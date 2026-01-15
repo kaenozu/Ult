@@ -1,0 +1,40 @@
+---
+name: brainstorm_with_opencode
+description: Collaborate with the OpenCode AI to brainstorm ideas, architectural designs, or problem-solving strategies.
+---
+
+# Brainstorm with OpenCode
+
+This skill acts as a bridge to a dedicated brainstorming session with the OpenCode AI agent. Use this when you need creative input, architectural advice, or a second opinion on a complex problem.
+
+## Usage
+
+### Start Brainstorming
+Send a topic or problem statement to OpenCode to generate ideas.
+
+```bash
+python backend/src/cli/opencode.py "Brainstorm ideas for: <TOPIC>"
+```
+
+**Arguments:**
+- `<TOPIC>`: The subject you want to brainstorm about (e.g., "improving database performance", "new features for the dashboard").
+
+### Example Instructions
+- "Brainstorm 5 different ways to optimize the React re-rendering issues."
+- "Propose an architectural design for a scalable notification system."
+- "List pros and cons of using GraphQL vs REST for this project."
+
+## Output Format (JSON)
+
+```json
+{
+  "instruction": "Brainstorm ideas for...",
+  "executed": true,
+  "output": "Here are 5 ideas:\n1. Use Memoization...\n2. Virtualize lists...",
+  "error": "",
+  "returncode": 0
+}
+```
+
+> [!NOTE]
+> This skill relies on the system's `opencode` CLI. Ensure you are authenticated and have sufficient credits/quota.
