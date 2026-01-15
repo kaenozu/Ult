@@ -1,7 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { getPositions, getMarketData, getSignal } from '@/lib/api'
+import { getPositions } from '@/lib/api'
+import { usePositionRow } from '@/hooks/usePositionRow'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,41 +11,25 @@ import {
   AlertTriangle,
   TrendingUp,
   TrendingDown,
-  ArrowRight,
 } from 'lucide-react'
 import TradingModal from './TradingModal'
 import Link from 'next/link'
-import { Position, SignalResponse, MarketDataResponse } from '@/types'
+import { Position } from '@/types'
 
 // Component for a single row in the position list
 function PositionRow({ position }: { position: Position }) {
   const { ticker, quantity, avg_price } = position
 
-  // Fetch live market data for PnL
-  const { data: market } = useQuery({
-    queryKey: ['market', ticker],
-    queryFn: () => getMarketData(ticker),
-    refetchInterval: 10000,
-  })
-
-  // Fetch signal for "Sell Alert"
-  const { data: signal } = useQuery({
-    queryKey: ['signal', ticker],
-    queryFn: () => getSignal(ticker),
-    refetchInterval: 60000,
-  })
+  const {
+    market,
+    currentPrice,
+    pnl,
+    pnlPercent,
+    isProfit,
+    showAlert,
+  } = usePositionRow(position)
 
   if (!market) return null // Loading state skeleton could be here
-
-  const currentPrice = market.price
-  const pnl = (currentPrice - avg_price) * quantity
-  const pnlPercent = ((currentPrice - avg_price) / avg_price) * 100
-  const isProfit = pnl >= 0
-
-  // Alert logic: High profit (>5%) or AI Sell Signal (-1)
-  const isSellSignal = signal?.signal === -1
-  const isHighProfit = pnlPercent >= 5.0
-  const showAlert = isSellSignal || isHighProfit
 
   return (
     <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg mb-3">
@@ -115,10 +100,24 @@ function PositionRow({ position }: { position: Position }) {
 }
 
 export default function PositionList() {
-  const { data: positions, isLoading } = useQuery({
+  const {
+    data: positions,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['positions'],
     queryFn: getPositions,
   })
+
+  // Debug log
+  console.log(
+    'PositionList - positions:',
+    positions,
+    'isLoading:',
+    isLoading,
+    'error:',
+    error
+  )
 
   if (isLoading)
     return <div className="h-20 animate-pulse bg-muted rounded-lg" />
