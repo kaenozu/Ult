@@ -12,6 +12,8 @@ export interface Position {
   avg_price: number
   current_price?: number
   unrealized_pnl?: number
+  name?: string
+  sector?: string
 }
 
 export interface SignalResponse {
@@ -30,6 +32,9 @@ export interface MarketDataResponse {
   change_percent: number
   volume: number
   timestamp: string
+  day_high?: number
+  day_low?: number
+  market_cap?: number
 }
 
 export interface TradeRequest {
@@ -61,4 +66,15 @@ export interface ApiResponse<T> {
   data?: T
   error?: string
   message?: string
+}
+
+export interface AutoTradeStatus {
+  is_running: boolean
+  scan_status: string
+  last_scan_time: string | null
+  config: {
+    max_budget_per_trade: number
+    max_total_invested: number
+    scan_interval: number
+  }
 }
