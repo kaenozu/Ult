@@ -1,13 +1,13 @@
 {
-  "paper_trading": {
-    "initial_capital": 1000000
-  },
-  "data": {
-    "default_period": "1y"
-  },
-  "system": {
-    "log_level": "INFO",
-    "parquet_dir": "data/parquet",
-    "db_path": "ult_trading.db"
-  }
+    "paper_trading": {
+        "initial_capital": 1000000
+    },
+    "data": {
+        "default_period": "1y"
+    },
+    "system": {
+        "log_level": "INFO",
+        "parquet_dir": "data/parquet",
+        "db_path": "ult_trading.db"
+    }
 }

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseMaintenance:
-    def __init__(self, db_path: str = "ult_trading.db"):
+    def __init__(self, db_path: str = "paper_trading.db"):
         self.db_path = db_path
         self.backup_dir = Path("backups")
         self.backup_dir.mkdir(exist_ok=True)
@@ -28,7 +28,7 @@ class DatabaseMaintenance:
 
             # Create indexes
             indexes = [
-                "CREATE INDEX IF NOT EXISTS idx_orders_timestamp ON orders(timestamp)",
+                "CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(date)",
                 "CREATE INDEX IF NOT EXISTS idx_orders_ticker ON orders(ticker)",
                 "CREATE INDEX IF NOT EXISTS idx_positions_ticker ON positions(ticker)",
                 "CREATE INDEX IF NOT EXISTS idx_balance_date ON balance(date)",
