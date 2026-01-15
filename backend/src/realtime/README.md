@@ -41,19 +41,19 @@ import asyncio
 
 async def main():
     client = RealtimeDataClient()
-    
+
     # データハンドラーを登録
     async def handle_market_data(data):
         print(f"市場データ: {data}")
-    
+
     client.register_data_handler("market_data", handle_market_data)
-    
+
     # 接続
     await client.connect()
-    
+
     # 10秒間データを受信
     await asyncio.sleep(10)
-    
+
     # 切断
     await client.disconnect()
 
