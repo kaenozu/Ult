@@ -1,46 +1,34 @@
 ---
 name: brainstorm_with_opencode
-description: Collaborate with the OpenCode AI to brainstorm ideas, architectural designs, or problem-solving strategies.
+description: Collaborate with the OpenCode AI to brainstorm ideas. Antigravity acts as the facilitator.
 ---
 
-# Brainstorm with OpenCode
+# Brainstorm with OpenCode (Facilitator Mode)
 
-This skill acts as a bridge to a dedicated brainstorming session with the OpenCode AI agent. Use this when you need creative input, architectural advice, or a second opinion on a complex problem.
+This skill defines a **protocol** for you (Antigravity) to act as a facilitator between the User and the OpenCode AI. Do not simply pass the prompt and exit. You must actively manage the session to produce high-quality results.
+
+## 🛑 Agent Protocol
+
+### Step 1: Decompose
+Break the user's request into smaller, specific questions to avoid timeouts and generic answers.
+- Bad: "Brainstorm everything about this app."
+- Good: "List 3 UI ideas." -> "List 3 Backend optimizations." -> "List 3 Security features."
+
+### Step 2: Interrogate (Multi-Turn)
+Execute the CLI multiple times with these specific questions using the free model.
+
+```bash
+python backend/src/cli/opencode.py "Question 1..." --model opencode/big-pickle
+python backend/src/cli/opencode.py "Question 2..." --model opencode/big-pickle
+```
+
+### Step 3: Synthesize
+Combine the raw outputs from OpenCode into a coherent summary. Add your own analysis.
+- What ideas are feasible?
+- What fits the current "Deep Void" design philosophy?
 
 ## Usage
 
-### Start Brainstorming
-Send a topic to OpenCode.
-
-> [!TIP]
-> **Avoid Timeouts:** Large, complex prompts may time out on free models. Break down your request into smaller sub-topics (e.g., "UI Ideas" instead of "Full System Architecture").
-
 ```bash
-python backend/src/cli/opencode.py "Brainstorm ideas for: <TOPIC>" --model opencode/big-pickle
+python backend/src/cli/opencode.py "<QUESTION>" --model opencode/big-pickle
 ```
-
-**Arguments:**
-- `<TOPIC>`: The subject you want to brainstorm about.
-- `--model <MODEL>`: Specify model(s).
-    - Single: `--model opencode/big-pickle`
-    - Multiple (Simultaneous): `--model "opencode/big-pickle,opencode/qwen3-coder"` (comma-separated)
-
-### Example Instructions
-- "Brainstorm 5 different ways to optimize the React re-rendering issues."
-- "Propose an architectural design for a scalable notification system."
-- "List pros and cons of using GraphQL vs REST for this project."
-
-## Output Format (JSON)
-
-```json
-{
-  "instruction": "Brainstorm ideas for...",
-  "executed": true,
-  "output": "Here are 5 ideas:\n1. Use Memoization...\n2. Virtualize lists...",
-  "error": "",
-  "returncode": 0
-}
-```
-
-> [!NOTE]
-> This skill relies on the system's `opencode` CLI. Ensure you are authenticated and have sufficient credits/quota.

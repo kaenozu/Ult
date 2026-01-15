@@ -1,40 +1,39 @@
 ---
 name: brainstorm_jp
-description: 「ブレストして」という指示でOpenCode AIとブレインストーミングを行います。
+description: 「ブレストして」という指示で、AntigravityがファシリテーターとなりOpenCode AIと対話してアイデアをまとめます。
 ---
 
-# ブレストして (Brainstorm in Japanese)
+# ブレストして (Interactive Brainstorming)
 
-「ブレストして」や「アイデア出し」といった日本語の指示で、OpenCode AIとブレインストーミングを行うためのスキルです。
-無料プランで動作する `opencode/big-pickle` モデルをデフォルトで使用します。
+このスキルは、単にコマンドを一つ実行するだけではありません。
+**あなた（Antigravity）がファシリテーターとなり、OpenCode AIから質の高いアイデアを引き出し、ユーザーに最終的な成果物を届けるための一連の手順（プロトコル）です。**
 
-## Usage
+## 🛑 Agent Protocol (必ず守ること)
 
-### ブレインストーミングの開始
-テーマを指定してブレストを開始します。
+ユーザーから「ブレストして」と頼まれたら、以下のステップを実行してください。**一度のコマンドで終わらせてはいけません。**
 
-```bash
-python backend/src/cli/opencode.py "ブレスト: <TOPIC>" --model opencode/big-pickle
+### Step 1: テーマの分解 (Decomposition)
+タイムアウトを防ぎ、深い回答を得るために、テーマを複数の側面に分解します。
+*   例：「アプリの改善」→「UI/UXのアイデア」「バックエンドの機能」「セキュリティ」
+
+### Step 2: インタラクティブな対話 (Execution)
+分解したサブテーマごとに、`opencode.py` を実行して意見を求めます。
+無料モデル (`opencode/big-pickle`) を使用してください。
+
+```python
+# Round 1: UI Ideas
+run_command('python backend/src/cli/opencode.py "List 3 unique cyberpunk UI concepts for..." --model opencode/big-pickle')
+
+# Round 2: Functional Features
+run_command('python backend/src/cli/opencode.py "List 3 technical features for..." --model opencode/big-pickle')
 ```
 
-**引数:**
-- `<TOPIC>`: ブレストしたいテーマ。
-  > [!TIP]
-  > 長すぎるテーマはタイムアウトする可能性があります。「UIについて」「機能について」のように細かく分けるとスムーズです。
-- `--model`: デフォルトで `opencode/big-pickle` を使用します。
-  - 複数同時実行: `--model "opencode/big-pickle,opencode/qwen3-coder"` のようにカンマ区切りで指定可能。
+### Step 3: 統合と報告 (Synthesis)
+OpenCodeから得られた複数の回答を、あなた自身のコンテキスト（プロジェクトの現状）と組み合わせて統合し、Markdownレポートとして出力・報告してください。
+「OpenCodeはこのように言っていますが、私はこう思います」という**あなたの考察**を含めることが重要です。
 
-### 実行例
-- 「UIの改善案についてブレストして」 (Single Model)
-- 「次の機能について、複数のAIでブレストして」 (Multi-Model inferred if configured, or explicitly passed by agent)
-- 「アーキテクチャの悩みについてブレストして」→ `<TOPIC>`="アーキテクチャの悩み"
+## Usage (Command Reference)
 
-## Output Format (JSON)
-```json
-{
-  "instruction": "ブレスト: ...",
-  "executed": true,
-  "output": "...",
-  "returncode": 0
-}
+```bash
+python backend/src/cli/opencode.py "<SPECIFIC_QUESTION>" --model opencode/big-pickle
 ```
