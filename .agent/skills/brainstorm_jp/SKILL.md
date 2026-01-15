@@ -18,11 +18,15 @@ python backend/src/cli/opencode.py "ブレスト: <TOPIC>" --model opencode/big-
 ```
 
 **引数:**
-- `<TOPIC>`: ブレストしたいテーマや課題（例：「ダッシュボードの改善案」「新規機能のアイデア」）。
-- `--model`: デフォルトで `opencode/big-pickle` を使用しますが、カンマ区切りで複数指定も可能です。
+- `<TOPIC>`: ブレストしたいテーマ。
+  > [!TIP]
+  > 長すぎるテーマはタイムアウトする可能性があります。「UIについて」「機能について」のように細かく分けるとスムーズです。
+- `--model`: デフォルトで `opencode/big-pickle` を使用します。
+  - 複数同時実行: `--model "opencode/big-pickle,opencode/qwen3-coder"` のようにカンマ区切りで指定可能。
 
 ### 実行例
-- 「UIの改善案についてブレストして」→ `<TOPIC>`="UIの改善案"
+- 「UIの改善案についてブレストして」 (Single Model)
+- 「次の機能について、複数のAIでブレストして」 (Multi-Model inferred if configured, or explicitly passed by agent)
 - 「アーキテクチャの悩みについてブレストして」→ `<TOPIC>`="アーキテクチャの悩み"
 
 ## Output Format (JSON)
