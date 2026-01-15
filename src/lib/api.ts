@@ -15,6 +15,8 @@ export type { TradeRequest } from '@/types'
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
 
+console.log('Using API URL:', API_URL)
+
 export const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -45,8 +47,16 @@ export const getPositions = async (): Promise<Position[]> => {
 export const getMarketData = async (
   ticker: string
 ): Promise<MarketDataResponse> => {
-  const response = await api.get<MarketDataResponse>(`/market/${ticker}`)
-  return response.data
+  try {
+    const response = await api.get<MarketDataResponse>(`/market/${ticker}`)
+    return response.data
+  } catch (error) {
+    console.error(`Error fetching market data for ${ticker}:`, error)
+    // Fallback or rethrow? For now, let's rethrow or return a safe default if needed.
+    // Given the previous code had a fallback, let's keep a minimal one if API fails?
+    // No, better to fail loud or let React Query handle error.
+    throw error
+  }
 }
 
 export const getSignal = async (
@@ -108,27 +118,18 @@ export interface AutoTradeConfig {
 }
 
 export const getAutoTradeStatus = async (): Promise<AutoTradeStatus> => {
-  try {
-    const response = await api.get('/status/autotrade')
-    return response.data
-  } catch (error) {
-    console.error('Failed to get auto-trade status:', error)
-    return {
-      is_running: false,
-      scan_status: 'Offline',
-      last_scan_time: null,
-      config: {
-        max_budget_per_trade: 0,
-        max_total_invested: 0,
-        scan_interval: 0,
-      },
-    }
-  }
+  const response = await api.get<AutoTradeStatus>('/status/autotrade')
+  return response.data
 }
 
 export const configureAutoTrade = async (
   config: Partial<AutoTradeConfig>
 ): Promise<AutoTradeStatus> => {
   const response = await api.post('/config/autotrade', config)
+  return response.data
+}
+
+export const resetPortfolio = async (initial_capital: number): Promise<{ success: boolean; message: string }> => {
+  const response = await api.post('/settings/reset-portfolio', { initial_capital })
   return response.data
 }
