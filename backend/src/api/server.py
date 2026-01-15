@@ -396,26 +396,14 @@ def register_routes(app: FastAPI):
     async def run_backtest(request: BacktestRequest):
         """バックテストを実行"""
         try:
-            from src.data_loader import fetch_stock_data
-            from src.backtest_engine import BacktestEngine
-            from src.strategies import LightGBMStrategy, RSIStrategy
+            from src.backtest_service import execute_backtest
             
-            # 戦略を選択
-            strategy_map = {
-                "LightGBM": LightGBMStrategy,
-                "RSI": RSIStrategy,
-            }
-            strategy_cls = strategy_map.get(request.strategy, LightGBMStrategy)
-            
-            # データ取得
-            data_map = fetch_stock_data([request.ticker], period=request.period)
-            df = data_map.get(request.ticker)
-            if df is None or df.empty:
-                raise HTTPException(status_code=404, detail="Data not found")
-            
-            # バックテスト実行
-            engine = BacktestEngine(initial_capital=request.initial_capital)
-            result = engine.run(df, strategy_cls())
+            result = execute_backtest(
+                ticker=request.ticker,
+                strategy_name=request.strategy,
+                period=request.period,
+                initial_capital=request.initial_capital
+            )
             
             if result is None:
                 raise HTTPException(status_code=400, detail="Backtest failed")

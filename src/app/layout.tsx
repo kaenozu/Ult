@@ -4,6 +4,7 @@ import './globals.css'
 import QueryProvider from '@/providers/QueryProvider'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import Sidebar from '@/components/layout/Sidebar'
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -12,8 +13,8 @@ const outfit = Outfit({
 })
 
 export const metadata: Metadata = {
-  title: 'AGStock Ult | Simple Trading',
-  description: 'AI-Powered Stock Trading for Everyone',
+  title: 'AGStock Ult | AI Command Center',
+  description: 'Next-Gen AI Trading Interface',
 }
 
 export default function RootLayout({
@@ -24,16 +25,22 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body
-        className={`${outfit.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${outfit.variable} font-sans antialiased bg-background text-foreground overflow-hidden`}
       >
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          enableSystem
+          enableSystem={false}
           disableTransitionOnChange
         >
           <QueryProvider>
-            <ErrorBoundary>{children}</ErrorBoundary>
+            <div className="flex w-full h-screen">
+              <Sidebar />
+              <main className="flex-1 h-full overflow-y-auto relative">
+                <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.02] pointer-events-none" />
+                <ErrorBoundary>{children}</ErrorBoundary>
+              </main>
+            </div>
           </QueryProvider>
         </ThemeProvider>
       </body>

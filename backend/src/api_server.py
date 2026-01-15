@@ -37,12 +37,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-CORS_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://localhost:3000",
-    "https://127.0.0.1:3000",
-]
+CORS_ORIGINS = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -148,9 +143,7 @@ async def rate_limit_middleware(request: Request, call_next):
     if client_ip not in request_counts:
         request_counts[client_ip] = []
 
-    request_counts[client_ip] = [
-        t for t in request_counts[client_ip] if current_time - t < window
-    ]
+    request_counts[client_ip] = [t for t in request_counts[client_ip] if current_time - t < window]
 
     if len(request_counts[client_ip]) >= 60:
         return JSONResponse(
@@ -290,9 +283,7 @@ async def get_market_data(symbol: str):
 
 
 @app.get("/api/v1/alerts", response_model=List[AlertResponse], tags=["Alerts"])
-async def get_alerts(
-    status: Optional[str] = None, severity: Optional[str] = None, limit: int = 50
-):
+async def get_alerts(status: Optional[str] = None, severity: Optional[str] = None, limit: int = 50):
     """アラート履歴取得"""
     alerts = db_manager.get_alerts(status=status, severity=severity, limit=limit)
     return [
@@ -339,9 +330,7 @@ async def get_config():
 
 
 @app.get("/api/v1/audit", tags=["Audit"])
-async def get_audit_logs(
-    module: Optional[str] = None, action: Optional[str] = None, limit: int = 100
-):
+async def get_audit_logs(module: Optional[str] = None, action: Optional[str] = None, limit: int = 100):
     """監査ログ取得"""
     logs = db_manager.get_audit_logs(module=module, action=action, limit=limit)
     return logs
