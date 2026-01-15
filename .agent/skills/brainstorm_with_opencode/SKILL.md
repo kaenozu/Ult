@@ -22,10 +22,12 @@ python backend/src/cli/opencode.py "Question 1..." --model opencode/big-pickle
 python backend/src/cli/opencode.py "Question 2..." --model opencode/big-pickle
 ```
 
-### Step 3: Synthesize
-Combine the raw outputs from OpenCode into a coherent summary. Add your own analysis.
-- What ideas are feasible?
-- What fits the current "Deep Void" design philosophy?
+### Step 3: Synthesize & Log
+Combine the raw outputs from OpenCode into a coherent summary.
+**Critically:** You must include a "Transcript" section showing the Q&A flow.
+
+- **Transcript:** showing "Antigravity asked: ..." and "OpenCode answered: ..."
+- **synthesis:** Your final analysis.
 
 ## Usage
 
