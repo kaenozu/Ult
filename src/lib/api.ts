@@ -1,108 +1,124 @@
-import axios from 'axios';
+import axios from 'axios'
 import {
-    PortfolioSummary,
-    Position,
-    SignalResponse,
-    TradeRequest,
-    TradeResponse,
-    MarketDataResponse
-} from '@/types';
+  PortfolioSummary,
+  Position,
+  SignalResponse,
+  TradeResponse,
+  MarketDataResponse,
+  ChartDataPoint,
+  TradeRequest,
+} from '@/types'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+// Re-export for components that import from api.ts
+export type { TradeRequest } from '@/types'
+
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
 
 export const api = axios.create({
-    baseURL: API_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
 
 export const getPortfolio = async (): Promise<PortfolioSummary> => {
-    const response = await api.get<PortfolioSummary>('/portfolio');
-    return response.data;
-};
-
-export const getPositions = async (): Promise<Position[]> => {
-    const response = await api.get<Position[]>('/positions');
-    return response.data;
-};
-
-export const getMarketData = async (ticker: string): Promise<MarketDataResponse> => {
-    const response = await api.get<MarketDataResponse>(`/market/${ticker}`);
-    return response.data;
-};
-
-export const getSignal = async (ticker: string, strategy: string = 'LightGBM'): Promise<SignalResponse> => {
-    const response = await api.get<SignalResponse>(`/signals/${ticker}?strategy=${strategy}`);
-    return response.data;
-};
-
-export interface ChartDataPoint {
-    date: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
+  const response = await api.get<PortfolioSummary>('/portfolio')
+  return response.data
 }
 
-export const getChartData = async (ticker: string, period: string = '3mo'): Promise<ChartDataPoint[]> => {
-    // Determine start date based on period (backend doesn't support "period" arg directly in some endpoints, 
-    // so we might need to rely on what the backend offers or impl a custom endpoint.
-    // However, looking at server.py, /market/{ticker} returns current data.
-    // We need a history endpoint. PaperTrader doesn't expose history.
-    // The underlying data_loader does.
-    // Let's check backend/src/api/server.py again to see available endpoints.
-    // If none, we will add one.
-    // For now, let's assume we will add '/market/{ticker}/history' to backend.
-    const response = await api.get<any>(`/market/${ticker}/history?period=${period}`);
+export const getPositions = async (): Promise<Position[]> => {
+  const response = await api.get<Position[]>('/positions')
+  return response.data
+}
 
-    // Transform backend generic dataframe JSON to ChartDataPoint[]
-    // Backend likely returns { "2024-01-01": { "Open": ..., "Close": ... } } or list of records.
-    // We'll standardize this in backend.
-    return response.data;
-};
+export const getMarketData = async (
+  ticker: string
+): Promise<MarketDataResponse> => {
+  const response = await api.get<MarketDataResponse>(`/market/${ticker}`)
+  return response.data
+}
 
-export const executeTrade = async (trade: TradeRequest): Promise<TradeResponse> => {
-    const response = await api.post<TradeResponse>('/trade', trade);
-    return response.data;
-};
+export const getSignal = async (
+  ticker: string,
+  strategy: string = 'LightGBM'
+): Promise<SignalResponse> => {
+  const response = await api.get<SignalResponse>(
+    `/signals/${ticker}?strategy=${strategy}`
+  )
+  return response.data
+}
+
+export const getChartData = async (
+  ticker: string,
+  period: string = '3mo'
+): Promise<ChartDataPoint[]> => {
+  // Determine start date based on period (backend doesn't support "period" arg directly in some endpoints,
+  // so we might need to rely on what the backend offers or impl a custom endpoint.
+  // However, looking at server.py, /market/{ticker} returns current data.
+  // We need a history endpoint. PaperTrader doesn't expose history.
+  // The underlying data_loader does.
+  // Let's check backend/src/api/server.py again to see available endpoints.
+  // If none, we will add one.
+  // For now, let's assume we will add '/market/{ticker}/history' to backend.
+  const response = await api.get<any>(
+    `/market/${ticker}/history?period=${period}`
+  )
+
+  // Transform backend generic dataframe JSON to ChartDataPoint[]
+  // Backend likely returns { "2024-01-01": { "Open": ..., "Close": ... } } or list of records.
+  // We'll standardize this in backend.
+  return response.data
+}
+
+export const executeTrade = async (
+  trade: TradeRequest
+): Promise<TradeResponse> => {
+  const response = await api.post<TradeResponse>('/trade', trade)
+  return response.data
+}
 
 // === AutoTrader ===
 
 export interface AutoTradeStatus {
-    is_running: boolean;
-    scan_status: string;
-    last_scan_time: string | null;
-    config: {
-        max_budget_per_trade: number;
-        max_total_invested: number;
-        scan_interval: number;
-    }
+  is_running: boolean
+  scan_status: string
+  last_scan_time: string | null
+  config: {
+    max_budget_per_trade: number
+    max_total_invested: number
+    scan_interval: number
+  }
 }
 
 export interface AutoTradeConfig {
-    max_budget_per_trade: number | null;
-    stop_loss_pct: number | null;
-    enabled: boolean | null;
+  max_budget_per_trade: number | null
+  stop_loss_pct: number | null
+  enabled: boolean | null
 }
 
 export const getAutoTradeStatus = async (): Promise<AutoTradeStatus> => {
-    try {
-        const response = await api.get('/status/autotrade');
-        return response.data;
-    } catch (error) {
-        console.error("Failed to get auto-trade status:", error);
-        return {
-            is_running: false,
-            scan_status: "Offline",
-            last_scan_time: null,
-            config: { max_budget_per_trade: 0, max_total_invested: 0, scan_interval: 0 }
-        };
+  try {
+    const response = await api.get('/status/autotrade')
+    return response.data
+  } catch (error) {
+    console.error('Failed to get auto-trade status:', error)
+    return {
+      is_running: false,
+      scan_status: 'Offline',
+      last_scan_time: null,
+      config: {
+        max_budget_per_trade: 0,
+        max_total_invested: 0,
+        scan_interval: 0,
+      },
     }
-};
+  }
+}
 
-export const configureAutoTrade = async (config: Partial<AutoTradeConfig>): Promise<AutoTradeStatus> => {
-    const response = await api.post('/config/autotrade', config);
-    return response.data;
-};
+export const configureAutoTrade = async (
+  config: Partial<AutoTradeConfig>
+): Promise<AutoTradeStatus> => {
+  const response = await api.post('/config/autotrade', config)
+  return response.data
+}
