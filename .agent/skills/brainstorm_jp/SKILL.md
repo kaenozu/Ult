@@ -28,11 +28,24 @@ run_command('python backend/src/cli/opencode.py "List 3 unique cyberpunk UI conc
 run_command('python backend/src/cli/opencode.py "List 3 technical features for..." --model opencode/big-pickle')
 ```
 
-### Step 3: 統合と報告 (Synthesis)
-OpenCodeから得られた複数の回答を、あなた自身のコンテキスト（プロジェクトの現状）と組み合わせて統合し、Markdownレポートとして出力・報告してください。
-「OpenCodeはこのように言っていますが、私はこう思います」という**あなたの考察**を含めることが重要です。
+### Step 3: 統合と報告 (Synthesis & Transcript)
+OpenCodeから得られた複数の回答を統合し、レポートを作成します。
+**重要:** ユーザーは「会話の流れ」を見たがっています。レポートには必ず以下の2点を含めてください。
 
-## Usage (Command Reference)
+1.  **Conversation Log (会話ログ):** あなたが投げかけた具体的な質問と、OpenCodeからの回答（要約で可）の履歴。
+2.  **Antigravity's Synthesis (考察):** それらを踏まえたあなたの結論。
+
+## Output Format (Artifact Example)
+```markdown
+# Brainstorming Session Log
+
+## 🗣️ Dialogue Transcript
+- **Q1 (Antigravity):** "List 3 UI ideas..."
+- **A1 (OpenCode):** "1. Holographic graphs, 2. ..."
+
+## 🧠 Final Synthesis
+...
+```
 
 ```bash
 python backend/src/cli/opencode.py "<SPECIFIC_QUESTION>" --model opencode/big-pickle
