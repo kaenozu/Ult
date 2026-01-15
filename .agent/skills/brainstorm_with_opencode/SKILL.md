@@ -13,11 +13,14 @@ This skill acts as a bridge to a dedicated brainstorming session with the OpenCo
 Send a topic or problem statement to OpenCode to generate ideas.
 
 ```bash
-python backend/src/cli/opencode.py "Brainstorm ideas for: <TOPIC>"
+python backend/src/cli/opencode.py "Brainstorm ideas for: <TOPIC>" --model opencode/big-pickle
 ```
 
 **Arguments:**
-- `<TOPIC>`: The subject you want to brainstorm about (e.g., "improving database performance", "new features for the dashboard").
+- `<TOPIC>`: The subject you want to brainstorm about.
+- `--model <MODEL>`: Specify model(s).
+    - Single: `--model opencode/big-pickle`
+    - Multiple (Simultaneous): `--model "opencode/big-pickle,opencode/qwen3-coder"` (comma-separated)
 
 ### Example Instructions
 - "Brainstorm 5 different ways to optimize the React re-rendering issues."
