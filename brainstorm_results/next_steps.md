@@ -1,29 +1,60 @@
-# Brainstorming Report: Next Steps & Roadmap
+# 🧠 ブレスト会議：次世代Ultアプリの戦略決定
 
-**Facilitator:** Antigravity  
-**Model:** `opencode/big-pickle` (Hybrid Session)  
-**Topic:** Post-Launch Roadmap for Ult Trading App
+**ファシリテーター:** Antigravity  
+**参加モデル:** `opencode/big-pickle` (A), `local/qwen` (B)  
+**トピック:** Ultトレーディングアプリの次なるキラー機能
 
-## 🗣️ Conversation Transcript (会話ログ)
+---
 
-- **Q1 (Antigravity):** "Suggest 3 advanced features for the roadmap of a crypto trading platform."
-- **A1 (OpenCode):**
-    1.  **AI-Driven Market Sentiment Analysis:** Integrating social media and news feeds to gauge market mood in real-time.
-    2.  **Automated Arbitrage Bot:** A bot that scans multiple exchanges for price discrepancies and executes risk-free trades.
-    3.  **Smart Contract Auditing Tool:** For users trading on DEXs, a built-in tool to quickly scan token contracts for known vulnerabilities.
+## ⚔️ 議論と対立 (Debate)
 
-- **Q2 (Antigravity):** "List 3 high-priority technical debt tasks."
-- **A2 (Antigravity Persona - Fallback due to Timeout):**
-    1.  **Type Safety Hardening:** The codebase currently mixes typed and untyped Python. We need to enforce `mypy` strict mode to prevent runtime errors in the financial logic.
-    2.  **Database Migration Strategy:** We are using SQLite. As data grows, we need a migration path to PostgreSQL/TimescaleDB for high-frequency tick data.
-    3.  **Frontend State Management:** Moving from local React state to a robust global store (Zustand/Redux) to handle the increasing number of real-time WebSocket feeds.
+### 議題 1: UI/UXの方向性 「サイバーパンク」をどう解釈するか？
 
-## 🧠 Antigravity's Synthesis (考察)
+*   **Model A (Big Pickle) の主張:** 「**関係性の可視化**」こそがサイバーパンクだ。
+    *   提案: **テックエコシステム支配マップ**。株価だけでなく、企業間のサプライチェーンや特許のつながりを「ニューラルネットワーク」として可視化する。
+    *   狙い: データの「意味」をアートにする。
 
-The **"Arbitrage Bot"** suggested by OpenCode is exciting but high-risk and complex. A safer immediate step aligns with the **"Sentiment Analysis"** idea, which we have already started exploring with Phase 2 skills.
+*   **Model B (Qwen) の主張:** 「**没入感とゲーミフィケーション**」こそがサイバーパンクだ。
+    *   提案: **ARポジションスキャナー**。FPSゲームのように、リスク領域を「ヒートシグネチャ」で表示し、レティクル（照準）でターゲットする。
+    *   狙い: 取引体験そのものを戦術的なゲームにする。
 
-On the technical side, **Database Migration** is critical. Storing tick data in SQLite will become a bottleneck very soon.
+*   **Antigravityの視点:**
+    *   Qwenの案はエキサイティングだが、頻繁な取引には疲れる可能性がある。Big Pickleの「エコシステムマップ」は、単なるビジュアルだけでなく**「連想ゲーム買い（NVIDIAが上がればTSMCも）」という実用的なアルファ**を含んでいる点で優れている。
 
-**Proposed Next Priorities:**
-1.  **Tech Debt:** Plan migration to TimescaleDB (or similar time-series DB).
-2.  **Feature:** Expand the "Sentiment Analysis" CLI into a full dashboard widget (visualizing the AI's suggest feature).
+### 議題 2: バックエンドAIの進化 「賢さ」とは何か？
+
+*   **Model A (Big Pickle) の主張:** 「**文脈理解 (Narrative)**」
+    *   提案: **センチメント融合**。ニュース、SNS、自然災害などの非構造化データを統合し、「なぜ動いたか」の物語を構築する。
+
+*   **Model B (Qwen) の主張:** 「**構造と適応 (Structure)**」
+    *   提案: **マルチエージェント強化学習 & レジーム検知**。相場環境（トレンド、レンジ、暴落）を分類し、それぞれの専門エージェントを切り替える。
+
+*   **Antigravityの視点:**
+    *   ここには強いシナジーがある。Qwenの「レジーム検知（今は有事か平時か？）」という**枠組み**の上に、Big Pickleの「センチメント（地震発生、決算ミス）」という**具体的要因**を乗せることで、最強のシグナルが生まれる。文脈なき数値分析も、数値的裏付けなき物語も弱い。
+
+---
+
+## ⚖️ 最終決定 (Final Decision)
+
+両モデルの提案を統合し、以下の2つのプロジェクトを**Next Steps**として採択する。
+
+### 1. 【Frontend】 プロジェクト "Neural Nexus" (ニューラル・ネクサス)
+*   **採用案:** Big Pickleの「エコシステムマップ」 + Qwenの「ニューラル配線ビジュアル」
+*   **内容:**
+    *   D3.js または React-Force-Graph を使用した、インタラクティブな**サプライチェーン相関図**の実装。
+    *   単なる株価チャートではなく、「親会社・子会社」「競合」「主要顧客」のネットワークを表示し、ショックがどう伝播するかを可視化する。
+    *   デザインはQwenが提案する「ネオングリッド」「パーティクル」を採用し、没入感を高める。
+
+### 2. 【Backend】 プロジェクト "Adaptive Regime" (アダプティブ・レジーム)
+*   **採用案:** Qwenの「レジーム検知」 + Big Pickleの「反脆弱（Anti-Fragile）ポートフォリオ」
+*   **内容:**
+    *   市場の状態を「安定成長」「乱高下」「暴落」の3つにリアルタイム分類するAIモジュール (**Regime Detector**) の実装。
+    *   レジームに応じて、リスク許容度（ポジションサイズ）を自動調整する**サーキットブレーカー**の強化。
+    *   これは「守り」であると同時に、暴落時にあえて利益を狙う「ボラティリティ・ハーベスティング」の基盤となる。
+
+---
+
+## 📝 今後のタスク (Action Items)
+
+1.  **[Frontend]** `src/components/visualizations/EcosystemGraph.tsx` のプロトタイプ作成 (D3.js/ForceGraph)
+2.  **[Backend]** `backend/src/strategies/ml/regime_detector.py` の実装 (ボラティリティベースの市場分類)
