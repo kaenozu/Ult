@@ -143,10 +143,16 @@ def get_app() -> FastAPI:
 
 # === Dependencies ===
 
+# Global PaperTrader instance
+_paper_trader = None
+
 def get_paper_trader():
-    """PaperTraderの依存性注入"""
-    from src.paper_trader import PaperTrader
-    return PaperTrader()
+    """PaperTraderの依存性注入 (Singleton)"""
+    global _paper_trader
+    if _paper_trader is None:
+        from src.paper_trader import PaperTrader
+        _paper_trader = PaperTrader()
+    return _paper_trader
 
 
 def get_data_loader():
@@ -199,20 +205,63 @@ def register_routes(app: FastAPI):
     async def reset_portfolio(request: ResetPortfolioRequest):
         """ポートフォリオをリセットして新しい初期資金で開始"""
         try:
-            import os
+            import sqlite3
             db_path = "ult_trading.db"
             
-            # Delete existing database
-            if os.path.exists(db_path):
-                os.remove(db_path)
-                logger.info(f"Deleted existing database: {db_path}")
+            global _paper_trader
+            global _auto_trader
+
+            # 1. Stop AutoTrader if exists and running
+            if _auto_trader:
+                _auto_trader.stop()
+                _auto_trader = None
+
+            # 2. Close existing PaperTrader connection to release lock
+            if _paper_trader:
+                _paper_trader.close()
+                _paper_trader = None
             
-            # Re-initialize PaperTrader with new capital
+            # 3. Clear existing data using SQL instead of deleting file (avoids WinError 32)
+            try:
+                # Use a temporary connection to clear data
+                conn = sqlite3.connect(db_path)
+                cursor = conn.cursor()
+                
+                # Disable foreign keys temporarily if needed, though we don't have strict ones
+                cursor.execute("PRAGMA foreign_keys = OFF")
+                
+                # Get list of tables
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                tables = [row[0] for row in cursor.fetchall() if row[0] != 'sqlite_sequence']
+                
+                for table in tables:
+                    cursor.execute(f"DELETE FROM {table}")
+                
+                # Reset sequences if exists
+                try:
+                    cursor.execute("DELETE FROM sqlite_sequence")
+                except Exception:
+                    pass # Ignore if table doesn't exist
+                
+                conn.commit()
+                # VACUUM to shrink file
+                try:
+                    conn.execute("VACUUM")
+                except Exception as ve:
+                    logger.warning(f"VACUUM failed (ignored): {ve}")
+                
+                conn.close()
+                logger.info(f"Cleared database tables: {db_path}")
+                
+            except Exception as e:
+                logger.error(f"Error clearing database: {e}")
+                raise HTTPException(status_code=500, detail=f"Database reset failed: {e}")
+            
+            # 4. Re-initialize PaperTrader with new capital
             from src.paper_trader import PaperTrader
             pt = PaperTrader(db_path=db_path, initial_capital=request.initial_capital)
             
-            # Clear the cached instance
-            global _paper_trader
+            # Update global singleton
             _paper_trader = pt
             
             return {
@@ -256,9 +305,13 @@ def register_routes(app: FastAPI):
             # 価格を取得（指定がなければ最新価格）
             price = request.price
             if price is None:
-                from src.data_loader import get_latest_price
-                price = get_latest_price(request.ticker)
-                if price is None:
+                from src.data_loader import fetch_stock_data, get_latest_price
+                # Fetch recent data to get the latest price
+                data_map = fetch_stock_data([request.ticker], period="5d")
+                df = data_map.get(request.ticker)
+                price = get_latest_price(df)
+                
+                if price <= 0:
                     raise HTTPException(status_code=400, detail="Could not fetch price")
             
             success = pt.execute_trade(
@@ -444,8 +497,9 @@ def get_auto_trader():
     global _auto_trader
     if _auto_trader is None:
         from src.auto_trader import AutoTrader
-        from src.paper_trader import PaperTrader
-        _auto_trader = AutoTrader(PaperTrader())
+        # Use the singleton paper trader to share DB connection
+        pt = get_paper_trader()
+        _auto_trader = AutoTrader(pt)
     return _auto_trader
 
 def register_autotrade_routes(app: FastAPI):

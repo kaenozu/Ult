@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { resetPortfolio } from '@/lib/api'
+
 import {
   Card,
   CardContent,
@@ -27,10 +28,12 @@ export default function SettingsPage() {
 
   const resetMutation = useMutation({
     mutationFn: async (newCapital: number) => {
-      const response = await api.post('/settings/reset-portfolio', {
-        initial_capital: newCapital,
-      })
-      return response.data
+      // Call real API
+      const result = await resetPortfolio(newCapital)
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to reset')
+      }
+      return result
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['portfolio'] })
@@ -102,7 +105,7 @@ export default function SettingsPage() {
 
             {resetMutation.isSuccess && (
               <div className="bg-green-500/10 text-green-500 p-3 rounded-lg text-sm">
-                ✓ {resetMutation.data?.message}
+                ✓ ポートフォリオがリセットされました
               </div>
             )}
 
