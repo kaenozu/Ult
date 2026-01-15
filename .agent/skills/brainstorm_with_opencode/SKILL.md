@@ -10,7 +10,10 @@ This skill acts as a bridge to a dedicated brainstorming session with the OpenCo
 ## Usage
 
 ### Start Brainstorming
-Send a topic or problem statement to OpenCode to generate ideas.
+Send a topic to OpenCode.
+
+> [!TIP]
+> **Avoid Timeouts:** Large, complex prompts may time out on free models. Break down your request into smaller sub-topics (e.g., "UI Ideas" instead of "Full System Architecture").
 
 ```bash
 python backend/src/cli/opencode.py "Brainstorm ideas for: <TOPIC>" --model opencode/big-pickle
