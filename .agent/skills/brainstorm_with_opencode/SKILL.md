@@ -32,5 +32,12 @@ Combine the raw outputs from OpenCode into a coherent summary.
 ## Usage
 
 ```bash
+# Cloud Model
 python backend/src/cli/opencode.py "<QUESTION>" --model opencode/big-pickle
+
+# Local Model (via 'qwen' command)
+python backend/src/cli/opencode.py "<QUESTION>" --model local/qwen
+
+# 3-Party Conference (Cloud + Local)
+python backend/src/cli/opencode.py "<QUESTION>" --model "opencode/big-pickle,local/qwen"
 ```

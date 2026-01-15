@@ -31,8 +31,15 @@ def main():
         }
         try:
             safe_instruction = instruction.replace('"', '\\"')
-            model_flag = f'--model "{model_name}"' if model_name else ""
-            command = f'opencode run {model_flag} "{safe_instruction}"'
+            
+            # Construct command based on model type
+            if model_name == "local/qwen":
+                # Use local 'qwen' command
+                command = f'qwen "{safe_instruction}"'
+            else:
+                # Use default 'opencode' command
+                model_flag = f'--model "{model_name}"' if model_name else ""
+                command = f'opencode run {model_flag} "{safe_instruction}"'
             
             process = subprocess.run(
                 command, 
@@ -40,7 +47,8 @@ def main():
                 capture_output=True, 
                 text=True, 
                 encoding='utf-8',
-                errors='replace'
+                errors='replace',
+                timeout=120 # Increased timeout for local models
             )
             
             res["executed"] = True

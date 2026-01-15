@@ -43,6 +43,14 @@ OpenCodeから得られた複数の回答を統合し、レポートを作成し
 - **Q1 (Antigravity):** "List 3 UI ideas..."
 - **A1 (OpenCode):** "1. Holographic graphs, 2. ..."
 
+### 実行例
+- **基本:** 「UIの改善案についてブレストして」 (Single Model)
+- **3者会議 (推奨):** 「次の機能について、3者会議で議論して」
+  - この場合、以下のコマンドを実行します:
+  ```python
+  run_command('python backend/src/cli/opencode.py "議題..." --model "opencode/big-pickle,local/qwen"')
+  ```
+
 ## 🧠 Final Synthesis
 ...
 ```
