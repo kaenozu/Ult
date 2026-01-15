@@ -29,10 +29,34 @@ def main():
         
         signals = []
         if market_data:
-            tickers = [x['ticker'] for x in market_data[:10]] # Check top 10
-            data_map = fetch_stock_data(tickers, period="3mo")
+            # Map aliases back to real tickers for fetching history
+            alias_map = {
+                "SP500": "^GSPC",
+                "USDJPY": "JPY=X",
+                "NIKKEI": "^N225",
+                "VIX": "^VIX",
+                "GOLD": "GC=F",
+                "OIL": "CL=F",
+                "US10Y": "^TNX"
+            }
             
-            for ticker, df in data_map.items():
+            summary_tickers = [x['ticker'] for x in market_data[:10]]
+            real_tickers = [alias_map.get(t, t) for t in summary_tickers]
+            
+            # Fetch data using real tickers
+            data_map = fetch_stock_data(real_tickers, period="3mo")
+            
+            # Remap results back to aliases for consistency in output if needed, 
+            # or just use real tickers for signals.
+            # actually data_map keys will be real tickers.
+            
+            for real_ticker, df in data_map.items():
+                # Find original alias if any
+                display_ticker = real_ticker
+                for alias, target in alias_map.items():
+                    if target == real_ticker:
+                        display_ticker = alias
+                        break
                 if df is not None and not df.empty:
                     # Calc RSI
                     delta = df['Close'].diff()
@@ -42,10 +66,11 @@ def main():
                     rsi = 100 - (100 / (1 + rs))
                     current_rsi = rsi.iloc[-1]
                     
+                    
                     if current_rsi < 30:
-                        signals.append({"ticker": ticker, "signal": "BUY", "reason": f"RSI Oversold ({current_rsi:.1f})"})
+                        signals.append({"ticker": display_ticker, "signal": "BUY", "reason": f"RSI Oversold ({current_rsi:.1f})"})
                     elif current_rsi > 70:
-                        signals.append({"ticker": ticker, "signal": "SELL", "reason": f"RSI Overbought ({current_rsi:.1f})"})
+                        signals.append({"ticker": display_ticker, "signal": "SELL", "reason": f"RSI Overbought ({current_rsi:.1f})"})
 
         output = {
             "market_summary": stats,
