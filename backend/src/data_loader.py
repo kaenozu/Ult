@@ -48,47 +48,36 @@ except ImportError:
 
 T = TypeVar("T")
 
-CRYPTO_PAIRS = [
-    "BTC-USD",
-    "ETH-USD",
-    "XRP-USD",
-    "SOL-USD",
-    "DOGE-USD",
-    "BNB-USD",
-    "ADA-USD",
-    "MATIC-USD",
-    "DOT-USD",
-    "LTC-USD",
-]
+# Load config if available
+import json
+from pathlib import Path
 
-FX_PAIRS = [
-    "USDJPY=X",
-    "EURUSD=X",
-    "GBPUSD=X",
-    "AUDUSD=X",
-    "USDCAD=X",
-    "USDCHF=X",
-    "EURJPY=X",
-    "GBPJPY=X",
-]
+_CONFIG_PATH = Path("config.json")
+_config = {}
+if _CONFIG_PATH.exists():
+    try:
+        with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
+            _config = json.load(f)
+    except Exception as e:
+        logger.error(f"Error loading config.json: {e}")
 
-JP_STOCKS = [
-    "7203.T",
-    "9984.T",
-    "6758.T",
-    "8035.T",
-    "6861.T",
-    "6098.T",
-    "4063.T",
-    "6367.T",
-    "6501.T",
-    "7974.T",
-    "9432.T",
-    "8306.T",
-    "7267.T",
-    "4502.T",
-    "6954.T",
-]
+_tickers_config = _config.get("tickers", {})
+
+CRYPTO_PAIRS = _tickers_config.get("crypto_pairs", [
+    "BTC-USD", "ETH-USD", "XRP-USD", "SOL-USD", "DOGE-USD",
+    "BNB-USD", "ADA-USD", "MATIC-USD", "DOT-USD", "LTC-USD",
+])
+
+FX_PAIRS = _tickers_config.get("fx_pairs", [
+    "USDJPY=X", "EURUSD=X", "GBPUSD=X", "AUDUSD=X",
+    "USDCAD=X", "USDCHF=X", "EURJPY=X", "GBPJPY=X",
+])
+
+JP_STOCKS = _tickers_config.get("jp_stocks", [
+    "7203.T", "9984.T", "6758.T", "8035.T", "6861.T",
+    "6098.T", "4063.T", "6367.T", "6501.T", "7974.T",
+    "9432.T", "8306.T", "7267.T", "4502.T", "6954.T",
+])
 
 
 class DataLoader:
@@ -410,7 +399,7 @@ def _sanitize_price_history(df: pd.DataFrame) -> pd.DataFrame:
     return clean
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
+# @st.cache_data(ttl=3600, show_spinner=False)
 @retry_with_backoff(retries=3, backoff_in_seconds=2)
 def fetch_stock_data(
     tickers: Sequence[str],
