@@ -17,6 +17,16 @@ export const api = axios.create({
     },
 });
 
+// Health Check
+export const checkHealth = async (): Promise<boolean> => {
+    try {
+        await api.get('/health');
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
+
 export const getPortfolio = async (): Promise<PortfolioSummary> => {
     const response = await api.get<PortfolioSummary>('/portfolio');
     return response.data;
