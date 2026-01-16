@@ -1,0 +1,70 @@
+from fastapi import APIRouter, HTTPException
+import logging
+import sqlite3
+
+from src.api.schemas import ResetPortfolioRequest
+from src.api.dependencies import reset_globals, set_paper_trader
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+@router.post("/settings/reset-portfolio")
+async def reset_portfolio(request: ResetPortfolioRequest):
+    """ポートフォリオをリセットして新しい初期資金で開始"""
+    try:
+        db_path = "ult_trading.db"
+        
+        # 1. Stop components and clear globals
+        reset_globals()
+        
+        # 2. Clear existing data using SQL
+        try:
+            # Use a temporary connection to clear data
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            
+            # Disable foreign keys temporarily if needed
+            cursor.execute("PRAGMA foreign_keys = OFF")
+            
+            # Get list of tables
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+            tables = [row[0] for row in cursor.fetchall() if row[0] != 'sqlite_sequence']
+            
+            for table in tables:
+                cursor.execute(f"DELETE FROM {table}")
+            
+            # Reset sequences if exists
+            try:
+                cursor.execute("DELETE FROM sqlite_sequence")
+            except Exception:
+                pass # Ignore if table doesn't exist
+            
+            conn.commit()
+            # VACUUM to shrink file
+            try:
+                conn.execute("VACUUM")
+            except Exception as ve:
+                logger.warning(f"VACUUM failed (ignored): {ve}")
+            
+            conn.close()
+            logger.info(f"Cleared database tables: {db_path}")
+            
+        except Exception as e:
+            logger.error(f"Error clearing database: {e}")
+            raise HTTPException(status_code=500, detail=f"Database reset failed: {e}")
+        
+        # 3. Re-initialize PaperTrader with new capital
+        from src.paper_trader import PaperTrader
+        pt = PaperTrader(db_path=db_path, initial_capital=request.initial_capital)
+        
+        # Update global singleton
+        set_paper_trader(pt)
+        
+        return {
+            "success": True,
+            "message": f"ポートフォリオをリセットしました。初期資金: ¥{request.initial_capital:,.0f}",
+            "initial_capital": request.initial_capital
+        }
+    except Exception as e:
+        logger.error(f"Error resetting portfolio: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

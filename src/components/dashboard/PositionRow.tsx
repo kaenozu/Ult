@@ -1,35 +1,44 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { getPositions } from '@/lib/api'
-import { usePositionRow } from '@/hooks/usePositionRow'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getMarketData, getSignal } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  Coins,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-} from 'lucide-react'
+import { AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
 import TradingModal from './TradingModal'
 import Link from 'next/link'
 import { Position } from '@/types'
+import { usePnL } from '@/hooks/usePnL'
+import { useAlert } from '@/hooks/useAlert'
 
-// Component for a single row in the position list
-function PositionRow({ position }: { position: Position }) {
+interface PositionRowProps {
+  position: Position
+}
+
+function PositionRow({ position }: PositionRowProps) {
   const { ticker, quantity, avg_price } = position
 
-  const {
-    market,
-    currentPrice,
-    pnl,
-    pnlPercent,
-    isProfit,
-    showAlert,
-  } = usePositionRow(position)
+  const { data: market } = useQuery({
+    queryKey: ['market', ticker],
+    queryFn: () => getMarketData(ticker),
+    refetchInterval: 10000,
+  })
 
-  if (!market) return null // Loading state skeleton could be here
+  const { data: signal } = useQuery({
+    queryKey: ['signal', ticker],
+    queryFn: () => getSignal(ticker),
+    refetchInterval: 60000,
+  })
+
+  if (!market) return null
+
+  const currentPrice = market.price
+  const { pnl, pnlPercent, isProfit } = usePnL(
+    currentPrice,
+    avg_price,
+    quantity
+  )
+  const { showAlert } = useAlert(signal, pnlPercent)
 
   return (
     <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg mb-3">
@@ -76,7 +85,7 @@ function PositionRow({ position }: { position: Position }) {
       <div className="ml-4">
         <TradingModal
           ticker={ticker}
-          name={ticker} // Ideally name fetches too
+          name={ticker}
           price={currentPrice}
           action="SELL"
           maxQuantity={quantity}
@@ -99,47 +108,4 @@ function PositionRow({ position }: { position: Position }) {
   )
 }
 
-export default function PositionList() {
-  const {
-    data: positions,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['positions'],
-    queryFn: getPositions,
-  })
-
-  // Debug log
-  console.log(
-    'PositionList - positions:',
-    positions,
-    'isLoading:',
-    isLoading,
-    'error:',
-    error
-  )
-
-  if (isLoading)
-    return <div className="h-20 animate-pulse bg-muted rounded-lg" />
-
-  if (!positions || positions.length === 0) {
-    // Empty state is handled gracefully, maybe show nothing or "No positions"
-    return null
-  }
-
-  return (
-    <Card className="border-none shadow-none bg-transparent">
-      <CardHeader className="px-0 pt-0 pb-4">
-        <CardTitle className="text-lg font-bold flex items-center gap-2">
-          <Coins className="h-5 w-5 text-amber-500" />
-          保有銘柄 (Portfolio)
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-0 space-y-2">
-        {positions.map((pos) => (
-          <PositionRow key={pos.ticker} position={pos} />
-        ))}
-      </CardContent>
-    </Card>
-  )
-}
+export default PositionRow
