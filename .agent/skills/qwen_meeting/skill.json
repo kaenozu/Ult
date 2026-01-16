@@ -1,0 +1,51 @@
+{
+  "name": "qwen_meeting",
+  "description": "Intelligent meeting agent with Qwen AI for conducting discussions, decision making, and generating meeting minutes",
+  "version": "1.0.0",
+  "author": "AGStock Team",
+  "license": "MIT",
+  "parameters": {
+    "required": [],
+    "optional": [
+      {
+        "name": "meeting_topic",
+        "type": "string",
+        "description": "Main topic or agenda for the meeting",
+        "default": "General discussion"
+      },
+      {
+        "name": "participants",
+        "type": "array",
+        "description": "List of meeting participants",
+        "default": ["User", "Qwen AI"]
+      },
+      {
+        "name": "duration_minutes",
+        "type": "integer",
+        "description": "Expected meeting duration in minutes",
+        "default": 30
+      },
+      {
+        "name": "language",
+        "type": "string",
+        "description": "Meeting language (ja, en, zh)",
+        "default": "ja"
+      },
+      {
+        "name": "save_transcript",
+        "type": "boolean",
+        "description": "Whether to save meeting transcript",
+        "default": true
+      }
+    ]
+  },
+  "dependencies": [
+    "requests>=2.31.0",
+    "openai>=1.0.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0"
+  ],
+  "entry_point": "scripts/meeting.py",
+  "tags": ["ai", "meeting", "collaboration", "qwen", "productivity"],
+  "category": "productivity"
+}

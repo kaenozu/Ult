@@ -1,0 +1,51 @@
+{
+  "name": "qwen_code_meeting",
+  "description": "Intelligent meeting agent for code discussions and reviews with Qwen-code AI",
+  "version": "1.0.0",
+  "author": "AGStock Team",
+  "license": "MIT",
+  "parameters": {
+    "required": [],
+    "optional": [
+      {
+        "name": "meeting_topic",
+        "type": "string",
+        "description": "Code review or development topic for discussion",
+        "default": "コードレビュー会議"
+      },
+      {
+        "name": "code_files",
+        "type": "array",
+        "description": "List of code files to discuss",
+        "default": []
+      },
+      {
+        "name": "duration_minutes",
+        "type": "integer",
+        "description": "Expected meeting duration in minutes",
+        "default": 45
+      },
+      {
+        "name": "language",
+        "type": "string",
+        "description": "Meeting language (ja, en)",
+        "default": "ja"
+      },
+      {
+        "name": "review_mode",
+        "type": "string",
+        "description": "Review focus: code, architecture, performance, security",
+        "default": "code"
+      }
+    ]
+  },
+  "dependencies": [
+    "requests>=2.31.0",
+    "openai>=1.0.0",
+    "pydantic>=2.0.0",
+    "python-dotenv>=1.0.0"
+  ],
+  "entry_point": "scripts/qwen_code_meeting.py",
+  "tags": ["ai", "meeting", "code-review", "qwen-code", "programming"],
+  "category": "development"
+}
