@@ -1,67 +1,79 @@
+# Core Framework & API
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
 streamlit>=1.29.0
-yfinance>=0.2.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+
+# Data Processing
 pandas>=2.0.0
 numpy>=1.24.0,<2.0
-nest_asyncio>=1.5.0
-pydantic-settings>=2.1.0
+scipy>=1.11.0
+scikit-learn>=1.3.0
 
-# Phase 0: Quick Wins
+# Financial Data & Analysis
+yfinance>=0.2.0
+ta>=0.10.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Machine Learning
+lightgbm>=4.0.0
+xgboost>=2.0.0
+torch>=2.0.0
+tensorflow>=2.13.0
+shap>=0.43.0
+optuna>=3.0.0
+
+# Visualization & Reporting
+plotly>=5.15.0
+seaborn>=0.12.0
 reportlab>=4.0.0
 openpyxl>=3.1.0
 
-# Phase 36: Social Trading (future)
-# social-auth-app-django==5.0.0
-
-# Phase 39: Derivatives (future)
-# py_vollib==1.0.1
-# quantlib==1.30
-
-# Phase 40: AI Evolution (future)
-# tpot==0.12.0
-# auto-sklearn==0.15.0
-shap==0.43.0
-scipy>=1.11.0
-cvxpy>=1.4.0
-prometheus-client>=0.19.0
-redis>=5.0.0
-celery>=5.3.0
-ta>=0.10.0
-scikit-learn>=1.3.0
-lightgbm>=4.0.0
-schedule>=1.2.0
-psutil>=5.9.0
+# Async & Background Tasks
 aiohttp>=3.8.0
-requests>=2.31.0
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
-plotly>=5.15.0
-feedparser>=1.2.0
-optuna>=3.0.0
-tensorflow>=2.13.0
+nest_asyncio>=1.5.0
+celery>=5.3.0
+redis>=5.0.0
+schedule>=1.2.0
+
+# Security & Authentication
 pyjwt>=2.8.0
 bcrypt>=4.0.0
+
+# Configuration & Utilities
 PyYAML>=6.0
+requests>=2.31.0
+psutil>=5.9.0
+
+# AI & NLP
+langchain>=0.1.0
+transformers>=4.30.0
+google-generativeai>=0.3.0
+langchain-google-genai>=0.0.1
+langchain-text-splitters>=0.0.1
+nltk>=3.8.0
+textblob>=0.17.0
+
+# Specialized Libraries
+cvxpy>=1.4.0
+prometheus-client>=0.19.0
 pypdf>=3.17.0
 selenium>=4.0.0
 webdriver-manager>=4.0.0
 mlflow>=2.0.0
 gTTS>=2.0.0
 prophet>=1.1.0
-xgboost>=2.0.0
-torch>=2.0.0
-seaborn>=0.12.0
 chromadb>=0.4.0
 cloudscraper>=1.2.0
 diskcache>=5.6.0
-google-generativeai>=0.3.0
-langchain-google-genai>=0.0.1
-langchain-text-splitters>=0.0.1
-pydantic-settings>=2.0.0
 web3>=6.0.0
-textblob>=0.17.0
-nltk>=3.8.0
 PyWavelets>=1.4.0
-python-dotenv>=1.0.0
-fastapi>=0.100.0
-langchain>=0.1.0
-transformers>=4.30.0
+
+# Future phases (commented out)
+# social-auth-app-django==5.0.0  # Phase 36: Social Trading
+# py_vollib==1.0.1              # Phase 39: Derivatives
+# quantlib==1.30               # Phase 39: Derivatives
+# tpot==0.12.0                 # Phase 40: AI Evolution
+# auto-sklearn==0.15.0         # Phase 40: AI Evolution

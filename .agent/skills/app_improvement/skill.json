@@ -1,0 +1,42 @@
+{
+  "name": "app_improvement",
+  "description": "AGStock Ultアプリケーションの包括的な改善を自動化するエージェントスキル",
+  "version": "1.0.0",
+  "author": "AGStock Ult Team",
+  "category": "application-improvement",
+  "tags": ["improvement", "optimization", "ui", "performance", "code-quality"],
+  "capabilities": [
+    "UI/UX改善の自動化",
+    "パフォーマンス最適化",
+    "コード品質向上",
+    "テストカバレッジ改善",
+    "機能拡張の実装",
+    "エラーハンドリング強化",
+    "現状分析とレポート生成"
+  ],
+  "supported_file_types": [
+    ".tsx",
+    ".ts",
+    ".jsx",
+    ".js",
+    ".css",
+    ".scss",
+    ".json",
+    ".py",
+    ".md"
+  ],
+  "dependencies": {
+    "python": ">=3.8",
+    "node": ">=16.0.0",
+    "next": ">=13.0.0",
+    "react": ">=18.0.0"
+  },
+  "configuration": {
+    "auto_execute_immediate_actions": true,
+    "generate_reports": true,
+    "backup_before_changes": true,
+    "max_effort_hours": 40
+  },
+  "entry_point": "agent.py",
+  "documentation": "SKILL.md"
+}
