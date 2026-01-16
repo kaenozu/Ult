@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Project specific junk
+*.txt
+*.db
+backend/debug_*.py
+backend/logs/
