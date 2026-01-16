@@ -65,23 +65,42 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
       {/* Signal Status */}
       <div className="mt-2 mb-4">
         {isBullish && (
-          <div className="flex items-center gap-2 text-primary neon-text">
+          <div className="flex items-center gap-2 text-primary neon-text mb-2">
             <TrendingUp className="w-5 h-5" />
-            <span className="text-lg font-bold">STRONG BUY</span>
+            <span className="text-lg font-bold">強気買い</span>
           </div>
         )}
         {isBearish && (
-          <div className="flex items-center gap-2 text-destructive neon-text">
+          <div className="flex items-center gap-2 text-destructive neon-text mb-2">
             <TrendingDown className="w-5 h-5" />
-            <span className="text-lg font-bold">SELL</span>
+            <span className="text-lg font-bold">売り</span>
           </div>
         )}
         {isNeutral && (
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <ArrowRight className="w-5 h-5" />
-            <span className="text-lg font-bold">HOLD</span>
+            <span className="text-lg font-bold">様子見</span>
           </div>
         )}
+
+        {/* Actionable Setup (Sniper Mode) */}
+        {(displaySignal.entry_price) && (
+          <div className="grid grid-cols-3 gap-2 text-xs font-mono bg-white/5 p-2 rounded mb-2 border border-white/10">
+            <div className="flex flex-col">
+              <span className="text-muted-foreground">エントリー</span>
+              <span className="font-bold text-white">¥{displaySignal.entry_price?.toLocaleString()}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground">利確</span>
+              <span className="font-bold text-emerald-400">¥{displaySignal.take_profit?.toLocaleString()}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground">損切</span>
+              <span className="font-bold text-red-400">¥{displaySignal.stop_loss?.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[2.5em]">
           {displaySignal.explanation}
         </p>
@@ -90,10 +109,37 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
       {/* Action */}
       <Button
         variant="outline"
-        className="w-full glass-button hover:text-primary hover:border-primary/50 group-hover:bg-primary/5"
+        className="w-full glass-button hover:text-primary hover:border-primary/50 group-hover:bg-primary/5 active:scale-95 transition-all"
+        onClick={async () => {
+          if (!displaySignal.entry_price) return;
+          const confirmed = window.confirm(`${ticker}の注文を実行しますか？\n\nEntry: ¥${displaySignal.entry_price}\nStop: ¥${displaySignal.stop_loss}\nTarget: ¥${displaySignal.take_profit}`);
+          if (!confirmed) return;
+
+          try {
+            const res = await fetch('/api/v1/trades', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                symbol: ticker,
+                action: isBullish ? 'BUY' : 'SELL',
+                quantity: 100, // Default 100 shares for paper trading
+                price: displaySignal.entry_price,
+                order_type: 'market'
+              })
+            });
+            if (res.ok) {
+              alert(`注文完了: ${ticker}`);
+            } else {
+              alert('注文失敗');
+            }
+          } catch (e) {
+            console.error(e);
+            alert('通信エラー');
+          }
+        }}
       >
         <Zap className="w-4 h-4 mr-2" />
-        Execute {isBullish ? 'Buy' : isBearish ? 'Sell' : 'Trade'}
+        注文実行
       </Button>
 
       {/* Background Gradient */}

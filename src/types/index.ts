@@ -21,6 +21,9 @@ export interface SignalResponse {
   strategy: string
   explanation: string
   target_price?: number
+  entry_price?: number
+  stop_loss?: number
+  take_profit?: number
 }
 
 export interface MarketDataResponse {
