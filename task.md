@@ -1,0 +1,6 @@
+- [ ] Phase 3: Realtime Synapse & Persona Protocol <!-- id: 0 -->
+    - [ ] [Backend] Implement WebSocket Server (FastAPI/Python) <!-- id: 1 -->
+    - [ ] [Frontend] Connect EcosystemGraph to WebSocket <!-- id: 2 -->
+    - [ ] [Backend] Broadcast Regime State via WebSocket <!-- id: 3 -->
+    - [ ] [Frontend] Implement Dynamic Ghost Persona (React to Regime) <!-- id: 4 -->
+    - [ ] [Verification] Test Realtime Updates & Persona Switching <!-- id: 5 -->
