@@ -40,10 +40,10 @@ export class ErrorBoundary extends Component<Props, State> {
                             <p className="font-mono text-xs text-red-300 break-words">{this.state.error?.message || 'Unknown Error'}</p>
                         </div>
                         <button
-                            className="w-full py-2 bg-destructive/10 hover:bg-destructive/20 border border-destructive/30 text-destructive rounded-lg transition-all duration-300 font-medium text-sm"
+                            className="w-full glass-button py-2 hover:bg-destructive/20 border border-destructive/30 text-destructive rounded-lg transition-all duration-300 font-medium text-sm neon-text"
                             onClick={() => this.setState({ hasError: false })}
                         >
-                            Reboot Module
+                            INITIATE REBOOT SEQUENCE
                         </button>
                     </div>
                 </div>

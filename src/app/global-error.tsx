@@ -41,7 +41,7 @@ export default function GlobalError({
                         </div>
 
                         <h2 className="text-4xl font-bold tracking-tight neon-text text-destructive">
-                            SYSTEM CRITICAL FAILURE
+                            NEURAL SYNC FAILURE
                         </h2>
 
                         <p className="text-xl text-muted-foreground">
@@ -56,16 +56,16 @@ export default function GlobalError({
                         <div className="pt-4 flex justify-center gap-4">
                             <button
                                 onClick={() => reset()}
-                                className="glass-button px-8 py-3 rounded-full text-lg font-medium hover:bg-primary/20 hover:border-primary/50 hover:text-primary transition-all duration-300"
+                                className="glass-button px-8 py-3 rounded-full text-lg font-medium hover:bg-primary/20 hover:border-primary/50 hover:text-primary transition-all duration-300 neon-text"
                             >
-                                Initialize System Reboot
+                                EXECUTE SYSTEM RESTORE
                             </button>
 
                             <button
                                 onClick={() => window.location.reload()}
-                                className="px-6 py-3 rounded-full text-sm font-medium text-muted-foreground hover:text-white transition-colors"
+                                className="px-6 py-3 rounded-full text-sm font-medium text-muted-foreground hover:text-white transition-colors border border-transparent hover:border-white/10"
                             >
-                                Hard Refresh
+                                HARD RESET
                             </button>
                         </div>
                     </div>

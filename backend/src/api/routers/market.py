@@ -2,7 +2,8 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 import logging
 
-from src.api.schemas import MarketDataResponse, SignalResponse, BacktestRequest, BacktestResponse
+from src.api.schemas import MarketDataResponse, SignalResponse, BacktestRequest, BacktestResponse, MacroIndicator
+from typing import List
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -152,3 +153,42 @@ async def run_backtest(request: BacktestRequest):
     except Exception as e:
         logger.error(f"Error running backtest: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/macro", response_model=List[MacroIndicator])
+async def get_macro_data():
+    """主要マクロ経済指標の取得"""
+    from src.data_loader import fetch_external_data
+    import time
+    
+    try:
+        # Fetch data for last 5 days to calculate change
+        data_map = fetch_external_data(period="5d")
+        
+        indicators = []
+        # Mapping: API Key -> (Loader Key, Display Name)
+        targets = [
+            ("NIKKEI", "Nikkei 225"), 
+            ("USDJPY", "USD/JPY"), 
+            ("US10Y", "US 10Y Yield"),
+            ("VIX", "VIX Index")
+        ]
+
+        for key, name in targets:
+            df = data_map.get(key)
+            if df is not None and not df.empty and len(df) >= 2:
+                current = float(df["Close"].iloc[-1])
+                prev = float(df["Close"].iloc[-2])
+                change = (current - prev) / prev
+                
+                indicators.append(MacroIndicator(
+                    symbol=key,
+                    name=name,
+                    price=round(current, 2 if key != "USDJPY" else 3),
+                    change_percent=round(change * 100, 2),
+                    trend="up" if change > 0 else "down" if change < 0 else "neutral",
+                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%S")
+                ))
+        return indicators
+    except Exception as e:
+        logger.error(f"Error fetching macro data: {e}")
+        return []
