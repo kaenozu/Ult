@@ -236,6 +236,10 @@ class LightGBMStrategy(Strategy):
 
         data = add_macro_features(data, macro_data)
 
+        # Ensure Return_1d exists for labeling
+        if "Return_1d" not in data.columns:
+            data["Return_1d"] = data["Close"].pct_change()
+
         # Min required adjustment for Weekly
         # lookback_days is usually "days". For weekly, we should interpret it as "periods" or scale it?
         # User request says "lookback... separate models".
@@ -258,10 +262,10 @@ class LightGBMStrategy(Strategy):
         while current_idx < end_idx:
             train_end = current_idx
             train_start = max(0, train_end - 1000)
-            train_df = data.iloc[train_start:train_end].dropna()
+            train_df = data.iloc[train_start:train_end].copy()  # Removed .dropna() here to handle NaNs gracefully
 
             pred_end = min(current_idx + retrain_period, end_idx)
-            test_df = data.iloc[current_idx:pred_end].dropna()
+            test_df = data.iloc[current_idx:pred_end].copy()
 
             if train_df.empty or test_df.empty:
                 current_idx += retrain_period
@@ -271,6 +275,10 @@ class LightGBMStrategy(Strategy):
             for col in self.feature_cols:
                 if col not in train_df.columns:
                     train_df[col] = 0.0
+                    test_df[col] = 0.0
+                else:
+                    train_df[col] = train_df[col].fillna(0.0)
+                    test_df[col] = test_df[col].fillna(0.0)
 
             X_train = train_df[self.feature_cols]
             y_train = (train_df["Return_1d"] > 0).astype(int)
