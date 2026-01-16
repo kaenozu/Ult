@@ -28,7 +28,12 @@
     "default_timeout": 10,
     "default_headless": true,
     "screenshot_support": true,
-    "html_report_support": true
+    "html_report_support": true,
+    "url_validation": {
+      "allowed_schemes": ["http", "https"],
+      "allowed_hosts": ["localhost", "127.0.0.1", "0.0.0.0"],
+      "allow_local_networks": true
+    }
   },
   "entry_point": "scripts/test_browser.py",
   "documentation": "SKILL.md"

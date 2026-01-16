@@ -37,6 +37,6 @@
     "backup_before_changes": true,
     "max_effort_hours": 40
   },
-  "entry_point": "agent.py",
+  "entry_point": "scripts/improve.py",
   "documentation": "SKILL.md"
 }
