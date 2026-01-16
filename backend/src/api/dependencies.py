@@ -50,3 +50,8 @@ def reset_globals():
 def set_paper_trader(pt):
     global _paper_trader
     _paper_trader = pt
+
+def get_portfolio_manager():
+    """PortfolioManagerの依存性注入"""
+    from src.portfolio_manager import portfolio_manager
+    return portfolio_manager

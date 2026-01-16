@@ -12,7 +12,6 @@ import logging
 from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
-from typing import Optional
 
 from src.ai_analyst import AIAnalyst
 from src.constants import CRYPTO_PAIRS, FX_PAIRS, NIKKEI_225_TICKERS, SP500_TICKERS, STOXX50_TICKERS

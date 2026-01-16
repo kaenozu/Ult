@@ -11,6 +11,8 @@ from datetime import datetime
 from typing import Dict, List, Set, Optional
 from dataclasses import dataclass
 import pandas as pd
+import numpy as np
+from src.regime_detector import RegimeDetector, MarketRegime
 
 logger = logging.getLogger(__name__)
 
@@ -224,6 +226,7 @@ class RealTimeDataFeed:
             self.portfolio_update_feed(),
             self.market_news_feed(),
             self.system_status_feed(),
+            self.regime_feed(),
         ]
 
         await asyncio.gather(*tasks)
@@ -391,6 +394,71 @@ class RealTimeDataFeed:
                 logger.error(f"Error in system status feed: {e}")
                 await asyncio.sleep(1200)
 
+    async def regime_feed(self):
+        """
+        市場レジーム監視フィード (Persona Protocol Core) - Real Data Integration
+        """
+        from src.data_loader import fetch_realtime_data
+        detector = RegimeDetector()
+        
+        # Monitor Key Indicator (e.g., Nikkei 225 or a representative stock)
+        # Using 7203.T (Toyota) as a proxy for market health in this demo context
+        monitor_symbol = "7203.T" 
+
+        while self.is_running:
+            try:
+                # 1. Fetch Real Market Data
+                # fetch_realtime_data handles caching internally (TTL)
+                # We offload this synch call to a thread if blocking, 
+                # but for simplicity/demo we call directly as it has caching.
+                # Ideally: await asyncio.to_thread(fetch_realtime_data, ...)
+                
+                df = await asyncio.to_thread(
+                    fetch_realtime_data, 
+                    ticker=monitor_symbol, 
+                    period="5d", 
+                    interval="15m" # Use 15m for better regime stability than 1m
+                )
+                
+                if df is None or df.empty:
+                    logger.warning("No realtime data fetched. Retrying...")
+                    await asyncio.sleep(10)
+                    continue
+
+                current_price = float(df["Close"].iloc[-1])
+                
+                # 2. Detect Regime
+                regime = detector.detect_regime(df)
+                strategy = detector.get_regime_strategy(regime)
+                
+                # 3. Broadcast Regime Update
+                notification = NotificationMessage(
+                    message_id=f"regime_{datetime.now().timestamp()}",
+                    type="regime_update",
+                    priority="high" if regime == MarketRegime.CRASH.value else "medium",
+                    title="Market Regime Shift",
+                    message=f"Current Regime: {regime}",
+                    data={
+                        "regime": regime,
+                        "price": round(current_price, 2),
+                        "strategy": strategy,
+                        "timestamp": datetime.now().isoformat()
+                    },
+                    timestamp=datetime.now(),
+                )
+
+                await self.ws_manager.add_notification_to_queue(notification)
+                
+                # Update interval: 
+                # Real market doesn't change every 5 seconds. 
+                # But for UX "aliveness", we might want faster price updates?
+                # For regime, 1 minute is fine.
+                await asyncio.sleep(30) 
+
+            except Exception as e:
+                logger.error(f"Error in regime feed: {e}")
+                await asyncio.sleep(60)
+
     def stop(self):
         """データフィードを停止"""
         self.is_running = False
@@ -472,7 +540,7 @@ class WebSocketServer:
         logger.info(f"WebSocket server started on {self.host}:{self.port}")
 
         try:
-            await server
+            await server.wait_closed()
         except KeyboardInterrupt:
             logger.info("Shutting down server...")
         finally:

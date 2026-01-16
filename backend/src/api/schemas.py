@@ -68,3 +68,24 @@ class AutoTradeConfig(BaseModel):
     max_budget_per_trade: Optional[float] = None
     stop_loss_pct: Optional[float] = None
     enabled: Optional[bool] = None
+
+class MacroIndicator(BaseModel):
+    symbol: str
+    name: str 
+    price: float
+    change_percent: float
+    trend: str 
+    timestamp: str
+
+class AlertRequest(BaseModel):
+    alert_type: str
+    message: str
+    severity: str = Field(default="info", pattern="^(info|warning|critical)$")
+
+class AlertResponse(BaseModel):
+    alert_id: str
+    alert_type: str
+    message: str
+    severity: str
+    status: str
+    timestamp: str

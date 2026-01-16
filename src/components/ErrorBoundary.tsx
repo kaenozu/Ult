@@ -1,135 +1,55 @@
-'use client'
+'use client';
 
-import React from 'react'
-import { Button } from '@/components/ui/button'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
-interface ErrorBoundaryState {
-  hasError: boolean
-  error?: Error
-  errorInfo?: React.ErrorInfo
+interface Props {
+    children?: ReactNode;
 }
 
-interface ErrorBoundaryProps {
-  children: React.ReactNode
-  fallback?: React.ComponentType<{ error?: Error; onReset?: () => void }>
+interface State {
+    hasError: boolean;
+    error: Error | null;
 }
 
-export class ErrorBoundary extends React.Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props)
-    this.state = { hasError: false }
-  }
+export class ErrorBoundary extends Component<Props, State> {
+    public state: State = {
+        hasError: false,
+        error: null,
+    };
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error }
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
-    this.setState({ errorInfo })
-
-    // Here you could send the error to a logging service
-    // logErrorToService(error, errorInfo);
-  }
-
-  handleReset = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined })
-  }
-
-  render() {
-    if (this.state.hasError) {
-      const FallbackComponent = this.props.fallback || DefaultErrorFallback
-      return (
-        <FallbackComponent
-          error={this.state.error}
-          onReset={this.handleReset}
-        />
-      )
+    public static getDerivedStateFromError(error: Error): State {
+        return { hasError: true, error };
     }
 
-    return this.props.children
-  }
-}
-
-interface DefaultErrorFallbackProps {
-  error?: Error
-  onReset?: () => void
-}
-
-function DefaultErrorFallback({ error, onReset }: DefaultErrorFallbackProps) {
-  return (
-    <div className="min-h-[400px] flex flex-col items-center justify-center p-6 bg-muted/10 rounded-lg border border-border/50">
-      <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-      <h2 className="text-xl font-semibold mb-2">エラーが発生しました</h2>
-      <p className="text-muted-foreground text-center mb-4 max-w-md">
-        予期せぬエラーが発生しました。ページを再読み込みするか、以下のボタンをクリックして再試行してください。
-      </p>
-      {error && (
-        <details className="mb-4 text-left">
-          <summary className="cursor-pointer text-sm text-muted-foreground mb-2">
-            エラー詳細
-          </summary>
-          <pre className="text-xs bg-background p-3 rounded border overflow-auto max-h-32">
-            {error.message}
-            {error.stack}
-          </pre>
-        </details>
-      )}
-      <div className="flex gap-2">
-        <Button onClick={onReset} variant="default" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          再試行
-        </Button>
-        <Button
-          onClick={() => window.location.reload()}
-          variant="outline"
-          size="sm"
-        >
-          ページを再読み込み
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-// Hook for functional components
-export function useErrorHandler() {
-  const [error, setError] = React.useState<Error | null>(null)
-
-  const handleError = React.useCallback((error: Error) => {
-    console.error('Error handled by useErrorHandler:', error)
-    setError(error)
-  }, [])
-
-  const resetError = React.useCallback(() => {
-    setError(null)
-  }, [])
-
-  React.useEffect(() => {
-    if (error) {
-      throw error
+    public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error('Uncaught error:', error, errorInfo);
     }
-  }, [error])
 
-  return { handleError, resetError }
-}
+    public render() {
+        if (this.state.hasError) {
+            return (
+                <div className="flex items-center justify-center h-full p-6">
+                    <div className="glass-panel p-8 rounded-xl border-destructive/30 shadow-[0_0_30px_rgba(255,0,0,0.1)] text-center max-w-md w-full">
+                        <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center border border-destructive/30 mb-4 animate-pulse">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-destructive">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                            </svg>
+                        </div>
+                        <h2 className="text-xl font-bold mb-2 neon-text text-destructive">System Alert</h2>
+                        <div className="bg-black/40 p-3 rounded text-left mb-4 border border-white/5 max-h-32 overflow-auto custom-scrollbar">
+                            <p className="font-mono text-xs text-red-300 break-words">{this.state.error?.message || 'Unknown Error'}</p>
+                        </div>
+                        <button
+                            className="w-full glass-button py-2 hover:bg-destructive/20 border border-destructive/30 text-destructive rounded-lg transition-all duration-300 font-medium text-sm neon-text"
+                            onClick={() => this.setState({ hasError: false })}
+                        >
+                            INITIATE REBOOT SEQUENCE
+                        </button>
+                    </div>
+                </div>
+            );
+        }
 
-// Higher-order component for wrapping components with error boundary
-export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
-) {
-  const WrappedComponent = (props: P) => (
-    <ErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} />
-    </ErrorBoundary>
-  )
-
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`
-
-  return WrappedComponent
+        return this.props.children;
+    }
 }

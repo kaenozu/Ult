@@ -68,3 +68,22 @@ async def reset_portfolio(request: ResetPortfolioRequest):
     except Exception as e:
         logger.error(f"Error resetting portfolio: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/config")
+async def get_config():
+    """設定取得（機密情報を除く）"""
+    from src.config_loader import config
+    full_config = config.get_all()
+    sensitive_keys = ["api_key", "password", "secret", "token"]
+    for key in list(full_config.keys()):
+        for sk in sensitive_keys:
+            if sk in key.lower():
+                full_config[key] = "***REDACTED***"
+    return full_config
+
+@router.get("/audit")
+async def get_audit_logs(module: str = None, action: str = None, limit: int = 100):
+    """監査ログ取得"""
+    from src.database_manager import db_manager
+    logs = db_manager.get_audit_logs(module=module, action=action, limit=limit)
+    return logs
