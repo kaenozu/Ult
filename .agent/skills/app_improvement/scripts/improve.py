@@ -16,8 +16,19 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
+
 # プロジェクトルートをパスに追加
-project_root = Path(__file__).resolve().parent.parent.parent
+def find_project_root(start_path: Path) -> Path:
+    """Find project root by looking for package.json"""
+    current = start_path
+    while current.parent != current:
+        if (current / "package.json").exists():
+            return current
+        current = current.parent
+    raise FileNotFoundError("Project root not found")
+
+
+project_root = find_project_root(Path(__file__).resolve())
 sys.path.insert(0, str(project_root / "backend"))
 
 
@@ -35,11 +46,11 @@ class ImprovementArea:
 class AppImprovementAgent:
     """アプリケーション改善エージェント"""
 
-    def __init__(self):
-        self.project_root = project_root
-        self.src_dir = self.project_root / "src"
-        self.backend_dir = self.project_root / "backend"
-        self.improvement_areas = []
+    def __init__(self) -> None:
+        self.project_root: Path = project_root
+        self.src_dir: Path = self.project_root / "src"
+        self.backend_dir: Path = self.project_root / "backend"
+        self.improvement_areas: List[ImprovementArea] = []
 
     def analyze_current_state(self) -> Dict[str, Any]:
         """現在のアプリケーション状態を分析"""
@@ -60,29 +71,35 @@ class AppImprovementAgent:
         """フロントエンドの分析"""
         print("  [FRONTEND] フロントエンドを分析中...")
 
-        # ファイル構成の分析
-        component_files = list(self.src_dir.glob("**/*.tsx"))
-        hook_files = list(self.src_dir.glob("**/use*.ts"))
-
         # 主要コンポーネントの特定
-        key_components = [
+        key_components = {
             "page.tsx",
             "PortfolioSummary.tsx",
             "SignalCard.tsx",
             "PositionList.tsx",
             "AutoTradeControls.tsx",
+        }
+
+        # 一度のファイル探索で全て収集
+        all_files = list(self.src_dir.rglob("*.ts*"))
+
+        component_files = [f for f in all_files if f.suffix == ".tsx"]
+        hook_files = [
+            f for f in all_files if f.name.startswith("use") and f.suffix == ".ts"
+        ]
+
+        found_key_components = [f for f in component_files if f.name in key_components]
+        ui_components = [f for f in component_files if "components/ui" in str(f)]
+        dashboard_components = [
+            f for f in component_files if "components/dashboard" in str(f)
         ]
 
         return {
             "total_components": len(component_files),
             "total_hooks": len(hook_files),
-            "key_components": [
-                f for f in component_files if any(k in f.name for k in key_components)
-            ],
-            "ui_components": len(list(self.src_dir.glob("components/ui/*.tsx"))),
-            "dashboard_components": len(
-                list(self.src_dir.glob("components/dashboard/*.tsx"))
-            ),
+            "key_components": found_key_components,
+            "ui_components": len(ui_components),
+            "dashboard_components": len(dashboard_components),
         }
 
     def _analyze_backend(self) -> Dict[str, Any]:
@@ -333,9 +350,16 @@ class AppImprovementAgent:
 
         # ホーム画面の改善
         page_file = self.src_dir / "app" / "page.tsx"
-        if page_file.exists():
-            print("    - ホーム画面のダッシュボードを改善します")
-            # 具体的な改善コードはここに実装
+        try:
+            if page_file.exists():
+                print("    - ホーム画面のダッシュボードを改善します")
+                # 具体的な改善コードはここに実装
+            else:
+                print(f"    [WARNING] {page_file} が見つかりません")
+                return False
+        except Exception as e:
+            print(f"    [ERROR] UI改善に失敗しました: {e}")
+            return False
 
         return True
 

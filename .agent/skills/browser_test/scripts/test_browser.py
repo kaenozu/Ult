@@ -14,9 +14,28 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
+from urllib.parse import urlparse
 
 # プロジェクトルートをパスに追加
 project_root = Path(__file__).resolve().parent.parent.parent
+
+
+def validate_url(url: str) -> bool:
+    """Validate URL for security"""
+    try:
+        parsed = urlparse(url)
+        # Allow only http/https and safe hosts
+        return (
+            parsed.scheme in ["http", "https"]
+            and parsed.netloc in ["localhost", "127.0.0.1", "0.0.0.0"]
+            or (
+                parsed.netloc.startswith("192.168.")
+                or parsed.netloc.startswith("10.")
+                or parsed.netloc.startswith("172.")
+            )
+        )
+    except Exception:
+        return False
 
 
 @dataclass
@@ -445,6 +464,12 @@ def main():
     )
 
     args = parser.parse_args()
+
+    # URL検証
+    if not validate_url(args.url):
+        print(f"[ERROR] 無効なURLです: {args.url}")
+        print("  localhostまたはローカルネットワークのURLのみ許可されています")
+        sys.exit(1)
 
     config = BrowserTestConfig(
         headless=args.headless.lower() == "true",
