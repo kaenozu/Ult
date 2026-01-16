@@ -188,6 +188,10 @@
     text-shadow: 0 0 10px var(--primary);
   }
 
+  .neon-text-green {
+    text-shadow: 0 0 10px oklch(0.75 0.18 150); /* Green Chart Color */
+  }
+
   .neon-border {
     box-shadow: 0 0 5px var(--primary);
   }
