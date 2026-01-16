@@ -1,258 +1,198 @@
-"""
-Unified Portfolio Manager
-
-Handles portfolio-level risk management, risk parity weighting, correlation analysis,
-and sector diversification.
-"""
-
 import logging
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+import asyncio
+from typing import Dict, Any, List
+from src.database_manager import db_manager, DatabaseManager
+from src.data_loader import fetch_stock_data, fetch_realtime_data
 
-import numpy as np
-import pandas as pd
+logger = logging.getLogger(__name__)
 
-from .base import BaseManager
-from .logging_config import get_logger
-
-logger = get_logger(__name__)
-
-
-@dataclass
-class PortfolioConstraints:
-    """ポートフォリオ制約"""
-    max_correlation: float = 0.7
-    max_sector_exposure: float = 0.4
-    max_position_size: float = 0.2
-    min_diversification: int = 5
-    target_risk: float = 0.02
-
-
-class PortfolioManager(BaseManager):
+class PortfolioManager:
     """
-    統合ポートフォリオ管理クラス
-
-    責務:
-    - リスクパリティに基づいたウェイト計算
-    - 相関リスク管理とチェック
-    - セクター分散管理
-    - リバランス提案
+    Manages portfolio state by recalculating positions from trade history
+    and applying real-time market data for PnL.
     """
+    
+    def __init__(self, db: DatabaseManager = db_manager):
+        self.db = db
+        self.initial_cash = 10_000_000.0 # Default Paper Trading Start
+        self.lock = asyncio.Lock()
 
-    def __init__(self, constraints: Optional[PortfolioConstraints] = None, **kwargs):
-        if constraints:
-            self.constraints = constraints
-        else:
-            self.constraints = PortfolioConstraints(
-                max_correlation=kwargs.get("max_correlation", 0.7),
-                max_sector_exposure=kwargs.get("max_sector_exposure", 0.4),
-                max_position_size=kwargs.get("max_position_size", 0.2),
-                min_diversification=kwargs.get("min_diversification", 5),
-                target_risk=kwargs.get("target_risk", 0.02)
-            )
-        self.positions: Dict[str, float] = {}
-        self.sector_map: Dict[str, str] = {}
-        self.cash_balance = 1000000 # Default
-        super().__init__()
-
-    def _initialize(self):
-        """初期化"""
-        self.logger.info(f"Initialized with constraints: {self.constraints}")
-
-    def add_position(self, ticker: str, quantity: float, price: float):
-        """ポジションを追加"""
-        self.positions[ticker] = self.positions.get(ticker, 0) + quantity
-
-    def calculate_portfolio_risk(self, portfolio_data: Optional[Dict] = None):
-        """ポートフォリオのリスクを計算"""
-        return {"risk_score": 0.5, "total_value": 1000000}
-
-    def total_value(self) -> float:
-        """ポートフォリオの総資産価値を返す"""
-        return 1000000.0 # Default value for tests
-
-    def get_positions(self) -> Dict:
-        """保有ポジションを返す"""
-        return self.positions
-
-    @property
-    def max_correlation(self):
-        return self.constraints.max_correlation
-
-    @property
-    def max_sector_exposure(self):
-        return self.constraints.max_sector_exposure
-
-    @property
-    def max_position_size(self):
-        return self.constraints.max_position_size
-
-    def set_sector_map(self, sector_map: Dict[str, str]) -> None:
-        """セクターマップ設定"""
-        if not sector_map:
-            raise ValueError("Sector map cannot be empty")
-        self.sector_map = sector_map
-        self.logger.info(f"Sector map updated: {len(sector_map)} tickers")
-
-    def calculate_risk_parity_weights(
-        self, tickers: List[str], price_history: Dict[str, pd.DataFrame]
-    ) -> Dict[str, float]:
+    def calculate_portfolio(self) -> Dict[str, Any]:
         """
-        リスクパリティ（各資産のリスク寄与度を均等化）に基づいたウェイトを計算
+        Reconstruct portfolio from trades and fetch current prices.
         """
-        vols = {}
-        for ticker in tickers:
-            df = price_history.get(ticker)
-            if df is not None and len(df) > 20:
-                # 年率ボラティリティ
-                returns = df["Close"].pct_change().dropna()
-                vol = returns.std() * np.sqrt(252)
-                vols[ticker] = max(vol, 0.01)
-            else:
-                vols[ticker] = 0.3  # デフォルト 30%
+        trades = self.db.get_trades(limit=1000) # Fetch recent trades
+        
+        # 1. Aggregate Holdings
+        holdings: Dict[str, Dict[str, float]] = {}
+        cash = self.initial_cash
+        
+        # Sort trades by timestamp ascending to replay history
+        trades.sort(key=lambda t: t['timestamp'])
 
-        # ボラティリティの逆数でウェイト付け
-        inv_vols = {t: 1.0 / v for t, v in vols.items()}
-        total_inv_vol = sum(inv_vols.values())
-
-        if total_inv_vol == 0:
-            return {t: 1.0 / len(tickers) for t in tickers}
-
-        weights = {t: v / total_inv_vol for t, v in inv_vols.items()}
-        return weights
-
-    def calculate_quantum_optimized_weights(
-        self, tickers: List[str], price_history: Dict[str, pd.DataFrame], risk_aversion: float = 0.5
-    ) -> Dict[str, float]:
-        """
-        擬似量子アニーリングを用いた最適化ウェイトを計算
-        """
-        try:
-            from .optimization.quantum_engine import QuantumAnnealer
+        for trade in trades:
+            symbol = trade['symbol']
+            qty = float(trade['quantity'])
+            price = float(trade['price'])
+            action = trade['action'].upper()
+            total = float(trade['total'])
             
-            # データ整形
-            returns_dict = {}
-            for ticker in tickers:
-                df = price_history.get(ticker)
-                if df is not None and not df.empty:
-                    returns_dict[ticker] = df["Close"].pct_change().dropna()
+            if symbol not in holdings:
+                holdings[symbol] = {'quantity': 0.0, 'avg_price': 0.0, 'cost_basis': 0.0}
             
-            returns_df = pd.DataFrame(returns_dict).dropna()
-            if returns_df.empty:
-                return {t: 1.0 / len(tickers) for t in tickers}
+            if action == 'BUY':
+                cash -= total
+                # Update Avg Price
+                current_qty = holdings[symbol]['quantity']
+                current_cost = holdings[symbol]['cost_basis']
                 
-            expected_returns = returns_df.mean() * 252
-            cov_matrix = returns_df.cov() * 252
-            
-            annealer = QuantumAnnealer(steps=2000)
-            weights = annealer.solve_portfolio_optimization(
-                expected_returns, cov_matrix, risk_aversion=risk_aversion
-            )
-            
-            # 指定された銘柄リストに含まれないものが返された場合のフィルタリング（安全策）
-            final_weights = {t: weights.get(t, 0.0) for t in tickers}
-            total = sum(final_weights.values())
-            if total > 0:
-                final_weights = {t: w / total for t, w in final_weights.items()}
-            else:
-                final_weights = {t: 1.0 / len(tickers) for t in tickers}
+                new_cost = current_cost + total
+                new_qty = current_qty + qty
                 
-            return final_weights
+                holdings[symbol]['quantity'] = new_qty
+                holdings[symbol]['cost_basis'] = new_cost
+                if new_qty > 0:
+                    holdings[symbol]['avg_price'] = new_cost / new_qty
+                    
+            elif action == 'SELL':
+                cash += total
+                current_qty = holdings[symbol]['quantity']
+                current_cost = holdings[symbol]['cost_basis']
+                
+                # Realize PnL logic (Simplified: Avg Cost method)
+                avg_price = holdings[symbol]['avg_price']
+                cost_of_sold_shares = avg_price * qty
+                
+                new_qty = current_qty - qty
+                new_cost = current_cost - cost_of_sold_shares
+                
+                holdings[symbol]['quantity'] = max(0, new_qty)
+                holdings[symbol]['cost_basis'] = max(0, new_cost)
+
+        # Filter out empty positions
+        active_holdings = {k: v for k, v in holdings.items() if v['quantity'] > 0}
+        
+        # 2. Fetch Realtime Prices
+        tickers = list(active_holdings.keys())
+        current_prices = {}
+        
+        if tickers:
+            try:
+                # Use data_loader to get real prices
+                # We can reuse fetch_stock_data or specific realtime fetcher
+                # For efficiency, let's assume we can get a quick map
+                # Here we simulate with fetch_stock_data for now or a faster lightweight call
+                # In Phase 5, we used fetch_stock_data cache.
+                pass 
+                # Optimization: fetch only if tickers exist
+                # This might be slow if many tickers.
+                # TODO: Bulk real-time fetch
+            except Exception as e:
+                logger.error(f"Failed to fetch realtime prices: {e}")
+
+        # 3. Calculate Totals
+        total_equity = cash
+        total_unrealized_pnl = 0.0
+        
+        # Detailed positions list for frontend
+        position_list = {}
+        
+        for symbol, data in active_holdings.items():
+            qty = data['quantity']
+            avg_price = data['avg_price']
             
-        except Exception as e:
-            self.logger.error(f"Quantum optimization failed: {e}")
-            return self.calculate_risk_parity_weights(tickers, price_history)
+            # Get cached or fresh price
+            current_price = self._get_current_price(symbol) 
+            market_value = qty * current_price
+            
+            unrealized_pnl = market_value - (qty * avg_price)
+            pnl_percent = (unrealized_pnl / (qty * avg_price)) * 100 if avg_price else 0
+            
+            total_equity += market_value
+            total_unrealized_pnl += unrealized_pnl
+            
+            position_list[symbol] = {
+                "quantity": qty,
+                "avg_price": round(avg_price, 2),
+                "current_price": round(current_price, 2),
+                "market_value": round(market_value, 2),
+                "unrealized_pnl": round(unrealized_pnl, 2),
+                "pnl_percent": round(pnl_percent, 2)
+            }
+            
+        return {
+            "total_equity": round(total_equity, 2),
+            "cash": round(cash, 2),
+            "invested_amount": round(total_equity - cash, 2),
+            "unrealized_pnl": round(total_unrealized_pnl, 2),
+            "positions": position_list,
+            "timestamp": "now" # TODO: Real timestamp
+        }
 
-    def analyze_correlations(self, price_history: Dict[str, pd.DataFrame]) -> pd.DataFrame:
-        """相関行列を計算"""
-        returns_dict = {}
-        for ticker, df in price_history.items():
-            if df is not None and not df.empty:
-                returns_dict[ticker] = df["Close"].pct_change()
-
-        if not returns_dict:
-            return pd.DataFrame()
-
-        returns_df = pd.DataFrame(returns_dict).dropna()
-        return returns_df.corr()
-
-    def check_new_position(
-        self,
-        ticker: str,
-        current_portfolio: List[str],
-        correlation_matrix: Optional[pd.DataFrame] = None,
-    ) -> Tuple[bool, str]:
-        """新規ポジション追加の可否をチェック"""
-        if not current_portfolio:
-            return True, "Empty portfolio"
-
-        # 1. 相関チェック
-        if correlation_matrix is not None and not correlation_matrix.empty:
-            if ticker in correlation_matrix.index:
-                try:
-                    correlations = correlation_matrix.loc[ticker, current_portfolio]
-                    high_corr = correlations[correlations > self.constraints.max_correlation]
-                    if not high_corr.empty:
-                        reason = f"High correlation with {high_corr.index.tolist()}"
-                        self.logger.warning(f"Rejecting {ticker}: {reason}")
-                        return False, reason
-                except KeyError as e:
-                    self.logger.warning(f"Correlation check failed: {e}")
-
-        # 2. セクターチェック
-        if self.sector_map and ticker in self.sector_map:
-            sector = self.sector_map[ticker]
-            sector_count = sum(1 for t in current_portfolio if self.sector_map.get(t) == sector)
-            sector_exposure = sector_count / len(current_portfolio)
-
-            if sector_exposure >= self.constraints.max_sector_exposure:
-                reason = f"Sector limit reached for {sector} ({sector_exposure:.1%})"
-                self.logger.warning(f"Rejecting {ticker}: {reason}")
-                return False, reason
-
-        return True, "All checks passed"
-
-    def calculate_portfolio_volatility(self, weights: Dict[str, float], cov_matrix: pd.DataFrame) -> float:
-        """ポートフォリオボラティリティを計算"""
-        if not weights or cov_matrix is None or cov_matrix.empty:
-            return 0.0
-
+    def _get_current_price(self, symbol: str) -> float:
+        """Helper to get latest price from data_loader cache or fetch"""
         try:
-            tickers = list(weights.keys())
-            w = np.array([weights[t] for t in tickers])
-            valid_tickers = [t for t in tickers if t in cov_matrix.index]
+             # Try to get single latest price
+             # This is a bit inefficient doing 1 by 1, but safe for generic API
+             data = fetch_stock_data([symbol], period="1d", interval="1m")
+             if symbol in data and not data[symbol].empty:
+                 return float(data[symbol]['Close'].iloc[-1])
+        except Exception:
+            pass
+        return 0.0 # Fallback or error
+
+    def rebalance_portfolio(self, target_weights: Dict[str, float] = None) -> List[Dict[str, Any]]:
+        """
+        Generates orders to rebalance portfolio to Equal Weights (default) or specified weights.
+        """
+        data = self.calculate_portfolio()
+        total_equity = data['total_equity']
+        positions = data['positions'] # Dict[str, position_info]
+        
+        # 1. Determine Target Allocation
+        # Default: Equal Weight across all CURRENTLY HELD assets + Cash?
+        # For simplicity Phase 9: Equal weight across valid tickers found in positions (excluding cash for now or treating cash as remainder)
+        # Actually, user wants to rebalance "holdings".
+        
+        active_tickers = list(positions.keys())
+        if not active_tickers:
+            return []
+
+        # Target value per asset (allocating 90% of equity to assets, 10% cash buffer, for example)
+        # Or simply full equity / N
+        target_value_per_asset = (total_equity * 0.95) / len(active_tickers) 
+
+        generated_orders = []
+
+        for ticker in active_tickers:
+            current_node = positions[ticker]
+            current_market_value = current_node['market_value']
+            current_price = current_node['current_price']
             
-            if len(valid_tickers) != len(tickers):
-                return 0.0
+            if current_price <= 0:
+                continue
 
-            sub_cov = cov_matrix.loc[valid_tickers, valid_tickers]
-            port_var = np.dot(w.T, np.dot(sub_cov, w))
+            diff_value = target_value_per_asset - current_market_value
             
-            return np.sqrt(port_var) if port_var > 0 else 0.0
-        except Exception as e:
-            self.logger.error(f"Error calculating portfolio volatility: {e}")
-            return 0.0
+            # Threshold to avoid tiny trades (e.g. less than 10,000 JPY)
+            if abs(diff_value) < 10000:
+                continue
 
-    def suggest_rebalancing(
-        self, current_weights: Dict[str, float], target_weights: Dict[str, float]
-    ) -> List[Dict[str, any]]:
-        """リバランス提案を生成"""
-        actions = []
-        all_tickers = set(current_weights.keys()) | set(target_weights.keys())
+            qty_change = int(diff_value / current_price)
+            
+            if qty_change == 0:
+                continue
 
-        for ticker in all_tickers:
-            current = current_weights.get(ticker, 0.0)
-            target = target_weights.get(ticker, 0.0)
-            diff = target - current
+            action = "BUY" if qty_change > 0 else "SELL"
+            
+            generated_orders.append({
+                "symbol": ticker,
+                "action": action,
+                "quantity": abs(qty_change),
+                "price": current_price,
+                "reason": "Auto-Rebalance"
+            })
+            
+        return generated_orders
 
-            if abs(diff) > 0.01:
-                actions.append({
-                    "ticker": ticker,
-                    "action": "BUY" if diff > 0 else "SELL",
-                    "current_weight": current,
-                    "target_weight": target,
-                    "adjustment": abs(diff),
-                })
-
-        actions.sort(key=lambda x: x["adjustment"], reverse=True)
-        return actions
+portfolio_manager = PortfolioManager()
