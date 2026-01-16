@@ -32,56 +32,57 @@ export default function PortfolioSummary() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Changed to grid-cols-2 to give more width for currency values */}
+      <div className="grid grid-cols-2 gap-4">
         {/* Total Equity */}
-        <Card className="glass-panel p-4 border-l-4 border-l-primary flex flex-col justify-between relative overflow-hidden group">
+        <Card className="glass-panel p-3 md:p-4 border-l-4 border-l-primary flex flex-col justify-between relative overflow-hidden group">
           <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center justify-between z-10">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">総資産 (Equity)</span>
-            <Wallet className="w-4 h-4 text-primary" />
+            <span className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider truncate mr-2">総資産</span>
+            <Wallet className="w-4 h-4 text-primary shrink-0" />
           </div>
           <div className="mt-2 z-10">
-            <h2 className="text-2xl font-bold font-mono tracking-tight text-foreground">
+            <h2 className="text-lg sm:text-xl xl:text-2xl font-bold font-sans tabular-nums tracking-tighter text-foreground truncate" title={`¥${display.total_equity.toLocaleString()}`}>
               ¥{display.total_equity.toLocaleString()}
             </h2>
           </div>
         </Card>
 
         {/* Unrealized PnL */}
-        <Card className={`glass-panel p-4 border-l-4 ${pnlIsPositive ? 'border-l-emerald-500' : 'border-l-destructive'} flex flex-col justify-between relative overflow-hidden`}>
+        <Card className={`glass-panel p-3 md:p-4 border-l-4 ${pnlIsPositive ? 'border-l-emerald-500' : 'border-l-destructive'} flex flex-col justify-between relative overflow-hidden`}>
           <div className={`absolute inset-0 opacity-0 hover:opacity-10 transition-opacity ${pnlIsPositive ? 'bg-emerald-500' : 'bg-destructive'}`} />
           <div className="flex items-center justify-between z-10">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">評価損益 (PnL)</span>
-            <TrendingUp className={`w-4 h-4 ${pnlIsPositive ? 'text-emerald-500' : 'text-destructive'}`} />
+            <span className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider truncate mr-2">評価損益</span>
+            <TrendingUp className={`w-4 h-4 shrink-0 ${pnlIsPositive ? 'text-emerald-500' : 'text-destructive'}`} />
           </div>
           <div className="mt-2 z-10">
-            <h2 className={`text-2xl font-bold font-mono tracking-tight ${pnlIsPositive ? 'text-emerald-400' : 'text-destructive'}`}>
+            <h2 className={`text-lg sm:text-xl xl:text-2xl font-bold font-sans tabular-nums tracking-tighter truncate ${pnlIsPositive ? 'text-emerald-400' : 'text-destructive'}`}>
               {pnlIsPositive ? '+' : ''}¥{display.unrealized_pnl.toLocaleString()}
             </h2>
           </div>
         </Card>
 
         {/* Cash */}
-        <Card className="glass-panel p-4 border-l-4 border-l-white/20 flex flex-col justify-between">
+        <Card className="glass-panel p-3 md:p-4 border-l-4 border-l-white/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">余力 (Cash)</span>
-            <DollarSign className="w-4 h-4 text-muted-foreground" />
+            <span className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider truncate mr-2">余力</span>
+            <DollarSign className="w-4 h-4 text-muted-foreground shrink-0" />
           </div>
           <div className="mt-2">
-            <h2 className="text-2xl font-bold font-mono tracking-tight text-foreground/80">
+            <h2 className="text-lg sm:text-xl xl:text-2xl font-bold font-sans tabular-nums tracking-tighter text-foreground/80 truncate">
               ¥{display.cash.toLocaleString()}
             </h2>
           </div>
         </Card>
 
         {/* Invested */}
-        <Card className="glass-panel p-4 border-l-4 border-l-blue-500 flex flex-col justify-between">
+        <Card className="glass-panel p-3 md:p-4 border-l-4 border-l-blue-500 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">投資額 (Invested)</span>
-            <PieChart className="w-4 h-4 text-blue-500" />
+            <span className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider truncate mr-2">投資額</span>
+            <PieChart className="w-4 h-4 text-blue-500 shrink-0" />
           </div>
           <div className="mt-2">
-            <h2 className="text-2xl font-bold font-mono tracking-tight text-foreground/80">
+            <h2 className="text-lg sm:text-xl xl:text-2xl font-bold font-sans tabular-nums tracking-tighter text-foreground/80 truncate">
               ¥{display.invested_amount.toLocaleString()}
             </h2>
           </div>
