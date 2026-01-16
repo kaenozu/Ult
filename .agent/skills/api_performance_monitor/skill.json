@@ -1,0 +1,55 @@
+{
+  "name": "api_performance_monitor",
+  "description": "Monitor API endpoints performance, track response times, error rates, and generate performance reports",
+  "version": "1.0.0",
+  "author": "AGStock Ult Team",
+  "category": "monitoring",
+  "tags": ["api", "performance", "monitoring", "analytics", "health-check"],
+  "capabilities": [
+    "API response time monitoring",
+    "Error rate tracking and analysis",
+    "Performance trend analysis",
+    "Automated alerting for anomalies",
+    "Historical data collection",
+    "Performance report generation",
+    "Health check automation",
+    "Endpoint availability monitoring"
+  ],
+  "supported_file_types": [".json", ".ts", ".tsx", ".py", ".log"],
+  "dependencies": {
+    "python": ">=3.8",
+    "requests": ">=2.31.0",
+    "psutil": ">=5.9.0",
+    "matplotlib": ">=3.7.0"
+  },
+  "configuration": {
+    "default_check_interval": 60,
+    "default_timeout": 10,
+    "max_response_time_threshold": 2000,
+    "error_rate_threshold": 0.05,
+    "enable_alerts": true,
+    "data_retention_days": 30,
+    "monitored_endpoints": [
+      {
+        "name": "Portfolio API",
+        "url": "http://localhost:8000/api/portfolio",
+        "method": "GET",
+        "expected_status": 200
+      },
+      {
+        "name": "Market Data API",
+        "url": "http://localhost:8000/api/market",
+        "method": "GET",
+        "expected_status": 200
+      },
+      {
+        "name": "Trading API",
+        "url": "http://localhost:8000/api/trade",
+        "method": "POST",
+        "expected_status": 201
+      }
+    ]
+  },
+  "entry_point": "scripts/monitor.py",
+  "documentation": "SKILL.md"
+}
