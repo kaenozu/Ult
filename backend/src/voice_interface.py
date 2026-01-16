@@ -5,6 +5,8 @@
 
 import asyncio
 import logging
+import tempfile
+import numpy as np
 from typing import Dict, Optional, List, Any, Callable
 from datetime import datetime
 import streamlit as st
@@ -21,7 +23,9 @@ try:
 
     AUDIO_AVAILABLE = True
 except ImportError:
-    logging.warning("Audio libraries not available. Install: pip install SpeechRecognition pyttsx3 pydub sounddevice")
+    logging.warning(
+        "Audio libraries not available. Install: pip install SpeechRecognition pyttsx3 pydub sounddevice"
+    )
     AUDIO_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
@@ -142,7 +146,9 @@ class VoiceInterface:
         """音声入力の表示を更新"""
         # 簡波器を表示
         if len(audio_data) > 0:
-            audio_wave = np.concatenate([np.frombuffer(a.get_raw_data(), dtype=np.int16) for a in audio_data])
+            audio_wave = np.concatenate(
+                [np.frombuffer(a.get_raw_data(), dtype=np.int16) for a in audio_data]
+            )
 
             # Streamlitで波形表示
             fig = {
@@ -258,7 +264,9 @@ class VoiceCommands:
             "show_analysis": "分析表示",
         }
 
-    def process_voice_command(self, command_text: str, callback: Callable[[str, Dict], None]) -> None:
+    def process_voice_command(
+        self, command_text: str, callback: Callable[[str, Dict], None]
+    ) -> None:
         """音声コマンドを処理"""
         command_lower = command_text.lower().strip()
 
@@ -294,7 +302,10 @@ class VoiceCommands:
             return "analysis"
 
         # 設定・システム関連
-        if any(keyword in text for keyword in self.commands["settings"] + self.commands["system"]):
+        if any(
+            keyword in text
+            for keyword in self.commands["settings"] + self.commands["system"]
+        ):
             return "settings"
 
         # AIアシスタント関連
@@ -344,7 +355,9 @@ class VoiceControlledUI:
                 voices = self.voice.get_available_voices()
                 if voices:
                     voice_names = [v["name"] for v in voices]
-                    selected_voice = st.selectbox("音声選択", voice_names, index=0, key="voice_selection")
+                    selected_voice = st.selectbox(
+                        "音声選択", voice_names, index=0, key="voice_selection"
+                    )
 
         st.markdown("---")
 
@@ -384,7 +397,8 @@ class VoiceControlledUI:
             "取引操作": self.voice_commands.commands["trade"],
             "分析・確認": self.voice_commands.commands["analysis"],
             "AIアシスタント": self.voice_commands.commands["assistant"],
-            "設定・システム": self.voice_commands.commands["settings"] + self.voice_commands["system"],
+            "設定・システム": self.voice_commands.commands["settings"]
+            + self.voice_commands["system"],
             "市場情報": self.voice_commands.commands["market"],
         }
 
@@ -433,7 +447,9 @@ class VoiceControlledUI:
         # 自動音声読み上げ設定
         st.subheader("🔄 自動読み上げ")
 
-        enable_auto_speak = st.checkbox("音声出力を有効化", value=False, key="auto_voice_enabled")
+        enable_auto_speak = st.checkbox(
+            "音声出力を有効化", value=False, key="auto_voice_enabled"
+        )
 
         if enable_auto_speak:
             st.info("🔊 AIの回答を自動で音声出力します")
@@ -451,7 +467,9 @@ class VoiceControlledUI:
             if "voice_transcript" not in st.session_state:
                 st.session_state.voice_transcript = []
 
-            st.session_state.voice_transcript.append({"text": transcript, "timestamp": datetime.now().isoformat()})
+            st.session_state.voice_transcript.append(
+                {"text": transcript, "timestamp": datetime.now().isoformat()}
+            )
 
             # 音声コマンドとして処理
             self.voice_commands.process_voice_command(
@@ -476,7 +494,12 @@ class VoiceControlledUI:
             st.session_state.command_history = []
 
         st.session_state.command_history.append(
-            {"command": command, "type": command_type, "action": action, "timestamp": datetime.now().isoformat()}
+            {
+                "command": command,
+                "type": command_type,
+                "action": action,
+                "timestamp": datetime.now().isoformat(),
+            }
         )
 
         # 既存のアクションを実行
@@ -554,7 +577,11 @@ def show_voice_control_page():
     if voice_interface.is_audio_available():
         if st.button("🎤 音声認識テスト"):
             with st.spinner("音声認識テスト中..."):
-                result = asyncio.run(voice_interface.start_voice_input(show_voice_control_page.process_voice_input))
+                result = asyncio.run(
+                    voice_interface.start_voice_input(
+                        show_voice_control_page.process_voice_input
+                    )
+                )
 
             if result:
                 st.success(f"✅ 音声認識成功: {result}")
@@ -570,7 +597,9 @@ def show_voice_control_page():
             "本日の市場トレンドを説明してください",
         ]
 
-        selected_text = st.selectbox("テスト文章選択", test_texts, key="voice_test_selection")
+        selected_text = st.selectbox(
+            "テスト文章選択", test_texts, key="voice_test_selection"
+        )
 
         if st.button("🔊 音声読み上げテスト"):
             with st.spinner("音声読み上げ中..."):

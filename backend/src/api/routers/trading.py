@@ -1,8 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 import logging
 
-from src.api.schemas import TradeRequest, TradeResponse
-from src.api.dependencies import get_paper_trader, get_portfolio_manager
+from src.api.schemas import TradeRequest, TradeResponse, AutoTradeConfig
+from src.api.dependencies import (
+    get_paper_trader,
+    get_portfolio_manager,
+    get_auto_trader,
+)
 from src.services.trading_service import TradingService
 
 router = APIRouter()

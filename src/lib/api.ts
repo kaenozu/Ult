@@ -69,69 +69,88 @@ api.interceptors.request.use((config) => {
 
 // Common API call wrapper with error handling and logging
 const apiCall = async <T>(
-  method: 'get' | 'post' | 'put' | 'delete',
+  method: "get" | "post" | "put" | "delete",
   url: string,
   data?: any,
-  context?: string
+  context?: string,
 ): Promise<T> => {
   try {
     const response = await api.request({
       method,
       url,
-      data
-    })
-    return response.data
+      data,
+    });
+    return response.data;
   } catch (error) {
-    handleApiError(error, context || `${method.toUpperCase()} ${url}`)
-    throw error
+    handleApiError(error, context || `${method.toUpperCase()} ${url}`);
+    throw error;
   }
-}
+};
 
 // Health Check
 export const checkHealth = async (): Promise<boolean> => {
   try {
-    await apiCall('get', '/health', undefined, 'health_check')
-    return true
+    await apiCall("get", "/health", undefined, "health_check");
+    return true;
   } catch (error) {
-    console.warn('Health check failed:', error)
-    return false
+    console.warn("Health check failed:", error);
+    return false;
   }
-}
 };
 
 export const getPortfolio = async (): Promise<PortfolioSummary> => {
-  return apiCall<PortfolioSummary>('get', '/portfolio', undefined, 'get_portfolio')
-}
+  return apiCall<PortfolioSummary>(
+    "get",
+    "/portfolio",
+    undefined,
+    "get_portfolio",
+  );
+};
 
 export const getPositions = async (): Promise<Position[]> => {
-  return apiCall<Position[]>('get', '/positions', undefined, 'get_positions')
-}
+  return apiCall<Position[]>("get", "/positions", undefined, "get_positions");
+};
 
 export const getMarketData = async (
-  ticker: string
+  ticker: string,
 ): Promise<MarketDataResponse> => {
-  return apiCall<MarketDataResponse>('get', `/market/${ticker}`, undefined, `get_market_data_${ticker}`)
-}
+  return apiCall<MarketDataResponse>(
+    "get",
+    `/market/${ticker}`,
+    undefined,
+    `get_market_data_${ticker}`,
+  );
+};
 
 export const getSignal = async (
   ticker: string,
   strategy: string = "LightGBM",
 ): Promise<SignalResponse> => {
-  return apiCall<SignalResponse>('get', `/signals/${ticker}?strategy=${strategy}`, undefined, `get_signal_${ticker}`)
-}
+  return apiCall<SignalResponse>(
+    "get",
+    `/signals/${ticker}?strategy=${strategy}`,
+    undefined,
+    `get_signal_${ticker}`,
+  );
+};
 
 export const getChartData = async (
   ticker: string,
   period: string = "3mo",
 ): Promise<ChartDataPoint[]> => {
-  return apiCall<ChartDataPoint[]>('get', `/market/${ticker}/history?period=${period}`, undefined, `get_chart_data_${ticker}`)
-}
+  return apiCall<ChartDataPoint[]>(
+    "get",
+    `/market/${ticker}/history?period=${period}`,
+    undefined,
+    `get_chart_data_${ticker}`,
+  );
+};
 
 export const executeTrade = async (
   trade: TradeRequest,
 ): Promise<TradeResponse> => {
-  return apiCall<TradeResponse>('post', '/trade', trade, 'execute_trade')
-}
+  return apiCall<TradeResponse>("post", "/trade", trade, "execute_trade");
+};
 
 // === AutoTrader ===
 
@@ -153,17 +172,32 @@ export interface AutoTradeConfig {
 }
 
 export const getAutoTradeStatus = async (): Promise<AutoTradeStatus> => {
-  return apiCall<AutoTradeStatus>('get', '/status/autotrade', undefined, 'get_autotrade_status')
-}
+  return apiCall<AutoTradeStatus>(
+    "get",
+    "/status/autotrade",
+    undefined,
+    "get_autotrade_status",
+  );
+};
 
 export const configureAutoTrade = async (
   config: Partial<AutoTradeConfig>,
 ): Promise<AutoTradeStatus> => {
-  return apiCall<AutoTradeStatus>('post', '/config/autotrade', config, 'configure_autotrade')
-}
+  return apiCall<AutoTradeStatus>(
+    "post",
+    "/config/autotrade",
+    config,
+    "configure_autotrade",
+  );
+};
 
 export const resetPortfolio = async (
   initial_capital: number,
 ): Promise<{ success: boolean; message: string }> => {
-  return apiCall<{ success: boolean; message: string }>('post', '/settings/reset-portfolio', { initial_capital }, 'reset_portfolio')
-}
+  return apiCall<{ success: boolean; message: string }>(
+    "post",
+    "/settings/reset-portfolio",
+    { initial_capital },
+    "reset_portfolio",
+  );
+};

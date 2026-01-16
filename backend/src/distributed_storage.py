@@ -41,7 +41,8 @@ class BlockchainTradeLogger:
                 return Web3(Web3.HTTPProvider("https://mainnet.optimism.io/"))
             elif provider == "infura":
                 return Web3(
-                    Web3.HTTPProvider("https://mainnet.infura.io/v3"), project_id=os.getenv("INFURA_PROJECT_ID")
+                    Web3.HTTPProvider("https://mainnet.infura.io/v3"),
+                    project_id=os.getenv("INFURA_PROJECT_ID"),
                 )
             elif provider == "alchemy":
                 return Web3(Web3.AlchemyProvider(os.getenv("ALCHEMY_URL")))
@@ -69,7 +70,10 @@ class BlockchainTradeLogger:
                 {
                     "type": "function",
                     "name": "getTradeHistory",
-                    "inputs": [{"name": "from", "type": "uint256"}, {"name": "limit", "type": "uint256"}],
+                    "inputs": [
+                        {"name": "from", "type": "uint256"},
+                        {"name": "limit", "type": "uint256"},
+                    ],
                     "outputs": [{"name": "trades", "type": "tuple[]"}],
                 },
                 {
@@ -94,7 +98,9 @@ class BlockchainTradeLogger:
 
             # デプロイ
             if contract_address and self.web3:
-                contract = self.web3.eth.contract(address=contract_address, abi=compiled_contract["abi"])
+                contract = self.web3.eth.contract(
+                    address=contract_address, abi=compiled_contract["abi"]
+                )
 
                 self.contract_address = contract_address
                 logger.info(f"Blockchain contract deployed at: {contract_address}")
@@ -139,18 +145,28 @@ class BlockchainTradeLogger:
 
             # スマートコントラクト呼び出し
             contract = self.web3.eth.contract(
-                address=self.contract_address, abi=self.web3.eth.contract(address=self.contract_address).abi
+                address=self.contract_address,
+                abi=self.web3.eth.contract(address=self.contract_address).abi,
             )
 
             # ガス最適化されたトランザクション
             transaction = contract.functions.recordTradeBatch(
                 [encoded_data],  # バッチ用配列
-                transaction={"from": trader_address, "nonce": nonce, "gas": gas_limit, "gasPrice": gas_price},
+                transaction={
+                    "from": trader_address,
+                    "nonce": nonce,
+                    "gas": gas_limit,
+                    "gasPrice": gas_price,
+                },
             )
 
             # ガスの送信
-            signed_txn = self.web3.eth.account.sign_transaction(transaction, self.private_key)
-            tx_hash = await self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+            signed_txn = self.web3.eth.account.sign_transaction(
+                transaction, self.private_key
+            )
+            tx_hash = await self.web3.eth.send_raw_transaction(
+                signed_txn.rawTransaction
+            )
 
             logger.info(f"Optimized trade recorded on blockchain: {tx_hash.hex()}")
 
@@ -172,30 +188,45 @@ class BlockchainTradeLogger:
         """複数の取引を一度に記録 - ガス節約"""
         try:
             if not self.web3 or not self.contract_address or not trades_data:
-                return {"success": False, "error": "Web3, contract, or trades not available"}
+                return {
+                    "success": False,
+                    "error": "Web3, contract, or trades not available",
+                }
 
             trader_address = self.web3.eth.account.address
             nonce = self.web3.eth.get_transaction_count(trader_address)
 
             # 複数の取引データをエンコード
-            encoded_trades = [self._encode_trade_data_optimized(trade) for trade in trades_data]
+            encoded_trades = [
+                self._encode_trade_data_optimized(trade) for trade in trades_data
+            ]
 
             # ガス最適化
             gas_price = await self.get_optimized_gas_price()
             gas_limit = 45000 + (len(trades_data) * 10000)  # バッチ用ガス計算
 
             contract = self.web3.eth.contract(
-                address=self.contract_address, abi=self.web3.eth.contract(address=self.contract_address).abi
+                address=self.contract_address,
+                abi=self.web3.eth.contract(address=self.contract_address).abi,
             )
 
             # バッチトランザクション
             transaction = contract.functions.recordTradeBatch(
                 encoded_trades,
-                transaction={"from": trader_address, "nonce": nonce, "gas": gas_limit, "gasPrice": gas_price},
+                transaction={
+                    "from": trader_address,
+                    "nonce": nonce,
+                    "gas": gas_limit,
+                    "gasPrice": gas_price,
+                },
             )
 
-            signed_txn = self.web3.eth.account.sign_transaction(transaction, self.private_key)
-            tx_hash = await self.web3.eth.send_raw_transaction(signed_txn.rawTransaction)
+            signed_txn = self.web3.eth.account.sign_transaction(
+                transaction, self.private_key
+            )
+            tx_hash = await self.web3.eth.send_raw_transaction(
+                signed_txn.rawTransaction
+            )
 
             cost_per_trade = (gas_limit * gas_price) / 1e18 / len(trades_data)
 
@@ -209,7 +240,9 @@ class BlockchainTradeLogger:
                 "gas_price_gwei": gas_price / 1e9,
                 "total_cost_eth": (gas_limit * gas_price) / 1e18,
                 "cost_per_trade_eth": cost_per_trade,
-                "savings_percent": round((1 - cost_per_trade / (0.001)) * 100, 2),  # 単取引と比較
+                "savings_percent": round(
+                    (1 - cost_per_trade / (0.001)) * 100, 2
+                ),  # 単取引と比較
             }
 
         except Exception as e:
@@ -240,7 +273,9 @@ class BlockchainTradeLogger:
         # 短いフィールド名とデータ圧縮
         encoded = {
             "t": trade_data["ticker"],  # ticker -> t
-            "a": 1 if trade_data["action"] == "buy" else 0,  # action -> a (buy:1, sell:0)
+            "a": 1
+            if trade_data["action"] == "buy"
+            else 0,  # action -> a (buy:1, sell:0)
             "q": int(trade_data["quantity"]),  # quantity -> q
             "p": int(trade_data["price"] * 100),  # price -> p (セント単位)
             "h": trade_data.get("timestamp", int(time.time())),  # timestamp -> h
@@ -257,7 +292,8 @@ class BlockchainTradeLogger:
 
             # コントラクトでの検証
             contract = self.web3.eth.contract(
-                address=self.contract_address, abi=self.web3.eth.contract(address=self.contract_address).abi
+                address=self.contract_address,
+                abi=self.web3.eth.contract(address=self.contract_address).abi,
             )
 
             result = contract.functions.verifyTradeRecord(trade_hash)
@@ -272,14 +308,17 @@ class BlockchainTradeLogger:
             logger.error(f"Blockchain verification failed: {e}")
             return {"success": False, "error": str(e)}
 
-    async def get_trade_history_from_blockchain(self, from_block: int = 0, limit: int = 100) -> List[Dict]:
+    async def get_trade_history_from_blockchain(
+        self, from_block: int = 0, limit: int = 100
+    ) -> List[Dict]:
         """ブロックチェーンから取引履歴を取得"""
         try:
             if not self.web3 or not self.contract_address:
                 return []
 
             contract = self.web3.eth.contract(
-                address=self.contract_address, abi=self.web3.eth.contract(address=self.contract_address).abi
+                address=self.contract_address,
+                abi=self.web3.eth.contract(address=self.contract_address).abi,
             )
 
             result = contract.functions.getTradeHistory(from_block, limit)
@@ -298,7 +337,9 @@ class BlockchainTradeLogger:
                             "timestamp": trade_data[5],
                             "trader": trade_data[6],
                             "verified": trade_data[7] if len(trade_data) > 7 else False,
-                            "block_number": trade_data[8] if len(trade_data) > 8 else None,
+                            "block_number": trade_data[8]
+                            if len(trade_data) > 8
+                            else None,
                         }
                     )
 
@@ -328,7 +369,8 @@ class BlockchainTradeLogger:
                 return 0
 
             contract = self.web3.eth.contract(
-                address=self.contract_address, abi=self.web3.eth.contract(address=self.contract_address).abi
+                address=self.contract_address,
+                abi=self.web3.eth.contract(address=self.contract_address).abi,
             )
 
             return contract.functions.getTradeCount()
@@ -351,7 +393,9 @@ class DistributedDataManager:
         """暗号化キーを取得"""
         return os.getenv("ENCRYPTION_KEY") or "default_key_here"
 
-    async def distribute_data_chunk(self, chunk_data: Dict, chunk_id: str) -> Dict[str, Any]:
+    async def distribute_data_chunk(
+        self, chunk_data: Dict, chunk_id: str
+    ) -> Dict[str, Any]:
         """データチャンクを分散保存"""
         success_count = 0
 
@@ -394,7 +438,12 @@ class DistributedDataManager:
             # データを暗号化してアップロード
             encrypted_data = self._encrypt_data(data)
 
-            s3_client.put_object(Bucket=bucket_name, Key=file_path, Body=encrypted_data, ServerSideEncryption="AES256")
+            s3_client.put_object(
+                Bucket=bucket_name,
+                Key=file_path,
+                Body=encrypted_data,
+                ServerSideEncryption="AES256",
+            )
 
             return {
                 "success": True,
@@ -420,7 +469,11 @@ class DistributedDataManager:
             encrypted_data = self._encrypt_data(data)
 
             blob = client.bucket(bucket_name).blob(blob_name)
-            blob.upload_from_string(encrypted_data, content_type="application/json", encryption_key=self.encryption_key)
+            blob.upload_from_string(
+                encrypted_data,
+                content_type="application/json",
+                encryption_key=self.encryption_key,
+            )
 
             return {
                 "success": True,
@@ -442,14 +495,19 @@ class DistributedDataManager:
             connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
             container_name = "agstock-backups"
 
-            blob_service_client = BlobServiceClient(connection_string, container_name=container_name)
+            blob_service_client = BlobServiceClient.from_connection_string(
+                connection_string
+            )
 
             blob_name = f"trades/{chunk_id}.json"
 
             # データを暗号化してアップロード
             encrypted_data = self._encrypt_data(data)
 
-            blob_client.upload_blob(container_name, blob_name, encrypted_data)
+            blob_client = blob_service_client.get_blob_client(
+                container=container_name, blob=blob_name
+            )
+            blob_client.upload_blob(encrypted_data)
 
             return {
                 "success": True,
@@ -473,7 +531,11 @@ class DistributedDataManager:
             # データをIPFSにアップロード
             json_data = json.dumps(data, ensure_ascii=False)
 
-            response = requests.post(f"{ipfs_gateway}/add", files={"file": ("file.json", json_data)}, timeout=30)
+            response = requests.post(
+                f"{ipfs_gateway}/add",
+                files={"file": ("file.json", json_data)},
+                timeout=30,
+            )
 
             if response.status_code == 200:
                 result = response.json()
@@ -484,7 +546,10 @@ class DistributedDataManager:
                     "timestamp": datetime.now().isoformat(),
                 }
             else:
-                return {"success": False, "error": f"IPFS upload failed: {response.status_code}"}
+                return {
+                    "success": False,
+                    "error": f"IPFS upload failed: {response.status_code}",
+                }
 
         except Exception as e:
             logger.error(f"IPFS upload failed: {e}")
@@ -523,7 +588,9 @@ class DistributedDataManager:
             logger.error(f"Data decryption failed: {e}")
             return None
 
-    async def save_data_distributed(self, data: Any, data_type: str, metadata: Dict = None) -> Dict[str, Any]:
+    async def save_data_distributed(
+        self, data: Any, data_type: str, metadata: Dict = None
+    ) -> Dict[str, Any]:
         """データを分散保存"""
         timestamp = datetime.now().isoformat()
 
@@ -532,7 +599,10 @@ class DistributedDataManager:
         data_string = json.dumps(data, ensure_ascii=False)
         data_bytes = data_string.encode("utf-8")
 
-        chunks = [data_bytes[i : i + chunk_size] for i in range(0, len(data_bytes), chunk_size)]
+        chunks = [
+            data_bytes[i : i + chunk_size]
+            for i in range(0, len(data_bytes), chunk_size)
+        ]
 
         chunk_ids = []
         for i, chunk in enumerate(chunks):
@@ -553,12 +623,16 @@ class DistributedDataManager:
             "success": all(r.get("success", False) for r in chunk_ids),
             "chunk_count": len(chunks),
             "total_size": len(data_bytes),
-            "distributed_locations": {chunk_id: r.get("location") for chunk_id, r in zip(chunk_ids)},
+            "distributed_locations": {
+                chunk_id: r.get("location") for chunk_id, r in zip(chunk_ids)
+            },
             "data_type": data_type,
             "timestamp": timestamp,
         }
 
-    async def restore_data_from_distributed(self, data_id: str, data_type: str) -> Dict[str, Any]:
+    async def restore_data_from_distributed(
+        self, data_id: str, data_type: str
+    ) -> Dict[str, Any]:
         """分散保存されたデータを復元"""
         try:
             # 復元すべきバックアップ場所を取得
@@ -606,7 +680,10 @@ class DistributedDataManager:
                     "timestamp": datetime.now().isoformat(),
                 }
             else:
-                return {"success": False, "error": f"Failed to restore {data_type} from any provider"}
+                return {
+                    "success": False,
+                    "error": f"Failed to restore {data_type} from any provider",
+                }
 
         except Exception as e:
             logger.error(f"Distributed restore failed: {e}")
@@ -637,7 +714,9 @@ class DisasterRecoveryManager:
             }
 
             # 復元ポイントを保存
-            recovery_file = Path(f"data/recovery_points/{recovery_point['timestamp']}.json")
+            recovery_file = Path(
+                f"data/recovery_points/{recovery_point['timestamp']}.json"
+            )
             recovery_file.parent.mkdir(parents=True)
 
             with open(recovery_file, "w", encoding="utf-8") as f:
@@ -675,13 +754,18 @@ class DisasterRecoveryManager:
             logger.error(f"Failed to load recovery points: {e}")
             return []
 
-    async def restore_from_recovery_point(self, recovery_point_id: str) -> Dict[str, Any]:
+    async def restore_from_recovery_point(
+        self, recovery_point_id: str
+    ) -> Dict[str, Any]:
         """指定された復元ポイントから復元"""
         try:
             recovery_file = Path(f"data/recovery_points/{recovery_point_id}.json")
 
             if not recovery_file.exists():
-                return {"success": False, "error": f"Recovery point not found: {recovery_point_id}"}
+                return {
+                    "success": False,
+                    "error": f"Recovery point not found: {recovery_point_id}",
+                }
 
             with open(recovery_file, "r", encoding="utf-8") as f:
                 recovery_point = json.load(f)
@@ -690,20 +774,32 @@ class DisasterRecoveryManager:
             restore_results = {}
 
             # 1. ポートフォリオデータ復元
-            portfolio_result = await self.distributed_manager.restore_data_from_distributed(
-                recovery_point.get("portfolio_data", {}), "portfolio", recovery_point["timestamp"]
+            portfolio_result = (
+                await self.distributed_manager.restore_data_from_distributed(
+                    recovery_point.get("portfolio_data", {}),
+                    "portfolio",
+                    recovery_point["timestamp"],
+                )
             )
             restore_results["portfolio"] = portfolio_result
 
             # 2. 取引履歴復元
-            trades_result = await self.distributed_manager.restore_data_from_distributed(
-                recovery_point.get("trades_data", {}), "trades", recovery_point["timestamp"]
+            trades_result = (
+                await self.distributed_manager.restore_data_from_distributed(
+                    recovery_point.get("trades_data", {}),
+                    "trades",
+                    recovery_point["timestamp"],
+                )
             )
             restore_results["trades"] = trades_result
 
             # 3. 設定ファイル復元
-            config_result = await self.distributed_manager.restore_data_from_distributed(
-                recovery_point.get("config_data", {}), "config", recovery_point["timestamp"]
+            config_result = (
+                await self.distributed_manager.restore_data_from_distributed(
+                    recovery_point.get("config_data", {}),
+                    "config",
+                    recovery_point["timestamp"],
+                )
             )
             restore_results["config"] = config_result
 
@@ -754,7 +850,8 @@ class DisasterRecoveryManager:
             success_count = sum(1 for r in backup_results.values() if r.get("success"))
 
             return {
-                "success": success_count == len(backup_results) and recovery_result.get("success"),
+                "success": success_count == len(backup_results)
+                and recovery_result.get("success"),
                 "backup_results": backup_results,
                 "recovery_point": recovery_result,
                 "backed_up_components": f"{success_count}/{len(backup_results)}",
@@ -814,7 +911,10 @@ class DisasterRecoveryManager:
                         test_results[chunk_id][provider] = test_result
 
                     except Exception as e:
-                        test_results[chunk_id][provider] = {"accessible": False, "error": str(e)}
+                        test_results[chunk_id][provider] = {
+                            "accessible": False,
+                            "error": str(e),
+                        }
 
             # 2. 復元ポイントテスト
             recovery_points = await self.get_recovery_points()
@@ -831,7 +931,10 @@ class DisasterRecoveryManager:
                 )
 
             accessible_backups = sum(
-                1 for chunk in test_results.values() for provider in chunk.values() if provider.get("accessible", False)
+                1
+                for chunk in test_results.values()
+                for provider in chunk.values()
+                if provider.get("accessible", False)
             )
 
             total_backups = sum(len(chunk) for chunk in test_results.values())
@@ -940,8 +1043,12 @@ class DisasterRecoveryManager:
             # locationからコンテナとBLOB名を解析
             blob_name = location.split("/")[-1]
 
-            blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-            blob_client = blob_service_client.get_blob_client(container="agstock-backups", blob=blob_name)
+            blob_service_client = BlobServiceClient.from_connection_string(
+                connection_string
+            )
+            blob_client = blob_service_client.get_blob_client(
+                container="agstock-backups", blob=blob_name
+            )
 
             encrypted_data = blob_client.download_blob().readall()
             decrypted_data = await self.decrypt_data(encrypted_data.decode())
@@ -1005,8 +1112,12 @@ class DisasterRecoveryManager:
             import os
 
             connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-            blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-            blob_client = blob_service_client.get_blob_client(container="agstock-backups", blob=location.split("/")[-1])
+            blob_service_client = BlobServiceClient.from_connection_string(
+                connection_string
+            )
+            blob_client = blob_service_client.get_blob_client(
+                container="agstock-backups", blob=location.split("/")[-1]
+            )
 
             # プロパティのみ取得してテスト
             blob_client.get_blob_properties()
@@ -1018,7 +1129,9 @@ class DisasterRecoveryManager:
         """IPFSアクセスをテスト"""
         try:
             # IPFSゲートウェイのステータスを確認
-            response = requests.get("https://ipfs.infura.io/ipfs/api/v0/version", timeout=10)
+            response = requests.get(
+                "https://ipfs.infura.io/ipfs/api/v0/version", timeout=10
+            )
 
             if response.status_code == 200:
                 return {"accessible": True, "response_time": "<200ms"}
