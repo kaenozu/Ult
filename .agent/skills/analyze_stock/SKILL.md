@@ -1,35 +1,32 @@
 ---
-name: Analyze Stock
+name: analyze_stock
 description: detailed technical and risk analysis of a specific stock ticker using Advanced Analytics.
 ---
 
-# Analyze Stock
+# Analyze Stock (個別銘柄詳細分析)
 
-Use this skill to perform a deep-dive analysis on a specific Japanese stock ticker. It calculates risk metrics, volatility, and performance indicators using the backend's `AdvancedAnalytics` engine.
+指定された銘柄コード（Ticker）に対して、システムが持つ分析エンジン（LightGBM, Oracleなど）をフル稼働させ、詳細な診断レポートを出力します。
+「なぜこのシグナルなのか？」「AIの確信度は？」といった疑問を解消するために使用します。
 
-## Usage
+## 🚀 使い方 (Usage)
 
-Run the python script `scripts/analyze.py` with the ticker symbol.
-
-### Arguments
-
-- `ticker`: The stock ticker symbol (e.g., "7203.T" for Toyota).
-
-### Example Command
-
+### Command
 ```bash
-python .agent/skills/analyze_stock/scripts/analyze.py 7203.T
+python backend/src/cli/analyze_ticker.py [Ticker]
 ```
 
-### Output
+### Example
+```bash
+python backend/src/cli/analyze_ticker.py 7203.T
+```
 
-The script returns a JSON object containing:
-- **Risk Metrics**: Sharpe Ratio, Sortino Ratio, Max Drawdown, Volatility.
-- **Price Info**: Latest close price.
-- **Summary**: A text summary of the analysis.
+## 📊 出力内容 (Output)
+1.  **Data Health:** 取得できたデータ数（Data Starvationのチェック）。
+2.  **Strategy Result:** 最終的なシグナル（BUY/SELL/HOLD）と確信度。
+3.  **Black Box Peek:** モデルの「生」の予測確率（Raw Probability）。
+4.  **Threshold Check:** 現在の基準値（Guardian Mode等）と、それを超えているかどうかの判定。
 
-## Interpretation
-
-- **Sharpe Ratio > 1.0**: Good risk-adjusted return.
-- **Max Drawdown < -0.2**: High risk, significantly down from peak.
-- **Volatility > 0.4**: High volatility asset.
+## 💡 いつ使うか？
+*   「なんでこの銘柄は0%なんだ？」と思った時。
+*   「本当に買っていいのか？」と不安になった時のセカンドオピニオンとして。
+*   システムの健全性チェック（データが正しく流れているか）として。
