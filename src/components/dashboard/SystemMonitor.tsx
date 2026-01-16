@@ -15,20 +15,35 @@ const MOCK_DATA = [
     { subject: 'API Limit', A: 85, fullMark: 100 },
 ];
 
-const MOCK_LOGS = [
-    { id: 1, type: 'info', msg: 'System initialized. Neural link established.', time: '10:00:01' },
-    { id: 2, type: 'success', msg: 'Market data feed active (WebSocket).', time: '10:00:03' },
-    { id: 3, type: 'warning', msg: 'High volatility detected in Sector 3.', time: '10:05:12' },
-    { id: 4, type: 'info', msg: 'AI Advisor analyzing 7203.T...', time: '10:06:45' },
-    { id: 5, type: 'info', msg: 'Rebalancing calculation started.', time: '10:07:00' },
+const INITIAL_LOGS = [
+    { type: 'info', msg: 'System initialized. Neural link established.' },
+    { type: 'success', msg: 'Market data feed active (WebSocket).' },
+    { type: 'warning', msg: 'High volatility detected in Sector 3.' },
+    { type: 'info', msg: 'AI Advisor analyzing 7203.T...' },
+    { type: 'info', msg: 'Rebalancing calculation started.' },
 ];
 
 export default function SystemMonitor() {
     const [mounted, setMounted] = useState(false);
     const [latencyData, setLatencyData] = useState<{ time: string, value: number }[]>([]);
+    const [logs, setLogs] = useState<{ id: number, type: string, msg: string, time: string }[]>([]);
 
     useEffect(() => {
         setMounted(true);
+
+        // Generate dynamic logs with current times
+        const now = new Date();
+        const generatedLogs = INITIAL_LOGS.map((log, i) => {
+            const logTime = new Date(now.getTime() - (INITIAL_LOGS.length - i) * 2000);
+            return {
+                id: i,
+                type: log.type,
+                msg: log.msg,
+                time: logTime.toLocaleTimeString('ja-JP', { hour12: false })
+            };
+        });
+        setLogs(generatedLogs);
+
         // Simulate heartbeat
         const interval = setInterval(() => {
             setLatencyData(prev => {
@@ -93,7 +108,7 @@ export default function SystemMonitor() {
                         <ShieldCheck className="w-3 h-3 text-emerald-500" />
                     </div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1">
-                        {MOCK_LOGS.map((log) => (
+                        {logs.map((log) => (
                             <div key={log.id} className="flex gap-2 opacity-80 hover:opacity-100 transition-opacity">
                                 <span className="text-muted-foreground w-12 shrink-0">[{log.time}]</span>
                                 <span className={

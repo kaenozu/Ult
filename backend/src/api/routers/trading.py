@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 import logging
 
 from src.api.schemas import TradeRequest, TradeResponse, AutoTradeConfig
-from src.api.dependencies import get_paper_trader, get_auto_trader
+from src.api.dependencies import get_paper_trader, get_auto_trader, get_portfolio_manager
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 @router.post("/trade", response_model=TradeResponse)
 async def execute_trade(
     request: TradeRequest,
-    pt = Depends(get_paper_trader)
+    pt = Depends(get_paper_trader),
+    pm = Depends(get_portfolio_manager)
 ):
     """取引を実行"""
     try:
@@ -26,17 +27,20 @@ async def execute_trade(
             if price <= 0:
                 raise HTTPException(status_code=400, detail="Could not fetch price")
         
-        success = pt.execute_trade(
-            ticker=request.ticker,
-            action=request.action,
-            quantity=request.quantity,
-            price=price,
-            strategy=request.strategy,
-        )
+        # Async Irony: Use PortfolioManager lock to prevent race with rebalancing
+        async with pm.lock:
+            success = pt.execute_trade(
+                ticker=request.ticker,
+                action=request.action,
+                quantity=request.quantity,
+                price=price,
+                strategy=request.strategy,
+            )
         
         return TradeResponse(
             success=success,
-            message="Trade executed" if success else "Trade failed",
+            message=f"Trade {'executed' if success else 'failed'}: {request.action} {request.quantity} {request.ticker} @ {price}",
+            order_id=None # TODO: Return actual Order ID
         )
     except HTTPException:
         raise

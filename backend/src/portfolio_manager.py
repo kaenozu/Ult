@@ -21,24 +21,26 @@ class PortfolioManager:
         """
         Reconstruct portfolio from trades and fetch current prices.
         """
+        from decimal import Decimal, getcontext
+        
         trades = self.db.get_trades(limit=1000) # Fetch recent trades
         
-        # 1. Aggregate Holdings
-        holdings: Dict[str, Dict[str, float]] = {}
-        cash = self.initial_cash
+        # 1. Aggregate Holdings (Using Decimal for precision)
+        holdings: Dict[str, Dict[str, Decimal]] = {}
+        cash = Decimal(str(self.initial_cash))
         
         # Sort trades by timestamp ascending to replay history
         trades.sort(key=lambda t: t['timestamp'])
 
         for trade in trades:
             symbol = trade['symbol']
-            qty = float(trade['quantity'])
-            price = float(trade['price'])
+            qty = Decimal(str(trade['quantity']))
+            price = Decimal(str(trade['price']))
             action = trade['action'].upper()
-            total = float(trade['total'])
+            total = Decimal(str(trade['total']))
             
             if symbol not in holdings:
-                holdings[symbol] = {'quantity': 0.0, 'avg_price': 0.0, 'cost_basis': 0.0}
+                holdings[symbol] = {'quantity': Decimal(0), 'avg_price': Decimal(0), 'cost_basis': Decimal(0)}
             
             if action == 'BUY':
                 cash -= total
@@ -66,14 +68,15 @@ class PortfolioManager:
                 new_qty = current_qty - qty
                 new_cost = current_cost - cost_of_sold_shares
                 
-                holdings[symbol]['quantity'] = max(0, new_qty)
-                holdings[symbol]['cost_basis'] = max(0, new_cost)
+                holdings[symbol]['quantity'] = max(Decimal(0), new_qty)
+                holdings[symbol]['cost_basis'] = max(Decimal(0), new_cost)
 
         # Filter out empty positions
         active_holdings = {k: v for k, v in holdings.items() if v['quantity'] > 0}
         
         # 2. Fetch Realtime Prices
         tickers = list(active_holdings.keys())
+        # ... (Fetching logic remains same, returning float prices usually)
         current_prices = {}
         
         if tickers:
@@ -92,7 +95,7 @@ class PortfolioManager:
 
         # 3. Calculate Totals
         total_equity = cash
-        total_unrealized_pnl = 0.0
+        total_unrealized_pnl = Decimal(0)
         
         # Detailed positions list for frontend
         position_list = {}
@@ -101,30 +104,36 @@ class PortfolioManager:
             qty = data['quantity']
             avg_price = data['avg_price']
             
-            # Get cached or fresh price
-            current_price = self._get_current_price(symbol) 
+            # Get cached or fresh price (float)
+            current_price_float = self._get_current_price(symbol)
+            current_price = Decimal(str(current_price_float))
+            
             market_value = qty * current_price
             
             unrealized_pnl = market_value - (qty * avg_price)
-            pnl_percent = (unrealized_pnl / (qty * avg_price)) * 100 if avg_price else 0
+            # Avoid division by zero
+            if qty > 0 and avg_price > 0:
+                pnl_percent = (unrealized_pnl / (qty * avg_price)) * 100
+            else:
+                pnl_percent = Decimal(0)
             
             total_equity += market_value
             total_unrealized_pnl += unrealized_pnl
             
             position_list[symbol] = {
-                "quantity": qty,
-                "avg_price": round(avg_price, 2),
-                "current_price": round(current_price, 2),
-                "market_value": round(market_value, 2),
-                "unrealized_pnl": round(unrealized_pnl, 2),
-                "pnl_percent": round(pnl_percent, 2)
+                "quantity": float(qty),
+                "avg_price": float(round(avg_price, 2)),
+                "current_price": float(round(current_price, 2)),
+                "market_value": float(round(market_value, 2)),
+                "unrealized_pnl": float(round(unrealized_pnl, 2)),
+                "pnl_percent": float(round(pnl_percent, 2))
             }
             
         return {
-            "total_equity": round(total_equity, 2),
-            "cash": round(cash, 2),
-            "invested_amount": round(total_equity - cash, 2),
-            "unrealized_pnl": round(total_unrealized_pnl, 2),
+            "total_equity": float(round(total_equity, 2)),
+            "cash": float(round(cash, 2)),
+            "invested_amount": float(round(total_equity - cash, 2)),
+            "unrealized_pnl": float(round(total_unrealized_pnl, 2)),
             "positions": position_list,
             "timestamp": "now" # TODO: Real timestamp
         }
