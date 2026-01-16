@@ -26,7 +26,7 @@ class LightGBMStrategy(Strategy):
         self.best_params = None
         self.model = None
         self.oracle = Oracle2026()  # Sovereign Integrate
-        self.default_positive_threshold = 0.52  # Lowered for more actionable signals
+        self.default_positive_threshold = 0.505  # [AGGRESSIVE MODE] Lowered for Paper Trading Learning
         self.default_negative_threshold = 0.48  # Balanced for practical trading
         self.feature_cols = [
             "ATR",
@@ -81,7 +81,7 @@ class LightGBMStrategy(Strategy):
 
         aligned_actual = actual.reindex(probs.index)
 
-        candidate_uppers = np.arange(0.55, 0.71, 0.01)
+        candidate_uppers = np.arange(0.48, 0.71, 0.01)  # [MODIFIED] Allow lower threshold for Aggressive Mode
         candidate_lowers = np.arange(0.29, 0.46, 0.01)
 
         best_score = -np.inf
