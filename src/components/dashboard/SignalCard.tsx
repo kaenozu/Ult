@@ -1,18 +1,11 @@
-import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
-import { getSignal, getMarketData } from '@/lib/api'
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { ArrowRight, Sparkles, Timer, TrendingUp } from 'lucide-react'
+'use client'
+
 import React from 'react'
-import TradingModal from './TradingModal'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { TrendingUp, TrendingDown, ArrowRight, Zap } from 'lucide-react'
+import { api, checkHealth, getSignal, SignalResponse } from '@/lib/api'
+import { useQuery } from '@tanstack/react-query'
 
 interface SignalCardProps {
   ticker: string
@@ -20,181 +13,140 @@ interface SignalCardProps {
 }
 
 export default function SignalCard({ ticker, name }: SignalCardProps) {
-  // LightGBM (AI) Signal
-  const { data: aiSignal, isLoading: isAILoading } = useQuery({
-    queryKey: ['signal', ticker, 'LightGBM'],
-    queryFn: () => getSignal(ticker, 'LightGBM'),
+  const { data: signal, isLoading } = useQuery({
+    queryKey: ['signal', ticker],
+    queryFn: () => getSignal(ticker),
+    refetchInterval: 30000
   })
 
-  // RSI (Technical) Signal
-  const { data: rsiSignal, isLoading: isRSILoading } = useQuery({
-    queryKey: ['signal', ticker, 'RSI'],
-    queryFn: () => getSignal(ticker, 'RSI'),
-  })
-
-  // Bollinger Bands (Volatility) Signal
-  const { data: bbSignal, isLoading: isBBLoading } = useQuery({
-    queryKey: ['signal', ticker, 'BOLLINGER'],
-    queryFn: () => getSignal(ticker, 'BOLLINGER'),
-  })
-
-  const { data: market, isLoading: isMarketLoading } = useQuery({
-    queryKey: ['market', ticker],
-    queryFn: () => getMarketData(ticker),
-  })
-
-  const isLoading =
-    isAILoading || isRSILoading || isBBLoading || isMarketLoading
-
-  if (isLoading) {
-    return (
-      <div className="h-[250px] w-full rounded-xl bg-muted/20 animate-pulse" />
-    )
+  // Mock data if API fails or loading (for visual dev)
+  const displaySignal = signal || {
+    signal: 0,
+    confidence: 0,
+    explanation: "Waiting for analysis...",
+    strategy: "N/A"
   }
 
-  if (!aiSignal || !market) return null
-
-  // Mixed Strategy Priority: BOLLINGER > RSI > AI
-  const getPrimarySignal = () => {
-    if (bbSignal && bbSignal.signal !== 0) return bbSignal
-    if (rsiSignal && rsiSignal.signal !== 0) return rsiSignal
-    return aiSignal
-  }
-
-  const signal = getPrimarySignal()
-  const isBuy = signal.signal === 1
-  const isSell = signal.signal === -1
-
-  // Helper to get badge text
-  const getSignalText = (s: number) =>
-    s === 1 ? '買い' : s === -1 ? '売り' : '様子見'
-  const getSignalVariant = (s: number) =>
-    s === 1 ? 'default' : s === -1 ? 'destructive' : 'secondary'
+  const isBullish = displaySignal.signal > 0
+  const isBearish = displaySignal.signal < 0
+  const isNeutral = displaySignal.signal === 0
 
   return (
-    <Card className="border-none shadow-lg bg-card relative overflow-hidden group hover:shadow-xl transition-all cursor-pointer">
-      <Link
-        href={`/stocks/${encodeURIComponent(ticker)}`}
-        className="absolute inset-0 z-10"
-        aria-label={`View details for ${name}`}
-      />
-      <div
-        className={`absolute top-0 left-0 w-1 h-full ${isBuy ? 'bg-emerald-500' : isSell ? 'bg-rose-500' : 'bg-gray-400'}`}
-      />
+    <Card className="glass-panel border-white/5 p-5 relative overflow-hidden transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(0,240,255,0.1)] group flex flex-col justify-between h-full min-h-[180px]">
 
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl font-bold flex items-center gap-2">
-              {name}{' '}
-              <span className="text-sm font-normal text-muted-foreground">
-                ({ticker})
-              </span>
-            </CardTitle>
-            <div className="text-2xl font-bold mt-1">
-              ¥{market.price.toLocaleString()}
-              <span
-                className={`text-sm ml-2 ${market.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}
-              >
-                {market.change >= 0 ? '+' : ''}
-                {market.change_percent.toFixed(2)}%
-              </span>
-            </div>
+      {/* Header */}
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <div className="flex items-baseline gap-2">
+            <h3 className="text-2xl font-bold font-sans tracking-tight">{ticker}</h3>
+            <span className="text-xs text-muted-foreground font-medium">{name}</span>
           </div>
-          {/* Triple Signal Badges */}
-          <div className="flex flex-col gap-1 items-end">
-            <Badge
-              variant={getSignalVariant(bbSignal?.signal || 0)}
-              className="text-[10px] px-1.5 py-0"
-            >
-              BB: {getSignalText(bbSignal?.signal || 0)}
-            </Badge>
-            <Badge
-              variant={getSignalVariant(rsiSignal?.signal || 0)}
-              className="text-[10px] px-1.5 py-0"
-            >
-              RSI: {getSignalText(rsiSignal?.signal || 0)}
-            </Badge>
-            <Badge
-              variant={getSignalVariant(aiSignal?.signal || 0)}
-              className="text-[10px] px-1.5 py-0 opacity-70"
-            >
-              AI: {getSignalText(aiSignal?.signal || 0)}
-            </Badge>
+          <div className="text-[10px] text-primary/70 uppercase tracking-widest mt-1">
+            Strategy: {displaySignal.strategy}
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent>
-        <div className="space-y-4">
-          <div className="bg-muted/30 p-3 rounded-lg flex gap-3 items-start">
-            <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <div className="font-semibold text-sm mb-1">AI解説</div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {signal.explanation ||
-                  '現在の市場動向とテクニカル指標に基づき、上昇トレンドが継続する可能性が高いと判断しました。'}
-              </p>
-            </div>
-          </div>
-
-          {isBuy && (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>
-                    期待収益率:{' '}
-                    <span className="font-semibold text-foreground">+5.2%</span>
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <Timer className="w-4 h-4" />
-                  <span>
-                    保有期間:{' '}
-                    <span className="font-semibold text-foreground">1-3日</span>
-                  </span>
-                </div>
-              </div>
-              {signal.target_price && (
-                <div className="text-sm bg-accent/20 p-2 rounded text-accent-foreground font-medium text-center">
-                  🎯 利確目標: ¥{signal.target_price.toLocaleString()}
-                </div>
-              )}
-            </div>
-          )}
+        {/* Confidence Ring (Simplified) */}
+        <div className="relative flex items-center justify-center w-12 h-12">
+          <svg className="w-full h-full transform -rotate-90">
+            <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-muted/20" />
+            <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent"
+              className={isBullish ? "text-primary" : isBearish ? "text-destructive" : "text-muted-foreground"}
+              strokeDasharray={125.6}
+              strokeDashoffset={125.6 * (1 - displaySignal.confidence)}
+            />
+          </svg>
+          <span className="absolute text-xs font-bold">
+            {Math.round(displaySignal.confidence * 100)}%
+          </span>
         </div>
-      </CardContent>
+      </div>
 
-      <CardFooter className="relative z-20">
-        {' '}
-        {/* Button should be clickable on top of link if needed, but here simple navigation is fine */}
-        {isBuy ? (
-          <TradingModal
-            ticker={ticker}
-            name={name}
-            price={market.price}
-            action="BUY"
-            trigger={
-              <Button
-                className="w-full font-semibold h-11 shadow-md hover:shadow-lg transition-all"
-                variant="default"
-                onClick={(e) => e.stopPropagation()}
-              >
-                このチャンスに乗る (注文){' '}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            }
-          />
-        ) : (
-          <Button
-            className="w-full font-semibold h-11 pointer-events-none"
-            variant="secondary"
-          >
-            詳細を見る <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
+      {/* Signal Status */}
+      <div className="mt-2 mb-4">
+        {isBullish && (
+          <div className="flex items-center gap-2 text-primary neon-text mb-2">
+            <TrendingUp className="w-5 h-5" />
+            <span className="text-lg font-bold">強気買い</span>
+          </div>
         )}
-      </CardFooter>
+        {isBearish && (
+          <div className="flex items-center gap-2 text-destructive neon-text mb-2">
+            <TrendingDown className="w-5 h-5" />
+            <span className="text-lg font-bold">売り</span>
+          </div>
+        )}
+        {isNeutral && (
+          <div className="flex items-center gap-2 text-muted-foreground mb-2">
+            <ArrowRight className="w-5 h-5" />
+            <span className="text-lg font-bold">様子見</span>
+          </div>
+        )}
+
+        {/* Actionable Setup (Sniper Mode) */}
+        {(displaySignal.entry_price) && (
+          <div className="grid grid-cols-3 gap-2 text-xs font-mono bg-white/5 p-2 rounded mb-2 border border-white/10">
+            <div className="flex flex-col">
+              <span className="text-muted-foreground">エントリー</span>
+              <span className="font-bold text-white">¥{displaySignal.entry_price?.toLocaleString()}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground">利確</span>
+              <span className="font-bold text-emerald-400">¥{displaySignal.take_profit?.toLocaleString()}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground">損切</span>
+              <span className="font-bold text-red-400">¥{displaySignal.stop_loss?.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[2.5em]">
+          {displaySignal.explanation}
+        </p>
+      </div>
+
+      {/* Action */}
+      <Button
+        variant="outline"
+        className="w-full glass-button hover:text-primary hover:border-primary/50 group-hover:bg-primary/5 active:scale-95 transition-all"
+        onClick={async () => {
+          if (!displaySignal.entry_price) return;
+          const confirmed = window.confirm(`${ticker}の注文を実行しますか？\n\nEntry: ¥${displaySignal.entry_price}\nStop: ¥${displaySignal.stop_loss}\nTarget: ¥${displaySignal.take_profit}`);
+          if (!confirmed) return;
+
+          try {
+            const res = await fetch('/api/v1/trades', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                symbol: ticker,
+                action: isBullish ? 'BUY' : 'SELL',
+                quantity: 100, // Default 100 shares for paper trading
+                price: displaySignal.entry_price,
+                order_type: 'market'
+              })
+            });
+            if (res.ok) {
+              alert(`注文完了: ${ticker}`);
+            } else {
+              alert('注文失敗');
+            }
+          } catch (e) {
+            console.error(e);
+            alert('通信エラー');
+          }
+        }}
+      >
+        <Zap className="w-4 h-4 mr-2" />
+        注文実行
+      </Button>
+
+      {/* Background Gradient */}
+      <div
+        className={`absolute -right-10 -bottom-10 w-32 h-32 rounded-full blur-[50px] opacity-10 
+        ${isBullish ? 'bg-primary' : isBearish ? 'bg-destructive' : 'bg-gray-500'}`}
+      />
     </Card>
   )
 }
