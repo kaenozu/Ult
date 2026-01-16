@@ -17,6 +17,12 @@ class MarketRegime(Enum):
     HIGH_VOLATILITY = "High Volatility"
     LOW_VOLATILITY = "Low Volatility"
     RANGING = "Ranging"
+    CRASH = "CRASH (市場崩壊警報)"
+
+    # Add helper to detect drawdown
+    @staticmethod
+    def _is_crash(volatility, trend):
+        return volatility == "high" and trend == "down"
 
 
 class RegimeDetector:
@@ -108,6 +114,20 @@ class RegimeDetector:
         return "normal"
 
     def _classify_regime(self, trend: str, volatility: str) -> str:
+        """
+        Classifies the market regime based on trend and volatility signals.
+        
+        Args:
+            trend (str): The detected trend direction ('up', 'down', 'ranging').
+            volatility (str): The detected volatility level ('high', 'low', 'normal').
+            
+        Returns:
+            str: The classification string corresponding to MarketRegime values.
+        """
+        # Crash Detection Priority
+        if MarketRegime._is_crash(volatility, trend):
+            return MarketRegime.CRASH.value
+
         if volatility == "high":
             return "high_volatility"
         if volatility == "low":
@@ -140,6 +160,12 @@ class RegimeDetector:
                 "stop_loss": 0.05,
                 "take_profit": 0.20,
                 "position_size": 0.3,
+            },
+            "CRASH (市場崩壊警報)": {
+                "strategy": "CIRCUIT_BREAKER",
+                "stop_loss": 0.0,
+                "take_profit": 0.0,
+                "position_size": 0.0,
             },
             "low_volatility": {
                 "strategy": "range_trading",
