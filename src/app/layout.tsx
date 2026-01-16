@@ -26,6 +26,7 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning>
       <body
         className={`${outfit.variable} font-sans antialiased bg-background text-foreground overflow-hidden`}
+        suppressHydrationWarning
       >
         <ThemeProvider
           attribute="class"
