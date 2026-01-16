@@ -12,6 +12,9 @@ import AIAdvisorPanel from '@/components/dashboard/AIAdvisorPanel'
 // Phase 11 New Components
 import SystemMonitor from '@/components/dashboard/SystemMonitor'
 import AIAgentAvatar from '@/components/dashboard/AIAgentAvatar'
+// Phase 13 New Components
+import DashboardOnboarding from '@/components/dashboard/DashboardOnboarding'
+import { useQuery } from '@tanstack/react-query'
 
 // Curated AI/Semiconductor focused stocks to watch
 const WATCHLIST = [
@@ -24,6 +27,41 @@ const WATCHLIST = [
 ]
 
 export default function Home() {
+  const { data: portfolio, isLoading } = useQuery({
+    queryKey: ['portfolio'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/v1/portfolio')
+        if (!res.ok) return null // Handle failure gracefully
+        return res.json()
+      } catch (e) {
+        return null
+      }
+    },
+    refetchInterval: 5000
+  })
+
+  // Show loading state or skeleton if needed
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-primary animate-pulse">SYSTEM SYNCHRONIZING...</div>
+  }
+
+  // Check for Zero State (Void)
+  // If portfolio is null (API down) or total_equity is 0 (No funds)
+  const isZeroState = !portfolio || portfolio.total_equity === 0
+
+  // NOTE: For development/testing, if API is down, we might want to show Onboarding or Error.
+  // Currently defaulting to Onboarding if no data.
+
+  if (isZeroState) {
+    return (
+      <div className="flex flex-col min-h-screen items-center justify-center p-4">
+        <AIAgentAvatar state="IDLE" />
+        <DashboardOnboarding />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <MacroStrip />
