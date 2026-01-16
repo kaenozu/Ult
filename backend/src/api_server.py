@@ -164,46 +164,42 @@ def create_app() -> FastAPI:
             "health": "/health",
         }
 
+    @app.get("/health", response_model=HealthResponse, tags=["System"])
+    async def health_check():
+        """Health Check"""
+        start_time_req = time.time()
+        uptime = time.time() - start_time
 
-@app.get("/health", response_model=HealthResponse, tags=["System"])
-async def health_check():
-    """Health Check"""
-    start_time_req = time.time()
-    uptime = time.time() - start_time
+        # ヘルスチェック結果取得
+        health_status = monitoring_system.get_health_status()
 
-    # ヘルスチェック結果取得
-    health_status = monitoring_system.get_health_status()
+        response_time = time.time() - start_time_req
 
-    response_time = time.time() - start_time_req
+        # APIリクエストログ
+        structured_logger.log_api_request(
+            method="GET", path="/health", status_code=200, duration=response_time
+        )
 
-    # APIリクエストログ
-    structured_logger.log_api_request(
-        method="GET", path="/health", status_code=200, duration=response_time
-    )
+        return HealthResponse(
+            status=health_status["overall_status"],
+            version="3.0.0",
+            timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"),
+        )
 
-    return HealthResponse(
-        status=health_status["overall_status"],
-        version="3.0.0",
-        timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"),
-    )
+    @app.get("/monitoring/health", tags=["Monitoring"])
+    async def monitoring_health():
+        """Monitoring Health Status"""
+        return monitoring_system.get_health_status()
 
+    @app.get("/monitoring/alerts", tags=["Monitoring"])
+    async def monitoring_alerts():
+        """Active Monitoring Alerts"""
+        return {"alerts": monitoring_system.get_active_alerts()}
 
-@app.get("/monitoring/health", tags=["Monitoring"])
-async def monitoring_health():
-    """Monitoring Health Status"""
-    return monitoring_system.get_health_status()
-
-
-@app.get("/monitoring/alerts", tags=["Monitoring"])
-async def monitoring_alerts():
-    """Active Monitoring Alerts"""
-    return {"alerts": monitoring_system.get_active_alerts()}
-
-
-@app.get("/monitoring/metrics", tags=["Monitoring"])
-async def monitoring_metrics():
-    """Monitoring Metrics Summary"""
-    return monitoring_system.get_metrics_summary()
+    @app.get("/monitoring/metrics", tags=["Monitoring"])
+    async def monitoring_metrics():
+        """Monitoring Metrics Summary"""
+        return monitoring_system.get_metrics_summary()
 
     # Global Exception Handler - Security-focused
     @app.exception_handler(Exception)
