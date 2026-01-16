@@ -1,39 +1,45 @@
-# Implementation Plan - Living Nexus & Strategy Shifter
+# Implementation Plan - Phase 3: Realtime Synapse & Persona Protocol
 
-We will enhance the previously implemented features to V2 status ("Living" and "Shifting").
-
-# Goal Description
-1.  **Living Nexus (Frontend):** Make the `EcosystemGraph` interactive ("Ghost in the Shell") and capable of handling live updates.
-2.  **Strategy Shifter (Backend):** Integrate the "Crash Detection" logic into the core `RegimeDetector` and ensure it outputs strict risk parameters (Circuit Breaker).
+This phase focuses on establishing a real-time communication channel (WebSocket) between the backend and frontend to stream market regime data and enable dynamic "Persona" UI updates.
 
 ## User Review Required
+
 > [!IMPORTANT]
-> We are merging the lightweight `strategies/ml/regime_detector.py` logic into the robust `backend/src/regime_detector.py`.
-> The `CRASH` state will force `position_size: 0.0` (Hard Stop).
+> **WebSocket Strategy**: We will use a standard `WebSocket` connection. The backend will broadcast the `market_regime` and critical alerts.
+> **Persona Logic**: The "Persona" (e.g., Big Pickle, MiniMax) will react to this stream.
 
 ## Proposed Changes
 
-### Frontend
-#### [MODIFY] [EcosystemGraph.tsx](file:///c:/gemini-thinkpad/Ult/src/components/visualizations/EcosystemGraph.tsx)
--   Add `onNodeClick` handler to trigger a "Ghost" dialogue (simulated AI comment about the stock).
--   Add visual pulsing effects for "Live" feel.
--   Refine Cyberpunk aesthetics based on the concept art (if possible with CSS/Canvas adjustment).
+### Backend (Python/FastAPI)
 
-### Backend
-#### [MODIFY] [regime_detector.py](file:///c:/gemini-thinkpad/Ult/backend/src/regime_detector.py)
--   Add `CRASH` to `MarketRegime` enum (or string constants).
--   Implement `_detect_crash` logic (Drawdown < -10% or ADX + VIX extreme).
--   Update `get_regime_strategy` to return `position_size: 0.0` for `CRASH`.
+#### [NEW] [websocket_manager.py](file:///c:/gemini-thinkpad/Ult/backend/src/api/websocket_manager.py)
+- Create a `ConnectionManager` class to handle active websocket connections.
+- Methods: `connect`, `disconnect`, `broadcast`.
 
-#### [DELETE] [backend/src/strategies/ml/regime_detector.py](file:///c:/gemini-thinkpad/Ult/backend/src/strategies/ml/regime_detector.py)
--   Cleanup the duplicate experimental file.
+#### [MODIFY] [market.py](file:///c:/gemini-thinkpad/Ult/backend/src/api/routers/market.py)
+- Add WebSocket endpoint `/ws/market-stream`.
+- Integrate `ConnectionManager`.
+- Implement a background task (or hook into the existing loop) to push updates when `MarketRegime` changes.
+
+### Frontend (Next.js/TypeScript)
+
+#### [NEW] [useMarketStream.ts](file:///c:/gemini-thinkpad/Ult/src/hooks/useMarketStream.ts)
+- Custom hook to manage WebSocket connection.
+- Handles reconnection logic and state updates (Redux or Context).
+
+#### [MODIFY] [MarketStatusCard.tsx](file:///c:/gemini-thinkpad/Ult/src/components/dashboard/MarketStatusCard.tsx)
+- Connect to `useMarketStream`.
+- Visual updates based on "Vibe" (Regime).
+    - **Crash/Panic**: Red pulsing, "SELL EVERYTHING" (Big Pickle persona)
+    - **Bull/Euphoria**: Green/Neon, "TO THE MOON"
+    - **Neutral**: Standard view.
 
 ## Verification Plan
 
 ### Automated Tests
--   Update unit tests for `regime_detector.py` to include CRASH scenarios.
--   Verify `get_regime_strategy('CRASH')` returns correct safety parameters.
+- Unit test for `websocket_manager.py`.
+- Integration test checking connection and message receipt.
 
 ### Manual Verification
--   **Frontend:** Click nodes in the graph and verify the "Ghost" speaks.
--   **Backend:** Mock a market crash data frame and assert the detector returns "CRASH".
+- **Visual Check**: Open the dashboard, manually trigger a regime change (via a dev tool or mock), and verify the UI "Vibe" shift (Colors, Text).
+- **Network Tab**: Confirm WS connection `101 Switching Protocols` and frame data.

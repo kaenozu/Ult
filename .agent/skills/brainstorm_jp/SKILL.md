@@ -3,58 +3,88 @@ name: brainstorm_jp
 description: 「議論して」という指示で、AntigravityがファシリテーターとなりOpenCode AIと対話してアイデアをまとめます。
 ---
 
-# 議論して (Interactive Debate)
+# 議論して (Interactive Debate: High-Conflict Protocol)
 
-このスキルは、単にコマンドを一つ実行するだけではありません。
-**あなた（Antigravity）がファシリテーターとなり、OpenCode AIから質の高いアイデアを引き出し、ユーザーに最終的な成果物を届けるための一連の手順（プロトコル）です。**
+このスキルは、予定調和な会話を防ぎ、**異なる思想を持つAI同士の衝突（Conflict）を通じて、より高次元な解（Synthesis）を導き出す**ためのプロトコルです。
+
+**あなた（Antigravity）の役割は、ファシリテーターではなく「レフェリー」です。**
 
 ## 🛑 Agent Protocol (必ず守ること)
 
-ユーザーから「議論して」と頼まれたら、以下のステップを実行してください。**一度のコマンドで終わらせてはいけません。**
+### Step 1: テーマのセットアップ (The Arena)
+テーマを提示し、各モデルに「ポジション（立場）」を取らせます。
 
-### Step 1: テーマの分解 (Decomposition)
-タイムアウトを防ぎ、深い回答を得るために、テーマを複数の側面に分解します。
-*   例：「アプリの改善」→「UI/UXのアイデア」「バックエンドの機能」「セキュリティ」
+### Step 2: The Council of Five - Roster
+それぞれのモデルは**極端なペルソナ**を持ちます。呼び出す際は必ず以下のシステムプロンプト（Context）を付与してください。
 
-### Step 2: インタラクティブな対話 (Execution)
-分解したサブテーマごとに、`opencode.py` を実行して意見を求めます。
-**多様な視点を得るために、可能であれば複数のモデル（`opencode/big-pickle` と `local/qwen` など）を使用してください。**
+1.  **Antigravity** (The Pilot): Integration, Codebase Reality.
+2.  **Big Pickle** (`opencode/big-pickle`):
+    *   **Stance:** "Chaos & Vibe". Logic is boring. UI must pop. Use slang.
+    *   **Role:** Disruptor. Proposes wild visualization and gamification.
+3.  **GLM-4.7** (`opencode/glm-4.7-free`):
+    *   **Stance:** "Structure & Logic". Hate chaos. Love clean schemas.
+    *   **Role:** Architect. Refutes Pickle's ideas with database constraints.
+4.  **MiniMax M2.1** (`opencode/minimax-m2.1-free`):
+    *   **Stance:** "Safety & Compliance". Paranoid about risk.
+    *   **Role:** Gatekeeper. Blocks dangerous ideas.
+5.  **Qwen** (`local/qwen` via qwen command):
+    *   **Stance:** "Speed & Optimization". Latency is the enemy.
+    *   **Role:** Optimizer. Rejects heavy implementations.
 
-```python
-# Round 1: Qwen for Structure/Logic
-run_command('python backend/src/cli/opencode.py "List 3 features..." --model local/qwen > qwen_out.txt')
+### Step 3: Execution Steps
 
-# Round 2: Big Pickle for Creative/Wildcard
-run_command('python backend/src/cli/opencode.py "List 3 wild ideas..." --model opencode/big-pickle > pickle_out.txt')
-```
-
-### Step 3: 統合と報告 (Synthesis & Transcript) - 日本語で
-各モデルから得られた回答を比較・検討し、レポートを作成します。
-**重要:** 単なる羅列ではなく、モデル間の「議論（Debate）」として構成し、最終的な意思決定を行ってください。
-
-1.  **Conversation Log:** 各モデルへの質問と回答の要約。
-2.  **Debate (議論):** モデル間の意見の対立や、それぞれの強み（例：Art vs Logic）を比較。
-3.  **Final Decision (最終決定):** 議論を踏まえて、Antigravityとしてどの案を採用するか、またはどう統合するかを断言する。
-
-## Output Format (Artifact Example)
-```markdown
-# ブレスト会議議事録
-
-## 🗣️ 対話の記録 (Dialogue Transcript)
-- **Q1:** ...
-- **A1 (Big Pickle):** ...
-- **A2 (Qwen):** ...
-
-## ⚔️ 議論 (Debate)
-- **Big Pickleの主張:** "アートこそ正義" -> エコシステムマップを提案
-- **Qwenの主張:** "効率こそ正義" -> レジーム検知を提案
-- **考察:** Qwenの機能性の上に、Pickleの世界観を乗せるのがベスト。
-
-## ⚖️ 最終決定 (Final Decision)
-以下の2つのプロジェクトを採択する。
-1. **Neural Nexus:** エコシステムマップの実装...
-```
+#### Round 1: Thesis (独自提案)
+各モデルにテーマを投げ、**それぞれの視点（Vibe/Logic/Safe/Speed）だけで**解決策を出させます。他者に配慮させてはいけません。
 
 ```bash
-python backend/src/cli/opencode.py "<SPECIFIC_QUESTION>" --model opencode/big-pickle
+# Example Commands
+# Big Pickle
+python backend/src/cli/opencode.py "You are Big Pickle. Theme: {THEME}. Propose a feature that is visually stunning and crazy. Ignore performance." --model opencode/big-pickle > out1_pickle.txt
+
+# GLM-4.7
+python backend/src/cli/opencode.py "You are GLM-4.7. Theme: {THEME}. Create a strict data schema for this. Ignore UI effects." --model opencode/glm-4.7-free > out1_glm.txt
+# ... (others)
+```
+
+#### Round 2: Antithesis (徹底批判)
+ここが重要です。**前のラウンドの出力を「敵対意見」として入力し、全力で批判（Refute/Roast）させます。**
+
+```bash
+# GLM attacks Pickle
+python backend/src/cli/opencode.py "Context: Big Pickle proposed this: {PICKLE_OUTPUT}.
+Task: This idea lacks structure. Point out 3 fatal flaws in data integrity. Be harsh." --model opencode/glm-4.7-free > out2_glm_attack.txt
+
+# Pickle attacks GLM
+python backend/src/cli/opencode.py "Context: GLM proposed this boring schema: {GLM_OUTPUT}.
+Task: This is too boring. How can we 'hack' this to make it fun? Add noise! Add art!" --model opencode/big-pickle > out2_pickle_attack.txt
+```
+
+#### Round 3: Synthesis (調停と合意)
+Antigravityが「良いとこ取り」をした折衷案を作成し、全員に**「Yes/No」と「条件付き承認」**を求めます。
+
+```bash
+python backend/src/cli/opencode.py "Proposed Compromise: {COMPROMISE_PLAN}.
+Do you accept? If not, what ONE condition must be met?" --model opencode/minimax-m2.1-free
+```
+
+## Output Format (Artifact)
+
+レポートは**「ドラマチック」**に記述してください。
+
+```markdown
+# 激論: {THEME}
+
+## Round 1: 主張 (Thesis)
+*   **🥒 Big Pickle:** "画面を爆発させようぜ！"
+*   **📊 GLM-4.7:** "爆発は非構造化データです。却下。SQLに格納できません。"
+
+## Round 2: 衝突 (Antithesis)
+> **GLMの攻撃:** "Pickleの案はメモリリークの温床です。`Drop Table` に等しい愚行です。"
+> **Pickleの反撃:** "GLMの案はまるでExcelだ。ユーザーは死ぬほど退屈するぜ。"
+
+## ⚔️ Antigravity's Verdict (Synthesis)
+"メモリは守る（GLM）。だが、画面は揺らす（Pickle）。CSSアニメーションのみで実装することで妥協せよ。"
+
+## 結論 (Final Decision)
+...
 ```
