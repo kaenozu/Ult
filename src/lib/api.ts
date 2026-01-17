@@ -10,7 +10,7 @@ import {
 } from "@/types";
 
 // Re-export for components that import from api.ts
-export type { TradeRequest } from "@/types";
+export type { TradeRequest, SignalResponse } from "@/types";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -50,7 +50,7 @@ api.interceptors.response.use(
         response.config.method,
         response.config.url,
         response.status,
-        Date.now() - response.config.timestamp,
+        Date.now() - (response.config as any).timestamp,
       );
     }
     return response;
@@ -63,7 +63,7 @@ api.interceptors.response.use(
 
 // Add timestamp to requests for performance monitoring
 api.interceptors.request.use((config) => {
-  config.timestamp = Date.now();
+  (config as any).timestamp = Date.now();
   return config;
 });
 
