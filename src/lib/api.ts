@@ -133,3 +133,22 @@ export const resetPortfolio = async (initial_capital: number): Promise<{ success
   const response = await api.post('/settings/reset-portfolio', { initial_capital })
   return response.data
 }
+
+export interface WatchlistItem {
+  ticker: string
+  name: string
+  price: number
+  change: number
+  change_percent: number
+  signal: number
+  confidence: number
+  sector: string
+  earnings_date?: string | null
+  days_to_earnings?: number | null
+  safety_triggered?: boolean
+}
+
+export const getWatchlist = async (): Promise<WatchlistItem[]> => {
+  const response = await api.get<WatchlistItem[]>('/market/watchlist')
+  return response.data
+}

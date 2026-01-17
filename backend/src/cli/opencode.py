@@ -51,8 +51,11 @@ def main():
                 timeout=120 # Increased timeout for local models
             )
             
+            output_lines = process.stdout.splitlines()
+            cleaned_output = "\n".join([line for line in output_lines if not line.strip().startswith("Active code page:")])
+            
             res["executed"] = True
-            res["output"] = process.stdout
+            res["output"] = cleaned_output + "\n" if cleaned_output else ""
             res["error"] = process.stderr
             res["returncode"] = process.returncode
         except Exception as e:

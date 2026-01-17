@@ -13,6 +13,11 @@ import {
   SubscribeMessage,
   UnsubscribeMessage,
   GetStatusMessage,
+  AgentActivityMessage,
+  CircuitBreakerStatusMessage,
+  CircuitBreakerTrippedMessage,
+  ApprovalRequestMessage,
+  ApprovalResponseMessage,
 } from "@/types/websocket";
 
 // ============================================================================
@@ -50,6 +55,7 @@ interface UseSynapseReturn {
       | "price_alerts"
       | "portfolio_updates"
       | "trades"
+      | "approvals"
       | "all"
     )[],
   ) => void;
@@ -66,7 +72,15 @@ interface UseSynapseReturn {
 
   // Handlers
   onMessage: <
-    T extends RegimeUpdateMessage | PriceAlertMessage | PortfolioUpdateMessage,
+    T extends
+      | RegimeUpdateMessage
+      | PriceAlertMessage
+      | PortfolioUpdateMessage
+      | AgentActivityMessage
+      | CircuitBreakerStatusMessage
+      | CircuitBreakerTrippedMessage
+      | ApprovalRequestMessage
+      | ApprovalResponseMessage,
   >(
     type: T["type"],
     handler: (message: T) => void,
@@ -134,6 +148,10 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
         // Send initial subscription if userId provided
         if (userId) {
           const subscribeMsg = MessageFactory.subscribe(["all"], userId);
+          ws.send(JSON.stringify(subscribeMsg));
+        } else {
+          // Subscribe to approvals by default for instant cards
+          const subscribeMsg = MessageFactory.subscribe(["approvals"]);
           ws.send(JSON.stringify(subscribeMsg));
         }
 
@@ -248,6 +266,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
         | "price_alerts"
         | "portfolio_updates"
         | "trades"
+        | "approvals"
         | "all"
       )[],
     ) => {
@@ -264,6 +283,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
         | "price_alerts"
         | "portfolio_updates"
         | "trades"
+        | "approvals"
         | "all"
       )[],
     ) => {
@@ -287,7 +307,12 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
       T extends
         | RegimeUpdateMessage
         | PriceAlertMessage
-        | PortfolioUpdateMessage,
+        | PortfolioUpdateMessage
+        | AgentActivityMessage
+        | CircuitBreakerStatusMessage
+        | CircuitBreakerTrippedMessage
+        | ApprovalRequestMessage
+        | ApprovalResponseMessage,
     >(
       type: T["type"],
       handler: (message: T) => void,
@@ -386,5 +411,42 @@ export function usePortfolioUpdates(
 
   useEffect(() => {
     onMessage<PortfolioUpdateMessage>("portfolio_update", callback);
+  }, [onMessage, callback]);
+}
+
+export function useAgentActivity(
+  callback: (message: AgentActivityMessage) => void,
+) {
+  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+
+  useEffect(() => {
+    onMessage<AgentActivityMessage>("agent_activity", callback);
+  }, [onMessage, callback]);
+}
+
+export function useCircuitBreakerStream(
+  callback: (
+    message: CircuitBreakerStatusMessage | CircuitBreakerTrippedMessage,
+  ) => void,
+) {
+  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+
+  useEffect(() => {
+    onMessage<CircuitBreakerStatusMessage>("circuit_breaker_status", callback);
+    onMessage<CircuitBreakerTrippedMessage>(
+      "circuit_breaker_tripped",
+      callback,
+    );
+  }, [onMessage, callback]);
+}
+
+export function useApprovalStream(
+  callback: (message: ApprovalRequestMessage | ApprovalResponseMessage) => void,
+) {
+  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+
+  useEffect(() => {
+    onMessage<ApprovalRequestMessage>("approval_request", callback);
+    onMessage<ApprovalResponseMessage>("approval_response", callback);
   }, [onMessage, callback]);
 }

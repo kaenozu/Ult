@@ -26,7 +26,7 @@ class LightGBMStrategy(Strategy):
         self.best_params = None
         self.model = None
         self.oracle = Oracle2026()  # Sovereign Integrate
-        self.default_positive_threshold = 0.505  # [AGGRESSIVE MODE] Lowered for Paper Trading Learning
+        self.default_positive_threshold = 0.52  # [GUARDIAN MODE] Reverted after fixing Data Starvation
         self.default_negative_threshold = 0.48  # Balanced for practical trading
         self.feature_cols = [
             "ATR",

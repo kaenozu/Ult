@@ -378,6 +378,25 @@ class TypedWebSocketManager:
         return self._connections.get(connection_id)
 
 
+    async def broadcast_agent_thought(self, thought: dict) -> int:
+        """Broadcast an agent thought"""
+        # Phase 4: Construct a proper message envelope
+        msg = MessageFactory.agent_activity(
+            activity_type="THOUGHT",
+            data=thought
+        )
+        return await self.broadcast(msg, channel="agent_activity")
+
+    async def broadcast_agent_action(self, action: dict) -> int:
+        """Broadcast an agent action"""
+        # Phase 4: Construct a proper message envelope
+        msg = MessageFactory.agent_activity(
+            activity_type="ACTION",
+            data=action
+        )
+        return await self.broadcast(msg, channel="agent_activity")
+
+
 # ============================================================================
 # GLOBAL INSTANCE
 # ============================================================================
