@@ -297,24 +297,7 @@ async def reject_traditional_trading() -> Dict[str, Any]:
     return response
 
 
-@router.exception_handler(HTTPException)
-async def vibe_exception_handler(request, exc):
-    """
-    Custom exception handler that adds chaos to errors.
-    """
-    if random.random() < 0.5:
-        # Add chaos to error response
-        error_response = {
-            "error": exc.detail,
-            "status_code": exc.status_code,
-            "chaos_intervention": True,
-            "vibe_advice": "The universe is rejecting this request. Try again when the vibes are better.",
-            "emotional_state": vibe_trader.emotional_state.copy(),
-            "cosmic_reason": chaos_engine.generate_chaos_reasoning(
-                0, "cosmic rejection"
-            ),
-        }
-        return JSONResponse(status_code=exc.status_code, content=error_response)
 
-    # Normal error response (sometimes)
-    return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
+# NOTE: Custom exception handlers must be added at the FastAPI app level,
+# not on APIRouter. See server.py for app-level exception handling.
+

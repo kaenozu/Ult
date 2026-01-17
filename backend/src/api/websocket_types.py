@@ -256,6 +256,60 @@ class WsErrorPayload(BaseModel):
 
 
 # ============================================================================
+# APPROVAL SYSTEM: Human-in-the-loop Controls
+# ============================================================================
+
+
+class ApprovalType(str, Enum):
+    """Type of action requiring approval"""
+
+    TRADE = "trade"
+    REBALANCE = "rebalance"
+    STRATEGY_CHANGE = "strategy_change"
+    BUDGET_INCREASE = "budget_increase"
+    KILL_SWITCH_DEACTIVATE = "kill_switch_deactivate"
+    SYSTEM_CONFIG = "system_config"
+
+
+class ApprovalStatus(str, Enum):
+    """Status of an approval request"""
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
+class ApprovalRequestPayload(BaseModel):
+    """Approval request sent to human operator"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    request_id: str
+    type: ApprovalType
+    title: str
+    description: str
+    context: dict  # Trade details, amounts, etc.
+    requester: str  # Agent or system component name
+    priority: Literal["low", "medium", "high", "critical"] = "medium"
+    expires_at: datetime
+    created_at: datetime
+
+
+class ApprovalResponsePayload(BaseModel):
+    """Human operator's response to an approval request"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    request_id: str
+    status: ApprovalStatus
+    responder: str  # Human operator identifier
+    reason: Optional[str] = None
+    responded_at: datetime
+
+
+# ============================================================================
 # CIRCUIT BREAKER: Hard Budget Limit & Kill Switch
 # ============================================================================
 
