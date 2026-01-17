@@ -81,6 +81,14 @@ class Config(BaseSettings):
     risk_management: RiskManagementSettings = Field(
         default_factory=RiskManagementSettings
     )
+<<<<<<< HEAD
+=======
+
+    # CORS settings for security
+    cors_origins: List[str] = Field(
+        default=["http://localhost:3000"], description="Allowed CORS origins"
+    )
+>>>>>>> origin/main
 
     # Other legacy constants mapped
     tickers_jp: List[str] = ["7203.T", "9984.T", "6758.T", "8035.T", "6861.T"]

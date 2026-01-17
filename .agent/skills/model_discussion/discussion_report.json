@@ -1,0 +1,48 @@
+{
+  "input_text": "機械学習の将来について議論して",
+  "topic": "機械学習の将来について",
+  "timestamp": "2026-01-16 23:05:25",
+  "responses": [
+    {
+      "model": "Big-Pickle",
+      "response": "Big-Pickleの包括的な見解：\n\n機械学習の将来についてについて、以下の視点から分析します：\n\n1. 全体像の観点から見ると...\n2. 構造側面を考慮すると...\n3. 統合な判断として...\n\n結論として、包括的なアプローチが最適と考えます。",
+      "style": "包括的",
+      "success": true,
+      "response_time": 2.0
+    },
+    {
+      "model": "GLM-4.7",
+      "response": "GLM-4.7の技術的な見解：\n\n機械学習の将来についてについて、以下の視点から分析します：\n\n1. 詳細の観点から見ると...\n2. 正確性側面を考慮すると...\n3. 専門性な判断として...\n\n結論として、技術的なアプローチが最適と考えます。",
+      "style": "技術的",
+      "success": true,
+      "response_time": 2.0
+    },
+    {
+      "model": "MiniMax-M2.1",
+      "response": "MiniMax-M2.1の実用的な見解：\n\n機械学習の将来についてについて、以下の視点から分析します：\n\n1. 具体の観点から見ると...\n2. 実装側面を考慮すると...\n3. 手法な判断として...\n\n結論として、実用的なアプローチが最適と考えます。",
+      "style": "実用的",
+      "success": true,
+      "response_time": 2.0
+    },
+    {
+      "model": "Grok-Code-Fast-1",
+      "response": "Grok-Code-Fast-1の革新的な見解：\n\n機械学習の将来についてについて、以下の視点から分析します：\n\n1. 新規性の観点から見ると...\n2. 効率側面を考慮すると...\n3. 最適化な判断として...\n\n結論として、革新的なアプローチが最適と考えます。",
+      "style": "革新的",
+      "success": true,
+      "response_time": 2.0
+    }
+  ],
+  "summary": {
+    "topic": "機械学習の将来について",
+    "consensus_type": "多様な見解",
+    "dominant_approach": "包括的",
+    "total_models": 4,
+    "successful_models": 4,
+    "recommendation": "包括的なアプローチが最も支持されました",
+    "next_steps": [
+      "1. 主な論点を整理する",
+      "2. 実装計画を立てる",
+      "3. チームで合意形成する"
+    ]
+  }
+}
