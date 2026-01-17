@@ -14,6 +14,7 @@ backend_root = current_file.parents[2]  # src/api/server.py -> src/api -> src ->
 if str(backend_root) not in sys.path:
     sys.path.insert(0, str(backend_root))
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -34,15 +35,11 @@ from src.api.routers import (
     approvals,
 )
 from src.api.vibe_endpoints import router as vibe_router
-from src.core.agent_loop import AutonomousAgent
+from src.di import container
 
 logger = logging.getLogger(__name__)
 
-# グローバルアプリインスタンス
-_app: Optional[FastAPI] = None
-
-# Autonomous Agent Instance
-_agent: Optional[AutonomousAgent] = None
+# Dependency injection container handles all instances
 
 # === Lifespan ===
 
@@ -50,19 +47,25 @@ _agent: Optional[AutonomousAgent] = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """アプリケーションのライフサイクル管理"""
-    global _agent
-    logger.info("AGStock API starting...")
+    logger.info("Living Nexus API starting...")
 
-    # 起動時の初期化: Autonomous Agent開始
-    _agent = AutonomousAgent(check_interval=5.0)  # 5秒間隔
-    await _agent.start()
+    # Start background tasks using dependency injection
+    from src.api.routers.websocket import start_regime_monitoring
+
+    monitoring_task = asyncio.create_task(start_regime_monitoring())
+
+    # Initialize WebSocket connections if needed
+    # Future: Initialize database connections, cache, etc.
 
     yield
 
     # シャットダウン時のクリーンアップ
-    if _agent:
-        await _agent.stop()
-    logger.info("AGStock API shutting down...")
+    logger.info("Living Nexus API shutting down...")
+    monitoring_task.cancel()
+    try:
+        await monitoring_task
+    except asyncio.CancelledError:
+        pass
 
 
 # === App Factory ===
@@ -130,17 +133,12 @@ def create_app() -> FastAPI:
     return app
 
 
-def get_app() -> FastAPI:
-    """シングルトンアプリインスタンスを取得"""
-    global _app
-    if _app is None:
-        _app = create_app()
-    return _app
+# Direct app creation - no global state needed
 
 
 # Module-level app instance for uvicorn compatibility
 # Usage: uvicorn src.api.server:app --reload
-app = get_app()
+app = create_app()
 
 
 # === Main ===

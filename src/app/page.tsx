@@ -4,36 +4,45 @@ import React from "react";
 import MatrixRain from "@/components/ui/matrix-rain";
 import { useQuery } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
+import { ComponentLoading } from "@/components/shared/Loading";
 
 // Core components - immediate load
 import { SwipeNotificationDemo } from "@/components/demo/SwipeNotificationDemo";
 
-// Heavy components - lazy load
+// Heavy components - lazy load with unified loading
 const MatrixPortfolioSummary = dynamic(
   () => import("@/components/features/dashboard/MatrixPortfolioSummary"),
   {
-    loading: () => <div className="h-32 bg-gray-800 animate-pulse rounded" />,
+    loading: () => (
+      <ComponentLoading height="h-32" message="Loading Portfolio..." />
+    ),
   },
 );
 
 const SignalCard = dynamic(
   () => import("@/components/features/dashboard/SignalCard"),
   {
-    loading: () => <div className="h-24 bg-gray-800 animate-pulse rounded" />,
+    loading: () => (
+      <ComponentLoading height="h-24" message="Loading Signals..." />
+    ),
   },
 );
 
 const AutoTradeControls = dynamic(
   () => import("@/components/features/dashboard/AutoTradeControls"),
   {
-    loading: () => <div className="h-48 bg-gray-800 animate-pulse rounded" />,
+    loading: () => (
+      <ComponentLoading height="h-48" message="Loading Controls..." />
+    ),
   },
 );
 
 const MatrixPositionList = dynamic(
   () => import("@/components/features/dashboard/MatrixPositionList"),
   {
-    loading: () => <div className="h-64 bg-gray-800 animate-pulse rounded" />,
+    loading: () => (
+      <ComponentLoading height="h-64" message="Loading Positions..." />
+    ),
   },
 );
 
@@ -42,49 +51,96 @@ const EcosystemGraph = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-96 bg-gray-800 animate-pulse rounded flex items-center justify-center text-cyan-500">
-        Loading Neural Network...
-      </div>
+      <ComponentLoading
+        height="h-96"
+        message="Initializing Neural Network..."
+      />
     ),
   },
 );
 
 const MacroStrip = dynamic(
   () => import("@/components/features/dashboard/MacroStrip"),
+  {
+    loading: () => (
+      <ComponentLoading height="h-16" message="Loading Market Data..." />
+    ),
+  },
 );
 const AIAdvisorPanel = dynamic(
   () => import("@/components/features/dashboard/AIAdvisorPanel"),
+  {
+    loading: () => (
+      <ComponentLoading height="h-40" message="Loading AI Advisor..." />
+    ),
+  },
 );
 const SystemMonitor = dynamic(
   () => import("@/components/features/dashboard/SystemMonitor"),
+  {
+    loading: () => (
+      <ComponentLoading height="h-32" message="Loading System Monitor..." />
+    ),
+  },
 );
 const AIAgentAvatar = dynamic(
   () => import("@/components/features/dashboard/AIAgentAvatar"),
+  {
+    loading: () => (
+      <ComponentLoading height="h-20" message="Loading AI Agent..." />
+    ),
+  },
 );
 const DashboardOnboarding = dynamic(
   () => import("@/components/features/dashboard/DashboardOnboarding"),
+  {
+    loading: () => (
+      <ComponentLoading height="h-48" message="Loading Tutorial..." />
+    ),
+  },
 );
 const MarketStatusCard = dynamic(
   () => import("@/components/features/dashboard/MarketStatusCard"),
+  {
+    loading: () => (
+      <ComponentLoading height="h-28" message="Loading Market Status..." />
+    ),
+  },
 );
 const PriceAlerts = dynamic(
   () => import("@/components/features/dashboard/PriceAlerts"),
+  {
+    loading: () => (
+      <ComponentLoading height="h-36" message="Loading Price Alerts..." />
+    ),
+  },
 );
 const NeuralMonitor = dynamic(
   () => import("@/components/NeuralMonitorAdvanced"),
   {
     ssr: false,
-    loading: () => <div className="h-32 bg-gray-800 animate-pulse rounded" />,
+    loading: () => (
+      <ComponentLoading height="h-32" message="Loading Neural Monitor..." />
+    ),
   },
 );
 
-const ApprovalCardsDemo = dynamic(() =>
-  import("@/components/features/approvals/ApprovalCardsDemo").then((mod) => ({
-    default: mod.ApprovalCardsDemo,
-  })),
+const ApprovalCardsDemo = dynamic(
+  () =>
+    import("@/components/features/approvals/ApprovalCardsDemo").then((mod) => ({
+      default: mod.ApprovalCardsDemo,
+    })),
+  {
+    loading: () => (
+      <ComponentLoading height="h-40" message="Loading Approvals..." />
+    ),
+  },
 );
 const VoidScene = dynamic(() => import("@/components/features/xr/VoidScene"), {
   ssr: false,
+  loading: () => (
+    <ComponentLoading height="h-64" message="Loading VR Scene..." />
+  ),
 });
 
 // Curated AI/Semiconductor focused stocks to watch
