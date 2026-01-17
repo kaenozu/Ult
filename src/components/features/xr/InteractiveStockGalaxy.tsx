@@ -366,10 +366,12 @@ const InteractiveStockGalaxy = memo(function InteractiveStockGalaxy() {
         prev.map((s) =>
           s.id === node.id ? { ...s, velocity, isGrabbed: false } : s,
         ),
-  );
-});
+      );
+    }
+    setGrabbedStock(null);
+  };
 
-export default InteractiveStockGalaxy;
+  const createExplosion = (node: StockNode) => {
     const newExplosions: ExplosionParticle[] = [];
     const colors = ["#ff3333", "#ff9933", "#ffff33", "#ffffff"];
 
@@ -395,51 +397,62 @@ export default InteractiveStockGalaxy;
     }, 2000);
   };
 
-  useFrame((state) => {
-    // Update thrown stocks
-    setStocks((prev) =>
-      prev.map((stock) => {
-        if (
-          !stock.isGrabbed &&
-          (stock.velocity[0] !== 0 ||
-            stock.velocity[1] !== 0 ||
-            stock.velocity[2] !== 0)
-        ) {
-          const newPos: [number, number, number] = [
-            stock.position[0] + stock.velocity[0] * 0.016,
-            stock.position[1] + stock.velocity[1] * 0.016,
-            stock.position[2] + stock.velocity[2] * 0.016,
-          ];
-          const newVel: [number, number, number] = [
-            stock.velocity[0] * 0.98,
-            stock.velocity[1] * 0.98 - 0.1, // gravity
-            stock.velocity[2] * 0.98,
-          ];
+  // Animation loop for stocks and explosions (using useEffect since this is outside Canvas)
+  React.useEffect(() => {
+    let animationId: number;
 
-          return { ...stock, position: newPos, velocity: newVel };
-        }
-        return stock;
-      }),
-    );
+    const animate = () => {
+      // Update thrown stocks
+      setStocks((prev) =>
+        prev.map((stock) => {
+          if (
+            !stock.isGrabbed &&
+            (stock.velocity[0] !== 0 ||
+              stock.velocity[1] !== 0 ||
+              stock.velocity[2] !== 0)
+          ) {
+            const newPos: [number, number, number] = [
+              stock.position[0] + stock.velocity[0] * 0.016,
+              stock.position[1] + stock.velocity[1] * 0.016,
+              stock.position[2] + stock.velocity[2] * 0.016,
+            ];
+            const newVel: [number, number, number] = [
+              stock.velocity[0] * 0.98,
+              stock.velocity[1] * 0.98 - 0.1, // gravity
+              stock.velocity[2] * 0.98,
+            ];
 
-    // Update explosions
-    setExplosions((prev) =>
-      prev.map((particle) => ({
-        ...particle,
-        position: [
-          particle.position[0] + particle.velocity[0],
-          particle.position[1] + particle.velocity[1],
-          particle.position[2] + particle.velocity[2],
-        ] as [number, number, number],
-        velocity: [
-          particle.velocity[0] * 0.98,
-          particle.velocity[1] * 0.98,
-          particle.velocity[2] * 0.98,
-        ] as [number, number, number],
-        life: particle.life * 0.98,
-      })),
-    );
-  });
+            return { ...stock, position: newPos, velocity: newVel };
+          }
+          return stock;
+        }),
+      );
+
+      // Update explosions
+      setExplosions((prev) =>
+        prev.map((particle) => ({
+          ...particle,
+          position: [
+            particle.position[0] + particle.velocity[0],
+            particle.position[1] + particle.velocity[1],
+            particle.position[2] + particle.velocity[2],
+          ] as [number, number, number],
+          velocity: [
+            particle.velocity[0] * 0.98,
+            particle.velocity[1] * 0.98,
+            particle.velocity[2] * 0.98,
+          ] as [number, number, number],
+          life: particle.life * 0.98,
+        })),
+      );
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animationId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationId);
+  }, []);
 
   return (
     <div className="relative w-full h-screen bg-black">
@@ -498,4 +511,6 @@ export default InteractiveStockGalaxy;
       </Canvas>
     </div>
   );
-}
+});
+
+export default InteractiveStockGalaxy;

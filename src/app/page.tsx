@@ -117,7 +117,7 @@ export default function Home() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-primary animate-pulse">
+      <div className="min-h-dvh flex items-center justify-center text-primary animate-pulse">
         SYSTEM SYNCHRONIZING...
       </div>
     );
@@ -126,7 +126,7 @@ export default function Home() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="text-red-500 text-xl font-bold">CONNECTION ERROR</div>
           <div className="text-gray-400 text-sm">
@@ -152,7 +152,7 @@ export default function Home() {
 
   if (isZeroState) {
     return (
-      <div className="flex flex-col min-h-screen items-center justify-center p-4">
+      <div className="flex flex-col min-h-dvh items-center justify-center p-4">
         <AIAgentAvatar state="IDLE" />
         <DashboardOnboarding />
       </div>
@@ -161,7 +161,7 @@ export default function Home() {
 
   return (
     <MatrixRain intensity={0.3}>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-dvh">
         <MacroStrip />
         <div className="p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto pb-32 flex-1 w-full">
           {/* Top Section: AI Status & Portfolio HUD */}
@@ -191,7 +191,7 @@ export default function Home() {
           <section>
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
+              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
                 In-App Swipe{" "}
                 <span className="text-muted-foreground text-sm ml-2 font-normal">
                   No More Context Switching
@@ -205,7 +205,7 @@ export default function Home() {
           <section>
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
+              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
                 Instant Approvals{" "}
                 <span className="text-muted-foreground text-sm ml-2 font-normal">
                   Ops Technical Design - Ephemeral UI
@@ -220,7 +220,7 @@ export default function Home() {
             {/* Phase 5: Void Terminal */}
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
+              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
                 The Void Terminal{" "}
                 <span className="text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded">
                   Phase 5.0
@@ -233,7 +233,7 @@ export default function Home() {
 
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
+              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
                 Neural Cortex{" "}
                 <span className="text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded">
                   Phase 4.2
@@ -255,7 +255,7 @@ export default function Home() {
           <section>
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
+              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
                 Profit Navigator{" "}
                 <span className="text-muted-foreground text-sm ml-2 font-normal">
                   AI Analysis Feed
@@ -278,7 +278,7 @@ export default function Home() {
           <section>
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
+              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
                 Active Assets
               </h2>
             </div>

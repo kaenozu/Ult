@@ -80,7 +80,7 @@ export default function MarketStatusCard() {
                     {vibe === 'bear' && <TrendingDown className="w-4 h-4 text-rose-400" />}
                     {vibe === 'panic' && <AlertTriangle className="w-4 h-4 text-rose-600" />}
                     {vibe === 'neutral' && <span className="text-xs">⚖️</span>}
-                    CONF: {(confidence * 100).toFixed(0)}%
+                    CONF: <span className="tabular-nums">{(confidence * 100).toFixed(0)}%</span>
                 </div>
             </div>
 
