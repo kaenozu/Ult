@@ -20,7 +20,12 @@ export type ServerToClientEventMessageType =
   | "price_alert"
   | "portfolio_update"
   | "trade_execution"
-  | "system_alert";
+  | "system_alert"
+  | "circuit_breaker_status"
+  | "circuit_breaker_tripped"
+  | "circuit_breaker_reset"
+  | "agent_activity"
+  | "approval_request";
 
 // Control Flow
 export type ControlFlowMessageType =
@@ -62,6 +67,25 @@ export enum ErrorSeverity {
 }
 
 // ============================================================================
+// CIRCUIT BREAKER ENUMS
+// ============================================================================
+
+export enum CircuitBreakerState {
+  CLOSED = "closed",
+  OPEN = "open",
+  HALF_OPEN = "half_open",
+}
+
+export enum CircuitBreakerTriggerType {
+  DAILY_LOSS_LIMIT = "daily_loss_limit",
+  MAX_DRAWDOWN = "max_drawdown",
+  HARD_BUDGET_LIMIT = "hard_budget_limit",
+  EMERGENCY_KILL_SWITCH = "emergency_kill_switch",
+  API_ERROR_THRESHOLD = "api_error_threshold",
+  MANUAL = "manual",
+}
+
+// ============================================================================
 // PAYLOAD TYPES
 // ============================================================================
 
@@ -72,6 +96,7 @@ export interface SubscribeRequestPayload {
     | "price_alerts"
     | "portfolio_updates"
     | "trades"
+    | "approvals"
     | "all"
   )[];
   user_id?: string;
@@ -83,6 +108,7 @@ export interface UnsubscribeRequestPayload {
     | "price_alerts"
     | "portfolio_updates"
     | "trades"
+    | "approvals"
     | "all"
   )[];
 }
@@ -149,6 +175,54 @@ export interface SystemAlertPayload {
   timestamp: string;
 }
 
+export interface AgentActivityPayload {
+  activity_type: "THOUGHT" | "ACTION";
+  content: Record<string, any>;
+  timestamp: string;
+}
+
+// ============================================================================
+// APPROVAL TYPES
+// ============================================================================
+
+export enum ApprovalType {
+  TRADE_EXECUTION = "trade_execution",
+  STRATEGY_CHANGE = "strategy_change",
+  RISK_LIMIT_CHANGE = "risk_limit_change",
+  EMERGENCY_ACTION = "emergency_action",
+}
+
+export enum ApprovalStatus {
+  PENDING = "pending",
+  APPROVED = "approved",
+  REJECTED = "rejected",
+  EXPIRED = "expired",
+}
+
+export interface ApprovalContext {
+  [key: string]: any;
+}
+
+export interface ApprovalRequestPayload {
+  request_id: string;
+  type: ApprovalType;
+  title: string;
+  description: string;
+  context: ApprovalContext;
+  requester: string;
+  priority: "low" | "medium" | "high" | "critical";
+  expires_at: string;
+  created_at: string;
+}
+
+export interface ApprovalResponsePayload {
+  request_id: string;
+  status: ApprovalStatus;
+  responder: string;
+  reason?: string;
+  responded_at: string;
+}
+
 // Control Flow Payloads
 export interface PongPayload {
   sequence: number;
@@ -182,6 +256,47 @@ export interface WsErrorPayload {
 }
 
 // ============================================================================
+// CIRCUIT BREAKER PAYLOADS
+// ============================================================================
+
+export interface CircuitBreakerConfig {
+  hard_budget_limit: number;
+  daily_loss_limit: number;
+  max_drawdown_limit: number;
+  failure_threshold: number;
+  failure_timeout: number;
+}
+
+export interface CircuitBreakerStatusPayload {
+  state: CircuitBreakerState;
+  can_trade: boolean;
+  total_losses: number;
+  peak_loss: number;
+  failure_count: number;
+  kill_switch_active: boolean;
+  manual_reset_required: boolean;
+  config: CircuitBreakerConfig;
+  timestamp: string;
+}
+
+export interface CircuitBreakerTrippedPayload {
+  state: CircuitBreakerState;
+  trigger_type: CircuitBreakerTriggerType;
+  trigger_reason: string;
+  total_losses: number;
+  kill_switch_active: boolean;
+  manual_reset_required: boolean;
+  timestamp: string;
+}
+
+export interface CircuitBreakerResetPayload {
+  previous_state: CircuitBreakerState;
+  triggered_at?: string;
+  reset_type: string;
+  timestamp: string;
+}
+
+// ============================================================================
 // MESSAGE ENVELOPE
 // ============================================================================
 
@@ -209,11 +324,23 @@ export type PriceAlertMessage = WsMessageEnvelope<PriceAlertPayload>;
 export type PortfolioUpdateMessage = WsMessageEnvelope<PortfolioUpdatePayload>;
 export type TradeExecutionMessage = WsMessageEnvelope<TradeExecutionPayload>;
 export type SystemAlertMessage = WsMessageEnvelope<SystemAlertPayload>;
+export type AgentActivityMessage = WsMessageEnvelope<AgentActivityPayload>;
+export type ApprovalRequestMessage = WsMessageEnvelope<ApprovalRequestPayload>;
+export type ApprovalResponseMessage =
+  WsMessageEnvelope<ApprovalResponsePayload>;
 export type PongMessage = WsMessageEnvelope<PongPayload>;
 export type SubscriptionConfirmedMessage =
   WsMessageEnvelope<SubscriptionConfirmedPayload>;
 export type StatusResponseMessage = WsMessageEnvelope<StatusResponsePayload>;
 export type ErrorMessage = WsMessageEnvelope<WsErrorPayload>;
+
+// Circuit Breaker Messages
+export type CircuitBreakerStatusMessage =
+  WsMessageEnvelope<CircuitBreakerStatusPayload>;
+export type CircuitBreakerTrippedMessage =
+  WsMessageEnvelope<CircuitBreakerTrippedPayload>;
+export type CircuitBreakerResetMessage =
+  WsMessageEnvelope<CircuitBreakerResetPayload>;
 
 // ============================================================================
 // UNION TYPES FOR ROUTING
@@ -234,7 +361,13 @@ export type AnyServerMessage =
   | PongMessage
   | SubscriptionConfirmedMessage
   | StatusResponseMessage
-  | ErrorMessage;
+  | ErrorMessage
+  | CircuitBreakerStatusMessage
+  | CircuitBreakerTrippedMessage
+  | CircuitBreakerResetMessage
+  | AgentActivityMessage
+  | ApprovalRequestMessage
+  | ApprovalResponseMessage;
 
 // ============================================================================
 // TYPE GUARDS (Runtime type checking)
@@ -276,6 +409,42 @@ export function isPongMessage(msg: AnyServerMessage): msg is PongMessage {
 
 export function isErrorMessage(msg: AnyServerMessage): msg is ErrorMessage {
   return msg.type === "error";
+}
+
+export function isCircuitBreakerStatusMessage(
+  msg: AnyServerMessage,
+): msg is CircuitBreakerStatusMessage {
+  return msg.type === "circuit_breaker_status";
+}
+
+export function isCircuitBreakerTrippedMessage(
+  msg: AnyServerMessage,
+): msg is CircuitBreakerTrippedMessage {
+  return msg.type === "circuit_breaker_tripped";
+}
+
+export function isCircuitBreakerResetMessage(
+  msg: AnyServerMessage,
+): msg is CircuitBreakerResetMessage {
+  return msg.type === "circuit_breaker_reset";
+}
+
+export function isAgentActivityMessage(
+  msg: AnyServerMessage,
+): msg is AgentActivityMessage {
+  return msg.type === "agent_activity";
+}
+
+export function isApprovalRequestMessage(
+  msg: AnyServerMessage,
+): msg is ApprovalRequestMessage {
+  return msg.type === "approval_request";
+}
+
+export function isApprovalResponseMessage(
+  msg: AnyServerMessage,
+): msg is ApprovalResponseMessage {
+  return msg.type === "approval_response";
 }
 
 export function isAnyServerMessage(msg: unknown): msg is AnyServerMessage {
@@ -375,6 +544,99 @@ export class MessageFactory {
       timestamp: new Date().toISOString(),
     };
   }
+
+  static circuitBreakerStatus(
+    state: CircuitBreakerState,
+    can_trade: boolean,
+    total_losses: number,
+    peak_loss: number,
+    failure_count: number,
+    kill_switch_active: boolean,
+    manual_reset_required: boolean,
+    config: CircuitBreakerConfig,
+  ): CircuitBreakerStatusMessage {
+    return {
+      msg_id: crypto.randomUUID(),
+      type: "circuit_breaker_status",
+      payload: {
+        state,
+        can_trade,
+        total_losses,
+        peak_loss,
+        failure_count,
+        kill_switch_active,
+        manual_reset_required,
+        config,
+        timestamp: new Date().toISOString(),
+      },
+      direction: "s2c",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  static circuitBreakerTripped(
+    state: CircuitBreakerState,
+    trigger_type: CircuitBreakerTriggerType,
+    trigger_reason: string,
+    total_losses: number,
+    kill_switch_active: boolean,
+    manual_reset_required: boolean,
+  ): CircuitBreakerTrippedMessage {
+    return {
+      msg_id: crypto.randomUUID(),
+      type: "circuit_breaker_tripped",
+      payload: {
+        state,
+        trigger_type,
+        trigger_reason,
+        total_losses,
+        kill_switch_active,
+        manual_reset_required,
+        timestamp: new Date().toISOString(),
+      },
+      direction: "s2c",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  static circuitBreakerReset(
+    previous_state: CircuitBreakerState,
+    triggered_at?: string,
+    reset_type: string = "automatic",
+  ): CircuitBreakerResetMessage {
+    return {
+      msg_id: crypto.randomUUID(),
+      type: "circuit_breaker_reset",
+      payload: {
+        previous_state,
+        triggered_at,
+        reset_type,
+        timestamp: new Date().toISOString(),
+      },
+      direction: "s2c",
+      timestamp: new Date().toISOString(),
+    };
+  }
+  static approvalResponse(
+    request_id: string,
+    status: ApprovalStatus,
+    responder: string,
+    reason?: string,
+  ): ApprovalResponseMessage {
+    return {
+      msg_id: crypto.randomUUID(),
+      type: "approval_response",
+      payload: {
+        request_id,
+        status,
+        responder,
+        reason,
+        responded_at: new Date().toISOString(),
+      },
+      direction: "c2s",
+      timestamp: new Date().toISOString(),
+    };
+  }
 }
 
 // ============================================================================
@@ -389,7 +651,7 @@ export function validateSubscribeRequestPayload(
   return (
     Array.isArray(p.channels) &&
     p.channels.every((ch) =>
-      ["regime", "price_alerts", "portfolio_updates", "trades", "all"].includes(
+      ["regime", "price_alerts", "portfolio_updates", "trades", "approvals", "all"].includes(
         ch,
       ),
     ) &&
@@ -429,6 +691,9 @@ export type MessageHandlerMap = {
   portfolio_update?: MessageHandler<PortfolioUpdateMessage>;
   trade_execution?: MessageHandler<TradeExecutionMessage>;
   system_alert?: MessageHandler<SystemAlertMessage>;
+  agent_activity?: MessageHandler<AgentActivityMessage>;
+  approval_request?: MessageHandler<ApprovalRequestMessage>;
+  approval_response?: MessageHandler<ApprovalResponseMessage>;
   pong?: MessageHandler<PongMessage>;
   subscription_confirmed?: MessageHandler<SubscriptionConfirmedMessage>;
   status_response?: MessageHandler<StatusResponseMessage>;

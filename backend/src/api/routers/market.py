@@ -5,8 +5,128 @@ import logging
 from src.api.schemas import MarketDataResponse, SignalResponse, BacktestRequest, BacktestResponse, MacroIndicator
 from typing import List
 
+from datetime import datetime, timedelta
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Simple In-Memory Cache
+MARKET_CACHE = {
+    "data": None,
+    "last_updated": None
+}
+
+@router.get("/market/watchlist", response_model=List[dict])
+async def get_market_watchlist():
+    """ウォッチリスト(JP_STOCKS)の全銘柄の価格とシグナルを取得 (Cached)"""
+    try:
+        from src.core.constants import JP_STOCKS, TICKER_NAMES, MARKET_SUMMARY_TTL
+        from src.data_loader import fetch_stock_data
+        from src.strategies import LightGBMStrategy
+        
+        # 0. Check Cache
+        now = datetime.now()
+        if (MARKET_CACHE["data"] is not None and 
+            MARKET_CACHE["last_updated"] is not None and 
+            (now - MARKET_CACHE["last_updated"]).total_seconds() < MARKET_SUMMARY_TTL):
+            logger.info("Serving market watchlist from cache")
+            return MARKET_CACHE["data"]
+
+        logger.info("Cache miss or expired. Fetching fresh market data...")
+        
+        # 1. Fetch Data for all stocks
+        # period="6mo" to ensure enough for signal (though model needs more, data_loader handles cache)
+        # using "1y" to be safe for lightgbm lookback
+        data_map = fetch_stock_data(JP_STOCKS, period="1y")
+
+        # 1.5 Fetch Earnings Dates (Batch, Cached by data_loader internally or just simple fetch)
+        from src.data_loader import fetch_earnings_dates
+        # Note: In production, fetch_earnings_dates should be cached independently or run in background
+        # For now, we call it (it uses yfinance calendar).
+        # We wrap it in try-except to not block main thread too much if yfinance is slow
+        earnings_map = {}
+        try:
+            # Check if we have cached earnings map in memory to avoid yfinance spam
+            if "earnings" not in MARKET_CACHE or MARKET_CACHE["earnings"] is None:
+                earnings_map = fetch_earnings_dates(JP_STOCKS)
+                MARKET_CACHE["earnings"] = earnings_map
+            else:
+                earnings_map = MARKET_CACHE["earnings"]
+        except Exception as e:
+            logger.warning(f"Failed to fetch earnings dates: {e}")
+        
+        # 2. Strategy Init
+        strat = LightGBMStrategy()
+        
+        results = []
+        
+        for ticker in JP_STOCKS:
+            df = data_map.get(ticker)
+            if df is None or df.empty:
+                continue
+                
+            # Latest Price Info
+            latest = df.iloc[-1]
+            prev = df.iloc[-2] if len(df) > 1 else latest
+            change = float(latest["Close"] - prev["Close"])
+            change_pct = float(change / prev["Close"] * 100)
+            
+            # Earnings Info
+            earnings_date_str = earnings_map.get(ticker)
+            days_to_earnings = None
+            if earnings_date_str:
+                try:
+                    # Parse ISO string or date string from yfinance
+                    # yfinance often returns datetime object or string. data_loader converts to str.
+                    # Assuming YYYY-MM-DD
+                    edate = datetime.strptime(earnings_date_str.split(" ")[0], "%Y-%m-%d")
+                    days_to_earnings = (edate - now).days
+                except:
+                    pass
+
+            # Signal Info
+            try:
+                sig_res = strat.analyze(df)
+                signal = sig_res.get("signal", 0)
+                confidence = sig_res.get("confidence", 0.0)
+            except Exception:
+                signal = 0
+                confidence = 0.0
+
+            # === MiniMax Safety Override ===
+            # If earnings are within 5 days, force NEUTRAL to avoid volatility gamble
+            safety_triggered = False
+            if days_to_earnings is not None and 0 <= days_to_earnings <= 5:
+                if signal != 0:
+                    logger.info(f"Safety Override triggered for {ticker}: Earnings in {days_to_earnings} days. Signal {signal} -> 0")
+                    signal = 0
+                    confidence = 0.0
+                    safety_triggered = True
+            
+            results.append({
+                "ticker": ticker,
+                "name": TICKER_NAMES.get(ticker, ticker),
+                "price": float(latest["Close"]),
+                "change": change,
+                "change_percent": change_pct,
+                "signal": signal,
+                "confidence": confidence,
+                "sector": "Technology" if ticker in ["8035.T", "6857.T"] else "Automotive" if ticker == "7203.T" else "Market",
+                "earnings_date": earnings_date_str,
+                "days_to_earnings": days_to_earnings,
+                "safety_triggered": safety_triggered
+            })
+            
+        # Update Cache
+        MARKET_CACHE["data"] = results
+        MARKET_CACHE["last_updated"] = now
+        logger.info(f"Market watchlist cache updated. TTL: {MARKET_SUMMARY_TTL}s")
+            
+        return results
+
+    except Exception as e:
+        logger.error(f"Error fetching watchlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/market/{ticker}", response_model=MarketDataResponse)
 async def get_market_data(ticker: str):

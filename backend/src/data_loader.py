@@ -645,3 +645,40 @@ class DataLoader:
 
     def fetch_external_data(self, period: str = "2y"):
         return fetch_external_data(period)
+
+    def fetch_earnings_dates(self, tickers: Sequence[str]) -> Dict[str, Optional[str]]:
+        return fetch_earnings_dates(tickers)
+
+def fetch_earnings_dates(tickers: Sequence[str]) -> Dict[str, Optional[str]]:
+    """Fetch the next earnings date for a list of tickers using yfinance."""
+    results = {}
+    for ticker in tickers:
+        try:
+            # Note: yf.Ticker property access is slow (sync), consider optimizing if list is huge
+            # But we only have ~10-20 tickers for now.
+            t = yf.Ticker(ticker)
+            cal = t.calendar
+            # yfinance .calendar returns a dict or dataframe depending on version
+            # Usually keys include 'Earnings Date' or 'Earnings Date' row
+            # Let's inspect structure safely
+            if cal is not None and not cal.empty:
+                # Assuming standard structure: dates as values in a specific key or index
+                # Usually it has 'Earnings Date' or 'Earnings High' etc.
+                # Future earnings are typically single value or list
+                # Implementation assumes 'Earnings Date' is the key we want
+                earnings_date = cal.get("Earnings Date")
+                if earnings_date is not None:
+                    # It might be a list of dates, take the first one (future)
+                    if isinstance(earnings_date, list) and len(earnings_date) > 0:
+                        results[ticker] = str(earnings_date[0])
+                    else:
+                        results[ticker] = str(earnings_date)
+                else:
+                    # Alternative structure check (sometimes it's transpoosed)
+                    results[ticker] = None
+            else:
+                 results[ticker] = None
+        except Exception as e:
+            logger.warning(f"Error fetching earnings for {ticker}: {e}")
+            results[ticker] = None
+    return results

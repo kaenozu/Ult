@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -169,8 +169,16 @@
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
     background-image:
-      radial-gradient(circle at top left, oklch(0.2 0.1 240 / 0.2), transparent 40%),
-      radial-gradient(circle at bottom right, oklch(0.2 0.1 280 / 0.2), transparent 40%);
+      radial-gradient(
+        circle at top left,
+        oklch(0.2 0.1 240 / 0.2),
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at bottom right,
+        oklch(0.2 0.1 280 / 0.2),
+        transparent 40%
+      );
     background-attachment: fixed;
   }
 }
@@ -194,5 +202,99 @@
 
   .neon-border {
     box-shadow: 0 0 5px var(--primary);
+  }
+
+  /* Hacker Terminal Theme Extensions */
+  .terminal-bg {
+    background: linear-gradient(
+      135deg,
+      #0a0a0a 0%,
+      #1a0a0a 25%,
+      #0a1a0a 50%,
+      #0a0a1a 75%,
+      #0a0a0a 100%
+    );
+  }
+
+  .matrix-text {
+    color: #00ff00;
+    text-shadow:
+      0 0 5px #00ff00,
+      0 0 10px #00ff00;
+    font-family: "Courier New", monospace;
+  }
+
+  .cyber-border {
+    border: 1px solid #00ffff;
+    box-shadow:
+      0 0 10px #00ffff,
+      inset 0 0 10px rgba(0, 255, 255, 0.2);
+  }
+
+  .scanlines {
+    background: linear-gradient(transparent 50%, rgba(0, 255, 255, 0.03) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    animation: scan 8s linear infinite;
+  }
+
+  .glitch-bg {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><filter id="noise"><feTurbulence baseFrequency="0.9" /></filter></defs><rect width="100" height="100" filter="url(%23noise)" opacity="0.02"/></svg>');
+  }
+
+  @keyframes glitch {
+    0% {
+      transform: translate(0, 0);
+    }
+    20% {
+      transform: translate(-2px, 2px);
+    }
+    40% {
+      transform: translate(-2px, -2px);
+    }
+    60% {
+      transform: translate(2px, 2px);
+    }
+    80% {
+      transform: translate(2px, -2px);
+    }
+    100% {
+      transform: translate(0, 0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  /* Terminal color palette */
+  .terminal-green {
+    color: #00ff00;
+  }
+  .terminal-cyan {
+    color: #00ffff;
+  }
+  .terminal-magenta {
+    color: #ff00ff;
+  }
+  .terminal-yellow {
+    color: #ffff00;
+  }
+  .terminal-red {
+    color: #ff0000;
+  }
+  .terminal-blue {
+    color: #0080ff;
   }
 }

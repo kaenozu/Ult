@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ult Trading System (G.H.O.S.T Interface)
+
+Advanced AI-powered trading platform with a "Cyberpunk Ghost" aesthetic.
+
+## Architecture
+- **Frontend:** Next.js (App Router), TailwindCSS, Recharts, Framer Motion
+- **Backend:** FastAPI (Router-based Architecture), SQLite, Pandas, Scikit-learn
+- **AI Core:** "Oracle" Regime Detection, LightGBM/XGBoost prediction engines
+
+## Technical Pillars (The 5 Commandments)
+1.  **Trust No Float:** All financial calculations use `Decimal` for precision.
+2.  **Async Irony:** State-mutating operations are protected by `asyncio.Lock` to prevent race conditions.
+3.  **Fail-Safe First:** Systems are resilient to API failures (Circuit Breakers, Fallbacks).
+4.  **Schema Sanctity:** API I/O must be strictly typed via Pydantic; no naked dictionaries.
+5.  **Audit Trail:** Every trade decision and system state change is logged.
+
+## UI/UX Principles (The Vibe Check)
+- **No Default UI:** All elements must be styled (`glass-panel`, `neon-text`).
+- **Alive Data:** Interfaces must breathe; no static placeholders.
+- **The Ghost Speaks:** System communication embodies a distinct "Ghost in the Machine" persona.
 
 ## Getting Started
 
-First, run the development server:
-
+### Backend
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd backend
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate
+pip install -r requirements.txt
+python -m src.api_server
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Frontend
+```bash
+npm install
+npm run dev
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Status
+- **Phase 12 Complete:** Technical Audit & Frontend Vibe Check verified.
