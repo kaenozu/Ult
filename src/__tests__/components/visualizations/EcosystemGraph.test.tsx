@@ -38,6 +38,9 @@ describe("EcosystemGraph", () => {
   });
 
   it("connects to WebSocket on mount", () => {
+    // Mock environment variable
+    process.env.NEXT_PUBLIC_WS_URL = "ws://localhost:8000/ws/regime";
+
     render(<EcosystemGraph />);
     expect(global.WebSocket).toHaveBeenCalledWith(
       "ws://localhost:8000/ws/regime",

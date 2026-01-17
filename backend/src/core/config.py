@@ -48,6 +48,20 @@ class SystemSettings(BaseSettings):
     data_dir: Path = Path("data")
     db_path: Path = Path("data/stock_data.db")
     parquet_dir: Path = Path("data/parquet")
+
+    # CORS Settings
+    cors_origins: List[str] = Field(
+        default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(","),
+        description="Allowed CORS origins"
+    )
+    cors_allow_credentials: bool = Field(True, description="Allow credentials in CORS")
+    cors_allow_methods: List[str] = Field(
+        ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        description="Allowed CORS methods"
+    )
+    cors_allow_headers: List[str] = Field(
+        ["*"], description="Allowed CORS headers"
+    )
     models_dir: Path = Path("models")
     initial_capital: int = 10000000  # Legacy default
 
