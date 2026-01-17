@@ -1,45 +1,51 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { TrendingUp, TrendingDown, ArrowRight, Zap } from 'lucide-react'
-import { api, checkHealth, getSignal, SignalResponse } from '@/lib/api'
-import { useQuery } from '@tanstack/react-query'
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { TrendingUp, TrendingDown, ArrowRight, Zap } from "lucide-react";
+import { getSignal, executeTrade } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 interface SignalCardProps {
-  ticker: string
-  name: string
+  ticker: string;
+  name: string;
 }
 
 export default function SignalCard({ ticker, name }: SignalCardProps) {
-  const { data: signal, isLoading } = useQuery({
-    queryKey: ['signal', ticker],
+  const { data: signal } = useQuery({
+    queryKey: ["signal", ticker],
     queryFn: () => getSignal(ticker),
-    refetchInterval: 30000
-  })
+    refetchInterval: 30000,
+  });
 
   // Mock data if API fails or loading (for visual dev)
   const displaySignal = signal || {
     signal: 0,
     confidence: 0,
     explanation: "Waiting for analysis...",
-    strategy: "N/A"
-  }
+    strategy: "N/A",
+    entry_price: undefined,
+    stop_loss: undefined,
+    take_profit: undefined,
+  };
 
-  const isBullish = displaySignal.signal > 0
-  const isBearish = displaySignal.signal < 0
-  const isNeutral = displaySignal.signal === 0
+  const isBullish = displaySignal.signal > 0;
+  const isBearish = displaySignal.signal < 0;
+  const isNeutral = displaySignal.signal === 0;
 
   return (
     <Card className="glass-panel border-white/5 p-5 relative overflow-hidden transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(0,240,255,0.1)] group flex flex-col justify-between h-full min-h-[180px]">
-
       {/* Header */}
       <div className="flex justify-between items-start mb-2">
         <div>
           <div className="flex items-baseline gap-2">
-            <h3 className="text-2xl font-bold font-sans tracking-tight">{ticker}</h3>
-            <span className="text-xs text-muted-foreground font-medium">{name}</span>
+            <h3 className="text-2xl font-bold font-sans tracking-tight">
+              {ticker}
+            </h3>
+            <span className="text-xs text-muted-foreground font-medium">
+              {name}
+            </span>
           </div>
           <div className="text-[10px] text-primary/70 uppercase tracking-widest mt-1">
             Strategy: {displaySignal.strategy}
@@ -49,9 +55,29 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
         {/* Confidence Ring (Simplified) */}
         <div className="relative flex items-center justify-center w-12 h-12">
           <svg className="w-full h-full transform -rotate-90">
-            <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-muted/20" />
-            <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent"
-              className={isBullish ? "text-primary" : isBearish ? "text-destructive" : "text-muted-foreground"}
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="transparent"
+              className="text-muted/20"
+            />
+            <circle
+              cx="24"
+              cy="24"
+              r="20"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="transparent"
+              className={
+                isBullish
+                  ? "text-primary"
+                  : isBearish
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+              }
               strokeDasharray={125.6}
               strokeDashoffset={125.6 * (1 - displaySignal.confidence)}
             />
@@ -84,19 +110,25 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
         )}
 
         {/* Actionable Setup (Sniper Mode) */}
-        {(displaySignal.entry_price) && (
+        {displaySignal.entry_price && (
           <div className="grid grid-cols-3 gap-2 text-xs font-mono bg-white/5 p-2 rounded mb-2 border border-white/10">
             <div className="flex flex-col">
               <span className="text-muted-foreground">エントリー</span>
-              <span className="font-bold text-white">¥{displaySignal.entry_price?.toLocaleString()}</span>
+              <span className="font-bold text-white">
+                ¥{displaySignal.entry_price?.toLocaleString()}
+              </span>
             </div>
             <div className="flex flex-col">
               <span className="text-muted-foreground">利確</span>
-              <span className="font-bold text-emerald-400">¥{displaySignal.take_profit?.toLocaleString()}</span>
+              <span className="font-bold text-emerald-400">
+                ¥{displaySignal.take_profit?.toLocaleString()}
+              </span>
             </div>
             <div className="flex flex-col">
               <span className="text-muted-foreground">損切</span>
-              <span className="font-bold text-red-400">¥{displaySignal.stop_loss?.toLocaleString()}</span>
+              <span className="font-bold text-red-400">
+                ¥{displaySignal.stop_loss?.toLocaleString()}
+              </span>
             </div>
           </div>
         )}
@@ -112,29 +144,27 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
         className="w-full glass-button hover:text-primary hover:border-primary/50 group-hover:bg-primary/5 active:scale-95 transition-all"
         onClick={async () => {
           if (!displaySignal.entry_price) return;
-          const confirmed = window.confirm(`${ticker}の注文を実行しますか？\n\nEntry: ¥${displaySignal.entry_price}\nStop: ¥${displaySignal.stop_loss}\nTarget: ¥${displaySignal.take_profit}`);
+          const confirmed = window.confirm(
+            `${ticker}の注文を実行しますか？\n\nEntry: ¥${displaySignal.entry_price}\nStop: ¥${displaySignal.stop_loss}\nTarget: ¥${displaySignal.take_profit}`,
+          );
           if (!confirmed) return;
 
           try {
-            const res = await fetch('/api/v1/trades', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                symbol: ticker,
-                action: isBullish ? 'BUY' : 'SELL',
-                quantity: 100, // Default 100 shares for paper trading
-                price: displaySignal.entry_price,
-                order_type: 'market'
-              })
+            const result = await executeTrade({
+              ticker,
+              action: isBullish ? "BUY" : "SELL",
+              quantity: 100, // Default 100 shares for paper trading
+              price: displaySignal.entry_price,
+              strategy: "manual",
             });
-            if (res.ok) {
+            if (result.success) {
               alert(`注文完了: ${ticker}`);
             } else {
-              alert('注文失敗');
+              alert(`注文失敗: ${result.message}`);
             }
           } catch (e) {
             console.error(e);
-            alert('通信エラー');
+            alert("通信エラー");
           }
         }}
       >
@@ -145,8 +175,8 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
       {/* Background Gradient */}
       <div
         className={`absolute -right-10 -bottom-10 w-32 h-32 rounded-full blur-[50px] opacity-10 
-        ${isBullish ? 'bg-primary' : isBearish ? 'bg-destructive' : 'bg-gray-500'}`}
+        ${isBullish ? "bg-primary" : isBearish ? "bg-destructive" : "bg-gray-500"}`}
       />
     </Card>
-  )
+  );
 }

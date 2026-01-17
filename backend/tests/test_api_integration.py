@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 import json
 from unittest.mock import patch, MagicMock
 
-from src.api_server import create_app
+from src.api.server import create_app
 from src.api.schemas import TradeRequest, TradeResponse
 
 
