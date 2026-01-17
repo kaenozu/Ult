@@ -23,7 +23,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.schemas import HealthResponse
-from src.api.routers import portfolio, trading, market, settings
+from src.api.routers import portfolio, trading, market, settings, websocket
 from src.api.vibe_endpoints import router as vibe_router
 
 logger = logging.getLogger(__name__)
@@ -74,6 +74,9 @@ def create_app() -> FastAPI:
     # 🌊 VIBE-BASED TRADING ROUTER 🌊
     app.include_router(vibe_router, prefix="/api/v1", tags=["Vibe Trading"])
 
+    # 🔌 WEBSOCKET ROUTER 🔌
+    app.include_router(websocket.router, tags=["WebSocket"])
+
     # Root Routes
     @app.get("/", response_model=HealthResponse)
     async def root():
@@ -100,6 +103,11 @@ def get_app() -> FastAPI:
     if _app is None:
         _app = create_app()
     return _app
+
+
+# Module-level app instance for uvicorn compatibility
+# Usage: uvicorn src.api.server:app --reload
+app = get_app()
 
 
 # === Main ===
