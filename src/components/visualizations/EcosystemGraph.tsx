@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, memo } from "react";
 import { Card } from "@/components/ui/card";
 
 // Dynamically import ForceGraph3D to avoid SSR issues
@@ -17,7 +17,7 @@ const ForceGraph3D = dynamic(() => import("react-force-graph-3d"), {
   ),
 });
 
-export default function EcosystemGraph() {
+const EcosystemGraph = memo(function EcosystemGraph() {
   const { theme } = useTheme();
   const [regimeData, setRegimeData] = useState<any>(null);
   const [ghostMessage, setGhostMessage] = useState<string | null>(null);
@@ -163,4 +163,6 @@ export default function EcosystemGraph() {
       </div>
     </Card>
   );
-}
+});
+
+export default EcosystemGraph;

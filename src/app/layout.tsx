@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Sidebar from "@/components/layout/Sidebar";
 import { NotificationProvider } from "@/components/notifications/NotificationSystem";
-import { ApprovalCardsProvider } from "@/components/approvals/ApprovalCardsProvider";
+import { ApprovalCardsProvider } from "@/components/features/approvals/ApprovalCardsProvider";
 
 const outfit = Outfit({
   subsets: ["latin"],

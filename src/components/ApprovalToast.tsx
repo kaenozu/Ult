@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, CheckCircle, XCircle, Clock } from "lucide-react";
-import { ApprovalRequestPayload, ApprovalType } from "@/types/websocket";
+import { ApprovalRequestPayload, ApprovalType } from "@/components/shared/websocket";
 
 interface ApprovalToastProps {
     request: ApprovalRequestPayload;

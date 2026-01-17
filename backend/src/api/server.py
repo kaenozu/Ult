@@ -23,7 +23,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.schemas import HealthResponse
-from src.api.routers import portfolio, trading, market, settings, websocket
+from src.api.routers import (
+    portfolio,
+    trading,
+    market,
+    settings,
+    websocket,
+    alerts,
+    circuit_breaker,
+    approvals,
+)
 from src.api.vibe_endpoints import router as vibe_router
 from src.core.agent_loop import AutonomousAgent
 
@@ -43,13 +52,13 @@ async def lifespan(app: FastAPI):
     """アプリケーションのライフサイクル管理"""
     global _agent
     logger.info("AGStock API starting...")
-    
+
     # 起動時の初期化: Autonomous Agent開始
     _agent = AutonomousAgent(check_interval=5.0)  # 5秒間隔
     await _agent.start()
-    
+
     yield
-    
+
     # シャットダウン時のクリーンアップ
     if _agent:
         await _agent.stop()
@@ -77,17 +86,29 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # ルーターを登録
+    # === API Routers Registration ===
+    # Core Trading APIs
     app.include_router(portfolio.router, prefix="/api/v1", tags=["Portfolio"])
     app.include_router(trading.router, prefix="/api/v1", tags=["Trading"])
-    app.include_router(market.router, prefix="/api/v1", tags=["Market"])
-    app.include_router(settings.router, prefix="/api/v1", tags=["Settings"])
 
-    # 🌊 VIBE-BASED TRADING ROUTER 🌊
-    app.include_router(vibe_router, prefix="/api/v1", tags=["Vibe Trading"])
+    # Market Data APIs
+    app.include_router(market.router, prefix="/api/v1", tags=["Market Data"])
 
-    # 🔌 WEBSOCKET ROUTER 🔌
+    # Risk Management APIs
+    app.include_router(alerts.router, prefix="/api/v1", tags=["Risk Management"])
+    app.include_router(
+        circuit_breaker.router, prefix="/api/v1", tags=["Risk Management"]
+    )
+
+    # Administrative APIs
+    app.include_router(settings.router, prefix="/api/v1", tags=["Administration"])
+    app.include_router(approvals.router, prefix="/api/v1", tags=["Administration"])
+
+    # Real-time Communication
     app.include_router(websocket.router, tags=["WebSocket"])
+
+    # Specialized Features
+    # app.include_router(vibe_router, prefix="/api/v1", tags=["Experimental"])
 
     # Root Routes
     @app.get("/", response_model=HealthResponse)

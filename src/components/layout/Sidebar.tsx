@@ -14,7 +14,7 @@ import {
   Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/components/shared/utils/utils";
 
 const NAV_ITEMS = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/" },

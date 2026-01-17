@@ -2,31 +2,33 @@
 
 import React from "react";
 import MatrixRain from "@/components/ui/matrix-rain";
-import MatrixPortfolioSummary from "@/components/dashboard/MatrixPortfolioSummary";
-import SignalCard from "@/components/dashboard/SignalCard";
-import AutoTradeControls from "@/components/dashboard/AutoTradeControls";
-import MatrixPositionList from "@/components/dashboard/MatrixPositionList";
+import MatrixPortfolioSummary from "@/components/features/dashboard/MatrixPortfolioSummary";
+import SignalCard from "@/components/features/dashboard/SignalCard";
+import AutoTradeControls from "@/components/features/dashboard/AutoTradeControls";
+import MatrixPositionList from "@/components/features/dashboard/MatrixPositionList";
 import EcosystemGraph from "@/components/visualizations/EcosystemGraph";
-import MacroStrip from "@/components/dashboard/MacroStrip";
-import AIAdvisorPanel from "@/components/dashboard/AIAdvisorPanel";
+import MacroStrip from "@/components/features/dashboard/MacroStrip";
+import AIAdvisorPanel from "@/components/features/dashboard/AIAdvisorPanel";
 
 // Phase 11 New Components
-import SystemMonitor from "@/components/dashboard/SystemMonitor";
-import AIAgentAvatar from "@/components/dashboard/AIAgentAvatar";
+import SystemMonitor from "@/components/features/dashboard/SystemMonitor";
+import AIAgentAvatar from "@/components/features/dashboard/AIAgentAvatar";
 // Phase 13 New Components
-import DashboardOnboarding from "@/components/dashboard/DashboardOnboarding";
+import DashboardOnboarding from "@/components/features/dashboard/DashboardOnboarding";
 // Phase 4 Autonomy: VibeCheck Components
-import MarketStatusCard from "@/components/dashboard/MarketStatusCard";
-import PriceAlerts from "@/components/dashboard/PriceAlerts";
+import MarketStatusCard from "@/components/features/dashboard/MarketStatusCard";
+import PriceAlerts from "@/components/features/dashboard/PriceAlerts";
 // Visuals First: AI Thinking Components
-import NeuralMonitor from "@/components/NeuralMonitor";
+import NeuralMonitor from "@/components/NeuralMonitorAdvanced";
 // Swipe Notification Demo
 import { SwipeNotificationDemo } from "@/components/demo/SwipeNotificationDemo";
-import { ApprovalCardsDemo } from "@/components/approvals/ApprovalCardsDemo";
+import { ApprovalCardsDemo } from "@/components/features/approvals/ApprovalCardsDemo";
 import { useQuery } from "@tanstack/react-query";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 
-const VoidScene = dynamic(() => import('@/components/xr/VoidScene'), { ssr: false });
+const VoidScene = dynamic(() => import("@/components/features/xr/VoidScene"), {
+  ssr: false,
+});
 
 // Curated AI/Semiconductor focused stocks to watch
 const WATCHLIST = [
@@ -136,12 +138,14 @@ export default function Home() {
 
           {/* Visuals First: AI Thinking Section */}
           <section>
-
             {/* Phase 5: Void Terminal */}
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
               <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
-                The Void Terminal <span className="text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded">Phase 5.0</span>
+                The Void Terminal{" "}
+                <span className="text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded">
+                  Phase 5.0
+                </span>
               </h2>
             </div>
             <div className="w-full mb-8">
@@ -151,7 +155,10 @@ export default function Home() {
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
               <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
-                Neural Cortex <span className="text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded">Phase 4.2</span>
+                Neural Cortex{" "}
+                <span className="text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded">
+                  Phase 4.2
+                </span>
               </h2>
             </div>
 

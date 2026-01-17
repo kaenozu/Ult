@@ -1,4 +1,4 @@
-import NeuralMonitor from "@/components/dashboard/NeuralMonitor";
+import NeuralMonitor from "@/components/features/dashboard/NeuralMonitorBasic";
 
 export default function NeuralMonitorPage() {
   return (

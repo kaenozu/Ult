@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { resetPortfolio } from "@/lib/api";
+import { resetPortfolio } from "@/components/shared/utils/api";
 
 import {
   Card,
