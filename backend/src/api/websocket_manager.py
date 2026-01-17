@@ -65,7 +65,7 @@ class TypedConnection:
         Validates payload structure before sending.
         """
         try:
-            message_dict = message.model_dump()
+            message_dict = message.model_dump(mode='json')
             await self.websocket.send_json(message_dict)
             logger.debug(f"Sent message {message.msg_id} to {self.connection_id}")
         except Exception as e:

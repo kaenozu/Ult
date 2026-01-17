@@ -25,11 +25,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api.schemas import HealthResponse
 from src.api.routers import portfolio, trading, market, settings, websocket
 from src.api.vibe_endpoints import router as vibe_router
+from src.core.agent_loop import AutonomousAgent
 
 logger = logging.getLogger(__name__)
 
 # グローバルアプリインスタンス
 _app: Optional[FastAPI] = None
+
+# Autonomous Agent Instance
+_agent: Optional[AutonomousAgent] = None
 
 # === Lifespan ===
 
@@ -37,10 +41,18 @@ _app: Optional[FastAPI] = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """アプリケーションのライフサイクル管理"""
+    global _agent
     logger.info("AGStock API starting...")
-    # 起動時の初期化
+    
+    # 起動時の初期化: Autonomous Agent開始
+    _agent = AutonomousAgent(check_interval=5.0)  # 5秒間隔
+    await _agent.start()
+    
     yield
+    
     # シャットダウン時のクリーンアップ
+    if _agent:
+        await _agent.stop()
     logger.info("AGStock API shutting down...")
 
 
