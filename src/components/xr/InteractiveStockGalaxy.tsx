@@ -397,51 +397,7 @@ export default function InteractiveStockGalaxy() {
     }, 2000);
   };
 
-  useFrame((state) => {
-    // Update thrown stocks
-    setStocks((prev) =>
-      prev.map((stock) => {
-        if (
-          !stock.isGrabbed &&
-          (stock.velocity[0] !== 0 ||
-            stock.velocity[1] !== 0 ||
-            stock.velocity[2] !== 0)
-        ) {
-          const newPos: [number, number, number] = [
-            stock.position[0] + stock.velocity[0] * 0.016,
-            stock.position[1] + stock.velocity[1] * 0.016,
-            stock.position[2] + stock.velocity[2] * 0.016,
-          ];
-          const newVel: [number, number, number] = [
-            stock.velocity[0] * 0.98,
-            stock.velocity[1] * 0.98 - 0.1, // gravity
-            stock.velocity[2] * 0.98,
-          ];
-
-          return { ...stock, position: newPos, velocity: newVel };
-        }
-        return stock;
-      }),
-    );
-
-    // Update explosions
-    setExplosions((prev) =>
-      prev.map((particle) => ({
-        ...particle,
-        position: [
-          particle.position[0] + particle.velocity[0],
-          particle.position[1] + particle.velocity[1],
-          particle.position[2] + particle.velocity[2],
-        ] as [number, number, number],
-        velocity: [
-          particle.velocity[0] * 0.98,
-          particle.velocity[1] * 0.98,
-          particle.velocity[2] * 0.98,
-        ] as [number, number, number],
-        life: particle.life * 0.98,
-      })),
-    );
-  });
+  // Note: Animation logic for stocks and explosions moved to GalaxyScene
 
   return (
     <div className="relative w-full h-screen bg-black">
