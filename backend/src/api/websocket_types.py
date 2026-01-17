@@ -624,6 +624,38 @@ class MessageFactory:
         ).to_client()
 
     @staticmethod
+    def subscription_confirmed(
+        channels: list[str], message: str
+    ) -> SubscriptionConfirmedMessage:
+        payload = SubscriptionConfirmedPayload(channels=channels, message=message)
+        return WsMessageEnvelope[SubscriptionConfirmedPayload](
+            type="subscription_confirmed", payload=payload
+        ).to_client()
+
+    @staticmethod
+    def status_response(
+        connection_id: str,
+        connected_at: str,
+        is_authenticated: bool,
+        channels_subscribed: list[str],
+        subscriber_count: int,
+        uptime_seconds: float,
+        queue_size: int,
+    ) -> StatusResponseMessage:
+        payload = StatusResponsePayload(
+            connection_id=connection_id,
+            connected_at=datetime.fromisoformat(connected_at),
+            is_authenticated=is_authenticated,
+            channels_subscribed=channels_subscribed,
+            subscriber_count=subscriber_count,
+            uptime_seconds=uptime_seconds,
+            queue_size=queue_size,
+        )
+        return WsMessageEnvelope[StatusResponsePayload](
+            type="status_response", payload=payload
+        ).to_client()
+
+    @staticmethod
     def error(
         code: str, message: str, severity: ErrorSeverity = ErrorSeverity.SYSTEM
     ) -> ErrorMessage:
