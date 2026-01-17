@@ -2,30 +2,87 @@
 
 import React from "react";
 import MatrixRain from "@/components/ui/matrix-rain";
-import MatrixPortfolioSummary from "@/components/features/dashboard/MatrixPortfolioSummary";
-import SignalCard from "@/components/features/dashboard/SignalCard";
-import AutoTradeControls from "@/components/features/dashboard/AutoTradeControls";
-import MatrixPositionList from "@/components/features/dashboard/MatrixPositionList";
-import EcosystemGraph from "@/components/visualizations/EcosystemGraph";
-import MacroStrip from "@/components/features/dashboard/MacroStrip";
-import AIAdvisorPanel from "@/components/features/dashboard/AIAdvisorPanel";
-
-// Phase 11 New Components
-import SystemMonitor from "@/components/features/dashboard/SystemMonitor";
-import AIAgentAvatar from "@/components/features/dashboard/AIAgentAvatar";
-// Phase 13 New Components
-import DashboardOnboarding from "@/components/features/dashboard/DashboardOnboarding";
-// Phase 4 Autonomy: VibeCheck Components
-import MarketStatusCard from "@/components/features/dashboard/MarketStatusCard";
-import PriceAlerts from "@/components/features/dashboard/PriceAlerts";
-// Visuals First: AI Thinking Components
-import NeuralMonitor from "@/components/NeuralMonitorAdvanced";
-// Swipe Notification Demo
-import { SwipeNotificationDemo } from "@/components/demo/SwipeNotificationDemo";
-import { ApprovalCardsDemo } from "@/components/features/approvals/ApprovalCardsDemo";
 import { useQuery } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 
+// Core components - immediate load
+import { SwipeNotificationDemo } from "@/components/demo/SwipeNotificationDemo";
+
+// Heavy components - lazy load
+const MatrixPortfolioSummary = dynamic(
+  () => import("@/components/features/dashboard/MatrixPortfolioSummary"),
+  {
+    loading: () => <div className="h-32 bg-gray-800 animate-pulse rounded" />,
+  },
+);
+
+const SignalCard = dynamic(
+  () => import("@/components/features/dashboard/SignalCard"),
+  {
+    loading: () => <div className="h-24 bg-gray-800 animate-pulse rounded" />,
+  },
+);
+
+const AutoTradeControls = dynamic(
+  () => import("@/components/features/dashboard/AutoTradeControls"),
+  {
+    loading: () => <div className="h-48 bg-gray-800 animate-pulse rounded" />,
+  },
+);
+
+const MatrixPositionList = dynamic(
+  () => import("@/components/features/dashboard/MatrixPositionList"),
+  {
+    loading: () => <div className="h-64 bg-gray-800 animate-pulse rounded" />,
+  },
+);
+
+const EcosystemGraph = dynamic(
+  () => import("@/components/visualizations/EcosystemGraph"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-96 bg-gray-800 animate-pulse rounded flex items-center justify-center text-cyan-500">
+        Loading Neural Network...
+      </div>
+    ),
+  },
+);
+
+const MacroStrip = dynamic(
+  () => import("@/components/features/dashboard/MacroStrip"),
+);
+const AIAdvisorPanel = dynamic(
+  () => import("@/components/features/dashboard/AIAdvisorPanel"),
+);
+const SystemMonitor = dynamic(
+  () => import("@/components/features/dashboard/SystemMonitor"),
+);
+const AIAgentAvatar = dynamic(
+  () => import("@/components/features/dashboard/AIAgentAvatar"),
+);
+const DashboardOnboarding = dynamic(
+  () => import("@/components/features/dashboard/DashboardOnboarding"),
+);
+const MarketStatusCard = dynamic(
+  () => import("@/components/features/dashboard/MarketStatusCard"),
+);
+const PriceAlerts = dynamic(
+  () => import("@/components/features/dashboard/PriceAlerts"),
+);
+const NeuralMonitor = dynamic(
+  () => import("@/components/NeuralMonitorAdvanced"),
+  {
+    ssr: false,
+    loading: () => <div className="h-32 bg-gray-800 animate-pulse rounded" />,
+  },
+);
+
+const ApprovalCardsDemo = dynamic(() =>
+  import("@/components/features/approvals/ApprovalCardsDemo").then((mod) => ({
+    default: mod.ApprovalCardsDemo,
+  })),
+);
 const VoidScene = dynamic(() => import("@/components/features/xr/VoidScene"), {
   ssr: false,
 });
@@ -41,25 +98,47 @@ const WATCHLIST = [
 ];
 
 export default function Home() {
-  const { data: portfolio, isLoading } = useQuery({
+  const {
+    data: portfolio,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["portfolio"],
     queryFn: async () => {
-      try {
-        const res = await fetch("/api/v1/portfolio");
-        if (!res.ok) return null; // Handle failure gracefully
-        return res.json();
-      } catch (e) {
-        return null;
-      }
+      const res = await fetch("/api/v1/portfolio");
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      return res.json();
     },
-    refetchInterval: 5000,
+    retry: 3,
+    staleTime: 5 * 60 * 1000, // 5分
+    refetchInterval: 30000, // 30秒ごとの更新
   });
 
-  // Show loading state or skeleton if needed
+  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-primary animate-pulse">
         SYSTEM SYNCHRONIZING...
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="text-red-500 text-xl font-bold">CONNECTION ERROR</div>
+          <div className="text-gray-400 text-sm">
+            Unable to load portfolio data
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/80"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

@@ -17,9 +17,28 @@ const ForceGraph3D = dynamic(() => import("react-force-graph-3d"), {
   ),
 });
 
+interface RegimeData {
+  regime?: string;
+  price?: number;
+  current_regime?: string;
+  strategy?: {
+    strategy: string;
+    position_size: number;
+    stop_loss: number;
+    take_profit: number;
+  };
+  statistics?: {
+    current_regime: string;
+    total_observations: number;
+    regime_counts: Record<string, number>;
+    regime_percentages: Record<string, number>;
+    most_common_regime: string;
+  };
+}
+
 const EcosystemGraph = memo(function EcosystemGraph() {
   const { theme } = useTheme();
-  const [regimeData, setRegimeData] = useState<any>(null);
+  const [regimeData, setRegimeData] = useState<RegimeData | null>(null);
   const [ghostMessage, setGhostMessage] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -28,7 +47,9 @@ const EcosystemGraph = memo(function EcosystemGraph() {
     setIsMounted(true);
 
     // Connect to WebSocket
-    const ws = new WebSocket("ws://localhost:8765");
+    const wsUrl =
+      process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws/regime";
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log("Connected to Realtime Synapse");
@@ -50,7 +71,13 @@ const EcosystemGraph = memo(function EcosystemGraph() {
           response.data.type === "regime_update"
         ) {
           const data = response.data.data;
-          setRegimeData(data);
+          setRegimeData({
+            regime: data.current_regime || data.regime,
+            price: data.strategy?.position_size || 0,
+            current_regime: data.current_regime,
+            strategy: data.strategy,
+            statistics: data.statistics,
+          });
 
           // Trigger Ghost Persona reaction
           if (data.regime === "CRASH (市場崩壊警報)") {
@@ -100,7 +127,7 @@ const EcosystemGraph = memo(function EcosystemGraph() {
           {regimeData && (
             <span
               className={`ml-2 text-xs border px-2 py-0.5 rounded ${
-                regimeData.regime.includes("CRASH")
+                regimeData.regime?.includes("CRASH")
                   ? "border-red-500 text-red-500 animate-pulse"
                   : "border-cyan-500/30 text-cyan-500/70"
               }`}
@@ -129,7 +156,7 @@ const EcosystemGraph = memo(function EcosystemGraph() {
         graphData={MOCK_ECOSYSTEM_DATA}
         nodeLabel="name"
         nodeColor={(node: any) =>
-          regimeData?.regime.includes("CRASH") ? "#ff0000" : node.color
+          regimeData?.regime?.includes("CRASH") ? "#ff0000" : node.color
         }
         nodeVal="val"
         nodeRelSize={4}
@@ -137,7 +164,7 @@ const EcosystemGraph = memo(function EcosystemGraph() {
         linkWidth={1}
         linkDirectionalParticles={4}
         linkDirectionalParticleSpeed={(d) =>
-          regimeData?.regime.includes("Volatile") ? 0.02 : 0.005
+          regimeData?.regime?.includes("Volatile") ? 0.02 : 0.005
         }
         linkDirectionalParticleWidth={1.5}
         linkDirectionalParticleColor={(d: any) => d.particleColor || "#ffffff"}
