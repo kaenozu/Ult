@@ -5,12 +5,12 @@
     - [x] [Frontend] Implement Dynamic Ghost Persona (React to Regime) <!-- id: 4 -->
     - [x] [Verification] Test Realtime Updates & Persona Switching <!-- id: 5 -->
 
-- [ ] Phase 4: Autonomous Ghost Personas (Council of Five) <!-- id: 6 -->
+- [x] Phase 4: Autonomous Ghost Personas (Council of Five) <!-- id: 6 -->
     - [x] [Safety] Implement CircuitBreaker (Hard Budget Limit & Kill Switch) <!-- id: 7 -->
     - [x] [Debt] Fix missing WebSocket types (ApprovalPayloads) <!-- id: 8a -->
-    - [ ] [Core] Async Agent Loop (Redis Stream / Fire-and-forget) <!-- id: 8 -->
-    - [ ] [UI] NeuralMonitor (Realtime Thought Process Display) <!-- id: 9 -->
-    - [ ] [Ops] Semi-Auto Mode (Human-in-the-loop approval) <!-- id: 10 -->
+    - [x] [Core] Async Agent Loop (Redis Stream / Fire-and-forget) <!-- id: 8 -->
+    - [x] [UI] NeuralMonitor (Realtime Thought Process Display) <!-- id: 9 -->
+    - [x] [Ops] Semi-Auto Mode (Human-in-the-loop approval) <!-- id: 10 -->
 
 - [ ] Phase 5: The Hybrid Singularity (Future Roadmap) <!-- id: 11 -->
     - [ ] [VR] WebXR Spatial Trading Interface (Spatial Computing) <!-- id: 12 -->
