@@ -17,7 +17,7 @@ import {
   TrendingDown,
   Info,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/components/shared/utils/utils";
 
 export interface Notification {
   id: string;

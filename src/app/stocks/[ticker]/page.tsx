@@ -2,9 +2,9 @@
 
 import { useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { getMarketData, getChartData, getSignal } from '@/lib/api'
-import PriceChart from '@/components/dashboard/PriceChart'
-import TradingModal from '@/components/dashboard/TradingModal'
+import { getMarketData, getChartData, getSignal } from '@/components/shared/utils/api'
+import PriceChart from '@/components/features/dashboard/PriceChart'
+import TradingModal from '@/components/features/dashboard/TradingModal'
 import { Button } from '@/components/ui/button'
 import {
   ArrowLeft,

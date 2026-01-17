@@ -2,8 +2,8 @@
 
 import React from "react";
 import MatrixRain from "@/components/ui/matrix-rain";
-import MatrixPortfolioSummary from "@/components/dashboard/MatrixPortfolioSummary";
-import MatrixPositionList from "@/components/dashboard/MatrixPositionList";
+import MatrixPortfolioSummary from "@/components/features/dashboard/MatrixPortfolioSummary";
+import MatrixPositionList from "@/components/features/dashboard/MatrixPositionList";
 
 export default function MatrixDemo() {
   return (

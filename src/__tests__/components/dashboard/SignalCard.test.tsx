@@ -2,12 +2,12 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import SignalCard from "@/components/dashboard/SignalCard";
-import { getSignal, executeTrade } from "@/lib/api";
+import SignalCard from "@/components/features/dashboard/SignalCard";
+import { getSignal, executeTrade } from "@/components/shared/utils/api";
 import { SignalResponse } from "@/types";
 
 // Mock the API functions
-jest.mock("@/lib/api", () => ({
+jest.mock("@/components/shared/utils/api", () => ({
   getSignal: jest.fn(),
   executeTrade: jest.fn(),
 }));

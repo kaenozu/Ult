@@ -1,4 +1,4 @@
-import InteractiveStockGalaxy from "@/components/xr/InteractiveStockGalaxy";
+import InteractiveStockGalaxy from "@/components/features/xr/InteractiveStockGalaxy";
 
 export default function WebXRPage() {
   return (

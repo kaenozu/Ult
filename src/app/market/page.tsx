@@ -3,11 +3,11 @@
 import React from 'react';
 import { BarChart3 } from 'lucide-react';
 
-import { getWatchlist, WatchlistItem } from '@/lib/api';
+import { getWatchlist, WatchlistItem } from '@/components/shared/utils/api';
 import { useQuery } from '@tanstack/react-query';
-import NeuralLoader from '@/components/dashboard/NeuralLoader';
-import EarningsCountdown from '@/components/dashboard/EarningsCountdown';
-import MarketStatusCard from '@/components/dashboard/MarketStatusCard';
+import NeuralLoader from '@/components/features/dashboard/NeuralLoader';
+import EarningsCountdown from '@/components/features/dashboard/EarningsCountdown';
+import MarketStatusCard from '@/components/features/dashboard/MarketStatusCard';
 
 export default function MarketPage() {
     const { data: watchlist, isLoading, isError, error } = useQuery({
