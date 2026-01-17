@@ -25,6 +25,7 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
     confidence: 0,
     explanation: "Waiting for analysis...",
     strategy: "N/A",
+    ticker,
     entry_price: undefined,
     stop_loss: undefined,
     take_profit: undefined,
@@ -143,7 +144,12 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
         variant="outline"
         className="w-full glass-button hover:text-primary hover:border-primary/50 group-hover:bg-primary/5 active:scale-95 transition-all"
         onClick={async () => {
-          if (!displaySignal.entry_price) return;
+          console.log("Button clicked");
+          if (!displaySignal.entry_price) {
+            console.log("No entry price, returning");
+            return;
+          }
+          console.log("Calling window.confirm");
           const confirmed = window.confirm(
             `${ticker}の注文を実行しますか？\n\nEntry: ¥${displaySignal.entry_price}\nStop: ¥${displaySignal.stop_loss}\nTarget: ¥${displaySignal.take_profit}`,
           );

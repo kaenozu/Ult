@@ -1,44 +1,44 @@
-'use client'
+"use client";
 
-import { useQuery } from '@tanstack/react-query'
-import { getMarketData, getSignal } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react'
-import TradingModal from './TradingModal'
-import Link from 'next/link'
-import { Position } from '@/types'
-import { usePnL } from '@/hooks/usePnL'
-import { useAlert } from '@/hooks/useAlert'
+import { useQuery } from "@tanstack/react-query";
+import { getMarketData, getSignal } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import TradingModal from "./TradingModal";
+import Link from "next/link";
+import { Position } from "@/types";
+import { usePnL } from "@/hooks/usePnL";
+import { useAlert } from "@/hooks/useAlert";
 
 interface PositionRowProps {
-  position: Position
+  position: Position;
 }
 
 function PositionRow({ position }: PositionRowProps) {
-  const { ticker, quantity, avg_price } = position
+  const { ticker, quantity, avg_price } = position;
 
   const { data: market } = useQuery({
-    queryKey: ['market', ticker],
+    queryKey: ["market", ticker],
     queryFn: () => getMarketData(ticker),
     refetchInterval: 10000,
-  })
+  });
 
   const { data: signal } = useQuery({
-    queryKey: ['signal', ticker],
+    queryKey: ["signal", ticker],
     queryFn: () => getSignal(ticker),
     refetchInterval: 60000,
-  })
+  });
 
-  if (!market) return null
-
-  const currentPrice = market.price
+  const currentPrice = market?.price || 0;
   const { pnl, pnlPercent, isProfit } = usePnL(
     currentPrice,
     avg_price,
-    quantity
-  )
-  const { showAlert } = useAlert(signal, pnlPercent)
+    quantity,
+  );
+  const { showAlert } = useAlert(signal, pnlPercent);
+
+  if (!market) return null;
 
   return (
     <div className="flex items-center justify-between p-4 bg-muted/20 rounded-lg mb-3">
@@ -70,14 +70,14 @@ function PositionRow({ position }: PositionRowProps) {
           ¥{currentPrice.toLocaleString()}
         </div>
         <div
-          className={`text-sm font-bold flex items-center justify-end ${isProfit ? 'text-green-500' : 'text-red-500'}`}
+          className={`text-sm font-bold flex items-center justify-end ${isProfit ? "text-green-500" : "text-red-500"}`}
         >
           {isProfit ? (
             <TrendingUp className="h-3 w-3 mr-1" />
           ) : (
             <TrendingDown className="h-3 w-3 mr-1" />
           )}
-          {pnl > 0 ? '+' : ''}
+          {pnl > 0 ? "+" : ""}
           {pnl.toLocaleString()} ({pnlPercent.toFixed(1)}%)
         </div>
       </div>
@@ -92,11 +92,11 @@ function PositionRow({ position }: PositionRowProps) {
           trigger={
             <Button
               size="sm"
-              variant={showAlert ? 'default' : 'outline'}
+              variant={showAlert ? "default" : "outline"}
               className={
                 showAlert
-                  ? 'bg-rose-500 hover:bg-rose-600 border-none text-white shadow-md'
-                  : ''
+                  ? "bg-rose-500 hover:bg-rose-600 border-none text-white shadow-md"
+                  : ""
               }
             >
               売却
@@ -105,7 +105,7 @@ function PositionRow({ position }: PositionRowProps) {
         />
       </div>
     </div>
-  )
+  );
 }
 
-export default PositionRow
+export default PositionRow;

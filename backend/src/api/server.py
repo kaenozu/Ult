@@ -5,6 +5,7 @@ AGStock FastAPI Server
 """
 
 import sys
+import asyncio
 from pathlib import Path
 
 # Add backend root to sys.path to resolve src imports
@@ -23,7 +24,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.schemas import HealthResponse
-from src.api.routers import portfolio, trading, market, settings
+from src.api.routers import portfolio, trading, market, settings, websocket
 from src.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -38,10 +39,22 @@ _app: Optional[FastAPI] = None
 async def lifespan(app: FastAPI):
     """アプリケーションのライフサイクル管理"""
     logger.info("AGStock API starting...")
+
+    # Start background regime monitoring
+    from src.api.routers.websocket import start_regime_monitoring
+
+    monitoring_task = asyncio.create_task(start_regime_monitoring())
+
     # 起動時の初期化
     yield
+
     # シャットダウン時のクリーンアップ
     logger.info("AGStock API shutting down...")
+    monitoring_task.cancel()
+    try:
+        await monitoring_task
+    except asyncio.CancelledError:
+        pass
 
 
 # === App Factory ===
@@ -70,6 +83,7 @@ def create_app() -> FastAPI:
     app.include_router(trading.router, prefix="/api/v1", tags=["Trading"])
     app.include_router(market.router, prefix="/api/v1", tags=["Market"])
     app.include_router(settings.router, prefix="/api/v1", tags=["Settings"])
+    app.include_router(websocket.router, tags=["WebSocket"])
 
     # Root Routes
     @app.get("/", response_model=HealthResponse)
