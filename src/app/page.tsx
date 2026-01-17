@@ -1,156 +1,108 @@
-"use client";
+'use client';
 
-import React from "react";
-import MatrixRain from "@/components/ui/matrix-rain";
-import { useQuery } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
-import { ComponentLoading } from "@/components/shared/Loading";
+import React from 'react';
+import MatrixRain from '@/components/ui/matrix-rain';
+import { useQuery } from '@tanstack/react-query';
+import {
+  createFeatureLazyComponent,
+  createDashboardLazyComponent,
+} from '@/components/shared/Loading';
 
 // Core components - immediate load
-import { SwipeNotificationDemo } from "@/components/demo/SwipeNotificationDemo";
+import { SwipeNotificationDemo } from '@/components/demo/SwipeNotificationDemo';
 
 // Heavy components - lazy load with unified loading
-const MatrixPortfolioSummary = dynamic(
-  () => import("@/components/features/dashboard/MatrixPortfolioSummary"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-32" message="Loading Portfolio..." />
-    ),
-  },
+const MatrixPortfolioSummary = createDashboardLazyComponent(
+  'MatrixPortfolioSummary',
+  () => import('@/components/features/dashboard/MatrixPortfolioSummary')
 );
 
-const SignalCard = dynamic(
-  () => import("@/components/features/dashboard/SignalCard"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-24" message="Loading Signals..." />
-    ),
-  },
+const SignalCard = createDashboardLazyComponent(
+  'SignalCard',
+  () => import('@/components/features/dashboard/SignalCard')
 );
 
-const AutoTradeControls = dynamic(
-  () => import("@/components/features/dashboard/AutoTradeControls"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-48" message="Loading Controls..." />
-    ),
-  },
+const AutoTradeControls = createDashboardLazyComponent(
+  'AutoTradeControls',
+  () => import('@/components/features/dashboard/AutoTradeControls')
 );
 
-const MatrixPositionList = dynamic(
-  () => import("@/components/features/dashboard/MatrixPositionList"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-64" message="Loading Positions..." />
-    ),
-  },
+const MatrixPositionList = createDashboardLazyComponent(
+  'MatrixPositionList',
+  () => import('@/components/features/dashboard/MatrixPositionList')
 );
 
-const EcosystemGraph = dynamic(
-  () => import("@/components/visualizations/EcosystemGraph"),
-  {
-    ssr: false,
-    loading: () => (
-      <ComponentLoading
-        height="h-96"
-        message="Initializing Neural Network..."
-      />
-    ),
-  },
+const EcosystemGraph = createFeatureLazyComponent(
+  'Neural',
+  'Network',
+  () => import('@/components/visualizations/EcosystemGraph')
 );
 
-const MacroStrip = dynamic(
-  () => import("@/components/features/dashboard/MacroStrip"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-16" message="Loading Market Data..." />
-    ),
-  },
-);
-const AIAdvisorPanel = dynamic(
-  () => import("@/components/features/dashboard/AIAdvisorPanel"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-40" message="Loading AI Advisor..." />
-    ),
-  },
-);
-const SystemMonitor = dynamic(
-  () => import("@/components/features/dashboard/SystemMonitor"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-32" message="Loading System Monitor..." />
-    ),
-  },
-);
-const AIAgentAvatar = dynamic(
-  () => import("@/components/features/dashboard/AIAgentAvatar"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-20" message="Loading AI Agent..." />
-    ),
-  },
-);
-const DashboardOnboarding = dynamic(
-  () => import("@/components/features/dashboard/DashboardOnboarding"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-48" message="Loading Tutorial..." />
-    ),
-  },
-);
-const MarketStatusCard = dynamic(
-  () => import("@/components/features/dashboard/MarketStatusCard"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-28" message="Loading Market Status..." />
-    ),
-  },
-);
-const PriceAlerts = dynamic(
-  () => import("@/components/features/dashboard/PriceAlerts"),
-  {
-    loading: () => (
-      <ComponentLoading height="h-36" message="Loading Price Alerts..." />
-    ),
-  },
-);
-const NeuralMonitor = dynamic(
-  () => import("@/components/NeuralMonitorAdvanced"),
-  {
-    ssr: false,
-    loading: () => (
-      <ComponentLoading height="h-32" message="Loading Neural Monitor..." />
-    ),
-  },
+const MacroStrip = createDashboardLazyComponent(
+  'MacroStrip',
+  () => import('@/components/features/dashboard/MacroStrip')
 );
 
-const ApprovalCardsDemo = dynamic(
+// Additional lazy-loaded components
+const AIAdvisorPanel = createDashboardLazyComponent(
+  'AIAdvisorPanel',
+  () => import('@/components/features/dashboard/AIAdvisorPanel')
+);
+
+const SystemMonitor = createDashboardLazyComponent(
+  'SystemMonitor',
+  () => import('@/components/features/dashboard/SystemMonitor')
+);
+
+const AIAgentAvatar = createDashboardLazyComponent(
+  'AIAgentAvatar',
+  () => import('@/components/features/dashboard/AIAgentAvatar')
+);
+
+const DashboardOnboarding = createDashboardLazyComponent(
+  'DashboardOnboarding',
+  () => import('@/components/features/dashboard/DashboardOnboarding')
+);
+
+const MarketStatusCard = createDashboardLazyComponent(
+  'MarketStatusCard',
+  () => import('@/components/features/dashboard/MarketStatusCard')
+);
+
+const PriceAlerts = createDashboardLazyComponent(
+  'PriceAlerts',
+  () => import('@/components/features/dashboard/PriceAlerts')
+);
+
+const NeuralMonitor = createFeatureLazyComponent(
+  'Neural',
+  'Monitor',
+  () => import('@/components/NeuralMonitorAdvanced')
+);
+
+const ApprovalCardsDemo = createFeatureLazyComponent(
+  'Approval',
+  'Cards Demo',
   () =>
-    import("@/components/features/approvals/ApprovalCardsDemo").then((mod) => ({
+    import('@/components/features/approvals/ApprovalCardsDemo').then(mod => ({
       default: mod.ApprovalCardsDemo,
-    })),
-  {
-    loading: () => (
-      <ComponentLoading height="h-40" message="Loading Approvals..." />
-    ),
-  },
+    }))
 );
-const VoidScene = dynamic(() => import("@/components/features/xr/VoidScene"), {
-  ssr: false,
-  loading: () => (
-    <ComponentLoading height="h-64" message="Loading VR Scene..." />
-  ),
-});
+
+const VoidScene = createFeatureLazyComponent(
+  'VR',
+  'Scene',
+  () => import('@/components/features/xr/VoidScene')
+);
 
 // Curated AI/Semiconductor focused stocks to watch
 const WATCHLIST = [
-  { ticker: "6857.T", name: "アドバンテスト" },
-  { ticker: "8035.T", name: "東京エレクトロン" },
-  { ticker: "6920.T", name: "レーザーテック" },
-  { ticker: "4062.T", name: "イビデン" },
-  { ticker: "6758.T", name: "ソニーG" },
-  { ticker: "9984.T", name: "ソフトバンクG" },
+  { ticker: '6857.T', name: 'アドバンテスト' },
+  { ticker: '8035.T', name: '東京エレクトロン' },
+  { ticker: '6920.T', name: 'レーザーテック' },
+  { ticker: '4062.T', name: 'イビデン' },
+  { ticker: '6758.T', name: 'ソニーG' },
+  { ticker: '9984.T', name: 'ソフトバンクG' },
 ];
 
 export default function Home() {
@@ -159,9 +111,9 @@ export default function Home() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["portfolio"],
+    queryKey: ['portfolio'],
     queryFn: async () => {
-      const res = await fetch("/api/v1/portfolio");
+      const res = await fetch('/api/v1/portfolio');
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       return res.json();
     },
@@ -173,7 +125,7 @@ export default function Home() {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-primary animate-pulse">
+      <div className='min-h-screen flex items-center justify-center text-primary animate-pulse'>
         SYSTEM SYNCHRONIZING...
       </div>
     );
@@ -182,15 +134,15 @@ export default function Home() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="text-red-500 text-xl font-bold">CONNECTION ERROR</div>
-          <div className="text-gray-400 text-sm">
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-center space-y-4'>
+          <div className='text-red-500 text-xl font-bold'>CONNECTION ERROR</div>
+          <div className='text-gray-400 text-sm'>
             Unable to load portfolio data
           </div>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/80"
+            className='px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/80'
           >
             Retry
           </button>
@@ -208,8 +160,8 @@ export default function Home() {
 
   if (isZeroState) {
     return (
-      <div className="flex flex-col min-h-screen items-center justify-center p-4">
-        <AIAgentAvatar state="IDLE" />
+      <div className='flex flex-col min-h-screen items-center justify-center p-4'>
+        <AIAgentAvatar state='IDLE' />
         <DashboardOnboarding />
       </div>
     );
@@ -217,19 +169,19 @@ export default function Home() {
 
   return (
     <MatrixRain intensity={0.3}>
-      <div className="flex flex-col min-h-screen">
+      <div className='flex flex-col min-h-screen'>
         <MacroStrip />
-        <div className="p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto pb-32 flex-1 w-full">
+        <div className='p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto pb-32 flex-1 w-full'>
           {/* Top Section: AI Status & Portfolio HUD */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
             {/* Left Column: VibeCheck & System Monitor */}
-            <div className="lg:col-span-1 flex flex-col gap-6">
+            <div className='lg:col-span-1 flex flex-col gap-6'>
               {/* VibeCheck: Market Status with Persona Protocol */}
               <MarketStatusCard />
               {/* Real-time Price Alerts */}
               <PriceAlerts />
-              <AIAgentAvatar state="IDLE" />
-              <div className="h-80">
+              <AIAgentAvatar state='IDLE' />
+              <div className='h-80'>
                 <SystemMonitor />
               </div>
               {/* AI Advisor Panel (Text Output) */}
@@ -237,7 +189,7 @@ export default function Home() {
             </div>
 
             {/* Portfolio HUD (Takes up 2 columns) */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
+            <div className='lg:col-span-2 flex flex-col gap-6'>
               <MatrixPortfolioSummary />
               <AutoTradeControls />
             </div>
@@ -245,11 +197,11 @@ export default function Home() {
 
           {/* In-App Swipe Notification Demo */}
           <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
-                In-App Swipe{" "}
-                <span className="text-muted-foreground text-sm ml-2 font-normal">
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                In-App Swipe{' '}
+                <span className='text-muted-foreground text-sm ml-2 font-normal'>
                   No More Context Switching
                 </span>
               </h2>
@@ -259,11 +211,11 @@ export default function Home() {
 
           {/* Instant Approval Cards Section */}
           <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
-                Instant Approvals{" "}
-                <span className="text-muted-foreground text-sm ml-2 font-normal">
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                Instant Approvals{' '}
+                <span className='text-muted-foreground text-sm ml-2 font-normal'>
                   Ops Technical Design - Ephemeral UI
                 </span>
               </h2>
@@ -274,30 +226,30 @@ export default function Home() {
           {/* Visuals First: AI Thinking Section */}
           <section>
             {/* Phase 5: Void Terminal */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
-                The Void Terminal{" "}
-                <span className="text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded">
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                The Void Terminal{' '}
+                <span className='text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded'>
                   Phase 5.0
                 </span>
               </h2>
             </div>
-            <div className="w-full mb-8">
+            <div className='w-full mb-8'>
               <VoidScene />
             </div>
 
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
-                Neural Cortex{" "}
-                <span className="text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded">
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                Neural Cortex{' '}
+                <span className='text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded'>
                   Phase 4.2
                 </span>
               </h2>
             </div>
 
-            <div className="w-full">
+            <div className='w-full'>
               <NeuralMonitor />
             </div>
           </section>
@@ -309,18 +261,18 @@ export default function Home() {
 
           {/* Middle Section: Profit Navigator (Signals) */}
           <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
-                Profit Navigator{" "}
-                <span className="text-muted-foreground text-sm ml-2 font-normal">
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                Profit Navigator{' '}
+                <span className='text-muted-foreground text-sm ml-2 font-normal'>
                   AI Analysis Feed
                 </span>
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {WATCHLIST.map((stock) => (
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {WATCHLIST.map(stock => (
                 <SignalCard
                   key={stock.ticker}
                   ticker={stock.ticker}
@@ -332,13 +284,13 @@ export default function Home() {
 
           {/* Bottom Section: Active Positions */}
           <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-foreground uppercase">
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
                 Active Assets
               </h2>
             </div>
-            <div className="glass-panel rounded-xl p-1">
+            <div className='glass-panel rounded-xl p-1'>
               <MatrixPositionList />
             </div>
           </section>
