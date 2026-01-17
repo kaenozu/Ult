@@ -23,8 +23,12 @@ class TradingSettings(BaseSettings):
     """Trading-specific configurations."""
 
     max_daily_trades: int = Field(5, description="Maximum number of trades per day")
-    daily_loss_limit_pct: float = Field(-5.0, description="Daily loss limit in percentage")
-    max_position_size: float = Field(0.2, description="Max position size as fraction of portfolio")
+    daily_loss_limit_pct: float = Field(
+        -5.0, description="Daily loss limit in percentage"
+    )
+    max_position_size: float = Field(
+        0.2, description="Max position size as fraction of portfolio"
+    )
     min_cash_reserve: float = Field(200000.0, description="Minimum cash to keep in JPY")
 
     # Risk Management
@@ -69,7 +73,14 @@ class Config(BaseSettings):
 
     trading: TradingSettings = Field(default_factory=TradingSettings)
     system: SystemSettings = Field(default_factory=SystemSettings)
-    risk_management: RiskManagementSettings = Field(default_factory=RiskManagementSettings)
+    risk_management: RiskManagementSettings = Field(
+        default_factory=RiskManagementSettings
+    )
+
+    # CORS settings for security
+    cors_origins: List[str] = Field(
+        default=["http://localhost:3000"], description="Allowed CORS origins"
+    )
 
     # Other legacy constants mapped
     tickers_jp: List[str] = ["7203.T", "9984.T", "6758.T", "8035.T", "6861.T"]
