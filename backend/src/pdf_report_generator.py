@@ -6,6 +6,7 @@ Generates automated weekly/monthly performance reports with AI analysis.
 import os
 import matplotlib
 import pandas as pd
+from typing import Optional
 
 matplotlib.use("Agg")  # Non-interactive backend
 import logging
@@ -14,7 +15,13 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
 from src.ai_analyst import AIAnalyst
-from src.constants import CRYPTO_PAIRS, FX_PAIRS, NIKKEI_225_TICKERS, SP500_TICKERS, STOXX50_TICKERS
+from src.constants import (
+    CRYPTO_PAIRS,
+    FX_PAIRS,
+    NIKKEI_225_TICKERS,
+    SP500_TICKERS,
+    STOXX50_TICKERS,
+)
 from src import demo_data
 from src.paper_trader import PaperTrader
 
@@ -24,7 +31,15 @@ try:
     from reportlab.lib.pagesizes import A4, letter
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
-    from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from reportlab.platypus import (
+        Image,
+        PageBreak,
+        Paragraph,
+        SimpleDocTemplate,
+        Spacer,
+        Table,
+        TableStyle,
+    )
 
     PDF_AVAILABLE = True
 except ImportError:
@@ -50,7 +65,11 @@ class PDFReportGenerator:
 
     def _get_equity_curve(self) -> pd.DataFrame:
         """紙トレ口座の残高履歴からエクイティカーブを取得"""
-        history = demo_data.generate_equity_history() if self.demo_mode else self.pt.get_equity_history()
+        history = (
+            demo_data.generate_equity_history()
+            if self.demo_mode
+            else self.pt.get_equity_history()
+        )
         if history.empty:
             # データがない場合は初期資金で2点プロット
             today = datetime.now().date()
@@ -67,7 +86,9 @@ class PDFReportGenerator:
         df = df.dropna(subset=["date"]).sort_values("date")
 
         if "total_equity" in df.columns:
-            df["total_equity"] = df["total_equity"].fillna(df.get("cash", self.pt.initial_capital))
+            df["total_equity"] = df["total_equity"].fillna(
+                df.get("cash", self.pt.initial_capital)
+            )
         else:
             df["total_equity"] = df.get("cash", self.pt.initial_capital)
 
@@ -75,11 +96,17 @@ class PDFReportGenerator:
 
     def _compute_trade_stats(self) -> dict:
         """勝率・月次損益・トップ/ワースト銘柄を計算"""
-        history = demo_data.generate_trade_history() if self.demo_mode else self.pt.get_trade_history(limit=5000)
+        history = (
+            demo_data.generate_trade_history()
+            if self.demo_mode
+            else self.pt.get_trade_history(limit=5000)
+        )
         if history.empty:
             return {"win_rate": 0.0, "monthly_pnl": 0.0, "top": None, "worst": None}
 
-        if "timestamp" in history.columns and not pd.api.types.is_datetime64_any_dtype(history["timestamp"]):
+        if "timestamp" in history.columns and not pd.api.types.is_datetime64_any_dtype(
+            history["timestamp"]
+        ):
             history["timestamp"] = pd.to_datetime(history["timestamp"], errors="coerce")
         history = history.dropna(subset=["timestamp"])
 
@@ -100,16 +127,32 @@ class PDFReportGenerator:
         top = None
         worst = None
         if "realized_pnl" in history.columns and "ticker" in history.columns:
-            ticker_pnl = history.groupby("ticker")["realized_pnl"].sum().sort_values(ascending=False)
+            ticker_pnl = (
+                history.groupby("ticker")["realized_pnl"]
+                .sum()
+                .sort_values(ascending=False)
+            )
             if not ticker_pnl.empty:
                 top = (ticker_pnl.index[0], float(ticker_pnl.iloc[0]))
                 worst = (ticker_pnl.index[-1], float(ticker_pnl.iloc[-1]))
 
-        return {"win_rate": win_rate, "monthly_pnl": monthly_pnl, "top": top, "worst": worst}
+        return {
+            "win_rate": win_rate,
+            "monthly_pnl": monthly_pnl,
+            "top": top,
+            "worst": worst,
+        }
 
     def _get_asset_allocation(self, positions: pd.DataFrame) -> dict:
         """地域別の簡易配分を計算（market_valueベース）"""
-        alloc = {"Japan": 0.0, "US": 0.0, "Europe": 0.0, "Crypto": 0.0, "FX": 0.0, "Other": 0.0}
+        alloc = {
+            "Japan": 0.0,
+            "US": 0.0,
+            "Europe": 0.0,
+            "Crypto": 0.0,
+            "FX": 0.0,
+            "Other": 0.0,
+        }
         if positions is None or positions.empty:
             return alloc
 
@@ -135,10 +178,15 @@ class PDFReportGenerator:
         total = sum(alloc.values()) or 1.0
         return {k: v for k, v in alloc.items()}
 
-    def _plot_asset_allocation(self, allocation: dict, output_path: str = "temp_allocation.png") -> Optional[str]:
+    def _plot_asset_allocation(
+        self, allocation: dict, output_path: str = "temp_allocation.png"
+    ) -> Optional[str]:
         try:
             values = [v for v in allocation.values()]
-            labels = [f"{k} ({v / sum(values) * 100:.1f}%)" if sum(values) else k for k, v in allocation.items()]
+            labels = [
+                f"{k} ({v / sum(values) * 100:.1f}%)" if sum(values) else k
+                for k, v in allocation.items()
+            ]
             fig, ax = plt.subplots(figsize=(6, 6))
             ax.pie(values, labels=labels, autopct="%1.1f%%", startangle=140)
             ax.set_title("資産配分 (推計)", fontsize=14, fontweight="bold")
@@ -164,7 +212,10 @@ class PDFReportGenerator:
                 equity_df = pd.concat(
                     [
                         pd.DataFrame(
-                            {"date": [single["date"] - pd.Timedelta(days=1)], "total_equity": [self.pt.initial_capital]}
+                            {
+                                "date": [single["date"] - pd.Timedelta(days=1)],
+                                "total_equity": [self.pt.initial_capital],
+                            }
                         ),
                         equity_df,
                     ],
@@ -180,7 +231,11 @@ class PDFReportGenerator:
             ax.fill_between(dates, equity, alpha=0.3, color=self.eq_color)
             ax.set_facecolor(self.bg_color)
             ax.figure.set_facecolor(self.bg_color)
-            ax.grid(True, alpha=self.grid_alpha, color="#999999" if self.theme == "light" else "#444444")
+            ax.grid(
+                True,
+                alpha=self.grid_alpha,
+                color="#999999" if self.theme == "light" else "#444444",
+            )
             ax.set_title(
                 "Portfolio Equity Curve",
                 fontsize=14,
@@ -212,8 +267,8 @@ class PDFReportGenerator:
 
             context = f"""
 ## Portfolio Status
-- Total Equity: ¥{balance['total_equity']:,.0f}
-- Cash: ¥{balance['cash']:,.0f}
+- Total Equity: ¥{balance["total_equity"]:,.0f}
+- Cash: ¥{balance["cash"]:,.0f}
 - Positions: {len(positions)}
 
 Please provide:
@@ -236,7 +291,9 @@ Keep it concise (max 200 words).
             return f"AI analysis error: {str(e)}"
 
     def generate_weekly_report(
-        self, output_path: str = "weekly_report.pdf", html_output_path: Optional[str] = None
+        self,
+        output_path: str = "weekly_report.pdf",
+        html_output_path: Optional[str] = None,
     ) -> bool:
         """
         Generate weekly PDF report.
@@ -265,7 +322,10 @@ Keep it concise (max 200 words).
                 spaceAfter=30,
             )
 
-            title = Paragraph(f"AGStock Weekly Report<br/>{datetime.now().strftime('%Y-%m-%d')}", title_style)
+            title = Paragraph(
+                f"AGStock Weekly Report<br/>{datetime.now().strftime('%Y-%m-%d')}",
+                title_style,
+            )
             story.append(title)
             story.append(Spacer(1, 0.2 * inch))
 
@@ -318,11 +378,15 @@ Keep it concise (max 200 words).
             story.append(Spacer(1, 0.3 * inch))
 
             # Equity stats (mean daily return, max drawdown)
-            equity_df = equity_hist if equity_hist is not None else self._get_equity_curve()
+            equity_df = (
+                equity_hist if equity_hist is not None else self._get_equity_curve()
+            )
             if not equity_df.empty and "total_equity" in equity_df.columns:
                 eq = equity_df["total_equity"].astype(float)
                 daily_returns = eq.pct_change().dropna()
-                mean_ret = daily_returns.mean() * 100 if not daily_returns.empty else 0.0
+                mean_ret = (
+                    daily_returns.mean() * 100 if not daily_returns.empty else 0.0
+                )
                 peak = eq.cummax()
                 drawdown = (eq / peak - 1).min() * 100 if not eq.empty else 0.0
                 stats_rows = [
@@ -346,7 +410,9 @@ Keep it concise (max 200 words).
 
             # Top / Worst performers
             if trade_stats.get("top") or trade_stats.get("worst"):
-                story.append(Paragraph("トップ / ワースト（実現損益）", self.styles["Heading2"]))
+                story.append(
+                    Paragraph("トップ / ワースト（実現損益）", self.styles["Heading2"])
+                )
                 story.append(Spacer(1, 0.1 * inch))
                 top, worst = trade_stats.get("top"), trade_stats.get("worst")
                 perf_rows = [["種別", "ティッカー", "損益"]]
@@ -354,7 +420,9 @@ Keep it concise (max 200 words).
                     perf_rows.append(["トップ", top[0], f"¥{top[1]:,.0f}"])
                 if worst:
                     perf_rows.append(["ワースト", worst[0], f"¥{worst[1]:,.0f}"])
-                perf_table = Table(perf_rows, colWidths=[1.2 * inch, 2 * inch, 1.8 * inch])
+                perf_table = Table(
+                    perf_rows, colWidths=[1.2 * inch, 2 * inch, 1.8 * inch]
+                )
                 perf_table.setStyle(
                     TableStyle(
                         [
@@ -390,7 +458,9 @@ Keep it concise (max 200 words).
             story.append(Spacer(1, 0.1 * inch))
 
             ai_analysis = self.generate_ai_analysis()
-            analysis_para = Paragraph(ai_analysis.replace("\n", "<br/>"), self.styles["BodyText"])
+            analysis_para = Paragraph(
+                ai_analysis.replace("\n", "<br/>"), self.styles["BodyText"]
+            )
             story.append(analysis_para)
 
             # Build PDF
@@ -399,7 +469,13 @@ Keep it concise (max 200 words).
 
             if html_output_path:
                 self._generate_html_report(
-                    html_output_path, balance, trade_stats, allocation, chart_path, allocation_path, ai_analysis
+                    html_output_path,
+                    balance,
+                    trade_stats,
+                    allocation,
+                    chart_path,
+                    allocation_path,
+                    ai_analysis,
                 )
             return True
 
@@ -420,7 +496,7 @@ Keep it concise (max 200 words).
         """シンプルなHTML版レポートを出力（オフライン確認用）"""
         try:
             alloc_rows = "".join(
-                f"<li>{k}: ¥{v:,.0f} ({(v / (sum(allocation.values()) or 1))*100:.1f}%)</li>"
+                f"<li>{k}: ¥{v:,.0f} ({(v / (sum(allocation.values()) or 1)) * 100:.1f}%)</li>"
                 for k, v in allocation.items()
             )
             top = trade_stats.get("top")
@@ -430,13 +506,13 @@ Keep it concise (max 200 words).
             html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>AGStock Weekly Report</title></head>
 <body>
-  <h1>AGStock Weekly Report - {datetime.now().strftime('%Y-%m-%d')}</h1>
+  <h1>AGStock Weekly Report - {datetime.now().strftime("%Y-%m-%d")}</h1>
   <h2>サマリー</h2>
   <ul>
-    <li>Total Equity: ¥{balance['total_equity']:,.0f}</li>
-    <li>Cash: ¥{balance['cash']:,.0f}</li>
-    <li>Win Rate: {trade_stats['win_rate'] * 100:.1f}%</li>
-    <li>Monthly PnL: ¥{trade_stats['monthly_pnl']:,.0f}</li>
+    <li>Total Equity: ¥{balance["total_equity"]:,.0f}</li>
+    <li>Cash: ¥{balance["cash"]:,.0f}</li>
+    <li>Win Rate: {trade_stats["win_rate"] * 100:.1f}%</li>
+    <li>Monthly PnL: ¥{trade_stats["monthly_pnl"]:,.0f}</li>
     <li>Top: {top_line}</li>
     <li>Worst: {worst_line}</li>
   </ul>
@@ -459,5 +535,7 @@ if __name__ == "__main__":
     # Simple CLI: optional HTML出力とデモモード
     html_out = os.getenv("REPORT_HTML_OUTPUT")
     generator = PDFReportGenerator()
-    success = generator.generate_weekly_report("test_report.pdf", html_output_path=html_out)
+    success = generator.generate_weekly_report(
+        "test_report.pdf", html_output_path=html_out
+    )
     print(f"Report generated: {success}")

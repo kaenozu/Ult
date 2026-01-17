@@ -1,0 +1,38 @@
+{
+  "name": "code_generator",
+  "description": "Generate boilerplate code for React components, API endpoints, and tests automatically",
+  "version": "1.0.0",
+  "author": "AGStock Ult Team",
+  "category": "development",
+  "tags": ["code-generation", "react", "api", "typescript", "boilerplate"],
+  "capabilities": [
+    "React component generation",
+    "API endpoint generation",
+    "Test file generation",
+    "TypeScript type definitions",
+    "Storybook stories",
+    "FastAPI routes",
+    "Database models",
+    "CRUD operations"
+  ],
+  "supported_file_types": [".tsx", ".ts", ".py", ".test.tsx", ".stories.tsx"],
+  "dependencies": {
+    "python": ">=3.8",
+    "node": ">=16.0.0",
+    "react": ">=18.0.0",
+    "fastapi": ">=0.68.0"
+  },
+  "configuration": {
+    "default_component_type": "dashboard",
+    "default_api_methods": ["GET"],
+    "auto_generate_tests": true,
+    "include_types": true,
+    "output_directories": {
+      "components": "src/components",
+      "api": "backend/src/api",
+      "tests": "src/components/__tests__"
+    }
+  },
+  "entry_point": "scripts/generate.py",
+  "documentation": "SKILL.md"
+}
