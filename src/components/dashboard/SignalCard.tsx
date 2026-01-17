@@ -4,7 +4,7 @@ import React from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown, ArrowRight, Zap } from "lucide-react";
-import { api, checkHealth, getSignal, SignalResponse } from "@/lib/api";
+import { getSignal, executeTrade } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 interface SignalCardProps {
@@ -13,7 +13,7 @@ interface SignalCardProps {
 }
 
 export default function SignalCard({ ticker, name }: SignalCardProps) {
-  const { data: signal, isLoading } = useQuery({
+  const { data: signal } = useQuery({
     queryKey: ["signal", ticker],
     queryFn: () => getSignal(ticker),
     refetchInterval: 30000,
@@ -150,21 +150,17 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
           if (!confirmed) return;
 
           try {
-            const res = await fetch("/api/v1/trades", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                symbol: ticker,
-                action: isBullish ? "BUY" : "SELL",
-                quantity: 100, // Default 100 shares for paper trading
-                price: displaySignal.entry_price,
-                order_type: "market",
-              }),
+            const result = await executeTrade({
+              ticker,
+              action: isBullish ? "BUY" : "SELL",
+              quantity: 100, // Default 100 shares for paper trading
+              price: displaySignal.entry_price,
+              strategy: "manual",
             });
-            if (res.ok) {
+            if (result.success) {
               alert(`注文完了: ${ticker}`);
             } else {
-              alert("注文失敗");
+              alert(`注文失敗: ${result.message}`);
             }
           } catch (e) {
             console.error(e);

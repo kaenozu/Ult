@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import {
   PortfolioSummary,
   Position,
@@ -8,6 +8,20 @@ import {
   ChartDataPoint,
   TradeRequest,
 } from "@/types";
+
+declare global {
+  interface Window {
+    structuredLogger?: {
+      logError: (type: string, data: Record<string, unknown>) => void;
+      logApiCall: (
+        method: string | undefined,
+        url: string | undefined,
+        status: number,
+        duration: number,
+      ) => void;
+    };
+  }
+}
 
 // Re-export for components that import from api.ts
 export type { TradeRequest, SignalResponse } from "@/types";
@@ -25,16 +39,17 @@ export const api = axios.create({
 });
 
 // Common error handler
-const handleApiError = (error: any, context: string) => {
+const handleApiError = (error: unknown, context: string) => {
   console.error(`API Error in ${context}:`, error);
 
   // Log structured error for monitoring
-  if (typeof window !== "undefined" && (window as any).structuredLogger) {
-    (window as any).structuredLogger.logError("api_call_failed", {
+  if (typeof window !== "undefined" && window.structuredLogger) {
+    const axiosError = error as AxiosError;
+    window.structuredLogger.logError("api_call_failed", {
       context,
-      message: error.message,
-      status: error.response?.status,
-      url: error.config?.url,
+      message: axiosError.message || "Unknown error",
+      status: axiosError.response?.status,
+      url: axiosError.config?.url,
     });
   }
 
@@ -45,12 +60,15 @@ const handleApiError = (error: any, context: string) => {
 api.interceptors.response.use(
   (response) => {
     // Log successful API calls
-    if (typeof window !== "undefined" && (window as any).structuredLogger) {
-      (window as any).structuredLogger.logApiCall(
-        response.config.method,
-        response.config.url,
+    if (typeof window !== "undefined" && window.structuredLogger) {
+      const config = response.config as InternalAxiosRequestConfig & {
+        timestamp: number;
+      };
+      window.structuredLogger.logApiCall(
+        config.method,
+        config.url,
         response.status,
-        Date.now() - (response.config as any).timestamp,
+        Date.now() - (config.timestamp || Date.now()),
       );
     }
     return response;
@@ -62,8 +80,9 @@ api.interceptors.response.use(
 );
 
 // Add timestamp to requests for performance monitoring
-api.interceptors.request.use((config) => {
-  (config as any).timestamp = Date.now();
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  (config as InternalAxiosRequestConfig & { timestamp: number }).timestamp =
+    Date.now();
   return config;
 });
 
@@ -71,7 +90,7 @@ api.interceptors.request.use((config) => {
 const apiCall = async <T>(
   method: "get" | "post" | "put" | "delete",
   url: string,
-  data?: any,
+  data?: unknown,
   context?: string,
 ): Promise<T> => {
   try {
