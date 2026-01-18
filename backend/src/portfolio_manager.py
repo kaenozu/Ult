@@ -81,17 +81,16 @@ class PortfolioManager:
         
         if tickers:
             try:
-                # Use data_loader to get real prices
-                # We can reuse fetch_stock_data or specific realtime fetcher
-                # For efficiency, let's assume we can get a quick map
-                # Here we simulate with fetch_stock_data for now or a faster lightweight call
-                # In Phase 5, we used fetch_stock_data cache.
-                pass 
-                # Optimization: fetch only if tickers exist
-                # This might be slow if many tickers.
-                # TODO: Bulk real-time fetch
+                # Batch fetch realtime prices (enables async mode in data_loader)
+                # Use "1d" period and "1m" interval for latest price
+                price_data_map = fetch_stock_data(tickers, period="5d", interval="1m")
+                
+                for ticker, df in price_data_map.items():
+                    if not df.empty:
+                        # Get latest close price
+                        current_prices[ticker] = float(df['Close'].iloc[-1])
             except Exception as e:
-                logger.error(f"Failed to fetch realtime prices: {e}")
+                logger.error(f"Failed to batch fetch realtime prices: {e}")
 
         # 3. Calculate Totals
         total_equity = cash
@@ -104,8 +103,12 @@ class PortfolioManager:
             qty = data['quantity']
             avg_price = data['avg_price']
             
-            # Get cached or fresh price (float)
-            current_price_float = self._get_current_price(symbol)
+            # Get from batch result or fallback to 0.0
+            current_price_float = current_prices.get(symbol, 0.0)
+            
+            # If batch failed, try individual fallback (optional, but maybe risky if batch failed due to network)
+            # Staying safe: just use what we have.
+            
             current_price = Decimal(str(current_price_float))
             
             market_value = qty * current_price
@@ -138,17 +141,7 @@ class PortfolioManager:
             "timestamp": "now" # TODO: Real timestamp
         }
 
-    def _get_current_price(self, symbol: str) -> float:
-        """Helper to get latest price from data_loader cache or fetch"""
-        try:
-             # Try to get single latest price
-             # This is a bit inefficient doing 1 by 1, but safe for generic API
-             data = fetch_stock_data([symbol], period="1d", interval="1m")
-             if symbol in data and not data[symbol].empty:
-                 return float(data[symbol]['Close'].iloc[-1])
-        except Exception:
-            pass
-        return 0.0 # Fallback or error
+    # Removed _get_current_price as it's no longer used efficiently
 
     def rebalance_portfolio(self, target_weights: Dict[str, float] = None) -> List[Dict[str, Any]]:
         """

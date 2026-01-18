@@ -71,7 +71,7 @@ const PriceAlerts = dynamic(
   () => import("@/components/features/dashboard/PriceAlerts"),
 );
 const NeuralMonitor = dynamic(
-  () => import("@/components/NeuralMonitorAdvanced"),
+  () => import("@/components/features/NeuralMonitor").then((mod) => mod.NeuralMonitor),
   {
     ssr: false,
     loading: () => <div className="h-32 bg-gray-800 animate-pulse rounded" />,
@@ -86,6 +86,17 @@ const ApprovalCardsDemo = dynamic(() =>
 const VoidScene = dynamic(() => import("@/components/features/xr/VoidScene"), {
   ssr: false,
 });
+const NeuralTradingDaemon = dynamic(
+  () => import("@/components/features/dashboard/NeuralTradingDaemon"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-96 bg-gray-800 animate-pulse rounded flex items-center justify-center text-purple-500">
+        Summoning Neural Daemon...
+      </div>
+    ),
+  },
+);
 
 // Curated AI/Semiconductor focused stocks to watch
 const WATCHLIST = [
@@ -97,7 +108,25 @@ const WATCHLIST = [
   { ticker: "9984.T", name: "ソフトバンクG" },
 ];
 
+const EarningsHunterPanel = dynamic(
+  () => import("@/components/features/dashboard/EarningsHunterPanel"),
+  {
+    loading: () => <div className="h-48 bg-gray-800 animate-pulse rounded" />,
+  },
+);
+
+{ ssr: false }
+);
+
+const NeuralTradingDaemon = dynamic(
+  () => import("@/components/features/dashboard/NeuralTradingDaemon"),
+  { ssr: false }
+);
+
+import { useNeuralStore } from "@/lib/store/neuralStore";
+
 export default function Home() {
+  const { isActive, setIsActive } = useNeuralStore();
   const {
     data: portfolio,
     isLoading,
@@ -164,6 +193,14 @@ export default function Home() {
       <div className="flex flex-col min-h-dvh">
         <MacroStrip />
         <div className="p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto pb-32 flex-1 w-full">
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => setIsActive(!isActive)}
+              className={`px-4 py-2 rounded font-bold uppercase transition-all duration-300 ${isActive ? 'bg-cyan-500 text-black shadow-[0_0_20px_#00ffcc]' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+            >
+              {isActive ? "Divine Mode: ON" : "Divine Mode: OFF"}
+            </button>
+          </div>
           {/* Top Section: AI Status & Portfolio HUD */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column: VibeCheck & System Monitor */}
@@ -172,9 +209,25 @@ export default function Home() {
               <MarketStatusCard />
               {/* Real-time Price Alerts */}
               <PriceAlerts />
+              {/* Top Row: Key Metrics & Radar */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="md:col-span-2">
+                  <MarketSummary />
+                </div>
+                <div className="md:col-span-1">
+                  <NewsShockRadar />
+                </div>
+              </div>
+
+              {/* AI Advisor & Neural Monitor & Daemon */}
               <AIAgentAvatar state="IDLE" />
-              <div className="h-80">
-                <SystemMonitor />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div className="h-80">
+                  <SystemMonitor />
+                </div>
+                <div className="h-80">
+                  <NeuralTradingDaemon />
+                </div>
               </div>
               {/* AI Advisor Panel (Text Output) */}
               <AIAdvisorPanel />
@@ -217,6 +270,20 @@ export default function Home() {
 
           {/* Visuals First: AI Thinking Section */}
           <section>
+            {/* Phase 6: Neural Trading Daemon */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(255,0,0,0.8)] animate-pulse" />
+              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
+                Neural Trading Daemon{" "}
+                <span className="text-xs text-red-400 ml-2 border border-red-500/50 px-2 py-0.5 rounded animate-pulse">
+                  Phase 6.0 - CHAOS UNLEASHED
+                </span>
+              </h2>
+            </div>
+            <div className="w-full mb-8">
+              <NeuralTradingDaemon />
+            </div>
+
             {/* Phase 5: Void Terminal */}
             <div className="flex items-center gap-3 mb-4">
               <div className="h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
@@ -261,6 +328,11 @@ export default function Home() {
                   AI Analysis Feed
                 </span>
               </h2>
+            </div>
+
+            {/* Phase 6: Alpha Generation (Earnings Hunter) */}
+            <div className="mb-6">
+              <EarningsHunterPanel />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
