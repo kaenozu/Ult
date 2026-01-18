@@ -32,10 +32,12 @@ from src.api.routers import (
     websocket,
     circuit_breaker,
     approvals,
+    learning,
 )
 from src.api.websocket_broadcaster import broadcaster
 from src.api.websocket_manager import manager
 from src.circuit_breaker import get_circuit_breaker
+from src.continuous_learning import continuous_learning, TaskContext
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +153,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(websocket.router, tags=["WebSocket"])
     app.include_router(approvals.router, prefix="/api/v1", tags=["Approvals"])
+    app.include_router(learning.router, tags=["Learning"])
 
     # Root Routes
     @app.get("/", tags=["Root"])
