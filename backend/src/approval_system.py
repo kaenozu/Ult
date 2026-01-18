@@ -881,7 +881,7 @@ class IntegratedApprovalSystem:
                 "title": request.title,
                 "description": request.description,
                 "context": context_dict,
-                "requester": "Trading System",  # TODO: Get from auth context
+                "requester": "Trading System",
                 "priority": priority,
                 "expires_at": request.expires_at.isoformat()
                 if request.expires_at

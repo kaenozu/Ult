@@ -112,7 +112,7 @@ class MarketDataBroadcaster:
             # Broadcast regime update
             regime_msg = MessageFactory.regime_update(
                 regime=regime_enum,
-                confidence=0.85,  # TODO: calculate actual confidence
+                confidence=strategy.get("confidence", 0.85),
                 strategy=strategy.get("strategy", "unknown"),
             )
             regime_msg.payload.indicators = {

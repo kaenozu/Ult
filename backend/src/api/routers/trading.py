@@ -46,7 +46,7 @@ async def execute_trade(
             return TradeResponse(
                 success=success,
                 message=result["message"],
-                order_id=None,  # TODO: Return actual Order ID
+                order_id=result.get("order_id"),
             )
         else:
             # バリデーションエラー

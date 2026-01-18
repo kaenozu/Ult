@@ -198,8 +198,10 @@ async def handle_get_status(message) -> None:
             is_authenticated=connection.is_authenticated,
             channels_subscribed=list(connection.subscriptions),
             subscriber_count=len(manager._connections),
-            uptime_seconds=0.0,  # TODO: implement uptime tracking
-            queue_size=0,  # TODO: implement queue tracking
+            uptime_seconds=(datetime.now() - connection.connected_at).total_seconds(),
+            queue_size=len(manager._message_queue)
+            if hasattr(manager, "_message_queue")
+            else 0,
         )
         await connection.send_message(status_msg)
 
