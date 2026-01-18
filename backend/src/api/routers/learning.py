@@ -97,9 +97,15 @@ async def report_task_completion(
             message="Task completion reported. Skill extraction analysis in progress.",
         )
 
+    except ValueError as e:
+        logger.error(f"Invalid task data: {e}")
+        raise HTTPException(status_code=400, detail="Invalid task completion data")
+    except ConnectionError as e:
+        logger.error(f"Database connection error: {e}")
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     except Exception as e:
-        logger.error(f"Error processing task completion: {e}")
-        raise HTTPException(status_code=500, detail="Failed to process task completion")
+        logger.error(f"Unexpected error processing task completion: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/stats", response_model=LearningStatsResponse)
@@ -110,9 +116,15 @@ async def get_learning_stats():
     try:
         stats = continuous_learning.get_learning_stats()
         return LearningStatsResponse(**stats)
+    except KeyError as e:
+        logger.error(f"Missing stats data: {e}")
+        raise HTTPException(status_code=500, detail="Statistics data unavailable")
+    except AttributeError as e:
+        logger.error(f"Continuous learning system not initialized: {e}")
+        raise HTTPException(status_code=503, detail="Learning system unavailable")
     except Exception as e:
-        logger.error(f"Error getting learning stats: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get learning statistics")
+        logger.error(f"Unexpected error getting learning stats: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.get("/skills")
@@ -152,8 +164,12 @@ async def _analyze_task_completion(task_context: TaskContext):
         else:
             logger.debug(f"No skill extracted from task: {task_context.description}")
 
+    except ValueError as e:
+        logger.error(f"Invalid task context data: {e}")
+    except AttributeError as e:
+        logger.error(f"Missing task context attribute: {e}")
     except Exception as e:
-        logger.error(f"Error in background skill extraction: {e}")
+        logger.error(f"Unexpected error in background skill extraction: {e}")
 
 
 # Integration hook for opencode's task completion

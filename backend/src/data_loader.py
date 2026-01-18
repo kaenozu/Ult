@@ -67,8 +67,12 @@ if _CONFIG_PATH.exists():
     try:
         with open(_CONFIG_PATH, "r", encoding="utf-8") as f:
             _config = json.load(f)
+    except FileNotFoundError as e:
+        logger.warning(f"config.json not found: {e}")
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in config.json: {e}")
     except Exception as e:
-        logger.error(f"Error loading config.json: {e}")
+        logger.error(f"Unexpected error loading config.json: {e}")
 
 _tickers_config = _config.get("tickers", {})
 
