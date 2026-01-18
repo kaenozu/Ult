@@ -2,17 +2,38 @@
 Learning API Router - Continuous Learning System Integration
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Security
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import logging
+import jwt
+import os
 
 from src.continuous_learning import continuous_learning, TaskContext, ExtractedSkill
 
-logger = logging.getLogger(__name__)
+# Security
+security = HTTPBearer()
+JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
 
-router = APIRouter(prefix="/api/v1/learning", tags=["learning"])
+
+def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+    """Verify JWT token"""
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=["HS256"])
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+router = APIRouter(
+    prefix="/api/v1/learning",
+    tags=["learning"],
+    dependencies=[Depends(verify_token)],  # Require authentication for all endpoints
+)
 
 
 class TaskCompletionRequest(BaseModel):

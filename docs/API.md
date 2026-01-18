@@ -61,6 +61,15 @@ http://localhost:8000/openapi.json
 - **GET** `/api/v1/portfolio/performance`
   - Get portfolio performance metrics
 
+### Learning System
+
+- **POST** `/api/v1/learning/task-completion`
+  - Report task completion for skill extraction
+- **GET** `/api/v1/learning/stats`
+  - Get continuous learning statistics
+- **GET** `/api/v1/learning/skills`
+  - List extracted skills
+
 ### Market Data
 
 - **GET** `/api/v1/market/summary`
@@ -112,11 +121,56 @@ ws.onmessage = event => {
 
 ```javascript
 const ws = new WebSocket('ws://localhost:8000/ws/market');
+```
 
-ws.onmessage = event => {
-  const data = JSON.parse(event.data);
-  console.log('Market data:', data);
-};
+## Learning System Details
+
+### Task Completion Reporting
+
+**Endpoint:** `POST /api/v1/learning/task-completion`
+
+**Request Body:**
+
+```json
+{
+  "task_type": "debugging",
+  "description": "Fixed critical bug in authentication",
+  "duration": 45.5,
+  "success": true,
+  "error_messages": ["Authentication failed"],
+  "technologies_used": ["Python", "FastAPI"],
+  "patterns_discovered": ["JWT validation"],
+  "solutions_applied": ["Fixed token decoding"],
+  "challenges_encountered": ["Token expiration handling"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "extracted": false,
+  "message": "Task completion reported. Skill extraction analysis in progress."
+}
+```
+
+### Learning Statistics
+
+**Endpoint:** `GET /api/v1/learning/stats`
+
+**Response:**
+
+```json
+{
+  "total_tasks_analyzed": 150,
+  "skills_extracted": 45,
+  "extraction_rate": 0.3,
+  "most_common_technologies": [
+    ["Python", 45],
+    ["React", 38]
+  ],
+  "recent_skills": ["Fixed authentication bug", "Optimized database query"]
+}
 ```
 
 ## Error Handling

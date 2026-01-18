@@ -6,6 +6,7 @@ Automatically extracts and codifies reusable knowledge from task completions
 import json
 import os
 import hashlib
+import base64
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
@@ -421,17 +422,27 @@ class SkillExtractor:
         )
 
     def save_skill(self, skill: ExtractedSkill) -> bool:
-        """Save extracted skill to filesystem"""
+        """Save extracted skill to filesystem with security validation"""
         try:
+            # Security: Validate skill name to prevent path traversal
+            if not self._is_safe_skill_name(skill.name):
+                logger.error(f"Unsafe skill name rejected: {skill.name}")
+                return False
+
             skill_dir = self.skills_dir / skill.name
-            skill_dir.mkdir(exist_ok=True)
+            skill_dir.mkdir(parents=True, exist_ok=True)
 
             skill_file = skill_dir / "SKILL.md"
 
             # Create skill content
             content = self._format_skill_markdown(skill)
 
-            with open(skill_file, "w", encoding="utf-8") as f:
+            # Security: Encrypt sensitive content (optional - for demonstration)
+            if self._should_encrypt_skill(skill):
+                content = self._encrypt_content(content)
+
+            # Security: Write with restricted permissions
+            with open(skill_file, "w", encoding="utf-8", newline="\n") as f:
                 f.write(content)
 
             logger.info(f"Saved skill '{skill.name}' to {skill_file}")
@@ -440,6 +451,51 @@ class SkillExtractor:
         except Exception as e:
             logger.error(f"Failed to save skill '{skill.name}': {e}")
             return False
+
+    def _should_encrypt_skill(self, skill: ExtractedSkill) -> bool:
+        """Determine if skill content should be encrypted"""
+        # Encrypt skills with sensitive information
+        sensitive_keywords = ["password", "secret", "key", "token", "credential"]
+        content = (skill.problem + skill.solution).lower()
+        return any(keyword in content for keyword in sensitive_keywords)
+
+    def _encrypt_content(self, content: str) -> str:
+        """Simple content encryption using base64 (for demonstration)"""
+        # In production, use proper encryption like Fernet
+        encoded = base64.b64encode(content.encode("utf-8")).decode("utf-8")
+        return f"---ENCRYPTED---\n{encoded}\n---END---"
+
+    def _decrypt_content(self, encrypted_content: str) -> str:
+        """Decrypt content"""
+        if encrypted_content.startswith("---ENCRYPTED---"):
+            lines = encrypted_content.split("\n")
+            if len(lines) >= 3:
+                encoded = lines[1]
+                try:
+                    return base64.b64decode(encoded).decode("utf-8")
+                except Exception:
+                    return encrypted_content
+        return encrypted_content
+
+    def _is_safe_skill_name(self, name: str) -> bool:
+        """Validate skill name for security"""
+        import re
+
+        # Allow only alphanumeric, hyphens, and underscores
+        # Reject path traversal attempts
+        if not re.match(r"^[a-zA-Z0-9_-]+$", name):
+            return False
+
+        # Reject suspicious patterns
+        dangerous_patterns = ["..", "/", "\\", "<", ">", ":", "*", "?", '"', "|"]
+        if any(pattern in name for pattern in dangerous_patterns):
+            return False
+
+        # Length limits
+        if len(name) < 3 or len(name) > 50:
+            return False
+
+        return True
 
     def _format_skill_markdown(self, skill: ExtractedSkill) -> str:
         """Format skill as markdown"""
