@@ -1,2 +1,0 @@
-{"timestamp": "2026-01-15T11:58:12.665108", "level": "INFO", "logger": "src.paper_trader", "message": "Balance recalculated from history: 1,000,000 JPY", "module": "paper_trader", "function": "recalculate_balance", "line": 170}
-{"timestamp": "2026-01-15T11:58:12.666618", "level": "INFO", "logger": "PortfolioManager", "message": "Initialized with constraints: PortfolioConstraints(max_correlation=0.7, max_sector_exposure=0.4, max_position_size=0.2, min_diversification=5, target_risk=0.02)", "module": "portfolio_manager", "function": "_initialize", "line": 60}

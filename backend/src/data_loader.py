@@ -1,11 +1,22 @@
 import os
+
 print(f"DEBUG: Loading data_loader from: {os.path.abspath(__file__)}")
 import asyncio
 import logging
 import os
 import time
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable, Dict, Mapping, Optional, Sequence, TypeVar, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
 import pandas as pd
 import streamlit as st
@@ -63,29 +74,73 @@ if _CONFIG_PATH.exists():
 
 _tickers_config = _config.get("tickers", {})
 
-CRYPTO_PAIRS = _tickers_config.get("crypto_pairs", [
-    "BTC-USD", "ETH-USD", "XRP-USD", "SOL-USD", "DOGE-USD",
-    "BNB-USD", "ADA-USD", "MATIC-USD", "DOT-USD", "LTC-USD",
-])
+CRYPTO_PAIRS = _tickers_config.get(
+    "crypto_pairs",
+    [
+        "BTC-USD",
+        "ETH-USD",
+        "XRP-USD",
+        "SOL-USD",
+        "DOGE-USD",
+        "BNB-USD",
+        "ADA-USD",
+        "MATIC-USD",
+        "DOT-USD",
+        "LTC-USD",
+    ],
+)
 
-FX_PAIRS = _tickers_config.get("fx_pairs", [
-    "USDJPY=X", "EURUSD=X", "GBPUSD=X", "AUDUSD=X",
-    "USDCAD=X", "USDCHF=X", "EURJPY=X", "GBPJPY=X",
-])
+FX_PAIRS = _tickers_config.get(
+    "fx_pairs",
+    [
+        "USDJPY=X",
+        "EURUSD=X",
+        "GBPUSD=X",
+        "AUDUSD=X",
+        "USDCAD=X",
+        "USDCHF=X",
+        "EURJPY=X",
+        "GBPJPY=X",
+    ],
+)
 
-JP_STOCKS = _tickers_config.get("jp_stocks", [
-    "7203.T", "9984.T", "6758.T", "8035.T", "6861.T",
-    "6098.T", "4063.T", "6367.T", "6501.T", "7974.T",
-    "9432.T", "8306.T", "7267.T", "4502.T", "6954.T",
-])
+JP_STOCKS = _tickers_config.get(
+    "jp_stocks",
+    [
+        "7203.T",
+        "9984.T",
+        "6758.T",
+        "8035.T",
+        "6861.T",
+        "6098.T",
+        "4063.T",
+        "6367.T",
+        "6501.T",
+        "7974.T",
+        "9432.T",
+        "8306.T",
+        "7267.T",
+        "4502.T",
+        "6954.T",
+    ],
+)
 
 
 class DataLoader:
     """Wrapper class for data loading operations (backward compatibility)."""
+
     def __init__(self, config: Optional[Union[str, Dict[str, Any]]] = None):
         self.config = config if isinstance(config, dict) else {}
-        self.db_path = config if isinstance(config, str) else self.config.get("database", {}).get("path")
-        self.manager = DataManager(self.db_path) if self.db_path and isinstance(self.db_path, str) else None
+        self.db_path = (
+            config
+            if isinstance(config, str)
+            else self.config.get("database", {}).get("path")
+        )
+        self.manager = (
+            DataManager(self.db_path)
+            if self.db_path and isinstance(self.db_path, str)
+            else None
+        )
         # Add attributes for compatibility
         data_cfg = self.config.get("data", {})
         self.default_period = data_cfg.get("default_period", "1y")
@@ -94,7 +149,9 @@ class DataLoader:
     def get_latest_data(self, ticker: str, period: str = "1y") -> pd.DataFrame:
         return fetch_stock_data(ticker, period=period)
 
-    def fetch_multiple(self, tickers: Sequence[str], period: str = "1y") -> Dict[str, pd.DataFrame]:
+    def fetch_multiple(
+        self, tickers: Sequence[str], period: str = "1y"
+    ) -> Dict[str, pd.DataFrame]:
         results = {}
         for ticker in tickers:
             results[ticker] = fetch_stock_data(ticker, period=period)
@@ -116,7 +173,9 @@ def _create_cache_instance():
 _cache_instance: Optional[CacheManager] = _create_cache_instance()
 _realtime_cache: Dict[str, tuple[float, pd.DataFrame]] = {}
 try:
-    _DEFAULT_REALTIME_TTL = int(os.getenv("REALTIME_TTL_SECONDS", str(DEFAULT_REALTIME_TTL_SECONDS)))
+    _DEFAULT_REALTIME_TTL = int(
+        os.getenv("REALTIME_TTL_SECONDS", str(DEFAULT_REALTIME_TTL_SECONDS))
+    )
 except Exception:
     _DEFAULT_REALTIME_TTL = DEFAULT_REALTIME_TTL_SECONDS
 
@@ -172,7 +231,9 @@ def _attempt_async_fetch(
         max_concurrent = 10
 
     async def _runner() -> Dict[str, pd.DataFrame]:
-        return await loader.fetch_multiple_async(list(tickers), period, interval, max_concurrent=max_concurrent)
+        return await loader.fetch_multiple_async(
+            list(tickers), period, interval, max_concurrent=max_concurrent
+        )
 
     try:
         return _run_coroutine(_runner)
@@ -224,7 +285,11 @@ def _download_and_cache_missing(
         raise DataLoadError(
             message=f"Failed to download data for tickers: {tickers}",
             ticker=",".join(tickers) if tickers else None,
-            details={"period": period, "interval": interval, "original_error": str(exc)},
+            details={
+                "period": period,
+                "interval": interval,
+                "original_error": str(exc),
+            },
         ) from exc
 
     if raw.empty:
@@ -294,7 +359,9 @@ def process_downloaded_data(
         df.dropna(inplace=True)
 
         # --- Strict Data Quality Check ---
-        logger.info(f"Ticker {ticker} downloaded {len(df)} points. Columns: {df.columns.tolist()}")
+        logger.info(
+            f"Ticker {ticker} downloaded {len(df)} points. Columns: {df.columns.tolist()}"
+        )
         if len(df) < MINIMUM_DATA_POINTS:
             logger.warning(
                 f"Ticker {ticker} specifically excluded: "
@@ -381,8 +448,10 @@ def _sanitize_price_history(df: pd.DataFrame) -> pd.DataFrame:
     now = pd.Timestamp.now()
     clean = clean[clean.index <= now + pd.Timedelta(minutes=1)]
 
-    price_cols = [c for c in ["Open", "High", "Low", "Close", "Adj Close"] if c in clean.columns]
-    
+    price_cols = [
+        c for c in ["Open", "High", "Low", "Close", "Adj Close"] if c in clean.columns
+    ]
+
     # Skip clipping if data is too small (e.g. for tests)
     if len(clean) < 30:
         return clean
@@ -420,41 +489,64 @@ def fetch_stock_data(
 
     db = DataManager()
     start_date = parse_period(period)
-    result: Dict[str, pd.DataFrame] = {}
-    need_refresh: list[str] = []
 
+    result = _load_from_cache(tickers, db, start_date)
+    need_refresh = [t for t in tickers if t not in result]
+
+    downloaded = _download_missing_data(need_refresh, period, interval, start_date, db)
+    result.update(downloaded)
+
+    result = _sanitize_results(result)
+
+    return result
+
+
+def _load_from_cache(
+    tickers: Sequence[str],
+    db: DataManager,
+    start_date: datetime,
+) -> Dict[str, pd.DataFrame]:
+    """Load cached data for tickers."""
+    result: Dict[str, pd.DataFrame] = {}
     for ticker in tickers:
         try:
             cached_df, needs_refresh = _load_cached_ticker(db, ticker, start_date)
             if cached_df is not None:
                 result[ticker] = cached_df
-            if needs_refresh:
-                need_refresh.append(ticker)
         except Exception as e:
             logger.error(f"Error loading cached data for {ticker}: {e}")
-            # キャッシュ読み込みに失敗した場合は、更新が必要とみなす
-            need_refresh.append(ticker)
+    return result
 
+
+def _download_missing_data(
+    tickers: Sequence[str],
+    period: str,
+    interval: str,
+    start_date: datetime,
+    db: DataManager,
+) -> Dict[str, pd.DataFrame]:
+    """Download and cache missing data for tickers."""
     try:
-        downloaded = _download_and_cache_missing(need_refresh, period, interval, start_date, db)
-        result.update(downloaded)
+        return _download_and_cache_missing(tickers, period, interval, start_date, db)
     except Exception as e:
         logger.error(f"Error downloading and caching missing data: {e}")
-        # ダウンロードに失敗した場合も、エラーログを出力し、処理を継続
+        return {}
 
-    # Sanitize to avoid leaks/outliers
-    for t, df in list(result.items()):
+
+def _sanitize_results(result: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+    """Sanitize dataframes to avoid outliers and quality issues."""
+    sanitized: Dict[str, pd.DataFrame] = {}
+    for t, df in result.items():
         try:
             cleaned = _sanitize_price_history(df)
             reason = evaluate_dataframe(cleaned)
             if reason:
                 logger.warning("Data quality guard triggered for %s: %s", t, reason)
-            result[t] = cleaned
+            sanitized[t] = cleaned
         except Exception as e:
             logger.error(f"Error sanitizing data for {t}: {e}")
-            # サニタイズに失敗した場合は、元のデータをそのまま使用
-
-    return result
+            sanitized[t] = df  # fallback to original
+    return sanitized
 
 
 def fetch_external_data(period: str = "2y") -> Dict[str, pd.DataFrame]:
@@ -579,7 +671,9 @@ def fetch_market_summary() -> tuple[pd.DataFrame, Dict[str, Any]]:
     return summary_df, stats
 
 
-DEFAULT_BACKOFF = int(os.getenv("REALTIME_BACKOFF_SECONDS", str(DEFAULT_REALTIME_BACKOFF_SECONDS)))
+DEFAULT_BACKOFF = int(
+    os.getenv("REALTIME_BACKOFF_SECONDS", str(DEFAULT_REALTIME_BACKOFF_SECONDS))
+)
 
 
 @retry_with_backoff(retries=2, backoff_in_seconds=DEFAULT_BACKOFF)
@@ -649,6 +743,7 @@ class DataLoader:
     def fetch_earnings_dates(self, tickers: Sequence[str]) -> Dict[str, Optional[str]]:
         return fetch_earnings_dates(tickers)
 
+
 def fetch_earnings_dates(tickers: Sequence[str]) -> Dict[str, Optional[str]]:
     """Fetch the next earnings date for a list of tickers using yfinance."""
     results = {}
@@ -677,7 +772,7 @@ def fetch_earnings_dates(tickers: Sequence[str]) -> Dict[str, Optional[str]]:
                     # Alternative structure check (sometimes it's transpoosed)
                     results[ticker] = None
             else:
-                 results[ticker] = None
+                results[ticker] = None
         except Exception as e:
             logger.warning(f"Error fetching earnings for {ticker}: {e}")
             results[ticker] = None
