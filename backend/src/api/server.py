@@ -100,6 +100,10 @@ def create_app() -> FastAPI:
     app.include_router(
         circuit_breaker.router, prefix="/api/v1", tags=["Risk Management"]
     )
+    
+    # Phase 7: News Shock Defense
+    from src.api.routers import shock_radar
+    app.include_router(shock_radar.router, prefix="/api/v1", tags=["Risk Management"])
 
     # Administrative APIs
     app.include_router(settings_router.router, prefix="/api/v1", tags=["Administration"])

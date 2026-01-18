@@ -11,14 +11,22 @@
     - [x] [Core] Async Agent Loop (Redis Stream / Fire-and-forget) <!-- id: 8 -->
     - [x] [UI] NeuralMonitor (Realtime Thought Process Display) <!-- id: 9 -->
     - [x] [Ops] Semi-Auto Mode (Human-in-the-loop approval) <!-- id: 10 -->
+    - [x] [Critical] Approval Persistence (SQLite Integration) <!-- id: 10a -->
+    - [x] [UI] Global Alert System (Circuit Breaker Visuals) <!-- id: 10b -->
 
-- [ ] Phase 5: The Hybrid Singularity (Future Roadmap) <!-- id: 11 -->
-    - [/] [VR] WebXR Spatial Trading Interface (Spatial Computing) <!-- id: 12 -->
-        - [x] R3F Hooks error fix <!-- id: 12a -->
-        - [ ] WebXR session management & error handling <!-- id: 12b -->
-        - [ ] Device detection & fallback UI <!-- id: 12c -->
-        - [ ] Performance optimization <!-- id: 12d -->
-    - [ ] [Core] Federated Learning Protocol (P2P Weight Sharing) <!-- id: 13 -->
-    - [ ] [Hardware] Edge Inference Optimization (ONNX/TensorRT) <!-- id: 14 -->
-    - [ ] [Audit] Proof of Non-Malfunction (Blockchain Logging) <!-- id: 15 -->
+- [ ] Phase 5: The Hybrid Singularity (Stabilization & Edge) <!-- id: 11 -->
+    - [x] [Stabilization] Dashboard & API Hardening (GLM) <!-- id: 12 -->
+        - [x] Backend Connection Resilience (config/imports/cors) <!-- id: 12a -->
+        - [x] Frontend Reconnection Logic (useSynapse) <!-- id: 12b -->
+        - [x] Frontend Config Fix (localhost proxy) <!-- id: 12c -->
+    - [/] [UI] WebXR & UI Polish (Pickle) <!-- id: 13 -->
+        - [x] WebXR Spatial Interface (Stable) <!-- id: 13a -->
+        - [ ] [Interaction] Parallax Effect (2.5D Mode) <!-- id: 13c -->
+        - [ ] UI Skills Application (text-balance, tabular-nums) <!-- id: 13b -->
+    - [x] [Edge] Edge Inference Pilot (Qwen) <!-- id: 14 -->
+        - [x] WebLLM / Transformers.js Integration <!-- id: 14a -->
+        - [ ] [Platform] Client-Side News Analysis (WASM) <!-- id: 14b -->
+    - [ ] [Intelligence] Divine Voice Interface (Voice Feedback) <!-- id: 17 -->
+    - [ ] [Deferred] Federated Learning Protocol <!-- id: 15 -->
+    - [ ] [Deferred] Blockchain Audit <!-- id: 16 -->
 

@@ -1,29 +1,46 @@
-# Walkthrough: Living Nexus & Strategy Shifter (V2)
+# Walkthrough - Patch 4.5: The Missing Link
 
-Based on the "Interactive Debate" results, I have implemented two major upgrades.
+**"The Ghost is now immortal."**
 
-## 1. Living Nexus (Frontend)
-The **EcosystemGraph** is now interactive and contains the "Ghost Protocol".
-- **Interaction:** Clicking on any node triggers a simulated AI analysis ("Ghost") about the stock's correlation and supply chain status.
-- **Visuals:** Updated to match the "Living" concept with pulsing effects and deeper cyberpunk aesthetics.
+Following the "Council of Five" debate, we identified critical gaps in Phase 4. This patch addresses them, ensuring the system is robust enough for Phase 5 (The Hybrid Singularity).
 
-## 2. Strategy Shifter (Backend)
-I have merged the experimental `strategies/ml/regime_detector.py` into the core `backend/src/regime_detector.py` and added **Hard Circuit Breakers**.
-- **Crash Detection:** Uses a combination of High Volatility and Down Trend to detect `MarketRegime.CRASH`.
-- **Circuit Breaker:** When `CRASH` is detected, `get_regime_strategy` returns:
-    - `position_size: 0.0` (Stop Trading)
-    - `stop_loss: 0.0` (Immediate Liquidation signal)
+## Changes
 
-## Verification
-Ran `verify_regime.py` with noisy crash simulations.
+### 1. Approval Persistence (SQLite)
+*   **Problem**: Approval requests were lost on server restart (Redis 60s TTL).
+*   **Solution**: Integrated `sqlite3` based persistence into `ApprovalWorkflowManager`.
+*   **Files**:
+    *   `backend/src/database_manager.py`: Added `approval_requests` table and CRUD methods.
+    *   `backend/src/approval_system.py`: Updated to read/write from DB.
+*   **Verification**: `backend/tests/test_approval_persistence.py` confirmed requests survive a restart.
+
+### 2. Global Alert System (UI)
+*   **Problem**: Circuit Breaker triggers were only visible in logs.
+*   **Solution**: Implemented a full-screen "Red Alert" overlay.
+*   **Files**:
+    *   `src/components/layout/GlobalAlertOverlay.tsx`: New component listening to `circuit_breaker` channel.
+    *   `src/app/layout.tsx`: Added overlay to root layout.
+*   **Effect**: When the system halts (Kill Switch / Hard Budget), the UI goes into lockdown mode.
+
+## Verification Results
+
+### Automated Tests
+```bash
+$ python -m tests.test_approval_persistence
+Created Request: DlVVF1-gR4EIf1UWrt0GDA
+Verified in DB: OK
+Simulating Restart...
+Verified Loaded after Restart: OK
+Approving Request...
+Verified DB Status Update: OK
+Ran 1 test in 0.051s
+OK
 ```
---- Testing Stable Scenario ---
-✅ PASS: Correctly identified STABLE/RANGING (low_volatility)
 
---- Testing Crash Scenario ---
-✅ PASS: Correctly identified CRASH
+### Manual Verification
+1.  **Persistence**: Confirmed Pending approvals appear after restart.
+2.  **Global Alert**: (Simulated) Validated red overlay appears on `circuit_breaker_tripped` event.
 
---- Testing Volatile Scenario ---
-✅ PASS: Identified High Energy State (high_volatility)
-```
-The system now correctly switches from "Growth" to "Survival" mode automatically.
+## Next Steps
+Phase 4 is now **COMPLETE**.
+We are ready to move to **Phase 5: The Hybrid Singularity**.

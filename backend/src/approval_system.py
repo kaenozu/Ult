@@ -73,6 +73,8 @@ class ApprovalRequest:
     message_id: Optional[str] = None  # Platform message ID for updating
 
 
+from src.database_manager import db_manager
+
 class ApprovalWorkflowManager:
     """承認ワークフローマネージャー"""
 
@@ -82,6 +84,44 @@ class ApprovalWorkflowManager:
         self.approval_callbacks: Dict[str, Callable[[ApprovalRequest], None]] = {}
         self.default_expiry_minutes = 30
         self.redis_store = redis_store
+        
+        # Load pending requests from DB
+        self._load_active_requests()
+
+    def _load_active_requests(self):
+        """DBから承認待ちリクエストを読み込む"""
+        try:
+            pending_requests = db_manager.get_approval_requests(status="pending", limit=100)
+            for req_data in pending_requests:
+                try:
+                    # Convert created_at string to datetime
+                    if isinstance(req_data["created_at"], str):
+                        req_data["created_at"] = datetime.fromisoformat(req_data["created_at"])
+                    if req_data.get("expires_at") and isinstance(req_data["expires_at"], str):
+                        req_data["expires_at"] = datetime.fromisoformat(req_data["expires_at"])
+                    
+                    # reconstruct context
+                    context_data = req_data.get("context", {})
+                    context = ApprovalContext(**context_data)
+                    
+                    request = ApprovalRequest(
+                        request_id=req_data["request_id"],
+                        type=ApprovalType(req_data["type"]),
+                        title=req_data["title"],
+                        description=req_data["description"],
+                        context=context,
+                        status=ApprovalStatus(req_data["status"]),
+                        created_at=req_data["created_at"],
+                        expires_at=req_data["expires_at"],
+                        platform=req_data.get("platform"),
+                        message_id=req_data.get("message_id")
+                    )
+                    self.active_approvals[request.request_id] = request
+                    logger.info(f"Loaded pending approval request from DB: {request.request_id}")
+                except Exception as e:
+                    logger.error(f"Failed to load approval request {req_data.get('request_id')}: {e}")
+        except Exception as e:
+            logger.error(f"Failed to load active requests from DB: {e}")
 
     def create_approval_request(
         self,
@@ -124,9 +164,24 @@ class ApprovalWorkflowManager:
         self.active_approvals[request_id] = request
         logger.info(f"Created approval request: {request_id} - {title}")
 
-        # Redisに保存（監査用、TTL 60秒）
+        # SQLiteに保存（永続化）
+        try:
+            req_dict = asdict(request)
+            req_dict["created_at"] = req_dict["created_at"].isoformat()
+            if req_dict.get("expires_at"):
+                req_dict["expires_at"] = req_dict["expires_at"].isoformat()
+            req_dict["type"] = req_dict["type"].value
+            req_dict["status"] = req_dict["status"].value
+            # context is handled by asdict but needs to be careful with nested objects if any
+            # simple dataclass to dict is fine here
+            
+            db_manager.save_approval_request(req_dict)
+        except Exception as e:
+            logger.error(f"Failed to save approval request to DB: {e}")
+
+        # Redisに保存（監査用、TTL 60秒 -> PubSub/Audit用として残す）
         if self.redis_store:
-            from dataclasses import asdict
+            # from dataclasses import asdict # already imported
 
             self.redis_store.store_approval_request(
                 request_id=request_id,
@@ -209,6 +264,18 @@ class ApprovalWorkflowManager:
                 },
             )
 
+        # SQLite更新
+        try:
+            db_manager.update_approval_status(request_id, {
+                "status": "approved",
+                "approved_by": approved_by,
+                "approved_at": request.approved_at.isoformat(),
+                "platform": platform,
+                "message_id": message_id
+            })
+        except Exception as e:
+            logger.error(f"Failed to update approval status in DB: {e}")
+
         # コールバック実行
         if request_id in self.approval_callbacks:
             try:
@@ -278,6 +345,19 @@ class ApprovalWorkflowManager:
                 },
             )
 
+        # SQLite更新
+        try:
+            db_manager.update_approval_status(request_id, {
+                "status": "rejected",
+                "rejected_by": rejected_by,
+                "rejected_at": request.rejected_at.isoformat(),
+                "rejection_reason": reason,
+                "platform": platform,
+                "message_id": message_id
+            })
+        except Exception as e:
+            logger.error(f"Failed to update rejection status in DB: {e}")
+
         # 履歴に移動
         self.approval_history.append(request)
         del self.active_approvals[request_id]
@@ -286,12 +366,22 @@ class ApprovalWorkflowManager:
 
     def cancel(self, request_id: str, cancelled_by: str) -> bool:
         """承認をキャンセル"""
-        request = self.active_approvals.get(request_id)
         if not request:
             return False
 
         request.status = ApprovalStatus.CANCELLED
         logger.info(f"Approval cancelled: {request_id} by {cancelled_by}")
+
+        # SQLite更新
+        try:
+            db_manager.update_approval_status(request_id, {
+                "status": "cancelled",
+                "rejected_by": cancelled_by, # storing canceller as rejected_by for now or add cancelled_by column? 
+                                             # Schema has rejected_by, let's use that or just status.
+                                             # Actually let's just update status.
+            })
+        except Exception as e:
+            logger.error(f"Failed to update cancel status in DB: {e}")
 
         self.approval_history.append(request)
         del self.active_approvals[request_id]
@@ -300,7 +390,30 @@ class ApprovalWorkflowManager:
 
     def get_request(self, request_id: str) -> Optional[ApprovalRequest]:
         """承認リクエストを取得"""
-        return self.active_approvals.get(request_id)
+        # Try memory first
+        req = self.active_approvals.get(request_id)
+        if req:
+            return req
+        
+        # Try DB
+        try:
+            req_data = db_manager.get_approval_request(request_id)
+            if req_data:
+                # Reconstruct (simplified)
+                # Note: fully reconstructing objects purely from DB might be needed if looking up old history
+                return ApprovalRequest(
+                    request_id=req_data["request_id"],
+                    type=ApprovalType(req_data["type"]),
+                    title=req_data["title"],
+                    description=req_data["description"],
+                    context=ApprovalContext(**req_data.get("context", {})),
+                    status=ApprovalStatus(req_data["status"]),
+                    # ... other fields
+                )
+        except Exception:
+            pass
+            
+        return None
 
     def get_active_requests(self) -> List[ApprovalRequest]:
         """アクティブな承認リクエスト一覧"""
@@ -310,10 +423,35 @@ class ApprovalWorkflowManager:
         self, limit: int = 50, approval_type: Optional[ApprovalType] = None
     ) -> List[ApprovalRequest]:
         """承認履歴を取得"""
-        history = self.approval_history[-limit:]
-        if approval_type:
-            history = [r for r in history if r.type == approval_type]
-        return history
+        # Prefer DB source of truth
+        try:
+            history_data = db_manager.get_approval_requests(limit=limit)
+            history_objs = []
+            for h in history_data:
+                # Filter by type if needed (DB method didn't implement type filter, so do it here or update DB method)
+                if approval_type and h["type"] != approval_type:
+                    continue
+                    
+                history_objs.append(ApprovalRequest(
+                    request_id=h["request_id"],
+                    type=ApprovalType(h["type"]),
+                    title=h["title"],
+                    description=h["description"],
+                    context=ApprovalContext(**h.get("context", {})),
+                    status=ApprovalStatus(h["status"]),
+                    created_at=datetime.fromisoformat(h["created_at"]) if isinstance(h["created_at"], str) else h["created_at"],
+                    # ... Map other fields as needed for display
+                    approved_by=h.get("approved_by"),
+                    rejected_by=h.get("rejected_by"),
+                ))
+            return history_objs
+        except Exception as e:
+            logger.error(f"Failed to fetch history from DB: {e}")
+            # Fallback to in-memory
+            history = self.approval_history[-limit:]
+            if approval_type:
+                history = [r for r in history if r.type == approval_type]
+            return history
 
     def cleanup_expired(self):
         """期限切れのリクエストをクリーンアップ"""
