@@ -1,19 +1,61 @@
 import { render, screen } from '@testing-library/react';
 import { TrafficLight } from './TrafficLight';
 
-describe('TrafficLight', () => {
-  it('renders safe level correctly', () => {
-    render(<TrafficLight safetyLevel='safe' />);
-    expect(screen.getByText('safe System')).toBeInTheDocument();
+describe('TrafficLight Component', () => {
+  describe('Rendering', () => {
+    it('renders safe level correctly with proper styling', () => {
+      render(<TrafficLight safetyLevel='safe' />);
+      const statusElement = screen.getByText('safe System');
+      expect(statusElement).toBeInTheDocument();
+      expect(statusElement).toHaveStyle({ color: '#22c55e' });
+    });
+
+    it('renders caution level correctly with proper styling', () => {
+      render(<TrafficLight safetyLevel='caution' />);
+      const statusElement = screen.getByText('caution System');
+      expect(statusElement).toBeInTheDocument();
+      expect(statusElement).toHaveStyle({ color: '#eab308' });
+    });
+
+    it('renders danger level correctly with proper styling', () => {
+      render(<TrafficLight safetyLevel='danger' />);
+      const statusElement = screen.getByText('danger System');
+      expect(statusElement).toBeInTheDocument();
+      expect(statusElement).toHaveStyle({ color: '#ef4444' });
+    });
   });
 
-  it('renders caution level correctly', () => {
-    render(<TrafficLight safetyLevel='caution' />);
-    expect(screen.getByText('caution System')).toBeInTheDocument();
+  describe('Accessibility', () => {
+    it('has proper ARIA attributes for screen readers', () => {
+      render(<TrafficLight safetyLevel='safe' />);
+      const container = screen.getByRole('status');
+      expect(container).toHaveAttribute(
+        'aria-label',
+        'System safety level: safe'
+      );
+      expect(container).toHaveAttribute('aria-live', 'polite');
+    });
+
+    it('has descriptive labels for light indicators', () => {
+      render(<TrafficLight safetyLevel='safe' />);
+      expect(screen.getByLabelText('safe level active')).toBeInTheDocument();
+      expect(
+        screen.getByLabelText('caution level inactive')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByLabelText('danger level inactive')
+      ).toBeInTheDocument();
+    });
   });
 
-  it('renders danger level correctly', () => {
-    render(<TrafficLight safetyLevel='danger' />);
-    expect(screen.getByText('danger System')).toBeInTheDocument();
+  describe('Performance', () => {
+    it('renders without unnecessary re-renders', () => {
+      const { rerender } = render(<TrafficLight safetyLevel='safe' />);
+      expect(screen.getByText('safe System')).toBeInTheDocument();
+
+      // Re-render with same props should not cause issues
+      rerender(<TrafficLight safetyLevel='safe' />);
+      expect(screen.getByText('safe System')).toBeInTheDocument();
+    });
   });
 });
