@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "home": "ホーム",
+    "portfolio": "ポートフォリオ",
+    "trading": "取引",
+    "market": "市場",
+    "settings": "設定"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "save": "保存",
+    "delete": "削除",
+    "edit": "編集",
+    "view": "表示",
+    "close": "閉じる"
+  },
+  "portfolio": {
+    "title": "ポートフォリオ",
+    "totalEquity": "総資産",
+    "cash": "現金",
+    "invested": "投資額",
+    "pnl": "損益",
+    "pnlPercent": "損益率",
+    "positions": "ポジション"
+  },
+  "trading": {
+    "title": "取引",
+    "buy": "買う",
+    "sell": "売る",
+    "orderType": "注文種別",
+    "market": "成行",
+    "limit": "指値",
+    "quantity": "数量",
+    "price": "価格",
+    "execute": "取引実行"
+  },
+  "errors": {
+    "network": "ネットワークエラーが発生しました",
+    "validation": "入力検証に失敗しました",
+    "unauthorized": "認証が必要です",
+    "notFound": "リソースが見つかりません",
+    "server": "サーバーエラー"
+  }
+}

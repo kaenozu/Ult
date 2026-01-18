@@ -7,6 +7,8 @@ import logging
 import logging.handlers
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, Optional
+import time
 
 
 class JSONFormatter(logging.Formatter):
@@ -49,7 +51,9 @@ def setup_logging(log_level: str = "INFO", log_dir: str = "logs"):
     # コンソールハンドラ（人間が読みやすい形式）
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    console_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    console_formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     console_handler.setFormatter(console_formatter)
 
     # ファイルハンドラ（JSON形式）
@@ -57,14 +61,17 @@ def setup_logging(log_level: str = "INFO", log_dir: str = "logs"):
         f"{log_dir}/agstock.log",
         maxBytes=10 * 1024 * 1024,
         backupCount=5,  # 10MB
-        encoding="utf-8"
+        encoding="utf-8",
     )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(JSONFormatter())
 
     # エラーログ専用ハンドラ
     error_handler = logging.handlers.RotatingFileHandler(
-        f"{log_dir}/error.log", maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
+        f"{log_dir}/error.log",
+        maxBytes=10 * 1024 * 1024,
+        backupCount=5,
+        encoding="utf-8",
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(JSONFormatter())
@@ -84,6 +91,59 @@ logger = setup_logging()
 def get_logger(name: str) -> logging.Logger:
     """名前付きロガーを取得"""
     return logging.getLogger(name)
+
+
+class MetricsCollector:
+    """Simple metrics collector for application monitoring."""
+
+    def __init__(self):
+        self.metrics: Dict[str, Any] = {}
+        self.start_time = time.time()
+
+    def increment(
+        self, name: str, value: int = 1, tags: Optional[Dict[str, str]] = None
+    ):
+        """Increment a counter metric."""
+        key = f"{name}:{json.dumps(tags or {}, sort_keys=True)}"
+        if key not in self.metrics:
+            self.metrics[key] = {"type": "counter", "value": 0}
+        self.metrics[key]["value"] += value
+        self.metrics[key]["timestamp"] = datetime.utcnow().isoformat()
+
+    def gauge(self, name: str, value: float, tags: Optional[Dict[str, str]] = None):
+        """Set a gauge metric."""
+        key = f"{name}:{json.dumps(tags or {}, sort_keys=True)}"
+        self.metrics[key] = {
+            "type": "gauge",
+            "value": value,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+    def timing(self, name: str, duration: float, tags: Optional[Dict[str, str]] = None):
+        """Record a timing metric."""
+        key = f"{name}:{json.dumps(tags or {}, sort_keys=True)}"
+        if key not in self.metrics:
+            self.metrics[key] = {"type": "timing", "values": []}
+        self.metrics[key]["values"].append(
+            {"duration": duration, "timestamp": datetime.utcnow().isoformat()}
+        )
+
+    def get_metrics(self) -> Dict[str, Any]:
+        """Get current metrics."""
+        return {
+            "metrics": self.metrics.copy(),
+            "uptime": time.time() - self.start_time,
+            "timestamp": datetime.utcnow().isoformat(),
+        }
+
+    def reset(self):
+        """Reset all metrics."""
+        self.metrics.clear()
+        self.start_time = time.time()
+
+
+# Global metrics collector
+metrics = MetricsCollector()
 
 
 if __name__ == "__main__":
