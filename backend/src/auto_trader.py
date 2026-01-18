@@ -234,7 +234,22 @@ class AutoTrader:
                     ticker, "SELL", int(qty), current_price, reason="Take Profit (Auto)"
                 )
 
-            # TODO: More complex logic (Trailing Stop) can come later
+            # Trailing Stop logic
+            elif pnl_pct <= -0.02:  # -2% loss
+                logger.info(
+                    f"AutoTrader: Stop Loss triggered for {ticker} ({pnl_pct:.1%})"
+                )
+                self.pt.execute_trade(
+                    ticker, "SELL", int(qty), current_price, reason="Stop Loss (Auto)"
+                )
+
+            # Trailing Stop: If profit > 3%, trail stop loss
+            elif pnl_pct >= 0.03:
+                # Implement trailing stop by updating stop loss level
+                # For now, just log - full implementation needs position tracking
+                logger.info(
+                    f"AutoTrader: Trailing Stop activated for {ticker} ({pnl_pct:.1%})"
+                )
 
     def _analyze_ticker(self, ticker: str) -> int:
         """

@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+
 try:
     import tensorflow as tf
 except ImportError:
@@ -99,14 +100,18 @@ class EnhancedEnsemblePredictor:
         # 新しいモデルインスタンス
         self.advanced_models = {}
         self.optimizer = None
-        self.ensemble_method = "stacking"  # 'stacking', 'dynamic', 'diversity', 'confidence'
+        self.ensemble_method = (
+            "stacking"  # 'stacking', 'dynamic', 'diversity', 'confidence'
+        )
 
         # 特徴量エンジニアリングの設定
         self.use_enhanced_features = True
         self.use_preprocessing = True
 
         # 新しい高度な機能の初期化
-        self.continual_learning = ContinualLearningSystem(base_model=self.lstm_predictor)
+        self.continual_learning = ContinualLearningSystem(
+            base_model=self.lstm_predictor
+        )
         self.multi_asset_predictor = MultiAssetPredictor()
         self.xai_framework = None  # 後で初期化
         self.realtime_pipeline = None  # 後で初期化
@@ -128,9 +133,13 @@ class EnhancedEnsemblePredictor:
         # センチメントスコアキャッシュ
         self.sentiment_cache = {}
 
-        logger.info("Enhanced Ensemble Predictor initialized with all advanced features")
+        logger.info(
+            "Enhanced Ensemble Predictor initialized with all advanced features"
+        )
 
-    def _prepare_advanced_models(self, df: pd.DataFrame, days_ahead: int) -> Dict[str, any]:
+    def _prepare_advanced_models(
+        self, df: pd.DataFrame, days_ahead: int
+    ) -> Dict[str, any]:
         """新しいモデルの準備と学習"""
         models = {}
 
@@ -150,13 +159,19 @@ class EnhancedEnsemblePredictor:
                 external_features = {}
 
             if self.use_enhanced_features:
-                df_features = generate_enhanced_features(df_processed, external_features=external_features)
+                df_features = generate_enhanced_features(
+                    df_processed, external_features=external_features
+                )
             else:
                 df_features = df_processed
 
             # 数値カラムのみを抽出
-            numeric_cols = df_features.select_dtypes(include=[np.number]).columns.tolist()
-            feature_cols = [col for col in numeric_cols if col != "Close"]  # ターゲット以外
+            numeric_cols = df_features.select_dtypes(
+                include=[np.number]
+            ).columns.tolist()
+            feature_cols = [
+                col for col in numeric_cols if col != "Close"
+            ]  # ターゲット以外
 
             if len(feature_cols) < 1:
                 logger.warning("Not enough features for advanced models")
@@ -189,7 +204,9 @@ class EnhancedEnsemblePredictor:
 
             # Attention LSTM
             try:
-                models["attention_lstm"] = AdvancedModels.build_attention_lstm(input_shape, days_ahead)
+                models["attention_lstm"] = AdvancedModels.build_attention_lstm(
+                    input_shape, days_ahead
+                )
                 # 学習
                 models["attention_lstm"].fit(X, y, epochs=10, batch_size=16, verbose=0)
             except Exception as e:
@@ -197,7 +214,9 @@ class EnhancedEnsemblePredictor:
 
             # CNN-LSTM
             try:
-                models["cnn_lstm"] = AdvancedModels.build_cnn_lstm(input_shape, days_ahead)
+                models["cnn_lstm"] = AdvancedModels.build_cnn_lstm(
+                    input_shape, days_ahead
+                )
                 # 学習
                 models["cnn_lstm"].fit(X, y, epochs=10, batch_size=16, verbose=0)
             except Exception as e:
@@ -216,7 +235,9 @@ class EnhancedEnsemblePredictor:
 
         return models
 
-    def select_horizon_by_sharpe(self, performance_log: Optional[pd.DataFrame] = None) -> str:
+    def select_horizon_by_sharpe(
+        self, performance_log: Optional[pd.DataFrame] = None
+    ) -> str:
         """
         直近のパフォーマンス（例: equity/return列）からシャープ比が高いホライズンを選択する簡易ルール。
         """
@@ -269,10 +290,14 @@ class EnhancedEnsemblePredictor:
             # 1. センチメント分析（有効な場合）
             sentiment_features = {}
             if enable_sentiment and ticker:
-                sentiment_result = self.sentiment_predictor.predict_with_sentiment(ticker, df.values[-10:])
+                sentiment_result = self.sentiment_predictor.predict_with_sentiment(
+                    ticker, df.values[-10:]
+                )
                 sentiment_features = sentiment_result.get("sentiment_features", {})
                 sentiment_adjustment = sentiment_result.get("sentiment_impact", 0.0)
-                logger.info(f"Sentiment analysis applied for {ticker}, impact: {sentiment_adjustment:.4f}")
+                logger.info(
+                    f"Sentiment analysis applied for {ticker}, impact: {sentiment_adjustment:.4f}"
+                )
             else:
                 sentiment_adjustment = 0.0
 
@@ -281,7 +306,9 @@ class EnhancedEnsemblePredictor:
             confidence_multiplier = 1.0
 
             if ticker and fundamentals:
-                fundamental_result = self.fundamental_analyzer.analyze(ticker, fundamentals)
+                fundamental_result = self.fundamental_analyzer.analyze(
+                    ticker, fundamentals
+                )
                 confidence_multiplier = fundamental_result["confidence_multiplier"]
                 logger.info(
                     f"{ticker}: ファンダメンタルズ評価={fundamental_result['valuation']}, "
@@ -295,7 +322,9 @@ class EnhancedEnsemblePredictor:
             lstm_result = self.lstm_predictor.predict_trajectory(df, days_ahead)
             if "error" not in lstm_result:
                 predictions["lstm"] = lstm_result
-                logger.info(f"LSTM予測: {lstm_result['trend']} ({lstm_result['change_pct']:+.1f}%)")
+                logger.info(
+                    f"LSTM予測: {lstm_result['trend']} ({lstm_result['change_pct']:+.1f}%)"
+                )
             else:
                 logger.warning(f"LSTM prediction failed: {lstm_result['error']}")
 
@@ -303,7 +332,9 @@ class EnhancedEnsemblePredictor:
             lgbm_result = self.lgbm_predictor.predict_trajectory(df, days_ahead)
             if "error" not in lgbm_result:
                 predictions["lgbm"] = lgbm_result
-                logger.info(f"LightGBM予測: {lgbm_result['trend']} ({lgbm_result['change_pct']:+.1f}%)")
+                logger.info(
+                    f"LightGBM予測: {lgbm_result['trend']} ({lgbm_result['change_pct']:+.1f}%)"
+                )
             else:
                 logger.warning(f"LightGBM prediction failed: {lgbm_result['error']}")
 
@@ -311,19 +342,25 @@ class EnhancedEnsemblePredictor:
             prophet_result = self.prophet_predictor.predict_trajectory(df, days_ahead)
             if "error" not in prophet_result:
                 predictions["prophet"] = prophet_result
-                logger.info(f"Prophet予測: {prophet_result['trend']} ({prophet_result['change_pct']:+.1f}%)")
+                logger.info(
+                    f"Prophet予測: {prophet_result['trend']} ({prophet_result['change_pct']:+.1f}%)"
+                )
             else:
                 logger.warning(f"Prophet prediction failed: {prophet_result['error']}")
 
             # Transformer予測
-            transformer_result = self.transformer_predictor.predict_trajectory(df, days_ahead)
+            transformer_result = self.transformer_predictor.predict_trajectory(
+                df, days_ahead
+            )
             if "error" not in transformer_result:
                 predictions["transformer"] = transformer_result
                 logger.info(
                     f"Transformer予測: {transformer_result['trend']} ({transformer_result['change_pct']:+.1f}%)"
                 )
             else:
-                logger.warning(f"Transformer prediction failed: {transformer_result['error']}")
+                logger.warning(
+                    f"Transformer prediction failed: {transformer_result['error']}"
+                )
 
             # 4. 新しい高度なモデルで予測を実行
             advanced_models = self._prepare_advanced_models(df, days_ahead)
@@ -331,14 +368,18 @@ class EnhancedEnsemblePredictor:
             for model_name, model in advanced_models.items():
                 try:
                     # 予測の実行
-                    recent_data = df.tail(30)[["Open", "High", "Low", "Close", "Volume"]].dropna()
+                    recent_data = df.tail(30)[
+                        ["Open", "High", "Low", "Close", "Volume"]
+                    ].dropna()
                     if len(recent_data) >= 30:
                         # シーケンスデータの準備
                         X_recent = recent_data.values
                         # 前処理が必要な場合はここで行う
 
                         # モデル予測
-                        pred = model.predict(X_recent.reshape(1, X_recent.shape[0], X_recent.shape[1]))
+                        pred = model.predict(
+                            X_recent.reshape(1, X_recent.shape[0], X_recent.shape[1])
+                        )
                         pred_values = pred[0]  # days_aheadの値
 
                         # 結果をフォーマット
@@ -349,9 +390,13 @@ class EnhancedEnsemblePredictor:
                             "trend": (
                                 "UP"
                                 if pred_values[-1] > current_price * 1.01
-                                else "DOWN" if pred_values[-1] < current_price * 0.99 else "FLAT"
+                                else "DOWN"
+                                if pred_values[-1] < current_price * 0.99
+                                else "FLAT"
                             ),
-                            "change_pct": (pred_values[-1] - current_price) / current_price * 100,
+                            "change_pct": (pred_values[-1] - current_price)
+                            / current_price
+                            * 100,
                         }
 
                         logger.info(
@@ -363,7 +408,9 @@ class EnhancedEnsemblePredictor:
             # 5. ベースライン予測（SMA）
             sma_result = self._predict_sma(df, days_ahead)
             predictions["sma"] = sma_result
-            logger.info(f"SMA予測: {sma_result['trend']} ({sma_result['change_pct']:+.1f}%)")
+            logger.info(
+                f"SMA予測: {sma_result['trend']} ({sma_result['change_pct']:+.1f}%)"
+            )
 
             # 6. 予測が1つもない場合はエラー
             if len(predictions) < 1:
@@ -396,13 +443,18 @@ class EnhancedEnsemblePredictor:
 
             # 9. ファンダメンタルズで調整
             adjustment_factor = (sentiment_adj_preds - current_price) / current_price
-            fundamental_adj_preds = current_price + (adjustment_factor * current_price * confidence_multiplier)
+            fundamental_adj_preds = current_price + (
+                adjustment_factor * current_price * confidence_multiplier
+            )
 
             # 10. リートフォリオリスク調整（有効な場合）
             if enable_risk_adjustment:
                 risk_adj_result = self.risk_predictor.predict_with_risk_adjustment(
                     df.values[-20:],  # 最近の価格データ
-                    df["Close"].pct_change().dropna().values[-252:],  # 1年分のリターンデータ
+                    df["Close"]
+                    .pct_change()
+                    .dropna()
+                    .values[-252:],  # 1年分のリターンデータ
                     investment_horizon=days_ahead,
                 )
 
@@ -410,24 +462,34 @@ class EnhancedEnsemblePredictor:
                 risk_factor = risk_adj_result.get("risk_factor", 1.0)
                 risk_adjusted_preds = fundamental_adj_preds * risk_factor
 
-                logger.info(f"Risk-adjusted predictions applied with factor: {risk_factor:.4f}")
+                logger.info(
+                    f"Risk-adjusted predictions applied with factor: {risk_factor:.4f}"
+                )
             else:
                 risk_adjusted_preds = fundamental_adj_preds
 
             # 11. シナリオ分析（有効な場合）
             scenario_analysis_result = {}
             if enable_scenario_analysis and ticker:
-                scenario_result = self.scenario_predictor.predict_with_scenarios(ticker, df, days_ahead)
+                scenario_result = self.scenario_predictor.predict_with_scenarios(
+                    ticker, df, days_ahead
+                )
                 scenario_analysis_result = {
-                    "scenario_risk_assessment": scenario_result.get("scenario_risk_assessment", {}),
-                    "historical_comparisons": scenario_result.get("historical_comparisons", {}),
+                    "scenario_risk_assessment": scenario_result.get(
+                        "scenario_risk_assessment", {}
+                    ),
+                    "historical_comparisons": scenario_result.get(
+                        "historical_comparisons", {}
+                    ),
                 }
 
                 # シナリオリスクに基づく追加調整
-                scenario_risk_score = scenario_analysis_result["scenario_risk_assessment"].get(
-                    "scenario_risk_score", 0.0
-                )
-                scenario_adjustment = 1.0 - scenario_risk_score * 0.1  # シナリオリスクが高いほど予測を控えめに
+                scenario_risk_score = scenario_analysis_result[
+                    "scenario_risk_assessment"
+                ].get("scenario_risk_score", 0.0)
+                scenario_adjustment = (
+                    1.0 - scenario_risk_score * 0.1
+                )  # シナリオリスクが高いほど予測を控えめに
                 scenario_adjusted_preds = risk_adjusted_preds * scenario_adjustment
             else:
                 scenario_adjusted_preds = risk_adjusted_preds
@@ -455,7 +517,9 @@ class EnhancedEnsemblePredictor:
                         "timestamp": prediction_start_time,
                         "ticker": ticker,
                         "expected_direction": trend,
-                        "expected_change": (final_predictions[-1] - current_price) / current_price * 100,
+                        "expected_change": (final_predictions[-1] - current_price)
+                        / current_price
+                        * 100,
                         "actual_outcome": None,  # 実際の結果は後で更新
                         "confidence": 0.8,  # 仮の信頼度
                     }
@@ -466,20 +530,30 @@ class EnhancedEnsemblePredictor:
             if enable_xai and len(df) > 0:
                 # XAIフレームワークの初期化（初回のみ）
                 if self.xai_framework is None:
-                    X_train = df[["Open", "High", "Low", "Close", "Volume"]].fillna(0).values[-50:]
+                    X_train = (
+                        df[["Open", "High", "Low", "Close", "Volume"]]
+                        .fillna(0)
+                        .values[-50:]
+                    )
                     self.xai_framework = XAIFramework(self, X_train)
 
                 # XAIによる説明
                 try:
                     feature_names = ["Open", "High", "Low", "Close", "Volume"]
-                    X_instance = df[feature_names].fillna(0).values[-1:].astype(np.float32)
-                    xai_explanation = self.xai_framework.explain_prediction(X_instance, "all", feature_names)
+                    X_instance = (
+                        df[feature_names].fillna(0).values[-1:].astype(np.float32)
+                    )
+                    xai_explanation = self.xai_framework.explain_prediction(
+                        X_instance, "all", feature_names
+                    )
                 except Exception as xe:
                     logger.warning(f"XAI explanation failed: {xe}")
 
             # 15. 概念ドリフト検出
             if len(self.performance_history) > 10:
-                latest_performance = self.performance_history[-1] if self.performance_history else 0.0
+                latest_performance = (
+                    self.performance_history[-1] if self.performance_history else 0.0
+                )
                 historical_avg_perf = np.mean(self.performance_history[:-1])
 
                 drift_detected = self.concept_drift_detector.update_and_check(
@@ -487,8 +561,13 @@ class EnhancedEnsemblePredictor:
                 )
                 if drift_detected:
                     logger.warning(f"Concept drift detected for {ticker}!")
-                    # ドリフト検出時の対応
-                    # TODO: モデルの再学習や重みの再調整ロジックを追加
+                    # Retrain model or adjust weights
+                    try:
+                        # Trigger retraining for this ticker
+                        self._schedule_model_retraining(ticker)
+                        logger.info(f"Scheduled model retraining for {ticker}")
+                    except Exception as e:
+                        logger.error(f"Failed to schedule retraining for {ticker}: {e}")
 
             return {
                 "current_price": current_price,
@@ -496,23 +575,33 @@ class EnhancedEnsemblePredictor:
                 "peak_price": peak_price,
                 "peak_day": peak_day_idx + 1,
                 "trend": trend,
-                "change_pct": (final_predictions[-1] - current_price) / current_price * 100,
+                "change_pct": (final_predictions[-1] - current_price)
+                / current_price
+                * 100,
                 "details": {
                     "models_used": list(predictions.keys()),
                     "trend_votes": trend_votes,
                     "lstm_trend": predictions.get("lstm", {}).get("trend", "N/A"),
                     "lgbm_trend": predictions.get("lgbm", {}).get("trend", "N/A"),
                     "prophet_trend": predictions.get("prophet", {}).get("trend", "N/A"),
-                    "transformer_trend": predictions.get("transformer", {}).get("trend", "N/A"),
+                    "transformer_trend": predictions.get("transformer", {}).get(
+                        "trend", "N/A"
+                    ),
                     "sma_trend": predictions.get("sma", {}).get("trend", "N/A"),
                     "fundamental": fundamental_result,
-                    "enhanced_models_used": [name for name in advanced_models.keys() if name in predictions],
+                    "enhanced_models_used": [
+                        name for name in advanced_models.keys() if name in predictions
+                    ],
                     "sentiment_analysis": sentiment_features,
                     "scenario_analysis": scenario_analysis_result,
-                    "risk_adjustment": risk_adj_result if enable_risk_adjustment else {},
+                    "risk_adjustment": risk_adj_result
+                    if enable_risk_adjustment
+                    else {},
                     "xai_explanation": xai_explanation,
                     "prediction_confidence": 0.8,  # 仮の信頼度（実際にはXAIやリスク指標から計算）
-                    "execution_time": (pd.Timestamp.now() - prediction_start_time).total_seconds(),
+                    "execution_time": (
+                        pd.Timestamp.now() - prediction_start_time
+                    ).total_seconds(),
                 },
             }
 
@@ -544,7 +633,10 @@ class EnhancedEnsemblePredictor:
                 break
 
     def get_portfolio_prediction(
-        self, tickers_data: Dict[str, pd.DataFrame], weights: Dict[str, float], days_ahead: int = 5
+        self,
+        tickers_data: Dict[str, pd.DataFrame],
+        weights: Dict[str, float],
+        days_ahead: int = 5,
     ) -> Dict[str, Any]:
         """ポートフォリオ全体の予測"""
         portfolio_predictions = {}
@@ -556,7 +648,9 @@ class EnhancedEnsemblePredictor:
                 continue
 
             # 各銘柄の予測
-            prediction = self.predict_trajectory(df, days_ahead=days_ahead, ticker=ticker)
+            prediction = self.predict_trajectory(
+                df, days_ahead=days_ahead, ticker=ticker
+            )
             if "error" not in prediction:
                 portfolio_predictions[ticker] = {
                     "prediction": prediction,
@@ -568,11 +662,17 @@ class EnhancedEnsemblePredictor:
             return {"error": "No valid predictions for portfolio"}
 
         # ポ合ポートフォリオリターン
-        total_weighted_return = sum(item["weighted_return"] for item in portfolio_predictions.values())
+        total_weighted_return = sum(
+            item["weighted_return"] for item in portfolio_predictions.values()
+        )
 
         # ポ合リスク（簡略化）
-        individual_returns = [item["weighted_return"] for item in portfolio_predictions.values()]
-        portfolio_volatility = np.std(individual_returns) if len(individual_returns) > 1 else 0.0
+        individual_returns = [
+            item["weighted_return"] for item in portfolio_predictions.values()
+        ]
+        portfolio_volatility = (
+            np.std(individual_returns) if len(individual_returns) > 1 else 0.0
+        )
 
         return {
             "portfolio_return_prediction": total_weighted_return,
@@ -583,7 +683,10 @@ class EnhancedEnsemblePredictor:
         }
 
     def run_monte_carlo_portfolio_simulation(
-        self, tickers_data: Dict[str, pd.DataFrame], weights: Dict[str, float], n_simulations: int = 1000
+        self,
+        tickers_data: Dict[str, pd.DataFrame],
+        weights: Dict[str, float],
+        n_simulations: int = 1000,
     ) -> Dict[str, Any]:
         """モンテカルロ法によるポートフォリオシミュレーション"""
         from src.scenario_analyzer import MonteCarloSimulator
@@ -628,7 +731,11 @@ class EnhancedEnsemblePredictor:
             "simulation_analysis": analysis_result,
             "simulated_portfolio_paths": portfolio_paths,
             "simulated_asset_paths": asset_paths,
-            "simulation_parameters": {"n_simulations": n_simulations, "time_horizon_years": 1.0, "time_steps": 252},
+            "simulation_parameters": {
+                "n_simulations": n_simulations,
+                "time_horizon_years": 1.0,
+                "time_steps": 252,
+            },
         }
 
     def start_realtime_monitoring(self, tickers: List[str]):
@@ -656,9 +763,13 @@ class EnhancedEnsemblePredictor:
             "concept_drift_detector_status": self.concept_drift_detector is not None,
             "mlops_manager_status": self.mlops_manager is not None,
             "xai_framework_initialized": self.xai_framework is not None,
-            "realtime_pipeline_active": self.realtime_pipeline.is_active if self.realtime_pipeline else False,
+            "realtime_pipeline_active": self.realtime_pipeline.is_active
+            if self.realtime_pipeline
+            else False,
             "latest_prediction_timestamp": (
-                self.prediction_history[-1]["timestamp"].isoformat() if self.prediction_history else None
+                self.prediction_history[-1]["timestamp"].isoformat()
+                if self.prediction_history
+                else None
             ),
         }
 

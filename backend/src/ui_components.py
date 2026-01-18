@@ -23,7 +23,8 @@ def display_risk_badge(risk_level: str, show_label: bool = True) -> None:
 
     if show_label:
         st.markdown(
-            f"**リスクレベル**: :{config['emoji']} {config['label_ja']} ({config['label_en']})", unsafe_allow_html=True
+            f"**リスクレベル**: :{config['emoji']} {config['label_ja']} ({config['label_en']})",
+            unsafe_allow_html=True,
         )
     else:
         st.markdown(f"{config['emoji']} {config['label_ja']}")
@@ -99,7 +100,11 @@ def display_sentiment_gauge(score: float, news_count: int = 0) -> None:
                         {"range": [-0.15, 0.15], "color": "rgba(107, 114, 128, 0.2)"},
                         {"range": [0.15, 1], "color": "rgba(16, 185, 129, 0.2)"},
                     ],
-                    "threshold": {"line": {"color": "white", "width": 2}, "thickness": 0.75, "value": score},
+                    "threshold": {
+                        "line": {"color": "white", "width": 2},
+                        "thickness": 0.75,
+                        "value": score,
+                    },
                 },
             )
         )
@@ -146,7 +151,9 @@ def display_stock_card(
             st.caption(ticker)
 
         with col2:
-            action_config = ACTION_TYPES.get(action.upper().replace(" (SHORT)", ""), ACTION_TYPES["HOLD"])
+            action_config = ACTION_TYPES.get(
+                action.upper().replace(" (SHORT)", ""), ACTION_TYPES["HOLD"]
+            )
             st.markdown(f"{action_config['icon']} **{action}**")
             st.caption(format_currency(price))
 
@@ -162,7 +169,9 @@ def display_stock_card(
                 if "PBR" in additional_info and additional_info["PBR"]:
                     info_parts.append(f"PBR: {additional_info['PBR']:.2f}")
                 if "ROE" in additional_info and additional_info["ROE"]:
-                    info_parts.append(f"ROE: {format_percentage(additional_info['ROE'], decimals=1)}")
+                    info_parts.append(
+                        f"ROE: {format_percentage(additional_info['ROE'], decimals=1)}"
+                    )
 
                 if info_parts:
                     st.caption(" | ".join(info_parts))
@@ -172,7 +181,11 @@ def display_stock_card(
             st.markdown(f"リスク: {risk_config['emoji']} {risk_config['label_ja']}")
 
             if on_order_click:
-                if st.button("📝 注文", key=f"order_{ticker}_{strategy}", use_container_width=True):
+                if st.button(
+                    "📝 注文",
+                    key=f"order_{ticker}_{strategy}",
+                    use_container_width=True,
+                ):
                     on_order_click(ticker, action, price)
 
         st.divider()
@@ -212,7 +225,9 @@ def display_best_pick_card(
         st.metric("現在価格", format_currency(price))
 
         risk_config = RISK_LEVELS.get(risk_level, RISK_LEVELS["medium"])
-        st.markdown(f"**リスクレベル**: {risk_config['emoji']} {risk_config['label_ja']}")
+        st.markdown(
+            f"**リスクレベル**: {risk_config['emoji']} {risk_config['label_ja']}"
+        )
 
         # 追加情報
         if additional_info:
@@ -221,20 +236,28 @@ def display_best_pick_card(
             if "PBR" in additional_info and additional_info["PBR"]:
                 st.caption(f"PBR: {additional_info['PBR']:.2f}倍")
             if "ROE" in additional_info and additional_info["ROE"]:
-                st.caption(f"ROE: {format_percentage(additional_info['ROE'], decimals=1)}")
+                st.caption(
+                    f"ROE: {format_percentage(additional_info['ROE'], decimals=1)}"
+                )
             if "Kelly" in additional_info and additional_info["Kelly"]:
                 st.caption(f"Kelly: {additional_info['Kelly']:.2f}")
             if "RiskRatio" in additional_info and additional_info["RiskRatio"]:
                 st.caption(f"Risk/Reward: {additional_info['RiskRatio']:.2f}")
 
     with col2:
-        action_config = ACTION_TYPES.get(action.upper().replace(" (SHORT)", ""), ACTION_TYPES["HOLD"])
+        action_config = ACTION_TYPES.get(
+            action.upper().replace(" (SHORT)", ""), ACTION_TYPES["HOLD"]
+        )
         st.success(f"**{action_config['icon']} {action}** 推奨")
         st.markdown(f"**理由**: {explanation}")
         st.caption(f"検知戦略: {strategy}")
 
         if on_order_click:
-            if st.button("🚀 この銘柄を今すぐ注文 (Paper Trading)", key="best_pick_order", type="primary"):
+            if st.button(
+                "🚀 この銘柄を今すぐ注文 (Paper Trading)",
+                key="best_pick_order",
+                type="primary",
+            ):
                 on_order_click(ticker, action, price)
 
 
@@ -260,7 +283,10 @@ def display_loading_skeleton(num_rows: int = 3) -> None:
 
 
 def display_error_message(
-    error_type: str, user_message: str, technical_details: Optional[str] = None, help_link: Optional[str] = None
+    error_type: str,
+    user_message: str,
+    technical_details: Optional[str] = None,
+    help_link: Optional[str] = None,
 ) -> None:
     """
     ユーザーフレンドリーなエラーメッセージを表示
@@ -303,7 +329,26 @@ def responsive_columns(mobile: int = 1, tablet: int = 2, desktop: int = 3):
         デフォルトでデスクトップレイアウトを返す。
         将来的にJavaScriptと連携して実装可能。
     """
-    # TODO: JavaScriptでデバイス幅を検出してst.session_stateに保存
+    # Detect device type using JavaScript
+    device_js = """
+    <script>
+        var width = window.innerWidth;
+        var device = 'desktop';
+        if (width <= 768) {
+            device = 'mobile';
+        } else if (width <= 1024) {
+            device = 'tablet';
+        }
+        // Send to Streamlit via query params or session storage
+        sessionStorage.setItem('device_type', device);
+        // Trigger rerun
+        if (window.parent !== window) {
+            window.parent.postMessage({type: 'streamlit:setComponentValue', value: device}, '*');
+        }
+    </script>
+    """
+    st.components.v1.html(device_js, height=0)
+
     device_type = st.session_state.get("device_type", "desktop")
 
     if device_type == "mobile":
@@ -330,7 +375,9 @@ def display_quick_action_bar(actions: List[Dict[str, Any]]) -> None:
     for i, action in enumerate(actions):
         with cols[i]:
             if st.button(
-                f"{action.get('icon', '')} {action['label']}", key=f"quick_action_{i}", use_container_width=True
+                f"{action.get('icon', '')} {action['label']}",
+                key=f"quick_action_{i}",
+                use_container_width=True,
             ):
                 if "callback" in action and callable(action["callback"]):
                     action["callback"]()

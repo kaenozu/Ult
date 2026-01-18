@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from datetime import datetime
 from typing import Dict, Any, List
 from src.database_manager import db_manager, DatabaseManager
 from src.data_loader import fetch_stock_data, fetch_realtime_data
@@ -88,13 +89,39 @@ class PortfolioManager:
             try:
                 # Use data_loader to get real prices
                 # We can reuse fetch_stock_data or specific realtime fetcher
-                # For efficiency, let's assume we can get a quick map
-                # Here we simulate with fetch_stock_data for now or a faster lightweight call
-                # In Phase 5, we used fetch_stock_data cache.
-                pass
-                # Optimization: fetch only if tickers exist
-                # This might be slow if many tickers.
-                # TODO: Bulk real-time fetch
+                # Bulk real-time fetch for efficiency
+                if tickers:
+                    try:
+                        # Fetch all tickers at once
+                        bulk_data = fetch_stock_data(
+                            tickers, period="1d", interval="1m"
+                        )
+                        if bulk_data is not None:
+                            for ticker in tickers:
+                                if ticker in bulk_data.columns:
+                                    latest_price = (
+                                        bulk_data[ticker].iloc[-1]
+                                        if not bulk_data[ticker].empty
+                                        else None
+                                    )
+                                    if latest_price is not None:
+                                        current_prices[ticker] = float(latest_price)
+                    except Exception as e:
+                        logger.warning(
+                            f"Bulk fetch failed, falling back to individual: {e}"
+                        )
+                        # Fallback to individual fetches if bulk fails
+                        for ticker in tickers:
+                            try:
+                                data = fetch_stock_data(
+                                    [ticker], period="1d", interval="1m"
+                                )
+                                if data is not None and not data.empty:
+                                    current_prices[ticker] = float(
+                                        data[ticker].iloc[-1]
+                                    )
+                            except Exception as e:
+                                logger.error(f"Failed to fetch {ticker}: {e}")
             except Exception as e:
                 logger.error(f"Failed to fetch realtime prices: {e}")
 
