@@ -105,6 +105,142 @@ const WATCHLIST = [
   { ticker: '9984.T', name: 'ソフトバンクG' },
 ];
 
+function TopSection() {
+  return (
+    <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+      {/* Left Column: VibeCheck & System Monitor */}
+      <div className='lg:col-span-1 flex flex-col gap-6'>
+        {/* VibeCheck: Market Status with Persona Protocol */}
+        <MarketStatusCard />
+        {/* Real-time Price Alerts */}
+        <PriceAlerts />
+        <AIAgentAvatar state='IDLE' />
+        <div className='h-80'>
+          <SystemMonitor />
+        </div>
+        {/* AI Advisor Panel (Text Output) */}
+        <AIAdvisorPanel />
+      </div>
+
+      {/* Portfolio HUD (Takes up 2 columns) */}
+      <div className='lg:col-span-2 flex flex-col gap-6'>
+        <MatrixPortfolioSummary />
+        <AutoTradeControls />
+      </div>
+    </div>
+  );
+}
+
+function SwipeSection() {
+  return (
+    <section>
+      <div className='flex items-center gap-3 mb-4'>
+        <div className='h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]' />
+        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+          In-App Swipe{' '}
+          <span className='text-muted-foreground text-sm ml-2 font-normal'>
+            No More Context Switching
+          </span>
+        </h2>
+      </div>
+      <SwipeNotificationDemo />
+    </section>
+  );
+}
+
+function ApprovalsSection() {
+  return (
+    <section>
+      <div className='flex items-center gap-3 mb-4'>
+        <div className='h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]' />
+        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+          Instant Approvals{' '}
+          <span className='text-muted-foreground text-sm ml-2 font-normal'>
+            Ops Technical Design - Ephemeral UI
+          </span>
+        </h2>
+      </div>
+      <ApprovalCardsDemo />
+    </section>
+  );
+}
+
+function VisualsSection() {
+  return (
+    <section>
+      {/* Phase 5: Void Terminal */}
+      <div className='flex items-center gap-3 mb-4'>
+        <div className='h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]' />
+        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+          The Void Terminal{' '}
+          <span className='text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded'>
+            Phase 5.0
+          </span>
+        </h2>
+      </div>
+      <div className='w-full mb-8'>
+        <VoidScene />
+      </div>
+
+      <div className='flex items-center gap-3 mb-4'>
+        <div className='h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]' />
+        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+          Neural Cortex{' '}
+          <span className='text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded'>
+            Phase 4.2
+          </span>
+        </h2>
+      </div>
+
+      <div className='w-full'>
+        <NeuralMonitor />
+      </div>
+    </section>
+  );
+}
+
+function ProfitNavigatorSection() {
+  return (
+    <section>
+      <div className='flex items-center gap-3 mb-4'>
+        <div className='h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]' />
+        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+          Profit Navigator{' '}
+          <span className='text-muted-foreground text-sm ml-2 font-normal'>
+            AI Analysis Feed
+          </span>
+        </h2>
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        {WATCHLIST.map(stock => (
+          <SignalCard
+            key={stock.ticker}
+            ticker={stock.ticker}
+            name={stock.name}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ActiveAssetsSection() {
+  return (
+    <section>
+      <div className='flex items-center gap-3 mb-4'>
+        <div className='h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]' />
+        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+          Active Assets
+        </h2>
+      </div>
+      <div className='glass-panel rounded-xl p-1'>
+        <MatrixPositionList />
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const {
     data: portfolio,
@@ -153,7 +289,7 @@ export default function Home() {
 
   // Check for Zero State (Void)
   // If portfolio is null (API down) or total_equity is 0 (No funds)
-  const isZeroState = !portfolio || portfolio.total_equity === 0;
+  const isZeroState = !portfolio || (portfolio && portfolio.total_equity === 0);
 
   // NOTE: For development/testing, if API is down, we might want to show Onboarding or Error.
   // Currently defaulting to Onboarding if no data.
@@ -172,128 +308,15 @@ export default function Home() {
       <div className='flex flex-col min-h-screen'>
         <MacroStrip />
         <div className='p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto pb-32 flex-1 w-full'>
-          {/* Top Section: AI Status & Portfolio HUD */}
-          <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-            {/* Left Column: VibeCheck & System Monitor */}
-            <div className='lg:col-span-1 flex flex-col gap-6'>
-              {/* VibeCheck: Market Status with Persona Protocol */}
-              <MarketStatusCard />
-              {/* Real-time Price Alerts */}
-              <PriceAlerts />
-              <AIAgentAvatar state='IDLE' />
-              <div className='h-80'>
-                <SystemMonitor />
-              </div>
-              {/* AI Advisor Panel (Text Output) */}
-              <AIAdvisorPanel />
-            </div>
-
-            {/* Portfolio HUD (Takes up 2 columns) */}
-            <div className='lg:col-span-2 flex flex-col gap-6'>
-              <MatrixPortfolioSummary />
-              <AutoTradeControls />
-            </div>
-          </div>
-
-          {/* In-App Swipe Notification Demo */}
-          <section>
-            <div className='flex items-center gap-3 mb-4'>
-              <div className='h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]' />
-              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-                In-App Swipe{' '}
-                <span className='text-muted-foreground text-sm ml-2 font-normal'>
-                  No More Context Switching
-                </span>
-              </h2>
-            </div>
-            <SwipeNotificationDemo />
-          </section>
-
-          {/* Instant Approval Cards Section */}
-          <section>
-            <div className='flex items-center gap-3 mb-4'>
-              <div className='h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]' />
-              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-                Instant Approvals{' '}
-                <span className='text-muted-foreground text-sm ml-2 font-normal'>
-                  Ops Technical Design - Ephemeral UI
-                </span>
-              </h2>
-            </div>
-            <ApprovalCardsDemo />
-          </section>
-
-          {/* Visuals First: AI Thinking Section */}
-          <section>
-            {/* Phase 5: Void Terminal */}
-            <div className='flex items-center gap-3 mb-4'>
-              <div className='h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]' />
-              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-                The Void Terminal{' '}
-                <span className='text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded'>
-                  Phase 5.0
-                </span>
-              </h2>
-            </div>
-            <div className='w-full mb-8'>
-              <VoidScene />
-            </div>
-
-            <div className='flex items-center gap-3 mb-4'>
-              <div className='h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]' />
-              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-                Neural Cortex{' '}
-                <span className='text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded'>
-                  Phase 4.2
-                </span>
-              </h2>
-            </div>
-
-            <div className='w-full'>
-              <NeuralMonitor />
-            </div>
-          </section>
-
-          {/* Neural Nexus Visualization */}
+          <TopSection />
+          <SwipeSection />
+          <ApprovalsSection />
+          <VisualsSection />
           <section>
             <EcosystemGraph />
           </section>
-
-          {/* Middle Section: Profit Navigator (Signals) */}
-          <section>
-            <div className='flex items-center gap-3 mb-4'>
-              <div className='h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]' />
-              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-                Profit Navigator{' '}
-                <span className='text-muted-foreground text-sm ml-2 font-normal'>
-                  AI Analysis Feed
-                </span>
-              </h2>
-            </div>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {WATCHLIST.map(stock => (
-                <SignalCard
-                  key={stock.ticker}
-                  ticker={stock.ticker}
-                  name={stock.name}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* Bottom Section: Active Positions */}
-          <section>
-            <div className='flex items-center gap-3 mb-4'>
-              <div className='h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]' />
-              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-                Active Assets
-              </h2>
-            </div>
-            <div className='glass-panel rounded-xl p-1'>
-              <MatrixPositionList />
-            </div>
-          </section>
+          <ProfitNavigatorSection />
+          <ActiveAssetsSection />
         </div>
       </div>
     </MatrixRain>
