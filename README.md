@@ -5,6 +5,7 @@ Advanced AI-powered trading platform with a "Cyberpunk Ghost" aesthetic. This sy
 ## Features
 
 - **AI-Powered Trading:** Automated buy/sell decisions using LightGBM and RSI strategies
+- **Continuous Learning:** Claude Code-inspired skill extraction and autonomous improvement
 - **Real-Time Monitoring:** Live portfolio tracking and market data visualization
 - **Risk Management:** Circuit breaker system with configurable safety limits
 - **Interactive Dashboard:** 3D visualizations and approval workflows
