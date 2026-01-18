@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useInfoToast } from './ToastSystem';
 
 interface WebVitalsMetric {
@@ -17,7 +17,7 @@ interface PerformanceData {
   memoryUsage?: number;
 }
 
-export const PerformanceMonitor: React.FC = () => {
+export const PerformanceMonitor: React.FC = React.memo(() => {
   const [performanceData, setPerformanceData] = useState<PerformanceData>({
     metrics: [],
     bundleSize: 0,
@@ -51,12 +51,13 @@ export const PerformanceMonitor: React.FC = () => {
     };
 
     // Dynamic import of web-vitals
-    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-      getCLS(reportWebVitals);
-      getFID(reportWebVitals);
-      getFCP(reportWebVitals);
-      getLCP(reportWebVitals);
-      getTTFB(reportWebVitals);
+    // @ts-ignore
+    import('web-vitals').then(webVitals => {
+      webVitals.getCLS(reportWebVitals);
+      webVitals.getFID(reportWebVitals);
+      webVitals.getFCP(reportWebVitals);
+      webVitals.getLCP(reportWebVitals);
+      webVitals.getTTFB(reportWebVitals);
     });
 
     // Bundle size monitoring
@@ -66,10 +67,12 @@ export const PerformanceMonitor: React.FC = () => {
       ) as PerformanceNavigationTiming[];
       if (entries.length > 0) {
         const navEntry = entries[0];
-        setPerformanceData(prev => ({
-          ...prev,
-          loadTime: navEntry.loadEventEnd - navEntry.fetchStart,
-        }));
+        if (navEntry) {
+          setPerformanceData(prev => ({
+            ...prev,
+            loadTime: navEntry.loadEventEnd - navEntry.fetchStart,
+          }));
+        }
       }
     }
 
@@ -237,7 +240,7 @@ export const PerformanceMonitor: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 // Hook for programmatic access to performance data
 export const usePerformanceMonitor = () => {
@@ -258,7 +261,7 @@ export const usePerformanceMonitor = () => {
         const entries = performance.getEntriesByType(
           'navigation'
         ) as PerformanceNavigationTiming[];
-        if (entries.length > 0) {
+        if (entries.length > 0 && entries[0]) {
           loadTime = entries[0].loadEventEnd - entries[0].fetchStart;
         }
 

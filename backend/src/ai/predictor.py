@@ -2,11 +2,12 @@
 Advanced AI/ML Predictor - Transformer-based Time Series Forecasting
 """
 
+import asyncio
 import torch
 import torch.nn as nn
 import pandas as pd
 import numpy as np
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Union, Callable, Awaitable
 from dataclasses import dataclass
 import logging
 
@@ -366,6 +367,38 @@ def initialize_models():
     logger.info("AI models initialized")
 
 
+async def make_prediction_async(
+    ticker: str,
+    historical_data: pd.DataFrame,
+    prediction_horizon: int = 5,
+    callback: Optional[Callable[[PredictionResult], Awaitable[None]]] = None,
+) -> PredictionResult:
+    """Make price prediction for a ticker asynchronously."""
+    try:
+        # Run prediction in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None,
+            predictor.predict_ensemble,
+            ticker,
+            historical_data,
+            prediction_horizon,
+        )
+
+        logger.info(
+            f"Async prediction made for {ticker}: confidence {result.confidence:.2f}"
+        )
+
+        # Call callback if provided
+        if callback:
+            await callback(result)
+
+        return result
+    except Exception as e:
+        logger.error(f"Async prediction failed for {ticker}: {e}")
+        raise
+
+
 def make_prediction(
     ticker: str, historical_data: pd.DataFrame, prediction_horizon: int = 5
 ) -> PredictionResult:
@@ -379,9 +412,32 @@ def make_prediction(
         raise
 
 
+async def batch_predict_async(
+    predictions: List[Tuple[str, pd.DataFrame, int]],
+) -> List[PredictionResult]:
+    """Make batch predictions asynchronously."""
+    tasks = [
+        make_prediction_async(ticker, data, horizon)
+        for ticker, data, horizon in predictions
+    ]
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # Filter out exceptions and log them
+    valid_results = []
+    for i, result in enumerate(results):
+        if isinstance(result, Exception):
+            ticker = predictions[i][0]
+            logger.error(f"Batch prediction failed for {ticker}: {result}")
+        else:
+            valid_results.append(result)
+
+    return valid_results
+
+
 def update_model_with_feedback(
     ticker: str, features: MarketFeatures, actual_return: float
-):
+) -> None:
     """Update model with real-time feedback."""
     real_time_learner.add_observation(ticker, features, actual_return)
 

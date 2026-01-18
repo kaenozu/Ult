@@ -114,12 +114,13 @@ export const SkeletonLoading: React.FC<{ className?: string }> = ({
 
 // Loading states for different component types
 export const createLoadingComponent = (
-  type: LoadingProps['variant'] = 'card',
+  type: NonNullable<LoadingProps['variant']>,
   defaultProps?: Partial<LoadingProps>
 ) => {
-  return (props: LoadingProps) => (
-    <Loading {...defaultProps} {...props} variant={type} />
-  );
+  return (props: LoadingProps) => {
+    const mergedProps = { ...defaultProps, ...props, variant: type };
+    return <Loading {...mergedProps} />;
+  };
 };
 
 // Pre-configured loading components
@@ -127,15 +128,26 @@ export const CardLoader = createLoadingComponent('card', { size: 'md' });
 export const InlineLoader = createLoadingComponent('inline', { size: 'sm' });
 export const SkeletonLoader = createLoadingComponent('skeleton');
 
-// Dynamic import factory functions
+// Dynamic import factory functions with error boundary
 export const createLazyComponent = <T extends React.ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
   message: string,
-  height: string = 'h-32'
+  height: string = 'h-32',
+  fallback?: React.ComponentType<any>
 ) => {
-  return dynamic(importFn, {
+  const LazyComponent = dynamic(importFn, {
     loading: () => <ComponentLoading height={height} message={message} />,
+    ssr: false, // Disable SSR for better performance
   });
+
+  // Wrap with error boundary
+  return React.memo((props: any) => (
+    <React.Suspense
+      fallback={<ComponentLoading height={height} message={message} />}
+    >
+      <LazyComponent {...props} />
+    </React.Suspense>
+  ));
 };
 
 export const createLazyNamedComponent = <T extends React.ComponentType<any>>(

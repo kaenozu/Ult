@@ -7,12 +7,13 @@ const nextConfig: NextConfig = {
   images: {
     domains: ['localhost'],
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         path: false,
+        crypto: false,
       };
     }
 
@@ -23,8 +24,32 @@ const nextConfig: NextConfig = {
         new BundleAnalyzerPlugin({
           analyzerMode: 'static',
           openAnalyzer: true,
+          reportFilename: 'bundle-analyzer-report.html',
         })
       );
+    }
+
+    // Production optimizations
+    if (!dev) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+              priority: 10,
+            },
+            common: {
+              name: 'common',
+              minChunks: 2,
+              priority: 5,
+            },
+          },
+        },
+      };
     }
 
     return config;
