@@ -22,8 +22,16 @@ const getTrafficLightColor = (level: SafetyLevel): string => {
 };
 
 export const TrafficLight: React.FC<TrafficLightProps> = ({ safetyLevel }) => (
-  <div className='flex flex-col items-center gap-3 p-5 bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-white/10'>
-    <div className='w-20 h-50 bg-gray-950 rounded-2xl flex flex-col items-center justify-around py-4 shadow-inner'>
+  <div
+    className='flex flex-col items-center gap-3 p-5 bg-gradient-to-b from-gray-900 to-gray-800 rounded-xl border border-white/10'
+    role='status'
+    aria-label={`System safety level: ${safetyLevel}`}
+    aria-live='polite'
+  >
+    <div
+      className='w-20 h-50 bg-gray-950 rounded-2xl flex flex-col items-center justify-around py-4 shadow-inner'
+      aria-hidden='true'
+    >
       {(['danger', 'caution', 'safe'] as SafetyLevel[]).map(level => {
         const isActive = safetyLevel === level;
         const baseColor =
@@ -46,6 +54,7 @@ export const TrafficLight: React.FC<TrafficLightProps> = ({ safetyLevel }) => (
                 ? `0 0 30px ${baseColor}, 0 0 60px ${baseColor}40`
                 : 'none',
             }}
+            aria-label={`${level} level ${isActive ? 'active' : 'inactive'}`}
           />
         );
       })}
@@ -53,6 +62,7 @@ export const TrafficLight: React.FC<TrafficLightProps> = ({ safetyLevel }) => (
     <div
       className='mt-3 px-4 py-2 bg-white/5 rounded-lg text-sm font-semibold uppercase tracking-wide'
       style={{ color: getTrafficLightColor(safetyLevel) }}
+      aria-label={`Current system status: ${safetyLevel}`}
     >
       {safetyLevel} System
     </div>

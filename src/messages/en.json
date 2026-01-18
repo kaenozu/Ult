@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "home": "Home",
+    "portfolio": "Portfolio",
+    "trading": "Trading",
+    "market": "Market",
+    "settings": "Settings"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "close": "Close"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "totalEquity": "Total Equity",
+    "cash": "Cash",
+    "invested": "Invested Amount",
+    "pnl": "P&L",
+    "pnlPercent": "P&L %",
+    "positions": "Positions"
+  },
+  "trading": {
+    "title": "Trading",
+    "buy": "Buy",
+    "sell": "Sell",
+    "orderType": "Order Type",
+    "market": "Market",
+    "limit": "Limit",
+    "quantity": "Quantity",
+    "price": "Price",
+    "execute": "Execute Trade"
+  },
+  "errors": {
+    "network": "Network error occurred",
+    "validation": "Validation failed",
+    "unauthorized": "Unauthorized access",
+    "notFound": "Resource not found",
+    "server": "Server error"
+  }
+}
