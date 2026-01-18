@@ -15,7 +15,11 @@ from src.continuous_learning import continuous_learning, TaskContext, ExtractedS
 
 # Security
 security = HTTPBearer()
-JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key-change-in-production")
+
+logger = logging.getLogger(__name__)
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise ValueError("JWT_SECRET environment variable must be set")
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):

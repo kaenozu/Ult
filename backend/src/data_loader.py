@@ -1,6 +1,4 @@
 import os
-
-print(f"DEBUG: Loading data_loader from: {os.path.abspath(__file__)}")
 import asyncio
 import logging
 import os
@@ -718,30 +716,6 @@ def fetch_realtime_data(
     df.dropna(inplace=True)
     _realtime_cache[cache_key] = (now, df)
     return df.copy()
-
-
-class DataLoader:
-    """Wrapper class for data loading functions."""
-
-    def __init__(self, config: Optional[Dict] = None):
-        self.config = config or {}
-        self.default_period = self.config.get("data", {}).get("default_period", "1y")
-        self.interval = self.config.get("data", {}).get("interval", "1d")
-
-    def fetch_stock_data(self, *args, **kwargs):
-        return fetch_stock_data(*args, **kwargs)
-
-    def get_latest_data(self, tickers: Sequence[str], period: str = "1d"):
-        return fetch_stock_data(tickers, period=period)
-
-    def fetch_fundamental_data(self, ticker: str):
-        return fetch_fundamental_data(ticker)
-
-    def fetch_external_data(self, period: str = "2y"):
-        return fetch_external_data(period)
-
-    def fetch_earnings_dates(self, tickers: Sequence[str]) -> Dict[str, Optional[str]]:
-        return fetch_earnings_dates(tickers)
 
 
 def fetch_earnings_dates(tickers: Sequence[str]) -> Dict[str, Optional[str]]:

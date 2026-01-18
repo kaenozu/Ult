@@ -178,19 +178,30 @@ class DataProcessorOptimizer:
                 if str(col_type)[:3] == "int":
                     if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
                         df_optimized[col] = df_optimized[col].astype(np.int8)
-                    elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
+                    elif (
+                        c_min > np.iinfo(np.int16).min
+                        and c_max < np.iinfo(np.int16).max
+                    ):
                         df_optimized[col] = df_optimized[col].astype(np.int16)
-                    elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
+                    elif (
+                        c_min > np.iinfo(np.int32).min
+                        and c_max < np.iinfo(np.int32).max
+                    ):
                         df_optimized[col] = df_optimized[col].astype(np.int32)
 
                 elif str(col_type)[:5] == "float":
-                    if c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
+                    if (
+                        c_min > np.finfo(np.float32).min
+                        and c_max < np.finfo(np.float32).max
+                    ):
                         df_optimized[col] = df_optimized[col].astype(np.float32)
 
         return df_optimized
 
     @staticmethod
-    def chunked_operation(df: pd.DataFrame, func: Callable, chunk_size: int = 10000) -> pd.DataFrame:
+    def chunked_operation(
+        df: pd.DataFrame, func: Callable, chunk_size: int = 10000
+    ) -> pd.DataFrame:
         """チャンク単位で操作を行うことでメモリ効率を改善
 
         Args:
@@ -219,8 +230,20 @@ class DataProcessorOptimizer:
 
         Returns:
             pd.Series: 計算結果
+
+        Note: Security fix - eval() removed due to code injection risk.
+        Only basic multiplication is supported for now.
         """
-        return df.eval(expression)
+        # Security: Avoid eval() to prevent code injection
+        # For now, support only simple multiplication
+        if "*" in expression and len(expression.split("*")) == 2:
+            col1, col2 = expression.split("*")
+            col1 = col1.strip()
+            col2 = col2.strip()
+            if col1 in df.columns and col2 in df.columns:
+                return df[col1] * df[col2]
+        # Add more safe operations as needed
+        raise ValueError(f"Unsupported or unsafe expression: {expression}")
 
 
 def time_it(func: Callable) -> Callable:
