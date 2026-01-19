@@ -35,6 +35,46 @@ class NewsShockDefense:
         ],
     }
 
+    DECAY_FACTOR = 0.95 # Score decay per check if no new shock
+    
+    def __init__(self):
+        self.current_shock_score = 0.0
+        self.last_shock_event = None
+
+    def analyze_current_market(self):
+        """
+        Fetches latest news and updates shock score.
+        """
+        from src.news_aggregator import get_news_aggregator
+        aggregator = get_news_aggregator()
+        news_items = aggregator.fetch_rss_news(limit=10)
+        
+        # Reset score slightly (decay)
+        self.current_shock_score *= self.DECAY_FACTOR
+        
+        shock = self.detect_shock_events(news_items)
+        if shock:
+            # Immediate Maximum Shock
+            self.current_shock_score = 1.0
+            self.last_shock_event = shock
+            return shock
+            
+        return None
+
+    def get_shock_status(self) -> Dict[str, Any]:
+        """Returns current shock status for UI/API"""
+        level = "NORMAL"
+        if self.current_shock_score > 0.8:
+            level = "CRITICAL"
+        elif self.current_shock_score > 0.4:
+            level = "WARNING"
+            
+        return {
+            "level": level,
+            "score": round(self.current_shock_score, 2),
+            "latest_event": self.last_shock_event
+        }
+
     def detect_shock_events(self, news_items: List[Dict[str, str]]) -> Optional[Dict[str, Any]]:
         """
         Scans a list of news items for critical keywords.

@@ -33,6 +33,8 @@ class ThoughtSchema(BaseModel):
     market_regime: str
     content: str
     emotion: Optional[str] = Field(None, description="The 'Vibe' of the thought (e.g. 'EXCITED', 'PANIC')")
+    sentiment_score: float = Field(0.0, ge=-1.0, le=1.0, description="Sentiment score from -1.0 to 1.0")
+    sentiment_label: str = Field("NEUTRAL", description="POSITIVE, NEGATIVE, or NEUTRAL")
 
 class AgentState(BaseModel):
     """

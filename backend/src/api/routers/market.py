@@ -312,3 +312,19 @@ async def get_macro_data():
     except Exception as e:
         logger.error(f"Error fetching macro data: {e}")
         return []
+
+@router.get("/market/earnings", response_model=List[dict])
+async def get_upcoming_earnings(days: int = 14):
+    """
+    Get list of stocks with earnings in the next N days.
+    """
+    try:
+        from src.data.earnings_provider import earnings_provider
+        from src.core.constants import JP_STOCKS
+        
+        # Check cache/fetch
+        results = earnings_provider.get_upcoming_earnings(JP_STOCKS, days_horizon=days)
+        return results
+    except Exception as e:
+        logger.error(f"Error getting earnings data: {e}")
+        return []

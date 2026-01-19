@@ -15,9 +15,14 @@ from src import demo_data
 # from tasks.daily_backtest import compute_metrics
 from src.paper_trader import PaperTrader
 
-# Dummy function to replace missing module
-def compute_metrics():
-    raise NotImplementedError("compute_metrics is not available")
+# Optional import - falls back to demo mode if tasks module is missing
+try:
+    from tasks.daily_backtest import compute_metrics
+except ImportError:
+    # Fallback: compute_metrics not available
+    def compute_metrics():
+        """Fallback when tasks module is not available."""
+        return pd.DataFrame()
 
 
 def _safe_pt():

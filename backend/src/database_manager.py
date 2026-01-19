@@ -157,6 +157,27 @@ class DatabaseManager:
                 )
             """
             )
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS approval_requests (
+                    request_id TEXT PRIMARY KEY,
+                    type TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    context TEXT,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    expires_at TEXT,
+                    approved_by TEXT,
+                    rejected_by TEXT,
+                    approved_at TEXT,
+                    rejected_at TEXT,
+                    rejection_reason TEXT,
+                    platform TEXT,
+                    message_id TEXT
+                )
+            """
+            )
             conn.commit()
         logger.info(f"Database initialized: {DB_PATH}")
 
@@ -434,11 +455,103 @@ class DatabaseManager:
         results = {}
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            for table in ["portfolio_history", "trades", "alerts", "audit_log"]:
-                cursor.execute(f"DELETE FROM {table} WHERE timestamp < ?", (cutoff,))
+            for table in ["portfolio_history", "trades", "alerts", "audit_log", "approval_requests"]:
+                cursor.execute(f"DELETE FROM {table} WHERE timestamp < ?" if table != "approval_requests" else f"DELETE FROM {table} WHERE created_at < ?", (cutoff,))
                 results[table] = cursor.rowcount
             conn.commit()
         return results
+
+    # Approval Request methods
+    def save_approval_request(self, request_data: Dict[str, Any]) -> str:
+        """承認リクエスト保存"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO approval_requests (
+                    request_id, type, title, description, context, status,
+                    created_at, expires_at, approved_by, rejected_by,
+                    approved_at, rejected_at, rejection_reason, platform, message_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(request_id) DO UPDATE SET
+                    status = excluded.status,
+                    approved_by = excluded.approved_by,
+                    rejected_by = excluded.rejected_by,
+                    approved_at = excluded.approved_at,
+                    rejected_at = excluded.rejected_at,
+                    rejection_reason = excluded.rejection_reason,
+                    platform = excluded.platform,
+                    message_id = excluded.message_id
+                """,
+                (
+                    request_data["request_id"],
+                    request_data["type"],
+                    request_data["title"],
+                    request_data["description"],
+                    json.dumps(request_data.get("context", {})),
+                    request_data["status"],
+                    request_data["created_at"],
+                    request_data.get("expires_at"),
+                    request_data.get("approved_by"),
+                    request_data.get("rejected_by"),
+                    request_data.get("approved_at"),
+                    request_data.get("rejected_at"),
+                    request_data.get("rejection_reason"),
+                    request_data.get("platform"),
+                    request_data.get("message_id"),
+                ),
+            )
+            conn.commit()
+        return request_data["request_id"]
+
+    def update_approval_status(self, request_id: str, updates: Dict[str, Any]) -> bool:
+        """承認リクエスト更新"""
+        set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
+        values = list(updates.values())
+        values.append(request_id)
+        
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"UPDATE approval_requests SET {set_clause} WHERE request_id = ?",
+                values
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_approval_request(self, request_id: str) -> Optional[Dict[str, Any]]:
+        """承認リクエスト取得"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM approval_requests WHERE request_id = ?", (request_id,))
+            row = cursor.fetchone()
+            if row:
+                data = dict(row)
+                data["context"] = json.loads(data["context"]) if data["context"] else {}
+                return data
+            return None
+
+    def get_approval_requests(self, status: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+        """承認リクエスト一覧取得"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            if status:
+                cursor.execute(
+                    "SELECT * FROM approval_requests WHERE status = ? ORDER BY created_at DESC LIMIT ?",
+                    (status, limit)
+                )
+            else:
+                cursor.execute(
+                    "SELECT * FROM approval_requests ORDER BY created_at DESC LIMIT ?",
+                    (limit,)
+                )
+            
+            results = []
+            for row in cursor.fetchall():
+                data = dict(row)
+                data["context"] = json.loads(data["context"]) if data["context"] else {}
+                results.append(data)
+            return results
 
 
 db_manager = DatabaseManager()

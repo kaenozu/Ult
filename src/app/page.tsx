@@ -38,9 +38,32 @@ const EcosystemGraph = createFeatureLazyComponent(
   () => import('@/components/visualizations/EcosystemGraph')
 );
 
+import { useNeuralStore } from '@/lib/store/neuralStore';
+
 const MacroStrip = createDashboardLazyComponent(
   'MacroStrip',
   () => import('@/components/features/dashboard/MacroStrip')
+);
+
+const MarketSummary = createDashboardLazyComponent(
+  'MarketSummary',
+  () => import('@/components/features/dashboard/MarketSummary')
+);
+
+const NewsShockRadar = createDashboardLazyComponent(
+  'NewsShockRadar',
+  () => import('@/components/features/dashboard/NewsShockRadar')
+);
+
+const EarningsHunterPanel = createDashboardLazyComponent(
+  'EarningsHunterPanel',
+  () => import('@/components/features/dashboard/EarningsHunterPanel')
+);
+
+const NeuralTradingDaemon = createFeatureLazyComponent(
+  'Neural',
+  'Daemon',
+  () => import('@/components/features/dashboard/NeuralTradingDaemon')
 );
 
 // Additional lazy-loaded components
@@ -105,143 +128,10 @@ const WATCHLIST = [
   { ticker: '9984.T', name: 'ソフトバンクG' },
 ];
 
-function TopSection() {
-  return (
-    <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-      {/* Left Column: VibeCheck & System Monitor */}
-      <div className='lg:col-span-1 flex flex-col gap-6'>
-        {/* VibeCheck: Market Status with Persona Protocol */}
-        <MarketStatusCard />
-        {/* Real-time Price Alerts */}
-        <PriceAlerts />
-        <AIAgentAvatar state='IDLE' />
-        <div className='h-80'>
-          <SystemMonitor />
-        </div>
-        {/* AI Advisor Panel (Text Output) */}
-        <AIAdvisorPanel />
-      </div>
-
-      {/* Portfolio HUD (Takes up 2 columns) */}
-      <div className='lg:col-span-2 flex flex-col gap-6'>
-        <MatrixPortfolioSummary />
-        <AutoTradeControls />
-      </div>
-    </div>
-  );
-}
-
-function SwipeSection() {
-  return (
-    <section>
-      <div className='flex items-center gap-3 mb-4'>
-        <div className='h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]' />
-        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-          In-App Swipe{' '}
-          <span className='text-muted-foreground text-sm ml-2 font-normal'>
-            No More Context Switching
-          </span>
-        </h2>
-      </div>
-      <SwipeNotificationDemo />
-    </section>
-  );
-}
-
-function ApprovalsSection() {
-  return (
-    <section>
-      <div className='flex items-center gap-3 mb-4'>
-        <div className='h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]' />
-        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-          Instant Approvals{' '}
-          <span className='text-muted-foreground text-sm ml-2 font-normal'>
-            Ops Technical Design - Ephemeral UI
-          </span>
-        </h2>
-      </div>
-      <ApprovalCardsDemo />
-    </section>
-  );
-}
-
-function VisualsSection() {
-  return (
-    <section>
-      {/* Phase 5: Void Terminal */}
-      <div className='flex items-center gap-3 mb-4'>
-        <div className='h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]' />
-        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-          The Void Terminal{' '}
-          <span className='text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded'>
-            Phase 5.0
-          </span>
-        </h2>
-      </div>
-      <div className='w-full mb-8'>
-        <VoidScene />
-      </div>
-
-      <div className='flex items-center gap-3 mb-4'>
-        <div className='h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]' />
-        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-          Neural Cortex{' '}
-          <span className='text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded'>
-            Phase 4.2
-          </span>
-        </h2>
-      </div>
-
-      <div className='w-full'>
-        <NeuralMonitor />
-      </div>
-    </section>
-  );
-}
-
-function ProfitNavigatorSection() {
-  return (
-    <section>
-      <div className='flex items-center gap-3 mb-4'>
-        <div className='h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]' />
-        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-          Profit Navigator{' '}
-          <span className='text-muted-foreground text-sm ml-2 font-normal'>
-            AI Analysis Feed
-          </span>
-        </h2>
-      </div>
-
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-        {WATCHLIST.map(stock => (
-          <SignalCard
-            key={stock.ticker}
-            ticker={stock.ticker}
-            name={stock.name}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ActiveAssetsSection() {
-  return (
-    <section>
-      <div className='flex items-center gap-3 mb-4'>
-        <div className='h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]' />
-        <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
-          Active Assets
-        </h2>
-      </div>
-      <div className='glass-panel rounded-xl p-1'>
-        <MatrixPositionList />
-      </div>
-    </section>
-  );
-}
+// No extra definitions needed here as they were moved to top or converted to lazy components
 
 export default function Home() {
+  const { isActive, setIsActive } = useNeuralStore();
   const {
     data: portfolio,
     isLoading,
@@ -308,15 +198,150 @@ export default function Home() {
       <div className='flex flex-col min-h-screen'>
         <MacroStrip />
         <div className='p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto pb-32 flex-1 w-full'>
-          <TopSection />
-          <SwipeSection />
-          <ApprovalsSection />
-          <VisualsSection />
+          <div className='flex justify-end mb-4'>
+            <button
+              onClick={() => setIsActive(!isActive)}
+              className={`px-4 py-2 rounded font-bold uppercase transition-all duration-300 ${
+                isActive
+                  ? 'bg-cyan-500 text-black shadow-[0_0_20px_#00ffcc]'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              {isActive ? 'Divine Mode: ON' : 'Divine Mode: OFF'}
+            </button>
+          </div>
+
+          {/* Top Section: AI Status & Portfolio HUD */}
+          <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
+            {/* Left Column: VibeCheck & System Monitor */}
+            <div className='lg:col-span-1 flex flex-col gap-6'>
+              <MarketStatusCard />
+              <PriceAlerts />
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <MarketSummary />
+                <NewsShockRadar />
+              </div>
+              <AIAgentAvatar state='IDLE' />
+              <div className='h-80'>
+                <SystemMonitor />
+              </div>
+              <AIAdvisorPanel />
+            </div>
+
+            {/* Portfolio HUD (Takes up 2 columns) */}
+            <div className='lg:col-span-2 flex flex-col gap-6'>
+              <MatrixPortfolioSummary />
+              <AutoTradeControls />
+              <NeuralTradingDaemon />
+            </div>
+          </div>
+
+          {/* New Feature: Earnings Hunter */}
+          <section>
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full shadow-[0_0_20px_rgba(251,191,36,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                Alpha Generation{' '}
+                <span className='text-muted-foreground text-sm ml-2 font-normal'>
+                  Earnings Hunter Protocol
+                </span>
+              </h2>
+            </div>
+            <EarningsHunterPanel />
+          </section>
+
+          {/* Standard Sections */}
+          <section>
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                In-App Swipe{' '}
+                <span className='text-muted-foreground text-sm ml-2 font-normal'>
+                  No More Context Switching
+                </span>
+              </h2>
+            </div>
+            <SwipeNotificationDemo />
+          </section>
+
+          <section>
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                Instant Approvals{' '}
+                <span className='text-muted-foreground text-sm ml-2 font-normal'>
+                  Ops Technical Design - Ephemeral UI
+                </span>
+              </h2>
+            </div>
+            <ApprovalCardsDemo />
+          </section>
+
+          <section>
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                The Void Terminal{' '}
+                <span className='text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded'>
+                  Phase 5.0
+                </span>
+              </h2>
+            </div>
+            <div className='w-full mb-8'>
+              <VoidScene />
+            </div>
+
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                Neural Cortex{' '}
+                <span className='text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded'>
+                  Phase 4.2
+                </span>
+              </h2>
+            </div>
+            <div className='w-full'>
+              <NeuralMonitor />
+            </div>
+          </section>
+
           <section>
             <EcosystemGraph />
           </section>
-          <ProfitNavigatorSection />
-          <ActiveAssetsSection />
+
+          <section>
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                Profit Navigator{' '}
+                <span className='text-muted-foreground text-sm ml-2 font-normal'>
+                  AI Analysis Feed
+                </span>
+              </h2>
+            </div>
+
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+              {WATCHLIST.map(stock => (
+                <SignalCard
+                  key={stock.ticker}
+                  ticker={stock.ticker}
+                  name={stock.name}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]' />
+              <h2 className='text-xl font-bold tracking-tight text-foreground uppercase'>
+                Active Assets
+              </h2>
+            </div>
+            <div className='glass-panel rounded-xl p-1'>
+              <MatrixPositionList />
+            </div>
+          </section>
         </div>
       </div>
     </MatrixRain>
