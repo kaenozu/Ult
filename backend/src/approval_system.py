@@ -1045,7 +1045,7 @@ def get_approval_system(websocket_manager=None) -> IntegratedApprovalSystem:
     global approval_system
     if approval_system is None:
         # Load from config
-        from src.config_loader import get_notification_config
+        from src.infra.config_loader import get_notification_config
         from src.approval_redis_store import get_approval_redis_store
 
         config = get_notification_config()

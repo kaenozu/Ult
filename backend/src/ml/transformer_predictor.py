@@ -223,7 +223,7 @@ class TransformerPredictor(BasePredictor):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    from src.data_loader import fetch_stock_data
+    from src.data_temp.data_loader import fetch_stock_data
 
     data_map = fetch_stock_data(["7203.T"], period="2y")
     df = data_map.get("7203.T")

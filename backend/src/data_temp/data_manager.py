@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 from typing import Optional
 from pathlib import Path
-from .config import settings
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 

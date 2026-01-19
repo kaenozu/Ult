@@ -83,7 +83,7 @@ class MarketDataBroadcaster:
         """
         try:
             # Fetch market data (using existing data_loader)
-            from src.data_loader import fetch_realtime_data
+            from src.data_temp.data_loader import fetch_realtime_data
 
             # Monitor a representative stock for regime detection
             monitor_symbol = "7203.T"  # Toyota

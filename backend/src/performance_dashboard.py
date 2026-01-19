@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src.paper_trader import PaperTrader
-from src.performance_analyzer import PerformanceAnalyzer
+from src.analysis_temp.performance_analyzer import PerformanceAnalyzer
 
 
 def create_performance_dashboard():

@@ -1,6 +1,6 @@
 from src.backtesting.engine import BacktestEngine
 from src.strategies import LightGBMStrategy, RSIStrategy
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 from typing import Dict, Any, Optional
 
 def execute_backtest(ticker: str, strategy_name: str, period: str, initial_capital: float) -> Optional[Dict[str, Any]]:
