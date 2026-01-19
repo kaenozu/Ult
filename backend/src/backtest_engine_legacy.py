@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 from src.backtesting.engine import BacktestEngine as CoreEngine
 BacktestEngine = CoreEngine
 

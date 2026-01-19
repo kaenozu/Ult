@@ -9,7 +9,7 @@ import streamlit as st
 
 from src.anomaly_detector import AnomalyDetector
 from src.auto_rebalancer import AutoRebalancer
-from src.pdf_report_generator import PDFReportGenerator
+from src.reporting_temp.pdf_report_generator import PDFReportGenerator
 
 
 def render_automation_tab():

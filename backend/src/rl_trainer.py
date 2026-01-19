@@ -10,7 +10,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 from src.features import add_advanced_features
 from src.rl_agent import DQNAgent
 from src.rl_environment import TradingEnvironment

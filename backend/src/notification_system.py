@@ -16,7 +16,7 @@ from urllib.request import Request, urlopen
 
 import requests
 
-from src.config_loader import get_notification_config
+from src.infra.config_loader import get_notification_config
 from src.database_manager import db_manager
 
 logger = logging.getLogger(__name__)

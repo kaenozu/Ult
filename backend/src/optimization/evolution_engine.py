@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Dict
 
 import pandas as pd
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 from src.features import add_advanced_features
 from src.optimization.optuna_tuner import OptunaTuner
 from src.oracle.oracle_2026 import Oracle2026
