@@ -7,3 +7,4 @@ from . import websocket
 from . import approvals
 from . import circuit_breaker
 from . import alerts
+from . import vision

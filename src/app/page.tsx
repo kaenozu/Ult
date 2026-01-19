@@ -115,13 +115,6 @@ const EarningsHunterPanel = dynamic(
   },
 );
 
-{ ssr: false }
-);
-
-const NeuralTradingDaemon = dynamic(
-  () => import("@/components/features/dashboard/NeuralTradingDaemon"),
-  { ssr: false }
-);
 
 import { useNeuralStore } from "@/lib/store/neuralStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -369,6 +362,7 @@ export default function Home() {
                   <div className="glass-panel rounded-xl p-1">
                     <MatrixPositionList />
                   </div>
+                </section>
               </TabsContent>
 
               <TabsContent value="replay" className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
@@ -393,6 +387,7 @@ export default function Home() {
             </Tabs>
           </div>
         </div>
+      </div>
     </MatrixRain>
   );
 }

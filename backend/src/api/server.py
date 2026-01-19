@@ -33,16 +33,10 @@ from src.api.routers import (
     circuit_breaker,
     approvals,
     replay, # Phase 10: The Time Machine
+    vision, # Phase 11: The Eyes of God
 )
-    portfolio,
-    trading,
-    market,
-    settings as settings_router,
-    websocket,
-    alerts,
-    circuit_breaker,
-    approvals,
-)
+
+
 from src.api.vibe_endpoints import router as vibe_router
 from src.core.agent_loop import AutonomousAgent
 from src.core.config import settings
@@ -117,6 +111,9 @@ def create_app() -> FastAPI:
     
     # Phase 10: The Time Machine (Replay & Analytics)
     app.include_router(replay.router)
+
+    # Phase 11: The Eyes of God (Multimodal Vision)
+    app.include_router(vision.router, prefix="/api/v1")
 
     # Administrative APIs
     app.include_router(settings_router.router, prefix="/api/v1", tags=["Administration"])

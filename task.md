@@ -19,14 +19,27 @@
         - [x] Backend Connection Resilience (config/imports/cors) <!-- id: 12a -->
         - [x] Frontend Reconnection Logic (useSynapse) <!-- id: 12b -->
         - [x] Frontend Config Fix (localhost proxy) <!-- id: 12c -->
-    - [/] [UI] WebXR & UI Polish (Pickle) <!-- id: 13 -->
+    - [ ] [Edge] Client-Side News Analysis (WASM) <!-- id: 14b -->
+        - [ ] [Worker] Create Sentiment Analysis WebWorker <!-- id: 27 -->
+        - [ ] [UI] Integrate into EarningsHunterPanel <!-- id: 28 -->
+        - [ ] [Verification] Performance Benchmark (Server vs Client) <!-- id: 29 -->
+    - [ ] [Intelligence] Divine Voice Interface (Voice Feedback) <!-- id: 17 -->
+    - [ ] [UI] WebXR & UI Polish (Pickle) <!-- id: 13 -->
         - [x] WebXR Spatial Interface (Stable) <!-- id: 13a -->
         - [ ] [Interaction] Parallax Effect (2.5D Mode) <!-- id: 13c -->
         - [ ] UI Skills Application (text-balance, tabular-nums) <!-- id: 13b -->
-    - [x] [Edge] Edge Inference Pilot (Qwen) <!-- id: 14 -->
-        - [x] WebLLM / Transformers.js Integration <!-- id: 14a -->
-        - [ ] [Platform] Client-Side News Analysis (WASM) <!-- id: 14b -->
-    - [ ] [Intelligence] Divine Voice Interface (Voice Feedback) <!-- id: 17 -->
     - [ ] [Deferred] Federated Learning Protocol <!-- id: 15 -->
     - [ ] [Deferred] Blockchain Audit <!-- id: 16 -->
+
+- [ ] Phase 11: The Eyes of God (Multimodal Vision) <!-- id: 18 -->
+    - [x] [UI] Chart Vision Analyst Interface <!-- id: 19 -->
+        - [x] [Interaction] "Analyze Chart" Button & Capture Logic <!-- id: 19a -->
+        - [x] [Display] Vision Analysis Result Card (Overlay/Panel) <!-- id: 19b -->
+    - [x] [Backend] Chart Capture Service (Puppeteer -> html2canvas) <!-- id: 20 -->
+    - [x] [Integration] Vision Brain (Gemini 1.5 Flash) <!-- id: 21 -->
+    - [x] Phase 11.5: Screenshot Diary <!-- id: 22 -->
+        - [x] [Backend] File Storage System (backend/data/screenshots) <!-- id: 23 -->
+        - [x] [Backend] Journal Database Table (metadata & analysis) <!-- id: 24 -->
+        - [x] [API] Save & Gallery Endpoints <!-- id: 25 -->
+        - [x] [UI] "Save to Diary" Action & Gallery Grid <!-- id: 26 -->
 
