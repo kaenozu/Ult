@@ -1,59 +1,72 @@
 ---
 name: GitHub Operations
-description: Manage GitHub Pull Requests, Issues, and Repository status using the `gh` CLI.
+description: Manage GitHub Pull Requests, Issues, and Repository status using the `gh` CLI. Standardizes PR creation with Conventional Commits and detailed body templates.
 ---
 
-# GitHub Operations (gh CLI)
+# GitHub Operations Skill
 
-Use this skill to interact with the GitHub repository directly from the terminal.
-**Prerequisite**: The `gh` CLI tool must be authenticated (usually pre-configured).
+## Purpose
+To create high-quality, standardized Pull Requests that are easy to review and merge.
 
-## Common Tasks
+## PR Title Format
+Follow **Conventional Commits**:
+`<type>(<scope>): <summary>`
+
+- **Types:**
+  - `feat`: New feature
+  - `fix`: Bug fix
+  - `perf`: Performance improvement
+  - `docs`: Documentation only
+  - `refactor`: Code change that neither fixes a bug nor adds a feature
+  - `test`: Adding missing tests or correcting existing tests
+  - `chore`: Changes that don't modify src or test files
+- **Scope:** (Optional) The module or component (e.g., `frontend`, `backend`, `auth`).
+- **Summary:** Imperative present tense. No period at the end.
+- **Breaking Changes:** Add `!` before colon (e.g., `feat(api)!: remove v1 endpoints`).
+
+## PR Creation Workflow
 
 ### 1. Check Status
-Get a quick overview of the current PRs and Issues relevant to you.
-```powershell
-gh status
+```bash
+git status
+git diff --stat
 ```
 
-### 2. Create a Pull Request (PR)
-When you have finished a task and want to merge changes.
-**Important**: Ensure you are on a feature branch, not `main`.
-
-1.  **Push changes**:
-    ```powershell
-    git push origin HEAD
-    ```
-2.  **Create PR**:
-    ```powershell
-    gh pr create --title "Title of your PR" --body "Description of changes"
-    ```
-    *Interactive mode (simpler)*: `gh pr create --web` (opens browser) or just `gh pr create` (prompts in terminal). For automation, use flags.
-
-### 3. List & View Issues
-Find what needs to be done.
-- **List all open issues**:
-    ```powershell
-    gh issue list
-    ```
-- **View specific issue**:
-    ```powershell
-    gh issue view <issue-number>
-    ```
-
-### 4. Check PR Status/Checks
-See if CI/CD passed for a PR.
-```powershell
-gh pr checks <pr-number>
+### 2. Push Branch
+```bash
+git push -u origin HEAD
 ```
 
-### 5. Checkout a PR
-To review or modify someone else's PR locally.
-```powershell
-gh pr checkout <pr-number>
+### 3. Create PR (Interactive)
+If you want to use the interactive mode:
+```bash
+gh pr create
 ```
 
-## Best Practices
-- **Atomic PRs**: Keep PRs focused on a single task or fix.
-- **Descriptive Titles**: Use titles that explain *what* changed (e.g., "feat: Add Auto-Pilot UI", "fix: Resolve build error in api.ts").
-- **Link Issues**: In the body, use "Fixes #123" to auto-close issues.
+### 4. Create PR (Command Line Template)
+Use this command to create a PR with a structured body:
+
+```bash
+gh pr create --title "<type>(<scope>): <summary>" --body "$(cat <<'EOF'
+## Summary
+<Describe what the PR does and how to test. Visuals are recommended.>
+
+## Implementation Details
+- [ ] Detail 1
+- [ ] Detail 2
+
+## Risk Assessment
+- [ ] Impact on existing features: <None/Low/High>
+- [ ] Migration required: <Yes/No>
+
+## Verification
+- [ ] Verified manually
+- [ ] Unit tests passed
+EOF
+)"
+```
+
+## Useful Commands
+- `gh pr list`: List open PRs
+- `gh pr view`: View current PR details
+- `gh pr browser`: Open PR in browser

@@ -3,95 +3,45 @@ name: Refactor Assistant
 description: Analyze code quality and provide refactoring suggestions for AGStock Ult codebase
 ---
 
-# Refactor Assistant
+# Refactor Assistant Skill
 
-Use this skill to analyze code quality and get automated refactoring suggestions.
+Refactor high-complexity React components in the codebase.
 
-## Usage
+## Core Refactoring Patterns
 
-Analyze code quality and generate refactoring recommendations:
+### Pattern 1: Extract Custom Hooks
+**When**: Component has complex state management, multiple `useState`/`useEffect`.
+**Action**: Move logic to `src/hooks/use-<feature>.ts`.
 
-```bash
-# Analyze entire codebase
-python .agent/skills/refactor_assistant/scripts/analyze_code.py
+```typescript
+// ❌ Before
+const Component = () => {
+  const [data, setData] = useState(...)
+  useEffect(() => { ... }, [])
+  return <div>...</div>
+}
 
-# Analyze specific directory
-python .agent/skills/refactor_assistant/scripts/analyze_code.py --path src/components
-
-# Analyze specific file
-python .agent/skills/refactor_assistant/scripts/analyze_code.py --file src/components/dashboard/PortfolioSummary.tsx
-
-# Focus on specific issues
-python .agent/skills/refactor_assistant/scripts/analyze_code.py --focus complexity,duplicates
-
-# Auto-fix simple issues
-python .agent/skills/refactor_assistant/scripts/analyze_code.py --auto-fix --dry-run
-```
-
-### Analysis Types
-
-- **Complexity**: Cyclomatic complexity and code complexity analysis
-- **Duplicates**: Code duplication detection and consolidation
-- **Smells**: Code smell detection (long methods, large classes, etc.)
-- **Security**: Security vulnerabilities and anti-patterns
-- **Performance**: Performance bottlenecks and optimizations
-- **Maintainability**: Code maintainability index assessment
-
-### Auto-Fix Options
-
-- **Formatting**: Code formatting and style consistency
-- **Imports**: Import statement optimization
-- **Variables**: Variable naming and unused variable cleanup
-- **Functions**: Function extraction and simplification
-- **Types**: TypeScript type improvements
-
-### Output
-
-Returns detailed analysis with:
-
-- **Code Quality Score**: Overall quality assessment (0-100)
-- **Issues Found**: Detailed list of code issues
-- **Refactoring Suggestions**: Specific improvement recommendations
-- **Auto-Fix Candidates**: Issues that can be automatically fixed
-- **Complexity Metrics**: Function and file complexity measurements
-- **Duplicate Code**: Repeated code blocks and consolidation opportunities
-
-### Examples
-
-```bash
-# Comprehensive analysis with auto-fix
-python .agent/skills/refactor_assistant/scripts/analyze_code.py --auto-fix
-
-# Focus on complexity issues
-python .agent/skills/refactor_assistant/scripts/analyze_code.py --focus complexity
-
-# Generate detailed report
-python .agent/skills/refactor_assistant/scripts/analyze_code.py --report --verbose
-
-# Dry run auto-fix
-python .agent/skills/refactor_assistant/scripts/analyze_code.py --auto-fix --dry-run
-```
-
-### Configuration
-
-Create `.refactor.json` in project root:
-
-```json
-{
-  "rules": {
-    "complexity": {
-      "max_function_complexity": 10,
-      "max_file_complexity": 50
-    },
-    "duplicates": {
-      "min_lines": 5,
-      "min_similarity": 0.8
-    },
-    "performance": {
-      "check_react_renders": true,
-      "check_large_arrays": true
-    }
-  },
-  "ignore": ["node_modules", ".git", "dist"]
+// ✅ After
+const Component = () => {
+  const { data } = useFeatureData()
+  return <div>...</div>
 }
 ```
+
+### Pattern 2: Extract Sub-Components
+**When**: Single component has multiple UI sections (> 300 lines).
+**Action**: Split into `components/features/<feature>/<SubComponent>.tsx`.
+
+### Pattern 3: Simplify Conditionals
+**When**: Deep nesting or complex switch statements.
+**Action**: Use lookup maps or early returns.
+
+### Pattern 4: React Query
+**When**: Component handles raw `fetch`.
+**Action**: Use `@tanstack/react-query` hooks (e.g., `useQuery`).
+
+## Workflow
+1. **Analyze**: Identify large components (e.g., `SystemMonitor.tsx`, `StockChart.tsx`).
+2. **Plan**: Propose a split (Hooks vs UI).
+3. **Execute**: Create new files first, then update parent.
+4. **Verify**: Ensure no regression.
