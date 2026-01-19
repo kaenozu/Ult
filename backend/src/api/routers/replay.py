@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 import logging
 
-from src.execution.paper_trader import PaperTrader
+from src.paper_trader import PaperTrader
 from src.analysis.performance_analyzer import PerformanceAnalyzer
 
 router = APIRouter(prefix="/api/v1/replay", tags=["replay"])
