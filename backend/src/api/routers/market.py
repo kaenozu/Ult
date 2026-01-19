@@ -21,7 +21,7 @@ async def get_market_watchlist():
     """ウォッチリスト(JP_STOCKS)の全銘柄の価格とシグナルを取得 (Cached)"""
     try:
         from src.core.constants import JP_STOCKS, TICKER_NAMES, MARKET_SUMMARY_TTL
-        from src.data_loader import fetch_stock_data
+        from src.data_temp.data_loader import fetch_stock_data
         from src.strategies import LightGBMStrategy
         
         # 0. Check Cache
@@ -40,7 +40,7 @@ async def get_market_watchlist():
         data_map = fetch_stock_data(JP_STOCKS, period="1y")
 
         # 1.5 Fetch Earnings Dates (Batch, Cached by data_loader internally or just simple fetch)
-        from src.data_loader import fetch_earnings_dates
+        from src.data_temp.data_loader import fetch_earnings_dates
         # Note: In production, fetch_earnings_dates should be cached independently or run in background
         # For now, we call it (it uses yfinance calendar).
         # We wrap it in try-except to not block main thread too much if yfinance is slow
@@ -132,7 +132,7 @@ async def get_market_watchlist():
 async def get_market_data(ticker: str):
     """銘柄の市場データを取得"""
     try:
-        from src.data_loader import fetch_stock_data
+        from src.data_temp.data_loader import fetch_stock_data
         data_map = fetch_stock_data([ticker], period="5d")
         df = data_map.get(ticker)
         
@@ -163,7 +163,7 @@ async def get_market_data(ticker: str):
 async def get_market_history(ticker: str, period: str = "3mo"):
     """銘柄の過去データを取得 (チャート用)"""
     try:
-        from src.data_loader import fetch_stock_data
+        from src.data_temp.data_loader import fetch_stock_data
         data_map = fetch_stock_data([ticker], period=period)
         df = data_map.get(ticker)
 
@@ -196,7 +196,7 @@ async def get_signal(
 ):
     """銘柄のシグナルを取得"""
     try:
-        from src.data_loader import fetch_stock_data
+        from src.data_temp.data_loader import fetch_stock_data
         from src.strategies import LightGBMStrategy, RSIStrategy, SMACrossoverStrategy, BollingerBandsStrategy
         
         # 戦略を選択
@@ -237,7 +237,7 @@ async def get_signal(
 async def run_backtest(request: BacktestRequest):
     """バックテストを実行"""
     try:
-        from src.data_loader import fetch_stock_data
+        from src.data_temp.data_loader import fetch_stock_data
         from src.backtest_engine import BacktestEngine
         from src.strategies import LightGBMStrategy, RSIStrategy
         
@@ -277,7 +277,7 @@ async def run_backtest(request: BacktestRequest):
 @router.get("/macro", response_model=List[MacroIndicator])
 async def get_macro_data():
     """主要マクロ経済指標の取得"""
-    from src.data_loader import fetch_external_data
+    from src.data_temp.data_loader import fetch_external_data
     import time
     
     try:

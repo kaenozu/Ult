@@ -5,6 +5,7 @@ import concurrent.futures
 import pytz
 from datetime import datetime
 from typing import Dict, List, Optional
+import jpholiday
 
 from .paper_trader import PaperTrader
 from .data_loader import fetch_stock_data, get_latest_price
@@ -44,13 +45,21 @@ class AutoTrader:
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 
     def _is_market_open(self) -> bool:
-        """Check if Tokyo Market is open (09:00-11:30, 12:30-15:00 JST)."""
+        """Check if Tokyo Market is open (09:00-11:30, 12:30-15:00 JST), excluding holidays."""
         tz = pytz.timezone("Asia/Tokyo")
         now = datetime.now(tz)
 
         # Weekend check
         if now.weekday() >= 5:
             return False
+
+        # Holiday check (Japanese holidays)
+        try:
+            if jpholiday.is_holiday(now.date()):
+                return False
+        except ImportError:
+            # If jpholiday not available, skip holiday check
+            logger.warning("jpholiday not available, skipping holiday check")
 
         current_time = now.time()
         morning_open = datetime.strptime("09:00", "%H:%M").time()
@@ -122,35 +131,44 @@ class AutoTrader:
 
     def _check_and_trade(self):
         """Execute the trading logic pipeline."""
-        # Check Market Hours
+        if not self._check_market_hours():
+            return
+
+        self._monitor_positions()
+
+        if not self._check_budget():
+            return
+
+        buy_signals = self._scan_opportunities()
+        self._execute_buys(buy_signals)
+
+    def _check_market_hours(self) -> bool:
+        """Check if market is open and return True if trading should proceed."""
         if not self._is_market_open():
             logger.info("AutoTrader: Market closed. Sleeping...")
             self.scan_status = "Market Closed"
-            # Sleep longer if closed (handled in loop by status check or just return)
-            # Actually loop waits scan_interval. Let's return.
-            return
+            return False
+        return True
 
-        # 1. Check Risk / Stop Loss / Take Profit
-        self._monitor_positions()
-
-        # 2. Check Budget Availability
+    def _check_budget(self) -> bool:
+        """Check if budget allows new trades and return True if possible."""
         balance = self.pt.get_current_balance()
         invested = balance.get("invested_amount", 0)
         cash = balance.get("cash", 0)
 
         if invested >= self.max_total_invested:
             logger.info("AutoTrader: Max total investment reached. Skipping buys.")
-            return
+            return False
 
         if cash < self.max_budget_per_trade:
             logger.info("AutoTrader: Insufficient cash for new trade.")
-            return
+            return False
 
-        # 3. Parallel Scan for New Opportunities
-        # Use ThreadPoolExecutor to analyze tickers concurrently
+        return True
+
+    def _scan_opportunities(self) -> List[str]:
+        """Scan for trading opportunities and return list of tickers to buy."""
         targets = NIKKEI_225_TICKERS
-
-        # Filter out already owned tickers
         owned_tickers = [pos["ticker"] for _, pos in self.pt.get_positions().iterrows()]
         candidates = [t for t in targets if t not in owned_tickers]
 
@@ -169,7 +187,6 @@ class AutoTrader:
                 logger.warning(f"Error analyzing {t}: {e}")
             return None
 
-        # Execute Batch Analysis
         futures = [self.executor.submit(analyze_wrapper, t) for t in candidates]
 
         for future in concurrent.futures.as_completed(futures):
@@ -177,7 +194,10 @@ class AutoTrader:
             if res:
                 buy_signals.append(res)
 
-        # Execute Buys (Sequential to handle budget correctly)
+        return buy_signals
+
+    def _execute_buys(self, buy_signals: List[str]):
+        """Execute buy orders for the given signals."""
         for ticker in buy_signals:
             if self._stop_event.is_set():
                 break

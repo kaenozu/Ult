@@ -18,7 +18,7 @@ from src.constants import (
     BACKTEST_MIN_TRAINING_PERIOD_DAYS,
     BACKTEST_RETRAIN_PERIOD_DAYS,
 )
-from src.logger_config import logger
+from src.infra.logger_config import logger
 from src.strategies.base import Order, OrderType, Strategy
 
 
