@@ -49,7 +49,7 @@ def create_breakout_data(length=100):
 class TestStrategies:
     def test_guerilla_range_strategy(self):
         print("\nTesting Guerilla (Range) Strategy...")
-        strategy = RangeStrategy(bb_window=20, rsi_window=14)
+        strategy = RangeStrategy(params={"bb_window": 20, "rsi_window": 14})
         
         # Sine wave should trigger mean reversion signals
         df = create_sine_wave_data(length=200, period=25)
@@ -64,7 +64,7 @@ class TestStrategies:
 
     def test_storm_chaser_volatility_strategy(self):
         print("\nTesting Storm Chaser (Volatility) Strategy...")
-        strategy = VolatilityStrategy(atr_window=14, k=1.0)
+        strategy = VolatilityStrategy(params={"atr_window": 14, "k": 1.0})
         
         # Breakout data should trigger buy
         df = create_breakout_data(length=100)

@@ -42,6 +42,12 @@
     - [x] [API] Update `/signals/{ticker}` to support AUTO mode <!-- id: 18d -->
     - [x] [Backtest] Verify each strategy against specific regimes <!-- id: 18e -->
 
+- [/] **Phase 14: The Blacksmith (Genetic Optimization)** <!-- id: 19 -->
+    - [x] [Refactor] Update Base Strategy to support dynamic params `__init__(params=...)` <!-- id: 19a -->
+    - [x] [Optimization] Implement `GeneticOptimizer` (Population, Fitness, Mutation) <!-- id: 19b -->
+    - [x] [CLI] Create `optimize_strategy.py` tool <!-- id: 19c -->
+    - [x] [Verify] Run optimization on 7203.T for 'The Guerilla' <!-- id: 19d -->
+
 - [ ] Phase 11: The Eyes of God (Multimodal Vision) <!-- id: 18 -->
     - [x] [UI] Chart Vision Analyst Interface <!-- id: 19 -->
         - [x] [Interaction] "Analyze Chart" Button & Capture Logic <!-- id: 19a -->

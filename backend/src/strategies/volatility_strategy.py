@@ -1,5 +1,6 @@
 import pandas as pd
 import ta
+from typing import Dict, Any, Optional
 from .base import Strategy
 
 class VolatilityStrategy(Strategy):
@@ -11,10 +12,10 @@ class VolatilityStrategy(Strategy):
     - Sell: Close < Open - (K * ATR) (Breakout Down)
     - Exit: Trailing Stop
     """
-    def __init__(self, atr_window=14, k=1.5):
-        super().__init__("VolatilityStrategy (The Storm Chaser)")
-        self.atr_window = atr_window
-        self.k = k
+    def __init__(self, params: Optional[Dict[str, Any]] = None):
+        super().__init__("VolatilityStrategy (The Storm Chaser)", params=params)
+        self.atr_window = int(self.params.get("atr_window", 14))
+        self.k = float(self.params.get("k", 1.5))
 
     def generate_signals(self, df: pd.DataFrame) -> pd.Series:
         if df.empty or len(df) < self.atr_window:
