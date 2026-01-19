@@ -19,9 +19,9 @@
         - [x] Backend Connection Resilience (config/imports/cors) <!-- id: 12a -->
         - [x] Frontend Reconnection Logic (useSynapse) <!-- id: 12b -->
         - [x] Frontend Config Fix (localhost proxy) <!-- id: 12c -->
-    - [ ] [Edge] Client-Side News Analysis (WASM) <!-- id: 14b -->
-        - [ ] [Worker] Create Sentiment Analysis WebWorker <!-- id: 27 -->
-        - [ ] [UI] Integrate into EarningsHunterPanel <!-- id: 28 -->
+    - [x] [Edge] Client-Side News Analysis (WASM) <!-- id: 14b -->
+        - [x] [Worker] Create Sentiment Analysis WebWorker <!-- id: 27 -->
+        - [x] [UI] Integrate into EarningsHunterPanel <!-- id: 28 -->
         - [ ] [Verification] Performance Benchmark (Server vs Client) <!-- id: 29 -->
     - [ ] [Intelligence] Divine Voice Interface (Voice Feedback) <!-- id: 17 -->
     - [ ] [UI] WebXR & UI Polish (Pickle) <!-- id: 13 -->
