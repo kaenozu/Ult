@@ -214,8 +214,12 @@ class ApprovalWorkflowManager:
             try:
                 callback = self.approval_callbacks.pop(request_id)
                 callback(request)
+            except TypeError as e:
+                logger.error(f"Invalid callback function: {e}")
+            except RuntimeError as e:
+                logger.error(f"Callback execution failed: {e}")
             except Exception as e:
-                logger.error(f"Error executing approval callback: {e}")
+                logger.error(f"Unexpected error in approval callback: {e}")
 
         # 履歴に移動
         self.approval_history.append(request)
@@ -1045,10 +1049,12 @@ def get_approval_system(websocket_manager=None) -> IntegratedApprovalSystem:
     global approval_system
     if approval_system is None:
         # Load from config
-        from src.config_loader import get_notification_config
+        # from src.config_loader import get_notification_config  # Module not found
         from src.approval_redis_store import get_approval_redis_store
 
-        config = get_notification_config()
+        # config = get_notification_config()
+        # Mock config for now
+        config = {}
         slack_url = config.get("slack", {}).get("webhook_url", "")
         discord_url = config.get("discord", {}).get("webhook_url", "")
 

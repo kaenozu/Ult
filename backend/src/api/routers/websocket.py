@@ -2,6 +2,7 @@
 # Phase 3: Realtime Synapse
 
 import logging
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, WebSocket, WebSocketException, status
@@ -61,8 +62,14 @@ async def websocket_synapse_endpoint(
         # Process messages
         await manager.process_client_messages(connection)
 
+    except ConnectionError as e:
+        logger.error(f"WebSocket connection error for {connection.connection_id}: {e}")
+        await manager.disconnect(connection.connection_id)
+    except ValueError as e:
+        logger.error(f"Invalid WebSocket data for {connection.connection_id}: {e}")
+        await manager.disconnect(connection.connection_id)
     except Exception as e:
-        logger.error(f"WebSocket error for {connection.connection_id}: {e}")
+        logger.error(f"Unexpected WebSocket error for {connection.connection_id}: {e}")
         await manager.disconnect(connection.connection_id)
 
 
@@ -97,8 +104,10 @@ async def handle_ping(message) -> None:
 
         logger.debug(f"Pong sent for sequence {payload.sequence}")
 
+    except AttributeError as e:
+        logger.error(f"Invalid ping payload: {e}")
     except Exception as e:
-        logger.error(f"Error handling ping: {e}")
+        logger.error(f"Unexpected error handling ping: {e}")
 
 
 async def handle_subscribe(message) -> None:
