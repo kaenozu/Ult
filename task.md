@@ -23,7 +23,10 @@
         - [x] [Worker] Create Sentiment Analysis WebWorker <!-- id: 27 -->
         - [x] [UI] Integrate into EarningsHunterPanel <!-- id: 28 -->
         - [ ] [Verification] Performance Benchmark (Server vs Client) <!-- id: 29 -->
-    - [ ] [Intelligence] Divine Voice Interface (Voice Feedback) <!-- id: 17 -->
+    - [x] [Intelligence] Divine Voice Interface (Voice Feedback) <!-- id: 17 -->
+        - [x] Create useSpeech hook (Web Speech API) <!-- id: 30 -->
+        - [x] Integrate into AIAdvisorPanel <!-- id: 31 -->
+        - [x] Integrate into VisionPanel <!-- id: 32 -->
     - [ ] [UI] WebXR & UI Polish (Pickle) <!-- id: 13 -->
         - [x] WebXR Spatial Interface (Stable) <!-- id: 13a -->
         - [ ] [Interaction] Parallax Effect (2.5D Mode) <!-- id: 13c -->
