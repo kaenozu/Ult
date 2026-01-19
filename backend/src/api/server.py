@@ -28,7 +28,7 @@ from src.api.routers import (
     portfolio,
     trading,
     market,
-    settings,
+    settings as settings_router,
     websocket,
     alerts,
     circuit_breaker,
@@ -36,6 +36,7 @@ from src.api.routers import (
 )
 from src.api.vibe_endpoints import router as vibe_router
 from src.di import container
+from src.core.agent_loop import AutonomousAgent
 from src.core.config import settings as app_settings
 
 logger = logging.getLogger(__name__)
@@ -103,9 +104,13 @@ def create_app() -> FastAPI:
     app.include_router(
         circuit_breaker.router, prefix="/api/v1", tags=["Risk Management"]
     )
+    
+    # Phase 7: News Shock Defense
+    from src.api.routers import shock_radar
+    app.include_router(shock_radar.router, prefix="/api/v1", tags=["Risk Management"])
 
     # Administrative APIs
-    app.include_router(settings.router, prefix="/api/v1", tags=["Administration"])
+    app.include_router(settings_router.router, prefix="/api/v1", tags=["Administration"])
     app.include_router(approvals.router, prefix="/api/v1", tags=["Administration"])
 
     # Real-time Communication

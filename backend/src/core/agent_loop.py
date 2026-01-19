@@ -9,6 +9,9 @@ from src.security.circuit_breaker import CircuitBreaker
 from src.api.websocket_manager import manager as ws_manager
 from src.services.approval_service import ApprovalService
 from src.api.websocket_types import ApprovalType, ApprovalStatus
+from src.execution.news_shock_defense import NewsShockDefense
+from src.execution.position_sizer import PositionSizer
+# from src.security.risk_manager import get_risk_manager
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,8 @@ class AutonomousAgent:
         # Dependencies
         self.circuit_breaker = CircuitBreaker()
         self.approval_service = ApprovalService(ws_manager=ws_manager)
+        self.shock_defense = NewsShockDefense()
+        self.position_sizer = PositionSizer()
         
         # State
         self.daily_pnl = 0.0
@@ -62,11 +67,28 @@ class AutonomousAgent:
                 # 1. Perceive (Mock Market Data)
                 market_state = self._perceive()
                 
-                # 2. Safety Check
+                # 2. Safety Check (Circuit Breaker + News Shock)
                 if not self.circuit_breaker.check_health(self.daily_pnl):
                     logger.warning("Agent Loop Paused: Circuit Breaker Tripped")
                     await asyncio.sleep(5)
                     continue
+
+                # Phase 7: News Shock Check
+                try:
+                    shock_status = self.shock_defense.analyze_current_market()
+                    if shock_status:
+                        emergency = self.shock_defense.get_emergency_action(shock_status)
+                        logger.critical(f"⚠️ SHOCK DEFENSE TRIGGERED: {emergency['reason']}")
+                        # Broadcast Emergency
+                        await ws_manager.broadcast_agent_activity({
+                            "type": "EMERGENCY", 
+                            "content": emergency['reason']
+                        })
+                        # In real system, execute the action (PARTIAL_LIQUIDATE) here
+                        await asyncio.sleep(10) # Pause for shock
+                        continue
+                except Exception as e:
+                    logger.error(f"News Shock Check Failed: {e}")
 
                 # 3. Think (Generate Thought)
                 thought = self._think(market_state)
@@ -127,18 +149,27 @@ class AutonomousAgent:
         content = f"Market seems {market_regime}. Monitoring volatility."
         emotion = "CHILL"
         
+        sentiment_score = 0.5
+        sentiment_label = "NEUTRAL"
+        
         if market_regime == "BULL_FRENZY":
             content = "Liquidity is flowing! Looking for breakouts."
             emotion = "EXCITED"
+            sentiment_score = 0.8
+            sentiment_label = "POSITIVE"
         elif market_regime == "BEAR_PANIC":
             content = "Risk metrics spiking. Capital preservation mode."
             emotion = "FEAR"
+            sentiment_score = 0.9
+            sentiment_label = "NEGATIVE"
             
         return ThoughtSchema(
             timestamp=datetime.now(),
             market_regime=market_regime,
             content=content,
-            emotion=emotion
+            emotion=emotion,
+            sentiment_score=sentiment_score,
+            sentiment_label=sentiment_label
         )
 
     def _act(self, thought: ThoughtSchema) -> ActionSchema:
@@ -162,11 +193,22 @@ class AutonomousAgent:
             confidence = 0.8
             risk_score = 0.2
             
+            
+        # Calculate Position Size using Neural Kelly
+        size_res = self.position_sizer.calculate_size(
+            ticker=ticker,
+            total_equity=1000000, # Mock Equity
+            win_rate=confidence,
+            sentiment_score=thought.sentiment_score
+        )
+        quantity = int(size_res['amount'] / 150) # Assuming price ~150 (mock) or use real price
+        if quantity < 1: quantity = 1
+
         return ActionSchema(
             type=action_type,
             ticker=ticker,
-            quantity=10,
-            reason=reason,
+            quantity=quantity,
+            reason=f"{reason} (Neural Sizing: {size_res['equity_fraction']*100:.1f}%)",
             risk_score=risk_score,
             confidence=confidence
         )
