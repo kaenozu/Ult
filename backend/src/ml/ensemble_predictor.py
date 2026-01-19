@@ -33,21 +33,21 @@ from src.advanced_models import AdvancedModels
 # 新しい高度な機能のインポート
 try:
     from src.continual_learning import ConceptDriftDetector, ContinualLearningSystem
-    from src.data_loader import fetch_external_data
-    from src.data_preprocessing import preprocess_for_prediction
+    from src.data_temp.data_loader import fetch_external_data
+    from src.data_temp.data_preprocessing import preprocess_for_prediction
     from src.features.enhanced_features import generate_enhanced_features
-    from src.fundamental_analyzer import FundamentalAnalyzer
-    from src.future_predictor import FuturePredictor
+    from src.analysis_temp.fundamental_analyzer import FundamentalAnalyzer
+    from src.ml.future_predictor import FuturePredictor
     from src.hyperparameter_optimizer import MultiModelOptimizer
-    from src.lgbm_predictor import LGBMPredictor
+    from src.ml.lgbm_predictor import LGBMPredictor
     from src.mlops_manager import MLopsManager
     from src.multi_asset_analytics import MultiAssetPredictor
-    from src.prophet_predictor import ProphetPredictor
+    from src.ml.prophet_predictor import ProphetPredictor
     from src.realtime_analytics import RealTimeAnalyticsPipeline
     from src.risk_adjusted_prediction import RiskAdjustedPredictor
-    from src.scenario_analyzer import ScenarioBasedPredictor
+    from src.analysis_temp.scenario_analyzer import ScenarioBasedPredictor
     from src.sentiment_analytics import SentimentEnhancedPredictor
-    from src.transformer_predictor import TransformerPredictor
+    from src.ml.transformer_predictor import TransformerPredictor
     from src.xai_explainer import XAIFramework
 except ImportError:
     # Set to None for missing modules
@@ -586,7 +586,7 @@ class EnhancedEnsemblePredictor:
         self, tickers_data: Dict[str, pd.DataFrame], weights: Dict[str, float], n_simulations: int = 1000
     ) -> Dict[str, Any]:
         """モンテカルロ法によるポートフォリオシミュレーション"""
-        from src.scenario_analyzer import MonteCarloSimulator
+        from src.analysis_temp.scenario_analyzer import MonteCarloSimulator
 
         # 各資産のリターンデータを準備
         returns_data = {}

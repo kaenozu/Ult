@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src.constants import TICKER_NAMES
-from src.dashboard_utils import check_and_execute_missed_trades
+from src.utils_temp.dashboard_utils import check_and_execute_missed_trades
 from src.formatters import format_currency
 from src.paper_trader import PaperTrader
 

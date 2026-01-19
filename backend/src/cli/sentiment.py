@@ -12,7 +12,7 @@ import os
 # Add backend directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from src.sentiment_analyzer import SentimentAnalyzer
+from src.analysis_temp.sentiment_analyzer import SentimentAnalyzer
 
 def main():
     parser = argparse.ArgumentParser(description="Sentiment Analysis CLI")

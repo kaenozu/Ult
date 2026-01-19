@@ -36,6 +36,7 @@ from src.api.routers import (
 )
 from src.api.vibe_endpoints import router as vibe_router
 from src.di import container
+from src.core.config import settings as app_settings
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +84,10 @@ def create_app() -> FastAPI:
     # CORS設定
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=settings.cors_allow_credentials,
-        allow_methods=settings.cors_allow_methods,
-        allow_headers=settings.cors_allow_headers,
+        allow_origins=app_settings.system.cors_origins,
+        allow_credentials=app_settings.system.cors_allow_credentials,
+        allow_methods=app_settings.system.cors_allow_methods,
+        allow_headers=app_settings.system.cors_allow_headers,
     )
 
     # === API Routers Registration ===
@@ -139,6 +140,10 @@ def create_app() -> FastAPI:
 # Module-level app instance for uvicorn compatibility
 # Usage: uvicorn src.api.server:app --reload
 app = create_app()
+
+
+def get_app():
+    return app
 
 
 # === Main ===

@@ -95,27 +95,27 @@ def _register_default_models(loader: LazyModelLoader):
     """デフォルトモデルを登録"""
 
     def load_lstm():
-        from src.future_predictor import FuturePredictor
+        from src.ml.future_predictor import FuturePredictor
 
         return FuturePredictor()
 
     def load_lgbm():
-        from src.lgbm_predictor import LGBMPredictor
+        from src.ml.lgbm_predictor import LGBMPredictor
 
         return LGBMPredictor()
 
     def load_prophet():
-        from src.prophet_predictor import ProphetPredictor
+        from src.ml.prophet_predictor import ProphetPredictor
 
         return ProphetPredictor()
 
     def load_transformer():
-        from src.transformer_predictor import TransformerPredictor
+        from src.ml.transformer_predictor import TransformerPredictor
 
         return TransformerPredictor()
 
     def load_rl():
-        from src.rl_strategy import RLStrategy
+        from src.strategies_temp.rl_strategy import RLStrategy
 
         return RLStrategy()
 

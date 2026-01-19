@@ -61,7 +61,7 @@ class EnsembleStrategy(Strategy):
 
         if self.enable_regime_detection:
             try:
-                from src.data_loader import fetch_macro_data
+                from src.data_temp.data_loader import fetch_macro_data
                 from src.regime import RegimeDetector
 
                 # マクロデータを取得してRegimeDetectorを訓練
@@ -89,7 +89,7 @@ class EnsembleStrategy(Strategy):
         # 0. Regime Detection & Weight Adjustment
         if self.enable_regime_detection and self.regime_detector:
             try:
-                from src.data_loader import fetch_macro_data
+                from src.data_temp.data_loader import fetch_macro_data
                 from src.regime import RegimeDetector
 
                 macro_data = fetch_macro_data(period="1y")

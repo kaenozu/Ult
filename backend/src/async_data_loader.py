@@ -15,7 +15,7 @@ import nest_asyncio
 import pandas as pd
 import yfinance as yf
 
-from src.data_manager import DataManager
+from src.data_temp.data_manager import DataManager
 
 # Streamlit環境でもasyncioを使えるようにする
 nest_asyncio.apply()
