@@ -128,3 +128,25 @@ Verified via script. The endpoint is reachable and correctly handles requests.
 *   🧠 Context-aware AI advice
 
 **PR:** [#29](https://github.com/kaenozu/Ult/pull/29)
+
+---
+
+## Phase 13: Multi-Strategy Engine (The Arsenal) (2026-01-19)
+
+**Feature:** Automatic routing between Trend, Range, and Volatile strategies based on Regime.
+
+**Changes:**
+1.  **New Strategies:**
+    *   **The Guerilla (Range):** Bollinger Band Mean Reversion (Buy Low BB, Sell Mid BB).
+    *   **The Storm Chaser (Volatile):** ATR Breakout + Trailing Stop.
+2.  **Strategy Router:**
+    *   Uses `RegimeClassifier` to pick the best strategy.
+    *   Trend -> Sniper (LightGBM)
+    *   Range -> Guerilla
+    *   Volatile -> Storm Chaser
+3.  **API Update:** `/signals/{ticker}` now uses `AUTO` mode by default to route requests.
+
+**Verification:**
+*   `tests/test_strategies_v2.py`: Verified Router correctly switches strategies based on synthetic data (Sine Wave -> Guerilla, Breakout -> Storm Chaser).
+
+**Next:** Deploy The Arsenal.

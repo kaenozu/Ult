@@ -241,6 +241,12 @@ async def get_signal(
         from src.data_loader import fetch_stock_data
         from src.strategies import LightGBMStrategy, RSIStrategy, SMACrossoverStrategy, BollingerBandsStrategy
         
+        # データ取得 (Common for all strategies)
+        data_map = fetch_stock_data([ticker], period="5y")
+        df = data_map.get(ticker)
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="Data not found")
+            
         # 戦略を選択
         strategy_map = {
             "LIGHTGBM": LightGBMStrategy,
@@ -249,14 +255,23 @@ async def get_signal(
             "BOLLINGER": BollingerBandsStrategy,
         }
         
+        if strategy.upper() == "AUTO":
+            from src.strategies.strategy_router import StrategyRouter
+            router = StrategyRouter()
+            # AUTO mode returns detailed result directly
+            router_result = router.get_signal(ticker, df)
+            
+            return SignalResponse(
+                ticker=ticker,
+                signal=router_result.get("signal", 0),
+                confidence=router_result.get("confidence", 0.0),
+                strategy=router_result.get("strategy", "AUTO"),
+                explanation=router_result.get("explanation", ""),
+                target_price=router_result.get("target_price"),
+            )
+
         strategy_cls = strategy_map.get(strategy.upper(), LightGBMStrategy)
         strat = strategy_cls()
-        
-        # データ取得
-        data_map = fetch_stock_data([ticker], period="5y")
-        df = data_map.get(ticker)
-        if df is None or df.empty:
-            raise HTTPException(status_code=404, detail="Data not found")
         
         # シグナル生成
         result = strat.analyze(df)
