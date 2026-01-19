@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, CheckCircle, AlertTriangle, Activity, ScanLine, Save } from 'lucide-react'
+import { X, Eye, CheckCircle, AlertTriangle, Activity, ScanLine, Save, Volume2, VolumeX } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useSpeech } from '@/hooks/useSpeech'
 
 interface VisionPanelProps {
     isOpen: boolean
@@ -27,6 +28,18 @@ export default function VisionPanel({ isOpen, onClose, ticker, image }: VisionPa
     const [error, setError] = useState<string | null>(null)
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
+
+    const { speak, stop, isSpeaking, isSupported } = useSpeech({ lang: 'ja-JP' })
+
+    const handleSpeak = () => {
+        if (!data) return
+        if (isSpeaking) {
+            stop()
+        } else {
+            const text = `分析結果は${data.verdict}です。${data.visual_rationale}`
+            speak(text)
+        }
+    }
 
     useEffect(() => {
         if (isOpen && image) {
@@ -218,24 +231,36 @@ export default function VisionPanel({ isOpen, onClose, ticker, image }: VisionPa
                                     </div>
 
                                     {/* Save Button */}
-                                    <Button
-                                        className={`w-full gap-2 ${saved ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : ''}`}
-                                        variant={saved ? 'outline' : 'default'}
-                                        onClick={handleSave}
-                                        disabled={saving || saved}
-                                    >
-                                        {saved ? (
-                                            <>
-                                                <CheckCircle className="w-4 h-4" />
-                                                Saved to Diary
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Save className="w-4 h-4" />
-                                                {saving ? 'Saving...' : 'Save to Diary'}
-                                            </>
+                                    <div className="flex gap-2">
+                                        {isSupported && (
+                                            <Button
+                                                variant="outline"
+                                                className={`gap-2 ${isSpeaking ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50' : ''}`}
+                                                onClick={handleSpeak}
+                                            >
+                                                {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                                                {isSpeaking ? '停止' : '読み上げ'}
+                                            </Button>
                                         )}
-                                    </Button>
+                                        <Button
+                                            className={`flex-1 gap-2 ${saved ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : ''}`}
+                                            variant={saved ? 'outline' : 'default'}
+                                            onClick={handleSave}
+                                            disabled={saving || saved}
+                                        >
+                                            {saved ? (
+                                                <>
+                                                    <CheckCircle className="w-4 h-4" />
+                                                    Saved to Diary
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Save className="w-4 h-4" />
+                                                    {saving ? 'Saving...' : 'Save to Diary'}
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
                                 </motion.div>
                             )}
                         </div>
