@@ -30,15 +30,17 @@
     - [ ] [UI] WebXR & UI Polish (Pickle) <!-- id: 13 -->
         - [x] WebXR Spatial Interface (Stable) <!-- id: 13a -->
         - [ ] [Interaction] Parallax Effect (2.5D Mode) <!-- id: 13c -->
-        - [ ] UI Skills Application (text-balance, tabular-nums) <!-- id: 13b -->
+        - [x] UI Skills Application (text-balance, tabular-nums) <!-- id: 13b -->
     - [/] **Phase 12: Regime Classifier (The Weather Forecaster)** <!-- id: 16 -->
     - [x] [Model] Train XGBoost/RandomForest for Regime Detection (Trend/Range/Volatile) <!-- id: 16a -->
     - [ ] [System] Implement Strategy Router (Switch logic based on Regime) <!-- id: 16b -->
 
-- [ ] **Phase 13: Multi-Strategy Engine (The Arsenal)** <!-- id: 18 -->
-    - [ ] [Strategy] Implement Mean Reversion Logic (for Range) <!-- id: 18a -->
-    - [ ] [Strategy] Implement Volatility Breakout Logic (for Chaos) <!-- id: 18b -->
-    - [ ] [Backtest] Verify each strategy against specific regimes <!-- id: 18c -->
+- [/] **Phase 13: Multi-Strategy Engine (The Arsenal)** <!-- id: 18 -->
+    - [x] [Strategy] Implement 'The Guerilla' (Range Strategy) <!-- id: 18a -->
+    - [x] [Strategy] Implement 'The Storm Chaser' (Volatility Strategy) <!-- id: 18b -->
+    - [x] [System] Implement 'Strategy Router' (Switch logic based on Regime) <!-- id: 18c -->
+    - [x] [API] Update `/signals/{ticker}` to support AUTO mode <!-- id: 18d -->
+    - [x] [Backtest] Verify each strategy against specific regimes <!-- id: 18e -->
 
 - [ ] Phase 11: The Eyes of God (Multimodal Vision) <!-- id: 18 -->
     - [x] [UI] Chart Vision Analyst Interface <!-- id: 19 -->
