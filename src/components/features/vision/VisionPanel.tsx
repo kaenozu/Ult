@@ -196,13 +196,13 @@ export default function VisionPanel({ isOpen, onClose, ticker, image }: VisionPa
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
                                             <span className="text-xs text-muted-foreground block mb-1">Support</span>
-                                            <span className="text-lg font-mono font-bold text-white">
+                                            <span className="text-lg font-mono font-bold text-white tabular-nums">
                                                 ¥{data.support?.toLocaleString()}
                                             </span>
                                         </div>
                                         <div className="bg-white/5 p-3 rounded-lg border border-white/5">
                                             <span className="text-xs text-muted-foreground block mb-1">Resistance</span>
-                                            <span className="text-lg font-mono font-bold text-white">
+                                            <span className="text-lg font-mono font-bold text-white tabular-nums">
                                                 ¥{data.resistance?.toLocaleString()}
                                             </span>
                                         </div>
@@ -226,7 +226,7 @@ export default function VisionPanel({ isOpen, onClose, ticker, image }: VisionPa
                                     </div>
 
                                     {/* Rationale */}
-                                    <div className="bg-black/40 p-4 rounded-lg text-sm text-gray-300 leading-relaxed border border-white/5">
+                                    <div className="bg-black/40 p-4 rounded-lg text-sm text-gray-300 leading-relaxed border border-white/5 text-pretty">
                                         {data.visual_rationale}
                                     </div>
 
@@ -235,8 +235,10 @@ export default function VisionPanel({ isOpen, onClose, ticker, image }: VisionPa
                                         {isSupported && (
                                             <Button
                                                 variant="outline"
+                                                type="button"
                                                 className={`gap-2 ${isSpeaking ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50' : ''}`}
                                                 onClick={handleSpeak}
+                                                aria-label={isSpeaking ? '読み上げ停止' : '読み上げ開始'}
                                             >
                                                 {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                                                 {isSpeaking ? '停止' : '読み上げ'}

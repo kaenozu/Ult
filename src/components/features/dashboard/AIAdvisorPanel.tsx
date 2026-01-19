@@ -81,19 +81,21 @@ export default function AIAdvisorPanel() {
                     <h3 className="font-mono text-sm font-bold tracking-widest uppercase">
                         {advice.title}
                     </h3>
-                    <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded text-white/70">
+                    <span className="text-[10px] bg-black/40 px-2 py-0.5 rounded text-white/70 tabular-nums">
                         信頼度: {(advice.confidence * 100).toFixed(0)}%
                     </span>
 
                     {/* Divine Voice Button */}
                     {isSupported && (
                         <button
+                            type="button"
                             onClick={handleSpeak}
                             className={`ml-auto p-1.5 rounded-lg transition-all ${isSpeaking
-                                    ? 'bg-cyan-500/20 text-cyan-400 animate-pulse'
-                                    : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+                                ? 'bg-cyan-500/20 text-cyan-400 animate-pulse'
+                                : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
                                 }`}
                             title={isSpeaking ? '停止' : '読み上げ'}
+                            aria-label={isSpeaking ? '読み上げ停止' : '読み上げ開始'}
                         >
                             {isSpeaking ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                         </button>
@@ -101,7 +103,7 @@ export default function AIAdvisorPanel() {
                 </div>
 
                 {/* Message */}
-                <p className="text-sm font-medium mb-4 pr-12 min-h-[3em]">
+                <p className="text-sm font-medium mb-4 pr-12 min-h-[3em] text-pretty">
                     &quot;{advice.message}&quot;
                 </p>
 
