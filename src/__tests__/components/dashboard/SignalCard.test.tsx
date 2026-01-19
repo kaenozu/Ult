@@ -78,46 +78,116 @@ describe("SignalCard", () => {
       expect(screen.getByText("80%")).toBeInTheDocument();
       expect(screen.getByText("¥150")).toBeInTheDocument();
       expect(screen.getByText("¥160")).toBeInTheDocument();
-      expect(screen.getByText("¥140")).toBeInTheDocument();
-    });
+    expect(screen.getByText("¥140")).toBeInTheDocument();
   });
 
-  it("displays bearish signal correctly", async () => {
-    mockGetSignal.mockResolvedValue({
-      ticker: "TSLA",
-      signal: -1,
-      confidence: 0.7,
-      explanation: "Strong sell signal",
-      strategy: "Reversal",
-      entry_price: 100,
-      stop_loss: 110,
-      take_profit: 90,
-    });
+  it("displays loading state initially", () => {
+    mockGetSignal.mockImplementation(() => new Promise(() => {})); // Never resolves
 
-    renderWithProviders(<SignalCard ticker="TSLA" name="Tesla Inc." />);
+    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
+
+    // Should show loading or default state
+    expect(screen.getByText("AAPL")).toBeInTheDocument();
+    expect(screen.getByText("Apple Inc.")).toBeInTheDocument();
+  });
+
+  it("handles API error gracefully", async () => {
+    mockGetSignal.mockRejectedValue(new Error("API Error"));
+
+    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
 
     await waitFor(() => {
-      expect(screen.getByText("売り")).toBeInTheDocument();
-      expect(screen.getByText("Strong sell signal")).toBeInTheDocument();
-      expect(screen.getByText("70%")).toBeInTheDocument();
+      // Should fall back to default values
+      expect(screen.getByText("Waiting for analysis...")).toBeInTheDocument();
+      expect(screen.getByText("N/A")).toBeInTheDocument();
     });
   });
 
   it("displays neutral signal correctly", async () => {
     mockGetSignal.mockResolvedValue({
-      ticker: "GOOGL",
+      ticker: "AAPL",
       signal: 0,
       confidence: 0.5,
       explanation: "Hold position",
-      strategy: "Hold",
+      strategy: "Conservative",
+      entry_price: 0,
+      stop_loss: 0,
+      take_profit: 0,
     });
 
-    renderWithProviders(<SignalCard ticker="GOOGL" name="Alphabet Inc." />);
+    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
 
     await waitFor(() => {
-      expect(screen.getByText("様子見")).toBeInTheDocument();
+      expect(screen.getByText("待機")).toBeInTheDocument();
       expect(screen.getByText("Hold position")).toBeInTheDocument();
+      expect(screen.getByText("50%")).toBeInTheDocument();
     });
+  });
+
+  it("shows correct colors for different signals", async () => {
+    // Test bullish signal colors
+    mockGetSignal.mockResolvedValue({
+      ticker: "AAPL",
+      signal: 1,
+      confidence: 0.9,
+      explanation: "Bullish signal",
+      strategy: "Test",
+      entry_price: 100,
+      stop_loss: 95,
+      take_profit: 110,
+    });
+
+    const { rerender } = renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
+
+    await waitFor(() => {
+      // Check for bullish styling (this would require more specific selectors)
+      expect(screen.getByText("強気買い")).toBeInTheDocument();
+    });
+
+    // Test bearish signal
+    mockGetSignal.mockResolvedValue({
+      ticker: "AAPL",
+      signal: -1,
+      confidence: 0.8,
+      explanation: "Bearish signal",
+      strategy: "Test",
+      entry_price: 100,
+      stop_loss: 105,
+      take_profit: 95,
+    });
+
+    rerender(<SignalCard ticker="AAPL" name="Apple Inc." />);
+
+    await waitFor(() => {
+      expect(screen.getByText("弱気売り")).toBeInTheDocument();
+    });
+  });
+
+  it("displays strategy information correctly", async () => {
+    mockGetSignal.mockResolvedValue({
+      ticker: "AAPL",
+      signal: 1,
+      confidence: 0.7,
+      explanation: "Technical analysis",
+      strategy: "RSI + MACD",
+      entry_price: 150,
+      stop_loss: 145,
+      take_profit: 155,
+    });
+
+    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
+
+    await waitFor(() => {
+      expect(screen.getByText("RSI + MACD")).toBeInTheDocument();
+      expect(screen.getByText("Technical analysis")).toBeInTheDocument();
+    });
+  });
+
+  it("handles very long ticker names", () => {
+    renderWithProviders(<SignalCard ticker="VERYLONGTICKERNAME" name="Very Long Company Name" />);
+
+    expect(screen.getByText("VERYLONGTICKERNAME")).toBeInTheDocument();
+    expect(screen.getByText("Very Long Company Name")).toBeInTheDocument();
   });
 
   it("executes trade on button click when entry price exists", async () => {

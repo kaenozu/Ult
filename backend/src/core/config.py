@@ -50,12 +50,15 @@ class SystemSettings(BaseSettings):
     parquet_dir: Path = Path("data/parquet")
 
     # CORS Settings
-    cors_origins: List[str] = Field(
-        default_factory=lambda: os.getenv(
-            "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
-        ).split(","),
-        description="Allowed CORS origins",
+    cors_origins_str: str = Field(
+        default="http://localhost:3000,http://localhost:3001",
+        description="Allowed CORS origins as comma-separated string",
     )
+
+    @property
+    def cors_origins(self) -> List[str]:
+        return self.cors_origins_str.split(",")
+
     cors_allow_credentials: bool = Field(True, description="Allow credentials in CORS")
     cors_allow_methods: List[str] = Field(
         ["GET", "POST", "PUT", "DELETE", "OPTIONS"], description="Allowed CORS methods"
