@@ -366,6 +366,7 @@ class ApprovalWorkflowManager:
 
     def cancel(self, request_id: str, cancelled_by: str) -> bool:
         """承認をキャンセル"""
+        request = self.active_approvals.get(request_id)
         if not request:
             return False
 
