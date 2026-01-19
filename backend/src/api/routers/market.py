@@ -16,6 +16,48 @@ MARKET_CACHE = {
     "last_updated": None
 }
 
+# --- Regime Cache ---
+REGIME_CACHE = {}
+
+@router.get("/market/regime/{ticker}")
+async def get_market_regime(ticker: str):
+    """
+    Get the current market regime (TREND, RANGE, VOLATILE) for a ticker.
+    Uses RegimeClassifier with heuristic logic (V1).
+    """
+    try:
+        from src.data_loader import fetch_stock_data
+        from src.evolution.regime_classifier import RegimeClassifier
+        
+        # Check cache (Simple in-memory for now)
+        if ticker in REGIME_CACHE:
+            cached_data, timestamp = REGIME_CACHE[ticker]
+            if (datetime.now() - timestamp).total_seconds() < 300: # 5 min TTL
+                return cached_data
+
+        # Fetch data (Need at least 50 candles for indicators)
+        data_map = fetch_stock_data([ticker], period="3mo")
+        df = data_map.get(ticker)
+        
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="Ticker not found")
+            
+        classifier = RegimeClassifier()
+        result = classifier.detect_regime(df)
+        
+        # Add ticker info
+        result["ticker"] = ticker
+        
+        # Update cache
+        REGIME_CACHE[ticker] = (result, datetime.now())
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error classifying regime for {ticker}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/market/watchlist", response_model=List[dict])
 async def get_market_watchlist():
     """ウォッチリスト(JP_STOCKS)の全銘柄の価格とシグナルを取得 (Cached)"""

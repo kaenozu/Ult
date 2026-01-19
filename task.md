@@ -31,8 +31,14 @@
         - [x] WebXR Spatial Interface (Stable) <!-- id: 13a -->
         - [ ] [Interaction] Parallax Effect (2.5D Mode) <!-- id: 13c -->
         - [ ] UI Skills Application (text-balance, tabular-nums) <!-- id: 13b -->
-    - [ ] [Deferred] Federated Learning Protocol <!-- id: 15 -->
-    - [ ] [Deferred] Blockchain Audit <!-- id: 16 -->
+    - [/] **Phase 12: Regime Classifier (The Weather Forecaster)** <!-- id: 16 -->
+    - [x] [Model] Train XGBoost/RandomForest for Regime Detection (Trend/Range/Volatile) <!-- id: 16a -->
+    - [ ] [System] Implement Strategy Router (Switch logic based on Regime) <!-- id: 16b -->
+
+- [ ] **Phase 13: Multi-Strategy Engine (The Arsenal)** <!-- id: 18 -->
+    - [ ] [Strategy] Implement Mean Reversion Logic (for Range) <!-- id: 18a -->
+    - [ ] [Strategy] Implement Volatility Breakout Logic (for Chaos) <!-- id: 18b -->
+    - [ ] [Backtest] Verify each strategy against specific regimes <!-- id: 18c -->
 
 - [ ] Phase 11: The Eyes of God (Multimodal Vision) <!-- id: 18 -->
     - [x] [UI] Chart Vision Analyst Interface <!-- id: 19 -->
