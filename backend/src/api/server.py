@@ -32,6 +32,16 @@ from src.api.routers import (
     alerts,
     circuit_breaker,
     approvals,
+    replay, # Phase 10: The Time Machine
+)
+    portfolio,
+    trading,
+    market,
+    settings as settings_router,
+    websocket,
+    alerts,
+    circuit_breaker,
+    approvals,
 )
 from src.api.vibe_endpoints import router as vibe_router
 from src.core.agent_loop import AutonomousAgent
@@ -104,6 +114,9 @@ def create_app() -> FastAPI:
     # Phase 7: News Shock Defense
     from src.api.routers import shock_radar
     app.include_router(shock_radar.router, prefix="/api/v1", tags=["Risk Management"])
+    
+    # Phase 10: The Time Machine (Replay & Analytics)
+    app.include_router(replay.router)
 
     # Administrative APIs
     app.include_router(settings_router.router, prefix="/api/v1", tags=["Administration"])

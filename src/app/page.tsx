@@ -124,6 +124,9 @@ const NeuralTradingDaemon = dynamic(
 );
 
 import { useNeuralStore } from "@/lib/store/neuralStore";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AnalyticsDashboard } from "@/components/features/analytics/AnalyticsDashboard";
+import { TradeReplayWidget } from "@/components/features/analytics/TradeReplayWidget";
 
 export default function Home() {
   const { isActive, setIsActive } = useNeuralStore();
@@ -193,173 +196,203 @@ export default function Home() {
       <div className="flex flex-col min-h-dvh">
         <MacroStrip />
         <div className="p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto pb-32 flex-1 w-full">
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => setIsActive(!isActive)}
-              className={`px-4 py-2 rounded font-bold uppercase transition-all duration-300 ${isActive ? 'bg-cyan-500 text-black shadow-[0_0_20px_#00ffcc]' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
-            >
-              {isActive ? "Divine Mode: ON" : "Divine Mode: OFF"}
-            </button>
-          </div>
-          {/* Top Section: AI Status & Portfolio HUD */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column: VibeCheck & System Monitor */}
-            <div className="lg:col-span-1 flex flex-col gap-6">
-              {/* VibeCheck: Market Status with Persona Protocol */}
-              <MarketStatusCard />
-              {/* Real-time Price Alerts */}
-              <PriceAlerts />
-              {/* Top Row: Key Metrics & Radar */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="md:col-span-2">
-                  <MarketSummary />
-                </div>
-                <div className="md:col-span-1">
-                  <NewsShockRadar />
-                </div>
+          <div className="flex justify-between items-center mb-4">
+            <Tabs defaultValue="live" className="w-full">
+              <div className="flex justify-between items-center mb-6">
+                <TabsList className="grid w-[400px] grid-cols-2">
+                  <TabsTrigger value="live" className="uppercase font-bold tracking-wider">Cockpit (Live)</TabsTrigger>
+                  <TabsTrigger value="replay" className="uppercase font-bold tracking-wider text-cyan-400">Time Machine</TabsTrigger>
+                </TabsList>
+
+                <button
+                  onClick={() => setIsActive(!isActive)}
+                  className={`px-4 py-2 rounded font-bold uppercase transition-all duration-300 ${isActive ? 'bg-cyan-500 text-black shadow-[0_0_20px_#00ffcc]' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}
+                >
+                  {isActive ? "Divine Mode: ON" : "Divine Mode: OFF"}
+                </button>
               </div>
 
-              {/* AI Advisor & Neural Monitor & Daemon */}
-              <AIAgentAvatar state="IDLE" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="h-80">
-                  <SystemMonitor />
-                </div>
-                <div className="h-80">
-                  <NeuralTradingDaemon />
-                </div>
-              </div>
-              {/* AI Advisor Panel (Text Output) */}
-              <AIAdvisorPanel />
-            </div>
+              <TabsContent value="live" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Top Section: AI Status & Portfolio HUD */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left Column: VibeCheck & System Monitor */}
+                  <div className="lg:col-span-1 flex flex-col gap-6">
+                    {/* VibeCheck: Market Status with Persona Protocol */}
+                    <MarketStatusCard />
+                    {/* Real-time Price Alerts */}
+                    <PriceAlerts />
+                    {/* Top Row: Key Metrics & Radar */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div className="md:col-span-2">
+                        <MarketSummary />
+                      </div>
+                      <div className="md:col-span-1">
+                        <NewsShockRadar />
+                      </div>
+                    </div>
 
-            {/* Portfolio HUD (Takes up 2 columns) */}
-            <div className="lg:col-span-2 flex flex-col gap-6">
-              <MatrixPortfolioSummary />
-              <AutoTradeControls />
-            </div>
+                    {/* AI Advisor & Neural Monitor & Daemon */}
+                    <AIAgentAvatar state="IDLE" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                      <div className="h-80">
+                        <SystemMonitor />
+                      </div>
+                      <div className="h-80">
+                        <NeuralTradingDaemon />
+                      </div>
+                    </div>
+                    {/* AI Advisor Panel (Text Output) */}
+                    <AIAdvisorPanel />
+                  </div>
+
+                  {/* Portfolio HUD (Takes up 2 columns) */}
+                  <div className="lg:col-span-2 flex flex-col gap-6">
+                    <MatrixPortfolioSummary />
+                    <AutoTradeControls />
+                  </div>
+                </div>
+
+                {/* In-App Swipe Notification Demo */}
+                <section>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
+                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
+                      In-App Swipe{" "}
+                      <span className="text-muted-foreground text-sm ml-2 font-normal">
+                        No More Context Switching
+                      </span>
+                    </h2>
+                  </div>
+                  <SwipeNotificationDemo />
+                </section>
+
+                {/* Instant Approval Cards Section */}
+                <section>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
+                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
+                      Instant Approvals{" "}
+                      <span className="text-muted-foreground text-sm ml-2 font-normal">
+                        Ops Technical Design - Ephemeral UI
+                      </span>
+                    </h2>
+                  </div>
+                  <ApprovalCardsDemo />
+                </section>
+
+                {/* Visuals First: AI Thinking Section */}
+                <section>
+                  {/* Phase 6: Neural Trading Daemon */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(255,0,0,0.8)] animate-pulse" />
+                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
+                      Neural Trading Daemon{" "}
+                      <span className="text-xs text-red-400 ml-2 border border-red-500/50 px-2 py-0.5 rounded animate-pulse">
+                        Phase 6.0 - CHAOS UNLEASHED
+                      </span>
+                    </h2>
+                  </div>
+                  <div className="w-full mb-8">
+                    <NeuralTradingDaemon />
+                  </div>
+
+                  {/* Phase 5: Void Terminal */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
+                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
+                      The Void Terminal{" "}
+                      <span className="text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded">
+                        Phase 5.0
+                      </span>
+                    </h2>
+                  </div>
+                  <div className="w-full mb-8">
+                    <VoidScene />
+                  </div>
+
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
+                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
+                      Neural Cortex{" "}
+                      <span className="text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded">
+                        Phase 4.2
+                      </span>
+                    </h2>
+                  </div>
+
+                  <div className="w-full">
+                    <NeuralMonitor />
+                  </div>
+                </section>
+
+                {/* Neural Nexus Visualization */}
+                <section>
+                  <EcosystemGraph />
+                </section>
+
+                {/* Middle Section: Profit Navigator (Signals) */}
+                <section>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]" />
+                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
+                      Profit Navigator{" "}
+                      <span className="text-muted-foreground text-sm ml-2 font-normal">
+                        AI Analysis Feed
+                      </span>
+                    </h2>
+                  </div>
+
+                  {/* Phase 6: Alpha Generation (Earnings Hunter) */}
+                  <div className="mb-6">
+                    <EarningsHunterPanel />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {WATCHLIST.map((stock) => (
+                      <SignalCard
+                        key={stock.ticker}
+                        ticker={stock.ticker}
+                        name={stock.name}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Bottom Section: Active Positions */}
+                <section>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
+                      Active Assets
+                    </h2>
+                  </div>
+                  <div className="glass-panel rounded-xl p-1">
+                    <MatrixPositionList />
+                  </div>
+              </TabsContent>
+
+              <TabsContent value="replay" className="space-y-8 animate-in fade-in zoom-in-95 duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-8 w-1 bg-cyan-500 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.5)]" />
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-white uppercase">The Time Machine</h2>
+                    <p className="text-sm text-gray-400">Algorithmic Forensics & Performance Analytics</p>
+                  </div>
+                </div>
+
+                <section>
+                  <h3 className="text-lg font-bold text-gray-300 mb-4 uppercase tracking-widest text-xs">Performance Vitals</h3>
+                  <AnalyticsDashboard />
+                </section>
+
+                <section>
+                  <h3 className="text-lg font-bold text-gray-300 mb-4 uppercase tracking-widest text-xs">Algorithmic Replay</h3>
+                  <TradeReplayWidget />
+                </section>
+              </TabsContent>
+            </Tabs>
           </div>
-
-          {/* In-App Swipe Notification Demo */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                In-App Swipe{" "}
-                <span className="text-muted-foreground text-sm ml-2 font-normal">
-                  No More Context Switching
-                </span>
-              </h2>
-            </div>
-            <SwipeNotificationDemo />
-          </section>
-
-          {/* Instant Approval Cards Section */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                Instant Approvals{" "}
-                <span className="text-muted-foreground text-sm ml-2 font-normal">
-                  Ops Technical Design - Ephemeral UI
-                </span>
-              </h2>
-            </div>
-            <ApprovalCardsDemo />
-          </section>
-
-          {/* Visuals First: AI Thinking Section */}
-          <section>
-            {/* Phase 6: Neural Trading Daemon */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(255,0,0,0.8)] animate-pulse" />
-              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                Neural Trading Daemon{" "}
-                <span className="text-xs text-red-400 ml-2 border border-red-500/50 px-2 py-0.5 rounded animate-pulse">
-                  Phase 6.0 - CHAOS UNLEASHED
-                </span>
-              </h2>
-            </div>
-            <div className="w-full mb-8">
-              <NeuralTradingDaemon />
-            </div>
-
-            {/* Phase 5: Void Terminal */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-purple-400 via-pink-500 to-red-500 rounded-full shadow-[0_0_20px_rgba(168,85,247,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                The Void Terminal{" "}
-                <span className="text-xs text-purple-400 ml-2 border border-purple-500/30 px-2 py-0.5 rounded">
-                  Phase 5.0
-                </span>
-              </h2>
-            </div>
-            <div className="w-full mb-8">
-              <VoidScene />
-            </div>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-gradient-to-b from-cyan-400 via-purple-400 to-emerald-400 rounded-full shadow-[0_0_20px_rgba(0,255,255,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                Neural Cortex{" "}
-                <span className="text-xs text-cyan-400 ml-2 border border-cyan-500/30 px-2 py-0.5 rounded">
-                  Phase 4.2
-                </span>
-              </h2>
-            </div>
-
-            <div className="w-full">
-              <NeuralMonitor />
-            </div>
-          </section>
-
-          {/* Neural Nexus Visualization */}
-          <section>
-            <EcosystemGraph />
-          </section>
-
-          {/* Middle Section: Profit Navigator (Signals) */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-primary rounded-full shadow-[0_0_10px_rgba(0,240,255,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                Profit Navigator{" "}
-                <span className="text-muted-foreground text-sm ml-2 font-normal">
-                  AI Analysis Feed
-                </span>
-              </h2>
-            </div>
-
-            {/* Phase 6: Alpha Generation (Earnings Hunter) */}
-            <div className="mb-6">
-              <EarningsHunterPanel />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {WATCHLIST.map((stock) => (
-                <SignalCard
-                  key={stock.ticker}
-                  ticker={stock.ticker}
-                  name={stock.name}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* Bottom Section: Active Positions */}
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-1 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-              <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                Active Assets
-              </h2>
-            </div>
-            <div className="glass-panel rounded-xl p-1">
-              <MatrixPositionList />
-            </div>
-          </section>
         </div>
-      </div>
     </MatrixRain>
   );
 }
