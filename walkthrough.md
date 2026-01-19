@@ -150,3 +150,26 @@ Verified via script. The endpoint is reachable and correctly handles requests.
 *   `tests/test_strategies_v2.py`: Verified Router correctly switches strategies based on synthetic data (Sine Wave -> Guerilla, Breakout -> Storm Chaser).
 
 **Next:** Deploy The Arsenal.
+
+---
+
+## Phase 14: The Blacksmith (Genetic Optimization) (2026-01-19)
+
+**Feature:** Genetic Algorithm (GA) to automatically find optimal parameters for strategy (RSI Period, BB Deviation, etc.).
+
+**Changes:**
+1.  **Backend Refactoring:**
+    *   Updated `Strategy`, `RangeStrategy`, `VolatilityStrategy` to accept `params` dictionary in `__init__`.
+    *   Updated `StrategyRouter` to support parameter injection.
+2.  **Genetic Optimizer:**
+    *   `src/optimization/genetic_optimizer.py`: Implements Evolution logic (Selection, Crossover, Mutation).
+    *   Optimization Goal: Maximize `Sharpe Ratio * Return` (with penalty for losses).
+3.  **CLI Tool:**
+    *   `python -m src.cli.optimize_strategy --strategy Guerilla --ticker 7203.T` to run optimization loop.
+
+**Verification:**
+*   **Unit Tests:** `tests/test_strategies_v2.py` PASSED (ensured refactoring didn't break logic).
+*   **Dry Run:** Ran Optimization CLI for 2 generations on 7203.T.
+    *   Result: Successfully evolved parameters (e.g. `bb_window: 40`).
+
+**Next:** Phase 11 Vision or Deployment.

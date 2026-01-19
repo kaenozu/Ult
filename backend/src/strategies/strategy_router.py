@@ -10,13 +10,14 @@ class StrategyRouter:
     """
     The Commander: Switches strategies based on Market Regime.
     """
-    def __init__(self):
+    def __init__(self, strategy_params: Optional[Dict[str, Dict[str, Any]]] = None):
         self.regime_classifier = RegimeClassifier()
+        self.params = strategy_params or {}
         
-        # The Arsenal
-        self.sniper = LightGBMStrategy()     # TREND
-        self.guerilla = RangeStrategy()      # RANGE
-        self.storm_chaser = VolatilityStrategy() # VOLATILE
+        # The Arsenal - Initialized with params if available
+        self.sniper = LightGBMStrategy()     # TREND (TODO: Add params support to LightGBM)
+        self.guerilla = RangeStrategy(params=self.params.get("RangeStrategy"))      # RANGE
+        self.storm_chaser = VolatilityStrategy(params=self.params.get("VolatilityStrategy")) # VOLATILE
         
     def get_signal(self, ticker: str, df: pd.DataFrame) -> Dict[str, Any]:
         """

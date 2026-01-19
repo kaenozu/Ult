@@ -1,5 +1,6 @@
 import pandas as pd
 import ta
+from typing import Dict, Any, Optional
 from .base import Strategy
 
 class RangeStrategy(Strategy):
@@ -11,11 +12,11 @@ class RangeStrategy(Strategy):
     - Sell: Price > Upper Band (2.0) AND RSI > 70 (Overbought)
     - Exit: Middle Band (Mean Reversion)
     """
-    def __init__(self, bb_window=20, bb_std=2.0, rsi_window=14):
-        super().__init__("RangeStrategy (The Guerilla)")
-        self.bb_window = bb_window
-        self.bb_std = bb_std
-        self.rsi_window = rsi_window
+    def __init__(self, params: Optional[Dict[str, Any]] = None):
+        super().__init__("RangeStrategy (The Guerilla)", params=params)
+        self.bb_window = int(self.params.get("bb_window", 20))
+        self.bb_std = float(self.params.get("bb_std", 2.0))
+        self.rsi_window = int(self.params.get("rsi_window", 14))
 
     def generate_signals(self, df: pd.DataFrame) -> pd.Series:
         if df.empty or len(df) < max(self.bb_window, self.rsi_window):

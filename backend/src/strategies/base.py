@@ -29,16 +29,19 @@ class Strategy:
     トレード戦略の基底クラス
     """
 
-    def __init__(self, name: str, trend_period: int = 200) -> None:
+    def __init__(self, name: str, trend_period: int = 200, params: Optional[Dict[str, Any]] = None) -> None:
         """
         戦略の初期化
 
         Args:
             name: 戦略名
             trend_period: トレンド期間（デフォルト: 200）
+            params: 戦略パラメータ（最適化用）
         """
         self.name = name
-        self.trend_period = trend_period
+        self.params = params or {}
+        # Allow trend_period override from params
+        self.trend_period = self.params.get("trend_period", trend_period)
 
     def apply_trend_filter(self, df: pd.DataFrame, signals: pd.Series) -> pd.Series:
         if self.trend_period <= 0:
