@@ -194,7 +194,7 @@ def autonomous_error_handler(name: str = "System", reraise: bool = False, notifi
                     try:
                         # Attempt to notify via existing channels
                         from src.smart_notifier import SmartNotifier
-                        from src.config import settings
+                        from src.infra.config import settings
 
                         notifier = SmartNotifier(settings.dict())
                         notifier.send_error_notification(module=name, error=str(e), stack=stack_trace[:500] + "...")

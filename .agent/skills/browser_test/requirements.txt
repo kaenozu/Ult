@@ -1,2 +1,0 @@
-selenium>=4.15.0
-selenium-manager>=4.15.0

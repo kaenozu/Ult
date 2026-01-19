@@ -83,7 +83,7 @@ class Ghostwriter:
             realized_pnl = float(weekly_trades["realized_pnl"].sum())
 
         # Market Regime
-        from src.dashboard_utils import get_market_regime
+        from src.utils_temp.dashboard_utils import get_market_regime
 
         regime_info = get_market_regime()
 
