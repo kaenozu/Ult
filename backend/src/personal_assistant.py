@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from src.log_config import get_logger
+from src.infra.log_config import get_logger
 from src.database_manager import db_manager
 
 logger = get_logger("personal_assistant")

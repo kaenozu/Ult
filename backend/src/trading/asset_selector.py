@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from src.constants import CRYPTO_PAIRS, FX_PAIRS, NIKKEI_225_TICKERS, SP500_TICKERS, STOXX50_TICKERS
-from src.data_loader import fetch_fundamental_data
+from src.data_temp.data_loader import fetch_fundamental_data
 
 
 class AssetSelector:

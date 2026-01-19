@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 
 
 def render_realtime_monitor():

@@ -1,6 +1,6 @@
 import sys
 
-from src.cache_config import install_cache
+from src.infra.cache_config import install_cache
 
 from .fully_automated_trader import FullyAutomatedTrader
 

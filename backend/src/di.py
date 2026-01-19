@@ -10,7 +10,7 @@ from dependency_injector.providers import Configuration
 
 from src.core.config import settings
 from src.regime_detector import RegimeDetector
-from src.api.routers.websocket import broadcast_regime_update, update_regime_with_data
+# from src.api.routers.websocket import broadcast_regime_update, update_regime_with_data
 
 
 class Container(containers.DeclarativeContainer):
@@ -31,9 +31,9 @@ class Container(containers.DeclarativeContainer):
     )
 
     # WebSocket management
-    websocket_broadcaster = providers.Callable(broadcast_regime_update)
+    # websocket_broadcaster = providers.Callable(broadcast_regime_update)
 
-    websocket_updater = providers.Callable(update_regime_with_data)
+    # websocket_updater = providers.Callable(update_regime_with_data)
 
     # Service providers (to be expanded)
     # data_service = providers.Singleton(DataService, config=config)
@@ -59,14 +59,14 @@ def get_regime_detector():
     return container.regime_detector()
 
 
-def get_websocket_broadcaster():
-    """Get WebSocket broadcaster function."""
-    return container.websocket_broadcaster()
+# def get_websocket_broadcaster():
+#     """Get WebSocket broadcaster function."""
+#     return container.websocket_broadcaster()
 
 
-def get_websocket_updater():
-    """Get WebSocket updater function."""
-    return container.websocket_updater()
+# def get_websocket_updater():
+#     """Get WebSocket updater function."""
+#     return container.websocket_updater()
 
 
 def get_config():
