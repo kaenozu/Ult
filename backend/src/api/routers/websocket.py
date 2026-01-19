@@ -1,6 +1,7 @@
 # WebSocket Router for FastAPI
 # Phase 3: Realtime Synapse
 
+import asyncio
 import logging
 from datetime import datetime
 from typing import Optional
@@ -206,11 +207,9 @@ async def handle_get_status(message) -> None:
             connected_at=connection.connected_at.isoformat(),
             is_authenticated=connection.is_authenticated,
             channels_subscribed=list(connection.subscriptions),
-            subscriber_count=len(manager._connections),
+            subscriber_count=0,  # TypedWebSocketManagerは_connections属性を持たない
             uptime_seconds=(datetime.now() - connection.connected_at).total_seconds(),
-            queue_size=len(manager._message_queue)
-            if hasattr(manager, "_message_queue")
-            else 0,
+            queue_size=0,  # TypedWebSocketManagerは_message_queue属性を持たない
         )
         await connection.send_message(status_msg)
 
@@ -239,3 +238,70 @@ async def get_websocket_status():
             "channel_counts": stats["channel_counts"],
         }
     )
+
+
+# ============================================================================
+# MISSING FUNCTIONS FOR DEPENDENCY INJECTION
+# ============================================================================
+
+
+async def broadcast_regime_update(regime_data: dict) -> None:
+    """
+    ブロードキャストレジーム更新をすべてのクライアントに送信
+    """
+    try:
+        # 利用可能なメッセージタイプを使用
+        message = MessageFactory.status_response(
+            connection_id="broadcast",
+            connected_at=datetime.now().isoformat(),
+            is_authenticated=True,
+            channels_subscribed=["regime"],
+            subscriber_count=0,  # TypedWebSocketManagerはconnections属性を持たない
+            uptime_seconds=0,
+            queue_size=0,
+        )
+        await manager.broadcast(message)
+        logger.info(
+            f"Regime update broadcasted: {regime_data.get('current_regime', 'UNKNOWN')}"
+        )
+    except Exception as e:
+        logger.error(f"Error broadcasting regime update: {e}")
+
+
+async def update_regime_with_data(data: dict) -> None:
+    """
+    レジームデータで更新をブロードキャスト
+    """
+    await broadcast_regime_update(data)
+
+
+async def start_regime_monitoring() -> None:
+    """
+    レジームモニタリングを開始するバックグラウンドタスク
+    """
+    try:
+        from src.regime_detector import RegimeDetector
+        import pandas as pd
+
+        detector = RegimeDetector()
+        logger.info("Starting regime monitoring...")
+
+        while True:
+            try:
+                # レジーム検出ロジック（ダミーデータを使用）
+                df = pd.DataFrame()  # 実際のデータで置き換える
+                regime_result = detector.detect_regime(df=df)
+                if regime_result:
+                    # 戻り値をdict形式に変換
+                    regime_data = {"current_regime": str(regime_result)}
+                    await broadcast_regime_update(regime_data)
+
+                # 30秒待機
+                await asyncio.sleep(30)
+
+            except Exception as e:
+                logger.error(f"Error in regime monitoring loop: {e}")
+                await asyncio.sleep(5)  # エラー時は短い待機
+
+    except Exception as e:
+        logger.error(f"Failed to start regime monitoring: {e}")

@@ -1,0 +1,12 @@
+{
+  "model_name": "EnhancedEnsemble_TEST_TICKER",
+  "version": "v1.0.0",
+  "created_by": "system",
+  "creation_timestamp": "2026-01-19T16:52:53.950184",
+  "metrics": {},
+  "parameters": {},
+  "dependencies": [],
+  "artifact_path": "models\\registry\\EnhancedEnsemble_TEST_TICKER\\v1.0.0\\EnhancedEnsemble_TEST_TICKER.pkl",
+  "hash": "98f8a9f16628fd36d4f5f11372416ebf56701e4f357bef31d12cf4b1a575b308",
+  "tags": []
+}

@@ -32,7 +32,7 @@ services:
     ports:
       - '8001:8000'
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/trading_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/trading_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:9092
       - AI_SERVICE_URL=http://ai-service:8004
@@ -59,7 +59,7 @@ services:
     ports:
       - '8002:8000'
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/portfolio_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/portfolio_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:9092
     depends_on:
@@ -82,7 +82,7 @@ services:
     ports:
       - '8003:8000'
     environment:
-      - DATABASE_URL=postgresql://user:password@postgres:5432/market_db
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/market_db
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:9092
       - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
@@ -153,9 +153,9 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=agstock
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=${POSTGRES_DB:-agstock}
+      - POSTGRES_USER=${POSTGRES_USER:-trading_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
       - '5432:5432'
     volumes:
@@ -164,7 +164,11 @@ services:
     networks:
       - agstock-network
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U user -d agstock']
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${POSTGRES_USER:-trading_user} -d ${POSTGRES_DB:-agstock}',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -237,7 +241,7 @@ services:
     ports:
       - '3001:3000'
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning

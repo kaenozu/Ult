@@ -57,13 +57,20 @@ class SystemSettings(BaseSettings):
 
     @property
     def cors_origins(self) -> List[str]:
+        # In production, only allow specific origins
+        if os.getenv("NODE_ENV") == "production":
+            production_origins = os.getenv("ALLOWED_ORIGINS", "")
+            return production_origins.split(",") if production_origins else []
         return self.cors_origins_str.split(",")
 
     cors_allow_credentials: bool = Field(True, description="Allow credentials in CORS")
     cors_allow_methods: List[str] = Field(
         ["GET", "POST", "PUT", "DELETE", "OPTIONS"], description="Allowed CORS methods"
     )
-    cors_allow_headers: List[str] = Field(["*"], description="Allowed CORS headers")
+    cors_allow_headers: List[str] = Field(
+        ["Content-Type", "Authorization", "X-Requested-With"],
+        description="Allowed CORS headers (restricted for security)",
+    )
     models_dir: Path = Path("models")
     initial_capital: int = 10000000  # Legacy default
 

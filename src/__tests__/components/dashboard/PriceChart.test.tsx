@@ -62,7 +62,7 @@ describe('PriceChart Component', () => {
 
   it('displays correct chart elements', () => {
     render(<PriceChart {...defaultProps} />);
-    expect(screen.getByTestId('line')).toBeInTheDocument();
+    expect(screen.getAllByTestId('line')).toHaveLength(2);
     expect(screen.getByTestId('x-axis')).toBeInTheDocument();
     expect(screen.getByTestId('y-axis')).toBeInTheDocument();
   });

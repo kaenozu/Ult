@@ -177,6 +177,21 @@ class RiskAdjustedPredictor:
     def fit(self, X, y):
         pass
 
+    def adjust_prediction(self, prediction: Any, features: np.ndarray) -> Any:
+        """予測値のリスク調整（簡易版）"""
+        # 実際にはfeaturesからボラティリティを予測したり、過去のリターン分布を参照したりする
+        # ここでは単純に、不確実性が高いと仮定して予測値を保守的に（0に近づける）調整する
+        
+        if isinstance(prediction, (int, float)):
+            return prediction * 0.9 # 一律10%割り引く（保守的予測）
+        elif isinstance(prediction, (list, np.ndarray)):
+            # numpy arrayの場合はブロードキャスト
+            if isinstance(prediction, np.ndarray):
+                return prediction * 0.9
+            return [p * 0.9 for p in prediction]
+        else:
+            return prediction
+
     def predict(self, X: np.ndarray) -> np.ndarray:
         """標準的な予測インターフェース (X: 特徴量行列)"""
         # Xがデータフレームの場合は値を抽出

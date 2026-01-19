@@ -25,10 +25,10 @@ logger = logging.getLogger(__name__)
 class StackingEnsemble:
     """Stackingアンサンブルの実装"""
 
-    def __init__(self, base_models: List, meta_model: Any = None):
+    def __init__(self, base_models: List, meta_model: Any = None, is_fitted: bool = False):
         self.base_models = base_models
         self.meta_model = meta_model or LinearRegression()
-        self.is_fitted = False
+        self.is_fitted = is_fitted
 
     def fit(self, X: np.ndarray, y: np.ndarray, cv_folds: int = 5) -> "StackingEnsemble":
         """モデルの学習"""

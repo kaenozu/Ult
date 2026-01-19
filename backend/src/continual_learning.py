@@ -49,6 +49,31 @@ class ConceptDriftDetector(BasePredictor):
         """ドリフト検出器は予測を行わないため、ダミーを返す"""
         return np.zeros(len(X) if hasattr(X, "__len__") else 1)
 
+    def detect(self, data: Any) -> bool:
+        """データセットから概念ドリフトを検出"""
+        # 単純化のため、データの最後の値（または代表値）をチェックに使用
+        try:
+            if hasattr(data, "empty") and data.empty:
+                return False
+            
+            val = 0.0
+            if hasattr(data, "values"):
+                # DataFrame/Series
+                flat = data.values.flatten()
+                if len(flat) > 0:
+                    val = float(flat[-1])
+            elif isinstance(data, (list, np.ndarray)):
+                flat = np.array(data).flatten()
+                if len(flat) > 0:
+                    val = float(flat[-1])
+            else:
+                val = float(data)
+                
+            return self.update_and_check(val)
+        except Exception as e:
+            logger.error(f"Error in drift detection: {e}")
+            return False
+
     def update_and_check(self, new_value: float) -> bool:
         """新しい値を追加し、ドリフトを検出"""
         self.current_window.append(new_value)

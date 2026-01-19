@@ -621,15 +621,32 @@ class MLopsManager:
 
     def start_experiment(self, experiment_name: str, description: str = "") -> str:
         """実験の開始"""
-        with mlflow.start_run(run_name=experiment_name):
-            mlflow.log_param("experiment_name", experiment_name)
-            mlflow.log_param("description", description)
-            mlflow.log_param("start_time", datetime.now().isoformat())
+        if mlflow:
+            with mlflow.start_run(run_name=experiment_name):
+                mlflow.log_param("experiment_name", experiment_name)
+                mlflow.log_param("description", description)
+                mlflow.log_param("start_time", datetime.now().isoformat())
 
-            return mlflow.active_run().info.run_id
+                return mlflow.active_run().info.run_id
+        return "dummy_run_id"
+
+    def log_model(self, model: Any, model_name: str, version: str = "v1.0.0", metadata: Dict[str, Any] = None) -> Any:
+        """モデルの記録（ラッパー）"""
+        # バージョン管理ロジック（簡易版：タイムスタンプ）
+        if version == "auto":
+            version = datetime.now().strftime("v%Y%m%d%H%M%S")
+            
+        try:
+            return self.model_registry.save_model(model, model_name, version, metadata)
+        except Exception as e:
+            logger.error(f"Failed to log model: {e}")
+            return None
 
     def log_model_with_mlflow(self, model: Any, model_name: str, X_sample: np.ndarray, conda_env: str = None):
         """MLflowを用いたモデルの記録"""
+        if not mlflow:
+            return
+
         signature = infer_signature(
             X_sample, model.predict(X_sample) if hasattr(model, "predict") else np.zeros(len(X_sample))
         )

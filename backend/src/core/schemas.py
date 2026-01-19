@@ -43,3 +43,6 @@ class AgentState(BaseModel):
     current_regime: str
     daily_pnl: float
     circuit_breaker_active: bool
+
+# Alias for backward compatibility
+TradingDecision = ActionSchema

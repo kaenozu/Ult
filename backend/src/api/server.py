@@ -28,14 +28,14 @@ from src.api.routers import (
     portfolio,
     trading,
     market,
-    settings,
     websocket,
     alerts,
     circuit_breaker,
     approvals,
 )
+from src.api.routers import settings as settings_router
 from src.api.vibe_endpoints import router as vibe_router
-from src.di import container
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +83,10 @@ def create_app() -> FastAPI:
     # CORS設定
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=settings.cors_allow_credentials,
-        allow_methods=settings.cors_allow_methods,
-        allow_headers=settings.cors_allow_headers,
+        allow_origins=settings.system.cors_origins,
+        allow_credentials=settings.system.cors_allow_credentials,
+        allow_methods=settings.system.cors_allow_methods,
+        allow_headers=settings.system.cors_allow_headers,
     )
 
     # === API Routers Registration ===
@@ -104,7 +104,9 @@ def create_app() -> FastAPI:
     )
 
     # Administrative APIs
-    app.include_router(settings.router, prefix="/api/v1", tags=["Administration"])
+    app.include_router(
+        settings_router.router, prefix="/api/v1", tags=["Administration"]
+    )
     app.include_router(approvals.router, prefix="/api/v1", tags=["Administration"])
 
     # Real-time Communication
@@ -139,6 +141,11 @@ def create_app() -> FastAPI:
 # Module-level app instance for uvicorn compatibility
 # Usage: uvicorn src.api.server:app --reload
 app = create_app()
+
+
+def get_app() -> FastAPI:
+    """アプリケーションインスタンスを取得（テスト用）"""
+    return app
 
 
 # === Main ===

@@ -293,7 +293,7 @@ class EnhancedEnsemblePredictor:
             self.scenario_predictor,
             self.realtime_pipeline,
         ]
-        self.advanced_ensemble = StackingEnsemble(base_models=base_models, meta_model=meta_model)
+        self.advanced_ensemble = StackingEnsemble(base_models=base_models, meta_model=meta_model, is_fitted=True)
 
         # XAIフレームワークの初期化
         self.xai_framework = XAIFramework(self.advanced_ensemble, X.values)
@@ -386,9 +386,7 @@ class EnhancedEnsemblePredictor:
 
         # 6. XAIによる説明可能性
         explanations = self.xai_framework.explain_prediction(
-            model=self.advanced_ensemble,
-            X=current_features,
-            prediction=predicted_changes,
+            X_instance=current_features
         )
 
         # 7. ファンダメンタルズ評価

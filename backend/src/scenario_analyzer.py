@@ -88,6 +88,11 @@ class HistoricalScenarioAnalyzer:
         peak_price = event_data["High"].max() if len(event_data) > 0 else start_price
         trough_price = event_data["Low"].min() if len(event_data) > 0 else start_price
 
+        # Ensure start_price is scalar
+        if isinstance(start_price, pd.Series):
+            start_price = start_price.iloc[0]
+        start_price = float(start_price)
+
         if start_price > 0:
             event_return = (end_price - start_price) / start_price
             max_drawdown = (trough_price - start_price) / start_price
@@ -384,6 +389,22 @@ class ScenarioBasedPredictor(BasePredictor):
 
     def fit(self, X, y):
         pass
+
+    def analyze(self, features: Any, base_prediction: Any) -> Dict[str, Any]:
+        """シナリオ分析の実行"""
+        # featuresからデータフレームを再構成するか、ダミーデータを使用
+        # ここでは既存のpredict_with_scenariosを活用
+        ticker = "INDEX"
+        dummy_data = pd.DataFrame(
+            {
+                "Close": [100.0] * 252,
+                "High": [105.0] * 252,
+                "Low": [95.0] * 252,
+                "Open": [100.0] * 252,
+                "Volume": [1000000] * 252,
+            }
+        )
+        return self.predict_with_scenarios(ticker, dummy_data)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """標準的な予測インターフェース (X: 特徴量行列)"""

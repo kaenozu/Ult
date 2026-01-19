@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 import logging
 
@@ -8,12 +8,13 @@ from src.api.dependencies import get_portfolio_manager
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+
 @router.get("/portfolio", response_model=PortfolioSummary)
-async def get_portfolio(pm = Depends(get_portfolio_manager)):
+async def get_portfolio(pm=Depends(get_portfolio_manager)):
     """ポートフォリオサマリーを取得"""
     try:
         data = pm.calculate_portfolio()
-        
+
         return PortfolioSummary(
             total_equity=data.get("total_equity", 0),
             cash=data.get("cash", 0),
@@ -23,15 +24,18 @@ async def get_portfolio(pm = Depends(get_portfolio_manager)):
         )
     except Exception as e:
         logger.error(f"Error getting portfolio: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500, detail="Internal server error while fetching portfolio"
+        )
+
 
 @router.get("/positions", response_model=List[Position])
-async def get_positions(pm = Depends(get_portfolio_manager)):
+async def get_positions(pm=Depends(get_portfolio_manager)):
     """保有ポジション一覧を取得"""
     try:
         data = pm.calculate_portfolio()
         positions_map = data.get("positions", {})
-        
+
         return [
             Position(
                 ticker=ticker,
@@ -46,24 +50,25 @@ async def get_positions(pm = Depends(get_portfolio_manager)):
         logger.error(f"Error getting positions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/advice")
-async def get_ai_advice(pm = Depends(get_portfolio_manager)):
+async def get_ai_advice(pm=Depends(get_portfolio_manager)):
     """AI投資助言取得"""
     from src.ai_advisor import ai_advisor
     from src.data_loader import fetch_stock_data
     from src.regime_detector import RegimeDetector
     import logging
-    
+
     # 1. Get Portfolio
     portfolio_data = pm.calculate_portfolio()
-    
+
     # 2. Detect Regime (Using Toyota 7203.T as proxy)
     regime = "ranging"
     try:
-         df = fetch_stock_data(["7203.T"], period="6mo")
-         if "7203.T" in df:
-             detector = RegimeDetector()
-             regime = detector.detect_regime(df["7203.T"])
+        df = fetch_stock_data(["7203.T"], period="6mo")
+        if "7203.T" in df:
+            detector = RegimeDetector()
+            regime = detector.detect_regime(df["7203.T"])
     except Exception as e:
         logger.error(f"Regime detection failed: {e}")
 
@@ -71,15 +76,16 @@ async def get_ai_advice(pm = Depends(get_portfolio_manager)):
     advice = ai_advisor.analyze_portfolio(portfolio_data, regime)
     return advice
 
+
 @router.post("/rebalance")
-async def execute_rebalance(pm = Depends(get_portfolio_manager)):
+async def execute_rebalance(pm=Depends(get_portfolio_manager)):
     """ポートフォリオ自動リバランス実行"""
     from src.database_manager import db_manager
-    
+
     async with pm.lock:
         orders = pm.rebalance_portfolio()
         executed_count = 0
-        
+
         for order in orders:
             try:
                 # Reusing log logic manually since we are inside API
@@ -88,10 +94,13 @@ async def execute_rebalance(pm = Depends(get_portfolio_manager)):
                     action=order["action"],
                     quantity=order["quantity"],
                     price=order["price"],
-                    status="filled" # Immediate fill for Paper Trading
+                    status="filled",  # Immediate fill for Paper Trading
                 )
                 executed_count += 1
             except Exception as e:
                 logger.error(f"Rebalance Order Failed: {e}")
-            
-    return {"message": f"Rebalancing Complete. Executed {executed_count} trades.", "orders": orders}
+
+    return {
+        "message": f"Rebalancing Complete. Executed {executed_count} trades.",
+        "orders": orders,
+    }

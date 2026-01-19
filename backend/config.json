@@ -1,13 +1,27 @@
 {
-    "paper_trading": {
-        "initial_capital": 1000000
+  "paper_trading": {
+    "initial_capital": 1000000
+  },
+  "data": {
+    "default_period": "1y"
+  },
+  "system": {
+    "log_level": "INFO",
+    "parquet_dir": "data/parquet",
+    "db_path": "ult_trading.db"
+  },
+  "api_keys": {
+    "alpha_vantage": {
+      "encrypted": false,
+      "value": "${ALPHA_VANTAGE_API_KEY}"
     },
-    "data": {
-        "default_period": "1y"
-    },
-    "system": {
-        "log_level": "INFO",
-        "parquet_dir": "data/parquet",
-        "db_path": "ult_trading.db"
+    "yahoo_finance": {
+      "encrypted": false,
+      "value": "${YAHOO_FINANCE_API_KEY}"
     }
+  },
+  "security": {
+    "encryption_key_env": "AGSTOCK_CRYPTO_KEY",
+    "mask_sensitive_logs": true
+  }
 }
