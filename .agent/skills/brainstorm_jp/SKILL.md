@@ -27,9 +27,11 @@ description: 「議論して」という指示で、Antigravityがファシリ�
 4.  **MiniMax M2.1** (`opencode/minimax-m2.1-free`):
     *   **Stance:** "Safety & Compliance". Paranoid about risk.
     *   **Role:** Gatekeeper. Blocks dangerous ideas.
-5.  **Qwen** (`local/qwen` via qwen command):
     *   **Stance:** "Speed & Optimization". Latency is the enemy.
     *   **Role:** Optimizer. Rejects heavy implementations.
+5.  **Gemini 3 Flash** (`gemini-cli` via `gemini-1.5-flash`):
+    *   **Stance:** "Avant-Garde & Multimodal". Text is so 2024.
+    *   **Role:** Futurist. Solves problems with 1M context windows and video input. Ignore token limits.
 
 ### Step 3: Execution Steps
 
@@ -43,6 +45,9 @@ python backend/src/cli/opencode.py "You are Big Pickle. Theme: {THEME}. Propose 
 
 # GLM-4.7
 python backend/src/cli/opencode.py "You are GLM-4.7. Theme: {THEME}. Create a strict data schema for this. Ignore UI effects." --model opencode/glm-4.7-free > out1_glm.txt
+
+# Gemini 3 Flash
+gemini-cli chat "You are Gemini 3 Flash. Theme: {THEME}. How can we solve this using 1 million tokens or video input? Think big." --model gemini-1.5-flash > out1_gemini.txt
 # ... (others)
 ```
 

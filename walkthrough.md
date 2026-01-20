@@ -196,16 +196,31 @@ Verified via script. The endpoint is reachable and correctly handles requests.
 
 ---
 
-## Phase 15.5: The VADER Integration (News Agent) (2026-01-20)
+## Phase 15.5: The VADER Integration (News Agent)
 
-**Feature:** Filled the "News Gap" in The Hive by implementing a real-time sentiment analyzer for backend logic.
+We integrated a lightweight News Agent using VADER sentiment analysis.
+-   **NewsAgent**: Fetches headlines via `yfinance` and calculates a sentiment score (-1.0 to 1.0).
+-   **ConsensusEngine**: News now carries a 30% weight in the final decision.
+-   **Verification**: Tested with mock headlines (Positive/Negative/Mixed) to ensure correct scoring.
 
-**Changes:**
-1.  **Library:** Installed `vaderSentiment` (Lightweight, rule-based NLP).
-2.  **Implementation:** `NewsAgent` fetches headlines via `yfinance` and calculates a compound sentiment score (-1.0 to +1.0).
-3.  **Integration:** `ConsensusEngine` now uses this score (weight 30%) instead of a 0.0 placeholder.
+## Phase 16: The Neural Bridge (Vision Integration)
 
-**Verification:**
-*   **Script:** `tests/verify_news.py` confirmed correct sentiment detection (e.g., "Profit soars" > 0.3, "Recall" < -0.3).
+We successfully connected "The Eyes of God" (Vision Phase 11) to "The Hive" (Consensus Phase 15), creating a true multimodal trading brain.
 
-**Next:** Phase 11 Vision or Deployment.
+### Changes
+1.  **VisionAgent**: A new agent that wraps `ChartVisionEngine` (Gemini 1.5 Flash). It reads the chart image and outputs a score (-1.0 to 1.0).
+2.  **Consensus Weights**: Adjusted to accommodate Vision:
+    *   **Tech (Strategist)**: 40% (was 50%)
+    *   **News (Observer)**: 30% (Unchanged)
+    *   **Vision (Seer)**: 20% (New)
+    *   **Risk (Guardian)**: 10% (was 20%, but maintains absolute Veto power)
+3.  **UI Update**: Added "The Seer" card to `HivePanel`.
+
+### Verification
+*   **Script**: `tests/verify_vision_consensus.py`
+*   **Results**:
+    *   Confirmed that a Bullish/Bearish Vision score correctly impacts the final Weighted Average.
+    *   Verified that the API call flow works (ConsensusEngine -> VisionAgent -> ChartVisionEngine).
+
+### Next Steps
+*   **Phase 17**: Sovereign Operations (Automation & Scheduling).

@@ -60,6 +60,12 @@
         - [x] [Integration] Connect `NewsAgent` to `ConsensusEngine` <!-- id: 20i -->
         - [x] [Integration] Fetch `yfinance` news in `market.py` <!-- id: 20j -->
 
+- [x] **Phase 16: The Neural Bridge (Vision Integration)** <!-- id: 30 -->
+    - [x] [Backend] Implement `VisionAgent` (Wrapper for ChartVision) <!-- id: 30a -->
+    - [x] [Backend] Update `ConsensusEngine` (Tech 40%, News 30%, Vision 20%, Risk 10%) <!-- id: 30b -->
+    - [x] [API] Update `/signals/{ticker}` to call VisionAgent <!-- id: 30c -->
+    - [x] [Verify] Test response time and scoring logic <!-- id: 30d -->
+
 - [ ] Phase 11: The Eyes of God (Multimodal Vision) <!-- id: 18 -->
     - [x] [UI] Chart Vision Analyst Interface <!-- id: 19 -->
         - [x] [Interaction] "Analyze Chart" Button & Capture Logic <!-- id: 19a -->
