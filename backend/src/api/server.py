@@ -19,6 +19,7 @@ import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Optional
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +31,19 @@ from src.api.responses import (
     internal_error,
     bad_request_error,
     ValidationError,
+)
+from src.infra.logging_config import setup_logging
+from src.api.routers import (
+    portfolio,
+    trading,
+    market,
+    settings as settings_router,
+    websocket,
+    alerts,
+    circuit_breaker,
+    approvals,
+    replay,  # Phase 10: The Time Machine
+    vision,  # Phase 11: The Eyes of God
 )
 from src.api.routers import (
     portfolio,
@@ -60,6 +74,14 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """アプリケーションのライフサイクル管理"""
+    # Setup structured logging
+    setup_logging(
+        log_level=app_settings.system.log_level
+        if hasattr(app_settings.system, "log_level")
+        else "INFO",
+        log_dir=str(app_settings.system.data_dir / "logs"),
+    )
+    logger = logging.getLogger(__name__)
     logger.info("Living Nexus API starting...")
 
     # Validate required API keys at startup

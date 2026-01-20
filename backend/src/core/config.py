@@ -63,6 +63,7 @@ class SystemSettings(BaseSettings):
     cors_allow_headers: List[str] = Field(["*"], description="Allowed CORS headers")
     models_dir: Path = Path("models")
     initial_capital: int = 10000000  # Legacy default
+    log_level: str = Field("INFO", description="Logging level")
 
     # Caching
     realtime_ttl_seconds: int = 30
