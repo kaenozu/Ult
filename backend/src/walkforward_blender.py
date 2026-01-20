@@ -15,7 +15,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.model_selection import TimeSeriesSplit
 
 from src.drift_monitor import DriftMonitor
-from src.data_quality import compute_quality_score
+from src.data_temp.data_quality import compute_quality_score
 from src.features.enhanced_features import generate_enhanced_features
 
 logger = logging.getLogger(__name__)

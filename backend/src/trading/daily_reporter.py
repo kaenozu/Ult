@@ -12,7 +12,7 @@ import google.generativeai as genai
 import pandas as pd
 
 from src.data.feedback_store import FeedbackStore
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 from src.evolution.genetic_optimizer import GeneticOptimizer
 from src.evolution.strategy_generator import StrategyGenerator
 from src.feedback_loop import DailyReviewer

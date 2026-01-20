@@ -18,7 +18,7 @@ except ImportError:
     yf = None  # yfinanceがなければNoneとして扱う
     YFINANCE_AVAILABLE = False
 
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 
 
 class RiskResult(dict):
