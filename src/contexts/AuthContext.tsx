@@ -12,6 +12,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -40,28 +41,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // TODO: 実際の認証ロジックを実装
-      // 開発用のモック認証
-      if (email === 'admin@ult.com' && password === 'admin123') {
-        const mockUser: User = {
-          id: '1',
-          email: email,
-          name: 'Admin User',
-        };
-        setUser(mockUser);
-        sessionStorage.setItem('user', JSON.stringify(mockUser));
+      // バックエンドAPIで認証を実行
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        setUser(data.user);
+        sessionStorage.setItem('user', JSON.stringify(data.user));
         return true;
       }
+
       return false;
     } catch (error) {
-      
       return false;
     }
   };
 
   const logout = () => {
-    setUser(null);
-    sessionStorage.removeItem('user');
+    // バックエンドでログアウト
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then(() => {
+        setUser(null);
+        sessionStorage.removeItem('user');
+      })
+      .catch(() => {
+        // エラー時もローカルをクリア
+        setUser(null);
+        sessionStorage.removeItem('user');
+      });
   };
 
   const isAuthenticated = user !== null;
@@ -73,7 +96,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
-        
         sessionStorage.removeItem('user');
       }
     }
