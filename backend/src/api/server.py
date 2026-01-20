@@ -32,7 +32,7 @@ from src.api.responses import (
     bad_request_error,
     ValidationError,
 )
-from src.infra.logging_config import setup_logging
+from src.infra.logging_config import setup_logging, metrics
 from src.api.routers import (
     portfolio,
     trading,
@@ -172,6 +172,19 @@ def register_health_routes(app: FastAPI) -> None:
             status="healthy",
             timestamp=datetime.now().isoformat(),
         )
+
+    @app.get("/api/v1/health", response_model=HealthResponse)
+    async def health_check():
+        """詳細ヘルスチェック"""
+        return HealthResponse(
+            status="healthy",
+            timestamp=datetime.now().isoformat(),
+        )
+
+    @app.get("/metrics")
+    async def metrics_endpoint():
+        """Application metrics for monitoring"""
+        return metrics.get_metrics()
 
     @app.get("/api/v1/health", response_model=HealthResponse)
     async def health_check():

@@ -51,9 +51,12 @@ class SystemSettings(BaseSettings):
 
     # CORS Settings
     cors_origins: List[str] = Field(
-        default_factory=lambda: os.getenv(
-            "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
-        ).split(","),
+        default_factory=lambda: [
+            origin.strip()
+            for origin in os.getenv(
+                "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
+            ).split(",")
+        ],
         description="Allowed CORS origins",
     )
     cors_allow_credentials: bool = Field(True, description="Allow credentials in CORS")
