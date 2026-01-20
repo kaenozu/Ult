@@ -51,19 +51,22 @@ class SystemSettings(BaseSettings):
 
     # CORS Settings
     cors_origins: List[str] = Field(
-        default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(","),
-        description="Allowed CORS origins"
+        default_factory=lambda: [
+            origin.strip()
+            for origin in os.getenv(
+                "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
+            ).split(",")
+        ],
+        description="Allowed CORS origins",
     )
     cors_allow_credentials: bool = Field(True, description="Allow credentials in CORS")
     cors_allow_methods: List[str] = Field(
-        ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        description="Allowed CORS methods"
+        ["GET", "POST", "PUT", "DELETE", "OPTIONS"], description="Allowed CORS methods"
     )
-    cors_allow_headers: List[str] = Field(
-        ["*"], description="Allowed CORS headers"
-    )
+    cors_allow_headers: List[str] = Field(["*"], description="Allowed CORS headers")
     models_dir: Path = Path("models")
     initial_capital: int = 10000000  # Legacy default
+    log_level: str = Field("INFO", description="Logging level")
 
     # Caching
     realtime_ttl_seconds: int = 30
@@ -95,6 +98,10 @@ class Config(BaseSettings):
     risk_management: RiskManagementSettings = Field(
         default_factory=RiskManagementSettings
     )
+
+    # API Keys (validated at startup)
+    gemini_api_key: Optional[str] = Field(None, env="GEMINI_API_KEY")
+    openai_api_key: Optional[str] = Field(None, env="OPENAI_API_KEY")
 
     # Other legacy constants mapped
     tickers_jp: List[str] = ["7203.T", "9984.T", "6758.T", "8035.T", "6861.T"]
