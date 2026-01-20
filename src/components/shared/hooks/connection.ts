@@ -1,3 +1,5 @@
+"use client";
+
 // Strictly Typed WebSocket Hook (React)
 // Phase 3: Realtime Synapse
 
@@ -73,14 +75,14 @@ interface UseSynapseReturn {
   // Handlers
   onMessage: <
     T extends
-      | RegimeUpdateMessage
-      | PriceAlertMessage
-      | PortfolioUpdateMessage
-      | AgentActivityMessage
-      | CircuitBreakerStatusMessage
-      | CircuitBreakerTrippedMessage
-      | ApprovalRequestMessage
-      | ApprovalResponseMessage,
+    | RegimeUpdateMessage
+    | PriceAlertMessage
+    | PortfolioUpdateMessage
+    | AgentActivityMessage
+    | CircuitBreakerStatusMessage
+    | CircuitBreakerTrippedMessage
+    | ApprovalRequestMessage
+    | ApprovalResponseMessage,
   >(
     type: T["type"],
     handler: (message: T) => void,
@@ -210,10 +212,14 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
           reconnectAttemptsRef.current < maxReconnectAttempts
         ) {
           reconnectAttemptsRef.current++;
-          console.log(
-            `Reconnecting... Attempt ${reconnectAttemptsRef.current}`,
+          const delay = Math.min(
+            reconnectInterval * Math.pow(1.5, reconnectAttemptsRef.current - 1),
+            30000,
           );
-          reconnectTimeoutRef.current = setTimeout(connect, reconnectInterval);
+          console.log(
+            `Reconnecting... Attempt ${reconnectAttemptsRef.current} in ${delay}ms`,
+          );
+          reconnectTimeoutRef.current = setTimeout(connect, delay);
         }
       };
     } catch (error) {
@@ -305,14 +311,14 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
   const onMessage = useCallback(
     <
       T extends
-        | RegimeUpdateMessage
-        | PriceAlertMessage
-        | PortfolioUpdateMessage
-        | AgentActivityMessage
-        | CircuitBreakerStatusMessage
-        | CircuitBreakerTrippedMessage
-        | ApprovalRequestMessage
-        | ApprovalResponseMessage,
+      | RegimeUpdateMessage
+      | PriceAlertMessage
+      | PortfolioUpdateMessage
+      | AgentActivityMessage
+      | CircuitBreakerStatusMessage
+      | CircuitBreakerTrippedMessage
+      | ApprovalRequestMessage
+      | ApprovalResponseMessage,
     >(
       type: T["type"],
       handler: (message: T) => void,

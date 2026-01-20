@@ -10,7 +10,7 @@ import sqlite3
 from datetime import datetime
 from typing import Any, Dict
 
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 
 logger = logging.getLogger(__name__)
 

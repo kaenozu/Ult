@@ -16,8 +16,8 @@ import pandas as pd
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from src.backup_manager import BackupManager
-from src.cache_config import install_cache
-from src.data_loader import (
+from src.infra.cache_config import install_cache
+from src.data_temp.data_loader import (
     fetch_stock_data,
 )
 from src.dynamic_risk_manager import DynamicRiskManager

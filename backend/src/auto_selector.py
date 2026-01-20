@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from src.constants import NIKKEI_225_TICKERS
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 from src.regime_detector import MarketRegime, RegimeDetector
 from src.strategies import BollingerBandsStrategy, LightGBMStrategy, RSIStrategy, SMACrossoverStrategy, Strategy
 

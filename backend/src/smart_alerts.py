@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 
 import yfinance as yf
 
-from src.data_loader import fetch_stock_data, get_latest_price
+from src.data_temp.data_loader import fetch_stock_data, get_latest_price
 from src.paper_trader import PaperTrader
 from src.smart_notifier import SmartNotifier
 

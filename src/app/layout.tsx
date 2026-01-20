@@ -7,6 +7,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import Sidebar from '@/components/layout/Sidebar';
 import { NotificationProvider } from '@/components/notifications/NotificationSystem';
 import { ApprovalCardsProvider } from '@/components/features/approvals/ApprovalCardsProvider';
+import { GlobalAlertOverlay } from '@/components/layout/GlobalAlertOverlay';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -44,6 +45,7 @@ export default function RootLayout({
                   <ErrorBoundary>{children}</ErrorBoundary>
                 </main>
                 <ApprovalCardsProvider />
+                <GlobalAlertOverlay />
               </div>
             </QueryProvider>
           </NotificationProvider>

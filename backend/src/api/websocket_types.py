@@ -264,6 +264,7 @@ class ApprovalType(str, Enum):
     """Type of action requiring approval"""
 
     TRADE = "trade"
+    TRADE_EXECUTION = "trade_execution"
     REBALANCE = "rebalance"
     STRATEGY_CHANGE = "strategy_change"
     BUDGET_INCREASE = "budget_increase"

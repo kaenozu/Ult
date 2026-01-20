@@ -25,7 +25,7 @@ async def get_market_watchlist():
     """ウォッチリスト(JP_STOCKS)の全銘柄の価格とシグナルを取得 (Cached)"""
     try:
         from src.core.constants import JP_STOCKS, TICKER_NAMES, MARKET_SUMMARY_TTL
-        from src.data_loader import fetch_stock_data
+        from src.data_temp.data_loader import fetch_stock_data
         from src.strategies import LightGBMStrategy
 
         # 0. Check Cache
@@ -47,8 +47,12 @@ async def get_market_watchlist():
         data_map = fetch_stock_data(JP_STOCKS, period="1y")
 
         # 1.5 Fetch Earnings Dates (Batch, Cached by data_loader internally or just simple fetch)
+<<<<<<< HEAD
         from src.data_loader import fetch_earnings_dates
 
+=======
+        from src.data_temp.data_loader import fetch_earnings_dates
+>>>>>>> main
         # Note: In production, fetch_earnings_dates should be cached independently or run in background
         # For now, we call it (it uses yfinance calendar).
         # We wrap it in try-except to not block main thread too much if yfinance is slow
@@ -155,8 +159,12 @@ async def get_market_watchlist():
 async def get_market_data(ticker: str):
     """銘柄の市場データを取得"""
     try:
+<<<<<<< HEAD
         from src.data_loader import fetch_stock_data
 
+=======
+        from src.data_temp.data_loader import fetch_stock_data
+>>>>>>> main
         data_map = fetch_stock_data([ticker], period="5d")
         df = data_map.get(ticker)
 
@@ -188,8 +196,12 @@ async def get_market_data(ticker: str):
 async def get_market_history(ticker: str, period: str = "3mo"):
     """銘柄の過去データを取得 (チャート用)"""
     try:
+<<<<<<< HEAD
         from src.data_loader import fetch_stock_data
 
+=======
+        from src.data_temp.data_loader import fetch_stock_data
+>>>>>>> main
         data_map = fetch_stock_data([ticker], period=period)
         df = data_map.get(ticker)
 
@@ -225,6 +237,7 @@ async def get_signal(
 ):
     """銘柄のシグナルを取得"""
     try:
+<<<<<<< HEAD
         from src.data_loader import fetch_stock_data
         from src.strategies import (
             LightGBMStrategy,
@@ -233,6 +246,11 @@ async def get_signal(
             BollingerBandsStrategy,
         )
 
+=======
+        from src.data_temp.data_loader import fetch_stock_data
+        from src.strategies import LightGBMStrategy, RSIStrategy, SMACrossoverStrategy, BollingerBandsStrategy
+        
+>>>>>>> main
         # 戦略を選択
         strategy_map = {
             "LIGHTGBM": LightGBMStrategy,
@@ -272,7 +290,7 @@ async def get_signal(
 async def run_backtest(request: BacktestRequest):
     """バックテストを実行"""
     try:
-        from src.data_loader import fetch_stock_data
+        from src.data_temp.data_loader import fetch_stock_data
         from src.backtest_engine import BacktestEngine
         from src.strategies import LightGBMStrategy, RSIStrategy
 
@@ -313,7 +331,7 @@ async def run_backtest(request: BacktestRequest):
 @router.get("/macro", response_model=List[MacroIndicator])
 async def get_macro_data():
     """主要マクロ経済指標の取得"""
-    from src.data_loader import fetch_external_data
+    from src.data_temp.data_loader import fetch_external_data
     import time
 
     try:
@@ -353,4 +371,20 @@ async def get_macro_data():
         return indicators
     except Exception as e:
         logger.error(f"Error fetching macro data: {e}")
+        return []
+
+@router.get("/market/earnings", response_model=List[dict])
+async def get_upcoming_earnings(days: int = 14):
+    """
+    Get list of stocks with earnings in the next N days.
+    """
+    try:
+        from src.data.earnings_provider import earnings_provider
+        from src.core.constants import JP_STOCKS
+        
+        # Check cache/fetch
+        results = earnings_provider.get_upcoming_earnings(JP_STOCKS, days_horizon=days)
+        return results
+    except Exception as e:
+        logger.error(f"Error getting earnings data: {e}")
         return []

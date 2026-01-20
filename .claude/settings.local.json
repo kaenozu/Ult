@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
+<<<<<<< HEAD
       "Bash(dir /B)"
+=======
+      "Bash(gh pr list:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh pr checkout:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+>>>>>>> main
     ]
   }
 }

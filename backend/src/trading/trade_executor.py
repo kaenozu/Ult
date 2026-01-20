@@ -7,7 +7,7 @@ import logging
 from typing import Any, Dict, List
 
 from src.data.feedback_store import FeedbackStore
-from src.data_loader import fetch_stock_data, get_latest_price
+from src.data_temp.data_loader import fetch_stock_data, get_latest_price
 from src.execution.execution_engine import ExecutionEngine
 from src.trading.portfolio_manager import PortfolioManager
 

@@ -28,6 +28,10 @@ from src.api.routers import (
     portfolio,
     trading,
     market,
+<<<<<<< HEAD
+=======
+    settings as settings_router,
+>>>>>>> main
     websocket,
     alerts,
     circuit_breaker,
@@ -35,7 +39,13 @@ from src.api.routers import (
 )
 from src.api.routers import settings as settings_router
 from src.api.vibe_endpoints import router as vibe_router
+<<<<<<< HEAD
 from src.core.config import settings
+=======
+from src.di import container
+from src.core.agent_loop import AutonomousAgent
+from src.core.config import settings as app_settings
+>>>>>>> main
 
 logger = logging.getLogger(__name__)
 
@@ -83,10 +93,17 @@ def create_app() -> FastAPI:
     # CORS設定
     app.add_middleware(
         CORSMiddleware,
+<<<<<<< HEAD
         allow_origins=settings.system.cors_origins,
         allow_credentials=settings.system.cors_allow_credentials,
         allow_methods=settings.system.cors_allow_methods,
         allow_headers=settings.system.cors_allow_headers,
+=======
+        allow_origins=app_settings.system.cors_origins,
+        allow_credentials=app_settings.system.cors_allow_credentials,
+        allow_methods=app_settings.system.cors_allow_methods,
+        allow_headers=app_settings.system.cors_allow_headers,
+>>>>>>> main
     )
 
     # === API Routers Registration ===
@@ -102,11 +119,19 @@ def create_app() -> FastAPI:
     app.include_router(
         circuit_breaker.router, prefix="/api/v1", tags=["Risk Management"]
     )
+    
+    # Phase 7: News Shock Defense
+    from src.api.routers import shock_radar
+    app.include_router(shock_radar.router, prefix="/api/v1", tags=["Risk Management"])
 
     # Administrative APIs
+<<<<<<< HEAD
     app.include_router(
         settings_router.router, prefix="/api/v1", tags=["Administration"]
     )
+=======
+    app.include_router(settings_router.router, prefix="/api/v1", tags=["Administration"])
+>>>>>>> main
     app.include_router(approvals.router, prefix="/api/v1", tags=["Administration"])
 
     # Real-time Communication
@@ -143,8 +168,12 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
+<<<<<<< HEAD
 def get_app() -> FastAPI:
     """アプリケーションインスタンスを取得（テスト用）"""
+=======
+def get_app():
+>>>>>>> main
     return app
 
 

@@ -3,7 +3,7 @@ from typing import Dict, List
 import pandas as pd
 from tenacity import retry, stop_after_attempt, wait_exponential  # _fetch_data_with_retry は SafetyChecks にある
 
-from src.data_loader import (
+from src.data_temp.data_loader import (
     get_latest_price,
 )  # fetch_stock_data は SafetyChecks にあるので必要に応じてインポート
 
@@ -25,7 +25,7 @@ class PositionManager:
         """
         リトライロジック付きでデータ取得
         """
-        from src.data_loader import fetch_stock_data  # ここでインポートすることで循環参照を避ける
+        from src.data_temp.data_loader import fetch_stock_data  # ここでインポートすることで循環参照を避ける
 
         try:
             self.logger.info(f"データ取得中... ({len(tickers)}銘柄)")

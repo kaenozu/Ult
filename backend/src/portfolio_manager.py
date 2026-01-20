@@ -3,7 +3,7 @@ import asyncio
 from datetime import datetime
 from typing import Dict, Any, List
 from src.database_manager import db_manager, DatabaseManager
-from src.data_loader import fetch_stock_data, fetch_realtime_data
+from src.data_temp.data_loader import fetch_stock_data, fetch_realtime_data
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +87,7 @@ class PortfolioManager:
 
         if tickers:
             try:
+<<<<<<< HEAD
                 # Use data_loader to get real prices
                 # We can reuse fetch_stock_data or specific realtime fetcher
                 # Bulk real-time fetch for efficiency
@@ -122,8 +123,18 @@ class PortfolioManager:
                                     )
                             except Exception as e:
                                 logger.error(f"Failed to fetch {ticker}: {e}")
+=======
+                # Batch fetch realtime prices (enables async mode in data_loader)
+                # Use "1d" period and "1m" interval for latest price
+                price_data_map = fetch_stock_data(tickers, period="5d", interval="1m")
+                
+                for ticker, df in price_data_map.items():
+                    if not df.empty:
+                        # Get latest close price
+                        current_prices[ticker] = float(df['Close'].iloc[-1])
+>>>>>>> main
             except Exception as e:
-                logger.error(f"Failed to fetch realtime prices: {e}")
+                logger.error(f"Failed to batch fetch realtime prices: {e}")
 
         # 3. Calculate Totals
         total_equity = cash
@@ -133,11 +144,23 @@ class PortfolioManager:
         position_list = {}
 
         for symbol, data in active_holdings.items():
+<<<<<<< HEAD
             qty = data["quantity"]
             avg_price = data["avg_price"]
 
             # Get cached or fresh price (float)
             current_price_float = self._get_current_price(symbol)
+=======
+            qty = data['quantity']
+            avg_price = data['avg_price']
+            
+            # Get from batch result or fallback to 0.0
+            current_price_float = current_prices.get(symbol, 0.0)
+            
+            # If batch failed, try individual fallback (optional, but maybe risky if batch failed due to network)
+            # Staying safe: just use what we have.
+            
+>>>>>>> main
             current_price = Decimal(str(current_price_float))
 
             market_value = qty * current_price
@@ -170,6 +193,7 @@ class PortfolioManager:
             "timestamp": datetime.now().isoformat(),
         }
 
+<<<<<<< HEAD
     def _get_current_price(self, symbol: str) -> float:
         """Helper to get latest price from data_loader cache or fetch"""
         try:
@@ -181,6 +205,9 @@ class PortfolioManager:
         except Exception:
             pass
         return 0.0  # Fallback or error
+=======
+    # Removed _get_current_price as it's no longer used efficiently
+>>>>>>> main
 
     def rebalance_portfolio(
         self, target_weights: Dict[str, float] = None

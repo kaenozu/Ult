@@ -12,8 +12,17 @@ from typing import Dict, List
 import pandas as pd
 
 from src import demo_data
+# from tasks.daily_backtest import compute_metrics
 from src.paper_trader import PaperTrader
-from tasks.daily_backtest import compute_metrics
+
+# Optional import - falls back to demo mode if tasks module is missing
+try:
+    from tasks.daily_backtest import compute_metrics
+except ImportError:
+    # Fallback: compute_metrics not available
+    def compute_metrics():
+        """Fallback when tasks module is not available."""
+        return pd.DataFrame()
 
 
 def _safe_pt():
@@ -98,7 +107,8 @@ def run_noon_playbook(use_demo: bool = False) -> Dict:
     sector_overweight = False
     if not positions.empty and "sector" in positions:
         sector_weights = (
-            positions.assign(value=positions["quantity"] * positions["current_price"]).groupby("sector")["value"].sum()
+            positions.assign(value=positions["quantity"] * positions["current_price"])
+            .groupby("sector")["value"].sum()
         )
         if kpis["equity"]:
             sector_overweight = (sector_weights / kpis["equity"]).max() > 0.4

@@ -146,7 +146,7 @@ export default function AutoTradeControls() {
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <ShieldCheck className="h-3.5 w-3.5" />
                 Max Invest:{" "}
-                <span className="font-mono text-foreground">
+                <span className="font-mono tabular-nums text-foreground">
                   ¥{status.config?.max_budget_per_trade.toLocaleString()}
                 </span>
               </div>
@@ -222,7 +222,7 @@ export default function AutoTradeControls() {
       </Card>
 
       {showTinderTrader && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 bg-black/90 p-4">
           <div className="h-full max-w-4xl mx-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-white flex items-center gap-2">

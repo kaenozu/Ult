@@ -72,7 +72,7 @@ async def reset_portfolio(request: ResetPortfolioRequest):
 @router.get("/config")
 async def get_config():
     """設定取得（機密情報を除く）"""
-    from src.config_loader import config
+    from src.infra.config_loader import config
     full_config = config.get_all()
     sensitive_keys = ["api_key", "password", "secret", "token"]
     for key in list(full_config.keys()):
