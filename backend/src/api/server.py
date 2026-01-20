@@ -24,6 +24,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.schemas import HealthResponse
+from src.api.responses import (
+    ErrorResponse,
+    ErrorDetail,
+    internal_error,
+    bad_request_error,
+    ValidationError,
+)
 from src.api.routers import (
     portfolio,
     trading,
@@ -153,6 +160,113 @@ def register_health_routes(app: FastAPI) -> None:
         )
 
 
+def setup_exception_handlers(app: FastAPI) -> None:
+    """グローバル例外ハンドラを設定"""
+    from fastapi import HTTPException, Request, JSONResponse
+    from fastapi.exceptions import RequestValidationError
+    from pydantic import ValidationError as PydanticValidationError
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException):
+        """HTTP例外ハンドラ"""
+        logger.warning(f"HTTP exception: {exc.status_code} - {exc.detail}")
+        error_response, status_code = bad_request_error(
+            message=exc.detail,
+            error_code=f"HTTP_{exc.status_code}",
+        )
+        return JSONResponse(
+            status_code=status_code,
+            content=error_response.dict(exclude_none=True),
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
+        """リクエストバリデーションエラーハンドラ"""
+        logger.warning(f"Validation error: {exc.errors()}")
+        errors = [
+            ErrorDetail(
+                field=".".join(str(loc) for loc in error["loc"]), message=error["msg"]
+            )
+            for error in exc.errors()
+        ]
+        error_response, status_code = bad_request_error(
+            message="Request validation failed",
+            error_code="VALIDATION_ERROR",
+            errors=errors,
+        )
+        return JSONResponse(
+            status_code=status_code,
+            content=error_response.dict(exclude_none=True),
+        )
+
+    @app.exception_handler(PydanticValidationError)
+    async def pydantic_validation_handler(
+        request: Request, exc: PydanticValidationError
+    ):
+        """Pydanticバリデーションエラーハンドラ"""
+        logger.warning(f"Pydantic validation error: {exc.errors()}")
+        errors = [
+            ErrorDetail(
+                field=".".join(str(loc) for loc in error["loc"]), message=error["msg"]
+            )
+            for error in exc.errors()
+        ]
+        error_response, status_code = bad_request_error(
+            message="Data validation failed",
+            error_code="PYDANTIC_VALIDATION_ERROR",
+            errors=errors,
+        )
+        return JSONResponse(
+            status_code=status_code,
+            content=error_response.dict(exclude_none=True),
+        )
+        return JSONResponse(
+            status_code=status_code,
+            content=error_response.dict(exclude_none=True),
+        )
+
+    @app.exception_handler(PydanticValidationError)
+    async def pydantic_validation_handler(
+        request: Request, exc: PydanticValidationError
+    ):
+        """Pydanticバリデーションエラーハンドラ"""
+        logger.warning(f"Pydantic validation error: {exc.errors()}")
+        errors = [
+            {
+                "field": ".".join(str(loc) for loc in error["loc"]),
+                "message": error["msg"],
+            }
+            for error in exc.errors()
+        ]
+        error_response, status_code = bad_request_error(
+            message="Data validation failed",
+            error_code="PYDANTIC_VALIDATION_ERROR",
+            errors=errors,
+        )
+        return JSONResponse(
+            status_code=status_code,
+            content=error_response.dict(exclude_none=True),
+        )
+
+    @app.exception_handler(Exception)
+    async def general_exception_handler(request: Request, exc: Exception):
+        """一般例外ハンドラ"""
+        logger.error(f"Unexpected error: {exc}", exc_info=True)
+        error_response, status_code = internal_error(
+            message="An unexpected error occurred",
+            error_code="INTERNAL_ERROR",
+        )
+        return JSONResponse(
+            status_code=status_code,
+            content=error_response.dict(exclude_none=True),
+        )
+
+
 def create_app() -> FastAPI:
     """FastAPIアプリケーションを作成"""
     app = FastAPI(
@@ -164,6 +278,7 @@ def create_app() -> FastAPI:
 
     # 設定適用
     configure_cors(app)
+    setup_exception_handlers(app)
     register_routers(app)
     register_health_routes(app)
 
