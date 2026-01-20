@@ -83,16 +83,8 @@ async def lifespan(app: FastAPI):
 # === App Factory ===
 
 
-def create_app() -> FastAPI:
-    """FastAPIアプリケーションを作成"""
-    app = FastAPI(
-        title="AGStock API",
-        description="AI-Powered Stock Trading System API",
-        version="1.0.0",
-        lifespan=lifespan,
-    )
-
-    # CORS設定
+def configure_cors(app: FastAPI) -> None:
+    """CORSミドルウェアを設定"""
     app.add_middleware(
         CORSMiddleware,
         allow_origins=app_settings.system.cors_origins,
@@ -101,7 +93,9 @@ def create_app() -> FastAPI:
         allow_headers=app_settings.system.cors_allow_headers,
     )
 
-    # === API Routers Registration ===
+
+def register_routers(app: FastAPI) -> None:
+    """APIルーターを登録"""
     # Core Trading APIs
     app.include_router(portfolio.router, prefix="/api/v1", tags=["Portfolio"])
     app.include_router(trading.router, prefix="/api/v1", tags=["Trading"])
@@ -138,7 +132,10 @@ def create_app() -> FastAPI:
     # Specialized Features
     # app.include_router(vibe_router, prefix="/api/v1", tags=["Experimental"])
 
-    # Root Routes
+
+def register_health_routes(app: FastAPI) -> None:
+    """ヘルスチェックルートを登録"""
+
     @app.get("/", response_model=HealthResponse)
     async def root():
         """ヘルスチェック"""
@@ -154,6 +151,21 @@ def create_app() -> FastAPI:
             status="healthy",
             timestamp=datetime.now().isoformat(),
         )
+
+
+def create_app() -> FastAPI:
+    """FastAPIアプリケーションを作成"""
+    app = FastAPI(
+        title="AGStock API",
+        description="AI-Powered Stock Trading System API",
+        version="1.0.0",
+        lifespan=lifespan,
+    )
+
+    # 設定適用
+    configure_cors(app)
+    register_routers(app)
+    register_health_routes(app)
 
     return app
 
