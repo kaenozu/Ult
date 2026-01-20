@@ -28,19 +28,27 @@ interface NeuralActivity {
   pattern: number[];
 }
 
-export default function VisualThinking() {
+export default function VisualThinking({ 
+  externalThoughts = [], 
+  isActive = false 
+}: { 
+  externalThoughts?: ThoughtNode[],
+  isActive?: boolean 
+}) {
   const [thoughts, setThoughts] = useState<ThoughtNode[]>([]);
   const [currentThought, setCurrentThought] = useState<string>("");
-  const [isThinking, setIsThinking] = useState<boolean>(false);
+  const [isThinking, setIsThinking] = useState<boolean>(isActive);
   const [neuralActivity, setNeuralActivity] = useState<NeuralActivity[]>([]);
   const [decisionPath, setDecisionPath] = useState<string[]>([]);
 
-  // Simulate AI thinking process
+  // Use external thoughts if provided, otherwise fallback to simulation
   useEffect(() => {
-    const thinkingInterval = setInterval(() => {
-      if (!isThinking) return;
-
-      // Generate random thought
+    if (externalThoughts.length > 0) {
+      setThoughts(externalThoughts);
+      setCurrentThought(externalThoughts[externalThoughts.length - 1].text);
+      setIsThinking(true);
+    }
+  }, [externalThoughts]);
       const thoughtTemplates = [
         {
           text: "Analyzing market sentiment...",
