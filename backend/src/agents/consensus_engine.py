@@ -4,7 +4,7 @@ import pandas as pd
 
 from src.strategies.strategy_router import StrategyRouter
 from src.agents.risk_agent import RiskAgent
-# NewsAgent (placeholder or use EarningsHunter logic later)
+from src.agents.news_agent import NewsAgent
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +18,7 @@ class ConsensusEngine:
     def __init__(self, strategy_params: Optional[Dict] = None):
         self.tech_agent = StrategyRouter(strategy_params=strategy_params)
         self.risk_agent = RiskAgent()
-        # TODO: self.news_agent = NewsAgent()
+        self.news_agent = NewsAgent()
         
         # Weights (The "Personality" of the Hive)
         self.weights = {
@@ -27,7 +27,7 @@ class ConsensusEngine:
             "risk": 0.2
         }
 
-    def deliberate(self, ticker: str, df: pd.DataFrame, external_data: Optional[Dict[str, pd.DataFrame]] = None, news_sentiment: float = 0.0) -> Dict[str, Any]:
+    def deliberate(self, ticker: str, df: pd.DataFrame, external_data: Optional[Dict[str, pd.DataFrame]] = None, headlines: List[str] = None) -> Dict[str, Any]:
         """
         Conduct a debate and reach a consensus.
         
@@ -35,7 +35,7 @@ class ConsensusEngine:
             ticker: Ticker symbol
             df: Stock data (OHLCV)
             external_data: Market data (VIX, etc.) for RiskAgent
-            news_sentiment: External sentiment score (-1.0 to 1.0) from News/Edge AI
+            headlines: List of news headline strings for NewsAgent
         """
         reasons = []
         
@@ -48,7 +48,6 @@ class ConsensusEngine:
         # Risk 0.0 -> Vote +1.0 (Safe)
         # Risk 0.5 -> Vote 0.0 (Neutral)
         # Risk 1.0 -> Vote -1.0 (Dangerous)
-        # Formula: 1.0 - (Risk * 2) 
         risk_vote = 1.0 - (risk_score * 2.0)
         risk_vote = max(-1.0, min(1.0, risk_vote))
         
@@ -75,10 +74,15 @@ class ConsensusEngine:
         reasons.append(f"Tech ({tech_str}): Signal {tech_signal} (Conf {tech_conf:.2f})")
 
         # 4. News Analysis (The Observer)
-        # Assuming news_sentiment is passed in (-1.0 to 1.0)
-        news_vote = news_sentiment
-        if news_sentiment != 0:
-            reasons.append(f"News: Sentiment {news_sentiment:.2f}")
+        if headlines:
+            news_vote = self.news_agent.analyze_headlines(ticker, headlines)
+        else:
+            # Fallback for verification/mocking if no headlines provided but agent exists
+            # Or assume neutral if disconnected
+            news_vote = 0.0
+            
+        if news_vote != 0:
+            reasons.append(f"News: Sentiment {news_vote:.2f}")
 
         # 5. Weighted Voting (The Hive Mind)
         # Score = (Tech * 0.5) + (News * 0.3) + (Risk * 0.2)
@@ -89,7 +93,6 @@ class ConsensusEngine:
                       (risk_vote * self.weights["risk"])
 
         # 6. Final Decision
-        # Thresholds
         final_signal = 0
         decision_reason = "HOLD"
         

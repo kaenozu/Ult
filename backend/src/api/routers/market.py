@@ -280,11 +280,24 @@ async def get_signal(
             else:
                 # THE HIVE (Consensus Engine)
                 engine = ConsensusEngine()
-                # Determine "News Sentiment" (Placeholder or fetch from DB/Edge)
-                # For now, we assume neutral (0.0) or implement simple logic later
-                news_sentiment = 0.0 
                 
-                consensus_result = engine.deliberate(ticker, df, external_data=external_data, news_sentiment=news_sentiment)
+                # Fetch News (via yfinance)
+                headlines = []
+                try:
+                    # 'df' has 'ticker' metadata sometimes, but safer to use yfinance directly or helper
+                    # src.data_loader doesn't expose .news directly.
+                    # We can use yfinance Ticker object.
+                    import yfinance as yf
+                    yf_ticker = yf.Ticker(ticker)
+                    news_list = yf_ticker.news
+                    if news_list:
+                        # Extract titles
+                        headlines = [n.get("title", "") for n in news_list if "title" in n]
+                        logger.info(f"Fetched {len(headlines)} headlines for {ticker}")
+                except Exception as e:
+                    logger.warning(f"Failed to fetch news for {ticker}: {e}")
+                
+                consensus_result = engine.deliberate(ticker, df, external_data=external_data, headlines=headlines)
                 
                 return SignalResponse(
                     ticker=ticker,

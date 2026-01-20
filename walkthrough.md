@@ -194,4 +194,18 @@ Verified via script. The endpoint is reachable and correctly handles requests.
 *   **Script:** `tests/verify_hive.py` confirmed that High Risk (VIX > 30) triggers a VETO even if Technical signals are bullish.
 *   **Safety:** "The Iron Hive" logic ensures we don't buy during market crashes.
 
-**Next:** Phase 11 (Vision) completion or Phase 16.
+---
+
+## Phase 15.5: The VADER Integration (News Agent) (2026-01-20)
+
+**Feature:** Filled the "News Gap" in The Hive by implementing a real-time sentiment analyzer for backend logic.
+
+**Changes:**
+1.  **Library:** Installed `vaderSentiment` (Lightweight, rule-based NLP).
+2.  **Implementation:** `NewsAgent` fetches headlines via `yfinance` and calculates a compound sentiment score (-1.0 to +1.0).
+3.  **Integration:** `ConsensusEngine` now uses this score (weight 30%) instead of a 0.0 placeholder.
+
+**Verification:**
+*   **Script:** `tests/verify_news.py` confirmed correct sentiment detection (e.g., "Profit soars" > 0.3, "Recall" < -0.3).
+
+**Next:** Phase 11 Vision or Deployment.

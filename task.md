@@ -54,6 +54,11 @@
     - [x] [API] Update `/signals/{ticker}` to return Consensus Result <!-- id: 20c -->
     - [x] [UI] Implement `HivePanel` (Visualization of Voting) <!-- id: 20d -->
     - [x] [Verify] Test Veto Logic (Force Risk -> Signal 0) <!-- id: 20e -->
+    - [x] **Phase 15.5: The VADER Integration (News Agent)** <!-- id: 20f -->
+        - [x] [Backend] Install `vaderSentiment` <!-- id: 20g -->
+        - [x] [Backend] Implement `NewsAgent` using VADER <!-- id: 20h -->
+        - [x] [Integration] Connect `NewsAgent` to `ConsensusEngine` <!-- id: 20i -->
+        - [x] [Integration] Fetch `yfinance` news in `market.py` <!-- id: 20j -->
 
 - [ ] Phase 11: The Eyes of God (Multimodal Vision) <!-- id: 18 -->
     - [x] [UI] Chart Vision Analyst Interface <!-- id: 19 -->
