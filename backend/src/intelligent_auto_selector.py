@@ -34,7 +34,7 @@ class IntelligentAutoSelector:
     def _initialize(self):
         """各コンポーネントを初期化"""
         try:
-            from src.enhanced_ensemble_predictor import EnhancedEnsemblePredictor
+            from src.ml.enhanced_ensemble_predictor import EnhancedEnsemblePredictor
 
             self.ensemble_predictor = EnhancedEnsemblePredictor()
             logger.info("EnhancedEnsemblePredictor initialized with advanced models + RL + FinBERT")
@@ -350,7 +350,7 @@ def get_auto_selector() -> IntelligentAutoSelector:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    from src.data_loader import fetch_stock_data
+    from src.data_temp.data_loader import fetch_stock_data
 
     # テスト
     selector = get_auto_selector()

@@ -231,7 +231,7 @@ class PaperTrader:
             
             # Fetch current prices (using external data loader)
             try:
-                from src.data_loader import fetch_stock_data
+                from src.data_temp.data_loader import fetch_stock_data
                 # Batch fetch prices for better performance
                 data_map = fetch_stock_data(tickers, period="1mo")
                 prices = {}
@@ -342,7 +342,7 @@ class PaperTrader:
         
         # Calculate daily pnl
         try:
-            from src.pnl_utils import calculate_daily_pnl_standalone
+            from src.utils_temp.pnl_utils import calculate_daily_pnl_standalone
             daily_pnl, _ = calculate_daily_pnl_standalone(self.db_path, total_equity)
         except Exception:
             daily_pnl = 0.0

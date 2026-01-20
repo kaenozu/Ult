@@ -112,7 +112,7 @@ class TournamentManager:
             profile = PERSONALITIES[acc_id]
             
             # Calculate Total Return using utility
-            from src.pnl_utils import calculate_total_return
+            from src.utils_temp.pnl_utils import calculate_total_return
             total_return_pct, _ = calculate_total_return(trader.initial_capital, balance["total_equity"])
             
             data.append(

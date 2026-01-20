@@ -9,7 +9,7 @@ from typing import Optional
 
 from src.core.evo_coder import EvoCoder
 from src.core.strategy_validator import StrategyValidator
-from src.data_loader import DataLoader
+from src.data_temp.data_loader import DataLoader
 from src.db.manager import DatabaseManager
 from src.llm_reasoner import get_llm_reasoner
 

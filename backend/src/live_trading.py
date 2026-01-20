@@ -194,7 +194,7 @@ class LiveTradingEngine:
     def fetch_realtime_data(self, ticker: str) -> Optional[pd.DataFrame]:
         # This will be replaced by the actual data_loader function
         # For now, we import it inside the method to avoid circular imports if any
-        from src.data_loader import fetch_realtime_data
+        from src.data_temp.data_loader import fetch_realtime_data
 
         return fetch_realtime_data(ticker)
 

@@ -8,7 +8,7 @@ import numpy as np
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 from src.strategies.ml.lightgbm import LightGBMStrategy
 from src.core.constants import MINIMUM_DATA_POINTS
 
@@ -62,7 +62,7 @@ def analyze(ticker: str):
              # Just a quick check of the last raw prediction if possible
              # Re-generating features locally to peek
              from src.features import add_advanced_features, add_macro_features
-             from src.data_loader import fetch_macro_data
+             from src.data_temp.data_loader import fetch_macro_data
              
              work_df = df.copy()
              if work_df.index.tz is not None:
