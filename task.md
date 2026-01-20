@@ -48,6 +48,13 @@
     - [x] [CLI] Create `optimize_strategy.py` tool <!-- id: 19c -->
     - [x] [Verify] Run optimization on 7203.T for 'The Guerilla' <!-- id: 19d -->
 
+- [/] **Phase 15: The Hive (Mechanical Consensus)** <!-- id: 20 -->
+    - [x] [Backend] Implement `ConsensusEngine` (Weighted Voting + Veto) <!-- id: 20a -->
+    - [x] [Backend] Implement `RiskAgent` (VIX/ATR Monitor) <!-- id: 20b -->
+    - [x] [API] Update `/signals/{ticker}` to return Consensus Result <!-- id: 20c -->
+    - [x] [UI] Implement `HivePanel` (Visualization of Voting) <!-- id: 20d -->
+    - [x] [Verify] Test Veto Logic (Force Risk -> Signal 0) <!-- id: 20e -->
+
 - [ ] Phase 11: The Eyes of God (Multimodal Vision) <!-- id: 18 -->
     - [x] [UI] Chart Vision Analyst Interface <!-- id: 19 -->
         - [x] [Interaction] "Analyze Chart" Button & Capture Logic <!-- id: 19a -->

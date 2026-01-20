@@ -173,3 +173,25 @@ Verified via script. The endpoint is reachable and correctly handles requests.
     *   Result: Successfully evolved parameters (e.g. `bb_window: 40`).
 
 **Next:** Phase 11 Vision or Deployment.
+
+---
+
+## Phase 15: The Hive (Mechanical Consensus) (2026-01-20)
+
+**Feature:** A "Brain-like" Consensus Engine that aggregates inputs from multiple specialized agents (Tech, News, Risk) to make robust decisions without relying on LLMs for every tick.
+
+**Changes:**
+1.  **Backend Agents:**
+    *   **Risk Agent:** Monitors VIX and Asset Volatility. Has VETO power if risk is too high.
+    *   **Consensus Engine:** `Score = Tech*0.5 + News*0.3 + Risk*0.2`.
+2.  **Frontend:**
+    *   `HivePanel.tsx`: Visualizes the "Meeting Room" where agents vote.
+    *   Updated `SignalResponse` type to include detailed voting logs.
+3.  **API:**
+    *   Updated `/signals/{ticker}` to support `strategy=CONSENSUS` mode.
+
+**Verification:**
+*   **Script:** `tests/verify_hive.py` confirmed that High Risk (VIX > 30) triggers a VETO even if Technical signals are bullish.
+*   **Safety:** "The Iron Hive" logic ensures we don't buy during market crashes.
+
+**Next:** Phase 11 (Vision) completion or Phase 16.

@@ -255,35 +255,45 @@ async def get_signal(
             "BOLLINGER": BollingerBandsStrategy,
         }
         
-        if strategy.upper() == "AUTO":
+        if strategy.upper() == "AUTO" or strategy.upper() == "CONSENSUS":
             from src.strategies.strategy_router import StrategyRouter
-            router = StrategyRouter()
-            # AUTO mode returns detailed result directly
-            router_result = router.get_signal(ticker, df)
+            from src.agents.consensus_engine import ConsensusEngine
+            from src.data_loader import fetch_external_data
             
-            return SignalResponse(
-                ticker=ticker,
-                signal=router_result.get("signal", 0),
-                confidence=router_result.get("confidence", 0.0),
-                strategy=router_result.get("strategy", "AUTO"),
-                explanation=router_result.get("explanation", ""),
-                target_price=router_result.get("target_price"),
-            )
+            # Fetch External Data for Risk Agent (VIX, etc.)
+            external_data = fetch_external_data(period="3mo")
 
-        strategy_cls = strategy_map.get(strategy.upper(), LightGBMStrategy)
-        strat = strategy_cls()
-        
-        # シグナル生成
-        result = strat.analyze(df)
-        
-        return SignalResponse(
-            ticker=ticker,
-            signal=result.get("signal", 0),
-            confidence=result.get("confidence", 0.0),
-            strategy=strategy,
-            explanation=strat.get_signal_explanation(result.get("signal", 0)),
-            target_price=result.get("target_price"),
-        )
+            if strategy.upper() == "AUTO":
+                # Legacy AUTO mode (Router only) - Retain for backward compatibility or switch to Consensus?
+                # Let's upgrade AUTO to use Consensus but maybe lighter weight?
+                # For now, let's keep AUTO as StrategyRouter, and CONSENSUS as The Hive.
+                router = StrategyRouter()
+                router_result = router.get_signal(ticker, df)
+                return SignalResponse(
+                    ticker=ticker,
+                    signal=router_result.get("signal", 0),
+                    confidence=router_result.get("confidence", 0.0),
+                    strategy=router_result.get("strategy", "AUTO"),
+                    explanation=router_result.get("explanation", ""),
+                    target_price=router_result.get("target_price"),
+                )
+            else:
+                # THE HIVE (Consensus Engine)
+                engine = ConsensusEngine()
+                # Determine "News Sentiment" (Placeholder or fetch from DB/Edge)
+                # For now, we assume neutral (0.0) or implement simple logic later
+                news_sentiment = 0.0 
+                
+                consensus_result = engine.deliberate(ticker, df, external_data=external_data, news_sentiment=news_sentiment)
+                
+                return SignalResponse(
+                    ticker=ticker,
+                    signal=consensus_result.get("signal", 0),
+                    confidence=consensus_result.get("confidence", 0.0),
+                    strategy="CONSENSUS (The Hive)",
+                    explanation=consensus_result.get("reason", ""),
+                    target_price=None, # Consensus doesn't set target price yet
+                )
     except HTTPException:
         raise
     except Exception as e:
