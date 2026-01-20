@@ -30,11 +30,13 @@ export interface SignalResponse {
   details?: {
     tech_vote?: number
     news_vote?: number
+    vision_vote?: number
     risk_vote?: number
     risk_score?: number
     tech?: number
     news?: number
     risk?: number
+    vision?: number
   }
 }
 

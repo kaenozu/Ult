@@ -53,8 +53,8 @@ export default function HivePanel({ ticker }: HivePanelProps) {
                 </div>
             </div>
 
-            {/* Agents Row */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            {/* Agents Row - Now 4 Agents */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
 
                 {/* Tech Agent */}
                 <div className="bg-black/20 rounded-lg p-3 border border-white/5 flex flex-col items-center text-center">
@@ -65,7 +65,7 @@ export default function HivePanel({ ticker }: HivePanelProps) {
                     <div className={`text-lg font-mono font-bold ${getVoteColor(techVote)}`}>
                         {techVote > 0 ? "+" : ""}{techVote.toFixed(2)}
                     </div>
-                    <div className="text-[#555] text-[10px] mt-1">Weight: 50%</div>
+                    <div className="text-[#555] text-[10px] mt-1">Weight: 40%</div>
                 </div>
 
                 {/* News Agent */}
@@ -80,6 +80,22 @@ export default function HivePanel({ ticker }: HivePanelProps) {
                     <div className="text-[#555] text-[10px] mt-1">Weight: 30%</div>
                 </div>
 
+                {/* Vision Agent (New) */}
+                <div className="bg-black/20 rounded-lg p-3 border border-white/5 flex flex-col items-center text-center">
+                    <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center mb-2">
+                        {/* Eye icon */}
+                        <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </div>
+                    <div className="text-xs font-bold text-muted-foreground mb-1">Seer</div>
+                    <div className={`text-lg font-mono font-bold ${getVoteColor(signal.details?.vision_vote || 0)}`}>
+                        {(signal.details?.vision_vote || 0) > 0 ? "+" : ""}{(signal.details?.vision_vote || 0).toFixed(2)}
+                    </div>
+                    <div className="text-[#555] text-[10px] mt-1">Weight: 20%</div>
+                </div>
+
                 {/* Risk Agent */}
                 <div className={`bg-black/20 rounded-lg p-3 border ${riskScore > 0.7 ? "border-red-500/50 bg-red-900/10" : "border-white/5"} flex flex-col items-center text-center transition-all`}>
                     <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
@@ -91,6 +107,7 @@ export default function HivePanel({ ticker }: HivePanelProps) {
                     </div>
                     <div className="text-[10px] mt-1 text-red-400/80">
                         Risk: {(riskScore * 100).toFixed(0)}%
+                        {/* W: 10% */}
                     </div>
                 </div>
             </div>

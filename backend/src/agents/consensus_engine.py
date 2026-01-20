@@ -5,6 +5,7 @@ import pandas as pd
 from src.strategies.strategy_router import StrategyRouter
 from src.agents.risk_agent import RiskAgent
 from src.agents.news_agent import NewsAgent
+from src.agents.vision_agent import VisionAgent
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -19,23 +20,20 @@ class ConsensusEngine:
         self.tech_agent = StrategyRouter(strategy_params=strategy_params)
         self.risk_agent = RiskAgent()
         self.news_agent = NewsAgent()
+        self.vision_agent = VisionAgent()
         
         # Weights (The "Personality" of the Hive)
+        # Total must equal 1.0
         self.weights = {
-            "tech": 0.5,
+            "tech": 0.4,
             "news": 0.3,
-            "risk": 0.2
+            "vision": 0.2,
+            "risk": 0.1
         }
 
     def deliberate(self, ticker: str, df: pd.DataFrame, external_data: Optional[Dict[str, pd.DataFrame]] = None, headlines: List[str] = None) -> Dict[str, Any]:
         """
         Conduct a debate and reach a consensus.
-        
-        Args:
-            ticker: Ticker symbol
-            df: Stock data (OHLCV)
-            external_data: Market data (VIX, etc.) for RiskAgent
-            headlines: List of news headline strings for NewsAgent
         """
         reasons = []
         
@@ -44,10 +42,7 @@ class ConsensusEngine:
         risk_score = risk_result["risk_score"]
         is_veto = risk_result["is_veto"]
         
-        # Invert Risk for Voting (High Risk = Negative Vote)
-        # Risk 0.0 -> Vote +1.0 (Safe)
-        # Risk 0.5 -> Vote 0.0 (Neutral)
-        # Risk 1.0 -> Vote -1.0 (Dangerous)
+        # Risk Voting
         risk_vote = 1.0 - (risk_score * 2.0)
         risk_vote = max(-1.0, min(1.0, risk_vote))
         
@@ -60,15 +55,15 @@ class ConsensusEngine:
                 "signal": 0,
                 "confidence": 1.0,
                 "reason": f"VETO: Market Risk too high ({risk_score:.2f}). {', '.join(risk_result['reasons'])}",
-                "consensus_score": -1.0, # Negative score implies bearish/wait
-                "details": {"tech": 0, "news": 0, "risk": risk_score}
+                "consensus_score": -1.0,
+                "details": {"tech": 0, "news": 0, "risk": risk_score, "vision": 0}
             }
 
         # 3. Technical Analysis (The Strategist)
         tech_result = self.tech_agent.get_signal(ticker, df)
-        tech_signal = tech_result["signal"] # -1, 0, 1
+        tech_signal = tech_result["signal"]
         tech_conf = tech_result["confidence"]
-        tech_vote = float(tech_signal) * tech_conf # Scale by confidence
+        tech_vote = float(tech_signal) * tech_conf
         
         tech_str = tech_result.get("strategy", "Unknown")
         reasons.append(f"Tech ({tech_str}): Signal {tech_signal} (Conf {tech_conf:.2f})")
@@ -77,22 +72,31 @@ class ConsensusEngine:
         if headlines:
             news_vote = self.news_agent.analyze_headlines(ticker, headlines)
         else:
-            # Fallback for verification/mocking if no headlines provided but agent exists
-            # Or assume neutral if disconnected
             news_vote = 0.0
             
         if news_vote != 0:
-            reasons.append(f"News: Sentiment {news_vote:.2f}")
+            reasons.append(f"News: {news_vote:.2f}")
 
-        # 5. Weighted Voting (The Hive Mind)
-        # Score = (Tech * 0.5) + (News * 0.3) + (Risk * 0.2)
-        # Range: -1.0 to 1.0
+        # 5. Vision Analysis (The Seer)
+        # Note: This is an expensive call (Latency).
+        # We assume 'df' has recent OHLC data.
+        vision_vote = 0.0
+        try:
+            vision_vote = self.vision_agent.analyze(ticker, df)
+            if vision_vote != 0:
+                reasons.append(f"Vision: {vision_vote:.2f}")
+        except Exception as e:
+            logger.warning(f"Vision analysis failed: {e}")
+
+        # 6. Weighted Voting (The Hive Mind)
+        # Score = (Tech*0.4) + (News*0.3) + (Vision*0.2) + (Risk*0.1)
         
         final_score = (tech_vote * self.weights["tech"]) + \
                       (news_vote * self.weights["news"]) + \
+                      (vision_vote * self.weights["vision"]) + \
                       (risk_vote * self.weights["risk"])
 
-        # 6. Final Decision
+        # 7. Final Decision
         final_signal = 0
         decision_reason = "HOLD"
         
@@ -107,12 +111,13 @@ class ConsensusEngine:
 
         return {
             "signal": final_signal,
-            "confidence": abs(final_score), # Score magnitude is confidence
+            "confidence": abs(final_score),
             "reason": "; ".join(reasons),
             "consensus_score": round(final_score, 3),
             "details": {
                 "tech_vote": round(tech_vote, 2),
                 "news_vote": round(news_vote, 2),
+                "vision_vote": round(vision_vote, 2),
                 "risk_vote": round(risk_vote, 2),
                 "risk_score": risk_result["risk_score"]
             }
