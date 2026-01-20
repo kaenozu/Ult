@@ -45,3 +45,17 @@ class AgentState(BaseModel):
     current_regime: str
     daily_pnl: float
     circuit_breaker_active: bool
+
+class TradingDecision(BaseModel):
+    """
+    Represents a high-level trading decision made by the strategy engine.
+    """
+    action: ActionType
+    ticker: str
+    quantity: int
+    limit_price: Optional[float] = None
+    stop_loss: Optional[float] = None
+    take_profit: Optional[float] = None
+    reason: str
+    confidence: float
+    timestamp: datetime = Field(default_factory=datetime.now)

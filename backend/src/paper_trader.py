@@ -11,6 +11,7 @@ import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Union, Any, List, Tuple, Optional
+import json
 
 import pandas as pd
 
@@ -94,6 +95,7 @@ class PaperTrader:
                 quantity INTEGER,
                 price REAL,
                 strategy_name TEXT,
+                thought_context TEXT,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """
@@ -414,12 +416,20 @@ class PaperTrader:
                         )
 
                 # Log order
+                # Thought Context is updated via separate update if needed, or we modify schema
+                # For Phase 10, we'll assume strategy_name might hold a summary or we can add a column
+                # Let's check schema first.
+                
+                thought_json = None
+                if hasattr(order, 'thought_context') and order.thought_context:
+                    thought_json = json.dumps(order.thought_context)
+                
                 cursor.execute(
                     """
-                    INSERT INTO orders (ticker, action, quantity, price, strategy_name)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO orders (ticker, action, quantity, price, strategy_name, thought_context)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                    (order.ticker, order.action, order.quantity, order.price, getattr(order, "strategy", None)),
+                    (order.ticker, order.action, order.quantity, order.price, getattr(order, "strategy", None), thought_json),
                 )
 
                 self.conn.commit()
@@ -430,17 +440,18 @@ class PaperTrader:
                 self.conn.rollback()
                 return False
 
-    def execute_trade(self, ticker: str, action: str, quantity: int, price: float, reason: str = "", strategy: str = None) -> bool:
+    def execute_trade(self, ticker: str, action: str, quantity: int, price: float, reason: str = "", strategy: str = None, thought_context: dict = None) -> bool:
         """Simplified trade execution."""
         class SimpleOrder:
-            def __init__(self, t, a, q, p, s):
+            def __init__(self, t, a, q, p, s, tc):
                 self.ticker = t
                 self.action = a
                 self.quantity = q
                 self.price = p
                 self.strategy = s
+                self.thought_context = tc
         
-        return self.execute_order(SimpleOrder(ticker, action, quantity, price, strategy))
+        return self.execute_order(SimpleOrder(ticker, action, quantity, price, strategy, thought_context))
 
     def update_daily_equity(self):
         """Update daily equity snapshot in database."""

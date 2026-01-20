@@ -178,6 +178,19 @@ class DatabaseManager:
                 )
             """
             )
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS screenshot_journal (
+                    id TEXT PRIMARY KEY,
+                    ticker TEXT NOT NULL,
+                    filepath TEXT NOT NULL,
+                    analysis_json TEXT,
+                    timestamp TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    status TEXT DEFAULT 'active'
+                )
+            """
+            )
             conn.commit()
         logger.info(f"Database initialized: {DB_PATH}")
 
@@ -552,6 +565,65 @@ class DatabaseManager:
                 data["context"] = json.loads(data["context"]) if data["context"] else {}
                 results.append(data)
             return results
+
+    # Screenshot Journal methods
+    def save_screenshot_record(
+        self,
+        ticker: str,
+        filepath: str,
+        analysis_result: Dict[str, Any],
+        timestamp: Optional[str] = None
+    ) -> str:
+        """スクリーンショット記録保存"""
+        record_id = self._generate_id()
+        now = datetime.now().isoformat()
+        if not timestamp:
+            timestamp = now
+            
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO screenshot_journal (
+                    id, ticker, filepath, analysis_json,
+                    timestamp, created_at, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    record_id,
+                    ticker,
+                    filepath,
+                    json.dumps(analysis_result),
+                    timestamp,
+                    now,
+                    "active"
+                ),
+            )
+            conn.commit()
+        return record_id
+
+    def get_screenshots(self, ticker: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """スクリーンショット履歴取得"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT * FROM screenshot_journal 
+                WHERE ticker = ? AND status = 'active'
+                ORDER BY timestamp DESC
+                LIMIT ?
+                """,
+                (ticker, limit)
+            )
+            
+            results = []
+            for row in cursor.fetchall():
+                data = dict(row)
+                data["analysis_result"] = json.loads(data["analysis_json"]) if data["analysis_json"] else {}
+                del data["analysis_json"] # APIレスポンス用に変換
+                results.append(data)
+            return results
+
 
 
 db_manager = DatabaseManager()

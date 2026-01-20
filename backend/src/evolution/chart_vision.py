@@ -34,6 +34,45 @@ class ChartVisionEngine:
             except Exception as e:
                 logger.error(f"Failed to init Gemini Vision: {e}")
 
+    def _get_vision_prompt(self, ticker: str) -> str:
+        return f"""
+        Analyze this price chart for {ticker}.
+        TASK:
+        1. Identify geometric patterns (Head & Shoulders, Double Top/Bottom, Triangles, etc.).
+        2. Identify key support and resistance levels visible in the chart.
+        3. Provide a visual verdict (BULLISH, BEARISH, or NEUTRAL).
+
+        Return ONLY a valid JSON object:
+        {{
+            "patterns": ["pattern1", "pattern2"],
+            "support": 1234.5,
+            "resistance": 1250.0,
+            "verdict": "BULLISH",
+            "visual_rationale": "Explanation based on the image..."
+        }}
+        """
+
+    def analyze_image_bytes(self, image_data: bytes, ticker: str) -> Optional[Dict[str, Any]]:
+        """
+        Analyze an existing image (e.g. uploaded from frontend).
+        """
+        if not self.has_vision:
+            return None
+
+        try:
+            prompt = self._get_vision_prompt(ticker)
+            
+            # 3. Call Gemini
+            response = self.model.generate_content([prompt, {"mime_type": "image/png", "data": image_data}])
+
+            # 4. Parse
+            import json
+            text = response.text.replace("```json", "").replace("```", "").strip()
+            return json.loads(text)
+        except Exception as e:
+            logger.error(f"Chart vision byte analysis failed for {ticker}: {e}")
+            return None
+
     def analyze_chart_vision(self, df: pd.DataFrame, ticker: str) -> Optional[Dict[str, Any]]:
         """
         1. Generates a visual plot of the OHLC data.
@@ -72,32 +111,7 @@ class ChartVisionEngine:
             plt.close()
             image_bytes = buf.getvalue()
 
-            # 2. Prepare Prompt
-            prompt = f"""
-            Analyze this price chart for {ticker}.
-            TASK:
-            1. Identify geometric patterns (Head & Shoulders, Double Top/Bottom, Triangles, etc.).
-            2. Identify key support and resistance levels visible in the chart.
-            3. Provide a visual verdict (BULLISH, BEARISH, or NEUTRAL).
-
-            Return ONLY a valid JSON object:
-            {{
-                "patterns": ["pattern1", "pattern2"],
-                "support": 1234.5,
-                "resistance": 1250.0,
-                "verdict": "BULLISH",
-                "visual_rationale": "Explanation based on the image..."
-            }}
-            """
-
-            # 3. Call Gemini
-            response = self.model.generate_content([prompt, {"mime_type": "image/png", "data": image_bytes}])
-
-            # 4. Parse
-            import json
-
-            text = response.text.replace("```json", "").replace("```", "").strip()
-            return json.loads(text)
+            return self.analyze_image_bytes(image_bytes, ticker)
 
         except Exception as e:
             logger.error(f"Chart vision analysis failed for {ticker}: {e}")

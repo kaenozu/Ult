@@ -16,6 +16,48 @@ MARKET_CACHE = {
     "last_updated": None
 }
 
+# --- Regime Cache ---
+REGIME_CACHE = {}
+
+@router.get("/market/regime/{ticker}")
+async def get_market_regime(ticker: str):
+    """
+    Get the current market regime (TREND, RANGE, VOLATILE) for a ticker.
+    Uses RegimeClassifier with heuristic logic (V1).
+    """
+    try:
+        from src.data_loader import fetch_stock_data
+        from src.evolution.regime_classifier import RegimeClassifier
+        
+        # Check cache (Simple in-memory for now)
+        if ticker in REGIME_CACHE:
+            cached_data, timestamp = REGIME_CACHE[ticker]
+            if (datetime.now() - timestamp).total_seconds() < 300: # 5 min TTL
+                return cached_data
+
+        # Fetch data (Need at least 50 candles for indicators)
+        data_map = fetch_stock_data([ticker], period="3mo")
+        df = data_map.get(ticker)
+        
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="Ticker not found")
+            
+        classifier = RegimeClassifier()
+        result = classifier.detect_regime(df)
+        
+        # Add ticker info
+        result["ticker"] = ticker
+        
+        # Update cache
+        REGIME_CACHE[ticker] = (result, datetime.now())
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error classifying regime for {ticker}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/market/watchlist", response_model=List[dict])
 async def get_market_watchlist():
     """ウォッチリスト(JP_STOCKS)の全銘柄の価格とシグナルを取得 (Cached)"""
@@ -199,6 +241,12 @@ async def get_signal(
         from src.data_temp.data_loader import fetch_stock_data
         from src.strategies import LightGBMStrategy, RSIStrategy, SMACrossoverStrategy, BollingerBandsStrategy
         
+        # データ取得 (Common for all strategies)
+        data_map = fetch_stock_data([ticker], period="5y")
+        df = data_map.get(ticker)
+        if df is None or df.empty:
+            raise HTTPException(status_code=404, detail="Data not found")
+            
         # 戦略を選択
         strategy_map = {
             "LIGHTGBM": LightGBMStrategy,
@@ -207,26 +255,58 @@ async def get_signal(
             "BOLLINGER": BollingerBandsStrategy,
         }
         
-        strategy_cls = strategy_map.get(strategy.upper(), LightGBMStrategy)
-        strat = strategy_cls()
-        
-        # データ取得
-        data_map = fetch_stock_data([ticker], period="5y")
-        df = data_map.get(ticker)
-        if df is None or df.empty:
-            raise HTTPException(status_code=404, detail="Data not found")
-        
-        # シグナル生成
-        result = strat.analyze(df)
-        
-        return SignalResponse(
-            ticker=ticker,
-            signal=result.get("signal", 0),
-            confidence=result.get("confidence", 0.0),
-            strategy=strategy,
-            explanation=strat.get_signal_explanation(result.get("signal", 0)),
-            target_price=result.get("target_price"),
-        )
+        if strategy.upper() == "AUTO" or strategy.upper() == "CONSENSUS":
+            from src.strategies.strategy_router import StrategyRouter
+            from src.agents.consensus_engine import ConsensusEngine
+            from src.data_loader import fetch_external_data
+            
+            # Fetch External Data for Risk Agent (VIX, etc.)
+            external_data = fetch_external_data(period="3mo")
+
+            if strategy.upper() == "AUTO":
+                # Legacy AUTO mode (Router only) - Retain for backward compatibility or switch to Consensus?
+                # Let's upgrade AUTO to use Consensus but maybe lighter weight?
+                # For now, let's keep AUTO as StrategyRouter, and CONSENSUS as The Hive.
+                router = StrategyRouter()
+                router_result = router.get_signal(ticker, df)
+                return SignalResponse(
+                    ticker=ticker,
+                    signal=router_result.get("signal", 0),
+                    confidence=router_result.get("confidence", 0.0),
+                    strategy=router_result.get("strategy", "AUTO"),
+                    explanation=router_result.get("explanation", ""),
+                    target_price=router_result.get("target_price"),
+                )
+            else:
+                # THE HIVE (Consensus Engine)
+                engine = ConsensusEngine()
+                
+                # Fetch News (via yfinance)
+                headlines = []
+                try:
+                    # 'df' has 'ticker' metadata sometimes, but safer to use yfinance directly or helper
+                    # src.data_loader doesn't expose .news directly.
+                    # We can use yfinance Ticker object.
+                    import yfinance as yf
+                    yf_ticker = yf.Ticker(ticker)
+                    news_list = yf_ticker.news
+                    if news_list:
+                        # Extract titles
+                        headlines = [n.get("title", "") for n in news_list if "title" in n]
+                        logger.info(f"Fetched {len(headlines)} headlines for {ticker}")
+                except Exception as e:
+                    logger.warning(f"Failed to fetch news for {ticker}: {e}")
+                
+                consensus_result = engine.deliberate(ticker, df, external_data=external_data, headlines=headlines)
+                
+                return SignalResponse(
+                    ticker=ticker,
+                    signal=consensus_result.get("signal", 0),
+                    confidence=consensus_result.get("confidence", 0.0),
+                    strategy="CONSENSUS (The Hive)",
+                    explanation=consensus_result.get("reason", ""),
+                    target_price=None, # Consensus doesn't set target price yet
+                )
     except HTTPException:
         raise
     except Exception as e:
