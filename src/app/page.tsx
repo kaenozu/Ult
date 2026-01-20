@@ -98,6 +98,10 @@ const NeuralTradingDaemon = dynamic(
   },
 );
 
+const NewsShockRadar = dynamic(
+  () => import("@/components/features/dashboard/NewsShockRadar"),
+);
+
 // Curated AI/Semiconductor focused stocks to watch
 const WATCHLIST = [
   { ticker: "6857.T", name: "アドバンテスト" },
@@ -214,14 +218,9 @@ export default function Home() {
                     <MarketStatusCard />
                     {/* Real-time Price Alerts */}
                     <PriceAlerts />
-                    {/* Top Row: Key Metrics & Radar */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                      <div className="md:col-span-2">
-                        <MarketSummary />
-                      </div>
-                      <div className="md:col-span-1">
-                        <NewsShockRadar />
-                      </div>
+                    {/* Top Row: News Radar */}
+                    <div className="mb-8">
+                      <NewsShockRadar />
                     </div>
 
                     {/* AI Advisor & Neural Monitor & Daemon */}
