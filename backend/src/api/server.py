@@ -33,8 +33,8 @@ from src.api.routers import (
     alerts,
     circuit_breaker,
     approvals,
-    replay, # Phase 10: The Time Machine
-    vision, # Phase 11: The Eyes of God
+    replay,  # Phase 10: The Time Machine
+    vision,  # Phase 11: The Eyes of God
 )
 
 
@@ -54,6 +54,12 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """アプリケーションのライフサイクル管理"""
     logger.info("Living Nexus API starting...")
+
+    # Validate required API keys at startup
+    if not app_settings.gemini_api_key and not app_settings.openai_api_key:
+        raise ValueError(
+            "At least one AI API key (GEMINI_API_KEY or OPENAI_API_KEY) is required"
+        )
 
     # Start background tasks using dependency injection
     from src.api.routers.websocket import start_regime_monitoring
@@ -108,11 +114,12 @@ def create_app() -> FastAPI:
     app.include_router(
         circuit_breaker.router, prefix="/api/v1", tags=["Risk Management"]
     )
-    
+
     # Phase 7: News Shock Defense
     from src.api.routers import shock_radar
+
     app.include_router(shock_radar.router, prefix="/api/v1", tags=["Risk Management"])
-    
+
     # Phase 10: The Time Machine (Replay & Analytics)
     app.include_router(replay.router)
 
@@ -120,7 +127,9 @@ def create_app() -> FastAPI:
     app.include_router(vision.router, prefix="/api/v1")
 
     # Administrative APIs
-    app.include_router(settings_router.router, prefix="/api/v1", tags=["Administration"])
+    app.include_router(
+        settings_router.router, prefix="/api/v1", tags=["Administration"]
+    )
     app.include_router(approvals.router, prefix="/api/v1", tags=["Administration"])
 
     # Real-time Communication
