@@ -26,6 +26,18 @@ export interface SignalResponse {
   entry_price?: number
   stop_loss?: number
   take_profit?: number
+  consensus_score?: number
+  details?: {
+    tech_vote?: number
+    news_vote?: number
+    vision_vote?: number
+    risk_vote?: number
+    risk_score?: number
+    tech?: number
+    news?: number
+    risk?: number
+    vision?: number
+  }
 }
 
 export interface MarketDataResponse {

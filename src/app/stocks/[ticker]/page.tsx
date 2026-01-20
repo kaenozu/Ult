@@ -12,16 +12,32 @@ import {
   TrendingUp,
   TrendingDown,
   AlertCircle,
+  Eye,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
-// Helper to decode URL-encoded ticker (e.g., 7203%2ET -> 7203.T)
-const decodeTicker = (t: string) => decodeURIComponent(t)
+import { useState } from 'react'
+import VisionPanel from '@/components/features/vision/VisionPanel'
+import { useChartCapture } from '@/hooks/useChartCapture'
+import DiaryGallery from '@/components/features/vision/DiaryGallery'
 
 export default function StockDetailPage() {
   const params = useParams()
   const ticker = decodeTicker(params.ticker as string)
+
+  // Vision State
+  const [visionOpen, setVisionOpen] = useState(false)
+  const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const { capture, isCapturing } = useChartCapture()
+
+  const handleVisionAnalyze = async () => {
+    // Capture the chart container
+    const img = await capture('price-chart-container')
+    if (img) {
+      setCapturedImage(img)
+      setVisionOpen(true)
+    }
+  }
 
   const { data: marketData, isLoading: isMarketLoading } = useQuery({
     queryKey: ['market', ticker],
@@ -29,6 +45,7 @@ export default function StockDetailPage() {
     refetchInterval: 5000,
   })
 
+  // ... (existing queries)
   const { data: chartData, isLoading: isChartLoading } = useQuery({
     queryKey: ['chart', ticker],
     queryFn: () => getChartData(ticker, '1y'),
@@ -39,6 +56,7 @@ export default function StockDetailPage() {
     queryFn: () => getSignal(ticker, 'RSI'), // Use RSI for non-zero confidence
   })
 
+  // ... (loading state check)
   const isLoading = isMarketLoading || isChartLoading || isSignalLoading
 
   if (isLoading) {
@@ -53,7 +71,7 @@ export default function StockDetailPage() {
     return <div className="p-8 text-center">Stock not found</div>
   }
 
-  // Determine signal color/text
+  // Determine signal color/text (existing logic)
   const signal = signalData?.signal || 0
   let signalText = '様子見 (Wait)'
   let signalColor = 'text-yellow-500'
@@ -134,12 +152,22 @@ export default function StockDetailPage() {
 
         {/* Chart */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm text-muted-foreground">
               Price History (1 Year)
             </CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2 border-purple-500/30 hover:bg-purple-500/10 hover:text-purple-400"
+              onClick={handleVisionAnalyze}
+              disabled={isCapturing}
+            >
+              <Eye className="w-4 h-4" />
+              {isCapturing ? 'Scanning...' : 'Analyze Vision'}
+            </Button>
           </CardHeader>
-          <CardContent className="p-0 pb-4">
+          <CardContent className="p-0 pb-4" id="price-chart-container">
             {chartData && (
               <PriceChart
                 data={chartData}
@@ -180,6 +208,20 @@ export default function StockDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Vision Panel */}
+      <VisionPanel
+        isOpen={visionOpen}
+        onClose={() => setVisionOpen(false)}
+        ticker={ticker}
+        image={capturedImage}
+      />
+
+      {/* Screenshot Diary Gallery */}
+      <div className="max-w-4xl mx-auto px-4 mt-8 mb-20">
+        <DiaryGallery ticker={ticker} />
+      </div>
+
     </main>
   )
 }
