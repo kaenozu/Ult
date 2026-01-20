@@ -96,7 +96,7 @@ export function ApprovalCard({ request, onClose }: ApprovalCardProps) {
       // Immediately close the card (ephemeral UI)
       onClose();
     } catch (error) {
-      console.error('Failed to send approval response:', error);
+      
       setIsResponding(false);
     }
   };

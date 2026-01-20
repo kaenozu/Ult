@@ -78,7 +78,7 @@ export function useApprovalSync() {
         return valid;
       }
     } catch (err) {
-      console.error("Failed to load approvals from storage:", err);
+      
     }
 
     return [];
@@ -90,7 +90,7 @@ export function useApprovalSync() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(approvalsToSave));
     } catch (err) {
-      console.error("Failed to save approvals to storage:", err);
+      
     }
   }, []);
 
@@ -102,7 +102,7 @@ export function useApprovalSync() {
         );
         return response.data;
       } catch (err) {
-        console.error("Failed to sync approvals from Redis:", err);
+        
         return null;
       }
     }, []);

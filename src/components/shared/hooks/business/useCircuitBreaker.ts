@@ -83,7 +83,7 @@ export function useCircuitBreaker(
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("CircuitBreaker WebSocket connected");
+      
       ws.send(
         JSON.stringify({
           msg_id: crypto.randomUUID(),
@@ -139,16 +139,16 @@ export function useCircuitBreaker(
           resetHandlersRef.current.forEach((handler) => handler(payload));
         }
       } catch (error) {
-        console.error("Error processing circuit breaker message:", error);
+        
       }
     };
 
     ws.onerror = (error) => {
-      console.error("CircuitBreaker WebSocket error:", error);
+      
     };
 
     ws.onclose = () => {
-      console.log("CircuitBreaker WebSocket closed");
+      
     };
   }, [wsUrl]);
 
@@ -185,7 +185,7 @@ export function useCircuitBreaker(
         }));
       }
     } catch (error) {
-      console.error("Failed to refresh circuit breaker status:", error);
+      
     }
   }, []);
 
@@ -206,7 +206,7 @@ export function useCircuitBreaker(
         }
         return false;
       } catch (error) {
-        console.error("Failed to activate kill switch:", error);
+        
         return false;
       }
     },
@@ -227,7 +227,7 @@ export function useCircuitBreaker(
       }
       return false;
     } catch (error) {
-      console.error("Failed to deactivate kill switch:", error);
+      
       return false;
     }
   }, [refreshStatus]);
@@ -245,7 +245,7 @@ export function useCircuitBreaker(
         }
         return false;
       } catch (error) {
-        console.error("Failed to reset circuit breaker:", error);
+        
         return false;
       }
     },

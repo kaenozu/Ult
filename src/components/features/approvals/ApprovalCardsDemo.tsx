@@ -50,7 +50,7 @@ export function ApprovalCardsDemo() {
       // In production, this would come from the backend
       send(testRequest as any);
     } catch (error) {
-      console.error("Failed to send test approval:", error);
+      
       alert("Failed to send test approval request");
     } finally {
       setIsSending(false);

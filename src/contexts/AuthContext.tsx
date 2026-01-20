@@ -49,32 +49,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           name: 'Admin User',
         };
         setUser(mockUser);
-        localStorage.setItem('user', JSON.stringify(mockUser));
+        sessionStorage.setItem('user', JSON.stringify(mockUser));
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Login error:', error);
+      
       return false;
     }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
   };
 
   const isAuthenticated = user !== null;
 
   useEffect(() => {
-    // ローカルストレージからユーザー情報を復元
-    const savedUser = localStorage.getItem('user');
+    // セッションストレージからユーザー情報を復元
+    const savedUser = sessionStorage.getItem('user');
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('user');
+        
+        sessionStorage.removeItem('user');
       }
     }
   }, []);

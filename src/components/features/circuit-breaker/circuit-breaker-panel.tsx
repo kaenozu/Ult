@@ -47,10 +47,10 @@ export function CircuitBreakerPanel({
 
   React.useEffect(() => {
     onTripped((payload) => {
-      console.log("Circuit breaker tripped:", payload);
+      
     });
     onReset((payload) => {
-      console.log("Circuit breaker reset:", payload);
+      
     });
   }, [onTripped, onReset]);
 

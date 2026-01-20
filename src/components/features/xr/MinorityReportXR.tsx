@@ -201,7 +201,7 @@ function XRScene() {
   ]);
 
   const handleChartGrab = (chartId: string) => {
-    console.log(`Grabbed chart: ${chartId}`);
+    
   };
 
   return (

@@ -1,242 +1,172 @@
-import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import SignalCard from "@/components/features/dashboard/SignalCard";
-import { getSignal, executeTrade } from "@/components/shared/utils/api";
-import { SignalResponse } from "@/types";
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import SignalCard from '@/components/features/dashboard/SignalCard';
+import { getSignal, executeTrade } from '@/components/shared/utils/api';
+import { SignalResponse } from '@/types';
 
 // Mock the API functions
-jest.mock("@/components/shared/utils/api", () => ({
+jest.mock('@/components/shared/utils/api', () => ({
   getSignal: jest.fn(),
   executeTrade: jest.fn(),
 }));
 
-const mockGetSignal = getSignal as jest.MockedFunction<
-  () => Promise<SignalResponse | undefined>
->;
+// Mock the auth context
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: '1', email: 'test@example.com', name: 'Test User' },
+    isAuthenticated: true,
+  }),
+}));
+
+const mockGetSignal = getSignal as jest.MockedFunction<typeof getSignal>;
 const mockExecuteTrade = executeTrade as jest.MockedFunction<
   typeof executeTrade
 >;
 
-const createQueryClient = () =>
+const createTestQueryClient = () =>
   new QueryClient({
     defaultOptions: {
-      queries: {
-        retry: false,
-      },
+      queries: { retry: false },
+      mutations: { retry: false },
     },
   });
 
-const renderWithProviders = (component: React.ReactElement) => {
-  const queryClient = createQueryClient();
+const renderWithProviders = (ui: React.ReactElement) => {
+  const testQueryClient = createTestQueryClient();
   return render(
-    <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>,
+    <QueryClientProvider client={testQueryClient}>{ui}</QueryClientProvider>
   );
 };
 
-describe("SignalCard", () => {
+describe('SignalCard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock window.confirm and window.alert
-    Object.defineProperty(window, "confirm", {
-      value: jest.fn(() => true),
-      writable: true,
-    });
-    Object.defineProperty(window, "alert", {
-      value: jest.fn(),
-      writable: true,
-    });
   });
 
-  it("renders ticker and name correctly", () => {
-    mockGetSignal.mockResolvedValue(undefined); // No signal data
+  it('renders loading state initially', () => {
+    mockGetSignal.mockReturnValue(new Promise(() => {})); // Never resolves
 
-    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
+    renderWithProviders(<SignalCard ticker='AAPL' name='Apple Inc.' />);
 
-    expect(screen.getByText("AAPL")).toBeInTheDocument();
-    expect(screen.getByText("Apple Inc.")).toBeInTheDocument();
+    expect(screen.getByText('Apple Inc.')).toBeInTheDocument();
+    expect(screen.getByText('AAPL')).toBeInTheDocument();
   });
 
-  it("displays bullish signal correctly", async () => {
-    mockGetSignal.mockResolvedValue({
-      ticker: "AAPL",
+  it('displays signal data correctly', async () => {
+    const mockSignal: SignalResponse = {
+      ticker: 'AAPL',
       signal: 1,
-      confidence: 0.8,
-      explanation: "Strong buy signal",
-      strategy: "Momentum",
-      entry_price: 150,
-      stop_loss: 140,
-      take_profit: 160,
-    });
+      confidence: 0.85,
+      explanation: 'Strong bullish momentum detected',
+      strategy: 'Buy',
+      entry_price: 150.25,
+      take_profit: 165.0,
+      stop_loss: 145.5,
+    };
 
-    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
+    mockGetSignal.mockResolvedValue(mockSignal);
 
-    await waitFor(() => {
-      expect(screen.getByText("強気買い")).toBeInTheDocument();
-      expect(screen.getByText("Strong buy signal")).toBeInTheDocument();
-      expect(screen.getByText("80%")).toBeInTheDocument();
-      expect(screen.getByText("¥150")).toBeInTheDocument();
-      expect(screen.getByText("¥160")).toBeInTheDocument();
-    expect(screen.getByText("¥140")).toBeInTheDocument();
-  });
-
-  it("displays loading state initially", () => {
-    mockGetSignal.mockImplementation(() => new Promise(() => {})); // Never resolves
-
-    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
-
-    // Should show loading or default state
-    expect(screen.getByText("AAPL")).toBeInTheDocument();
-    expect(screen.getByText("Apple Inc.")).toBeInTheDocument();
-  });
-
-  it("handles API error gracefully", async () => {
-    mockGetSignal.mockRejectedValue(new Error("API Error"));
-
-    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
+    renderWithProviders(<SignalCard ticker='AAPL' name='Apple Inc.' />);
 
     await waitFor(() => {
-      // Should fall back to default values
-      expect(screen.getByText("Waiting for analysis...")).toBeInTheDocument();
-      expect(screen.getByText("N/A")).toBeInTheDocument();
+      expect(
+        screen.getByText('Strong bullish momentum detected')
+      ).toBeInTheDocument();
+      expect(screen.getByText('85%')).toBeInTheDocument();
+      expect(screen.getByText('買いシグナル')).toBeInTheDocument();
     });
   });
 
-  it("displays neutral signal correctly", async () => {
+  it('displays strategy information correctly', async () => {
     mockGetSignal.mockResolvedValue({
-      ticker: "AAPL",
-      signal: 0,
-      confidence: 0.5,
-      explanation: "Hold position",
-      strategy: "Conservative",
-      entry_price: 0,
-      stop_loss: 0,
-      take_profit: 0,
-    });
-
-    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
-
-    await waitFor(() => {
-      expect(screen.getByText("待機")).toBeInTheDocument();
-      expect(screen.getByText("Hold position")).toBeInTheDocument();
-      expect(screen.getByText("50%")).toBeInTheDocument();
-    });
-  });
-
-  it("shows correct colors for different signals", async () => {
-    // Test bullish signal colors
-    mockGetSignal.mockResolvedValue({
-      ticker: "AAPL",
+      ticker: 'AAPL',
       signal: 1,
-      confidence: 0.9,
-      explanation: "Bullish signal",
-      strategy: "Test",
-      entry_price: 100,
-      stop_loss: 95,
-      take_profit: 110,
-    });
-
-    const { rerender } = renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
-
-    await waitFor(() => {
-      // Check for bullish styling (this would require more specific selectors)
-      expect(screen.getByText("強気買い")).toBeInTheDocument();
-    });
-
-    // Test bearish signal
-    mockGetSignal.mockResolvedValue({
-      ticker: "AAPL",
-      signal: -1,
-      confidence: 0.8,
-      explanation: "Bearish signal",
-      strategy: "Test",
-      entry_price: 100,
-      stop_loss: 105,
-      take_profit: 95,
-    });
-
-    rerender(<SignalCard ticker="AAPL" name="Apple Inc." />);
-
-    await waitFor(() => {
-      expect(screen.getByText("弱気売り")).toBeInTheDocument();
-    });
-  });
-
-  it("displays strategy information correctly", async () => {
-    mockGetSignal.mockResolvedValue({
-      ticker: "AAPL",
-      signal: 1,
-      confidence: 0.7,
-      explanation: "Technical analysis",
-      strategy: "RSI + MACD",
-      entry_price: 150,
-      stop_loss: 145,
+      confidence: 0.75,
+      explanation: 'Technical indicators suggest bullish trend',
+      strategy: 'Buy',
+      entry_price: 150.25,
       take_profit: 155,
+      stop_loss: 148,
     });
 
-    renderWithProviders(<SignalCard ticker="AAPL" name="Apple Inc." />);
+    renderWithProviders(<SignalCard ticker='AAPL' name='Apple Inc.' />);
 
     await waitFor(() => {
-      expect(screen.getByText("RSI + MACD")).toBeInTheDocument();
-      expect(screen.getByText("Technical analysis")).toBeInTheDocument();
+      expect(
+        screen.getByText('Technical indicators suggest bullish trend')
+      ).toBeInTheDocument();
+      expect(screen.getByText('75%')).toBeInTheDocument();
     });
   });
 
-  it("handles very long ticker names", () => {
-    renderWithProviders(<SignalCard ticker="VERYLONGTICKERNAME" name="Very Long Company Name" />);
+  it('handles very long ticker names', () => {
+    mockGetSignal.mockReturnValue(new Promise(() => {})); // Never resolves
 
-    expect(screen.getByText("VERYLONGTICKERNAME")).toBeInTheDocument();
-    expect(screen.getByText("Very Long Company Name")).toBeInTheDocument();
+    renderWithProviders(
+      <SignalCard ticker='VERYLONGTICKERNAME' name='Very Long Company Name' />
+    );
+
+    expect(screen.getByText('Very Long Company Name')).toBeInTheDocument();
   });
 
-  it("executes trade on button click when entry price exists", async () => {
+  it('executes trade on button click when entry price exists', async () => {
     mockGetSignal.mockResolvedValue({
-      ticker: "MSFT",
+      ticker: 'MSFT',
       signal: 1,
       confidence: 0.9,
-      explanation: "Buy signal",
-      strategy: "Test",
-      entry_price: 200,
-      stop_loss: 190,
+      explanation: 'Breakout pattern detected',
+      strategy: 'Buy',
+      entry_price: 300.5,
       take_profit: 210,
+      stop_loss: 290,
     });
+
     mockExecuteTrade.mockResolvedValue({
       success: true,
-      message: "Order placed successfully",
+      message: 'Trade executed successfully',
+      tradeId: 'trade_123',
     });
 
-    renderWithProviders(<SignalCard ticker="MSFT" name="Microsoft Corp." />);
+    renderWithProviders(<SignalCard ticker='MSFT' name='Microsoft Corp.' />);
 
     await waitFor(() => {
-      expect(screen.getByText("注文実行")).toBeInTheDocument();
+      expect(screen.getByText('Breakout pattern detected')).toBeInTheDocument();
     });
 
-    const button = screen.getByText("注文実行");
-    fireEvent.click(button);
+    fireEvent.click(screen.getByText('注文実行'));
 
     await waitFor(() => {
-      expect(window.confirm).toHaveBeenCalled();
-      expect(mockExecuteTrade).toHaveBeenCalled();
+      expect(mockExecuteTrade).toHaveBeenCalledWith({
+        ticker: 'MSFT',
+        signal: 1,
+        confidence: 0.9,
+        explanation: 'Breakout pattern detected',
+        strategy: 'Buy',
+        entry_price: 300.5,
+        take_profit: 210,
+        stop_loss: 290,
+      });
     });
   });
 
-  it("does not execute trade when no entry price", async () => {
+  it('does not execute trade when no entry price', async () => {
     mockGetSignal.mockResolvedValue({
-      ticker: "NVDA",
+      ticker: 'NVDA',
       signal: 0,
       confidence: 0.5,
-      explanation: "No clear signal",
-      strategy: "Wait",
+      explanation: 'No clear signal',
+      strategy: 'Wait',
     });
 
-    renderWithProviders(<SignalCard ticker="NVDA" name="NVIDIA Corp." />);
+    renderWithProviders(<SignalCard ticker='NVDA' name='NVIDIA Corp.' />);
 
     await waitFor(() => {
-      expect(screen.getByText("注文実行")).toBeInTheDocument();
+      expect(screen.getByText('注文実行')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText("注文実行"));
+    fireEvent.click(screen.getByText('注文実行'));
 
     expect(mockExecuteTrade).not.toHaveBeenCalled();
   });

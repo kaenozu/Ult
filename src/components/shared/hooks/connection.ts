@@ -130,7 +130,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.warn("WebSocket already connected");
+      
       return;
     }
 
@@ -141,7 +141,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("WebSocket connected");
+        
         setStateInternal("connected");
         reconnectAttemptsRef.current = 0;
 
@@ -169,7 +169,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
 
           // Validate message structure
           if (!isAnyServerMessage(data)) {
-            console.error("Invalid message received:", data);
+            
             return;
           }
 
@@ -180,7 +180,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
             await handler(data as any);
           }
         } catch (error) {
-          console.error("Error processing message:", error);
+          
           errorHandlersRef.current.forEach((handler) =>
             handler(error as Error),
           );
@@ -188,14 +188,14 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
       };
 
       ws.onerror = (error) => {
-        console.error("WebSocket error:", error);
+        
         setStateInternal("error");
         const err = new Error("WebSocket connection error");
         errorHandlersRef.current.forEach((handler) => handler(err));
       };
 
       ws.onclose = (event) => {
-        console.log("WebSocket closed:", event.code, event.reason);
+        
         setStateInternal("disconnected");
 
         // Clear ping interval
@@ -217,7 +217,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
         }
       };
     } catch (error) {
-      console.error("Failed to create WebSocket connection:", error);
+      
       setStateInternal("error");
       errorHandlersRef.current.forEach((handler) => handler(error as Error));
     }
@@ -253,7 +253,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
 
   const send = useCallback((message: AnyClientMessage) => {
     if (wsRef.current?.readyState !== WebSocket.OPEN) {
-      console.warn("WebSocket not connected, cannot send message");
+      
       return;
     }
     wsRef.current.send(JSON.stringify(message));

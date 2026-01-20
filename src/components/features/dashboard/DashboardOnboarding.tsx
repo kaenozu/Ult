@@ -20,10 +20,10 @@ export default function DashboardOnboarding() {
             if (res.ok) {
                 window.location.reload();
             } else {
-                console.error("Failed to initialize");
+                
             }
         } catch (error) {
-            console.error(error);
+            
         } finally {
             setLoading(false);
         }

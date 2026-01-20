@@ -23,7 +23,7 @@ export function SwipeNotificationDemo() {
   const [isDemoMode, setIsDemoMode] = useState(false);
 
   const handleTradeExecute = () => {
-    console.log("Trade executed!");
+    
     showSystemAlert(
       "Trade Executed",
       "Your trade has been successfully executed.",

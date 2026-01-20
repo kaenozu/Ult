@@ -38,7 +38,7 @@ export default function AssetAllocation() {
           setData(chartData);
         }
       } catch (e) {
-        console.error(e);
+        
       }
     };
 

@@ -51,7 +51,7 @@ const EcosystemGraph = memo(function EcosystemGraph() {
     const ws = new WebSocket(config.websocket.url);
 
     ws.onopen = () => {
-      console.log('Connected to Realtime Synapse');
+      
       setWsConnected(true);
       ws.send(
         JSON.stringify({
@@ -93,7 +93,7 @@ const EcosystemGraph = memo(function EcosystemGraph() {
           }
         }
       } catch (e) {
-        console.error('WS Error:', e);
+        
       }
     };
 
@@ -172,7 +172,7 @@ const EcosystemGraph = memo(function EcosystemGraph() {
         enableNodeDrag={false}
         onNodeClick={(node: any) => {
           // Ghost in the Shell Interaction
-          console.log('Ghost accessing:', node.name);
+          
           setGhostMessage(`Analyzing ${node.name}... Correlation confirmed.`);
           setTimeout(() => setGhostMessage(null), 3000);
         }}

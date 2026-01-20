@@ -50,10 +50,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Enhanced error logging
     console.group("🚨 Error Boundary Caught Error");
-    console.error("Error:", error);
-    console.error("Error Info:", errorInfo);
-    console.error("Component Stack:", errorInfo.componentStack);
-    console.error("Retry Count:", retryCount);
+    
+    
+    
+    
     console.groupEnd();
 
     // Call optional error handler
@@ -133,7 +133,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
 
     // In a real app, send to error reporting service
-    console.log("Bug Report:", bugReport);
+    
 
     // Copy to clipboard for manual reporting
     navigator.clipboard?.writeText(JSON.stringify(bugReport, null, 2));
@@ -282,7 +282,7 @@ export const PageErrorBoundary: React.FC<{ children: ReactNode }> = ({
     maxRetries={3}
     onError={(error, errorInfo) => {
       // Send to error reporting service
-      console.error("Page Error:", { error, errorInfo });
+      
     }}
   >
     {children}

@@ -168,7 +168,7 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
               alert("注文失敗");
             }
           } catch (e) {
-            console.error(e);
+            
             alert("通信エラー");
           }
         }}

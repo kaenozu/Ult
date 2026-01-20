@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-// Input validation schema
+// Enhanced input validation schema
 const TradeRequestSchema = z.object({
   ticker: z
     .string()
-    .min(1)
-    .max(10)
-    .regex(/^[A-Z0-9.]+$/),
+    .min(1, 'Ticker symbol is required')
+    .max(10, 'Ticker symbol too long')
+    .regex(/^[A-Z0-9.\-\^=]+$/i, 'Invalid ticker format'),
   action: z.enum(['BUY', 'SELL']),
-  quantity: z.number().int().positive().max(1000000),
-  price: z.number().positive().max(10000000),
-  reason: z.string().max(500).optional(),
+  quantity: z
+    .number()
+    .int('Quantity must be an integer')
+    .positive('Quantity must be positive')
+    .max(1000000, 'Quantity exceeds maximum limit'),
+  price: z
+    .number()
+    .positive('Price must be positive')
+    .max(10000000, 'Price exceeds maximum limit')
+    .refine(val => Number.isFinite(val), 'Invalid price format'),
+  reason: z
+    .string()
+    .max(500, 'Reason too long')
+    .optional()
+    .refine(val => !val || val.trim().length > 0, 'Reason cannot be empty'),
 });
 
 // Rate limiting (simple in-memory for demo)
@@ -55,7 +67,6 @@ export async function GET() {
 
     return NextResponse.json(portfolio);
   } catch (error) {
-    console.error('Portfolio fetch error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -110,7 +121,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(tradeResult);
   } catch (error) {
-    console.error('Trade execution error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

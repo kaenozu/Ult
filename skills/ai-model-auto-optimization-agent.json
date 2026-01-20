@@ -1,0 +1,182 @@
+{
+  "name": "ai-model-auto-optimization-agent",
+  "description": "Advanced AI agent for automated model performance analysis, hyperparameter optimization, retraining pipelines, and ensemble creation with real-time monitoring",
+  "version": "1.0.0",
+  "author": "Trading Platform AI Team",
+  "category": "mlops-optimization",
+  "tags": ["machine-learning", "optimization", "automation", "ensemble", "hyperparameter"],
+  "compatibility": {
+    "python": ">=3.9",
+    "framework": "fastapi",
+    "dependencies": ["optuna", "bayesian-optimization", "lightgbm", "xgboost", "scikit-learn", "pandas", "numpy", "mlflow", "redis", "sqlalchemy"]
+  },
+  "capabilities": {
+    "model_analysis": {
+      "description": "Deep analysis of model performance metrics and drift detection",
+      "features": ["performance degradation detection", "data drift analysis", "concept drift identification", "feature importance tracking", "prediction confidence analysis"]
+    },
+    "hyperparameter_optimization": {
+      "description": "Advanced hyperparameter tuning using multiple optimization strategies",
+      "methods": ["Optuna TPE sampling", "Bayesian optimization", "Grid search for critical parameters", "Multi-objective optimization", "Early stopping with pruning"]
+    },
+    "automated_retraining": {
+      "description": "Intelligent automated retraining pipelines with quality gates",
+      "features": ["trigger-based retraining", "quality gate validation", "A/B testing framework", "shadow deployment", "rollback capabilities"]
+    },
+    "ensemble_creation": {
+      "description": "Dynamic ensemble creation and optimization",
+      "methods": ["weighted averaging", "stacking ensembles", "dynamic selection", "diversity maximization", "correlation analysis"]
+    },
+    "feature_engineering": {
+      "description": "Automated feature engineering and selection",
+      "features": ["automatic feature generation", "importance-based selection", "correlation analysis", "polynomial features", "interaction detection"]
+    }
+  },
+  "integration_points": {
+    "model_registry": {
+      "module": "src.mlops.model_registry",
+      "interface": "ModelRegistryService",
+      "methods": ["register_model", "get_model", "list_models", "delete_model"]
+    },
+    "monitoring": {
+      "module": "src.mlops.monitoring",
+      "interface": "MonitoringService",
+      "methods": ["track_metrics", "get_metrics", "alert_thresholds"]
+    },
+    "data_pipeline": {
+      "module": "src.core.data_pipeline",
+      "interface": "DataPipelineService",
+      "methods": ["get_training_data", "get_validation_data", "data_quality_check"]
+    },
+    "deployment": {
+      "module": "src.mlops.deployment",
+      "interface": "DeploymentService",
+      "methods": ["deploy_model", "rollback", "shadow_deploy", "ab_test"]
+    },
+    "storage": {
+      "module": "src.core.storage",
+      "interface": "StorageService",
+      "methods": ["save_model", "load_model", "save_metrics", "load_metrics"]
+    }
+  },
+  "configuration": {
+    "optimization_settings": {
+      "max_trials": 100,
+      "timeout_seconds": 3600,
+      "early_stopping_rounds": 50,
+      "cv_folds": 5,
+      "test_size": 0.2,
+      "random_state": 42
+    },
+    "performance_thresholds": {
+      "accuracy_drop_threshold": 0.05,
+      "performance_window_hours": 24,
+      "min_samples_for_retrain": 1000,
+      "ensemble_diversity_threshold": 0.7
+    },
+    "monitoring": {
+      "metrics_interval_seconds": 300,
+      "alert_cooldown_minutes": 60,
+      "drift_threshold": 0.1,
+      "confidence_threshold": 0.8
+    }
+  },
+  "api_endpoints": [
+    {
+      "path": "/api/v1/optimization/analyze",
+      "method": "POST",
+      "description": "Analyze current model performance and detect issues",
+      "parameters": {
+        "model_id": "string",
+        "analysis_type": "string",
+        "time_range": "string"
+      }
+    },
+    {
+      "path": "/api/v1/optimization/hyperparameter",
+      "method": "POST",
+      "description": "Start hyperparameter optimization",
+      "parameters": {
+        "model_id": "string",
+        "optimization_method": "string",
+        "parameters": "object"
+      }
+    },
+    {
+      "path": "/api/v1/optimization/retrain",
+      "method": "POST",
+      "description": "Trigger automated retraining pipeline",
+      "parameters": {
+        "model_id": "string",
+        "retrain_type": "string",
+        "quality_gates": "boolean"
+      }
+    },
+    {
+      "path": "/api/v1/optimization/ensemble",
+      "method": "POST",
+      "description": "Create and optimize ensemble models",
+      "parameters": {
+        "base_models": "array",
+        "ensemble_method": "string",
+        "optimization_target": "string"
+      }
+    },
+    {
+      "path": "/api/v1/optimization/status",
+      "method": "GET",
+      "description": "Get status of optimization processes",
+      "parameters": {
+        "process_id": "string"
+      }
+    }
+  ],
+  "implementation": {
+    "core_classes": ["ModelAnalyzer", "HyperparameterOptimizer", "AutoRetrainer", "EnsembleCreator", "FeatureEngineer", "OptimizationAgent"],
+    "main_entry": "src.skills.ai_model_auto_optimization.agent",
+    "dependencies": {
+      "internal": ["src.mlops.model_registry", "src.mlops.monitoring", "src.core.data_pipeline", "src.core.storage", "src.core.notifications"],
+      "external": ["optuna", "bayesian_optimization", "lightgbm", "xgboost", "sklearn", "mlflow", "redis"]
+    }
+  },
+  "error_handling": {
+    "retry_policy": {
+      "max_retries": 3,
+      "backoff_factor": 2,
+      "timeout_seconds": 300
+    },
+    "fallback_strategies": ["use_previous_best_model", "simplified_optimization", "manual_intervention_required"],
+    "alerting": {
+      "channels": ["slack", "email", "dashboard"],
+      "severity_levels": ["info", "warning", "error", "critical"]
+    }
+  },
+  "monitoring_metrics": [
+    "model_accuracy",
+    "prediction_latency",
+    "data_drift_score",
+    "feature_importance_drift",
+    "ensemble_diversity",
+    "retraining_success_rate",
+    "optimization_improvement",
+    "resource_utilization"
+  ],
+  "safety_checks": {
+    "pre_deployment": ["model_validation", "performance_regression_check", "bias_detection", "security_scan", "resource_usage_validation"],
+    "post_deployment": ["real_time_monitoring", "automated_rollback_conditions", "performance_tracking", "user_feedback_collection"]
+  },
+  "usage_examples": {
+    "basic_optimization": {
+      "description": "Basic model performance optimization",
+      "code": "agent.optimize_model(model_id='trading_model_v1')"
+    },
+    "hyperparameter_tuning": {
+      "description": "Advanced hyperparameter optimization",
+      "code": "agent.tune_hyperparameters(model_id='lgb_trader', method='optuna', trials=100)"
+    },
+    "ensemble_creation": {
+      "description": "Create optimized ensemble",
+      "code": "agent.create_ensemble(base_models=['lgb_1', 'xgb_2', 'rf_3'], method='weighted')"
+    }
+  }
+}

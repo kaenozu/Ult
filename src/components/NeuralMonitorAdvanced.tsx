@@ -143,7 +143,7 @@ export default function NeuralMonitor() {
 
         // Approvals
         onMessage<ApprovalRequestMessage>("approval_request", (msg) => {
-            console.log("Approval Request Received:", msg.payload);
+            
             setApprovalRequest(msg.payload);
         });
 
