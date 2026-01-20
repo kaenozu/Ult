@@ -7,9 +7,11 @@ import json
 import logging
 import os
 import sqlite3
+import time
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
@@ -18,6 +20,58 @@ logger = logging.getLogger(__name__)
 
 DATA_DIR = "data"
 DB_PATH = os.path.join(DATA_DIR, "agstock.db")
+
+
+class CacheManager:
+    """Simple in-memory cache with TTL support."""
+
+    def __init__(self):
+        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._default_ttl = 300  # 5 minutes
+
+    def get(self, key: str) -> Optional[Any]:
+        """Get cached value if not expired."""
+        if key in self._cache:
+            entry = self._cache[key]
+            if time.time() < entry['expires_at']:
+                logger.debug(f"Cache hit for key: {key}")
+                return entry['value']
+            else:
+                # Expired, remove
+                del self._cache[key]
+                logger.debug(f"Cache expired for key: {key}")
+        return None
+
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+        """Set cached value with TTL."""
+        expires_at = time.time() + (ttl or self._default_ttl)
+        self._cache[key] = {
+            'value': value,
+            'expires_at': expires_at
+        }
+        logger.debug(f"Cache set for key: {key}, expires in {ttl or self._default_ttl}s")
+
+    def invalidate(self, key: str) -> None:
+        """Invalidate specific cache entry."""
+        if key in self._cache:
+            del self._cache[key]
+            logger.debug(f"Cache invalidated for key: {key}")
+
+    def clear(self) -> None:
+        """Clear all cache entries."""
+        self._cache.clear()
+        logger.debug("Cache cleared")
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics."""
+        return {
+            'entries': len(self._cache),
+            'total_size': sum(len(str(entry['value'])) for entry in self._cache.values())
+        }
+
+
+# Global cache instance
+cache_manager = CacheManager()
 
 
 @dataclass
@@ -250,25 +304,54 @@ class DatabaseManager:
                 ),
             )
             conn.commit()
+
+        # Invalidate related caches
+        cache_manager.invalidate("latest_portfolio")
+        cache_manager.invalidate("portfolio_history_100")  # Common limit
+
         return portfolio_id
 
     def get_portfolio_history(self, limit: int = 100) -> List[Dict[str, Any]]:
-        """ポートフォリオ履歴取得"""
+        """ポートフォリオ履歴取得（キャッシュ対応）"""
+        cache_key = f"portfolio_history_{limit}"
+
+        # Try cache first
+        cached_result = cache_manager.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        # Query database
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT * FROM portfolio_history ORDER BY timestamp DESC LIMIT ?",
                 (limit,),
             )
-            return [dict(row) for row in cursor.fetchall()]
+            result = [dict(row) for row in cursor.fetchall()]
+
+        # Cache result for 5 minutes
+        cache_manager.set(cache_key, result, ttl=300)
+        return result
 
     def get_latest_portfolio(self) -> Optional[Dict[str, Any]]:
-        """最新ポートフォリオ取得"""
+        """最新ポートフォリオ取得（キャッシュ対応）"""
+        cache_key = "latest_portfolio"
+
+        # Try cache first
+        cached_result = cache_manager.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        # Query database
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM portfolio_history ORDER BY timestamp DESC LIMIT 1")
             row = cursor.fetchone()
-            return dict(row) if row else None
+            result = dict(row) if row else None
+
+        # Cache result for 1 minute (shorter TTL for latest data)
+        cache_manager.set(cache_key, result, ttl=60)
+        return result
 
     # Trade methods
     def save_trade(

@@ -45,18 +45,6 @@ from src.api.routers import (
     replay,  # Phase 10: The Time Machine
     vision,  # Phase 11: The Eyes of God
 )
-from src.api.routers import (
-    portfolio,
-    trading,
-    market,
-    settings as settings_router,
-    websocket,
-    alerts,
-    circuit_breaker,
-    approvals,
-    replay,  # Phase 10: The Time Machine
-    vision,  # Phase 11: The Eyes of God
-)
 
 
 from src.api.vibe_endpoints import router as vibe_router
@@ -186,18 +174,11 @@ def register_health_routes(app: FastAPI) -> None:
         """Application metrics for monitoring"""
         return metrics.get_metrics()
 
-    @app.get("/api/v1/health", response_model=HealthResponse)
-    async def health_check():
-        """詳細ヘルスチェック"""
-        return HealthResponse(
-            status="healthy",
-            timestamp=datetime.now().isoformat(),
-        )
-
 
 def setup_exception_handlers(app: FastAPI) -> None:
     """グローバル例外ハンドラを設定"""
-    from fastapi import HTTPException, Request, JSONResponse
+    from fastapi import HTTPException, Request
+    from fastapi.responses import JSONResponse
     from fastapi.exceptions import RequestValidationError
     from pydantic import ValidationError as PydanticValidationError
     import logging
@@ -249,33 +230,6 @@ def setup_exception_handlers(app: FastAPI) -> None:
             ErrorDetail(
                 field=".".join(str(loc) for loc in error["loc"]), message=error["msg"]
             )
-            for error in exc.errors()
-        ]
-        error_response, status_code = bad_request_error(
-            message="Data validation failed",
-            error_code="PYDANTIC_VALIDATION_ERROR",
-            errors=errors,
-        )
-        return JSONResponse(
-            status_code=status_code,
-            content=error_response.dict(exclude_none=True),
-        )
-        return JSONResponse(
-            status_code=status_code,
-            content=error_response.dict(exclude_none=True),
-        )
-
-    @app.exception_handler(PydanticValidationError)
-    async def pydantic_validation_handler(
-        request: Request, exc: PydanticValidationError
-    ):
-        """Pydanticバリデーションエラーハンドラ"""
-        logger.warning(f"Pydantic validation error: {exc.errors()}")
-        errors = [
-            {
-                "field": ".".join(str(loc) for loc in error["loc"]),
-                "message": error["msg"],
-            }
             for error in exc.errors()
         ]
         error_response, status_code = bad_request_error(
