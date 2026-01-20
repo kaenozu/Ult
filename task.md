@@ -66,6 +66,12 @@
     - [x] [API] Update `/signals/{ticker}` to call VisionAgent <!-- id: 30c -->
     - [x] [Verify] Test response time and scoring logic <!-- id: 30d -->
 
+- [x] **Phase 17: Sovereign Operations (Automation)** <!-- id: 31 -->
+    - [x] [Backend] Implement `Notifier` (Discord/Console) <!-- id: 31a -->
+    - [x] [Backend] Implement `SovereignScheduler` (APScheduler/Loop) <!-- id: 31b -->
+    - [x] [Script] Create `run_sovereign.py` (Daily Routine Entry Point) <!-- id: 31c -->
+    - [x] [Verify] Run a simulated "Day in the Life" (Headless) <!-- id: 31d -->
+
 - [ ] Phase 11: The Eyes of God (Multimodal Vision) <!-- id: 18 -->
     - [x] [UI] Chart Vision Analyst Interface <!-- id: 19 -->
         - [x] [Interaction] "Analyze Chart" Button & Capture Logic <!-- id: 19a -->
