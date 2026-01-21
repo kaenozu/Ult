@@ -7,6 +7,11 @@ from typing import Any, Dict, List, Optional
 
 import streamlit as st
 
+try:
+    from streamlit_javascript import st_javascript
+except ImportError:
+    st_javascript = None
+
 from src.design_tokens import ACTION_TYPES, RISK_LEVELS, SENTIMENT_LABELS, Colors
 from src.formatters import format_currency, format_percentage
 
@@ -303,7 +308,28 @@ def responsive_columns(mobile: int = 1, tablet: int = 2, desktop: int = 3):
         デフォルトでデスクトップレイアウトを返す。
         将来的にJavaScriptと連携して実装可能。
     """
-    # TODO: JavaScriptでデバイス幅を検出してst.session_stateに保存
+    # JavaScriptでデバイス幅を検出
+    if st_javascript and "device_type_detected" not in st.session_state:
+        # 画面幅を取得（ウィンドウサイズ変更には追従しないが、初期ロード時のデバイス判定には有効）
+        # unique keyを指定して再レンダリングを防ぐ
+        # Note: iframe内実行のため window.parent.innerWidth を使用
+        screen_width = st_javascript("window.parent.innerWidth", key="screen_width_detection")
+
+        # st_javascriptは初期ロード時に0やNoneを返すことがあるため、正の数値であることを確認
+        if screen_width is not None and isinstance(screen_width, (int, float)) and screen_width > 0:
+            if screen_width < 768:
+                st.session_state["device_type"] = "mobile"
+            elif screen_width < 1024:
+                st.session_state["device_type"] = "tablet"
+            else:
+                st.session_state["device_type"] = "desktop"
+
+            # 検出完了フラグ（リロードループ防止用）
+            st.session_state["device_type_detected"] = True
+
+            # デバイスタイプが変更された場合のみ再実行（チラつき防止）
+            # ただし、st_javascriptの返り値が得られた時点でRerunがかかる可能性がある
+
     device_type = st.session_state.get("device_type", "desktop")
 
     if device_type == "mobile":
