@@ -245,6 +245,7 @@ export default function Home() {
                 </div>
 
                 {/* In-App Swipe Notification Demo */}
+                {/* 
                 <section>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
@@ -258,7 +259,6 @@ export default function Home() {
                   <SwipeNotificationDemo />
                 </section>
 
-                {/* Instant Approval Cards Section */}
                 <section>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
@@ -271,6 +271,7 @@ export default function Home() {
                   </div>
                   <ApprovalCardsDemo />
                 </section>
+                */}
 
                 {/* Visuals First: AI Thinking Section */}
                 <section>

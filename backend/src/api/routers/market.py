@@ -26,7 +26,7 @@ async def get_market_regime(ticker: str):
     Uses RegimeClassifier with heuristic logic (V1).
     """
     try:
-        from src.data_loader import fetch_stock_data
+        from src.data_temp.data_loader import fetch_stock_data
         from src.evolution.regime_classifier import RegimeClassifier
         
         # Check cache (Simple in-memory for now)
@@ -170,6 +170,22 @@ async def get_market_watchlist():
         logger.error(f"Error fetching watchlist: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/market/earnings", response_model=List[dict])
+async def get_upcoming_earnings(days: int = 14):
+    """
+    Get list of stocks with earnings in the next N days.
+    """
+    try:
+        from src.data.earnings_provider import earnings_provider
+        from src.core.constants import JP_STOCKS
+        
+        # Check cache/fetch
+        results = earnings_provider.get_upcoming_earnings(JP_STOCKS, days_horizon=days)
+        return results
+    except Exception as e:
+        logger.error(f"Error getting earnings data: {e}")
+        return []
+
 @router.get("/market/{ticker}", response_model=MarketDataResponse)
 async def get_market_data(ticker: str):
     """銘柄の市場データを取得"""
@@ -258,7 +274,7 @@ async def get_signal(
         if strategy.upper() == "AUTO" or strategy.upper() == "CONSENSUS":
             from src.strategies.strategy_router import StrategyRouter
             from src.agents.consensus_engine import ConsensusEngine
-            from src.data_loader import fetch_external_data
+            from src.data_temp.data_loader import fetch_external_data
             
             # Fetch External Data for Risk Agent (VIX, etc.)
             external_data = fetch_external_data(period="3mo")
@@ -393,18 +409,3 @@ async def get_macro_data():
         logger.error(f"Error fetching macro data: {e}")
         return []
 
-@router.get("/market/earnings", response_model=List[dict])
-async def get_upcoming_earnings(days: int = 14):
-    """
-    Get list of stocks with earnings in the next N days.
-    """
-    try:
-        from src.data.earnings_provider import earnings_provider
-        from src.core.constants import JP_STOCKS
-        
-        # Check cache/fetch
-        results = earnings_provider.get_upcoming_earnings(JP_STOCKS, days_horizon=days)
-        return results
-    except Exception as e:
-        logger.error(f"Error getting earnings data: {e}")
-        return []

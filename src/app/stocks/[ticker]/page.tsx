@@ -1,7 +1,7 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getMarketData, getChartData, getSignal } from '@/components/shared/utils/api'
 import PriceChart from '@/components/features/dashboard/PriceChart'
 import TradingModal from '@/components/features/dashboard/TradingModal'
@@ -13,13 +13,17 @@ import {
   TrendingDown,
   AlertCircle,
   Eye,
+  Camera,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useState } from 'react'
 import VisionPanel from '@/components/features/vision/VisionPanel'
 import { useChartCapture } from '@/hooks/useChartCapture'
-import DiaryGallery from '@/components/features/vision/DiaryGallery'
+import DiaryGallery from '@/components/features/journal/DiaryGallery'
+
+// Helper to decode ticker
+const decodeTicker = (ticker: string) => decodeURIComponent(ticker)
 
 export default function StockDetailPage() {
   const params = useParams()
@@ -29,6 +33,29 @@ export default function StockDetailPage() {
   const [visionOpen, setVisionOpen] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const { capture, isCapturing } = useChartCapture()
+  const queryClient = useQueryClient()
+
+  const handleCaptureJournal = async () => {
+    const img = await capture('price-chart-container')
+    if (img) {
+      try {
+        const res = await fetch('/api/v1/journal/capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ticker,
+            image_base64: img,
+            timestamp: new Date().toISOString()
+          })
+        });
+        if (res.ok) {
+          queryClient.invalidateQueries({ queryKey: ['journal', ticker] })
+        }
+      } catch (e) {
+        console.error("Failed to save journal entry", e);
+      }
+    }
+  }
 
   const handleVisionAnalyze = async () => {
     // Capture the chart container
@@ -165,6 +192,16 @@ export default function StockDetailPage() {
             >
               <Eye className="w-4 h-4" />
               {isCapturing ? 'Scanning...' : 'Analyze Vision'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2 border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-400"
+              onClick={handleCaptureJournal}
+              disabled={isCapturing}
+            >
+              <Camera className="w-4 h-4" />
+              Capture Journal
             </Button>
           </CardHeader>
           <CardContent className="p-0 pb-4" id="price-chart-container">

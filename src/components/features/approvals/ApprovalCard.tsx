@@ -11,7 +11,7 @@ import {
   ApprovalStatus,
   ApprovalResponsePayload,
 } from "@/components/shared/websocket";
-import { useSynapse } from "@/components/shared/hooks/useSynapse";
+import { useSynapse } from "@/components/shared/hooks/connection";
 
 interface ApprovalCardProps {
   request: ApprovalRequestPayload;
@@ -115,15 +115,14 @@ export function ApprovalCard({ request, onClose }: ApprovalCardProps) {
       className="fixed top-4 right-4 z-50 max-w-md w-full"
     >
       <Card
-        className={`shadow-lg border-l-4 ${
-          request.priority === "critical"
+        className={`shadow-lg border-l-4 ${request.priority === "critical"
             ? "border-l-red-500"
             : request.priority === "high"
               ? "border-l-orange-500"
               : request.priority === "medium"
                 ? "border-l-yellow-500"
                 : "border-l-blue-500"
-        }`}
+          }`}
       >
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -143,13 +142,12 @@ export function ApprovalCard({ request, onClose }: ApprovalCardProps) {
               {!isExpired && (
                 <Badge
                   variant="outline"
-                  className={`text-xs ${
-                    timeLeft < 30000
+                  className={`text-xs ${timeLeft < 30000
                       ? "bg-red-100 text-red-800 border-red-200 animate-pulse"
                       : timeLeft < 60000
                         ? "bg-yellow-100 text-yellow-800 border-yellow-200"
                         : "bg-green-100 text-green-800 border-green-200"
-                  }`}
+                    }`}
                 >
                   {formatTimeLeft(timeLeft)}
                 </Badge>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRegimeStream } from '@/components/shared/hooks/useSynapse';
+import { useRegimeStream } from '@/components/shared/hooks/connection';
 import { MarketRegime } from '@/components/shared/websocket';
 import { Activity, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 

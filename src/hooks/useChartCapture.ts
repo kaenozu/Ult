@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image-more';
 
 interface UseChartCaptureReturn {
   capture: (elementId: string) => Promise<string | null>;
@@ -20,20 +20,23 @@ export const useChartCapture = (): UseChartCaptureReturn => {
         throw new Error(`Element with id '${elementId}' not found`);
       }
 
-      // Add a small delay for any animations to settle if needed, or capturing instant state
-      // Capture
-      const canvas = await html2canvas(element, {
-        backgroundColor: '#111827', // Ensure dark background
-        logging: false,
-        useCORS: true,
-        scale: 1,
-      } as any);
+      // 1. Force background color to avoid transparency issues
+      // 2. Filter out problematic nodes if necessary (optional)
+      const dataUrl = await domtoimage.toPng(element, {
+        bgcolor: '#111827', // Tailwind gray-900
+        quality: 1.0,
+        // Optional: filter out elements that don't need to be captured
+        // filter: (node) => node.tagName !== 'BUTTON', 
+      });
 
-      const base64Image = canvas.toDataURL('image/png');
       setIsCapturing(false);
-      return base64Image;
+      return dataUrl;
     } catch (err: any) {
       console.error("Capture failed:", err);
+      // Fallback or specific error handling
+      if (err.message && err.message.includes("lab")) {
+        // Known issue with some color spaces, but dom-to-image should handle better or fail differently
+      }
       setError(err.message || 'Capture failed');
       setIsCapturing(false);
       return null;

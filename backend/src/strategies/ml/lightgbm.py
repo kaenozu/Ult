@@ -8,7 +8,7 @@ from ..base import Strategy
 
 # Update relative imports to match new depth
 from ...features import add_advanced_features, add_macro_features
-from ...data_loader import fetch_macro_data
+from src.data_temp.data_loader import fetch_macro_data
 from ...optimization.optuna_tuner import OptunaTuner
 from ...oracle.oracle_2026 import Oracle2026
 

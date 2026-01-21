@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSynapse } from "@/components/shared/hooks/useSynapse";
+import { useSynapse } from "@/components/shared/hooks/connection";
 import { ApprovalType } from "@/components/shared/websocket";
 import { MessageFactory } from "@/components/shared/websocket";
 

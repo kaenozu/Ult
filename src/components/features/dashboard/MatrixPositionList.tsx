@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { getPositions } from "@/components/shared/utils/api";
-import { usePositionRow } from "@/components/shared/hooks/usePositionRow";
+import { usePositionRow } from "@/components/shared/hooks/business/usePositionRow";
 import TradingModal from "./TradingModal";
 import Link from "next/link";
 import { Position } from "@/types";
@@ -85,11 +85,10 @@ function MatrixPositionRow({ position, index }: MatrixPositionRow) {
               <button
                 className={`
                 px-3 py-1 text-xs font-mono border transition-all duration-200
-                ${
-                  showAlert
+                ${showAlert
                     ? "bg-red-500/20 border-red-500/60 text-red-400 hover:bg-red-500/30"
                     : "bg-green-500/20 border-green-500/60 text-green-400 hover:bg-green-500/30"
-                }
+                  }
               `}
               >
                 [EXECUTE_SELL]
@@ -176,7 +175,7 @@ export default function MatrixPositionList() {
     );
   }
 
-  if (!positions || positions.length === 0) {
+  if (!positions || !Array.isArray(positions) || positions.length === 0) {
     return (
       <div className="border border-green-500/40 bg-slate-900/40 p-8 text-center">
         <div className="text-green-400 font-mono mb-2">
@@ -208,7 +207,7 @@ export default function MatrixPositionList() {
 
       {/* Position Rows */}
       <div className="space-y-3">
-        {positions.map((pos, index) => (
+        {Array.isArray(positions) && positions.map((pos, index) => (
           <div key={pos.ticker} className="relative">
             <MatrixPositionRow position={pos} index={index} />
           </div>
