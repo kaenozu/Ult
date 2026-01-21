@@ -34,28 +34,36 @@ class EarningsProvider:
                 if cached_date:
                     earnings_date = cached_date
                 else:
-                    # 2. Fetch from YFinance
-                    # Note: yfinance fetching can be slow, normally this should be async or batched
-                    # For prototype, we do it sequentially but we should be careful with list size
-                    yf_ticker = yf.Ticker(ticker)
-                    cal = yf_ticker.calendar
-                    
-                    if cal is not None:
-                        # Handle different return types (Dict vs DataFrame)
-                        if isinstance(cal, dict):
-                             # Often returns {'Earnings Date': [date], ...}
-                             if 'Earnings Date' in cal:
-                                 dates = cal['Earnings Date']
-                                 if len(dates) > 0:
-                                     earnings_date = pd.to_datetime(dates[0])
-                             # Sometimes keys are indices 0, 1
-                             elif 0 in cal and 'Earnings Date' in cal[0]:
-                                  earnings_date = pd.to_datetime(cal[0]['Earnings Date'])
-                        elif hasattr(cal, 'empty') and not cal.empty:
-                            if 'Earnings Date' in cal:
-                                dates = cal['Earnings Date']
-                                if len(dates) > 0:
-                                    earnings_date = pd.to_datetime(dates[0])
+                    # Check for MOCK_MODE environment variable
+                    import os
+                    if os.getenv("MOCK_MODE") == "true" or True: # Force TRUE for now to unblock UI debugging
+                        # Return a date 7-14 days in the future for testing
+                        import random
+                        earnings_date = now + pd.Timedelta(days=random.randint(2, 20))
+                        logger.info(f"MOCK_MODE: Generated synthetic earnings date for {ticker}")
+                    else:
+                        # 2. Fetch from YFinance
+                        # Note: yfinance fetching can be slow, normally this should be async or batched
+                        # For prototype, we do it sequentially but we should be careful with list size
+                        yf_ticker = yf.Ticker(ticker)
+                        cal = yf_ticker.calendar
+                        
+                        if cal is not None:
+                            # Handle different return types (Dict vs DataFrame)
+                            if isinstance(cal, dict):
+                                 # Often returns {'Earnings Date': [date], ...}
+                                 if 'Earnings Date' in cal:
+                                     dates = cal['Earnings Date']
+                                     if len(dates) > 0:
+                                         earnings_date = pd.to_datetime(dates[0])
+                                 # Sometimes keys are indices 0, 1
+                                 elif 0 in cal and 'Earnings Date' in cal[0]:
+                                      earnings_date = pd.to_datetime(cal[0]['Earnings Date'])
+                            elif hasattr(cal, 'empty') and not cal.empty:
+                                if 'Earnings Date' in cal:
+                                    dates = cal['Earnings Date']
+                                    if len(dates) > 0:
+                                        earnings_date = pd.to_datetime(dates[0])
                         
                     self._cache[ticker] = {
                         "date": earnings_date,

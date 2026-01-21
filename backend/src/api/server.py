@@ -35,6 +35,7 @@ from src.api.routers import (
     approvals,
     replay, # Phase 10: The Time Machine
     vision, # Phase 11: The Eyes of God
+    journal, # Phase 11.5: Visual Journal
 )
 
 
@@ -118,6 +119,9 @@ def create_app() -> FastAPI:
 
     # Phase 11: The Eyes of God (Multimodal Vision)
     app.include_router(vision.router, prefix="/api/v1")
+    
+    # Phase 11.5: Visual Journal
+    app.include_router(journal.router, prefix="/api/v1")
 
     # Administrative APIs
     app.include_router(settings_router.router, prefix="/api/v1", tags=["Administration"])

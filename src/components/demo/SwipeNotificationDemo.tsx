@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useNotificationManager } from "@/components/shared/hooks/useNotificationManager";
+import { useNotificationManager } from "@/components/shared/hooks/ui/useNotificationManager";
 import { Badge } from "@/components/ui/badge";
 import { Bell, TrendingUp, AlertTriangle, Briefcase, Info } from "lucide-react";
 

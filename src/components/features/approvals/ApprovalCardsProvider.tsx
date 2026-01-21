@@ -1,7 +1,7 @@
 "use client";
 
 import { ApprovalCardContainer } from "@/components/features/approvals/ApprovalCard";
-import { useApprovalRequests } from "@/components/shared/hooks/useApprovalRequests";
+import { useApprovalRequests } from "@/components/shared/hooks/business/useApprovalRequests";
 
 export function ApprovalCardsProvider() {
   const { activeRequests, removeRequest } = useApprovalRequests();

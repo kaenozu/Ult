@@ -479,6 +479,17 @@ def fetch_stock_data(
     """Fetch price history for one or more tickers."""
     if not tickers:
         return {}
+    
+    # EMERGENCY MOCK MODE (Verify UI)
+    import pandas as pd
+    import numpy as np
+    mock_results = {}
+    for t in tickers:
+        prices = np.random.normal(100, 5, 100).tolist()
+        dates = pd.date_range(end=pd.Timestamp.now(), periods=100)
+        df = pd.DataFrame({"Open": prices, "High": prices, "Low": prices, "Close": prices, "Volume": 1000}, index=dates)
+        mock_results[t] = df
+    return mock_results
 
     if _should_use_async_loader(use_async, tickers):
         async_result = _attempt_async_fetch(tickers, period, interval)

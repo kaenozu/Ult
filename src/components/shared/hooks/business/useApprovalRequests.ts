@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useSynapse } from "./useSynapse";
+import { useSynapse } from "../connection";
 import {
   ApprovalRequestMessage,
   ApprovalRequestPayload,

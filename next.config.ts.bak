@@ -1,9 +1,9 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  experimental: {
-    optimizeCss: true,
-  },
+  // experimental: {
+  //   optimizeCss: true,
+  // },
   async rewrites() {
     return [
       {
@@ -11,12 +11,6 @@ const nextConfig: NextConfig = {
         destination: 'http://localhost:8000/api/:path*',
       },
     ]
-  },
-    ]
-=======
-  experimental: {
-    optimizeCss: true,
->>>>>>> origin/main
   },
   images: {
     domains: ['localhost'],

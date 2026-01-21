@@ -623,7 +623,20 @@ class DatabaseManager:
                 del data["analysis_json"] # APIレスポンス用に変換
                 results.append(data)
             return results
+            return results
 
+    def get_screenshot_by_id(self, record_id: str) -> Optional[Dict[str, Any]]:
+        """IDからスクリーンショット記録取得"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM screenshot_journal WHERE id = ?", (record_id,))
+            row = cursor.fetchone()
+            if row:
+                data = dict(row)
+                data["analysis_result"] = json.loads(data["analysis_json"]) if data["analysis_json"] else {}
+                del data["analysis_json"]
+                return data
+            return None
 
 
 db_manager = DatabaseManager()
