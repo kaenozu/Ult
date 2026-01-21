@@ -49,12 +49,15 @@ const NeuralMonitorUI: React.FC = () => {
   const [warningPulse, setWarningPulse] = useState(false);
 
   useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
     if (monitorState.isDangerous) {
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         setWarningPulse(prev => !prev);
       }, 500);
-      return () => clearInterval(interval);
     }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [monitorState.isDangerous]);
 
   const getTrafficLightColor = (level: SafetyLevel): string => {

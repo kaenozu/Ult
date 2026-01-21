@@ -51,37 +51,56 @@ export function calculateCorrelationMatrix(
     .map(() => Array(n).fill(0));
 
   for (let i = 0; i < n; i++) {
+    const dataI = stockData[i];
+    const rowI = matrix[i];
+    if (!dataI || !rowI) continue;
+
     for (let j = i; j < n; j++) {
-      const correlation = calculateCorrelation(
-        stockData[i].prices,
-        stockData[j].prices
-      );
-      matrix[i][j] = correlation;
-      matrix[j][i] = correlation;
+      const dataJ = stockData[j];
+      const rowJ = matrix[j];
+      if (!dataJ || !rowJ) continue;
+
+      const correlation = calculateCorrelation(dataI.prices, dataJ.prices);
+      rowI[j] = correlation;
+      rowJ[i] = correlation;
     }
   }
 
-  return matrix as Matrix;
+  return matrix;
 }
 
 export function transposeMatrix(matrix: Matrix): Matrix {
-  return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
+  if (matrix.length === 0 || !matrix[0]) return [];
+  const firstRow = matrix[0];
+  return firstRow.map((_, colIndex) =>
+    matrix.map((row) => (row && row[colIndex] !== undefined ? row[colIndex]! : 0)),
+  );
 }
 
 export function multiplyMatrices(a: Matrix, b: Matrix): Matrix {
   const aRows = a.length;
-  const aCols = a[0].length;
-  const bCols = b[0].length;
+  if (aRows === 0 || !a[0]) return [];
+  const aCols = a[0]!.length;
+  if (b.length === 0 || !b[0]) return [];
+  const bCols = b[0]!.length;
 
   const result: Matrix = Array(aRows)
     .fill(0)
     .map(() => Array(bCols).fill(0));
 
   for (let i = 0; i < aRows; i++) {
+    const rowA = a[i];
+    const rowRes = result[i];
+    if (!rowA || !rowRes) continue;
+
     for (let j = 0; j < bCols; j++) {
+      let sum = 0;
       for (let k = 0; k < aCols; k++) {
-        result[i][j] += a[i][k] * b[k][j];
+        const rowB = b[k];
+        if (!rowB) continue;
+        sum += (rowA[k] || 0) * (rowB[j] || 0);
       }
+      rowRes[j] = sum;
     }
   }
 
@@ -90,20 +109,25 @@ export function multiplyMatrices(a: Matrix, b: Matrix): Matrix {
 
 export function multiplyMatrixVector(matrix: Matrix, vector: Vector): Vector {
   const rows = matrix.length;
-  const cols = matrix[0].length;
+  if (rows === 0 || !matrix[0]) return [];
+  const cols = matrix[0]!.length;
   const result: Vector = Array(rows).fill(0);
 
   for (let i = 0; i < rows; i++) {
+    const row = matrix[i];
+    if (!row) continue;
+    let sum = 0;
     for (let j = 0; j < cols; j++) {
-      result[i] += matrix[i][j] * vector[j];
+      sum += (row[j] || 0) * (vector[j] || 0);
     }
+    result[i] = sum;
   }
 
   return result;
 }
 
 export function dotProduct(v1: Vector, v2: Vector): number {
-  return v1.reduce((sum, val, i) => sum + val * v2[i], 0);
+  return v1.reduce((sum, val, i) => sum + val * (v2[i] || 0), 0);
 }
 
 export function vectorLength(v: Vector): number {
@@ -117,7 +141,7 @@ export function normalizeVector(v: Vector): Vector {
 }
 
 export function subtractVectors(v1: Vector, v2: Vector): Vector {
-  return v1.map((val, i) => val - v2[i]);
+  return v1.map((val, i) => val - (v2[i] || 0));
 }
 
 export function multiplyVectorScalar(v: Vector, scalar: number): Vector {
@@ -180,8 +204,11 @@ export function calculatePCA(
     const outerProduct = multiplyMatrices(eigenVectorMatrix, transposeEV);
 
     for (let r = 0; r < n; r++) {
+      const rowRem = remainingMatrix[r];
+      const rowOuter = outerProduct[r];
+      if (!rowRem || !rowOuter) continue;
       for (let c = 0; c < n; c++) {
-        remainingMatrix[r][c] -= outerProduct[r][c] * eigenvalue;
+        rowRem[c] = (rowRem[c] || 0) - (rowOuter[c] || 0) * eigenvalue;
       }
     }
   }
@@ -193,7 +220,11 @@ export function calculatePCA(
   for (let i = 0; i < n; i++) {
     const point: [number, number, number] = [0, 0, 0];
     for (let j = 0; j < numComponents; j++) {
-      point[j] = eigenvectors[j][i] * Math.sqrt(Math.abs(eigenvalues[j]));
+      const ev = eigenvectors[j];
+      const evalue = eigenvalues[j];
+      if (ev && evalue !== undefined) {
+        point[j as 0 | 1 | 2] = (ev[i] || 0) * Math.sqrt(Math.abs(evalue));
+      }
     }
     positions.push(point);
   }
@@ -215,7 +246,7 @@ export function calculateMDS(
 
   const rowMeans = squaredMatrix.map(row => row.reduce((a, b) => a + b, 0) / n);
   const colMeans = squaredMatrix
-    .map((_, col) => squaredMatrix.reduce((sum, row) => sum + row[col], 0) / n)
+    .map((_, col) => squaredMatrix.reduce((sum, row) => sum + (row[col] || 0), 0) / n)
     .slice(0, n);
   const grandMean = rowMeans.reduce((a, b) => a + b, 0) / n;
 
@@ -224,9 +255,16 @@ export function calculateMDS(
     .map(() => Array(n).fill(0));
 
   for (let i = 0; i < n; i++) {
+    const rowB = bMatrix[i];
+    const rowSq = squaredMatrix[i];
+    if (!rowB || !rowSq) continue;
     for (let j = 0; j < n; j++) {
-      bMatrix[i][j] =
-        -0.5 * (squaredMatrix[i][j] - rowMeans[i] - colMeans[j] + grandMean);
+      rowB[j] =
+        -0.5 *
+        ((rowSq[j] || 0) -
+          (rowMeans[i] || 0) -
+          (colMeans[j] || 0) +
+          grandMean);
     }
   }
 
@@ -244,8 +282,11 @@ export function calculateMDS(
     const outerProduct = multiplyMatrices(eigenVectorMatrix, transposeEV);
 
     for (let r = 0; r < n; r++) {
+      const rowRem = remainingMatrix[r];
+      const rowOuter = outerProduct[r];
+      if (!rowRem || !rowOuter) continue;
       for (let c = 0; c < n; c++) {
-        remainingMatrix[r][c] -= outerProduct[r][c] * eigenvalue;
+        rowRem[c] = (rowRem[c] || 0) - (rowOuter[c] || 0) * eigenvalue;
       }
     }
   }
@@ -255,8 +296,9 @@ export function calculateMDS(
     const pos: [number, number, number] = [0, 0, 0];
     for (let d = 0; d < numDimensions; d++) {
       const eigenvalue = eigenvalues[d];
-      if (eigenvalue > 0) {
-        pos[d] = eigenvectors[d][i] * Math.sqrt(eigenvalue);
+      const ev = eigenvectors[d];
+      if (eigenvalue !== undefined && eigenvalue > 0 && ev) {
+        pos[d] = (ev[i] || 0) * Math.sqrt(eigenvalue);
       }
     }
     positions.push(pos);
@@ -288,12 +330,12 @@ export function generateMockStockPrices(
   const sectorsAssigned: string[] = [];
 
   for (let i = 0; i < numStocks; i++) {
-    const sectorIndex = i % sectors.length;
-    const prefix = sectors[sectorIndex].substring(0, 3).toUpperCase();
+    const sector = sectors[i % sectors.length] ?? "Other";
+    const prefix = sector.substring(0, 3).toUpperCase();
     symbols.push(`${prefix}${i}`);
     basePrices.push(50 + Math.random() * 150);
     volatilities.push(0.01 + Math.random() * 0.03);
-    sectorsAssigned.push(sectors[sectorIndex]);
+    sectorsAssigned.push(sector);
   }
 
   const marketTrend = Array(numDays)
@@ -308,18 +350,17 @@ export function generateMockStockPrices(
 
   return symbols.map((symbol, i) => {
     const prices: number[] = [];
-    let price = basePrices[i];
+    let price = basePrices[i] ?? 100;
 
     for (let day = 0; day < numDays; day++) {
-      const sectorIndex = sectorsAssigned[i]
-        ? sectors.indexOf(sectorsAssigned[i])
-        : 0;
+      const sName = sectorsAssigned[i];
+      const sectorIndex = sName ? sectors.indexOf(sName) : 0;
       const sectorTrend = sectorTrends[sectorIndex]?.[day] || 0;
 
       const change =
-        marketTrend[day] * 0.7 +
+        (marketTrend[day] || 0) * 0.7 +
         sectorTrend * 0.2 +
-        (Math.random() - 0.5) * volatilities[i];
+        (Math.random() - 0.5) * (volatilities[i] || 0.02);
 
       price = price * (1 + change);
       prices.push(price);
@@ -327,7 +368,7 @@ export function generateMockStockPrices(
 
     return {
       symbol,
-      sector: sectorsAssigned[i],
+      sector: sectorsAssigned[i] ?? "Other",
       prices,
     };
   });

@@ -130,6 +130,7 @@ export default function PositionList() {
     style: React.CSSProperties;
   }) => {
     const position = positions[index];
+    if (!position) return null;
     return (
       <div style={style} key={position.ticker}>
         <PositionRow position={position} />
@@ -151,6 +152,7 @@ export default function PositionList() {
         {shouldVirtualize ? (
           <List
             height={ITEM_HEIGHT * MAX_VISIBLE_ITEMS}
+            width="100%"
             itemCount={positions.length}
             itemSize={ITEM_HEIGHT}
             className='space-y-2'

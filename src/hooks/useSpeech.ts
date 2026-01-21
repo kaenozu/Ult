@@ -72,7 +72,8 @@ export function useSpeech(options: UseSpeechOptions = {}): UseSpeechReturn {
         utterance.volume = config.volume!
 
         // Try to find a matching voice
-        const preferredVoice = voices.find(v => v.lang.includes(config.lang!.split('-')[0]))
+        const langBase = config.lang!.split('-')[0] || 'ja'
+        const preferredVoice = voices.find(v => v.lang.includes(langBase))
         if (preferredVoice) {
             utterance.voice = preferredVoice
         }

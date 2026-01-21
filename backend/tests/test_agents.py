@@ -16,7 +16,7 @@ class TestAgents:
         config.system.data_dir = "data"
         return config
 
-    @patch("src.core.agent_loop.settings")
+    @patch("src.core.agent_loop.app_settings")
     def test_autonomous_agent_initialization(self, mock_settings, mock_config):
         """Test autonomous agent initialization."""
         mock_settings.return_value = mock_config
@@ -26,7 +26,7 @@ class TestAgents:
         assert hasattr(agent, "state")
         assert hasattr(agent, "memory")
 
-    @patch("src.agents.consensus_engine.settings")
+    @patch("src.agents.consensus_engine.app_settings")
     def test_consensus_engine_initialization(self, mock_settings, mock_config):
         """Test consensus engine initialization."""
         mock_settings.return_value = mock_config
@@ -35,7 +35,7 @@ class TestAgents:
         assert hasattr(engine, "agents")
         assert hasattr(engine, "consensus_threshold")
 
-    @patch("src.agents.consensus_engine.settings")
+    @patch("src.agents.consensus_engine.app_settings")
     def test_consensus_engine_add_agent(self, mock_settings, mock_config):
         """Test adding agents to consensus engine."""
         mock_settings.return_value = mock_config
@@ -47,7 +47,7 @@ class TestAgents:
         engine.add_agent(agent)
         assert "test_agent" in engine.agents
 
-    @patch("src.agents.consensus_engine.settings")
+    @patch("src.agents.consensus_engine.app_settings")
     @patch("src.agents.consensus_engine.logger")
     def test_consensus_engine_make_decision(
         self, mock_logger, mock_settings, mock_config
@@ -79,7 +79,7 @@ class TestAgents:
         assert decision["action"] in ["BUY", "SELL", "HOLD"]
 
     @patch("src.agents.news_agent.requests.get")
-    @patch("src.agents.news_agent.settings")
+    @patch("src.agents.news_agent.app_settings")
     def test_news_agent_sentiment_analysis(
         self, mock_settings, mock_requests, mock_config
     ):
@@ -103,7 +103,7 @@ class TestAgents:
         assert isinstance(sentiment, float)
         assert -1 <= sentiment <= 1
 
-    @patch("src.agents.vision_agent.settings")
+    @patch("src.agents.vision_agent.app_settings")
     def test_vision_agent_initialization(self, mock_settings, mock_config):
         """Test vision agent initialization."""
         mock_settings.return_value = mock_config

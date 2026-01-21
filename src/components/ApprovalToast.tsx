@@ -41,30 +41,31 @@ export const ApprovalToast: React.FC<ApprovalToastProps> = ({
 
     // Hold Logic
     useEffect(() => {
-        if (isHolding) {
-            const start = Date.now();
-            startTimeRef.current = start;
-
-            // Use RequestAnimation frame for smooth progress
-            let rafId: number;
-            const animate = () => {
-                const elapsed = Date.now() - start;
-                const p = Math.min(100, (elapsed / HOLD_DURATION) * 100);
-                setProgress(p);
-
-                if (p >= 100) {
-                    setIsHolding(false);
-                    onApprove(request.request_id);
-                } else {
-                    rafId = requestAnimationFrame(animate);
-                }
-            };
-            rafId = requestAnimationFrame(animate);
-
-            return () => cancelAnimationFrame(rafId);
-        } else {
+        if (!isHolding) {
             setProgress(0);
+            return;
         }
+
+        const start = Date.now();
+        startTimeRef.current = start;
+
+        // Use RequestAnimation frame for smooth progress
+        let rafId: number;
+        const animate = () => {
+            const elapsed = Date.now() - start;
+            const p = Math.min(100, (elapsed / HOLD_DURATION) * 100);
+            setProgress(p);
+
+            if (p >= 100) {
+                setIsHolding(false);
+                onApprove(request.request_id);
+            } else {
+                rafId = requestAnimationFrame(animate);
+            }
+        };
+        rafId = requestAnimationFrame(animate);
+
+        return () => cancelAnimationFrame(rafId);
     }, [isHolding, onApprove, request.request_id]);
 
     const handleStartHold = () => setIsHolding(true);

@@ -2,11 +2,11 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 
 const AnalyticsDashboard = dynamic(
-  () => import('@/components/features/analytics/AnalyticsDashboard')
+  () => import('@/components/features/analytics/AnalyticsDashboard').then(mod => mod.AnalyticsDashboard)
 );
 
 const TradeReplayWidget = dynamic(
-  () => import('@/components/features/analytics/TradeReplayWidget')
+  () => import('@/components/features/analytics/TradeReplayWidget').then(mod => mod.TradeReplayWidget)
 );
 
 export const TimeMachinePanel: React.FC = () => {

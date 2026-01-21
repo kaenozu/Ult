@@ -338,7 +338,7 @@ const InteractiveStockGalaxy = memo(function InteractiveStockGalaxy() {
       return {
         id: `${symbol}-${idx}`,
         symbol,
-        sector: sectors[idx % sectors.length],
+        sector: sectors[idx % sectors.length] ?? "Unknown",
         price,
         change,
         changePercent,
@@ -402,7 +402,7 @@ const InteractiveStockGalaxy = memo(function InteractiveStockGalaxy() {
           Math.random() * 0.5,
           (Math.random() - 0.5) * 0.5,
         ],
-        color: colors[Math.floor(Math.random() * colors.length)],
+        color: colors[Math.floor(Math.random() * colors.length)] ?? "#ffffff",
         life: 1.0,
       });
     }

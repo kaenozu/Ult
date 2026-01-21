@@ -29,6 +29,10 @@ self.addEventListener('message', async (event) => {
             self.postMessage({ status: 'progress', data });
         });
 
+        if (!classifier) {
+            throw new Error('Failed to initialize classifier');
+        }
+
         const output = await classifier(text);
 
         // Send result back

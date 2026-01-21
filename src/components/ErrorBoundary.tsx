@@ -69,33 +69,8 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  override render() {
-    const { onError, maxRetries = 3 } = this.props;
-    const { retryCount } = this.state;
 
-    // Enhanced error logging
-    logger.error('🚨 Error Boundary Caught Error', {
-      error,
-      errorInfo,
-      componentStack: errorInfo.componentStack,
-      retryCount,
-    });
-
-    // Call optional error handler
-    onError?.(error, errorInfo);
-
-    this.setState(prevState => ({
-      errorInfo,
-      retryCount: prevState.retryCount + 1,
-    }));
-
-    // Auto-retry for recoverable errors
-    if (retryCount < maxRetries && this.isRecoverableError(error)) {
-      this.scheduleRetry();
-    }
-  }
-
-  componentWillUnmount() {
+  override componentWillUnmount() {
     if (this.retryTimeoutId) {
       clearTimeout(this.retryTimeoutId);
       this.retryTimeoutId = null;

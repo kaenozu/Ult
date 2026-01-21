@@ -112,8 +112,9 @@ export default function DecisionTree() {
         parentNode.active = false;
 
         // Update current path
-        if (Math.random() > 0.5) {
-          setCurrentPath(prev => [...prev.slice(-3), newNodes[0].id]);
+        const firstNewNode = newNodes[0];
+        if (Math.random() > 0.5 && firstNewNode) {
+          setCurrentPath(prev => [...prev.slice(-3), firstNewNode.id]);
         }
 
         setConnections(prev => [...prev, ...newConnections]);
@@ -142,7 +143,7 @@ export default function DecisionTree() {
       'Increase Size',
       'Decrease Risk',
     ];
-    return labels[Math.floor(Math.random() * labels.length)];
+    return labels[Math.floor(Math.random() * labels.length)] ?? 'Unknown';
   };
 
   const generateNodeType = (): 'decision' | 'outcome' | 'analysis' => {
@@ -219,11 +220,10 @@ export default function DecisionTree() {
         <div className='flex gap-2'>
           <button
             onClick={() => setIsGrowing(!isGrowing)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${
-              isGrowing
-                ? 'bg-purple-500/20 border border-purple-400 text-purple-400'
-                : 'bg-gray-800 border border-gray-600 text-gray-400'
-            }`}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-all ${isGrowing
+              ? 'bg-purple-500/20 border border-purple-400 text-purple-400'
+              : 'bg-gray-800 border border-gray-600 text-gray-400'
+              }`}
           >
             {isGrowing ? 'GROWING' : 'STATIC'}
           </button>
@@ -277,9 +277,8 @@ export default function DecisionTree() {
         {nodes.map(node => (
           <div
             key={node.id}
-            className={`absolute px-3 py-2 rounded-lg border transition-all duration-300 ${getNodeColor(node)} ${
-              node.active ? 'animate-pulse' : ''
-            } ${currentPath.includes(node.id) ? 'ring-2 ring-yellow-400 ring-opacity-50' : ''}`}
+            className={`absolute px-3 py-2 rounded-lg border transition-all duration-300 ${getNodeColor(node)} ${node.active ? 'animate-pulse' : ''
+              } ${currentPath.includes(node.id) ? 'ring-2 ring-yellow-400 ring-opacity-50' : ''}`}
             style={{
               left: `${node.position.x - 40}px`,
               top: `${node.position.y - 20}px`,

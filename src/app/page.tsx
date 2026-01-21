@@ -2,6 +2,7 @@
 
 import React from 'react';
 import MatrixRain from '@/components/ui/matrix-rain';
+import MatrixPortfolioSummary from '@/components/features/dashboard/MatrixPortfolioSummary';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 
@@ -216,7 +217,6 @@ export default function Home() {
                 </button>
               </div>
 
-<<<<<<< HEAD
               <TabsContent value="live" className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Top Section: AI Status & Portfolio HUD */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -251,35 +251,6 @@ export default function Home() {
                     <AutoTradeControls />
                   </div>
                 </div>
-
-                {/* In-App Swipe Notification Demo */}
-                {/* 
-                <section>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-8 w-1 bg-gradient-to-b from-green-400 via-blue-400 to-purple-400 rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)]" />
-                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                      In-App Swipe{" "}
-                      <span className="text-muted-foreground text-sm ml-2 font-normal">
-                        No More Context Switching
-                      </span>
-                    </h2>
-                  </div>
-                  <SwipeNotificationDemo />
-                </section>
-
-                <section>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-8 w-1 bg-gradient-to-b from-red-400 via-orange-400 to-yellow-400 rounded-full shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
-                    <h2 className="text-xl font-bold tracking-tight text-balance text-foreground uppercase">
-                      Instant Approvals{" "}
-                      <span className="text-muted-foreground text-sm ml-2 font-normal">
-                        Ops Technical Design - Ephemeral UI
-                      </span>
-                    </h2>
-                  </div>
-                  <ApprovalCardsDemo />
-                </section>
-                */}
 
                 {/* Visuals First: AI Thinking Section */}
                 <section>
@@ -371,13 +342,6 @@ export default function Home() {
                     <MatrixPositionList />
                   </div>
                 </section>
-=======
-              <TabsContent
-                value='live'
-                className='space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500'
-              >
-                <CockpitPanel isActive={isActive} setIsActive={setIsActive} />
->>>>>>> main
               </TabsContent>
 
               <TabsContent

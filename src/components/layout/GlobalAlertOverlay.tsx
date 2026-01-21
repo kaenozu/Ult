@@ -1,12 +1,7 @@
 'use client';
 
-<<<<<<< HEAD
-import { useState, useEffect } from "react";
-import { useSynapse } from "@/components/shared/hooks/connection";
-=======
 import { useState, useEffect } from 'react';
 import { useSynapse } from '@/components/shared/hooks/connection';
->>>>>>> main
 import {
   CircuitBreakerTrippedMessage,
   CircuitBreakerStatusMessage,

@@ -41,7 +41,7 @@ export default function HivePanel({ ticker }: HivePanelProps) {
   const riskVote = details.risk_vote || 0;
   const riskScore = details.risk_score || 0;
 
-  const isVetoed = signal.explanation.includes('VETO');
+  const isVetoed = (signal.explanation ?? '').includes('VETO');
 
   const getVoteColor = (vote: number) => {
     if (vote > 0.1) return 'text-emerald-400';

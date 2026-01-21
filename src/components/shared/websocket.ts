@@ -350,7 +350,8 @@ export type AnyClientMessage =
   | SubscribeMessage
   | UnsubscribeMessage
   | PingMessage
-  | GetStatusMessage;
+  | GetStatusMessage
+  | ApprovalResponseMessage;
 
 export type AnyServerMessage =
   | RegimeUpdateMessage
