@@ -1,20 +1,14 @@
-<<<<<<< HEAD
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    async rewrites() {
-        return [
-            {
-                source: '/api/:path*',
-                destination: 'http://localhost:8000/api/:path*',
-            },
-        ]
-    },
-};
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:8000/api/:path*',
+      },
+    ]
+  },
 
-export default nextConfig;
-=======
-/** @type {import('next').NextConfig} */
-const nextConfig = {
   // Force webpack for compatibility
   webpack: (config, { dev, isServer }) => {
     // Optimize bundle splitting
@@ -129,4 +123,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
->>>>>>> main
