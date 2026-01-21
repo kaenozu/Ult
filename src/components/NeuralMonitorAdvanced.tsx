@@ -24,6 +24,7 @@ import {
 } from '@/components/shared/websocket';
 import { useSynapse } from '@/components/shared/hooks/connection';
 import { ApprovalToast } from './ApprovalToast';
+import { logger } from '@/lib/logger';
 
 // ============================================================================
 // TYPES
@@ -156,7 +157,7 @@ export default function NeuralMonitor() {
 
     // Approvals
     onMessage<ApprovalRequestMessage>('approval_request', msg => {
-      console.log('Approval Request Received:', msg.payload);
+      logger.info('Approval Request Received', { payload: msg.payload });
       setApprovalRequest(msg.payload);
     });
 

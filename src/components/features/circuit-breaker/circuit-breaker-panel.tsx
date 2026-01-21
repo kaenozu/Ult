@@ -8,6 +8,7 @@ import { useCircuitBreaker } from '@/components/shared/hooks/business/useCircuit
 import { CircuitBreakerState } from '@/components/shared/websocket';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { logger } from '@/lib/logger';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -47,10 +48,10 @@ export function CircuitBreakerPanel({
 
   React.useEffect(() => {
     onTripped(payload => {
-      console.log('Circuit breaker tripped:', payload);
+      logger.warn('Circuit breaker tripped', { payload });
     });
     onReset(payload => {
-      console.log('Circuit breaker reset:', payload);
+      logger.info('Circuit breaker reset', { payload });
     });
   }, [onTripped, onReset]);
 

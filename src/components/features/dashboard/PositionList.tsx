@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getPositions } from '@/components/shared/utils/api';
 import { usePositionRow } from '@/components/shared/hooks/business/usePositionRow';
@@ -7,9 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Coins, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { FixedSizeList as List } from 'react-window';
 import TradingModal from './TradingModal';
 import Link from 'next/link';
 import { Position } from '@/types';
+import { logger } from '@/lib/logger';
 
 // Component for a single row in the position list
 function PositionRow({ position }: { position: Position }) {
@@ -88,6 +91,8 @@ function PositionRow({ position }: { position: Position }) {
   );
 }
 
+PositionRow.displayName = 'PositionRow';
+
 export default function PositionList() {
   const {
     data: positions,
@@ -99,14 +104,11 @@ export default function PositionList() {
   });
 
   // Debug log
-  console.log(
-    'PositionList - positions:',
-    positions,
-    'isLoading:',
+  logger.debug('PositionList state', {
+    positionsCount: positions?.length,
     isLoading,
-    'error:',
-    error
-  );
+    hasError: !!error,
+  });
 
   if (isLoading)
     return <div className='h-20 animate-pulse bg-muted rounded-lg' />;
@@ -116,6 +118,27 @@ export default function PositionList() {
     return null;
   }
 
+  // Virtualization for performance with long lists
+  const ITEM_HEIGHT = 120; // Approximate height of each position row
+  const MAX_VISIBLE_ITEMS = 10; // Show max 10 items without scrolling
+
+  const renderRow = ({
+    index,
+    style,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+  }) => {
+    const position = positions[index];
+    return (
+      <div style={style} key={position.ticker}>
+        <PositionRow position={position} />
+      </div>
+    );
+  };
+
+  const shouldVirtualize = positions.length > MAX_VISIBLE_ITEMS;
+
   return (
     <Card className='border-none shadow-none bg-transparent'>
       <CardHeader className='px-0 pt-0 pb-4'>
@@ -124,10 +147,23 @@ export default function PositionList() {
           保有銘柄 (Portfolio)
         </CardTitle>
       </CardHeader>
-      <CardContent className='px-0 space-y-2'>
-        {positions.map(pos => (
-          <PositionRow key={pos.ticker} position={pos} />
-        ))}
+      <CardContent className='px-0'>
+        {shouldVirtualize ? (
+          <List
+            height={ITEM_HEIGHT * MAX_VISIBLE_ITEMS}
+            itemCount={positions.length}
+            itemSize={ITEM_HEIGHT}
+            className='space-y-2'
+          >
+            {renderRow}
+          </List>
+        ) : (
+          <div className='space-y-2'>
+            {positions.map(pos => (
+              <PositionRow key={pos.ticker} position={pos} />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
