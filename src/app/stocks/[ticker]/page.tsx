@@ -114,14 +114,15 @@ export default function StockDetailPage() {
       </header>
 
       <div className='p-4 space-y-6 max-w-4xl mx-auto'>
-        {/* Price & Signal Overview */}
-        {isMarketLoading ? (
+        {/* Loading State */}
+        {isMarketLoading && (
           <div className='flex justify-center items-center h-32'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500'></div>
           </div>
-        ) : (
-          <>
-            <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
+        )}
+
+        {/* Price & Signal Overview */}
+        <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
               <div>
                 <div className='text-3xl font-bold font-mono'>
                   ¥{marketData?.price?.toLocaleString() || 'N/A'}
@@ -226,15 +227,7 @@ export default function StockDetailPage() {
                 </div>
               </CardContent>
             </Card>
-          </>
-        )}
       </div>
-        ) : !marketData ? (
-          <div className='text-center py-8'>
-            <p className='text-muted-foreground'>Market data not available</p>
-          </div>
-        <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
-          <div>
             <div className='text-3xl font-bold font-mono'>
               ¥{marketData?.price?.toLocaleString() || 'N/A'}
             </div>
@@ -280,21 +273,33 @@ export default function StockDetailPage() {
             }
           />
         )}
+
+        {/* Price & Signal Overview */}
+        <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-4'>
+          <div>
+            <div className='text-3xl font-bold font-mono'>
+              ¥{marketData?.price?.toLocaleString() || 'N/A'}
+            </div>
+            {marketData && (
+              <div
+                className={`flex items-center gap-2 text-sm ${marketData.change >= 0 ? 'text-green-500' : 'text-red-500'}`}
+              >
                 <span>
                   {marketData.change > 0 ? '+' : ''}
                   {marketData.change.toLocaleString()} (
                   {marketData.change_percent.toFixed(2)}%)
                 </span>
               </div>
-            </div>
-
-            <div
-              className={`px-4 py-2 rounded-full font-bold border ${signalColor} ${signalBg} flex items-center gap-2`}
-            >
-              <AlertCircle className='h-5 w-5' />
-              {signalText}
-            </div>
+            )}
           </div>
+
+          <div
+            className={`px-4 py-2 rounded-full font-bold border ${signalColor} ${signalBg} flex items-center gap-2`}
+          >
+            <AlertCircle className='h-5 w-5' />
+            {signalText}
+          </div>
+        </div>
 
           {/* Action Button (One-Tap Trade) */}
           {marketData && (
@@ -340,8 +345,20 @@ export default function StockDetailPage() {
               )}
             </CardContent>
           </Card>
-      </div>
 
+        {/* Vision Panel */}
+        <VisionPanel
+          isOpen={visionOpen}
+          onClose={() => setVisionOpen(false)}
+          ticker={ticker}
+          image={capturedImage}
+        />
+
+        {/* Screenshot Diary Gallery */}
+        <div className='max-w-4xl mx-auto px-4 mt-8 mb-20'>
+          <DiaryGallery ticker={ticker} />
+        </div>
+      </div>
       {/* Vision Panel */}
       <VisionPanel
         isOpen={visionOpen}
@@ -355,5 +372,6 @@ export default function StockDetailPage() {
         <DiaryGallery ticker={ticker} />
       </div>
     </main>
+  );
   );
 }

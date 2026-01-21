@@ -17,6 +17,7 @@ next-env.d.ts
 # Production
 build/
 dist/
+docs/
 
 # Environment variables
 .env

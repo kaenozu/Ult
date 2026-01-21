@@ -4,6 +4,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 import { cn } from '@/components/shared/utils/common';
+import { logger } from '@/lib/logger';
 
 interface Props {
   children: ReactNode;
@@ -49,7 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
     const { retryCount } = this.state;
 
     // Log the error with additional context
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logger.error('ErrorBoundary caught an error', { error, errorInfo });
 
     // Call onError callback if provided
     onError?.(error, errorInfo);
@@ -73,12 +74,12 @@ export class ErrorBoundary extends Component<Props, State> {
     const { retryCount } = this.state;
 
     // Enhanced error logging
-    console.group('🚨 Error Boundary Caught Error');
-    console.error('Error:', error);
-    console.error('Error Info:', errorInfo);
-    console.error('Component Stack:', errorInfo.componentStack);
-    console.error('Retry Count:', retryCount);
-    console.groupEnd();
+    logger.error('🚨 Error Boundary Caught Error', {
+      error,
+      errorInfo,
+      componentStack: errorInfo.componentStack,
+      retryCount,
+    });
 
     // Call optional error handler
     onError?.(error, errorInfo);
@@ -157,7 +158,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
 
     // In a real app, send to error reporting service
-    console.log('Bug Report:', bugReport);
+    logger.info('Bug Report submitted', { bugReport });
 
     // Copy to clipboard for manual reporting
     navigator.clipboard?.writeText(JSON.stringify(bugReport, null, 2));
@@ -306,7 +307,7 @@ export const PageErrorBoundary: React.FC<{ children: ReactNode }> = ({
     maxRetries={3}
     onError={(error, errorInfo) => {
       // Send to error reporting service
-      console.error('Page Error:', { error, errorInfo });
+      logger.error('Page Error', { error, errorInfo });
     }}
   >
     {children}
