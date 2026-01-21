@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 import jpholiday
 
 from .paper_trader import PaperTrader
-from .data_loader import fetch_stock_data, get_latest_price
+from .data.data_loader import fetch_stock_data, get_latest_price
 from .strategies import LightGBMStrategy, RSIStrategy
 from .core.constants import NIKKEI_225_TICKERS
 from .core.config import settings
