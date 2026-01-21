@@ -308,13 +308,14 @@ def _download_and_cache_missing(
                 updated[ticker] = refreshed
         except Exception as exc:
             logger.error("Error saving/loading data for %s: %s", ticker, exc)
-            from .errors import DataLoadError
+            # from .errors import DataLoadError
 
-            raise DataLoadError(
-                message=f"Failed to save/load data for ticker: {ticker}",
-                ticker=ticker,
-                details={"original_error": str(exc)},
-            ) from exc
+            # raise DataLoadError(
+            #     message=f"Failed to save/load data for ticker: {ticker}",
+            #     ticker=ticker,
+            #     details={"original_error": str(exc)},
+            # ) from exc
+            continue # Skip this ticker and continue
 
     return updated
 
