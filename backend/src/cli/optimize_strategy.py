@@ -12,11 +12,6 @@ from pathlib import Path
 # parents[2] = backend
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-<<<<<<< HEAD
-=======
-from src.data_temp.data_loader import fetch_stock_data
-from src.optimization.genetic_optimizer import GeneticOptimizer
->>>>>>> main
 from src.strategies.range_strategy import RangeStrategy
 from src.strategies.volatility_strategy import VolatilityStrategy
 from src.strategies.ensemble_strategy import EnsembleStrategy
@@ -66,11 +61,11 @@ def main():
     parser.add_argument("strategy", type=str, help="Strategy type (range, volatility)")
     parser.add_argument("--gens", type=int, default=10, help="Number of generations")
     parser.add_argument("--pop", type=int, default=20, help="Population size")
-    
+
     args = parser.parse_args()
-    
+
     logger.info(f"🚀 Starting Optimization for {args.ticker} using {args.strategy.upper()} strategy...")
-    
+
     try:
         # Load Data
         df = DataProvider.get_historical_data(args.ticker, period="1y")
@@ -79,7 +74,7 @@ def main():
             return
 
         strategy_class = get_strategy_class(args.strategy)
-        
+
         # Initialize Optimizer
         optimizer = GeneticOptimizer(
             strategy_class=strategy_class,
@@ -87,10 +82,10 @@ def main():
             population_size=args.pop,
             generations=args.gens
         )
-        
+
         # Run Evolution
         best_genome, history = optimizer.optimize()
-        
+
         logger.info("\n" + "="*50)
         logger.info(f"🏆 Best Genome Found for {args.ticker}")
         logger.info("="*50)
@@ -98,7 +93,7 @@ def main():
         logger.info(f"Train Fitness: {best_genome.fitness:.2f}")
         logger.info(f"Test Fitness:  {best_genome.test_fitness:.2f}")
         logger.info("="*50)
-        
+
         # Save results to DB
         config_key = f"strategy_params:{args.strategy}:{args.ticker}"
         config_value = {
@@ -107,13 +102,13 @@ def main():
             "test_fitness": best_genome.test_fitness,
             "updated_at": pd.Timestamp.now().isoformat()
         }
-        
+
         try:
             db_manager.save_config(key=config_key, value=config_value, category="strategy_params")
             logger.info(f"💾 Successfully saved optimal parameters to DB: {config_key}")
         except Exception as db_err:
             logger.error(f"Failed to save to DB: {db_err}")
-        
+
     except Exception as e:
         logger.error(f"Optimization failed: {e}")
 

@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from src.data.data_loader import fetch_macro_data
+from src.data_temp.data_loader import fetch_macro_data
 from src.analysis_temp.llm_analyzer import LLMAnalyzer
 
 logger = logging.getLogger(__name__)
