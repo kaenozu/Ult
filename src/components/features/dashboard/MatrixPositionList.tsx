@@ -1,11 +1,20 @@
 'use client';
 
+<<<<<<< HEAD
+import { useQuery } from "@tanstack/react-query";
+import { getPositions } from "@/components/shared/utils/api";
+import { usePositionRow } from "@/components/shared/hooks/business/usePositionRow";
+import TradingModal from "./TradingModal";
+import Link from "next/link";
+import { Position } from "@/types";
+=======
 import { useQuery } from '@tanstack/react-query';
 import { getPositions } from '@/components/shared/utils/api';
 import { usePositionRow } from '@/components/shared/hooks/business/usePositionRow';
 import TradingModal from './TradingModal';
 import Link from 'next/link';
 import { Position } from '@/types';
+>>>>>>> main
 import {
   TrendingUp,
   TrendingDown,
@@ -85,11 +94,18 @@ function MatrixPositionRow({ position, index }: MatrixPositionRow) {
               <button
                 className={`
                 px-3 py-1 text-xs font-mono border transition-all duration-200
+<<<<<<< HEAD
+                ${showAlert
+                    ? "bg-red-500/20 border-red-500/60 text-red-400 hover:bg-red-500/30"
+                    : "bg-green-500/20 border-green-500/60 text-green-400 hover:bg-green-500/30"
+                  }
+=======
                 ${
                   showAlert
                     ? 'bg-red-500/20 border-red-500/60 text-red-400 hover:bg-red-500/30'
                     : 'bg-green-500/20 border-green-500/60 text-green-400 hover:bg-green-500/30'
                 }
+>>>>>>> main
               `}
               >
                 [EXECUTE_SELL]
@@ -176,7 +192,7 @@ export default function MatrixPositionList() {
     );
   }
 
-  if (!positions || positions.length === 0) {
+  if (!positions || !Array.isArray(positions) || positions.length === 0) {
     return (
       <div className='border border-green-500/40 bg-slate-900/40 p-8 text-center'>
         <div className='text-green-400 font-mono mb-2'>
@@ -207,9 +223,15 @@ export default function MatrixPositionList() {
       </div>
 
       {/* Position Rows */}
+<<<<<<< HEAD
+      <div className="space-y-3">
+        {Array.isArray(positions) && positions.map((pos, index) => (
+          <div key={pos.ticker} className="relative">
+=======
       <div className='space-y-3'>
         {positions.map((pos, index) => (
           <div key={pos.ticker} className='relative'>
+>>>>>>> main
             <MatrixPositionRow position={pos} index={index} />
           </div>
         ))}

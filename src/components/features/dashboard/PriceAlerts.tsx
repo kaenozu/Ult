@@ -1,8 +1,14 @@
 'use client';
 
+<<<<<<< HEAD
+import { useState } from "react";
+import { usePriceAlerts } from "@/components/shared/hooks/connection";
+import { AlertTriangle, TrendingUp, TrendingDown, Info } from "lucide-react";
+=======
 import { useState } from 'react';
 import { usePriceAlerts } from '@/components/shared/hooks/connection';
 import { AlertTriangle, TrendingUp, TrendingDown, Info } from 'lucide-react';
+>>>>>>> main
 
 interface PriceAlert {
   symbol: string;
@@ -120,6 +126,14 @@ export default function PriceAlertsComponent() {
               </div>
               <div className='text-right'>
                 <div
+<<<<<<< HEAD
+                  className={`text-xs font-mono ${alert.change_percent > 0
+                      ? "text-emerald-400"
+                      : alert.change_percent < 0
+                        ? "text-rose-400"
+                        : "text-muted-foreground"
+                    }`}
+=======
                   className={`text-xs font-mono ${
                     alert.change_percent > 0
                       ? 'text-emerald-400'
@@ -127,6 +141,7 @@ export default function PriceAlertsComponent() {
                         ? 'text-rose-400'
                         : 'text-muted-foreground'
                   }`}
+>>>>>>> main
                 >
                   {alert.change_percent > 0 && '+'}
                   {alert.change_percent.toFixed(2)}%

@@ -2,7 +2,11 @@ import logging
 import random
 import pandas as pd
 from typing import Dict, List, Optional
+<<<<<<< HEAD
+from src.data_temp.data_loader import fetch_stock_data
+=======
 from ..data.data_loader import fetch_stock_data
+>>>>>>> main
 
 logger = logging.getLogger(__name__)
 
