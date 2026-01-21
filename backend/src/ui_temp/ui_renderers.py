@@ -184,7 +184,7 @@ def render_performance_tab(ticker_group, selected_market, custom_tickers, curren
 
     if st.button("ヒートマップを生成", type="primary"):
         with st.spinner("データ取得中..."):
-            from src.data_temp.data_loader import fetch_stock_data
+            from src.data.data_loader import fetch_stock_data
 
             # Get tickers based on selection
             if ticker_group == "カスタム入力":
@@ -239,7 +239,7 @@ def render_paper_trading_tab():
     """
     ペーパートレーディングタブのレンダリングロジック
     """
-    from src.data_temp.data_loader import fetch_stock_data
+    from src.data.data_loader import fetch_stock_data
     from src.formatters import format_currency
     from src.paper_trader import PaperTrader
 
@@ -355,7 +355,7 @@ def render_market_scan_tab(
     import os
 
     from src.backtester import Backtester
-    from src.data_temp.data_loader import fetch_fundamental_data, fetch_stock_data, get_latest_price
+    from src.data.data_loader import fetch_fundamental_data, fetch_stock_data, get_latest_price
     from src.formatters import get_risk_level
     from src.paper_trader import PaperTrader
     from src.sentiment import SentimentAnalyzer
@@ -406,7 +406,7 @@ def render_market_scan_tab(
         # === Display Macro Indicators ===
         with st.expander("📈 マクロ経済指標", expanded=True):
             try:
-                from src.data_temp.data_loader import fetch_external_data
+                from src.data.data_loader import fetch_external_data
 
                 macro_data = fetch_external_data(period="5d")
 
@@ -678,7 +678,7 @@ def render_market_scan_tab(
         # === Macro Indicators ===
         with st.expander("訣 繝槭け繝ｭ邨梧ｸ域欠讓・, expanded=True"):
             try:
-                from src.data_temp.data_loader import fetch_external_data
+                from src.data.data_loader import fetch_external_data
 
                 macro_data = fetch_external_data(period="5d")
 
@@ -973,7 +973,7 @@ def render_realtime_monitoring_tab(ticker_group, selected_market, custom_tickers
             # Streamlit縺ｮrerun繧剃ｽｿ縺・◆繧√『hile繝ｫ繝ｼ繝励・1蝗槭〒謚懊￠繧区ｧ矩縺ｫ縺吶ｋ縺九・            # 縺ゅｋ縺・・st.empty()繧呈峩譁ｰ縺礼ｶ壹￠繧九↑繧鋭leep繧剃ｽｿ縺・
             # 縺薙％縺ｧ縺ｯ繧ｷ繝ｳ繝励Ν縺ｫ1蝗槫ｮ溯｡後＠縺ｦsleep縺励※rerun縺吶ｋ繝代ち繝ｼ繝ｳ
 
-            # 1. 繝・・繧ｿ蜿門ｾ暦ｼ域闘莨ｼ繝ｪ繧｢繝ｫ繧ｿ繧､繝・・            from src.data_temp.data_loader import fetch_stock_data
+            # 1. 繝・・繧ｿ蜿門ｾ暦ｼ域闘莨ｼ繝ｪ繧｢繝ｫ繧ｿ繧､繝・・            from src.data.data_loader import fetch_stock_data
 
             # 譛譁ｰ繝・・繧ｿ蜿門ｾ・            current_data = fetch_stock_data(target_tickers, period="1d", interval="1m")
 

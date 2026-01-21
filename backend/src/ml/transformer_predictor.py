@@ -156,6 +156,20 @@ class TransformerPredictor(BasePredictor):
         except Exception as e:
             logger.error(f"TFT training error: {e}")
 
+    def reset_model(self):
+        """モデルをリセットして再学習を強制する"""
+        self.is_ready = False
+        self.model = None
+        # 保存されたモデルファイルがあれば削除またはバックアップ
+        if os.path.exists(MODEL_PATH):
+            try:
+                # バックアップ
+                os.rename(MODEL_PATH, MODEL_PATH + ".bak")
+                logger.info("Existing TFT model backup up to .bak and reset")
+            except Exception as e:
+                logger.warning(f"Failed to backup/remove model file: {e}")
+        logger.info("Transformer model reset for retraining")
+
     def predict_trajectory(self, df: pd.DataFrame, days_ahead: int = 5) -> Dict:
         """
         時系列予測を実行
@@ -223,7 +237,7 @@ class TransformerPredictor(BasePredictor):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    from src.data_temp.data_loader import fetch_stock_data
+    from src.data.data_loader import fetch_stock_data
 
     data_map = fetch_stock_data(["7203.T"], period="2y")
     df = data_map.get("7203.T")

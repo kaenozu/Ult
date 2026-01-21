@@ -9,7 +9,7 @@ import time
 import pandas as pd
 import streamlit as st
 
-from src.data_temp.data_loader import fetch_stock_data
+from src.data.data_loader import fetch_stock_data
 from src.paper_trader import PaperTrader
 import os
 

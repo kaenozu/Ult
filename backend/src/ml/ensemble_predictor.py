@@ -33,8 +33,8 @@ from src.advanced_models import AdvancedModels
 # 新しい高度な機能のインポート
 try:
     from src.continual_learning import ConceptDriftDetector, ContinualLearningSystem
-    from src.data_temp.data_loader import fetch_external_data
-    from src.data_temp.data_preprocessing import preprocess_for_prediction
+    from src.data.data_loader import fetch_external_data
+    from src.data.data_preprocessing import preprocess_for_prediction
     from src.features.enhanced_features import generate_enhanced_features
     from src.analysis_temp.fundamental_analyzer import FundamentalAnalyzer
     from src.ml.future_predictor import FuturePredictor
@@ -94,7 +94,18 @@ class EnhancedEnsemblePredictor:
             "transformer": 0.20,  # 新規追加
             "attention_lstm": 0.15,  # 新規追加
             "cnn_lstm": 0.10,  # 新規追加
+            "sma": 0.05,
+            "nbeats": 0.10,
         }
+
+        # 正規化
+        total_w = sum(self.base_weights.values())
+        if total_w > 0:
+            for k in self.base_weights:
+                self.base_weights[k] /= total_w
+
+        self.model_weights = self.base_weights.copy()
+        self.model_performances = {k: [] for k in self.base_weights.keys()}
 
         # 新しいモデルインスタンス
         self.advanced_models = {}
@@ -374,18 +385,36 @@ class EnhancedEnsemblePredictor:
                 # アンサンブル用のデータ準備
                 available_models = list(predictions.keys())
 
-                # 結果の統合（最初は単純平均）
-                # 将来的にはAdvancedEnsembleを使用して高度な統合
+                # 結果の統合（重み付き平均）
                 all_preds = []
-                for model_name in available_models:
-                    all_preds.append(predictions[model_name]["predictions"])
 
-                # 平均を計算
-                if all_preds:
-                    all_preds = np.array(all_preds)
-                    avg_preds = np.mean(all_preds, axis=0)
+                # Check for models that have no weight defined, add them with default small weight
+                for m in available_models:
+                     if m not in self.model_weights:
+                         self.model_weights[m] = 0.1 # Default weight for new models
+
+                # Normalize weights for available models
+                available_weights = {m: self.model_weights.get(m, 0.1) for m in available_models}
+                sum_weights = sum(available_weights.values())
+
+                weighted_preds = np.zeros(days_ahead)
+
+                if sum_weights > 0:
+                    for model_name in available_models:
+                         w = available_weights[model_name] / sum_weights
+                         pred = np.array(predictions[model_name]["predictions"])
+                         weighted_preds += pred * w
+
+                    avg_preds = weighted_preds
                 else:
-                    return {"error": "有効な予測がありません"}
+                    # Fallback to simple mean
+                    for model_name in available_models:
+                         all_preds.append(predictions[model_name]["predictions"])
+                    if all_preds:
+                        all_preds = np.array(all_preds)
+                        avg_preds = np.mean(all_preds, axis=0)
+                    else:
+                        return {"error": "有効な予測がありません"}
             else:
                 # 1つだけ予測がある場合はそれを使用
                 model_name = list(predictions.keys())[0]
@@ -450,12 +479,17 @@ class EnhancedEnsemblePredictor:
 
             # 13. 予測結果の保存（継続的学習用）
             if enable_continual_learning:
+                individual_preds_snapshot = {}
+                for m, res in predictions.items():
+                    individual_preds_snapshot[m] = res["change_pct"]
+
                 self.prediction_history.append(
                     {
                         "timestamp": prediction_start_time,
                         "ticker": ticker,
                         "expected_direction": trend,
                         "expected_change": (final_predictions[-1] - current_price) / current_price * 100,
+                        "individual_predictions": individual_preds_snapshot,
                         "actual_outcome": None,  # 実際の結果は後で更新
                         "confidence": 0.8,  # 仮の信頼度
                     }
@@ -488,7 +522,7 @@ class EnhancedEnsemblePredictor:
                 if drift_detected:
                     logger.warning(f"Concept drift detected for {ticker}!")
                     # ドリフト検出時の対応
-                    # TODO: モデルの再学習や重みの再調整ロジックを追加
+                    self._handle_concept_drift(ticker)
 
             return {
                 "current_price": current_price,
@@ -523,6 +557,55 @@ class EnhancedEnsemblePredictor:
             traceback.print_exc()
             return {"error": str(e)}
 
+    def _rebalance_weights(self):
+        """モデルの重みを動的に調整"""
+        # Calculate inverse error score (lower error -> higher score)
+        scores = {}
+        for m, errors in self.model_performances.items():
+            if not errors:
+                continue
+            # Use exponential moving average of errors, giving more weight to recent
+            # Simple mean for now, can be improved to EMA
+            mean_error = np.mean(errors)
+            if mean_error < 1e-6: mean_error = 1e-6
+            scores[m] = 1.0 / mean_error
+
+        if not scores:
+            return
+
+        total_score = sum(scores.values())
+        if total_score > 0:
+            for m in scores:
+                self.model_weights[m] = scores[m] / total_score
+
+            logger.info(f"Updated model weights: {self.model_weights}")
+
+    def _handle_concept_drift(self, ticker: str):
+        """概念ドリフト検出時の対応"""
+        logger.info(f"Initiating concept drift response for {ticker}")
+
+        # 1. Reset stateful models
+        if hasattr(self.transformer_predictor, "reset_model"):
+            self.transformer_predictor.reset_model()
+
+        # 2. Reset weights to base weights (mix them)
+        # Reset to base as a safe fallback for new regime.
+        for m, w in self.base_weights.items():
+            if m in self.model_weights:
+                self.model_weights[m] = w
+
+        # Normalize just in case
+        total = sum(self.model_weights.values())
+        if total > 0:
+             for m in self.model_weights:
+                 self.model_weights[m] /= total
+
+        # 3. Clear recent performance history to allow fast adaptation
+        for m in self.model_performances:
+            self.model_performances[m] = [] # Clear history to start fresh
+
+        logger.info("Models reset and weights restored to defaults due to concept drift")
+
     def update_prediction_performance(self, ticker: str, actual_return: float):
         """予測性能の更新（継続的学習用）"""
         # 最近の予測を検索して実際の結果と照合
@@ -537,6 +620,24 @@ class EnhancedEnsemblePredictor:
                 # 性能履歴を保存（最新100件まで）
                 if len(self.performance_history) > 100:
                     self.performance_history = self.performance_history[-100:]
+
+                # Update individual model performance
+                if "individual_predictions" in prediction:
+                    for model_name, pred_change in prediction["individual_predictions"].items():
+                        # Calculate error for this model
+                        error = abs(actual_return - pred_change)
+
+                        if model_name not in self.model_performances:
+                            self.model_performances[model_name] = []
+
+                        self.model_performances[model_name].append(error)
+
+                        # Keep history short (50 items)
+                        if len(self.model_performances[model_name]) > 50:
+                            self.model_performances[model_name] = self.model_performances[model_name][-50:]
+
+                    # Rebalance weights based on new performance
+                    self._rebalance_weights()
 
                 logger.info(
                     f"Updated prediction performance for {ticker}: Expected={expected_return:.2f}%, Actual={actual_return:.2f}%"

@@ -67,7 +67,7 @@ class GeneticStrategyBreeder:
         """
         適応度評価関数（実データバックテスト版）
         """
-        from src.data_temp.data_loader import fetch_stock_data
+        from src.data.data_loader import fetch_stock_data
         from src.backtesting.fast_engine import FastBacktester
 
         # データのロード（キャッシュされるので高速）

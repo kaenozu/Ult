@@ -16,7 +16,7 @@ import pandas as pd
 import pytz
 import yfinance as yf
 
-from .base_predictor import BasePredictor
+from src.ml.base_predictor import BasePredictor
 
 warnings.filterwarnings("ignore")
 

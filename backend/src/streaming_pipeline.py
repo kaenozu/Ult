@@ -45,7 +45,7 @@ class StreamingPipeline:
         self._load_strategies()
 
         # 2. 履歴データのロード（特徴量計算用）
-        from src.data_temp.data_loader import fetch_stock_data
+        from src.data.data_loader import fetch_stock_data
 
         # 期間を少し長めに取ってテクニカル指標の計算に必要な期間を確保
         period = f"{lookback_days + 30}d"
