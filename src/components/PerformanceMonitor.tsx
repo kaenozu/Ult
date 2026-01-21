@@ -53,11 +53,11 @@ export const PerformanceMonitor: React.FC = React.memo(() => {
     // Dynamic import of web-vitals
     // @ts-ignore
     import('web-vitals').then(webVitals => {
-      webVitals.getCLS(reportWebVitals);
-      webVitals.getFID(reportWebVitals);
-      webVitals.getFCP(reportWebVitals);
-      webVitals.getLCP(reportWebVitals);
-      webVitals.getTTFB(reportWebVitals);
+      webVitals.onCLS(reportWebVitals);
+      webVitals.onINP(reportWebVitals);
+      webVitals.onFCP(reportWebVitals);
+      webVitals.onLCP(reportWebVitals);
+      webVitals.onTTFB(reportWebVitals);
     });
 
     // Bundle size monitoring
@@ -114,10 +114,10 @@ export const PerformanceMonitor: React.FC = React.memo(() => {
           : value <= 0.25
             ? 'needs-improvement'
             : 'poor';
-      case 'FID':
-        return value <= 100
+      case 'INP':
+        return value <= 200
           ? 'good'
-          : value <= 300
+          : value <= 500
             ? 'needs-improvement'
             : 'poor';
       case 'FCP':
@@ -160,7 +160,7 @@ export const PerformanceMonitor: React.FC = React.memo(() => {
     switch (name) {
       case 'CLS':
         return value.toFixed(3);
-      case 'FID':
+      case 'INP':
       case 'FCP':
       case 'LCP':
       case 'TTFB':

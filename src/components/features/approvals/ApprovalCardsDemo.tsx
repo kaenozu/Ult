@@ -1,20 +1,11 @@
 'use client';
 
-<<<<<<< HEAD
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSynapse } from "@/components/shared/hooks/connection";
-import { ApprovalType } from "@/components/shared/websocket";
-import { MessageFactory } from "@/components/shared/websocket";
-=======
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSynapse } from '@/components/shared/hooks/connection';
 import { ApprovalType } from '@/components/shared/websocket';
 import { MessageFactory } from '@/components/shared/websocket';
->>>>>>> main
 
 export function ApprovalCardsDemo() {
   const [isSending, setIsSending] = useState(false);

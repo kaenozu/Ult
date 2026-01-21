@@ -32,21 +32,22 @@ export default function PriceChart({
     // Map original data: "close" is set, "predicted" is null
     const result: ChartDataPoint[] = data.map((d) => ({
       ...d,
-      predicted: null as null | number,
+      predicted: undefined as undefined | number,
     }))
 
     if (signal === 0 || !targetPrice) return result
 
     const lastPoint = data[data.length - 1]
+    if (!lastPoint || !lastPoint.date) return result
     const lastDate = new Date(lastPoint.date)
 
     // Add connection point: The last history point should start the prediction line
     // We modify the last point in 'result' to have both 'close' and 'predicted'
-    if (lastPoint.close !== null) {
+    if (lastPoint.close !== null && result[result.length - 1]) {
       result[result.length - 1] = {
         ...result[result.length - 1],
         predicted: lastPoint.close,
-      }
+      } as ChartDataPoint
     }
 
     // Linear interpolation for 7 days
@@ -60,15 +61,17 @@ export default function PriceChart({
         (lastPoint.close || 0) + (targetPrice - (lastPoint.close || 0)) * weight
 
       result.push({
+        timestamp: nextDate.toISOString(),
+        price: projectedPrice,
         date: nextDate.toISOString().split('T')[0],
         open: projectedPrice,
         high: projectedPrice,
         low: projectedPrice,
-        close: null, // "close" is null for future points so solid line stops
+        close: undefined, // "close" is undefined for future points so solid line stops
         predicted: projectedPrice, // "predicted" continues
         volume: 0,
         isPrediction: true,
-      } as ChartDataPoint)
+      })
     }
     return result
   }, [data, signal, targetPrice])

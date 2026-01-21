@@ -73,6 +73,7 @@ export function DataTable<T extends Record<string, any>>({
     style: React.CSSProperties;
   }) => {
     const item = data[index];
+    if (!item) return null;
     return (
       <div
         key={String(item[keyField])}

@@ -155,22 +155,26 @@ function GalaxyScene({ data, onNodeClick, pcaResult }: CorrelationGalaxyProps) {
 
     for (let i = 0; i < data.length; i++) {
       for (let j = i + 1; j < data.length; j++) {
-        const dx = data[i].position[0] - data[j].position[0];
-        const dy = data[i].position[1] - data[j].position[1];
-        const dz = data[i].position[2] - data[j].position[2];
+        const nodeI = data[i];
+        const nodeJ = data[j];
+        if (!nodeI || !nodeJ) continue;
+
+        const dx = nodeI.position[0] - nodeJ.position[0];
+        const dy = nodeI.position[1] - nodeJ.position[1];
+        const dz = nodeI.position[2] - nodeJ.position[2];
         const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
         const pcDist = Math.sqrt(
-          Math.pow(data[i].pc1 - data[j].pc1, 2) +
-            Math.pow(data[i].pc2 - data[j].pc2, 2) +
-            Math.pow(data[i].pc3 - data[j].pc3, 2),
+          Math.pow(nodeI.pc1 - nodeJ.pc1, 2) +
+          Math.pow(nodeI.pc2 - nodeJ.pc2, 2) +
+          Math.pow(nodeI.pc3 - nodeJ.pc3, 2),
         );
 
         if (distance < 2 && pcDist < 1.5) {
           const strength = 1 - pcDist / 1.5;
           lines.push({
-            start: data[i].position,
-            end: data[j].position,
+            start: nodeI.position,
+            end: nodeJ.position,
             strength,
           });
         }
@@ -196,7 +200,7 @@ function GalaxyScene({ data, onNodeClick, pcaResult }: CorrelationGalaxyProps) {
         <CorrelationNode
           key={node.id}
           node={node}
-          onClick={onNodeClick || (() => {})}
+          onClick={onNodeClick || (() => { })}
         />
       ))}
 
@@ -294,9 +298,12 @@ export default function SPCorrelationGalaxy() {
     ];
 
     const stockNodes: StockNode[] = stockData.map((stock, idx) => {
-      const pc1 = pcaResult.positions[idx][0];
-      const pc2 = pcaResult.positions[idx][1];
-      const pc3 = pcaResult.positions[idx][2];
+      const pos = pcaResult.positions[idx];
+      if (!pos) return null as any; // Filter out below
+
+      const pc1 = pos[0];
+      const pc2 = pos[1];
+      const pc3 = pos[2];
 
       const scale = 3;
       const position: [number, number, number] = [
@@ -310,12 +317,16 @@ export default function SPCorrelationGalaxy() {
 
       const avgCorrelation =
         stockData.slice(0, Math.min(10, stockData.length)).reduce((sum, s) => {
+          const sIdx = stockData.indexOf(s);
+          const sPos = pcaResult.positions[sIdx];
+          if (!sPos) return sum;
+
           return (
             sum +
             Math.abs(
-              pc1 * pcaResult.positions[stockData.indexOf(s)][0] +
-                pc2 * pcaResult.positions[stockData.indexOf(s)][1] +
-                pc3 * pcaResult.positions[stockData.indexOf(s)][2],
+              pc1 * sPos[0] +
+              pc2 * sPos[1] +
+              pc3 * sPos[2],
             )
           );
         }, 0) / Math.min(10, stockData.length);
@@ -323,7 +334,7 @@ export default function SPCorrelationGalaxy() {
       return {
         id: `${stock.symbol}-${idx}`,
         symbol: stock.symbol,
-        sector: sectors[idx % sectors.length],
+        sector: sectors[idx % sectors.length] ?? "Other",
         correlation: avgCorrelation,
         position,
         size,
@@ -332,7 +343,7 @@ export default function SPCorrelationGalaxy() {
         pc2,
         pc3,
       };
-    });
+    }).filter(node => node !== null);
 
     return { stockData, pcaResult, stockNodes };
   }, [numStocks]);
@@ -359,15 +370,15 @@ export default function SPCorrelationGalaxy() {
           <div className="mt-2 space-y-1">
             <p className="text-red-400">
               🔴 X-Axis: PC1 (Variance:{" "}
-              {(pcaResult.explainedVariance[0] * 100).toFixed(1)}%)
+              {((pcaResult.explainedVariance[0] ?? 0) * 100).toFixed(1)}%)
             </p>
             <p className="text-green-400">
               🟢 Y-Axis: PC2 (Variance:{" "}
-              {(pcaResult.explainedVariance[1] * 100).toFixed(1)}%)
+              {((pcaResult.explainedVariance[1] ?? 0) * 100).toFixed(1)}%)
             </p>
             <p className="text-blue-400">
               🔵 Z-Axis: PC3 (Variance:{" "}
-              {(pcaResult.explainedVariance[2] * 100).toFixed(1)}%)
+              {((pcaResult.explainedVariance[2] ?? 0) * 100).toFixed(1)}%)
             </p>
           </div>
           <p className="text-gray-400 mt-2">

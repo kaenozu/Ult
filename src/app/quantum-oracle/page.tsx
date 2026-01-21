@@ -1,9 +1,10 @@
-import QuantumTradingOracle from "@/components/features/xr/QuantumTradingOracle";
+import QuantumOracleClient from "./QuantumOracleClient";
 
 export default function QuantumOraclePage() {
   return (
     <div className="w-full h-screen">
-      <QuantumTradingOracle />
+      <QuantumOracleClient />
     </div>
   );
 }
+活跃度

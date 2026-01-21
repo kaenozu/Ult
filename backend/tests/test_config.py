@@ -33,7 +33,7 @@ class TestConfiguration:
 
     def test_system_settings_custom_cors(self, clean_env):
         """Test custom CORS origins."""
-        os.environ["CORS_ORIGINS"] = "https://example.com,https://app.example.com"
+        os.environ["CORS_ORIGINS"] = '["https://example.com", "https://app.example.com"]'
 
         settings = SystemSettings()
         expected_origins = ["https://example.com", "https://app.example.com"]
@@ -60,7 +60,7 @@ class TestConfiguration:
         """Test full config initialization with environment variables."""
         os.environ.update(
             {
-                "CORS_ORIGINS": "http://localhost:3000",
+                "CORS_ORIGINS": '["http://localhost:3000"]',
                 "LOG_LEVEL": "WARNING",
                 "GEMINI_API_KEY": "test_gemini_key",
                 "OPENAI_API_KEY": "test_openai_key",
@@ -86,7 +86,7 @@ class TestConfiguration:
 
     def test_config_validation_cors_empty_strings(self, clean_env):
         """Test CORS filtering of empty strings."""
-        os.environ["CORS_ORIGINS"] = "http://localhost:3000,,https://example.com,"
+        os.environ["CORS_ORIGINS"] = '["http://localhost:3000", "", "https://example.com", ""]'
 
         config = Config()
         # Empty strings should be filtered out

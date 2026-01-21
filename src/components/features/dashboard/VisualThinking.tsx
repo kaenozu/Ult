@@ -45,7 +45,10 @@ export default function VisualThinking({
   useEffect(() => {
     if (externalThoughts.length > 0) {
       setThoughts(externalThoughts);
-      setCurrentThought(externalThoughts[externalThoughts.length - 1].text);
+      const lastThought = externalThoughts[externalThoughts.length - 1];
+      if (lastThought) {
+        setCurrentThought(lastThought.text);
+      }
       setIsThinking(true);
     }
   }, [externalThoughts]);
@@ -100,6 +103,8 @@ export default function VisualThinking({
 
       const template =
         thoughtTemplates[Math.floor(Math.random() * thoughtTemplates.length)];
+      if (!template) return;
+
       const newThought: ThoughtNode = {
         id: Date.now().toString(),
         text: template.text,
@@ -206,11 +211,10 @@ export default function VisualThinking({
 
         <button
           onClick={() => setIsThinking(!isThinking)}
-          className={`px-4 py-2 rounded-lg text-sm font-mono transition-all ${
-            isThinking
-              ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-400 hover:bg-cyan-500/30'
-              : 'bg-gray-800 border border-gray-600 text-gray-400 hover:border-gray-500'
-          }`}
+          className={`px-4 py-2 rounded-lg text-sm font-mono transition-all ${isThinking
+            ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-400 hover:bg-cyan-500/30'
+            : 'bg-gray-800 border border-gray-600 text-gray-400 hover:border-gray-500'
+            }`}
         >
           {isThinking ? 'THINKING' : 'IDLE'}
         </button>
@@ -272,15 +276,14 @@ export default function VisualThinking({
             {decisionPath.map((path, i) => (
               <span
                 key={i}
-                className={`px-2 py-1 rounded text-xs font-mono border ${
-                  path === 'analysis'
-                    ? 'border-blue-400/30 text-blue-400'
-                    : path === 'prediction'
-                      ? 'border-emerald-400/30 text-emerald-400'
-                      : path === 'risk'
-                        ? 'border-red-400/30 text-red-400'
-                        : 'border-yellow-400/30 text-yellow-400'
-                }`}
+                className={`px-2 py-1 rounded text-xs font-mono border ${path === 'analysis'
+                  ? 'border-blue-400/30 text-blue-400'
+                  : path === 'prediction'
+                    ? 'border-emerald-400/30 text-emerald-400'
+                    : path === 'risk'
+                      ? 'border-red-400/30 text-red-400'
+                      : 'border-yellow-400/30 text-yellow-400'
+                  }`}
               >
                 {path}
               </span>

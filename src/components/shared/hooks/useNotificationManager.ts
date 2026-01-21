@@ -90,36 +90,6 @@ export const useNotificationManager = () => {
     addNotification(notification);
   };
 
-  const showPriceAlert = (title?: string, message?: string, type?: string) => {
-    addNotification({
-      type: 'price',
-      title: title || 'Price Alert',
-      message: message || 'Price notification',
-      priority: 'medium',
-    });
-  };
-
-  const showPortfolioAlert = (
-    title?: string,
-    message?: string,
-    type?: string
-  ) => {
-    addNotification({
-      type: 'portfolio',
-      title: title || 'Portfolio Alert',
-      message: message || 'Portfolio notification',
-      priority: 'medium',
-    });
-  };
-
-  const showSystemAlert = (title?: string, message?: string, type?: string) => {
-    addNotification({
-      type: 'system',
-      title: title || 'System Alert',
-      message: message || 'System notification',
-      priority: 'high',
-    });
-  };
 
   return {
     notifications,

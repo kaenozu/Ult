@@ -1,0 +1,51 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.0, pytest-7.4.2, pluggy-1.6.0
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: C:\gemini-desktop\Ult\backend
+plugins: anyio-4.9.0, dash-3.1.1, Faker-37.5.3, logfire-4.0.0, asyncio-0.23.7, benchmark-5.1.0, cov-4.1.0, mock-3.14.1, timeout-2.4.0, xdist-3.8.0, requests-mock-1.12.1, respx-0.22.0, typeguard-4.4.4
+asyncio: mode=Mode.STRICT
+collected 78 items / 1 error
+
+=================================== ERRORS ====================================
+____________________ ERROR collecting tests/test_chaos.py _____________________
+ImportError while importing test module 'C:\gemini-desktop\Ult\backend\tests\test_chaos.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests\test_chaos.py:10: in <module>
+    from src.portfolio_manager import PortfolioManager
+src\portfolio_manager.py:5: in <module>
+    from src.data_temp.data_loader import fetch_stock_data, fetch_realtime_data
+src\data_temp\data_loader.py:38: in <module>
+    from .data_quality_guard import evaluate_dataframe
+E   ModuleNotFoundError: No module named 'src.data_temp.data_quality_guard'
+------------------------------- Captured stdout -------------------------------
+DEBUG: Loading data_loader from: C:\gemini-desktop\Ult\backend\src\data_temp\data_loader.py
+============================== warnings summary ===============================
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\fields.py:1093
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\fields.py:1093
+  C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\fields.py:1093: PydanticDeprecatedSince20: Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. (Extra keys: 'env'). Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warn(
+
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_internal\_config.py:323
+  C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_internal\_config.py:323: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_internal\_generate_schema.py:298
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_internal\_generate_schema.py:298
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_internal\_generate_schema.py:298
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_internal\_generate_schema.py:298
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_internal\_generate_schema.py:298
+  C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\pydantic\_internal\_generate_schema.py:298: PydanticDeprecatedSince20: `json_encoders` is deprecated. See https://docs.pydantic.dev/2.11/concepts/serialization/#custom-serializers for alternatives. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.11/migration/
+    warnings.warn(
+
+..\..\..\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\streamlit\elements\image.py:22
+  C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\streamlit\elements\image.py:22: DeprecationWarning: 'imghdr' is deprecated and slated for removal in Python 3.13
+    import imghdr
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+ERROR tests/test_chaos.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+======================== 9 warnings, 1 error in 7.18s =========================

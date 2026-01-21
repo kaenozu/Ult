@@ -77,10 +77,13 @@ export default function EdgeNewsRefinery() {
                 const score = result[0]?.score || 0.5
 
                 setAnalyzed(prev => {
+                    const currentItem = prev.length < news.length ? news[prev.length] : undefined;
+                    if (!currentItem) return prev;
+
                     const newItem: AnalyzedNews = {
-                        headline: prev.length < news.length ? news[prev.length].headline : '',
-                        source: prev.length < news.length ? news[prev.length].source : '',
-                        datetime: prev.length < news.length ? news[prev.length].datetime : Date.now(),
+                        headline: currentItem.headline,
+                        source: currentItem.source,
+                        datetime: currentItem.datetime,
                         sentiment: label.toUpperCase() === 'POSITIVE' ? 'POSITIVE' : 'NEGATIVE',
                         score: score
                     }

@@ -30,7 +30,8 @@ const BrainCore = () => {
             const distortion = 0.3 + (sentimentScore * 0.5);
 
             // Smoothly interpolate color
-            meshRef.current.material.color.lerp(targetColor, 0.05);
+            const mat = meshRef.current.material as THREE.MeshStandardMaterial;
+            if (mat.color) mat.color.lerp(targetColor, 0.05);
 
             // Rotate
             meshRef.current.rotation.x = time * 0.2;

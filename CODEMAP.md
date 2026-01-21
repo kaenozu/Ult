@@ -5,6 +5,9 @@ Generated on: Ult
 ```
 ├── backend
 │   ├── data
+│   │   ├── logs
+│   │   │   ├── agstock.log
+│   │   │   └── error.log
 │   │   ├── parquet
 │   │   │   ├── 4062.T.parquet
 │   │   │   ├── 4502.T.parquet
@@ -32,18 +35,29 @@ Generated on: Ult
 │   │   │   ├── N225.parquet
 │   │   │   ├── TNX.parquet
 │   │   │   └── VIX.parquet
+│   │   ├── screenshots
+│   │   │   └── TEST_DIARY_7777.T_20260119_153010.png
 │   │   ├── agstock.db
 │   │   └── stock_data.db
 │   ├── logs
+│   │   ├── agstock.log
+│   │   └── error.log
 │   ├── models
+│   │   └── checkpoints
 │   ├── src
 │   │   ├── agents
 │   │   │   ├── __init__.py
 │   │   │   ├── base_agent.py
 │   │   │   ├── committee.py
+│   │   │   ├── consensus_engine.py
 │   │   │   ├── neuromancer.py
+│   │   │   ├── news_agent.py
+│   │   │   ├── risk_agent.py
 │   │   │   ├── risk_manager.py
-│   │   │   └── rl_agent_wrapper.py
+│   │   │   ├── rl_agent_wrapper.py
+│   │   │   └── vision_agent.py
+│   │   ├── ai
+│   │   │   └── predictor.py
 │   │   ├── analysis
 │   │   │   ├── __init__.py
 │   │   │   ├── monte_carlo.py
@@ -51,12 +65,22 @@ Generated on: Ult
 │   │   │   ├── multimodal_analyzer.py
 │   │   │   ├── pdf_reader.py
 │   │   │   └── performance_analyzer.py
+│   │   ├── analysis_temp
+│   │   │   ├── analytics.py
+│   │   │   ├── fundamental_analyzer.py
+│   │   │   ├── llm_analyzer.py
+│   │   │   ├── performance_analyzer.py
+│   │   │   ├── portfolio_analyzer.py
+│   │   │   ├── scenario_analyzer.py
+│   │   │   └── sentiment_analyzer.py
 │   │   ├── api
 │   │   │   ├── routers
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── alerts.py
 │   │   │   │   ├── approvals.py
 │   │   │   │   ├── circuit_breaker.py
+│   │   │   │   ├── journal.py
+│   │   │   │   ├── learning.py
 │   │   │   │   ├── market.py
 │   │   │   │   ├── portfolio.py
 │   │   │   │   ├── replay.py
@@ -64,15 +88,19 @@ Generated on: Ult
 │   │   │   │   ├── settings_temp_check.py
 │   │   │   │   ├── shock_radar.py
 │   │   │   │   ├── trading.py
+│   │   │   │   ├── vision.py
 │   │   │   │   └── websocket.py
 │   │   │   ├── __init__.py
 │   │   │   ├── dependencies.py
+│   │   │   ├── responses.py
 │   │   │   ├── schemas.py
 │   │   │   ├── server.py
 │   │   │   ├── vibe_endpoints.py
 │   │   │   ├── websocket_broadcaster.py
 │   │   │   ├── websocket_manager.py
 │   │   │   └── websocket_types.py
+│   │   ├── api_temp
+│   │   │   └── api_server.py
 │   │   ├── backtesting
 │   │   │   ├── __init__.py
 │   │   │   ├── analyzer.py
@@ -85,6 +113,7 @@ Generated on: Ult
 │   │   │   ├── autotrade.py
 │   │   │   ├── backtest.py
 │   │   │   ├── opencode.py
+│   │   │   ├── optimize_strategy.py
 │   │   │   ├── rebalance.py
 │   │   │   └── sentiment.py
 │   │   ├── core
@@ -118,6 +147,7 @@ Generated on: Ult
 │   │   │   └── verify_dashboard.py
 │   │   ├── data
 │   │   │   ├── __init__.py
+│   │   │   ├── data_loader.py
 │   │   │   ├── earnings_history.py
 │   │   │   ├── earnings_provider.py
 │   │   │   ├── feedback_store.py
@@ -126,6 +156,11 @@ Generated on: Ult
 │   │   │   ├── universe_manager.py
 │   │   │   ├── us_market_monitor.py
 │   │   │   └── whale_tracker.py
+│   │   ├── data_temp
+│   │   │   ├── __init__.py
+│   │   │   ├── data_loader.py
+│   │   │   ├── data_manager.py
+│   │   │   └── data_quality_guard.py
 │   │   ├── db
 │   │   │   ├── __init__.py
 │   │   │   ├── database.py
@@ -153,6 +188,7 @@ Generated on: Ult
 │   │   │   ├── heritage_manager.py
 │   │   │   ├── market_simulator.py
 │   │   │   ├── paradigm_switcher.py
+│   │   │   ├── regime_classifier.py
 │   │   │   ├── strategy_breeder.py
 │   │   │   ├── strategy_generator.py
 │   │   │   ├── swarm_intel.py
@@ -184,6 +220,22 @@ Generated on: Ult
 │   │   │   ├── memory_cache.py
 │   │   │   ├── numba_utils.py
 │   │   │   └── settings.py
+│   │   ├── infra
+│   │   │   ├── cache_config.py
+│   │   │   ├── config.py
+│   │   │   ├── config_manager.py
+│   │   │   ├── log_config.py
+│   │   │   ├── logger_config.py
+│   │   │   └── logging_config.py
+│   │   ├── ml
+│   │   │   ├── base_predictor.py
+│   │   │   ├── enhanced_ensemble_predictor.py
+│   │   │   ├── ensemble_predictor.py
+│   │   │   ├── future_predictor.py
+│   │   │   ├── lgbm_predictor.py
+│   │   │   ├── lstm_predictor.py
+│   │   │   ├── prophet_predictor.py
+│   │   │   └── transformer_predictor.py
 │   │   ├── mobile
 │   │   │   ├── __init__.py
 │   │   │   └── commander.py
@@ -196,6 +248,7 @@ Generated on: Ult
 │   │   │   ├── __init__.py
 │   │   │   ├── evolution_engine.py
 │   │   │   ├── genetic_breeder.py
+│   │   │   ├── genetic_optimizer.py
 │   │   │   ├── hyperparameter_tuner.py
 │   │   │   ├── meta_optimizers.py
 │   │   │   ├── multi_model_optimizer.py
@@ -244,6 +297,9 @@ Generated on: Ult
 │   │   │   ├── __init__.py
 │   │   │   ├── sovereign_report.py
 │   │   │   └── weekly_report_html.py
+│   │   ├── reporting_temp
+│   │   │   ├── pdf_report_generator.py
+│   │   │   └── tax_report_generator.py
 │   │   ├── rl
 │   │   │   ├── __init__.py
 │   │   │   ├── agent.py
@@ -255,7 +311,8 @@ Generated on: Ult
 │   │   │   ├── input_validator.py
 │   │   │   ├── risk_manager.py
 │   │   │   ├── secure_config.py
-│   │   │   └── secure_data_manager.py
+│   │   │   ├── secure_data_manager.py
+│   │   │   └── zero_trust.py
 │   │   ├── services
 │   │   │   ├── __init__.py
 │   │   │   ├── api_optimizer.py
@@ -271,6 +328,9 @@ Generated on: Ult
 │   │   │   ├── chronos_lab.py
 │   │   │   ├── digital_twin.py
 │   │   │   └── probability_engine.py
+│   │   ├── sovereign
+│   │   │   ├── notifier.py
+│   │   │   └── scheduler.py
 │   │   ├── strategies
 │   │   │   ├── ensemble
 │   │   │   │   ├── __init__.py
@@ -300,6 +360,7 @@ Generated on: Ult
 │   │   │   │   └── sma_crossover.py
 │   │   │   ├── __init__.py
 │   │   │   ├── base.py
+│   │   │   ├── ensemble_strategy.py
 │   │   │   ├── evolved_strategy.py
 │   │   │   ├── hedging_manager.py
 │   │   │   ├── hierarchical_strategy.py
@@ -309,8 +370,17 @@ Generated on: Ult
 │   │   │   ├── moe_strategy.py
 │   │   │   ├── options_strategy.py
 │   │   │   ├── orchestrator.py
+│   │   │   ├── range_strategy.py
 │   │   │   ├── rl_strategy.py
+│   │   │   ├── strategy_router.py
 │   │   │   ├── vectorized_combined.py
+│   │   │   ├── volatility_strategy.py
+│   │   │   └── yuutai_strategy.py
+│   │   ├── strategies_temp
+│   │   │   ├── evolved_strategy.py
+│   │   │   ├── hierarchical_strategy.py
+│   │   │   ├── moe_strategy.py
+│   │   │   ├── rl_strategy.py
 │   │   │   └── yuutai_strategy.py
 │   │   ├── tax
 │   │   │   ├── __init__.py
@@ -334,6 +404,19 @@ Generated on: Ult
 │   │   │   ├── safety_checks.py
 │   │   │   ├── tournament_manager.py
 │   │   │   └── trade_executor.py
+│   │   ├── ui_temp
+│   │   │   ├── ui_ai_report.py
+│   │   │   ├── ui_alerts.py
+│   │   │   ├── ui_automation.py
+│   │   │   ├── ui_components.py
+│   │   │   ├── ui_customizer.py
+│   │   │   ├── ui_export.py
+│   │   │   ├── ui_ghostwriter.py
+│   │   │   ├── ui_nisa.py
+│   │   │   ├── ui_options.py
+│   │   │   ├── ui_realtime.py
+│   │   │   ├── ui_renderers.py
+│   │   │   └── ui_tax.py
 │   │   ├── utils
 │   │   │   ├── __init__.py
 │   │   │   ├── cache_mgr.py
@@ -358,6 +441,13 @@ Generated on: Ult
 │   │   │   ├── state_engine.py
 │   │   │   ├── tax_optimizer.py
 │   │   │   └── voice_oracle.py
+│   │   ├── utils_temp
+│   │   │   ├── dashboard_utils.py
+│   │   │   ├── helpers.py
+│   │   │   ├── performance_utils.py
+│   │   │   ├── platform_utils.py
+│   │   │   ├── pnl_utils.py
+│   │   │   └── security_utils.py
 │   │   ├── __init__.py
 │   │   ├── advanced_analytics.py
 │   │   ├── advanced_ensemble.py
@@ -368,8 +458,6 @@ Generated on: Ult
 │   │   ├── ai_analyst.py
 │   │   ├── alert_manager.py
 │   │   ├── alert_system.py
-│   │   ├── analytics.py
-│   │   ├── api_server.py
 │   │   ├── approval_redis_store.py
 │   │   ├── approval_system.py
 │   │   ├── approval_workflow_demo.py
@@ -387,36 +475,26 @@ Generated on: Ult
 │   │   ├── backtester.py
 │   │   ├── backup_manager.py
 │   │   ├── base.py
-│   │   ├── base_predictor.py
 │   │   ├── batch_inference.py
 │   │   ├── benchmark_comparator.py
 │   │   ├── bert_sentiment.py
 │   │   ├── broker.py
-│   │   ├── cache_config.py
 │   │   ├── cache_manager.py
 │   │   ├── chaos_engine.py
 │   │   ├── circuit_breaker.py
 │   │   ├── cloud_sync.py
-│   │   ├── config.py
-│   │   ├── config_manager.py
 │   │   ├── constants.py
 │   │   ├── continual_learning.py
+│   │   ├── continuous_learning.py
 │   │   ├── cost_optimizer.py
 │   │   ├── cross_validation.py
-│   │   ├── dashboard_utils.py
-│   │   ├── data_augmenter.py
-│   │   ├── data_loader.py
-│   │   ├── data_manager.py
-│   │   ├── data_preprocessing.py
-│   │   ├── data_processor.py
-│   │   ├── data_quality.py
-│   │   ├── data_quality_guard.py
 │   │   ├── database_manager.py
 │   │   ├── db_maintenance.py
 │   │   ├── deep_optimizer.py
 │   │   ├── defi_blockchain_integration.py
 │   │   ├── demo_data.py
 │   │   ├── design_tokens.py
+│   │   ├── di.py
 │   │   ├── distributed_storage.py
 │   │   ├── drift_monitor.py
 │   │   ├── dynamic_ensemble.py
@@ -424,31 +502,24 @@ Generated on: Ult
 │   │   ├── dynamic_stop.py
 │   │   ├── encryption.py
 │   │   ├── enhanced_ai_prediction.py
-│   │   ├── enhanced_ensemble_predictor.py
 │   │   ├── enhanced_features.py
 │   │   ├── enhanced_performance_dashboard.py
 │   │   ├── ensemble.py
-│   │   ├── ensemble_predictor.py
 │   │   ├── ensemble_weight_optimizer.py
 │   │   ├── error_handling.py
 │   │   ├── errors.py
 │   │   ├── evolution_engine.py
-│   │   ├── evolved_strategy.py
 │   │   ├── exceptions.py
 │   │   ├── explainable_ai.py
 │   │   ├── external_data.py
 │   │   ├── feature_filter.py
 │   │   ├── feedback_loop.py
 │   │   ├── formatters.py
-│   │   ├── fundamental_analyzer.py
 │   │   ├── fundamentals.py
-│   │   ├── future_predictor.py
 │   │   ├── ghostwriter.py
 │   │   ├── global_market_integration.py
 │   │   ├── gpt4_vision.py
 │   │   ├── gpu_accelerator.py
-│   │   ├── helpers.py
-│   │   ├── hierarchical_strategy.py
 │   │   ├── horizon_expert.py
 │   │   ├── hyperparameter_optimizer.py
 │   │   ├── hyperparameter_tuning.py
@@ -460,21 +531,14 @@ Generated on: Ult
 │   │   ├── japan_tax_calculator.py
 │   │   ├── kelly_criterion.py
 │   │   ├── lazy_loader.py
-│   │   ├── lgbm_predictor.py
 │   │   ├── live_trading.py
-│   │   ├── llm_analyzer.py
 │   │   ├── llm_reasoner.py
-│   │   ├── log_config.py
-│   │   ├── logger_config.py
-│   │   ├── logging_config.py
-│   │   ├── lstm_predictor.py
 │   │   ├── market_access.py
 │   │   ├── meta_optimizer.py
 │   │   ├── metrics.py
 │   │   ├── ml_pipeline.py
 │   │   ├── ml_prediction_system.py
 │   │   ├── mlops_manager.py
-│   │   ├── moe_strategy.py
 │   │   ├── moe_system.py
 │   │   ├── morning_briefing_generator.py
 │   │   ├── morning_strategy_memo.py
@@ -495,9 +559,7 @@ Generated on: Ult
 │   │   ├── parallel_backtester.py
 │   │   ├── paths.py
 │   │   ├── patterns.py
-│   │   ├── pdf_report_generator.py
 │   │   ├── performance.py
-│   │   ├── performance_analyzer.py
 │   │   ├── performance_attribution.py
 │   │   ├── performance_calculator.py
 │   │   ├── performance_collector.py
@@ -505,13 +567,9 @@ Generated on: Ult
 │   │   ├── performance_metrics.py
 │   │   ├── performance_monitor.py
 │   │   ├── performance_optimizer.py
-│   │   ├── performance_utils.py
 │   │   ├── persistent_cache.py
 │   │   ├── personal_assistant.py
-│   │   ├── platform_utils.py
-│   │   ├── pnl_utils.py
 │   │   ├── portfolio.py
-│   │   ├── portfolio_analyzer.py
 │   │   ├── portfolio_manager.py
 │   │   ├── portfolio_optimizer.py
 │   │   ├── portfolio_rebalancer.py
@@ -521,7 +579,6 @@ Generated on: Ult
 │   │   ├── prediction_dashboard.py
 │   │   ├── production_manager.py
 │   │   ├── prompts.py
-│   │   ├── prophet_predictor.py
 │   │   ├── psychological_guard.py
 │   │   ├── push_notifications.py
 │   │   ├── pytest_cov_optional.py
@@ -540,21 +597,18 @@ Generated on: Ult
 │   │   ├── risk_limiter.py
 │   │   ├── rl_agent.py
 │   │   ├── rl_environment.py
-│   │   ├── rl_strategy.py
 │   │   ├── rl_trainer.py
 │   │   ├── safety_manager.py
-│   │   ├── scenario_analyzer.py
 │   │   ├── schemas.py
 │   │   ├── sector_rotation.py
-│   │   ├── security_utils.py
 │   │   ├── sentiment.py
 │   │   ├── sentiment_analytics.py
-│   │   ├── sentiment_analyzer.py
 │   │   ├── sentiment_tracker.py
 │   │   ├── simple_dashboard.py
 │   │   ├── simulator.py
 │   │   ├── simulator_core.py
 │   │   ├── simulator_main.py
+│   │   ├── skill_search.py
 │   │   ├── smart_alerts.py
 │   │   ├── smart_cache.py
 │   │   ├── smart_notifier.py
@@ -564,28 +618,14 @@ Generated on: Ult
 │   │   ├── startup_optimizer.py
 │   │   ├── streaming_pipeline.py
 │   │   ├── tax_calculator.py
-│   │   ├── tax_report_generator.py
 │   │   ├── test_walkforward_lightgbm.py
 │   │   ├── timeseries_cv.py
 │   │   ├── trade_explainer.py
 │   │   ├── trading_cost.py
 │   │   ├── transformer_model.py
-│   │   ├── transformer_predictor.py
 │   │   ├── trust_engine.py
 │   │   ├── typed_core_functions.py
 │   │   ├── types.py
-│   │   ├── ui_ai_report.py
-│   │   ├── ui_alerts.py
-│   │   ├── ui_automation.py
-│   │   ├── ui_components.py
-│   │   ├── ui_customizer.py
-│   │   ├── ui_export.py
-│   │   ├── ui_ghostwriter.py
-│   │   ├── ui_nisa.py
-│   │   ├── ui_options.py
-│   │   ├── ui_realtime.py
-│   │   ├── ui_renderers.py
-│   │   ├── ui_tax.py
 │   │   ├── vector_backtester.py
 │   │   ├── vibe_trader.py
 │   │   ├── visualizer.py
@@ -594,8 +634,7 @@ Generated on: Ult
 │   │   ├── walkforward_blender.py
 │   │   ├── walkforward_lightgbm.py
 │   │   ├── websocket_notifier.py
-│   │   ├── xai_explainer.py
-│   │   └── yuutai_strategy.py
+│   │   └── xai_explainer.py
 │   ├── tests
 │   │   ├── core
 │   │   │   ├── test_agent_loop.py
@@ -604,68 +643,78 @@ Generated on: Ult
 │   │   │   └── test_circuit_breaker.py
 │   │   ├── services
 │   │   │   └── test_approval_service.py
+│   │   ├── test_agents.py
+│   │   ├── test_api_endpoints.py
 │   │   ├── test_api_integration.py
-│   │   ├── test_api_structure.py
 │   │   ├── test_approval_persistence.py
 │   │   ├── test_auto_trader.py
 │   │   ├── test_chaos.py
+│   │   ├── test_config.py
+│   │   ├── test_database.py
+│   │   ├── test_genetic_optimizer.py
 │   │   ├── test_vibe_trading.py
 │   │   └── test_websocket.py
+│   ├── vaderSentiment
+│   │   ├── __init__.py
+│   │   └── vaderSentiment.py
+│   ├── backend_error_log.txt
+│   ├── backend_error_log_v10.txt
+│   ├── backend_error_log_v2.txt
+│   ├── backend_error_log_v3.txt
+│   ├── backend_error_log_v4.txt
+│   ├── backend_error_log_v5.txt
+│   ├── backend_error_log_v6.txt
+│   ├── backend_error_log_v7.txt
+│   ├── backend_error_log_v9.txt
+│   ├── backend_test_log.txt
+│   ├── backend_test_log_v2.txt
+│   ├── backend_test_log_v3.txt
+│   ├── backend_test_log_v4.txt
+│   ├── backend_test_log_v5.txt
+│   ├── backend_test_log_v6.txt
 │   ├── cache.db
 │   ├── config.json
+│   ├── debug_db.py
+│   ├── debug_portfolio.py
+│   ├── debug_signals.py
+│   ├── debug_trade.py
 │   ├── main.py
 │   ├── requirements.txt
+│   ├── run_sovereign.py
 │   ├── stock_data.db
 │   ├── ult_trading.db
 │   ├── ult_trading.db-shm
 │   └── ult_trading.db-wal
 ├── brainstorm_results
 │   ├── accuracy_debate.md
-│   ├── adaptive_regime_concept.png
-│   ├── big_pickle_roast_glm_react.md
-│   ├── brainstorm_skill_review.md
-│   ├── bug_fixing_meeting.md
-│   ├── cleanup_meeting.md
-│   ├── conference_room.md
-│   ├── conference_room_v2.md
-│   ├── council_conflict_test.md
-│   ├── council_verification.md
-│   ├── data_starvation_meeting.md
-│   ├── earnings_hunter_meeting.md
+│   ├── can_we_win_debate.md
 │   ├── edge_inference_debate.md
-│   ├── interactive_session.md
-│   ├── interactive_session_v2.md
-│   ├── living_nexus_concept.png
-│   ├── next_steps.md
-│   ├── next_steps_decision.md
-│   ├── next_steps_discussion.md
-│   ├── next_steps_meeting.md
-│   ├── next_steps_v2.md
-│   ├── next_steps_v3.md
+│   ├── emergency_session_debate.md
+│   ├── liquidity_trap_debate.md
+│   ├── next_phase_debate.md
+│   ├── next_phase_decision.md
+│   ├── next_steps_debate.md
 │   ├── phase10_debate.md
-│   ├── phase3_conflict_debate.md
-│   ├── phase4_agent_loop_priority.md
-│   ├── phase4_autonomy_debate.md
-│   ├── phase4_execution_strategy.md
+│   ├── phase11_5_implementation_debate.md
+│   ├── phase11_5_ui_review_debate.md
+│   ├── phase11_debate.md
+│   ├── phase11_diary_debate.md
+│   ├── phase11_ui_debate.md
+│   ├── phase13_5_optimization_debate.md
+│   ├── phase13_arsenal_debate.md
+│   ├── phase14_blacksmith_debate.md
+│   ├── phase15_5_review.md
+│   ├── phase15_debate.md
+│   ├── phase15_mechanical_hive.md
+│   ├── phase15_review.md
+│   ├── phase17_debate.md
 │   ├── phase4_missing_check.md
-│   ├── phase4_ops_debate.md
-│   ├── phase4_ops_technical.md
-│   ├── phase4_priority_debate.md
-│   ├── phase4_semi_auto_complete.md
-│   ├── phase4_ui_design.md
-│   ├── phase5_galaxy_design.md
 │   ├── phase5_next_priority.md
-│   ├── phase5_priority_debate.md
-│   ├── phase5_singularity_proposal.md
-│   ├── phase5_singularity_roadmap.md
 │   ├── phase5_strategy.md
 │   ├── phase5_strategy_debate.md
 │   ├── phase5_strategy_debate_v2.md
-│   ├── phase5_webxr_design.md
-│   ├── phase_next_priority_debate.md
+│   ├── phase5_voice_debate.md
 │   ├── profitability_debate.md
-│   ├── profitability_meeting.md
-│   ├── protocol_test.md
 │   ├── r1_accuracy_glm.txt
 │   ├── r1_accuracy_minimax.txt
 │   ├── r1_accuracy_pickle.txt
@@ -683,37 +732,36 @@ Generated on: Ult
 │   ├── r1_qwen_p5.txt
 │   ├── r2_minimax_attack.txt
 │   ├── r2_qwen_attack.txt
-│   ├── recalibration_meeting.md
-│   ├── recalibration_meeting_final.md
 │   ├── retrospective_patch_4_5.md
-│   ├── risk_assessment_meeting.md
-│   ├── sensitivity_meeting.md
-│   ├── source_review_meeting.md
-│   ├── ui_design_meeting.md
-│   ├── ui_skills_review.md
-│   ├── ui_touch_review.md
-│   ├── ult_improvements.md
-│   ├── ult_improvements_v2.md
-│   ├── visual_evaluation_meeting.md
-│   └── zero_data_meeting.md
+│   ├── ui_audit_report.md
+│   ├── ui_fix_prioritization_debate.md
+│   ├── ui_review_summary.md
+│   └── ui_skills_review.md
 ├── data
 │   ├── parquet
-│   │   ├── 4062.T.parquet
-│   │   ├── 6758.T.parquet
-│   │   ├── 6857.T.parquet
-│   │   ├── 6920.T.parquet
+│   │   ├── 6471.T.parquet
+│   │   ├── 6501.T.parquet
+│   │   ├── 6954.T.parquet
 │   │   ├── 7203.T.parquet
-│   │   ├── 8035.T.parquet
-│   │   ├── 9984.T.parquet
 │   │   ├── CL=F.parquet
 │   │   ├── GC=F.parquet
+│   │   ├── GOLD.parquet
 │   │   ├── GSPC.parquet
 │   │   ├── JPY=X.parquet
 │   │   ├── N225.parquet
 │   │   ├── TNX.parquet
 │   │   └── VIX.parquet
+│   ├── screenshots
 │   ├── agstock.db
 │   └── stock_data.db
+├── docs
+│   ├── API.md
+│   ├── APPROVAL_QUICKSTART.md
+│   └── APPROVAL_WORKFLOW_GUIDE.md
+├── e2e
+│   └── app.spec.ts
+├── k8s
+│   └── deployment.yml
 ├── logs
 │   ├── walkforward_analysis
 │   │   └── 20260119_070621
@@ -729,9 +777,16 @@ Generated on: Ult
 │   ├── edge-worker.js
 │   ├── file.svg
 │   ├── globe.svg
+│   ├── grid-pattern.svg
 │   ├── next.svg
 │   ├── vercel.svg
 │   └── window.svg
+├── skills-dev
+│   └── trading-system-orchestrator
+│       ├── scripts
+│       │   ├── run_verification.cjs
+│       │   └── start_system.cjs
+│       └── SKILL.md
 ├── src
 │   ├── __tests__
 │   │   └── components
@@ -741,7 +796,9 @@ Generated on: Ult
 │   │           └── EcosystemGraph.test.tsx
 │   ├── app
 │   │   ├── api
-│   │   │   └── notifications
+│   │   │   ├── notifications
+│   │   │   │   └── route.ts
+│   │   │   └── portfolio
 │   │   │       └── route.ts
 │   │   ├── edge
 │   │   │   └── page.tsx
@@ -756,7 +813,8 @@ Generated on: Ult
 │   │   ├── portfolio
 │   │   │   └── page.tsx
 │   │   ├── quantum-oracle
-│   │   │   └── page.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── QuantumOracleClient.tsx
 │   │   ├── settings
 │   │   │   └── page.tsx
 │   │   ├── stocks
@@ -788,10 +846,12 @@ Generated on: Ult
 │   │   │   │   ├── AIAgentAvatar.tsx
 │   │   │   │   ├── AssetAllocation.tsx
 │   │   │   │   ├── AutoTradeControls.tsx
+│   │   │   │   ├── CockpitPanel.tsx
 │   │   │   │   ├── DashboardOnboarding.tsx
 │   │   │   │   ├── DecisionTree.tsx
 │   │   │   │   ├── EarningsCountdown.tsx
 │   │   │   │   ├── EarningsHunterPanel.tsx
+│   │   │   │   ├── HivePanel.tsx
 │   │   │   │   ├── MacroStrip.tsx
 │   │   │   │   ├── MarketStatusCard.tsx
 │   │   │   │   ├── MatrixPortfolioSummary.tsx
@@ -809,13 +869,21 @@ Generated on: Ult
 │   │   │   │   ├── PriceChart.tsx
 │   │   │   │   ├── SignalCard.tsx
 │   │   │   │   ├── SystemMonitor.tsx
+│   │   │   │   ├── TimeMachinePanel.tsx
 │   │   │   │   ├── TinderTradeCard.tsx
 │   │   │   │   ├── TinderTrader.tsx
 │   │   │   │   ├── TradingModal.tsx
 │   │   │   │   └── VisualThinking.tsx
 │   │   │   ├── edge
 │   │   │   │   ├── EdgeInferenceWidget.tsx
+│   │   │   │   ├── EdgeNewsRefinery.tsx
 │   │   │   │   └── sentiment.worker.ts
+│   │   │   ├── journal
+│   │   │   │   ├── DiaryGallery.tsx
+│   │   │   │   └── ScreenshotCard.tsx
+│   │   │   ├── vision
+│   │   │   │   ├── DiaryGallery.tsx
+│   │   │   │   └── VisionPanel.tsx
 │   │   │   ├── xr
 │   │   │   │   ├── InteractiveStockGalaxy.tsx
 │   │   │   │   ├── MinorityReportXR.tsx
@@ -831,15 +899,24 @@ Generated on: Ult
 │   │   │   └── NotificationSystem.tsx
 │   │   ├── shared
 │   │   │   ├── hooks
+│   │   │   │   ├── __tests__
+│   │   │   │   │   └── useAsyncData.test.ts
+│   │   │   │   ├── business
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── useApprovalRequests.ts
+│   │   │   │   │   ├── useApprovalSync.ts
+│   │   │   │   │   ├── useCircuitBreaker.ts
+│   │   │   │   │   ├── usePnL.ts
+│   │   │   │   │   └── usePositionRow.ts
+│   │   │   │   ├── ui
+│   │   │   │   │   ├── index.ts
+│   │   │   │   │   ├── useAlert.ts
+│   │   │   │   │   └── useNotificationManager.ts
 │   │   │   │   ├── common.ts
-│   │   │   │   ├── useAlert.ts
-│   │   │   │   ├── useApprovalRequests.ts
-│   │   │   │   ├── useApprovalSync.ts
-│   │   │   │   ├── useCircuitBreaker.ts
-│   │   │   │   ├── useNotificationManager.ts
-│   │   │   │   ├── usePnL.ts
-│   │   │   │   ├── usePositionRow.ts
-│   │   │   │   └── useSynapse.ts
+│   │   │   │   ├── connection.ts
+│   │   │   │   ├── stubs.ts
+│   │   │   │   ├── useAsyncData.ts
+│   │   │   │   └── useNotificationManager.ts
 │   │   │   ├── utils
 │   │   │   │   ├── api.ts
 │   │   │   │   ├── common.ts
@@ -847,15 +924,17 @@ Generated on: Ult
 │   │   │   │   ├── sounds.ts
 │   │   │   │   └── utils.ts
 │   │   │   ├── index.ts
-│   │   │   ├── types-phase5.ts
-│   │   │   ├── types.ts
+│   │   │   ├── Loading.tsx
 │   │   │   └── websocket.ts
 │   │   ├── ui
+│   │   │   ├── __tests__
+│   │   │   │   └── data-table.test.tsx
 │   │   │   ├── avatar.tsx
 │   │   │   ├── badge.tsx
 │   │   │   ├── button.tsx
 │   │   │   ├── card.tsx
 │   │   │   ├── chart.tsx
+│   │   │   ├── data-table.tsx
 │   │   │   ├── dialog.tsx
 │   │   │   ├── glitch-text.tsx
 │   │   │   ├── input.tsx
@@ -863,59 +942,168 @@ Generated on: Ult
 │   │   │   ├── label.tsx
 │   │   │   ├── matrix-rain.tsx
 │   │   │   ├── progress.tsx
+│   │   │   ├── skeleton.tsx
 │   │   │   ├── switch.tsx
 │   │   │   └── tabs.tsx
 │   │   ├── visualizations
 │   │   │   └── EcosystemGraph.tsx
 │   │   ├── ApprovalToast.tsx
+│   │   ├── CircuitBreakerStatus.tsx
+│   │   ├── DangerWarning.tsx
 │   │   ├── ErrorBoundary.tsx
+│   │   ├── MetricsGrid.tsx
 │   │   ├── NeuralMonitorAdvanced.tsx
-│   │   └── NeuralMonitorUI.tsx
+│   │   ├── NeuralMonitorUI.tsx
+│   │   ├── PerformanceMonitor.tsx
+│   │   ├── ToastSystem.tsx
+│   │   ├── TrafficLight.test.tsx
+│   │   └── TrafficLight.tsx
 │   ├── data
 │   │   └── mockEcosystem.ts
+│   ├── hooks
+│   │   ├── useChartCapture.ts
+│   │   ├── useExecuteTrade.ts
+│   │   └── useSpeech.ts
+│   ├── i18n
+│   │   └── request.ts
 │   ├── lib
 │   │   ├── ai
 │   │   │   └── EdgeAIClient.ts
-│   │   └── store
-│   │       └── neuralStore.ts
-│   └── providers
-│       ├── QueryProvider.tsx
-│       └── ThemeProvider.tsx
-├── webxr-galaxy
-│   └── index.html
-├── APPROVAL_QUICKSTART.md
-├── APPROVAL_WORKFLOW_GUIDE.md
-├── cache.db
+│   │   ├── store
+│   │   │   └── neuralStore.ts
+│   │   ├── api.ts
+│   │   ├── config.ts
+│   │   ├── logger.ts
+│   │   └── utils.ts
+│   ├── messages
+│   │   ├── en.json
+│   │   └── ja.json
+│   ├── providers
+│   │   ├── QueryProvider.tsx
+│   │   └── ThemeProvider.tsx
+│   └── types
+│       ├── dom-to-image-more.d.ts
+│       ├── index.ts
+│       └── phase5.ts
+├── tests
+│   ├── test_agent_integration.py
+│   ├── test_regime_classifier.py
+│   ├── test_risk_veto.py
+│   ├── test_sovereign_cycle.py
+│   ├── test_strategies_v2.py
+│   ├── test_vision_journal.py
+│   ├── verify_hive.py
+│   ├── verify_news.py
+│   └── verify_vision_consensus.py
+├── check_db.py
+├── check_db_v2.py
+├── check_db_v2_backend.py
 ├── CODEMAP.md
 ├── components.json
-├── eslint.config.mjs
+├── debug_portfolio.py
+├── docker-compose.yml
+├── eslint.config.js
+├── frontend_build_log.txt
+├── frontend_build_log_v10.txt
+├── frontend_build_log_v11.txt
+├── frontend_build_log_v12.txt
+├── frontend_build_log_v13.txt
+├── frontend_build_log_v14.txt
+├── frontend_build_log_v15.txt
+├── frontend_build_log_v16.txt
+├── frontend_build_log_v17.txt
+├── frontend_build_log_v18.txt
+├── frontend_build_log_v19.txt
+├── frontend_build_log_v2.txt
+├── frontend_build_log_v20.txt
+├── frontend_build_log_v21.txt
+├── frontend_build_log_v22.txt
+├── frontend_build_log_v23.txt
+├── frontend_build_log_v24.txt
+├── frontend_build_log_v25.txt
+├── frontend_build_log_v26.txt
+├── frontend_build_log_v27.txt
+├── frontend_build_log_v28.txt
+├── frontend_build_log_v29.txt
+├── frontend_build_log_v3.txt
+├── frontend_build_log_v30.txt
+├── frontend_build_log_v31.txt
+├── frontend_build_log_v32.txt
+├── frontend_build_log_v33.txt
+├── frontend_build_log_v34.txt
+├── frontend_build_log_v35.txt
+├── frontend_build_log_v36.txt
+├── frontend_build_log_v37.txt
+├── frontend_build_log_v38.txt
+├── frontend_build_log_v39.txt
+├── frontend_build_log_v4.txt
+├── frontend_build_log_v40.txt
+├── frontend_build_log_v41.txt
+├── frontend_build_log_v42.txt
+├── frontend_build_log_v43.txt
+├── frontend_build_log_v44.txt
+├── frontend_build_log_v45.txt
+├── frontend_build_log_v46.txt
+├── frontend_build_log_v47.txt
+├── frontend_build_log_v48.txt
+├── frontend_build_log_v49.txt
+├── frontend_build_log_v5.txt
+├── frontend_build_log_v50.txt
+├── frontend_build_log_v51.txt
+├── frontend_build_log_v52.txt
+├── frontend_build_log_v53.txt
+├── frontend_build_log_v54.txt
+├── frontend_build_log_v55.txt
+├── frontend_build_log_v56.txt
+├── frontend_build_log_v57.txt
+├── frontend_build_log_v58.txt
+├── frontend_build_log_v59.txt
+├── frontend_build_log_v6.txt
+├── frontend_build_log_v60.txt
+├── frontend_build_log_v7.txt
+├── frontend_build_log_v8.txt
+├── frontend_build_log_v9.txt
+├── frontend_test_log.txt
+├── frontend_test_log_v2.txt
+├── frontend_test_log_v3.txt
+├── frontend_test_log_v4.txt
+├── frontend_test_log_v5.txt
+├── frontend_test_log_v6.txt
 ├── GEMINI.md
-├── implementation_plan.md
-├── jest.config.js
+├── jest.config.cjs
 ├── jest.setup.js
 ├── LEARNINGS.md
-├── neural-monitor-case.md
-├── neuro-symbiotic-interface.md
+├── living-nexus-guardian.skill
+├── mypy.ini
 ├── next-env.d.ts
-├── next.config.ts
-├── nul
-├── OPS_SECURITY_DESIGN.md
+├── next.config.js
+├── next.config.ts.bak
 ├── package-lock.json
 ├── package.json
-├── PHASE3_QUICKSTART.md
-├── PHASE3_WEBSOCKET_ARCHITECTURE.md
+├── playwright.config.ts
 ├── postcss.config.mjs
+├── pr_body_phases15-17.md
 ├── README.md
-├── redis-memory-argument.md
-├── REFACTORING_SUMMARY.md
-├── source_review.md
+├── seed_portfolio.py
+├── sovereign.log
 ├── stock_data.db
 ├── task.md
-├── test_approval_cards.py
+├── test_autotrade_api.py
+├── test_import.py
+├── test_reset.py
+├── test_yf.py
+├── trading-system-orchestrator.skill
 ├── tsconfig.json
 ├── tsconfig.tsbuildinfo
+├── typedoc.json
+├── ult_trading.db
+├── ult_trading.db-shm
+├── ult_trading.db-wal
+├── verify_db_config.py
 ├── verify_earnings.py
+├── verify_earnings_api.py
 ├── verify_shock_defense.py
+├── verify_strategy_router.py
 ├── verify_time_machine.py
 └── walkthrough.md
 ```

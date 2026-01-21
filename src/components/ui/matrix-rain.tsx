@@ -68,7 +68,7 @@ export default function MatrixRain({
         speed: 0.3 + Math.random() * 1.5,
         chars: Array.from(
           { length: Math.floor(10 + Math.random() * 10) },
-          () => matrixChars[Math.floor(Math.random() * matrixChars.length)],
+          () => matrixChars.charAt(Math.floor(Math.random() * matrixChars.length)),
         ),
         opacity: 0.03 + Math.random() * 0.05,
         color: ["green", "cyan", "magenta", "red"][
@@ -142,14 +142,14 @@ export default function MatrixRain({
           column.opacity = 0.03 + Math.random() * 0.05;
           column.chars = Array.from(
             { length: Math.floor(10 + Math.random() * 10) },
-            () => matrixChars[Math.floor(Math.random() * matrixChars.length)],
+            () => matrixChars.charAt(Math.floor(Math.random() * matrixChars.length)),
           );
         }
 
         if (Math.random() < 0.005) {
           const randomIndex = Math.floor(Math.random() * column.chars.length);
           column.chars[randomIndex] =
-            matrixChars[Math.floor(Math.random() * matrixChars.length)];
+            matrixChars.charAt(Math.floor(Math.random() * matrixChars.length));
         }
       });
 
@@ -191,12 +191,15 @@ export default function MatrixRain({
         const randomColumn = Math.floor(
           Math.random() * columnsRef.current.length,
         );
-        columnsRef.current[randomColumn].chars = Array.from(
+        const col = columnsRef.current[randomColumn];
+        if (!col) return;
+
+        col.chars = Array.from(
           { length: 30 + Math.floor(Math.random() * 20) },
-          () => matrixChars[Math.floor(Math.random() * matrixChars.length)],
+          () => matrixChars.charAt(Math.floor(Math.random() * matrixChars.length)),
         );
-        columnsRef.current[randomColumn].opacity = 0.1 + Math.random() * 0.15;
-        columnsRef.current[randomColumn].speed = 2 + Math.random() * 2;
+        col.opacity = 0.1 + Math.random() * 0.15;
+        col.speed = 2 + Math.random() * 2;
       }
 
       animationId = requestAnimationFrame((t) => animate(t));

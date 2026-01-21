@@ -31,9 +31,10 @@ export default function SignalCard({ ticker, name }: SignalCardProps) {
     take_profit: 0,
   };
 
-  const isBullish = displaySignal.signal > 0;
-  const isBearish = displaySignal.signal < 0;
-  const isNeutral = displaySignal.signal === 0;
+  const signalValue = typeof displaySignal.signal === 'number' ? displaySignal.signal : 0;
+  const isBullish = signalValue > 0;
+  const isBearish = signalValue < 0;
+  const isNeutral = signalValue === 0;
 
   return (
     <Card className="glass-panel border-white/5 p-5 relative overflow-hidden transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(0,240,255,0.1)] group flex flex-col justify-between h-full min-h-[180px]">

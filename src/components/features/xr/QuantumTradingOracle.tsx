@@ -535,7 +535,7 @@ const QuantumTradingOracle = memo(function QuantumTradingOracle() {
         energy: Math.random(),
         consciousness: Math.random(),
         quantumState:
-          quantumStates[Math.floor(Math.random() * quantumStates.length)],
+          quantumStates[Math.floor(Math.random() * quantumStates.length)] ?? "superposition",
         connections: [],
       };
     });
@@ -601,7 +601,7 @@ const QuantumTradingOracle = memo(function QuantumTradingOracle() {
         (Math.random() - 0.5) * 40,
       ] as [number, number, number],
       text: thought,
-      emotion: emotions[Math.floor(Math.random() * emotions.length)],
+      emotion: emotions[Math.floor(Math.random() * emotions.length)] ?? "hope",
       size: 0.5 + Math.random() * 1,
       opacity: 0.3 + Math.random() * 0.4,
     }));
