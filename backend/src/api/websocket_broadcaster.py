@@ -100,7 +100,7 @@ class MarketDataBroadcaster:
                 return
 
             # Detect regime
-            regime_str = self.regime_detector.detect_regime(df)
+            regime_str, confidence = self.regime_detector.detect_regime_with_confidence(df)
             strategy = self.regime_detector.get_regime_strategy(regime_str)
 
             # Map to our strict enum
@@ -112,7 +112,7 @@ class MarketDataBroadcaster:
             # Broadcast regime update
             regime_msg = MessageFactory.regime_update(
                 regime=regime_enum,
-                confidence=0.85,  # TODO: calculate actual confidence
+                confidence=confidence,
                 strategy=strategy.get("strategy", "unknown"),
             )
             regime_msg.payload.indicators = {
