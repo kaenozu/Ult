@@ -5,7 +5,7 @@ Trading Service Layer
 
 import logging
 from typing import Optional
-from src.data.data_loader import fetch_stock_data, get_latest_price
+from src.data_temp.data_loader import fetch_stock_data, get_latest_price
 from src.api.dependencies import get_paper_trader, get_portfolio_manager
 
 logger = logging.getLogger(__name__)

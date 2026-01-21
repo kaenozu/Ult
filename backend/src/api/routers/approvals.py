@@ -135,7 +135,7 @@ async def request_trade_approval(
         # 価格を取得（指定がなければ最新価格）
         price = request.price
         if price is None:
-            from src.data.data_loader import fetch_stock_data, get_latest_price
+            from src.data_temp.data_loader import fetch_stock_data, get_latest_price
 
             data_map = fetch_stock_data([request.ticker], period="5d")
             df = data_map.get(request.ticker)

@@ -479,7 +479,7 @@ def fetch_stock_data(
     """Fetch price history for one or more tickers."""
     if not tickers:
         return {}
-    
+
     # Real Data Fetching (Enable this for Production/Phase 10+)
     if _should_use_async_loader(use_async, tickers):
         async_result = _attempt_async_fetch(tickers, period, interval)

@@ -42,8 +42,8 @@ from src.api.routers import (
     alerts,
     circuit_breaker,
     approvals,
-    replay, # Phase 10: The Time Machine
-    vision, # Phase 11: The Eyes of God
+    replay,  # Phase 10: The Time Machine
+    vision,  # Phase 11: The Eyes of God
     journal, # Phase 11.5: Visual Journal
 )
 
@@ -103,6 +103,7 @@ async def lifespan(app: FastAPI):
 
 def configure_cors(app: FastAPI) -> None:
     """CORSミドルウェアを設定"""
+    print(f"DEBUG: CORS ORIGINS LOADED = {app_settings.system.cors_origins}")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=app_settings.system.cors_origins,
@@ -186,7 +187,6 @@ def setup_exception_handlers(app: FastAPI) -> None:
     from fastapi.exceptions import RequestValidationError
     from pydantic import ValidationError as PydanticValidationError
     import logging
-    from fastapi.encoders import jsonable_encoder
 
     logger = logging.getLogger(__name__)
 
@@ -200,7 +200,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         )
         return JSONResponse(
             status_code=status_code,
-            content=jsonable_encoder(error_response),
+            content=error_response.dict(exclude_none=True),
         )
 
     @app.exception_handler(RequestValidationError)
@@ -211,7 +211,6 @@ def setup_exception_handlers(app: FastAPI) -> None:
         logger.warning(f"Validation error: {exc.errors()}")
         errors = [
             ErrorDetail(
-                code="VALIDATION_ERROR",
                 field=".".join(str(loc) for loc in error["loc"]), message=error["msg"]
             )
             for error in exc.errors()
@@ -223,7 +222,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         )
         return JSONResponse(
             status_code=status_code,
-            content=jsonable_encoder(error_response),
+            content=error_response.dict(exclude_none=True),
         )
 
     @app.exception_handler(PydanticValidationError)
@@ -234,7 +233,6 @@ def setup_exception_handlers(app: FastAPI) -> None:
         logger.warning(f"Pydantic validation error: {exc.errors()}")
         errors = [
             ErrorDetail(
-                code="PYDANTIC_VALIDATION_ERROR",
                 field=".".join(str(loc) for loc in error["loc"]), message=error["msg"]
             )
             for error in exc.errors()
@@ -246,7 +244,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         )
         return JSONResponse(
             status_code=status_code,
-            content=jsonable_encoder(error_response),
+            content=error_response.dict(exclude_none=True),
         )
 
     @app.exception_handler(Exception)
@@ -259,7 +257,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         )
         return JSONResponse(
             status_code=status_code,
-            content=jsonable_encoder(error_response),
+            content=error_response.dict(exclude_none=True),
         )
 
 

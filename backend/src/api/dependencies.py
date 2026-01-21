@@ -27,7 +27,7 @@ def get_auto_trader():
 
 def get_data_loader():
     """DataLoaderの依存性注入"""
-    from src.data.data_loader import DataLoader
+    from src.data_temp.data_loader import DataLoader
     return DataLoader()
 
 # Function to reset/clear globals (useful for reset functionality)
