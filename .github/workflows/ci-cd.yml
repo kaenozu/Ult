@@ -162,10 +162,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          df -h
+
       - name: Install backend dependencies
         working-directory: ./backend
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements-ci.txt
           pip install pytest pytest-asyncio httpx
 
       - name: Install frontend dependencies
