@@ -234,7 +234,35 @@ class AutoTrader:
                     ticker, "SELL", int(qty), current_price, reason="Take Profit (Auto)"
                 )
 
-            # TODO: More complex logic (Trailing Stop) can come later
+            # Trailing Stop Logic
+            entry_price = pos["entry_price"]
+            highest_price = pos["highest_price"]
+
+            # Initialize highest_price if needed (e.g. legacy positions)
+            if highest_price < entry_price:
+                highest_price = entry_price
+
+            # Update highest price if current price is higher
+            if current_price > highest_price:
+                highest_price = current_price
+                # Persist the new highest price
+                self.pt.update_position_stop(ticker, pos["stop_price"], highest_price)
+
+            activation_pct = settings.trading.trailing_stop_activation_pct
+            callback_pct = settings.trading.trailing_stop_callback_pct
+
+            # Check if trailing stop is activated
+            if highest_price >= entry_price * (1 + activation_pct):
+                trailing_stop_price = highest_price * (1 - callback_pct)
+
+                if current_price <= trailing_stop_price:
+                    logger.info(
+                        f"AutoTrader: Trailing Stop triggered for {ticker} "
+                        f"(High: {highest_price:.1f}, Curr: {current_price:.1f}, Stop: {trailing_stop_price:.1f})"
+                    )
+                    self.pt.execute_trade(
+                        ticker, "SELL", int(qty), current_price, reason="Trailing Stop (Auto)"
+                    )
 
     def _analyze_ticker(self, ticker: str) -> int:
         """
