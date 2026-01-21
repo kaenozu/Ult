@@ -1,0 +1,90 @@
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> ult-app@0.1.0 test
+> jest
+
+FAIL src/__tests__/components/visualizations/EcosystemGraph.test.tsx
+  笳・Test suite failed to run
+
+    Cannot find module 'react-force-graph-3d' from 'jest.setup.js'
+
+       6 |
+       7 | // Mock react-force-graph-3d
+    >  8 | jest.mock('react-force-graph-3d', () => {
+         |      ^
+       9 |     return function MockForceGraph3D() {
+      10 |         return React.createElement('div', { 'data-testid': 'force-graph' }, 'Force Graph 3D');
+      11 |     };
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (jest.setup.js:8:6)
+
+FAIL src/components/shared/hooks/__tests__/useAsyncData.test.ts
+  笳・Test suite failed to run
+
+    Cannot find module 'react-force-graph-3d' from 'jest.setup.js'
+
+       6 |
+       7 | // Mock react-force-graph-3d
+    >  8 | jest.mock('react-force-graph-3d', () => {
+         |      ^
+       9 |     return function MockForceGraph3D() {
+      10 |         return React.createElement('div', { 'data-testid': 'force-graph' }, 'Force Graph 3D');
+      11 |     };
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (jest.setup.js:8:6)
+
+FAIL src/__tests__/components/dashboard/SignalCard.test.tsx
+  笳・Test suite failed to run
+
+    Cannot find module 'react-force-graph-3d' from 'jest.setup.js'
+
+       6 |
+       7 | // Mock react-force-graph-3d
+    >  8 | jest.mock('react-force-graph-3d', () => {
+         |      ^
+       9 |     return function MockForceGraph3D() {
+      10 |         return React.createElement('div', { 'data-testid': 'force-graph' }, 'Force Graph 3D');
+      11 |     };
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (jest.setup.js:8:6)
+
+FAIL src/components/TrafficLight.test.tsx
+  笳・Test suite failed to run
+
+    Cannot find module 'react-force-graph-3d' from 'jest.setup.js'
+
+       6 |
+       7 | // Mock react-force-graph-3d
+    >  8 | jest.mock('react-force-graph-3d', () => {
+         |      ^
+       9 |     return function MockForceGraph3D() {
+      10 |         return React.createElement('div', { 'data-testid': 'force-graph' }, 'Force Graph 3D');
+      11 |     };
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (jest.setup.js:8:6)
+
+FAIL src/components/ui/__tests__/data-table.test.tsx
+  笳・Test suite failed to run
+
+    Cannot find module 'react-force-graph-3d' from 'jest.setup.js'
+
+       6 |
+       7 | // Mock react-force-graph-3d
+    >  8 | jest.mock('react-force-graph-3d', () => {
+         |      ^
+       9 |     return function MockForceGraph3D() {
+      10 |         return React.createElement('div', { 'data-testid': 'force-graph' }, 'Force Graph 3D');
+      11 |     };
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (jest.setup.js:8:6)
+
+Test Suites: 5 failed, 5 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        2.954 s
+Ran all test suites.

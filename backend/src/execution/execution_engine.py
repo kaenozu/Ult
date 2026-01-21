@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src.paper_trader import PaperTrader
-from src.data_temp.data_loader import fetch_fundamental_data, fetch_external_data
+from src.data.data_loader import fetch_fundamental_data, fetch_external_data
 from src.utils.health import quick_health_check
 
 logger = logging.getLogger(__name__)

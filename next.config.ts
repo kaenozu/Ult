@@ -7,16 +7,10 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*',
+        source: '/api/:path*', 
+        destination: 'http://localhost:8000/api/:path*', 
       },
-    ]
-  },
-    ]
-=======
-  experimental: {
-    optimizeCss: true,
->>>>>>> origin/main
+    ];
   },
   images: {
     domains: ['localhost'],
@@ -33,6 +27,7 @@ const nextConfig: NextConfig = {
 
     // Bundle analyzer
     if (process.env.ANALYZE === 'true') {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
       config.plugins.push(
         new BundleAnalyzerPlugin({

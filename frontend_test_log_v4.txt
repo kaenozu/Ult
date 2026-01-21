@@ -1,0 +1,535 @@
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> ult-app@0.1.0 test
+> jest
+
+FAIL src/components/ui/__tests__/data-table.test.tsx
+  笳・Test suite failed to run
+
+    Cannot find module 'react-window' from 'src/components/ui/data-table.tsx'
+
+    Require stack:
+      src/components/ui/data-table.tsx
+      src/components/ui/__tests__/data-table.test.tsx
+
+      1 | import React, { useMemo } from 'react';
+    > 2 | import { FixedSizeList as List } from 'react-window';
+        | ^
+      3 | import { cn } from '@/lib/utils';
+      4 | import { logger } from '@/lib/logger';
+      5 |
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (src/components/ui/data-table.tsx:2:1)
+      at Object.<anonymous> (src/components/ui/__tests__/data-table.test.tsx:2:1)
+
+FAIL src/components/shared/hooks/__tests__/useAsyncData.test.ts
+  useAsyncData
+    竏・should handle successful data fetching (42 ms)
+    ﾃ・should handle errors and retry logic (14 ms)
+    竏・should call onSuccess callback on successful fetch (6 ms)
+    竏・should call onError callback on failure (4 ms)
+    竏・should allow manual refetch (9 ms)
+    竏・should reset state (3 ms)
+    竏・should re-execute when dependencies change (3 ms)
+    竏・should handle non-Error exceptions (4 ms)
+
+  笳・useAsyncData 窶ｺ should handle errors and retry logic
+
+    expect(received).toEqual(expected) // deep equality
+
+    Expected: {"success": true}
+    Received: null
+
+      82 |     });
+      83 |
+    > 84 |     expect(result.current.data).toEqual({ success: true });
+         |                                 ^
+      85 |     expect(result.current.error).toBe(null);
+      86 |     expect(mockAsyncFn).toHaveBeenCalledTimes(3);
+      87 |   });
+
+      at Object.<anonymous> (src/components/shared/hooks/__tests__/useAsyncData.test.ts:84:33)
+
+PASS src/components/TrafficLight.test.tsx
+  TrafficLight Component
+    Rendering
+      竏・renders safe level correctly with proper styling (85 ms)
+      竏・renders caution level correctly with proper styling (10 ms)
+      竏・renders danger level correctly with proper styling (8 ms)
+    Accessibility
+      竏・has proper ARIA attributes for screen readers (14 ms)
+      竏・has descriptive labels for light indicators (6 ms)
+    Performance
+      竏・renders without unnecessary re-renders (9 ms)
+
+  console.error
+    An update to ForwardRef(LoadableComponent) inside a test was not wrapped in act(...).
+    
+    When testing, code that causes React state updates should be wrapped into act(...):
+    
+    act(() => {
+      /* fire events that update state */
+    });
+    /* assert on the output */
+    
+    This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      at node_modules/react-dom/cjs/react-dom-client.development.js:18758:19
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom-client.development.js:18757:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:16409:11)
+      at forceStoreRerender (node_modules/react-dom/cjs/react-dom-client.development.js:8262:24)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:8247:11
+      at callback (node_modules/next/src/shared/lib/loadable.shared-runtime.tsx:235:48)
+          at Set.forEach (<anonymous>)
+      at LoadableSubscription.forEach (node_modules/next/src/shared/lib/loadable.shared-runtime.tsx:235:21)
+      at _update (node_modules/next/src/shared/lib/loadable.shared-runtime.tsx:217:14)
+
+  console.error
+    Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["signal","AAPL"]
+
+      at Query.fetch (node_modules/@tanstack/query-core/src/query.ts:551:19)
+
+FAIL src/__tests__/components/dashboard/SignalCard.test.tsx
+  SignalCard
+    竏・renders ticker and name correctly (102 ms)
+    竏・displays bullish signal correctly (49 ms)
+    竏・displays bearish signal correctly (37 ms)
+    竏・displays neutral signal correctly (31 ms)
+    ﾃ・executes trade on button click when entry price exists (1027 ms)
+    竏・does not execute trade when no entry price (8 ms)
+
+  笳・SignalCard 窶ｺ executes trade on button click when entry price exists
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+    Ignored nodes: comments, script, style
+    <html>
+      <head />
+      <body>
+        <div>
+          <div
+            class="bg-card text-card-foreground gap-6 rounded-xl border shadow-sm glass-panel border-white/5 p-5 relative overflow-hidden transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_20px_rgba(0,240,255,0.1)] group flex flex-col justify-between h-full min-h-[180px]"
+            data-slot="card"
+          >
+            <div
+              class="flex justify-between items-start mb-2"
+            >
+              <div>
+                <div
+                  class="flex items-baseline gap-2"
+                >
+                  <h3
+                    class="text-2xl font-bold font-sans tracking-tight"
+                  >
+                    MSFT
+                  </h3>
+                  <span
+                    class="text-xs text-muted-foreground font-medium"
+                  >
+                    Microsoft Corp.
+                  </span>
+                </div>
+                <div
+                  class="text-[10px] text-primary/70 uppercase tracking-widest mt-1"
+                >
+                  Strategy: 
+                  Test
+                </div>
+              </div>
+              <div
+                class="relative flex items-center justify-center w-12 h-12"
+              >
+                <svg
+                  class="w-full h-full transform -rotate-90"
+                >
+                  <circle
+                    class="text-muted/20"
+                    cx="24"
+                    cy="24"
+                    fill="transparent"
+                    r="20"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  />
+                  <circle
+                    class="text-primary"
+                    cx="24"
+                    cy="24"
+                    fill="transparent"
+                    r="20"
+                    stroke="currentColor"
+                    stroke-dasharray="125.6"
+                    stroke-dashoffset="12.559999999999997"
+                    stroke-width="4"
+                  />
+                </svg>
+                <span
+                  class="absolute text-xs font-bold"
+                >
+                  90
+                  %
+                </span>
+              </div>
+            </div>
+            <div
+              class="mt-2 mb-4"
+            >
+              <div
+                class="flex items-center gap-2 text-primary neon-text mb-2"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-trending-up w-5 h-5"
+                  fill="none"
+                  height="24"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M16 7h6v6"
+                  />
+                  <path
+                    d="m22 7-8.5 8.5-5-5L2 17"
+                  />
+                </svg>
+                <span
+                  class="text-lg font-bold"
+                >
+                  蠑ｷ豌苓ｲｷ縺・[0m
+                </span>
+              </div>
+              <div
+                class="grid grid-cols-3 gap-2 text-xs font-mono bg-white/5 p-2 rounded mb-2 border border-white/10"
+              >
+                <div
+                  class="flex flex-col"
+                >
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    繧ｨ繝ｳ繝医Μ繝ｼ
+                  </span>
+                  <span
+                    class="font-bold text-white"
+                  >
+                    ﾂ･
+                    200
+                  </span>
+                </div>
+                <div
+                  class="flex flex-col"
+                >
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    蛻ｩ遒ｺ
+                  </span>
+                  <span
+                    class="font-bold text-emerald-400"
+                  >
+                    ﾂ･
+                    210
+                  </span>
+                </div>
+                <div
+                  class="flex flex-col"
+                >
+                  <span
+                    class="text-muted-foreground"
+                  >
+                    謳榊・
+                  </span>
+                  <span
+                    class="font-bold text-red-400"
+                  >
+                    ﾂ･
+                    190
+                  </span>
+                </div>
+              </div>
+              <p
+                class="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[2.5em]"
+              >
+                Buy signal
+              </p>
+            </div>
+            <button
+              class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent dark:bg-input/30 dark:border-input dark:hover:bg-input/50 h-9 px-4 py-2 has-[>svg]:px-3 w-full glass-button hover:text-primary hover:border-primary/50 group-hover:bg-primary/5 active:scale-95 transition-all"
+              data-size="default"
+              data-slot="button"
+              data-variant="outline"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-zap w-4 h-4 mr-2"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+                />
+              </svg>
+              豕ｨ譁・ｮ溯｡・[0m
+            </button>
+            <div
+              class="absolute -right-10 -bottom-10 w-32 h-32 rounded-full blur-[50px] opacity-10 
+            bg-primary"
+            />
+          </div>
+        </div>
+      </body>
+    </html>
+
+      147 |
+      148 |     await waitFor(() => {
+    > 149 |       expect(window.confirm).toHaveBeenCalled();
+          |                              ^
+      150 |       expect(mockExecuteTrade).toHaveBeenCalled();
+      151 |     });
+      152 |   });
+
+      at src/__tests__/components/dashboard/SignalCard.test.tsx:149:30
+      at runWithExpensiveErrorDiagnosticsDisabled (node_modules/@testing-library/dom/dist/config.js:47:12)
+      at checkCallback (node_modules/@testing-library/dom/dist/wait-for.js:124:77)
+      at checkRealTimersCallback (node_modules/@testing-library/dom/dist/wait-for.js:118:16)
+      at Timeout.task [as _onTimeout] (node_modules/jsdom/lib/jsdom/browser/Window.js:520:19)
+
+FAIL src/__tests__/components/visualizations/EcosystemGraph.test.tsx
+  EcosystemGraph
+    竏・renders the neural nexus title (136 ms)
+    竏・shows offline status initially (7 ms)
+    竏・connects to WebSocket on mount (6 ms)
+    ﾃ・displays regime data when received (1026 ms)
+    ﾃ・displays appropriate ghost persona for crash regime (1007 ms)
+    竏・displays analysis persona on node click (4 ms)
+    ﾃ・clears persona after timeout for non-crash regimes (20 ms)
+
+  笳・EcosystemGraph 窶ｺ displays regime data when received
+
+    Unable to find an element with the text: trending_up. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm w-full h-[600px] overflow-hidden border-cyan-900/50 bg-black relative group"
+          data-slot="card"
+        >
+          <div
+            class="absolute top-4 left-4 z-10 pointer-events-none"
+          >
+            <h2
+              class="text-2xl font-bold text-cyan-400 font-mono tracking-tighter"
+            >
+              NEURAL NEXUS
+              <span
+                class="text-xs px-2 py-0.5 rounded ml-2 transition-colors duration-500 bg-red-900/30 text-red-500"
+              >
+                OFFLINE
+              </span>
+            </h2>
+            <p
+              class="text-xs text-cyan-600/70 font-mono"
+            >
+              SUPPLY CHAIN & CORRELATION MATRIX
+            </p>
+          </div>
+          <div
+            data-testid="force-graph"
+          >
+            Force Graph 3D
+          </div>
+          <div
+            class="absolute inset-0 pointer-events-none bg-[url('/grid.png')] opacity-10 mix-blend-overlay"
+          />
+          <div
+            class="absolute bottom-4 right-4 z-10 text-right"
+          >
+            <div
+              class="flex gap-2 text-xs font-mono text-cyan-500/50"
+            >
+              <span>
+                NODES: 
+                13
+              </span>
+              <span>
+                LINKS: 
+                13
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      63 |     mockWebSocket.onmessage({ data: JSON.stringify(mockMessage) });
+      64 |
+    > 65 |     await waitFor(() => {
+         |                  ^
+      66 |       expect(screen.getByText("trending_up")).toBeInTheDocument();
+      67 |     });
+      68 |   });
+
+      at waitForWrapper (node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (src/__tests__/components/visualizations/EcosystemGraph.test.tsx:65:18)
+
+  笳・EcosystemGraph 窶ｺ displays appropriate ghost persona for crash regime
+
+    Unable to find an element with the text: CIRCUIT BREAKER. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm w-full h-[600px] overflow-hidden border-cyan-900/50 bg-black relative group"
+          data-slot="card"
+        >
+          <div
+            class="absolute top-4 left-4 z-10 pointer-events-none"
+          >
+            <h2
+              class="text-2xl font-bold text-cyan-400 font-mono tracking-tighter"
+            >
+              NEURAL NEXUS
+              <span
+                class="text-xs px-2 py-0.5 rounded ml-2 transition-colors duration-500 bg-red-900/30 text-red-500"
+              >
+                OFFLINE
+              </span>
+            </h2>
+            <p
+              class="text-xs text-cyan-600/70 font-mono"
+            >
+              SUPPLY CHAIN & CORRELATION MATRIX
+            </p>
+          </div>
+          <div
+            data-testid="force-graph"
+          >
+            Force Graph 3D
+          </div>
+          <div
+            class="absolute inset-0 pointer-events-none bg-[url('/grid.png')] opacity-10 mix-blend-overlay"
+          />
+          <div
+            class="absolute bottom-4 right-4 z-10 text-right"
+          >
+            <div
+              class="flex gap-2 text-xs font-mono text-cyan-500/50"
+            >
+              <span>
+                NODES: 
+                13
+              </span>
+              <span>
+                LINKS: 
+                13
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      81 |     mockWebSocket.onmessage({ data: JSON.stringify(mockMessage) });
+      82 |
+    > 83 |     await waitFor(() => {
+         |                  ^
+      84 |       expect(screen.getByText("CIRCUIT BREAKER")).toBeInTheDocument();
+      85 |       expect(screen.getByText(/SYSTEM FAILURE DETECTED/)).toBeInTheDocument();
+      86 |     });
+
+      at waitForWrapper (node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (src/__tests__/components/visualizations/EcosystemGraph.test.tsx:83:18)
+
+  笳・EcosystemGraph 窶ｺ clears persona after timeout for non-crash regimes
+
+    Unable to find an element with the text: OPTIMIST PRIME. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm w-full h-[600px] overflow-hidden border-cyan-900/50 bg-black relative group"
+          data-slot="card"
+        >
+          <div
+            class="absolute top-4 left-4 z-10 pointer-events-none"
+          >
+            <h2
+              class="text-2xl font-bold text-cyan-400 font-mono tracking-tighter"
+            >
+              NEURAL NEXUS
+              <span
+                class="text-xs px-2 py-0.5 rounded ml-2 transition-colors duration-500 bg-red-900/30 text-red-500"
+              >
+                OFFLINE
+              </span>
+            </h2>
+            <p
+              class="text-xs text-cyan-600/70 font-mono"
+            >
+              SUPPLY CHAIN & CORRELATION MATRIX
+            </p>
+          </div>
+          <div
+            data-testid="force-graph"
+          >
+            Force Graph 3D
+          </div>
+          <div
+            class="absolute inset-0 pointer-events-none bg-[url('/grid.png')] opacity-10 mix-blend-overlay"
+          />
+          <div
+            class="absolute bottom-4 right-4 z-10 text-right"
+          >
+            <div
+              class="flex gap-2 text-xs font-mono text-cyan-500/50"
+            >
+              <span>
+                NODES: 
+                13
+              </span>
+              <span>
+                LINKS: 
+                13
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      112 |     mockWebSocket.onmessage({ data: JSON.stringify(mockMessage) });
+      113 |
+    > 114 |     await waitFor(() => {
+          |                  ^
+      115 |       expect(screen.getByText("OPTIMIST PRIME")).toBeInTheDocument();
+      116 |     });
+      117 |
+
+      at waitForWrapper (node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (src/__tests__/components/visualizations/EcosystemGraph.test.tsx:114:18)
+
+Test Suites: 4 failed, 1 passed, 5 total
+Tests:       5 failed, 22 passed, 27 total
+Snapshots:   0 total
+Time:        5.274 s
+Ran all test suites.

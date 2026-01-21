@@ -50,7 +50,7 @@ async def get_positions(pm = Depends(get_portfolio_manager)):
 async def get_ai_advice(pm = Depends(get_portfolio_manager)):
     """AI投資助言取得"""
     from src.ai_advisor import ai_advisor
-    from src.data_temp.data_loader import fetch_stock_data
+    from src.data.data_loader import fetch_stock_data
     from src.regime_detector import RegimeDetector
     import logging
     
