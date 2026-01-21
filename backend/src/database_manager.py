@@ -228,10 +228,18 @@ class DatabaseManager:
                     rejected_at TEXT,
                     rejection_reason TEXT,
                     platform TEXT,
-                    message_id TEXT
+                    message_id TEXT,
+                    requester TEXT
                 )
             """
             )
+
+            # Check if requester column exists (migration for existing DB)
+            try:
+                cursor.execute("SELECT requester FROM approval_requests LIMIT 1")
+            except sqlite3.OperationalError:
+                logger.info("Adding requester column to approval_requests table")
+                cursor.execute("ALTER TABLE approval_requests ADD COLUMN requester TEXT")
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS screenshot_journal (
@@ -579,8 +587,8 @@ class DatabaseManager:
                 INSERT INTO approval_requests (
                     request_id, type, title, description, context, status,
                     created_at, expires_at, approved_by, rejected_by,
-                    approved_at, rejected_at, rejection_reason, platform, message_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    approved_at, rejected_at, rejection_reason, platform, message_id, requester
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(request_id) DO UPDATE SET
                     status = excluded.status,
                     approved_by = excluded.approved_by,
@@ -589,7 +597,8 @@ class DatabaseManager:
                     rejected_at = excluded.rejected_at,
                     rejection_reason = excluded.rejection_reason,
                     platform = excluded.platform,
-                    message_id = excluded.message_id
+                    message_id = excluded.message_id,
+                    requester = excluded.requester
                 """,
                 (
                     request_data["request_id"],
@@ -607,6 +616,7 @@ class DatabaseManager:
                     request_data.get("rejection_reason"),
                     request_data.get("platform"),
                     request_data.get("message_id"),
+                    request_data.get("requester"),
                 ),
             )
             conn.commit()
