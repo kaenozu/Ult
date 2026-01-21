@@ -1,0 +1,26 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/types/index.ts", "src/lib/logger.ts", "src/components/shared/hooks/useAsyncData.ts", "src/components/ui/data-table.tsx"],
+  "out": "docs/api",
+  "name": "Ult Trading System API",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "hideGenerator": true,
+  "readme": "README.md",
+  "theme": "default",
+  "gitRevision": "main",
+  "categorizeByGroup": true,
+  "categoryOrder": ["Types", "Hooks", "Components", "Utilities"],
+  "groupOrder": ["Types", "Hooks", "Components", "Utilities"],
+  "sort": ["source-order", "visibility", "required-first", "kind"],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true
+  },
+  "searchInComments": true,
+  "cleanOutputDir": true,
+  "emit": "docs",
+  "exclude": ["**/__tests__/**", "**/*.test.*", "**/*.spec.*", "node_modules/**"]
+}

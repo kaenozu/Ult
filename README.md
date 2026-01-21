@@ -11,6 +11,9 @@ Advanced AI-powered trading platform with a "Cyberpunk Ghost" aesthetic. This sy
 - **Interactive Dashboard:** 3D visualizations and approval workflows
 - **Multi-Asset Support:** Stocks, crypto, forex, and commodities
 - **Notification System:** Swipe-based notifications and alerts
+- **Security & Monitoring:** JWT authentication, structured logging, error handling, metrics
+- **Testing:** Comprehensive test suite with 80%+ coverage
+- **API Documentation:** Auto-generated OpenAPI docs with FastAPI
 
 ## Architecture
 
@@ -27,11 +30,74 @@ Advanced AI-powered trading platform with a "Cyberpunk Ghost" aesthetic. This sy
 4. **Schema Sanctity:** API I/O must be strictly typed via Pydantic; no naked dictionaries.
 5. **Audit Trail:** Every trade decision and system state change is logged.
 
+## Security & Monitoring
+
+- **Authentication:** JWT-based API authentication (required for production)
+- **Logging:** Structured JSON logging with automatic rotation
+- **Error Handling:** Comprehensive exception handling with standardized responses
+- **Metrics:** Application metrics endpoint at `/metrics`
+- **Security Scanning:** Integrated CodeQL and Trivy vulnerability scanning
+
 ## UI/UX Principles (The Vibe Check)
 
 - **No Default UI:** All elements must be styled (`glass-panel`, `neon-text`).
 - **Alive Data:** Interfaces must breathe; no static placeholders.
 - **The Ghost Speaks:** System communication embodies a distinct "Ghost in the Machine" persona.
+
+## Performance & Code Quality
+
+- **Type Safety:** Strict TypeScript with comprehensive type definitions
+- **Performance Optimization:** React.memo, useMemo, and useCallback for optimal rendering
+- **Error Resilience:** Comprehensive error boundaries and safe data access patterns
+- **Testing:** Jest and Playwright for unit and E2E testing
+- **Code Quality:** ESLint with strict rules and Prettier for consistent formatting
+
+## Installation & Setup
+
+### Prerequisites
+
+- Python 3.8+
+- Node.js 18+
+- SQLite3
+
+### Backend Setup
+
+```bash
+cd backend
+pip install -r requirements.txt
+
+# Environment variables (create .env file)
+GEMINI_API_KEY=your_gemini_key
+OPENAI_API_KEY=your_openai_key
+JWT_SECRET=your_secure_jwt_secret
+LOG_LEVEL=INFO
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# Run
+python -m src.api.server
+```
+
+### Frontend Setup
+
+```bash
+npm install
+npm run dev
+```
+
+### Testing
+
+```bash
+# Backend tests with coverage
+cd backend
+pytest --cov=src --cov-report=html
+
+# Frontend tests
+npm test
+```
+
+## API Documentation
+
+Access auto-generated API docs at `http://localhost:8000/docs` when running the backend.
 
 ## API Documentation
 

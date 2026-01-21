@@ -15,7 +15,7 @@ class StrategyRouter:
         self.params = strategy_params or {}
         
         # The Arsenal - Initialized with params if available
-        self.sniper = LightGBMStrategy()     # TREND (TODO: Add params support to LightGBM)
+        self.sniper = LightGBMStrategy(params=self.params.get("LightGBMStrategy"))     # TREND
         self.guerilla = RangeStrategy(params=self.params.get("RangeStrategy"))      # RANGE
         self.storm_chaser = VolatilityStrategy(params=self.params.get("VolatilityStrategy")) # VOLATILE
         

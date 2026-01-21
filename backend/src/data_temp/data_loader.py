@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import os
 
 print(f"DEBUG: Loading data_loader from: {os.path.abspath(__file__)}")
@@ -778,3 +779,6 @@ def fetch_earnings_dates(tickers: Sequence[str]) -> Dict[str, Optional[str]]:
             logger.warning(f"Error fetching earnings for {ticker}: {e}")
             results[ticker] = None
     return results
+=======
+from src.data.data_loader import *
+>>>>>>> main

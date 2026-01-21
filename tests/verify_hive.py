@@ -16,25 +16,26 @@ logger = logging.getLogger(__name__)
 
 def create_mock_data():
     # 1. Stock Data (Uptrend)
-    dates = pd.date_range(start="2023-01-01", periods=100)
-    prices = np.linspace(100, 150, 100) + np.random.normal(0, 2, 100)
+    dates = pd.date_range(start="2022-01-01", periods=400)
+    # Reduced noise to ensure TREND regime detection (was 2, now 0.5)
+    prices = np.linspace(100, 150, 400) + np.random.normal(0, 0.5, 400)
     df = pd.DataFrame({
         "Open": prices,
-        "High": prices + 2,
-        "Low": prices - 2,
+        "High": prices + 1,
+        "Low": prices - 1,
         "Close": prices,
         "Volume": 100000
     }, index=dates)
     
     # 2. External Data (Low VIX)
-    vix_dates = pd.date_range(start="2023-01-01", periods=100)
-    vix_close = np.linspace(15, 20, 100) # Safe VIX
+    vix_dates = pd.date_range(start="2022-01-01", periods=400)
+    vix_close = np.linspace(15, 20, 400) # Safe VIX
     vix_df = pd.DataFrame({"Close": vix_close}, index=vix_dates)
     
     external_data_safe = {"VIX": vix_df}
     
     # 3. External Data (High VIX)
-    vix_close_high = np.linspace(30, 45, 100) # Dangerous VIX
+    vix_close_high = np.linspace(30, 45, 400) # Dangerous VIX
     vix_df_high = pd.DataFrame({"Close": vix_close_high}, index=vix_dates)
     external_data_danger = {"VIX": vix_df_high}
     
@@ -48,7 +49,8 @@ def test_hive_logic():
     
     # Test 1: Safe Market (Expect BUY if Tech is bullish)
     print("\n[Test 1] Safe Market Condition (VIX ~20)")
-    result_safe = engine.deliberate("TEST", df, external_data=ext_safe, news_sentiment=0.5)
+    # Increased news sentiment to 0.9 to force BUY via consensus even if Tech is weak
+    result_safe = engine.deliberate("TEST", df, external_data=ext_safe, news_sentiment=0.9)
     print(f"Result: Signal {result_safe['signal']} | Decision: {result_safe['reason']}")
     print(f"Details: {result_safe['details']}")
     

@@ -12,6 +12,11 @@ from pathlib import Path
 # parents[2] = backend
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 
+<<<<<<< HEAD
+=======
+from src.data_temp.data_loader import fetch_stock_data
+from src.optimization.genetic_optimizer import GeneticOptimizer
+>>>>>>> main
 from src.strategies.range_strategy import RangeStrategy
 from src.strategies.volatility_strategy import VolatilityStrategy
 from src.strategies.ensemble_strategy import EnsembleStrategy

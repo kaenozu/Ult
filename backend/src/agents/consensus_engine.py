@@ -31,7 +31,7 @@ class ConsensusEngine:
             "risk": 0.1
         }
 
-    def deliberate(self, ticker: str, df: pd.DataFrame, external_data: Optional[Dict[str, pd.DataFrame]] = None, headlines: List[str] = None) -> Dict[str, Any]:
+    def deliberate(self, ticker: str, df: pd.DataFrame, external_data: Optional[Dict[str, pd.DataFrame]] = None, headlines: List[str] = None, news_sentiment: Optional[float] = None, skip_vision: bool = False) -> Dict[str, Any]:
         """
         Conduct a debate and reach a consensus.
         """
@@ -56,7 +56,8 @@ class ConsensusEngine:
                 "confidence": 1.0,
                 "reason": f"VETO: Market Risk too high ({risk_score:.2f}). {', '.join(risk_result['reasons'])}",
                 "consensus_score": -1.0,
-                "details": {"tech": 0, "news": 0, "risk": risk_score, "vision": 0}
+                "details": {"tech": 0, "news": 0, "risk": risk_score, "vision": 0},
+                "individual_thoughts": risk_result["reasons"]
             }
 
         # 3. Technical Analysis (The Strategist)
@@ -69,24 +70,27 @@ class ConsensusEngine:
         reasons.append(f"Tech ({tech_str}): Signal {tech_signal} (Conf {tech_conf:.2f})")
 
         # 4. News Analysis (The Observer)
-        if headlines:
+        news_vote = 0.0
+        if news_sentiment is not None:
+            news_vote = news_sentiment
+            reasons.append(f"News (Injected): {news_vote:.2f}")
+        elif headlines:
             news_vote = self.news_agent.analyze_headlines(ticker, headlines)
-        else:
-            news_vote = 0.0
-            
-        if news_vote != 0:
-            reasons.append(f"News: {news_vote:.2f}")
+            if news_vote != 0:
+                reasons.append(f"News (Agent): {news_vote:.2f}")
 
         # 5. Vision Analysis (The Seer)
         # Note: This is an expensive call (Latency).
-        # We assume 'df' has recent OHLC data.
         vision_vote = 0.0
-        try:
-            vision_vote = self.vision_agent.analyze(ticker, df)
-            if vision_vote != 0:
-                reasons.append(f"Vision: {vision_vote:.2f}")
-        except Exception as e:
-            logger.warning(f"Vision analysis failed: {e}")
+        if not skip_vision:
+            try:
+                vision_vote = self.vision_agent.analyze(ticker, df)
+                if vision_vote != 0:
+                    reasons.append(f"Vision: {vision_vote:.2f}")
+            except Exception as e:
+                logger.warning(f"Vision analysis failed: {e}")
+        else:
+            logger.info(f"Skipping Vision analysis for {ticker} (Efficiency Mode)")
 
         # 6. Weighted Voting (The Hive Mind)
         # Score = (Tech*0.4) + (News*0.3) + (Vision*0.2) + (Risk*0.1)
