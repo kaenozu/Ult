@@ -184,7 +184,7 @@ class ParallelBacktester:
 
 def benchmark_backtest_speed():
     """バックテスト速度ベンチマーク"""
-    from src.data_temp.data_loader import fetch_stock_data
+    from src.data.data_loader import fetch_stock_data
     from src.strategies import SMACrossoverStrategy
 
     # テストデータ

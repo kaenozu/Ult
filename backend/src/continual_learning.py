@@ -23,7 +23,7 @@ try:
 except ImportError:
     keras = None
 
-from .base_predictor import BasePredictor
+from src.ml.base_predictor import BasePredictor
 
 logger = logging.getLogger(__name__)
 

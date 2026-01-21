@@ -19,7 +19,7 @@ except ImportError:
     class Dropout: pass
     class Adam: pass
 
-from .features import add_technical_indicators
+from src.features.enhanced_features import generate_enhanced_features as add_technical_indicators
 
 logger = logging.getLogger(__name__)
 

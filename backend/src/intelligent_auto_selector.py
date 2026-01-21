@@ -350,7 +350,7 @@ def get_auto_selector() -> IntelligentAutoSelector:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
-    from src.data_temp.data_loader import fetch_stock_data
+    from src.data.data_loader import fetch_stock_data
 
     # テスト
     selector = get_auto_selector()
