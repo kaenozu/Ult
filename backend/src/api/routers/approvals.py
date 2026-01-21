@@ -11,6 +11,7 @@ from dataclasses import asdict
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
 from pydantic import BaseModel, Field
 
+from src.auth import User
 from src.approval_system import (
     ApprovalStatus,
     ApprovalType,
@@ -18,7 +19,11 @@ from src.approval_system import (
     ApprovalRequest,
     get_approval_system,
 )
-from src.api.dependencies import get_paper_trader, get_portfolio_manager
+from src.api.dependencies import (
+    get_paper_trader,
+    get_portfolio_manager,
+    get_current_user,
+)
 from src.approval_redis_store import get_approval_redis_store
 
 router = APIRouter()
@@ -287,14 +292,15 @@ async def list_approvals(status: Optional[str] = None, limit: int = 50):
 
 @router.post("/approvals/decision")
 async def make_approval_decision(
-    request: ApprovalDecisionRequest, http_request: Request
+    request: ApprovalDecisionRequest,
+    current_user: User = Depends(get_current_user),
 ):
     """
     承認決定を行う
 
     Args:
         request: 承認決定データ
-        http_request: HTTPリクエスト（ユーザー情報取得用）
+        current_user: 認証済みユーザー
 
     Returns:
         Dict: 結果
@@ -302,8 +308,7 @@ async def make_approval_decision(
     try:
         system = get_approval_system()
 
-        # ユーザー情報を取得（簡易実装）
-        user = "web_user"  # 認証システムと統合する場合はここで取得
+        user = current_user.username
 
         if request.decision == "approve":
             success = system.workflow.approve(
@@ -338,20 +343,22 @@ async def make_approval_decision(
 
 
 @router.delete("/approvals/{request_id}")
-async def cancel_approval(request_id: str, http_request: Request):
+async def cancel_approval(
+    request_id: str, current_user: User = Depends(get_current_user)
+):
     """
     承認リクエストをキャンセル
 
     Args:
         request_id: リクエストID
-        http_request: HTTPリクエスト（ユーザー情報取得用）
+        current_user: 認証済みユーザー
 
     Returns:
         Dict: 結果
     """
     try:
         system = get_approval_system()
-        user = "web_user"
+        user = current_user.username
 
         success = system.workflow.cancel(request_id, user)
 
