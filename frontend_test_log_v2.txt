@@ -1,0 +1,175 @@
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> ult-app@0.1.0 test
+> jest
+
+FAIL src/components/shared/hooks/__tests__/useAsyncData.test.ts
+  笳・Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     窶｢ If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     窶｢ If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     窶｢ To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     窶｢ If you need a custom transformation specify a "transform" option in your config.
+     窶｢ If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\gemini-desktop\Ult\jest.setup.js:9
+            return <div data-testid="force-graph">Force Graph 3D</div>;
+                   ^
+
+    SyntaxError: Unexpected token '<'
+
+      at Runtime.createScriptFromCode (node_modules/jest-runtime/build/index.js:1505:14)
+
+FAIL src/components/ui/__tests__/data-table.test.tsx
+  笳・Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     窶｢ If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     窶｢ If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     窶｢ To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     窶｢ If you need a custom transformation specify a "transform" option in your config.
+     窶｢ If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\gemini-desktop\Ult\jest.setup.js:9
+            return <div data-testid="force-graph">Force Graph 3D</div>;
+                   ^
+
+    SyntaxError: Unexpected token '<'
+
+      at Runtime.createScriptFromCode (node_modules/jest-runtime/build/index.js:1505:14)
+
+FAIL src/__tests__/components/visualizations/EcosystemGraph.test.tsx
+  笳・Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     窶｢ If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     窶｢ If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     窶｢ To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     窶｢ If you need a custom transformation specify a "transform" option in your config.
+     窶｢ If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\gemini-desktop\Ult\jest.setup.js:9
+            return <div data-testid="force-graph">Force Graph 3D</div>;
+                   ^
+
+    SyntaxError: Unexpected token '<'
+
+      at Runtime.createScriptFromCode (node_modules/jest-runtime/build/index.js:1505:14)
+
+FAIL src/__tests__/components/dashboard/SignalCard.test.tsx
+  笳・Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     窶｢ If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     窶｢ If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     窶｢ To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     窶｢ If you need a custom transformation specify a "transform" option in your config.
+     窶｢ If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\gemini-desktop\Ult\jest.setup.js:9
+            return <div data-testid="force-graph">Force Graph 3D</div>;
+                   ^
+
+    SyntaxError: Unexpected token '<'
+
+      at Runtime.createScriptFromCode (node_modules/jest-runtime/build/index.js:1505:14)
+
+FAIL src/components/TrafficLight.test.tsx
+  笳・Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     窶｢ If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     窶｢ If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     窶｢ To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     窶｢ If you need a custom transformation specify a "transform" option in your config.
+     窶｢ If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\gemini-desktop\Ult\jest.setup.js:9
+            return <div data-testid="force-graph">Force Graph 3D</div>;
+                   ^
+
+    SyntaxError: Unexpected token '<'
+
+      at Runtime.createScriptFromCode (node_modules/jest-runtime/build/index.js:1505:14)
+
+Test Suites: 5 failed, 5 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        2.407 s
+Ran all test suites.
