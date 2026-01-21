@@ -71,6 +71,7 @@ class ApprovalRequest:
     rejection_reason: Optional[str] = None
     platform: Optional[str] = None  # 'slack', 'discord', 'web'
     message_id: Optional[str] = None  # Platform message ID for updating
+    requester: Optional[str] = None  # Request initiator
 
 
 from src.database_manager import db_manager
@@ -114,7 +115,8 @@ class ApprovalWorkflowManager:
                         created_at=req_data["created_at"],
                         expires_at=req_data["expires_at"],
                         platform=req_data.get("platform"),
-                        message_id=req_data.get("message_id")
+                        message_id=req_data.get("message_id"),
+                        requester=req_data.get("requester"),
                     )
                     self.active_approvals[request.request_id] = request
                     logger.info(f"Loaded pending approval request from DB: {request.request_id}")
@@ -130,6 +132,7 @@ class ApprovalWorkflowManager:
         description: str,
         context: ApprovalContext,
         expiry_minutes: Optional[int] = None,
+        requester: Optional[str] = None,
     ) -> ApprovalRequest:
         """
         承認リクエストを作成
@@ -140,6 +143,7 @@ class ApprovalWorkflowManager:
             description: 詳細説明
             context: コンテキスト情報
             expiry_minutes: 有効期限（分）
+            requester: リクエスト作成者
 
         Returns:
             ApprovalRequest: 作成された承認リクエスト
@@ -159,6 +163,7 @@ class ApprovalWorkflowManager:
             created_at=created_at,
             expires_at=expires_at,
             status=ApprovalStatus.PENDING,
+            requester=requester,
         )
 
         self.active_approvals[request_id] = request
@@ -395,7 +400,7 @@ class ApprovalWorkflowManager:
         req = self.active_approvals.get(request_id)
         if req:
             return req
-        
+
         # Try DB
         try:
             req_data = db_manager.get_approval_request(request_id)
@@ -409,11 +414,15 @@ class ApprovalWorkflowManager:
                     description=req_data["description"],
                     context=ApprovalContext(**req_data.get("context", {})),
                     status=ApprovalStatus(req_data["status"]),
+                    created_at=datetime.fromisoformat(req_data["created_at"])
+                    if isinstance(req_data["created_at"], str)
+                    else req_data["created_at"],
+                    requester=req_data.get("requester"),
                     # ... other fields
                 )
         except Exception:
             pass
-            
+
         return None
 
     def get_active_requests(self) -> List[ApprovalRequest]:
@@ -444,6 +453,7 @@ class ApprovalWorkflowManager:
                     # ... Map other fields as needed for display
                     approved_by=h.get("approved_by"),
                     rejected_by=h.get("rejected_by"),
+                    requester=h.get("requester"),
                 ))
             return history_objs
         except Exception as e:
@@ -1020,7 +1030,8 @@ class IntegratedApprovalSystem:
                 "title": request.title,
                 "description": request.description,
                 "context": context_dict,
-                "requester": "Trading System",  # TODO: Get from auth context
+                "requester": request.requester
+                or "Trading System",  # Default if not provided
                 "priority": priority,
                 "expires_at": request.expires_at.isoformat()
                 if request.expires_at
@@ -1081,6 +1092,7 @@ class IntegratedApprovalSystem:
         callback: Optional[Callable[[ApprovalRequest], None]] = None,
         platform: str = "both",
         expiry_minutes: Optional[int] = None,
+        requester: Optional[str] = None,
     ) -> ApprovalRequest:
         """
         承認リクエストを作成し通知を送信
@@ -1093,6 +1105,7 @@ class IntegratedApprovalSystem:
             callback: コールバック関数
             platform: 通知先プラットフォーム
             expiry_minutes: 有効期限
+            requester: リクエスト作成者
 
         Returns:
             ApprovalRequest: 作成された承認リクエスト
@@ -1103,6 +1116,7 @@ class IntegratedApprovalSystem:
             description=description,
             context=context,
             expiry_minutes=expiry_minutes,
+            requester=requester,
         )
 
         if callback:

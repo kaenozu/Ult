@@ -94,6 +94,8 @@ async def create_approval(
         system = get_approval_system()
 
         # 承認リクエストを作成し通知を送信
+        # TODO: Get actual user from auth context
+        user = "Web User"
         approval_req = system.create_and_notify_approval(
             approval_type=request.approval_type,
             title=request.title,
@@ -101,6 +103,7 @@ async def create_approval(
             context=request.context,
             platform=request.platform,
             expiry_minutes=request.expiry_minutes,
+            requester=user,
         )
 
         return ApprovalResponse(
@@ -215,6 +218,7 @@ async def request_trade_approval(
             callback=execute_trade_callback,
             platform="both",  # 両方のプラットフォームに通知
             expiry_minutes=30,
+            requester="Trading System",
         )
 
         return ApprovalResponse(
