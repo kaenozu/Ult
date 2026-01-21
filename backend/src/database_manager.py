@@ -198,17 +198,6 @@ class DatabaseManager:
                 )
             """
             )
-            # Create indexes for better performance
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_timestamp ON portfolio_history(timestamp)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts(severity)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_config_key ON system_config(key)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_approvals_status ON approval_requests(status)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenshots_ticker ON screenshot_journal(ticker)")
-            )
             cursor.execute(
                 """
                 CREATE TABLE IF NOT EXISTS audit_log (
@@ -256,6 +245,18 @@ class DatabaseManager:
                 )
             """
             )
+
+            # Create indexes for better performance
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_portfolio_timestamp ON portfolio_history(timestamp)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trades_symbol ON trades(symbol)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON alerts(timestamp)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_alerts_severity ON alerts(severity)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_config_key ON system_config(key)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_approvals_status ON approval_requests(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_screenshots_ticker ON screenshot_journal(ticker)")
+            
             conn.commit()
         logger.info(f"Database initialized: {DB_PATH}")
 
