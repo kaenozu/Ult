@@ -52,7 +52,7 @@ class PaperTrader:
     def _initialize_database(self):
         """Initialize the SQLite database with required tables."""
         cursor = self.conn.cursor()
-        
+
         # パフォーマンス向上のための設定
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
@@ -132,7 +132,7 @@ class PaperTrader:
 
         with self.lock:
              self.conn.commit()
-        
+
         # Ensure data consistency on startup
         self.recalculate_balance()
 
@@ -143,21 +143,21 @@ class PaperTrader:
         """
         try:
             cursor = self.conn.cursor()
-            
-            # Since we don't have a deposits table, we'll assume the 'initial_capital' 
+
+            # Since we don't have a deposits table, we'll assume the 'initial_capital'
             # in the accounts table is the starting point.
-            
+
             cursor.execute("SELECT initial_capital FROM accounts WHERE id=1")
             res = cursor.fetchone()
             if not res: return
             start_cap = res[0]
-            
+
             # Sum up all BUYs and SELLs
             cursor.execute("SELECT action, quantity, price FROM orders")
             orders = cursor.fetchall()
-            
+
             calculated_balance = start_cap
-            
+
             for action, qty, price in orders:
                 if price is None: continue
                 amount = qty * price
@@ -165,12 +165,12 @@ class PaperTrader:
                     calculated_balance -= amount
                 elif action == "SELL":
                     calculated_balance += amount
-            
+
             # Update the accounts table
             cursor.execute("UPDATE accounts SET current_balance = ? WHERE id = 1", (calculated_balance,))
             self.conn.commit()
             logger.info(f"Balance recalculated from history: {calculated_balance:,.0f} JPY")
-            
+
         except Exception as e:
             logger.error(f"Failed to recalculate balance: {e}")
 
@@ -228,7 +228,7 @@ class PaperTrader:
 
             positions = []
             tickers = [r[columns.index("ticker")] for r in rows]
-            
+
             # Fetch current prices (using external data loader)
             try:
                 from src.data_temp.data_loader import fetch_stock_data
@@ -256,23 +256,23 @@ class PaperTrader:
                 ticker = pos.get("ticker")
                 qty = pos.get("quantity")
                 avg_p = pos.get("avg_price", 0.0)
-                
+
                 # Use current price if available, fallback to stored current_price then avg_price
                 curr_p = prices.get(ticker, 0.0)
                 if curr_p <= 0:
                     curr_p = pos.get("current_price", 0.0)
                 if curr_p <= 0:
                     curr_p = avg_p
-                
+
                 m_val = qty * curr_p
-                
+
                 if avg_p > 0:
                     u_pnl = m_val - (qty * avg_p)
                     u_pnl_pct = u_pnl / (qty * avg_p)
                 else:
                     u_pnl = 0.0
                     u_pnl_pct = 0.0
-                
+
                 positions.append({
                     "ticker": ticker,
                     "quantity": qty,
@@ -288,7 +288,7 @@ class PaperTrader:
                     "stop_price": pos.get("stop_price", 0.0),
                     "highest_price": pos.get("highest_price", 0.0)
                 })
-            
+
             return pd.DataFrame(positions)
 
         except Exception as e:
@@ -320,7 +320,7 @@ class PaperTrader:
                 params.append(start_date.isoformat())
             query += " ORDER BY timestamp DESC LIMIT ?"
             params.append(limit)
-            
+
             return pd.read_sql_query(query, self.conn, params=params)
         except Exception as e:
             logger.error(f"Error fetching trade history: {e}")
@@ -330,23 +330,23 @@ class PaperTrader:
         """Get balance summary including estimated total equity."""
         cash = self.get_balance()
         positions = self.get_positions()
-        
+
         invested = 0.0
         unrealized_pnl = 0.0
         if not positions.empty:
             invested = (positions["quantity"] * positions["avg_price"]).sum()
             if "unrealized_pnl" in positions.columns:
                 unrealized_pnl = positions["unrealized_pnl"].sum()
-        
+
         total_equity = cash + invested + unrealized_pnl
-        
+
         # Calculate daily pnl
         try:
             from src.utils_temp.pnl_utils import calculate_daily_pnl_standalone
             daily_pnl, _ = calculate_daily_pnl_standalone(self.db_path, total_equity)
         except Exception:
             daily_pnl = 0.0
-            
+
         return {
             "cash": cash,
             "total_equity": total_equity,
@@ -355,8 +355,8 @@ class PaperTrader:
             "daily_pnl": daily_pnl
         }
 
-    def execute_order(self, order: Any) -> bool:
-        """Execute a trade order."""
+    def execute_order(self, order: Any) -> Optional[int]:
+        """Execute a trade order. Returns order ID on success, None on failure."""
         with self.lock:
             try:
                 balance = self._get_balance_unsafe()
@@ -366,7 +366,7 @@ class PaperTrader:
                 if order.action == "BUY":
                     if cost > balance:
                         logger.warning(f"Insufficient balance for order: {order}")
-                        return False
+                        return None
 
                     new_balance = balance - cost
                     cursor = self.conn.cursor()
@@ -386,9 +386,9 @@ class PaperTrader:
                         VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                         (
-                            order.ticker, 
-                            new_quantity, 
-                            new_avg_price, 
+                            order.ticker,
+                            new_quantity,
+                            new_avg_price,
                             new_avg_price if position["quantity"] == 0 else position.get("entry_price", new_avg_price),
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S") if position["quantity"] == 0 else position.get("entry_date"),
                             order.price,
@@ -399,7 +399,7 @@ class PaperTrader:
                 elif order.action == "SELL":
                     if order.quantity > position["quantity"]:
                         logger.warning(f"Trying to sell more than owned: {order}")
-                        return False
+                        return None
 
                     proceeds = order.quantity * order.price
                     new_balance = balance + proceeds
@@ -419,11 +419,11 @@ class PaperTrader:
                 # Thought Context is updated via separate update if needed, or we modify schema
                 # For Phase 10, we'll assume strategy_name might hold a summary or we can add a column
                 # Let's check schema first.
-                
+
                 thought_json = None
                 if hasattr(order, 'thought_context') and order.thought_context:
                     thought_json = json.dumps(order.thought_context)
-                
+
                 cursor.execute(
                     """
                     INSERT INTO orders (ticker, action, quantity, price, strategy_name, thought_context)
@@ -432,16 +432,17 @@ class PaperTrader:
                     (order.ticker, order.action, order.quantity, order.price, getattr(order, "strategy", None), thought_json),
                 )
 
+                order_id = cursor.lastrowid
                 self.conn.commit()
-                return True
+                return order_id
 
             except Exception as e:
                 logger.error(f"Error executing order: {e}")
                 self.conn.rollback()
-                return False
+                return None
 
-    def execute_trade(self, ticker: str, action: str, quantity: int, price: float, reason: str = "", strategy: str = None, thought_context: dict = None) -> bool:
-        """Simplified trade execution."""
+    def execute_trade(self, ticker: str, action: str, quantity: int, price: float, reason: str = "", strategy: str = None, thought_context: dict = None) -> Optional[int]:
+        """Simplified trade execution. Returns order ID on success, None on failure."""
         class SimpleOrder:
             def __init__(self, t, a, q, p, s, tc):
                 self.ticker = t
@@ -450,7 +451,7 @@ class PaperTrader:
                 self.price = p
                 self.strategy = s
                 self.thought_context = tc
-        
+
         return self.execute_order(SimpleOrder(ticker, action, quantity, price, strategy, thought_context))
 
     def update_daily_equity(self):
@@ -459,7 +460,7 @@ class PaperTrader:
             try:
                 summary = self.get_current_balance()
                 today = datetime.now().strftime("%Y-%m-%d")
-                
+
                 cursor = self.conn.cursor()
                 cursor.execute(
                     """
