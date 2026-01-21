@@ -1,20 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
-import { getMarketData, getSignal } from "@/components/shared/utils/api";
-import { Position } from "@/types";
+import { useQuery } from '@tanstack/react-query';
+import { getMarketData, getSignal } from '@/components/shared/utils/api';
+import { Position } from '@/types';
 
 export function usePositionRow(position: Position) {
   const { ticker, quantity, avg_price } = position;
 
   // Fetch live market data for PnL
   const { data: market, isLoading: isMarketLoading } = useQuery({
-    queryKey: ["market", ticker],
+    queryKey: ['market', ticker],
     queryFn: () => getMarketData(ticker),
     refetchInterval: 30000, // Reduced from 10s to 30s
   });
 
   // Fetch signal for "Sell Alert"
   const { data: signal, isLoading: isSignalLoading } = useQuery({
-    queryKey: ["signal", ticker],
+    queryKey: ['signal', ticker],
     queryFn: () => getSignal(ticker),
     refetchInterval: 300000, // Reduced from 60s to 5min
   });
@@ -25,8 +25,8 @@ export function usePositionRow(position: Position) {
     avg_price > 0 ? ((currentPrice - avg_price) / avg_price) * 100 : 0;
   const isProfit = pnl >= 0;
 
-  // Alert logic: High profit (>5%) or AI Sell Signal (-1)
-  const isSellSignal = signal?.signal === -1;
+  // Alert logic: High profit (>5%) or AI Sell Signal
+  const isSellSignal = signal?.signal === 'sell' || signal?.signal === -1;
   const isHighProfit = pnlPercent >= 5.0;
   const showAlert = isSellSignal || isHighProfit;
 
