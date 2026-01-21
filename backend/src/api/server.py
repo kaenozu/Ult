@@ -103,7 +103,6 @@ async def lifespan(app: FastAPI):
 
 def configure_cors(app: FastAPI) -> None:
     """CORSミドルウェアを設定"""
-    print(f"DEBUG: CORS ORIGINS LOADED = {app_settings.system.cors_origins}")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=app_settings.system.cors_origins,

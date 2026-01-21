@@ -35,7 +35,7 @@ async def execute_trade(
         if result["success"]:
             # 実際の取引実行（既存の依存関係を使用）
             async with pm.lock:
-                success = pt.execute_trade(
+                order_id = pt.execute_trade(
                     ticker=request.ticker,
                     action=request.action,
                     quantity=request.quantity,
@@ -43,10 +43,12 @@ async def execute_trade(
                     strategy=result["strategy"],
                 )
 
+            success = order_id is not None
+
             return TradeResponse(
                 success=success,
                 message=result["message"],
-                order_id=None,  # TODO: Return actual Order ID
+                order_id=str(order_id) if order_id is not None else None,
             )
         else:
             # バリデーションエラー
