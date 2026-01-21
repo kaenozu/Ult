@@ -14,131 +14,45 @@ class PortfolioManager:
     
     def __init__(self, db: DatabaseManager = db_manager):
         self.db = db
-        self.initial_cash = 10_000_000.0 # Default Paper Trading Start
+        self.initial_cash = 10_000_000.0
         self.lock = asyncio.Lock()
+        
+        # Lazy import to avoid circular dependency if any
+        # Real-time dependency injection would be better, but for now:
+        from src.api.dependencies import get_paper_trader
+        self.pt = get_paper_trader()
 
     def calculate_portfolio(self) -> Dict[str, Any]:
         """
-        Reconstruct portfolio from trades and fetch current prices.
+        Retrieve portfolio state from PaperTrader (Source of Truth).
         """
-        from decimal import Decimal, getcontext
+        # 1. Get Balance Summary
+        summary = self.pt.get_current_balance()
         
-        trades = self.db.get_trades(limit=1000) # Fetch recent trades
+        # 2. Get Positions
+        df_positions = self.pt.get_positions()
         
-        # 1. Aggregate Holdings (Using Decimal for precision)
-        holdings: Dict[str, Dict[str, Decimal]] = {}
-        cash = Decimal(str(self.initial_cash))
-        
-        # Sort trades by timestamp ascending to replay history
-        trades.sort(key=lambda t: t['timestamp'])
-
-        for trade in trades:
-            symbol = trade['symbol']
-            qty = Decimal(str(trade['quantity']))
-            price = Decimal(str(trade['price']))
-            action = trade['action'].upper()
-            total = Decimal(str(trade['total']))
-            
-            if symbol not in holdings:
-                holdings[symbol] = {'quantity': Decimal(0), 'avg_price': Decimal(0), 'cost_basis': Decimal(0)}
-            
-            if action == 'BUY':
-                cash -= total
-                # Update Avg Price
-                current_qty = holdings[symbol]['quantity']
-                current_cost = holdings[symbol]['cost_basis']
-                
-                new_cost = current_cost + total
-                new_qty = current_qty + qty
-                
-                holdings[symbol]['quantity'] = new_qty
-                holdings[symbol]['cost_basis'] = new_cost
-                if new_qty > 0:
-                    holdings[symbol]['avg_price'] = new_cost / new_qty
-                    
-            elif action == 'SELL':
-                cash += total
-                current_qty = holdings[symbol]['quantity']
-                current_cost = holdings[symbol]['cost_basis']
-                
-                # Realize PnL logic (Simplified: Avg Cost method)
-                avg_price = holdings[symbol]['avg_price']
-                cost_of_sold_shares = avg_price * qty
-                
-                new_qty = current_qty - qty
-                new_cost = current_cost - cost_of_sold_shares
-                
-                holdings[symbol]['quantity'] = max(Decimal(0), new_qty)
-                holdings[symbol]['cost_basis'] = max(Decimal(0), new_cost)
-
-        # Filter out empty positions
-        active_holdings = {k: v for k, v in holdings.items() if v['quantity'] > 0}
-        
-        # 2. Fetch Realtime Prices
-        tickers = list(active_holdings.keys())
-        # ... (Fetching logic remains same, returning float prices usually)
-        current_prices = {}
-        
-        if tickers:
-            try:
-                # Batch fetch realtime prices (enables async mode in data_loader)
-                # Use "1d" period and "1m" interval for latest price
-                price_data_map = fetch_stock_data(tickers, period="5d", interval="1m")
-                
-                for ticker, df in price_data_map.items():
-                    if not df.empty:
-                        # Get latest close price
-                        current_prices[ticker] = float(df['Close'].iloc[-1])
-            except Exception as e:
-                logger.error(f"Failed to batch fetch realtime prices: {e}")
-
-        # 3. Calculate Totals
-        total_equity = cash
-        total_unrealized_pnl = Decimal(0)
-        
-        # Detailed positions list for frontend
         position_list = {}
-        
-        for symbol, data in active_holdings.items():
-            qty = data['quantity']
-            avg_price = data['avg_price']
-            
-            # Get from batch result or fallback to 0.0
-            current_price_float = current_prices.get(symbol, 0.0)
-            
-            # If batch failed, try individual fallback (optional, but maybe risky if batch failed due to network)
-            # Staying safe: just use what we have.
-            
-            current_price = Decimal(str(current_price_float))
-            
-            market_value = qty * current_price
-            
-            unrealized_pnl = market_value - (qty * avg_price)
-            # Avoid division by zero
-            if qty > 0 and avg_price > 0:
-                pnl_percent = (unrealized_pnl / (qty * avg_price)) * 100
-            else:
-                pnl_percent = Decimal(0)
-            
-            total_equity += market_value
-            total_unrealized_pnl += unrealized_pnl
-            
-            position_list[symbol] = {
-                "quantity": float(qty),
-                "avg_price": float(round(avg_price, 2)),
-                "current_price": float(round(current_price, 2)),
-                "market_value": float(round(market_value, 2)),
-                "unrealized_pnl": float(round(unrealized_pnl, 2)),
-                "pnl_percent": float(round(pnl_percent, 2))
-            }
-            
+        if not df_positions.empty:
+            for _, row in df_positions.iterrows():
+                symbol = row['ticker']
+                position_list[symbol] = {
+                    "quantity": float(row['quantity']),
+                    "avg_price": float(row['avg_price']),
+                    "current_price": float(row['current_price']),
+                    "market_value": float(row['market_value']),
+                    "unrealized_pnl": float(row['unrealized_pnl']),
+                    "pnl_percent": float(row['unrealized_pnl_pct']) * 100, # convert to %
+                    "sector": row.get('sector', 'Market')
+                }
+
         return {
-            "total_equity": float(round(total_equity, 2)),
-            "cash": float(round(cash, 2)),
-            "invested_amount": float(round(total_equity - cash, 2)),
-            "unrealized_pnl": float(round(total_unrealized_pnl, 2)),
+            "total_equity": summary['total_equity'],
+            "cash": summary['cash'],
+            "invested_amount": summary['invested_amount'],
+            "unrealized_pnl": summary['unrealized_pnl'],
             "positions": position_list,
-            "timestamp": "now" # TODO: Real timestamp
+            "timestamp": "now"
         }
 
     # Removed _get_current_price as it's no longer used efficiently

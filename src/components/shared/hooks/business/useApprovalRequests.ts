@@ -1,5 +1,10 @@
+<<<<<<< HEAD
+import { useEffect, useState, useCallback } from "react";
+import { useSynapse } from "../connection";
+=======
 import { useEffect, useState, useCallback } from 'react';
 import { useSynapse } from '../connection';
+>>>>>>> main
 import {
   ApprovalRequestMessage,
   ApprovalRequestPayload,

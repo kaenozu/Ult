@@ -1,0 +1,440 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.0, pytest-7.4.2, pluggy-1.6.0
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: C:\gemini-desktop\Ult\backend
+plugins: anyio-4.9.0, dash-3.1.1, Faker-37.5.3, logfire-4.0.0, asyncio-0.23.7, benchmark-5.1.0, cov-4.1.0, mock-3.14.1, timeout-2.4.0, xdist-3.8.0, requests-mock-1.12.1, respx-0.22.0, typeguard-4.4.4
+asyncio: mode=Mode.STRICT
+collected 15 items / 15 errors
+
+=================================== ERRORS ====================================
+______________ ERROR collecting src/test_walkforward_lightgbm.py ______________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1128: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:241: in _call_with_frames_removed
+    ???
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+<frozen importlib._bootstrap_external>:940: in exec_module
+    ???
+<frozen importlib._bootstrap>:241: in _call_with_frames_removed
+    ???
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+____________________ ERROR collecting tests/test_agents.py ____________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_agents.py:3: in <module>
+    from src.core.agent_loop import AutonomousAgent
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+________________ ERROR collecting tests/test_api_endpoints.py _________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_api_endpoints.py:4: in <module>
+    from src.api.server import create_app
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+_______________ ERROR collecting tests/test_api_integration.py ________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_api_integration.py:12: in <module>
+    from src.api.server import create_app
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+_____________ ERROR collecting tests/test_approval_persistence.py _____________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_approval_persistence.py:7: in <module>
+    from src.database_manager import db_manager, DatabaseManager
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+_________________ ERROR collecting tests/test_auto_trader.py __________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_auto_trader.py:10: in <module>
+    from src.auto_trader import AutoTrader
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+____________________ ERROR collecting tests/test_chaos.py _____________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_chaos.py:10: in <module>
+    from src.portfolio_manager import PortfolioManager
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+____________________ ERROR collecting tests/test_config.py ____________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_config.py:4: in <module>
+    from src.core.config import Config, SystemSettings, TradingSettings
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+___________________ ERROR collecting tests/test_database.py ___________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_database.py:4: in <module>
+    from src.database_manager import DatabaseManager
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+______________ ERROR collecting tests/test_genetic_optimizer.py _______________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_genetic_optimizer.py:11: in <module>
+    from src.optimization.genetic_optimizer import GeneticOptimizer
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+__________________ ERROR collecting tests/test_websocket.py ___________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\test_websocket.py:9: in <module>
+    from src.api.server import create_app
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+_______________ ERROR collecting tests/core/test_agent_loop.py ________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\core\test_agent_loop.py:17: in <module>
+    from src.core.agent_loop import AutonomousAgent
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+_________________ ERROR collecting tests/core/test_schemas.py _________________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\core\test_schemas.py:3: in <module>
+    from src.core.schemas import ActionSchema, ActionType, ThoughtSchema, AgentState
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+___________ ERROR collecting tests/security/test_circuit_breaker.py ___________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\security\test_circuit_breaker.py:2: in <module>
+    from src.security.circuit_breaker import CircuitBreaker
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+__________ ERROR collecting tests/services/test_approval_service.py ___________
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\python.py:617: in _importtestmodule
+    mod = import_path(self.path, mode=importmode, root=self.config.rootpath)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\pathlib.py:567: in import_path
+    importlib.import_module(module_name)
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\importlib\__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+<frozen importlib._bootstrap>:1206: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1178: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1149: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:690: in _load_unlocked
+    ???
+C:\Users\neoen\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\assertion\rewrite.py:178: in exec_module
+    exec(co, module.__dict__)
+tests\services\test_approval_service.py:4: in <module>
+    from src.services.approval_service import ApprovalService
+src\__init__.py:13: in <module>
+    from .core.config import settings
+src\core\__init__.py:2: in <module>
+    from .config import Config, get_config
+E     File "C:\gemini-desktop\Ult\backend\src\core\config.py", line 56
+E       <<<<<<< HEAD
+E       ^^
+E   SyntaxError: invalid syntax
+=========================== short test summary info ===========================
+ERROR src/test_walkforward_lightgbm.py
+ERROR tests/test_agents.py
+ERROR tests/test_api_endpoints.py
+ERROR tests/test_api_integration.py
+ERROR tests/test_approval_persistence.py
+ERROR tests/test_auto_trader.py
+ERROR tests/test_chaos.py
+ERROR tests/test_config.py
+ERROR tests/test_database.py
+ERROR tests/test_genetic_optimizer.py
+ERROR tests/test_websocket.py
+ERROR tests/core/test_agent_loop.py
+ERROR tests/core/test_schemas.py
+ERROR tests/security/test_circuit_breaker.py
+ERROR tests/services/test_approval_service.py
+!!!!!!!!!!!!!!!!!! Interrupted: 15 errors during collection !!!!!!!!!!!!!!!!!!!
+============================= 15 errors in 2.99s ==============================

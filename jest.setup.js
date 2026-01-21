@@ -20,5 +20,5 @@ global.ResizeObserver = class ResizeObserver {
 
 // Mock react-window
 jest.mock('react-window', () => ({
-    FixedSizeList: () => <div data-testid="virt-list">List</div>,
+    FixedSizeList: () => React.createElement('div', { 'data-testid': 'virt-list' }, 'List'),
 }), { virtual: true });

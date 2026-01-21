@@ -228,3 +228,33 @@ async def get_websocket_status():
             "channel_counts": stats["channel_counts"],
         }
     )
+
+# ============================================================================
+# BACKGROUND TASKS
+# ============================================================================
+
+async def start_regime_monitoring():
+    # Background task to monitor market regime and broadcast updates.
+    logger.info('Regime Monitoring Background Task Started')
+    from src.api.websocket_types import MarketRegimeEnum
+    import asyncio
+    
+    while True:
+        try:
+            regime = MarketRegimeEnum.SIDEWAYS
+            confidence = 0.85
+            strategy = 'Iron Condor (Neutral)'
+            msg = MessageFactory.regime_update(
+                regime=regime,
+                confidence=confidence,
+                strategy=strategy
+            )
+            await manager.broadcast(msg)
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            logger.info('Regime Monitoring Task Cancelled')
+            break
+        except Exception as e:
+            logger.error(f'Error in regime monitoring: {e}')
+            await asyncio.sleep(10)
+

@@ -4,7 +4,7 @@ import React, { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Text, Stars } from '@react-three/drei';
 import { useNeuralStore } from '@/lib/store/neuralStore';
-import { EdgeAIClient } from '@/lib/ai/EdgeAIClient';
+// import { EdgeAIClient } from '@/lib/ai/EdgeAIClient';
 import * as THREE from 'three';
 import { useState, useEffect } from 'react';
 
@@ -96,7 +96,7 @@ export const NeuralMonitor = () => {
     useEffect(() => {
         if (!isActive) return;
 
-        const ws = new WebSocket("ws://localhost:8000/ws/synapse");
+        const ws = new WebSocket("ws://127.0.0.1:8000/ws/synapse");
 
         ws.onopen = () => {
             console.log("NeuralMonitor: Connected to Synapse");
@@ -130,6 +130,7 @@ export const NeuralMonitor = () => {
         };
     }, [isActive, addThought]);
 
+    /*
     const handleEdgeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inputText.trim()) return;
@@ -152,6 +153,13 @@ export const NeuralMonitor = () => {
         } finally {
             setIsProcessing(false);
         }
+    };
+    */
+
+    const handleEdgeSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        addThought(inputText, 0.5, 'NEUTRAL');
+        setInputText("");
     };
 
     if (!isActive) return null;

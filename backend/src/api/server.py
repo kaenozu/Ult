@@ -42,8 +42,14 @@ from src.api.routers import (
     alerts,
     circuit_breaker,
     approvals,
+<<<<<<< HEAD
+    replay, # Phase 10: The Time Machine
+    vision, # Phase 11: The Eyes of God
+    journal, # Phase 11.5: Visual Journal
+=======
     replay,  # Phase 10: The Time Machine
     vision,  # Phase 11: The Eyes of God
+>>>>>>> main
 )
 
 
@@ -100,8 +106,22 @@ async def lifespan(app: FastAPI):
 # === App Factory ===
 
 
+<<<<<<< HEAD
+def create_app() -> FastAPI:
+    """FastAPIアプリケーションを作成"""
+    app = FastAPI(
+        title="AGStock API",
+        description="AI-Powered Stock Trading System API",
+        version="1.0.0",
+        lifespan=lifespan,
+    )
+
+    # CORS設定
+    print(f"DEBUG: CORS ORIGINS LOADED = {app_settings.system.cors_origins}")
+=======
 def configure_cors(app: FastAPI) -> None:
     """CORSミドルウェアを設定"""
+>>>>>>> main
     app.add_middleware(
         CORSMiddleware,
         allow_origins=app_settings.system.cors_origins,
@@ -136,6 +156,9 @@ def register_routers(app: FastAPI) -> None:
 
     # Phase 11: The Eyes of God (Multimodal Vision)
     app.include_router(vision.router, prefix="/api/v1")
+    
+    # Phase 11.5: Visual Journal
+    app.include_router(journal.router, prefix="/api/v1")
 
     # Administrative APIs
     app.include_router(
