@@ -62,6 +62,62 @@ class RegimeDetector:
         )
         return regime
 
+    def calculate_confidence(self, df: pd.DataFrame, regime: str) -> float:
+        """
+        Calculates confidence score (0.0 - 1.0) for the detected regime.
+
+        Logic:
+        - Trending: Uses ADX strength.
+        - Volatile: Uses volatility percentile or proximity to threshold.
+        - Ranging: Inverse of ADX/Volatility.
+        """
+        if df is None or df.empty or len(df) < 20:
+            return 0.5
+
+        confidence = 0.5
+
+        try:
+            # ADX for Trend Strength
+            adx_indicator = ADXIndicator(high=df['High'], low=df['Low'], close=df['Close'], window=14)
+            adx = adx_indicator.adx().iloc[-1]
+
+            # Volatility
+            returns = df["Close"].pct_change().dropna()
+            vol = returns.rolling(self.window_short).std().iloc[-1] * np.sqrt(252)
+
+            if regime in ["trending_up", "trending_down"]:
+                # Trend confidence heavily relies on ADX
+                # ADX > 25 is trend, maxes out around 60-70 usually
+                confidence = min(max((adx - 15) / 40.0, 0.2), 0.95)
+
+            elif regime in ["high_volatility", "CRASH (市場崩壊警報)"]:
+                # High volatility confidence
+                # If vol > 0.4 (threshold), how much higher?
+                confidence = min(max((vol - 0.3) / 0.4, 0.4), 0.95)
+
+            elif regime == "ranging":
+                # Ranging means low ADX and normal volatility
+                adx_score = 1.0 - min(adx / 30.0, 1.0) # Lower ADX = Higher confidence
+                confidence = max(adx_score, 0.3)
+
+            elif regime == "low_volatility":
+                 # Low volatility confidence
+                 confidence = min(max((0.2 - vol) / 0.15, 0.3), 0.9)
+
+        except Exception as e:
+            # Fallback
+            pass
+
+        return round(float(confidence), 2)
+
+    def detect_regime_with_confidence(self, df: pd.DataFrame, vix_value: Optional[float] = None) -> Tuple[str, float]:
+        """
+        Returns both regime and calculated confidence.
+        """
+        regime = self.detect_regime(df, vix_value)
+        confidence = self.calculate_confidence(df, regime)
+        return regime, confidence
+
     def get_regime_signal(self, df: pd.DataFrame, vix_value: Optional[float] = None) -> Dict:
         """
         Returns regime detection result as a dictionary.
