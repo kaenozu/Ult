@@ -395,7 +395,7 @@ export function useSynapse(config: WebSocketConfig): UseSynapseReturn {
 export function useRegimeStream(
   callback: (message: RegimeUpdateMessage) => void,
 ) {
-  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+  const { onMessage } = useSynapse({ url: "ws://127.0.0.1:8000/ws/synapse" });
 
   useEffect(() => {
     onMessage<RegimeUpdateMessage>("regime_update", callback);
@@ -403,7 +403,7 @@ export function useRegimeStream(
 }
 
 export function usePriceAlerts(callback: (message: PriceAlertMessage) => void) {
-  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+  const { onMessage } = useSynapse({ url: "ws://127.0.0.1:8000/ws/synapse" });
 
   useEffect(() => {
     onMessage<PriceAlertMessage>("price_alert", callback);
@@ -413,7 +413,7 @@ export function usePriceAlerts(callback: (message: PriceAlertMessage) => void) {
 export function usePortfolioUpdates(
   callback: (message: PortfolioUpdateMessage) => void,
 ) {
-  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+  const { onMessage } = useSynapse({ url: "ws://127.0.0.1:8000/ws/synapse" });
 
   useEffect(() => {
     onMessage<PortfolioUpdateMessage>("portfolio_update", callback);
@@ -423,7 +423,7 @@ export function usePortfolioUpdates(
 export function useAgentActivity(
   callback: (message: AgentActivityMessage) => void,
 ) {
-  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+  const { onMessage } = useSynapse({ url: "ws://127.0.0.1:8000/ws/synapse" });
 
   useEffect(() => {
     onMessage<AgentActivityMessage>("agent_activity", callback);
@@ -435,7 +435,7 @@ export function useCircuitBreakerStream(
     message: CircuitBreakerStatusMessage | CircuitBreakerTrippedMessage,
   ) => void,
 ) {
-  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+  const { onMessage } = useSynapse({ url: "ws://127.0.0.1:8000/ws/synapse" });
 
   useEffect(() => {
     onMessage<CircuitBreakerStatusMessage>("circuit_breaker_status", callback);
@@ -449,7 +449,7 @@ export function useCircuitBreakerStream(
 export function useApprovalStream(
   callback: (message: ApprovalRequestMessage | ApprovalResponseMessage) => void,
 ) {
-  const { onMessage } = useSynapse({ url: "ws://localhost:8000/ws/synapse" });
+  const { onMessage } = useSynapse({ url: "ws://127.0.0.1:8000/ws/synapse" });
 
   useEffect(() => {
     onMessage<ApprovalRequestMessage>("approval_request", callback);

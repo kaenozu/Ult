@@ -96,7 +96,7 @@ export const NeuralMonitor = () => {
     useEffect(() => {
         if (!isActive) return;
 
-        const ws = new WebSocket("ws://localhost:8000/ws/synapse");
+        const ws = new WebSocket("ws://127.0.0.1:8000/ws/synapse");
 
         ws.onopen = () => {
             console.log("NeuralMonitor: Connected to Synapse");

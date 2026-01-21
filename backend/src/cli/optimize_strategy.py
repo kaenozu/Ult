@@ -6,12 +6,28 @@ import pandas as pd
 
 # Add backend root to path
 from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parents[3]))
+# Current file: .../backend/src/cli/optimize_strategy.py
+# parents[0] = cli
+# parents[1] = src
+# parents[2] = backend
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from src.strategies.range_strategy import RangeStrategy
 from src.strategies.volatility_strategy import VolatilityStrategy
+from src.strategies.ensemble_strategy import EnsembleStrategy
 from src.optimization.genetic_optimizer import GeneticOptimizer
-from src.core.data_provider import DataProvider
+# from src.core.data_provider import DataProvider
+# Fallback to data_loader directly as DataProvider seems missing
+from src.data_temp.data_loader import fetch_stock_data
+
+class DataProviderAdapter:
+    @staticmethod
+    def get_historical_data(ticker, period="1y"):
+        # Wrap fetch_stock_data to return DataFrame directly
+        res = fetch_stock_data([ticker], period=period)
+        return res.get(ticker)
+
+DataProvider = DataProviderAdapter
 from src.database_manager import db_manager
 
 # Logging setup
@@ -22,12 +38,22 @@ logging.basicConfig(
 logger = logging.getLogger("OptimizerCLI")
 
 def get_strategy_class(name: str) -> Type:
-    if name.lower() == "range":
-        return RangeStrategy
-    elif name.lower() == "volatility":
-        return VolatilityStrategy
-    else:
-        raise ValueError(f"Unknown strategy: {name}")
+    logger.info(f"Looking for strategy class: {name}")
+    try:
+        if name.lower() == "range":
+            return RangeStrategy
+        elif name.lower() == "volatility":
+            return VolatilityStrategy
+        elif name.lower() == "ensemble":
+            # Use importlib to bypass strange NameError/Scope issues
+            import importlib
+            module = importlib.import_module("src.strategies.ensemble_strategy")
+            return getattr(module, "EnsembleStrategy")
+        else:
+            raise ValueError(f"Unknown strategy: {name}")
+    except Exception as e:
+        logger.error(f"Error in get_strategy_class: {e}")
+        raise
 
 def main():
     parser = argparse.ArgumentParser(description="AGStock Genetic Optimizer CLI")
@@ -68,9 +94,20 @@ def main():
         logger.info(f"Test Fitness:  {best_genome.test_fitness:.2f}")
         logger.info("="*50)
         
-        # Save results to DB (using generic optimization_results table if exists, or just log)
-        # Ideally we update the strategy config in DB.
-        # For now, just logging is fine for Phase 13.5 verification.
+        # Save results to DB
+        config_key = f"strategy_params:{args.strategy}:{args.ticker}"
+        config_value = {
+            "params": best_genome.params,
+            "fitness": best_genome.fitness,
+            "test_fitness": best_genome.test_fitness,
+            "updated_at": pd.Timestamp.now().isoformat()
+        }
+        
+        try:
+            db_manager.save_config(key=config_key, value=config_value, category="strategy_params")
+            logger.info(f"💾 Successfully saved optimal parameters to DB: {config_key}")
+        except Exception as db_err:
+            logger.error(f"Failed to save to DB: {db_err}")
         
     except Exception as e:
         logger.error(f"Optimization failed: {e}")

@@ -31,24 +31,24 @@
         - [x] WebXR Spatial Interface (Stable) <!-- id: 13a -->
         - [ ] [Interaction] Parallax Effect (2.5D Mode) <!-- id: 13c -->
         - [x] UI Skills Application (text-balance, tabular-nums) <!-- id: 13b -->
-    - [/] **Phase 12: Regime Classifier (The Weather Forecaster)** <!-- id: 16 -->
+    - [x] **Phase 12: Regime Classifier (The Weather Forecaster)** <!-- id: 16 -->
     - [x] [Model] Train XGBoost/RandomForest for Regime Detection (Trend/Range/Volatile) <!-- id: 16a -->
-    - [ ] [System] Implement Strategy Router (Switch logic based on Regime) <!-- id: 16b -->
+    - [x] [System] Implement Strategy Router (Switch logic based on Regime) <!-- id: 16b -->
 
-- [/] **Phase 13: Multi-Strategy Engine (The Arsenal)** <!-- id: 18 -->
+- [x] **Phase 13: Multi-Strategy Engine (The Arsenal)** <!-- id: 18 -->
     - [x] [Strategy] Implement 'The Guerilla' (Range Strategy) <!-- id: 18a -->
     - [x] [Strategy] Implement 'The Storm Chaser' (Volatility Strategy) <!-- id: 18b -->
     - [x] [System] Implement 'Strategy Router' (Switch logic based on Regime) <!-- id: 18c -->
     - [x] [API] Update `/signals/{ticker}` to support AUTO mode <!-- id: 18d -->
     - [x] [Backtest] Verify each strategy against specific regimes <!-- id: 18e -->
 
-- [/] **Phase 14: The Blacksmith (Genetic Optimization)** <!-- id: 19 -->
+- [x] **Phase 14: The Blacksmith (Genetic Optimization)** <!-- id: 19 -->
     - [x] [Refactor] Update Base Strategy to support dynamic params `__init__(params=...)` <!-- id: 19a -->
     - [x] [Optimization] Implement `GeneticOptimizer` (Population, Fitness, Mutation) <!-- id: 19b -->
     - [x] [CLI] Create `optimize_strategy.py` tool <!-- id: 19c -->
     - [x] [Verify] Run optimization on 7203.T for 'The Guerilla' <!-- id: 19d -->
 
-- [/] **Phase 15: The Hive (Mechanical Consensus)** <!-- id: 20 -->
+- [x] **Phase 15: The Hive (Mechanical Consensus)** <!-- id: 20 -->
     - [x] [Backend] Implement `ConsensusEngine` (Weighted Voting + Veto) <!-- id: 20a -->
     - [x] [Backend] Implement `RiskAgent` (VIX/ATR Monitor) <!-- id: 20b -->
     - [x] [API] Update `/signals/{ticker}` to return Consensus Result <!-- id: 20c -->

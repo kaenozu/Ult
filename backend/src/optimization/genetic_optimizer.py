@@ -9,6 +9,7 @@ from copy import deepcopy
 from src.strategies.base import Strategy
 from src.strategies.range_strategy import RangeStrategy
 from src.strategies.volatility_strategy import VolatilityStrategy
+from src.strategies.ensemble_strategy import EnsembleStrategy
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +58,22 @@ class GeneticOptimizer:
                 "atr_window": [7, 10, 14, 20],
                 "k": [1.0, 1.5, 1.8, 2.0, 2.2, 2.5, 3.0],
                 "stop_loss_atr": [1.0, 1.5, 2.0, 3.0] # Trailing stop multiplier
+            }
+        elif strategy_class == EnsembleStrategy:
+            return {
+                # Range Sub-Strategy
+                "range_bb_window": [10, 20, 30],
+                "range_bb_std": [1.5, 2.0, 2.5],
+                "range_rsi_window": [7, 14, 21],
+                
+                # Vol Sub-Strategy
+                "vol_atr_window": [10, 14, 20],
+                "vol_k": [1.0, 1.5, 2.0, 2.5],
+                
+                # Ensemble Weights
+                "w_range": [0.2, 0.4, 0.5, 0.6, 0.8],
+                "w_vol": [0.2, 0.4, 0.5, 0.6, 0.8],
+                "threshold": [0.3, 0.5, 0.7]
             }
         else:
             # Fallback or generic params
@@ -112,7 +129,7 @@ class GeneticOptimizer:
             return -999.0
 
     def _evaluate_genome(self, genome: Genome, data: pd.DataFrame) -> float:
-        strategy = self.strategy_class(name="Gen", params=genome.params)
+        strategy = self.strategy_class(params=genome.params)
         return self._run_backtest(strategy, data)
 
     def _crossover(self, parent1: Genome, parent2: Genome) -> Genome:
