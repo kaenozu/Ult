@@ -15,7 +15,7 @@ import streamlit as st
 
 from src.constants import TICKER_NAMES
 from src import demo_data
-from src.data_temp.data_loader import fetch_external_data
+from src.data.data_loader import fetch_external_data
 from src.paper_trader import PaperTrader
 from src.services.defense import defense_status
 from src.ui.playbooks import render_playbook_cards

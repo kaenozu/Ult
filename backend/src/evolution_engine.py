@@ -12,7 +12,7 @@ import pandas as pd
 from typing import List, Dict, Any
 
 from src.infra.config import settings
-from src.data_temp.data_loader import fetch_stock_data
+from src.data.data_loader import fetch_stock_data
 
 logger = logging.getLogger("EvolutionEngine")
 

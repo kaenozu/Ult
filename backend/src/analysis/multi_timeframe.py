@@ -7,7 +7,7 @@ import logging
 from typing import Dict
 import pandas as pd
 
-from src.data_temp.data_loader import fetch_stock_data
+from src.data.data_loader import fetch_stock_data
 from src.exceptions import DataFetchError
 
 logger = logging.getLogger(__name__)

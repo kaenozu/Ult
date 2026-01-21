@@ -2,7 +2,7 @@ import logging
 import asyncio
 from typing import Dict, Any, List
 from src.database_manager import db_manager, DatabaseManager
-from src.data_temp.data_loader import fetch_stock_data, fetch_realtime_data
+from src.data.data_loader import fetch_stock_data, fetch_realtime_data
 
 logger = logging.getLogger(__name__)
 

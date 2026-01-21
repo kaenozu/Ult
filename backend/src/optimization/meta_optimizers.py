@@ -199,7 +199,7 @@ class HyperparameterOptimizer:
 
 if __name__ == "__main__":
     # Test run
-    from src.data_temp.data_loader import fetch_stock_data
+    from src.data.data_loader import fetch_stock_data
 
     logging.basicConfig(level=logging.INFO)
 

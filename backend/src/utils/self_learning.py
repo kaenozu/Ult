@@ -6,7 +6,7 @@ import pandas as pd
 from typing import Dict, Any, List
 
 from src.optimization import MultiModelOptimizer
-from src.data_temp.data_loader import fetch_stock_data
+from src.data.data_loader import fetch_stock_data
 
 logger = logging.getLogger(__name__)
 

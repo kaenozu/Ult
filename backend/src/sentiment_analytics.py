@@ -19,7 +19,7 @@ import yfinance as yf
 from nltk.sentiment import SentimentIntensityAnalyzer
 from textblob import TextBlob
 
-from .base_predictor import BasePredictor
+from src.ml.base_predictor import BasePredictor
 
 warnings.filterwarnings("ignore")
 
