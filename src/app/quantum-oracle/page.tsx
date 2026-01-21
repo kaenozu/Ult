@@ -7,4 +7,3 @@ export default function QuantumOraclePage() {
     </div>
   );
 }
-活跃度
