@@ -1,0 +1,117 @@
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> ult-app@0.1.0 test
+> jest
+
+FAIL src/components/ui/__tests__/data-table.test.tsx
+  笳・Test suite failed to run
+
+    Cannot find module 'react-window' from 'src/components/ui/data-table.tsx'
+
+    Require stack:
+      src/components/ui/data-table.tsx
+      src/components/ui/__tests__/data-table.test.tsx
+
+      1 | import React, { useMemo } from 'react';
+    > 2 | import { FixedSizeList as List } from 'react-window';
+        | ^
+      3 | import { cn } from '@/lib/utils';
+      4 | import { logger } from '@/lib/logger';
+      5 |
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.<anonymous> (src/components/ui/data-table.tsx:2:1)
+      at Object.<anonymous> (src/components/ui/__tests__/data-table.test.tsx:2:1)
+
+FAIL src/components/shared/hooks/__tests__/useAsyncData.test.ts
+  useAsyncData
+    竏・should handle successful data fetching (38 ms)
+    ﾃ・should handle errors and retry logic (12 ms)
+    竏・should call onSuccess callback on successful fetch (6 ms)
+    竏・should call onError callback on failure (4 ms)
+    竏・should allow manual refetch (10 ms)
+    竏・should reset state (3 ms)
+    竏・should re-execute when dependencies change (3 ms)
+    竏・should handle non-Error exceptions (3 ms)
+
+  笳・useAsyncData 窶ｺ should handle errors and retry logic
+
+    expect(received).toEqual(expected) // deep equality
+
+    Expected: {"success": true}
+    Received: null
+
+      82 |     });
+      83 |
+    > 84 |     expect(result.current.data).toEqual({ success: true });
+         |                                 ^
+      85 |     expect(result.current.error).toBe(null);
+      86 |     expect(mockAsyncFn).toHaveBeenCalledTimes(3);
+      87 |   });
+
+      at Object.<anonymous> (src/components/shared/hooks/__tests__/useAsyncData.test.ts:84:33)
+
+  console.error
+    An update to ForwardRef(LoadableComponent) inside a test was not wrapped in act(...).
+    
+    When testing, code that causes React state updates should be wrapped into act(...):
+    
+    act(() => {
+      /* fire events that update state */
+    });
+    /* assert on the output */
+    
+    This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      at node_modules/react-dom/cjs/react-dom-client.development.js:18758:19
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom-client.development.js:18757:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:16409:11)
+      at forceStoreRerender (node_modules/react-dom/cjs/react-dom-client.development.js:8262:24)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:8247:11
+      at callback (node_modules/next/src/shared/lib/loadable.shared-runtime.tsx:235:48)
+          at Set.forEach (<anonymous>)
+      at LoadableSubscription.forEach (node_modules/next/src/shared/lib/loadable.shared-runtime.tsx:235:21)
+      at _update (node_modules/next/src/shared/lib/loadable.shared-runtime.tsx:217:14)
+
+PASS src/components/TrafficLight.test.tsx
+  TrafficLight Component
+    Rendering
+      竏・renders safe level correctly with proper styling (79 ms)
+      竏・renders caution level correctly with proper styling (10 ms)
+      竏・renders danger level correctly with proper styling (6 ms)
+    Accessibility
+      竏・has proper ARIA attributes for screen readers (16 ms)
+      竏・has descriptive labels for light indicators (6 ms)
+    Performance
+      竏・renders without unnecessary re-renders (5 ms)
+
+PASS src/__tests__/components/visualizations/EcosystemGraph.test.tsx
+  EcosystemGraph
+    竏・renders the neural nexus title (125 ms)
+    竏・shows offline status initially (6 ms)
+    竏・connects to WebSocket on mount (6 ms)
+    竏・displays analysis persona on node click (5 ms)
+    笳・skipped displays regime data when received
+    笳・skipped displays appropriate ghost persona for crash regime
+    笳・skipped clears persona after timeout for non-crash regimes
+
+  console.error
+    Query data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["signal","AAPL"]
+
+      at Query.fetch (node_modules/@tanstack/query-core/src/query.ts:551:19)
+
+PASS src/__tests__/components/dashboard/SignalCard.test.tsx
+  SignalCard
+    竏・renders ticker and name correctly (100 ms)
+    竏・displays bullish signal correctly (40 ms)
+    竏・displays bearish signal correctly (32 ms)
+    竏・displays neutral signal correctly (30 ms)
+    竏・does not execute trade when no entry price (19 ms)
+    笳・skipped executes trade on button click when entry price exists
+
+Test Suites: 2 failed, 3 passed, 5 total
+Tests:       1 failed, 4 skipped, 22 passed, 27 total
+Snapshots:   0 total
+Time:        3.226 s
+Ran all test suites.

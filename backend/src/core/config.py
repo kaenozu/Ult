@@ -6,7 +6,7 @@ Replaces dispersed os.getenv calls and hardcoded constants.
 from typing import Any, List, Optional, Dict
 from pathlib import Path
 from pydantic_settings import BaseSettings
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from dotenv import load_dotenv
 import json
 import os
@@ -29,6 +29,9 @@ class TradingSettings(BaseSettings):
     max_position_size: float = Field(
         0.2, description="Max position size as fraction of portfolio"
     )
+    max_total_invested: Optional[float] = Field(
+        200000.0, description="Maximum total amount to invest (in JPY)"
+    )
     min_cash_reserve: float = Field(200000.0, description="Minimum cash to keep in JPY")
 
     # Risk Management
@@ -50,20 +53,37 @@ class SystemSettings(BaseSettings):
     parquet_dir: Path = Path("data/parquet")
 
     # CORS Settings
+<<<<<<< HEAD
     cors_origins: List[str] = Field(
         default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001,http://localhost:8000,http://127.0.0.1:8000").split(","),
         description="Allowed CORS origins"
+=======
+    cors_origins: Any = Field(
+        default=["http://localhost:3000", "http://localhost:3001"],
+        description="Allowed CORS origins",
+>>>>>>> main
     )
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v: Any) -> List[str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        elif isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
     cors_allow_credentials: bool = Field(True, description="Allow credentials in CORS")
     cors_allow_methods: List[str] = Field(
-        ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        description="Allowed CORS methods"
+        ["GET", "POST", "PUT", "DELETE", "OPTIONS"], description="Allowed CORS methods"
     )
-    cors_allow_headers: List[str] = Field(
-        ["*"], description="Allowed CORS headers"
-    )
+    cors_allow_headers: List[str] = Field(["*"], description="Allowed CORS headers")
     models_dir: Path = Path("models")
     initial_capital: int = 10000000  # Legacy default
+    log_level: str = Field("INFO", description="Logging level")
 
     # Caching
     realtime_ttl_seconds: int = 30
@@ -95,6 +115,10 @@ class Config(BaseSettings):
     risk_management: RiskManagementSettings = Field(
         default_factory=RiskManagementSettings
     )
+
+    # API Keys (validated at startup)
+    gemini_api_key: Optional[str] = Field(None, env="GEMINI_API_KEY")
+    openai_api_key: Optional[str] = Field(None, env="OPENAI_API_KEY")
 
     # Other legacy constants mapped
     tickers_jp: List[str] = ["7203.T", "9984.T", "6758.T", "8035.T", "6861.T"]

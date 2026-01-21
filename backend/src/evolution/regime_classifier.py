@@ -18,28 +18,27 @@ class RegimeClassifier:
     Currently uses V1 Heuristic Logic (Logic-based), upgradable to ML models later.
     """
 
-    def __init__(self):
-        pass
+    # Thresholds as class constants for easier tuning/overriding
+    ADX_TREND_THRESHOLD = 25
+    ADX_RANGE_THRESHOLD = 20
+    ATR_HIGH_VOLATILITY = 2.0  # > 2% daily move implies high volatility
+    MIN_DATA_POINTS = 50
+
+    def __init__(self, custom_thresholds: Dict[str, float] = None):
+        if custom_thresholds:
+            self.ADX_TREND_THRESHOLD = custom_thresholds.get("adx_trend", self.ADX_TREND_THRESHOLD)
+            self.ADX_RANGE_THRESHOLD = custom_thresholds.get("adx_range", self.ADX_RANGE_THRESHOLD)
+            self.ATR_HIGH_VOLATILITY = custom_thresholds.get("atr_volatile", self.ATR_HIGH_VOLATILITY)
 
     def detect_regime(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
         Detects the current market regime based on OHLCV data.
-        
-        Args:
-            df (pd.DataFrame): DataFrame with columns ['Open', 'High', 'Low', 'Close', 'Volume']
-        
-        Returns:
-            Dict: {
-                "regime": RegimeType.value,
-                "confidence": float (0.0 - 1.0),
-                "details": { ...indicators... }
-            }
         """
-        if len(df) < 50:
+        if len(df) < self.MIN_DATA_POINTS:
             return {
                 "regime": RegimeType.UNCERTAIN.value,
                 "confidence": 0.0,
-                "reason": "Not enough data (min 50 candles)"
+                "reason": f"Not enough data (min {self.MIN_DATA_POINTS} candles)"
             }
 
         # --- Indicator Calculation ---
