@@ -132,6 +132,28 @@ class AuthManager:
         finally:
             conn.close()
 
+    def get_user_by_id(self, user_id: int) -> Optional[User]:
+        """ユーザーIDで取得"""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+            row = cursor.fetchone()
+
+            if row:
+                return User(
+                    id=row[0],
+                    username=row[1],
+                    email=row[2],
+                    password_hash=row[3],
+                    is_active=bool(row[4]),
+                    is_admin=bool(row[5]),
+                    created_at=row[8],
+                )
+            return None
+        finally:
+            conn.close()
+
     def get_user(self, username: str) -> Optional[User]:
         """ユーザー取得"""
         conn = sqlite3.connect(self.db_path)
