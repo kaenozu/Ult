@@ -480,17 +480,7 @@ def fetch_stock_data(
     if not tickers:
         return {}
     
-    # EMERGENCY MOCK MODE (Verify UI)
-    import pandas as pd
-    import numpy as np
-    mock_results = {}
-    for t in tickers:
-        prices = np.random.normal(100, 5, 100).tolist()
-        dates = pd.date_range(end=pd.Timestamp.now(), periods=100)
-        df = pd.DataFrame({"Open": prices, "High": prices, "Low": prices, "Close": prices, "Volume": 1000}, index=dates)
-        mock_results[t] = df
-    return mock_results
-
+    # Real Data Fetching (Enable this for Production/Phase 10+)
     if _should_use_async_loader(use_async, tickers):
         async_result = _attempt_async_fetch(tickers, period, interval)
         if async_result is not None:

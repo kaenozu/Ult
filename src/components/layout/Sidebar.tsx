@@ -20,7 +20,7 @@ import { cn } from "@/components/shared/utils/utils";
 const NAV_ITEMS = [
   { name: "Dashboard", icon: LayoutDashboard, href: "/" },
   { name: "Market", icon: LineChart, href: "/market" },
-  { name: "AI Lab", icon: BrainCircuit, href: "/ai-lab" },
+  // { name: "AI Lab", icon: BrainCircuit, href: "/ai-lab" },
   { name: "Portfolio", icon: Wallet, href: "/portfolio" },
   { name: "WebXR", icon: Monitor, href: "/xr" },
   { name: "Quantum Oracle", icon: Sparkles, href: "/quantum-oracle" },

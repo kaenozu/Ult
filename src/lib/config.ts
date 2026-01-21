@@ -61,12 +61,12 @@ const getEnvNumber = (key: string, defaultValue: number = 0): number => {
 // Configuration object
 export const config: AppConfig = {
   api: {
-    baseUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:8000'),
+    baseUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://127.0.0.1:8000'),
     timeout: getEnvNumber('API_TIMEOUT', 30000),
   },
 
   websocket: {
-    url: getEnvVar('NEXT_PUBLIC_WS_URL', 'ws://localhost:8000/ws/regime'),
+    url: getEnvVar('NEXT_PUBLIC_WS_URL', 'ws://127.0.0.1:8000/ws/synapse'),
     reconnectInterval: getEnvNumber('WS_RECONNECT_INTERVAL', 5000),
     maxReconnectAttempts: getEnvNumber('WS_MAX_RECONNECT_ATTEMPTS', 5),
   },
