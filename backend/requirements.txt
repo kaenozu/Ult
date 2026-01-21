@@ -92,3 +92,4 @@ PyWavelets>=1.4.0
 # quantlib==1.30               # Phase 39: Derivatives
 # tpot==0.12.0                 # Phase 40: AI Evolution
 # auto-sklearn==0.15.0         # Phase 40: AI Evolution
+streamlit-javascript>=0.1.5
