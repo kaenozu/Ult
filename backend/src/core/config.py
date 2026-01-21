@@ -126,8 +126,12 @@ class Config(BaseSettings):
     )
 
     # API Keys (validated at startup)
-    gemini_api_key: Optional[str] = Field(None, env="GEMINI_API_KEY")
-    openai_api_key: Optional[str] = Field(None, env="OPENAI_API_KEY")
+    gemini_api_key: Optional[str] = Field(None, json_schema_extra={"env": "GEMINI_API_KEY"})
+    openai_api_key: Optional[str] = Field(None, json_schema_extra={"env": "OPENAI_API_KEY"})
+
+    # App Config
+    PROJECT_NAME: str = "AGStock"
+    API_V1_STR: str = "/api/v1"
 
     # Other legacy constants mapped
     tickers_jp: List[str] = ["7203.T", "9984.T", "6758.T", "8035.T", "6861.T"]

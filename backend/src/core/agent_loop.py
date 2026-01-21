@@ -13,7 +13,8 @@ from src.api.websocket_types import ApprovalType, ApprovalStatus
 from src.execution.news_shock_defense import NewsShockDefense
 from src.execution.position_sizer import PositionSizer
 from src.agents.consensus_engine import ConsensusEngine
-from src.data_temp.data_loader import fetch_stock_data
+from src.data.data_loader import fetch_stock_data
+from src.sovereign.scheduler import SovereignScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class AutonomousAgent:
         self._task: Optional[asyncio.Task] = None
         
         # Dependencies
+        self.scheduler = SovereignScheduler()
         self.circuit_breaker = CircuitBreaker()
         self.approval_service = ApprovalService(ws_manager=ws_manager)
         self.shock_defense = NewsShockDefense()

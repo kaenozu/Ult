@@ -209,6 +209,30 @@ async def handle_get_status(message) -> None:
         logger.error(f"Error handling get_status: {e}")
 
 
+async def broadcast_regime_update(regime: str, confidence: float, strategy: str):
+    """
+    Broadcast a regime update message to all connected clients.
+    """
+    try:
+        from src.api.websocket_types import MarketRegimeEnum
+
+        # Convert string regime to Enum if needed, or fallback
+        try:
+            regime_enum = MarketRegimeEnum(regime.upper())
+        except ValueError:
+            regime_enum = MarketRegimeEnum.SIDEWAYS
+
+        msg = MessageFactory.regime_update(
+            regime=regime_enum,
+            confidence=confidence,
+            strategy=strategy
+        )
+        await manager.broadcast(msg)
+        logger.debug(f"Broadcasted regime update: {regime}")
+    except Exception as e:
+        logger.error(f"Error broadcasting regime update: {e}")
+
+
 # ============================================================================
 # HTTP ENDPOINTS FOR STATUS
 # ============================================================================
