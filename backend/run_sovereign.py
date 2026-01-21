@@ -11,7 +11,7 @@ from src.sovereign.notifier import Notifier
 from src.sovereign.scheduler import SovereignScheduler
 from src.agents.consensus_engine import ConsensusEngine
 from src.core.constants import JP_STOCKS
-from src.data.data_loader import fetch_stock_data, fetch_external_data
+from src.data_temp.data_loader import fetch_stock_data, fetch_external_data
 from src.evolution.regime_classifier import RegimeClassifier
 
 # Setup logging

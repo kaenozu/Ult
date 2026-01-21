@@ -308,13 +308,14 @@ def _download_and_cache_missing(
                 updated[ticker] = refreshed
         except Exception as exc:
             logger.error("Error saving/loading data for %s: %s", ticker, exc)
-            from .errors import DataLoadError
+            # from .errors import DataLoadError
 
-            raise DataLoadError(
-                message=f"Failed to save/load data for ticker: {ticker}",
-                ticker=ticker,
-                details={"original_error": str(exc)},
-            ) from exc
+            # raise DataLoadError(
+            #     message=f"Failed to save/load data for ticker: {ticker}",
+            #     ticker=ticker,
+            #     details={"original_error": str(exc)},
+            # ) from exc
+            continue # Skip this ticker and continue
 
     return updated
 
@@ -479,7 +480,7 @@ def fetch_stock_data(
     """Fetch price history for one or more tickers."""
     if not tickers:
         return {}
-    
+
     # Real Data Fetching (Enable this for Production/Phase 10+)
     if _should_use_async_loader(use_async, tickers):
         async_result = _attempt_async_fetch(tickers, period, interval)
