@@ -353,8 +353,6 @@ real_time_learner = RealTimeLearner(predictor)
 
 def initialize_models():
     """Initialize AI models."""
-    global predictor
-
     # Create transformer model
     transformer_model = TransformerPredictor(
         input_size=15,  # Number of features

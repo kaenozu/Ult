@@ -11,6 +11,8 @@ import logging
 import jwt
 import os
 
+logger = logging.getLogger(__name__)
+
 from src.continuous_learning import continuous_learning, TaskContext, ExtractedSkill
 
 # Security
