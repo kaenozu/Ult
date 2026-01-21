@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, RefreshCw, Home, Bug } from "lucide-react";
-import { cn } from "@/components/shared/utils/common";
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
+import { cn } from '@/components/shared/utils/common';
 
 interface Props {
   children: ReactNode;
@@ -44,22 +44,46 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    const { onError, maxRetries = 3 } = this.props;
+    const { retryCount } = this.state;
+
+    // Log the error with additional context
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    // Call onError callback if provided
+    onError?.(error, errorInfo);
+
+    // Increment retry count
+    this.setState(prevState => ({
+      retryCount: prevState.retryCount + 1,
+      lastErrorTime: Date.now(),
+    }));
+
+    // Auto-retry if under max retries
+    if (retryCount < maxRetries) {
+      setTimeout(() => {
+        this.setState({ hasError: false, error: null, errorInfo: null });
+      }, 1000);
+    }
+  }
+
+  override render() {
     const { onError, maxRetries = 3 } = this.props;
     const { retryCount } = this.state;
 
     // Enhanced error logging
-    console.group("🚨 Error Boundary Caught Error");
-    console.error("Error:", error);
-    console.error("Error Info:", errorInfo);
-    console.error("Component Stack:", errorInfo.componentStack);
-    console.error("Retry Count:", retryCount);
+    console.group('🚨 Error Boundary Caught Error');
+    console.error('Error:', error);
+    console.error('Error Info:', errorInfo);
+    console.error('Component Stack:', errorInfo.componentStack);
+    console.error('Retry Count:', retryCount);
     console.groupEnd();
 
     // Call optional error handler
     onError?.(error, errorInfo);
 
-    this.setState((prevState) => ({
+    this.setState(prevState => ({
       errorInfo,
       retryCount: prevState.retryCount + 1,
     }));
@@ -87,7 +111,7 @@ export class ErrorBoundary extends Component<Props, State> {
       /retry/i,
     ];
 
-    return recoverablePatterns.some((pattern) => pattern.test(error.message));
+    return recoverablePatterns.some(pattern => pattern.test(error.message));
   };
 
   private scheduleRetry = () => {
@@ -111,14 +135,14 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleManualRetry = () => {
-    this.setState((prevState) => ({
+    this.setState(prevState => ({
       retryCount: 0, // Reset retry count for manual retry
     }));
     this.handleRetry();
   };
 
   private handleGoHome = () => {
-    window.location.href = "/";
+    window.location.href = '/';
   };
 
   private handleReportBug = () => {
@@ -133,16 +157,16 @@ export class ErrorBoundary extends Component<Props, State> {
     };
 
     // In a real app, send to error reporting service
-    console.log("Bug Report:", bugReport);
+    console.log('Bug Report:', bugReport);
 
     // Copy to clipboard for manual reporting
     navigator.clipboard?.writeText(JSON.stringify(bugReport, null, 2));
   };
 
-  render() {
+  override render() {
     const {
       fallback,
-      showDetails = process.env.NODE_ENV === "development",
+      showDetails = process.env.NODE_ENV === 'development',
       maxRetries = 3,
     } = this.props;
     const { hasError, error, errorInfo, retryCount } = this.state;
@@ -157,21 +181,21 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     const canRetry = retryCount < maxRetries;
-    const isDevelopment = process.env.NODE_ENV === "development";
+    const isDevelopment = process.env.NODE_ENV === 'development';
 
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-        <div className="max-w-2xl w-full space-y-6">
+      <div className='min-h-screen flex items-center justify-center p-4 bg-background'>
+        <div className='max-w-2xl w-full space-y-6'>
           {/* Error Header */}
-          <div className="text-center space-y-4">
-            <div className="mx-auto w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center border-2 border-destructive/20">
-              <AlertTriangle className="w-10 h-10 text-destructive animate-pulse" />
+          <div className='text-center space-y-4'>
+            <div className='mx-auto w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center border-2 border-destructive/20'>
+              <AlertTriangle className='w-10 h-10 text-destructive animate-pulse' />
             </div>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-foreground">
+            <div className='space-y-2'>
+              <h1 className='text-3xl font-bold text-foreground'>
                 Something went wrong
               </h1>
-              <p className="text-muted-foreground text-lg">
+              <p className='text-muted-foreground text-lg'>
                 We encountered an unexpected error. Our team has been notified.
               </p>
             </div>
@@ -179,24 +203,24 @@ export class ErrorBoundary extends Component<Props, State> {
 
           {/* Error Details (Development Only) */}
           {showDetails && error && (
-            <div className="bg-muted/50 rounded-lg p-4 border">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Bug className="w-4 h-4" />
+            <div className='bg-muted/50 rounded-lg p-4 border'>
+              <h3 className='font-semibold mb-2 flex items-center gap-2'>
+                <Bug className='w-4 h-4' />
                 Error Details
               </h3>
-              <div className="space-y-2">
-                <div className="text-sm">
-                  <span className="font-medium">Message:</span>
-                  <code className="ml-2 px-2 py-1 bg-muted rounded text-xs">
+              <div className='space-y-2'>
+                <div className='text-sm'>
+                  <span className='font-medium'>Message:</span>
+                  <code className='ml-2 px-2 py-1 bg-muted rounded text-xs'>
                     {error.message}
                   </code>
                 </div>
                 {errorInfo?.componentStack && (
-                  <details className="text-sm">
-                    <summary className="cursor-pointer font-medium">
+                  <details className='text-sm'>
+                    <summary className='cursor-pointer font-medium'>
                       Component Stack
                     </summary>
-                    <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-32 whitespace-pre-wrap">
+                    <pre className='mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-32 whitespace-pre-wrap'>
                       {errorInfo.componentStack}
                     </pre>
                   </details>
@@ -206,35 +230,35 @@ export class ErrorBoundary extends Component<Props, State> {
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className='flex flex-col sm:flex-row gap-3 justify-center'>
             {canRetry && (
               <Button
                 onClick={this.handleManualRetry}
-                className="flex items-center gap-2"
-                variant="default"
+                className='flex items-center gap-2'
+                variant='default'
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className='w-4 h-4' />
                 Try Again ({maxRetries - retryCount} attempts left)
               </Button>
             )}
 
             <Button
               onClick={this.handleGoHome}
-              variant="outline"
-              className="flex items-center gap-2"
+              variant='outline'
+              className='flex items-center gap-2'
             >
-              <Home className="w-4 h-4" />
+              <Home className='w-4 h-4' />
               Go Home
             </Button>
 
             {isDevelopment && (
               <Button
                 onClick={this.handleReportBug}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
+                variant='outline'
+                size='sm'
+                className='flex items-center gap-2'
               >
-                <Bug className="w-4 h-4" />
+                <Bug className='w-4 h-4' />
                 Copy Bug Report
               </Button>
             )}
@@ -242,10 +266,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
           {/* Retry Status */}
           {retryCount > 0 && (
-            <div className="text-center text-sm text-muted-foreground">
+            <div className='text-center text-sm text-muted-foreground'>
               Retry attempts: {retryCount}/{maxRetries}
               {retryCount >= maxRetries && (
-                <div className="text-destructive mt-1">
+                <div className='text-destructive mt-1'>
                   Maximum retry attempts reached
                 </div>
               )}
@@ -260,7 +284,7 @@ export class ErrorBoundary extends Component<Props, State> {
 // Higher-order component for easier usage
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<Props, "children">,
+  errorBoundaryProps?: Omit<Props, 'children'>
 ) {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
@@ -282,7 +306,7 @@ export const PageErrorBoundary: React.FC<{ children: ReactNode }> = ({
     maxRetries={3}
     onError={(error, errorInfo) => {
       // Send to error reporting service
-      console.error("Page Error:", { error, errorInfo });
+      console.error('Page Error:', { error, errorInfo });
     }}
   >
     {children}
@@ -296,9 +320,9 @@ export const ComponentErrorBoundary: React.FC<{
   <ErrorBoundary
     fallback={
       fallback || (
-        <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
-          <div className="flex items-center gap-2 text-destructive text-sm">
-            <AlertTriangle className="w-4 h-4" />
+        <div className='p-4 bg-destructive/5 border border-destructive/20 rounded-lg'>
+          <div className='flex items-center gap-2 text-destructive text-sm'>
+            <AlertTriangle className='w-4 h-4' />
             Component failed to load
           </div>
         </div>

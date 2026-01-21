@@ -24,6 +24,7 @@ export interface Position {
   id: string;
   ticker: string;
   quantity: number;
+  avg_price: number;
   entryPrice: number;
   currentPrice: number;
   pnl: number;
@@ -35,7 +36,7 @@ export interface Position {
 export interface Trade {
   id: string;
   ticker: string;
-  type: "buy" | "sell";
+  type: 'buy' | 'sell';
   quantity: number;
   price: number;
   timestamp: string;
@@ -86,7 +87,7 @@ export interface WebSocketMessage {
 }
 
 export interface RegimeUpdateMessage extends WebSocketMessage {
-  type: "regime_update";
+  type: 'regime_update';
   data: RegimeData;
 }
 
@@ -103,8 +104,8 @@ export interface CardProps extends BaseComponentProps {
 }
 
 export interface ButtonProps extends BaseComponentProps {
-  variant?: "primary" | "secondary" | "danger" | "success";
-  size?: "sm" | "md" | "lg";
+  variant?: 'primary' | 'secondary' | 'danger' | 'success';
+  size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   loading?: boolean;
   onClick?: () => void;
@@ -159,9 +160,9 @@ export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<
 
 // Event Types
 export interface CustomEventMap {
-  "regime-change": CustomEvent<RegimeData>;
-  "position-update": CustomEvent<Position>;
-  "market-data-update": CustomEvent<MarketData>;
+  'regime-change': CustomEvent<RegimeData>;
+  'position-update': CustomEvent<Position>;
+  'market-data-update': CustomEvent<MarketData>;
 }
 
 declare global {
@@ -173,10 +174,10 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public statusCode: number,
-    public response?: any,
+    public response?: any
   ) {
     super(message);
-    this.name = "ApiError";
+    this.name = 'ApiError';
   }
 }
 
@@ -184,11 +185,73 @@ export class WebSocketError extends Error {
   constructor(
     message: string,
     public code?: number,
-    public reason?: string,
+    public reason?: string
   ) {
     super(message);
-    this.name = "WebSocketError";
+    this.name = 'WebSocketError';
   }
+}
+
+// Signal and Chart Types
+export interface SignalResponse {
+  id: string;
+  symbol: string;
+  ticker?: string; // Alias for symbol
+  signal: 'buy' | 'sell' | 'hold' | number; // Allow both string and number for backward compatibility
+  confidence: number;
+  timestamp: string;
+  explanation?: string;
+  target_price?: number;
+  strategy?: string;
+  entry_price?: number;
+  stop_loss?: number;
+  take_profit?: number;
+  details?: any;
+  consensus_score?: number;
+}
+
+export interface ChartDataPoint {
+  timestamp: string;
+  price: number;
+  volume?: number;
+  date?: string;
+  open?: number;
+  high?: number;
+  low?: number;
+  close?: number;
+  predicted?: number;
+  isPrediction?: boolean;
+}
+
+// API Response Types for missing imports
+export interface PortfolioSummary {
+  totalValue: number;
+  cash: number;
+  invested: number;
+  pnl: number;
+  pnlPercentage: number;
+}
+
+export interface TradeResponse {
+  id?: string;
+  status: 'success' | 'failed';
+  message?: string;
+  success?: boolean;
+}
+
+export interface MarketDataResponse {
+  symbol: string;
+  data: ChartDataPoint[];
+  price: number;
+  change: number;
+  change_percent: number;
+}
+
+export interface TradeRequest {
+  ticker: string;
+  action: 'BUY' | 'SELL';
+  quantity: number;
+  price?: number;
 }
 
 // Configuration Types
@@ -207,8 +270,11 @@ export interface AppConfig {
     riskPerTrade: number;
   };
   ui: {
-    theme: "light" | "dark" | "auto";
+    theme: 'light' | 'dark' | 'auto';
     language: string;
     currency: string;
   };
 }
+
+// Phase 5 types
+export * from './phase5';

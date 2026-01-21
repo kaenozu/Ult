@@ -18,50 +18,54 @@ export function calculateMean(vector: Vector): number {
 
 export function calculateStdDev(vector: Vector): number {
   const mean = calculateMean(vector);
-  const squaredDiffs = vector.map((val) => Math.pow(val - mean, 2));
+  const squaredDiffs = vector.map(val => Math.pow(val - mean, 2));
   return Math.sqrt(
-    squaredDiffs.reduce((sum, val) => sum + val, 0) / vector.length,
+    squaredDiffs.reduce((sum, val) => sum + val, 0) / vector.length
   );
 }
 
 export function standardize(vector: Vector): Vector {
   const mean = calculateMean(vector);
   const std = calculateStdDev(vector);
-  return vector.map((val) => (val - mean) / (std || 1));
+  return vector.map(val => (val - mean) / (std || 1));
 }
 
 export function calculateCorrelation(v1: Vector, v2: Vector): number {
+  if (v1.length !== v2.length || v1.length === 0) {
+    return 0;
+  }
+
   const z1 = standardize(v1);
   const z2 = standardize(v2);
   const n = v1.length;
-  const dotProduct = z1.reduce((sum, val, i) => sum + val * z2[i], 0);
+  const dotProduct = z1.reduce((sum, val, i) => sum + val * (z2[i] || 0), 0);
   return dotProduct / (n - 1);
 }
 
 export function calculateCorrelationMatrix(
-  stockData: StockPriceData[],
+  stockData: StockPriceData[]
 ): Matrix {
   const n = stockData.length;
   const matrix: Matrix = Array(n)
-    .fill(0)
+    .fill(null)
     .map(() => Array(n).fill(0));
 
   for (let i = 0; i < n; i++) {
     for (let j = i; j < n; j++) {
       const correlation = calculateCorrelation(
         stockData[i].prices,
-        stockData[j].prices,
+        stockData[j].prices
       );
       matrix[i][j] = correlation;
       matrix[j][i] = correlation;
     }
   }
 
-  return matrix;
+  return matrix as Matrix;
 }
 
 export function transposeMatrix(matrix: Matrix): Matrix {
-  return matrix[0].map((_, colIndex) => matrix.map((row) => row[colIndex]));
+  return matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]));
 }
 
 export function multiplyMatrices(a: Matrix, b: Matrix): Matrix {
@@ -109,7 +113,7 @@ export function vectorLength(v: Vector): number {
 export function normalizeVector(v: Vector): Vector {
   const len = vectorLength(v);
   if (len === 0) return v;
-  return v.map((val) => val / len);
+  return v.map(val => val / len);
 }
 
 export function subtractVectors(v1: Vector, v2: Vector): Vector {
@@ -117,13 +121,13 @@ export function subtractVectors(v1: Vector, v2: Vector): Vector {
 }
 
 export function multiplyVectorScalar(v: Vector, scalar: number): Vector {
-  return v.map((val) => val * scalar);
+  return v.map(val => val * scalar);
 }
 
 export function powerIteration(
   matrix: Matrix,
   numIterations: number = 100,
-  tolerance: number = 1e-10,
+  tolerance: number = 1e-10
 ): { eigenvalue: number; eigenvector: Vector } {
   const n = matrix.length;
   let b = Array(n)
@@ -149,31 +153,29 @@ export function powerIteration(
 
 export function calculatePCA(
   stockData: StockPriceData[],
-  numComponents: number = 3,
+  numComponents: number = 3
 ): PCAResult {
   if (stockData.length < 2) {
-    throw new Error("Need at least 2 stocks for PCA");
+    throw new Error('Need at least 2 stocks for PCA');
   }
 
   const n = stockData.length;
 
-  const standardizedPrices = stockData.map((stock) =>
-    standardize(stock.prices),
-  );
+  const standardizedPrices = stockData.map(stock => standardize(stock.prices));
 
   const transpose = transposeMatrix(standardizedPrices);
   const covarianceMatrix = multiplyMatrices(standardizedPrices, transpose);
 
   const eigenvalues: number[] = [];
   const eigenvectors: Vector[] = [];
-  let remainingMatrix = covarianceMatrix.map((row) => [...row]);
+  let remainingMatrix = covarianceMatrix.map(row => [...row]);
 
   for (let i = 0; i < numComponents; i++) {
     const { eigenvalue, eigenvector } = powerIteration(remainingMatrix, 200);
     eigenvalues.push(eigenvalue);
     eigenvectors.push(eigenvector);
 
-    const eigenVectorMatrix = eigenvector.map((val) => [val]);
+    const eigenVectorMatrix = eigenvector.map(val => [val]);
     const transposeEV = transposeMatrix(eigenVectorMatrix);
     const outerProduct = multiplyMatrices(eigenVectorMatrix, transposeEV);
 
@@ -185,7 +187,7 @@ export function calculatePCA(
   }
 
   const totalVariance = eigenvalues.reduce((sum, val) => sum + val, 0);
-  const explainedVariance = eigenvalues.map((val) => val / totalVariance);
+  const explainedVariance = eigenvalues.map(val => val / totalVariance);
 
   const positions: [number, number, number][] = [];
   for (let i = 0; i < n; i++) {
@@ -205,17 +207,13 @@ export function calculatePCA(
 
 export function calculateMDS(
   correlationMatrix: Matrix,
-  numDimensions: number = 3,
+  numDimensions: number = 3
 ): [number, number, number][] {
   const n = correlationMatrix.length;
 
-  const squaredMatrix = correlationMatrix.map((row) =>
-    row.map((val) => val * val),
-  );
+  const squaredMatrix = correlationMatrix.map(row => row.map(val => val * val));
 
-  const rowMeans = squaredMatrix.map(
-    (row) => row.reduce((a, b) => a + b, 0) / n,
-  );
+  const rowMeans = squaredMatrix.map(row => row.reduce((a, b) => a + b, 0) / n);
   const colMeans = squaredMatrix
     .map((_, col) => squaredMatrix.reduce((sum, row) => sum + row[col], 0) / n)
     .slice(0, n);
@@ -234,14 +232,14 @@ export function calculateMDS(
 
   const eigenvectors: Vector[] = [];
   const eigenvalues: number[] = [];
-  let remainingMatrix = bMatrix.map((row) => [...row]);
+  let remainingMatrix = bMatrix.map(row => [...row]);
 
   for (let i = 0; i < numDimensions; i++) {
     const { eigenvalue, eigenvector } = powerIteration(remainingMatrix, 300);
     eigenvalues.push(eigenvalue);
     eigenvectors.push(eigenvector);
 
-    const eigenVectorMatrix = eigenvector.map((val) => [val]);
+    const eigenVectorMatrix = eigenvector.map(val => [val]);
     const transposeEV = transposeMatrix(eigenVectorMatrix);
     const outerProduct = multiplyMatrices(eigenVectorMatrix, transposeEV);
 
@@ -269,19 +267,19 @@ export function calculateMDS(
 
 export function generateMockStockPrices(
   numStocks: number,
-  numDays: number = 100,
+  numDays: number = 100
 ): StockPriceData[] {
   const sectors = [
-    "Technology",
-    "Healthcare",
-    "Financial",
-    "Energy",
-    "Consumer",
-    "Industrial",
-    "Materials",
-    "Utilities",
-    "Real Estate",
-    "Communication",
+    'Technology',
+    'Healthcare',
+    'Financial',
+    'Energy',
+    'Consumer',
+    'Industrial',
+    'Materials',
+    'Utilities',
+    'Real Estate',
+    'Communication',
   ];
 
   const symbols: string[] = [];
@@ -305,7 +303,7 @@ export function generateMockStockPrices(
   const sectorTrends = sectors.map(() =>
     Array(numDays)
       .fill(0)
-      .map(() => (Math.random() - 0.5) * 0.015),
+      .map(() => (Math.random() - 0.5) * 0.015)
   );
 
   return symbols.map((symbol, i) => {
