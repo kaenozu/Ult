@@ -44,6 +44,14 @@ Advanced AI-powered trading platform with a "Cyberpunk Ghost" aesthetic. This sy
 - **Alive Data:** Interfaces must breathe; no static placeholders.
 - **The Ghost Speaks:** System communication embodies a distinct "Ghost in the Machine" persona.
 
+## Performance & Code Quality
+
+- **Type Safety:** Strict TypeScript with comprehensive type definitions
+- **Performance Optimization:** React.memo, useMemo, and useCallback for optimal rendering
+- **Error Resilience:** Comprehensive error boundaries and safe data access patterns
+- **Testing:** Jest and Playwright for unit and E2E testing
+- **Code Quality:** ESLint with strict rules and Prettier for consistent formatting
+
 ## Installation & Setup
 
 ### Prerequisites

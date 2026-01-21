@@ -9,22 +9,7 @@ import dynamic from 'next/dynamic';
 import { CockpitPanel } from '@/components/features/dashboard/CockpitPanel';
 import { TimeMachinePanel } from '@/components/features/dashboard/TimeMachinePanel';
 
-// Heavy components - lazy load
-const EcosystemGraph = dynamic(
-  () => import('@/components/visualizations/EcosystemGraph'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className='h-96 bg-gray-800 animate-pulse rounded flex items-center justify-center text-cyan-500'>
-        Loading Neural Network...
-      </div>
-    ),
-  }
-);
-
-const VoidScene = dynamic(() => import('@/components/features/xr/VoidScene'), {
-  ssr: false,
-});
+// Heavy components - lazy load (none currently)
 
 const SignalCard = dynamic(
   () => import('@/components/features/dashboard/SignalCard'),

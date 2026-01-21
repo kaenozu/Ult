@@ -1,36 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Bundle analyzer (conditionally enabled)
-  ...(process.env.ANALYZE === 'true' && {
-    webpack: config => {
-      if (process.env.NODE_ENV === 'production') {
-        // Add bundle analyzer
-        const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-        config.plugins.push(
-          new BundleAnalyzerPlugin({
-            analyzerMode: 'static',
-            reportFilename: './analyze/client.html',
-            openAnalyzer: false,
-          })
-        );
-      }
-      return config;
-    },
-  }),
-
-  // Performance optimizations
-  experimental: {
-    // Enable webpack build worker
-    webpackBuildWorker: true,
-
-    // Optimize CSS
-    optimizeCss: true,
-
-    // Enable faster refresh
-    fastRefresh: true,
-  },
-
-  // Bundle optimization
+  // Force webpack for compatibility
   webpack: (config, { dev, isServer }) => {
     // Optimize bundle splitting
     if (!dev && !isServer) {
@@ -61,17 +31,17 @@ const nextConfig = {
       };
     }
 
-    // Add compression for production
-    if (!dev && !isServer) {
-      config.plugins.push(
-        new (require('compression-webpack-plugin'))({
-          algorithm: 'gzip',
-          test: /\.(js|css|html|svg)$/,
-          threshold: 10240,
-          minRatio: 0.8,
-        })
-      );
-    }
+    // Add compression for production (requires compression-webpack-plugin)
+    // if (!dev && !isServer) {
+    //   config.plugins.push(
+    //     new (require('compression-webpack-plugin'))({
+    //       algorithm: 'gzip',
+    //       test: /\.(js|css|html|svg)$/,
+    //       threshold: 10240,
+    //       minRatio: 0.8,
+    //     })
+    //   );
+    // }
 
     return config;
   },
@@ -131,13 +101,7 @@ const nextConfig = {
   },
 
   // PWA and service worker (if needed)
-  ...(process.env.NODE_ENV === 'production' && {
-    // Enable service worker for caching
-    experimental: {
-      ...this.experimental,
-      serviceWorker: true,
-    },
-  }),
+  // Note: Service worker configuration moved to separate plugin
 
   // Build optimization
   output: 'standalone',

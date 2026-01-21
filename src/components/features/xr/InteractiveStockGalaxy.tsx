@@ -183,6 +183,28 @@ function ExplosionEffect({ particles }: { particles: ExplosionParticle[] }) {
   );
 }
 
+function ParallaxCamera() {
+  const { camera, mouse } = useThree();
+  const initialPosition = useRef(new THREE.Vector3(0, 0, 20));
+
+  useFrame(() => {
+    // Smoothly interpolate camera position based on mouse coordinates
+    camera.position.x = THREE.MathUtils.lerp(
+      camera.position.x,
+      initialPosition.current.x + mouse.x * 2,
+      0.05
+    );
+    camera.position.y = THREE.MathUtils.lerp(
+      camera.position.y,
+      initialPosition.current.y + mouse.y * 2,
+      0.05
+    );
+    camera.lookAt(0, 0, 0);
+  });
+
+  return null;
+}
+
 function GalaxyScene({
   stocks,
   onGrabStock,
@@ -200,7 +222,10 @@ function GalaxyScene({
 
   useFrame((state) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y += 0.001;
+      // Slower, smoother rotation
+      groupRef.current.rotation.y += 0.0005;
+      // Add slight floating motion
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.5;
     }
   });
 
@@ -222,13 +247,6 @@ function GalaxyScene({
       ))}
 
       <ExplosionEffect particles={explosions} />
-
-      <OrbitControls
-        enableDamping
-        dampingFactor={0.05}
-        minDistance={5}
-        maxDistance={30}
-      />
     </group>
   );
 }
@@ -499,12 +517,19 @@ const InteractiveStockGalaxy = memo(function InteractiveStockGalaxy() {
           <XR store={store}>
             <StarBackground />
             <HandIndicators />
+            <ParallaxCamera />
             <GalaxyScene
               stocks={stocks}
               onGrabStock={handleGrabStock}
               onThrowStock={handleThrowStock}
               onExplodeStock={createExplosion}
               explosions={explosions}
+            />
+            <OrbitControls
+              enableDamping
+              dampingFactor={0.05}
+              minDistance={5}
+              maxDistance={30}
             />
           </XR>
         </Suspense>

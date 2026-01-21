@@ -7,7 +7,7 @@ import json
 # Add backend to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 
-from src.data_loader import fetch_stock_data
+from src.data_temp.data_loader import fetch_stock_data
 from src.optimization.genetic_optimizer import GeneticOptimizer
 from src.strategies.range_strategy import RangeStrategy
 from src.strategies.volatility_strategy import VolatilityStrategy
