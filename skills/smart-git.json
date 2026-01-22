@@ -1,0 +1,11 @@
+{
+  "name": "smart-git",
+  "description": "Safely stages and commits changes in a cross-platform manner, avoiding shell syntax errors.",
+  "commands": [
+    {
+      "name": "commit",
+      "usage": "node skills/smart-git.js \"<message>\"",
+      "description": "Stages all changes and commits with the provided message."
+    }
+  ]
+}

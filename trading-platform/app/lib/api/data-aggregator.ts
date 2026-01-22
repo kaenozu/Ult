@@ -1,5 +1,5 @@
 import { Stock, Signal, OHLCV } from '@/app/types';
-import { analyzeStock } from '@/app/lib/analysis';
+import { mlPredictionService } from '@/app/lib/mlPrediction';
 
 export interface FetchResult<T> {
   success: boolean;
@@ -31,7 +31,7 @@ class MarketDataClient {
   /**
    * Fetch Historical Data (Chart)
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan'): Promise<FetchResult<OHLCV[]>> {
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}`;
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
     if (cached) return { success: true, data: cached, source: 'cache' };
@@ -104,21 +104,25 @@ class MarketDataClient {
   }
 
   /**
-   * Generate Signal based on Real Data
+   * Generate Signal based on Ensemble ML Model
    */
   async fetchSignal(stock: Stock): Promise<FetchResult<Signal>> {
     try {
-      // We need history to analyze trend
+      // We need history to analyze trend and provide features for ML
       const result = await this.fetchOHLCV(stock.symbol, stock.market);
       
-      if (!result.success || !result.data || result.data.length === 0) {
-        throw new Error('No data available for analysis');
+      if (!result.success || !result.data || result.data.length < 50) {
+        throw new Error('No sufficient data available for ML analysis');
       }
 
-      const signal = analyzeStock(stock.symbol, result.data);
+      const indicators = mlPredictionService.calculateIndicators(result.data);
+      const prediction = mlPredictionService.predict(stock, result.data, indicators);
+      const signal = mlPredictionService.generateSignal(stock, result.data, prediction, indicators);
+      
       return { success: true, data: signal, source: 'api' };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
       return { success: false, data: null, source: 'api', error: errorMessage };
     }
   }

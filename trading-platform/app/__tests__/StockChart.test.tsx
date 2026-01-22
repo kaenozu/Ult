@@ -60,7 +60,7 @@ describe('StockChart', () => {
 
   it('shows loading state', () => {
     render(<StockChart data={[]} loading={true} />);
-    expect(screen.getByText(/Fetching Real Market Data.../i)).toBeInTheDocument();
+    expect(screen.getByText(/データを取得中.../i)).toBeInTheDocument();
   });
 
   it('handles error state', () => {

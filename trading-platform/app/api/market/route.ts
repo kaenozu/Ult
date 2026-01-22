@@ -52,31 +52,37 @@ export async function GET(request: Request) {
 
   try {
     if (type === 'history') {
-      // Calculate start date for 200 days ago
+      // Calculate start date for 300 days ago
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 300); // 300 days for good chart context
-      
-      const result = await yf.chart(yahooSymbol, {
-        period1: startDate.toISOString().split('T')[0],
-        interval: '1d',
-      }) as YahooChartResult;
+      startDate.setDate(startDate.getDate() - 300);
+      const period1 = startDate.toISOString().split('T')[0];
 
-      if (!result || !result.quotes || result.quotes.length === 0) {
-        throw new Error('No data returned');
+      try {
+        const result = await yf.chart(yahooSymbol, {
+          period1: period1,
+          interval: '1d',
+        }) as unknown as YahooChartResult;
+
+        if (!result || !result.quotes || result.quotes.length === 0) {
+          throw new Error('No data returned from chart');
+        }
+
+        const ohlcv = result.quotes
+          .filter(q => q.open !== null && q.close !== null)
+          .map(q => ({
+            date: q.date.toISOString().split('T')[0],
+            open: q.open,
+            high: q.high,
+            low: q.low,
+            close: q.close,
+            volume: q.volume || 0,
+          }));
+
+        return NextResponse.json({ data: ohlcv });
+      } catch (innerError: any) {
+        console.error(`yf.chart failed for ${yahooSymbol}:`, innerError.message);
+        throw innerError;
       }
-
-      const ohlcv = result.quotes
-        .filter(q => q.open !== null && q.close !== null) // Filter invalid candles
-        .map(q => ({
-          date: q.date.toISOString().split('T')[0],
-          open: q.open,
-          high: q.high,
-          low: q.low,
-          close: q.close,
-          volume: q.volume || 0,
-        }));
-
-      return NextResponse.json({ data: ohlcv });
     } 
     
     if (type === 'quote') {
@@ -93,16 +99,21 @@ export async function GET(request: Request) {
           marketState: result.marketState
         });
       } else {
-        const results = await yf.quote(symbols) as unknown as YahooQuoteResult[];
-        const data = results.map(r => ({
-          symbol: r.symbol.replace('.T', ''), // Strip .T for frontend consistency
-          price: r.regularMarketPrice,
-          change: r.regularMarketChange,
-          changePercent: r.regularMarketChangePercent,
-          volume: r.regularMarketVolume,
-          marketState: r.marketState
-        }));
-        return NextResponse.json({ data });
+        try {
+          const results = await yf.quote(symbols) as unknown as YahooQuoteResult[];
+          const data = results.map(r => ({
+            symbol: r.symbol.replace('.T', ''), // Strip .T for frontend consistency
+            price: r.regularMarketPrice,
+            change: r.regularMarketChange,
+            changePercent: r.regularMarketChangePercent,
+            volume: r.regularMarketVolume,
+            marketState: r.marketState
+          }));
+          return NextResponse.json({ data });
+        } catch (batchError) {
+          console.error('Batch quote failed, attempting fallback:', batchError);
+          return NextResponse.json({ data: [] }); 
+        }
       }
     }
 
