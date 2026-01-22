@@ -89,9 +89,9 @@ export default function Workstation() {
 
       <main className="flex-1 flex overflow-hidden">
         {/* Left Sidebar: Watchlist */}
-        <aside className="w-72 flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-[#233648] bg-[#192633]/50">
-            <span className="text-xs font-bold text-[#92adc9] uppercase">Watchlist</span>
+        <aside className="w-80 min-w-[300px] flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#233648] bg-[#192633]/50">
+            <span className="text-xs font-bold text-[#92adc9] uppercase tracking-wider whitespace-nowrap">ウォッチリスト</span>
             <div className="flex gap-1">
               <button className="p-1 hover:bg-[#233648] rounded text-[#92adc9] transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,18 +138,18 @@ export default function Workstation() {
                 ))}
               </div>
               <div className="h-4 w-px bg-[#233648]" />
-              <div className="flex items-center gap-2 text-xs text-[#92adc9]">
-                <span className="flex items-center gap-1 cursor-pointer hover:text-white">
+              <div className="flex items-center gap-3 text-xs text-[#92adc9]">
+                <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                   </svg>
-                  Indicators
+                  インジケーター
                 </span>
-                <span className="flex items-center gap-1 cursor-pointer hover:text-white">
+                <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
-                  Tools
+                  ツール
                 </span>
               </div>
             </div>
@@ -196,12 +196,12 @@ export default function Workstation() {
           </div>
 
           {/* Bottom Panel: Positions & Orders */}
-          <div className="h-48 border-t border-[#233648] bg-[#141e27] flex flex-col shrink-0">
+          <div className="h-52 border-t border-[#233648] bg-[#141e27] flex flex-col shrink-0">
             <div className="flex items-center gap-1 px-2 border-b border-[#233648] bg-[#192633]/50">
               {[
-                { id: 'positions', label: `Positions (${portfolio.positions.length})` },
-                { id: 'orders', label: 'Active Orders (2)' },
-                { id: 'history', label: 'History' },
+                { id: 'positions', label: `保有ポジション (${portfolio.positions.length})` },
+                { id: 'orders', label: '注文一覧 (2)' },
+                { id: 'history', label: '取引履歴' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -241,19 +241,19 @@ export default function Workstation() {
 
           {/* Level 2 / Order Book */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-[#233648] bg-[#192633]/50 flex justify-between items-center">
-              <span className="text-xs font-bold text-[#92adc9] uppercase">Order Book</span>
-              <span className="text-[10px] bg-[#233648] px-1.5 py-0.5 rounded text-white">
-                {displayStock?.market === 'japan' ? 'TSE' : 'NYSE'}
+            <div className="px-4 py-3 border-b border-[#233648] bg-[#192633]/50 flex justify-between items-center">
+              <span className="text-xs font-bold text-[#92adc9] uppercase tracking-wider">板情報</span>
+              <span className="text-[10px] bg-blue-500/20 px-2 py-0.5 rounded text-blue-400 font-bold border border-blue-500/30">
+                {displayStock?.market === 'japan' ? '東証' : 'NYSE'}
               </span>
             </div>
             <div className="flex-1 overflow-y-auto bg-[#101922]">
               <table className="w-full text-xs tabular-nums border-collapse">
                 <thead className="sticky top-0 bg-[#141e27] text-[10px] text-[#92adc9] z-10">
                   <tr>
-                    <th className="py-1 px-2 text-center font-medium w-1/3">Bid Size</th>
-                    <th className="py-1 px-2 text-center font-medium w-1/3">Price</th>
-                    <th className="py-1 px-2 text-center font-medium w-1/3">Ask Size</th>
+                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">買数量</th>
+                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">気配値</th>
+                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">売数量</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -327,7 +327,7 @@ export default function Workstation() {
       <Navigation />
 
       {/* Disclaimer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#192633]/90 border-t border-[#233648] py-2 px-4 text-center text-[10px] text-[#92adc9] z-40">
+      <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>

@@ -15,6 +15,7 @@ interface TradingStore {
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
   closePosition: (symbol: string, exitPrice: number) => void;
+  setCash: (amount: number) => void;
   journal: JournalEntry[];
   addJournalEntry: (entry: JournalEntry) => void;
   selectedStock: Stock | null;
@@ -159,10 +160,19 @@ export const useTradingStore = create<TradingStore>()(
             positions,
             totalValue,
             totalProfit,
+            // Add profit to cash on close
+            cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit, 
           },
           journal: [...state.journal, entry],
         };
       }),
+
+      setCash: (amount) => set((state) => ({
+        portfolio: {
+          ...state.portfolio,
+          cash: amount,
+        },
+      })),
 
       journal: [],
 
