@@ -3,12 +3,14 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
-import { StockTable, PositionTable, HistoryTable } from '@/app/components/StockTable';
+import { StockTable } from '@/app/components/StockTable';
+import { PositionTable } from '@/app/components/PositionTable';
+import { HistoryTable } from '@/app/components/HistoryTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
 import { OrderPanel } from '@/app/components/OrderPanel';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { fetchOHLCV, fetchSignal, ALL_STOCKS } from '@/app/data/stocks';
+import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { cn, formatCurrency } from '@/app/lib/utils';
 
@@ -65,7 +67,7 @@ export default function Workstation() {
     const initializeData = async () => {
       // Priority: 1. storeSelectedStock (from screener), 2. watchlist[0] (default)
       const stockToSelect = storeSelectedStock || watchlist[0];
-      if (stockToSelect) {
+      if (stockToSelect && !selectedStock) {
         setLocalSelectedStock(stockToSelect);
         if (!storeSelectedStock) setSelectedStock(stockToSelect);
         fetchData(stockToSelect);
@@ -73,7 +75,7 @@ export default function Workstation() {
     };
 
     initializeData();
-  }, [fetchData, storeSelectedStock, watchlist, setSelectedStock]);
+  }, [fetchData, storeSelectedStock, watchlist, setSelectedStock, selectedStock]);
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
@@ -81,14 +83,17 @@ export default function Workstation() {
     fetchData(stock);
   }, [setSelectedStock, fetchData]);
 
-  const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
-    closePosition(symbol, currentPrice);
-  }, [closePosition]);
+  const handleClosePosition = useCallback((symbol: string) => {
+    // Current price is retrieved from the stock data in the store or from the position itself
+    const position = portfolio.positions.find(p => p.symbol === symbol);
+    if (position) {
+      closePosition(symbol, position.currentPrice);
+    }
+  }, [closePosition, portfolio.positions]);
 
   const displayStock = selectedStock || watchlist[0];
-  const displaySignal = chartSignal;
 
-  if (loading) {
+  if (loading && chartData.length === 0) {
     return (
       <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
         <div className="flex-1 flex items-center justify-center">

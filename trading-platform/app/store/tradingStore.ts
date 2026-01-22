@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Stock, Signal, Position, Portfolio, JournalEntry, Theme } from '../types';
+import { Stock, Position, Portfolio, JournalEntry, Theme } from '../types';
 import { JAPAN_STOCKS, USA_STOCKS } from '../data/stocks';
-import { mlPredictionService } from '../lib/mlPrediction';
 
 interface TradingStore {
   theme: Theme;
@@ -66,7 +65,7 @@ const initialPortfolio: Portfolio = {
 
 export const useTradingStore = create<TradingStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
 

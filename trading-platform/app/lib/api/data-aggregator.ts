@@ -8,8 +8,23 @@ export interface FetchResult<T> {
   error?: string;
 }
 
+// Helper interfaces for API responses
+interface QuoteData {
+  symbol: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  volume: number;
+  marketState: string;
+}
+
+interface MarketResponse<T> {
+  data?: T;
+  error?: string;
+}
+
 class MarketDataClient {
-  private cache: Map<string, { data: any; timestamp: number }> = new Map();
+  private cache: Map<string, { data: unknown; timestamp: number }> = new Map();
   // 5 minutes cache for real data to respect Yahoo's bandwidth and local performance
   private cacheDuration: number = 5 * 60 * 1000; 
 
@@ -18,47 +33,46 @@ class MarketDataClient {
    */
   async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}`;
-    const cached = this.getFromCache(cacheKey);
+    const cached = this.getFromCache<OHLCV[]>(cacheKey);
     if (cached) return { success: true, data: cached, source: 'cache' };
 
     try {
       const res = await fetch(`/api/market?type=history&symbol=${symbol}&market=${market}`);
-      const json = await res.json();
+      const json = await res.json() as MarketResponse<OHLCV[]>;
       
-      if (!res.ok || json.error) {
+      if (!res.ok || json.error || !json.data) {
         throw new Error(json.error || res.statusText);
       }
       
       this.setCache(cacheKey, json.data);
       return { success: true, data: json.data, source: 'api' };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
       console.error(`Fetch OHLCV failed for ${symbol}:`, err);
-      return { success: false, data: null, source: 'api', error: err.message };
+      return { success: false, data: null, source: 'api', error: errorMessage };
     }
   }
 
   /**
    * Fetch Quotes for multiple symbols
    */
-  async fetchQuotes(symbols: string[]): Promise<any[]> {
+  async fetchQuotes(symbols: string[]): Promise<QuoteData[]> {
     try {
-      // Yahoo Finance API endpoint handles batching
-      // We might need to split into chunks if too many, but 50 is fine
       const symbolStr = symbols.join(',');
-      // We assume mixed markets might be an issue, but let's try.
-      // Actually our formatSymbol in API handles it if we pass "market" param?
-      // No, mixed markets in one call is tricky if we rely on "market" param.
-      // But formatSymbol uses .T for Japan. Yahoo distinguishes by suffix.
-      // So we can ignore "market" param for batch calls if we handle suffix in frontend or backend.
-      // Let's rely on backend formatSymbol which is naive.
-      // We should probably just pass raw symbols and let backend handle?
-      // Backend expects "market" param to apply logic.
-      // Strategy: Fetch Japan and USA separately.
-      
       const res = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
       const json = await res.json();
+
       if (!res.ok) throw new Error(json.error);
-      return json.data || [json]; // Handle single or array
+
+      // Handle array or single object response structure from backend
+      if (json.data && Array.isArray(json.data)) {
+        return json.data as QuoteData[];
+      } else if (json.symbol) {
+        // Single quote response structure
+        return [json as QuoteData];
+      }
+
+      return [];
     } catch (err) {
       console.error('Batch fetch failed:', err);
       return [];
@@ -68,9 +82,9 @@ class MarketDataClient {
   /**
    * Fetch Current Quote (Price)
    */
-  async fetchQuote(symbol: string, market: 'japan' | 'usa' = 'japan'): Promise<any> {
+  async fetchQuote(symbol: string, market: 'japan' | 'usa' = 'japan'): Promise<QuoteData | null> {
     const cacheKey = `quote-${symbol}`;
-    const cached = this.getFromCache(cacheKey);
+    const cached = this.getFromCache<QuoteData>(cacheKey);
     if (cached) return cached;
 
     try {
@@ -82,7 +96,7 @@ class MarketDataClient {
       }
       
       this.setCache(cacheKey, json);
-      return json;
+      return json as QuoteData;
     } catch (err) {
       console.error(`Fetch Quote failed for ${symbol}:`, err);
       return null;
@@ -106,23 +120,24 @@ class MarketDataClient {
       const signal = mlPredictionService.generateSignal(stock, result.data, prediction, indicators);
       
       return { success: true, data: signal, source: 'api' };
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
       console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
-      return { success: false, data: null, source: 'api', error: err.message };
+      return { success: false, data: null, source: 'api', error: errorMessage };
     }
   }
 
-  private getFromCache(key: string) {
+  private getFromCache<T>(key: string): T | null {
     const item = this.cache.get(key);
     if (!item) return null;
     if (Date.now() - item.timestamp > this.cacheDuration) {
       this.cache.delete(key);
       return null;
     }
-    return item.data;
+    return item.data as T;
   }
 
-  private setCache(key: string, data: any) {
+  private setCache(key: string, data: unknown) {
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 }
