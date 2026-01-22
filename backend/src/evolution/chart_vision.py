@@ -4,9 +4,16 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-import google.generativeai as genai
 import matplotlib.pyplot as plt
 import pandas as pd
+
+# Optional import for Gemini
+try:
+    import google.generativeai as genai
+    GENAI_AVAILABLE = True
+except ImportError:
+    genai = None
+    GENAI_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +30,10 @@ class ChartVisionEngine:
 
     def _init_gemini(self):
         """Init Gemini Vision model."""
+        if not GENAI_AVAILABLE:
+            logger.info("google-generativeai not installed, ChartVision disabled.")
+            return
+            
         api_key = os.getenv("GEMINI_API_KEY")
         if api_key:
             try:
