@@ -4,7 +4,7 @@ import { Stock } from '@/app/types';
 import { formatCurrency, formatPercent, formatVolume, getChangeColor, cn } from '@/app/lib/utils';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
-import { useEffect, memo, useCallback } from 'react';
+import { useEffect, memo, useCallback, useMemo } from 'react';
 
 // Memoized Stock Row
 const StockRow = memo(({
@@ -63,12 +63,12 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
   const { setSelectedStock, updateStockData } = useTradingStore();
 
   // Create a stable key for the list of symbols to prevent re-fetching when prices change
-  const symbolKey = stocks.map(s => s.symbol).join(',');
+  const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
 
   useEffect(() => {
     let mounted = true;
     const fetchQuotes = async () => {
-      const symbols = stocks.map(s => s.symbol);
+      const symbols = symbolKey.split(',').filter(Boolean);
       if (symbols.length === 0) return;
 
       const quotes = await marketClient.fetchQuotes(symbols);
