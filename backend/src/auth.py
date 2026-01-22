@@ -72,8 +72,12 @@ class AuthManager:
             )
 
             # インデックス追加
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at)"
+            )
 
             conn.commit()
         finally:
@@ -104,7 +108,9 @@ class AuthManager:
 
         return True, "OK"
 
-    def create_user(self, username: str, email: str, password: str, is_admin: bool = False) -> Optional[int]:
+    def create_user(
+        self, username: str, email: str, password: str, is_admin: bool = False
+    ) -> Optional[int]:
         """ユーザー作成"""
         # パスワード強度チェック
         is_strong, message = self.check_password_strength(password)
@@ -307,7 +313,9 @@ class AuthManager:
         """ログイン"""
         # アカウントロックチェック
         if self.is_account_locked(username):
-            raise ValueError("アカウントがロックされています。15分後に再試行してください。")
+            raise ValueError(
+                "アカウントがロックされています。15分後に再試行してください。"
+            )
 
         user = self.get_user(username)
 
@@ -360,8 +368,13 @@ class AuthManager:
 
 
 if __name__ == "__main__":
-    # テスト
-    auth = AuthManager("test-secret-key")
+    # テスト (本番環境では環境変数を使用してください)
+    import os
+
+    test_secret = os.getenv("SECRET_KEY", "test-secret-key-change-in-production")
+    test_db = os.getenv("USERS_DB_PATH", "data/test_users.db")
+
+    auth = AuthManager(secret_key=test_secret, db_path=test_db)
 
     # ユーザー作成
     user_id = auth.create_user("testuser", "test@example.com", "TestPassword123")

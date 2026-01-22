@@ -52,10 +52,25 @@ class SystemSettings(BaseSettings):
     db_path: Path = Path("data/stock_data.db")
     parquet_dir: Path = Path("data/parquet")
 
+    # Authentication & Security
+    secret_key: SecretStr = Field(
+        default_factory=lambda: os.getenv(
+            "SECRET_KEY", "change-me-in-production-use-openssl-rand-base64-32"
+        ),
+        description="Secret key for JWT token signing (must be set in production)",
+    )
+    users_db_path: Path = Field(
+        default_factory=lambda: Path(os.getenv("USERS_DB_PATH", "data/users.db")),
+        description="Path to users database",
+    )
+
     # CORS Settings
     cors_origins: List[str] = Field(
-        default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001,http://localhost:8000,http://127.0.0.1:8000").split(","),
-        description="Allowed CORS origins"
+        default_factory=lambda: os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001,http://localhost:8000,http://127.0.0.1:8000",
+        ).split(","),
+        description="Allowed CORS origins",
     )
 
     @field_validator("cors_origins", mode="before")
