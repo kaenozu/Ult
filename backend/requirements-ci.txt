@@ -4,6 +4,7 @@ fastapi>=0.100.0
 uvicorn>=0.23.0
 pydantic-settings>=2.1.0
 python-dotenv>=1.0.0
+dependency-injector>=4.41.0
 
 # Data Processing
 pandas>=2.0.0
