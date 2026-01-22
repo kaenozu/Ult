@@ -8,7 +8,9 @@ Gemini CLIエージェントはこのファイルをコンテキストとして�
 - **技術スタック**: Next.js (App Router), TypeScript, Tailwind CSS
 - **変更方針**: 小さく、安全な変更を優先する (Prefer small, safe diffs)。
 - **信頼性**: 不確かなAPIレスポンスを捏造せず、必要に応じて確認を行う。
-- **Git操作**: GitHubの操作には `gh` コマンドを使用する。
+- **Git操作**:
+  - GitHubの操作には `gh` コマンドを使用する。
+  - コミット操作には `node skills/smart-git.js "<message>"` を使用し、シェル固有の結合演算子 (`&&`) のエラーを回避する。
 
 ## 技術スタック (Tech Stack)
 - **Framework**: Next.js 16.1.4 (App Router)
