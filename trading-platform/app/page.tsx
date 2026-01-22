@@ -89,7 +89,7 @@ export default function Workstation() {
 
       <main className="flex-1 flex overflow-hidden">
         {/* Left Sidebar: Watchlist */}
-        <aside className="w-72 flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0">
+        <aside className="w-72 flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
           <div className="flex items-center justify-between px-3 py-2 border-b border-[#233648] bg-[#192633]/50">
             <span className="text-xs font-bold text-[#92adc9] uppercase">Watchlist</span>
             <div className="flex gap-1">
@@ -234,7 +234,7 @@ export default function Workstation() {
         </section>
 
         {/* Right Sidebar: Level 2 & Signal Panel */}
-        <aside className="w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0">
+        <aside className="w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
           {displayStock && (
             <SignalPanel stock={displayStock} signal={chartSignal} loading={loading} />
           )}

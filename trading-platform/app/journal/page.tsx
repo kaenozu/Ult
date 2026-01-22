@@ -53,7 +53,7 @@ export default function Journal() {
           </div>
         </div>
         <div className="flex flex-1 justify-end gap-6 items-center">
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
               Dashboard
             </Link>
@@ -79,7 +79,7 @@ export default function Journal() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-64 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0 z-10">
+        <aside className="w-64 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0 z-10 max-lg:hidden">
           <div className="p-5 flex flex-col gap-6">
             <div className="flex items-center gap-3 px-2">
               <div className="size-10 bg-center bg-no-repeat bg-cover rounded-full ring-2 ring-primary/20" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuARZJdTQ8NN5-AppYn7TeBtwap-bUwXfPfnQc6UBsMWsTcN5v5XvQY1sc7Bew71qlZ41pbTd0YEn_M5bAIv9cccq7xItHrkH6oPp-n_8tljknEzSRl-UpPxHzlaI6ypY2Y7-6qZSTRG4BdlwQwsRzOechzBjZO7vRqDDLCpK-Xj61O0LuX8V4pDOMwoqf5fnWvNgBPe9ArL2ClIanDSW4dR45IO55Fh9k-OYUJgUchHa7sFqfUlYTMl0Hl-ksinOxe0FI_gOX5I708")' }}></div>
