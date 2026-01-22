@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import yf from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
+
+const yf = new YahooFinance();
 
 function formatSymbol(symbol: string, market?: string): string {
   if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
@@ -22,31 +24,37 @@ export async function GET(request: Request) {
 
   try {
     if (type === 'history') {
-      // Calculate start date for 200 days ago
+      // Calculate start date for 300 days ago
       const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 300); // 300 days for good chart context
-      
-      const result: any = await yf.chart(yahooSymbol, {
-        period1: startDate.toISOString().split('T')[0],
-        interval: '1d',
-      });
+      startDate.setDate(startDate.getDate() - 300);
+      const period1 = startDate.toISOString().split('T')[0];
 
-      if (!result || !result.quotes || result.quotes.length === 0) {
-        throw new Error('No data returned');
+      try {
+        const result = await yf.chart(yahooSymbol, {
+          period1: period1,
+          interval: '1d',
+        });
+
+        if (!result || !result.quotes || result.quotes.length === 0) {
+          throw new Error('No data returned from chart');
+        }
+
+        const ohlcv = result.quotes
+          .filter((q: any) => q.open !== null && q.close !== null)
+          .map((q: any) => ({
+            date: q.date.toISOString().split('T')[0],
+            open: q.open,
+            high: q.high,
+            low: q.low,
+            close: q.close,
+            volume: q.volume || 0,
+          }));
+
+        return NextResponse.json({ data: ohlcv });
+      } catch (innerError: any) {
+        console.error(`yf.chart failed for ${yahooSymbol}:`, innerError.message);
+        throw innerError;
       }
-
-      const ohlcv = result.quotes
-        .filter((q: any) => q.open !== null && q.close !== null) // Filter invalid candles
-        .map((q: any) => ({
-          date: q.date.toISOString().split('T')[0],
-          open: q.open,
-          high: q.high,
-          low: q.low,
-          close: q.close,
-          volume: q.volume || 0,
-        }));
-
-      return NextResponse.json({ data: ohlcv });
     } 
     
     if (type === 'quote') {
@@ -64,7 +72,7 @@ export async function GET(request: Request) {
         });
       } else {
         try {
-          const results: any[] = await yf.quote(symbols, { validateResult: false });
+          const results: any[] = await yf.quote(symbols);
           const data = results.map(r => ({
             symbol: r.symbol.replace('.T', ''), // Strip .T for frontend consistency
             price: r.regularMarketPrice,
