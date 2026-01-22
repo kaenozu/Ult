@@ -165,7 +165,6 @@ export default function Workstation() {
             <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
               <StockChart 
                 data={chartData} 
-                signal={chartSignal || undefined} 
                 height={400} 
                 showVolume={true} 
                 market={displayStock?.market}
