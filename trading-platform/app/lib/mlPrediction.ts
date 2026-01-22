@@ -61,7 +61,6 @@ class MLPredictionService {
     const volumes = data.map(d => d.volume);
 
     const currentPrice = prices[prices.length - 1];
-    const prevPrice = prices[prices.length - 2];
 
     const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
     const volumeRatio = volumes[volumes.length - 1] / avgVolume;
@@ -69,8 +68,7 @@ class MLPredictionService {
     const volatility = this.calculateVolatility(prices.slice(-20));
 
     const currentRSI = indicators.rsi[indicators.rsi.length - 1] || 50;
-    const prevRSI = indicators.rsi[indicators.rsi.length - 2] || 50;
-
+    
     const currentSMA5 = indicators.sma5[indicators.sma5.length - 1] || currentPrice;
     const currentSMA20 = indicators.sma20[indicators.sma20.length - 1] || currentPrice;
     const currentSMA50 = indicators.sma50[indicators.sma50.length - 1] || currentPrice;
@@ -89,7 +87,7 @@ class MLPredictionService {
 
     return {
       rsi: currentRSI,
-      rsiChange: currentRSI - prevRSI,
+      rsiChange: 0, 
       sma5: (currentPrice - currentSMA5) / currentSMA5 * 100,
       sma20: (currentPrice - currentSMA20) / currentSMA20 * 100,
       sma50: (currentPrice - currentSMA50) / currentSMA50 * 100,
@@ -104,7 +102,6 @@ class MLPredictionService {
 
   predict(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): ModelPrediction {
     const features = this.extractFeatures(stock, data, indicators);
-    // ... rest of predict remains the same
 
     const rfPrediction = this.randomForestPredict(features);
     const xgbPrediction = this.xgboostPredict(features);
@@ -131,7 +128,6 @@ class MLPredictionService {
     const currentATR = indicators.atr[indicators.atr.length - 1] || currentPrice * 0.02;
     
     // Use ATR for volatility-adjusted targets
-    // ATR * 2.5 for target, ATR * 1.5 for stop
     const targetMove = currentATR * 2.5;
     const stopMove = currentATR * 1.5;
 
@@ -169,7 +165,6 @@ class MLPredictionService {
     };
   }
 
-  // Remove redundant private methods as they are now in utils.ts
   private calculateVolatility(prices: number[]): number {
     if (prices.length < 2) return 0;
     const returns = prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);
@@ -237,7 +232,7 @@ class MLPredictionService {
     const longMA = recentPrices.slice(-20).reduce((a, b) => a + b, 0) / 20;
     const maSignal = (shortMA - longMA) / longMA * 100;
 
-    let score = trend * 0.4 + maSignal * 0.4 - volatility * 0.2;
+    const score = trend * 0.4 + maSignal * 0.4 - volatility * 0.2;
 
     return score * 0.8;
   }
@@ -246,8 +241,7 @@ class MLPredictionService {
     let confidence = 50;
 
     if (features.rsi < 25 || features.rsi > 75) confidence += 10;
-    if (Math.abs(features.rsiChange) > 5) confidence += 5;
-
+    
     if (Math.abs(features.priceMomentum) > 5) confidence += 8;
     if (Math.abs(features.priceMomentum) > 10) confidence += 5;
 

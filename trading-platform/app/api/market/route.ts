@@ -1,6 +1,34 @@
 import { NextResponse } from 'next/server';
 import YahooFinance from 'yahoo-finance2';
 
+// Define explicit types for Yahoo Finance responses
+// (Partial definitions based on what we use)
+interface YahooChartResult {
+  meta: {
+    currency: string;
+    symbol: string;
+    regularMarketPrice: number;
+  };
+  quotes: {
+    date: Date;
+    open: number | null;
+    high: number | null;
+    low: number | null;
+    close: number | null;
+    volume: number;
+  }[];
+}
+
+interface YahooQuoteResult {
+  symbol: string;
+  regularMarketPrice: number;
+  regularMarketChange: number;
+  regularMarketChangePercent: number;
+  regularMarketVolume: number;
+  marketState: string;
+  [key: string]: unknown;
+}
+
 const yf = new YahooFinance();
 
 function formatSymbol(symbol: string, market?: string): string {
@@ -33,15 +61,15 @@ export async function GET(request: Request) {
         const result = await yf.chart(yahooSymbol, {
           period1: period1,
           interval: '1d',
-        });
+        }) as unknown as YahooChartResult;
 
         if (!result || !result.quotes || result.quotes.length === 0) {
           throw new Error('No data returned from chart');
         }
 
         const ohlcv = result.quotes
-          .filter((q: any) => q.open !== null && q.close !== null)
-          .map((q: any) => ({
+          .filter(q => q.open !== null && q.close !== null)
+          .map(q => ({
             date: q.date.toISOString().split('T')[0],
             open: q.open,
             high: q.high,
@@ -61,7 +89,7 @@ export async function GET(request: Request) {
       const symbols = symbol.split(',').map(s => formatSymbol(s.trim(), market || undefined));
       
       if (symbols.length === 1) {
-        const result: any = await yf.quote(symbols[0]);
+        const result = await yf.quote(symbols[0]) as unknown as YahooQuoteResult;
         return NextResponse.json({ 
           symbol: symbol,
           price: result.regularMarketPrice,
@@ -72,7 +100,7 @@ export async function GET(request: Request) {
         });
       } else {
         try {
-          const results: any[] = await yf.quote(symbols);
+          const results = await yf.quote(symbols) as unknown as YahooQuoteResult[];
           const data = results.map(r => ({
             symbol: r.symbol.replace('.T', ''), // Strip .T for frontend consistency
             price: r.regularMarketPrice,
@@ -84,8 +112,6 @@ export async function GET(request: Request) {
           return NextResponse.json({ data });
         } catch (batchError) {
           console.error('Batch quote failed, attempting fallback:', batchError);
-          // Fallback: Return empty list or partial data if possible
-          // For now, let's just return what we can or empty to avoid 500 loop
           return NextResponse.json({ data: [] }); 
         }
       }

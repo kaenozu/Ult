@@ -21,7 +21,6 @@ export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'u
   
   // Calculate Indicators
   const rsi = calculateRSI(closes, 14);
-  const sma20 = calculateSMA(closes, 20);
   const sma50 = calculateSMA(closes, 50);
   const sma200 = calculateSMA(closes, 200);
   const macdData = calculateMACD(closes);
@@ -80,9 +79,8 @@ export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'u
   }
 
   // Dynamic Target/Stop based on ATR (Volatility)
-  // Standard logic: Stop = 2.0 * ATR, Target = 4.0 * ATR (Reward/Risk = 2)
   const atrMultiplier = 2.0;
-  const rewardRiskRatio = 2.5; // Slightly more aggressive target
+  const rewardRiskRatio = 2.5; 
 
   let targetPrice = currentPrice;
   let stopLoss = currentPrice;

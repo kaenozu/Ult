@@ -6,12 +6,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { JAPAN_STOCKS } from '@/app/data/stocks';
+import { Signal } from '@/app/types';
 
 describe('SignalPanel', () => {
   const mockStock = JAPAN_STOCKS[0];
-  const mockSignal = {
+  const mockSignal: Signal = {
     symbol: mockStock.symbol,
-    type: 'BUY' as const,
+    type: 'BUY',
     confidence: 80,
     predictedChange: 5,
     targetPrice: 1000,

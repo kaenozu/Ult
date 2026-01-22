@@ -11,7 +11,6 @@ import { marketClient } from '@/app/lib/api/data-aggregator';
 import { filterByTechnicals, TechFilters } from '@/app/lib/screener-utils';
 import { useTradingStore } from '@/app/store/tradingStore';
 
-type FilterField = 'price' | 'change' | 'volume' | 'sector' | 'market';
 type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
 type SortDirection = 'asc' | 'desc';
 
@@ -45,7 +44,9 @@ export default function Screener() {
   useEffect(() => {
     let mounted = true;
     const fetchAllData = async () => {
-      const symbols = stocks.map(s => s.symbol);
+      // Use constants directly to avoid dependency on 'stocks' state
+      const allStocks = [...JAPAN_STOCKS, ...USA_STOCKS];
+      const symbols = allStocks.map(s => s.symbol);
       const quotes = await marketClient.fetchQuotes(symbols);
       
       if (mounted && quotes.length > 0) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo, memo } from 'react';
+import { useRef, useMemo, memo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,7 @@ import {
   Tooltip,
   Legend,
   Filler,
+  TooltipItem,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV } from '@/app/types';
@@ -163,8 +164,11 @@ export const StockChart = memo(function StockChart({
         borderWidth: 1,
         padding: 12,
         callbacks: {
-          label: (context: any) => {
-            return `${context.dataset.label}: ${formatCurrency(context.parsed.y, market === 'japan' ? 'JPY' : 'USD')}`;
+          label: (context: TooltipItem<'line'>) => {
+            if (context.parsed.y !== null) {
+              return `${context.dataset.label}: ${formatCurrency(context.parsed.y, market === 'japan' ? 'JPY' : 'USD')}`;
+            }
+            return '';
           },
         },
       },
@@ -186,7 +190,12 @@ export const StockChart = memo(function StockChart({
         },
         ticks: {
           color: '#92adc9',
-          callback: (value: number) => formatCurrency(value, market === 'japan' ? 'JPY' : 'USD'),
+          callback: (value: string | number) => {
+            if (typeof value === 'number') {
+              return formatCurrency(value, market === 'japan' ? 'JPY' : 'USD');
+            }
+            return value;
+          },
         },
       },
       yMACD: {
@@ -271,7 +280,7 @@ export const StockChart = memo(function StockChart({
 
   return (
     <div className="relative w-full" style={{ height }}>
-      <Line ref={chartRef as any} data={chartData} options={options as any} />
+      <Line ref={chartRef} data={chartData} options={options as any} />
 
       {showVolume && (
         <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none opacity-50">
