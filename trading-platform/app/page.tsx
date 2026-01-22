@@ -63,11 +63,8 @@ export default function Workstation() {
     fetchData(stock);
   };
 
-  const handleClosePosition = (symbol: string) => {
-    const stock = watchlist.find(s => s.symbol === symbol);
-    if (stock) {
-      closePosition(symbol, stock.price);
-    }
+  const handleClosePosition = (symbol: string, currentPrice: number) => {
+    closePosition(symbol, currentPrice);
   };
 
   const displayStock = selectedStock || watchlist[0];
