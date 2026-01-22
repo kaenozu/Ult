@@ -15,7 +15,7 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV } from '@/app/types';
-import { formatCurrency } from '@/app/lib/utils';
+import { formatCurrency, calculateSMA, calculateBollingerBands } from '@/app/lib/utils';
 
 ChartJS.register(
   CategoryScale,
@@ -44,17 +44,22 @@ export function StockChart({
   data, 
   height = 400, 
   showVolume = true, 
-  showIndicators = false, 
+  showIndicators = true, 
   loading = false, 
   error = null,
   market = 'usa',
   currentPrice
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
+  const [showSMA, setShowSMA] = useState(true);
+  const [showBollinger, setShowBollinger] = useState(false);
 
   const labels = data.map(d => d.date);
   const prices = data.map(d => d.close);
   const volumes = data.map(d => d.volume);
+
+  const sma20 = calculateSMA(prices, 20);
+  const { upper, lower } = calculateBollingerBands(prices, 20, 2);
 
   const chartData = {
     labels,
@@ -69,7 +74,41 @@ export function StockChart({
         pointRadius: 0,
         pointHoverRadius: 4,
         borderWidth: 2,
+        order: 1,
       },
+      ...(showSMA ? [{
+        label: 'SMA (20)',
+        data: sma20,
+        borderColor: '#fbbf24', // Yellow
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.1,
+        fill: false,
+        order: 2,
+      }] : []),
+      ...(showBollinger ? [
+        {
+          label: 'Bollinger Upper',
+          data: upper,
+          borderColor: 'rgba(59, 130, 246, 0.5)', // Blue with opacity
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: 0.1,
+          fill: '+1', // Fill to next dataset (Lower)
+          order: 3,
+        },
+        {
+          label: 'Bollinger Lower',
+          data: lower,
+          borderColor: 'rgba(59, 130, 246, 0.5)',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: 0.1,
+          fill: false,
+          order: 4,
+        }
+      ] : []),
     ],
   };
 
@@ -92,8 +131,8 @@ export function StockChart({
         borderWidth: 1,
         padding: 12,
         callbacks: {
-          label: (context: { parsed: { y: number } }) => {
-            return `Price: ${formatCurrency(context.parsed.y)}`;
+          label: (context: any) => {
+            return `${context.dataset.label}: ${formatCurrency(context.parsed.y, market === 'japan' ? 'JPY' : 'USD')}`;
           },
         },
       },
@@ -114,7 +153,7 @@ export function StockChart({
         },
         ticks: {
           color: '#92adc9',
-          callback: (value: number) => formatCurrency(value),
+          callback: (value: number) => formatCurrency(value, market === 'japan' ? 'JPY' : 'USD'),
         },
       },
     },
@@ -193,6 +232,30 @@ export function StockChart({
 
   return (
     <div className="relative w-full" style={{ height }}>
+      {showIndicators && (
+        <div className="absolute top-2 left-2 z-10 flex gap-2">
+          <button
+            onClick={() => setShowSMA(!showSMA)}
+            className={`px-2 py-1 text-[10px] font-bold rounded border transition-colors ${
+              showSMA 
+                ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50' 
+                : 'bg-[#192633]/80 text-[#92adc9] border-[#233648] hover:text-white'
+            }`}
+          >
+            SMA (20)
+          </button>
+          <button
+            onClick={() => setShowBollinger(!showBollinger)}
+            className={`px-2 py-1 text-[10px] font-bold rounded border transition-colors ${
+              showBollinger
+                ? 'bg-blue-500/20 text-blue-400 border-blue-500/50'
+                : 'bg-[#192633]/80 text-[#92adc9] border-[#233648] hover:text-white'
+            }`}
+          >
+            Bollinger
+          </button>
+        </div>
+      )}
       <Line ref={chartRef as any} data={chartData} options={options as any} />
 
       {showVolume && (
