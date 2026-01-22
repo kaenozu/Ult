@@ -14,7 +14,7 @@ import { Stock, OHLCV, Signal } from '@/app/types';
 import { cn, formatCurrency } from '@/app/lib/utils';
 
 export default function Workstation() {
-  const { portfolio, setSelectedStock, closePosition, watchlist } = useTradingStore();
+  const { portfolio, setSelectedStock, closePosition, watchlist, selectedStock: storeSelectedStock } = useTradingStore();
   const [chartData, setChartData] = useState<OHLCV[]>([]);
   const [chartSignal, setChartSignal] = useState<Signal | null>(null);
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
@@ -56,16 +56,17 @@ export default function Workstation() {
 
   useEffect(() => {
     const initializeData = async () => {
-      const defaultStock = watchlist[0];
-      if (defaultStock) {
-        setLocalSelectedStock(defaultStock);
-        setSelectedStock(defaultStock);
-        fetchData(defaultStock);
+      // Priority: 1. storeSelectedStock (from screener), 2. watchlist[0] (default)
+      const stockToSelect = storeSelectedStock || watchlist[0];
+      if (stockToSelect) {
+        setLocalSelectedStock(stockToSelect);
+        if (!storeSelectedStock) setSelectedStock(stockToSelect);
+        fetchData(stockToSelect);
       }
     };
 
     initializeData();
-  }, [fetchData]); // watchlist is initial only
+  }, [fetchData, storeSelectedStock, watchlist, setSelectedStock]);
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
