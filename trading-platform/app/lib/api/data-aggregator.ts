@@ -16,7 +16,7 @@ class MarketDataClient {
   /**
    * Fetch Historical Data (Chart)
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan'): Promise<FetchResult<OHLCV[]>> {
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}`;
     const cached = this.getFromCache(cacheKey);
     if (cached) return { success: true, data: cached, source: 'cache' };
@@ -33,10 +33,7 @@ class MarketDataClient {
       return { success: true, data: json.data, source: 'api' };
     } catch (err: any) {
       console.error(`Fetch OHLCV failed for ${symbol}:`, err);
-      // Fallback to mock data for development stability
-      console.warn(`Falling back to mock data for ${symbol}`);
-      const mockData = this.generateMockOHLCV(1000, 100); // Generate 100 days of data
-      return { success: true, data: mockData, source: 'mock', error: err.message };
+      return { success: false, data: null, source: 'api', error: err.message };
     }
   }
 
@@ -123,35 +120,6 @@ class MarketDataClient {
 
   private setCache(key: string, data: any) {
     this.cache.set(key, { data, timestamp: Date.now() });
-  }
-
-  private generateMockOHLCV(startPrice: number, count: number): OHLCV[] {
-    const data: OHLCV[] = [];
-    let currentPrice = startPrice;
-    const now = new Date();
-
-    for (let i = 0; i < count; i++) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - (count - i));
-      
-      const change = currentPrice * (Math.random() * 0.04 - 0.02);
-      const open = currentPrice;
-      const close = currentPrice + change;
-      const high = Math.max(open, close) + (Math.random() * 0.01 * currentPrice);
-      const low = Math.min(open, close) - (Math.random() * 0.01 * currentPrice);
-      const volume = Math.floor(Math.random() * 1000000) + 500000;
-
-      data.push({
-        date: date.toISOString().split('T')[0],
-        open,
-        high,
-        low,
-        close,
-        volume,
-      });
-      currentPrice = close;
-    }
-    return data;
   }
 }
 

@@ -36,7 +36,7 @@ export default function Workstation() {
     setChartSignal(null);
 
     try {
-      const data = await fetchOHLCV(stock.symbol, stock.market);
+      const data = await fetchOHLCV(stock.symbol, stock.market, stock.price);
       if (data.length === 0) {
         setError('No data available');
       } else {
