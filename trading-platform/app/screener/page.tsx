@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
 import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
-import { Stock, OHLCV } from '@/app/types';
+import { Stock } from '@/app/types';
 import { cn, formatCurrency, formatPercent, formatVolume, getChangeColor } from '@/app/lib/utils';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 import { filterByTechnicals, TechFilters } from '@/app/lib/screener-utils';
@@ -141,7 +141,7 @@ export default function Screener() {
         ? (aVal as number) - (bVal as number)
         : (bVal as number) - (aVal as number);
     });
-  }, [filters, sortField, sortDirection, stocks]);
+  }, [filters, sortField, sortDirection, stocks, analyzedStocks, isTechAnalysisDone, techFilters]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
