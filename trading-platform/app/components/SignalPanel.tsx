@@ -92,8 +92,12 @@ export function SignalPanel({ stock, signal, loading = false }: SignalPanelProps
           </div>
         </div>
 
-        <div className="mt-3 text-xs text-[#92adc9]">
-          <span className="font-medium text-white">理由:</span> {signal.reason}
+        <div className="mt-4 pt-3 border-t border-[#233648]/50">
+          <div className="text-xs font-bold text-[#92adc9] mb-2 uppercase tracking-wider">AI分析レポート</div>
+          <div className="text-xs text-[#92adc9] leading-relaxed bg-[#101922]/50 p-2 rounded border border-[#233648]/50">
+            <span className="font-medium text-white block mb-1">主要因:</span>
+            {signal.reason}
+          </div>
         </div>
       </div>
     </div>
