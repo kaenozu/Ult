@@ -24,9 +24,9 @@ describe('SignalPanel', () => {
     render(<SignalPanel stock={mockStock} signal={mockSignal} />);
     
     expect(screen.getByText('BUY')).toBeInTheDocument();
-    expect(screen.getByText(/主要因:/)).toBeInTheDocument(); // Updated UI text
+    expect(screen.getByText(/AI分析エンジン/)).toBeInTheDocument();
     expect(screen.getByText('Test Reason')).toBeInTheDocument();
-    expect(screen.getByText('80%')).toBeInTheDocument();
+    expect(screen.getAllByText('80%')[0]).toBeInTheDocument();
   });
 
   it('renders loading state when signal is null', () => {

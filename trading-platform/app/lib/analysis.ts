@@ -1,8 +1,8 @@
 import { OHLCV, Signal } from '@/app/types';
-import { calculateRSI, calculateSMA } from './utils';
+import { calculateRSI, calculateSMA, calculateMACD, calculateATR } from './utils';
 
 export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): Signal {
-  // Need at least 50 points for SMA50
+  // Need at least 50 points for reliable indicators
   if (data.length < 50) {
     return {
       symbol,
@@ -23,77 +23,79 @@ export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'u
   const rsi = calculateRSI(closes, 14);
   const sma20 = calculateSMA(closes, 20);
   const sma50 = calculateSMA(closes, 50);
+  const sma200 = calculateSMA(closes, 200);
+  const macdData = calculateMACD(closes);
+  const atr = calculateATR(data, 14);
 
   const currentPrice = closes[closes.length - 1];
+  
   // Helper to safely get value or 0
   const getVal = (arr: number[], idx: number) => !isNaN(arr[idx]) ? arr[idx] : 0;
 
   const currentRSI = getVal(rsi, rsi.length - 1);
-  const currentSMA20 = getVal(sma20, sma20.length - 1);
-  const prevSMA20 = getVal(sma20, sma20.length - 2);
   const currentSMA50 = getVal(sma50, sma50.length - 1);
+  const currentSMA200 = getVal(sma200, sma200.length - 1);
+  const currentATR = getVal(atr, atr.length - 1);
+  
+  // MACD Logic
+  const macdLine = macdData.macd;
+  const signalLine = macdData.signal;
+  const currMacd = getVal(macdLine, macdLine.length - 1);
+  const prevMacd = getVal(macdLine, macdLine.length - 2);
+  const currSig = getVal(signalLine, signalLine.length - 1);
+  const prevSig = getVal(signalLine, signalLine.length - 2);
+
+  const isGoldenCross = prevMacd <= prevSig && currMacd > currSig;
+  const isDeadCross = prevMacd >= prevSig && currMacd < currSig;
 
   let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
   let reason = '';
   let confidence = 50;
 
-  // Logic: Trend + Reversal
-  // BUY: Uptrend (Price > SMA50) AND Oversold (RSI < 40)
-  // SELL: Downtrend (Price < SMA50) AND Overbought (RSI > 60)
-
-  const isUptrend = currentPrice > currentSMA50;
-  const isDowntrend = currentPrice < currentSMA50;
+  const isUptrend = currentPrice > currentSMA50 && (currentSMA200 === 0 || currentPrice > currentSMA200);
   
-  const rsiOversold = 40;
-  const rsiOverbought = 60;
+  // Combined Logic (Volatility Adjusted)
+  const rsiOversold = currentRSI < 30;
+  const rsiOverbought = currentRSI > 70;
 
-  if (isUptrend && currentRSI < rsiOversold) {
+  if (isGoldenCross && currentRSI < 65) {
     type = 'BUY';
-    confidence = 60 + (rsiOversold - currentRSI); // Boost confidence if deeper dip
-    reason = `上昇トレンド中の押し目買いチャンス (価格 > SMA50 かつ RSI ${currentRSI.toFixed(1)} < 40)`;
-  } else if (isDowntrend && currentRSI > rsiOverbought) {
+    confidence = isUptrend ? 88 : 70;
+    reason = `MACDゴールデンクロスと${isUptrend ? '強気トレンド' : '反転傾向'}を確認。RSI(${currentRSI.toFixed(1)})は適正。`;
+  } else if (isDeadCross && currentRSI > 35) {
     type = 'SELL';
-    confidence = 60 + (currentRSI - rsiOverbought); // Boost confidence if higher rally
-    reason = `下降トレンド中の戻り売り推奨 (価格 < SMA50 かつ RSI ${currentRSI.toFixed(1)} > 60)`;
-  } else if (currentRSI < 30) {
+    confidence = !isUptrend ? 88 : 70;
+    reason = `MACDデッドクロスと${!isUptrend ? '弱気トレンド' : '調整局面'}を確認。RSI(${currentRSI.toFixed(1)})は低下中。`;
+  } else if (rsiOversold) {
     type = 'BUY';
-    confidence = 55;
-    reason = `売られすぎ水準 (RSI ${currentRSI.toFixed(1)}) - 短期リバウンド期待`;
-  } else if (currentRSI > 70) {
+    confidence = 65;
+    reason = `RSIが売られすぎ水準(${currentRSI.toFixed(1)})に到達。ボラティリティ(${((currentATR/currentPrice)*100).toFixed(1)}%)に基づいた自律反発を期待。`;
+  } else if (rsiOverbought) {
     type = 'SELL';
-    confidence = 55;
-    reason = `買われすぎ水準 (RSI ${currentRSI.toFixed(1)}) - 加熱感あり`;
+    confidence = 65;
+    reason = `RSIが買われすぎ水準(${currentRSI.toFixed(1)})に到達。短期的過熱感による調整リスク。`;
   } else {
     type = 'HOLD';
-    reason = `明確なシグナルなし (RSI ${currentRSI.toFixed(1)}, トレンド${isUptrend ? '上昇' : '下降'})`;
+    reason = `明確なトレンド転換サイン待ち。現在のRSI: ${currentRSI.toFixed(1)}。`;
   }
 
-  // Cap confidence
-  confidence = Math.min(Math.max(confidence, 0), 95);
-
-  // Targets based on Volatility (ATR-like approx)
-  const recentCloses = closes.slice(-14);
-  const high = Math.max(...recentCloses);
-  const low = Math.min(...recentCloses);
-  const volatility = (high - low) / currentPrice; // Approx % volatility
-  
-  // Dynamic Target/Stop
-  const rewardRatio = 2.0;
-  const targetPercent = Math.max(volatility, 0.02) * rewardRatio; // Min 2% move
-  const stopPercent = Math.max(volatility, 0.02);
+  // Dynamic Target/Stop based on ATR (Volatility)
+  // Standard logic: Stop = 2.0 * ATR, Target = 4.0 * ATR (Reward/Risk = 2)
+  const atrMultiplier = 2.0;
+  const rewardRiskRatio = 2.5; // Slightly more aggressive target
 
   let targetPrice = currentPrice;
   let stopLoss = currentPrice;
   let predictedChange = 0;
 
   if (type === 'BUY') {
-    targetPrice = currentPrice * (1 + targetPercent);
-    stopLoss = currentPrice * (1 - stopPercent);
-    predictedChange = targetPercent * 100;
+    stopLoss = currentPrice - (currentATR * atrMultiplier);
+    targetPrice = currentPrice + (currentATR * atrMultiplier * rewardRiskRatio);
+    predictedChange = ((targetPrice - currentPrice) / currentPrice) * 100;
   } else if (type === 'SELL') {
-    targetPrice = currentPrice * (1 - targetPercent);
-    stopLoss = currentPrice * (1 + stopPercent);
-    predictedChange = -targetPercent * 100;
+    stopLoss = currentPrice + (currentATR * atrMultiplier);
+    targetPrice = currentPrice - (currentATR * atrMultiplier * rewardRiskRatio);
+    predictedChange = ((targetPrice - currentPrice) / currentPrice) * 100;
   }
 
   return {

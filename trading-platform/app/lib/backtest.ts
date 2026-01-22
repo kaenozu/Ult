@@ -1,5 +1,5 @@
-import { OHLCV, Signal } from '@/app/types';
-import { analyzeStock } from './analysis';
+import { OHLCV, Signal, Stock } from '@/app/types';
+import { mlPredictionService } from './mlPrediction';
 
 export interface BacktestResult {
   totalTrades: number;
@@ -24,68 +24,90 @@ export interface BacktestTrade {
 
 export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): BacktestResult {
   const trades: BacktestTrade[] = [];
-  let currentPosition: { type: 'BUY' | 'SELL', price: number, date: string } | null = null;
+  let currentPosition: { 
+    type: 'BUY' | 'SELL', 
+    price: number, 
+    date: string, 
+    stopLoss: number,
+    highestPrice: number, // For trailing stop
+    lowestPrice: number   // For trailing stop
+  } | null = null;
   
-  // Need at least 50 days for indicators
   const minPeriod = 50;
   if (data.length < minPeriod) {
     return createEmptyResult();
   }
 
-  // Simulate trading day by day
-  // We use a window of past data to generate a signal for "today"
+  const mockStock: Stock = { 
+    symbol, 
+    market, 
+    name: symbol, 
+    price: data[minPeriod].close,
+    sector: 'Unknown',
+    change: 0,
+    changePercent: 0,
+    volume: 0
+  };
+
   for (let i = minPeriod; i < data.length - 1; i++) {
     const currentDay = data[i];
-    const nextDay = data[i + 1]; // Execution happens next open or close
+    const nextDay = data[i + 1];
     
-    // Slice data up to current day for analysis
     const historicalWindow = data.slice(0, i + 1);
-    
-    // Generate signal
-    const signal = analyzeStock(symbol, historicalWindow, market);
+    const indicators = mlPredictionService.calculateIndicators(historicalWindow);
+    const prediction = mlPredictionService.predict(mockStock, historicalWindow, indicators);
+    const signal = mlPredictionService.generateSignal(mockStock, historicalWindow, prediction, indicators);
 
-    // Logic: 
-    // If NO position and signal is BUY/SELL -> Open Position
-    // If HAS position and signal is OPPOSITE or HOLD (with stop/target logic) -> Close Position
-    
     if (!currentPosition) {
-      if (signal.type === 'BUY' || signal.type === 'SELL') {
-        if (signal.confidence >= 60) { // Filter weak signals
-          currentPosition = {
-            type: signal.type,
-            price: nextDay.open, // Assume execution at next open
-            date: nextDay.date
-          };
-        }
+      if ((signal.type === 'BUY' || signal.type === 'SELL') && signal.confidence >= 60) {
+        currentPosition = {
+          type: signal.type,
+          price: nextDay.open,
+          date: nextDay.date,
+          stopLoss: signal.stopLoss,
+          highestPrice: nextDay.open,
+          lowestPrice: nextDay.open
+        };
       }
     } else {
-      // Check for exit conditions
-      // 1. Signal reversal
-      // 2. Stop loss / Take profit (simplified)
+      // Update highest/lowest for trailing stop
+      currentPosition.highestPrice = Math.max(currentPosition.highestPrice, nextDay.high);
+      currentPosition.lowestPrice = Math.min(currentPosition.lowestPrice, nextDay.low);
+
+      // Trailing Stop Logic: Pull up stop loss as price moves in favor
+      // Simple ATR-based trail (approximate)
+      const trailBuffer = (currentPosition.highestPrice - currentPosition.price) * 0.3; // Lock in 30% of max gains
       
       let shouldExit = false;
       let exitReason = '';
+      let exitPrice = nextDay.close;
 
+      // 1. Signal Reversal
       if (currentPosition.type === 'BUY' && signal.type === 'SELL') {
         shouldExit = true;
         exitReason = 'Signal Reversal';
       } else if (currentPosition.type === 'SELL' && signal.type === 'BUY') {
         shouldExit = true;
         exitReason = 'Signal Reversal';
-      } else {
-        // Simple 5% stop/target for backtest simplicity if no signal reversal
-        const change = (nextDay.close - currentPosition.price) / currentPosition.price;
-        if (currentPosition.type === 'BUY') {
-          if (change > 0.05) { shouldExit = true; exitReason = 'Take Profit (+5%)'; }
-          if (change < -0.03) { shouldExit = true; exitReason = 'Stop Loss (-3%)'; }
-        } else {
-          if (change < -0.05) { shouldExit = true; exitReason = 'Take Profit (+5%)'; }
-          if (change > 0.03) { shouldExit = true; exitReason = 'Stop Loss (-3%)'; }
+      } 
+      // 2. Trailing Stop or Original Stop Loss
+      else if (currentPosition.type === 'BUY') {
+        const dynamicStop = Math.max(currentPosition.stopLoss, currentPosition.highestPrice * 0.95); // 5% trail or original stop
+        if (nextDay.low <= dynamicStop) {
+          shouldExit = true;
+          exitPrice = dynamicStop;
+          exitReason = 'Trailing Stop Triggered';
+        }
+      } else if (currentPosition.type === 'SELL') {
+        const dynamicStop = Math.min(currentPosition.stopLoss, currentPosition.lowestPrice * 1.05); // 5% trail or original stop
+        if (nextDay.high >= dynamicStop) {
+          shouldExit = true;
+          exitPrice = dynamicStop;
+          exitReason = 'Trailing Stop Triggered';
         }
       }
 
       if (shouldExit) {
-        const exitPrice = nextDay.close; // Assume exit at close
         const rawProfit = currentPosition.type === 'BUY' 
           ? (exitPrice - currentPosition.price) / currentPosition.price
           : (currentPosition.price - exitPrice) / currentPosition.price;

@@ -229,3 +229,32 @@ export function calculateBollingerBands(
 
   return { upper, middle, lower };
 }
+
+export function calculateATR(
+  ohlcv: { high: number; low: number; close: number }[],
+  period: number = 14
+): number[] {
+  const tr: number[] = [ohlcv[0].high - ohlcv[0].low];
+  
+  for (let i = 1; i < ohlcv.length; i++) {
+    const hl = ohlcv[i].high - ohlcv[i].low;
+    const hpc = Math.abs(ohlcv[i].high - ohlcv[i - 1].close);
+    const lpc = Math.abs(ohlcv[i].low - ohlcv[i - 1].close);
+    tr.push(Math.max(hl, hpc, lpc));
+  }
+
+  const atr: number[] = [];
+  for (let i = 0; i < ohlcv.length; i++) {
+    if (i < period - 1) {
+      atr.push(NaN);
+    } else if (i === period - 1) {
+      const sum = tr.slice(0, period).reduce((a, b) => a + b, 0);
+      atr.push(sum / period);
+    } else {
+      const prevATR = atr[i - 1];
+      atr.push((prevATR * (period - 1) + tr[i]) / period);
+    }
+  }
+
+  return atr;
+}

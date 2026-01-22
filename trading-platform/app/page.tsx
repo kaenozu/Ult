@@ -22,6 +22,7 @@ export default function Workstation() {
   const [error, setError] = useState<string | null>(null);
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
+  const [showMACD, setShowMACD] = useState(false);
   const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
@@ -219,6 +220,15 @@ export default function Workstation() {
                 >
                   BB
                 </button>
+                <button
+                  onClick={() => setShowMACD(!showMACD)}
+                  className={cn(
+                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+                    showMACD ? 'bg-purple-500/20 text-purple-400' : 'text-[#92adc9] hover:text-white'
+                  )}
+                >
+                  MACD
+                </button>
               </div>
               <div className="h-4 w-px bg-[#233648]" />
               <div className="flex items-center gap-3 text-xs text-[#92adc9]">
@@ -255,6 +265,7 @@ export default function Workstation() {
                 showVolume={true} 
                 showSMA={showSMA}
                 showBollinger={showBollinger}
+                showMACD={showMACD}
                 market={displayStock?.market}
                 currentPrice={displayStock?.price}
                 loading={loading}
