@@ -1,10 +1,10 @@
 from typing import Optional
 import logging
-import os
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 from src.auth import AuthManager, User
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +20,9 @@ def get_auth_manager():
     """AuthManagerの依存性注入 (Singleton)"""
     global _auth_manager
     if _auth_manager is None:
-        secret_key = os.environ.get("SECRET_KEY", "your-super-secret-key")
-        _auth_manager = AuthManager(secret_key=secret_key, db_path="users.db")
+        secret_key = settings.system.secret_key.get_secret_value()
+        db_path = str(settings.system.users_db_path)
+        _auth_manager = AuthManager(secret_key=secret_key, db_path=db_path)
     return _auth_manager
 
 
@@ -54,23 +55,29 @@ def get_paper_trader():
     global _paper_trader
     if _paper_trader is None:
         from src.paper_trader import PaperTrader
+
         _paper_trader = PaperTrader()
     return _paper_trader
+
 
 def get_auto_trader():
     """AutoTraderの依存性注入"""
     global _auto_trader
     if _auto_trader is None:
         from src.auto_trader import AutoTrader
+
         # Use the singleton paper trader to share DB connection
         pt = get_paper_trader()
         _auto_trader = AutoTrader(pt)
     return _auto_trader
 
+
 def get_data_loader():
     """DataLoaderの依存性注入"""
     from src.data_temp.data_loader import DataLoader
+
     return DataLoader()
+
 
 # Function to reset/clear globals (useful for reset functionality)
 def reset_globals():
@@ -81,7 +88,7 @@ def reset_globals():
         except Exception as e:
             logger.error(f"Error stopping auto trader: {e}")
         _auto_trader = None
-    
+
     if _paper_trader:
         try:
             _paper_trader.close()
@@ -89,11 +96,14 @@ def reset_globals():
             logger.error(f"Error closing paper trader: {e}")
         _paper_trader = None
 
+
 def set_paper_trader(pt):
     global _paper_trader
     _paper_trader = pt
 
+
 def get_portfolio_manager():
     """PortfolioManagerの依存性注入"""
     from src.portfolio_manager import portfolio_manager
+
     return portfolio_manager
