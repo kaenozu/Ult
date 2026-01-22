@@ -97,34 +97,34 @@ export function Header() {
           </div>
           <input
             className="block w-64 p-2 pl-10 text-sm text-white bg-[#192633] border border-[#233648] rounded-lg focus:ring-primary focus:border-primary placeholder-[#92adc9]"
-            placeholder="Symbol, Index, or Contract"
+            placeholder="銘柄名、コードで検索"
             type="text"
-            aria-label="Search symbols"
+            aria-label="銘柄検索"
           />
         </div>
         <button
           onClick={toggleConnection}
           className="flex items-center gap-2"
-          aria-label={isConnected ? "Disconnect from server" : "Connect to server"}
-          title={isConnected ? "Disconnect" : "Connect"}
+          aria-label={isConnected ? "サーバーから切断" : "サーバーに接続"}
+          title={isConnected ? "切断" : "接続"}
         >
           <span className={`flex h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
           <span className="text-xs font-medium text-[#92adc9]">
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {isConnected ? '接続済み' : '未接続'}
           </span>
           {isConnected ? <Wifi className="w-4 h-4 text-green-500" /> : <WifiOff className="w-4 h-4 text-red-500" />}
         </button>
         <button
           className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
-          aria-label="Settings"
-          title="Settings"
+          aria-label="設定"
+          title="設定"
         >
           <Settings className="w-5 h-5" />
         </button>
         <button
           className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
-          aria-label="User Profile"
-          title="User Profile"
+          aria-label="ユーザープロフィール"
+          title="ユーザープロフィール"
         >
           <User className="w-5 h-5" />
         </button>
