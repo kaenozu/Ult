@@ -1,7 +1,7 @@
 import { OHLCV, Signal } from '@/app/types';
 import { calculateRSI, calculateSMA } from './utils';
 
-export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): Signal {
+export function analyzeStock(symbol: string, data: OHLCV[]): Signal {
   // Need at least 50 points for SMA50
   if (data.length < 50) {
     return {
@@ -21,7 +21,6 @@ export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'u
   
   // Calculate Indicators
   const rsi = calculateRSI(closes, 14);
-  const sma20 = calculateSMA(closes, 20);
   const sma50 = calculateSMA(closes, 50);
 
   const currentPrice = closes[closes.length - 1];
@@ -29,8 +28,6 @@ export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'u
   const getVal = (arr: number[], idx: number) => !isNaN(arr[idx]) ? arr[idx] : 0;
 
   const currentRSI = getVal(rsi, rsi.length - 1);
-  const currentSMA20 = getVal(sma20, sma20.length - 1);
-  const prevSMA20 = getVal(sma20, sma20.length - 2);
   const currentSMA50 = getVal(sma50, sma50.length - 1);
 
   let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
