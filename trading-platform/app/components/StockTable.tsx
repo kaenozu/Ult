@@ -3,6 +3,8 @@
 import { Stock, Position } from '@/app/types';
 import { formatCurrency, formatPercent, formatVolume, getChangeColor, cn } from '@/app/lib/utils';
 import { useTradingStore } from '@/app/store/tradingStore';
+import { marketClient } from '@/app/lib/api/data-aggregator';
+import { useEffect } from 'react';
 
 interface StockTableProps {
   stocks: Stock[];
@@ -13,7 +15,37 @@ interface StockTableProps {
 }
 
 export function StockTable({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) {
-  const { setSelectedStock } = useTradingStore();
+  const { setSelectedStock, updateStockData } = useTradingStore();
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchQuotes = async () => {
+      const symbols = stocks.map(s => s.symbol);
+      if (symbols.length === 0) return;
+
+      const quotes = await marketClient.fetchQuotes(symbols);
+      
+      if (mounted && quotes.length > 0) {
+        quotes.forEach(q => {
+          if (q && q.symbol) {
+            updateStockData(q.symbol, {
+              price: q.price,
+              change: q.change,
+              changePercent: q.changePercent * 100, // Yahoo often returns 0.01 for 1%
+              volume: q.volume,
+            });
+          }
+        });
+      }
+    };
+
+    fetchQuotes();
+    const interval = setInterval(fetchQuotes, 60000); // 1 min refresh
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [stocks.length]); // Refresh if list changes
 
   const handleSelect = (stock: Stock) => {
     setSelectedStock(stock);

@@ -16,7 +16,6 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { cn, formatCurrency } from '@/app/lib/utils';
-import { fetchOHLCVFromAPI, fetchSignalFromAPI } from '@/app/data/stocks';
 
 ChartJS.register(
   CategoryScale,
@@ -161,13 +160,21 @@ export function StockChart({
     },
   };
 
-  if (loading) {
+  if (loading || data.length === 0) {
     return (
-      <div className="relative w-full" style={{ height }}>
-        <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center">
-          <div className="h-12 w-12 border-4 border-gray-600 rounded-full border-t-gray-600 animate-spin" />
+      <div className="relative w-full bg-[#131b23] border border-[#233648] rounded overflow-hidden" style={{ height }}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-full h-full animate-pulse flex flex-col p-4">
+            <div className="h-2/3 bg-[#192633] rounded w-full mb-4"></div>
+            <div className="h-1/3 bg-[#192633]/50 rounded w-full"></div>
+          </div>
         </div>
-        <p className="text-gray-400 text-sm">データを取得中...</p>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p className="text-xs text-[#92adc9] animate-pulse">Fetching Real Market Data...</p>
+          </div>
+        </div>
       </div>
     );
   }

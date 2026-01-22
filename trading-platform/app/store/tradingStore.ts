@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Stock, Signal, Position, Portfolio, JournalEntry, Theme } from '../types';
-import { JAPAN_STOCKS, USA_STOCKS, generateMockOHLCV } from '../data/stocks';
+import { JAPAN_STOCKS, USA_STOCKS } from '../data/stocks';
 import { mlPredictionService } from '../lib/mlPrediction';
 
 interface TradingStore {
@@ -10,8 +10,7 @@ interface TradingStore {
   watchlist: Stock[];
   addToWatchlist: (stock: Stock) => void;
   removeFromWatchlist: (symbol: string) => void;
-  signals: Map<string, Signal>;
-  refreshSignals: () => void;
+  updateStockData: (symbol: string, data: Partial<Stock>) => void;
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
@@ -82,20 +81,18 @@ export const useTradingStore = create<TradingStore>()(
         watchlist: state.watchlist.filter(s => s.symbol !== symbol),
       })),
 
-      signals: new Map(),
-
-      refreshSignals: () => {
-        const { watchlist } = get();
-        const signals = new Map<string, Signal>();
-        watchlist.forEach(stock => {
-          const ohlcv = generateMockOHLCV(stock.price, 100);
-          const indicators = mlPredictionService.calculateIndicators(ohlcv);
-          const prediction = mlPredictionService.predict(stock, ohlcv, indicators);
-          const signal = mlPredictionService.generateSignal(stock, ohlcv, prediction);
-          signals.set(stock.symbol, signal);
-        });
-        set({ signals });
-      },
+      updateStockData: (symbol, data) => set((state) => ({
+        watchlist: state.watchlist.map(s => 
+          s.symbol === symbol ? { ...s, ...data } : s
+        ),
+        // Also update portfolio current prices if matched
+        portfolio: {
+          ...state.portfolio,
+          positions: state.portfolio.positions.map(p => 
+            p.symbol === symbol && data.price ? { ...p, currentPrice: data.price } : p
+          )
+        }
+      })),
 
       portfolio: initialPortfolio,
 
