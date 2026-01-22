@@ -14,8 +14,8 @@ import {
   Filler,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
-import { OHLCV, Signal } from '@/app/types';
-import { cn, formatCurrency } from '@/app/lib/utils';
+import { OHLCV } from '@/app/types';
+import { formatCurrency } from '@/app/lib/utils';
 
 ChartJS.register(
   CategoryScale,
@@ -31,7 +31,6 @@ ChartJS.register(
 
 export interface StockChartProps {
   data: OHLCV[];
-  signal?: Signal;
   height?: number;
   showVolume?: boolean;
   showIndicators?: boolean;
@@ -43,7 +42,6 @@ export interface StockChartProps {
 
 export function StockChart({ 
   data, 
-  signal, 
   height = 400, 
   showVolume = true, 
   showIndicators = false, 
@@ -196,67 +194,6 @@ export function StockChart({
   return (
     <div className="relative w-full" style={{ height }}>
       <Line ref={chartRef as any} data={chartData} options={options as any} />
-
-      {signal && (
-        <div className="absolute top-4 right-4 z-10">
-          <div
-            className={cn(
-              'px-3 py-1.5 rounded-lg border backdrop-blur-sm',
-              signal.type === 'BUY' && 'bg-green-500/20 border-green-500/50',
-              signal.type === 'SELL' && 'bg-red-500/20 border-red-500/50',
-              signal.type === 'HOLD' && 'bg-gray-500/20 border-gray-500/50'
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  'text-2xl font-bold',
-                  signal.type === 'BUY' && 'text-green-500',
-                  signal.type === 'SELL' && 'text-red-500',
-                  signal.type === 'HOLD' && 'text-gray-400'
-                )}>
-                  {signal.type}
-                </span>
-                <span className={cn(
-                  'text-sm px-2 py-0.5 rounded',
-                  signal.type === 'BUY' && 'bg-green-500/20 text-green-400',
-                  signal.type === 'SELL' && 'bg-red-500/20 text-red-400',
-                  signal.type === 'HOLD' && 'bg-gray-500/20 text-gray-400'
-                )}>
-                  {signal.predictedChange > 0 ? '+' : ''}{signal.predictedChange}%
-                </span>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-[#92adc9]">Target</div>
-                <div className="text-white font-bold">
-                  {market === 'japan' ? formatCurrency(signal.targetPrice, 'JPY') : formatCurrency(signal.targetPrice, 'USD')}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-[#233648]/50">
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-xs text-[#92adc9]">Stop Loss</div>
-                  <div className="text-white font-medium">
-                    {market === 'japan' ? formatCurrency(signal.stopLoss, 'JPY') : formatCurrency(signal.stopLoss, 'USD')}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-[#92adc9]">Current</div>
-                  <div className="text-white font-medium">
-                    {currentPrice ? (market === 'japan' ? formatCurrency(currentPrice, 'JPY') : formatCurrency(currentPrice, 'USD')) : '-'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 text-xs text-[#92adc9]">
-              <span className="font-medium text-white">理由:</span> {signal.reason}
-            </div>
-          </div>
-        </div>
-      )}
 
       {showVolume && (
         <div className="absolute bottom-0 left-0 right-0 h-16">
