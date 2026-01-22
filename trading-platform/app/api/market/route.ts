@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import yahooFinance from 'yahoo-finance2';
 
+// In some versions/types, suppressNotices is not available on the default export type definition 
+// even if it exists at runtime, or we might not need it if the error was about instantiation.
+// The error "Call `const yahooFinance = new YahooFinance()` first" is key.
+// It implies we shouldn't use the singleton directly if it's not initialized?
+// Actually, let's remove suppressNotices for now to fix the build error, 
+// and address the runtime error by ensuring we catch it or ignore it if it's just a warning.
+// But "Call ... first" is a crash.
+
 function formatSymbol(symbol: string, market?: string): string {
   if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
     return `${symbol}.T`;
