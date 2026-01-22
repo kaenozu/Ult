@@ -3,8 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
-import { StockTable } from '@/app/components/StockTable';
-import { PositionTable } from '@/app/components/StockTable';
+import { StockTable, PositionTable, HistoryTable } from '@/app/components/StockTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
 import { OrderPanel } from '@/app/components/OrderPanel';
@@ -14,7 +13,7 @@ import { Stock, OHLCV, Signal } from '@/app/types';
 import { cn, formatCurrency } from '@/app/lib/utils';
 
 export default function Workstation() {
-  const { portfolio, setSelectedStock, closePosition, watchlist, selectedStock: storeSelectedStock } = useTradingStore();
+  const { portfolio, setSelectedStock, closePosition, watchlist, selectedStock: storeSelectedStock, journal } = useTradingStore();
   const [chartData, setChartData] = useState<OHLCV[]>([]);
   const [chartSignal, setChartSignal] = useState<Signal | null>(null);
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
@@ -26,6 +25,11 @@ export default function Workstation() {
   const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Keep a ref to watchlist for stable callbacks
   const watchlistRef = useRef(watchlist);
@@ -279,9 +283,9 @@ export default function Workstation() {
           <div className="h-52 border-t border-[#233648] bg-[#141e27] flex flex-col shrink-0">
             <div className="flex items-center gap-1 px-2 border-b border-[#233648] bg-[#192633]/50">
               {[
-                { id: 'positions', label: `保有ポジション (${portfolio.positions.length})` },
-                { id: 'orders', label: `注文一覧 (${portfolio.orders?.length || 0})` },
-                { id: 'history', label: '取引履歴' },
+                { id: 'positions', label: `保有ポジション (${isMounted ? portfolio.positions.length : 0})` },
+                { id: 'orders', label: `注文一覧 (${isMounted ? (portfolio.orders?.length || 0) : 0})` },
+                { id: 'history', label: `取引履歴 (${isMounted ? journal.length : 0})` },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -301,14 +305,12 @@ export default function Workstation() {
               <PositionTable positions={portfolio.positions} onClose={handleClosePosition} />
             )}
             {activeTab === 'orders' && (
-              <div className="flex-1 flex items-center justify-center text-[#92adc9] text-sm">
-                No active orders
+              <div className="flex-1 flex items-center justify-center text-[#92adc9] text-sm italic">
+                有効な注文はありません
               </div>
             )}
             {activeTab === 'history' && (
-              <div className="flex-1 flex items-center justify-center text-[#92adc9] text-sm">
-                No trading history yet
-              </div>
+              <HistoryTable entries={journal} />
             )}
           </div>
         </section>

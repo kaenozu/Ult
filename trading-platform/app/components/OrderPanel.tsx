@@ -19,31 +19,25 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
   const [isConfirming, setIsConfirming] = useState(false);
 
   const price = orderType === 'MARKET' ? currentPrice : parseFloat(limitPrice);
-  const totalCost = price * quantity;
-  const canAfford = portfolio.cash >= totalCost;
+  const totalCost = quantity > 0 ? price * quantity : 0;
+  const canAfford = portfolio.cash >= totalCost && quantity > 0;
 
   const handleOrder = () => {
+    if (quantity <= 0) return;
     if (side === 'BUY' && !canAfford) return;
 
     // Simulate order execution
-    if (side === 'BUY') {
-      setCash(portfolio.cash - totalCost);
-      addPosition({
-        symbol: stock.symbol,
-        name: stock.name,
-        market: stock.market,
-        side: 'LONG', // Simplified: only LONG for now
-        quantity: quantity,
-        avgPrice: price,
-        currentPrice: price,
-        entryDate: new Date().toISOString().split('T')[0],
-      });
-    } else {
-        // Sell logic needs position check, but for now assuming we can sell/short
-        // Actually store only supports closing existing positions properly via closePosition
-        // Let's restrict to BUY for this prototype or implement shorting later
-        // Just showing UI for SELL but disabling action if no position
-    }
+    setCash(portfolio.cash - totalCost);
+    addPosition({
+      symbol: stock.symbol,
+      name: stock.name,
+      market: stock.market,
+      side: side === 'BUY' ? 'LONG' : 'SHORT',
+      quantity: quantity,
+      avgPrice: price,
+      currentPrice: price,
+      entryDate: new Date().toISOString().split('T')[0],
+    });
 
     addJournalEntry({
         id: Date.now().toString(),
@@ -60,7 +54,7 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
     });
 
     setIsConfirming(false);
-    alert(`Order Executed: ${side} ${quantity} @ ${price}`);
+    alert(`注文を実行しました: ${side === 'BUY' ? '買い' : '空売り'} ${quantity}株 @ ${price}`);
   };
 
   return (
