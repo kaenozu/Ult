@@ -2,6 +2,7 @@
 # Phase 3: Realtime Synapse
 
 import logging
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, WebSocket, WebSocketException, status
@@ -198,7 +199,7 @@ async def handle_get_status(message) -> None:
             is_authenticated=connection.is_authenticated,
             channels_subscribed=list(connection.subscriptions),
             subscriber_count=len(manager._connections),
-            uptime_seconds=0.0,  # TODO: implement uptime tracking
+            uptime_seconds=(datetime.utcnow() - connection.connected_at).total_seconds(),
             queue_size=0,  # TODO: implement queue tracking
         )
         await connection.send_message(status_msg)
