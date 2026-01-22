@@ -101,28 +101,8 @@ async def lifespan(app: FastAPI):
 # === App Factory ===
 
 
-def create_app() -> FastAPI:
-    """FastAPIアプリケーションを作成"""
-    app = FastAPI(
-        title="AGStock API",
-        description="AI-Powered Stock Trading System API",
-        version="1.0.0",
-        lifespan=lifespan,
-    )
-
-    # 設定適用
-    configure_cors(app)
-    setup_exception_handlers(app)
-    register_routers(app)
-    register_health_routes(app)
-
-    return app
-
-
 def configure_cors(app: FastAPI) -> None:
     """CORSミドルウェアを設定"""
-    # CORS設定
-    print(f"DEBUG: CORS ORIGINS LOADED = {app_settings.system.cors_origins}")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=app_settings.system.cors_origins,
@@ -278,6 +258,24 @@ def setup_exception_handlers(app: FastAPI) -> None:
             status_code=status_code,
             content=error_response.dict(exclude_none=True),
         )
+
+
+def create_app() -> FastAPI:
+    """FastAPIアプリケーションを作成"""
+    app = FastAPI(
+        title="AGStock API",
+        description="AI-Powered Stock Trading System API",
+        version="1.0.0",
+        lifespan=lifespan,
+    )
+
+    # 設定適用
+    configure_cors(app)
+    setup_exception_handlers(app)
+    register_routers(app)
+    register_health_routes(app)
+
+    return app
 
 
 # Direct app creation - no global state needed

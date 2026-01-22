@@ -44,6 +44,10 @@ class TradingSettings(BaseSettings):
     default_period: str = "2y"
     default_interval: str = "1d"
 
+    # Tickers (moved from Config to here for better organization, but Config has them too for compatibility)
+    tickers_jp: List[str] = ["7203.T", "9984.T", "6758.T", "8035.T", "6861.T"]
+    tickers_us: List[str] = ["AAPL", "MSFT", "AMZN", "NVDA", "TSLA"]
+
 
 class SystemSettings(BaseSettings):
     """System-wide infrastructure settings."""
