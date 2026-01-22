@@ -57,6 +57,7 @@ const initialPortfolio: Portfolio = {
       entryDate: '2024-01-20',
     },
   ],
+  orders: [],
   totalValue: 0,
   totalProfit: 0,
   dailyPnL: 0,

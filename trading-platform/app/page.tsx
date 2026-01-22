@@ -280,7 +280,7 @@ export default function Workstation() {
             <div className="flex items-center gap-1 px-2 border-b border-[#233648] bg-[#192633]/50">
               {[
                 { id: 'positions', label: `保有ポジション (${portfolio.positions.length})` },
-                { id: 'orders', label: '注文一覧 (2)' },
+                { id: 'orders', label: `注文一覧 (${portfolio.orders?.length || 0})` },
                 { id: 'history', label: '取引履歴' },
               ].map((tab) => (
                 <button
