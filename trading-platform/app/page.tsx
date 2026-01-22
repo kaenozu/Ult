@@ -5,21 +5,34 @@ import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
 import { StockTable } from '@/app/components/StockTable';
 import { PositionTable } from '@/app/components/PositionTable';
+import { HistoryTable } from '@/app/components/HistoryTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
+import { OrderPanel } from '@/app/components/OrderPanel';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { cn, formatCurrency } from '@/app/lib/utils';
 
 export default function Workstation() {
-  const { portfolio, setSelectedStock, closePosition, watchlist } = useTradingStore();
+  const { portfolio, setSelectedStock, closePosition, watchlist, selectedStock: storeSelectedStock, journal } = useTradingStore();
   const [chartData, setChartData] = useState<OHLCV[]>([]);
   const [chartSignal, setChartSignal] = useState<Signal | null>(null);
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
   const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSMA, setShowSMA] = useState(true);
+  const [showBollinger, setShowBollinger] = useState(false);
+  const [showMACD, setShowMACD] = useState(false);
+  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Keep a ref to watchlist for stable callbacks
   const watchlistRef = useRef(watchlist);
@@ -34,7 +47,7 @@ export default function Workstation() {
     setChartSignal(null);
 
     try {
-      const data = await fetchOHLCV(stock.symbol, stock.market);
+      const data = await fetchOHLCV(stock.symbol, stock.market, stock.price);
       if (data.length === 0) {
         setError('No data available');
       } else {
@@ -51,14 +64,18 @@ export default function Workstation() {
   }, []);
 
   useEffect(() => {
-    // Only initialize if no stock is selected
-    if (!selectedStock && watchlist.length > 0) {
-      const defaultStock = watchlist[0];
-      setLocalSelectedStock(defaultStock);
-      setSelectedStock(defaultStock);
-      fetchData(defaultStock);
-    }
-  }, [fetchData, setSelectedStock, watchlist, selectedStock]);
+    const initializeData = async () => {
+      // Priority: 1. storeSelectedStock (from screener), 2. watchlist[0] (default)
+      const stockToSelect = storeSelectedStock || watchlist[0];
+      if (stockToSelect && !selectedStock) {
+        setLocalSelectedStock(stockToSelect);
+        if (!storeSelectedStock) setSelectedStock(stockToSelect);
+        fetchData(stockToSelect);
+      }
+    };
+
+    initializeData();
+  }, [fetchData, storeSelectedStock, watchlist, setSelectedStock, selectedStock]);
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
@@ -67,15 +84,16 @@ export default function Workstation() {
   }, [setSelectedStock, fetchData]);
 
   const handleClosePosition = useCallback((symbol: string) => {
-    const stock = watchlistRef.current.find(s => s.symbol === symbol);
-    if (stock) {
-      closePosition(symbol, stock.price);
+    // Current price is retrieved from the stock data in the store or from the position itself
+    const position = portfolio.positions.find(p => p.symbol === symbol);
+    if (position) {
+      closePosition(symbol, position.currentPrice);
     }
-  }, [closePosition]);
+  }, [closePosition, portfolio.positions]);
 
   const displayStock = selectedStock || watchlist[0];
 
-  if (loading) {
+  if (loading && chartData.length === 0) {
     return (
       <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
         <div className="flex-1 flex items-center justify-center">
@@ -87,14 +105,62 @@ export default function Workstation() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
-      <Header />
+      <div className="flex items-center border-b border-[#233648] bg-[#101922] pr-4">
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="lg:hidden p-4 text-[#92adc9] hover:text-white transition-colors border-r border-[#233648]"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="flex-1">
+          <Header />
+        </div>
+        <button
+          onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+          className="lg:hidden p-4 text-[#92adc9] hover:text-white transition-colors border-l border-[#233648]"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </button>
+      </div>
 
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Backdrop (Left) */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Mobile Backdrop (Right) */}
+        {isRightSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsRightSidebarOpen(false)}
+          />
+        )}
+
         {/* Left Sidebar: Watchlist */}
-        <aside className="w-72 flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-[#233648] bg-[#192633]/50">
-            <span className="text-xs font-bold text-[#92adc9] uppercase">Watchlist</span>
+        <aside className={cn(
+          "w-80 min-w-[300px] flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 transition-transform duration-300 ease-in-out z-40",
+          "lg:static lg:translate-x-0",
+          isSidebarOpen ? "fixed inset-y-0 left-0 translate-x-0" : "fixed inset-y-0 left-0 -translate-x-full lg:translate-x-0"
+        )}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#233648] bg-[#192633]/50">
+            <span className="text-xs font-bold text-[#92adc9] uppercase tracking-wider whitespace-nowrap">ウォッチリスト</span>
             <div className="flex gap-1">
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="lg:hidden p-1 text-[#92adc9] hover:text-white mr-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
               <button className="p-1 hover:bg-[#233648] rounded text-[#92adc9] transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -117,8 +183,8 @@ export default function Workstation() {
         {/* Center: Chart Area */}
         <section className="flex-1 flex flex-col min-w-0 bg-[#101922] relative">
           {/* Chart Header/Toolbar */}
-          <div className="h-10 border-b border-[#233648] flex items-center justify-between px-4 bg-[#192633]/30 shrink-0">
-            <div className="flex items-center gap-4">
+          <div className="min-h-10 border-b border-[#233648] flex flex-wrap items-center justify-between px-4 py-1 gap-2 bg-[#192633]/30 shrink-0">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg">{displayStock?.symbol}</span>
                 <span className="text-xs text-[#92adc9]">{displayStock?.name}</span>
@@ -140,18 +206,48 @@ export default function Workstation() {
                 ))}
               </div>
               <div className="h-4 w-px bg-[#233648]" />
-              <div className="flex items-center gap-2 text-xs text-[#92adc9]">
-                <span className="flex items-center gap-1 cursor-pointer hover:text-white">
+              <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
+                <button
+                  onClick={() => setShowSMA(!showSMA)}
+                  className={cn(
+                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+                    showSMA ? 'bg-yellow-500/20 text-yellow-500' : 'text-[#92adc9] hover:text-white'
+                  )}
+                >
+                  SMA
+                </button>
+                <button
+                  onClick={() => setShowBollinger(!showBollinger)}
+                  className={cn(
+                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+                    showBollinger ? 'bg-blue-500/20 text-blue-400' : 'text-[#92adc9] hover:text-white'
+                  )}
+                >
+                  BB
+                </button>
+                <button
+                  onClick={() => setShowMACD(!showMACD)}
+                  className={cn(
+                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+                    showMACD ? 'bg-purple-500/20 text-purple-400' : 'text-[#92adc9] hover:text-white'
+                  )}
+                >
+                  MACD
+                </button>
+              </div>
+              <div className="h-4 w-px bg-[#233648]" />
+              <div className="flex items-center gap-3 text-xs text-[#92adc9]">
+                <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                   </svg>
-                  Indicators
+                  インジケーター
                 </span>
-                <span className="flex items-center gap-1 cursor-pointer hover:text-white">
+                <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
-                  Tools
+                  ツール
                 </span>
               </div>
             </div>
@@ -170,9 +266,11 @@ export default function Workstation() {
             <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
               <StockChart 
                 data={chartData} 
-                signal={chartSignal || undefined} 
                 height={400} 
                 showVolume={true} 
+                showSMA={showSMA}
+                showBollinger={showBollinger}
+                showMACD={showMACD}
                 market={displayStock?.market}
                 currentPrice={displayStock?.price}
                 loading={loading}
@@ -198,12 +296,12 @@ export default function Workstation() {
           </div>
 
           {/* Bottom Panel: Positions & Orders */}
-          <div className="h-48 border-t border-[#233648] bg-[#141e27] flex flex-col shrink-0">
+          <div className="h-52 border-t border-[#233648] bg-[#141e27] flex flex-col shrink-0">
             <div className="flex items-center gap-1 px-2 border-b border-[#233648] bg-[#192633]/50">
               {[
-                { id: 'positions', label: `Positions (${portfolio.positions.length})` },
-                { id: 'orders', label: 'Active Orders (2)' },
-                { id: 'history', label: 'History' },
+                { id: 'positions', label: `保有ポジション (${isMounted ? portfolio.positions.length : 0})` },
+                { id: 'orders', label: `注文一覧 (${isMounted ? (portfolio.orders?.length || 0) : 0})` },
+                { id: 'history', label: `取引履歴 (${isMounted ? journal.length : 0})` },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -223,39 +321,76 @@ export default function Workstation() {
               <PositionTable positions={portfolio.positions} onClose={handleClosePosition} />
             )}
             {activeTab === 'orders' && (
-              <div className="flex-1 flex items-center justify-center text-[#92adc9] text-sm">
-                No active orders
+              <div className="flex-1 flex items-center justify-center text-[#92adc9] text-sm italic">
+                有効な注文はありません
               </div>
             )}
             {activeTab === 'history' && (
-              <div className="flex-1 flex items-center justify-center text-[#92adc9] text-sm">
-                No trading history yet
-              </div>
+              <HistoryTable entries={journal} />
             )}
           </div>
         </section>
 
         {/* Right Sidebar: Level 2 & Signal Panel */}
-        <aside className="w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
-          {displayStock && (
-            <SignalPanel stock={displayStock} signal={chartSignal} loading={loading} />
-          )}
+        <aside className={cn(
+          "w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0 transition-transform duration-300 ease-in-out z-40",
+          "lg:static lg:translate-x-0",
+          isRightSidebarOpen ? "fixed inset-y-0 right-0 translate-x-0" : "fixed inset-y-0 right-0 translate-x-full lg:translate-x-0"
+        )}>
+          <div className="flex border-b border-[#233648] bg-[#192633]">
+            <button
+              onClick={() => setRightPanelMode('signal')}
+              className={cn(
+                'flex-1 py-2 text-xs font-bold transition-colors',
+                rightPanelMode === 'signal' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
+              )}
+            >
+              分析 & シグナル
+            </button>
+            <button
+              onClick={() => setRightPanelMode('order')}
+              className={cn(
+                'flex-1 py-2 text-xs font-bold transition-colors',
+                rightPanelMode === 'order' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
+              )}
+            >
+              注文パネル
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {displayStock && (
+              rightPanelMode === 'signal' ? (
+                <SignalPanel 
+                  stock={displayStock} 
+                  signal={chartSignal} 
+                  ohlcv={chartData}
+                  loading={loading} 
+                />
+              ) : (
+                <OrderPanel 
+                  stock={displayStock} 
+                  currentPrice={displayStock.price} 
+                />
+              )
+            )}
+          </div>
 
           {/* Level 2 / Order Book */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-3 py-2 border-b border-[#233648] bg-[#192633]/50 flex justify-between items-center">
-              <span className="text-xs font-bold text-[#92adc9] uppercase">Order Book</span>
-              <span className="text-[10px] bg-[#233648] px-1.5 py-0.5 rounded text-white">
-                {displayStock?.market === 'japan' ? 'TSE' : 'NYSE'}
+          <div className="flex-1 flex flex-col overflow-hidden border-t border-[#233648]">
+            <div className="px-4 py-3 border-b border-[#233648] bg-[#192633]/50 flex justify-between items-center">
+              <span className="text-xs font-bold text-[#92adc9] uppercase tracking-wider">板情報</span>
+              <span className="text-[10px] bg-blue-500/20 px-2 py-0.5 rounded text-blue-400 font-bold border border-blue-500/30">
+                {displayStock?.market === 'japan' ? '東証' : 'NYSE'}
               </span>
             </div>
             <div className="flex-1 overflow-y-auto bg-[#101922]">
               <table className="w-full text-xs tabular-nums border-collapse">
                 <thead className="sticky top-0 bg-[#141e27] text-[10px] text-[#92adc9] z-10">
                   <tr>
-                    <th className="py-1 px-2 text-center font-medium w-1/3">Bid Size</th>
-                    <th className="py-1 px-2 text-center font-medium w-1/3">Price</th>
-                    <th className="py-1 px-2 text-center font-medium w-1/3">Ask Size</th>
+                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">買数量</th>
+                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">気配値</th>
+                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">売数量</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -329,7 +464,7 @@ export default function Workstation() {
       <Navigation />
 
       {/* Disclaimer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#192633]/90 border-t border-[#233648] py-2 px-4 text-center text-[10px] text-[#92adc9] z-40">
+      <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>

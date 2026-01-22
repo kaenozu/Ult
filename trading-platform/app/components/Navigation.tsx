@@ -18,8 +18,9 @@ export function Navigation() {
   ];
 
   return (
-    <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#192633] border border-[#233648] rounded-full shadow-2xl px-2 py-1 flex items-center gap-1">
-      {navItems.map((item) => {
+    <div className="flex justify-center bg-[#101922] py-2 border-t border-[#233648] shrink-0">
+      <nav className="bg-[#192633] border border-[#233648] rounded-full shadow-lg px-2 py-1 flex items-center gap-1">
+        {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.path;
         return (
@@ -47,6 +48,7 @@ export function Navigation() {
       >
         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
-    </nav>
+      </nav>
+    </div>
   );
 }

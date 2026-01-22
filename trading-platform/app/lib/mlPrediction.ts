@@ -1,4 +1,5 @@
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '../types';
+import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from './utils';
 
 interface PredictionFeatures {
   rsi: number;
@@ -11,6 +12,7 @@ interface PredictionFeatures {
   volatility: number;
   macdSignal: number;
   bollingerPosition: number;
+  atrPercent: number; // Added for volatility awareness
 }
 
 interface ModelPrediction {
@@ -28,17 +30,18 @@ class MLPredictionService {
     lstm: 0.30,
   };
 
-  calculateIndicators(data: OHLCV[]): TechnicalIndicator {
+  calculateIndicators(data: OHLCV[]): TechnicalIndicator & { atr: number[] } {
     const prices = data.map(d => d.close);
 
-    const sma5 = this.calculateSMA(prices, 5);
-    const sma20 = this.calculateSMA(prices, 20);
-    const sma50 = this.calculateSMA(prices, 50);
-    const sma200 = prices.length >= 200 ? this.calculateSMA(prices, 200) : undefined;
+    const sma5 = calculateSMA(prices, 5);
+    const sma20 = calculateSMA(prices, 20);
+    const sma50 = calculateSMA(prices, 50);
+    const sma200 = prices.length >= 200 ? calculateSMA(prices, 200) : undefined;
 
-    const rsi = this.calculateRSI(prices, 14);
-    const macd = this.calculateMACD(prices);
-    const bb = this.calculateBollingerBands(prices);
+    const rsi = calculateRSI(prices, 14);
+    const macd = calculateMACD(prices);
+    const bb = calculateBollingerBands(prices);
+    const atr = calculateATR(data, 14);
 
     return {
       symbol: '',
@@ -49,10 +52,11 @@ class MLPredictionService {
       rsi,
       macd,
       bollingerBands: bb,
+      atr,
     };
   }
 
-  extractFeatures(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator): PredictionFeatures {
+  extractFeatures(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): PredictionFeatures {
     const prices = data.map(d => d.close);
     const volumes = data.map(d => d.volume);
 
@@ -64,9 +68,7 @@ class MLPredictionService {
     const volatility = this.calculateVolatility(prices.slice(-20));
 
     const currentRSI = indicators.rsi[indicators.rsi.length - 1] || 50;
-    // prevRSI was removed to avoid lint warning, rsiChange calculation simplified to 0 for now
-    // as we cannot safely assume rsi[length-2] exists without check if length < 2
-
+    
     const currentSMA5 = indicators.sma5[indicators.sma5.length - 1] || currentPrice;
     const currentSMA20 = indicators.sma20[indicators.sma20.length - 1] || currentPrice;
     const currentSMA50 = indicators.sma50[indicators.sma50.length - 1] || currentPrice;
@@ -80,9 +82,12 @@ class MLPredictionService {
     const bbLower = indicators.bollingerBands.lower[indicators.bollingerBands.lower.length - 1] || currentPrice;
     const bollingerPosition = ((currentPrice - bbLower) / (bbUpper - bbLower || 1)) * 100;
 
+    const currentATR = indicators.atr[indicators.atr.length - 1] || 0;
+    const atrPercent = (currentATR / currentPrice) * 100;
+
     return {
       rsi: currentRSI,
-      rsiChange: 0, // Simplified as prevRSI removed
+      rsiChange: 0, 
       sma5: (currentPrice - currentSMA5) / currentSMA5 * 100,
       sma20: (currentPrice - currentSMA20) / currentSMA20 * 100,
       sma50: (currentPrice - currentSMA50) / currentSMA50 * 100,
@@ -91,10 +96,11 @@ class MLPredictionService {
       volatility,
       macdSignal: macdLine - signalLine,
       bollingerPosition,
+      atrPercent,
     };
   }
 
-  predict(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator): ModelPrediction {
+  predict(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): ModelPrediction {
     const features = this.extractFeatures(stock, data, indicators);
 
     const rfPrediction = this.randomForestPredict(features);
@@ -117,23 +123,34 @@ class MLPredictionService {
     };
   }
 
-  generateSignal(stock: Stock, data: OHLCV[], prediction: ModelPrediction): Signal {
+  generateSignal(stock: Stock, data: OHLCV[], prediction: ModelPrediction, indicators: TechnicalIndicator & { atr: number[] }): Signal {
     const currentPrice = data[data.length - 1].close;
-    const targetPrice = currentPrice * (1 + prediction.ensemblePrediction / 100);
-    const stopLoss = currentPrice * (1 - Math.abs(prediction.ensemblePrediction) * 0.5 / 100);
+    const currentATR = indicators.atr[indicators.atr.length - 1] || currentPrice * 0.02;
+    
+    // Use ATR for volatility-adjusted targets
+    const targetMove = currentATR * 2.5;
+    const stopMove = currentATR * 1.5;
 
     let signalType: 'BUY' | 'SELL' | 'HOLD';
     let reason: string;
+    let targetPrice: number;
+    let stopLoss: number;
 
     if (prediction.ensemblePrediction > 2 && prediction.confidence > 60) {
       signalType = 'BUY';
-      reason = this.generateBuyReason(prediction, data);
+      reason = this.generateBuyReason(prediction, indicators);
+      targetPrice = currentPrice + targetMove;
+      stopLoss = currentPrice - stopMove;
     } else if (prediction.ensemblePrediction < -2 && prediction.confidence > 60) {
       signalType = 'SELL';
-      reason = this.generateSellReason(prediction, data);
+      reason = this.generateSellReason(prediction, indicators);
+      targetPrice = currentPrice - targetMove;
+      stopLoss = currentPrice + stopMove;
     } else {
       signalType = 'HOLD';
       reason = '中立的なシグナル。市場の方向性を様子見することを推奨。';
+      targetPrice = currentPrice;
+      stopLoss = currentPrice;
     }
 
     return {
@@ -146,132 +163,6 @@ class MLPredictionService {
       predictedChange: parseFloat(prediction.ensemblePrediction.toFixed(2)),
       predictionDate: new Date().toISOString().split('T')[0],
     };
-  }
-
-  private calculateSMA(prices: number[], period: number): number[] {
-    const sma: number[] = [];
-    for (let i = 0; i < prices.length; i++) {
-      if (i < period - 1) {
-        sma.push(NaN);
-      } else {
-        const sum = prices.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-        sma.push(sum / period);
-      }
-    }
-    return sma;
-  }
-
-  private calculateRSI(prices: number[], period: number): number[] {
-    const rsi: number[] = [];
-    const gains: number[] = [];
-    const losses: number[] = [];
-
-    for (let i = 1; i < prices.length; i++) {
-      const change = prices[i] - prices[i - 1];
-      gains.push(change > 0 ? change : 0);
-      losses.push(change < 0 ? -change : 0);
-    }
-
-    for (let i = 0; i < prices.length; i++) {
-      if (i < period) {
-        rsi.push(NaN);
-      } else if (i === period) {
-        const avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
-        const avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
-        const rs = avgGain / (avgLoss || 0.0001);
-        rsi.push(100 - 100 / (1 + rs));
-      } else {
-        const currentGain = gains[i - 1];
-        const currentLoss = losses[i - 1];
-        const avgGain = (gains.slice(i - period, i).reduce((a, b) => a + b, 0) + currentGain) / period;
-        const avgLoss = (losses.slice(i - period, i).reduce((a, b) => a + b, 0) + currentLoss) / period;
-        const rs = avgGain / (avgLoss || 0.0001);
-        rsi.push(100 - 100 / (1 + rs));
-      }
-    }
-
-    rsi.unshift(NaN);
-    return rsi;
-  }
-
-  private calculateMACD(prices: number[]): { macd: number[]; signal: number[]; histogram: number[] } {
-    const fastEMA = this.calculateEMA(prices, 12);
-    const slowEMA = this.calculateEMA(prices, 26);
-
-    const macdLine: number[] = [];
-    for (let i = 0; i < prices.length; i++) {
-      if (isNaN(fastEMA[i]) || isNaN(slowEMA[i])) {
-        macdLine.push(NaN);
-      } else {
-        macdLine.push(fastEMA[i] - slowEMA[i]);
-      }
-    }
-
-    const validMacd = macdLine.filter(v => !isNaN(v));
-    const signalEMA = this.calculateEMA(validMacd, 9);
-
-    const signal: number[] = [];
-    const histogram: number[] = [];
-    let signalIndex = 0;
-
-    for (let i = 0; i < prices.length; i++) {
-      if (isNaN(macdLine[i])) {
-        signal.push(NaN);
-        histogram.push(NaN);
-      } else {
-        const sigValue = signalEMA[signalIndex];
-        signal.push(sigValue);
-        histogram.push(macdLine[i] - sigValue);
-        signalIndex++;
-      }
-    }
-
-    return { macd: macdLine, signal, histogram };
-  }
-
-  private calculateEMA(prices: number[], period: number): number[] {
-    const ema: number[] = [];
-    const multiplier = 2 / (period + 1);
-
-    let sum = 0;
-    for (let i = 0; i < period && i < prices.length; i++) {
-      sum += prices[i];
-    }
-    const initialSMA = sum / period;
-    ema.push(initialSMA);
-
-    for (let i = period; i < prices.length; i++) {
-      const emaValue = (prices[i] - ema[ema.length - 1]) * multiplier + ema[ema.length - 1];
-      ema.push(emaValue);
-    }
-
-    while (ema.length < prices.length) {
-      ema.unshift(NaN);
-    }
-
-    return ema;
-  }
-
-  private calculateBollingerBands(prices: number[], period: number = 20, stdDev: number = 2) {
-    const middle = this.calculateSMA(prices, period);
-    const upper: number[] = [];
-    const lower: number[] = [];
-
-    for (let i = 0; i < prices.length; i++) {
-      if (i < period - 1) {
-        upper.push(NaN);
-        lower.push(NaN);
-      } else {
-        const slice = prices.slice(i - period + 1, i + 1);
-        const mean = middle[i];
-        const squaredDiffs = slice.map(p => Math.pow(p - mean, 2));
-        const std = Math.sqrt(squaredDiffs.reduce((a, b) => a + b, 0) / period);
-        upper.push(mean + stdDev * std);
-        lower.push(mean - stdDev * std);
-      }
-    }
-
-    return { upper, middle, lower };
   }
 
   private calculateVolatility(prices: number[]): number {
@@ -350,8 +241,7 @@ class MLPredictionService {
     let confidence = 50;
 
     if (features.rsi < 25 || features.rsi > 75) confidence += 10;
-    if (Math.abs(features.rsiChange) > 5) confidence += 5;
-
+    
     if (Math.abs(features.priceMomentum) > 5) confidence += 8;
     if (Math.abs(features.priceMomentum) > 10) confidence += 5;
 
@@ -367,10 +257,9 @@ class MLPredictionService {
     return Math.min(Math.max(confidence, 30), 95);
   }
 
-  private generateBuyReason(prediction: ModelPrediction, data: OHLCV[]): string {
+  private generateBuyReason(prediction: ModelPrediction, indicators: TechnicalIndicator & { atr: number[] }): string {
     const reasons: string[] = [];
-    const prices = data.map(d => d.close);
-    const currentRSI = this.calculateRSI(prices, 14).pop();
+    const currentRSI = indicators.rsi[indicators.rsi.length - 1];
 
     if (currentRSI && currentRSI < 35) {
       reasons.push('RSIが売られ過ぎ領域');
@@ -391,10 +280,9 @@ class MLPredictionService {
     return reasons.join('、') + '。上昇余地あり。';
   }
 
-  private generateSellReason(prediction: ModelPrediction, data: OHLCV[]): string {
+  private generateSellReason(prediction: ModelPrediction, indicators: TechnicalIndicator & { atr: number[] }): string {
     const reasons: string[] = [];
-    const prices = data.map(d => d.close);
-    const currentRSI = this.calculateRSI(prices, 14).pop();
+    const currentRSI = indicators.rsi[indicators.rsi.length - 1];
 
     if (currentRSI && currentRSI > 65) {
       reasons.push('RSIが買われ過ぎ領域');

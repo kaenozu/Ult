@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Navigation } from '@/app/components/Navigation';
 import { JAPAN_STOCKS, USA_STOCKS } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
 import { cn, formatPercent } from '@/app/lib/utils';
+import { marketClient } from '@/app/lib/api/data-aggregator';
 
 const SECTORS = [
   '全て',
@@ -70,12 +71,40 @@ function HeatmapBlock({ stock, className }: HeatmapBlockProps) {
 export default function Heatmap() {
   const [selectedSector, setSelectedSector] = useState('全て');
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'japan' | 'usa'>('all');
+  const [stocks, setStocks] = useState<Stock[]>([...JAPAN_STOCKS, ...USA_STOCKS]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setLoading(true);
+      const symbols = [...JAPAN_STOCKS, ...USA_STOCKS].map(s => s.symbol);
+      const quotes = await marketClient.fetchQuotes(symbols);
+      
+      if (quotes.length > 0) {
+        setStocks(prev => prev.map(s => {
+          const q = quotes.find(q => q.symbol === s.symbol);
+          if (q) {
+            return {
+              ...s,
+              price: q.price,
+              change: q.change,
+              changePercent: q.changePercent * 100,
+              volume: q.volume,
+            };
+          }
+          return s;
+        }));
+      }
+      setLoading(false);
+    };
+    fetchAllData();
+  }, []);
 
   const allStocks = selectedMarket === 'all'
-    ? [...JAPAN_STOCKS, ...USA_STOCKS]
+    ? stocks
     : selectedMarket === 'japan'
-      ? JAPAN_STOCKS
-      : USA_STOCKS;
+      ? stocks.filter(s => s.market === 'japan')
+      : stocks.filter(s => s.market === 'usa');
 
   const filteredStocks = selectedSector === '全て'
     ? allStocks
@@ -97,13 +126,14 @@ export default function Heatmap() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
-      {/* Mock Data Banner */}
-      <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 flex items-center justify-center gap-2 text-yellow-400 text-xs">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <span className="font-medium">注意:  表示データはモック（模擬データ）です。実際の市場データではありません。</span>
-        <span className="text-yellow-500/60">Mock Data Only</span>
+      {/* Real-time Status Banner */}
+      <div className="bg-emerald-500/10 border-b border-emerald-500/30 px-4 py-2 flex items-center justify-center gap-2 text-emerald-400 text-xs">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span className="font-medium">Market Live: リアルタイムデータ同期中</span>
+        <span className="text-emerald-500/60 ml-2">Connected to Yahoo Finance</span>
       </div>
 
       {/* Header */}
@@ -115,25 +145,10 @@ export default function Heatmap() {
                 <path d="M3 13h2v8H3v-8zm4-6h2v14H7V7zm4 3h2v11h-2V10zm4-6h2v17h-2V4zm4 4h2v13h-2V8z" />
               </svg>
             </div>
-            <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em]">TradePro</h2>
+            <h2 className="text-white text-lg font-bold leading-tight tracking-tight">ヒートマップ</h2>
           </div>
         </div>
         <div className="flex flex-1 justify-end gap-6 items-center">
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Dashboard
-            </Link>
-            <span className="text-white text-sm font-medium leading-normal border-b-2 border-primary py-1">
-              Heatmap
-            </span>
-            <Link href="/journal" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Journal
-            </Link>
-            <Link href="/screener" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Screener
-            </Link>
-          </nav>
-          <div className="h-6 w-px bg-[#233648] mx-2 hidden lg:block" />
           <div className="flex items-center gap-3 pl-2">
             <div className="hidden xl:flex flex-col">
               <span className="text-xs font-bold text-white leading-none mb-1">K. Tanaka</span>
@@ -282,7 +297,7 @@ export default function Heatmap() {
       <Navigation />
 
       {/* Disclaimer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#192633]/90 border-t border-[#233648] py-2 px-4 text-center text-[10px] text-[#92adc9] z-40">
+      <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>

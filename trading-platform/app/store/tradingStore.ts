@@ -14,6 +14,7 @@ interface TradingStore {
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
   closePosition: (symbol: string, exitPrice: number) => void;
+  setCash: (amount: number) => void;
   journal: JournalEntry[];
   addJournalEntry: (entry: JournalEntry) => void;
   selectedStock: Stock | null;
@@ -55,6 +56,7 @@ const initialPortfolio: Portfolio = {
       entryDate: '2024-01-20',
     },
   ],
+  orders: [],
   totalValue: 0,
   totalProfit: 0,
   dailyPnL: 0,
@@ -113,10 +115,33 @@ export const useTradingStore = create<TradingStore>()(
         };
       }),
 
-      addPosition: (position) => set((state) => {
-        const positions = [...state.portfolio.positions, position];
+      addPosition: (newPosition) => set((state) => {
+        let positions = [...state.portfolio.positions];
+        const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
+
+        if (existingIndex >= 0) {
+          const existing = positions[existingIndex];
+          const totalCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
+          const totalQty = existing.quantity + newPosition.quantity;
+          
+          positions[existingIndex] = {
+            ...existing,
+            quantity: totalQty,
+            avgPrice: totalCost / totalQty,
+            currentPrice: newPosition.currentPrice
+          };
+        } else {
+          positions.push(newPosition);
+        }
+
         const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-        const totalProfit = positions.reduce((sum, p) => sum + (p.currentPrice - p.avgPrice) * p.quantity, 0);
+        const totalProfit = positions.reduce((sum, p) => {
+          const pnl = p.side === 'LONG' 
+            ? (p.currentPrice - p.avgPrice) * p.quantity
+            : (p.avgPrice - p.currentPrice) * p.quantity;
+          return sum + pnl;
+        }, 0);
+        
         return {
           portfolio: {
             ...state.portfolio,
@@ -131,8 +156,13 @@ export const useTradingStore = create<TradingStore>()(
         const position = state.portfolio.positions.find(p => p.symbol === symbol);
         if (!position) return state;
 
-        const profit = (exitPrice - position.avgPrice) * position.quantity;
-        const profitPercent = ((exitPrice - position.avgPrice) / position.avgPrice) * 100;
+        const profit = position.side === 'LONG'
+          ? (exitPrice - position.avgPrice) * position.quantity
+          : (position.avgPrice - exitPrice) * position.quantity;
+          
+        const profitPercent = position.side === 'LONG'
+          ? ((exitPrice - position.avgPrice) / position.avgPrice) * 100
+          : ((position.avgPrice - exitPrice) / position.avgPrice) * 100;
 
         const entry: JournalEntry = {
           id: Date.now().toString(),
@@ -150,7 +180,12 @@ export const useTradingStore = create<TradingStore>()(
 
         const positions = state.portfolio.positions.filter(p => p.symbol !== symbol);
         const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-        const totalProfit = positions.reduce((sum, p) => sum + (p.currentPrice - p.avgPrice) * p.quantity, 0);
+        const totalProfit = positions.reduce((sum, p) => {
+          const pnl = p.side === 'LONG' 
+            ? (p.currentPrice - p.avgPrice) * p.quantity
+            : (p.avgPrice - p.currentPrice) * p.quantity;
+          return sum + pnl;
+        }, 0);
 
         return {
           portfolio: {
@@ -158,10 +193,19 @@ export const useTradingStore = create<TradingStore>()(
             positions,
             totalValue,
             totalProfit,
+            // Return capital + profit to cash
+            cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit, 
           },
           journal: [...state.journal, entry],
         };
       }),
+
+      setCash: (amount) => set((state) => ({
+        portfolio: {
+          ...state.portfolio,
+          cash: amount,
+        },
+      })),
 
       journal: [],
 
