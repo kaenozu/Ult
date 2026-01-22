@@ -20,6 +20,8 @@ export default function Workstation() {
   const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSMA, setShowSMA] = useState(true);
+  const [showBollinger, setShowBollinger] = useState(false);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -135,6 +137,27 @@ export default function Workstation() {
                 ))}
               </div>
               <div className="h-4 w-px bg-[#233648]" />
+              <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
+                <button
+                  onClick={() => setShowSMA(!showSMA)}
+                  className={cn(
+                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+                    showSMA ? 'bg-yellow-500/20 text-yellow-500' : 'text-[#92adc9] hover:text-white'
+                  )}
+                >
+                  SMA
+                </button>
+                <button
+                  onClick={() => setShowBollinger(!showBollinger)}
+                  className={cn(
+                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+                    showBollinger ? 'bg-blue-500/20 text-blue-400' : 'text-[#92adc9] hover:text-white'
+                  )}
+                >
+                  BB
+                </button>
+              </div>
+              <div className="h-4 w-px bg-[#233648]" />
               <div className="flex items-center gap-3 text-xs text-[#92adc9]">
                 <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,6 +190,8 @@ export default function Workstation() {
                 data={chartData} 
                 height={400} 
                 showVolume={true} 
+                showSMA={showSMA}
+                showBollinger={showBollinger}
                 market={displayStock?.market}
                 currentPrice={displayStock?.price}
                 loading={loading}

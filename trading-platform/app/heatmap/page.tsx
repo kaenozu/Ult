@@ -115,25 +115,10 @@ export default function Heatmap() {
                 <path d="M3 13h2v8H3v-8zm4-6h2v14H7V7zm4 3h2v11h-2V10zm4-6h2v17h-2V4zm4 4h2v13h-2V8z" />
               </svg>
             </div>
-            <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em]">TradePro</h2>
+            <h2 className="text-white text-lg font-bold leading-tight tracking-tight">ヒートマップ</h2>
           </div>
         </div>
         <div className="flex flex-1 justify-end gap-6 items-center">
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Dashboard
-            </Link>
-            <span className="text-white text-sm font-medium leading-normal border-b-2 border-primary py-1">
-              Heatmap
-            </span>
-            <Link href="/journal" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Journal
-            </Link>
-            <Link href="/screener" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Screener
-            </Link>
-          </nav>
-          <div className="h-6 w-px bg-[#233648] mx-2 hidden lg:block" />
           <div className="flex items-center gap-3 pl-2">
             <div className="hidden xl:flex flex-col">
               <span className="text-xs font-bold text-white leading-none mb-1">K. Tanaka</span>
@@ -282,7 +267,7 @@ export default function Heatmap() {
       <Navigation />
 
       {/* Disclaimer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#192633]/90 border-t border-[#233648] py-2 px-4 text-center text-[10px] text-[#92adc9] z-40">
+      <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>

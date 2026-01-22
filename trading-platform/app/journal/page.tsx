@@ -49,25 +49,10 @@ export default function Journal() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h2 className="text-white text-lg font-bold leading-tight tracking-[-0.015em]">TradePro</h2>
+            <h2 className="text-white text-lg font-bold leading-tight tracking-tight">トレードジャーナル</h2>
           </div>
         </div>
         <div className="flex flex-1 justify-end gap-6 items-center">
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Dashboard
-            </Link>
-            <Link href="/heatmap" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Heatmap
-            </Link>
-            <span className="text-white text-sm font-medium leading-normal border-b-2 border-primary py-1">
-              Journal
-            </span>
-            <Link href="/screener" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
-              Screener
-            </Link>
-          </nav>
-          <div className="h-6 w-px bg-[#233648] mx-2 hidden lg:block" />
           <div className="flex items-center gap-3 pl-2">
             <div className="hidden xl:flex flex-col">
               <span className="text-xs font-bold text-white leading-none mb-1">K. Tanaka</span>
@@ -334,7 +319,7 @@ export default function Journal() {
       <Navigation />
 
       {/* Disclaimer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#192633]/90 border-t border-[#233648] py-2 px-4 text-center text-[10px] text-[#92adc9] z-40">
+      <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>
