@@ -42,6 +42,8 @@ export function Navigation() {
       <button
         onClick={toggleTheme}
         className="p-2 text-[#92adc9] hover:text-white rounded-full hover:bg-[#233648] transition-colors"
+        aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+        title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       >
         {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
