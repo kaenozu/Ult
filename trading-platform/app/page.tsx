@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
 import { StockTable } from '@/app/components/StockTable';
@@ -23,20 +23,13 @@ export default function Workstation() {
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
 
+  // Keep a ref to watchlist for stable callbacks
+  const watchlistRef = useRef(watchlist);
   useEffect(() => {
-    const initializeData = async () => {
-      const defaultStock = watchlist[0];
-      if (defaultStock) {
-        setLocalSelectedStock(defaultStock);
-        setSelectedStock(defaultStock);
-        fetchData(defaultStock);
-      }
-    };
+    watchlistRef.current = watchlist;
+  }, [watchlist]);
 
-    initializeData();
-  }, []);
-
-  const fetchData = async (stock: Stock) => {
+  const fetchData = useCallback(async (stock: Stock) => {
     setLoading(true);
     setError(null);
     setChartData([]); // Clear for skeleton
@@ -57,17 +50,30 @@ export default function Workstation() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleStockSelect = (stock: Stock) => {
+  useEffect(() => {
+    const initializeData = async () => {
+      const defaultStock = watchlist[0];
+      if (defaultStock) {
+        setLocalSelectedStock(defaultStock);
+        setSelectedStock(defaultStock);
+        fetchData(defaultStock);
+      }
+    };
+
+    initializeData();
+  }, [fetchData]); // watchlist is initial only
+
+  const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
     setSelectedStock(stock);
     fetchData(stock);
-  };
+  }, [setSelectedStock, fetchData]);
 
-  const handleClosePosition = (symbol: string, currentPrice: number) => {
+  const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
     closePosition(symbol, currentPrice);
-  };
+  }, [closePosition]);
 
   const displayStock = selectedStock || watchlist[0];
   const displaySignal = chartSignal;

@@ -4,7 +4,52 @@ import { Stock, Position } from '@/app/types';
 import { formatCurrency, formatPercent, formatVolume, getChangeColor, cn } from '@/app/lib/utils';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
-import { useEffect } from 'react';
+import { useEffect, memo, useCallback } from 'react';
+
+// Memoized Stock Row
+const StockRow = memo(({
+  stock,
+  isSelected,
+  onSelect,
+  showChange,
+  showVolume
+}: {
+  stock: Stock;
+  isSelected: boolean;
+  onSelect: (stock: Stock) => void;
+  showChange: boolean;
+  showVolume: boolean;
+}) => (
+  <tr
+    onClick={() => onSelect(stock)}
+    className={cn(
+      'hover:bg-[#192633] cursor-pointer group transition-colors',
+      isSelected && 'bg-[#192633]/50 border-l-2 border-primary'
+    )}
+  >
+    <td className="px-3 py-2">
+      <div className="flex flex-col">
+        <span className="font-bold text-white leading-tight">{stock.symbol}</span>
+        <span className="text-[10px] text-[#92adc9] truncate max-w-[90px]">{stock.name}</span>
+      </div>
+    </td>
+    <td className="px-1 py-2 text-right text-white font-medium">
+      {stock.market === 'japan' ? formatCurrency(stock.price, 'JPY') : formatCurrency(stock.price, 'USD')}
+    </td>
+    {showChange && (
+      <td className={cn('px-1 py-2 text-right font-medium', getChangeColor(stock.change))}>
+        {formatPercent(stock.changePercent)}
+      </td>
+    )}
+    {showVolume && (
+      <td className="px-1 py-2 text-right text-[#92adc9]">
+        {formatVolume(stock.volume)}
+      </td>
+    )}
+  </tr>
+));
+
+StockRow.displayName = 'StockRow';
 
 interface StockTableProps {
   stocks: Stock[];
@@ -14,8 +59,11 @@ interface StockTableProps {
   showVolume?: boolean;
 }
 
-export function StockTable({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) {
+export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) => {
   const { setSelectedStock, updateStockData } = useTradingStore();
+
+  // Create a stable key for the list of symbols to prevent re-fetching when prices change
+  const symbolKey = stocks.map(s => s.symbol).join(',');
 
   useEffect(() => {
     let mounted = true;
@@ -45,12 +93,12 @@ export function StockTable({ stocks, onSelect, selectedSymbol, showChange = true
       mounted = false;
       clearInterval(interval);
     };
-  }, [stocks.length]); // Refresh if list changes
+  }, [symbolKey, updateStockData]);
 
-  const handleSelect = (stock: Stock) => {
+  const handleSelect = useCallback((stock: Stock) => {
     setSelectedStock(stock);
     onSelect?.(stock);
-  };
+  }, [setSelectedStock, onSelect]);
 
   return (
     <div className="overflow-y-auto flex-1">
@@ -65,47 +113,84 @@ export function StockTable({ stocks, onSelect, selectedSymbol, showChange = true
         </thead>
         <tbody className="divide-y divide-[#233648]/50">
           {stocks.map((stock) => (
-            <tr
+            <StockRow
               key={stock.symbol}
-              onClick={() => handleSelect(stock)}
-              className={cn(
-                'hover:bg-[#192633] cursor-pointer group transition-colors',
-                selectedSymbol === stock.symbol && 'bg-[#192633]/50 border-l-2 border-primary'
-              )}
-            >
-              <td className="px-3 py-2">
-                <div className="flex flex-col">
-                  <span className="font-bold text-white leading-tight">{stock.symbol}</span>
-                  <span className="text-[10px] text-[#92adc9] truncate max-w-[90px]">{stock.name}</span>
-                </div>
-              </td>
-              <td className="px-1 py-2 text-right text-white font-medium">
-                {stock.market === 'japan' ? formatCurrency(stock.price, 'JPY') : formatCurrency(stock.price, 'USD')}
-              </td>
-              {showChange && (
-                <td className={cn('px-1 py-2 text-right font-medium', getChangeColor(stock.change))}>
-                  {formatPercent(stock.changePercent)}
-                </td>
-              )}
-              {showVolume && (
-                <td className="px-1 py-2 text-right text-[#92adc9]">
-                  {formatVolume(stock.volume)}
-                </td>
-              )}
-            </tr>
+              stock={stock}
+              isSelected={selectedSymbol === stock.symbol}
+              onSelect={handleSelect}
+              showChange={showChange}
+              showVolume={showVolume}
+            />
           ))}
         </tbody>
       </table>
     </div>
   );
-}
+});
+
+StockTable.displayName = 'StockTable';
+
+// Memoized Position Row
+const PositionRow = memo(({
+  position,
+  onClose
+}: {
+  position: Position;
+  onClose?: (symbol: string, currentPrice: number) => void;
+}) => {
+  const marketValue = position.currentPrice * position.quantity;
+  const profit = (position.currentPrice - position.avgPrice) * position.quantity;
+  const profitPercent = ((position.currentPrice - position.avgPrice) / position.avgPrice) * 100;
+  const isProfit = profit >= 0;
+
+  return (
+    <tr className="hover:bg-[#192633] group transition-colors">
+      <td className="px-4 py-2">
+        <div className="flex flex-col">
+          <span className="font-bold text-white">{position.symbol}</span>
+          <span className="text-[10px] text-[#92adc9]">{position.name}</span>
+        </div>
+      </td>
+      <td className={cn('px-4 py-2 font-medium', isProfit ? 'text-green-500' : 'text-red-500')}>
+        {position.side}
+      </td>
+      <td className="px-4 py-2 text-right text-white">{position.quantity}</td>
+      <td className="px-4 py-2 text-right text-[#92adc9]">
+        {position.market === 'japan' ? formatCurrency(position.avgPrice, 'JPY') : formatCurrency(position.avgPrice, 'USD')}
+      </td>
+      <td className="px-4 py-2 text-right text-white">
+        {position.market === 'japan' ? formatCurrency(position.currentPrice, 'JPY') : formatCurrency(position.currentPrice, 'USD')}
+      </td>
+      <td className="px-4 py-2 text-right text-white">
+        {position.market === 'japan' ? formatCurrency(marketValue, 'JPY') : formatCurrency(marketValue, 'USD')}
+      </td>
+      <td className={cn('px-4 py-2 text-right font-bold', isProfit ? 'text-green-500' : 'text-red-500')}>
+        {isProfit ? '+' : ''}
+        {position.market === 'japan' ? formatCurrency(profit, 'JPY') : formatCurrency(profit, 'USD')}
+        <span className="ml-1 text-[10px] opacity-80">
+          ({isProfit ? '+' : ''}{profitPercent.toFixed(1)}%)
+        </span>
+      </td>
+      <td className="px-4 py-2 text-right">
+        <button
+          onClick={() => onClose?.(position.symbol, position.currentPrice)}
+          className="text-[10px] px-2 py-0.5 rounded bg-[#192633] border border-[#233648] hover:bg-[#233648] text-[#92adc9] transition-colors"
+        >
+          CLOSE
+        </button>
+      </td>
+    </tr>
+  );
+});
+
+PositionRow.displayName = 'PositionRow';
 
 interface PositionTableProps {
   positions: Position[];
   onClose?: (symbol: string, currentPrice: number) => void;
 }
 
-export function PositionTable({ positions, onClose }: PositionTableProps) {
+export const PositionTable = memo(({ positions, onClose }: PositionTableProps) => {
   const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
   const totalProfit = positions.reduce((sum, p) => sum + (p.currentPrice - p.avgPrice) * p.quantity, 0);
 
@@ -125,51 +210,13 @@ export function PositionTable({ positions, onClose }: PositionTableProps) {
           </tr>
         </thead>
         <tbody className="divide-y divide-[#233648]/50">
-          {positions.map((position) => {
-            const marketValue = position.currentPrice * position.quantity;
-            const profit = (position.currentPrice - position.avgPrice) * position.quantity;
-            const profitPercent = ((position.currentPrice - position.avgPrice) / position.avgPrice) * 100;
-            const isProfit = profit >= 0;
-
-            return (
-              <tr key={position.symbol} className="hover:bg-[#192633] group transition-colors">
-                <td className="px-4 py-2">
-                  <div className="flex flex-col">
-                    <span className="font-bold text-white">{position.symbol}</span>
-                    <span className="text-[10px] text-[#92adc9]">{position.name}</span>
-                  </div>
-                </td>
-                <td className={cn('px-4 py-2 font-medium', isProfit ? 'text-green-500' : 'text-red-500')}>
-                  {position.side}
-                </td>
-                <td className="px-4 py-2 text-right text-white">{position.quantity}</td>
-                <td className="px-4 py-2 text-right text-[#92adc9]">
-                  {position.market === 'japan' ? formatCurrency(position.avgPrice, 'JPY') : formatCurrency(position.avgPrice, 'USD')}
-                </td>
-                <td className="px-4 py-2 text-right text-white">
-                  {position.market === 'japan' ? formatCurrency(position.currentPrice, 'JPY') : formatCurrency(position.currentPrice, 'USD')}
-                </td>
-                <td className="px-4 py-2 text-right text-white">
-                  {position.market === 'japan' ? formatCurrency(marketValue, 'JPY') : formatCurrency(marketValue, 'USD')}
-                </td>
-                <td className={cn('px-4 py-2 text-right font-bold', isProfit ? 'text-green-500' : 'text-red-500')}>
-                  {isProfit ? '+' : ''}
-                  {position.market === 'japan' ? formatCurrency(profit, 'JPY') : formatCurrency(profit, 'USD')}
-                  <span className="ml-1 text-[10px] opacity-80">
-                    ({isProfit ? '+' : ''}{profitPercent.toFixed(1)}%)
-                  </span>
-                </td>
-                <td className="px-4 py-2 text-right">
-                  <button
-                    onClick={() => onClose?.(position.symbol, position.currentPrice)}
-                    className="text-[10px] px-2 py-0.5 rounded bg-[#192633] border border-[#233648] hover:bg-[#233648] text-[#92adc9] transition-colors"
-                  >
-                    CLOSE
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
+          {positions.map((position) => (
+            <PositionRow
+              key={position.symbol}
+              position={position}
+              onClose={onClose}
+            />
+          ))}
         </tbody>
       </table>
       <div className="border-t border-[#233648] p-4 bg-[#141e27]">
@@ -186,4 +233,6 @@ export function PositionTable({ positions, onClose }: PositionTableProps) {
       </div>
     </div>
   );
-}
+});
+
+PositionTable.displayName = 'PositionTable';

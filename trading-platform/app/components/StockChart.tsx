@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, memo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -42,7 +42,8 @@ export interface StockChartProps {
   currentPrice?: number;
 }
 
-export function StockChart({ 
+// Memoize component to prevent re-renders from parent updates if props are unchanged
+export const StockChart = memo(function StockChart({
   data, 
   height = 400, 
   showVolume = true, 
@@ -56,14 +57,16 @@ export function StockChart({
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
 
-  const labels = data.map(d => d.date);
-  const prices = data.map(d => d.close);
-  const volumes = data.map(d => d.volume);
+  // Memoize derived data arrays to prevent unnecessary mapping on every render
+  const labels = useMemo(() => data.map(d => d.date), [data]);
+  const prices = useMemo(() => data.map(d => d.close), [data]);
+  const volumes = useMemo(() => data.map(d => d.volume), [data]);
 
-  const sma20 = calculateSMA(prices, 20);
-  const { upper, lower } = calculateBollingerBands(prices, 20, 2);
+  const sma20 = useMemo(() => calculateSMA(prices, 20), [prices]);
+  const { upper, lower } = useMemo(() => calculateBollingerBands(prices, 20, 2), [prices]);
 
-  const chartData = {
+  // Memoize chart configuration to prevent Chart.js from re-rendering/animating when data hasn't changed
+  const chartData = useMemo(() => ({
     labels,
     datasets: [
       {
@@ -112,9 +115,9 @@ export function StockChart({
         }
       ] : []),
     ],
-  };
+  }), [labels, prices, sma20, upper, lower, showSMA, showBollinger]);
 
-  const options = {
+  const options = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -159,9 +162,9 @@ export function StockChart({
         },
       },
     },
-  };
+  }), [market]);
 
-  const volumeData = {
+  const volumeData = useMemo(() => ({
     labels,
     datasets: [
       {
@@ -176,9 +179,9 @@ export function StockChart({
         borderWidth: 0,
       },
     ],
-  };
+  }), [labels, volumes, prices]);
 
-  const volumeOptions = {
+  const volumeOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -197,7 +200,7 @@ export function StockChart({
         display: false,
       },
     },
-  };
+  }), []);
 
   if (error) {
     return (
@@ -243,4 +246,4 @@ export function StockChart({
       )}
     </div>
   );
-}
+});
