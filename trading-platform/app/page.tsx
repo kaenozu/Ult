@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
 import { StockTable } from '@/app/components/StockTable';
-import { PositionTable } from '@/app/components/StockTable';
+import { PositionTable } from '@/app/components/PositionTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
 import { useTradingStore } from '@/app/store/tradingStore';
