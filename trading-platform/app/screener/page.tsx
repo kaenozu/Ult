@@ -69,9 +69,13 @@ export default function Screener() {
   }, []);
 
   const handleTechScreening = async () => {
+    console.log('Starting screening...', techFilters);
     setIsTechAnalysisDone(false);
-    setAnalyzing(true);
     setAnalyzedStocks([]);
+    setAnalyzing(true);
+    
+    // Add artificial delay to ensure UI updates and user perceives the action
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     const candidates = stocks.filter(stock => {
       if (filters.priceMin && stock.price < parseFloat(filters.priceMin)) return false;
