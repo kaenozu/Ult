@@ -102,7 +102,7 @@ export function StockTable({ stocks, onSelect, selectedSymbol, showChange = true
 
 interface PositionTableProps {
   positions: Position[];
-  onClose?: (symbol: string) => void;
+  onClose?: (symbol: string, currentPrice: number) => void;
 }
 
 export function PositionTable({ positions, onClose }: PositionTableProps) {
@@ -161,7 +161,7 @@ export function PositionTable({ positions, onClose }: PositionTableProps) {
                 </td>
                 <td className="px-4 py-2 text-right">
                   <button
-                    onClick={() => onClose?.(position.symbol)}
+                    onClick={() => onClose?.(position.symbol, position.currentPrice)}
                     className="text-[10px] px-2 py-0.5 rounded bg-[#192633] border border-[#233648] hover:bg-[#233648] text-[#92adc9] transition-colors"
                   >
                     CLOSE
