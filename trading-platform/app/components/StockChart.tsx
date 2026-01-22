@@ -34,6 +34,8 @@ export interface StockChartProps {
   height?: number;
   showVolume?: boolean;
   showIndicators?: boolean;
+  showSMA?: boolean;
+  showBollinger?: boolean;
   loading?: boolean;
   error?: string | null;
   market?: 'japan' | 'usa';
@@ -45,14 +47,14 @@ export function StockChart({
   height = 400, 
   showVolume = true, 
   showIndicators = true, 
+  showSMA = true,
+  showBollinger = false,
   loading = false, 
   error = null,
   market = 'usa',
   currentPrice
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
-  const [showSMA, setShowSMA] = useState(true);
-  const [showBollinger, setShowBollinger] = useState(false);
 
   const labels = data.map(d => d.date);
   const prices = data.map(d => d.close);
@@ -232,30 +234,6 @@ export function StockChart({
 
   return (
     <div className="relative w-full" style={{ height }}>
-      {showIndicators && (
-        <div className="absolute top-2 left-2 z-10 flex gap-2">
-          <button
-            onClick={() => setShowSMA(!showSMA)}
-            className={`px-2 py-1 text-[10px] font-bold rounded border transition-colors ${
-              showSMA 
-                ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50' 
-                : 'bg-[#192633]/80 text-[#92adc9] border-[#233648] hover:text-white'
-            }`}
-          >
-            SMA (20)
-          </button>
-          <button
-            onClick={() => setShowBollinger(!showBollinger)}
-            className={`px-2 py-1 text-[10px] font-bold rounded border transition-colors ${
-              showBollinger
-                ? 'bg-blue-500/20 text-blue-400 border-blue-500/50'
-                : 'bg-[#192633]/80 text-[#92adc9] border-[#233648] hover:text-white'
-            }`}
-          >
-            Bollinger
-          </button>
-        </div>
-      )}
       <Line ref={chartRef as any} data={chartData} options={options as any} />
 
       {showVolume && (
