@@ -86,11 +86,12 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ error: 'Invalid type parameter. Use "history" or "quote".' }, { status: 400 });
 
-  } catch (error: any) {
-    console.error(`Yahoo Finance API Error (${yahooSymbol}):`, error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Yahoo Finance API Error (${yahooSymbol}):`, errorMessage);
     return NextResponse.json({ 
-      error: error.message,
-      details: 'Failed to fetch real data.' 
+      error: 'Failed to fetch market data',
+      details: 'An internal error occurred while fetching data.'
     }, { status: 500 });
   }
 }
