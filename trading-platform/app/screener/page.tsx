@@ -2,18 +2,22 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
 import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
 import { Stock, OHLCV } from '@/app/types';
 import { cn, formatCurrency, formatPercent, formatVolume, getChangeColor } from '@/app/lib/utils';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 import { filterByTechnicals, TechFilters } from '@/app/lib/screener-utils';
+import { useTradingStore } from '@/app/store/tradingStore';
 
 type FilterField = 'price' | 'change' | 'volume' | 'sector' | 'market';
 type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
 type SortDirection = 'asc' | 'desc';
 
 export default function Screener() {
+  const router = useRouter();
+  const { setSelectedStock } = useTradingStore();
   const [filters, setFilters] = useState({
     priceMin: '',
     priceMax: '',
@@ -36,6 +40,7 @@ export default function Screener() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzedStocks, setAnalyzedStocks] = useState<string[]>([]);
   const [isTechAnalysisDone, setIsTechAnalysisDone] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -64,6 +69,7 @@ export default function Screener() {
   }, []);
 
   const handleTechScreening = async () => {
+    setIsTechAnalysisDone(false);
     setAnalyzing(true);
     setAnalyzedStocks([]);
     
@@ -142,12 +148,43 @@ export default function Screener() {
     }
   };
 
+  const handleStockClick = (stock: Stock) => {
+    setSelectedStock(stock);
+    router.push('/');
+  };
+
+  const applyPreset = (type: 'oversold' | 'uptrend' | 'dip') => {
+    // Reset basic filters
+    setFilters({
+      priceMin: '', priceMax: '', changeMin: '', changeMax: '',
+      volumeMin: '', sector: '', market: '',
+    });
+    
+    // Set technical filters
+    if (type === 'oversold') {
+      setTechFilters({ rsiMax: '30', rsiMin: '', trend: 'all' });
+    } else if (type === 'uptrend') {
+      setTechFilters({ rsiMax: '', rsiMin: '', trend: 'uptrend' });
+    } else if (type === 'dip') {
+      setTechFilters({ rsiMax: '40', rsiMin: '', trend: 'uptrend' });
+    }
+    setIsTechAnalysisDone(false);
+  };
+
   const sectors = [...new Set(stocks.map(s => s.sector))];
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="lg:hidden p-2 text-[#92adc9] hover:text-white transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
           <div className="flex items-center gap-3 text-white">
             <div className="size-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,22 +204,88 @@ export default function Screener() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Backdrop */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar Filters */}
-        <aside className="w-72 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0 z-10 max-lg:hidden">
+        <aside className={cn(
+          "w-72 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0 transition-transform duration-300 ease-in-out",
+          "lg:static lg:translate-x-0 z-40", // Desktop: static, always visible
+          isSidebarOpen ? "fixed inset-y-0 left-0 translate-x-0" : "fixed inset-y-0 left-0 -translate-x-full lg:translate-x-0" // Mobile: toggle
+        )}>
           <div className="p-5 flex flex-col gap-6">
             <div className="flex justify-between items-center">
               <h3 className="text-white text-base font-bold">フィルター</h3>
               <button
-                onClick={() => setFilters({
-                  priceMin: '', priceMax: '', changeMin: '', changeMax: '',
-                  volumeMin: '', sector: '', market: '',
-                })}
-                className="text-primary text-xs font-medium hover:text-primary/80"
+                onClick={() => setIsSidebarOpen(false)}
+                className="lg:hidden p-1 text-[#92adc9] hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <button
+                onClick={() => {
+                  setFilters({
+                    priceMin: '', priceMax: '', changeMin: '', changeMax: '',
+                    volumeMin: '', sector: '', market: '',
+                  });
+                  setTechFilters({ rsiMax: '', rsiMin: '', trend: 'all' });
+                  setIsTechAnalysisDone(false);
+                }}
+                className="text-primary text-xs font-medium hover:text-primary/80 hidden lg:block"
               >
                 リセット
               </button>
             </div>
+            
+            {/* Mobile Reset Button (visible only on mobile) */}
+            <button
+                onClick={() => {
+                  setFilters({
+                    priceMin: '', priceMax: '', changeMin: '', changeMax: '',
+                    volumeMin: '', sector: '', market: '',
+                  });
+                  setTechFilters({ rsiMax: '', rsiMin: '', trend: 'all' });
+                  setIsTechAnalysisDone(false);
+                }}
+                className="text-primary text-xs font-medium hover:text-primary/80 lg:hidden text-left"
+              >
+                条件をリセット
+            </button>
+
+            {/* Quick Presets */}
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">クイック検索</span>
+              <div className="grid grid-cols-1 gap-2">
+                <button 
+                  onClick={() => applyPreset('oversold')}
+                  className="bg-[#192633] hover:bg-[#233648] border border-green-500/30 text-green-400 text-xs py-2 px-3 rounded-lg text-left transition-colors flex items-center gap-2"
+                >
+                  <span className="text-lg">🔥</span> 売られすぎ (RSI &lt; 30)
+                </button>
+                <button 
+                  onClick={() => applyPreset('uptrend')}
+                  className="bg-[#192633] hover:bg-[#233648] border border-blue-500/30 text-blue-400 text-xs py-2 px-3 rounded-lg text-left transition-colors flex items-center gap-2"
+                >
+                  <span className="text-lg">🚀</span> 上昇トレンド
+                </button>
+                <button 
+                  onClick={() => applyPreset('dip')}
+                  className="bg-[#192633] hover:bg-[#233648] border border-yellow-500/30 text-yellow-400 text-xs py-2 px-3 rounded-lg text-left transition-colors flex items-center gap-2"
+                >
+                  <span className="text-lg">📉</span> 押し目買い (トレンド + RSI低)
+                </button>
+              </div>
+            </div>
+
+            <div className="h-px w-full bg-[#233648]" />
 
             {/* Price Range */}
             <div className="flex flex-col gap-2">
@@ -347,13 +450,22 @@ export default function Screener() {
                   "w-full py-2 rounded-lg text-xs font-bold transition-all mt-2 flex items-center justify-center gap-2",
                   analyzing 
                     ? "bg-[#233648] text-[#92adc9] cursor-wait" 
-                    : "bg-primary text-white hover:bg-primary/80 shadow-lg shadow-primary/20"
+                    : isTechAnalysisDone
+                      ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-lg"
+                      : "bg-primary text-white hover:bg-primary/80 shadow-lg shadow-primary/20"
                 )}
               >
                 {analyzing ? (
                   <>
                     <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     分析中...
+                  </>
+                ) : isTechAnalysisDone ? (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    再分析を実行
                   </>
                 ) : (
                   <>
@@ -464,7 +576,11 @@ export default function Screener() {
               <tbody className="divide-y divide-[#233648]/50">
                 {filteredStocks.map((stock) => {
                   return (
-                    <tr key={stock.symbol} className="hover:bg-[#192633] cursor-pointer transition-colors">
+                    <tr 
+                      key={stock.symbol} 
+                      className="hover:bg-[#192633] cursor-pointer transition-colors"
+                      onClick={() => handleStockClick(stock)}
+                    >
                       <td className="px-4 py-3 font-bold text-white">{stock.symbol}</td>
                       <td className="px-4 py-3 text-[#92adc9]">{stock.name}</td>
                       <td className="px-4 py-3">
