@@ -24,6 +24,8 @@ export default function Workstation() {
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
   const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
   // Keep a ref to watchlist for stable callbacks
   const watchlistRef = useRef(watchlist);
@@ -93,14 +95,62 @@ export default function Workstation() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
-      <Header />
+      <div className="flex items-center border-b border-[#233648] bg-[#101922] pr-4">
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="lg:hidden p-4 text-[#92adc9] hover:text-white transition-colors border-r border-[#233648]"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <div className="flex-1">
+          <Header />
+        </div>
+        <button
+          onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
+          className="lg:hidden p-4 text-[#92adc9] hover:text-white transition-colors border-l border-[#233648]"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </button>
+      </div>
 
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Backdrop (Left) */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Mobile Backdrop (Right) */}
+        {isRightSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+            onClick={() => setIsRightSidebarOpen(false)}
+          />
+        )}
+
         {/* Left Sidebar: Watchlist */}
-        <aside className="w-80 min-w-[300px] flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
+        <aside className={cn(
+          "w-80 min-w-[300px] flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 transition-transform duration-300 ease-in-out z-40",
+          "lg:static lg:translate-x-0",
+          isSidebarOpen ? "fixed inset-y-0 left-0 translate-x-0" : "fixed inset-y-0 left-0 -translate-x-full lg:translate-x-0"
+        )}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#233648] bg-[#192633]/50">
             <span className="text-xs font-bold text-[#92adc9] uppercase tracking-wider whitespace-nowrap">ウォッチリスト</span>
             <div className="flex gap-1">
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="lg:hidden p-1 text-[#92adc9] hover:text-white mr-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
               <button className="p-1 hover:bg-[#233648] rounded text-[#92adc9] transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -264,7 +314,11 @@ export default function Workstation() {
         </section>
 
         {/* Right Sidebar: Level 2 & Signal Panel */}
-        <aside className="w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
+        <aside className={cn(
+          "w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0 transition-transform duration-300 ease-in-out z-40",
+          "lg:static lg:translate-x-0",
+          isRightSidebarOpen ? "fixed inset-y-0 right-0 translate-x-0" : "fixed inset-y-0 right-0 translate-x-full lg:translate-x-0"
+        )}>
           <div className="flex border-b border-[#233648] bg-[#192633]">
             <button
               onClick={() => setRightPanelMode('signal')}
