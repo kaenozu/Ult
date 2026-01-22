@@ -3,10 +3,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Navigation } from '@/app/components/Navigation';
-import { JAPAN_STOCKS, USA_STOCKS } from '@/app/data/stocks';
-import { Stock } from '@/app/types';
+import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
+import { Stock, OHLCV } from '@/app/types';
 import { cn, formatCurrency, formatPercent, formatVolume, getChangeColor } from '@/app/lib/utils';
 import { marketClient } from '@/app/lib/api/data-aggregator';
+import { filterByTechnicals, TechFilters } from '@/app/lib/screener-utils';
 
 type FilterField = 'price' | 'change' | 'volume' | 'sector' | 'market';
 type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
@@ -23,9 +24,18 @@ export default function Screener() {
     market: '',
   });
 
+  const [techFilters, setTechFilters] = useState<TechFilters>({
+    rsiMax: '',
+    rsiMin: '',
+    trend: 'all',
+  });
+
   const [sortField, setSortField] = useState<SortField>('changePercent');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [stocks, setStocks] = useState<Stock[]>([...JAPAN_STOCKS, ...USA_STOCKS]);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analyzedStocks, setAnalyzedStocks] = useState<string[]>([]);
+  const [isTechAnalysisDone, setIsTechAnalysisDone] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -53,6 +63,39 @@ export default function Screener() {
     return () => { mounted = false; };
   }, []);
 
+  const handleTechScreening = async () => {
+    setAnalyzing(true);
+    setAnalyzedStocks([]);
+    
+    const candidates = stocks.filter(stock => {
+      if (filters.priceMin && stock.price < parseFloat(filters.priceMin)) return false;
+      if (filters.priceMax && stock.price > parseFloat(filters.priceMax)) return false;
+      return true;
+    });
+
+    const passedSymbols: string[] = [];
+
+    // Limit concurrency to avoid overloading the browser/API
+    const CHUNK_SIZE = 3;
+    for (let i = 0; i < candidates.length; i += CHUNK_SIZE) {
+        const chunk = candidates.slice(i, i + CHUNK_SIZE);
+        await Promise.all(chunk.map(async (stock) => {
+            try {
+                const ohlcv = await fetchOHLCV(stock.symbol, stock.market, stock.price);
+                if (filterByTechnicals(stock, ohlcv, techFilters)) {
+                    passedSymbols.push(stock.symbol);
+                }
+            } catch (e) {
+                console.error(`Failed to analyze ${stock.symbol}`, e);
+            }
+        }));
+    }
+
+    setAnalyzedStocks(passedSymbols);
+    setIsTechAnalysisDone(true);
+    setAnalyzing(false);
+  };
+
   const filteredStocks = useMemo(() => {
     return stocks.filter(stock => {
       if (filters.priceMin && stock.price < parseFloat(filters.priceMin)) return false;
@@ -62,6 +105,12 @@ export default function Screener() {
       if (filters.volumeMin && stock.volume < parseFloat(filters.volumeMin)) return false;
       if (filters.sector && stock.sector !== filters.sector) return false;
       if (filters.market && stock.market !== filters.market) return false;
+      
+      const hasTechFilter = techFilters.rsiMax || techFilters.rsiMin || techFilters.trend !== 'all';
+      if (hasTechFilter && isTechAnalysisDone) {
+         if (!analyzedStocks.includes(stock.symbol)) return false;
+      }
+      
       return true;
     }).sort((a, b) => {
       let aVal = a[sortField];
@@ -235,6 +284,86 @@ export default function Screener() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="h-px w-full bg-[#233648]" />
+
+            {/* Technical Indicators */}
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">Technical Indicators</span>
+              
+              {/* RSI */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] text-[#92adc9]">RSI (14)</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={techFilters.rsiMin}
+                      onChange={(e) => {
+                        setTechFilters(prev => ({ ...prev, rsiMin: e.target.value }));
+                        setIsTechAnalysisDone(false); // Reset analysis state on filter change
+                      }}
+                      className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-[#92adc9]"
+                    />
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={techFilters.rsiMax}
+                      onChange={(e) => {
+                        setTechFilters(prev => ({ ...prev, rsiMax: e.target.value }));
+                        setIsTechAnalysisDone(false);
+                      }}
+                      className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-[#92adc9]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Trend */}
+              <div className="flex flex-col gap-2">
+                <span className="text-[10px] text-[#92adc9]">Trend (SMA50)</span>
+                <select
+                  value={techFilters.trend}
+                  onChange={(e) => {
+                    setTechFilters(prev => ({ ...prev, trend: e.target.value }));
+                    setIsTechAnalysisDone(false);
+                  }}
+                  className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white"
+                >
+                  <option value="all">Any</option>
+                  <option value="uptrend">Uptrend (Price &gt; SMA50)</option>
+                  <option value="downtrend">Downtrend (Price &lt; SMA50)</option>
+                </select>
+              </div>
+
+              <button
+                onClick={handleTechScreening}
+                disabled={analyzing}
+                className={cn(
+                  "w-full py-2 rounded-lg text-xs font-bold transition-all mt-2 flex items-center justify-center gap-2",
+                  analyzing 
+                    ? "bg-[#233648] text-[#92adc9] cursor-wait" 
+                    : "bg-primary text-white hover:bg-primary/80 shadow-lg shadow-primary/20"
+                )}
+              >
+                {analyzing ? (
+                  <>
+                    <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Analyzing...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Run Screening
+                  </>
+                )}
+              </button>
             </div>
 
             <div className="h-px w-full bg-[#233648]" />
