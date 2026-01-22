@@ -1,32 +1,35 @@
 /**
  * @jest-environment node
  */
-import { GET } from '../api/market/route';
-import YahooFinance from 'yahoo-finance2';
-
-// Mock instance methods
-const mockChart = jest.fn();
-const mockQuote = jest.fn();
-const mockHistorical = jest.fn();
-
-// Mock yahoo-finance2 as a class constructor
-jest.mock('yahoo-finance2', () => {
-  return jest.fn().mockImplementation(() => ({
-    chart: mockChart,
-    quote: mockQuote,
-    historical: mockHistorical,
-  }));
-});
+/**
+ * @jest-environment node
+ */
 
 describe('Market API GET', () => {
+  let GET: any;
+  let mockChart: any;
+
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetModules();
+    mockChart = jest.fn();
+    
+    jest.doMock('yahoo-finance2', () => {
+      return jest.fn(() => ({
+        chart: mockChart,
+        quote: jest.fn(),
+        historical: jest.fn(),
+      }));
+    });
+
+    // Import route after mocking
+    const route = require('../api/market/route');
+    GET = route.GET;
   });
 
   it('should return 500 and generic error message when yahooFinance fails', async () => {
     // Arrange
     const sensitiveError = 'Sensitive database connection string failed';
-    mockHistorical.mockRejectedValue(new Error(sensitiveError));
+    mockChart.mockRejectedValue(new Error(sensitiveError));
 
     // Construct a mock Request object
     const req = new Request('http://localhost/api/market?type=history&symbol=AAPL');
