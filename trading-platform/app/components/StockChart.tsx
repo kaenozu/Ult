@@ -15,7 +15,7 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV } from '@/app/types';
-import { formatCurrency, calculateSMA, calculateBollingerBands } from '@/app/lib/utils';
+import { formatCurrency, calculateSMA, calculateBollingerBands, calculateMACD } from '@/app/lib/utils';
 
 ChartJS.register(
   CategoryScale,
@@ -36,6 +36,7 @@ export interface StockChartProps {
   showIndicators?: boolean;
   showSMA?: boolean;
   showBollinger?: boolean;
+  showMACD?: boolean;
   loading?: boolean;
   error?: string | null;
   market?: 'japan' | 'usa';
@@ -50,6 +51,7 @@ export const StockChart = memo(function StockChart({
   showIndicators = true, 
   showSMA = true,
   showBollinger = false,
+  showMACD = false,
   loading = false, 
   error = null,
   market = 'usa',
@@ -64,13 +66,14 @@ export const StockChart = memo(function StockChart({
 
   const sma20 = useMemo(() => calculateSMA(prices, 20), [prices]);
   const { upper, lower } = useMemo(() => calculateBollingerBands(prices, 20, 2), [prices]);
+  const macdData = useMemo(() => calculateMACD(prices), [prices]);
 
-  // Memoize chart configuration to prevent Chart.js from re-rendering/animating when data hasn't changed
+  // Memoize chart configuration
   const chartData = useMemo(() => ({
     labels,
     datasets: [
       {
-        label: 'Price',
+        label: '価格',
         data: prices,
         borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -80,31 +83,34 @@ export const StockChart = memo(function StockChart({
         pointHoverRadius: 4,
         borderWidth: 2,
         order: 1,
+        yAxisID: 'y',
       },
       ...(showSMA ? [{
         label: 'SMA (20)',
         data: sma20,
-        borderColor: '#fbbf24', // Yellow
+        borderColor: '#fbbf24',
         borderWidth: 1.5,
         pointRadius: 0,
         tension: 0.1,
         fill: false,
         order: 2,
+        yAxisID: 'y',
       }] : []),
       ...(showBollinger ? [
         {
-          label: 'Bollinger Upper',
+          label: 'ボリバン+2σ',
           data: upper,
-          borderColor: 'rgba(59, 130, 246, 0.5)', // Blue with opacity
+          borderColor: 'rgba(59, 130, 246, 0.5)',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
           borderWidth: 1,
           pointRadius: 0,
           tension: 0.1,
-          fill: '+1', // Fill to next dataset (Lower)
+          fill: '+1',
           order: 3,
+          yAxisID: 'y',
         },
         {
-          label: 'Bollinger Lower',
+          label: 'ボリバン-2σ',
           data: lower,
           borderColor: 'rgba(59, 130, 246, 0.5)',
           borderWidth: 1,
@@ -112,10 +118,31 @@ export const StockChart = memo(function StockChart({
           tension: 0.1,
           fill: false,
           order: 4,
+          yAxisID: 'y',
+        }
+      ] : []),
+      ...(showMACD ? [
+        {
+          label: 'MACD',
+          data: macdData.macd,
+          borderColor: '#3b82f6',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          yAxisID: 'yMACD',
+          order: 10,
+        },
+        {
+          label: 'シグナル',
+          data: macdData.signal,
+          borderColor: '#f43f5e',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          yAxisID: 'yMACD',
+          order: 11,
         }
       ] : []),
     ],
-  }), [labels, prices, sma20, upper, lower, showSMA, showBollinger]);
+  }), [labels, prices, sma20, upper, lower, macdData, showSMA, showBollinger, showMACD]);
 
   const options = useMemo(() => ({
     responsive: true,
@@ -153,6 +180,7 @@ export const StockChart = memo(function StockChart({
         },
       },
       y: {
+        position: 'right' as const,
         grid: {
           color: 'rgba(35, 54, 72, 0.3)',
         },
@@ -161,20 +189,30 @@ export const StockChart = memo(function StockChart({
           callback: (value: number) => formatCurrency(value, market === 'japan' ? 'JPY' : 'USD'),
         },
       },
+      yMACD: {
+        display: showMACD,
+        position: 'left' as const,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          display: false,
+        }
+      }
     },
-  }), [market]);
+  }), [market, showMACD]);
 
   const volumeData = useMemo(() => ({
     labels,
     datasets: [
       {
-        label: 'Volume',
+        label: '出来高',
         data: volumes,
         backgroundColor: volumes.map((_, i) => {
           if (i === 0) return 'rgba(239, 68, 68, 0.5)';
           return prices[i] >= prices[i - 1]
-            ? 'rgba(239, 68, 68, 0.5)'
-            : 'rgba(16, 185, 129, 0.5)';
+            ? 'rgba(16, 185, 129, 0.5)'
+            : 'rgba(239, 68, 68, 0.5)';
         }),
         borderWidth: 0,
       },
@@ -193,12 +231,8 @@ export const StockChart = memo(function StockChart({
       },
     },
     scales: {
-      x: {
-        display: false,
-      },
-      y: {
-        display: false,
-      },
+      x: { display: false },
+      y: { display: false },
     },
   }), []);
 
@@ -240,7 +274,7 @@ export const StockChart = memo(function StockChart({
       <Line ref={chartRef as any} data={chartData} options={options as any} />
 
       {showVolume && (
-        <div className="absolute bottom-0 left-0 right-0 h-16">
+        <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none opacity-50">
           <Bar data={volumeData} options={volumeOptions as any} />
         </div>
       )}
