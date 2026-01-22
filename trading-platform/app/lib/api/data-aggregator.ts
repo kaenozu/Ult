@@ -154,7 +154,7 @@ class DataAggregatorImpl implements DataAggregator {
         try {
           const stock = this.getStockBySymbol(symbol);
           if (stock) {
-            const mockData = generateMockOHLCV(stock.price, days);
+            const mockData = generateMockOHLCV(stock.price, days, stock.symbol);
             
             return {
               success: true,
@@ -177,7 +177,7 @@ class DataAggregatorImpl implements DataAggregator {
     // If API is disabled, use mock data directly
     const stock = this.getStockBySymbol(symbol);
     if (stock) {
-      const mockData = generateMockOHLCV(stock.price, days);
+      const mockData = generateMockOHLCV(stock.price, days, stock.symbol);
       
       return {
         success: true,
