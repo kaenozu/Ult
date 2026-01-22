@@ -8,7 +8,7 @@ import { PositionTable } from '@/app/components/StockTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { fetchOHLCV, fetchSignal, ALL_STOCKS } from '@/app/data/stocks';
+import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { cn, formatCurrency } from '@/app/lib/utils';
 
@@ -51,17 +51,14 @@ export default function Workstation() {
   }, []);
 
   useEffect(() => {
-    const initializeData = async () => {
+    // Only initialize if no stock is selected
+    if (!selectedStock && watchlist.length > 0) {
       const defaultStock = watchlist[0];
-      if (defaultStock) {
-        setLocalSelectedStock(defaultStock);
-        setSelectedStock(defaultStock);
-        fetchData(defaultStock);
-      }
-    };
-
-    initializeData();
-  }, [fetchData]); // watchlist is initial only
+      setLocalSelectedStock(defaultStock);
+      setSelectedStock(defaultStock);
+      fetchData(defaultStock);
+    }
+  }, [fetchData, setSelectedStock, watchlist, selectedStock]);
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
@@ -77,7 +74,6 @@ export default function Workstation() {
   }, [closePosition]);
 
   const displayStock = selectedStock || watchlist[0];
-  const displaySignal = chartSignal;
 
   if (loading) {
     return (
