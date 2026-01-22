@@ -1,0 +1,50 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { BarChart3, Grid3X3, FileText, Filter, Moon, Sun } from 'lucide-react';
+import { useTradingStore } from '@/app/store/tradingStore';
+import { cn } from '@/app/lib/utils';
+
+export function Navigation() {
+  const pathname = usePathname();
+  const { theme, toggleTheme } = useTradingStore();
+
+  const navItems = [
+    { path: '/', label: 'ワークステーション', icon: BarChart3 },
+    { path: '/heatmap', label: 'ヒートマップ', icon: Grid3X3 },
+    { path: '/journal', label: 'ジャーナル', icon: FileText },
+    { path: '/screener', label: 'スクリーナー', icon: Filter },
+  ];
+
+  return (
+    <nav className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-[#192633] border border-[#233648] rounded-full shadow-2xl px-2 py-1 flex items-center gap-1">
+      {navItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = pathname === item.path;
+        return (
+          <Link
+            key={item.path}
+            href={item.path}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors',
+              isActive
+                ? 'bg-primary text-white'
+                : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
+            )}
+          >
+            <Icon className="w-4 h-4" />
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
+      <div className="w-px h-6 bg-[#233648] mx-1" />
+      <button
+        onClick={toggleTheme}
+        className="p-2 text-[#92adc9] hover:text-white rounded-full hover:bg-[#233648] transition-colors"
+      >
+        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+    </nav>
+  );
+}
