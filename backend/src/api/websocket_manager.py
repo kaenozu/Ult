@@ -58,18 +58,54 @@ class TypedConnection:
         self.is_authenticated = False
         self.connected_at = datetime.utcnow()
         self.user_id: Optional[str] = None
+        # Queue for outgoing messages
+        self._write_queue: asyncio.Queue[Optional[dict]] = asyncio.Queue()
+        self._write_task = asyncio.create_task(self._process_write_queue())
+
+    @property
+    def queue_size(self) -> int:
+        """Returns the current number of messages waiting in the write queue."""
+        return self._write_queue.qsize()
+
+    async def _process_write_queue(self) -> None:
+        """Background task to process the write queue"""
+        try:
+            while True:
+                data = await self._write_queue.get()
+                if data is None: # Sentinel to close
+                    break
+
+                try:
+                    await self.websocket.send_json(data)
+                    logger.debug(f"Sent message to {self.connection_id}")
+                except Exception as e:
+                    logger.error(f"Error sending message to {self.connection_id}: {e}")
+                    # If send fails, we might want to close connection or stop queue
+                    # For now, let's break and let the connection manager handle cleanup on next receive error?
+                    # Or we can re-raise?
+                    # Ideally, if send fails, the connection is likely dead.
+                    break
+                finally:
+                    self._write_queue.task_done()
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"Unexpected error in write loop for {self.connection_id}: {e}")
 
     async def send_message(self, message: WsMessageEnvelope) -> None:
         """
         Send a strictly typed message.
         Validates payload structure before sending.
         """
+        if self._write_task.done():
+            raise RuntimeError(f"Connection {self.connection_id} write task is closed")
+
         try:
             message_dict = message.model_dump(mode='json')
-            await self.websocket.send_json(message_dict)
-            logger.debug(f"Sent message {message.msg_id} to {self.connection_id}")
+            # Put in queue instead of sending directly
+            await self._write_queue.put(message_dict)
         except Exception as e:
-            logger.error(f"Error sending message to {self.connection_id}: {e}")
+            logger.error(f"Error queuing message to {self.connection_id}: {e}")
             raise
 
     async def send_error(
@@ -142,6 +178,22 @@ class TypedConnection:
             await self.send_error("RECEIVE_ERROR", str(e))
             return None
 
+    async def close(self) -> None:
+        """Gracefully close the connection and write task"""
+        # Stop the write loop
+        await self._write_queue.put(None)
+        try:
+            await self._write_task
+        except Exception:
+            pass
+
+        # Close websocket? The manager might do this or it might happen automatically.
+        # It's usually good practice to close if not already closed.
+        try:
+            await self.websocket.close()
+        except Exception:
+            pass
+
 
 # ============================================================================
 # MANAGER CLASS (Typed)
@@ -191,6 +243,9 @@ class TypedWebSocketManager:
         """Disconnect a connection and clean up"""
         if connection_id in self._connections:
             conn = self._connections[connection_id]
+
+            # Close connection properly
+            await conn.close()
 
             # Remove from subscriptions
             for channel in conn.subscriptions:

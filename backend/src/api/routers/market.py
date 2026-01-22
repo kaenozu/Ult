@@ -26,11 +26,7 @@ async def get_market_regime(ticker: str):
     Uses RegimeClassifier with heuristic logic (V1).
     """
     try:
-<<<<<<< HEAD
-        from src.data_temp.data_loader import fetch_stock_data
-=======
         from src.data.data_loader import fetch_stock_data
->>>>>>> main
         from src.evolution.regime_classifier import RegimeClassifier
         
         # Check cache (Simple in-memory for now)
@@ -279,11 +275,7 @@ async def get_signal(
         if strategy.upper() == "AUTO" or strategy.upper() == "CONSENSUS":
             from src.strategies.strategy_router import StrategyRouter
             from src.agents.consensus_engine import ConsensusEngine
-<<<<<<< HEAD
-            from src.data_temp.data_loader import fetch_external_data
-=======
             from src.data.data_loader import fetch_external_data
->>>>>>> main
             
             # Fetch External Data for Risk Agent (VIX, etc.)
             external_data = fetch_external_data(period="3mo")
@@ -433,22 +425,3 @@ async def get_macro_data():
     except Exception as e:
         logger.error(f"Error fetching macro data: {e}")
         return []
-
-<<<<<<< HEAD
-=======
-@router.get("/market/earnings", response_model=List[dict])
-async def get_upcoming_earnings(days: int = 14):
-    """
-    Get list of stocks with earnings in the next N days.
-    """
-    try:
-        from src.data.earnings_provider import earnings_provider
-        from src.core.constants import JP_STOCKS
-        
-        # Check cache/fetch
-        results = earnings_provider.get_upcoming_earnings(JP_STOCKS, days_horizon=days)
-        return results
-    except Exception as e:
-        logger.error(f"Error getting earnings data: {e}")
-        return []
->>>>>>> main
