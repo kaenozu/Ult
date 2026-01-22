@@ -172,7 +172,7 @@ export default function Screener() {
         <aside className="w-72 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0 z-10 max-lg:hidden">
           <div className="p-5 flex flex-col gap-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-white text-base font-bold">Filters</h3>
+              <h3 className="text-white text-base font-bold">フィルター</h3>
               <button
                 onClick={() => setFilters({
                   priceMin: '', priceMax: '', changeMin: '', changeMax: '',
@@ -180,18 +180,18 @@ export default function Screener() {
                 })}
                 className="text-primary text-xs font-medium hover:text-primary/80"
               >
-                Reset All
+                リセット
               </button>
             </div>
 
             {/* Price Range */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">Price</span>
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">価格</span>
               <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
                   <input
                     type="number"
-                    placeholder="Min"
+                    placeholder="最小"
                     value={filters.priceMin}
                     onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))}
                     className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-[#92adc9]"
@@ -200,7 +200,7 @@ export default function Screener() {
                 <div className="relative">
                   <input
                     type="number"
-                    placeholder="Max"
+                    placeholder="最大"
                     value={filters.priceMax}
                     onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))}
                     className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-[#92adc9]"
@@ -211,12 +211,12 @@ export default function Screener() {
 
             {/* Change Range */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">% Change</span>
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">騰落率 (%)</span>
               <div className="grid grid-cols-2 gap-2">
                 <div className="relative">
                   <input
                     type="number"
-                    placeholder="Min %"
+                    placeholder="最小 %"
                     value={filters.changeMin}
                     onChange={(e) => setFilters(prev => ({ ...prev, changeMin: e.target.value }))}
                     className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-[#92adc9]"
@@ -225,7 +225,7 @@ export default function Screener() {
                 <div className="relative">
                   <input
                     type="number"
-                    placeholder="Max %"
+                    placeholder="最大 %"
                     value={filters.changeMax}
                     onChange={(e) => setFilters(prev => ({ ...prev, changeMax: e.target.value }))}
                     className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-[#92adc9]"
@@ -236,10 +236,10 @@ export default function Screener() {
 
             {/* Volume */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">Volume</span>
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">出来高</span>
               <input
                 type="number"
-                placeholder="Min Volume"
+                placeholder="最小出来高"
                 value={filters.volumeMin}
                 onChange={(e) => setFilters(prev => ({ ...prev, volumeMin: e.target.value }))}
                 className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-[#92adc9]"
@@ -248,13 +248,13 @@ export default function Screener() {
 
             {/* Sector */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">Sector</span>
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">セクター</span>
               <select
                 value={filters.sector}
                 onChange={(e) => setFilters(prev => ({ ...prev, sector: e.target.value }))}
                 className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white"
               >
-                <option value="">All Sectors</option>
+                <option value="">すべて</option>
                 {sectors.map(sector => (
                   <option key={sector} value={sector}>{sector}</option>
                 ))}
@@ -263,12 +263,12 @@ export default function Screener() {
 
             {/* Market */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">Market</span>
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">市場</span>
               <div className="flex gap-2">
                 {[
-                  { id: '', label: 'All' },
-                  { id: 'japan', label: 'Japan' },
-                  { id: 'usa', label: 'US' },
+                  { id: '', label: '全て' },
+                  { id: 'japan', label: '日本' },
+                  { id: 'usa', label: '米国' },
                 ].map((market) => (
                   <button
                     key={market.id}
@@ -290,7 +290,7 @@ export default function Screener() {
 
             {/* Technical Indicators */}
             <div className="flex flex-col gap-3">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">Technical Indicators</span>
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">テクニカル指標</span>
               
               {/* RSI */}
               <div className="flex flex-col gap-2">
@@ -299,7 +299,7 @@ export default function Screener() {
                   <div className="relative">
                     <input
                       type="number"
-                      placeholder="Min"
+                      placeholder="最小"
                       value={techFilters.rsiMin}
                       onChange={(e) => {
                         setTechFilters(prev => ({ ...prev, rsiMin: e.target.value }));
@@ -311,7 +311,7 @@ export default function Screener() {
                   <div className="relative">
                     <input
                       type="number"
-                      placeholder="Max"
+                      placeholder="最大"
                       value={techFilters.rsiMax}
                       onChange={(e) => {
                         setTechFilters(prev => ({ ...prev, rsiMax: e.target.value }));
@@ -325,7 +325,7 @@ export default function Screener() {
 
               {/* Trend */}
               <div className="flex flex-col gap-2">
-                <span className="text-[10px] text-[#92adc9]">Trend (SMA50)</span>
+                <span className="text-[10px] text-[#92adc9]">トレンド (SMA50)</span>
                 <select
                   value={techFilters.trend}
                   onChange={(e) => {
@@ -334,9 +334,9 @@ export default function Screener() {
                   }}
                   className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white"
                 >
-                  <option value="all">Any</option>
-                  <option value="uptrend">Uptrend (Price &gt; SMA50)</option>
-                  <option value="downtrend">Downtrend (Price &lt; SMA50)</option>
+                  <option value="all">指定なし</option>
+                  <option value="uptrend">上昇 (価格 &gt; SMA50)</option>
+                  <option value="downtrend">下降 (価格 &lt; SMA50)</option>
                 </select>
               </div>
 
@@ -353,14 +353,14 @@ export default function Screener() {
                 {analyzing ? (
                   <>
                     <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Analyzing...
+                    分析中...
                   </>
                 ) : (
                   <>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    Run Screening
+                    詳細分析を実行
                   </>
                 )}
               </button>
@@ -371,7 +371,7 @@ export default function Screener() {
             {/* Results Count */}
             <div className="bg-[#192633] rounded-lg p-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs text-[#92adc9]">Results</span>
+                <span className="text-xs text-[#92adc9]">該当件数</span>
                 <span className="text-sm font-medium text-white">{filteredStocks.length}</span>
               </div>
             </div>
@@ -380,16 +380,34 @@ export default function Screener() {
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col min-w-0 bg-[#101922]">
-          <div className="flex flex-wrap justify-between items-end gap-3 px-6 py-5 border-b border-[#233648]/50">
-            <div className="flex min-w-72 flex-col gap-1">
-              <h1 className="text-white tracking-tight text-2xl font-bold leading-tight">Stock Screener</h1>
-              <div className="flex items-center gap-2 text-[#92adc9] text-sm font-normal">
-                <span>Find opportunities</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                <span className="text-white font-medium">{filteredStocks.length} stocks found</span>
+          <div className="flex flex-col gap-4 px-6 py-5 border-b border-[#233648]/50">
+            <div className="flex flex-wrap justify-between items-end gap-3">
+              <div className="flex min-w-72 flex-col gap-1">
+                <h1 className="text-white tracking-tight text-2xl font-bold leading-tight">株式スクリーナー</h1>
+                <div className="flex items-center gap-2 text-[#92adc9] text-sm font-normal">
+                  <span>投資機会を見つける</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="text-white font-medium">{filteredStocks.length} 銘柄が見つかりました</span>
+                </div>
               </div>
+            </div>
+            
+            {/* Usage Guide */}
+            <div className="bg-[#192633]/50 border border-[#233648] rounded-lg p-3 text-xs text-[#92adc9]">
+              <div className="font-bold text-white mb-1 flex items-center gap-2">
+                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                使い方ガイド
+              </div>
+              <p>
+                左側のフィルターを使って条件を設定してください。「価格」や「市場」などの基本条件で絞り込んだ後、
+                <span className="text-white font-medium mx-1">「テクニカル指標」</span>を設定して
+                <span className="text-primary font-medium mx-1">「詳細分析を実行」</span>ボタンを押すと、
+                各銘柄の過去データを取得してRSIやトレンド判定などの詳細なスクリーニングを行います。
+              </p>
             </div>
           </div>
 
@@ -400,7 +418,7 @@ export default function Screener() {
                 <tr>
                   <th className="px-4 py-3 cursor-pointer hover:text-white" onClick={() => handleSort('symbol')}>
                     <div className="flex items-center gap-1">
-                      Symbol
+                      銘柄コード
                       {sortField === 'symbol' && (
                         <svg className={`w-3 h-3 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -408,12 +426,12 @@ export default function Screener() {
                       )}
                     </div>
                   </th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Market</th>
-                  <th className="px-4 py-3">Sector</th>
+                  <th className="px-4 py-3">名称</th>
+                  <th className="px-4 py-3">市場</th>
+                  <th className="px-4 py-3">セクター</th>
                   <th className="px-4 py-3 cursor-pointer hover:text-white text-right" onClick={() => handleSort('price')}>
                     <div className="flex items-center justify-end gap-1">
-                      Price
+                      現在値
                       {sortField === 'price' && (
                         <svg className={`w-3 h-3 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -423,7 +441,7 @@ export default function Screener() {
                   </th>
                   <th className="px-4 py-3 cursor-pointer hover:text-white text-right" onClick={() => handleSort('changePercent')}>
                     <div className="flex items-center justify-end gap-1">
-                      % Change
+                      騰落率
                       {sortField === 'changePercent' && (
                         <svg className={`w-3 h-3 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -433,7 +451,7 @@ export default function Screener() {
                   </th>
                   <th className="px-4 py-3 cursor-pointer hover:text-white text-right" onClick={() => handleSort('volume')}>
                     <div className="flex items-center justify-end gap-1">
-                      Volume
+                      出来高
                       {sortField === 'volume' && (
                         <svg className={`w-3 h-3 ${sortDirection === 'asc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
