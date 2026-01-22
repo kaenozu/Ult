@@ -8,7 +8,7 @@ from typing import Any, Dict
 
 import pandas as pd
 
-from src.strategies_temp.evolved_strategy import EvolvedStrategy
+from src.strategies.evolved_strategy import EvolvedStrategy
 from src.regime_detector import MarketRegimeDetector
 
 logger = logging.getLogger(__name__)

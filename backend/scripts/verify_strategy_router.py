@@ -4,7 +4,8 @@ import sys
 import os
 
 # Add backend to path
-sys.path.append(os.path.join(os.getcwd(), "backend"))
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.strategies.strategy_router import StrategyRouter
 from src.evolution.regime_classifier import RegimeType
