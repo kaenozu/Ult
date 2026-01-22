@@ -12,7 +12,9 @@ Gemini CLIエージェントはこのファイルをコンテキストとして�
   - GitHubの操作には `gh` コマンドを使用する。
   - コミット操作には `node skills/smart-git.js "<message>"` を使用する。
 - **コマンド実行**:
-  - 複数のコマンドを連続実行する場合は `&&` を使用せず、`node skills/chain-commands.js "cmd1" "cmd2"` を使用する。これによりOS間の非互換性を回避する。
+  - 複数のコマンドを連続実行する場合は `&&` を使用せず、`node skills/chain-commands.js "cmd1" "cmd2"` を使用する。
+- **UI品質管理**:
+  - UIを変更した際は `node skills/ux-linter.js` を実行し、翻訳漏れやレスポンシブの不備がないか確認する。
 
 ## 技術スタック (Tech Stack)
 - **Framework**: Next.js 16.1.4 (App Router)
