@@ -119,7 +119,7 @@ export default function Heatmap() {
           </div>
         </div>
         <div className="flex flex-1 justify-end gap-6 items-center">
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-[#92adc9] hover:text-white transition-colors text-sm font-medium leading-normal">
               Dashboard
             </Link>
@@ -145,7 +145,7 @@ export default function Heatmap() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar Filters */}
-        <aside className="w-64 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0 z-10">
+        <aside className="w-64 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0 z-10 max-lg:hidden">
           <div className="p-5 flex flex-col gap-6">
             <div className="flex justify-between items-center">
               <h3 className="text-white text-base font-bold">Filters</h3>

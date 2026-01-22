@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2'; // Default export is the Class
 
-// In some versions/types, suppressNotices is not available on the default export type definition 
-// even if it exists at runtime, or we might not need it if the error was about instantiation.
-// The error "Call `const yahooFinance = new YahooFinance()` first" is key.
-// It implies we shouldn't use the singleton directly if it's not initialized?
-// Actually, let's remove suppressNotices for now to fix the build error, 
-// and address the runtime error by ensuring we catch it or ignore it if it's just a warning.
-// But "Call ... first" is a crash.
+const yf = new YahooFinance();
 
 function formatSymbol(symbol: string, market?: string): string {
   if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
@@ -34,7 +28,7 @@ export async function GET(request: Request) {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 300); // 300 days for good chart context
       
-      const result: any = await yahooFinance.chart(yahooSymbol, {
+      const result: any = await yf.chart(yahooSymbol, {
         period1: startDate.toISOString().split('T')[0],
         interval: '1d',
       });
@@ -61,7 +55,7 @@ export async function GET(request: Request) {
       const symbols = symbol.split(',').map(s => formatSymbol(s.trim(), market || undefined));
       
       if (symbols.length === 1) {
-        const result: any = await yahooFinance.quote(symbols[0]);
+        const result: any = await yf.quote(symbols[0]);
         return NextResponse.json({ 
           symbol: symbol,
           price: result.regularMarketPrice,
@@ -71,7 +65,7 @@ export async function GET(request: Request) {
           marketState: result.marketState
         });
       } else {
-        const results: any[] = await yahooFinance.quote(symbols);
+        const results: any[] = await yf.quote(symbols);
         const data = results.map(r => ({
           symbol: r.symbol.replace('.T', ''), // Strip .T for frontend consistency
           price: r.regularMarketPrice,
