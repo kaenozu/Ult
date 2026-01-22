@@ -17,7 +17,7 @@ export default function Workstation() {
   const [chartData, setChartData] = useState<OHLCV[]>(() => {
     // Initial optimistic state with mock data
     const defaultStock = watchlist[0];
-    return defaultStock ? generateMockOHLCV(defaultStock.price, 100) : [];
+    return defaultStock ? generateMockOHLCV(defaultStock.price, 100, defaultStock.symbol) : [];
   });
   const [chartSignal, setChartSignal] = useState<Signal | null>(() => {
     // Initial optimistic state with mock data
@@ -58,7 +58,7 @@ export default function Workstation() {
   const handleStockSelect = (stock: Stock) => {
     setLocalSelectedStock(stock);
     setSelectedStock(stock);
-    const data = generateMockOHLCV(stock.price, 100);
+    const data = generateMockOHLCV(stock.price, 100, stock.symbol);
     setChartData(data);
     setChartSignal(generateMockSignal(stock));
   };

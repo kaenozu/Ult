@@ -25,7 +25,7 @@ export default function Screener() {
   const [sortField, setSortField] = useState<SortField>('changePercent');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-  const allStocks = [...JAPAN_STOCKS, ...USA_STOCKS];
+  const allStocks = useMemo(() => [...JAPAN_STOCKS, ...USA_STOCKS], []);
 
   const filteredStocks = useMemo(() => {
     return allStocks.filter(stock => {
@@ -56,7 +56,7 @@ export default function Screener() {
         ? (aVal as number) - (bVal as number)
         : (bVal as number) - (aVal as number);
     });
-  }, [filters, sortField, sortDirection]);
+  }, [filters, sortField, sortDirection, allStocks]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -69,21 +69,8 @@ export default function Screener() {
 
   const sectors = [...new Set(allStocks.map(s => s.sector))];
 
-  const [signals, setSignals] = useState<Map<string, Signal>>(new Map());
-
-  useEffect(() => {
-    const generateSignals = () => {
-      const newSignals = new Map<string, Signal>();
-      allStocks.forEach(stock => {
-        newSignals.set(stock.symbol, generateMockSignal(stock));
-      });
-      setSignals(newSignals);
-    };
-    generateSignals();
-  }, [allStocks]);
-
   const getSignalForStock = (stock: Stock): Signal => {
-    return signals.get(stock.symbol) || generateMockSignal(stock);
+    return generateMockSignal(stock);
   };
 
   return (
