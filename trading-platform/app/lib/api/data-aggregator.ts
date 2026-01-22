@@ -1,23 +1,5 @@
-/**
- * Data Aggregator
- * 
- * Consolidates data from multiple sources:
- * 1. Primary: Alpha Vantage API (real-time data)
- * 2. Fallback: Mock data (for errors/development)
- * 
- * Handles rate limiting, caching, and error recovery.
- */
-
-import { AlphaVantageClient, getAlphaVantageClient, TimeSeriesData } from './alpha-vantage';
-import { generateMockOHLCV, generateMockSignal } from '@/app/data/stocks';
-import { getRateLimiter } from './rate-limiter';
 import { Stock, Signal, OHLCV } from '@/app/types';
-
-export interface DataSourceConfig {
-  enableAPI: boolean;
-  enableCache: boolean;
-  cacheDuration: number; // in milliseconds
-}
+import { analyzeStock } from '@/app/lib/analysis';
 
 export interface FetchResult<T> {
   success: boolean;
@@ -26,276 +8,119 @@ export interface FetchResult<T> {
   error?: string;
 }
 
-export interface DataAggregator {
-  fetchOHLCV: (symbol: string, days?: number) => Promise<FetchResult<OHLCV[]>>;
-  fetchSignal: (stock: Stock) => Promise<FetchResult<Signal>>;
-  prefetchData: (symbols: string[]) => Promise<void>;
-  clearCache: () => void;
-  getStatus: () => { cacheSize: number; lastFetch?: string };
-}
+class MarketDataClient {
+  private cache: Map<string, { data: any; timestamp: number }> = new Map();
+  // 5 minutes cache for real data to respect Yahoo's bandwidth and local performance
+  private cacheDuration: number = 5 * 60 * 1000; 
 
-/**
- * Simple in-memory cache
- */
-class SimpleCache {
-  private cache: Map<string, { data: any; timestamp: number }>;
-  private duration: number;
+  /**
+   * Fetch Historical Data (Chart)
+   */
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan'): Promise<FetchResult<OHLCV[]>> {
+    const cacheKey = `ohlcv-${symbol}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return { success: true, data: cached, source: 'cache' };
 
-  constructor(duration: number = 24 * 60 * 1000) { // 24 hours default
-    this.cache = new Map();
-    this.duration = duration;
+    try {
+      const res = await fetch(`/api/market?type=history&symbol=${symbol}&market=${market}`);
+      const json = await res.json();
+      
+      if (!res.ok || json.error) {
+        throw new Error(json.error || res.statusText);
+      }
+      
+      this.setCache(cacheKey, json.data);
+      return { success: true, data: json.data, source: 'api' };
+    } catch (err: any) {
+      console.error(`Fetch OHLCV failed for ${symbol}:`, err);
+      return { success: false, data: null, source: 'api', error: err.message };
+    }
   }
 
-  get(key: string): any | null {
+  /**
+   * Fetch Quotes for multiple symbols
+   */
+  async fetchQuotes(symbols: string[]): Promise<any[]> {
+    try {
+      // Yahoo Finance API endpoint handles batching
+      // We might need to split into chunks if too many, but 50 is fine
+      const symbolStr = symbols.join(',');
+      // We assume mixed markets might be an issue, but let's try.
+      // Actually our formatSymbol in API handles it if we pass "market" param?
+      // No, mixed markets in one call is tricky if we rely on "market" param.
+      // But formatSymbol uses .T for Japan. Yahoo distinguishes by suffix.
+      // So we can ignore "market" param for batch calls if we handle suffix in frontend or backend.
+      // Let's rely on backend formatSymbol which is naive.
+      // We should probably just pass raw symbols and let backend handle?
+      // Backend expects "market" param to apply logic.
+      // Strategy: Fetch Japan and USA separately.
+      
+      const res = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      return json.data || [json]; // Handle single or array
+    } catch (err) {
+      console.error('Batch fetch failed:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch Current Quote (Price)
+   */
+  async fetchQuote(symbol: string, market: 'japan' | 'usa' = 'japan'): Promise<any> {
+    const cacheKey = `quote-${symbol}`;
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const res = await fetch(`/api/market?type=quote&symbol=${symbol}&market=${market}`);
+      const json = await res.json();
+      
+      if (!res.ok || json.error) {
+        throw new Error(json.error || res.statusText);
+      }
+      
+      this.setCache(cacheKey, json);
+      return json;
+    } catch (err) {
+      console.error(`Fetch Quote failed for ${symbol}:`, err);
+      return null;
+    }
+  }
+
+  /**
+   * Generate Signal based on Real Data
+   */
+  async fetchSignal(stock: Stock): Promise<FetchResult<Signal>> {
+    try {
+      // We need history to analyze trend
+      const result = await this.fetchOHLCV(stock.symbol, stock.market);
+      
+      if (!result.success || !result.data || result.data.length === 0) {
+        throw new Error('No data available for analysis');
+      }
+
+      const signal = analyzeStock(stock.symbol, result.data, stock.market);
+      return { success: true, data: signal, source: 'api' };
+    } catch (err: any) {
+      return { success: false, data: null, source: 'api', error: err.message };
+    }
+  }
+
+  private getFromCache(key: string) {
     const item = this.cache.get(key);
     if (!item) return null;
-
-    const now = Date.now();
-    if (now - item.timestamp > this.duration) {
+    if (Date.now() - item.timestamp > this.cacheDuration) {
       this.cache.delete(key);
       return null;
     }
-
     return item.data;
   }
 
-  set(key: string, data: any): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-    });
-  }
-
-  delete(key: string): void {
-    this.cache.delete(key);
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  size(): number {
-    return this.cache.size;
+  private setCache(key: string, data: any) {
+    this.cache.set(key, { data, timestamp: Date.now() });
   }
 }
 
-/**
- * Data Aggregator Implementation
- */
-class DataAggregatorImpl implements DataAggregator {
-  private config: DataSourceConfig;
-  private cache: SimpleCache;
-  private alphaClient: AlphaVantageClient;
-  private rateLimiter: ReturnType<typeof getRateLimiter>;
-
-  constructor(config?: Partial<DataSourceConfig>) {
-    this.config = {
-      enableAPI: true,
-      enableCache: true,
-      cacheDuration: 24 * 60 * 1000, // 24 hours
-      ...config,
-    };
-
-    this.cache = new SimpleCache(this.config.cacheDuration);
-    this.alphaClient = getAlphaVantageClient();
-    this.rateLimiter = getRateLimiter();
-  }
-
-  /**
-   * Fetch OHLCV data with fallback
-   */
-  async fetchOHLCV(symbol: string, days: number = 100): Promise<FetchResult<OHLCV[]>> {
-    const cacheKey = `ohlcv-${symbol}-${days}`;
-
-    // Try cache first
-    if (this.config.enableCache) {
-      const cached = this.cache.get(cacheKey);
-      if (cached) {
-        return {
-          success: true,
-          data: cached,
-          source: 'cache',
-        };
-      }
-    }
-
-    // Try API
-    if (this.config.enableAPI) {
-      try {
-        // Fail fast if rate limit exceeded instead of waiting
-        // await this.rateLimiter.waitForNextRequest(); 
-        await this.rateLimiter.acquire();
-        
-        const apiData = await this.alphaClient.getDailyBars(symbol);
-        
-        // Cache the result
-        const mappedData: OHLCV[] = apiData.data.map(d => ({
-          date: d.timestamp,
-          open: d.open,
-          high: d.high,
-          low: d.low,
-          close: d.close,
-          volume: d.volume,
-        }));
-
-        if (this.config.enableCache) {
-          this.cache.set(cacheKey, mappedData);
-        }
-
-        return {
-          success: true,
-          data: mappedData,
-          source: 'api',
-        };
-      } catch (apiError: any) {
-        console.warn(`Alpha Vantage API error for ${symbol}:`, apiError.message);
-        
-        // Fallback to mock data
-        try {
-          const stock = this.getStockBySymbol(symbol);
-          if (stock) {
-            const mockData = generateMockOHLCV(stock.price, days, stock.symbol);
-            
-            return {
-              success: true,
-              data: mockData,
-              source: 'mock',
-              error: apiError.message,
-            };
-          }
-        } catch (mockError: any) {
-          return {
-            success: false,
-            data: null,
-            source: 'mock',
-            error: apiError.message,
-          };
-        }
-      }
-    }
-
-    // If API is disabled, use mock data directly
-    const stock = this.getStockBySymbol(symbol);
-    if (stock) {
-      const mockData = generateMockOHLCV(stock.price, days, stock.symbol);
-      
-      return {
-        success: true,
-        data: mockData,
-        source: 'mock',
-      };
-    }
-
-    return {
-      success: false,
-      data: null,
-      source: 'mock',
-      error: 'Stock not found',
-    };
-  }
-
-  /**
-   * Fetch signal with fallback
-   */
-  async fetchSignal(stock: Stock): Promise<FetchResult<Signal>> {
-    const cacheKey = `signal-${stock.symbol}`;
-
-    // Try cache first
-    if (this.config.enableCache) {
-      const cached = this.cache.get(cacheKey);
-      if (cached) {
-        return {
-          success: true,
-          data: cached,
-          source: 'cache',
-        };
-      }
-    }
-
-    // Try API (for now, we use mock signal logic)
-    // In the future, we can integrate with ML prediction service
-    const mockSignal = generateMockSignal(stock);
-    
-    // Cache the result
-    if (this.config.enableCache) {
-      this.cache.set(cacheKey, mockSignal);
-    }
-
-    return {
-      success: true,
-      data: mockSignal,
-      source: 'mock',
-    };
-  }
-
-  /**
-   * Prefetch data for multiple symbols
-   */
-  async prefetchData(symbols: string[]): Promise<void> {
-    const results = await Promise.allSettled(
-      symbols.map(symbol => this.fetchOHLCV(symbol, 50))
-    );
-
-    const failed = results.filter(r => r.status === 'rejected');
-    if (failed.length > 0) {
-      console.warn(`Prefetch failed for ${failed.length} symbols`);
-    }
-  }
-
-  /**
-   * Clear cache
-   */
-  clearCache(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * Get status
-   */
-  getStatus(): { cacheSize: number; lastFetch?: string } {
-    return {
-      cacheSize: this.cache.size(),
-      lastFetch: undefined, // Can be enhanced to track last fetch time
-    };
-  }
-
-  /**
-   * Get stock by symbol (helper)
-   */
-  private getStockBySymbol(symbol: string): Stock | undefined {
-    // This would typically come from the store
-    // For now, we return undefined and rely on mock data generation
-    return undefined;
-  }
-
-  /**
-   * Configure the aggregator
-   */
-  configure(config: Partial<DataSourceConfig>): void {
-    if (config.enableAPI !== undefined) {
-      this.config.enableAPI = config.enableAPI;
-    }
-    if (config.enableCache !== undefined) {
-      this.config.enableCache = config.enableCache;
-    }
-    if (config.cacheDuration !== undefined) {
-      this.config.cacheDuration = config.cacheDuration;
-      this.cache = new SimpleCache(config.cacheDuration);
-    }
-  }
-}
-
-// Singleton instance
-let aggregatorInstance: DataAggregatorImpl | null = null;
-
-export function getDataAggregator(config?: Partial<DataSourceConfig>): DataAggregator {
-  if (!aggregatorInstance) {
-    aggregatorInstance = new DataAggregatorImpl(config);
-  }
-
-  if (config) {
-    aggregatorInstance.configure(config);
-  }
-
-  return aggregatorInstance;
-}
+export const marketClient = new MarketDataClient();

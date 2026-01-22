@@ -8,27 +8,18 @@ import { PositionTable } from '@/app/components/StockTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { fetchOHLCVFromAPI, fetchSignalFromAPI, generateMockSignal, generateMockOHLCV, ALL_STOCKS } from '@/app/data/stocks';
+import { fetchOHLCV, fetchSignal, ALL_STOCKS } from '@/app/data/stocks';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { cn, formatCurrency } from '@/app/lib/utils';
 
 export default function Workstation() {
   const { portfolio, setSelectedStock, closePosition, watchlist } = useTradingStore();
-  const [chartData, setChartData] = useState<OHLCV[]>(() => {
-    // Initial optimistic state with mock data
-    const defaultStock = watchlist[0];
-    return defaultStock ? generateMockOHLCV(defaultStock.price, 100, defaultStock.symbol) : [];
-  });
-  const [chartSignal, setChartSignal] = useState<Signal | null>(() => {
-    // Initial optimistic state with mock data
-    const defaultStock = watchlist[0];
-    return defaultStock ? generateMockSignal(defaultStock) : null;
-  });
+  const [chartData, setChartData] = useState<OHLCV[]>([]);
+  const [chartSignal, setChartSignal] = useState<Signal | null>(null);
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
   const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
-  const [loading, setLoading] = useState(false); // No blocking loading state
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [dataSource, setDataSource] = useState<'api' | 'cache' | 'mock'>('mock');
 
   useEffect(() => {
     const initializeData = async () => {
@@ -36,31 +27,40 @@ export default function Workstation() {
       if (defaultStock) {
         setLocalSelectedStock(defaultStock);
         setSelectedStock(defaultStock);
-        
-        // Background update
-        try {
-          const data = await fetchOHLCVFromAPI(defaultStock.symbol, 100);
-          setChartData(data);
-          const signalData = await fetchSignalFromAPI(defaultStock);
-          setChartSignal(signalData);
-          setDataSource('api');
-        } catch (err) {
-          console.error('Data fetch error:', err);
-          // Keep using initial mock data if API fails
-          setDataSource('mock');
-        }
+        fetchData(defaultStock);
       }
     };
 
     initializeData();
   }, []);
 
+  const fetchData = async (stock: Stock) => {
+    setLoading(true);
+    setError(null);
+    setChartData([]); // Clear for skeleton
+    setChartSignal(null);
+
+    try {
+      const data = await fetchOHLCV(stock.symbol, stock.market);
+      if (data.length === 0) {
+        setError('No data available');
+      } else {
+        setChartData(data);
+        const signalData = await fetchSignal(stock);
+        setChartSignal(signalData);
+      }
+    } catch (err) {
+      console.error('Data fetch error:', err);
+      setError('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleStockSelect = (stock: Stock) => {
     setLocalSelectedStock(stock);
     setSelectedStock(stock);
-    const data = generateMockOHLCV(stock.price, 100, stock.symbol);
-    setChartData(data);
-    setChartSignal(generateMockSignal(stock));
+    fetchData(stock);
   };
 
   const handleClosePosition = (symbol: string) => {
@@ -85,15 +85,6 @@ export default function Workstation() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
-      {/* Mock Data Banner */}
-      <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 flex items-center justify-center gap-2 text-yellow-400 text-xs">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <span className="font-medium">注意:  表示データはモック（模擬データ）です。実際の市場データではありません。</span>
-        <span className="text-yellow-500/60">Mock Data Only</span>
-      </div>
-
       <Header />
 
       <main className="flex-1 flex overflow-hidden">
@@ -175,16 +166,16 @@ export default function Workstation() {
           {/* Main Chart Visualization */}
           <div className="flex-1 relative p-4 flex flex-col">
             <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
-              {chartData.length > 0 && displaySignal && (
-                <StockChart 
-                  data={chartData} 
-                  signal={displaySignal} 
-                  height={400} 
-                  showVolume={true} 
-                  market={displayStock?.market}
-                  currentPrice={displayStock?.price}
-                />
-              )}
+              <StockChart 
+                data={chartData} 
+                signal={chartSignal || undefined} 
+                height={400} 
+                showVolume={true} 
+                market={displayStock?.market}
+                currentPrice={displayStock?.price}
+                loading={loading}
+                error={error}
+              />
             </div>
 
             {/* RSI Sub-chart */}
@@ -245,7 +236,7 @@ export default function Workstation() {
         {/* Right Sidebar: Level 2 & Signal Panel */}
         <aside className="w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0">
           {displayStock && (
-            <SignalPanel stock={displayStock} />
+            <SignalPanel stock={displayStock} signal={chartSignal} loading={loading} />
           )}
 
           {/* Level 2 / Order Book */}

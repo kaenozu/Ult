@@ -3,9 +3,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Navigation } from '@/app/components/Navigation';
-import { JAPAN_STOCKS, USA_STOCKS, generateMockSignal } from '@/app/data/stocks';
-import { Stock, Signal } from '@/app/types';
+import { JAPAN_STOCKS, USA_STOCKS } from '@/app/data/stocks';
+import { Stock } from '@/app/types';
 import { cn, formatCurrency, formatPercent, formatVolume, getChangeColor } from '@/app/lib/utils';
+import { marketClient } from '@/app/lib/api/data-aggregator';
 
 type FilterField = 'price' | 'change' | 'volume' | 'sector' | 'market';
 type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
@@ -24,11 +25,36 @@ export default function Screener() {
 
   const [sortField, setSortField] = useState<SortField>('changePercent');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [stocks, setStocks] = useState<Stock[]>([...JAPAN_STOCKS, ...USA_STOCKS]);
 
-  const allStocks = useMemo(() => [...JAPAN_STOCKS, ...USA_STOCKS], []);
+  useEffect(() => {
+    let mounted = true;
+    const fetchAllData = async () => {
+      const symbols = stocks.map(s => s.symbol);
+      const quotes = await marketClient.fetchQuotes(symbols);
+      
+      if (mounted && quotes.length > 0) {
+        setStocks(prev => prev.map(s => {
+          const q = quotes.find(q => q.symbol === s.symbol);
+          if (q) {
+            return {
+              ...s,
+              price: q.price,
+              change: q.change,
+              changePercent: q.changePercent * 100,
+              volume: q.volume,
+            };
+          }
+          return s;
+        }));
+      }
+    };
+    fetchAllData();
+    return () => { mounted = false; };
+  }, []);
 
   const filteredStocks = useMemo(() => {
-    return allStocks.filter(stock => {
+    return stocks.filter(stock => {
       if (filters.priceMin && stock.price < parseFloat(filters.priceMin)) return false;
       if (filters.priceMax && stock.price > parseFloat(filters.priceMax)) return false;
       if (filters.changeMin && stock.changePercent < parseFloat(filters.changeMin)) return false;
@@ -56,7 +82,7 @@ export default function Screener() {
         ? (aVal as number) - (bVal as number)
         : (bVal as number) - (aVal as number);
     });
-  }, [filters, sortField, sortDirection, allStocks]);
+  }, [filters, sortField, sortDirection, stocks]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -67,24 +93,10 @@ export default function Screener() {
     }
   };
 
-  const sectors = [...new Set(allStocks.map(s => s.sector))];
-
-  const getSignalForStock = (stock: Stock): Signal => {
-    return generateMockSignal(stock);
-  };
+  const sectors = [...new Set(stocks.map(s => s.sector))];
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
-      {/* Mock Data Banner */}
-      <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 flex items-center justify-center gap-2 text-yellow-400 text-xs">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <span className="font-medium">注意:  表示データはモック（模擬データ）です。実際の市場データではありません。</span>
-        <span className="text-yellow-500/60">Mock Data Only</span>
-      </div>
-
-      {/* Header */}
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 text-white">
@@ -315,12 +327,10 @@ export default function Screener() {
                       )}
                     </div>
                   </th>
-                  <th className="px-4 py-3 text-center">Signal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#233648]/50">
                 {filteredStocks.map((stock) => {
-                  const signal = getSignalForStock(stock);
                   return (
                     <tr key={stock.symbol} className="hover:bg-[#192633] cursor-pointer transition-colors">
                       <td className="px-4 py-3 font-bold text-white">{stock.symbol}</td>
@@ -344,17 +354,6 @@ export default function Screener() {
                       </td>
                       <td className="px-4 py-3 text-right text-[#92adc9]">
                         {formatVolume(stock.volume)}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span className={cn(
-                          'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
-                          signal.type === 'BUY' && 'bg-green-500/20 text-green-500',
-                          signal.type === 'SELL' && 'bg-red-500/20 text-red-500',
-                          signal.type === 'HOLD' && 'bg-gray-500/20 text-gray-400'
-                        )}>
-                          {signal.type}
-                          <span className="text-[10px] opacity-70">{signal.confidence}%</span>
-                        </span>
                       </td>
                     </tr>
                   );
