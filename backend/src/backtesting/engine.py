@@ -35,12 +35,47 @@ class BacktestEngine:
         commission: float = BACKTEST_DEFAULT_COMMISSION_RATE,
         slippage: float = BACKTEST_DEFAULT_SLIPPAGE_RATE,
         allow_short: bool = True,
+        chaos_config: Optional[Dict[str, Any]] = None,
     ) -> None:
+        """
+        Initialize BacktestEngine.
+
+        Args:
+            chaos_config: Dictionary containing chaos parameters:
+                - latency_ms (float): Simulated latency in milliseconds (0 = none)
+                - slippage_std_dev (float): Standard deviation of slippage (0 = deterministic)
+                - packet_loss_prob (float): Probability of order failure (0.0 - 1.0)
+        """
         self.initial_capital = initial_capital
         self.position_size = position_size
         self.commission = commission
         self.slippage = slippage
         self.allow_short = allow_short
+        self.chaos_config = chaos_config or {}
+
+    def _apply_chaos_to_price(self, price: float) -> float:
+        """Apply chaotic slippage to execution price."""
+        if not self.chaos_config:
+            return price
+
+        # Standard slippage is already handled by self.slippage, but chaos adds variance
+        chaos_slippage_std = self.chaos_config.get("slippage_std_dev", 0.0)
+        if chaos_slippage_std > 0:
+            # Add random noise to price (log-normal or normal distribution)
+            # Using simple normal distribution for percentage impact
+            noise_pct = np.random.normal(0, chaos_slippage_std)
+            return price * (1 + noise_pct)
+        return price
+
+    def _should_fail_order(self) -> bool:
+        """Determine if order should fail due to packet loss."""
+        if not self.chaos_config:
+            return False
+
+        loss_prob = self.chaos_config.get("packet_loss_prob", 0.0)
+        if loss_prob > 0:
+            return np.random.random() < loss_prob
+        return False
 
     def _size_position(self, ticker: str, portfolio_value: float, exec_price: float) -> float:
         """Calculate number of shares for a new position.
@@ -141,6 +176,15 @@ class BacktestEngine:
             for ticker, df in aligned_data.items():
                 today_sig = df["Signal"].iloc[i]
                 exec_price = df["Open"].iloc[i + 1]
+
+                # --- CHAOS INJECTION ---
+                simulated_packet_loss = self._should_fail_order()
+                exec_price = self._apply_chaos_to_price(exec_price)
+
+                # Latency simulation: For daily bars, we can't easily shift by ms.
+                # True latency simulation would require Tick data or minute data.
+                # For now, we rely on Slippage (Execution Price) and Packet Loss (Failure).
+
                 position = holdings[ticker]
                 exit_executed = False
                 today_high = df["High"].iloc[i]
@@ -164,28 +208,36 @@ class BacktestEngine:
                             and trailing_stop_levels[ticker] > 0
                             and today_low <= trailing_stop_levels[ticker]
                         ):
-                            trades.append(
-                                {
-                                    "ticker": ticker,
-                                    "entry_date": None,
-                                    "exit_date": full_index[i],
-                                    "entry_price": entry,
-                                    "exit_price": trailing_stop_levels[ticker],
-                                    "return": (trailing_stop_levels[ticker] - entry) / entry,
-                                    "type": "Long",
-                                    "reason": "Trailing Stop",
-                                }
-                            )
-                            cash += holdings[ticker] * trailing_stop_levels[ticker]
-                            holdings[ticker] = 0.0
-                            entry_prices[ticker] = 0.0
-                            trailing_stop_levels[ticker] = 0.0
-                            highest_prices[ticker] = 0.0
-                            exit_executed = True
-                            continue
+                            # Simulation: If packet loss occurs, bot fails to send "Market" exit order
+                            # triggered by internal trailing stop logic.
+                            if simulated_packet_loss:
+                                pass # Missed exit
+                            else:
+                                trades.append(
+                                    {
+                                        "ticker": ticker,
+                                        "entry_date": None,
+                                        "exit_date": full_index[i],
+                                        "entry_price": entry,
+                                        "exit_price": trailing_stop_levels[ticker],
+                                        "return": (trailing_stop_levels[ticker] - entry) / entry,
+                                        "type": "Long",
+                                        "reason": "Trailing Stop",
+                                    }
+                                )
+                                cash += holdings[ticker] * trailing_stop_levels[ticker]
+                                holdings[ticker] = 0.0
+                                entry_prices[ticker] = 0.0
+                                trailing_stop_levels[ticker] = 0.0
+                                highest_prices[ticker] = 0.0
+                                exit_executed = True
+                                continue
 
                         # Check take profit
                         elif take_profit and (today_high - entry) / entry >= take_profit:
+                            # TP/SL usually reside on Broker (GTC), so packet loss shouldn't affect them
+                            # UNLESS they are bot-managed soft stops.
+                            # Let's assume TP/SL are Hard Stops (Broker Side) -> No Packet Loss.
                             take_profit_price = entry * (1 + take_profit)
                             trades.append(
                                 {
@@ -231,7 +283,8 @@ class BacktestEngine:
                             continue
 
                 # ----- EXIT LOGIC FOR INTEGER SIGNALS -----
-                if isinstance(today_sig, (int, np.integer, float, np.floating)):
+                # Apply Packet Loss check for Signal-based exits
+                if not simulated_packet_loss and isinstance(today_sig, (int, np.integer, float, np.floating)):
                     if position > 0 and today_sig <= -0.5:
                         entry = entry_prices[ticker]
                         ret = (exec_price - entry) / entry
@@ -271,7 +324,8 @@ class BacktestEngine:
                         exit_executed = True
 
                 # ----- ORDER OBJECT LOGIC -----
-                if isinstance(today_sig, Order):
+                # Apply Packet Loss check for Signal-based exits
+                if not simulated_packet_loss and isinstance(today_sig, Order):
                     # Ensure ticker attribute is set
                     if not today_sig.ticker:
                         today_sig.ticker = ticker
@@ -311,6 +365,10 @@ class BacktestEngine:
 
                     # Execute order if conditions met
                     if should_execute:
+                        # Apply chaos to fill price again if we are using limit/stop
+                        # (We applied it to 'exec_price' which is Open, but limit/stop might fill at trigger)
+                        fill_price = self._apply_chaos_to_price(fill_price)
+
                         # BUY action
                         if today_sig.action.upper() == "BUY":
                             if holdings[ticker] == 0:
@@ -356,7 +414,8 @@ class BacktestEngine:
                                 entry_prices[ticker] = 0.0
                                 exit_executed = True
 
-                if not exit_executed and isinstance(today_sig, (int, np.integer, float, np.floating)):
+                # Apply Packet Loss check for Entry Logic (Integer Signals)
+                if not exit_executed and not simulated_packet_loss and isinstance(today_sig, (int, np.integer, float, np.floating)):
                     if holdings[ticker] == 0 and today_sig >= 0.5:
                         # Open long position
                         shares = self._size_position(ticker, current_portfolio_value, exec_price)
