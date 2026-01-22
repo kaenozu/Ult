@@ -115,10 +115,28 @@ export const useTradingStore = create<TradingStore>()(
         };
       }),
 
-      addPosition: (position) => set((state) => {
-        const positions = [...state.portfolio.positions, position];
+      addPosition: (newPosition) => set((state) => {
+        let positions = [...state.portfolio.positions];
+        const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol);
+
+        if (existingIndex >= 0) {
+          const existing = positions[existingIndex];
+          const totalCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
+          const totalQty = existing.quantity + newPosition.quantity;
+          
+          positions[existingIndex] = {
+            ...existing,
+            quantity: totalQty,
+            avgPrice: totalCost / totalQty,
+            currentPrice: newPosition.currentPrice
+          };
+        } else {
+          positions.push(newPosition);
+        }
+
         const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
         const totalProfit = positions.reduce((sum, p) => sum + (p.currentPrice - p.avgPrice) * p.quantity, 0);
+        
         return {
           portfolio: {
             ...state.portfolio,

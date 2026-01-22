@@ -7,6 +7,7 @@ import { StockTable } from '@/app/components/StockTable';
 import { PositionTable } from '@/app/components/StockTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
+import { OrderPanel } from '@/app/components/OrderPanel';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { fetchOHLCV, fetchSignal, ALL_STOCKS } from '@/app/data/stocks';
 import { Stock, OHLCV, Signal } from '@/app/types';
@@ -22,6 +23,7 @@ export default function Workstation() {
   const [error, setError] = useState<string | null>(null);
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
+  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
 
   // Keep a ref to watchlist for stable callbacks
   const watchlistRef = useRef(watchlist);
@@ -262,17 +264,47 @@ export default function Workstation() {
 
         {/* Right Sidebar: Level 2 & Signal Panel */}
         <aside className="w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
-          {displayStock && (
-            <SignalPanel 
-              stock={displayStock} 
-              signal={chartSignal} 
-              ohlcv={chartData}
-              loading={loading} 
-            />
-          )}
+          <div className="flex border-b border-[#233648] bg-[#192633]">
+            <button
+              onClick={() => setRightPanelMode('signal')}
+              className={cn(
+                'flex-1 py-2 text-xs font-bold transition-colors',
+                rightPanelMode === 'signal' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
+              )}
+            >
+              分析 & シグナル
+            </button>
+            <button
+              onClick={() => setRightPanelMode('order')}
+              className={cn(
+                'flex-1 py-2 text-xs font-bold transition-colors',
+                rightPanelMode === 'order' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
+              )}
+            >
+              注文パネル
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {displayStock && (
+              rightPanelMode === 'signal' ? (
+                <SignalPanel 
+                  stock={displayStock} 
+                  signal={chartSignal} 
+                  ohlcv={chartData}
+                  loading={loading} 
+                />
+              ) : (
+                <OrderPanel 
+                  stock={displayStock} 
+                  currentPrice={displayStock.price} 
+                />
+              )
+            )}
+          </div>
 
           {/* Level 2 / Order Book */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden border-t border-[#233648]">
             <div className="px-4 py-3 border-b border-[#233648] bg-[#192633]/50 flex justify-between items-center">
               <span className="text-xs font-bold text-[#92adc9] uppercase tracking-wider">板情報</span>
               <span className="text-[10px] bg-blue-500/20 px-2 py-0.5 rounded text-blue-400 font-bold border border-blue-500/30">
