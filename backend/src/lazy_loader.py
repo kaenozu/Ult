@@ -115,7 +115,7 @@ def _register_default_models(loader: LazyModelLoader):
         return TransformerPredictor()
 
     def load_rl():
-        from src.strategies_temp.rl_strategy import RLStrategy
+        from src.strategies.rl_strategy import RLStrategy
 
         return RLStrategy()
 

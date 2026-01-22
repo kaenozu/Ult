@@ -1,10 +1,9 @@
 
 import sys
 from pathlib import Path
-# Current: Ult/verify_db_config.py
-# parents[0] = Ult
-# We need to add Ult/backend
-sys.path.append(str(Path(__file__).resolve().parent / "backend"))
+# Updated for location: backend/scripts/verify_db_config.py
+# We need to add backend directory to sys.path to import src modules
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 from src.database_manager import db_manager
 import json
 

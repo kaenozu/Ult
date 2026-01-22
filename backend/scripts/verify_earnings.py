@@ -3,7 +3,8 @@ import sys
 import os
 
 # Add backend to path
-sys.path.insert(0, os.path.join(os.getcwd(), 'backend'))
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.data.earnings_provider import earnings_provider
 
