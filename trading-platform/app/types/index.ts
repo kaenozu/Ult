@@ -75,8 +75,20 @@ export interface JournalEntry {
   status: 'OPEN' | 'CLOSED';
 }
 
+export interface Order {
+  id: string;
+  symbol: string;
+  type: 'MARKET' | 'LIMIT';
+  side: 'BUY' | 'SELL';
+  quantity: number;
+  price?: number;
+  status: 'PENDING' | 'FILLED' | 'CANCELLED';
+  date: string;
+}
+
 export interface Portfolio {
   positions: Position[];
+  orders: Order[];
   totalValue: number;
   totalProfit: number;
   dailyPnL: number;
