@@ -115,7 +115,7 @@ export function calculateEMA(prices: number[], period: number): number[] {
   for (let i = 0; i < period && i < prices.length; i++) {
     sum += prices[i];
   }
-  let initialSMA = sum / period;
+    const initialSMA = sum / period;
   ema.push(initialSMA);
 
   for (let i = period; i < prices.length; i++) {
@@ -150,7 +150,6 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
       const rs = avgGain / (avgLoss || 0.0001);
       rsi.push(100 - 100 / (1 + rs));
     } else {
-      const prevRSI = rsi[i - 1];
       const currentGain = gains[i - 1];
       const currentLoss = losses[i - 1];
       const avgGain = (gains.slice(i - period, i).reduce((a, b) => a + b, 0) + currentGain) / period;
