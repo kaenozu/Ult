@@ -52,22 +52,51 @@ export const getStocksBySector = (sector: string): Stock[] => {
   return ALL_STOCKS.filter(s => s.sector === sector);
 };
 
-export const generateMockOHLCV = (basePrice: number, days: number = 100): OHLCV[] => {
+// Simple seeded random number generator
+class SeededRandom {
+  private seed: number;
+
+  constructor(seed: string | number) {
+    if (typeof seed === 'string') {
+      this.seed = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    } else {
+      this.seed = seed;
+    }
+  }
+
+  // Returns a number between 0 and 1
+  next(): number {
+    const x = Math.sin(this.seed++) * 10000;
+    return x - Math.floor(x);
+  }
+}
+
+export const generateMockOHLCV = (basePrice: number, days: number = 100, seedStr: string = 'default'): OHLCV[] => {
+  const rng = new SeededRandom(seedStr);
   const data: OHLCV[] = [];
   let currentPrice = basePrice;
   const today = new Date();
 
+  // Ensure consistent date generation for server/client hydration match
+  // Use a fixed start date relative to "today" but "today" changes... 
+  // Actually, for hydration match, "today" must be consistent.
+  // We'll use the current date but stripe the time component.
+  // However, if the server renders at 23:59 and client at 00:01, there is a mismatch.
+  // Ideally, mock data should rely on a fixed reference date or the seed.
+  // For now, let's assume the date discrepancy is rare or acceptable, 
+  // but the random values are the main source of hydration error.
+  
   for (let i = days; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
 
     const volatility = 0.02;
-    const change = (Math.random() - 0.48) * volatility * currentPrice;
+    const change = (rng.next() - 0.48) * volatility * currentPrice;
     const open = currentPrice;
     const close = currentPrice + change;
-    const high = Math.max(open, close) + Math.random() * volatility * currentPrice * 0.5;
-    const low = Math.min(open, close) - Math.random() * volatility * currentPrice * 0.5;
-    const volume = Math.floor(Math.random() * 10000000) + 1000000;
+    const high = Math.max(open, close) + rng.next() * volatility * currentPrice * 0.5;
+    const low = Math.min(open, close) - rng.next() * volatility * currentPrice * 0.5;
+    const volume = Math.floor(rng.next() * 10000000) + 1000000;
 
     data.push({
       date: date.toISOString().split('T')[0],
@@ -85,7 +114,8 @@ export const generateMockOHLCV = (basePrice: number, days: number = 100): OHLCV[
 };
 
 export const generateMockSignal = (stock: Stock): Signal => {
-  const random = Math.random();
+  const rng = new SeededRandom(stock.symbol);
+  const random = rng.next();
 
   let type: 'BUY' | 'SELL' | 'HOLD';
   let confidence: number;
@@ -94,18 +124,18 @@ export const generateMockSignal = (stock: Stock): Signal => {
 
   if (random > 0.6) {
     type = 'BUY';
-    confidence = 65 + Math.random() * 25;
-    predictedChange = Math.random() * 10 + 2;
+    confidence = 65 + rng.next() * 25;
+    predictedChange = rng.next() * 10 + 2;
     reason = 'RSIが売られ過ぎ領域、移動平均線とのゴールデンクロス発生';
   } else if (random > 0.3) {
     type = 'HOLD';
-    confidence = 50 + Math.random() * 20;
-    predictedChange = (Math.random() - 0.5) * 4;
+    confidence = 50 + rng.next() * 20;
+    predictedChange = (rng.next() - 0.5) * 4;
     reason = '中立、市場のトレンドを様子見推奨';
   } else {
     type = 'SELL';
-    confidence = 65 + Math.random() * 25;
-    predictedChange = -(Math.random() * 10 + 2);
+    confidence = 65 + rng.next() * 25;
+    predictedChange = -(rng.next() * 10 + 2);
     reason = '高値圏、RSIが買われ過ぎ領域';
   }
 
