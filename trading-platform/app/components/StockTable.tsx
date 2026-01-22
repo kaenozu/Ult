@@ -55,12 +55,12 @@ export function StockTable({ stocks, onSelect, selectedSymbol, showChange = true
   return (
     <div className="overflow-y-auto flex-1">
       <table className="w-full text-left text-xs tabular-nums">
-        <thead className="text-[10px] uppercase text-[#92adc9] font-medium sticky top-0 bg-[#141e27] z-10">
+        <thead className="text-[10px] uppercase text-[#92adc9] font-bold sticky top-0 bg-[#141e27] z-10 border-b border-[#233648]">
           <tr>
-            <th className="px-3 py-2">Sym</th>
-            <th className="px-2 py-2 text-right">Last</th>
-            {showChange && <th className="px-2 py-2 text-right">% Chg</th>}
-            {showVolume && <th className="px-2 py-2 text-right">Vol</th>}
+            <th className="px-3 py-2">銘柄</th>
+            <th className="px-1 py-2 text-right">現在値</th>
+            {showChange && <th className="px-1 py-2 text-right">前日比</th>}
+            {showVolume && <th className="px-1 py-2 text-right">出来高</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-[#233648]/50">
@@ -75,20 +75,20 @@ export function StockTable({ stocks, onSelect, selectedSymbol, showChange = true
             >
               <td className="px-3 py-2">
                 <div className="flex flex-col">
-                  <span className="font-bold text-white">{stock.symbol}</span>
-                  <span className="text-[10px] text-[#92adc9] truncate max-w-[80px]">{stock.name}</span>
+                  <span className="font-bold text-white leading-tight">{stock.symbol}</span>
+                  <span className="text-[10px] text-[#92adc9] truncate max-w-[90px]">{stock.name}</span>
                 </div>
               </td>
-              <td className="px-2 py-2 text-right text-white">
+              <td className="px-1 py-2 text-right text-white font-medium">
                 {stock.market === 'japan' ? formatCurrency(stock.price, 'JPY') : formatCurrency(stock.price, 'USD')}
               </td>
               {showChange && (
-                <td className={cn('px-2 py-2 text-right font-medium', getChangeColor(stock.change))}>
+                <td className={cn('px-1 py-2 text-right font-medium', getChangeColor(stock.change))}>
                   {formatPercent(stock.changePercent)}
                 </td>
               )}
               {showVolume && (
-                <td className="px-2 py-2 text-right text-[#92adc9]">
+                <td className="px-1 py-2 text-right text-[#92adc9]">
                   {formatVolume(stock.volume)}
                 </td>
               )}
@@ -112,15 +112,15 @@ export function PositionTable({ positions, onClose }: PositionTableProps) {
   return (
     <div className="flex-1 overflow-auto">
       <table className="w-full text-left text-xs tabular-nums">
-        <thead className="text-[10px] uppercase text-[#92adc9] font-medium sticky top-0 bg-[#141e27] z-10">
+        <thead className="text-[10px] uppercase text-[#92adc9] font-bold sticky top-0 bg-[#141e27] z-10 border-b border-[#233648]">
           <tr>
-            <th className="px-4 py-2">Symbol</th>
-            <th className="px-4 py-2">Side</th>
-            <th className="px-4 py-2 text-right">Qty</th>
-            <th className="px-4 py-2 text-right">Avg Price</th>
-            <th className="px-4 py-2 text-right">Mark</th>
-            <th className="px-4 py-2 text-right">Mkt Val</th>
-            <th className="px-4 py-2 text-right">Unr P&L</th>
+            <th className="px-4 py-2">銘柄</th>
+            <th className="px-4 py-2">売買</th>
+            <th className="px-4 py-2 text-right">数量</th>
+            <th className="px-4 py-2 text-right">平均単価</th>
+            <th className="px-4 py-2 text-right">現在値</th>
+            <th className="px-4 py-2 text-right">評価額</th>
+            <th className="px-4 py-2 text-right">評価損益</th>
             <th className="px-4 py-2"></th>
           </tr>
         </thead>
