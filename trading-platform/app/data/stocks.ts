@@ -64,3 +64,60 @@ export async function fetchSignal(stock: Stock): Promise<Signal | null> {
   const result = await marketClient.fetchSignal(stock);
   return result.data;
 }
+
+// --- Mock Data Generators ---
+
+export function generateMockOHLCV(startPrice: number, count: number): OHLCV[] {
+  const data: OHLCV[] = [];
+  let currentPrice = startPrice;
+  const now = new Date();
+
+  for (let i = 0; i < count; i++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - (count - i));
+    
+    const change = currentPrice * (Math.random() * 0.04 - 0.02);
+    const open = currentPrice;
+    const close = currentPrice + change;
+    const high = Math.max(open, close) + (Math.random() * 0.01 * currentPrice);
+    const low = Math.min(open, close) - (Math.random() * 0.01 * currentPrice);
+    const volume = Math.floor(Math.random() * 1000000) + 500000;
+
+    data.push({
+      date: date.toISOString().split('T')[0],
+      open,
+      high,
+      low,
+      close,
+      volume,
+    });
+    currentPrice = close;
+  }
+  return data;
+}
+
+export function generateMockSignal(stock: Stock): Signal {
+  const types: ('BUY' | 'SELL' | 'HOLD')[] = ['BUY', 'SELL', 'HOLD'];
+  const type = types[Math.floor(Math.random() * types.length)];
+  const confidence = Math.floor(Math.random() * 40) + 55; // 55-95
+  const predictedChange = (Math.random() * 10 - 5); // -5% to +5%
+  
+  const targetPrice = type === 'BUY' 
+    ? stock.price * (1 + (Math.abs(predictedChange) / 100))
+    : stock.price * (1 - (Math.abs(predictedChange) / 100));
+    
+  const stopLoss = type === 'BUY'
+    ? stock.price * (1 - (Math.abs(predictedChange) / 200))
+    : stock.price * (1 + (Math.abs(predictedChange) / 200));
+
+  return {
+    symbol: stock.symbol,
+    type,
+    confidence,
+    targetPrice,
+    stopLoss,
+    reason: `テクニカル指標とAIモデルの統合分析により、短期的な${type === 'BUY' ? '上昇' : type === 'SELL' ? '下落' : '横ばい'}トレンドが予想されます。`,
+    predictedChange,
+    predictionDate: new Date().toISOString().split('T')[0],
+  };
+}
