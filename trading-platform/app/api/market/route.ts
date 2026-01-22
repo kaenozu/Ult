@@ -63,16 +63,23 @@ export async function GET(request: Request) {
           marketState: result.marketState
         });
       } else {
-        const results: any[] = await yf.quote(symbols);
-        const data = results.map(r => ({
-          symbol: r.symbol.replace('.T', ''), // Strip .T for frontend consistency
-          price: r.regularMarketPrice,
-          change: r.regularMarketChange,
-          changePercent: r.regularMarketChangePercent,
-          volume: r.regularMarketVolume,
-          marketState: r.marketState
-        }));
-        return NextResponse.json({ data });
+        try {
+          const results: any[] = await yf.quote(symbols, { validateResult: false });
+          const data = results.map(r => ({
+            symbol: r.symbol.replace('.T', ''), // Strip .T for frontend consistency
+            price: r.regularMarketPrice,
+            change: r.regularMarketChange,
+            changePercent: r.regularMarketChangePercent,
+            volume: r.regularMarketVolume,
+            marketState: r.marketState
+          }));
+          return NextResponse.json({ data });
+        } catch (batchError) {
+          console.error('Batch quote failed, attempting fallback:', batchError);
+          // Fallback: Return empty list or partial data if possible
+          // For now, let's just return what we can or empty to avoid 500 loop
+          return NextResponse.json({ data: [] }); 
+        }
       }
     }
 

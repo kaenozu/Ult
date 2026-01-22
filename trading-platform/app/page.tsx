@@ -263,7 +263,12 @@ export default function Workstation() {
         {/* Right Sidebar: Level 2 & Signal Panel */}
         <aside className="w-80 flex flex-col border-l border-[#233648] bg-[#141e27] shrink-0 max-lg:hidden">
           {displayStock && (
-            <SignalPanel stock={displayStock} signal={chartSignal} loading={loading} />
+            <SignalPanel 
+              stock={displayStock} 
+              signal={chartSignal} 
+              ohlcv={chartData}
+              loading={loading} 
+            />
           )}
 
           {/* Level 2 / Order Book */}
