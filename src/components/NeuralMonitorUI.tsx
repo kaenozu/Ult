@@ -253,104 +253,62 @@ const NeuralMonitorUI: React.FC = () => {
         </div>
       </div>
 
-      <div
-        style={{
-          marginTop: '20px',
-          height: '8px',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '4px',
-          overflow: 'hidden',
-        }}
-      >
+      <div className="mt-5 h-2 bg-white/10 rounded-full overflow-hidden">
         <div
-          style={{
-            width: `${monitorState.circuitBreaker.healthScore}%`,
-            height: '100%',
-            background: `linear-gradient(90deg, #22c55e, #16a34a)`,
-            borderRadius: '4px',
-            transition: 'width 0.5s ease',
-          }}
+          className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${monitorState.circuitBreaker.healthScore}%` }}
         />
       </div>
     </div>
   );
 
   const renderMetricsGrid = () => (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
-      }}
-    >
+    <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
       {[
         {
           label: 'Response Time',
           value: `${monitorState.metrics.responseTime}ms`,
           unit: 'ms',
-          color: '#3b82f6',
+          colorClass: 'text-blue-500',
         },
         {
           label: 'Error Rate',
           value: `${monitorState.metrics.errorRate}%`,
           unit: '%',
-          color: '#8b5cf6',
+          colorClass: 'text-purple-500',
         },
         {
           label: 'Throughput',
           value: `${monitorState.metrics.throughput}`,
           unit: 'req/s',
-          color: '#06b6d4',
+          colorClass: 'text-cyan-500',
         },
         {
           label: 'CPU Usage',
           value: `${monitorState.metrics.cpuUsage}%`,
           unit: '%',
-          color: '#f59e0b',
+          colorClass: 'text-amber-500',
         },
         {
           label: 'Memory Usage',
           value: `${monitorState.metrics.memoryUsage}%`,
           unit: '%',
-          color: '#10b981',
+          colorClass: 'text-emerald-500',
         },
       ].map(metric => (
         <div
           key={metric.label}
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '1px solid rgba(255,255,255,0.05)',
-          }}
+          className="bg-white/5 p-5 rounded-xl border border-white/5"
         >
-          <div
-            style={{
-              fontSize: '12px',
-              color: '#888',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              marginBottom: '8px',
-            }}
-          >
+          <div className="text-xs text-gray-400 uppercase tracking-widest mb-2">
             {metric.label}
           </div>
           <div
-            style={{
-              fontSize: '28px',
-              fontWeight: 700,
-              color: metric.color,
-            }}
+            className={`text-2xl font-bold ${metric.colorClass}`}
           >
             {metric.value}
           </div>
-          <div
-            style={{
-              fontSize: '12px',
-              color: '#666',
-              marginTop: '4px',
-            }}
-          >
+          <div className="text-xs text-gray-500 mt-1">
             {metric.unit}
           </div>
         </div>
