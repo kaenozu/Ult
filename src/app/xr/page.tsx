@@ -1,4 +1,9 @@
-import InteractiveStockGalaxy from "@/components/features/xr/InteractiveStockGalaxy";
+import dynamic from "next/dynamic";
+
+const InteractiveStockGalaxy = dynamic(
+  () => import("@/components/features/xr/InteractiveStockGalaxy"),
+  { ssr: false }
+);
 
 export default function WebXRPage() {
   return (
