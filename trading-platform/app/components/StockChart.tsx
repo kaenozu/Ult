@@ -160,6 +160,20 @@ export function StockChart({
     },
   };
 
+  if (error) {
+    return (
+      <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded overflow-hidden" style={{ height }}>
+        <div className="text-center p-4">
+          <svg className="w-12 h-12 text-red-400 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-red-400 font-bold">データの取得に失敗しました</p>
+          {error && <p className="text-red-300 text-sm mt-1">{error}</p>}
+        </div>
+      </div>
+    );
+  }
+
   if (loading || data.length === 0) {
     return (
       <div className="relative w-full bg-[#131b23] border border-[#233648] rounded overflow-hidden" style={{ height }}>
@@ -171,23 +185,9 @@ export function StockChart({
         </div>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex flex-col items-center">
-            <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2"></div>
-            <p className="text-xs text-[#92adc9] animate-pulse">Fetching Real Market Data...</p>
+            <div className="h-8 w-8 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin mb-2"></div>
+            <p className="text-xs text-[#92adc9] animate-pulse">データを取得中...</p>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="relative w-full h-full flex items-center justify-center bg-red-500/10">
-        <div className="text-center">
-          <svg className="w-12 h-12 text-red-400 mx-auto" fill="none" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6 938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-          <p className="text-red-400 mt-2">データの取得に失敗しました</p>
-          {error && <p className="text-red-300 text-sm">{error}</p>}
         </div>
       </div>
     );
