@@ -5,7 +5,37 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { StockChart } from '@/app/components/StockChart';
-import { generateMockOHLCV } from '@/app/data/stocks';
+import { OHLCV } from '@/app/types';
+
+function generateMockOHLCV(startPrice: number, days: number): OHLCV[] {
+  const data: OHLCV[] = [];
+  let currentPrice = startPrice;
+  const now = new Date();
+
+  for (let i = days; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+
+    const open = currentPrice;
+    const change = (Math.random() - 0.5) * 10;
+    const close = open + change;
+    const high = Math.max(open, close) + Math.random() * 5;
+    const low = Math.min(open, close) - Math.random() * 5;
+    const volume = Math.floor(Math.random() * 1000000);
+
+    data.push({
+      date: date.toISOString().split('T')[0],
+      open,
+      high,
+      low,
+      close,
+      volume,
+    });
+
+    currentPrice = close;
+  }
+  return data;
+}
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -30,7 +60,7 @@ describe('StockChart', () => {
 
   it('shows loading state', () => {
     render(<StockChart data={[]} loading={true} />);
-    expect(screen.getByText(/データを取得中/i)).toBeInTheDocument();
+    expect(screen.getByText(/データを取得中.../i)).toBeInTheDocument();
   });
 
   it('handles error state', () => {
