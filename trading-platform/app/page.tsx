@@ -114,8 +114,8 @@ export default function Workstation() {
         {/* Center: Chart Area */}
         <section className="flex-1 flex flex-col min-w-0 bg-[#101922] relative">
           {/* Chart Header/Toolbar */}
-          <div className="h-10 border-b border-[#233648] flex items-center justify-between px-4 bg-[#192633]/30 shrink-0">
-            <div className="flex items-center gap-4">
+          <div className="min-h-10 border-b border-[#233648] flex flex-wrap items-center justify-between px-4 py-1 gap-2 bg-[#192633]/30 shrink-0">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg">{displayStock?.symbol}</span>
                 <span className="text-xs text-[#92adc9]">{displayStock?.name}</span>
