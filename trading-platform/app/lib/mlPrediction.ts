@@ -1,5 +1,5 @@
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '../types';
-import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from './utils';
+import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR, roundToTickSize } from './utils';
 
 interface PredictionFeatures {
   rsi: number;
@@ -127,6 +127,20 @@ class MLPredictionService {
     const currentPrice = data[data.length - 1].close;
     const currentATR = indicators.atr[indicators.atr.length - 1] || currentPrice * 0.02;
     
+    // Check for minimum data length
+    if (data.length < 20) {
+      return {
+        symbol: stock.symbol,
+        type: 'HOLD',
+        confidence: 0,
+        targetPrice: currentPrice,
+        stopLoss: currentPrice,
+        reason: '分析に必要なデータ期間（最低20日間）が不足しています。',
+        predictedChange: 0,
+        predictionDate: new Date().toISOString().split('T')[0],
+      };
+    }
+
     // Use ATR for volatility-adjusted targets
     const targetMove = currentATR * 2.5;
     const stopMove = currentATR * 1.5;
@@ -157,8 +171,8 @@ class MLPredictionService {
       symbol: stock.symbol,
       type: signalType,
       confidence: Math.round(prediction.confidence),
-      targetPrice: parseFloat(targetPrice.toFixed(2)),
-      stopLoss: parseFloat(stopLoss.toFixed(2)),
+      targetPrice: roundToTickSize(targetPrice, stock.market),
+      stopLoss: roundToTickSize(stopLoss, stock.market),
       reason,
       predictedChange: parseFloat(prediction.ensemblePrediction.toFixed(2)),
       predictionDate: new Date().toISOString().split('T')[0],

@@ -39,7 +39,7 @@ export const HistoryTable = memo(({ entries }: HistoryTableProps) => {
                   'px-1 py-2 font-medium',
                   entry.signalType === 'BUY' ? 'text-green-500' : 'text-red-500'
                 )}>
-                  {entry.signalType}
+                  {entry.signalType === 'BUY' ? '買い' : '売り'}
                 </td>
                 <td className="px-4 py-2 text-right text-white">{entry.quantity}</td>
                 <td className="px-4 py-2 text-right text-[#92adc9]">

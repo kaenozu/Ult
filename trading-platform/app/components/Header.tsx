@@ -1,15 +1,20 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Search, Settings, User, Wifi, WifiOff, Edit2 } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { Search, Settings, User, Wifi, WifiOff, Edit2, Plus } from 'lucide-react';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { formatCurrency } from '@/app/lib/utils';
+import { formatCurrency, cn } from '@/app/lib/utils';
+import { ALL_STOCKS } from '@/app/data/stocks';
+import { Stock } from '@/app/types';
 
 export function Header() {
-  const { portfolio, isConnected, toggleConnection, setCash } = useTradingStore();
+  const { portfolio, isConnected, toggleConnection, setCash, addToWatchlist, setSelectedStock, watchlist } = useTradingStore();
   const [isEditingCash, setIsEditingCash] = useState(false);
   const [cashInput, setCashInput] = useState('');
+  const [searchQuery, setSearchInput] = useState('');
+  const [showResults, setShowResults] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const dailyPnL = portfolio.positions.reduce((sum, p) => {
     const change = (p.currentPrice - p.avgPrice) * p.quantity;
@@ -17,13 +22,24 @@ export function Header() {
     return sum + (change - prevChange);
   }, 0);
 
-  const dailyPnLPercent = (dailyPnL / (portfolio.totalValue - dailyPnL)) * 100;
+  const dailyPnLPercent = (dailyPnL / (portfolio.totalValue - dailyPnL || 1)) * 100;
 
   useEffect(() => {
     if (isEditingCash && inputRef.current) {
       inputRef.current.focus();
     }
   }, [isEditingCash]);
+
+  // Click outside search to close
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleCashClick = () => {
     setCashInput(portfolio.cash.toString());
@@ -44,6 +60,22 @@ export function Header() {
     } else if (e.key === 'Escape') {
       setIsEditingCash(false);
     }
+  };
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return ALL_STOCKS.filter(s => 
+      s.symbol.toLowerCase().includes(query) || 
+      s.name.toLowerCase().includes(query)
+    ).slice(0, 8);
+  }, [searchQuery]);
+
+  const handleStockSelect = (stock: Stock) => {
+    addToWatchlist(stock);
+    setSelectedStock(stock);
+    setSearchInput('');
+    setShowResults(false);
   };
 
   return (
@@ -91,7 +123,7 @@ export function Header() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <div className="relative group">
+        <div className="relative group" ref={searchRef}>
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#92adc9]">
             <Search className="w-4 h-4" />
           </div>
@@ -99,8 +131,50 @@ export function Header() {
             className="block w-64 p-2 pl-10 text-sm text-white bg-[#192633] border border-[#233648] rounded-lg focus:ring-primary focus:border-primary placeholder-[#92adc9]"
             placeholder="銘柄名、コードで検索"
             type="text"
+            value={searchQuery}
+            onChange={(e) => {
+                setSearchInput(e.target.value);
+                setShowResults(true);
+            }}
+            onFocus={() => setShowResults(true)}
             aria-label="銘柄検索"
           />
+          
+          {/* Search Results Dropdown */}
+          {showResults && searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-[#141e27] border border-[#233648] rounded-lg shadow-2xl z-50 overflow-hidden">
+                <div className="px-3 py-2 border-b border-[#233648] bg-[#192633]/50">
+                    <span className="text-[10px] font-bold text-[#92adc9] uppercase tracking-wider">検索結果</span>
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                    {searchResults.map((stock) => (
+                        <button
+                            key={stock.symbol}
+                            onClick={() => handleStockSelect(stock)}
+                            className="w-full flex items-center justify-between px-4 py-2 hover:bg-[#192633] transition-colors group"
+                        >
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-white text-sm">{stock.symbol}</span>
+                                <span className="text-[10px] text-[#92adc9]">{stock.name}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className={cn(
+                                    "text-[10px] px-1.5 py-0.5 rounded font-bold",
+                                    stock.market === 'japan' ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400"
+                                )}>
+                                    {stock.market === 'japan' ? 'JP' : 'US'}
+                                </span>
+                                {watchlist.some(s => s.symbol === stock.symbol) ? (
+                                    <span className="text-[10px] text-green-500 font-bold">追加済み</span>
+                                ) : (
+                                    <Plus className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                )}
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </div>
+          )}
         </div>
         <button
           onClick={toggleConnection}

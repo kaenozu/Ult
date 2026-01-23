@@ -257,3 +257,65 @@ export function calculateATR(
 
   return atr;
 }
+
+/**
+ * Get the daily price limit (stop limit) for Japanese stocks based on the reference price.
+ * Follows the standard TSE daily price limit table.
+ */
+export function getPriceLimit(referencePrice: number): number {
+  if (referencePrice < 100) return 30;
+  if (referencePrice < 200) return 50;
+  if (referencePrice < 500) return 80;
+  if (referencePrice < 700) return 100;
+  if (referencePrice < 1000) return 150;
+  if (referencePrice < 1500) return 300;
+  if (referencePrice < 2000) return 400;
+  if (referencePrice < 3000) return 500;
+  if (referencePrice < 5000) return 700;
+  if (referencePrice < 7000) return 1000;
+  if (referencePrice < 10000) return 1500;
+  if (referencePrice < 15000) return 3000;
+  if (referencePrice < 20000) return 4000;
+  if (referencePrice < 30000) return 5000;
+  if (referencePrice < 50000) return 7000;
+  if (referencePrice < 70000) return 10000;
+  if (referencePrice < 100000) return 15000;
+  if (referencePrice < 150000) return 30000;
+  if (referencePrice < 200000) return 40000;
+  if (referencePrice < 300000) return 50000;
+  if (referencePrice < 500000) return 70000;
+  if (referencePrice < 700000) return 100000;
+  if (referencePrice < 1000000) return 150000;
+  return 300000; // Simplified for very high prices
+}
+
+/**
+ * Get the tick size for Japanese stocks based on price.
+ * Follows the standard TSE tick size table (for non-TOPIX100 stocks).
+ */
+export function getTickSize(price: number): number {
+  if (price <= 3000) return 1;
+  if (price <= 5000) return 5;
+  if (price <= 10000) return 10;
+  if (price <= 30000) return 50;
+  if (price <= 50000) return 100;
+  if (price <= 100000) return 500;
+  if (price <= 300000) return 1000;
+  if (price <= 500000) return 5000;
+  if (price <= 1000000) return 10000;
+  if (price <= 3000000) return 50000;
+  if (price <= 5000000) return 100000;
+  return 500000;
+}
+
+/**
+ * Round a price to the nearest valid tick size for the Japanese market.
+ */
+export function roundToTickSize(price: number, market: 'japan' | 'usa' = 'japan'): number {
+  if (market === 'usa') {
+    return Number(price.toFixed(2));
+  }
+  
+  const tickSize = getTickSize(price);
+  return Math.round(price / tickSize) * tickSize;
+}

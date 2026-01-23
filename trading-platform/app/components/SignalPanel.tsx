@@ -28,7 +28,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           <div className="h-4 w-12 bg-[#233648] rounded animate-pulse" />
         </div>
         <div className="h-48 bg-[#192633]/50 rounded-lg border border-[#233648] animate-pulse flex items-center justify-center">
-          <span className="text-[#92adc9]/50 text-xs">Analyzing Market Data...</span>
+          <span className="text-[#92adc9]/50 text-xs">市場データを分析中...</span>
         </div>
       </div>
     );
@@ -75,11 +75,11 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
                 'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm',
                 signal.confidence >= 80 ? 'bg-white text-black' : 'bg-black/20 text-white/70'
               )}>
-                {signal.confidence >= 80 ? '🔥 High Conviction' : 'Normal Signal'}
+                {signal.confidence >= 80 ? '🔥 強気シグナル' : '通常シグナル'}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-[#92adc9] uppercase font-bold tracking-widest">Confidence</div>
+              <div className="text-[10px] text-[#92adc9] uppercase font-bold tracking-widest">予測信頼度</div>
               <div className={cn('text-xl font-black tabular-nums', getConfidenceColor(signal.confidence))}>
                 {signal.confidence}%
               </div>
@@ -94,7 +94,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
                 signal.type === 'SELL' && 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]',
                 signal.type === 'HOLD' && 'text-gray-400'
               )}>
-                {signal.type}
+                {signal.type === 'BUY' ? '買い' : signal.type === 'SELL' ? '売り' : '維持'}
               </span>
               <span className="text-[10px] font-bold text-[#92adc9] mt-1 ml-1 uppercase">推奨アクション</span>
             </div>
@@ -111,7 +111,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
           <div className="mt-6 space-y-3">
             <div className="relative pt-4">
-              <div className="absolute top-0 left-0 text-[10px] font-bold text-[#92adc9] uppercase tracking-widest">Price Target Analysis</div>
+              <div className="absolute top-0 left-0 text-[10px] font-bold text-[#92adc9] uppercase tracking-widest">目標価格・リスク管理</div>
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <div className="text-[10px] text-[#92adc9] mb-1">利確ターゲット</div>
@@ -175,7 +175,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
                   <div>
                     <div className="flex items-center gap-2">
                       <span className={cn('font-bold', trade.type === 'BUY' ? 'text-green-500' : 'text-red-500')}>
-                        {trade.type}
+                        {trade.type === 'BUY' ? '買い' : '売り'}
                       </span>
                       <span className="text-[#92adc9]">{trade.entryDate}</span>
                     </div>
