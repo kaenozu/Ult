@@ -49,7 +49,7 @@ export default function Workstation() {
     try {
       const data = await fetchOHLCV(stock.symbol, stock.market, stock.price);
       if (data.length === 0) {
-        setError('No data available');
+        setError('利用可能なデータがありません');
       } else {
         setChartData(data);
         const signalData = await fetchSignal(stock);
@@ -57,25 +57,23 @@ export default function Workstation() {
       }
     } catch (err) {
       console.error('Data fetch error:', err);
-      setError('Failed to fetch data');
+      setError('データの取得に失敗しました');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const initializeData = async () => {
-      // Priority: 1. storeSelectedStock (from screener), 2. watchlist[0] (default)
-      const stockToSelect = storeSelectedStock || watchlist[0];
-      if (stockToSelect && !selectedStock) {
-        setLocalSelectedStock(stockToSelect);
-        if (!storeSelectedStock) setSelectedStock(stockToSelect);
-        fetchData(stockToSelect);
-      }
-    };
-
-    initializeData();
-  }, [fetchData, storeSelectedStock, watchlist, setSelectedStock, selectedStock]);
+    if (storeSelectedStock) {
+      setLocalSelectedStock(storeSelectedStock);
+      fetchData(storeSelectedStock);
+    } else if (watchlist.length > 0 && !selectedStock) {
+      const defaultStock = watchlist[0];
+      setLocalSelectedStock(defaultStock);
+      setSelectedStock(defaultStock);
+      fetchData(defaultStock);
+    }
+  }, [storeSelectedStock, fetchData, watchlist, setSelectedStock]); // Removed selectedStock from deps to avoid loop if needed, but ensured fetch on change
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
@@ -253,10 +251,10 @@ export default function Workstation() {
             </div>
             {chartData.length > 0 && (
               <div className="flex items-center gap-4 text-sm tabular-nums">
-                <span className="text-[#92adc9]">O: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.open || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                <span className="text-[#92adc9]">H: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.high || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                <span className="text-[#92adc9]">L: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.low || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                <span className="text-[#92adc9]">C: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.close || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+                <span className="text-[#92adc9]">始: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.open || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+                <span className="text-[#92adc9]">高: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.high || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+                <span className="text-[#92adc9]">安: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.low || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+                <span className="text-[#92adc9]">終: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.close || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
               </div>
             )}
           </div>
@@ -432,7 +430,7 @@ export default function Workstation() {
                           <td className="py-1 px-4 text-center font-bold text-sm text-white flex justify-center items-center gap-2" colSpan={3}>
                             {displayStock ? formatCurrency(displayStock.price, displayStock.market === 'japan' ? 'JPY' : 'USD') : '-'}
                             <span className="text-[10px] font-normal text-[#92adc9]">
-                              Spread: 0.02
+                              スプレッド: 0.02
                             </span>
                           </td>
                         </tr>

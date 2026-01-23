@@ -29,6 +29,44 @@ class MarketDataClient {
   private cacheDuration: number = 5 * 60 * 1000; 
 
   /**
+   * Helper for fetch with exponential backoff
+   */
+  private async fetchWithRetry<T>(
+    url: string, 
+    options: RequestInit = {}, 
+    retries: number = 3, 
+    backoff: number = 500
+  ): Promise<T> {
+    try {
+      const res = await fetch(url, options);
+      
+      if (res.status === 429) {
+        // Rate limited - wait longer
+        const retryAfter = res.headers.get('Retry-After');
+        const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : backoff * 4;
+        console.warn(`Rate limit (429) hit. Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        return this.fetchWithRetry(url, options, retries - 1, backoff * 2);
+      }
+
+      const json = await res.json() as MarketResponse<T>;
+      
+      if (!res.ok || json.error) {
+        throw new Error(json.error || res.statusText);
+      }
+      
+      return json.data as T;
+    } catch (err) {
+      if (retries > 0) {
+        // Wait for exponential backoff
+        await new Promise(resolve => setTimeout(resolve, backoff));
+        return this.fetchWithRetry(url, options, retries - 1, backoff * 2);
+      }
+      throw err;
+    }
+  }
+
+  /**
    * Fetch Historical Data (Chart)
    */
   async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
@@ -37,18 +75,18 @@ class MarketDataClient {
     if (cached) return { success: true, data: cached, source: 'cache' };
 
     try {
-      const res = await fetch(`/api/market?type=history&symbol=${symbol}&market=${market}`);
-      const json = await res.json() as MarketResponse<OHLCV[]>;
+      const data = await this.fetchWithRetry<OHLCV[]>(
+        `/api/market?type=history&symbol=${symbol}&market=${market}`
+      );
       
-      if (!res.ok || json.error || !json.data) {
-        throw new Error(json.error || res.statusText);
-      }
+      if (!data || data.length === 0) throw new Error('No data received');
       
-      this.setCache(cacheKey, json.data);
-      return { success: true, data: json.data, source: 'api' };
+      const interpolatedData = this.interpolateOHLCV(data);
+      this.setCache(cacheKey, interpolatedData);
+      return { success: true, data: interpolatedData, source: 'api' };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error(`Fetch OHLCV failed for ${symbol}:`, err);
+      console.error(`Fetch OHLCV failed for ${symbol} after retries:`, err);
       return { success: false, data: null, source: 'api', error: errorMessage };
     }
   }
@@ -60,6 +98,13 @@ class MarketDataClient {
     try {
       const symbolStr = symbols.join(',');
       const res = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
+      
+      if (res.status === 429) {
+        // Simple wait for batch fetch (less critical than OHLCV)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return this.fetchQuotes(symbols);
+      }
+
       const json = await res.json();
 
       if (!res.ok) throw new Error(json.error);
@@ -88,17 +133,14 @@ class MarketDataClient {
     if (cached) return cached;
 
     try {
-      const res = await fetch(`/api/market?type=quote&symbol=${symbol}&market=${market}`);
-      const json = await res.json();
+      const data = await this.fetchWithRetry<QuoteData>(
+        `/api/market?type=quote&symbol=${symbol}&market=${market}`
+      );
       
-      if (!res.ok || json.error) {
-        throw new Error(json.error || res.statusText);
-      }
-      
-      this.setCache(cacheKey, json);
-      return json as QuoteData;
+      if (data) this.setCache(cacheKey, data);
+      return data;
     } catch (err) {
-      console.error(`Fetch Quote failed for ${symbol}:`, err);
+      console.error(`Fetch Quote failed for ${symbol} after retries:`, err);
       return null;
     }
   }
@@ -111,7 +153,7 @@ class MarketDataClient {
       // We need history to analyze trend and provide features for ML
       const result = await this.fetchOHLCV(stock.symbol, stock.market);
       
-      if (!result.success || !result.data || result.data.length < 50) {
+      if (!result.success || !result.data || result.data.length < 20) {
         throw new Error('No sufficient data available for ML analysis');
       }
 
@@ -139,6 +181,93 @@ class MarketDataClient {
 
   private setCache(key: string, data: unknown) {
     this.cache.set(key, { data, timestamp: Date.now() });
+  }
+
+  /**
+   * Comprehensive interpolation for missing data and date gaps
+   */
+  private interpolateOHLCV(data: OHLCV[]): OHLCV[] {
+    if (data.length < 2) return data;
+
+    // Sort by date just in case
+    let sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    // Step 1: Fill date gaps (weekdays only)
+    const filledWithGaps: OHLCV[] = [];
+    for (let i = 0; i < sorted.length; i++) {
+      filledWithGaps.push(sorted[i]);
+      
+      if (i < sorted.length - 1) {
+        const current = new Date(sorted[i].date);
+        const next = new Date(sorted[i + 1].date);
+        const diffDays = Math.floor((next.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (diffDays > 1) {
+          // Fill missing weekdays
+          for (let d = 1; d < diffDays; d++) {
+            const gapDate = new Date(current);
+            gapDate.setDate(current.getDate() + d);
+            const dayOfWeek = gapDate.getDay();
+            
+            // 0 is Sunday, 6 is Saturday
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+              filledWithGaps.push({
+                date: gapDate.toISOString().split('T')[0],
+                open: 0, // Mark for linear interpolation in next step
+                high: 0,
+                low: 0,
+                close: 0,
+                volume: 0
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Step 2: Linear interpolation for missing values (zeros)
+    const result = [...filledWithGaps];
+    const fields: (keyof Pick<OHLCV, 'open' | 'high' | 'low' | 'close'>)[] = ['open', 'high', 'low', 'close'];
+
+    for (const field of fields) {
+      for (let i = 0; i < result.length; i++) {
+        if (result[i][field] === 0) {
+          // Find previous valid value
+          let prevIdx = i - 1;
+          while (prevIdx >= 0 && result[prevIdx][field] === 0) prevIdx--;
+
+          // Find next valid value
+          let nextIdx = i + 1;
+          while (nextIdx < result.length && result[nextIdx][field] === 0) nextIdx++;
+
+          if (prevIdx >= 0 && nextIdx < result.length) {
+            // Linear interpolation
+            const prevVal = result[prevIdx][field] as number;
+            const nextVal = result[nextIdx][field] as number;
+            const gap = nextIdx - prevIdx;
+            const diff = nextVal - prevVal;
+            result[i][field] = Number((prevVal + (diff * (i - prevIdx)) / gap).toFixed(2));
+          } else if (prevIdx >= 0) {
+            // Fill with previous value if no next value
+            result[i][field] = result[prevIdx][field];
+          } else if (nextIdx < result.length) {
+            // Fill with next value if no previous value
+            result[i][field] = result[nextIdx][field];
+          }
+        }
+      }
+    }
+    
+    // Volume interpolation (simple fill with 0 or average)
+    for (let i = 0; i < result.length; i++) {
+      if (result[i].volume === 0) {
+        let prevIdx = i - 1;
+        while (prevIdx >= 0 && result[prevIdx].volume === 0) prevIdx--;
+        if (prevIdx >= 0) result[i].volume = result[prevIdx].volume;
+      }
+    }
+
+    return result;
   }
 }
 

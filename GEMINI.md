@@ -6,8 +6,10 @@ Gemini CLIエージェントはこのファイルをコンテキストとして�
 ## 基本方針 (Core Principles)
 - **出力言語**: 日本語 (Japanese)
 - **技術スタック**: Next.js (App Router), TypeScript, Tailwind CSS
-- **変更方針**: 小さく、安全な変更を優先する (Prefer small, safe diffs)。
-- **信頼性**: 不確かなAPIレスポンスを捏造せず、必要に応じて確認を行う。
+- 変更方針: 小さく、安全な変更を優先する。リスクのある変更は専用ブランチで作業し、検証後にマージする。
+- ワークフロー: `skills/trading-expert.md` に基づくプロフェッショナルなトレーディング体験を最優先する（BUY/80%基準、日本市場ルール遵守）。
+- プロセス管理: `skills/safe-process-manager.md` を遵守し、エージェント自身のプロセスを保護しながらサーバーを管理する。
+- 信頼性: 不確かなAPIレスポンスを捏造せず、必要に応じて確認を行う。
 - **Git操作**: GitHubの操作には `gh` コマンドを使用する。
 
 ## 技術スタック (Tech Stack)

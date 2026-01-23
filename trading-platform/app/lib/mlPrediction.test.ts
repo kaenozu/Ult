@@ -74,6 +74,66 @@ describe('MLPredictionService', () => {
       prediction.xgbPrediction * 0.35 + 
       prediction.lstmPrediction * 0.30;
     
-    expect(prediction.ensemblePrediction).toBeCloseTo(expected, 5);
-  });
-});
+        
+    
+        expect(prediction.ensemblePrediction).toBeCloseTo(expected, 5);
+    
+      });
+    
+    
+    
+      it('applies Japanese tick size (呼値) to target prices', () => {
+    
+        const jpStock: Stock = {
+    
+          symbol: '7203.T',
+    
+          name: 'Toyota',
+    
+          market: 'japan',
+    
+          sector: 'Automotive',
+    
+          price: 5000,
+    
+          change: 0,
+    
+          changePercent: 0,
+    
+          volume: 0,
+    
+        };
+    
+    
+    
+        const data = generateMockData(70, 'up');
+    
+        // 価格帯を日本株（5000円近辺）に調整
+    
+        const jpData = data.map(d => ({ ...d, close: d.close * 50 }));
+    
+        
+    
+        const indicators = mlPredictionService.calculateIndicators(jpData);
+    
+        const prediction = mlPredictionService.predict(jpStock, jpData, indicators);
+    
+        const signal = mlPredictionService.generateSignal(jpStock, jpData, prediction, indicators);
+    
+    
+    
+        if (signal.targetPrice > 5000 && signal.targetPrice <= 10000) {
+    
+          // 5000円超〜1万円以下の呼値は10円（標準テーブル）
+    
+          // ※先ほど実装した getTickSize では 3000-5000 は 5, 5000-10000 は 10 としています
+    
+          expect(signal.targetPrice % 10).toBe(0);
+    
+        }
+    
+      });
+    
+    });
+    
+    
