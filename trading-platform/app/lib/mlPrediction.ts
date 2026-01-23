@@ -1,6 +1,6 @@
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '../types';
 import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR, roundToTickSize } from './utils';
-import { analyzeStock } from './analysis'; // パラメータ最適化ロジック
+import { analyzeStock } from './analysis';
 
 interface PredictionFeatures {
   rsi: number;
@@ -83,7 +83,7 @@ class MLPredictionService {
   generateSignal(stock: Stock, data: OHLCV[], prediction: ModelPrediction, indicators: TechnicalIndicator & { atr: number[] }, indexData?: OHLCV[]): Signal {
     const currentPrice = data[data.length - 1].close;
     
-    // 1. パラメータ最適化エンジン (analysis.ts) の結果をマージ
+    // 1. パラメータ最適化エンジン (analysis.ts) の結果を取得
     const baseAnalysis = analyzeStock(stock.symbol, data, stock.market);
 
     // 2. 市場相関の分析 (Market Sync)
@@ -133,7 +133,18 @@ class MLPredictionService {
     if (prediction.ensemblePrediction > 1.5 && finalConfidence >= 60) signalType = 'BUY';
     else if (prediction.ensemblePrediction < -1.5 && finalConfidence >= 60) signalType = 'SELL';
 
-    // 最適化されたパラメータ情報を理由に追加
+    // 4. 自己矯正 (Self-Correction): 誤差係数によるターゲット補正
+    const errorFactor = baseAnalysis.predictionError || 1.0;
+    let targetPrice = baseAnalysis.targetPrice;
+    let stopLoss = baseAnalysis.stopLoss;
+
+    if (errorFactor > 1.2) {
+      marketComment += ` 直近の予測誤差が大きいため、予報円を ${errorFactor.toFixed(1)}倍に広げて警戒を促しています。`;
+      // 誤差が大きい時はリスク許容度を下げる
+      if (signalType === 'BUY') stopLoss = currentPrice - (Math.abs(currentPrice - stopLoss) * errorFactor);
+      else if (signalType === 'SELL') stopLoss = currentPrice + (Math.abs(currentPrice - stopLoss) * errorFactor);
+    }
+
     const optParams = baseAnalysis.optimizedParams ? `最適化設定(RSI:${baseAnalysis.optimizedParams.rsiPeriod}, SMA:${baseAnalysis.optimizedParams.smaPeriod}) ` : "";
     const reason = `${prefix}${optParams}${this.generateBaseReason(signalType, prediction, indicators)} ${marketComment}`;
 
@@ -141,15 +152,17 @@ class MLPredictionService {
       symbol: stock.symbol,
       type: signalType,
       confidence: Math.round(finalConfidence),
-      accuracy: baseAnalysis.accuracy, // 過去の的中率を継承
-      atr: baseAnalysis.atr,           // ボラティリティを継承
-      targetPrice: baseAnalysis.targetPrice,
-      stopLoss: baseAnalysis.stopLoss,
+      accuracy: baseAnalysis.accuracy,
+      atr: baseAnalysis.atr,
+      targetPrice: targetPrice,
+      stopLoss: stopLoss,
       reason,
       predictedChange: parseFloat(prediction.ensemblePrediction.toFixed(2)),
       predictionDate: new Date().toISOString().split('T')[0],
       marketContext: marketInfo,
-      optimizedParams: baseAnalysis.optimizedParams
+      optimizedParams: baseAnalysis.optimizedParams,
+      predictionError: errorFactor,
+      volumeResistance: baseAnalysis.volumeResistance
     };
   }
 
