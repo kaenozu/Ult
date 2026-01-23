@@ -16,7 +16,7 @@ import {
   TooltipItem,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
-import { OHLCV } from '@/app/types';
+import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency, calculateSMA, calculateBollingerBands } from '@/app/lib/utils';
 
 ChartJS.register(
@@ -40,6 +40,7 @@ export interface StockChartProps {
   loading?: boolean;
   error?: string | null;
   market?: 'japan' | 'usa';
+  signal?: Signal | null;
 }
 
 // Memoize component to prevent re-renders from parent updates if props are unchanged
@@ -52,24 +53,117 @@ export const StockChart = memo(function StockChart({
   loading = false, 
   error = null,
   market = 'usa',
+  signal = null,
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
 
-  // Memoize derived data arrays to prevent unnecessary mapping on every render
-  const labels = useMemo(() => data.map(d => d.date), [data]);
-  const prices = useMemo(() => data.map(d => d.close), [data]);
+  // Extend labels and data for forecast (5 days)
+  const extendedData = useMemo(() => {
+    const labels = data.map(d => d.date);
+    const prices = data.map(d => d.close);
+    
+    if (signal) {
+      // Add 5 future slots with explicit labels
+      const lastDate = data.length > 0 ? new Date(data[data.length - 1].date) : new Date();
+      for (let i = 1; i <= 5; i++) {
+        const futureDate = new Date(lastDate);
+        futureDate.setDate(lastDate.getDate() + i);
+        labels.push(futureDate.toISOString().split('T')[0]);
+        prices.push(NaN); // No real price yet
+      }
+    }
+    
+    return { labels, prices };
+  }, [data, signal]);
+
   const volumes = useMemo(() => data.map(d => d.volume), [data]);
+  const sma20 = useMemo(() => calculateSMA(extendedData.prices, 20), [extendedData.prices]);
+  const { upper, lower } = useMemo(() => calculateBollingerBands(extendedData.prices, 20, 2), [extendedData.prices]);
 
-  const sma20 = useMemo(() => calculateSMA(prices, 20), [prices]);
-  const { upper, lower } = useMemo(() => calculateBollingerBands(prices, 20, 2), [prices]);
+  // Build Forecast Cloud datasets
+  const forecastDatasets = useMemo(() => {
+    if (!signal || data.length === 0) return [];
 
-  // Memoize chart configuration to prevent Chart.js from re-rendering/animating when data hasn't changed
+    const lastIdx = data.length - 1;
+    const currentPrice = data[lastIdx].close;
+    
+    const targetArr = new Array(extendedData.labels.length).fill(NaN);
+    const stopArr = new Array(extendedData.labels.length).fill(NaN);
+    
+    // Determine target/stop levels using ATR and Confidence
+    const stockATR = signal.atr || (currentPrice * 0.02);
+    const confidenceFactor = (110 - signal.confidence) / 30; // High confidence = narrower cloud
+    
+    let target = signal.targetPrice;
+    let stop = signal.stopLoss;
+
+    if (signal.type === 'HOLD') {
+      target = currentPrice + (stockATR * confidenceFactor);
+      stop = currentPrice - (stockATR * confidenceFactor);
+    } else {
+      // For BUY/SELL, the 'width' of the cloud reflects uncertainty
+      const uncertainty = (stockATR * 0.5) * confidenceFactor;
+      if (signal.type === 'BUY') {
+        target = signal.targetPrice + uncertainty;
+        stop = signal.targetPrice - uncertainty;
+      } else {
+        target = signal.targetPrice - uncertainty;
+        stop = signal.targetPrice + uncertainty;
+      }
+    }
+
+    // Connect from current price
+    targetArr[lastIdx] = currentPrice;
+    stopArr[lastIdx] = currentPrice;
+    
+    // Smoothly interpolate to the target over 5 days
+    const steps = extendedData.labels.length - 1 - lastIdx;
+    for (let i = 1; i <= steps; i++) {
+      const ratio = i / steps;
+      targetArr[lastIdx + i] = currentPrice + (target - currentPrice) * ratio;
+      stopArr[lastIdx + i] = currentPrice + (stop - currentPrice) * ratio;
+    }
+
+    const isBuy = signal.type === 'BUY';
+    const isSell = signal.type === 'SELL';
+    
+    // Vivid colors for high visibility
+    const cloudColor = isBuy ? 'rgba(16, 185, 129' : isSell ? 'rgba(239, 68, 68' : 'rgba(146, 173, 201';
+    const borderOpacity = signal.type === 'HOLD' ? 0.3 : 0.8;
+    const fillOpacity = signal.type === 'HOLD' ? 0.05 : 0.25;
+
+    return [
+      {
+        label: 'AI予測ターゲット',
+        data: targetArr,
+        borderColor: `${cloudColor}, ${borderOpacity})`,
+        backgroundColor: `${cloudColor}, ${fillOpacity})`,
+        borderWidth: 2,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        fill: '+1',
+        order: -1,
+      },
+      {
+        label: 'AI予測リスク',
+        data: stopArr,
+        borderColor: `${cloudColor}, ${borderOpacity * 0.5})`,
+        borderWidth: 2,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        fill: false,
+        order: -1,
+      }
+    ];
+  }, [signal, data, extendedData]);
+
+  // Memoize chart configuration
   const chartData = useMemo(() => ({
-    labels,
+    labels: extendedData.labels,
     datasets: [
       {
-        label: 'Price',
-        data: prices,
+        label: '現在価格',
+        data: extendedData.prices,
         borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
         fill: true,
@@ -79,6 +173,7 @@ export const StockChart = memo(function StockChart({
         borderWidth: 2,
         order: 1,
       },
+      ...forecastDatasets,
       ...(showSMA ? [{
         label: 'SMA (20)',
         data: sma20,
@@ -91,18 +186,18 @@ export const StockChart = memo(function StockChart({
       }] : []),
       ...(showBollinger ? [
         {
-          label: 'Bollinger Upper',
+          label: 'BB Upper',
           data: upper,
-          borderColor: 'rgba(59, 130, 246, 0.5)', // Blue with opacity
+          borderColor: 'rgba(59, 130, 246, 0.5)',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
           borderWidth: 1,
           pointRadius: 0,
           tension: 0.1,
-          fill: '+1' as const, // Fill to next dataset (Lower)
+          fill: '+1' as const,
           order: 3,
         },
         {
-          label: 'Bollinger Lower',
+          label: 'BB Lower',
           data: lower,
           borderColor: 'rgba(59, 130, 246, 0.5)',
           borderWidth: 1,
@@ -113,19 +208,20 @@ export const StockChart = memo(function StockChart({
         }
       ] : []),
     ],
-  }), [labels, prices, sma20, upper, lower, showSMA, showBollinger]);
+  }), [extendedData, sma20, upper, lower, showSMA, showBollinger, forecastDatasets]);
 
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+      padding: { right: 40 } // Extra padding for the future labels
+    },
     interaction: {
       mode: 'index' as const,
       intersect: false,
     },
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       tooltip: {
         backgroundColor: '#1a2632',
         titleColor: '#fff',
@@ -136,70 +232,63 @@ export const StockChart = memo(function StockChart({
         callbacks: {
           label: (context: TooltipItem<'line'>) => {
             const value = context.parsed.y ?? 0;
-            return `${context.dataset.label}: ${formatCurrency(value, market === 'japan' ? 'JPY' : 'USD')}`;
+            const isForecast = context.dataIndex >= data.length;
+            const prefix = isForecast ? '【予測】' : '';
+            return `${prefix}${context.dataset.label}: ${formatCurrency(value, market === 'japan' ? 'JPY' : 'USD')}`;
           },
         },
       },
     },
     scales: {
       x: {
+        // Default zoom to show only recent data + future for clarity
+        min: extendedData.labels.length > 105 ? extendedData.labels[extendedData.labels.length - 105] : undefined,
         grid: {
-          color: 'rgba(35, 54, 72, 0.3)',
+          color: (context) => context.index >= data.length ? 'rgba(59, 130, 246, 0.2)' : 'rgba(35, 54, 72, 0.3)',
+          lineWidth: (context) => context.index === data.length - 1 ? 3 : 1,
         },
         ticks: {
-          color: '#92adc9',
-          maxTicksLimit: 10,
+          color: (context) => (context.index >= data.length ? '#3b82f6' : '#92adc9'),
+          maxTicksLimit: 15,
         },
       },
       y: {
-        grid: {
-          color: 'rgba(35, 54, 72, 0.3)',
-        },
+        grid: { color: 'rgba(35, 54, 72, 0.3)' },
         ticks: {
           color: '#92adc9',
-          callback: function(value) {
-            return formatCurrency(Number(value), market === 'japan' ? 'JPY' : 'USD');
-          },
+          callback: (value) => formatCurrency(Number(value), market === 'japan' ? 'JPY' : 'USD'),
         },
       },
     },
-  }), [market]);
+  }), [market, data.length, extendedData.labels]);
 
   const volumeData = useMemo(() => ({
-    labels,
+    labels: extendedData.labels,
     datasets: [
       {
-        label: 'Volume',
+        label: '出来高',
         data: volumes,
         backgroundColor: volumes.map((_, i) => {
           if (i === 0) return 'rgba(239, 68, 68, 0.5)';
-          return prices[i] >= prices[i - 1]
-            ? 'rgba(239, 68, 68, 0.5)'
-            : 'rgba(16, 185, 129, 0.5)';
+          const currentPrice = data[i]?.close || 0;
+          const prevPrice = data[i - 1]?.close || currentPrice;
+          return currentPrice >= prevPrice ? 'rgba(239, 68, 68, 0.5)' : 'rgba(16, 185, 129, 0.5)';
         }),
         borderWidth: 0,
       },
     ],
-  }), [labels, volumes, prices]);
+  }), [extendedData.labels, volumes, data]);
 
   const volumeOptions: ChartOptions<'bar'> = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        enabled: false,
-      },
+      legend: { display: false },
+      tooltip: { enabled: false },
     },
     scales: {
-      x: {
-        display: false,
-      },
-      y: {
-        display: false,
-      },
+      x: { display: false },
+      y: { display: false },
     },
   }), []);
 
