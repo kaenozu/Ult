@@ -89,7 +89,7 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
             updateStockData(q.symbol, {
               price: q.price,
               change: q.change,
-              changePercent: q.changePercent * 100, // Yahoo often returns 0.01 for 1%
+              changePercent: q.changePercent, // Removed * 100, API usually returns actual %
               volume: q.volume,
             });
           }

@@ -56,14 +56,16 @@ describe('Screener Page - Default Filters and AI Analysis', () => {
     }, { timeout: 5000 });
   });
 
-  it('navigates to workstation when a stock is clicked', async () => {
+  it('adds to watchlist and navigates to workstation when a stock is clicked', async () => {
     render(<Screener />);
     
     // 表の中の銘柄（例: 7203）をクリック
     const toyotaRow = screen.getByText('7203');
     fireEvent.click(toyotaRow);
     
-    expect(useTradingStore.getState().selectedStock?.symbol).toBe('7203');
+    const { selectedStock, watchlist } = useTradingStore.getState();
+    expect(selectedStock?.symbol).toBe('7203');
+    expect(watchlist.some(s => s.symbol === '7203')).toBe(true);
     expect(mockPush).toHaveBeenCalledWith('/');
   });
 });
