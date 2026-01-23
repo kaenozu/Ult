@@ -24,7 +24,7 @@ describe('SignalPanel', () => {
   it('renders signal data correctly', () => {
     render(<SignalPanel stock={mockStock} signal={mockSignal} />);
     
-    expect(screen.getByText('BUY')).toBeInTheDocument();
+    expect(screen.getByText('買い')).toBeInTheDocument();
     expect(screen.getByText(/AI分析エンジン/)).toBeInTheDocument();
     expect(screen.getByText('Test Reason')).toBeInTheDocument();
     expect(screen.getAllByText('80%')[0]).toBeInTheDocument();
@@ -32,14 +32,14 @@ describe('SignalPanel', () => {
 
   it('renders loading state when signal is null', () => {
     render(<SignalPanel stock={mockStock} signal={null} loading={true} />);
-    expect(screen.getByText('Analyzing Market Data...')).toBeInTheDocument();
+    expect(screen.getByText('市場データを分析中...')).toBeInTheDocument();
   });
 
   it('switches to backtest tab', () => {
     render(<SignalPanel stock={mockStock} signal={mockSignal} ohlcv={[]} />);
     
     // Check initial state (Signal tab)
-    expect(screen.getByText('BUY')).toBeInTheDocument();
+    expect(screen.getByText('買い')).toBeInTheDocument();
 
     // Click Backtest tab
     const backtestTab = screen.getByText('検証結果');
