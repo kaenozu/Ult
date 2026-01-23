@@ -50,6 +50,15 @@ export interface Signal {
   reason: string;
   predictedChange: number;
   predictionDate: string;
+  optimizedParams?: {
+    rsiPeriod: number;
+    smaPeriod: number;
+  };
+  marketContext?: {
+    indexSymbol: string;
+    correlation: number; // 指数との相関係数 (-1 to 1)
+    indexTrend: 'UP' | 'DOWN' | 'NEUTRAL';
+  };
 }
 
 export interface PaperTrade {
