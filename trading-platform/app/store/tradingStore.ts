@@ -34,6 +34,7 @@ const initialPortfolio: Portfolio = {
       quantity: 10,
       avgPrice: 850.00,
       currentPrice: 875.40,
+      change: 15.40,
       entryDate: '2024-01-15',
     },
     {
@@ -44,6 +45,7 @@ const initialPortfolio: Portfolio = {
       quantity: 100,
       avgPrice: 3500,
       currentPrice: 3580,
+      change: 40,
       entryDate: '2024-01-10',
     },
     {
@@ -54,6 +56,7 @@ const initialPortfolio: Portfolio = {
       quantity: 5,
       avgPrice: 180.00,
       currentPrice: 185.50,
+      change: 2.10,
       entryDate: '2024-01-20',
     },
   ],
@@ -83,28 +86,37 @@ export const useTradingStore = create<TradingStore>()(
         watchlist: state.watchlist.filter(s => s.symbol !== symbol),
       })),
 
-      updateStockData: (symbol, data) => set((state) => ({
-        watchlist: state.watchlist.map(s => 
+      updateStockData: (symbol, data) => set((state) => {
+        const newWatchlist = state.watchlist.map(s => 
           s.symbol === symbol ? { ...s, ...data } : s
-        ),
-        // Also update portfolio current prices if matched
-        portfolio: {
-          ...state.portfolio,
-          positions: state.portfolio.positions.map(p => 
-            p.symbol === symbol && data.price ? { ...p, currentPrice: data.price } : p
-          )
-        }
-      })),
+        );
+        
+        const newPositions = state.portfolio.positions.map(p => 
+          p.symbol === symbol ? { 
+            ...p, 
+            currentPrice: data.price ?? p.currentPrice,
+            change: data.change ?? p.change 
+          } : p
+        );
+
+        const dailyPnL = newPositions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+
+        return {
+          watchlist: newWatchlist,
+          portfolio: {
+            ...state.portfolio,
+            positions: newPositions,
+            dailyPnL
+          }
+        };
+      }),
 
       portfolio: initialPortfolio,
 
       updatePortfolio: (positions) => set((state) => {
         const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
         const totalProfit = positions.reduce((sum, p) => sum + (p.currentPrice - p.avgPrice) * p.quantity, 0);
-        const dailyPnL = positions.reduce((sum, p) => {
-          const prevPrice = p.currentPrice * 0.995;
-          return sum + (p.currentPrice - prevPrice) * p.quantity;
-        }, 0);
+        const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
         return {
           portfolio: {
             ...state.portfolio,
@@ -129,7 +141,8 @@ export const useTradingStore = create<TradingStore>()(
             ...existing,
             quantity: totalQty,
             avgPrice: totalCost / totalQty,
-            currentPrice: newPosition.currentPrice
+            currentPrice: newPosition.currentPrice,
+            change: newPosition.change
           };
         } else {
           positions.push(newPosition);
@@ -142,6 +155,7 @@ export const useTradingStore = create<TradingStore>()(
             : (p.avgPrice - p.currentPrice) * p.quantity;
           return sum + pnl;
         }, 0);
+        const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
         
         return {
           portfolio: {
@@ -149,6 +163,7 @@ export const useTradingStore = create<TradingStore>()(
             positions,
             totalValue,
             totalProfit,
+            dailyPnL,
           },
         };
       }),
@@ -187,6 +202,7 @@ export const useTradingStore = create<TradingStore>()(
             : (p.avgPrice - p.currentPrice) * p.quantity;
           return sum + pnl;
         }, 0);
+        const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
 
         return {
           portfolio: {
@@ -194,6 +210,7 @@ export const useTradingStore = create<TradingStore>()(
             positions,
             totalValue,
             totalProfit,
+            dailyPnL,
             // Return capital + profit to cash
             cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit, 
           },
