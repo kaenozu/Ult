@@ -11,3 +11,7 @@
 ## 2024-05-22 - [Refactoring Components with Logic Bugs]
 **Learning:** Sometimes optimizing a component reveals logical bugs (like unreachable error states).
 **Action:** It's acceptable to fix small logical bugs (like `if` statement order) if they block testing of the optimization.
+
+## 2024-05-22 - [Environment Noise in PRs]
+**Learning:** Running `npm install` in the sandbox can modify `package-lock.json` with platform-specific or version-specific changes (e.g., stripping `"peer": true`), which creates noise in the PR.
+**Action:** Always revert `package-lock.json` before submitting if no dependencies were actually changed in `package.json`.
