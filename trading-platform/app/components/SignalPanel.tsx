@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
 import { formatCurrency, cn, getConfidenceColor } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
+import { useTradingStore } from '@/app/store/tradingStore';
 
 interface SignalPanelProps {
   stock: Stock;
@@ -11,7 +12,15 @@ interface SignalPanelProps {
 }
 
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
-  const [activeTab, setActiveTab] = useState<'signal' | 'backtest'>('signal');
+  const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai'>('signal');
+  const { aiStatus, processAITrades } = useTradingStore();
+
+  // 自動売買プロセスをトリガー
+  useEffect(() => {
+    if (signal && stock.price) {
+      processAITrades(stock.symbol, stock.price, signal);
+    }
+  }, [stock.symbol, stock.price, signal, processAITrades]);
 
   const backtestResult: BacktestResult = useMemo(() => {
     if (!ohlcv || ohlcv.length === 0) {
@@ -19,6 +28,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     }
     return runBacktest(stock.symbol, ohlcv, stock.market);
   }, [stock.symbol, ohlcv, stock.market]);
+
+  const aiTrades = useMemo(() => {
+    return aiStatus.trades.filter(t => t.symbol === stock.symbol);
+  }, [aiStatus.trades, stock.symbol]);
 
   if (loading || !signal) {
     return (
@@ -54,7 +67,16 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               activeTab === 'backtest' ? 'bg-[#233648] text-white' : 'text-[#92adc9] hover:text-white'
             )}
           >
-            検証結果
+            バックテスト
+          </button>
+          <button
+            onClick={() => setActiveTab('ai')}
+            className={cn(
+              'px-3 py-1 text-xs font-medium rounded transition-colors',
+              activeTab === 'ai' ? 'bg-[#233648] text-white' : 'text-[#92adc9] hover:text-white'
+            )}
+          >
+            AI戦績
           </button>
         </div>
         {activeTab === 'signal' && (
@@ -69,6 +91,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
       {activeTab === 'signal' ? (
         <div className="flex flex-col gap-3">
+          {/* ... existing signal display code ... */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className={cn(
@@ -142,8 +165,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'backtest' ? (
         <div className="flex-1 overflow-auto">
+          {/* ... existing backtest code ... */}
           <div className="grid grid-cols-2 gap-2 mb-4">
             <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
               <div className="text-[10px] text-[#92adc9]">勝率</div>
@@ -157,34 +181,74 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
                 {backtestResult.totalProfitPercent > 0 ? '+' : ''}{backtestResult.totalProfitPercent}%
               </div>
             </div>
-            <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
-              <div className="text-[10px] text-[#92adc9]">PF</div>
-              <div className="text-white font-bold">{backtestResult.profitFactor}</div>
-            </div>
-            <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
-              <div className="text-[10px] text-[#92adc9]">Max DD</div>
-              <div className="text-red-400 font-bold">-{backtestResult.maxDrawdown}%</div>
-            </div>
           </div>
 
           <div className="space-y-2">
-            <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のトレード</div>
-            {backtestResult.trades.length === 0 ? (
-              <div className="text-xs text-[#92adc9] text-center py-4">データ不足のため検証不可</div>
+            <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のシミュレーション</div>
+            {backtestResult.trades.slice(0, 5).map((trade, i) => (
+              <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn('font-bold', trade.type === 'BUY' ? 'text-green-500' : 'text-red-500')}>
+                      {trade.type === 'BUY' ? '買い' : '売り'}
+                    </span>
+                    <span className="text-[#92adc9]">{trade.entryDate}</span>
+                  </div>
+                </div>
+                <div className={cn('font-bold', trade.profitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
+                  {trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent.toFixed(1)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto space-y-4">
+          <div className="bg-[#1a2632] p-3 rounded-lg border border-[#233648] flex justify-between items-center">
+            <div>
+              <div className="text-[10px] text-[#92adc9] uppercase font-bold">AI仮想口座合計損益</div>
+              <div className={cn('text-xl font-black', aiStatus.totalProfit >= 0 ? 'text-green-400' : 'text-red-400')}>
+                {aiStatus.totalProfit >= 0 ? '+' : ''}{formatCurrency(aiStatus.totalProfit, stock.market === 'japan' ? 'JPY' : 'USD')}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-[10px] text-[#92adc9] uppercase font-bold">仮想残高</div>
+              <div className="text-sm font-bold text-white">{formatCurrency(aiStatus.virtualBalance, stock.market === 'japan' ? 'JPY' : 'USD')}</div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider">AI売買履歴と自己反省</div>
+            {aiTrades.length === 0 ? (
+              <div className="text-xs text-[#92adc9] text-center py-8 bg-[#192633]/20 rounded-lg border border-dashed border-[#233648]">
+                この銘柄での売買履歴はまだありません。
+              </div>
             ) : (
-              backtestResult.trades.slice(0, 5).map((trade, i) => (
-                <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
-                  <div>
+              aiTrades.map((trade, i) => (
+                <div key={i} className="bg-[#192633]/50 rounded-lg border border-[#233648] overflow-hidden">
+                  <div className="p-2 flex justify-between items-center border-b border-[#233648]/50 bg-black/20">
                     <div className="flex items-center gap-2">
-                      <span className={cn('font-bold', trade.type === 'BUY' ? 'text-green-500' : 'text-red-500')}>
+                      <span className={cn('text-[10px] font-black px-1.5 py-0.5 rounded', trade.type === 'BUY' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400')}>
                         {trade.type === 'BUY' ? '買い' : '売り'}
                       </span>
-                      <span className="text-[#92adc9]">{trade.entryDate}</span>
+                      <span className="text-[10px] text-[#92adc9]">{trade.entryDate.split('T')[0]}</span>
                     </div>
-                    <div className="text-[10px] text-[#92adc9] mt-0.5">{trade.reason}</div>
+                    {trade.status === 'CLOSED' && (
+                      <span className={cn('text-[10px] font-bold', (trade.profitPercent || 0) >= 0 ? 'text-green-400' : 'text-red-400')}>
+                        {(trade.profitPercent || 0) >= 0 ? '+' : ''}{(trade.profitPercent || 0).toFixed(2)}%
+                      </span>
+                    )}
                   </div>
-                  <div className={cn('font-bold', trade.profitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
-                    {trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent.toFixed(1)}%
+                  <div className="p-2">
+                    <div className="text-[10px] text-[#92adc9] mb-1 flex justify-between">
+                      <span>Entry: {formatCurrency(trade.entryPrice, stock.market === 'japan' ? 'JPY' : 'USD')}</span>
+                      {trade.status === 'CLOSED' && <span>Exit: {formatCurrency(trade.exitPrice || 0, stock.market === 'japan' ? 'JPY' : 'USD')}</span>}
+                    </div>
+                    {trade.reflection && (
+                      <div className="mt-2 text-[11px] text-white/80 leading-relaxed bg-black/40 p-2 rounded italic border-l-2 border-primary/50">
+                        「{trade.reflection}」
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
