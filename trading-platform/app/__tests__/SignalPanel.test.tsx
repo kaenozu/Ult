@@ -41,7 +41,7 @@ describe('SignalPanel', () => {
     expect(screen.getByText('買い')).toBeInTheDocument();
 
     // Click Backtest tab
-    const backtestTab = screen.getByText('検証結果');
+    const backtestTab = screen.getByText('バックテスト');
     fireEvent.click(backtestTab);
 
     // Check backtest view
