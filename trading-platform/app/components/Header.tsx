@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Settings, User, Wifi, WifiOff, Edit2, Plus } from 'lucide-react';
+import { Search, Settings, User, Wifi, WifiOff, Edit2, Plus, Loader2 } from 'lucide-react';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { formatCurrency, cn } from '@/app/lib/utils';
-import { ALL_STOCKS } from '@/app/data/stocks';
+import { ALL_STOCKS, fetchStockMetadata } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
 
 export function Header() {
@@ -13,6 +13,7 @@ export function Header() {
   const [cashInput, setCashInput] = useState('');
   const [searchQuery, setSearchInput] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [isSearchingAPI, setIsSearchingAPI] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -50,11 +51,24 @@ export function Header() {
     setIsEditingCash(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleSearchKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleCashSubmit();
+      if (searchResults.length === 1) {
+        handleStockSelect(searchResults[0]);
+      } else if (searchQuery.trim().length >= 2) {
+        // Try API fetch for unknown symbol
+        setIsSearchingAPI(true);
+        try {
+          const newStock = await fetchStockMetadata(searchQuery.toUpperCase());
+          if (newStock) {
+            handleStockSelect(newStock);
+          }
+        } finally {
+          setIsSearchingAPI(false);
+        }
+      }
     } else if (e.key === 'Escape') {
-      setIsEditingCash(false);
+      setShowResults(false);
     }
   };
 
@@ -96,7 +110,10 @@ export function Header() {
                 value={cashInput}
                 onChange={(e) => setCashInput(e.target.value)}
                 onBlur={handleCashSubmit}
-                onKeyDown={handleKeyDown}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCashSubmit();
+                  if (e.key === 'Escape') setIsEditingCash(false);
+                }}
                 className="font-bold text-white text-[15px] bg-[#192633] border border-[#233648] rounded px-1 py-0 w-28 -ml-1 focus:outline-none focus:border-primary"
               />
             ) : (
@@ -121,7 +138,7 @@ export function Header() {
       <div className="flex items-center gap-4">
         <div className="relative group" ref={searchRef}>
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#92adc9]">
-            <Search className="w-4 h-4" />
+            {isSearchingAPI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           </div>
           <input
             className="block w-64 p-2 pl-10 text-sm text-white bg-[#192633] border border-[#233648] rounded-lg focus:ring-primary focus:border-primary placeholder-[#92adc9]"
@@ -133,6 +150,7 @@ export function Header() {
                 setShowResults(true);
             }}
             onFocus={() => setShowResults(true)}
+            onKeyDown={handleSearchKeyDown}
             aria-label="銘柄検索"
           />
           

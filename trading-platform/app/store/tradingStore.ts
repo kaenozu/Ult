@@ -276,9 +276,22 @@ export const useTradingStore = create<TradingStore>()(
               : (openTrade.entryPrice - exitPrice) * openTrade.quantity;
             const profitPercent = (profit / (openTrade.entryPrice * openTrade.quantity)) * 100;
 
+            // マクロ連動型の反省コメントを生成
+            let advancedReflection = reflection;
+            if (signal?.marketContext) {
+              const { indexSymbol, correlation, indexTrend } = signal.marketContext;
+              const isMarketDrag = (openTrade.type === 'BUY' && indexTrend === 'DOWN') || (openTrade.type === 'SELL' && indexTrend === 'UP');
+              
+              if (profitPercent < 0 && isMarketDrag && correlation > 0.5) {
+                advancedReflection = `${reflection} 個別要因よりも、${indexSymbol}の${indexTrend === 'DOWN' ? '下落' : '上昇'}による市場全体の地合い(r=${correlation.toFixed(2)})に強く引きずられた形です。`;
+              } else if (profitPercent > 0 && !isMarketDrag && correlation > 0.5) {
+                advancedReflection = `${reflection} ${indexSymbol}の良好な地合い(r=${correlation.toFixed(2)})が予測を強力に後押ししました。`;
+              }
+            }
+
             const updatedTrades = aiStatus.trades.map(t => 
               t.id === openTrade.id 
-                ? { ...t, status: 'CLOSED' as const, exitPrice, exitDate: new Date().toISOString(), profitPercent, reflection } 
+                ? { ...t, status: 'CLOSED' as const, exitPrice, exitDate: new Date().toISOString(), profitPercent, reflection: advancedReflection } 
                 : t
             );
 
