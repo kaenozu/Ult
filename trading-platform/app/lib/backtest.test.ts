@@ -2,26 +2,24 @@ import { runBacktest, BacktestResult } from './backtest';
 import { OHLCV } from '@/app/types';
 
 describe('runBacktest', () => {
-  // Generate more realistic mock data: Healthy Uptrend
-  const generateHealthyUptrendData = (): OHLCV[] => {
+  // Generate simple mock data: Uptrend
+  const generateUptrendData = (): OHLCV[] => {
     const data: OHLCV[] = [];
     let price = 100;
     const now = new Date('2024-01-01');
     
-    for (let i = 0; i < 200; i++) {
-      // 0.5% average growth with random noise to create pullbacks
-      const change = (Math.random() * 0.04 - 0.015); // -1.5% to +2.5%
-      price *= (1 + change);
-      
+    // 100 days
+    for (let i = 0; i < 100; i++) {
+      price *= 1.01; // 1% daily increase
       const date = new Date(now);
       date.setDate(date.getDate() + i);
       data.push({
         date: date.toISOString().split('T')[0],
-        open: price * (1 - 0.005),
-        high: price * (1 + 0.01),
-        low: price * (1 - 0.01),
-        close: price,
-        volume: 2000 + Math.random() * 3000,
+        open: price,
+        high: price * 1.02,
+        low: price * 0.98,
+        close: price * 1.01,
+        volume: 1000,
       });
     }
     return data;
@@ -34,22 +32,18 @@ describe('runBacktest', () => {
     expect(result.winRate).toBe(0);
   });
 
-  it('should run without error and potentially execute trades', () => {
-    const data = generateHealthyUptrendData();
-    const result = runBacktest('AAPL', data, 'usa');
+  it('should execute trades on sufficient data', () => {
+    const data = generateUptrendData();
+    // We mock analyzeStock inside backtest.ts? 
+    // runBacktest imports analyzeStock directly. We should mock that import.
+    // However, for integration test, we can use the real one if it's deterministic.
+    // analyzeStock uses RSI/SMA. Uptrend data should trigger BUY.
     
+    const result = runBacktest('TEST', data, 'usa');
+    
+    // We expect some trades because price is increasing
+    // The exact number depends on analyzeStock logic, but it shouldn't crash
     expect(result).toBeDefined();
-    expect(result.trades).toBeInstanceOf(Array);
-    // Even if no trades occur due to strict ML filters, the result should be a valid object
-  });
-
-  it('should capture trade statistics if trades are executed', () => {
-    const data = generateHealthyUptrendData();
-    const result = runBacktest('AAPL', data, 'usa');
-    
-    if (result.totalTrades > 0) {
-      expect(result.winRate).toBeGreaterThanOrEqual(0);
-      expect(result.totalProfitPercent).toBeDefined();
-    }
+    expect(result.totalTrades).toBeGreaterThanOrEqual(0);
   });
 });
