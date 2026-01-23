@@ -4,17 +4,11 @@
 Gemini CLIエージェントはこのファイルをコンテキストとして参照し、プロジェクトの規約とパターンに従って作業を行います。
 
 ## 基本方針 (Core Principles)
-- **出力言語**: 日本語 (Japanese)
-- **技術スタック**: Next.js (App Router), TypeScript, Tailwind CSS
-- **変更方針**: 小さく、安全な変更を優先する (Prefer small, safe diffs)。
-- **信頼性**: 不確かなAPIレスポンスを捏造せず、必要に応じて確認を行う。
-- **Git操作**:
-  - GitHubの操作には `gh` コマンドを使用する。
-  - コミット操作には `node skills/smart-git.js "<message>"` を使用する。
-- **コマンド実行**:
-  - 複数のコマンドを連続実行する場合は `&&` を使用せず、`node skills/chain-commands.js "cmd1" "cmd2"` を使用する。
-- **UI品質管理**:
-  - UIを変更した際は `node skills/ux-linter.js` を実行し、翻訳漏れやレスポンシブの不備がないか確認する。
+- **出力言語**: 日本語 (Japanese) を徹底する。
+- **技術スタック**: Next.js (App Router), TypeScript, Tailwind CSS。
+- **総合指針**: `skills/pro-trading-master.md` に基づき、5年分データの永続化、スマート差分取得、BUY/80%基準、日本市場ルール遵守、および安全なプロセス管理を自動的に適用する。
+- **品質保証**: 作業完了前に必ずビルド整合性と表示妥当性（異常値の有無）を自己検証する。
+- **Git操作**: GitHubの操作には `gh` コマンドを使用し、変更は専用ブランチで管理する。
 
 ## 技術スタック (Tech Stack)
 - **Framework**: Next.js 16.1.4 (App Router)
