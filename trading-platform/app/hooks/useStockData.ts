@@ -43,21 +43,29 @@ export function useStockData() {
   useEffect(() => {
     // Priority 1: Stock explicitly selected in the global store (from Screener or Search)
     if (storeSelectedStock) {
-      setLocalSelectedStock(storeSelectedStock);
-      fetchData(storeSelectedStock);
+      // Optimize: Only fetch if the symbol changed
+      if (selectedStock?.symbol !== storeSelectedStock.symbol) {
+        setLocalSelectedStock(storeSelectedStock);
+        fetchData(storeSelectedStock);
+      }
     }
     // Priority 2: If no global selection but watchlist has items, show the first one
     else if (watchlist.length > 0) {
       const defaultStock = watchlist[0];
-      setLocalSelectedStock(defaultStock);
-      setSelectedStock(defaultStock); // Sync back to store
-      fetchData(defaultStock);
+      // Optimize: Only fetch if the symbol changed
+      if (selectedStock?.symbol !== defaultStock.symbol) {
+        setLocalSelectedStock(defaultStock);
+        setSelectedStock(defaultStock); // Sync back to store
+        fetchData(defaultStock);
+      }
     }
     // Priority 3: Nothing to show
     else {
-      setLocalSelectedStock(null);
+      if (selectedStock) {
+        setLocalSelectedStock(null);
+      }
     }
-  }, [storeSelectedStock, fetchData, watchlist, setSelectedStock]);
+  }, [storeSelectedStock, fetchData, watchlist, setSelectedStock, selectedStock]);
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
