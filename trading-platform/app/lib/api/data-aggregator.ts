@@ -114,24 +114,36 @@ class MarketDataClient {
   }
 
   async fetchQuotes(symbols: string[]): Promise<QuoteData[]> {
+    if (symbols.length === 0) return [];
+
+    const CHUNK_SIZE = 50;
+    const chunks: string[][] = [];
+    for (let i = 0; i < symbols.length; i += CHUNK_SIZE) {
+      chunks.push(symbols.slice(i, i + CHUNK_SIZE));
+    }
+
     try {
-      const symbolStr = symbols.join(',');
-      const res = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
-      
-      if (res.status === 429) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return this.fetchQuotes(symbols);
-      }
+      const results = await Promise.all(chunks.map(async (chunk) => {
+        const symbolStr = chunk.join(',');
+        const res = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
+        
+        if (res.status === 429) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return this.fetchQuotes(chunk); // Retry chunk
+        }
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error);
 
-      if (json.data && Array.isArray(json.data)) {
-        return json.data as QuoteData[];
-      } else if (json.symbol) {
-        return [json as QuoteData];
-      }
-      return [];
+        if (json.data && Array.isArray(json.data)) {
+          return json.data as QuoteData[];
+        } else if (json.symbol) {
+          return [json as QuoteData];
+        }
+        return [];
+      }));
+
+      return results.flat();
     } catch (err) {
       console.error('Batch fetch failed:', err);
       return [];
