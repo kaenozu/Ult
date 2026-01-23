@@ -16,15 +16,9 @@ export function Header() {
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  const dailyPnL = portfolio.positions.reduce((sum, p) => {
-    const change = (p.currentPrice - p.avgPrice) * p.quantity;
-    const prevChange = (p.currentPrice * 0.995 - p.avgPrice) * p.quantity;
-    return sum + (change - prevChange);
-  }, 0);
-
-  // Avoid NaN when no value
+  const dailyPnL = portfolio.dailyPnL;
   const denominator = portfolio.totalValue - dailyPnL;
-  const dailyPnLPercent = denominator !== 0 ? (dailyPnL / denominator) * 100 : 0;
+  const dailyPnLPercent = (portfolio.totalValue > 0 && denominator !== 0) ? (dailyPnL / denominator) * 100 : 0;
 
   useEffect(() => {
     if (isEditingCash && inputRef.current) {

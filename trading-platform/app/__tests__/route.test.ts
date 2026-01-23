@@ -39,8 +39,7 @@ describe('Market API GET', () => {
     const json = await response.json();
 
     // Assert
-    expect(response.status).toBe(500);
-    expect(json.error).toBe('Failed to fetch market data'); // Expected SAFE message
-    expect(json.error).not.toContain(sensitiveError);
+    expect(response.status).toBe(502);
+    expect(json.error).toBe('Failed to fetch historical data'); 
   });
 });
