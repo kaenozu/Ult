@@ -58,6 +58,7 @@ export interface Position {
   quantity: number;
   avgPrice: number;
   currentPrice: number;
+  change: number;
   entryDate: string;
 }
 
