@@ -1,25 +1,30 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
 import { StockTable, PositionTable, HistoryTable } from '@/app/components/StockTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
 import { OrderPanel } from '@/app/components/OrderPanel';
+import { OrderBook } from '@/app/components/OrderBook';
+import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { fetchOHLCV, fetchSignal, ALL_STOCKS } from '@/app/data/stocks';
-import { Stock, OHLCV, Signal } from '@/app/types';
-import { cn, formatCurrency } from '@/app/lib/utils';
+import { cn } from '@/app/lib/utils';
+import { useStockData } from '@/app/hooks/useStockData';
 
 export default function Workstation() {
-  const { portfolio, setSelectedStock, closePosition, watchlist, selectedStock: storeSelectedStock, journal } = useTradingStore();
-  const [chartData, setChartData] = useState<OHLCV[]>([]);
-  const [chartSignal, setChartSignal] = useState<Signal | null>(null);
+  const { portfolio, closePosition, watchlist, journal } = useTradingStore();
+  const {
+    selectedStock,
+    chartData,
+    chartSignal,
+    loading,
+    error,
+    handleStockSelect
+  } = useStockData();
+
   const [activeTab, setActiveTab] = useState<'positions' | 'orders' | 'history'>('positions');
-  const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
   const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
@@ -31,66 +36,11 @@ export default function Workstation() {
     setIsMounted(true);
   }, []);
 
-  // Keep a ref to watchlist for stable callbacks
-  const watchlistRef = useRef(watchlist);
-  useEffect(() => {
-    watchlistRef.current = watchlist;
-  }, [watchlist]);
-
-  const fetchData = useCallback(async (stock: Stock) => {
-    setLoading(true);
-    setError(null);
-    setChartData([]); // Clear for skeleton
-    setChartSignal(null);
-
-    try {
-      const data = await fetchOHLCV(stock.symbol, stock.market, stock.price);
-      if (data.length === 0) {
-        setError('No data available');
-      } else {
-        setChartData(data);
-        const signalData = await fetchSignal(stock);
-        setChartSignal(signalData);
-      }
-    } catch (err) {
-      console.error('Data fetch error:', err);
-      setError('Failed to fetch data');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Priority 1: Stock explicitly selected in the global store (from Screener or Search)
-    if (storeSelectedStock) {
-      setLocalSelectedStock(storeSelectedStock);
-      fetchData(storeSelectedStock);
-    } 
-    // Priority 2: If no global selection but watchlist has items, show the first one
-    else if (watchlist.length > 0) {
-      const defaultStock = watchlist[0];
-      setLocalSelectedStock(defaultStock);
-      setSelectedStock(defaultStock); // Sync back to store
-      fetchData(defaultStock);
-    } 
-    // Priority 3: Nothing to show
-    else {
-      setLocalSelectedStock(null);
-    }
-  }, [storeSelectedStock, fetchData, watchlist, setSelectedStock]); 
-
-  const handleStockSelect = useCallback((stock: Stock) => {
-    setLocalSelectedStock(stock);
-    setSelectedStock(stock);
-    fetchData(stock);
-  }, [setSelectedStock, fetchData]);
-
   const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
     closePosition(symbol, currentPrice);
   }, [closePosition]);
 
   const displayStock = selectedStock; 
-  const displaySignal = chartSignal;
 
   if (loading) {
     return (
@@ -196,74 +146,14 @@ export default function Workstation() {
           ) : (
             <>
               {/* Chart Header/Toolbar */}
-              <div className="min-h-10 border-b border-[#233648] flex flex-wrap items-center justify-between px-4 py-1 gap-2 bg-[#192633]/30 shrink-0">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg">{displayStock?.symbol}</span>
-                    <span className="text-xs text-[#92adc9]">{displayStock?.name}</span>
-                  </div>
-                  <div className="h-4 w-px bg-[#233648]" />
-                  <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
-                    {['1m', '5m', '15m', '1H', '4H', 'D'].map((tf) => (
-                      <button
-                        key={tf}
-                        className={cn(
-                          'px-2 py-0.5 text-xs font-medium rounded transition-colors',
-                          tf === '5m'
-                            ? 'bg-primary text-white shadow-sm'
-                            : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
-                        )}
-                      >
-                        {tf}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="h-4 w-px bg-[#233648]" />
-                  <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
-                    <button
-                      onClick={() => setShowSMA(!showSMA)}
-                      className={cn(
-                        'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
-                        showSMA ? 'bg-yellow-500/20 text-yellow-500' : 'text-[#92adc9] hover:text-white'
-                      )}
-                    >
-                      SMA
-                    </button>
-                    <button
-                      onClick={() => setShowBollinger(!showBollinger)}
-                      className={cn(
-                        'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
-                        showBollinger ? 'bg-blue-500/20 text-blue-400' : 'text-[#92adc9] hover:text-white'
-                      )}
-                    >
-                      BB
-                    </button>
-                  </div>
-                  <div className="h-4 w-px bg-[#233648]" />
-                  <div className="flex items-center gap-3 text-xs text-[#92adc9]">
-                    <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                      </svg>
-                      インジケーター
-                    </span>
-                    <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                      ツール
-                    </span>
-                  </div>
-                </div>
-                {chartData.length > 0 && (
-                  <div className="flex items-center gap-4 text-sm tabular-nums">
-                    <span className="text-[#92adc9]">始: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.open || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                    <span className="text-[#92adc9]">高: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.high || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                    <span className="text-[#92adc9]">安: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.low || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                    <span className="text-[#92adc9]">終: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.close || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                  </div>
-                )}
-              </div>
+              <ChartToolbar
+                stock={displayStock}
+                latestData={chartData.length > 0 ? chartData[chartData.length - 1] : undefined}
+                showSMA={showSMA}
+                setShowSMA={setShowSMA}
+                showBollinger={showBollinger}
+                setShowBollinger={setShowBollinger}
+              />
 
               {/* Main Chart Visualization */}
               <div className="flex-1 relative p-4 flex flex-col">
@@ -382,87 +272,7 @@ export default function Workstation() {
           </div>
 
           {/* Level 2 / Order Book */}
-          <div className="flex-1 flex flex-col overflow-hidden border-t border-[#233648]">
-            <div className="px-4 py-3 border-b border-[#233648] bg-[#192633]/50 flex justify-between items-center">
-              <span className="text-xs font-bold text-[#92adc9] uppercase tracking-wider">板情報</span>
-              <span className="text-[10px] bg-blue-500/20 px-2 py-0.5 rounded text-blue-400 font-bold border border-blue-500/30">
-                {displayStock?.market === 'japan' ? '東証' : 'NYSE'}
-              </span>
-            </div>
-            <div className="flex-1 overflow-y-auto bg-[#101922]">
-              <table className="w-full text-xs tabular-nums border-collapse">
-                <thead className="sticky top-0 bg-[#141e27] text-[10px] text-[#92adc9] z-10">
-                  <tr>
-                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">買数量</th>
-                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">気配値</th>
-                    <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">売数量</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    const basePrice = displayStock?.price || 100;
-                    const bids = [
-                      { price: basePrice - 0.01, size: 920 },
-                      { price: basePrice - 0.02, size: 410 },
-                      { price: basePrice - 0.03, size: 250 },
-                      { price: basePrice - 0.04, size: 180 },
-                      { price: basePrice - 0.05, size: 120 },
-                    ];
-                    const asks = [
-                      { price: basePrice + 0.01, size: 450 },
-                      { price: basePrice + 0.02, size: 230 },
-                      { price: basePrice + 0.03, size: 150 },
-                      { price: basePrice + 0.04, size: 100 },
-                      { price: basePrice + 0.05, size: 80 },
-                    ];
-
-                    return (
-                      <>
-                        {asks.reverse().map((ask, i) => (
-                          <tr key={`ask-${i}`} className="hover:bg-[#192633]/50">
-                            <td className="py-0.5 px-2 text-right text-[#92adc9]"></td>
-                            <td className="py-0.5 px-2 text-center text-red-500 font-medium">
-                              {formatCurrency(ask.price, displayStock?.market === 'japan' ? 'JPY' : 'USD')}
-                            </td>
-                            <td className="py-0.5 px-2 text-left text-white relative">
-                              <span
-                                className="absolute inset-y-0 left-0 bg-red-500/20"
-                                style={{ width: `${Math.min(ask.size / 5, 100)}%` }}
-                              ></span>
-                              <span className="relative z-10">{ask.size}</span>
-                            </td>
-                          </tr>
-                        ))}
-                        <tr className="bg-[#192633] border-y border-[#233648]">
-                          <td className="py-1 px-4 text-center font-bold text-sm text-white flex justify-center items-center gap-2" colSpan={3}>
-                            {displayStock ? formatCurrency(displayStock.price, displayStock.market === 'japan' ? 'JPY' : 'USD') : '-'}
-                            <span className="text-[10px] font-normal text-[#92adc9]">
-                              Spread: 0.02
-                            </span>
-                          </td>
-                        </tr>
-                        {bids.map((bid, i) => (
-                          <tr key={`bid-${i}`} className="hover:bg-[#192633]/50">
-                            <td className="py-0.5 px-2 text-right text-white relative">
-                              <span
-                                className="absolute inset-y-0 right-0 bg-green-500/20"
-                                style={{ width: `${Math.min(bid.size / 10, 100)}%` }}
-                              ></span>
-                              <span className="relative z-10">{bid.size}</span>
-                            </td>
-                            <td className="py-0.5 px-2 text-center text-green-500 font-medium">
-                              {formatCurrency(bid.price, displayStock?.market === 'japan' ? 'JPY' : 'USD')}
-                            </td>
-                            <td className="py-0.5 px-2 text-left text-[#92adc9]"></td>
-                          </tr>
-                        ))}
-                      </>
-                    );
-                  })()}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <OrderBook stock={displayStock} />
         </aside>
       </main>
 
