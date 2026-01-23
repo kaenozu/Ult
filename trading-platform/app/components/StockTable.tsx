@@ -49,6 +49,7 @@ const StockRow = memo(({
                 e.stopPropagation();
                 onRemove(stock.symbol);
             }}
+            aria-label={`${stock.name}をウォッチリストから削除`}
             className="p-1 text-[#92adc9] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
         >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Stock, Signal, Position, Portfolio, JournalEntry, Theme } from '../types';
-import { JAPAN_STOCKS, USA_STOCKS } from '../data/stocks';
-import { mlPredictionService } from '../lib/mlPrediction';
+import { Stock, Position, Portfolio, JournalEntry, Theme } from '../types';
 
 interface TradingStore {
   theme: Theme;
@@ -26,46 +24,12 @@ interface TradingStore {
 }
 
 const initialPortfolio: Portfolio = {
-  positions: [
-    {
-      symbol: 'NVDA',
-      name: 'NVIDIA Corp.',
-      market: 'usa',
-      side: 'LONG',
-      quantity: 10,
-      avgPrice: 850.00,
-      currentPrice: 875.40,
-      change: 15.40,
-      entryDate: '2024-01-15',
-    },
-    {
-      symbol: '7203',
-      name: 'トヨタ自動車',
-      market: 'japan',
-      side: 'LONG',
-      quantity: 100,
-      avgPrice: 3500,
-      currentPrice: 3580,
-      change: 40,
-      entryDate: '2024-01-10',
-    },
-    {
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-      market: 'usa',
-      side: 'LONG',
-      quantity: 5,
-      avgPrice: 180.00,
-      currentPrice: 185.50,
-      change: 2.10,
-      entryDate: '2024-01-20',
-    },
-  ],
+  positions: [],
   orders: [],
   totalValue: 0,
   totalProfit: 0,
   dailyPnL: 0,
-  cash: 250000,
+  cash: 1000000, // 1M JPY initial capital
 };
 
 export const useTradingStore = create<TradingStore>()(
@@ -148,7 +112,7 @@ export const useTradingStore = create<TradingStore>()(
       }),
 
       addPosition: (newPosition) => set((state) => {
-        let positions = [...state.portfolio.positions];
+        const positions = [...state.portfolio.positions];
         const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
 
         if (existingIndex >= 0) {

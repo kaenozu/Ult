@@ -9,6 +9,7 @@ Gemini CLIエージェントはこのファイルをコンテキストとして�
 - **総合指針**: `skills/trader-pro-master.md` を唯一無二の基準とし、機能の維持、日本語化の徹底、データの妥当性、および安全なプロセス管理を自動的に実行する。
 - 安全なプロセス管理: `skills/safe-process-manager.md` を遵守し、エージェント自身のプロセスを保護しながら開発サーバーを管理する。
 - Gitオート・サバイバル: `skills/git-auto-survival.md` を遵守し、ロックや競合を自律的に解決して開発を止めない。
+- スマート・ギット: `skills/smart-git.md` に基づき、大規模な変更後も機能とテストの整合性を保ちながらマージを完遂する。
 - 変更方針: 既存機能を一切損なわない（デグレードさせない）ことを前提に、小さく安全な変更を行う。
 - **Git操作**: GitHubの操作には `gh` コマンドを使用し、変更は専用ブランチで管理する。
 
@@ -26,11 +27,13 @@ Gemini CLIエージェントはこのファイルをコンテキストとして�
 ## ディレクトリ構造 (Directory Structure)
 - **`trading-platform/`**: メインのアプリケーションコード
     - `app/`: Next.js App Router ページとレイアウト
-    - `components/`: Reactコンポーネント (UIパーツ)
-    - `lib/`: ユーティリティ、APIクライアント、ML予測ロジック
-    - `store/`: Zustand ストア (状態管理)
-    - `types/`: TypeScript 型定義
-    - `__tests__/`: テストファイル
+        - `api/`: APIルート
+        - `components/`: Reactコンポーネント (UIパーツ)
+        - `hooks/`: カスタムフック
+        - `lib/`: ユーティリティ、APIクライアント、ML予測ロジック
+        - `store/`: Zustand ストア (状態管理)
+        - `types/`: TypeScript 型定義
+        - `__tests__/`: テストファイル
 - **`skills/`**: 開発支援用オートメーションスクリプト (AIエージェントスキル)
     - `auto-runner.js`: タスクの自動実行・監視
     - `tdd-developer.js`: TDDワークフロー支援
