@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo, memo } from 'react';
+import { useRef, useMemo, memo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +12,8 @@ import {
   Tooltip,
   Legend,
   Filler,
+  ChartOptions,
+  TooltipItem,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV } from '@/app/types';
@@ -33,13 +35,11 @@ export interface StockChartProps {
   data: OHLCV[];
   height?: number;
   showVolume?: boolean;
-  showIndicators?: boolean;
   showSMA?: boolean;
   showBollinger?: boolean;
   loading?: boolean;
   error?: string | null;
   market?: 'japan' | 'usa';
-  currentPrice?: number;
 }
 
 // Memoize component to prevent re-renders from parent updates if props are unchanged
@@ -47,13 +47,11 @@ export const StockChart = memo(function StockChart({
   data, 
   height = 400, 
   showVolume = true, 
-  showIndicators = true, 
   showSMA = true,
   showBollinger = false,
   loading = false, 
   error = null,
   market = 'usa',
-  currentPrice
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
 
@@ -100,7 +98,7 @@ export const StockChart = memo(function StockChart({
           borderWidth: 1,
           pointRadius: 0,
           tension: 0.1,
-          fill: '+1', // Fill to next dataset (Lower)
+          fill: '+1' as const, // Fill to next dataset (Lower)
           order: 3,
         },
         {
@@ -117,7 +115,7 @@ export const StockChart = memo(function StockChart({
     ],
   }), [labels, prices, sma20, upper, lower, showSMA, showBollinger]);
 
-  const options = useMemo(() => ({
+  const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -136,8 +134,9 @@ export const StockChart = memo(function StockChart({
         borderWidth: 1,
         padding: 12,
         callbacks: {
-          label: (context: any) => {
-            return `${context.dataset.label}: ${formatCurrency(context.parsed.y, market === 'japan' ? 'JPY' : 'USD')}`;
+          label: (context: TooltipItem<'line'>) => {
+            const value = context.parsed.y ?? 0;
+            return `${context.dataset.label}: ${formatCurrency(value, market === 'japan' ? 'JPY' : 'USD')}`;
           },
         },
       },
@@ -158,7 +157,9 @@ export const StockChart = memo(function StockChart({
         },
         ticks: {
           color: '#92adc9',
-          callback: (value: number) => formatCurrency(value, market === 'japan' ? 'JPY' : 'USD'),
+          callback: function(value) {
+            return formatCurrency(Number(value), market === 'japan' ? 'JPY' : 'USD');
+          },
         },
       },
     },
@@ -181,7 +182,7 @@ export const StockChart = memo(function StockChart({
     ],
   }), [labels, volumes, prices]);
 
-  const volumeOptions = useMemo(() => ({
+  const volumeOptions: ChartOptions<'bar'> = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -237,11 +238,11 @@ export const StockChart = memo(function StockChart({
 
   return (
     <div className="relative w-full" style={{ height }}>
-      <Line ref={chartRef as any} data={chartData} options={options as any} />
+      <Line ref={chartRef} data={chartData} options={options} />
 
       {showVolume && (
         <div className="absolute bottom-0 left-0 right-0 h-16">
-          <Bar data={volumeData} options={volumeOptions as any} />
+          <Bar data={volumeData} options={volumeOptions} />
         </div>
       )}
     </div>

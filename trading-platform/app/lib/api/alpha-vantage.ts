@@ -36,14 +36,38 @@ export interface TimeSeriesData {
 
 export interface TechnicalIndicator {
   name: string;
-  data: any[];
+  data: Record<string, number | string>[];
   meta: {
     symbol: string;
     indicator: string;
     interval: string;
     timePeriod?: number | string;
-    [key: string]: any;
+    [key: string]: string | number | undefined;
   };
+}
+
+interface AlphaVantageTimeSeriesValue {
+  '1. open': string;
+  '2. high': string;
+  '3. low': string;
+  '4. close': string;
+  '5. volume': string;
+}
+
+interface AlphaVantageIndicatorValue {
+  [key: string]: string;
+}
+
+interface AlphaVantageSymbolMatch {
+  '1. symbol': string;
+  '2. name': string;
+  '3. type': string;
+  '4. region': string;
+  '5. marketOpen': string;
+  '6. marketClose': string;
+  '7. timezone': string;
+  '8. currency': string;
+  '9. matchScore': string;
 }
 
 export interface SymbolSearchResult {
@@ -92,24 +116,23 @@ export class AlphaVantageClient {
         throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as Record<string, any>;
 
       if (data['Error Message']) {
-        throw new Error(data['Error Message']);
+        throw new Error(data['Error Message'] as string);
       }
 
       if (data['Note']) {
-        // API limit reached message from API
-        throw new Error(data['Note']);
+        throw new Error(data['Note'] as string);
       }
 
-      if (!data['Time Series (Daily)']) {
+      const timeSeries = data['Time Series (Daily)'] as Record<string, AlphaVantageTimeSeriesValue> | undefined;
+      if (!timeSeries) {
         throw new Error('No time series data returned');
       }
 
-      const timeSeries = data['Time Series (Daily)'];
       const parsed: OHLCV[] = Object.entries(timeSeries)
-        .map(([timestamp, values]: [string, any]) => ({
+        .map(([timestamp, values]) => ({
           timestamp,
           open: parseFloat(values['1. open']),
           high: parseFloat(values['2. high']),
@@ -132,10 +155,6 @@ export class AlphaVantageClient {
 
   /**
    * Get intraday data for a symbol
-   * @param symbol Stock symbol
-   * @param interval Time interval between two consecutive data points (1min, 5min, 15min, 30min, 60min)
-   * @param outputsize Compact or full output
-   * @param month Month in YYYY-MM format (required for full output)
    */
   async getIntraday(
     symbol: string,
@@ -162,19 +181,20 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as Record<string, any>;
 
     if (data['Error Message']) {
-      throw new Error(data['Error Message']);
+      throw new Error(data['Error Message'] as string);
     }
 
-    if (!data['Time Series (' + interval + ')']) {
+    const key = `Time Series (${interval})`;
+    const timeSeries = data[key] as Record<string, AlphaVantageTimeSeriesValue> | undefined;
+    if (!timeSeries) {
       throw new Error('No time series data returned');
     }
 
-    const timeSeries = data['Time Series (' + interval + ')'];
     const parsed: OHLCV[] = Object.entries(timeSeries)
-      .map(([timestamp, values]: [string, any]) => ({
+      .map(([timestamp, values]) => ({
         timestamp,
         open: parseFloat(values['1. open']),
         high: parseFloat(values['2. high']),
@@ -192,10 +212,7 @@ export class AlphaVantageClient {
   }
 
   /**
-   * Get RSI (Relative Strength Index) indicator
-   * @param symbol Stock symbol
-   * @param timePeriod Time period for RSI calculation (default: 14)
-   * @param series Type of price data (open, high, low, close)
+   * Get RSI indicator
    */
   async getRSI(
     symbol: string,
@@ -218,19 +235,19 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as Record<string, any>;
 
     if (data['Error Message']) {
-      throw new Error(data['Error Message']);
+      throw new Error(data['Error Message'] as string);
     }
 
-    if (!data['Technical Analysis: RSI']) {
+    const rsiData = data['Technical Analysis: RSI'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    if (!rsiData) {
       throw new Error('No RSI data returned');
     }
 
-    const rsiData = data['Technical Analysis: RSI'];
-    const parsed: any[] = Object.entries(rsiData)
-      .map(([timestamp, values]: [string, any]) => ({
+    const parsed = Object.entries(rsiData)
+      .map(([timestamp, values]) => ({
         timestamp,
         rsi: parseFloat(values['RSI']),
       }))
@@ -249,10 +266,7 @@ export class AlphaVantageClient {
   }
 
   /**
-   * Get SMA (Simple Moving Average) indicator
-   * @param symbol Stock symbol
-   * @param timePeriod Time period for SMA calculation
-   * @param series Type of price data
+   * Get SMA indicator
    */
   async getSMA(
     symbol: string,
@@ -275,19 +289,19 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as Record<string, any>;
 
     if (data['Error Message']) {
-      throw new Error(data['Error Message']);
+      throw new Error(data['Error Message'] as string);
     }
 
-    if (!data['Technical Analysis: SMA']) {
+    const smaData = data['Technical Analysis: SMA'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    if (!smaData) {
       throw new Error('No SMA data returned');
     }
 
-    const smaData = data['Technical Analysis: SMA'];
-    const parsed: any[] = Object.entries(smaData)
-      .map(([timestamp, values]: [string, any]) => ({
+    const parsed = Object.entries(smaData)
+      .map(([timestamp, values]) => ({
         timestamp,
         sma: parseFloat(values['SMA']),
       }))
@@ -306,10 +320,7 @@ export class AlphaVantageClient {
   }
 
   /**
-   * Get EMA (Exponential Moving Average) indicator
-   * @param symbol Stock symbol
-   * @param timePeriod Time period for EMA calculation
-   * @param series Type of price data
+   * Get EMA indicator
    */
   async getEMA(
     symbol: string,
@@ -332,19 +343,19 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as Record<string, any>;
 
     if (data['Error Message']) {
-      throw new Error(data['Error Message']);
+      throw new Error(data['Error Message'] as string);
     }
 
-    if (!data['Technical Analysis: EMA']) {
+    const emaData = data['Technical Analysis: EMA'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    if (!emaData) {
       throw new Error('No EMA data returned');
     }
 
-    const emaData = data['Technical Analysis: EMA'];
-    const parsed: any[] = Object.entries(emaData)
-      .map(([timestamp, values]: [string, any]) => ({
+    const parsed = Object.entries(emaData)
+      .map(([timestamp, values]) => ({
         timestamp,
         ema: parseFloat(values['EMA']),
       }))
@@ -363,11 +374,7 @@ export class AlphaVantageClient {
   }
 
   /**
-   * Get MACD (Moving Average Convergence Divergence) indicator
-   * @param symbol Stock symbol
-   * @param fastperiod Fast MA period (default: 12)
-   * @param slowperiod Slow MA period (default: 26)
-   * @param signalperiod Signal line MA period (default: 9)
+   * Get MACD indicator
    */
   async getMACD(
     symbol: string,
@@ -392,19 +399,19 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as Record<string, any>;
 
     if (data['Error Message']) {
-      throw new Error(data['Error Message']);
+      throw new Error(data['Error Message'] as string);
     }
 
-    if (!data['Technical Analysis: MACD']) {
+    const macdData = data['Technical Analysis: MACD'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    if (!macdData) {
       throw new Error('No MACD data returned');
     }
 
-    const macdData = data['Technical Analysis: MACD'];
-    const parsed: any[] = Object.entries(macdData)
-      .map(([timestamp, values]: [string, any]) => ({
+    const parsed = Object.entries(macdData)
+      .map(([timestamp, values]) => ({
         timestamp,
         macd: parseFloat(values['MACD']),
         macd_Signal: parseFloat(values['MACD_Signal']),
@@ -426,10 +433,6 @@ export class AlphaVantageClient {
 
   /**
    * Get Bollinger Bands indicator
-   * @param symbol Stock symbol
-   * @param timePeriod Time period for MA calculation (default: 20)
-   * @param series Type of price data
-   * @param nbdevup Standard deviation multiplier for upper band (default: 2)
    */
   async getBollingerBands(
     symbol: string,
@@ -454,19 +457,19 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as Record<string, any>;
 
     if (data['Error Message']) {
-      throw new Error(data['Error Message']);
+      throw new Error(data['Error Message'] as string);
     }
 
-    if (!data['Technical Analysis: BBANDS']) {
+    const bbData = data['Technical Analysis: BBANDS'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    if (!bbData) {
       throw new Error('No Bollinger Bands data returned');
     }
 
-    const bbData = data['Technical Analysis: BBANDS'];
-    const parsed: any[] = Object.entries(bbData)
-      .map(([timestamp, values]: [string, any]) => ({
+    const parsed = Object.entries(bbData)
+      .map(([timestamp, values]) => ({
         timestamp,
         realMiddleBand: parseFloat(values['Real Middle Band']),
         upperBand: parseFloat(values['Real Upper Band']),
@@ -489,8 +492,6 @@ export class AlphaVantageClient {
 
   /**
    * Search for symbols
-   * @param keywords Search keywords
-   * @param datatype Data type to return (default: "equity")
    */
   async searchSymbols(
     keywords: string,
@@ -510,17 +511,17 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { bestMatches?: AlphaVantageSymbolMatch[], 'Error Message'?: string };
 
     if (data['Error Message']) {
       throw new Error(data['Error Message']);
     }
 
-    if (!data['bestMatches']) {
+    if (!data.bestMatches) {
       return [];
     }
 
-    return data['bestMatches'].map((match: any) => ({
+    return data.bestMatches.map((match) => ({
       symbol: match['1. symbol'],
       name: match['2. name'],
       type: match['3. type'],
@@ -535,9 +536,8 @@ export class AlphaVantageClient {
 
   /**
    * Get global quote for a symbol
-   * @param symbol Stock symbol or comma-separated symbols
    */
-  async getGlobalQuote(symbol: string): Promise<any> {
+  async getGlobalQuote(symbol: string): Promise<Record<string, string>> {
     const params = new URLSearchParams({
       function: 'GLOBAL_QUOTE',
       symbol,
@@ -551,17 +551,18 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { 'Global Quote'?: Record<string, string>, 'Error Message'?: string };
 
     if (data['Error Message']) {
       throw new Error(data['Error Message']);
     }
 
-    if (!data['Global Quote']) {
+    const quote = data['Global Quote'];
+    if (!quote) {
       throw new Error('No quote data returned');
     }
 
-    return data['Global Quote'];
+    return quote;
   }
 }
 

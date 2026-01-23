@@ -3,7 +3,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
-import { StockTable, PositionTable, HistoryTable } from '@/app/components/StockTable';
+import { StockTable } from '@/app/components/StockTable';
+import { PositionTable } from '@/app/components/PositionTable';
+import { HistoryTable } from '@/app/components/HistoryTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
 import { OrderPanel } from '@/app/components/OrderPanel';
@@ -30,11 +32,6 @@ export default function Workstation() {
   const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
     closePosition(symbol, currentPrice);
@@ -165,7 +162,6 @@ export default function Workstation() {
                     showSMA={showSMA}
                     showBollinger={showBollinger}
                     market={displayStock?.market}
-                    currentPrice={displayStock?.price}
                     loading={loading}
                     error={error}
                   />
@@ -194,9 +190,9 @@ export default function Workstation() {
           <div className="h-52 border-t border-[#233648] bg-[#141e27] flex flex-col shrink-0">
             <div className="flex items-center gap-1 px-2 border-b border-[#233648] bg-[#192633]/50">
               {[
-                { id: 'positions', label: `保有ポジション (${isMounted ? portfolio.positions.length : 0})` },
-                { id: 'orders', label: `注文一覧 (${isMounted ? (portfolio.orders?.length || 0) : 0})` },
-                { id: 'history', label: `取引履歴 (${isMounted ? journal.length : 0})` },
+                { id: 'positions', label: `保有ポジション (${portfolio.positions.length})` },
+                { id: 'orders', label: `注文一覧 (${portfolio.orders?.length || 0})` },
+                { id: 'history', label: `取引履歴 (${journal.length})` },
               ].map((tab) => (
                 <button
                   key={tab.id}

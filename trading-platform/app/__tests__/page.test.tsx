@@ -6,17 +6,10 @@ import '@testing-library/jest-dom';
 // Mock child components to focus on page logic
 jest.mock('../components/Header', () => ({ Header: () => <div>Header</div> }));
 jest.mock('../components/Navigation', () => ({ Navigation: () => <div>Navigation</div> }));
-jest.mock('../components/StockTable', () => ({ 
-  StockTable: () => <div>StockTable</div>
-}));
-jest.mock('../components/PositionTable', () => ({
-  PositionTable: () => <div>PositionTable</div>
-}));
-jest.mock('../components/HistoryTable', () => ({
-  HistoryTable: () => <div>HistoryTable</div>
-}));
-jest.mock('../components/SignalPanel', () => ({ SignalPanel: () => <div>SignalPanel</div> }));
-jest.mock('../components/StockChart', () => ({ StockChart: () => <div>StockChart</div> }));
+jest.mock('../components/StockTable', () => ({ StockTable: () => <div>StockTable</div> }));
+jest.mock('../components/PositionTable', () => ({ PositionTable: () => <div>PositionTable</div> }));
+jest.mock('../components/HistoryTable', () => ({ HistoryTable: () => <div>HistoryTable</div> }));
+jest.mock('../components/SignalPanel', () => ({ SignalPanel: () => <div>SignalPanel</div> }));jest.mock('../components/StockChart', () => ({ StockChart: () => <div>StockChart</div> }));
 jest.mock('../components/OrderPanel', () => ({ OrderPanel: () => <div>OrderPanel</div> }));
 
 // Mock next/navigation

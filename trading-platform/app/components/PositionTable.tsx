@@ -9,7 +9,7 @@ const PositionRow = memo(({
   onClose
 }: {
   position: Position;
-  onClose?: (symbol: string) => void;
+  onClose?: (symbol: string, currentPrice: number) => void;
 }) => {
   const marketValue = position.currentPrice * position.quantity;
   const profit = position.side === 'LONG' 
@@ -52,7 +52,7 @@ const PositionRow = memo(({
       </td>
       <td className="px-4 py-2 text-right">
         <button
-          onClick={() => onClose?.(position.symbol)}
+          onClick={() => onClose?.(position.symbol, position.currentPrice)}
           className="text-[10px] px-2 py-0.5 rounded bg-[#192633] border border-[#233648] hover:bg-[#233648] text-[#92adc9] transition-colors"
         >
           決済
@@ -66,7 +66,7 @@ PositionRow.displayName = 'PositionRow';
 
 interface PositionTableProps {
   positions: Position[];
-  onClose?: (symbol: string) => void;
+  onClose?: (symbol: string, currentPrice: number) => void;
 }
 
 export const PositionTable = memo(({ positions, onClose }: PositionTableProps) => {
