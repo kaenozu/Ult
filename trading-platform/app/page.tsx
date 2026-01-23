@@ -64,18 +64,16 @@ export default function Workstation() {
   }, []);
 
   useEffect(() => {
-    const initializeData = async () => {
-      // Priority: 1. storeSelectedStock (from screener), 2. watchlist[0] (default)
-      const stockToSelect = storeSelectedStock || watchlist[0];
-      if (stockToSelect && !selectedStock) {
-        setLocalSelectedStock(stockToSelect);
-        if (!storeSelectedStock) setSelectedStock(stockToSelect);
-        fetchData(stockToSelect);
-      }
-    };
-
-    initializeData();
-  }, [fetchData, storeSelectedStock, watchlist, setSelectedStock, selectedStock]);
+    if (storeSelectedStock) {
+      setLocalSelectedStock(storeSelectedStock);
+      fetchData(storeSelectedStock);
+    } else if (watchlist.length > 0 && !selectedStock) {
+      const defaultStock = watchlist[0];
+      setLocalSelectedStock(defaultStock);
+      setSelectedStock(defaultStock);
+      fetchData(defaultStock);
+    }
+  }, [storeSelectedStock, fetchData, watchlist, setSelectedStock]); // Removed selectedStock from deps to avoid loop if needed, but ensured fetch on change
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);

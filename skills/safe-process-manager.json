@@ -1,0 +1,7 @@
+{
+  "name": "safe-process-manager",
+  "description": "自分自身を終了させずに開発サーバーを安全に再起動・停止するためのスキル",
+  "version": "1.0.0",
+  "priority": "critical",
+  "auto_activate": true
+}
