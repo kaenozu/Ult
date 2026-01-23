@@ -115,7 +115,7 @@ export function calculateEMA(prices: number[], period: number): number[] {
   for (let i = 0; i < period && i < prices.length; i++) {
     sum += prices[i];
   }
-    const initialSMA = sum / period;
+  let initialSMA = sum / period;
   ema.push(initialSMA);
 
   for (let i = period; i < prices.length; i++) {
@@ -150,6 +150,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
       const rs = avgGain / (avgLoss || 0.0001);
       rsi.push(100 - 100 / (1 + rs));
     } else {
+      const prevRSI = rsi[i - 1];
       const currentGain = gains[i - 1];
       const currentLoss = losses[i - 1];
       const avgGain = (gains.slice(i - period, i).reduce((a, b) => a + b, 0) + currentGain) / period;
@@ -233,6 +234,7 @@ export function calculateATR(
   ohlcv: { high: number; low: number; close: number }[],
   period: number = 14
 ): number[] {
+  if (ohlcv.length === 0) return [];
   const tr: number[] = [ohlcv[0].high - ohlcv[0].low];
   
   for (let i = 1; i < ohlcv.length; i++) {
@@ -258,10 +260,29 @@ export function calculateATR(
   return atr;
 }
 
-/**
- * Get the daily price limit (stop limit) for Japanese stocks based on the reference price.
- * Follows the standard TSE daily price limit table.
- */
+export function getTickSize(price: number): number {
+  if (price <= 3000) return 1;
+  if (price <= 5000) return 5;
+  if (price <= 10000) return 10;
+  if (price <= 30000) return 50;
+  if (price <= 50000) return 100;
+  if (price <= 100000) return 500;
+  if (price <= 300000) return 1000;
+  if (price <= 500000) return 5000;
+  if (price <= 1000000) return 10000;
+  if (price <= 3000000) return 50000;
+  if (price <= 5000000) return 100000;
+  return 500000;
+}
+
+export function roundToTickSize(price: number, market: 'japan' | 'usa' = 'japan'): number {
+  if (market === 'usa') {
+    return Number(price.toFixed(2));
+  }
+  const tickSize = getTickSize(price);
+  return Math.round(price / tickSize) * tickSize;
+}
+
 export function getPriceLimit(referencePrice: number): number {
   if (referencePrice < 100) return 30;
   if (referencePrice < 200) return 50;
@@ -286,36 +307,5 @@ export function getPriceLimit(referencePrice: number): number {
   if (referencePrice < 500000) return 70000;
   if (referencePrice < 700000) return 100000;
   if (referencePrice < 1000000) return 150000;
-  return 300000; // Simplified for very high prices
-}
-
-/**
- * Get the tick size for Japanese stocks based on price.
- * Follows the standard TSE tick size table (for non-TOPIX100 stocks).
- */
-export function getTickSize(price: number): number {
-  if (price <= 3000) return 1;
-  if (price <= 5000) return 5;
-  if (price <= 10000) return 10;
-  if (price <= 30000) return 50;
-  if (price <= 50000) return 100;
-  if (price <= 100000) return 500;
-  if (price <= 300000) return 1000;
-  if (price <= 500000) return 5000;
-  if (price <= 1000000) return 10000;
-  if (price <= 3000000) return 50000;
-  if (price <= 5000000) return 100000;
-  return 500000;
-}
-
-/**
- * Round a price to the nearest valid tick size for the Japanese market.
- */
-export function roundToTickSize(price: number, market: 'japan' | 'usa' = 'japan'): number {
-  if (market === 'usa') {
-    return Number(price.toFixed(2));
-  }
-  
-  const tickSize = getTickSize(price);
-  return Math.round(price / tickSize) * tickSize;
+  return 300000;
 }

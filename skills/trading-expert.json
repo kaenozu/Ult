@@ -1,7 +1,0 @@
-{
-  "name": "trading-expert",
-  "description": "トレーディング戦略の最適化、日本市場ルールの適用、および安全な開発フローを管理するスキル",
-  "version": "1.0.0",
-  "priority": "high",
-  "auto_activate": true
-}

@@ -4,7 +4,6 @@ import { Position } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { memo } from 'react';
 
-// Memoized Position Row
 const PositionRow = memo(({
   position,
   onClose
@@ -13,8 +12,14 @@ const PositionRow = memo(({
   onClose?: (symbol: string) => void;
 }) => {
   const marketValue = position.currentPrice * position.quantity;
-  const profit = (position.currentPrice - position.avgPrice) * position.quantity;
-  const profitPercent = ((position.currentPrice - position.avgPrice) / position.avgPrice) * 100;
+  const profit = position.side === 'LONG' 
+    ? (position.currentPrice - position.avgPrice) * position.quantity
+    : (position.avgPrice - position.currentPrice) * position.quantity;
+    
+  const profitPercent = position.side === 'LONG'
+    ? ((position.currentPrice - position.avgPrice) / position.avgPrice) * 100
+    : ((position.avgPrice - position.currentPrice) / position.avgPrice) * 100;
+    
   const isProfit = profit >= 0;
 
   return (
@@ -25,20 +30,20 @@ const PositionRow = memo(({
           <span className="text-[10px] text-[#92adc9]">{position.name}</span>
         </div>
       </td>
-      <td className={cn('px-4 py-2 font-medium', isProfit ? 'text-green-500' : 'text-red-500')}>
+      <td className={cn('px-4 py-2 font-medium', position.side === 'LONG' ? 'text-green-500' : 'text-red-500')}>
         {position.side === 'LONG' ? '買い' : '空売り'}
       </td>
-      <td className="px-4 py-2 text-right text-white">{position.quantity}</td>
-      <td className="px-4 py-2 text-right text-[#92adc9]">
+      <td className="px-4 py-2 text-right text-white tabular-nums">{position.quantity}</td>
+      <td className="px-4 py-2 text-right text-[#92adc9] tabular-nums">
         {position.market === 'japan' ? formatCurrency(position.avgPrice, 'JPY') : formatCurrency(position.avgPrice, 'USD')}
       </td>
-      <td className="px-4 py-2 text-right text-white">
+      <td className="px-4 py-2 text-right text-white tabular-nums">
         {position.market === 'japan' ? formatCurrency(position.currentPrice, 'JPY') : formatCurrency(position.currentPrice, 'USD')}
       </td>
-      <td className="px-4 py-2 text-right text-white">
+      <td className="px-4 py-2 text-right text-white tabular-nums">
         {position.market === 'japan' ? formatCurrency(marketValue, 'JPY') : formatCurrency(marketValue, 'USD')}
       </td>
-      <td className={cn('px-4 py-2 text-right font-bold', isProfit ? 'text-green-500' : 'text-red-500')}>
+      <td className={cn('px-4 py-2 text-right font-bold tabular-nums', isProfit ? 'text-green-500' : 'text-red-500')}>
         {isProfit ? '+' : ''}
         {position.market === 'japan' ? formatCurrency(profit, 'JPY') : formatCurrency(profit, 'USD')}
         <span className="ml-1 text-[10px] opacity-80">
@@ -66,7 +71,12 @@ interface PositionTableProps {
 
 export const PositionTable = memo(({ positions, onClose }: PositionTableProps) => {
   const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-  const totalProfit = positions.reduce((sum, p) => sum + (p.currentPrice - p.avgPrice) * p.quantity, 0);
+  const totalProfit = positions.reduce((sum, p) => {
+    const pnl = p.side === 'LONG' 
+      ? (p.currentPrice - p.avgPrice) * p.quantity
+      : (p.avgPrice - p.currentPrice) * p.quantity;
+    return sum + pnl;
+  }, 0);
 
   return (
     <div className="flex-1 overflow-auto">

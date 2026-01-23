@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Navigation } from '@/app/components/Navigation';
 import { JAPAN_STOCKS, USA_STOCKS } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
 import { cn, formatPercent } from '@/app/lib/utils';
-import { marketClient } from '@/app/lib/api/data-aggregator';
 
 const SECTORS = [
   '全て',
@@ -71,40 +70,12 @@ function HeatmapBlock({ stock, className }: HeatmapBlockProps) {
 export default function Heatmap() {
   const [selectedSector, setSelectedSector] = useState('全て');
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'japan' | 'usa'>('all');
-  const [stocks, setStocks] = useState<Stock[]>([...JAPAN_STOCKS, ...USA_STOCKS]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchAllData = async () => {
-      setLoading(true);
-      const symbols = [...JAPAN_STOCKS, ...USA_STOCKS].map(s => s.symbol);
-      const quotes = await marketClient.fetchQuotes(symbols);
-      
-      if (quotes.length > 0) {
-        setStocks(prev => prev.map(s => {
-          const q = quotes.find(q => q.symbol === s.symbol);
-          if (q) {
-            return {
-              ...s,
-              price: q.price,
-              change: q.change,
-              changePercent: q.changePercent * 100,
-              volume: q.volume,
-            };
-          }
-          return s;
-        }));
-      }
-      setLoading(false);
-    };
-    fetchAllData();
-  }, []);
 
   const allStocks = selectedMarket === 'all'
-    ? stocks
+    ? [...JAPAN_STOCKS, ...USA_STOCKS]
     : selectedMarket === 'japan'
-      ? stocks.filter(s => s.market === 'japan')
-      : stocks.filter(s => s.market === 'usa');
+      ? JAPAN_STOCKS
+      : USA_STOCKS;
 
   const filteredStocks = selectedSector === '全て'
     ? allStocks
@@ -126,14 +97,13 @@ export default function Heatmap() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
-      {/* Real-time Status Banner */}
-      <div className="bg-emerald-500/10 border-b border-emerald-500/30 px-4 py-2 flex items-center justify-center gap-2 text-emerald-400 text-xs">
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-        </span>
-        <span className="font-medium">Market Live: リアルタイムデータ同期中</span>
-        <span className="text-emerald-500/60 ml-2">Connected to Yahoo Finance</span>
+      {/* Mock Data Banner */}
+      <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 flex items-center justify-center gap-2 text-yellow-400 text-xs">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span className="font-medium">注意:  表示データはモック（模擬データ）です。実際の市場データではありません。</span>
+        <span className="text-yellow-500/60">Mock Data Only</span>
       </div>
 
       {/* Header */}

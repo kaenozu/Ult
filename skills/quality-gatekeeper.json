@@ -1,7 +1,0 @@
-{
-  "name": "quality-gatekeeper",
-  "description": "完了報告前にビルドエラーや論理的な表示バグ（異常値）を自動検知するためのスキル",
-  "version": "1.0.0",
-  "priority": "high",
-  "auto_activate": true
-}

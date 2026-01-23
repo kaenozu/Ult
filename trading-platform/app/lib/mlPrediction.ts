@@ -12,7 +12,7 @@ interface PredictionFeatures {
   volatility: number;
   macdSignal: number;
   bollingerPosition: number;
-  atrPercent: number; // Added for volatility awareness
+  atrPercent: number;
 }
 
 interface ModelPrediction {
@@ -61,6 +61,7 @@ class MLPredictionService {
     const volumes = data.map(d => d.volume);
 
     const currentPrice = prices[prices.length - 1];
+    const prevRSI = indicators.rsi[indicators.rsi.length - 2] || 50;
 
     const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
     const volumeRatio = volumes[volumes.length - 1] / avgVolume;
@@ -87,7 +88,7 @@ class MLPredictionService {
 
     return {
       rsi: currentRSI,
-      rsiChange: 0, 
+      rsiChange: currentRSI - prevRSI, 
       sma5: (currentPrice - currentSMA5) / currentSMA5 * 100,
       sma20: (currentPrice - currentSMA20) / currentSMA20 * 100,
       sma50: (currentPrice - currentSMA50) / currentSMA50 * 100,

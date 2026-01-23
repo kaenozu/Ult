@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import YahooFinance from 'yahoo-finance2';
 
 // Define explicit types for Yahoo Finance responses
-// (Partial definitions based on what we use)
 interface YahooChartResult {
   meta: {
     currency: string;
@@ -52,10 +51,16 @@ export async function GET(request: Request) {
 
   try {
     if (type === 'history') {
-      // Calculate start date for 300 days ago
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 300);
-      const period1 = startDate.toISOString().split('T')[0];
+      const startDateParam = searchParams.get('startDate');
+      let period1: string;
+
+      if (startDateParam) {
+        period1 = startDateParam;
+      } else {
+        const startDate = new Date();
+        startDate.setFullYear(startDate.getFullYear() - 5);
+        period1 = startDate.toISOString().split('T')[0];
+      }
 
       try {
         const result = await yf.chart(yahooSymbol, {
@@ -65,15 +70,9 @@ export async function GET(request: Request) {
 
         if (!result || !result.quotes || result.quotes.length === 0) {
           console.warn(`No data returned from chart for ${yahooSymbol}`);
-          return NextResponse.json({ 
-            data: [], 
-            warning: 'No historical data found for this symbol' 
-          });
+          return NextResponse.json({ data: [], warning: 'No historical data found' });
         }
 
-        // Map data and filter out only completely invalid entries
-        // Note: We used to filter out q.open === null, but now we'll keep them 
-        // and let the client-side interpolation handle it if possible.
         const ohlcv = result.quotes.map(q => ({
           date: q.date instanceof Date ? q.date.toISOString().split('T')[0] : String(q.date),
           open: q.open || 0,
@@ -89,7 +88,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ 
           error: 'Failed to fetch historical data', 
           details: innerError.message 
-        }, { status: 502 }); // Bad Gateway for upstream errors
+        }, { status: 502 });
       }
     } 
     

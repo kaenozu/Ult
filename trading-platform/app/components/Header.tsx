@@ -22,7 +22,9 @@ export function Header() {
     return sum + (change - prevChange);
   }, 0);
 
-  const dailyPnLPercent = (dailyPnL / (portfolio.totalValue - dailyPnL || 1)) * 100;
+  // Avoid NaN when no value
+  const denominator = portfolio.totalValue - dailyPnL;
+  const dailyPnLPercent = denominator !== 0 ? (dailyPnL / denominator) * 100 : 0;
 
   useEffect(() => {
     if (isEditingCash && inputRef.current) {
@@ -140,7 +142,6 @@ export function Header() {
             aria-label="銘柄検索"
           />
           
-          {/* Search Results Dropdown */}
           {showResults && searchResults.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-[#141e27] border border-[#233648] rounded-lg shadow-2xl z-50 overflow-hidden">
                 <div className="px-3 py-2 border-b border-[#233648] bg-[#192633]/50">

@@ -3,14 +3,12 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
-import { StockTable } from '@/app/components/StockTable';
-import { PositionTable } from '@/app/components/PositionTable';
-import { HistoryTable } from '@/app/components/HistoryTable';
+import { StockTable, PositionTable, HistoryTable } from '@/app/components/StockTable';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { StockChart } from '@/app/components/StockChart';
 import { OrderPanel } from '@/app/components/OrderPanel';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
+import { fetchOHLCV, fetchSignal, ALL_STOCKS } from '@/app/data/stocks';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { cn, formatCurrency } from '@/app/lib/utils';
 
@@ -24,7 +22,6 @@ export default function Workstation() {
   const [error, setError] = useState<string | null>(null);
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
-  const [showMACD, setShowMACD] = useState(false);
   const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
@@ -49,7 +46,7 @@ export default function Workstation() {
     try {
       const data = await fetchOHLCV(stock.symbol, stock.market, stock.price);
       if (data.length === 0) {
-        setError('利用可能なデータがありません');
+        setError('No data available');
       } else {
         setChartData(data);
         const signalData = await fetchSignal(stock);
@@ -57,23 +54,25 @@ export default function Workstation() {
       }
     } catch (err) {
       console.error('Data fetch error:', err);
-      setError('データの取得に失敗しました');
+      setError('Failed to fetch data');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (storeSelectedStock) {
-      setLocalSelectedStock(storeSelectedStock);
-      fetchData(storeSelectedStock);
-    } else if (watchlist.length > 0 && !selectedStock) {
-      const defaultStock = watchlist[0];
-      setLocalSelectedStock(defaultStock);
-      setSelectedStock(defaultStock);
-      fetchData(defaultStock);
-    }
-  }, [storeSelectedStock, fetchData, watchlist, setSelectedStock]); // Removed selectedStock from deps to avoid loop if needed, but ensured fetch on change
+    const initializeData = async () => {
+      // Priority: 1. storeSelectedStock (from screener), 2. watchlist[0] (default)
+      const stockToSelect = storeSelectedStock || watchlist[0];
+      if (stockToSelect) {
+        setLocalSelectedStock(stockToSelect);
+        if (!storeSelectedStock) setSelectedStock(stockToSelect);
+        fetchData(stockToSelect);
+      }
+    };
+
+    initializeData();
+  }, [fetchData, storeSelectedStock, watchlist, setSelectedStock]);
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
@@ -81,17 +80,14 @@ export default function Workstation() {
     fetchData(stock);
   }, [setSelectedStock, fetchData]);
 
-  const handleClosePosition = useCallback((symbol: string) => {
-    // Current price is retrieved from the stock data in the store or from the position itself
-    const position = portfolio.positions.find(p => p.symbol === symbol);
-    if (position) {
-      closePosition(symbol, position.currentPrice);
-    }
-  }, [closePosition, portfolio.positions]);
+  const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
+    closePosition(symbol, currentPrice);
+  }, [closePosition]);
 
   const displayStock = selectedStock || watchlist[0];
+  const displaySignal = chartSignal;
 
-  if (loading && chartData.length === 0) {
+  if (loading) {
     return (
       <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
         <div className="flex-1 flex items-center justify-center">
@@ -223,15 +219,6 @@ export default function Workstation() {
                 >
                   BB
                 </button>
-                <button
-                  onClick={() => setShowMACD(!showMACD)}
-                  className={cn(
-                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
-                    showMACD ? 'bg-purple-500/20 text-purple-400' : 'text-[#92adc9] hover:text-white'
-                  )}
-                >
-                  MACD
-                </button>
               </div>
               <div className="h-4 w-px bg-[#233648]" />
               <div className="flex items-center gap-3 text-xs text-[#92adc9]">
@@ -268,7 +255,6 @@ export default function Workstation() {
                 showVolume={true} 
                 showSMA={showSMA}
                 showBollinger={showBollinger}
-                showMACD={showMACD}
                 market={displayStock?.market}
                 currentPrice={displayStock?.price}
                 loading={loading}
@@ -430,7 +416,7 @@ export default function Workstation() {
                           <td className="py-1 px-4 text-center font-bold text-sm text-white flex justify-center items-center gap-2" colSpan={3}>
                             {displayStock ? formatCurrency(displayStock.price, displayStock.market === 'japan' ? 'JPY' : 'USD') : '-'}
                             <span className="text-[10px] font-normal text-[#92adc9]">
-                              スプレッド: 0.02
+                              Spread: 0.02
                             </span>
                           </td>
                         </tr>
