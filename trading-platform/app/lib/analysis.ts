@@ -75,6 +75,60 @@ function calculateHistoricalAccuracyWithParams(data: OHLCV[], market: 'japan' | 
   return totalSignals > 0 ? Math.round((hitCount / totalSignals) * 100) : 0;
 }
 
+/**
+ * 直近の予測誤差係数を計算する（自己矯正用）
+ */
+function calculatePredictionError(data: OHLCV[]): number {
+  if (data.length < 30) return 1.0;
+  
+  let totalError = 0;
+  let count = 0;
+  const window = 20;
+
+  for (let i = data.length - window; i < data.length - 5; i++) {
+    const current = data[i];
+    const actualFuture = data[i + 5].close;
+    
+    // 5日前の移動平均からの予測値をシミュレート
+    const sma = calculateSMA(data.slice(0, i + 1).map(d => d.close), 20).pop() || current.close;
+    const error = Math.abs(actualFuture - sma) / sma;
+    totalError += error;
+    count++;
+  }
+
+  const avgError = totalError / count;
+  // 標準的な誤差を 2% と仮定し、それに対する比率を返す (最小 0.8, 最大 2.5)
+  return Math.min(Math.max(avgError / 0.02, 0.8), 2.5);
+}
+
+/**
+ * 価格帯別出来高（ボリュームプロファイル）から主要な抵抗帯を抽出する
+ */
+function calculateVolumeProfile(data: OHLCV[]): { price: number, strength: number }[] {
+  if (data.length === 0) return [];
+  
+  const prices = data.map(d => d.close);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const range = maxPrice - minPrice;
+  if (range === 0) return [];
+
+  const binCount = 10;
+  const binSize = range / binCount;
+  const bins = new Array(binCount).fill(0);
+
+  data.forEach(d => {
+    const binIdx = Math.min(Math.floor((d.close - minPrice) / binSize), binCount - 1);
+    bins[binIdx] += d.volume;
+  });
+
+  const maxVolume = Math.max(...bins);
+  return bins.map((vol, i) => ({
+    price: minPrice + (binSize * i) + (binSize / 2),
+    strength: vol / maxVolume
+  })).filter(b => b.strength > 0.5); // 強い壁だけを抽出
+}
+
 export function analyzeStock(symbol: string, data: OHLCV[], _market: 'japan' | 'usa'): Signal {
   if (data.length < 50) {
     return {
@@ -146,6 +200,10 @@ export function analyzeStock(symbol: string, data: OHLCV[], _market: 'japan' | '
     predictedChange = -targetPercent * 100;
   }
 
+  // 自己矯正用データの計算
+  const predictionError = calculatePredictionError(data);
+  const volumeResistance = calculateVolumeProfile(data);
+
   return {
     symbol,
     type,
@@ -157,6 +215,8 @@ export function analyzeStock(symbol: string, data: OHLCV[], _market: 'japan' | '
     reason: (confidence >= 80 ? '【強気】' : '') + reason,
     predictedChange: parseFloat(predictedChange.toFixed(2)),
     predictionDate: new Date().toISOString().split('T')[0],
-    optimizedParams: { rsiPeriod, smaPeriod }
+    optimizedParams: { rsiPeriod, smaPeriod },
+    predictionError,
+    volumeResistance
   };
 }

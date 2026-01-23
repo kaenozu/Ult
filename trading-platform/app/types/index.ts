@@ -59,6 +59,11 @@ export interface Signal {
     correlation: number; // 指数との相関係数 (-1 to 1)
     indexTrend: 'UP' | 'DOWN' | 'NEUTRAL';
   };
+  predictionError?: number; // 予測誤差係数 (1.0 = 標準)
+  volumeResistance?: {
+    price: number;
+    strength: number; // 0 to 1
+  }[];
 }
 
 export interface PaperTrade {

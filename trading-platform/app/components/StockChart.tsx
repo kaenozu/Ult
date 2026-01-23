@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, memo } from 'react';
+import { useRef, useMemo, memo, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,6 +18,7 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency, calculateSMA, calculateBollingerBands } from '@/app/lib/utils';
+import { analyzeStock } from '@/app/lib/analysis';
 
 ChartJS.register(
   CategoryScale,
@@ -43,7 +44,6 @@ export interface StockChartProps {
   signal?: Signal | null;
 }
 
-// Memoize component to prevent re-renders from parent updates if props are unchanged
 export const StockChart = memo(function StockChart({
   data, 
   height = 400, 
@@ -56,23 +56,20 @@ export const StockChart = memo(function StockChart({
   signal = null,
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
+  const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
 
-  // Extend labels and data for forecast (5 days)
   const extendedData = useMemo(() => {
     const labels = data.map(d => d.date);
     const prices = data.map(d => d.close);
-    
     if (signal) {
-      // Add 5 future slots with explicit labels
       const lastDate = data.length > 0 ? new Date(data[data.length - 1].date) : new Date();
       for (let i = 1; i <= 5; i++) {
         const futureDate = new Date(lastDate);
         futureDate.setDate(lastDate.getDate() + i);
         labels.push(futureDate.toISOString().split('T')[0]);
-        prices.push(NaN); // No real price yet
+        prices.push(NaN);
       }
     }
-    
     return { labels, prices };
   }, [data, signal]);
 
@@ -80,43 +77,94 @@ export const StockChart = memo(function StockChart({
   const sma20 = useMemo(() => calculateSMA(extendedData.prices, 20), [extendedData.prices]);
   const { upper, lower } = useMemo(() => calculateBollingerBands(extendedData.prices, 20, 2), [extendedData.prices]);
 
-  // Build Forecast Cloud datasets
-  const forecastDatasets = useMemo(() => {
-    if (!signal || data.length === 0) return [];
+  // AI Time Travel: Ghost Cloud
+  const ghostForecastDatasets = useMemo(() => {
+    if (hoveredIdx === null || hoveredIdx >= data.length || data.length < 50) return [];
+    const historicalSlice = data.slice(0, hoveredIdx + 1);
+    const pastSignal = analyzeStock(data[0].symbol, historicalSlice, market);
+    if (!pastSignal) return [];
 
-    const lastIdx = data.length - 1;
-    const currentPrice = data[lastIdx].close;
-    
     const targetArr = new Array(extendedData.labels.length).fill(NaN);
     const stopArr = new Array(extendedData.labels.length).fill(NaN);
+    const currentPrice = data[hoveredIdx].close;
+    targetArr[hoveredIdx] = currentPrice;
+    stopArr[hoveredIdx] = currentPrice;
+
+    // Determine target/stop for ghost cloud using "Searchlight Cone" geometry
+    const stockATR = pastSignal.atr || (currentPrice * 0.02);
+    const confidenceFactor = (110 - pastSignal.confidence) / 25;
+    const momentum = (pastSignal.predictedChange / 100); // Directional slope
+
+    const steps = 5;
+    for (let i = 1; i <= steps; i++) {
+      if (hoveredIdx + i < extendedData.labels.length) {
+        const timeRatio = i / steps;
+        
+        // The center path follows the predicted momentum
+        const centerPrice = currentPrice * (1 + (momentum * timeRatio));
+        
+        // The spread (width) expands as we go further into the future (Searchlight effect)
+        // High confidence = tighter beam, Low confidence = wider beam
+        const spread = (stockATR * timeRatio) * confidenceFactor;
+        
+        targetArr[hoveredIdx + i] = centerPrice + spread;
+        stopArr[hoveredIdx + i] = centerPrice - spread;
+      }
+    }
+
+    const isBuy = pastSignal.type === 'BUY';
+    const isSell = pastSignal.type === 'SELL';
+    // Use slightly different ghost colors to distinguish from "Future" cloud
+    const color = isBuy ? 'rgba(34, 197, 94' : isSell ? 'rgba(239, 68, 68' : 'rgba(100, 116, 139';
     
-    // Determine target/stop levels using ATR and Confidence
+    return [
+      {
+        label: '過去の予測範囲(上)',
+        data: targetArr,
+        borderColor: `${color}, 0.3)`,
+        backgroundColor: `${color}, 0.08)`,
+        borderWidth: 1,
+        borderDash: [3, 3],
+        pointRadius: 0,
+        fill: '+1',
+        order: -2,
+      },
+      {
+        label: '過去の予測範囲(下)',
+        data: stopArr,
+        borderColor: `${color}, 0.1)`,
+        borderWidth: 1,
+        pointRadius: 0,
+        fill: false,
+        order: -2,
+      }
+    ];
+  }, [hoveredIdx, data, market, extendedData.labels.length]);
+
+  const forecastDatasets = useMemo(() => {
+    if (!signal || data.length === 0) return [];
+    const lastIdx = data.length - 1;
+    const currentPrice = data[lastIdx].close;
+    const targetArr = new Array(extendedData.labels.length).fill(NaN);
+    const stopArr = new Array(extendedData.labels.length).fill(NaN);
+    // Determine target/stop levels using ATR, Confidence, and Self-Correction Error
     const stockATR = signal.atr || (currentPrice * 0.02);
-    const confidenceFactor = (110 - signal.confidence) / 30; // High confidence = narrower cloud
+    const errorFactor = signal.predictionError || 1.0;
+    const confidenceFactor = ((110 - signal.confidence) / 25) * errorFactor; // Error factor expands the cone
     
     let target = signal.targetPrice;
     let stop = signal.stopLoss;
-
     if (signal.type === 'HOLD') {
       target = currentPrice + (stockATR * confidenceFactor);
       stop = currentPrice - (stockATR * confidenceFactor);
     } else {
-      // For BUY/SELL, the 'width' of the cloud reflects uncertainty
       const uncertainty = (stockATR * 0.5) * confidenceFactor;
-      if (signal.type === 'BUY') {
-        target = signal.targetPrice + uncertainty;
-        stop = signal.targetPrice - uncertainty;
-      } else {
-        target = signal.targetPrice - uncertainty;
-        stop = signal.targetPrice + uncertainty;
-      }
+      if (signal.type === 'BUY') { target = signal.targetPrice + uncertainty; stop = signal.targetPrice - uncertainty; }
+      else { target = signal.targetPrice - uncertainty; stop = signal.targetPrice + uncertainty; }
     }
 
-    // Connect from current price
     targetArr[lastIdx] = currentPrice;
     stopArr[lastIdx] = currentPrice;
-    
-    // Smoothly interpolate to the target over 5 days
     const steps = extendedData.labels.length - 1 - lastIdx;
     for (let i = 1; i <= steps; i++) {
       const ratio = i / steps;
@@ -124,20 +172,13 @@ export const StockChart = memo(function StockChart({
       stopArr[lastIdx + i] = currentPrice + (stop - currentPrice) * ratio;
     }
 
-    const isBuy = signal.type === 'BUY';
-    const isSell = signal.type === 'SELL';
-    
-    // Vivid colors for high visibility
-    const cloudColor = isBuy ? 'rgba(16, 185, 129' : isSell ? 'rgba(239, 68, 68' : 'rgba(146, 173, 201';
-    const borderOpacity = signal.type === 'HOLD' ? 0.3 : 0.8;
-    const fillOpacity = signal.type === 'HOLD' ? 0.05 : 0.25;
-
+    const cloudColor = signal.type === 'BUY' ? 'rgba(16, 185, 129' : signal.type === 'SELL' ? 'rgba(239, 68, 68' : 'rgba(146, 173, 201';
     return [
       {
         label: 'AI予測ターゲット',
         data: targetArr,
-        borderColor: `${cloudColor}, ${borderOpacity})`,
-        backgroundColor: `${cloudColor}, ${fillOpacity})`,
+        borderColor: `${cloudColor}, 0.8)`,
+        backgroundColor: `${cloudColor}, 0.25)`,
         borderWidth: 2,
         borderDash: [6, 4],
         pointRadius: 0,
@@ -147,7 +188,7 @@ export const StockChart = memo(function StockChart({
       {
         label: 'AI予測リスク',
         data: stopArr,
-        borderColor: `${cloudColor}, ${borderOpacity * 0.5})`,
+        borderColor: `${cloudColor}, 0.4)`,
         borderWidth: 2,
         borderDash: [6, 4],
         pointRadius: 0,
@@ -157,7 +198,6 @@ export const StockChart = memo(function StockChart({
     ];
   }, [signal, data, extendedData]);
 
-  // Memoize chart configuration
   const chartData = useMemo(() => ({
     labels: extendedData.labels,
     datasets: [
@@ -174,10 +214,11 @@ export const StockChart = memo(function StockChart({
         order: 1,
       },
       ...forecastDatasets,
+      ...ghostForecastDatasets,
       ...(showSMA ? [{
         label: 'SMA (20)',
         data: sma20,
-        borderColor: '#fbbf24', // Yellow
+        borderColor: '#fbbf24',
         borderWidth: 1.5,
         pointRadius: 0,
         tension: 0.1,
@@ -208,47 +249,42 @@ export const StockChart = memo(function StockChart({
         }
       ] : []),
     ],
-  }), [extendedData, sma20, upper, lower, showSMA, showBollinger, forecastDatasets]);
+  }), [extendedData, sma20, upper, lower, showSMA, showBollinger, forecastDatasets, ghostForecastDatasets]);
 
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
-    layout: {
-      padding: { right: 40 } // Extra padding for the future labels
-    },
-    interaction: {
-      mode: 'index' as const,
-      intersect: false,
+    layout: { padding: { right: 40 } },
+    interaction: { mode: 'index' as const, intersect: false },
+    onHover: (event, elements) => {
+      if (elements && elements.length > 0) {
+        setHoveredIndex(elements[0].index);
+      } else {
+        setHoveredIndex(null);
+      }
     },
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: '#1a2632',
-        titleColor: '#fff',
-        bodyColor: '#92adc9',
-        borderColor: '#233648',
-        borderWidth: 1,
-        padding: 12,
-        callbacks: {
-          label: (context: TooltipItem<'line'>) => {
-            const value = context.parsed.y ?? 0;
-            const isForecast = context.dataIndex >= data.length;
-            const prefix = isForecast ? '【予測】' : '';
-            return `${prefix}${context.dataset.label}: ${formatCurrency(value, market === 'japan' ? 'JPY' : 'USD')}`;
-          },
-        },
+        enabled: false, // Disable default tooltip to prevent overlap
       },
     },
     scales: {
       x: {
-        // Default zoom to show only recent data + future for clarity
+        // ... grid settings ...
         min: extendedData.labels.length > 105 ? extendedData.labels[extendedData.labels.length - 105] : undefined,
         grid: {
-          color: (context) => context.index >= data.length ? 'rgba(59, 130, 246, 0.2)' : 'rgba(35, 54, 72, 0.3)',
-          lineWidth: (context) => context.index === data.length - 1 ? 3 : 1,
+          color: (context) => {
+            // Show a special vertical line at the hovered index (Crosshair)
+            if (context.index === hoveredIdx) return 'rgba(59, 130, 246, 0.8)';
+            const isFuture = context.index >= data.length;
+            return isFuture ? 'rgba(59, 130, 246, 0.2)' : 'rgba(35, 54, 72, 0.3)';
+          },
+          lineWidth: (context) => (context.index === hoveredIdx ? 2 : context.index === data.length - 1 ? 3 : 1),
+          drawTicks: true,
         },
         ticks: {
-          color: (context) => (context.index >= data.length ? '#3b82f6' : '#92adc9'),
+          color: (context) => (context.index === hoveredIdx ? '#fff' : context.index >= data.length ? '#3b82f6' : '#92adc9'),
           maxTicksLimit: 15,
         },
       },
@@ -282,14 +318,8 @@ export const StockChart = memo(function StockChart({
   const volumeOptions: ChartOptions<'bar'> = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { enabled: false },
-    },
-    scales: {
-      x: { display: false },
-      y: { display: false },
-    },
+    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    scales: { x: { display: false }, y: { display: false } },
   }), []);
 
   if (error) {
@@ -326,9 +356,33 @@ export const StockChart = memo(function StockChart({
   }
 
   return (
-    <div className="relative w-full" style={{ height }}>
-      <Line ref={chartRef} data={chartData} options={options} />
+    <div className="relative w-full group" style={{ height }}>
+      {/* Floating HUD for Hover Data */}
+      {hoveredIdx !== null && hoveredIdx < data.length && (
+        <div className="absolute top-2 left-2 z-20 bg-[#1a2632]/90 border border-[#233648] p-2 rounded shadow-xl pointer-events-none backdrop-blur-sm transition-opacity duration-200">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 border-b border-[#233648] pb-1 mb-1">
+              <span className="text-[10px] font-black text-primary uppercase">Point Analysis</span>
+              <span className="text-[10px] text-[#92adc9]">{extendedData.labels[hoveredIdx]}</span>
+            </div>
+            <div className="flex gap-4">
+              <div>
+                <div className="text-[9px] text-[#92adc9] uppercase font-bold">Price</div>
+                <div className="text-xs font-bold text-white">{formatCurrency(data[hoveredIdx].close, market === 'japan' ? 'JPY' : 'USD')}</div>
+              </div>
+              {/* If it's a ghost cloud point, show reproduced prediction */}
+              {ghostForecastDatasets.length > 0 && (
+                <div className="border-l border-[#233648] pl-3">
+                  <div className="text-[9px] text-blue-400 uppercase font-bold">Reproduced Prediction</div>
+                  <div className="text-xs font-bold text-blue-300">当時のAI予測を再現中</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
+      <Line ref={chartRef} data={chartData} options={options} />
       {showVolume && (
         <div className="absolute bottom-0 left-0 right-0 h-16">
           <Bar data={volumeData} options={volumeOptions} />

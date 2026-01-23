@@ -170,11 +170,12 @@ class MarketDataClient {
   async fetchMarketIndex(market: 'japan' | 'usa'): Promise<OHLCV[]> {
     const symbol = market === 'japan' ? '^N225' : '^IXIC';
     try {
-      const result = await this.fetchOHLCV(symbol, market);
-      console.log(`[Aggregator] Fetched market index ${symbol}: ${result.data?.length || 0} points`);
-      return result.data || [];
+      // 内部のfetchOHLCVが投げるエラーをここで完全にキャッチする
+      const result = await this.fetchOHLCV(symbol, market).catch(() => ({ success: false, data: [] }));
+      console.log(`[Aggregator] Market index ${symbol} data status: ${result.success ? 'Success' : 'Failed'}`);
+      return (result.success && result.data) ? result.data : [];
     } catch (err) {
-      console.warn(`[Aggregator] Failed to fetch market index ${symbol}:`, err);
+      console.warn(`[Aggregator] Silent failure fetching market index ${symbol}:`, err);
       return [];
     }
   }
@@ -187,8 +188,13 @@ class MarketDataClient {
         throw new Error('Insufficient data for ML analysis');
       }
 
-      // マクロデータの取得（相関分析用）
-      const indexData = await this.fetchMarketIndex(stock.market);
+      // マクロデータの取得（相関分析用）- 失敗しても全体を止めないフェイルセーフ設計
+      let indexData: OHLCV[] = [];
+      try {
+        indexData = await this.fetchMarketIndex(stock.market);
+      } catch (err) {
+        console.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol} due to error:`, err);
+      }
 
       const indicators = mlPredictionService.calculateIndicators(result.data);
       const prediction = mlPredictionService.predict(stock, result.data, indicators);

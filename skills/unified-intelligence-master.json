@@ -1,0 +1,7 @@
+{
+  "name": "unified-intelligence-master",
+  "description": "銘柄別パラメータ最適化と市場相関分析を統合し、高度な相場観を提供するスキル",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": true
+}
