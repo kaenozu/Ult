@@ -7,8 +7,12 @@ import '@testing-library/jest-dom';
 jest.mock('../components/Header', () => ({ Header: () => <div>Header</div> }));
 jest.mock('../components/Navigation', () => ({ Navigation: () => <div>Navigation</div> }));
 jest.mock('../components/StockTable', () => ({ 
-  StockTable: () => <div>StockTable</div>,
-  PositionTable: () => <div>PositionTable</div>,
+  StockTable: () => <div>StockTable</div>
+}));
+jest.mock('../components/PositionTable', () => ({
+  PositionTable: () => <div>PositionTable</div>
+}));
+jest.mock('../components/HistoryTable', () => ({
   HistoryTable: () => <div>HistoryTable</div>
 }));
 jest.mock('../components/SignalPanel', () => ({ SignalPanel: () => <div>SignalPanel</div> }));
