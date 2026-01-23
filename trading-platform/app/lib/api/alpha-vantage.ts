@@ -569,10 +569,15 @@ export class AlphaVantageClient {
 let clientInstance: AlphaVantageClient | null = null;
 
 export function getAlphaVantageClient(): AlphaVantageClient {
-  const apiKey = process.env.NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY;
+  // SECURITY: Ensure this is only run on the server to protect API keys
+  if (typeof window !== 'undefined') {
+    throw new Error('AlphaVantageClient must be used on server side only');
+  }
+
+  const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
   
   if (!apiKey) {
-    throw new Error('NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY is not defined in environment variables');
+    throw new Error('ALPHA_VANTAGE_API_KEY is not defined in environment variables');
   }
 
   if (!clientInstance) {
