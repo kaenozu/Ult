@@ -52,6 +52,26 @@ export interface Signal {
   predictionDate: string;
 }
 
+export interface PaperTrade {
+  id: string;
+  symbol: string;
+  type: 'BUY' | 'SELL';
+  entryPrice: number;
+  exitPrice?: number;
+  quantity: number;
+  status: 'OPEN' | 'CLOSED';
+  entryDate: string;
+  exitDate?: string;
+  profitPercent?: number;
+  reflection?: string; // AIによる事後分析
+}
+
+export interface AIStatus {
+  virtualBalance: number;
+  totalProfit: number;
+  trades: PaperTrade[];
+}
+
 export interface Position {
   symbol: string;
   name: string;

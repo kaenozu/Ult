@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Stock, Position, Portfolio, JournalEntry, Theme } from '../types';
+import { Stock, Position, Portfolio, JournalEntry, Theme, AIStatus, Signal, PaperTrade } from '../types';
 
 interface TradingStore {
   theme: Theme;
@@ -21,6 +21,8 @@ interface TradingStore {
   setSelectedStock: (stock: Stock | null) => void;
   isConnected: boolean;
   toggleConnection: () => void;
+  aiStatus: AIStatus; // AI専用の仮想口座
+  processAITrades: (symbol: string, currentPrice: number, signal: Signal | null) => void;
 }
 
 const initialPortfolio: Portfolio = {
@@ -32,9 +34,15 @@ const initialPortfolio: Portfolio = {
   cash: 1000000, // 1M JPY initial capital
 };
 
+const initialAIStatus: AIStatus = {
+  virtualBalance: 1000000,
+  totalProfit: 0,
+  trades: [],
+};
+
 export const useTradingStore = create<TradingStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
 
@@ -221,6 +229,97 @@ export const useTradingStore = create<TradingStore>()(
       isConnected: true,
 
       toggleConnection: () => set((state) => ({ isConnected: !state.isConnected })),
+
+      aiStatus: initialAIStatus,
+
+      processAITrades: (symbol, currentPrice, signal) => {
+        const { aiStatus } = get();
+        const slippage = 0.001; // 0.1% slippage
+        
+        // Check for existing position
+        const openTrade = aiStatus.trades.find(t => t.symbol === symbol && t.status === 'OPEN');
+        
+        if (openTrade) {
+          let shouldClose = false;
+          let reflection = "";
+
+          if (signal) {
+            if (openTrade.type === 'BUY') {
+              if (currentPrice >= signal.targetPrice) {
+                shouldClose = true;
+                reflection = "利確ターゲット到達。AI予測通りの反発を利益に変えました。";
+              } else if (currentPrice <= signal.stopLoss) {
+                shouldClose = true;
+                reflection = "損切りライン接触。想定以上の売り圧力により予測を逸脱。";
+              } else if (signal.type === 'SELL') {
+                shouldClose = true;
+                reflection = "トレンド転換シグナルを検出し、エグジット。";
+              }
+            } else if (openTrade.type === 'SELL') {
+              if (currentPrice <= signal.targetPrice) {
+                shouldClose = true;
+                reflection = "空売り利確成功。目標値での買い戻しを完了。";
+              } else if (currentPrice >= signal.stopLoss) {
+                shouldClose = true;
+                reflection = "上昇トレンドへの回帰を確認。ショートカバーを実行。";
+              } else if (signal.type === 'BUY') {
+                shouldClose = true;
+                reflection = "上昇シグナル発生により、空売りポジションを解消。";
+              }
+            }
+          }
+
+          if (shouldClose) {
+            const exitPrice = openTrade.type === 'BUY' ? currentPrice * (1 - slippage) : currentPrice * (1 + slippage);
+            const profit = openTrade.type === 'BUY' 
+              ? (exitPrice - openTrade.entryPrice) * openTrade.quantity
+              : (openTrade.entryPrice - exitPrice) * openTrade.quantity;
+            const profitPercent = (profit / (openTrade.entryPrice * openTrade.quantity)) * 100;
+
+            const updatedTrades = aiStatus.trades.map(t => 
+              t.id === openTrade.id 
+                ? { ...t, status: 'CLOSED' as const, exitPrice, exitDate: new Date().toISOString(), profitPercent, reflection } 
+                : t
+            );
+
+            set({
+              aiStatus: {
+                ...aiStatus,
+                virtualBalance: aiStatus.virtualBalance + (openTrade.entryPrice * openTrade.quantity) + profit,
+                totalProfit: aiStatus.totalProfit + profit,
+                trades: updatedTrades
+              }
+            });
+            return;
+          }
+        }
+
+        // New Entry Logic (Only for strong signals)
+        if (!openTrade && signal && signal.confidence >= 80 && signal.type !== 'HOLD') {
+          const entryPrice = signal.type === 'BUY' ? currentPrice * (1 + slippage) : currentPrice * (1 - slippage);
+          const quantity = Math.floor((aiStatus.virtualBalance * 0.1) / entryPrice);
+
+          if (quantity > 0) {
+            const newTrade: PaperTrade = {
+              id: Math.random().toString(36).substring(7),
+              symbol,
+              type: signal.type as 'BUY' | 'SELL',
+              entryPrice,
+              quantity,
+              status: 'OPEN',
+              entryDate: new Date().toISOString(),
+            };
+
+            set({
+              aiStatus: {
+                ...aiStatus,
+                virtualBalance: aiStatus.virtualBalance - (entryPrice * quantity),
+                trades: [newTrade, ...aiStatus.trades]
+              }
+            });
+          }
+        }
+      }
     }),
     {
       name: 'trading-platform-storage',
@@ -229,6 +328,7 @@ export const useTradingStore = create<TradingStore>()(
         watchlist: state.watchlist,
         journal: state.journal,
         portfolio: state.portfolio,
+        aiStatus: state.aiStatus,
       }),
     }
   )
