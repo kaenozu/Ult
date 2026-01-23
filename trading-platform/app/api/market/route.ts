@@ -64,24 +64,32 @@ export async function GET(request: Request) {
         }) as unknown as YahooChartResult;
 
         if (!result || !result.quotes || result.quotes.length === 0) {
-          throw new Error('No data returned from chart');
+          console.warn(`No data returned from chart for ${yahooSymbol}`);
+          return NextResponse.json({ 
+            data: [], 
+            warning: 'No historical data found for this symbol' 
+          });
         }
 
-        const ohlcv = result.quotes
-          .filter(q => q.open !== null && q.close !== null)
-          .map(q => ({
-            date: q.date.toISOString().split('T')[0],
-            open: q.open,
-            high: q.high,
-            low: q.low,
-            close: q.close,
-            volume: q.volume || 0,
-          }));
+        // Map data and filter out only completely invalid entries
+        // Note: We used to filter out q.open === null, but now we'll keep them 
+        // and let the client-side interpolation handle it if possible.
+        const ohlcv = result.quotes.map(q => ({
+          date: q.date instanceof Date ? q.date.toISOString().split('T')[0] : String(q.date),
+          open: q.open || 0,
+          high: q.high || 0,
+          low: q.low || 0,
+          close: q.close || 0,
+          volume: q.volume || 0,
+        }));
 
         return NextResponse.json({ data: ohlcv });
       } catch (innerError: any) {
         console.error(`yf.chart failed for ${yahooSymbol}:`, innerError.message);
-        throw innerError;
+        return NextResponse.json({ 
+          error: 'Failed to fetch historical data', 
+          details: innerError.message 
+        }, { status: 502 }); // Bad Gateway for upstream errors
       }
     } 
     
@@ -89,30 +97,38 @@ export async function GET(request: Request) {
       const symbols = symbol.split(',').map(s => formatSymbol(s.trim(), market || undefined));
       
       if (symbols.length === 1) {
-        const result = await yf.quote(symbols[0]) as unknown as YahooQuoteResult;
-        return NextResponse.json({ 
-          symbol: symbol,
-          price: result.regularMarketPrice,
-          change: result.regularMarketChange,
-          changePercent: result.regularMarketChangePercent,
-          volume: result.regularMarketVolume,
-          marketState: result.marketState
-        });
+        try {
+          const result = await yf.quote(symbols[0]) as unknown as YahooQuoteResult;
+          if (!result) throw new Error('Symbol not found');
+          
+          return NextResponse.json({ 
+            symbol: symbol,
+            price: result.regularMarketPrice,
+            change: result.regularMarketChange,
+            changePercent: result.regularMarketChangePercent,
+            volume: result.regularMarketVolume,
+            marketState: result.marketState
+          });
+        } catch (quoteError: any) {
+          return NextResponse.json({ error: 'Quote not found', details: quoteError.message }, { status: 404 });
+        }
       } else {
         try {
           const results = await yf.quote(symbols) as unknown as YahooQuoteResult[];
-          const data = results.map(r => ({
-            symbol: r.symbol.replace('.T', ''), // Strip .T for frontend consistency
-            price: r.regularMarketPrice,
-            change: r.regularMarketChange,
-            changePercent: r.regularMarketChangePercent,
-            volume: r.regularMarketVolume,
-            marketState: r.marketState
-          }));
+          const data = results
+            .filter(r => r !== undefined)
+            .map(r => ({
+              symbol: r.symbol ? r.symbol.replace('.T', '') : 'UNKNOWN',
+              price: r.regularMarketPrice || 0,
+              change: r.regularMarketChange || 0,
+              changePercent: r.regularMarketChangePercent || 0,
+              volume: r.regularMarketVolume || 0,
+              marketState: r.marketState || 'UNKNOWN'
+            }));
           return NextResponse.json({ data });
-        } catch (batchError) {
-          console.error('Batch quote failed, attempting fallback:', batchError);
-          return NextResponse.json({ data: [] }); 
+        } catch (batchError: any) {
+          console.error('Batch quote failed:', batchError.message);
+          return NextResponse.json({ data: [], error: 'Batch fetch failed' }); 
         }
       }
     }

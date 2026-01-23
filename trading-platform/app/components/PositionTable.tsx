@@ -26,7 +26,7 @@ const PositionRow = memo(({
         </div>
       </td>
       <td className={cn('px-4 py-2 font-medium', isProfit ? 'text-green-500' : 'text-red-500')}>
-        {position.side}
+        {position.side === 'LONG' ? '買い' : '空売り'}
       </td>
       <td className="px-4 py-2 text-right text-white">{position.quantity}</td>
       <td className="px-4 py-2 text-right text-[#92adc9]">
@@ -50,7 +50,7 @@ const PositionRow = memo(({
           onClick={() => onClose?.(position.symbol)}
           className="text-[10px] px-2 py-0.5 rounded bg-[#192633] border border-[#233648] hover:bg-[#233648] text-[#92adc9] transition-colors"
         >
-          CLOSE
+          決済
         </button>
       </td>
     </tr>
@@ -73,13 +73,13 @@ export const PositionTable = memo(({ positions, onClose }: PositionTableProps) =
       <table className="w-full text-left text-xs tabular-nums">
         <thead className="text-[10px] uppercase text-[#92adc9] font-medium sticky top-0 bg-[#141e27] z-10">
           <tr>
-            <th className="px-4 py-2">Symbol</th>
-            <th className="px-4 py-2">Side</th>
-            <th className="px-4 py-2 text-right">Qty</th>
-            <th className="px-4 py-2 text-right">Avg Price</th>
-            <th className="px-4 py-2 text-right">Mark</th>
-            <th className="px-4 py-2 text-right">Mkt Val</th>
-            <th className="px-4 py-2 text-right">Unr P&L</th>
+            <th className="px-4 py-2">銘柄</th>
+            <th className="px-4 py-2">種別</th>
+            <th className="px-4 py-2 text-right">数量</th>
+            <th className="px-4 py-2 text-right">平均単価</th>
+            <th className="px-4 py-2 text-right">現在値</th>
+            <th className="px-4 py-2 text-right">評価額</th>
+            <th className="px-4 py-2 text-right">評価損益</th>
             <th className="px-4 py-2"></th>
           </tr>
         </thead>
@@ -95,11 +95,11 @@ export const PositionTable = memo(({ positions, onClose }: PositionTableProps) =
       </table>
       <div className="border-t border-[#233648] p-4 bg-[#141e27]">
         <div className="flex justify-between text-xs">
-          <span className="text-[#92adc9]">Total Value</span>
+          <span className="text-[#92adc9]">資産合計</span>
           <span className="text-white font-bold">{formatCurrency(totalValue)}</span>
         </div>
         <div className="flex justify-between text-xs mt-1">
-          <span className="text-[#92adc9]">Total Unrealized P&L</span>
+          <span className="text-[#92adc9]">評価損益合計</span>
           <span className={cn('font-bold', totalProfit >= 0 ? 'text-green-500' : 'text-red-500')}>
             {totalProfit >= 0 ? '+' : ''}{formatCurrency(totalProfit)}
           </span>
