@@ -21,9 +21,33 @@ export class IndexedDBClient {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME);
+        const oldVersion = event.oldVersion;
+        
+        console.log(`IndexedDB Upgrade: ${oldVersion} -> ${DB_VERSION}`);
+
+        if (oldVersion < 1) {
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
         }
+        
+        // Add future migration logic here (e.g., if (oldVersion < 2) { ... })
+      };
+    });
+  }
+
+  async clearAllData(): Promise<void> {
+    await this.init();
+    return new Promise((resolve, reject) => {
+      if (!this.db) return reject('DB not initialized');
+      const transaction = this.db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.clear();
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        console.log('IndexedDB: All data cleared.');
+        resolve();
       };
     });
   }
