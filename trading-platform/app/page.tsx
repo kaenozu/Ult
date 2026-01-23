@@ -164,6 +164,7 @@ export default function Workstation() {
                     market={displayStock?.market}
                     loading={loading}
                     error={error}
+                    signal={chartSignal}
                   />
                 </div>
 

@@ -77,6 +77,11 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               )}>
                 {signal.confidence >= 80 ? '🔥 強気シグナル' : '通常シグナル'}
               </div>
+              {(signal.accuracy || 0) >= 70 && (
+                <div className="px-2 py-1 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 flex items-center gap-1">
+                  🌟 高精度
+                </div>
+              )}
             </div>
             <div className="text-right">
               <div className="text-[10px] text-[#92adc9] uppercase font-bold tracking-widest">予測信頼度</div>
@@ -99,13 +104,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               <span className="text-[10px] font-bold text-[#92adc9] mt-1 ml-1 uppercase">推奨アクション</span>
             </div>
             <div className="text-right">
-              <div className={cn(
-                'text-lg font-bold px-2 py-0.5 rounded-md inline-block',
-                signal.predictedChange > 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-              )}>
-                {signal.predictedChange > 0 ? '▲' : '▼'} {Math.abs(signal.predictedChange).toFixed(1)}%
+              <div className="text-[10px] text-[#92adc9] uppercase font-bold tracking-widest mb-1">過去の的中率</div>
+              <div className="text-lg font-black text-white tabular-nums">
+                {signal.accuracy || 0}%
               </div>
-              <div className="text-[10px] text-[#92adc9] mt-1 font-medium">予測騰落率</div>
             </div>
           </div>
 
