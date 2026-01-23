@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Stock } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { useTradingStore } from '@/app/store/tradingStore';
@@ -17,6 +17,11 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
   const [quantity, setQuantity] = useState<number>(100);
   const [limitPrice, setLimitPrice] = useState<string>(currentPrice.toString());
   const [isConfirming, setIsConfirming] = useState(false);
+
+  const orderTypeId = useId();
+  const quantityId = useId();
+  const limitPriceId = useId();
+  const modalTitleId = useId();
 
   const price = orderType === 'MARKET' ? currentPrice : parseFloat(limitPrice);
   const totalCost = quantity > 0 ? price * quantity : 0;
@@ -68,9 +73,10 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       </div>
 
       {/* Side Selection */}
-      <div className="flex bg-[#192633] rounded-lg p-1">
+      <div className="flex bg-[#192633] rounded-lg p-1" role="group" aria-label="注文サイドの選択">
         <button
           onClick={() => setSide('BUY')}
+          aria-pressed={side === 'BUY'}
           className={cn(
             'flex-1 py-2 text-sm font-bold rounded-md transition-all',
             side === 'BUY' ? 'bg-green-600 text-white shadow-lg' : 'text-[#92adc9] hover:text-white'
@@ -80,6 +86,7 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
         </button>
         <button
           onClick={() => setSide('SELL')}
+          aria-pressed={side === 'SELL'}
           className={cn(
             'flex-1 py-2 text-sm font-bold rounded-md transition-all',
             side === 'SELL' ? 'bg-red-600 text-white shadow-lg' : 'text-[#92adc9] hover:text-white'
@@ -91,8 +98,9 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
 
       {/* Order Type */}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] uppercase text-[#92adc9] font-bold">注文種別</label>
+        <label htmlFor={orderTypeId} className="text-[10px] uppercase text-[#92adc9] font-bold">注文種別</label>
         <select
+          id={orderTypeId}
           value={orderType}
           onChange={(e) => setOrderType(e.target.value as 'MARKET' | 'LIMIT')}
           className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
@@ -104,8 +112,9 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
 
       {/* Quantity */}
       <div className="flex flex-col gap-1">
-        <label className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
+        <label htmlFor={quantityId} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
         <input
+          id={quantityId}
           type="number"
           min="1"
           value={quantity}
@@ -117,8 +126,9 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       {/* Limit Price (if LIMIT) */}
       {orderType === 'LIMIT' && (
         <div className="flex flex-col gap-1">
-          <label className="text-[10px] uppercase text-[#92adc9] font-bold">指値価格</label>
+          <label htmlFor={limitPriceId} className="text-[10px] uppercase text-[#92adc9] font-bold">指値価格</label>
           <input
+            id={limitPriceId}
             type="number"
             value={limitPrice}
             onChange={(e) => setLimitPrice(e.target.value)}
@@ -153,11 +163,16 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
         {side === 'BUY' ? (canAfford ? '買い注文を発注' : '資金不足です') : '空売り注文を発注'}
       </button>
 
-      {/* Confirmation Modal (Simplified overlay) */}
+      {/* Confirmation Modal */}
       {isConfirming && (
-        <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-4 z-50 rounded-lg backdrop-blur-sm">
+        <div
+          className="absolute inset-0 bg-black/80 flex items-center justify-center p-4 z-50 rounded-lg backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={modalTitleId}
+        >
             <div className="bg-[#141e27] border border-[#233648] p-4 rounded-lg w-full max-w-xs shadow-2xl">
-                <h4 className="text-white font-bold mb-2">注文の確認</h4>
+                <h4 id={modalTitleId} className="text-white font-bold mb-2">注文の確認</h4>
                 <div className="text-sm text-[#92adc9] mb-4">
                     {side === 'BUY' ? '買い' : '空売り'} {quantity} {stock.symbol} @ {orderType === 'MARKET' ? '成行' : limitPrice}
                 </div>

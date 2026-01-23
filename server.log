@@ -1,0 +1,28 @@
+
+> trading-platform@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+✓ Ready in 1130ms
+○ Compiling / ...
+ GET / 200 in 6.3s (compile: 5.7s, render: 592ms)
+ GET / 200 in 95ms (compile: 6ms, render: 89ms)
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+ GET /api/market?type=history&symbol=AAPL&market=usa 200 in 1300ms (compile: 1066ms, render: 234ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 1518ms (compile: 1243ms, render: 275ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 29ms (compile: 4ms, render: 26ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 41ms (compile: 6ms, render: 35ms)
+ GET / 200 in 89ms (compile: 5ms, render: 84ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 101ms (compile: 3ms, render: 98ms)
+ GET /api/market?type=history&symbol=AAPL&market=usa 200 in 264ms (compile: 4ms, render: 260ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 28ms (compile: 4ms, render: 24ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 44ms (compile: 3ms, render: 40ms)
