@@ -11,6 +11,7 @@ interface TradingStore {
   addToWatchlist: (stock: Stock) => void;
   removeFromWatchlist: (symbol: string) => void;
   updateStockData: (symbol: string, data: Partial<Stock>) => void;
+  batchUpdateStockData: (updates: { symbol: string, data: Partial<Stock> }[]) => void;
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
@@ -95,6 +96,24 @@ export const useTradingStore = create<TradingStore>()(
           )
         }
       })),
+
+      batchUpdateStockData: (updates) => set((state) => {
+        const updateMap = new Map(updates.map(u => [u.symbol, u.data]));
+
+        return {
+          watchlist: state.watchlist.map(s => {
+            const update = updateMap.get(s.symbol);
+            return update ? { ...s, ...update } : s;
+          }),
+          portfolio: {
+            ...state.portfolio,
+            positions: state.portfolio.positions.map(p => {
+              const update = updateMap.get(p.symbol);
+              return update && update.price ? { ...p, currentPrice: update.price } : p;
+            })
+          }
+        };
+      }),
 
       portfolio: initialPortfolio,
 

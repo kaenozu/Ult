@@ -70,7 +70,7 @@ interface StockTableProps {
 }
 
 export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) => {
-  const { setSelectedStock, updateStockData, removeFromWatchlist } = useTradingStore();
+  const { setSelectedStock, batchUpdateStockData, removeFromWatchlist } = useTradingStore();
 
   const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
 
@@ -83,16 +83,21 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
       const quotes = await marketClient.fetchQuotes(symbols);
       
       if (mounted && quotes.length > 0) {
-        quotes.forEach(q => {
-          if (q && q.symbol) {
-            updateStockData(q.symbol, {
+        const updates = quotes
+          .filter(q => q && q.symbol)
+          .map(q => ({
+            symbol: q.symbol,
+            data: {
               price: q.price,
               change: q.change,
               changePercent: q.changePercent,
               volume: q.volume,
-            });
-          }
-        });
+            }
+          }));
+
+        if (updates.length > 0) {
+          batchUpdateStockData(updates);
+        }
       }
     };
 
@@ -102,7 +107,7 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
       mounted = false;
       clearInterval(interval);
     };
-  }, [symbolKey, updateStockData]);
+  }, [symbolKey, batchUpdateStockData]);
 
   const handleSelect = useCallback((stock: Stock) => {
     setSelectedStock(stock);
