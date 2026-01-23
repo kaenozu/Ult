@@ -35,7 +35,6 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
   // Simulate trading day by day
   // We use a window of past data to generate a signal for "today"
   for (let i = minPeriod; i < data.length - 1; i++) {
-    const currentDay = data[i];
     const nextDay = data[i + 1]; // Execution happens next open or close
     
     // Slice data up to current day for analysis

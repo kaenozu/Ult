@@ -1,7 +1,7 @@
 'use client';
 
 import { Stock } from '@/app/types';
-import { formatCurrency, cn } from '@/app/lib/utils';
+import { formatCurrency } from '@/app/lib/utils';
 
 interface OrderBookProps {
   stock: Stock | null;
