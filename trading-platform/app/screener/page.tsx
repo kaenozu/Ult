@@ -16,7 +16,7 @@ type SortDirection = 'asc' | 'desc';
 
 export default function Screener() {
   const router = useRouter();
-  const { setSelectedStock } = useTradingStore();
+  const { setSelectedStock, addToWatchlist } = useTradingStore();
   const [filters, setFilters] = useState({
     priceMin: '',
     priceMax: '',
@@ -59,7 +59,7 @@ export default function Screener() {
               ...s,
               price: q.price,
               change: q.change,
-              changePercent: q.changePercent * 100,
+              changePercent: q.changePercent, // Removed * 100
               volume: q.volume,
             };
           }
@@ -179,6 +179,7 @@ export default function Screener() {
   };
 
   const handleStockClick = (stock: Stock) => {
+    addToWatchlist(stock);
     setSelectedStock(stock);
     router.push('/');
   };
