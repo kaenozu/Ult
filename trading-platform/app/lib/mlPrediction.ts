@@ -142,23 +142,26 @@ class MLPredictionService {
       };
     }
 
-    // Use ATR for volatility-adjusted targets
-    const targetMove = currentATR * 2.5;
-    const stopMove = currentATR * 1.5;
+    // Adjust multipliers based on confidence (Project Rule: 80%+ is Strong)
+    const isStrong = prediction.confidence >= 80;
+    const targetMove = currentATR * (isStrong ? 3.5 : 2.0);
+    const stopMove = currentATR * (isStrong ? 1.5 : 1.2);
 
     let signalType: 'BUY' | 'SELL' | 'HOLD';
     let reason: string;
     let targetPrice: number;
     let stopLoss: number;
 
-    if (prediction.ensemblePrediction > 2 && prediction.confidence > 60) {
+    const prefix = isStrong ? '【強気】' : '【注視】';
+
+    if (prediction.ensemblePrediction > 1.5 && prediction.confidence >= 60) {
       signalType = 'BUY';
-      reason = this.generateBuyReason(prediction, indicators);
+      reason = prefix + this.generateBuyReason(prediction, indicators);
       targetPrice = currentPrice + targetMove;
       stopLoss = currentPrice - stopMove;
-    } else if (prediction.ensemblePrediction < -2 && prediction.confidence > 60) {
+    } else if (prediction.ensemblePrediction < -1.5 && prediction.confidence >= 60) {
       signalType = 'SELL';
-      reason = this.generateSellReason(prediction, indicators);
+      reason = prefix + this.generateSellReason(prediction, indicators);
       targetPrice = currentPrice - targetMove;
       stopLoss = currentPrice + stopMove;
     } else {
