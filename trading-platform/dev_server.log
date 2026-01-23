@@ -1,0 +1,18 @@
+
+> trading-platform@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+
+✓ Starting...
+✓ Ready in 1073ms
+○ Compiling / ...
+ GET / 200 in 4.8s (compile: 4.3s, render: 552ms)
+ GET / 200 in 92ms (compile: 6ms, render: 86ms)
+Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
+ GET /api/market?type=history&symbol=NVDA&market=usa 200 in 1242ms (compile: 992ms, render: 250ms)
+ GET /api/market?type=quote&symbol=NVDA 200 in 1438ms (compile: 1156ms, render: 283ms)
+ GET /api/market?type=quote&symbol=NVDA 200 in 97ms (compile: 7ms, render: 90ms)
+ GET /api/market?type=quote&symbol=NVDA 200 in 46ms (compile: 6ms, render: 40ms)

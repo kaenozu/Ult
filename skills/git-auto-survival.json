@@ -1,0 +1,7 @@
+{
+  "name": "git-auto-survival",
+  "description": "Gitのロック、競合、対話プロンプトを自律的に解決し、開発を止めないためのスキル",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": true
+}
