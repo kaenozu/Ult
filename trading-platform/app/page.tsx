@@ -61,18 +61,23 @@ export default function Workstation() {
   }, []);
 
   useEffect(() => {
-    const initializeData = async () => {
-      // Priority: 1. storeSelectedStock (from screener), 2. watchlist[0] (default)
-      const stockToSelect = storeSelectedStock || watchlist[0];
-      if (stockToSelect) {
-        setLocalSelectedStock(stockToSelect);
-        if (!storeSelectedStock) setSelectedStock(stockToSelect);
-        fetchData(stockToSelect);
-      }
-    };
-
-    initializeData();
-  }, [fetchData, storeSelectedStock, watchlist, setSelectedStock]);
+    // Priority 1: Stock explicitly selected in the global store (from Screener or Search)
+    if (storeSelectedStock) {
+      setLocalSelectedStock(storeSelectedStock);
+      fetchData(storeSelectedStock);
+    } 
+    // Priority 2: If no global selection but watchlist has items, show the first one
+    else if (watchlist.length > 0) {
+      const defaultStock = watchlist[0];
+      setLocalSelectedStock(defaultStock);
+      setSelectedStock(defaultStock); // Sync back to store
+      fetchData(defaultStock);
+    } 
+    // Priority 3: Nothing to show
+    else {
+      setLocalSelectedStock(null);
+    }
+  }, [storeSelectedStock, fetchData, watchlist, setSelectedStock]); 
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
@@ -84,7 +89,7 @@ export default function Workstation() {
     closePosition(symbol, currentPrice);
   }, [closePosition]);
 
-  const displayStock = selectedStock || watchlist[0];
+  const displayStock = selectedStock; 
   const displaySignal = chartSignal;
 
   if (loading) {
@@ -176,108 +181,124 @@ export default function Workstation() {
 
         {/* Center: Chart Area */}
         <section className="flex-1 flex flex-col min-w-0 bg-[#101922] relative">
-          {/* Chart Header/Toolbar */}
-          <div className="min-h-10 border-b border-[#233648] flex flex-wrap items-center justify-between px-4 py-1 gap-2 bg-[#192633]/30 shrink-0">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-lg">{displayStock?.symbol}</span>
-                <span className="text-xs text-[#92adc9]">{displayStock?.name}</span>
+          {!displayStock ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-[#92adc9] p-8 text-center">
+              <div className="w-20 h-20 mb-6 bg-[#192633] rounded-full flex items-center justify-center text-primary/40">
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
-              <div className="h-4 w-px bg-[#233648]" />
-              <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
-                {['1m', '5m', '15m', '1H', '4H', 'D'].map((tf) => (
-                  <button
-                    key={tf}
-                    className={cn(
-                      'px-2 py-0.5 text-xs font-medium rounded transition-colors',
-                      tf === '5m'
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
-                    )}
-                  >
-                    {tf}
-                  </button>
-                ))}
-              </div>
-              <div className="h-4 w-px bg-[#233648]" />
-              <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
-                <button
-                  onClick={() => setShowSMA(!showSMA)}
-                  className={cn(
-                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
-                    showSMA ? 'bg-yellow-500/20 text-yellow-500' : 'text-[#92adc9] hover:text-white'
-                  )}
-                >
-                  SMA
-                </button>
-                <button
-                  onClick={() => setShowBollinger(!showBollinger)}
-                  className={cn(
-                    'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
-                    showBollinger ? 'bg-blue-500/20 text-blue-400' : 'text-[#92adc9] hover:text-white'
-                  )}
-                >
-                  BB
-                </button>
-              </div>
-              <div className="h-4 w-px bg-[#233648]" />
-              <div className="flex items-center gap-3 text-xs text-[#92adc9]">
-                <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                  </svg>
-                  インジケーター
-                </span>
-                <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                  ツール
-                </span>
-              </div>
+              <h2 className="text-xl font-bold text-white mb-2">銘柄が未選択です</h2>
+              <p className="text-sm max-w-xs">
+                ウォッチリストから銘柄を選択するか、上の検索ボックスから銘柄を探して取引を開始してください。
+              </p>
             </div>
-            {chartData.length > 0 && (
-              <div className="flex items-center gap-4 text-sm tabular-nums">
-                <span className="text-[#92adc9]">始: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.open || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                <span className="text-[#92adc9]">高: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.high || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                <span className="text-[#92adc9]">安: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.low || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
-                <span className="text-[#92adc9]">終: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.close || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+          ) : (
+            <>
+              {/* Chart Header/Toolbar */}
+              <div className="min-h-10 border-b border-[#233648] flex flex-wrap items-center justify-between px-4 py-1 gap-2 bg-[#192633]/30 shrink-0">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg">{displayStock?.symbol}</span>
+                    <span className="text-xs text-[#92adc9]">{displayStock?.name}</span>
+                  </div>
+                  <div className="h-4 w-px bg-[#233648]" />
+                  <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
+                    {['1m', '5m', '15m', '1H', '4H', 'D'].map((tf) => (
+                      <button
+                        key={tf}
+                        className={cn(
+                          'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                          tf === '5m'
+                            ? 'bg-primary text-white shadow-sm'
+                            : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
+                        )}
+                      >
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="h-4 w-px bg-[#233648]" />
+                  <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
+                    <button
+                      onClick={() => setShowSMA(!showSMA)}
+                      className={cn(
+                        'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+                        showSMA ? 'bg-yellow-500/20 text-yellow-500' : 'text-[#92adc9] hover:text-white'
+                      )}
+                    >
+                      SMA
+                    </button>
+                    <button
+                      onClick={() => setShowBollinger(!showBollinger)}
+                      className={cn(
+                        'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+                        showBollinger ? 'bg-blue-500/20 text-blue-400' : 'text-[#92adc9] hover:text-white'
+                      )}
+                    >
+                      BB
+                    </button>
+                  </div>
+                  <div className="h-4 w-px bg-[#233648]" />
+                  <div className="flex items-center gap-3 text-xs text-[#92adc9]">
+                    <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                      </svg>
+                      インジケーター
+                    </span>
+                    <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      ツール
+                    </span>
+                  </div>
+                </div>
+                {chartData.length > 0 && (
+                  <div className="flex items-center gap-4 text-sm tabular-nums">
+                    <span className="text-[#92adc9]">始: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.open || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+                    <span className="text-[#92adc9]">高: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.high || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+                    <span className="text-[#92adc9]">安: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.low || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+                    <span className="text-[#92adc9]">終: <span className="text-white">{formatCurrency(chartData[chartData.length - 1]?.close || 0, displayStock?.market === 'japan' ? 'JPY' : 'USD')}</span></span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Main Chart Visualization */}
-          <div className="flex-1 relative p-4 flex flex-col">
-            <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
-              <StockChart 
-                data={chartData} 
-                height={400} 
-                showVolume={true} 
-                showSMA={showSMA}
-                showBollinger={showBollinger}
-                market={displayStock?.market}
-                currentPrice={displayStock?.price}
-                loading={loading}
-                error={error}
-              />
-            </div>
+              {/* Main Chart Visualization */}
+              <div className="flex-1 relative p-4 flex flex-col">
+                <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
+                  <StockChart 
+                    data={chartData} 
+                    height={400} 
+                    showVolume={true} 
+                    showSMA={showSMA}
+                    showBollinger={showBollinger}
+                    market={displayStock?.market}
+                    currentPrice={displayStock?.price}
+                    loading={loading}
+                    error={error}
+                  />
+                </div>
 
-            {/* RSI Sub-chart */}
-            <div className="h-24 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
-              <span className="absolute top-1 left-2 text-[10px] text-[#92adc9] font-medium">RSI (14)</span>
-              <div className="absolute top-0 left-0 right-0 bottom-0 grid grid-rows-2 grid-cols-1 pointer-events-none">
-                <div className="border-b border-[#233648]/20 border-dashed"></div>
+                {/* RSI Sub-chart */}
+                <div className="h-24 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
+                  <span className="absolute top-1 left-2 text-[10px] text-[#92adc9] font-medium">RSI (14)</span>
+                  <div className="absolute top-0 left-0 right-0 bottom-0 grid grid-rows-2 grid-cols-1 pointer-events-none">
+                    <div className="border-b border-[#233648]/20 border-dashed"></div>
+                  </div>
+                  <svg className="w-full h-full" preserveAspectRatio="none">
+                    <path
+                      d="M0,50 C50,40 100,60 150,30 S300,80 400,50 S500,20 600,40 S800,60 1200,45"
+                      fill="none"
+                      stroke="#a855f7"
+                      strokeWidth="1.5"
+                    />
+                  </svg>
+                </div>
               </div>
-              <svg className="w-full h-full" preserveAspectRatio="none">
-                <path
-                  d="M0,50 C50,40 100,60 150,30 S300,80 400,50 S500,20 600,40 S800,60 1200,45"
-                  fill="none"
-                  stroke="#a855f7"
-                  strokeWidth="1.5"
-                />
-              </svg>
-            </div>
-          </div>
+            </>
+          )}
 
           {/* Bottom Panel: Positions & Orders */}
           <div className="h-52 border-t border-[#233648] bg-[#141e27] flex flex-col shrink-0">

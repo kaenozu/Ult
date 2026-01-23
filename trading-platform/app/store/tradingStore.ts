@@ -66,11 +66,11 @@ const initialPortfolio: Portfolio = {
 
 export const useTradingStore = create<TradingStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       theme: 'dark',
       toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
 
-      watchlist: [...JAPAN_STOCKS.slice(0, 5), ...USA_STOCKS.slice(0, 5)],
+      watchlist: [],
 
       addToWatchlist: (stock) => set((state) => {
         if (state.watchlist.find(s => s.symbol === stock.symbol)) {
