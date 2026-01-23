@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
 import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
-import { Stock } from '@/app/types';
-import { cn, formatCurrency, formatPercent, formatVolume, getChangeColor } from '@/app/lib/utils';
+import { Stock, Signal } from '@/app/types';
+import { cn, formatCurrency, formatPercent, getChangeColor } from '@/app/lib/utils';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 import { filterByTechnicals, TechFilters } from '@/app/lib/screener-utils';
 import { useTradingStore } from '@/app/store/tradingStore';
@@ -39,7 +38,7 @@ export default function Screener() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [stocks, setStocks] = useState<Stock[]>([...JAPAN_STOCKS, ...USA_STOCKS]);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analyzedStocks, setAnalyzedStocks] = useState<{symbol: string, signal?: any}[]>([]);
+  const [analyzedStocks, setAnalyzedStocks] = useState<{symbol: string, signal?: Signal}[]>([]);
   const [isTechAnalysisDone, setIsTechAnalysisDone] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -82,12 +81,11 @@ export default function Screener() {
       return true;
     });
 
-    const results: {symbol: string, signal?: any}[] = [];
+    const results: {symbol: string, signal?: Signal}[] = [];
     const CHUNK_SIZE = 5;
 
     for (let i = 0; i < candidates.length; i += CHUNK_SIZE) {
         const chunk = candidates.slice(i, i + CHUNK_SIZE);
-        console.log(`Analyzing progress: ${Math.round((i / candidates.length) * 100)}%`);
         
         await Promise.all(chunk.map(async (stock) => {
             try {
@@ -141,22 +139,13 @@ export default function Screener() {
     });
   }, [filters, sortField, sortDirection, stocks, analyzedStocks, isTechAnalysisDone]);
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-
   const handleStockClick = (stock: Stock) => {
     addToWatchlist(stock);
     setSelectedStock(stock);
     router.push('/');
   };
 
-  const applyPreset = (type: 'oversold' | 'uptrend' | 'dip') => {
+  const applyPreset = (type: 'oversold' | 'uptrend') => {
     setFilters({
       priceMin: '', priceMax: '', changeMin: '', changeMax: '',
       volumeMin: '', sector: '', market: '',
@@ -164,15 +153,12 @@ export default function Screener() {
     });
     if (type === 'oversold') setTechFilters({ rsiMax: '30', rsiMin: '', trend: 'all' });
     else if (type === 'uptrend') setTechFilters({ rsiMax: '', rsiMin: '', trend: 'uptrend' });
-    else if (type === 'dip') setTechFilters({ rsiMax: '40', rsiMin: '', trend: 'uptrend' });
     setIsTechAnalysisDone(false);
   };
 
-  const sectors = [...new Set(stocks.map(s => s.sector))];
-
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
+      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
         <div className="flex items-center gap-4">
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-2 text-[#92adc9] hover:text-white transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>

@@ -83,11 +83,12 @@ export async function GET(request: Request) {
         }));
 
         return NextResponse.json({ data: ohlcv });
-      } catch (innerError: any) {
-        console.error(`yf.chart failed for ${yahooSymbol}:`, innerError.message);
+      } catch (innerError: unknown) {
+        const errorMsg = innerError instanceof Error ? innerError.message : 'Unknown historical error';
+        console.error(`yf.chart failed for ${yahooSymbol}:`, errorMsg);
         return NextResponse.json({ 
           error: 'Failed to fetch historical data', 
-          details: innerError.message 
+          details: 'The market data provider is temporarily unavailable.' 
         }, { status: 502 });
       }
     } 
@@ -108,14 +109,16 @@ export async function GET(request: Request) {
             volume: result.regularMarketVolume,
             marketState: result.marketState
           });
-        } catch (quoteError: any) {
-          return NextResponse.json({ error: 'Quote not found', details: quoteError.message }, { status: 404 });
+        } catch (quoteError: unknown) {
+          const errorMsg = quoteError instanceof Error ? quoteError.message : 'Quote error';
+          console.error(`yf.quote failed for ${symbols[0]}:`, errorMsg);
+          return NextResponse.json({ error: 'Quote not found' }, { status: 404 });
         }
       } else {
         try {
-          const results = await yf.quote(symbols) as unknown as YahooQuoteResult[];
+          const results = await yf.quote(symbols) as unknown as (YahooQuoteResult | undefined)[];
           const data = results
-            .filter(r => r !== undefined)
+            .filter((r): r is YahooQuoteResult => r !== undefined)
             .map(r => ({
               symbol: r.symbol ? r.symbol.replace('.T', '') : 'UNKNOWN',
               price: r.regularMarketPrice || 0,
@@ -125,8 +128,9 @@ export async function GET(request: Request) {
               marketState: r.marketState || 'UNKNOWN'
             }));
           return NextResponse.json({ data });
-        } catch (batchError: any) {
-          console.error('Batch quote failed:', batchError.message);
+        } catch (batchError: unknown) {
+          const errorMsg = batchError instanceof Error ? batchError.message : 'Batch error';
+          console.error('Batch quote failed:', errorMsg);
           return NextResponse.json({ data: [], error: 'Batch fetch failed' }); 
         }
       }
@@ -136,10 +140,10 @@ export async function GET(request: Request) {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`Yahoo Finance API Error (${yahooSymbol}):`, errorMessage);
+    console.error(`Market API Root Error (${yahooSymbol}):`, errorMessage);
     return NextResponse.json({ 
       error: 'Failed to fetch market data',
-      details: 'An internal error occurred while fetching data.'
+      details: 'An internal error occurred while processing your request.'
     }, { status: 500 });
   }
 }
