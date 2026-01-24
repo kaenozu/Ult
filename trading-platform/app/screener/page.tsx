@@ -34,8 +34,8 @@ export default function Screener() {
     trend: 'all',
   });
 
-  const [sortField, setSortField] = useState<SortField>('changePercent');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [sortField, _setSortField] = useState<SortField>('changePercent');
+  const [sortDirection, _setSortDirection] = useState<SortDirection>('desc');
   const [stocks, setStocks] = useState<Stock[]>([...JAPAN_STOCKS, ...USA_STOCKS]);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzedStocks, setAnalyzedStocks] = useState<{symbol: string, signal?: Signal}[]>([]);

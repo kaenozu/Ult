@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+// import Link from 'next/link';
 import { Navigation } from '@/app/components/Navigation';
 import { JAPAN_STOCKS, USA_STOCKS } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
