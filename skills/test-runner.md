@@ -18,7 +18,7 @@ npm test
 # 特定のファイルのみ実行
 npm test -- path/to/test.spec.ts
 
-#ウォッチモードで実行
+# ウォッチモードで実行
 npm test -- --watch
 
 # カバレッジレポート付き
@@ -60,13 +60,49 @@ npm run test:db
 - 外部サービスとの連携
 - ステート管理の統合
 
-### 結果の分析
-- APIレスポンスの検証
-- データ整合性の確認
-- エラーハンドリングの動作確認
-
 ## 3. E2Eテスト実行 (E2E Test Execution)
 ブラウザを使用したエンドツーエンドのテストを実行する。
+
+### Playwright 設定
+
+#### playwright.config.ts
+```typescript
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './e2e',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
+  use: {
+    baseURL: 'http://localhost:3000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
+  ],
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+  },
+});
+```
 
 ### 実行手順
 ```bash
@@ -77,10 +113,80 @@ npx playwright test
 npx playwright test --headed=false
 
 # 特定のテストファイル実行
-npx playwright test tests/e2e/checkout.spec.ts
+npx playwright test e2e/main.spec.ts
 
 # デバッグモードで実行
 npx playwright test --debug
+
+# レポートを開く
+npx playwright show-report
+```
+
+### E2Eテスト記述パターン
+
+#### メイン機能のテスト
+```typescript
+test.describe('Trader Pro - メイン機能', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test('ページが正しく表示される', async ({ page }) => {
+    await expect(page).toHaveTitle(/Trader Pro/);
+    await expect(page.locator('h1')).toContainText('TRADER PRO');
+  });
+
+  test('銘柄をクリックしてチャートが更新される', async ({ page }) => {
+    await page.click('text=任天堂');
+    await expect(page.locator('text=6146')).toBeVisible();
+  });
+
+  test('時間足を切り替える', async ({ page }) => {
+    await page.click('button:has-text("1m")');
+    await page.waitForTimeout(1000);
+
+    await page.click('button:has-text("5m")');
+    await page.waitForTimeout(1000);
+
+    const button5m = page.locator('button:has-text("5m")');
+    await expect(button5m).toHaveClass(/focus/);
+  });
+});
+```
+
+#### ナビゲーションのテスト
+```typescript
+test.describe('Trader Pro - ナビゲーション', () => {
+  test('各ページに遷移できる', async ({ page }) => {
+    await page.goto('/');
+
+    await page.click('a:has-text("ヒートマップ")');
+    await expect(page).toHaveURL(/\/heatmap/);
+
+    await page.click('a:has-text("ジャーナル")');
+    await expect(page).toHaveURL(/\/journal/);
+
+    await page.click('a:has-text("スクリーナー")');
+    await expect(page).toHaveURL(/\/screener/);
+  });
+});
+```
+
+#### エラーハンドリングのテスト
+```typescript
+test.describe('Trader Pro - エラーハンドリング', () => {
+  test('無効な銘柄コードでエラーが表示されないこと', async ({ page }) => {
+    await page.fill('[placeholder="銘柄検索"]', 'INVALID_TICKER');
+    await page.press('Enter');
+
+    await expect(page).not.toHaveURL(/\/error/);
+  });
+
+  test('APIエラー時に適切に処理されること', async ({ page }) => {
+    await page.goto('/screener');
+    await expect(page.locator('h1')).toBeVisible();
+  });
+});
 ```
 
 ### Chrome DevTools MCPとの統合
@@ -94,13 +200,72 @@ wait_for("Welcome", timeout=5000)
 take_screenshot()
 ```
 
-### テストシナリオ
-1. **ユーザー登録**: フォーム入力 → 送信 → 確認メール
-2. **商品購入**: 商品選択 → カート追加 → 決済
-3. **ログイン**: 認証 → ダッシュボード表示
-4. **データ更新**: 編集 → 保存 → 反映確認
+## 4. モンキーテスト (Monkey Testing)
+ランダムなUI操作で予期せぬバグを発見するテスト。
 
-## 4. テスト結果の可視化 (Test Reporting)
+### モンキーテストスクリプト
+
+#### scripts/monkey-test.js
+```javascript
+const { chromium } = require('playwright');
+
+(async () => {
+  const browser = await chromium.launch({ headless: false });
+  const page = await browser.newPage();
+
+  await page.goto('http://localhost:3000');
+
+  // ランダムクリックを実行
+  for (let i = 0; i < 50; i++) {
+    try {
+      const buttons = await page.$$('button, a, [role="button"]');
+      if (buttons.length > 0) {
+        const randomButton = buttons[Math.floor(Math.random() * buttons.length)];
+        await randomButton.click({ timeout: 1000 });
+        await page.waitForTimeout(500);
+      }
+    } catch (e) {
+      console.log(`Click ${i} failed:`, e.message);
+    }
+  }
+
+  await browser.close();
+})();
+```
+
+### 実行手順
+```bash
+# モンキーテスト実行
+node scripts/monkey-test.js
+
+# 結果チェック
+node scripts/check-monkey-test-results.js
+```
+
+### GitHub Actions 連携
+```yaml
+name: Monkey Test
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 毎日実行
+  workflow_dispatch:
+
+jobs:
+  monkey-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - run: npm run dev &
+      - run: npx playwright test
+      - run: node scripts/monkey-test.js
+```
+
+## 5. テスト結果の可視化 (Test Reporting)
 
 ### レポート形式
 ```markdown
@@ -132,28 +297,58 @@ take_screenshot()
 | [ファイル] | [%] | [%] | [%] | [%] |
 ```
 
-### JUnit XML形式
-```xml
-<testsuites name="Test Suite">
-  <testsuite name="Unit Tests" tests="10" failures="1" skipped="0">
-    <testcase name="should render correctly">
-      <failure message="Expected 'Hello' but got 'Goodbye'"/>
-    </testcase>
-  </testsuite>
-</testsuites>
+### Playwright HTML レポート
+```bash
+# レポート生成
+npx playwright test
+
+# レポートを開く
+npx playwright show-report
 ```
 
-## 5. CI/CD統合
+## 6. CI/CD統合
 
 ### GitHub Actions
 ```yaml
-- name: Run tests
-  run: npm test
+name: Test
 
-- name: Upload coverage
-  uses: codecov/codecov-action@v3
-  with:
-    files: ./coverage/lcov.info
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run E2E tests
+        run: npx playwright test
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
 ```
 
 ### テスト結果の通知
@@ -161,16 +356,16 @@ take_screenshot()
 - **失敗**: 赤色の×マーク + 詳細ログ
 - **カバレッジ低下**: 警告メッセージ
 
-## 6. 自動テスト戦略
+## 7. 自動テスト戦略
 
 ### テストピラミッド
 ```
         /\
-       /E2E\      少ない、高価値
+       /E2E\      少ない、高価値 (5-10%)
       /------\
-     /統合テスト\    中程度
+     /統合テスト\    中程度 (20-30%)
     /------------\
-   /  単体テスト   \  多い、高速
+   /  単体テスト   \  多い、高速 (60-75%)
   /----------------\
 ```
 
@@ -181,7 +376,15 @@ take_screenshot()
 4. テストがパスすることを確認
 5. リファクタリング
 
-## 7. トラブルシューティング
+### テストカバレッジ目標
+| ファイルタイプ | 目標カバレッジ |
+|---------------|----------------|
+| ユーティリティ | 90%+ |
+| API/データ層 | 80%+ |
+| コンポーネント | 70%+ |
+| ページ/E2E | クリティカルパス100% |
+
+## 8. トラブルシューティング
 
 | 問題 | 原因 | 対処法 |
 |------|------|--------|
@@ -189,3 +392,5 @@ take_screenshot()
 | フリッキーテスト | タイミング依存 | リトライを追加 |
 | カバレッジが低い | テスト不足 | 新規テスト追加 |
 | メモリリーク | クリーンアップ漏れ | `afterEach` で後処理 |
+| E2Eが失敗 | サーバー未起動 | `webServer` 設定を確認 |
+| モン�テストがクラッシュ | 予期せぬUI状態 | エラーハンドリング追加 |
