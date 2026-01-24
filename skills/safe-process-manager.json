@@ -1,0 +1,5 @@
+{
+  "name": "safe-process-manager",
+  "description": "Windows上でAIエージェントを終了させることなく、開発プロセスを安全に管理・再起動するエキスパート・スキル。",
+  "version": "1.0.0"
+}
