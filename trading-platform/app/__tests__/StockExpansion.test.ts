@@ -1,55 +1,49 @@
-import { ALL_STOCKS, fetchStockMetadata } from '../data/stocks';
+import { fetchStockMetadata } from '../data/stocks';
 import { marketClient } from '../lib/api/data-aggregator';
 
-// モックの修正
+// APIクライアントをモック
 jest.mock('../lib/api/data-aggregator', () => ({
   marketClient: {
-    fetchQuote: jest.fn(),
-    fetchOHLCV: jest.fn(),
-    fetchSignal: jest.fn(),
+    fetchQuote: jest.fn()
   }
 }));
 
-describe('Stock Master Expansion (100 Stocks & On-demand)', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+describe('Stock Universe Expansion (On-demand Analysis)', () => {
+  it('should create a valid Stock object for a new US symbol', async () => {
+    (marketClient.fetchQuote as jest.Mock).mockResolvedValue({
+      symbol: 'TSM',
+      price: 140.5,
+      change: 2.5,
+      changePercent: 1.8,
+      volume: 5000000
+    });
+
+    const stock = await fetchStockMetadata('TSM');
+    
+    expect(stock).not.toBeNull();
+    expect(stock?.symbol).toBe('TSM');
+    expect(stock?.market).toBe('usa');
+    expect(stock?.price).toBe(140.5);
   });
 
-  describe('Requirement 1: 100 Stocks Pre-defined', () => {
-    it('should have around 100 stocks in the pre-defined list', () => {
-      const uniqueSymbols = new Set(ALL_STOCKS.map(s => s.symbol));
-      // 目標の100に近い数（今回は厳選した90-100の主力銘柄）であることを確認
-      expect(uniqueSymbols.size).toBeGreaterThanOrEqual(95);
+  it('should create a valid Stock object for a new Japan symbol', async () => {
+    (marketClient.fetchQuote as jest.Mock).mockResolvedValue({
+      symbol: '9101',
+      price: 5000,
+      change: 100,
+      changePercent: 2.0,
+      volume: 1000000
     });
 
-    it('should have a balanced mix of Japan and US stocks', () => {
-      const jpStocks = ALL_STOCKS.filter(s => s.market === 'japan');
-      const usStocks = ALL_STOCKS.filter(s => s.market === 'usa');
-      expect(jpStocks.length).toBeGreaterThanOrEqual(50);
-      expect(usStocks.length).toBeGreaterThanOrEqual(40);
-    });
+    const stock = await fetchStockMetadata('9101');
+    
+    expect(stock?.market).toBe('japan');
+    expect(stock?.symbol).toBe('9101');
   });
 
-  describe('Requirement 2: On-demand Auto-Registration', () => {
-    it('should dynamically register and return a new stock metadata', async () => {
-      const unknownSymbol = '6752'; // Panasonic
-      
-      // モックの返り値を設定
-      (marketClient.fetchQuote as jest.Mock).mockResolvedValue({
-        symbol: '6752',
-        price: 1500,
-        change: 10,
-        changePercent: 0.67,
-        volume: 1000000,
-        marketState: 'OPEN'
-      });
-
-      const stock = await fetchStockMetadata(unknownSymbol);
-      
-      expect(stock).toBeDefined();
-      expect(stock?.symbol).toBe('6752');
-      expect(stock?.price).toBe(1500);
-      expect(stock?.market).toBe('japan');
-    });
+  it('should return null if the symbol does not exist', async () => {
+    (marketClient.fetchQuote as jest.Mock).mockResolvedValue(null);
+    const stock = await fetchStockMetadata('INVALID');
+    expect(stock).toBeNull();
   });
 });

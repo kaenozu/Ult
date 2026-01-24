@@ -53,16 +53,35 @@ export function Header() {
 
   const handleSearchKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      const query = searchQuery.trim().toUpperCase();
+      if (!query) return;
+
+      // 1. まずローカルの全リストから完全一致を探す
+      const exactMatch = ALL_STOCKS.find(s => s.symbol.toUpperCase() === query);
+      if (exactMatch) {
+        handleStockSelect(exactMatch);
+        return;
+      }
+
+      // 2. 検索結果が1件ならそれを選択
       if (searchResults.length === 1) {
         handleStockSelect(searchResults[0]);
-      } else if (searchQuery.trim().length >= 2) {
-        // Try API fetch for unknown symbol
+        return;
+      }
+
+      // 3. なければAPIから未知の銘柄として取得を試みる
+      if (query.length >= 2) {
         setIsSearchingAPI(true);
         try {
-          const newStock = await fetchStockMetadata(searchQuery.toUpperCase());
+          const newStock = await fetchStockMetadata(query);
           if (newStock) {
             handleStockSelect(newStock);
+          } else {
+            // エラー表示の代わりにプレースホルダー
+            console.warn('Symbol not found:', query);
           }
+        } catch (err) {
+          console.error('On-demand fetch error:', err);
         } finally {
           setIsSearchingAPI(false);
         }
