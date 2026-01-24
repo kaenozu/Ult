@@ -23,11 +23,18 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   }, [stock.symbol, stock.price, signal, processAITrades]);
 
   const backtestResult: BacktestResult = useMemo(() => {
+    const emptyResult = { totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalProfitPercent: 0, maxDrawdown: 0, profitFactor: 0, trades: [] };
+
+    // ⚡ Bolt Optimization: Lazy load backtest calculation
+    if (activeTab !== 'backtest') {
+      return emptyResult;
+    }
+
     if (!ohlcv || ohlcv.length === 0) {
-      return { totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalProfitPercent: 0, maxDrawdown: 0, profitFactor: 0, trades: [] };
+      return emptyResult;
     }
     return runBacktest(stock.symbol, ohlcv, stock.market);
-  }, [stock.symbol, ohlcv, stock.market]);
+  }, [stock.symbol, ohlcv, stock.market, activeTab]);
 
   const aiTrades = useMemo(() => {
     return aiStatus.trades.filter(t => t.symbol === stock.symbol);
