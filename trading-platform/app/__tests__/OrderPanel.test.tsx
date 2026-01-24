@@ -20,6 +20,7 @@ const mockStock: Stock = {
   changePercent: 1.0,
   volume: 1000000,
   market: 'usa',
+  sector: 'テクノロジー',
 };
 
 describe('OrderPanel', () => {
