@@ -7,12 +7,23 @@
 - Network:       http://192.168.0.2:3000
 
 ✓ Starting...
-✓ Ready in 1073ms
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+✓ Ready in 1149ms
 ○ Compiling / ...
- GET / 200 in 4.8s (compile: 4.3s, render: 552ms)
- GET / 200 in 92ms (compile: 6ms, render: 86ms)
+ GET / 200 in 6.4s (compile: 5.8s, render: 605ms)
+ GET / 200 in 97ms (compile: 6ms, render: 91ms)
+ GET / 200 in 74ms (compile: 4ms, render: 69ms)
+ GET / 200 in 72ms (compile: 4ms, render: 68ms)
 Please consider completing the survey at https://bit.ly/yahoo-finance-api-feedback if you haven't already; for more info see https://github.com/gadicc/yahoo-finance2/issues/764#issuecomment-2056623851.  This will only be shown once, but you can suppress this message in future with `new YahooFinance({ suppressNotices: ['yahooSurvey'] })`.
- GET /api/market?type=history&symbol=NVDA&market=usa 200 in 1242ms (compile: 992ms, render: 250ms)
- GET /api/market?type=quote&symbol=NVDA 200 in 1438ms (compile: 1156ms, render: 283ms)
- GET /api/market?type=quote&symbol=NVDA 200 in 97ms (compile: 7ms, render: 90ms)
- GET /api/market?type=quote&symbol=NVDA 200 in 46ms (compile: 6ms, render: 40ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 1500ms (compile: 1168ms, render: 332ms)
+ GET /api/market?type=history&symbol=AAPL&market=usa 200 in 1449ms (compile: 1040ms, render: 409ms)
+ GET /api/market?type=history&symbol=^IXIC&market=usa 400 in 8ms (compile: 3ms, render: 5ms)
+ GET /api/market?type=history&symbol=^IXIC&market=usa 400 in 8ms (compile: 3ms, render: 5ms)
+ GET /api/market?type=history&symbol=^IXIC&market=usa 400 in 11ms (compile: 4ms, render: 7ms)
+ GET /api/market?type=history&symbol=^IXIC&market=usa 400 in 8ms (compile: 3ms, render: 5ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 131ms (compile: 8ms, render: 124ms)
+ GET /api/market?type=quote&symbol=AAPL 200 in 35ms (compile: 5ms, render: 30ms)
