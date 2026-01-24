@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-// import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
-import { JAPAN_STOCKS, USA_STOCKS } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
 import { cn, formatPercent } from '@/app/lib/utils';
+import { useTradingStore } from '@/app/store/tradingStore';
+import { marketClient } from '@/app/lib/api/data-aggregator';
 
 const SECTORS = [
   '全て',
@@ -17,6 +18,13 @@ const SECTORS = [
   '半導体',
   '消費財',
   'エネルギー',
+  '産業機械',
+  '通信',
+  'サービス',
+  '飲料',
+  '食品',
+  'エンターテイメント',
+  'ソフトウェア'
 ];
 
 const SECTOR_COLORS: Record<string, string> = {
@@ -33,9 +41,10 @@ const SECTOR_COLORS: Record<string, string> = {
 interface HeatmapBlockProps {
   stock: Stock;
   className?: string;
+  onClick: (stock: Stock) => void;
 }
 
-function HeatmapBlock({ stock, className }: HeatmapBlockProps) {
+function HeatmapBlock({ stock, className, onClick }: HeatmapBlockProps) {
   const isPositive = stock.changePercent >= 0;
   const intensity = Math.min(Math.abs(stock.changePercent) / 5, 1);
 
@@ -46,21 +55,22 @@ function HeatmapBlock({ stock, className }: HeatmapBlockProps) {
   return (
     <div
       className={cn(
-        'relative p-3 flex flex-col justify-between cursor-pointer hover:opacity-80 transition-opacity',
+        'relative p-3 flex flex-col justify-between cursor-pointer hover:opacity-80 transition-opacity border border-white/5',
         className
       )}
       style={{ backgroundColor: bgColor }}
+      onClick={() => onClick(stock)}
     >
       <div className="flex justify-between items-start">
-        <span className="font-bold text-white text-sm">{stock.symbol}</span>
-        <span className={cn('text-xs font-medium', isPositive ? 'text-green-200' : 'text-red-200')}>
+        <span className="font-bold text-white text-[10px] leading-none">{stock.symbol}</span>
+        <span className={cn('text-[10px] font-black', isPositive ? 'text-green-200' : 'text-red-200')}>
           {formatPercent(stock.changePercent)}
         </span>
       </div>
-      <div className="mt-2">
-        <div className="text-[10px] text-white/80 truncate">{stock.name}</div>
-        <div className="text-sm font-bold text-white">
-          {stock.market === 'japan' ? `¥${stock.price.toLocaleString()}` : `$${stock.price.toFixed(2)}`}
+      <div className="mt-1.5">
+        <div className="text-[9px] text-white/70 truncate mb-0.5">{stock.name}</div>
+        <div className="text-[11px] font-bold text-white">
+          {stock.market === 'japan' ? `¥${Math.round(stock.price).toLocaleString()}` : `$${stock.price.toFixed(2)}`}
         </div>
       </div>
     </div>
@@ -68,24 +78,59 @@ function HeatmapBlock({ stock, className }: HeatmapBlockProps) {
 }
 
 export default function Heatmap() {
+  const router = useRouter();
+  const { watchlist, batchUpdateStockData, setSelectedStock } = useTradingStore();
   const [selectedSector, setSelectedSector] = useState('全て');
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'japan' | 'usa'>('all');
+  const [loading, setLoading] = useState(false);
 
-  const allStocks = selectedMarket === 'all'
-    ? [...JAPAN_STOCKS, ...USA_STOCKS]
-    : selectedMarket === 'japan'
-      ? JAPAN_STOCKS
-      : USA_STOCKS;
+  // 初回表示時に最新価格を一括取得
+  useEffect(() => {
+    const fetchLatestQuotes = async () => {
+      if (watchlist.length === 0) return;
+      setLoading(true);
+      try {
+        const symbols = watchlist.map(s => s.symbol);
+        const latestQuotes = await marketClient.fetchQuotes(symbols);
+        
+        const updates = latestQuotes.map(q => ({
+          symbol: q.symbol,
+          data: {
+            price: q.price,
+            change: q.change,
+            changePercent: q.changePercent,
+            volume: q.volume
+          }
+        }));
+        
+        batchUpdateStockData(updates);
+      } catch (error) {
+        console.error('Heatmap sync failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filteredStocks = selectedSector === '全て'
-    ? allStocks
-    : allStocks.filter(s => s.sector === selectedSector);
+    fetchLatestQuotes();
+  }, []); // エウント時のみ1回
+
+  const handleStockClick = (stock: Stock) => {
+    setSelectedStock(stock);
+    router.push('/');
+  };
+
+  const filteredStocks = watchlist.filter(s => {
+    const marketMatch = selectedMarket === 'all' || s.market === selectedMarket;
+    const sectorMatch = selectedSector === '全て' || s.sector === selectedSector;
+    return marketMatch && sectorMatch;
+  });
 
   const sectorGroups = filteredStocks.reduce((acc, stock) => {
-    if (!acc[stock.sector]) {
-      acc[stock.sector] = [];
+    const sector = stock.sector || 'その他';
+    if (!acc[sector]) {
+      acc[sector] = [];
     }
-    acc[stock.sector].push(stock);
+    acc[sector].push(stock);
     return acc;
   }, {} as Record<string, Stock[]>);
 
@@ -97,17 +142,8 @@ export default function Heatmap() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
-      {/* Mock Data Banner */}
-      <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 flex items-center justify-center gap-2 text-yellow-400 text-xs">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        <span className="font-medium">注意:  表示データはモック（模擬データ）です。実際の市場データではありません。</span>
-        <span className="text-yellow-500/60">Mock Data Only</span>
-      </div>
-
       {/* Header */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
+      <header className="flex items-center justify-between whitespace-nowrap border-b border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 text-white">
             <div className="size-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary">
@@ -115,16 +151,13 @@ export default function Heatmap() {
                 <path d="M3 13h2v8H3v-8zm4-6h2v14H7V7zm4 3h2v11h-2V10zm4-6h2v17h-2V4zm4 4h2v13h-2V8z" />
               </svg>
             </div>
-            <h2 className="text-white text-lg font-bold leading-tight tracking-tight">ヒートマップ</h2>
+            <h2 className="text-white text-lg font-bold leading-tight tracking-tight">マーケット・ヒートマップ</h2>
           </div>
         </div>
-        <div className="flex flex-1 justify-end gap-6 items-center">
-          <div className="flex items-center gap-3 pl-2">
-            <div className="hidden xl:flex flex-col">
-              <span className="text-xs font-bold text-white leading-none mb-1">K. Tanaka</span>
-              <span className="text-[10px] font-medium text-emerald-400 leading-none">● Market Open</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          {loading && <span className="text-[10px] text-[#92adc9] animate-pulse">同期中...</span>}
+          <div className="size-2 rounded-full bg-emerald-500"></div>
+          <span className="text-[10px] font-bold text-emerald-400">リアルタイム同期中</span>
         </div>
       </header>
 
@@ -133,15 +166,18 @@ export default function Heatmap() {
         <aside className="w-64 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0 z-10 max-lg:hidden">
           <div className="p-5 flex flex-col gap-6">
             <div className="flex justify-between items-center">
-              <h3 className="text-white text-base font-bold">Filters</h3>
-              <button className="text-primary text-xs font-medium hover:text-primary/80">
-                Reset All
+              <h3 className="text-white text-base font-bold">フィルター</h3>
+              <button 
+                onClick={() => { setSelectedSector('全て'); setSelectedMarket('all'); }}
+                className="text-primary text-xs font-medium hover:underline"
+              >
+                リセット
               </button>
             </div>
 
             {/* Market Filter */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">Market</span>
+              <span className="text-[10px] font-bold text-[#92adc9] uppercase tracking-widest">市場</span>
               <div className="flex h-9 w-full items-center justify-center rounded-lg bg-[#192633] p-1">
                 {[
                   { id: 'all', label: 'All' },
@@ -150,12 +186,10 @@ export default function Heatmap() {
                 ].map((market) => (
                   <button
                     key={market.id}
-                    onClick={() => setSelectedMarket(market.id as 'all' | 'japan' | 'usa')}
+                    onClick={() => setSelectedMarket(market.id as any)}
                     className={cn(
-                      'flex h-full grow items-center justify-center overflow-hidden rounded-md px-2 text-xs font-medium transition-all',
-                      selectedMarket === market.id
-                        ? 'bg-[#111a22] shadow-sm text-white'
-                        : 'text-[#92adc9] hover:text-white'
+                      'flex h-full grow items-center justify-center rounded-md px-2 text-xs font-bold transition-all',
+                      selectedMarket === market.id ? 'bg-[#111a22] text-white shadow-lg' : 'text-[#92adc9] hover:text-white'
                     )}
                   >
                     {market.label}
@@ -166,17 +200,17 @@ export default function Heatmap() {
 
             {/* Sector Filter */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">Sector</span>
-              <div className="flex flex-wrap gap-2">
+              <span className="text-[10px] font-bold text-[#92adc9] uppercase tracking-widest">セクター</span>
+              <div className="flex flex-wrap gap-1.5">
                 {SECTORS.map((sector) => (
                   <button
                     key={sector}
                     onClick={() => setSelectedSector(sector)}
                     className={cn(
-                      'h-8 flex items-center justify-center rounded-lg text-xs font-bold transition-all hover:opacity-80 cursor-pointer px-3',
+                      'px-2 py-1.5 rounded text-[10px] font-bold transition-all border',
                       selectedSector === sector
-                        ? 'bg-primary text-white'
-                        : 'bg-[#192633] text-[#92adc9]'
+                        ? 'bg-primary border-primary text-white'
+                        : 'bg-[#192633] border-[#233648] text-[#92adc9] hover:border-[#3b82f6]'
                     )}
                   >
                     {sector}
@@ -185,27 +219,19 @@ export default function Heatmap() {
               </div>
             </div>
 
-            <div className="h-px w-full bg-[#233648]" />
-
-            {/* Summary Stats */}
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase">Summary</span>
+            <div className="mt-auto pt-4 border-t border-[#233648]">
               <div className="bg-[#192633] rounded-lg p-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#92adc9]">Total Stocks</span>
-                  <span className="text-white font-medium">{filteredStocks.length}</span>
+                <div className="flex justify-between text-[11px] mb-2">
+                  <span className="text-[#92adc9]">表示銘柄数</span>
+                  <span className="text-white font-bold">{filteredStocks.length}</span>
                 </div>
-                <div className="flex justify-between text-sm mt-2">
-                  <span className="text-[#92adc9]">Gainers</span>
-                  <span className="text-green-500 font-medium">
-                    {filteredStocks.filter(s => s.changePercent > 0).length}
-                  </span>
+                <div className="flex justify-between text-[11px] mb-2">
+                  <span className="text-green-400">値上がり</span>
+                  <span className="text-green-400 font-bold">{filteredStocks.filter(s => s.changePercent > 0).length}</span>
                 </div>
-                <div className="flex justify-between text-sm mt-2">
-                  <span className="text-[#92adc9]">Losers</span>
-                  <span className="text-red-500 font-medium">
-                    {filteredStocks.filter(s => s.changePercent < 0).length}
-                  </span>
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-red-400">値下がり</span>
+                  <span className="text-red-400 font-bold">{filteredStocks.filter(s => s.changePercent < 0).length}</span>
                 </div>
               </div>
             </div>
@@ -213,63 +239,38 @@ export default function Heatmap() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col min-w-0 bg-[#101922]">
-          <div className="flex flex-wrap justify-between items-end gap-3 px-6 py-5 border-b border-[#233648]/50">
-            <div className="flex min-w-72 flex-col gap-1">
-              <h1 className="text-white tracking-tight text-2xl font-bold leading-tight">Market Heatmap</h1>
-              <div className="flex items-center gap-2 text-[#92adc9] text-sm font-normal">
-                <span>{selectedMarket === 'all' ? 'Global' : selectedMarket === 'japan' ? 'Japan' : 'US'}</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-                <span className="text-white font-medium">
-                  {selectedSector === '全て' ? 'All Sectors' : selectedSector}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 h-8 bg-[#192633] rounded-lg text-[#92adc9] text-xs">
-                <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Live Updates
-              </div>
-            </div>
-          </div>
-
-          {/* Heatmap Grid */}
-          <div className="flex-1 p-4 overflow-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1">
-              {sortedSectors.map(([sector, stocks]) => (
-                <div key={sector} className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 px-2 py-1">
-                    <div className={cn('w-2 h-2 rounded-full', SECTOR_COLORS[sector] || 'bg-gray-500')} />
-                    <span className="text-xs font-medium text-[#92adc9]">{sector}</span>
-                    <span className={cn(
-                      'text-xs font-medium ml-auto',
-                      stocks.reduce((sum, s) => sum + s.changePercent, 0) / stocks.length >= 0
-                        ? 'text-green-500'
-                        : 'text-red-500'
-                    )}>
-                      {formatPercent(stocks.reduce((sum, s) => sum + s.changePercent, 0) / stocks.length)}
-                    </span>
+        <main className="flex-1 flex flex-col min-w-0 bg-[#101922] p-4 overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+            {sortedSectors.map(([sector, stocks]) => (
+              <div key={sector} className="bg-[#141e27] border border-[#233648] rounded-xl overflow-hidden flex flex-col shadow-2xl">
+                <div className="px-4 py-2 bg-[#192633]/50 flex items-center justify-between border-b border-[#233648]">
+                  <div className="flex items-center gap-2">
+                    <div className={cn('w-1.5 h-3 rounded-full', SECTOR_COLORS[sector] || 'bg-slate-500')} />
+                    <span className="text-[11px] font-black uppercase tracking-wider text-white">{sector}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1">
-                    {stocks.map((stock) => (
-                      <HeatmapBlock key={stock.symbol} stock={stock} />
-                    ))}
-                  </div>
+                  <span className={cn(
+                    'text-[10px] font-black',
+                    stocks.reduce((sum, s) => sum + s.changePercent, 0) / stocks.length >= 0 ? 'text-green-400' : 'text-red-400'
+                  )}>
+                    {formatPercent(stocks.reduce((sum, s) => sum + s.changePercent, 0) / stocks.length)}
+                  </span>
                 </div>
-              ))}
-            </div>
+                <div className="p-1 grid grid-cols-2 gap-1">
+                  {stocks.map((stock) => (
+                    <HeatmapBlock 
+                      key={stock.symbol} 
+                      stock={stock} 
+                      onClick={handleStockClick}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </main>
       </div>
 
       <Navigation />
-
-      {/* Disclaimer */}
-      <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">
-        投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
-      </div>
     </div>
   );
 }
