@@ -221,6 +221,7 @@ export function Header() {
           {isConnected ? <Wifi className="w-4 h-4 text-green-500" /> : <WifiOff className="w-4 h-4 text-red-500" />}
         </button>
         <button
+          onClick={() => alert('設定機能は現在開発中です')}
           className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
           aria-label="設定"
           title="設定"
@@ -228,6 +229,7 @@ export function Header() {
           <Settings className="w-5 h-5" />
         </button>
         <button
+          onClick={() => alert('ユーザープロフィール機能は現在開発中です')}
           className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
           aria-label="ユーザープロフィール"
           title="ユーザープロフィール"
