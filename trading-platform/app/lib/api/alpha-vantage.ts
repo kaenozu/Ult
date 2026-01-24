@@ -20,6 +20,8 @@ import type {
   AlphaVantageRSI,
   AlphaVantageSMA,
   AlphaVantageError,
+} from '@/app/types';
+import {
   APIError,
   NetworkError,
   RateLimitError,
