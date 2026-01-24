@@ -1,18 +1,30 @@
 /**
  * Alpha Vantage API Client
- * 
+ *
  * Provides access to stock market data including:
  * - Daily OHLCV data
  * - Intraday data (1min, 5min, 15min)
  * - Technical indicators (RSI, SMA, MACD, Bollinger Bands)
  * - Symbol search
- * 
+ *
  * Rate Limit (Free Tier):
  * - 5 requests per minute
  * - 25 requests per day
- * 
+ *
  * Documentation: https://www.alphavantage.co/documentation/
  */
+
+import type {
+  AlphaVantageTimeSeriesDaily,
+  AlphaVantageGlobalQuote,
+  AlphaVantageRSI,
+  AlphaVantageSMA,
+  AlphaVantageError,
+  APIError,
+  NetworkError,
+  RateLimitError,
+  isAlphaVantageError,
+} from '@/app/types';
 
 export interface AlphaVantageConfig {
   apiKey: string;
@@ -113,18 +125,14 @@ export class AlphaVantageClient {
       clearTimeout(timeoutId);
       
       if (!response.ok) {
-        throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
       }
 
-const data = await response.json() as Record<string, unknown>;
+      const data = await response.json() as AlphaVantageTimeSeriesDaily | AlphaVantageError;
 
-      if (data['Error Message']) {
-        throw new Error(data['Error Message'] as string);
-      }
-
-      if (data['Note']) {
-        throw new Error(data['Note'] as string);
-      }
+      validateAlphaVantageResponse(data);
 
       const timeSeries = data['Time Series (Daily)'] as Record<string, AlphaVantageTimeSeriesValue> | undefined;
       if (!timeSeries) {
@@ -176,15 +184,22 @@ const data = await response.json() as Record<string, unknown>;
 
     const url = `${this.baseUrl}?${params}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+      throw new NetworkError(
+        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+      );
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = await response.json() as Record<string, unknown> | AlphaVantageError;
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message'] as string);
+    if (isAlphaVantageError(data)) {
+      if (data['Error Message']) {
+        throw new APIError(data['Error Message'], 'API_ERROR');
+      }
+      if (data['Note']) {
+        throw new RateLimitError(data['Note']);
+      }
     }
 
     const key = `Time Series (${interval})`;
@@ -230,15 +245,22 @@ const data = await response.json() as Record<string, unknown>;
 
     const url = `${this.baseUrl}?${params}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+      throw new NetworkError(
+        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+      );
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = await response.json() as Record<string, unknown> | AlphaVantageError;
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message'] as string);
+    if (isAlphaVantageError(data)) {
+      if (data['Error Message']) {
+        throw new APIError(data['Error Message'], 'API_ERROR');
+      }
+      if (data['Note']) {
+        throw new RateLimitError(data['Note']);
+      }
     }
 
     const rsiData = data['Technical Analysis: RSI'] as Record<string, AlphaVantageIndicatorValue> | undefined;
@@ -284,15 +306,22 @@ const data = await response.json() as Record<string, unknown>;
 
     const url = `${this.baseUrl}?${params}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+      throw new NetworkError(
+        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+      );
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = await response.json() as Record<string, unknown> | AlphaVantageError;
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message'] as string);
+    if (isAlphaVantageError(data)) {
+      if (data['Error Message']) {
+        throw new APIError(data['Error Message'], 'API_ERROR');
+      }
+      if (data['Note']) {
+        throw new RateLimitError(data['Note']);
+      }
     }
 
     const smaData = data['Technical Analysis: SMA'] as Record<string, AlphaVantageIndicatorValue> | undefined;
@@ -338,15 +367,22 @@ const data = await response.json() as Record<string, unknown>;
 
     const url = `${this.baseUrl}?${params}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+      throw new NetworkError(
+        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+      );
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = await response.json() as Record<string, unknown> | AlphaVantageError;
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message'] as string);
+    if (isAlphaVantageError(data)) {
+      if (data['Error Message']) {
+        throw new APIError(data['Error Message'], 'API_ERROR');
+      }
+      if (data['Note']) {
+        throw new RateLimitError(data['Note']);
+      }
     }
 
     const emaData = data['Technical Analysis: EMA'] as Record<string, AlphaVantageIndicatorValue> | undefined;
@@ -394,15 +430,22 @@ const data = await response.json() as Record<string, unknown>;
 
     const url = `${this.baseUrl}?${params}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+      throw new NetworkError(
+        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+      );
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = await response.json() as Record<string, unknown> | AlphaVantageError;
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message'] as string);
+    if (isAlphaVantageError(data)) {
+      if (data['Error Message']) {
+        throw new APIError(data['Error Message'], 'API_ERROR');
+      }
+      if (data['Note']) {
+        throw new RateLimitError(data['Note']);
+      }
     }
 
     const macdData = data['Technical Analysis: MACD'] as Record<string, AlphaVantageIndicatorValue> | undefined;
@@ -452,15 +495,22 @@ const data = await response.json() as Record<string, unknown>;
 
     const url = `${this.baseUrl}?${params}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
-      throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+      throw new NetworkError(
+        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+      );
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = await response.json() as Record<string, unknown> | AlphaVantageError;
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message'] as string);
+    if (isAlphaVantageError(data)) {
+      if (data['Error Message']) {
+        throw new APIError(data['Error Message'], 'API_ERROR');
+      }
+      if (data['Note']) {
+        throw new RateLimitError(data['Note']);
+      }
     }
 
     const bbData = data['Technical Analysis: BBANDS'] as Record<string, AlphaVantageIndicatorValue> | undefined;
@@ -511,11 +561,9 @@ const data = await response.json() as Record<string, unknown>;
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as { bestMatches?: AlphaVantageSymbolMatch[], 'Error Message'?: string };
+    const data = await response.json() as { bestMatches?: AlphaVantageSymbolMatch[] } | AlphaVantageError;
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message']);
-    }
+    validateAlphaVantageResponse(data);
 
     if (!data.bestMatches) {
       return [];
@@ -551,11 +599,9 @@ const data = await response.json() as Record<string, unknown>;
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as { 'Global Quote'?: Record<string, string>, 'Error Message'?: string };
+    const data = await response.json() as { 'Global Quote'?: Record<string, string> } | AlphaVantageError;
 
-    if (data['Error Message']) {
-      throw new Error(data['Error Message']);
-    }
+    validateAlphaVantageResponse(data);
 
     const quote = data['Global Quote'];
     if (!quote) {
@@ -564,6 +610,53 @@ const data = await response.json() as Record<string, unknown>;
 
     return quote;
   }
+}
+
+// ============================================================================
+// Error Handling Helpers
+// ============================================================================
+
+/**
+ * Validate and throw error for Alpha Vantage API response
+ * @param data - API response data
+ * @throws {APIError} - If API returns an error
+ * @throws {RateLimitError} - If rate limit is exceeded
+ */
+export function validateAlphaVantageResponse(data: AlphaVantageError | unknown): void {
+  if (!isAlphaVantageError(data)) {
+    return;
+  }
+
+  if (data['Error Message']) {
+    throw new APIError(data['Error Message'], 'API_ERROR');
+  }
+
+  if (data['Note']) {
+    throw new RateLimitError(data['Note']);
+  }
+
+  if (data['Information']) {
+    throw new APIError(data['Information'], 'API_INFO');
+  }
+}
+
+/**
+ * Handle fetch response and validate
+ * @param response - Fetch response object
+ * @returns Parsed JSON data
+ * @throws {NetworkError} - If request failed
+ * @throws {APIError} - If API returned error
+ */
+export async function handleAlphaVantageFetch<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    throw new NetworkError(
+      `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+    );
+  }
+
+  const data = await response.json();
+  validateAlphaVantageResponse(data);
+  return data as T;
 }
 
 // Singleton instance

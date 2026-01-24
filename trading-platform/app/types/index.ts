@@ -150,3 +150,190 @@ export interface ScreenerFilter {
 }
 
 export type Theme = 'dark' | 'light';
+
+// ============================================================================
+// API Types
+// ============================================================================
+
+/**
+ * Alpha Vantage API Error Response
+ */
+export interface AlphaVantageError {
+  'Error Message'?: string;
+  Note?: string;
+  Information?: string;
+}
+
+/**
+ * Alpha Vantage Global Quote Response
+ */
+export interface AlphaVantageGlobalQuote {
+  '01. symbol': string;
+  '02. open': string;
+  '03. high': string;
+  '04. low': string;
+  '05. price': string;
+  '06. volume': string;
+  '07. latest trading day': string;
+  '08. previous close': string;
+  '09. change': string;
+  '10. change percent': string;
+}
+
+/**
+ * Alpha Vantage Time Series Daily Response
+ */
+export interface AlphaVantageTimeSeriesDaily {
+  'Meta Data': {
+    '1. Information': string;
+    '2. Symbol': string;
+    '3. Last Refreshed': string;
+    '4. Output Size': string;
+    '5. Time Zone': string;
+  };
+  'Time Series (Daily)': Record<string, {
+    '1. open': string;
+    '2. high': string;
+    '3. low': string;
+    '4. close': string;
+    '5. volume': string;
+  }>;
+}
+
+/**
+ * Alpha Vantage RSI Response
+ */
+export interface AlphaVantageRSI {
+  'Meta Data': {
+    '1. Indicator': string;
+    '2. Symbol': string;
+    '3. Last Refreshed': string;
+    '4. Interval': string;
+    '5. Time Period': number;
+    '6. Series Type': string;
+    '7. Time Zone': string;
+  };
+  'Technical Analysis: RSI': Record<string, {
+    RSI: string;
+  }>;
+}
+
+/**
+ * Alpha Vantage SMA Response
+ */
+export interface AlphaVantageSMA {
+  'Meta Data': {
+    '1: Symbol': string;
+    '2: Indicator': string;
+    '3: Last Refreshed': string;
+    '4: Interval': string;
+    '5: Time Period': number;
+    '6: Series Type': string;
+    '7: Time Zone': string;
+  };
+  'Technical Analysis: SMA': Record<string, {
+    SMA: string;
+  }>;
+}
+
+/**
+ * Alpha Vantage API Response (Union type for all endpoints)
+ */
+export type AlphaVantageResponse =
+  | AlphaVantageGlobalQuote
+  | AlphaVantageTimeSeriesDaily
+  | AlphaVantageRSI
+  | AlphaVantageSMA
+  | AlphaVantageError;
+
+// ============================================================================
+// Error Types
+// ============================================================================
+
+/**
+ * Custom error class for API-related errors
+ */
+export class APIError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly statusCode?: number,
+    public readonly details?: unknown
+  ) {
+    super(message);
+    this.name = 'APIError';
+  }
+}
+
+/**
+ * Network error for connectivity issues
+ */
+export class NetworkError extends APIError {
+  constructor(message: string, details?: unknown) {
+    super(message, 'NETWORK_ERROR', undefined, details);
+    this.name = 'NetworkError';
+  }
+}
+
+/**
+ * Validation error for invalid input
+ */
+export class ValidationError extends APIError {
+  constructor(message: string, public readonly field?: string) {
+    super(message, 'VALIDATION_ERROR', 400, { field });
+    this.name = 'ValidationError';
+  }
+}
+
+/**
+ * Rate limit error for API throttling
+ */
+export class RateLimitError extends APIError {
+  constructor(message: string = 'Rate limit exceeded') {
+    super(message, 'RATE_LIMIT_ERROR', 429);
+    this.name = 'RateLimitError';
+  }
+}
+
+/**
+ * Type guard for Alpha Vantage Error Response
+ */
+export function isAlphaVantageError(data: unknown): data is AlphaVantageError {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+  const errorData = data as Record<string, unknown>;
+  return (
+    typeof errorData['Error Message'] === 'string' ||
+    typeof errorData['Note'] === 'string' ||
+    typeof errorData['Information'] === 'string'
+  );
+}
+
+// ============================================================================
+// API Result Types
+// ============================================================================
+
+/**
+ * Standard API result wrapper
+ */
+export interface APIResult<T> {
+  success: true;
+  data: T;
+  source: 'cache' | 'api' | 'aggregated';
+}
+
+/**
+ * API error wrapper
+ */
+export interface APIErrorResult {
+  success: false;
+  data: null;
+  source: 'cache' | 'api' | 'aggregated';
+  error: string;
+}
+
+/**
+ * Union type for API responses
+ */
+export type APIResponse<T> = APIResult<T> | APIErrorResult;
