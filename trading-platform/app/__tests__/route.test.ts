@@ -6,7 +6,7 @@
  */
 
 describe('Market API GET', () => {
-  let GET: jest.MockedFunction<() => Promise<Response>>;
+  let GET: (request: Request) => Promise<Response>;
   let mockChart: jest.MockedFunction<() => Promise<unknown>>;
 
   beforeEach(() => {

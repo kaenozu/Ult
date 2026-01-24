@@ -48,8 +48,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Symbol is required' }, { status: 400 });
   }
 
-  // Validate symbol format (alphanumeric and . only)
-  if (!/^[A-Z0-9.]+$/.test(symbol.trim().toUpperCase())) {
+  // Validate symbol format (alphanumeric, dots, and commas for batch)
+  if (!/^[A-Z0-9.,]+$/.test(symbol.trim().toUpperCase())) {
     return NextResponse.json({ error: 'Invalid symbol format' }, { status: 400 });
   }
 
