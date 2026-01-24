@@ -1,13 +1,12 @@
-import { Stock, Signal, OHLCV } from '@/app/types';
+import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, APIError, NetworkError, RateLimitError } from '@/app/types';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { idbClient } from './idb';
 
-export interface FetchResult<T> {
-  success: boolean;
-  data: T | null;
-  source: 'api' | 'cache' | 'idb' | 'mock';
-  error?: string;
-}
+/**
+ * Type alias for backward compatibility
+ * Use APIResponse<T> for new code
+ */
+export type FetchResult<T> = APIResponse<T>;
 
 interface QuoteData {
   symbol: string;
@@ -26,7 +25,7 @@ interface MarketResponse<T> {
 }
 
 class MarketDataClient {
-  private cache: Map<string, { data: unknown; timestamp: number }> = new Map();
+  private cache: Map<string, { data: OHLCV | Signal | TechnicalIndicator; timestamp: number }> = new Map();
   private cacheDuration: number = 5 * 60 * 1000; 
 
   private async fetchWithRetry<T>(
@@ -72,20 +71,22 @@ class MarketDataClient {
    */
   async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}`;
-    
+
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
     if (cached) return { success: true, data: cached, source: 'cache' };
+
+    let source: 'api' | 'idb' | 'cache' | 'error' = 'error';
 
     try {
       // 1. Try to get data from local DB
       const localData = await idbClient.getData(symbol);
       let finalData: OHLCV[] = localData;
-      let source: 'api' | 'idb' = 'idb';
+      source = 'idb';
 
       const now = new Date();
       // Use local noon to avoid timezone/market-close issues for "needs update" check
       const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
-      
+
       // Update if no data, or if latest data is older than 24 hours
       const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
 
@@ -98,7 +99,7 @@ class MarketDataClient {
         }
 
         const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl);
-        
+
         if (newData && newData.length > 0) {
           finalData = await idbClient.mergeAndSave(symbol, newData);
           source = 'api';
@@ -111,9 +112,8 @@ class MarketDataClient {
       this.setCache(cacheKey, interpolatedData);
       return { success: true, data: interpolatedData, source };
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
       console.error(`Fetch OHLCV failed for ${symbol}:`, err);
-      return { success: false, data: null, source: 'api', error: errorMessage };
+      return createErrorResult(err, source, `fetchOHLCV(${symbol})`);
     }
   }
 
@@ -206,9 +206,8 @@ class MarketDataClient {
       
       return { success: true, data: signal, source: result.source };
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
       console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
-      return { success: false, data: null, source: 'api', error: errorMessage };
+      return createErrorResult(err, result.source, `fetchSignal(${stock.symbol})`);
     }
   }
 
@@ -222,7 +221,7 @@ class MarketDataClient {
     return item.data as T;
   }
 
-  private setCache(key: string, data: unknown) {
+  private setCache(key: string, data: OHLCV | Signal | TechnicalIndicator) {
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 
@@ -292,6 +291,49 @@ class MarketDataClient {
 
     return result;
   }
+}
+
+// ============================================================================
+// Error Handling Helpers
+// ============================================================================
+
+/**
+ * Convert unknown error to appropriate API error
+ */
+export function handleApiError(error: unknown, context: string): APIError {
+  if (error instanceof APIError) {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    // Check for common error patterns
+    if (error.message.includes('fetch') || error.message.includes('network')) {
+      return new NetworkError(error.message, error);
+    }
+    if (error.message.includes('429') || error.message.includes('rate limit')) {
+      return new RateLimitError(error.message);
+    }
+    return new APIError(error.message, 'UNKNOWN_ERROR', undefined, error);
+  }
+
+  return new APIError(String(error), 'UNKNOWN_ERROR', undefined, error);
+}
+
+/**
+ * Create error result from error
+ */
+export function createErrorResult(
+  error: unknown,
+  source: 'cache' | 'api' | 'aggregated',
+  context?: string
+): APIErrorResult {
+  const apiError = handleApiError(error, context || 'Unknown operation');
+  return {
+    success: false,
+    data: null,
+    source,
+    error: apiError.message,
+  };
 }
 
 export const marketClient = new MarketDataClient();

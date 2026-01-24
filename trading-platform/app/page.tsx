@@ -32,13 +32,26 @@ export default function Workstation() {
     closePosition(symbol, currentPrice);
   }, [closePosition]);
 
-  const displayStock = selectedStock; 
+  const displayStock = selectedStock;
 
   if (loading) {
     return (
       <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-[#92adc9] mb-2">データの取得に失敗しました</p>
+            <p className="text-red-400">{error}</p>
+          </div>
         </div>
       </div>
     );
