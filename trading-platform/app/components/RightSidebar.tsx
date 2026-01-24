@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { OrderPanel } from '@/app/components/OrderPanel';
-import { OrderBook } from '@/app/components/OrderBook';
 import { cn } from '@/app/lib/utils';
 import { Stock, Signal, OHLCV } from '@/app/types';
 
@@ -24,7 +23,7 @@ export const RightSidebar = ({
   ohlcv,
   loading
 }: RightSidebarProps) => {
-  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');
+  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');    
 
   return (
     <aside className={cn(
@@ -70,9 +69,6 @@ export const RightSidebar = ({
           )
         )}
       </div>
-
-      {/* Level 2 / Order Book */}
-      <OrderBook stock={displayStock} />
     </aside>
   );
 };

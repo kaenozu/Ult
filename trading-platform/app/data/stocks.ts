@@ -155,19 +155,27 @@ export async function fetchSignal(stock: Stock): Promise<Signal | null> {
  * リストにない銘柄のメタデータを取得してStockオブジェクトを生成する（オンデマンド拡張）
  */
 export async function fetchStockMetadata(symbol: string): Promise<Stock | null> {
-  const market = symbol.match(/^\d{4}$/) ? 'japan' : 'usa';
-  const quote = await marketClient.fetchQuote(symbol, market);
+  const cleanSymbol = symbol.trim().toUpperCase();
+  // 4桁の数字または.Tで終わる場合は日本市場と判定
+  const isJapan = /^\d{4}$/.test(cleanSymbol) || cleanSymbol.endsWith('.T');
+  const market = isJapan ? 'japan' : 'usa';
   
-  if (!quote) return null;
+  try {
+    const quote = await marketClient.fetchQuote(cleanSymbol, market);
+    if (!quote) return null;
 
-  return {
-    symbol: quote.symbol,
-    name: quote.symbol, // Yahoo Finance APIからは名称取得が限定的なためシンボルを暫定名に
-    market,
-    sector: '不明',
-    price: quote.price,
-    change: quote.change,
-    changePercent: quote.changePercent,
-    volume: quote.volume
-  };
+    return {
+      symbol: quote.symbol.replace('.T', ''), // 表示はサフィックスなし
+      name: quote.symbol.replace('.T', '') + (market === 'japan' ? ' (JP)' : ' (US)'),
+      market,
+      sector: market === 'japan' ? '日本市場' : '米国市場', // 詳細セクターは分析時に補完
+      price: quote.price,
+      change: quote.change,
+      changePercent: quote.changePercent,
+      volume: quote.volume
+    };
+  } catch (error) {
+    console.error('Metadata fetch failed for:', cleanSymbol, error);
+    return null;
+  }
 }
