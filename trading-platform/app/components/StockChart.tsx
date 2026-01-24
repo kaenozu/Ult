@@ -11,6 +11,47 @@ import { analyzeStock } from '@/app/lib/analysis';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
+// 需給の壁 (Volume Profile) Plugin
+const volumeProfilePlugin = {
+  id: 'volumeProfile',
+  afterDatasetsDraw: (chart: any, args: any, options: any) => {
+    if (!options.enabled || !options.data || options.data.length === 0) return;
+    
+    const { ctx, chartArea: { right, width, top, bottom } } = chart;
+    const yAxis = chart.scales.y;
+    const currentPrice = options.currentPrice;
+    
+    ctx.save();
+    // Disable shadow for cleaner look
+    ctx.shadowBlur = 0;
+    
+    options.data.forEach((wall: any) => {
+      const yPos = yAxis.getPixelForValue(wall.price);
+      if (yPos < top || yPos > bottom) return;
+
+      const isAbove = wall.price > currentPrice;
+      const color = isAbove ? '239, 68, 68' : '34, 197, 94'; 
+      const barWidth = width * 0.15 * wall.strength; // Limit width to 15%
+      const barHeight = (bottom - top) / 25; // Responsive thickness
+      
+      // Draw smooth, semi-transparent bars
+      const gradient = ctx.createLinearGradient(right - barWidth, 0, right, 0);
+      gradient.addColorStop(0, `rgba(${color}, 0)`);
+      gradient.addColorStop(1, `rgba(${color}, ${0.1 + wall.strength * 0.2})`);
+      
+      ctx.fillStyle = gradient;
+      ctx.fillRect(right - barWidth, yPos - barHeight / 2, barWidth, barHeight);
+      
+      // Draw very thin indicator line at the right edge
+      ctx.fillStyle = `rgba(${color}, 0.4)`;
+      ctx.fillRect(right - 2, yPos - barHeight / 2, 2, barHeight);
+    });
+    ctx.restore();
+  }
+};
+
+ChartJS.register(volumeProfilePlugin);
+
 export interface StockChartProps {
   data: OHLCV[];
   height?: number;
@@ -80,22 +121,6 @@ export const StockChart = memo(function StockChart({
     ];
   }, [hoveredIdx, data, market, extendedData.labels.length]);
 
-  // 3. 需給の壁 (Volume Profile Resistance/Support)
-  const wallDatasets = useMemo(() => {
-    if (!signal?.volumeResistance || data.length === 0) return [];
-    const currentPrice = data[data.length - 1].close;
-    return signal.volumeResistance.map((wall, i) => {
-      const isAbove = wall.price > currentPrice;
-      const color = isAbove ? '239, 68, 68' : '34, 197, 94';
-      return {
-        label: `壁 ${i}`, data: new Array(extendedData.labels.length).fill(wall.price),
-        borderColor: `rgba(${color}, ${wall.strength * 0.3})`,
-        borderWidth: Math.max(1, wall.strength * 4),
-        pointRadius: 0, fill: false, order: 5, borderDash: [5, 5],
-      };
-    });
-  }, [signal?.volumeResistance, data, extendedData.labels.length]);
-
   // 4. 未来予測の予報円 (Forecast Cone)
   const forecastDatasets = useMemo(() => {
     if (!signal || data.length === 0) return [];
@@ -136,20 +161,28 @@ export const StockChart = memo(function StockChart({
     labels: extendedData.labels,
     datasets: [
       { label: '現在価格', data: extendedData.prices, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.1, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, order: 1 },
-      ...forecastDatasets, ...ghostForecastDatasets, ...wallDatasets,
+      ...forecastDatasets, ...ghostForecastDatasets,
       ...(showSMA ? [{ label: 'SMA (20)', data: sma20, borderColor: '#fbbf24', borderWidth: 1.5, pointRadius: 0, tension: 0.1, fill: false, order: 2 }] : []),
       ...(showBollinger ? [
         { label: 'BB Upper', data: upper, borderColor: 'rgba(59, 130, 246, 0.5)', backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 1, pointRadius: 0, tension: 0.1, fill: '+1', order: 3 },
         { label: 'BB Lower', data: lower, borderColor: 'rgba(59, 130, 246, 0.5)', borderWidth: 1, pointRadius: 0, tension: 0.1, fill: false, order: 4 }
       ] : []),
     ],
-  }), [extendedData, sma20, upper, lower, showSMA, showBollinger, forecastDatasets, ghostForecastDatasets, wallDatasets]);
+  }), [extendedData, sma20, upper, lower, showSMA, showBollinger, forecastDatasets, ghostForecastDatasets]);
 
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true, maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
     onHover: (_, elements) => setHoveredIndex(elements.length > 0 ? elements[0].index : null),
-    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    plugins: { 
+      legend: { display: false }, 
+      tooltip: { enabled: false },
+      volumeProfile: {
+        enabled: true,
+        data: signal?.volumeResistance,
+        currentPrice: data.length > 0 ? data[data.length - 1].close : 0
+      }
+    },
     scales: {
       x: {
         min: extendedData.labels.length > 105 ? extendedData.labels[extendedData.labels.length - 105] : undefined,

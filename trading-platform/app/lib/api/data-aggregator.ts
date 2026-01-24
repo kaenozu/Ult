@@ -21,15 +21,14 @@ interface QuoteData {
 interface MarketResponse<T> {
   data?: T;
   error?: string;
+  details?: string;
+  debug?: string;
 }
 
 class MarketDataClient {
   private cache: Map<string, { data: unknown; timestamp: number }> = new Map();
   private cacheDuration: number = 5 * 60 * 1000; 
 
-  /**
-   * Helper for fetch with exponential backoff and 429 handling
-   */
   private async fetchWithRetry<T>(
     url: string, 
     options: RequestInit = {}, 
@@ -40,6 +39,7 @@ class MarketDataClient {
       const res = await fetch(url, options);
       
       if (res.status === 429) {
+        // ... rate limit logic ...
         const retryAfter = res.headers.get('Retry-After');
         const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : backoff * 4;
         console.warn(`Rate limit (429) hit. Waiting ${waitTime}ms before retry...`);
@@ -50,12 +50,16 @@ class MarketDataClient {
       const json = await res.json() as MarketResponse<T>;
       
       if (!res.ok || json.error) {
-        throw new Error(json.error || res.statusText);
+        // Combine all error info
+        const debugInfo = json.debug ? ` (Debug: ${json.debug})` : '';
+        const details = json.details ? ` - ${json.details}` : '';
+        throw new Error(`${json.error || res.statusText}${details}${debugInfo}`);
       }
       
       return json.data as T;
     } catch (err) {
       if (retries > 0) {
+        // ... retry logic ...
         await new Promise(resolve => setTimeout(resolve, backoff));
         return this.fetchWithRetry(url, options, retries - 1, backoff * 2);
       }

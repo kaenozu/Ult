@@ -90,22 +90,47 @@ class MLPredictionService {
     
     // 2. シグナルタイプの決定
     let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-    if (pred.ensemblePrediction > 1.5 && finalConfidence >= 60) type = 'BUY';
-    else if (pred.ensemblePrediction < -1.5 && finalConfidence >= 60) type = 'SELL';
+    if (pred.ensemblePrediction > 1.0 && finalConfidence >= 60) type = 'BUY';
+    else if (pred.ensemblePrediction < -1.0 && finalConfidence >= 60) type = 'SELL';
 
-    // 3. 自己矯正 (Self-Correction): 誤差係数による補正
+    // 3. 自己矯正 (Self-Correction): 誤差係数による補正と、ターゲット価格の再計算
     const errorFactor = baseAnalysis.predictionError || 1.0;
-    let { targetPrice, stopLoss } = baseAnalysis;
+    
+    // ML予測に基づいた動的なターゲット価格の算出 (テクニカル分析の結果をML予測で上書きして一貫性を持たせる)
+    const atr = baseAnalysis.atr || (currentPrice * 0.02);
+    let targetPrice = currentPrice;
+    let stopLoss = currentPrice;
+
+    if (type === 'BUY') {
+      // 予測騰落率かATRの大きい方を採用
+      const move = Math.max(currentPrice * (Math.abs(pred.ensemblePrediction) / 100), atr * 1.5);
+      targetPrice = currentPrice + move;
+      stopLoss = currentPrice - (move / 2);
+    } else if (type === 'SELL') {
+      const move = Math.max(currentPrice * (Math.abs(pred.ensemblePrediction) / 100), atr * 1.5);
+      targetPrice = currentPrice - move;
+      stopLoss = currentPrice + (move / 2);
+    } else {
+      // HOLDの場合はターゲットを現在値に固定し、不必要な予報線の傾きを排除する
+      targetPrice = currentPrice;
+      stopLoss = currentPrice;
+    }
 
     let correctionComment = "";
-    if (errorFactor > 1.2) {
+    if (errorFactor > 1.2 && type !== 'HOLD') {
       correctionComment = ` 直近の予測誤差(${errorFactor.toFixed(1)}倍)を考慮しリスク管理を強化。`;
       const drift = Math.abs(currentPrice - stopLoss) * errorFactor;
-      stopLoss = type === 'BUY' ? currentPrice - drift : type === 'SELL' ? currentPrice + drift : stopLoss;
+      stopLoss = type === 'BUY' ? currentPrice - drift : currentPrice + drift;
     }
 
     const optParamsStr = baseAnalysis.optimizedParams ? `最適化設定(RSI:${baseAnalysis.optimizedParams.rsiPeriod}, SMA:${baseAnalysis.optimizedParams.smaPeriod}) ` : "";
     const reason = `${isStrong ? '【強気】' : '【注視】'}${optParamsStr}${this.generateBaseReason(type)} ${marketComment}${correctionComment}`;
+
+    // 予測騰落率の符号をシグナルタイプと強制的に一致させるガード
+    let finalPredictedChange = pred.ensemblePrediction;
+    if (type === 'BUY' && finalPredictedChange < 0) finalPredictedChange = Math.abs(finalPredictedChange);
+    if (type === 'SELL' && finalPredictedChange > 0) finalPredictedChange = -Math.abs(finalPredictedChange);
+    if (type === 'HOLD') finalPredictedChange = 0;
 
     return {
       symbol: stock.symbol, type,
@@ -113,7 +138,7 @@ class MLPredictionService {
       accuracy: baseAnalysis.accuracy,
       atr: baseAnalysis.atr,
       targetPrice, stopLoss, reason,
-      predictedChange: parseFloat(pred.ensemblePrediction.toFixed(2)),
+      predictedChange: parseFloat(finalPredictedChange.toFixed(2)),
       predictionDate: new Date().toISOString().split('T')[0],
       marketContext: marketInfo,
       optimizedParams: baseAnalysis.optimizedParams,
