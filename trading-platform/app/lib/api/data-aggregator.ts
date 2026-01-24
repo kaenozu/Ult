@@ -1,4 +1,4 @@
-import { Stock, Signal, OHLCV, TechnicalIndicator } from '@/app/types';
+import { Stock, Signal, OHLCV } from '@/app/types';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { idbClient } from './idb';
 
@@ -66,7 +66,7 @@ class MarketDataClient {
   /**
    * Fetch Historical Data with Smart Persistence (IndexedDB + Delta fetching)
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}`;
     
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
@@ -225,7 +225,7 @@ class MarketDataClient {
   private interpolateOHLCV(data: OHLCV[]): OHLCV[] {
     if (data.length < 2) return data;
 
-    let sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     const filledWithGaps: OHLCV[] = [];
     for (let i = 0; i < sorted.length; i++) {

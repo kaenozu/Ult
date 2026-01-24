@@ -1,18 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+// import Link from 'next/link';
 import { Navigation } from '@/app/components/Navigation';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { JournalEntry } from '@/app/types';
+// import { JournalEntry } from '@/app/types';
 import { cn, formatCurrency, formatPercent } from '@/app/lib/utils';
 
 export default function Journal() {
-  const { journal, portfolio } = useTradingStore();
+  const { journal } = useTradingStore();
   const [activeTab, setActiveTab] = useState<'trades' | 'analysis'>('trades');
 
   const closedTrades = journal.filter(entry => entry.status === 'CLOSED');
-  const openPositions = portfolio.positions;
+  // const openPositions = portfolio.positions;
 
   const totalTrades = closedTrades.length;
   const winningTrades = closedTrades.filter(t => (t.profit || 0) > 0).length;

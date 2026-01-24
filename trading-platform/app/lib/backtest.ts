@@ -1,4 +1,4 @@
-import { OHLCV, Signal } from '@/app/types';
+import { OHLCV } from '@/app/types';
 import { analyzeStock } from './analysis';
 
 export interface BacktestResult {

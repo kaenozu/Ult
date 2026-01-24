@@ -1,9 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StockTable } from '../components/StockTable';
 import { useTradingStore } from '../store/tradingStore';
+import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
-const mockStocks = [
+const mockStocks: Stock[] = [
   { symbol: '7203', name: 'トヨタ自動車', market: 'japan', sector: '自動車', price: 3000, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'AAPL', name: 'Apple Inc.', market: 'usa', sector: 'テクノロジー', price: 180, change: 0, changePercent: 0, volume: 0 },
 ];

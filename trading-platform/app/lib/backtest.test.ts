@@ -1,4 +1,4 @@
-import { runBacktest, BacktestResult } from './backtest';
+import { runBacktest } from './backtest';
 import { OHLCV } from '@/app/types';
 
 describe('runBacktest', () => {

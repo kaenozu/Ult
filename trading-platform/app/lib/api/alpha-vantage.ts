@@ -116,7 +116,7 @@ export class AlphaVantageClient {
         throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json() as Record<string, any>;
+const data = await response.json() as Record<string, unknown>;
 
       if (data['Error Message']) {
         throw new Error(data['Error Message'] as string);
@@ -181,7 +181,7 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as Record<string, any>;
+    const data = await response.json() as Record<string, unknown>;
 
     if (data['Error Message']) {
       throw new Error(data['Error Message'] as string);
@@ -235,7 +235,7 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as Record<string, any>;
+    const data = await response.json() as Record<string, unknown>;
 
     if (data['Error Message']) {
       throw new Error(data['Error Message'] as string);
@@ -289,7 +289,7 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as Record<string, any>;
+    const data = await response.json() as Record<string, unknown>;
 
     if (data['Error Message']) {
       throw new Error(data['Error Message'] as string);
@@ -343,7 +343,7 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as Record<string, any>;
+    const data = await response.json() as Record<string, unknown>;
 
     if (data['Error Message']) {
       throw new Error(data['Error Message'] as string);
@@ -399,7 +399,7 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as Record<string, any>;
+    const data = await response.json() as Record<string, unknown>;
 
     if (data['Error Message']) {
       throw new Error(data['Error Message'] as string);
@@ -457,7 +457,7 @@ export class AlphaVantageClient {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
 
-    const data = await response.json() as Record<string, any>;
+    const data = await response.json() as Record<string, unknown>;
 
     if (data['Error Message']) {
       throw new Error(data['Error Message'] as string);
@@ -570,7 +570,7 @@ export class AlphaVantageClient {
 let clientInstance: AlphaVantageClient | null = null;
 
 export function getAlphaVantageClient(): AlphaVantageClient {
-  // SECURITY: Ensure this is only run on the server to protect API keys
+  // SECURITY: Ensure this is only run on server to protect API keys
   if (typeof window !== 'undefined') {
     throw new Error('AlphaVantageClient must be used on server side only');
   }
@@ -579,6 +579,11 @@ export function getAlphaVantageClient(): AlphaVantageClient {
   
   if (!apiKey) {
     throw new Error('ALPHA_VANTAGE_API_KEY is not defined in environment variables');
+  }
+
+  // Validate API key format
+  if (typeof apiKey !== 'string' || apiKey.length < 10) {
+    throw new Error('Invalid API key format');
   }
 
   if (!clientInstance) {

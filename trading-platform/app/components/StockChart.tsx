@@ -51,7 +51,7 @@ export const StockChart = memo(function StockChart({
   // 2. AI Time Travel: Ghost Cloud (過去の予測再現)
   const ghostForecastDatasets = useMemo(() => {
     if (hoveredIdx === null || hoveredIdx >= data.length || data.length < 50) return [];
-    const pastSignal = analyzeStock(data[0].symbol, data.slice(0, hoveredIdx + 1), market);
+    const pastSignal = analyzeStock(data[0].symbol || '', data.slice(0, hoveredIdx + 1), market);
     if (!pastSignal) return [];
 
     const targetArr = new Array(extendedData.labels.length).fill(NaN);

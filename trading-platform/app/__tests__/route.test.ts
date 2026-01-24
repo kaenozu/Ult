@@ -6,8 +6,8 @@
  */
 
 describe('Market API GET', () => {
-  let GET: any;
-  let mockChart: any;
+  let GET: (request: Request) => Promise<Response>;
+  let mockChart: jest.MockedFunction<() => Promise<unknown>>;
 
   beforeEach(() => {
     jest.resetModules();
