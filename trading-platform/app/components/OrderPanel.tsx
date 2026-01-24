@@ -11,7 +11,11 @@ interface OrderPanelProps {
 }
 
 export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
-  const { portfolio, addPosition, setCash, addJournalEntry } = useTradingStore();
+  const addPosition = useTradingStore(s => s.addPosition);
+  const setCash = useTradingStore(s => s.setCash);
+  const addJournalEntry = useTradingStore(s => s.addJournalEntry);
+  const cash = useTradingStore(s => s.portfolio.cash);
+
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
@@ -25,14 +29,14 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
 
   const price = orderType === 'MARKET' ? currentPrice : parseFloat(limitPrice);
   const totalCost = quantity > 0 ? price * quantity : 0;
-  const canAfford = portfolio.cash >= totalCost && quantity > 0;
+  const canAfford = cash >= totalCost && quantity > 0;
 
   const handleOrder = () => {
     if (quantity <= 0) return;
     if (side === 'BUY' && !canAfford) return;
 
     // Simulate order execution
-    setCash(portfolio.cash - totalCost);
+    setCash(cash - totalCost);
     addPosition({
       symbol: stock.symbol,
       name: stock.name,
@@ -68,7 +72,7 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       <div className="flex justify-between items-center border-b border-[#233648] pb-2">
         <h3 className="text-white font-bold">{stock.symbol} を取引</h3>
         <span className="text-xs text-[#92adc9]">
-            余力: {formatCurrency(portfolio.cash)}
+            余力: {formatCurrency(cash)}
         </span>
       </div>
 

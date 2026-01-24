@@ -3,14 +3,18 @@ import { OrderPanel } from '../components/OrderPanel';
 import { Stock } from '../types';
 
 // Mock zustand
-jest.mock('@/app/store/tradingStore', () => ({
-  useTradingStore: () => ({
+jest.mock('@/app/store/tradingStore', () => {
+  const mockStore = {
     portfolio: { cash: 20000 },
     addPosition: jest.fn(),
     setCash: jest.fn(),
     addJournalEntry: jest.fn(),
-  }),
-}));
+  };
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    useTradingStore: (selector: any) => selector ? selector(mockStore) : mockStore,
+  };
+});
 
 const mockStock: Stock = {
   symbol: 'AAPL',

@@ -94,7 +94,7 @@ export const StockChart = memo(function StockChart({
         pointRadius: 0, fill: false, order: 5, borderDash: [5, 5],
       };
     });
-  }, [signal?.volumeResistance, data, extendedData.labels.length]);
+  }, [signal, data, extendedData.labels.length]);
 
   // 4. 未来予測の予報円 (Forecast Cone)
   const forecastDatasets = useMemo(() => {
