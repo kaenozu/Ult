@@ -96,7 +96,10 @@ export function calculatePredictionError(data: OHLCV[]): number {
  */
 export function calculateVolumeProfile(data: OHLCV[]): { price: number, strength: number }[] {
   if (data.length === 0) return [];
-  const prices = data.map(d => d.close);
+  
+  // 直近1年分（約250日）のデータに絞って計算することで、現在の価格に近い壁を抽出する
+  const recentData = data.slice(-250);
+  const prices = recentData.map(d => d.close);
   const minP = Math.min(...prices), maxP = Math.max(...prices);
   const range = maxP - minP;
   if (range === 0) return [];
@@ -104,7 +107,7 @@ export function calculateVolumeProfile(data: OHLCV[]): { price: number, strength
   const binCount = 20, binSize = range / binCount;
   const bins = new Array(binCount).fill(0);
 
-  data.forEach(d => {
+  recentData.forEach(d => {
     const startBin = Math.max(0, Math.floor((d.low - minP) / binSize));
     const endBin = Math.min(binCount - 1, Math.floor((d.high - minP) / binSize));
     const volPerBin = d.volume / (endBin - startBin + 1);
@@ -115,7 +118,7 @@ export function calculateVolumeProfile(data: OHLCV[]): { price: number, strength
   return bins.map((vol, i) => ({
     price: minP + (binSize * i) + (binSize / 2),
     strength: vol / maxV
-  })).filter(b => b.strength > 0.4);
+  })).filter(b => b.strength > 0.2); // フィルタリングを緩和(0.4 -> 0.2)
 }
 
 /**

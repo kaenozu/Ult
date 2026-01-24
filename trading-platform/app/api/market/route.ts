@@ -31,6 +31,11 @@ interface YahooQuoteResult {
 const yf = new YahooFinance();
 
 function formatSymbol(symbol: string, market?: string): string {
+  // Never add suffix to indices (starting with ^)
+  if (symbol.startsWith('^')) {
+    return symbol;
+  }
+  
   if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
     return `${symbol}.T`;
   }
@@ -48,8 +53,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Symbol is required' }, { status: 400 });
   }
 
-  // Validate symbol format (alphanumeric, dots, and commas for batch)
-  if (!/^[A-Z0-9.,]+$/.test(symbol.trim().toUpperCase())) {
+  // Validate symbol format (alphanumeric, dots, commas, and caret for indices)
+  if (!/^[A-Z0-9.,^]+$/.test(symbol.trim().toUpperCase())) {
     return NextResponse.json({ error: 'Invalid symbol format' }, { status: 400 });
   }
 
@@ -79,13 +84,12 @@ export async function GET(request: Request) {
       }
 
       try {
+        // Use simplified options to avoid compatibility issues
         const result = await yf.chart(yahooSymbol, {
           period1: period1,
-          interval: '1d',
         }) as unknown as YahooChartResult;
 
         if (!result || !result.quotes || result.quotes.length === 0) {
-          console.warn(`No data returned from chart for ${yahooSymbol}`);
           return NextResponse.json({ data: [], warning: 'No historical data found' });
         }
 
@@ -102,9 +106,11 @@ export async function GET(request: Request) {
       } catch (innerError: unknown) {
         const errorMsg = innerError instanceof Error ? innerError.message : 'Unknown historical error';
         console.error(`yf.chart failed for ${yahooSymbol}:`, errorMsg);
+        
         return NextResponse.json({ 
           error: 'Failed to fetch historical data', 
-          details: 'The market data provider is temporarily unavailable.' 
+          details: 'The market data provider is temporarily unavailable.',
+          debug: process.env.NODE_ENV !== 'production' ? errorMsg : undefined
         }, { status: 502 });
       }
     } 
