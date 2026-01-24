@@ -12,6 +12,7 @@ export interface Stock {
 }
 
 export interface OHLCV {
+  symbol?: string;
   date: string;
   open: number;
   high: number;

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import Workstation from '../page';
 import { useTradingStore } from '../store/tradingStore';
+import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
 // Mock child components to focus on page logic
@@ -33,11 +34,20 @@ describe('Workstation Page - Initial State', () => {
   });
 
   it('does not show placeholder when a stock is selected', () => {
-    const mockStock = { symbol: '7203', name: 'トヨタ', market: 'japan', price: 3000 };
+    const mockStock: Stock = { 
+      symbol: '7203', 
+      name: 'トヨタ', 
+      market: 'japan', 
+      sector: '自動車',
+      price: 3000,
+      change: 0,
+      changePercent: 0,
+      volume: 1000000
+    };
     
     useTradingStore.setState({
-      selectedStock: mockStock as any,
-      watchlist: [mockStock as any],
+      selectedStock: mockStock,
+      watchlist: [mockStock],
     });
 
     render(<Workstation />);
