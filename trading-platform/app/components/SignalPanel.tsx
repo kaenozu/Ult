@@ -3,6 +3,7 @@ import { Stock, Signal, OHLCV } from '@/app/types';
 import { formatCurrency, cn, getConfidenceColor } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { useTradingStore } from '@/app/store/tradingStore';
+import { calculateAIHitRate } from '@/app/lib/analysis';
 
 interface SignalPanelProps {
   stock: Stock;
@@ -13,7 +14,44 @@ interface SignalPanelProps {
 
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai'>('signal');
+  const [calculatingHitRate, setCalculatingHitRate] = useState(false);
+  const [preciseHitRate, setPreciseHitRate] = useState<{ hitRate: number, trades: number }>({ hitRate: 0, trades: 0 });
   const { aiStatus, processAITrades } = useTradingStore();
+
+  // 詳細な的中率を非同期で計算（長期データを使用）
+  useEffect(() => {
+    const calculateFullPerformance = async () => {
+      if (!stock.symbol) return;
+      setCalculatingHitRate(true);
+      try {
+        // APIを直接叩いて、過去2年分のデータを的中率計算用に取得
+        const twoYearsAgo = new Date();
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+        const startDate = twoYearsAgo.toISOString().split('T')[0];
+        
+        const response = await fetch(`/api/market?type=history&symbol=${stock.symbol}&market=${stock.market}&startDate=${startDate}`);
+        const resultData = await response.json();
+        
+        if (resultData.data && resultData.data.length > 100) {
+          const result = calculateAIHitRate(stock.symbol, resultData.data, stock.market);
+          setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
+        } else {
+          // データが不十分な場合は表示用データで代用試行
+          const result = calculateAIHitRate(stock.symbol, ohlcv, stock.market);
+          setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
+        }
+      } catch (e) {
+        console.error('Precise hit rate fetch failed:', e);
+      } finally {
+        setCalculatingHitRate(false);
+      }
+    };
+    calculateFullPerformance();
+  }, [stock.symbol, stock.market]); // ohlcvへの依存を外し、銘柄変更時のみ実行
+
+  const aiPerformance = useMemo(() => {
+    return preciseHitRate;
+  }, [preciseHitRate]);
 
   // 自動売買プロセスをトリガー
   useEffect(() => {
@@ -100,9 +138,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               )}>
                 {signal.confidence >= 80 ? '🔥 強気シグナル' : '通常シグナル'}
               </div>
-              {(signal.accuracy || 0) >= 70 && (
+              {aiPerformance.hitRate >= 60 && (
                 <div className="px-2 py-1 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 flex items-center gap-1">
-                  🌟 高精度
+                  🌟 高的中率 ({aiPerformance.hitRate}%)
                 </div>
               )}
             </div>
@@ -128,9 +166,16 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             </div>
             <div className="text-right">
               <div className="text-[10px] text-[#92adc9] uppercase font-bold tracking-widest mb-1">過去の的中率</div>
-              <div className="text-lg font-black text-white tabular-nums">
-                {signal.accuracy || 0}%
+              <div className={cn('text-lg font-black tabular-nums', aiPerformance.hitRate >= 50 ? 'text-white' : 'text-red-400')}>
+                {calculatingHitRate ? (
+                  <span className="text-xs text-[#92adc9] animate-pulse">計算中...</span>
+                ) : (
+                  `${aiPerformance.hitRate}%`
+                )}
               </div>
+              {!calculatingHitRate && (
+                <div className="text-[8px] text-[#92adc9]/60">過去{aiPerformance.trades}回の試行</div>
+              )}
             </div>
           </div>
 

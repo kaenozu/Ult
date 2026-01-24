@@ -6,6 +6,7 @@ import { useTradingStore } from '@/app/store/tradingStore';
 export function useStockData() {
   const { watchlist, selectedStock: storeSelectedStock, setSelectedStock } = useTradingStore();
   const [chartData, setChartData] = useState<OHLCV[]>([]);
+  const [indexData, setIndexData] = useState<OHLCV[]>([]);
   const [chartSignal, setChartSignal] = useState<Signal | null>(null);
   const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
   const [loading, setLoading] = useState(false);
@@ -20,18 +21,31 @@ export function useStockData() {
   const fetchData = useCallback(async (stock: Stock) => {
     setLoading(true);
     setError(null);
-    setChartData([]); // Clear for skeleton
+    setChartData([]); 
+    setIndexData([]);
     setChartSignal(null);
 
     try {
+      // 1. 個別銘柄のデータ取得
       const data = await fetchOHLCV(stock.symbol, stock.market, stock.price);
       if (data.length === 0) {
         setError('No data available');
-      } else {
-        setChartData(data);
-        const signalData = await fetchSignal(stock);
-        setChartSignal(signalData);
+        return;
       }
+      setChartData(data);
+
+      // 2. 市場指数のデータ取得 (重ね合わせ用)
+      const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
+      const idxData = await fetchOHLCV(indexSymbol, stock.market);
+      setIndexData(idxData);
+
+      // 3. シグナル取得
+      const signalData = await fetchSignal(stock);
+      setChartSignal(signalData);
+
+      // 4. 的中率計算用の長期データをバックグラウンドで同期
+      fetchOHLCV(stock.symbol, stock.market).catch(e => console.warn('Background sync failed:', e));
+
     } catch (err) {
       console.error('Data fetch error:', err);
       setError('Failed to fetch data');
@@ -41,25 +55,20 @@ export function useStockData() {
   }, []);
 
   useEffect(() => {
-    // Priority 1: Stock explicitly selected in the global store (from Screener or Search)
     if (storeSelectedStock) {
-      // Optimize: Only fetch if the symbol changed
       if (selectedStock?.symbol !== storeSelectedStock.symbol) {
         setLocalSelectedStock(storeSelectedStock);
         fetchData(storeSelectedStock);
       }
     }
-    // Priority 2: If no global selection but watchlist has items, show the first one
     else if (watchlist.length > 0) {
       const defaultStock = watchlist[0];
-      // Optimize: Only fetch if the symbol changed
       if (selectedStock?.symbol !== defaultStock.symbol) {
         setLocalSelectedStock(defaultStock);
-        setSelectedStock(defaultStock); // Sync back to store
+        setSelectedStock(defaultStock); 
         fetchData(defaultStock);
       }
     }
-    // Priority 3: Nothing to show
     else {
       if (selectedStock) {
         setLocalSelectedStock(null);
@@ -76,6 +85,7 @@ export function useStockData() {
   return {
     selectedStock,
     chartData,
+    indexData,
     chartSignal,
     loading,
     error,
