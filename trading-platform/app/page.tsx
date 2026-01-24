@@ -96,6 +96,11 @@ export default function Workstation() {
 
         {/* Center: Chart Area */}
         <section className="flex-1 flex flex-col min-w-0 bg-[#101922] relative">
+          {error && (
+            <div className="bg-red-500/10 border-b border-red-500/20 p-2 text-red-500 text-xs text-center font-medium animate-pulse">
+              データの取得に失敗しました: {error}
+            </div>
+          )}
           {!displayStock ? (
             <div className="flex-1 flex flex-col items-center justify-center text-[#92adc9] p-8 text-center">
               <div className="w-20 h-20 mb-6 bg-[#192633] rounded-full flex items-center justify-center text-primary/40">

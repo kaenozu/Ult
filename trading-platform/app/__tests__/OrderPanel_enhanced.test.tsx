@@ -7,6 +7,15 @@ import '@testing-library/jest-dom';
 describe('OrderPanel Interaction Tests', () => {
   const mockStock = { symbol: '7974', name: '任天堂', price: 10000, market: 'japan' as const };
 
+  beforeEach(() => {
+    useTradingStore.getState().setCash(10000000);
+    jest.spyOn(window, 'alert').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('should allow changing quantity and show total cost', () => {
     render(<OrderPanel stock={mockStock} currentPrice={10000} />);
     const input = screen.getByDisplayValue('100');
