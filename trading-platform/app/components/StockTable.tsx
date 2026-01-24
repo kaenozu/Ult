@@ -13,7 +13,7 @@ const StockRow = memo(({
   onSelect,
   onRemove,
   showChange,
-  showVolume
+  _showVolume
 }: {
   stock: Stock;
   isSelected: boolean;

@@ -1,5 +1,5 @@
 import { useTradingStore } from '../store/tradingStore';
-import { Signal, OHLCV } from '../types';
+import { Signal } from '../types';
 
 // Mock current time for consistent testing
 const mockDate = '2026-01-23T12:00:00.000Z';
@@ -8,7 +8,7 @@ jest.useFakeTimers().setSystemTime(new Date(mockDate));
 describe('AI Performance (Auto-Pilot & Reflection) Logic', () => {
   beforeEach(() => {
     // Reset store state before each test
-    const store = useTradingStore.getState();
+    // const store = useTradingStore.getState();
     // Manual reset since we are using persist
     useTradingStore.setState({
       aiStatus: {

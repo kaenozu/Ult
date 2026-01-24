@@ -43,8 +43,24 @@ export async function GET(request: Request) {
   const symbol = searchParams.get('symbol');
   const market = searchParams.get('market');
 
+  // Input validation and sanitization
   if (!symbol) {
     return NextResponse.json({ error: 'Symbol is required' }, { status: 400 });
+  }
+
+  // Validate symbol format (alphanumeric and . only)
+  if (!/^[A-Z0-9.]+$/.test(symbol.trim().toUpperCase())) {
+    return NextResponse.json({ error: 'Invalid symbol format' }, { status: 400 });
+  }
+
+  // Validate type parameter
+  if (type && !['history', 'quote'].includes(type)) {
+    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
+  }
+
+  // Validate market parameter
+  if (market && !['japan', 'usa'].includes(market)) {
+    return NextResponse.json({ error: 'Invalid market parameter' }, { status: 400 });
   }
 
   const yahooSymbol = formatSymbol(symbol, market || undefined);

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { OrderPanel } from '../components/OrderPanel';
 import { Stock } from '../types';
 
@@ -19,7 +19,7 @@ const mockStock: Stock = {
   change: 1.5,
   changePercent: 1.0,
   volume: 1000000,
-  market: 'us',
+  market: 'usa',
 };
 
 describe('OrderPanel', () => {

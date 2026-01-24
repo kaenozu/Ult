@@ -1,5 +1,5 @@
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '../types';
-import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR, roundToTickSize } from './utils';
+import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from './utils';
 import { analyzeStock } from './analysis';
 
 interface PredictionFeatures {
@@ -135,7 +135,7 @@ class MLPredictionService {
 
     // 4. 自己矯正 (Self-Correction): 誤差係数によるターゲット補正
     const errorFactor = baseAnalysis.predictionError || 1.0;
-    let targetPrice = baseAnalysis.targetPrice;
+    const targetPrice = baseAnalysis.targetPrice;
     let stopLoss = baseAnalysis.stopLoss;
 
     if (errorFactor > 1.2) {
@@ -225,7 +225,7 @@ class MLPredictionService {
     return Math.min(Math.max(c, 30), 95);
   }
 
-  private generateBaseReason(type: string, p: ModelPrediction, ind: any): string {
+  private generateBaseReason(type: string, _p: ModelPrediction, _ind: TechnicalIndicator): string {
     if (type === 'BUY') return "短期的な上昇トレンドを検出。上昇余地あり。";
     if (type === 'SELL') return "過熱感があり、反落の可能性が高いシグナル。";
     return "中立的なシグナル。市場の方向性を様子見することを推奨。";

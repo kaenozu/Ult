@@ -13,7 +13,6 @@ import {
   Legend,
   Filler,
   ChartOptions,
-  TooltipItem,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
@@ -81,7 +80,8 @@ export const StockChart = memo(function StockChart({
   const ghostForecastDatasets = useMemo(() => {
     if (hoveredIdx === null || hoveredIdx >= data.length || data.length < 50) return [];
     const historicalSlice = data.slice(0, hoveredIdx + 1);
-    const pastSignal = analyzeStock(data[0].symbol, historicalSlice, market);
+    const symbol = data[0].symbol || '';
+    const pastSignal = analyzeStock(symbol, historicalSlice, market);
     if (!pastSignal) return [];
 
     const targetArr = new Array(extendedData.labels.length).fill(NaN);
@@ -296,7 +296,7 @@ export const StockChart = memo(function StockChart({
         },
       },
     },
-  }), [market, data.length, extendedData.labels]);
+  }), [market, data.length, extendedData.labels, hoveredIdx]);
 
   const volumeData = useMemo(() => ({
     labels: extendedData.labels,
