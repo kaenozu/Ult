@@ -1,0 +1,11 @@
+{
+  "name": "lint-fix",
+  "description": "コードのリンティングと自動修正を行うスキル。ESLint、Prettierを使用してコード品質を維持する。",
+  "version": "1.0.0",
+  "rules": [
+    "eslint-auto-fix",
+    "prettier-format",
+    "import-organization",
+    "type-check"
+  ]
+}

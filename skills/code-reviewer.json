@@ -1,0 +1,11 @@
+{
+  "name": "code-reviewer",
+  "description": "包括的なコードレビューと静的解析を行うコードレビュー専門スキル。セキュリティ、パフォーマンス、コード品質の問題を自動的に検出・報告する。",
+  "version": "1.0.0",
+  "rules": [
+    "comprehensive-review",
+    "security-scan",
+    "performance-analysis",
+    "code-quality-check"
+  ]
+}

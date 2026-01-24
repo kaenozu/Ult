@@ -1,0 +1,11 @@
+{
+  "name": "dev-master",
+  "description": "コードレビュー、デバッグ、開発支援を統合した包括的な開発マスタースキル。コード品質の向上から不具合修正まで、開発ライフサイクル全体を自動的に支援する。",
+  "version": "1.0.0",
+  "rules": [
+    "auto-code-review",
+    "intelligent-debugging",
+    "proactive-quality-gate",
+    "continuous-improvement"
+  ]
+}

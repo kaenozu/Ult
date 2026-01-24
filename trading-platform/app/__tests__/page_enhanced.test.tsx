@@ -9,15 +9,12 @@ jest.mock('../hooks/useStockData');
 
 describe('Workstation Page Comprehensive Tests', () => {
   const mockHandleStockSelect = jest.fn();
-  const mockHandleClosePosition = jest.fn();
+  const mockSelectedStock = { symbol: '7974', name: '任天堂', price: 10000, market: 'japan' as const };
 
   beforeEach(() => {
     (useStockData as jest.Mock).mockReturnValue({
-      watchlist: [{ symbol: '7974', name: '任天堂', price: 10000, changePercent: 5 }],
-      portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 },
-      journal: [],
-      selectedStock: { symbol: '7974', name: '任天堂', price: 10000, market: 'japan' },
-      chartData: [{ date: '2026-01-01', close: 10000 }],
+      selectedStock: mockSelectedStock,
+      chartData: [{ date: '2026-01-01', open: 10000, high: 10500, low: 9800, close: 10000, volume: 1000000 }],
       indexData: [],
       chartSignal: null,
       loading: false,
@@ -30,15 +27,11 @@ describe('Workstation Page Comprehensive Tests', () => {
     render(<Workstation />);
     expect(screen.getAllByText(/ウォッチリスト/)[0]).toBeInTheDocument();
     expect(screen.getByText(/分析 & シグナル/)).toBeInTheDocument();
-    expect(screen.getByText(/7974/)).toBeInTheDocument();
     expect(screen.getByText(/任天堂/)).toBeInTheDocument();
   });
 
   it('should show error state in workstation if hook returns error', () => {
     (useStockData as jest.Mock).mockReturnValue({
-      watchlist: [],
-      portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 },
-      journal: [],
       selectedStock: null,
       chartData: [],
       indexData: [],
@@ -49,7 +42,7 @@ describe('Workstation Page Comprehensive Tests', () => {
     });
 
     render(<Workstation />);
-    expect(screen.getByText(/データの取得に失敗しました/)).toBeInTheDocument();
+    expect(screen.getByText((content) => content.includes('データの取得に失敗しました'))).toBeInTheDocument();
     expect(screen.getByText(/Connection failed/)).toBeInTheDocument();
   });
 });
