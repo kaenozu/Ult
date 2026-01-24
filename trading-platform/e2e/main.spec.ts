@@ -142,7 +142,7 @@ test.describe('Trader Pro - スクリーナー機能', () => {
     await page.waitForTimeout(500);
 
     // 降順マークが表示されることを確認
-    await expect(page.locator('th:has-text("騰落率")').toContainText('↓');
+    await expect(page.locator('th:has-text("騰落率")')).toContainText('↓');
   });
 });
 

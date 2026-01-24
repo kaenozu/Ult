@@ -71,20 +71,22 @@ class MarketDataClient {
    */
   async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}`;
-    
+
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
     if (cached) return { success: true, data: cached, source: 'cache' };
+
+    let source: 'api' | 'idb' | 'cache' | 'error' = 'error';
 
     try {
       // 1. Try to get data from local DB
       const localData = await idbClient.getData(symbol);
       let finalData: OHLCV[] = localData;
-      let source: 'api' | 'idb' = 'idb';
+      source = 'idb';
 
       const now = new Date();
       // Use local noon to avoid timezone/market-close issues for "needs update" check
       const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
-      
+
       // Update if no data, or if latest data is older than 24 hours
       const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
 
@@ -97,7 +99,7 @@ class MarketDataClient {
         }
 
         const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl);
-        
+
         if (newData && newData.length > 0) {
           finalData = await idbClient.mergeAndSave(symbol, newData);
           source = 'api';
