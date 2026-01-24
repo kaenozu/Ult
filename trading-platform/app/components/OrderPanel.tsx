@@ -17,6 +17,7 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
   const [quantity, setQuantity] = useState<number>(100);
   const [limitPrice, setLimitPrice] = useState<string>(currentPrice.toString());
   const [isConfirming, setIsConfirming] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const orderTypeId = useId();
   const quantityId = useId();
@@ -60,11 +61,17 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
     });
 
     setIsConfirming(false);
-    alert(`注文を実行しました: ${side === 'BUY' ? '買い' : '空売り'} ${quantity}株 @ ${price}`);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
   };
 
   return (
-    <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full">
+    <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative">
+      {showSuccess && (
+        <div className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+          注文を送信しました
+        </div>
+      )}
       <div className="flex justify-between items-center border-b border-[#233648] pb-2">
         <h3 className="text-white font-bold">{stock.symbol} を取引</h3>
         <span className="text-xs text-[#92adc9]">

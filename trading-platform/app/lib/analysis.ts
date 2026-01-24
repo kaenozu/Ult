@@ -129,6 +129,10 @@ export function calculateVolumeProfile(data: OHLCV[], bins: number = 20) {
     const binIndex = Math.min(Math.floor((d.close - min) / step), bins - 1);
     if (binIndex >= 0) profile[binIndex].volume += d.volume;
   });
+  
+  const totalVol = profile.reduce((sum, p) => sum + p.volume, 0);
+  if (totalVol === 0) return [];
+
   const maxVol = Math.max(...profile.map(p => p.volume));
   profile.forEach(p => { p.strength = maxVol > 0 ? p.volume / maxVol : 0; });
   return profile;
