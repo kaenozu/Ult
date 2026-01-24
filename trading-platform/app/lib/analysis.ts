@@ -1,87 +1,143 @@
 import { OHLCV, Signal } from '@/app/types';
 import { calculateRSI, calculateSMA } from './utils';
 
+const LookbackDays = 250;
+
 /**
- * 銘柄ごとに最適なインジケーター設定を探索する
+ * 精密なトレードシミュレーター
+ * 「損切りが先か、利確が先か」を保守的に判定
+ */
+function simulateTrade(data: OHLCV[], startIndex: number, type: 'BUY' | 'SELL', targetMove: number) {
+  const entryPrice = data[startIndex].close;
+  const targetPrice = type === 'BUY' ? entryPrice + targetMove : entryPrice - targetMove;
+  const stopLoss = type === 'BUY' ? entryPrice - targetMove : entryPrice + targetMove;
+
+  let tradeWon = false;
+  let tradeLost = false;
+
+  for (let j = 1; j <= 5; j++) {
+    const day = data[startIndex + j];
+    if (!day || day.high === 0 || day.low === 0) break;
+
+    if (type === 'BUY') {
+      // 保守的ルール: 同じ日に両方当たったら負けとする
+      if (day.low <= stopLoss) { tradeLost = true; break; }
+      if (day.high >= targetPrice) { tradeWon = true; break; }
+    } else {
+      if (day.high >= stopLoss) { tradeLost = true; break; }
+      if (day.low <= targetPrice) { tradeWon = true; break; }
+    }
+  }
+
+  const fiveDaysLater = data[startIndex + 5]?.close || data[data.length - 1].close;
+  const directionalHit = type === 'BUY' ? fiveDaysLater > entryPrice : fiveDaysLater < entryPrice;
+
+  return { won: tradeWon && !tradeLost, directionalHit };
+}
+
+/**
+ * 真のボラティリティ(ATR)を簡易計算
+ */
+function calculateSimpleATR(data: OHLCV[], index: number) {
+  const window = data.slice(Math.max(0, index - 14), index + 1);
+  const trs = window.map((d, i) => {
+    if (i === 0) return d.high - d.low;
+    const highLow = d.high - d.low;
+    const highClose = Math.abs(d.high - window[i - 1].close);
+    const lowClose = Math.abs(d.low - window[i - 1].close);
+    return Math.max(highLow, highClose, lowClose);
+  });
+  return trs.reduce((a, b) => a + b, 0) / trs.length;
+}
+
+/**
+ * 銘柄ごとに的中率が最大化するパラメータを探索
  */
 export function optimizeParameters(data: OHLCV[], market: 'japan' | 'usa'): { rsiPeriod: number, smaPeriod: number, accuracy: number } {
-  const rsiOptions = [10, 14, 20];
-  const smaOptions = [20, 50, 100];
+  if (data.length < 120) return { rsiPeriod: 14, smaPeriod: 50, accuracy: 0 };
   
+  const rsiOptions = [10, 14, 21];
+  const smaOptions = [20, 50, 100];
   let bestAccuracy = -1;
   let bestParams = { rsiPeriod: 14, smaPeriod: 50 };
 
   for (const rsiP of rsiOptions) {
     for (const smaP of smaOptions) {
-      const accuracy = calculateHistoricalAccuracyWithParams(data, market, rsiP, smaP);
-      if (accuracy > bestAccuracy) {
-        bestAccuracy = accuracy;
+      const result = internalCalculatePerformance(data, rsiP, smaP);
+      if (result.hitRate > bestAccuracy) {
+        bestAccuracy = result.hitRate;
         bestParams = { rsiPeriod: rsiP, smaPeriod: smaP };
       }
     }
   }
-
   return { ...bestParams, accuracy: bestAccuracy };
 }
 
-/**
- * 特定のパラメータでの的中率を計算（シミュレーション）
- */
-function calculateHistoricalAccuracyWithParams(data: OHLCV[], market: 'japan' | 'usa', rsiP: number, smaP: number): number {
-  if (data.length < 100) return 0;
+function internalCalculatePerformance(data: OHLCV[], rsiP: number, smaP: number) {
+  let wins = 0, dirHits = 0, total = 0;
+  const warmup = 100;
+  const step = 3;
   const closes = data.map(d => d.close);
   const rsi = calculateRSI(closes, rsiP);
   const sma = calculateSMA(closes, smaP);
 
-  let totalSignals = 0;
-  let hitCount = 0;
-  const step = 5;
-
-  for (let i = Math.max(rsiP, smaP); i < data.length - 10; i += step) {
-    const currentPrice = closes[i];
-    const currentRSI = rsi[i];
-    const currentSMA = sma[i];
-    if (isNaN(currentRSI) || isNaN(currentSMA)) continue;
-
-    let simType: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-    if (currentPrice > currentSMA && currentRSI < 40) simType = 'BUY';
-    else if (currentPrice < currentSMA && currentRSI > 60) simType = 'SELL';
-    else if (currentRSI < 30) simType = 'BUY';
-    else if (currentRSI > 70) simType = 'SELL';
-
-    if (simType === 'HOLD') continue;
-    totalSignals++;
-
-    const recentWindow = closes.slice(Math.max(0, i - 14), i + 1);
-    const vol = (Math.max(...recentWindow) - Math.min(...recentWindow)) / currentPrice;
-    const targetMove = currentPrice * Math.max(vol, 0.02) * 2.0;
-    const stopMove = currentPrice * Math.max(vol, 0.02);
-    const targetPrice = simType === 'BUY' ? currentPrice + targetMove : currentPrice - targetMove;
-    const stopLoss = simType === 'BUY' ? currentPrice - stopMove : currentPrice + stopMove;
-
-    const futureWindow = data.slice(i + 1, i + 6);
-    for (const day of futureWindow) {
-      if (simType === 'BUY') {
-        if (day.high >= targetPrice) { hitCount++; break; }
-        if (day.low <= stopLoss) break;
-      } else {
-        if (day.low <= targetPrice) { hitCount++; break; }
-        if (day.high >= stopLoss) break;
-      }
-    }
+  for (let i = warmup; i < data.length - 10; i += step) {
+    if (isNaN(rsi[i]) || isNaN(sma[i])) continue;
+    
+    let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+    if (closes[i] > sma[i] && rsi[i] < 40) type = 'BUY';
+    else if (closes[i] < sma[i] && rsi[i] > 60) type = 'SELL';
+    
+    if (type === 'HOLD') continue;
+    
+    total++;
+    const atr = calculateSimpleATR(data, i);
+    const targetMove = Math.max(atr * 0.8, closes[i] * 0.012);
+    
+    const result = simulateTrade(data, i, type, targetMove);
+    if (result.won) wins++;
+    if (result.directionalHit) dirHits++;
   }
-  return totalSignals > 0 ? Math.round((hitCount / totalSignals) * 100) : 0;
+  return { 
+    hitRate: total > 0 ? (wins / total) * 100 : 0, 
+    directionalAccuracy: total > 0 ? (dirHits / total) * 100 : 0,
+    total 
+  };
 }
 
-/**
- * 直近の予測誤差係数を計算する
- */
+export function calculateAIHitRate(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan') {
+  const opt = optimizeParameters(data, market);
+  const result = internalCalculatePerformance(data, opt.rsiPeriod, opt.smaPeriod);
+  
+  return {
+    hitRate: Math.round(result.hitRate),
+    directionalAccuracy: Math.round(result.directionalAccuracy),
+    totalTrades: result.total,
+    averageProfit: 0 // 今回は的中率にフォーカス
+  };
+}
+
+export function calculateVolumeProfile(data: OHLCV[], bins: number = 20) {
+  if (data.length === 0) return [];
+  const recentData = data.slice(-LookbackDays);
+  const prices = recentData.map(d => d.close);
+  const min = Math.min(...prices), max = Math.max(...prices);
+  if (max === min) return [];
+  const step = (max - min) / bins;
+  const profile = Array.from({ length: bins }, (_, i) => ({ price: min + step * i, volume: 0, strength: 0 }));
+  recentData.forEach(d => {
+    const binIndex = Math.min(Math.floor((d.close - min) / step), bins - 1);
+    if (binIndex >= 0) profile[binIndex].volume += d.volume;
+  });
+  const maxVol = Math.max(...profile.map(p => p.volume));
+  profile.forEach(p => { p.strength = maxVol > 0 ? p.volume / maxVol : 0; });
+  return profile;
+}
+
 export function calculatePredictionError(data: OHLCV[]): number {
   if (data.length < 30) return 1.0;
   let totalError = 0, count = 0;
-  const window = 20;
-
-  for (let i = data.length - window; i < data.length - 5; i++) {
+  for (let i = data.length - 20; i < data.length - 5; i++) {
     const current = data[i];
     const actualFuture = data[i + 5].close;
     const sma = calculateSMA(data.slice(0, i + 1).map(d => d.close), 20).pop() || current.close;
@@ -91,86 +147,31 @@ export function calculatePredictionError(data: OHLCV[]): number {
   return Math.min(Math.max((totalError / count) / 0.02, 0.8), 2.5);
 }
 
-/**
- * 需給の壁（ボリュームプロファイル）を抽出
- */
-export function calculateVolumeProfile(data: OHLCV[]): { price: number, strength: number }[] {
-  if (data.length === 0) return [];
-  
-  // 直近1年分（約250日）のデータに絞って計算することで、現在の価格に近い壁を抽出する
-  const recentData = data.slice(-250);
-  const prices = recentData.map(d => d.close);
-  const minP = Math.min(...prices), maxP = Math.max(...prices);
-  const range = maxP - minP;
-  if (range === 0) return [];
-
-  const binCount = 20, binSize = range / binCount;
-  const bins = new Array(binCount).fill(0);
-
-  recentData.forEach(d => {
-    const startBin = Math.max(0, Math.floor((d.low - minP) / binSize));
-    const endBin = Math.min(binCount - 1, Math.floor((d.high - minP) / binSize));
-    const volPerBin = d.volume / (endBin - startBin + 1);
-    for (let i = startBin; i <= endBin; i++) bins[i] += volPerBin;
-  });
-
-  const maxV = Math.max(...bins);
-  return bins.map((vol, i) => ({
-    price: minP + (binSize * i) + (binSize / 2),
-    strength: vol / maxV
-  })).filter(b => b.strength > 0.2); // フィルタリングを緩和(0.4 -> 0.2)
-}
-
-/**
- * 基本的なテクニカル指標に基づきシグナルタイプを決定する
- */
 function determineSignalType(price: number, sma: number, rsi: number, params: { rsiPeriod: number, smaPeriod: number }): { type: 'BUY' | 'SELL' | 'HOLD', reason: string } {
-  if (price > sma && rsi < 40) {
-    return { type: 'BUY', reason: `上昇トレンド中の押し目。最適化設定(RSI:${params.rsiPeriod}, SMA:${params.smaPeriod})により反発を予測。` };
-  } 
-  if (price < sma && rsi > 60) {
-    return { type: 'SELL', reason: `下降トレンド中の戻り売り。最適化設定(RSI:${params.rsiPeriod}, SMA:${params.smaPeriod})に基づき続落を予測。` };
-  }
-  if (rsi < 30) return { type: 'BUY', reason: '極端な売られすぎ水準。短期的な自律反発を予測。' };
-  if (rsi > 70) return { type: 'SELL', reason: '買われすぎによる加熱。利益確定売りの優勢を予測。' };
-  
-  return { type: 'HOLD', reason: `現在のパラメータ設定(RSI:${params.rsiPeriod}, SMA:${params.smaPeriod})では明確な優位性なし。` };
+  if (price > sma && rsi < 40) return { type: 'BUY', reason: `上昇トレンド中の押し目。RSI(${params.rsiPeriod})とSMA(${params.smaPeriod})による最適化予測。` };
+  if (price < sma && rsi > 60) return { type: 'SELL', reason: `下落トレンド中の戻り売り。RSI(${params.rsiPeriod})とSMA(${params.smaPeriod})による最適化予測。` };
+  if (rsi < 30) return { type: 'BUY', reason: '売られすぎ水準からの自律反発。' };
+  if (rsi > 70) return { type: 'SELL', reason: '買われすぎ水準からの反落。' };
+  return { type: 'HOLD', reason: '明確な優位性なし。' };
 }
 
-/**
- * 銘柄の総合的なテクニカル分析を実行
- */
 export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): Signal {
-  if (data.length < 50) {
-    return { symbol, type: 'HOLD', confidence: 0, targetPrice: 0, stopLoss: 0, reason: 'データ不足により分析不可', predictedChange: 0, predictionDate: new Date().toISOString().split('T')[0] };
-  }
-
-  // 1. パラメータ最適化
+  if (data.length < 50) return { symbol, type: 'HOLD', confidence: 0, targetPrice: 0, stopLoss: 0, reason: 'データ不足', predictedChange: 0, predictionDate: '' };
   const opt = optimizeParameters(data, market);
   const closes = data.map(d => d.close);
   const lastRSI = calculateRSI(closes, opt.rsiPeriod).pop() || 50;
   const lastSMA = calculateSMA(closes, opt.smaPeriod).pop() || closes[closes.length - 1];
   const currentPrice = closes[closes.length - 1];
-
-  // 2. シグナル判定
   const { type, reason } = determineSignalType(currentPrice, lastSMA, lastRSI, opt);
-  
-  // 3. ボラティリティとリスク管理の計算
   const recentCloses = closes.slice(-14);
   const atr = (Math.max(...recentCloses) - Math.min(...recentCloses)) / 2;
   const targetPercent = Math.max(atr / currentPrice, 0.02);
-  
   const targetPrice = type === 'BUY' ? currentPrice * (1 + targetPercent * 2) : type === 'SELL' ? currentPrice * (1 - targetPercent * 2) : currentPrice;
   const stopLoss = type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice;
   const confidence = 50 + (type === 'HOLD' ? 0 : Math.min(Math.abs(50 - lastRSI) * 1.5, 45));
-
   return {
-    symbol, type,
-    confidence: parseFloat(confidence.toFixed(1)),
-    accuracy: opt.accuracy,
-    atr,
-    targetPrice: parseFloat(targetPrice.toFixed(2)),
-    stopLoss: parseFloat(stopLoss.toFixed(2)),
+    symbol, type, confidence: parseFloat(confidence.toFixed(1)), accuracy: Math.round(opt.accuracy), atr,
+    targetPrice: parseFloat(targetPrice.toFixed(2)), stopLoss: parseFloat(stopLoss.toFixed(2)),
     reason: (confidence >= 80 ? '【強気】' : '') + reason,
     predictedChange: parseFloat(((targetPrice - currentPrice) / currentPrice * 100).toFixed(2)),
     predictionDate: new Date().toISOString().split('T')[0],

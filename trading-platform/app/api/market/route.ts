@@ -45,7 +45,7 @@ function formatSymbol(symbol: string, market?: string): string {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
-  const symbol = searchParams.get('symbol');
+  const symbol = searchParams.get('symbol')?.trim().toUpperCase();
   const market = searchParams.get('market');
 
   // Input validation and sanitization
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
   }
 
   // Validate symbol format (alphanumeric, dots, commas, and caret for indices)
-  if (!/^[A-Z0-9.,^]+$/.test(symbol.trim().toUpperCase())) {
+  if (!/^[A-Z0-9.,^]+$/.test(symbol)) {
     return NextResponse.json({ error: 'Invalid symbol format' }, { status: 400 });
   }
 

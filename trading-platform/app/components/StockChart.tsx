@@ -54,6 +54,7 @@ ChartJS.register(volumeProfilePlugin);
 
 export interface StockChartProps {
   data: OHLCV[];
+  indexData?: OHLCV[];
   height?: number;
   showVolume?: boolean;
   showSMA?: boolean;
@@ -65,7 +66,7 @@ export interface StockChartProps {
 }
 
 export const StockChart = memo(function StockChart({
-  data, height = 400, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null,
+  data, indexData = [], height = 400, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null,
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
   const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
@@ -85,6 +86,26 @@ export const StockChart = memo(function StockChart({
     }
     return { labels, prices };
   }, [data, signal]);
+
+  // 1.5 市場指数の正規化 (Normalizing Index to Stock scale)
+  const normalizedIndexData = useMemo(() => {
+    if (!indexData || indexData.length < 10 || data.length === 0) return [];
+    
+    // 表示期間の開始価格を基準に倍率を計算
+    const stockStartPrice = data[0].close;
+    // indexDataからdata[0].dateに最も近い日の価格を探す
+    const targetDate = data[0].date;
+    const indexStartPoint = indexData.find(d => d.date >= targetDate) || indexData[0];
+    const indexStartPrice = indexStartPoint.close;
+    
+    const ratio = stockStartPrice / indexStartPrice;
+    
+    // data[i].date に合わせて indexData をマッピング
+    return extendedData.labels.map(label => {
+      const idxPoint = indexData.find(d => d.date === label);
+      return idxPoint ? idxPoint.close * ratio : NaN;
+    });
+  }, [data, indexData, extendedData.labels]);
 
   const sma20 = useMemo(() => calculateSMA(extendedData.prices, 20), [extendedData.prices]);
   const { upper, lower } = useMemo(() => calculateBollingerBands(extendedData.prices, 20, 2), [extendedData.prices]);
@@ -160,6 +181,17 @@ export const StockChart = memo(function StockChart({
   const chartData = useMemo(() => ({
     labels: extendedData.labels,
     datasets: [
+      {
+        label: market === 'japan' ? '日経平均 (相対)' : 'NASDAQ (相対)',
+        data: normalizedIndexData,
+        borderColor: 'rgba(148, 163, 184, 0.3)',
+        backgroundColor: 'rgba(148, 163, 184, 0.05)',
+        fill: true,
+        pointRadius: 0,
+        borderWidth: 1,
+        tension: 0.1,
+        order: 10 // 最背面に配置
+      },
       { label: '現在価格', data: extendedData.prices, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.1, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2, order: 1 },
       ...forecastDatasets, ...ghostForecastDatasets,
       ...(showSMA ? [{ label: 'SMA (20)', data: sma20, borderColor: '#fbbf24', borderWidth: 1.5, pointRadius: 0, tension: 0.1, fill: false, order: 2 }] : []),

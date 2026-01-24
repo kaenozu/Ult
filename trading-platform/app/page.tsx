@@ -16,6 +16,7 @@ export default function Workstation() {
   const {
     selectedStock,
     chartData,
+    indexData,
     chartSignal,
     loading,
     error,
@@ -122,17 +123,14 @@ export default function Workstation() {
               {/* Main Chart Visualization */}
               <div className="flex-1 relative p-4 flex flex-col">
                 <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
-                  <StockChart 
-                    data={chartData} 
-                    height={400} 
-                    showVolume={true} 
-                    showSMA={showSMA}
-                    showBollinger={showBollinger}
-                    market={displayStock?.market}
-                    loading={loading}
-                    error={error}
-                    signal={chartSignal}
-                  />
+            <StockChart
+              data={chartData}
+              indexData={indexData}
+              loading={loading}
+              error={error}
+              market={selectedStock?.market}
+              signal={chartSignal}
+            />
                 </div>
 
                 {/* RSI Sub-chart */}
