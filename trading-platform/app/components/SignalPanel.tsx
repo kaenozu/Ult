@@ -180,6 +180,27 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           </div>
 
           <div className="mt-6 space-y-3">
+            {/* 予測誤差表示 (AI予測の深化) */}
+            {signal.predictionError !== undefined && (
+              <div className="bg-black/20 p-2 rounded-lg border border-[#233648]/50">
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] font-bold text-[#92adc9] uppercase tracking-wider">予測誤差</div>
+                  <div className={cn(
+                    'text-xs font-bold tabular-nums',
+                    signal.predictionError <= 1.0 ? 'text-green-400' :  // 標準以下
+                    signal.predictionError <= 1.5 ? 'text-yellow-400' :  // 中程度
+                    'text-red-400'  // 高い誤差
+                  )}>
+                    {signal.predictionError.toFixed(2)}x
+                  </div>
+                </div>
+                <div className="text-[8px] text-[#92adc9]/60 mt-1">
+                  {signal.predictionError <= 1.0 ? '精度良好' :
+                   signal.predictionError <= 1.5 ? 'やや不確実' : '不確実性が高い'}
+                </div>
+              </div>
+            )}
+
             <div className="relative pt-4">
               <div className="absolute top-0 left-0 text-[10px] font-bold text-[#92adc9] uppercase tracking-widest">目標価格・リスク管理</div>
               <div className="flex items-center gap-2">
