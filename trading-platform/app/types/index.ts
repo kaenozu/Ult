@@ -329,7 +329,7 @@ export interface APIResult<T> {
 export interface APIErrorResult {
   success: false;
   data: null;
-  source: 'cache' | 'api' | 'aggregated' | 'idb';
+  source: 'cache' | 'api' | 'aggregated' | 'idb' | 'error';
   error: string;
 }
 
