@@ -1,5 +1,6 @@
 import { OHLCV } from '@/app/types';
 import { analyzeStock } from './analysis';
+import { BACKTEST_CONFIG, BACKTEST_METRICS } from '@/app/constants';
 
 export interface BacktestResult {
   totalTrades: number;
@@ -25,9 +26,9 @@ export interface BacktestTrade {
 export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): BacktestResult {
   const trades: BacktestTrade[] = [];
   let currentPosition: { type: 'BUY' | 'SELL', price: number, date: string } | null = null;
-  
-  // Need at least 50 days for indicators
-  const minPeriod = 50;
+
+  // Need minimum period for indicators
+  const minPeriod = BACKTEST_CONFIG.MIN_DATA_PERIOD;
   if (data.length < minPeriod) {
     return createEmptyResult();
   }
@@ -36,20 +37,20 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
   // We use a window of past data to generate a signal for "today"
   for (let i = minPeriod; i < data.length - 1; i++) {
     const nextDay = data[i + 1]; // Execution happens next open or close
-    
+
     // Slice data up to current day for analysis
     const historicalWindow = data.slice(0, i + 1);
-    
+
     // Generate signal
     const signal = analyzeStock(symbol, historicalWindow, market);
 
-    // Logic: 
+    // Logic:
     // If NO position and signal is BUY/SELL -> Open Position
     // If HAS position and signal is OPPOSITE or HOLD (with stop/target logic) -> Close Position
-    
+
     if (!currentPosition) {
       if (signal.type === 'BUY' || signal.type === 'SELL') {
-        if (signal.confidence >= 60) { // Filter weak signals
+        if (signal.confidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) { // Filter weak signals
           currentPosition = {
             type: signal.type,
             price: nextDay.open, // Assume execution at next open
@@ -61,7 +62,7 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
       // Check for exit conditions
       // 1. Signal reversal
       // 2. Stop loss / Take profit (simplified)
-      
+
       let shouldExit = false;
       let exitReason = '';
 
@@ -72,23 +73,35 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
         shouldExit = true;
         exitReason = 'Signal Reversal';
       } else {
-        // Simple 5% stop/target for backtest simplicity if no signal reversal
+        // Simple stop/target for backtest simplicity if no signal reversal
         const change = (nextDay.close - currentPosition.price) / currentPosition.price;
         if (currentPosition.type === 'BUY') {
-          if (change > 0.05) { shouldExit = true; exitReason = 'Take Profit (+5%)'; }
-          if (change < -0.03) { shouldExit = true; exitReason = 'Stop Loss (-3%)'; }
+          if (change > BACKTEST_CONFIG.BULL_TAKE_PROFIT) {
+            shouldExit = true;
+            exitReason = `Take Profit (+${BACKTEST_CONFIG.BULL_TAKE_PROFIT * 100}%)`;
+          }
+          if (change < -BACKTEST_CONFIG.BULL_STOP_LOSS) {
+            shouldExit = true;
+            exitReason = `Stop Loss (-${BACKTEST_CONFIG.BULL_STOP_LOSS * 100}%)`;
+          }
         } else {
-          if (change < -0.05) { shouldExit = true; exitReason = 'Take Profit (+5%)'; }
-          if (change > 0.03) { shouldExit = true; exitReason = 'Stop Loss (-3%)'; }
+          if (change < -BACKTEST_CONFIG.BEAR_TAKE_PROFIT) {
+            shouldExit = true;
+            exitReason = `Take Profit (+${BACKTEST_CONFIG.BEAR_TAKE_PROFIT * 100}%)`;
+          }
+          if (change > BACKTEST_CONFIG.BEAR_STOP_LOSS) {
+            shouldExit = true;
+            exitReason = `Stop Loss (-${BACKTEST_CONFIG.BEAR_STOP_LOSS * 100}%)`;
+          }
         }
       }
 
       if (shouldExit) {
         const exitPrice = nextDay.close; // Assume exit at close
-        const rawProfit = currentPosition.type === 'BUY' 
+        const rawProfit = currentPosition.type === 'BUY'
           ? (exitPrice - currentPosition.price) / currentPosition.price
           : (currentPosition.price - exitPrice) / currentPosition.price;
-        
+
         trades.push({
           entryDate: currentPosition.date,
           exitDate: nextDay.date,
