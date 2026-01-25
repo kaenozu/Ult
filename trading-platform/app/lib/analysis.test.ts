@@ -1,5 +1,33 @@
-import { calculateVolumeProfile } from './analysis';
+import { calculateVolumeProfile, optimizeParameters } from './analysis';
 import { OHLCV } from '../types';
+
+describe('optimizeParameters', () => {
+  const generateData = (): OHLCV[] => {
+    const data: OHLCV[] = [];
+    let price = 100;
+    // Generate a sine wave pattern so RSI swings
+    for (let i = 0; i < 200; i++) {
+      const angle = i * 0.1;
+      price = 100 + Math.sin(angle) * 10;
+      data.push({
+        date: new Date(2020, 0, i + 1).toISOString().split('T')[0],
+        open: price,
+        high: price + 1,
+        low: price - 1,
+        close: price,
+        volume: 1000
+      });
+    }
+    return data;
+  };
+
+  const data = generateData();
+
+  it('returns consistent results', () => {
+    const result = optimizeParameters(data, 'usa');
+    expect(result).toMatchSnapshot();
+  });
+});
 
 describe('calculateVolumeProfile', () => {
   it('should identify the strongest price level as a wall', () => {
