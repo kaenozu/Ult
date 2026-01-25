@@ -325,7 +325,7 @@ export function handleApiError(error: unknown, context: string): APIError {
  */
 export function createErrorResult(
   error: unknown,
-  source: 'cache' | 'api' | 'aggregated',
+  source: 'cache' | 'api' | 'aggregated' | 'idb',
   context?: string
 ): APIErrorResult {
   const apiError = handleApiError(error, context || 'Unknown operation');
