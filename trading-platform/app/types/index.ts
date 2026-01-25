@@ -50,7 +50,9 @@ export function extractIntradayTimeSeries(
   interval: string
 ): Record<string, { '1. open': string; '2. high': string; '3. low': string; '4. close': string; '5. volume': string }> | undefined {
   const key = `Time Series (${interval})`;
-  return (data as Record<string, unknown>)[key] as Record<string, {
+  // Cast through unknown to avoid type incompatibility
+  const dataRecord = data as unknown as Record<string, unknown>;
+  return dataRecord[key] as Record<string, {
     '1. open': string;
     '2. high': string;
     '3. low': string;
