@@ -186,9 +186,10 @@ class MarketDataClient {
   }
 
   async fetchSignal(stock: Stock): Promise<FetchResult<Signal>> {
+    let result: FetchResult<OHLCV[]> | null = null;
     try {
-      const result = await this.fetchOHLCV(stock.symbol, stock.market);
-      
+      result = await this.fetchOHLCV(stock.symbol, stock.market);
+
       if (!result.success || !result.data || result.data.length < 20) {
         throw new Error('Insufficient data for ML analysis');
       }
@@ -204,11 +205,11 @@ class MarketDataClient {
       const indicators = mlPredictionService.calculateIndicators(result.data);
       const prediction = mlPredictionService.predict(stock, result.data, indicators);
       const signal = mlPredictionService.generateSignal(stock, result.data, prediction, indicators, indexData);
-      
+
       return { success: true, data: signal, source: result.source };
     } catch (err: unknown) {
       console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
-      return createErrorResult(err, result.source, `fetchSignal(${stock.symbol})`);
+      return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
     }
   }
 
