@@ -204,10 +204,13 @@ export class AlphaVantageClient {
       if (data['Note']) {
         throw new RateLimitError(data['Note']);
       }
+      throw new APIError('Unknown API error', 'API_ERROR');
     }
 
+    // After error check, data is guaranteed to be Record<string, unknown>
+    const validData = data as Record<string, unknown>;
     const key = `Time Series (${interval})`;
-    const timeSeries = data[key] as Record<string, AlphaVantageTimeSeriesValue> | undefined;
+    const timeSeries = validData[key] as Record<string, AlphaVantageTimeSeriesValue> | undefined;
     if (!timeSeries) {
       throw new Error('No time series data returned');
     }
@@ -265,9 +268,12 @@ export class AlphaVantageClient {
       if (data['Note']) {
         throw new RateLimitError(data['Note']);
       }
+      throw new APIError('Unknown API error', 'API_ERROR');
     }
 
-    const rsiData = data['Technical Analysis: RSI'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    // After error check, data is guaranteed to be Record<string, unknown>
+    const validData = data as Record<string, unknown>;
+    const rsiData = validData['Technical Analysis: RSI'] as Record<string, AlphaVantageIndicatorValue> | undefined;
     if (!rsiData) {
       throw new Error('No RSI data returned');
     }
@@ -326,9 +332,12 @@ export class AlphaVantageClient {
       if (data['Note']) {
         throw new RateLimitError(data['Note']);
       }
+      throw new APIError('Unknown API error', 'API_ERROR');
     }
 
-    const smaData = data['Technical Analysis: SMA'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    // After error check, data is guaranteed to be Record<string, unknown>
+    const validData = data as Record<string, unknown>;
+    const smaData = validData['Technical Analysis: SMA'] as Record<string, AlphaVantageIndicatorValue> | undefined;
     if (!smaData) {
       throw new Error('No SMA data returned');
     }
@@ -387,9 +396,12 @@ export class AlphaVantageClient {
       if (data['Note']) {
         throw new RateLimitError(data['Note']);
       }
+      throw new APIError('Unknown API error', 'API_ERROR');
     }
 
-    const emaData = data['Technical Analysis: EMA'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    // After error check, data is guaranteed to be Record<string, unknown>
+    const validData = data as Record<string, unknown>;
+    const emaData = validData['Technical Analysis: EMA'] as Record<string, AlphaVantageIndicatorValue> | undefined;
     if (!emaData) {
       throw new Error('No EMA data returned');
     }
@@ -450,9 +462,12 @@ export class AlphaVantageClient {
       if (data['Note']) {
         throw new RateLimitError(data['Note']);
       }
+      throw new APIError('Unknown API error', 'API_ERROR');
     }
 
-    const macdData = data['Technical Analysis: MACD'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    // After error check, data is guaranteed to be Record<string, unknown>
+    const validData = data as Record<string, unknown>;
+    const macdData = validData['Technical Analysis: MACD'] as Record<string, AlphaVantageIndicatorValue> | undefined;
     if (!macdData) {
       throw new Error('No MACD data returned');
     }
@@ -515,9 +530,12 @@ export class AlphaVantageClient {
       if (data['Note']) {
         throw new RateLimitError(data['Note']);
       }
+      throw new APIError('Unknown API error', 'API_ERROR');
     }
 
-    const bbData = data['Technical Analysis: BBANDS'] as Record<string, AlphaVantageIndicatorValue> | undefined;
+    // After error check, data is guaranteed to be Record<string, unknown>
+    const validData = data as Record<string, unknown>;
+    const bbData = validData['Technical Analysis: BBANDS'] as Record<string, AlphaVantageIndicatorValue> | undefined;
     if (!bbData) {
       throw new Error('No Bollinger Bands data returned');
     }
