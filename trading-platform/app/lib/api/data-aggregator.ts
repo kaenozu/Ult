@@ -26,7 +26,7 @@ interface MarketResponse<T> {
 }
 
 class MarketDataClient {
-  private cache: Map<string, { data: OHLCV | OHLCV[] | Signal | TechnicalIndicator; timestamp: number }> = new Map();
+  private cache: Map<string, { data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData; timestamp: number }> = new Map();
   private cacheDuration: number = 5 * 60 * 1000; 
 
   private async fetchWithRetry<T>(
@@ -222,7 +222,7 @@ class MarketDataClient {
     return item.data as T;
   }
 
-  private setCache(key: string, data: OHLCV | OHLCV[] | Signal | TechnicalIndicator) {
+  private setCache(key: string, data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData) {
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 
