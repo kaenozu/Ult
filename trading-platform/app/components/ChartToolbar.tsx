@@ -32,6 +32,8 @@ export function ChartToolbar({
           {['1m', '5m', '15m', '1H', '4H', 'D'].map((tf) => (
             <button
               key={tf}
+              type="button"
+              aria-pressed={tf === '5m'}
               className={cn(
                 'px-2 py-0.5 text-xs font-medium rounded transition-colors',
                 tf === '5m'
@@ -46,6 +48,8 @@ export function ChartToolbar({
         <div className="h-4 w-px bg-[#233648]" />
         <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
           <button
+            type="button"
+            aria-pressed={showSMA}
             onClick={() => setShowSMA(!showSMA)}
             className={cn(
               'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
@@ -55,6 +59,8 @@ export function ChartToolbar({
             SMA
           </button>
           <button
+            type="button"
+            aria-pressed={showBollinger}
             onClick={() => setShowBollinger(!showBollinger)}
             className={cn(
               'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
@@ -66,18 +72,18 @@ export function ChartToolbar({
         </div>
         <div className="h-4 w-px bg-[#233648]" />
         <div className="flex items-center gap-3 text-xs text-[#92adc9]">
-          <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button type="button" className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
             </svg>
             インジケーター
-          </span>
-          <span className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          </button>
+          <button type="button" className="flex items-center gap-1 cursor-pointer hover:text-white transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
             ツール
-          </span>
+          </button>
         </div>
       </div>
       {latestData && (
