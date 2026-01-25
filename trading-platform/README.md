@@ -294,7 +294,40 @@ CMD ["npm", "start"]
 ```bash
 # ビルドと実行
 docker build -t trader-pro .
-docker run -p 3000:3000 trader-pro
+docker run -p 3000:3000 -e ALPHA_VANTAGE_API_KEY=your_key trader-pro
+```
+
+## 🔒 セキュリティベストプラクティス
+
+### 環境変数の保護
+
+```bash
+# ✅ 正しい: サーバーサイドのみで使用
+ALPHA_VANTAGE_API_KEY=your_key
+
+# ❌ 危険: クライアントサイドに露出
+NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY=your_key
+```
+
+### 鍵管理のルール
+
+1. **コミット禁止**: `.env.local` は `.gitignore` で保護
+2. **テンプレート使用**: `.env.example` を参考に設定
+3. **本番環境**: プラットフォームの環境変数を使用
+   - Vercel: Project Settings > Environment Variables
+   - Docker: `-e` フラグまたは `--env-file`
+   - Kubernetes: Secret/ConfigMap
+
+### APIキーの検証
+
+アプリケーションは以下を検証します：
+- キーが設定されているか
+- プレースホルダー値でないか
+- 最小文字数（10文字以上）
+
+```typescript
+// 不安全なキーは自動的に拒否されます
+const insecurePatterns = ['your_api_key_here', 'example', 'placeholder', 'xxx'];
 ```
 
 ## 🤝 貢献方法
