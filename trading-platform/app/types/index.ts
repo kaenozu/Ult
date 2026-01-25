@@ -1,3 +1,68 @@
+// ============================================================================
+// Alpha Vantage API Types
+// ============================================================================
+
+/**
+ * Alpha Vantage Time Series Intraday Response
+ * Used for intervals like 1min, 5min, 15min, 30min, 60min
+ */
+export interface AlphaVantageTimeSeriesIntraday {
+  'Meta Data': {
+    '1. Information': string;
+    '2. Symbol': string;
+    '3. Last Refreshed': string;
+    '4. Interval': string;
+    '5. Output Size': string;
+    '6. Time Zone': string;
+  };
+  'Time Series (${string})': Record<string, {
+    '1. open': string;
+    '2. high': string;
+    '3. low': string;
+    '4. close': string;
+    '5. volume': string;
+  }>;
+}
+
+/**
+ * Alpha Vantage Intraday data with dynamic key
+ */
+export type AlphaVantageIntradayResponse =
+  | AlphaVantageTimeSeriesIntraday
+  | AlphaVantageError;
+
+/**
+ * Check if response is a valid Alpha Vantage Intraday response
+ */
+export function isIntradayResponse(
+  data: unknown
+): data is AlphaVantageTimeSeriesIntraday {
+  if (typeof data !== 'object' || data === null) return false;
+  const d = data as Record<string, unknown>;
+  return 'Meta Data' in d && typeof d['Meta Data'] === 'object';
+}
+
+/**
+ * Extract time series data from intraday response
+ */
+export function extractIntradayTimeSeries(
+  data: AlphaVantageTimeSeriesIntraday,
+  interval: string
+): Record<string, { '1. open': string; '2. high': string; '3. low': string; '4. close': string; '5. volume': string }> | undefined {
+  const key = `Time Series (${interval})`;
+  return (data as Record<string, unknown>)[key] as Record<string, {
+    '1. open': string;
+    '2. high': string;
+    '3. low': string;
+    '4. close': string;
+    '5. volume': string;
+  }> | undefined;
+}
+
+// ============================================================================
+// Domain Types
+// ============================================================================
+
 export interface Stock {
   symbol: string;
   name: string;
@@ -233,6 +298,71 @@ export interface AlphaVantageSMA {
   };
   'Technical Analysis: SMA': Record<string, {
     SMA: string;
+  }>;
+}
+
+/**
+ * Alpha Vantage EMA Response
+ */
+export interface AlphaVantageEMA {
+  'Meta Data': {
+    '1: Symbol': string;
+    '2: Indicator': string;
+    '3: Last Refreshed': string;
+    '4: Interval': string;
+    '5: Time Period': number;
+    '6: Series Type': string;
+    '7: Time Zone': string;
+  };
+  'Technical Analysis: EMA': Record<string, {
+    EMA: string;
+  }>;
+}
+
+/**
+ * Alpha Vantage MACD Response
+ */
+export interface AlphaVantageMACD {
+  'Meta Data': {
+    '1: Symbol': string;
+    '2: Indicator': string;
+    '3: Last Refreshed': string;
+    '4: Interval': string;
+    '5: Time Period': {
+      'Fast Period': number;
+      'Slow Period': number;
+      'Signal Period': number;
+    };
+    '6: Series Type': string;
+    '7: Time Zone': string;
+  };
+  'Technical Analysis: MACD': Record<string, {
+    MACD: string;
+    MACD_Signal: string;
+    MACD_Hist: string;
+  }>;
+}
+
+/**
+ * Alpha Vantage Bollinger Bands Response
+ */
+export interface AlphaVantageBollingerBands {
+  'Meta Data': {
+    '1: Symbol': string;
+    '2: Indicator': string;
+    '3: Last Refreshed': string;
+    '4: Interval': string;
+    '5: Time Period': number;
+    '6: Series Type': string;
+    '7: NB Dev Up': number;
+    '8: NB Dev Dn': number;
+    '9: MA Type': number;
+    '10: Time Zone': string;
+  };
+  'Technical Analysis: BBANDS': Record<string, {
+    'Real Upper Band': string;
+    'Real Middle Band': string;
+    'Real Lower Band': string;
   }>;
 }
 
