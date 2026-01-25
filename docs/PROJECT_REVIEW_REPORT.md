@@ -58,7 +58,7 @@ const data = await response.json() as Record<string, unknown>;
 #### APIキーの露出
 ```bash
 .env.local
-NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY=LK21DCMJ0CQFMK67
+NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY=REDACTED
 ```
 
 **問題点:**
