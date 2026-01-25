@@ -700,9 +700,18 @@ export function getAlphaVantageClient(): AlphaVantageClient {
     throw new Error('ALPHA_VANTAGE_API_KEY is not defined in environment variables');
   }
 
-  // Validate API key format
+  // Validate API key format and security
   if (typeof apiKey !== 'string' || apiKey.length < 10) {
     throw new Error('Invalid API key format');
+  }
+
+  // SECURITY: Prevent usage of example/placeholder keys
+  const insecurePatterns = ['your_api_key_here', 'example', 'placeholder', 'xxx', 'test_key'];
+  if (insecurePatterns.some(pattern => apiKey.toLowerCase().includes(pattern))) {
+    throw new APIError(
+      'Insecure API key detected. Please set a real API key in environment variables.',
+      'INSECURE_API_KEY'
+    );
   }
 
   if (!clientInstance) {
