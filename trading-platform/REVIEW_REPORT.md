@@ -1,56 +1,50 @@
-# ソースコードレビューレポート
+# ソースコードレビュー報告書
 
-**日時:** 2025-02-24
-**対象:** `trading-platform` (Next.js Application)
-**レビュアー:** Jules (AI Agent)
+**日付:** 2024年5月22日
+**対象:** trading-platform (Next.js Frontend) および関連スクリプト
 
-## 概要
+## 1. 概要
+プロジェクト全体として、モダンな技術スタック（Next.js 14+, Tailwind CSS v4, Zustand）が採用されており、型安全性（TypeScript Strict Mode）やセキュリティ設定（HTTPヘッダー、入力検証）への意識が高いコードベースです。
+一方で、バックテストやデータ分析ロジックにおいて、計算量が指数関数的に増加する実装が含まれており、データ量が増加した際のパフォーマンスに懸念があります。
 
-プロジェクト全体のコードベースを診断・レビューしました。
-全体として、ディレクトリ構造は整理されており、Zustandによる状態管理、Next.js App Routerの活用、TypeScriptの型定義など、モダンなプラクティスが採用されています。セキュリティ対策（APIキー保護など）も適切に実装されています。
+## 2. クリティカルな課題 (Critical Issues)
 
-いくつかのLintエラー、パフォーマンス改善の余地、およびコード品質向上のための修正点を特定しました。
+### 2.1 バックテストの計算量爆発 (`app/lib/backtest.ts`)
+- **問題:** `runBacktest` 関数内でループごとに `analyzeStock` を呼び出しており、さらにその中で `optimizeParameters`（パラメータ探索のループ）が実行されています。
+- **影響:** 計算量が **O(N * M)** （N=日数, M=パラメータ組み合わせ数）となり、期間が長い場合やパラメータ範囲を広げた場合にブラウザのメインスレッドを長時間ブロック（フリーズ）させる原因になります。
+- **推奨:** パラメータ最適化はバックテスト期間全体で1回行うか、計算結果をキャッシュ（メモ化）する仕組みが必要です。またはWeb Workerへのオフロードを検討してください。
 
-## 発見事項詳細
+### 2.2 メインスレッドでの重いデータ取得 (`app/components/SignalPanel.tsx`)
+- **問題:** コンポーネントのマウント時に `calculateFullPerformance` が実行され、APIから過去2年分の全データを取得しています。
+- **影響:** ユーザーがタブを切り替えるたびに大量のデータフェッチと計算が発生し、UIのレスポンス低下やAPIのレート制限に抵触する可能性があります。
+- **推奨:** データ取得を React Query などでキャッシュするか、サーバーサイドで計算済みの統計情報のみを返すエンドポイントを作成してください。
 
-### 1. エラー・警告 (Critical / Warnings)
+## 3. メジャーな改善点 (Major Improvements)
 
-ビルドやLintで検出された、修正が推奨される項目です。
+### 3.1 データ取得の直列実行 (`app/hooks/useStockData.ts`)
+- **現状:** `fetchOHLCV` (個別), `fetchOHLCV` (指数), `fetchSignal` が `await` で順次実行されています。
+- **改善:** `Promise.all` を使用して並列実行することで、データ読み込み時間を短縮できます。
 
-- **`app/components/StockChart.tsx` (Lint Error)**
-  - **問題:** `react-hooks/preserve-manual-memoization` エラーが発生しています。`useMemo` の依存配列がコンパイラの推論と一致していません（`signal` オブジェクトと、そのプロパティ `volumeResistance` の関係）。
-  - **推奨:** 依存配列を修正するか、オブジェクトの分割代入を `useMemo` の外で行うことで解決します。
+### 3.2 状態管理とロジックの分離 (`app/store/tradingStore.ts`)
+- **現状:** `processAITrades` アクション内に、利確・損切りの判定やスリッページ計算、自己反省コメント生成などの複雑なドメインロジックが含まれています。
+- **改善:** これらのロジックは `app/lib/trade-logic.ts` などの純粋関数として切り出し、Storeは状態の更新のみに責務を限定すべきです。テストも容易になります。
 
-- **`app/components/StockTable.tsx` (Lint Warning)**
-  - **問題:** プロパティ `showVolume` が定義されていますが、コンポーネント内で使用されていません。
-  - **推奨:** 不要であれば削除し、将来的に使用する場合は `_showVolume` として一時的に無効化するか、実装を追加します。
+### 3.3 モバイルメニューのアクセシビリティ (`app/page.tsx`)
+- **現状:** モバイル用サイドバー開閉ボタンが `<svg>` のみで構成されており、スクリーンリーダー用のラベル (`aria-label`) が不足しています。
+- **改善:** `<button aria-label="メニューを開く">` のように明示的なラベルを付与してください。
 
-- **`app/lib/mlPrediction.ts` (Lint Warning)**
-  - **問題:** 再代入されていない変数（`targetPrice`, `c`）が `let` で宣言されており、`prefer-const` 警告が出ています。
-  - **推奨:** `const` に変更します。
+## 4. マイナーな改善点・確認事項 (Minor Issues)
 
-### 2. パフォーマンス・最適化 (Performance)
+- **チャートのアクセシビリティ (`StockChart.tsx`):** Canvas要素には中身がないため、スクリーンリーダー利用者には情報が伝わりません。データの要約テーブルを非表示で配置するか、`aria-label` / `role="img"` で概要を説明することを推奨します。
+- **テストツールのパス依存 (`skills/frontend-tester.js`):** `path.join(__dirname, '..', 'trading-platform')` というハードコードされたパスがあり、フォルダ構成の変更に弱くなっています。設定ファイルや引数で渡せるようにすると柔軟性が向上します。
+- **APIの期間計算 (`api/market/route.ts`):** 履歴データ取得時、開始日が指定されない場合のデフォルトが「現在から5年前」と固定されています。定数として定義するか、クライアント側から柔軟に制御できる設計が望ましいです。
 
-- **`app/hooks/useStockData.ts`**
-  - **問題:** `fetchData` 関数内で、`fetchOHLCV` と `fetchSignal` が直列に実行されています（Waterfall）。
-  - **推奨:** `Promise.all` を使用して並列取得することで、データ読み込み時間を短縮できます。
+## 5. セキュリティ評価
+- ✅ **入力検証:** APIルート (`market/route.ts`) でシンボルに対して厳格な正規表現チェックが行われており良好です。
+- ✅ **ヘッダー設定:** `next.config.ts` に HSTS や X-Frame-Options などのセキュリティヘッダーが適切に設定されています。
+- ✅ **依存関係:** `eslint` の設定で `no-explicit-any` がエラー設定されており、型安全性が保たれています。
 
-- **`app/components/SignalPanel.tsx` / `app/lib/analysis.ts`**
-  - **問題:** バックテストやパラメータ最適化の計算がメインスレッドで同期的に実行されています。データ量が数千件を超えるとUIがフリーズする可能性があります。
-  - **推奨:** 将来的には Web Worker へのオフロードを検討してください（現状のデータ量では許容範囲内です）。
-
-### 3. その他・改善点 (Minor)
-
-- **`app/api/market/route.ts`**
-  - **観察:** テスト実行時に `yf.chart failed ... Sensitive database connection string failed` というエラーログが出力されます。これはライブラリ内部のエラーメッセージと思われますが、ログの視認性を下げる要因です。
-  - **推奨:** エラーハンドリングのログ出力を整理し、意図したエラーかどうかを明確にします。
-
-- **アクセシビリティ (a11y)**
-  - `StockChart` コンポーネントの Canvas 要素に代替テキストや `aria-label` が不足しており、スクリーンリーダー利用者に情報が伝わりにくい状態です。
-
-## 修正計画
-
-本レビューに基づき、以下の優先順位で修正を行うことを提案します。
-
-1. **Lintエラー・警告の修正** (`StockChart.tsx`, `StockTable.tsx`, `mlPrediction.ts`)
-2. **データ取得の並列化** (`useStockData.ts`)
+## 6. 次のステップへの提案
+1. `backtest.ts` のアルゴリズム最適化（最優先）
+2. `useStockData.ts` の `Promise.all` 化
+3. アクセシビリティ修正（aria-label追加）
