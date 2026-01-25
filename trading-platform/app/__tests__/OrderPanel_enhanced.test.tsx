@@ -4,10 +4,6 @@ import { OrderPanel } from '../components/OrderPanel';
 import { useTradingStore } from '../store/tradingStore';
 import '@testing-library/jest-dom';
 
-// Mock window.alert
-const alertMock = jest.fn();
-global.alert = alertMock;
-
 // Use actual store but mock addPosition
 jest.mock('../store/tradingStore', () => ({
   ...jest.requireActual('../store/tradingStore'),
@@ -21,10 +17,6 @@ jest.mock('../store/tradingStore', () => ({
 
 describe('OrderPanel Interaction Tests', () => {
   const mockStock = { symbol: '7974', name: '任天堂', price: 10000, market: 'japan' as const };
-
-  beforeEach(() => {
-    alertMock.mockClear();
-  });
 
   it('should allow changing quantity and show total cost', async () => {
     render(<OrderPanel stock={mockStock} currentPrice={10000} />);
@@ -49,14 +41,18 @@ describe('OrderPanel Interaction Tests', () => {
     // Click confirm button
     fireEvent.click(screen.getByText('注文を確定'));
 
-    // Wait for alert to be called
+    // Wait for success message to appear
     await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('注文を実行しました'));
-      expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('買い'));
+      expect(screen.getByText('注文を送信しました')).toBeInTheDocument();
+    });
+
+    // Verify confirmation dialog is closed
+    await waitFor(() => {
+      expect(screen.queryByText('注文を確定')).not.toBeInTheDocument();
     });
   });
 
-  it('should show success alert after confirming order', async () => {
+  it('should show success message after confirming order', async () => {
     render(<OrderPanel stock={mockStock} currentPrice={10000} />);
 
     // Click the buy order button
@@ -70,9 +66,13 @@ describe('OrderPanel Interaction Tests', () => {
     // Click confirm button
     fireEvent.click(screen.getByText('注文を確定'));
 
-    // Check alert was called with buy order details
+    // Check success message is displayed
     await waitFor(() => {
-      expect(alertMock).toHaveBeenCalledWith(expect.stringContaining('買い'));
+      expect(screen.getByText('注文を送信しました')).toBeInTheDocument();
     });
+
+    // Verify the success message contains order details (green background indicates buy order)
+    const successMessage = screen.getByText('注文を送信しました');
+    expect(successMessage).toHaveClass('bg-green-600');
   });
 });
