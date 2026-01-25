@@ -19,6 +19,9 @@ import type {
   AlphaVantageGlobalQuote,
   AlphaVantageRSI,
   AlphaVantageSMA,
+  AlphaVantageEMA,
+  AlphaVantageMACD,
+  AlphaVantageBollingerBands,
   AlphaVantageError,
 } from '@/app/types';
 import {
@@ -683,6 +686,34 @@ export async function handleAlphaVantageFetch<T>(response: Response): Promise<T>
   const data = await response.json();
   validateAlphaVantageResponse(data);
   return data as T;
+}
+
+/**
+ * Type-safe technical indicator data extractor
+ * Handles the common pattern for RSI, SMA, EMA, MACD, BBANDS responses
+ */
+export function extractTechnicalIndicatorData<T extends AlphaVantageSMA | AlphaVantageRSI | AlphaVantageEMA | AlphaVantageMACD | AlphaVantageBollingerBands>(
+  data: T | AlphaVantageError,
+  keyName: string
+): Record<string, AlphaVantageIndicatorValue> | undefined {
+  // Type guard: ensure data is not an error
+  if (isAlphaVantageError(data)) {
+    return undefined;
+  }
+
+  const value = (data as Record<string, unknown>)[keyName];
+  return (value && typeof value === 'object') ? value as Record<string, AlphaVantageIndicatorValue> : undefined;
+}
+
+/**
+ * Type-safe time series data extractor for intraday/daily responses
+ */
+export function extractTimeSeriesData<T extends { [key: string]: { '1. open': string; '2. high': string; '3. low': string; '4. close': string; '5. volume': string } }>(
+  data: Record<string, unknown>,
+  keyName: string
+): Record<string, AlphaVantageTimeSeriesValue> | undefined {
+  const value = data[keyName];
+  return (value && typeof value === 'object') ? value as Record<string, AlphaVantageTimeSeriesValue> : undefined;
 }
 
 // Singleton instance
