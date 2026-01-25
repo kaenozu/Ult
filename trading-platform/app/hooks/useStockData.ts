@@ -8,7 +8,10 @@ import { useTradingStore } from '@/app/store/tradingStore';
  * Includes proper cleanup to prevent memory leaks
  */
 export function useStockData() {
-  const { watchlist, selectedStock: storeSelectedStock, setSelectedStock } = useTradingStore();
+  const watchlist = useTradingStore(state => state.watchlist);
+  const storeSelectedStock = useTradingStore(state => state.selectedStock);
+  const setSelectedStock = useTradingStore(state => state.setSelectedStock);
+
   const [chartData, setChartData] = useState<OHLCV[]>([]);
   const [indexData, setIndexData] = useState<OHLCV[]>([]);
   const [chartSignal, setChartSignal] = useState<Signal | null>(null);
@@ -50,31 +53,28 @@ export function useStockData() {
     setChartSignal(null);
 
     try {
-      // 1. 個別銘柄のデータ取得
-      const data = await fetchOHLCV(stock.symbol, stock.market, stock.price);
+      // Parallel execution for Stock Data, Index Data, and Signals
+      const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
+
+      const [data, idxData, signalData] = await Promise.all([
+        fetchOHLCV(stock.symbol, stock.market, stock.price),
+        fetchOHLCV(indexSymbol, stock.market),
+        fetchSignal(stock)
+      ]);
+
       if (controller.signal.aborted || !isMountedRef.current) return;
 
       if (data.length === 0) {
         setError('No data available');
         return;
       }
+
       setChartData(data);
-
-      // 2. 市場指数のデータ取得 (重ね合わせ用)
-      const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
-      const idxData = await fetchOHLCV(indexSymbol, stock.market);
-      if (controller.signal.aborted || !isMountedRef.current) return;
-
       setIndexData(idxData);
-
-      // 3. シグナル取得
-      const signalData = await fetchSignal(stock);
-      if (controller.signal.aborted || !isMountedRef.current) return;
-
       setChartSignal(signalData);
 
-      // 4. 的中率計算用の長期データをバックグラウンドで同期
-      // アンマウントされた後は実行しない
+      // 4. Background sync for long-term data (keep independent)
+      // This is for background calculations, so we don't await it
       fetchOHLCV(stock.symbol, stock.market).catch(e => {
         if (isMountedRef.current && !controller.signal.aborted) {
           console.warn('Background sync failed:', e);
