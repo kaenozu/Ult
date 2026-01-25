@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Stock, Position, Portfolio, JournalEntry, Theme, AIStatus, Signal, PaperTrade } from '../types';
+import { AI_TRADING, POSITION_SIZING, MARKET_CORRELATION } from '@/app/constants';
 
 interface TradingStore {
   theme: Theme;
@@ -31,11 +32,11 @@ const initialPortfolio: Portfolio = {
   totalValue: 0,
   totalProfit: 0,
   dailyPnL: 0,
-  cash: 1000000, // 1M JPY initial capital
+  cash: AI_TRADING.INITIAL_VIRTUAL_BALANCE,
 };
 
 const initialAIStatus: AIStatus = {
-  virtualBalance: 1000000,
+  virtualBalance: AI_TRADING.INITIAL_VIRTUAL_BALANCE,
   totalProfit: 0,
   trades: [],
 };
@@ -234,11 +235,11 @@ export const useTradingStore = create<TradingStore>()(
 
       processAITrades: (symbol, currentPrice, signal) => {
         const { aiStatus } = get();
-        const slippage = 0.001; // 0.1% slippage
-        
+        const slippage = POSITION_SIZING.SLIPPAGE_PERCENTAGE;
+
         // Check for existing position
         const openTrade = aiStatus.trades.find(t => t.symbol === symbol && t.status === 'OPEN');
-        
+
         if (openTrade) {
           let shouldClose = false;
           let reflection = "";
@@ -271,7 +272,7 @@ export const useTradingStore = create<TradingStore>()(
 
           if (shouldClose) {
             const exitPrice = openTrade.type === 'BUY' ? currentPrice * (1 - slippage) : currentPrice * (1 + slippage);
-            const profit = openTrade.type === 'BUY' 
+            const profit = openTrade.type === 'BUY'
               ? (exitPrice - openTrade.entryPrice) * openTrade.quantity
               : (openTrade.entryPrice - exitPrice) * openTrade.quantity;
             const profitPercent = (profit / (openTrade.entryPrice * openTrade.quantity)) * 100;
@@ -281,17 +282,17 @@ export const useTradingStore = create<TradingStore>()(
             if (signal?.marketContext) {
               const { indexSymbol, correlation, indexTrend } = signal.marketContext;
               const isMarketDrag = (openTrade.type === 'BUY' && indexTrend === 'DOWN') || (openTrade.type === 'SELL' && indexTrend === 'UP');
-              
-              if (profitPercent < 0 && isMarketDrag && correlation > 0.5) {
+
+              if (profitPercent < 0 && isMarketDrag && correlation > MARKET_CORRELATION.STRONG_THRESHOLD) {
                 advancedReflection = `${reflection} 個別要因よりも、${indexSymbol}の${indexTrend === 'DOWN' ? '下落' : '上昇'}による市場全体の地合い(r=${correlation.toFixed(2)})に強く引きずられた形です。`;
-              } else if (profitPercent > 0 && !isMarketDrag && correlation > 0.5) {
+              } else if (profitPercent > 0 && !isMarketDrag && correlation > MARKET_CORRELATION.STRONG_THRESHOLD) {
                 advancedReflection = `${reflection} ${indexSymbol}の良好な地合い(r=${correlation.toFixed(2)})が予測を強力に後押ししました。`;
               }
             }
 
-            const updatedTrades = aiStatus.trades.map(t => 
-              t.id === openTrade.id 
-                ? { ...t, status: 'CLOSED' as const, exitPrice, exitDate: new Date().toISOString(), profitPercent, reflection: advancedReflection } 
+            const updatedTrades = aiStatus.trades.map(t =>
+              t.id === openTrade.id
+                ? { ...t, status: 'CLOSED' as const, exitPrice, exitDate: new Date().toISOString(), profitPercent, reflection: advancedReflection }
                 : t
             );
 
@@ -308,9 +309,10 @@ export const useTradingStore = create<TradingStore>()(
         }
 
         // New Entry Logic (Only for strong signals)
-        if (!openTrade && signal && signal.confidence >= 80 && signal.type !== 'HOLD') {
+        const HIGH_CONFIDENCE_THRESHOLD = 80;
+        if (!openTrade && signal && signal.confidence >= HIGH_CONFIDENCE_THRESHOLD && signal.type !== 'HOLD') {
           const entryPrice = signal.type === 'BUY' ? currentPrice * (1 + slippage) : currentPrice * (1 - slippage);
-          const quantity = Math.floor((aiStatus.virtualBalance * 0.1) / entryPrice);
+          const quantity = Math.floor((aiStatus.virtualBalance * POSITION_SIZING.DEFAULT_RATIO) / entryPrice);
 
           if (quantity > 0) {
             const newTrade: PaperTrade = {
