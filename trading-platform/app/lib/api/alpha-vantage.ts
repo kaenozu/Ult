@@ -136,7 +136,9 @@ export class AlphaVantageClient {
 
       validateAlphaVantageResponse(data);
 
-      const timeSeries = data['Time Series (Daily)'] as Record<string, AlphaVantageTimeSeriesValue> | undefined;
+      // Type guard: ensure data is not an error response
+      const validData = isAlphaVantageError(data) ? undefined : data;
+      const timeSeries = validData?.['Time Series (Daily)'] as Record<string, AlphaVantageTimeSeriesValue> | undefined;
       if (!timeSeries) {
         throw new Error('No time series data returned');
       }
@@ -567,11 +569,13 @@ export class AlphaVantageClient {
 
     validateAlphaVantageResponse(data);
 
-    if (!data.bestMatches) {
+    // Type guard: ensure data is not an error response
+    const validData = isAlphaVantageError(data) ? undefined : data;
+    if (!validData?.bestMatches) {
       return [];
     }
 
-    return data.bestMatches.map((match) => ({
+    return validData.bestMatches.map((match) => ({
       symbol: match['1. symbol'],
       name: match['2. name'],
       type: match['3. type'],
@@ -605,7 +609,9 @@ export class AlphaVantageClient {
 
     validateAlphaVantageResponse(data);
 
-    const quote = data['Global Quote'];
+    // Type guard: ensure data is not an error response
+    const validData = isAlphaVantageError(data) ? undefined : data;
+    const quote = validData?.['Global Quote'];
     if (!quote) {
       throw new Error('No quote data returned');
     }
