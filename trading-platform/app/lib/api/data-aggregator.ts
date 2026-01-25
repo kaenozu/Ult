@@ -1,4 +1,5 @@
 import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, APIError, NetworkError, RateLimitError } from '@/app/types';
+import type { TechnicalIndicator } from './alpha-vantage';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { idbClient } from './idb';
 
@@ -25,7 +26,7 @@ interface MarketResponse<T> {
 }
 
 class MarketDataClient {
-  private cache: Map<string, { data: OHLCV | Signal | TechnicalIndicator; timestamp: number }> = new Map();
+  private cache: Map<string, { data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData; timestamp: number }> = new Map();
   private cacheDuration: number = 5 * 60 * 1000; 
 
   private async fetchWithRetry<T>(
@@ -185,9 +186,10 @@ class MarketDataClient {
   }
 
   async fetchSignal(stock: Stock): Promise<FetchResult<Signal>> {
+    let result: FetchResult<OHLCV[]> | null = null;
     try {
-      const result = await this.fetchOHLCV(stock.symbol, stock.market);
-      
+      result = await this.fetchOHLCV(stock.symbol, stock.market);
+
       if (!result.success || !result.data || result.data.length < 20) {
         throw new Error('Insufficient data for ML analysis');
       }
@@ -203,11 +205,11 @@ class MarketDataClient {
       const indicators = mlPredictionService.calculateIndicators(result.data);
       const prediction = mlPredictionService.predict(stock, result.data, indicators);
       const signal = mlPredictionService.generateSignal(stock, result.data, prediction, indicators, indexData);
-      
+
       return { success: true, data: signal, source: result.source };
     } catch (err: unknown) {
       console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
-      return createErrorResult(err, result.source, `fetchSignal(${stock.symbol})`);
+      return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
     }
   }
 
@@ -221,7 +223,7 @@ class MarketDataClient {
     return item.data as T;
   }
 
-  private setCache(key: string, data: OHLCV | Signal | TechnicalIndicator) {
+  private setCache(key: string, data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData) {
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 
@@ -324,7 +326,7 @@ export function handleApiError(error: unknown, context: string): APIError {
  */
 export function createErrorResult(
   error: unknown,
-  source: 'cache' | 'api' | 'aggregated',
+  source: 'cache' | 'api' | 'aggregated' | 'idb' | 'error',
   context?: string
 ): APIErrorResult {
   const apiError = handleApiError(error, context || 'Unknown operation');

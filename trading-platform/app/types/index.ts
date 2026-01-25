@@ -320,7 +320,7 @@ export function isAlphaVantageError(data: unknown): data is AlphaVantageError {
 export interface APIResult<T> {
   success: true;
   data: T;
-  source: 'cache' | 'api' | 'aggregated';
+  source: 'cache' | 'api' | 'aggregated' | 'idb';
 }
 
 /**
@@ -329,7 +329,7 @@ export interface APIResult<T> {
 export interface APIErrorResult {
   success: false;
   data: null;
-  source: 'cache' | 'api' | 'aggregated';
+  source: 'cache' | 'api' | 'aggregated' | 'idb' | 'error';
   error: string;
 }
 
