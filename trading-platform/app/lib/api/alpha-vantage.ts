@@ -648,7 +648,9 @@ export function extractTechnicalIndicatorData<T extends AlphaVantageSMA | AlphaV
     return undefined;
   }
 
-  const value = (data as Record<string, unknown>)[keyName];
+  // Cast through unknown to avoid type incompatibility
+  const dataRecord = data as unknown as Record<string, unknown>;
+  const value = dataRecord[keyName];
   return (value && typeof value === 'object') ? value as Record<string, AlphaVantageIndicatorValue> : undefined;
 }
 
