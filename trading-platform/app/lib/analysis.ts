@@ -66,13 +66,27 @@ export function optimizeParameters(data: OHLCV[], market: 'japan' | 'usa'): { rs
     return { rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, accuracy: 0 };
   }
 
+  // Pre-calculate common data to avoid redundant iterations in loops
+  const closes = data.map(d => d.close);
+  const rsiMap = new Map<number, number[]>();
+  const smaMap = new Map<number, number[]>();
+
+  for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
+    rsiMap.set(rsiP, calculateRSI(closes, rsiP));
+  }
+  for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
+    smaMap.set(smaP, calculateSMA(closes, smaP));
+  }
+
   let bestAccuracy = -1;
   let bestRsiPeriod = RSI_CONFIG.DEFAULT_PERIOD;
   let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
 
   for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
+    const rsi = rsiMap.get(rsiP)!;
     for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
-      const result = internalCalculatePerformance(data, rsiP, smaP);
+      const sma = smaMap.get(smaP)!;
+      const result = internalCalculatePerformance(data, rsiP, smaP, closes, rsi, sma);
       if (result.hitRate > bestAccuracy) {
         bestAccuracy = result.hitRate;
         bestRsiPeriod = rsiP;
@@ -83,13 +97,18 @@ export function optimizeParameters(data: OHLCV[], market: 'japan' | 'usa'): { rs
   return { rsiPeriod: bestRsiPeriod, smaPeriod: bestSmaPeriod, accuracy: bestAccuracy };
 }
 
-function internalCalculatePerformance(data: OHLCV[], rsiP: number, smaP: number) {
+function internalCalculatePerformance(
+  data: OHLCV[],
+  rsiP: number,
+  smaP: number,
+  closes: number[],
+  rsi: number[],
+  sma: number[]
+) {
   let wins = 0, dirHits = 0, total = 0;
   const warmup = 100;
   const step = 3;
-  const closes = data.map(d => d.close);
-  const rsi = calculateRSI(closes, rsiP);
-  const sma = calculateSMA(closes, smaP);
+  // closes, rsi, sma are now passed in
 
   for (let i = warmup; i < data.length - 10; i += step) {
     if (isNaN(rsi[i]) || isNaN(sma[i])) continue;
@@ -117,7 +136,13 @@ function internalCalculatePerformance(data: OHLCV[], rsiP: number, smaP: number)
 
 export function calculateAIHitRate(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan') {
   const opt = optimizeParameters(data, market);
-  const result = internalCalculatePerformance(data, opt.rsiPeriod, opt.smaPeriod);
+
+  // Calculate indicators for the selected parameters
+  const closes = data.map(d => d.close);
+  const rsi = calculateRSI(closes, opt.rsiPeriod);
+  const sma = calculateSMA(closes, opt.smaPeriod);
+
+  const result = internalCalculatePerformance(data, opt.rsiPeriod, opt.smaPeriod, closes, rsi, sma);
 
   return {
     hitRate: Math.round(result.hitRate),
