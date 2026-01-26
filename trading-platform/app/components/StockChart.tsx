@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, memo, useState } from 'react';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, ChartOptions
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, ChartOptions, Chart
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
@@ -22,10 +22,20 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
+interface VolumeProfilePluginOptions {
+  enabled: boolean;
+  data: { price: number; strength: number }[];
+  currentPrice: number;
+}
+
+interface ChartContext {
+  index: number;
+}
+
 // 需給の壁 (Volume Profile) Plugin
 const volumeProfilePlugin = {
   id: 'volumeProfile',
-  afterDatasetsDraw: (chart: any, args: unknown, options: any) => {
+  afterDatasetsDraw: (chart: Chart, _args: unknown, options: VolumeProfilePluginOptions) => {
     if (!options.enabled || !options.data || options.data.length === 0) return;
 
     const { ctx, chartArea: { right, width, top, bottom } } = chart;
@@ -36,9 +46,9 @@ const volumeProfilePlugin = {
     // Disable shadow for cleaner look
     ctx.shadowBlur = 0;
 
-    options.data.forEach((wall: any) => {
+    options.data.forEach((wall) => {
       const yPos = yAxis.getPixelForValue(wall.price);
-      if (yPos < top || yPos > bottom) return;
+      if (yPos === undefined || yPos < top || yPos > bottom) return;
 
       const isAbove = wall.price > currentPrice;
       const color = isAbove ? '239, 68, 68' : '34, 197, 94';
@@ -337,15 +347,15 @@ export const StockChart = memo(function StockChart({
       x: {
         min: extendedData.labels.length > 105 ? extendedData.labels[extendedData.labels.length - 105] : undefined,
         grid: {
-          color: (c: any) => c.index === hoveredIdx
+          color: (c: ChartContext) => c.index === hoveredIdx
             ? CHART_GRID.HOVER_COLOR
-            : (c.index! >= data.length ? CHART_GRID.FUTURE_AREA_COLOR : CHART_GRID.MAIN_COLOR),
-          lineWidth: (c: any) => c.index === hoveredIdx
+            : (c.index >= data.length ? CHART_GRID.FUTURE_AREA_COLOR : CHART_GRID.MAIN_COLOR),
+          lineWidth: (c: ChartContext) => c.index === hoveredIdx
             ? CHART_GRID.HOVER_LINE_WIDTH
             : (c.index === data.length - 1 ? CHART_GRID.CURRENT_PRICE_LINE_WIDTH : 1)
         },
         ticks: {
-          color: (c: any) => c.index === hoveredIdx ? '#fff' : (c.index! >= data.length ? '#3b82f6' : '#92adc9'),
+          color: (c: ChartContext) => c.index === hoveredIdx ? '#fff' : (c.index >= data.length ? '#3b82f6' : '#92adc9'),
           maxTicksLimit: 15,
           font: { size: CHART_GRID.LABEL_FONT_SIZE }
         }
