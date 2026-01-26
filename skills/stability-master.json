@@ -1,0 +1,19 @@
+{
+  "name": "stability-master",
+  "description": "Expert in application robustness, type safety, memory management, and test environment hygiene.",
+  "version": "1.0.0",
+  "instructions": "skills/stability-master.md",
+  "permissions": [
+    "read_file",
+    "write_file",
+    "run_shell_command",
+    "replace"
+  ],
+  "triggers": [
+    "fix bugs",
+    "improve stability",
+    "refactor types",
+    "fix memory leak",
+    "harden code"
+  ]
+}
