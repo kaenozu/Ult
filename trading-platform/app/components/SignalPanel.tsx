@@ -4,6 +4,8 @@ import { formatCurrency, cn, getConfidenceColor } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { calculateAIHitRate } from '@/app/lib/analysis';
+import { useWebSocket } from '@/app/hooks/useWebSocket';
+import { SignalCard } from './SignalCard';
 
 interface SignalPanelProps {
   stock: Stock;
@@ -30,13 +32,13 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         const twoYearsAgo = new Date();
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
         const startDate = twoYearsAgo.toISOString().split('T')[0];
-        
+
         const response = await fetch(`/api/market?type=history&symbol=${stock.symbol}&market=${stock.market}&startDate=${startDate}`);
         if (!response.ok) {
-           throw new Error(`Failed to fetch history: ${response.statusText}`);
+          throw new Error(`Failed to fetch history: ${response.statusText}`);
         }
         const resultData = await response.json();
-        
+
         if (resultData.data && resultData.data.length > 100) {
           const result = calculateAIHitRate(stock.symbol, resultData.data, stock.market);
           setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
@@ -59,12 +61,31 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     return preciseHitRate;
   }, [preciseHitRate]);
 
+  const { status: wsStatus, lastMessage } = useWebSocket('ws://localhost:8000/ws/signals');
+  const [liveSignal, setLiveSignal] = useState<Signal | null>(null);
+
+  useEffect(() => {
+    if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE' && lastMessage.data.symbol === stock.symbol) {
+      setLiveSignal(lastMessage.data);
+    } else if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE' && lastMessage.data.symbol !== stock.symbol) {
+      // Different symbol, ignore or maybe clear if we switched?
+      // Actually, if we switched stock, we should clear liveSignal until we get a new one
+    }
+  }, [lastMessage, stock.symbol]);
+
+  // Reset live signal when stock changes
+  useEffect(() => {
+    setLiveSignal(null);
+  }, [stock.symbol]);
+
+  const displaySignal = liveSignal || signal;
+
   // 自動売買プロセスをトリガー
   useEffect(() => {
-    if (signal && stock.price) {
-      processAITrades(stock.symbol, stock.price, signal);
+    if (displaySignal && stock.price) {
+      processAITrades(stock.symbol, stock.price, displaySignal);
     }
-  }, [stock.symbol, stock.price, signal, processAITrades]);
+  }, [stock.symbol, stock.price, displaySignal, processAITrades]);
 
   const backtestResult: BacktestResult = useMemo(() => {
     if (!ohlcv || ohlcv.length === 0) {
@@ -77,7 +98,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     return aiStatus.trades.filter(t => t.symbol === stock.symbol);
   }, [aiStatus.trades, stock.symbol]);
 
-  if (loading || !signal) {
+  if (loading || !displaySignal) {
     return (
       <div className="bg-[#141e27] p-4 flex flex-col gap-3 h-full">
         <div className="flex justify-between items-center text-xs">
@@ -126,119 +147,23 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         {activeTab === 'signal' && (
           <div className="flex items-center gap-2 text-xs">
             <span className="text-[#92adc9]">信頼度:</span>
-            <span className={cn('font-bold', getConfidenceColor(signal.confidence))}>
-              {signal.confidence}%
+            <span className={cn('font-bold', getConfidenceColor(displaySignal.confidence))}>
+              {displaySignal.confidence}%
             </span>
           </div>
         )}
       </div>
 
       {activeTab === 'signal' ? (
-        <div className="flex flex-col gap-3">
-          {/* ... existing signal display code ... */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={cn(
-                'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm',
-                signal.confidence >= 80 ? 'bg-white text-black' : 'bg-black/20 text-white/70'
-              )}>
-                {signal.confidence >= 80 ? '🔥 強気シグナル' : '通常シグナル'}
-              </div>
-              {aiPerformance.hitRate >= 60 && (
-                <div className="px-2 py-1 rounded-full text-[10px] font-bold bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 flex items-center gap-1">
-                  🌟 高的中率 ({aiPerformance.hitRate}%)
-                </div>
-              )}
-            </div>
-            <div className="text-right">
-              <div className="text-[10px] text-[#92adc9] uppercase font-bold tracking-widest">予測信頼度</div>
-              <div className={cn('text-xl font-black tabular-nums', getConfidenceColor(signal.confidence))}>
-                {signal.confidence}%
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 flex items-end justify-between">
-            <div className="flex flex-col">
-              <span className={cn(
-                'text-5xl font-black leading-none tracking-tighter',
-                signal.type === 'BUY' && 'text-green-500 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]',
-                signal.type === 'SELL' && 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.3)]',
-                signal.type === 'HOLD' && 'text-gray-400'
-              )}>
-                {signal.type === 'BUY' ? '買い' : signal.type === 'SELL' ? '売り' : '維持'}
-              </span>
-              <span className="text-[10px] font-bold text-[#92adc9] mt-1 ml-1 uppercase">推奨アクション</span>
-            </div>
-            <div className="text-right">
-              <div className="text-[10px] text-[#92adc9] uppercase font-bold tracking-widest mb-1">過去の的中率</div>
-              <div className={cn('text-lg font-black tabular-nums', aiPerformance.hitRate >= 50 ? 'text-white' : 'text-red-400')}>
-                {calculatingHitRate ? (
-                  <span className="text-xs text-[#92adc9] animate-pulse">計算中...</span>
-                ) : error ? (
-                   <span className="text-xs text-red-400" title={error}>エラー</span>
-                ) : (
-                  `${aiPerformance.hitRate}%`
-                )}
-              </div>
-              {!calculatingHitRate && !error && (
-                <div className="text-[8px] text-[#92adc9]/60">過去{aiPerformance.trades}回の試行</div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {/* 予測誤差表示 (AI予測の深化) */}
-            {signal.predictionError !== undefined && (
-              <div className="bg-black/20 p-2 rounded-lg border border-[#233648]/50">
-                <div className="flex items-center justify-between">
-                  <div className="text-[10px] font-bold text-[#92adc9] uppercase tracking-wider">予測誤差</div>
-                  <div className={cn(
-                    'text-xs font-bold tabular-nums',
-                    signal.predictionError <= 1.0 ? 'text-green-400' :  // 標準以下
-                    signal.predictionError <= 1.5 ? 'text-yellow-400' :  // 中程度
-                    'text-red-400'  // 高い誤差
-                  )}>
-                    {signal.predictionError.toFixed(2)}x
-                  </div>
-                </div>
-                <div className="text-[8px] text-[#92adc9]/60 mt-1">
-                  {signal.predictionError <= 1.0 ? '精度良好' :
-                   signal.predictionError <= 1.5 ? 'やや不確実' : '不確実性が高い'}
-                </div>
-              </div>
-            )}
-
-            <div className="relative pt-4">
-              <div className="absolute top-0 left-0 text-[10px] font-bold text-[#92adc9] uppercase tracking-widest">目標価格・リスク管理</div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1">
-                  <div className="text-[10px] text-[#92adc9] mb-1">利確ターゲット</div>
-                  <div className="text-sm font-black text-white bg-white/5 p-2 rounded border border-white/10 text-center">
-                    {stock.market === 'japan' ? formatCurrency(signal.targetPrice, 'JPY') : formatCurrency(signal.targetPrice, 'USD')}
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="text-[10px] text-red-400/70 mb-1 text-right">損切りライン</div>
-                  <div className="text-sm font-black text-red-400 bg-red-400/5 p-2 rounded border border-red-400/20 text-center">
-                    {stock.market === 'japan' ? formatCurrency(signal.stopLoss, 'JPY') : formatCurrency(signal.stopLoss, 'USD')}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-black/30 p-3 rounded-lg border border-[#233648] relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1 h-full bg-primary/50"></div>
-              <div className="text-[10px] font-bold text-[#92adc9] mb-1 uppercase tracking-widest flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                AI分析エンジン
-              </div>
-              <p className="text-xs text-white/90 leading-relaxed font-medium">
-                {signal.reason}
-              </p>
-            </div>
-          </div>
-        </div>
+        <SignalCard
+          signal={displaySignal}
+          stock={stock}
+          isLive={!!liveSignal}
+          aiHitRate={aiPerformance.hitRate}
+          aiTradesCount={aiPerformance.trades}
+          calculatingHitRate={calculatingHitRate}
+          error={error}
+        />
       ) : activeTab === 'backtest' ? (
         <div className="flex-1 overflow-auto">
           {/* ... existing backtest code ... */}
