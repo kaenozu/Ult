@@ -183,14 +183,22 @@ export const StockChart = memo(function StockChart({
     const stopArr = new Array(extendedData.labels.length).fill(NaN);
 
     const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    const confidenceFactor = ((110 - signal.confidence) / FORECAST_CONE.CONFIDENCE_FACTOR_BASE) * (signal.predictionError || 1.0);
+    // 予測誤差の影響を抑え、より現実的な範囲にする
+    // predictionErrorは1.0〜2.5程度だが、その影響を0.5〜1.5に制限
+    const errorFactor = Math.min(Math.max(signal.predictionError || 1.0, 0.5), 1.5);
+    // 信頼度に基づく不確実性（40%〜80%の間に収まる）
+    const confidenceUncertainty = 0.4 + ((100 - signal.confidence) / 100) * 0.4;
+    const combinedFactor = errorFactor * confidenceUncertainty;
 
+    // signal.targetPriceとsignal.stopLossをベースにしつつ、適度な幅を追加
     let target = signal.targetPrice, stop = signal.stopLoss;
     if (signal.type === 'HOLD') {
-      target = currentPrice + (stockATR * confidenceFactor);
-      stop = currentPrice - (stockATR * confidenceFactor);
+      // HOLDの場合は現在価格から±ATR×係数
+      target = currentPrice + (stockATR * combinedFactor * 2);
+      stop = currentPrice - (stockATR * combinedFactor * 2);
     } else {
-      const uncertainty = (stockATR * FORECAST_CONE.ATR_MULTIPLIER) * confidenceFactor;
+      // BUY/SELLの場合は目標価格・損切りラインをベースに、適度な不確実性範囲を追加
+      const uncertainty = stockATR * FORECAST_CONE.ATR_MULTIPLIER * combinedFactor;
       target += (signal.type === 'BUY' ? 1 : -1) * uncertainty;
       stop -= (signal.type === 'BUY' ? 1 : -1) * uncertainty;
     }
@@ -208,9 +216,9 @@ export const StockChart = memo(function StockChart({
       {
         label: 'ターゲット',
         data: targetArr,
-        borderColor: `rgba(${color}, 0.8)`,
-        backgroundColor: `rgba(${color}, 0.25)`,
-        borderWidth: 2,
+        borderColor: `rgba(${color}, 1)`,
+        backgroundColor: `rgba(${color}, 0.3)`,
+        borderWidth: 3,
         borderDash: [6, 4],
         pointRadius: 0,
         fill: '+1',
@@ -219,8 +227,8 @@ export const StockChart = memo(function StockChart({
       {
         label: 'リスク',
         data: stopArr,
-        borderColor: `rgba(${color}, 0.4)`,
-        borderWidth: 2,
+        borderColor: `rgba(${color}, 0.7)`,
+        borderWidth: 3,
         borderDash: [6, 4],
         pointRadius: 0,
         fill: false,
@@ -246,13 +254,12 @@ export const StockChart = memo(function StockChart({
       {
         label: '現在価格',
         data: extendedData.prices,
-        borderColor: CANDLESTICK.BULL_COLOR.replace('0.5', '1').replace('rgba', '').replace(', 0.5)', '').replace('(', '#').replace(')', ''),
-        backgroundColor: CANDLESTICK.BULL_COLOR,
-        fill: true,
+        borderColor: CANDLESTICK.MAIN_LINE_COLOR,
+        fill: false,
         tension: CHART_CONFIG.TENSION,
         pointRadius: 0,
         pointHoverRadius: CANDLESTICK.HOVER_RADIUS,
-        borderWidth: 2,
+        borderWidth: CANDLESTICK.MAIN_LINE_WIDTH,
         order: 1
       },
       ...forecastDatasets,
@@ -293,6 +300,26 @@ export const StockChart = memo(function StockChart({
     ],
   }), [extendedData, sma20, upper, lower, showSMA, showBollinger, forecastDatasets, ghostForecastDatasets]);
 
+  // Y軸の範囲を計算（価格変動を見やすくするため）
+  const yAxisRange = useMemo(() => {
+    if (data.length === 0) return { min: 0, max: 100 };
+    const prices = data.map(d => d.close);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const currentPrice = data[data.length - 1].close;
+    const range = maxPrice - minPrice;
+
+    // 価格変動が小さい場合、範囲を制限して変動を見やすくする
+    // 最小範囲は現在価格の±3%、最大範囲はデータの最小値〜最大値
+    const minRange = currentPrice * 0.06; // ±3%
+    const adjustedRange = Math.max(range, minRange);
+
+    return {
+      min: currentPrice - adjustedRange / 2,
+      max: currentPrice + adjustedRange / 2,
+    };
+  }, [data]);
+
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true, maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
@@ -319,15 +346,22 @@ export const StockChart = memo(function StockChart({
         },
         ticks: {
           color: (c: any) => c.index === hoveredIdx ? '#fff' : (c.index! >= data.length ? '#3b82f6' : '#92adc9'),
-          maxTicksLimit: 15
+          maxTicksLimit: 15,
+          font: { size: CHART_GRID.LABEL_FONT_SIZE }
         }
       },
       y: {
+        min: yAxisRange.min,
+        max: yAxisRange.max,
         grid: { color: CHART_GRID.MAIN_COLOR },
-        ticks: { color: '#92adc9', callback: (v) => formatCurrency(Number(v), market === 'japan' ? 'JPY' : 'USD') }
+        ticks: {
+          color: '#92adc9',
+          callback: (v) => formatCurrency(Number(v), market === 'japan' ? 'JPY' : 'USD'),
+          font: { size: CHART_GRID.LABEL_FONT_SIZE }
+        }
       }
     },
-  }), [market, data.length, extendedData.labels, hoveredIdx]);
+  }), [market, data.length, extendedData.labels, hoveredIdx, yAxisRange]);
 
   if (error) return (
     <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded" style={{ height }}>
