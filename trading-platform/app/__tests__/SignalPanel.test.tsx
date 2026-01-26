@@ -20,13 +20,18 @@ describe('SignalPanel', () => {
     predictionDate: '2026-01-22'
   };
 
-  it('renders signal data correctly', () => {
+  it('renders signal data correctly using SignalCard', () => {
     render(<SignalPanel stock={mockStock} signal={mockSignal} />);
-    
+
+    // Check for SignalCard specific elements
     expect(screen.getByText('買い')).toBeInTheDocument();
-    expect(screen.getByText(/AI分析エンジン/)).toBeInTheDocument(); 
+    expect(screen.getByText(/AI分析エンジン/)).toBeInTheDocument();
     expect(screen.getByText('Test Reason')).toBeInTheDocument();
-    expect(screen.getAllByText('80%').length).toBeGreaterThan(0);
+
+    // Check key stats rendered by SignalCard
+    expect(screen.getAllByText('80%').length).toBeGreaterThan(0); // Confidence
+    expect(screen.getByText('🔥 強気シグナル')).toBeInTheDocument();
+    expect(screen.getByText('目標価格・リスク管理')).toBeInTheDocument();
   });
 
   it('renders loading state when signal is null', () => {

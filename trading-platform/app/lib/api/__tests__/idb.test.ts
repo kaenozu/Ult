@@ -9,9 +9,9 @@ import { OHLCV } from '@/app/types';
 
 describe('IndexedDB Client', () => {
   let client: IndexedDBClient;
-  let mockOpenRequest: any;
-  let mockDB: any;
-  let mockStore: any;
+  let mockOpenRequest: unknown;
+  let mockDB: unknown;
+  let mockStore: unknown;
 
   beforeEach(() => {
     client = new IndexedDBClient();
@@ -39,7 +39,14 @@ describe('IndexedDB Client', () => {
       result: mockDB,
     };
 
-    jest.spyOn(window.indexedDB, 'open').mockReturnValue(mockOpenRequest);
+    jest.spyOn(window.indexedDB, 'open').mockImplementation(() => {
+      setTimeout(() => {
+        if (mockOpenRequest.onsuccess) {
+          mockOpenRequest.onsuccess({ target: mockOpenRequest });
+        }
+      }, 0);
+      return mockOpenRequest;
+    });
   });
 
   afterEach(() => {
@@ -64,84 +71,101 @@ describe('IndexedDB Client', () => {
     });
   });
 
-  describe('mergeAndSave logic', () => {
-    it('should merge new data with existing data correctly', () => {
-      const existingData: OHLCV[] = [
-        { date: '2023-01-01', open: 100, high: 110, low: 90, close: 105, volume: 1000000 },
-        { date: '2023-01-02', open: 105, high: 115, low: 100, close: 110, volume: 1100000 }
-      ];
+  describe('getData', () => {
+    it('should retrieve data from store', async () => {
+      const mockResult = [{ date: '2023-01-01', close: 100 }];
+      const getRequest = { result: mockResult, onsuccess: null, onerror: null };
 
-      const newData: OHLCV[] = [
-        { date: '2023-01-02', open: 106, high: 116, low: 101, close: 111, volume: 1150000 }, // Overwrites
-        { date: '2023-01-03', open: 110, high: 120, low: 105, close: 115, volume: 1200000 }  // New
-      ];
+      // Auto-trigger onsuccess for store.get
+      (mockStore as any).get.mockImplementation(() => {
+        setTimeout(() => {
+          if (getRequest.onsuccess) (getRequest.onsuccess as any)();
+        }, 0);
+        return getRequest;
+      });
 
-      // Test merge logic
-      const dataMap = new Map<string, OHLCV>();
-      existingData.forEach(d => dataMap.set(d.date, d));
-      newData.forEach(d => dataMap.set(d.date, d));
+      const result = await client.getData('AAPL');
 
-      const merged = Array.from(dataMap.values()).sort((a, b) =>
-        new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-
-      expect(merged).toHaveLength(3);
-      expect(merged[0].date).toBe('2023-01-01'); // From existing
-      expect(merged[1].date).toBe('2023-01-02'); // Overwritten
-      expect(merged[1].open).toBe(106); // New value
-      expect(merged[2].date).toBe('2023-01-03'); // From new
+      expect(result).toEqual(mockResult);
+      expect((mockStore as any).get).toHaveBeenCalledWith('AAPL');
     });
 
-    it('should handle data with same dates correctly', () => {
-      const existingData: OHLCV[] = [
-        { date: '2023-01-01', open: 100, high: 110, low: 90, close: 105, volume: 1000000 }
-      ];
+    it('should return empty array on null result', async () => {
+      const getRequest = { result: null, onsuccess: null, onerror: null };
+      (mockStore as any).get.mockImplementation(() => {
+        setTimeout(() => {
+          if (getRequest.onsuccess) (getRequest.onsuccess as any)();
+        }, 0);
+        return getRequest;
+      });
 
-      const newData: OHLCV[] = [
-        { date: '2023-01-01', open: 101, high: 111, low: 91, close: 106, volume: 1050000 } // Same date
-      ];
-
-      // Test merge logic
-      const dataMap = new Map<string, OHLCV>();
-      existingData.forEach(d => dataMap.set(d.date, d));
-      newData.forEach(d => dataMap.set(d.date, d));
-
-      const merged = Array.from(dataMap.values());
-
-      expect(merged).toHaveLength(1); // Only one entry per date
-      expect(merged[0].open).toBe(101); // New value overwrites
+      const result = await client.getData('AAPL');
+      expect(result).toEqual([]);
     });
+  });
 
-    it('should handle empty existing data', () => {
-      const existingData: OHLCV[] = [];
-      const newData: OHLCV[] = [
-        { date: '2023-01-01', open: 100, high: 110, low: 90, close: 105, volume: 1000000 }
+  describe('saveData', () => {
+    it('should save sorted data', async () => {
+      const data = [
+        { date: '2023-01-02', close: 110 } as any,
+        { date: '2023-01-01', close: 100 } as any
       ];
 
-      // Test merge logic
-      const dataMap = new Map<string, OHLCV>();
-      existingData.forEach(d => dataMap.set(d.date, d));
-      newData.forEach(d => dataMap.set(d.date, d));
+      const putRequest = { onsuccess: null, onerror: null };
+      (mockStore as any).put.mockImplementation(() => {
+        setTimeout(() => {
+          if (putRequest.onsuccess) (putRequest.onsuccess as any)();
+        }, 0);
+        return putRequest;
+      });
 
-      const merged = Array.from(dataMap.values());
+      await client.saveData('AAPL', data);
 
-      expect(merged).toHaveLength(1);
-      expect(merged[0]).toEqual(newData[0]);
+      expect((mockStore as any).put).toHaveBeenCalled();
+      const savedData = (mockStore as any).put.mock.calls[0][0];
+      expect(savedData[0].date).toBe('2023-01-01');
     });
+  });
 
-    it('should sort data by date', () => {
-      const unsortedData: OHLCV[] = [
-        { date: '2023-01-03', open: 110, high: 120, low: 105, close: 115, volume: 1200000 },
-        { date: '2023-01-01', open: 100, high: 110, low: 90, close: 105, volume: 1000000 },
-        { date: '2023-01-02', open: 105, high: 115, low: 100, close: 110, volume: 1100000 }
-      ];
+  describe('mergeAndSave', () => {
+    it('should merge and save data', async () => {
+      const existing = [{ date: '2023-01-01', close: 100 } as any];
+      const getRequest = { result: existing, onsuccess: null };
+      (mockStore as any).get.mockImplementation(() => {
+        setTimeout(() => {
+          if (getRequest.onsuccess) (getRequest.onsuccess as any)();
+        }, 0);
+        return getRequest;
+      });
 
-      // Test sort logic
-      const sorted = [...unsortedData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const putRequest = { onsuccess: null };
+      (mockStore as any).put.mockImplementation(() => {
+        setTimeout(() => {
+          if (putRequest.onsuccess) (putRequest.onsuccess as any)();
+        }, 0);
+        return putRequest;
+      });
 
-      expect(sorted[0].date).toBe('2023-01-01');
-      expect(sorted[1].date).toBe('2023-01-02');
-      expect(sorted[2].date).toBe('2023-01-03');
+      const newData = [{ date: '2023-01-02', close: 110 } as any];
+
+      const result = await client.mergeAndSave('AAPL', newData);
+      expect(result).toHaveLength(2);
+      expect((mockStore as any).put).toHaveBeenCalled();
+    });
+  });
+
+  describe('clearAllData', () => {
+    it('should clear object store', async () => {
+      const clearRequest = { onsuccess: null, onerror: null };
+      (mockStore as any).clear.mockImplementation(() => {
+        setTimeout(() => {
+          if (clearRequest.onsuccess) (clearRequest.onsuccess as any)();
+        }, 0);
+        return clearRequest;
+      });
+
+      await client.clearAllData();
+      expect((mockStore as any).clear).toHaveBeenCalled();
     });
   });
 });

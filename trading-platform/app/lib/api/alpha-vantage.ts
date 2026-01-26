@@ -129,7 +129,7 @@ export class AlphaVantageClient {
     try {
       const response = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
         throw new NetworkError(
           `Alpha Vantage API Error: ${response.status} ${response.statusText}`
@@ -147,7 +147,11 @@ export class AlphaVantageClient {
 
       const timeSeries = extractTimeSeriesData(data, 'Time Series (Daily)');
       if (!timeSeries) {
-        throw new Error('No time series data returned');
+        return {
+          symbol,
+          interval: 'daily',
+          data: [],
+        };
       }
 
       const parsed: OHLCV[] = Object.entries(timeSeries)
@@ -531,7 +535,7 @@ export class AlphaVantageClient {
 
     const url = `${this.baseUrl}?${params}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
@@ -571,7 +575,7 @@ export class AlphaVantageClient {
 
     const url = `${this.baseUrl}?${params}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
     }
@@ -684,8 +688,8 @@ export function extractTimeSeriesData(
         if (entries.length > 0) {
           const [, sample] = entries[0];
           if (typeof sample === 'object' && sample !== null &&
-              '1. open' in sample && '2. high' in sample &&
-              '3. low' in sample && '4. close' in sample && '5. volume' in sample) {
+            '1. open' in sample && '2. high' in sample &&
+            '3. low' in sample && '4. close' in sample && '5. volume' in sample) {
             return value as Record<string, AlphaVantageTimeSeriesValue>;
           }
         }
@@ -705,7 +709,7 @@ export function getAlphaVantageClient(): AlphaVantageClient {
   }
 
   const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
-  
+
   if (!apiKey) {
     throw new Error('ALPHA_VANTAGE_API_KEY is not defined in environment variables');
   }
