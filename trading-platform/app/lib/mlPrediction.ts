@@ -177,7 +177,7 @@ class MLPredictionService {
     const trendDeviation = 1 + MARKET_CORRELATION.TREND_DEVIATION;
     const indexTrend: 'UP' | 'DOWN' | 'NEUTRAL' =
       indexPrice > indexSMA20 * trendDeviation ? 'UP' :
-      indexPrice < indexSMA20 * (2 - trendDeviation) ? 'DOWN' : 'NEUTRAL';
+        indexPrice < indexSMA20 * (2 - trendDeviation) ? 'DOWN' : 'NEUTRAL';
 
     const marketInfo = {
       indexSymbol: stock.market === 'japan' ? '日経平均' : 'NASDAQ',
@@ -268,7 +268,7 @@ class MLPredictionService {
     const PREDICTION_BONUS = 5;
     const MOMENTUM_THRESHOLD = SIGNAL_THRESHOLDS.STRONG_MOMENTUM;
 
-    let c = 50 +
+    const c = 50 +
       (f.rsi < RSI_CONFIG.EXTREME_OVERSOLD - 5 || f.rsi > RSI_CONFIG.EXTREME_OVERBOUGHT + 5 ? RSI_EXTREME_BONUS : 0) +
       (Math.abs(f.priceMomentum) > MOMENTUM_THRESHOLD ? MOMENTUM_BONUS : 0) +
       (Math.abs(p) > MOMENTUM_THRESHOLD ? PREDICTION_BONUS : 0);

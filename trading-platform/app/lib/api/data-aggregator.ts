@@ -31,14 +31,14 @@ class MarketDataClient {
   private pendingRequests: Map<string, Promise<any>> = new Map();
 
   private async fetchWithRetry<T>(
-    url: string, 
-    options: RequestInit = {}, 
-    retries: number = 3, 
+    url: string,
+    options: RequestInit = {},
+    retries: number = 3,
     backoff: number = 500
   ): Promise<T> {
     try {
       const res = await fetch(url, options);
-      
+
       if (res.status === 429) {
         // ... rate limit logic ...
         const retryAfter = res.headers.get('Retry-After');
@@ -49,14 +49,14 @@ class MarketDataClient {
       }
 
       const json = await res.json() as MarketResponse<T>;
-      
+
       if (!res.ok || json.error) {
         // Combine all error info
         const debugInfo = json.debug ? ` (Debug: ${json.debug})` : '';
         const details = json.details ? ` - ${json.details}` : '';
         throw new Error(`${json.error || res.statusText}${details}${debugInfo}`);
       }
-      
+
       return json.data as T;
     } catch (err) {
       if (retries > 0) {
@@ -133,7 +133,7 @@ class MarketDataClient {
 
     try {
       const data = await fetchPromise;
-      return { success: true, data, source };
+      return { success: true, data, source: source as 'api' | 'idb' | 'cache' };
     } catch (err: unknown) {
       if (signal?.aborted) {
         return { success: false, data: null, source: 'error', error: 'Aborted' };
@@ -156,7 +156,7 @@ class MarketDataClient {
       const results = await Promise.all(chunks.map(async (chunk) => {
         const symbolStr = chunk.join(',');
         const res = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
-        
+
         if (res.status === 429) {
           await new Promise(resolve => setTimeout(resolve, 2000));
           return this.fetchQuotes(chunk); // Retry chunk
@@ -263,16 +263,16 @@ class MarketDataClient {
     if (data.length < 2) return data;
 
     const sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    
+
     const filledWithGaps: OHLCV[] = [];
     for (let i = 0; i < sorted.length; i++) {
       filledWithGaps.push(sorted[i]);
-      
+
       if (i < sorted.length - 1) {
         const current = new Date(sorted[i].date);
         const next = new Date(sorted[i + 1].date);
         const diffDays = Math.floor((next.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays > 1) {
           for (let d = 1; d < diffDays; d++) {
             const gapDate = new Date(current);
@@ -314,7 +314,7 @@ class MarketDataClient {
         }
       }
     }
-    
+
     for (let i = 0; i < result.length; i++) {
       if (result[i].volume === 0) {
         let prevIdx = i - 1;
