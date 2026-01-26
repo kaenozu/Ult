@@ -111,16 +111,16 @@ export const StockChart = memo(function StockChart({
   // 1.5 市場指数の正規化 (Normalizing Index to Stock scale)
   const normalizedIndexData = useMemo(() => {
     if (!indexData || indexData.length < 10 || data.length === 0) return [];
-    
+
     // 表示期間の開始価格を基準に倍率を計算
     const stockStartPrice = data[0].close;
     // indexDataからdata[0].dateに最も近い日の価格を探す
     const targetDate = data[0].date;
     const indexStartPoint = indexData.find(d => d.date >= targetDate) || indexData[0];
     const indexStartPrice = indexStartPoint.close;
-    
+
     const ratio = stockStartPrice / indexStartPrice;
-    
+
     // data[i].date に合わせて indexData をマッピング
     return extendedData.labels.map(label => {
       const idxPoint = indexData.find(d => d.date === label);
@@ -201,6 +201,10 @@ export const StockChart = memo(function StockChart({
     const combinedFactor = errorFactor * confidenceUncertainty;
 
     // signal.targetPriceとsignal.stopLossをベースにしつつ、適度な幅を追加
+    // momentumの計算を追加（予測騰落率またはトレンドから推定）
+    const momentum = signal.predictedChange ? signal.predictedChange / 100 : 0;
+    const confidenceFactor = (110 - signal.confidence) / 100;
+
     let target = signal.targetPrice, stop = signal.stopLoss;
     if (signal.type === 'HOLD') {
       // HOLDの場合は現在価格から±ATR×係数
