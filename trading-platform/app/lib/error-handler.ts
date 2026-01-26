@@ -8,7 +8,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import type { APIError, NetworkError, RateLimitError } from '@/app/types';
+// import type { APIError, NetworkError, RateLimitError } from '@/app/types';
 
 /**
  * エラーレスポンスの構造

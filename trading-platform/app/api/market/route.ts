@@ -40,7 +40,7 @@ function formatSymbol(symbol: string, market?: string): string {
   if (symbol.startsWith('^')) {
     return symbol;
   }
-  
+
   if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
     return `${symbol}.T`;
   }
@@ -117,13 +117,13 @@ export async function GET(request: Request) {
 
         return NextResponse.json({ data: ohlcv });
       } catch (innerError: unknown) {
-        return handleApiError(innerError, 'market/history', 502);
+        return handleApiError(new Error('Failed to fetch historical data'), 'market/history', 502);
       }
-    } 
-    
+    }
+
     if (type === 'quote') {
       const symbols = symbol.split(',').map(s => formatSymbol(s.trim(), market || undefined));
-      
+
       if (symbols.length === 1) {
         try {
           const result = await yf.quote(symbols[0]) as unknown as YahooQuoteResult;

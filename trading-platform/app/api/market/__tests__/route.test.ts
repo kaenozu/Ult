@@ -8,10 +8,16 @@ jest.mock('yahoo-finance2', () => {
   return jest.fn().mockImplementation(() => {
     return {
       chart: jest.fn().mockResolvedValue({ quotes: [] }),
-      quote: jest.fn().mockResolvedValue({ regularMarketPrice: 100 }),
+      quote: jest.fn().mockImplementation((query) => {
+        if (Array.isArray(query)) {
+          return Promise.resolve(query.map((s: string) => ({ symbol: s, regularMarketPrice: 100 })));
+        }
+        return Promise.resolve({ symbol: query, regularMarketPrice: 100 });
+      }),
     };
   });
 });
+
 
 describe('Market API Security Tests', () => {
   const createRequest = (url: string) => new Request(`http://localhost${url}`);
