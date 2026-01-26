@@ -15,3 +15,7 @@
 ## 2024-05-22 - [Environment Noise in PRs]
 **Learning:** Running `npm install` in the sandbox can modify `package-lock.json` with platform-specific or version-specific changes (e.g., stripping `"peer": true`), which creates noise in the PR.
 **Action:** Always revert `package-lock.json` before submitting if no dependencies were actually changed in `package.json`.
+
+## 2024-05-23 - [Optimization] Hoisting Invariants in Nested Loops
+**Learning:** Pre-calculating derived data (like indicators) outside of nested parameter optimization loops significantly reduces redundancy. Even if the inner loop complexity is O(N), reducing the constant factor (number of passes) matters when N is large.
+**Action:** Look for nested loops where the inner operation allocates or re-calculates data based on outer loop variables.

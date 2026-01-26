@@ -16,6 +16,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai'>('signal');
   const [calculatingHitRate, setCalculatingHitRate] = useState(false);
   const [preciseHitRate, setPreciseHitRate] = useState<{ hitRate: number, trades: number }>({ hitRate: 0, trades: 0 });
+  const [error, setError] = useState<string | null>(null);
   const { aiStatus, processAITrades } = useTradingStore();
 
   // 詳細な的中率を非同期で計算（長期データを使用）
@@ -23,6 +24,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     const calculateFullPerformance = async () => {
       if (!stock.symbol) return;
       setCalculatingHitRate(true);
+      setError(null);
       try {
         // APIを直接叩いて、過去2年分のデータを的中率計算用に取得
         const twoYearsAgo = new Date();
@@ -30,6 +32,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         const startDate = twoYearsAgo.toISOString().split('T')[0];
         
         const response = await fetch(`/api/market?type=history&symbol=${stock.symbol}&market=${stock.market}&startDate=${startDate}`);
+        if (!response.ok) {
+           throw new Error(`Failed to fetch history: ${response.statusText}`);
+        }
         const resultData = await response.json();
         
         if (resultData.data && resultData.data.length > 100) {
@@ -42,6 +47,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         }
       } catch (e) {
         console.error('Precise hit rate fetch failed:', e);
+        setError('的中率の計算に失敗しました');
       } finally {
         setCalculatingHitRate(false);
       }
@@ -169,17 +175,40 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               <div className={cn('text-lg font-black tabular-nums', aiPerformance.hitRate >= 50 ? 'text-white' : 'text-red-400')}>
                 {calculatingHitRate ? (
                   <span className="text-xs text-[#92adc9] animate-pulse">計算中...</span>
+                ) : error ? (
+                   <span className="text-xs text-red-400" title={error}>エラー</span>
                 ) : (
                   `${aiPerformance.hitRate}%`
                 )}
               </div>
-              {!calculatingHitRate && (
+              {!calculatingHitRate && !error && (
                 <div className="text-[8px] text-[#92adc9]/60">過去{aiPerformance.trades}回の試行</div>
               )}
             </div>
           </div>
 
           <div className="mt-6 space-y-3">
+            {/* 予測誤差表示 (AI予測の深化) */}
+            {signal.predictionError !== undefined && (
+              <div className="bg-black/20 p-2 rounded-lg border border-[#233648]/50">
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] font-bold text-[#92adc9] uppercase tracking-wider">予測誤差</div>
+                  <div className={cn(
+                    'text-xs font-bold tabular-nums',
+                    signal.predictionError <= 1.0 ? 'text-green-400' :  // 標準以下
+                    signal.predictionError <= 1.5 ? 'text-yellow-400' :  // 中程度
+                    'text-red-400'  // 高い誤差
+                  )}>
+                    {signal.predictionError.toFixed(2)}x
+                  </div>
+                </div>
+                <div className="text-[8px] text-[#92adc9]/60 mt-1">
+                  {signal.predictionError <= 1.0 ? '精度良好' :
+                   signal.predictionError <= 1.5 ? 'やや不確実' : '不確実性が高い'}
+                </div>
+              </div>
+            )}
+
             <div className="relative pt-4">
               <div className="absolute top-0 left-0 text-[10px] font-bold text-[#92adc9] uppercase tracking-widest">目標価格・リスク管理</div>
               <div className="flex items-center gap-2">

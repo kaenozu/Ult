@@ -70,9 +70,28 @@ export function optimizeParameters(data: OHLCV[], market: 'japan' | 'usa'): { rs
   let bestRsiPeriod = RSI_CONFIG.DEFAULT_PERIOD;
   let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
 
+  // Optimization: Pre-calculate closes and indicators to avoid redundant calculations in nested loops
+  const closes = data.map(d => d.close);
+  const rsiCache = new Map<number, number[]>();
+  const smaCache = new Map<number, number[]>();
+
+  for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
+    rsiCache.set(rsiP, calculateRSI(closes, rsiP));
+  }
+  for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
+    smaCache.set(smaP, calculateSMA(closes, smaP));
+  }
+
   for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
     for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
-      const result = internalCalculatePerformance(data, rsiP, smaP);
+      const result = internalCalculatePerformance(
+        data,
+        rsiP,
+        smaP,
+        closes,
+        rsiCache.get(rsiP),
+        smaCache.get(smaP)
+      );
       if (result.hitRate > bestAccuracy) {
         bestAccuracy = result.hitRate;
         bestRsiPeriod = rsiP;
@@ -83,13 +102,20 @@ export function optimizeParameters(data: OHLCV[], market: 'japan' | 'usa'): { rs
   return { rsiPeriod: bestRsiPeriod, smaPeriod: bestSmaPeriod, accuracy: bestAccuracy };
 }
 
-function internalCalculatePerformance(data: OHLCV[], rsiP: number, smaP: number) {
+function internalCalculatePerformance(
+  data: OHLCV[],
+  rsiP: number,
+  smaP: number,
+  preCalcCloses?: number[],
+  preCalcRsi?: number[],
+  preCalcSma?: number[]
+) {
   let wins = 0, dirHits = 0, total = 0;
   const warmup = 100;
   const step = 3;
-  const closes = data.map(d => d.close);
-  const rsi = calculateRSI(closes, rsiP);
-  const sma = calculateSMA(closes, smaP);
+  const closes = preCalcCloses || data.map(d => d.close);
+  const rsi = preCalcRsi || calculateRSI(closes, rsiP);
+  const sma = preCalcSma || calculateSMA(closes, smaP);
 
   for (let i = warmup; i < data.length - 10; i += step) {
     if (isNaN(rsi[i]) || isNaN(sma[i])) continue;

@@ -5,7 +5,7 @@
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { StockChart } from '@/app/components/StockChart';
-import { OHLCV } from '@/app/types';
+import { OHLCV, Signal } from '@/app/types';
 
 function generateMockOHLCV(startPrice: number, days: number): OHLCV[] {
   const data: OHLCV[] = [];
@@ -77,5 +77,216 @@ describe('StockChart', () => {
   it('does not render volume chart when showVolume is false', () => {
     render(<StockChart data={mockData} showVolume={false} />);
     expect(screen.queryByTestId('bar-chart')).not.toBeInTheDocument();
+  });
+});
+
+describe('StockChart - 予測円 (Forecast Cone)', () => {
+  const mockData = generateMockOHLCV(1000, 50);
+
+  it('renders forecast cone when BUY signal is provided', () => {
+    const buySignal: Signal = {
+      symbol: '7203',
+      type: 'BUY',
+      confidence: 80,
+      targetPrice: 1100,
+      stopLoss: 900,
+      reason: 'Strong uptrend detected',
+      predictedChange: 10,
+      predictionDate: '2026-01-25',
+      atr: 50,
+      predictionError: 1.2,
+      volumeResistance: []
+    };
+    render(<StockChart data={mockData} signal={buySignal} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('renders forecast cone when SELL signal is provided', () => {
+    const sellSignal: Signal = {
+      symbol: '7203',
+      type: 'SELL',
+      confidence: 70,
+      targetPrice: 900,
+      stopLoss: 1100,
+      reason: 'Downtrend expected',
+      predictedChange: -10,
+      predictionDate: '2026-01-25',
+      atr: 50,
+      predictionError: 1.0,
+      volumeResistance: []
+    };
+    render(<StockChart data={mockData} signal={sellSignal} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('renders forecast cone when HOLD signal is provided', () => {
+    const holdSignal: Signal = {
+      symbol: '7203',
+      type: 'HOLD',
+      confidence: 50,
+      targetPrice: 1000,
+      stopLoss: 1000,
+      reason: 'No clear direction',
+      predictedChange: 0,
+      predictionDate: '2026-01-25',
+      atr: 50,
+      predictionError: 0.9,
+      volumeResistance: []
+    };
+    render(<StockChart data={mockData} signal={holdSignal} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('includes prediction error in forecast calculation', () => {
+    const signalWithError: Signal = {
+      symbol: '7203',
+      type: 'BUY',
+      confidence: 75,
+      targetPrice: 1100,
+      stopLoss: 900,
+      reason: 'Uptrend with high uncertainty',
+      predictedChange: 10,
+      predictionDate: '2026-01-25',
+      atr: 50,
+      predictionError: 2.5, // High error
+      volumeResistance: []
+    };
+    render(<StockChart data={mockData} signal={signalWithError} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+});
+
+describe('StockChart - ボリュームプロファイル (Volume Profile)', () => {
+  const mockData = generateMockOHLCV(1000, 50);
+
+  it('renders volume profile when signal has volumeResistance data', () => {
+    const signalWithVolume: Signal = {
+      symbol: '7203',
+      type: 'BUY',
+      confidence: 80,
+      targetPrice: 1100,
+      stopLoss: 900,
+      reason: 'Strong support at 950',
+      predictedChange: 10,
+      predictionDate: '2026-01-25',
+      volumeResistance: [
+        { price: 950, strength: 0.9 },
+        { price: 1050, strength: 0.7 }
+      ]
+    };
+    render(<StockChart data={mockData} signal={signalWithVolume} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('handles empty volumeResistance array', () => {
+    const signalWithNoVolume: Signal = {
+      symbol: '7203',
+      type: 'HOLD',
+      confidence: 50,
+      targetPrice: 1000,
+      stopLoss: 1000,
+      reason: 'Neutral',
+      predictedChange: 0,
+      predictionDate: '2026-01-25',
+      volumeResistance: []
+    };
+    render(<StockChart data={mockData} signal={signalWithNoVolume} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+});
+
+describe('StockChart - 市場指数 (Market Index)', () => {
+  const mockStockData = generateMockOHLCV(1000, 50);
+  const mockIndexData = generateMockOHLCV(25000, 50);
+
+  it('renders normalized index data when indexData is provided', () => {
+    render(<StockChart data={mockStockData} indexData={mockIndexData} market="japan" />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('handles empty indexData', () => {
+    render(<StockChart data={mockStockData} indexData={[]} market="japan" />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('handles insufficient indexData', () => {
+    const insufficientIndex = generateMockOHLCV(25000, 5);
+    render(<StockChart data={mockStockData} indexData={insufficientIndex} market="japan" />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+});
+
+describe('StockChart - インジケーター (Indicators)', () => {
+  const mockData = generateMockOHLCV(1000, 50);
+
+  it('renders SMA indicator when showSMA is true', () => {
+    render(<StockChart data={mockData} showSMA={true} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('does not render SMA indicator when showSMA is false', () => {
+    render(<StockChart data={mockData} showSMA={false} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('renders Bollinger Bands when showBollinger is true', () => {
+    render(<StockChart data={mockData} showBollinger={true} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('renders both SMA and Bollinger Bands', () => {
+    render(<StockChart data={mockData} showSMA={true} showBollinger={true} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+});
+
+describe('StockChart - 市場タイプ (Market Types)', () => {
+  const mockData = generateMockOHLCV(1000, 50);
+
+  it('renders correctly for Japan market', () => {
+    render(<StockChart data={mockData} market="japan" />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('renders correctly for USA market', () => {
+    render(<StockChart data={mockData} market="usa" />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+});
+
+describe('StockChart - エッジケース (Edge Cases)', () => {
+  const mockData = generateMockOHLCV(1000, 50);
+
+  it('handles empty data array', () => {
+    render(<StockChart data={[]} />);
+    // Empty data renders without crashing but may not show chart
+    expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument();
+  });
+
+  it('handles single data point', () => {
+    const singlePoint = [generateMockOHLCV(1000, 1)[0]];
+    render(<StockChart data={singlePoint} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('handles minimal data for forecast', () => {
+    const minimalData = generateMockOHLCV(1000, 20);
+    const signal: Signal = {
+      symbol: 'TEST',
+      type: 'BUY',
+      confidence: 60,
+      targetPrice: 1100,
+      stopLoss: 900,
+      reason: 'Test',
+      predictedChange: 10,
+      predictionDate: '2026-01-25'
+    };
+    render(<StockChart data={minimalData} signal={signal} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+  });
+
+  it('handles custom height', () => {
+    render(<StockChart data={mockData} height={600} />);
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 });

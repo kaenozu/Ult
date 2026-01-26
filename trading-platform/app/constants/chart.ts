@@ -59,8 +59,12 @@ export const CANDLESTICK = {
   BULL_COLOR: 'rgba(16, 185, 129, 0.5)',
   /** 陰線の色 */
   BEAR_COLOR: 'rgba(239, 68, 68, 0.5)',
+  /** メイン価格線の色（控えめなシアン） */
+  MAIN_LINE_COLOR: '#67e8f9', // cyan-300（より薄く控えめ）
   /** 線の太さ */
   LINE_WIDTH: 1,
+  /** メイン価格線の太さ */
+  MAIN_LINE_WIDTH: 2,
   /** ホバー時のポイントサイズ */
   HOVER_RADIUS: 4,
 } as const;
@@ -71,8 +75,8 @@ export const SMA = {
   SHORT_PERIOD: 20,
   /** 色 */
   COLOR: '#fbbf24',
-  /** 線の太さ */
-  LINE_WIDTH: 1.5,
+  /** 線の太さ（見やすさ向上） */
+  LINE_WIDTH: 2.5,
 } as const;
 
 // RSIサブチャートの設定
@@ -87,8 +91,8 @@ export const RSI = {
 
 // グリッドと軸の設定
 export const CHART_GRID = {
-  /** メイングリッドの色 */
-  MAIN_COLOR: 'rgba(35, 54, 72, 0.3)',
+  /** メイングリッドの色（見やすさ向上で透明度を上げる） */
+  MAIN_COLOR: 'rgba(35, 54, 72, 0.5)',
   /** ホバー時のグリッド色 */
   HOVER_COLOR: 'rgba(59, 130, 246, 0.8)',
   /** 未来予測エリアのグリッド色 */
@@ -97,6 +101,8 @@ export const CHART_GRID = {
   CURRENT_PRICE_LINE_WIDTH: 3,
   /** ホバー線の太さ */
   HOVER_LINE_WIDTH: 2,
+  /** ラベルのフォントサイズ */
+  LABEL_FONT_SIZE: 12,
 } as const;
 
 // チャート全般の設定
