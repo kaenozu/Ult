@@ -33,10 +33,10 @@ export const FORECAST_CONE = {
   STEPS: 5,
   /** 過去データの参照日数 */
   LOOKBACK_DAYS: 250,
-  /** 不確実性の計算に使用するATRの倍率 */
-  ATR_MULTIPLIER: 0.5,
+  /** 不確実性の計算に使用するATRの倍率（予測として意味のある幅） */
+  ATR_MULTIPLIER: 1.0,
   /** 信頼度による不確実性の調整係数 */
-  CONFIDENCE_FACTOR_BASE: 0.8,
+  CONFIDENCE_FACTOR_BASE: 1.0,
 } as const;
 
 // ゴースト予測（過去の予測を表示）の設定
