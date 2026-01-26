@@ -141,13 +141,13 @@ export const getStocksBySector = (sector: string): Stock[] => {
 
 // --- Real Data Access Methods ---
 
-export async function fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', currentPrice?: number): Promise<OHLCV[]> {
-  const result = await marketClient.fetchOHLCV(symbol, market, currentPrice);
+export async function fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', currentPrice?: number, signal?: AbortSignal): Promise<OHLCV[]> {
+  const result = await marketClient.fetchOHLCV(symbol, market, currentPrice, signal);
   return result.data || [];
 }
 
-export async function fetchSignal(stock: Stock): Promise<Signal | null> {
-  const result = await marketClient.fetchSignal(stock);
+export async function fetchSignal(stock: Stock, signal?: AbortSignal): Promise<Signal | null> {
+  const result = await marketClient.fetchSignal(stock, signal);
   return result.data;
 }
 
