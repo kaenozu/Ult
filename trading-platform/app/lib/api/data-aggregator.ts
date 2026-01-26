@@ -27,7 +27,8 @@ interface MarketResponse<T> {
 
 class MarketDataClient {
   private cache: Map<string, { data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData; timestamp: number }> = new Map();
-  private cacheDuration: number = 5 * 60 * 1000; 
+  private cacheDuration: number = 5 * 60 * 1000;
+  private pendingRequests: Map<string, Promise<any>> = new Map();
 
   private async fetchWithRetry<T>(
     url: string, 
@@ -70,49 +71,73 @@ class MarketDataClient {
   /**
    * Fetch Historical Data with Smart Persistence (IndexedDB + Delta fetching)
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}`;
 
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
     if (cached) return { success: true, data: cached, source: 'cache' };
 
+    // Request Deduplication
+    if (this.pendingRequests.has(cacheKey)) {
+      try {
+        const data = await this.pendingRequests.get(cacheKey) as OHLCV[];
+        return { success: true, data, source: 'aggregated' }; // 'aggregated' to indicate shared request
+      } catch (err) {
+        // Fallback to error handling below if shared promise fails
+      }
+    }
+
     let source: 'api' | 'idb' | 'cache' | 'error' = 'error';
 
-    try {
-      // 1. Try to get data from local DB
-      const localData = await idbClient.getData(symbol);
-      let finalData: OHLCV[] = localData;
-      source = 'idb';
+    const fetchPromise = (async () => {
+      try {
+        // 1. Try to get data from local DB
+        const localData = await idbClient.getData(symbol);
+        let finalData: OHLCV[] = localData;
+        source = 'idb';
 
-      const now = new Date();
-      // Use local noon to avoid timezone/market-close issues for "needs update" check
-      const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
+        const now = new Date();
+        // Use local noon to avoid timezone/market-close issues for "needs update" check
+        const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
 
-      // Update if no data, or if latest data is older than 24 hours
-      const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
+        // Update if no data, or if latest data is older than 24 hours
+        const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
 
-      if (needsUpdate) {
-        let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
-        if (lastDataDate) {
-          const startDate = new Date(lastDataDate);
-          startDate.setDate(startDate.getDate() + 1);
-          fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
+        if (needsUpdate) {
+          let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
+          if (lastDataDate) {
+            const startDate = new Date(lastDataDate);
+            startDate.setDate(startDate.getDate() + 1);
+            fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
+          }
+
+          const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
+
+          if (newData && newData.length > 0) {
+            finalData = await idbClient.mergeAndSave(symbol, newData);
+            source = 'api';
+          } else if (!lastDataDate) {
+            throw new Error('No historical data available');
+          }
         }
 
-        const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl);
-
-        if (newData && newData.length > 0) {
-          finalData = await idbClient.mergeAndSave(symbol, newData);
-          source = 'api';
-        } else if (!lastDataDate) {
-          throw new Error('No historical data available');
-        }
+        const interpolatedData = this.interpolateOHLCV(finalData);
+        this.setCache(cacheKey, interpolatedData);
+        return interpolatedData;
+      } finally {
+        this.pendingRequests.delete(cacheKey);
       }
+    })();
 
-      const interpolatedData = this.interpolateOHLCV(finalData);
-      this.setCache(cacheKey, interpolatedData);
-      return { success: true, data: interpolatedData, source };
+    this.pendingRequests.set(cacheKey, fetchPromise);
+
+    try {
+      const data = await fetchPromise;
+      return { success: true, data, source };
     } catch (err: unknown) {
+      if (signal?.aborted) {
+        return { success: false, data: null, source: 'error', error: 'Aborted' };
+      }
       console.error(`Fetch OHLCV failed for ${symbol}:`, err);
       return createErrorResult(err, source, `fetchOHLCV(${symbol})`);
     }
@@ -172,42 +197,49 @@ class MarketDataClient {
     }
   }
 
-  async fetchMarketIndex(market: 'japan' | 'usa'): Promise<OHLCV[]> {
+  async fetchMarketIndex(market: 'japan' | 'usa', signal?: AbortSignal): Promise<OHLCV[]> {
     const symbol = market === 'japan' ? '^N225' : '^IXIC';
     try {
       // 内部のfetchOHLCVが投げるエラーをここで完全にキャッチする
-      const result = await this.fetchOHLCV(symbol, market).catch(() => ({ success: false, data: [] }));
+      const result = await this.fetchOHLCV(symbol, market, undefined, signal).catch(() => ({ success: false, data: [] }));
       console.log(`[Aggregator] Market index ${symbol} data status: ${result.success ? 'Success' : 'Failed'}`);
       return (result.success && result.data) ? result.data : [];
     } catch (err) {
+      if (signal?.aborted) return [];
       console.warn(`[Aggregator] Silent failure fetching market index ${symbol}:`, err);
       return [];
     }
   }
 
-  async fetchSignal(stock: Stock): Promise<FetchResult<Signal>> {
+  async fetchSignal(stock: Stock, signal?: AbortSignal): Promise<FetchResult<Signal>> {
     let result: FetchResult<OHLCV[]> | null = null;
     try {
-      result = await this.fetchOHLCV(stock.symbol, stock.market);
+      result = await this.fetchOHLCV(stock.symbol, stock.market, undefined, signal);
 
       if (!result.success || !result.data || result.data.length < 20) {
+        if (signal?.aborted) throw new Error('Aborted');
         throw new Error('Insufficient data for ML analysis');
       }
 
       // マクロデータの取得（相関分析用）- 失敗しても全体を止めないフェイルセーフ設計
       let indexData: OHLCV[] = [];
       try {
-        indexData = await this.fetchMarketIndex(stock.market);
+        indexData = await this.fetchMarketIndex(stock.market, signal);
       } catch (err) {
         console.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol} due to error:`, err);
       }
 
+      if (signal?.aborted) throw new Error('Aborted');
+
       const indicators = mlPredictionService.calculateIndicators(result.data);
       const prediction = mlPredictionService.predict(stock, result.data, indicators);
-      const signal = mlPredictionService.generateSignal(stock, result.data, prediction, indicators, indexData);
+      const signalData = mlPredictionService.generateSignal(stock, result.data, prediction, indicators, indexData);
 
-      return { success: true, data: signal, source: result.source };
+      return { success: true, data: signalData, source: result.source };
     } catch (err: unknown) {
+      if (signal?.aborted) {
+        return { success: false, data: null, source: result?.source ?? 'error', error: 'Aborted' };
+      }
       console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
       return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
     }
