@@ -70,7 +70,7 @@ class MarketDataClient {
   /**
    * Fetch Historical Data with Smart Persistence (IndexedDB + Delta fetching)
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number): Promise<FetchResult<OHLCV[]>> {
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}`;
 
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
@@ -99,7 +99,7 @@ class MarketDataClient {
           fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
         }
 
-        const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl);
+        const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
 
         if (newData && newData.length > 0) {
           finalData = await idbClient.mergeAndSave(symbol, newData);
@@ -113,6 +113,10 @@ class MarketDataClient {
       this.setCache(cacheKey, interpolatedData);
       return { success: true, data: interpolatedData, source };
     } catch (err: unknown) {
+      if (signal?.aborted) {
+        // Silent return on abort
+        return { success: false, data: null, source: 'error', error: 'Aborted' };
+      }
       console.error(`Fetch OHLCV failed for ${symbol}:`, err);
       return createErrorResult(err, source, `fetchOHLCV(${symbol})`);
     }
@@ -172,42 +176,49 @@ class MarketDataClient {
     }
   }
 
-  async fetchMarketIndex(market: 'japan' | 'usa'): Promise<OHLCV[]> {
+  async fetchMarketIndex(market: 'japan' | 'usa', signal?: AbortSignal): Promise<OHLCV[]> {
     const symbol = market === 'japan' ? '^N225' : '^IXIC';
     try {
       // 内部のfetchOHLCVが投げるエラーをここで完全にキャッチする
-      const result = await this.fetchOHLCV(symbol, market).catch(() => ({ success: false, data: [] }));
+      const result = await this.fetchOHLCV(symbol, market, undefined, signal).catch(() => ({ success: false, data: [] }));
       console.log(`[Aggregator] Market index ${symbol} data status: ${result.success ? 'Success' : 'Failed'}`);
       return (result.success && result.data) ? result.data : [];
     } catch (err) {
+      if (signal?.aborted) return [];
       console.warn(`[Aggregator] Silent failure fetching market index ${symbol}:`, err);
       return [];
     }
   }
 
-  async fetchSignal(stock: Stock): Promise<FetchResult<Signal>> {
+  async fetchSignal(stock: Stock, signal?: AbortSignal): Promise<FetchResult<Signal>> {
     let result: FetchResult<OHLCV[]> | null = null;
     try {
-      result = await this.fetchOHLCV(stock.symbol, stock.market);
+      result = await this.fetchOHLCV(stock.symbol, stock.market, undefined, signal);
 
       if (!result.success || !result.data || result.data.length < 20) {
+        if (signal?.aborted) throw new Error('Aborted');
         throw new Error('Insufficient data for ML analysis');
       }
 
       // マクロデータの取得（相関分析用）- 失敗しても全体を止めないフェイルセーフ設計
       let indexData: OHLCV[] = [];
       try {
-        indexData = await this.fetchMarketIndex(stock.market);
+        indexData = await this.fetchMarketIndex(stock.market, signal);
       } catch (err) {
         console.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol} due to error:`, err);
       }
 
+      if (signal?.aborted) throw new Error('Aborted');
+
       const indicators = mlPredictionService.calculateIndicators(result.data);
       const prediction = mlPredictionService.predict(stock, result.data, indicators);
-      const signal = mlPredictionService.generateSignal(stock, result.data, prediction, indicators, indexData);
+      const signalData = mlPredictionService.generateSignal(stock, result.data, prediction, indicators, indexData);
 
-      return { success: true, data: signal, source: result.source };
+      return { success: true, data: signalData, source: result.source };
     } catch (err: unknown) {
+      if (signal?.aborted) {
+        return { success: false, data: null, source: result?.source ?? 'error', error: 'Aborted' };
+      }
       console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
       return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
     }
