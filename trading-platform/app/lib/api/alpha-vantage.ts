@@ -17,7 +17,6 @@
 import type {
   AlphaVantageTimeSeriesDaily,
   AlphaVantageTimeSeriesIntraday,
-  AlphaVantageGlobalQuote,
   AlphaVantageRSI,
   AlphaVantageSMA,
   AlphaVantageEMA,
@@ -198,41 +197,50 @@ export class AlphaVantageClient {
     }
 
     const url = `${this.baseUrl}?${params}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!response.ok) {
-      throw new NetworkError(
-        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
-      );
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json() as AlphaVantageTimeSeriesIntraday | AlphaVantageError;
+
+      validateAlphaVantageResponse(data);
+
+      // Type-safe data extraction
+      const key = `Time Series (${interval})`;
+      const timeSeries = extractTimeSeriesData(data as Record<string, unknown>, key);
+      if (!timeSeries) {
+        throw new Error('No time series data returned');
+      }
+
+      const parsed: OHLCV[] = Object.entries(timeSeries)
+        .map(([timestamp, values]) => ({
+          timestamp,
+          open: parseFloat(values['1. open']),
+          high: parseFloat(values['2. high']),
+          low: parseFloat(values['3. low']),
+          close: parseFloat(values['4. close']),
+          volume: parseInt(values['5. volume']),
+        }))
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+      return {
+        symbol,
+        interval,
+        data: parsed,
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-
-    const data = await response.json() as AlphaVantageTimeSeriesIntraday | AlphaVantageError;
-
-    validateAlphaVantageResponse(data);
-
-    // Type-safe data extraction
-    const key = `Time Series (${interval})`;
-    const timeSeries = extractTimeSeriesData(data as Record<string, unknown>, key);
-    if (!timeSeries) {
-      throw new Error('No time series data returned');
-    }
-
-    const parsed: OHLCV[] = Object.entries(timeSeries)
-      .map(([timestamp, values]) => ({
-        timestamp,
-        open: parseFloat(values['1. open']),
-        high: parseFloat(values['2. high']),
-        low: parseFloat(values['3. low']),
-        close: parseFloat(values['4. close']),
-        volume: parseInt(values['5. volume']),
-      }))
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-    return {
-      symbol,
-      interval,
-      data: parsed,
-    };
   }
 
   /**
@@ -253,41 +261,50 @@ export class AlphaVantageClient {
     });
 
     const url = `${this.baseUrl}?${params}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!response.ok) {
-      throw new NetworkError(
-        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
-      );
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json() as AlphaVantageRSI | AlphaVantageError;
+
+      validateAlphaVantageResponse(data);
+
+      // Type-safe data extraction
+      const rsiData = extractTechnicalIndicatorData(data, 'Technical Analysis: RSI');
+      if (!rsiData) {
+        throw new Error('No RSI data returned');
+      }
+
+      const parsed = Object.entries(rsiData)
+        .map(([timestamp, values]) => ({
+          timestamp,
+          rsi: parseFloat(values['RSI']),
+        }))
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+      return {
+        name: 'RSI',
+        data: parsed,
+        meta: {
+          symbol,
+          indicator: 'RSI',
+          interval: 'daily',
+          timePeriod,
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-
-    const data = await response.json() as AlphaVantageRSI | AlphaVantageError;
-
-    validateAlphaVantageResponse(data);
-
-    // Type-safe data extraction
-    const rsiData = extractTechnicalIndicatorData(data, 'Technical Analysis: RSI');
-    if (!rsiData) {
-      throw new Error('No RSI data returned');
-    }
-
-    const parsed = Object.entries(rsiData)
-      .map(([timestamp, values]) => ({
-        timestamp,
-        rsi: parseFloat(values['RSI']),
-      }))
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-    return {
-      name: 'RSI',
-      data: parsed,
-      meta: {
-        symbol,
-        indicator: 'RSI',
-        interval: 'daily',
-        timePeriod,
-      },
-    };
   }
 
   /**
@@ -308,41 +325,50 @@ export class AlphaVantageClient {
     });
 
     const url = `${this.baseUrl}?${params}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!response.ok) {
-      throw new NetworkError(
-        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
-      );
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json() as AlphaVantageSMA | AlphaVantageError;
+
+      validateAlphaVantageResponse(data);
+
+      // Type-safe data extraction
+      const smaData = extractTechnicalIndicatorData(data, 'Technical Analysis: SMA');
+      if (!smaData) {
+        throw new Error('No SMA data returned');
+      }
+
+      const parsed = Object.entries(smaData)
+        .map(([timestamp, values]) => ({
+          timestamp,
+          sma: parseFloat(values['SMA']),
+        }))
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+      return {
+        name: 'SMA',
+        data: parsed,
+        meta: {
+          symbol,
+          indicator: 'SMA',
+          interval: 'daily',
+          timePeriod,
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-
-    const data = await response.json() as AlphaVantageSMA | AlphaVantageError;
-
-    validateAlphaVantageResponse(data);
-
-    // Type-safe data extraction
-    const smaData = extractTechnicalIndicatorData(data, 'Technical Analysis: SMA');
-    if (!smaData) {
-      throw new Error('No SMA data returned');
-    }
-
-    const parsed = Object.entries(smaData)
-      .map(([timestamp, values]) => ({
-        timestamp,
-        sma: parseFloat(values['SMA']),
-      }))
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-    return {
-      name: 'SMA',
-      data: parsed,
-      meta: {
-        symbol,
-        indicator: 'SMA',
-        interval: 'daily',
-        timePeriod,
-      },
-    };
   }
 
   /**
@@ -363,41 +389,50 @@ export class AlphaVantageClient {
     });
 
     const url = `${this.baseUrl}?${params}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!response.ok) {
-      throw new NetworkError(
-        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
-      );
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json() as AlphaVantageEMA | AlphaVantageError;
+
+      validateAlphaVantageResponse(data);
+
+      // Type-safe data extraction
+      const emaData = extractTechnicalIndicatorData(data, 'Technical Analysis: EMA');
+      if (!emaData) {
+        throw new Error('No EMA data returned');
+      }
+
+      const parsed = Object.entries(emaData)
+        .map(([timestamp, values]) => ({
+          timestamp,
+          ema: parseFloat(values['EMA']),
+        }))
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+      return {
+        name: 'EMA',
+        data: parsed,
+        meta: {
+          symbol,
+          indicator: 'EMA',
+          interval: 'daily',
+          timePeriod,
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-
-    const data = await response.json() as AlphaVantageEMA | AlphaVantageError;
-
-    validateAlphaVantageResponse(data);
-
-    // Type-safe data extraction
-    const emaData = extractTechnicalIndicatorData(data, 'Technical Analysis: EMA');
-    if (!emaData) {
-      throw new Error('No EMA data returned');
-    }
-
-    const parsed = Object.entries(emaData)
-      .map(([timestamp, values]) => ({
-        timestamp,
-        ema: parseFloat(values['EMA']),
-      }))
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-    return {
-      name: 'EMA',
-      data: parsed,
-      meta: {
-        symbol,
-        indicator: 'EMA',
-        interval: 'daily',
-        timePeriod,
-      },
-    };
   }
 
   /**
@@ -420,43 +455,52 @@ export class AlphaVantageClient {
     });
 
     const url = `${this.baseUrl}?${params}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!response.ok) {
-      throw new NetworkError(
-        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
-      );
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json() as AlphaVantageMACD | AlphaVantageError;
+
+      validateAlphaVantageResponse(data);
+
+      // Type-safe data extraction
+      const macdData = extractTechnicalIndicatorData(data, 'Technical Analysis: MACD');
+      if (!macdData) {
+        throw new Error('No MACD data returned');
+      }
+
+      const parsed = Object.entries(macdData)
+        .map(([timestamp, values]) => ({
+          timestamp,
+          macd: parseFloat(values['MACD']),
+          macd_Signal: parseFloat(values['MACD_Signal']),
+          macd_Hist: parseFloat(values['MACD_Hist']),
+        }))
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+      return {
+        name: 'MACD',
+        data: parsed,
+        meta: {
+          symbol,
+          indicator: 'MACD',
+          interval: 'daily',
+          timePeriod: `${fastperiod}-${slowperiod}-${signalperiod}`,
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-
-    const data = await response.json() as AlphaVantageMACD | AlphaVantageError;
-
-    validateAlphaVantageResponse(data);
-
-    // Type-safe data extraction
-    const macdData = extractTechnicalIndicatorData(data, 'Technical Analysis: MACD');
-    if (!macdData) {
-      throw new Error('No MACD data returned');
-    }
-
-    const parsed = Object.entries(macdData)
-      .map(([timestamp, values]) => ({
-        timestamp,
-        macd: parseFloat(values['MACD']),
-        macd_Signal: parseFloat(values['MACD_Signal']),
-        macd_Hist: parseFloat(values['MACD_Hist']),
-      }))
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-    return {
-      name: 'MACD',
-      data: parsed,
-      meta: {
-        symbol,
-        indicator: 'MACD',
-        interval: 'daily',
-        timePeriod: `${fastperiod}-${slowperiod}-${signalperiod}`,
-      },
-    };
   }
 
   /**
@@ -479,44 +523,53 @@ export class AlphaVantageClient {
     });
 
     const url = `${this.baseUrl}?${params}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!response.ok) {
-      throw new NetworkError(
-        `Alpha Vantage API Error: ${response.status} ${response.statusText}`
-      );
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json() as AlphaVantageBollingerBands | AlphaVantageError;
+
+      validateAlphaVantageResponse(data);
+
+      // Type-safe data extraction
+      const bbData = extractTechnicalIndicatorData(data, 'Technical Analysis: BBANDS');
+      if (!bbData) {
+        throw new Error('No Bollinger Bands data returned');
+      }
+
+      const parsed = Object.entries(bbData)
+        .map(([timestamp, values]) => ({
+          timestamp,
+          realMiddleBand: parseFloat(values['Real Middle Band']),
+          upperBand: parseFloat(values['Real Upper Band']),
+          lowerBand: parseFloat(values['Real Lower Band']),
+        }))
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+      return {
+        name: 'Bollinger Bands',
+        data: parsed,
+        meta: {
+          symbol,
+          indicator: 'Bollinger Bands',
+          interval: 'daily',
+          timePeriod,
+          nbdevup,
+        },
+      };
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-
-    const data = await response.json() as AlphaVantageBollingerBands | AlphaVantageError;
-
-    validateAlphaVantageResponse(data);
-
-    // Type-safe data extraction
-    const bbData = extractTechnicalIndicatorData(data, 'Technical Analysis: BBANDS');
-    if (!bbData) {
-      throw new Error('No Bollinger Bands data returned');
-    }
-
-    const parsed = Object.entries(bbData)
-      .map(([timestamp, values]) => ({
-        timestamp,
-        realMiddleBand: parseFloat(values['Real Middle Band']),
-        upperBand: parseFloat(values['Real Upper Band']),
-        lowerBand: parseFloat(values['Real Lower Band']),
-      }))
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-    return {
-      name: 'Bollinger Bands',
-      data: parsed,
-      meta: {
-        symbol,
-        indicator: 'Bollinger Bands',
-        interval: 'daily',
-        timePeriod,
-        nbdevup,
-      },
-    };
   }
 
   /**
@@ -534,33 +587,44 @@ export class AlphaVantageClient {
     });
 
     const url = `${this.baseUrl}?${params}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!response.ok) {
-      throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json() as { bestMatches?: AlphaVantageSymbolMatch[] } | AlphaVantageError;
+
+      validateAlphaVantageResponse(data);
+
+      // Type guard: ensure data is not an error response
+      const validData = isAlphaVantageError(data) ? undefined : data;
+      if (!validData?.bestMatches) {
+        return [];
+      }
+
+      return validData.bestMatches.map((match) => ({
+        symbol: match['1. symbol'],
+        name: match['2. name'],
+        type: match['3. type'],
+        region: match['4. region'],
+        marketOpen: match['5. marketOpen'],
+        marketClose: match['6. marketClose'],
+        timezone: match['7. timezone'],
+        currency: match['8. currency'],
+        matchScore: match['9. matchScore'],
+      }));
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-
-    const data = await response.json() as { bestMatches?: AlphaVantageSymbolMatch[] } | AlphaVantageError;
-
-    validateAlphaVantageResponse(data);
-
-    // Type guard: ensure data is not an error response
-    const validData = isAlphaVantageError(data) ? undefined : data;
-    if (!validData?.bestMatches) {
-      return [];
-    }
-
-    return validData.bestMatches.map((match) => ({
-      symbol: match['1. symbol'],
-      name: match['2. name'],
-      type: match['3. type'],
-      region: match['4. region'],
-      marketOpen: match['5. marketOpen'],
-      marketClose: match['6. marketClose'],
-      timezone: match['7. timezone'],
-      currency: match['8. currency'],
-      matchScore: match['9. matchScore'],
-    }));
   }
 
   /**
@@ -574,24 +638,35 @@ export class AlphaVantageClient {
     });
 
     const url = `${this.baseUrl}?${params}`;
-    const response = await fetch(url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!response.ok) {
-      throw new Error(`Alpha Vantage API Error: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new NetworkError(
+          `Alpha Vantage API Error: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json() as { 'Global Quote'?: Record<string, string> } | AlphaVantageError;
+
+      validateAlphaVantageResponse(data);
+
+      // Type guard: ensure data is not an error response
+      const validData = isAlphaVantageError(data) ? undefined : data;
+      const quote = validData?.['Global Quote'];
+      if (!quote) {
+        throw new Error('No quote data returned');
+      }
+
+      return quote;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
     }
-
-    const data = await response.json() as { 'Global Quote'?: Record<string, string> } | AlphaVantageError;
-
-    validateAlphaVantageResponse(data);
-
-    // Type guard: ensure data is not an error response
-    const validData = isAlphaVantageError(data) ? undefined : data;
-    const quote = validData?.['Global Quote'];
-    if (!quote) {
-      throw new Error('No quote data returned');
-    }
-
-    return quote;
   }
 }
 
