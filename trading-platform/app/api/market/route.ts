@@ -63,6 +63,14 @@ export async function GET(request: Request) {
     return validationError('Invalid symbol format', 'symbol');
   }
 
+  // Validate symbol length to prevent DoS
+  // Single symbol: max 20 chars
+  // Batch symbols (comma separated): max 1000 chars
+  const isBatch = symbol.includes(',');
+  if (symbol.length > (isBatch ? 1000 : 20)) {
+    return NextResponse.json({ error: 'Symbol too long' }, { status: 400 });
+  }
+
   // Validate type parameter
   if (type && !['history', 'quote'].includes(type)) {
     return validationError('Invalid type parameter', 'type');
