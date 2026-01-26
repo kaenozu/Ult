@@ -140,9 +140,12 @@ export class AlphaVantageClient {
 
       validateAlphaVantageResponse(data);
 
-      // Type guard: ensure data is not an error response
-      const validData = isAlphaVantageError(data) ? undefined : data;
-      const timeSeries = validData?.['Time Series (Daily)'] as Record<string, AlphaVantageTimeSeriesValue> | undefined;
+      // Type-safe data extraction using helper function
+      if (isAlphaVantageError(data)) {
+        throw new Error('API returned an error response');
+      }
+
+      const timeSeries = extractTimeSeriesData(data, 'Time Series (Daily)');
       if (!timeSeries) {
         throw new Error('No time series data returned');
       }
@@ -648,21 +651,48 @@ export function extractTechnicalIndicatorData<T extends AlphaVantageSMA | AlphaV
     return undefined;
   }
 
-  // Cast through unknown to avoid type incompatibility
-  const dataRecord = data as unknown as Record<string, unknown>;
-  const value = dataRecord[keyName];
-  return (value && typeof value === 'object') ? value as Record<string, AlphaVantageIndicatorValue> : undefined;
+  // Type-safe key lookup using Object.entries
+  for (const [key, value] of Object.entries(data)) {
+    if (key === keyName) {
+      if (typeof value === 'object' && value !== null) {
+        return value as Record<string, AlphaVantageIndicatorValue>;
+      }
+    }
+  }
+  return undefined;
 }
 
 /**
  * Type-safe time series data extractor for intraday/daily responses
+ * @param data - The API response data (must be a non-null object)
+ * @param keyName - The key to extract (e.g., "Time Series (Daily)")
+ * @returns The time series data or undefined if not found
  */
-export function extractTimeSeriesData<T extends { [key: string]: { '1. open': string; '2. high': string; '3. low': string; '4. close': string; '5. volume': string } }>(
-  data: Record<string, unknown>,
+export function extractTimeSeriesData(
+  data: Record<string, unknown> | AlphaVantageTimeSeriesDaily | AlphaVantageTimeSeriesIntraday,
   keyName: string
 ): Record<string, AlphaVantageTimeSeriesValue> | undefined {
-  const value = data[keyName];
-  return (value && typeof value === 'object') ? value as Record<string, AlphaVantageTimeSeriesValue> : undefined;
+  // Convert to Record<string, unknown> for consistent processing
+  const dataRecord: Record<string, unknown> = data as Record<string, unknown>;
+
+  // Type-safe key lookup with validation
+  for (const [key, value] of Object.entries(dataRecord)) {
+    if (key === keyName) {
+      if (typeof value === 'object' && value !== null) {
+        // Verify the structure of at least one entry before returning
+        const entries = Object.entries(value);
+        if (entries.length > 0) {
+          const [, sample] = entries[0];
+          if (typeof sample === 'object' && sample !== null &&
+              '1. open' in sample && '2. high' in sample &&
+              '3. low' in sample && '4. close' in sample && '5. volume' in sample) {
+            return value as Record<string, AlphaVantageTimeSeriesValue>;
+          }
+        }
+      }
+    }
+  }
+  return undefined;
 }
 
 // Singleton instance

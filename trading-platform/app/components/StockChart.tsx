@@ -136,7 +136,7 @@ export const StockChart = memo(function StockChart({
     targetArr[hoveredIdx] = stopArr[hoveredIdx] = currentPrice;
 
     const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    const confidenceFactor = (110 - pastSignal.confidence) / 25;
+    const confidenceFactor = (110 - pastSignal.confidence) / 100;
     const momentum = pastSignal.predictedChange / 100;
 
     for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
@@ -183,24 +183,19 @@ export const StockChart = memo(function StockChart({
     const stopArr = new Array(extendedData.labels.length).fill(NaN);
 
     const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    const confidenceFactor = ((110 - signal.confidence) / FORECAST_CONE.CONFIDENCE_FACTOR_BASE) * (signal.predictionError || 1.0);
-
-    let target = signal.targetPrice, stop = signal.stopLoss;
-    if (signal.type === 'HOLD') {
-      target = currentPrice + (stockATR * confidenceFactor);
-      stop = currentPrice - (stockATR * confidenceFactor);
-    } else {
-      const uncertainty = (stockATR * FORECAST_CONE.ATR_MULTIPLIER) * confidenceFactor;
-      target += (signal.type === 'BUY' ? 1 : -1) * uncertainty;
-      stop -= (signal.type === 'BUY' ? 1 : -1) * uncertainty;
-    }
+    const confidenceFactor = (110 - signal.confidence) / 100;
+    const momentum = signal.predictedChange / 100;
 
     targetArr[lastIdx] = stopArr[lastIdx] = currentPrice;
-    const steps = extendedData.labels.length - 1 - lastIdx;
+    const steps = FORECAST_CONE.STEPS;
     for (let i = 1; i <= steps; i++) {
-      const ratio = i / steps;
-      targetArr[lastIdx + i] = currentPrice + (target - currentPrice) * ratio;
-      stopArr[lastIdx + i] = currentPrice + (stop - currentPrice) * ratio;
+      if (lastIdx + i < extendedData.labels.length) {
+        const timeRatio = i / steps;
+        const centerPrice = currentPrice * (1 + (momentum * timeRatio));
+        const spread = (stockATR * timeRatio) * confidenceFactor;
+        targetArr[lastIdx + i] = centerPrice + spread;
+        stopArr[lastIdx + i] = centerPrice - spread;
+      }
     }
 
     const color = signal.type === 'BUY' ? '16, 185, 129' : signal.type === 'SELL' ? '239, 68, 68' : '146, 173, 201';
@@ -235,9 +230,9 @@ export const StockChart = memo(function StockChart({
       {
         label: market === 'japan' ? '日経平均 (相対)' : 'NASDAQ (相対)',
         data: normalizedIndexData,
-        borderColor: CHART_GRID.FUTURE_AREA_COLOR,
-        backgroundColor: 'rgba(148, 163, 184, 0.05)',
-        fill: true,
+        borderColor: '#60a5fa',  // 明るい青（ダークテーマ用）
+        backgroundColor: 'rgba(96, 165, 250, 0.05)',
+        fill: false,  // 塗りつぶしを無効化（線のみ表示）
         pointRadius: 0,
         borderWidth: 1,
         tension: CHART_CONFIG.TENSION,
@@ -246,9 +241,9 @@ export const StockChart = memo(function StockChart({
       {
         label: '現在価格',
         data: extendedData.prices,
-        borderColor: CANDLESTICK.BULL_COLOR.replace('0.5', '1').replace('rgba', '').replace(', 0.5)', '').replace('(', '#').replace(')', ''),
-        backgroundColor: CANDLESTICK.BULL_COLOR,
-        fill: true,
+        borderColor: '#10b981',  // 明るい緑（ダークテーマ用）
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        fill: false,  // 塗りつぶしを無効化（線のみ表示）
         tension: CHART_CONFIG.TENSION,
         pointRadius: 0,
         pointHoverRadius: CANDLESTICK.HOVER_RADIUS,
@@ -298,7 +293,18 @@ export const StockChart = memo(function StockChart({
     interaction: { mode: 'index', intersect: false },
     onHover: (_, elements) => setHoveredIndex(elements.length > 0 ? elements[0].index : null),
     plugins: {
-      legend: { display: false },
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: {
+          color: '#92adc9',
+          font: { size: 11 },
+          usePointStyle: true,
+          boxWidth: 8,
+          padding: 10,
+        }
+      },
       tooltip: { enabled: false },
       volumeProfile: {
         enabled: true,
@@ -323,6 +329,29 @@ export const StockChart = memo(function StockChart({
         }
       },
       y: {
+        // Y軸の範囲をデータ＋予報円に合わせて調整
+        min: (() => {
+          if (data.length === 0) return undefined;
+          const dataMin = Math.min(...data.map(d => d.low));
+          // 予報円の最小値も考慮
+          const forecastMin = Math.min(...[
+            ...(forecastDatasets.length > 0 ? forecastDatasets.flatMap(d => d.data).filter(v => !isNaN(v)) : []),
+            ...(ghostForecastDatasets.length > 0 ? ghostForecastDatasets.flatMap(d => d.data).filter(v => !isNaN(v)) : [])
+          ]);
+          const allMin = Math.min(dataMin, forecastMin);
+          return allMin * 0.99;
+        })(),
+        max: (() => {
+          if (data.length === 0) return undefined;
+          const dataMax = Math.max(...data.map(d => d.high));
+          // 予報円の最大値も考慮
+          const forecastMax = Math.max(...[
+            ...(forecastDatasets.length > 0 ? forecastDatasets.flatMap(d => d.data).filter(v => !isNaN(v)) : []),
+            ...(ghostForecastDatasets.length > 0 ? ghostForecastDatasets.flatMap(d => d.data).filter(v => !isNaN(v)) : [])
+          ]);
+          const allMax = Math.max(dataMax, forecastMax);
+          return allMax * 1.01;
+        })(),
         grid: { color: CHART_GRID.MAIN_COLOR },
         ticks: { color: '#92adc9', callback: (v) => formatCurrency(Number(v), market === 'japan' ? 'JPY' : 'USD') }
       }

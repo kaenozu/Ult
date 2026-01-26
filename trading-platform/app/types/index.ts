@@ -38,27 +38,27 @@ export function isIntradayResponse(
   data: unknown
 ): data is AlphaVantageTimeSeriesIntraday {
   if (typeof data !== 'object' || data === null) return false;
-  const d = data as Record<string, unknown>;
-  return 'Meta Data' in d && typeof d['Meta Data'] === 'object';
+  const d = data as { 'Meta Data'?: unknown };
+  return 'Meta Data' in d && typeof d['Meta Data'] === 'object' && d['Meta Data'] !== null;
 }
 
 /**
  * Extract time series data from intraday response
+ * Uses a type-safe approach to access dynamic keys
  */
 export function extractIntradayTimeSeries(
   data: AlphaVantageTimeSeriesIntraday,
   interval: string
 ): Record<string, { '1. open': string; '2. high': string; '3. low': string; '4. close': string; '5. volume': string }> | undefined {
-  const key = `Time Series (${interval})`;
-  // Cast through unknown to avoid type incompatibility
-  const dataRecord = data as unknown as Record<string, unknown>;
-  return dataRecord[key] as Record<string, {
-    '1. open': string;
-    '2. high': string;
-    '3. low': string;
-    '4. close': string;
-    '5. volume': string;
-  }> | undefined;
+  // Use Object.entries to find the matching key dynamically and type-safely
+  for (const [key, value] of Object.entries(data)) {
+    if (key === `Time Series (${interval})`) {
+      if (typeof value === 'object' && value !== null) {
+        return value as Record<string, { '1. open': string; '2. high': string; '3. low': string; '4. close': string; '5. volume': string }>;
+      }
+    }
+  }
+  return undefined;
 }
 
 // ============================================================================
@@ -434,7 +434,11 @@ export function isAlphaVantageError(data: unknown): data is AlphaVantageError {
   if (typeof data !== 'object' || data === null) {
     return false;
   }
-  const errorData = data as Record<string, unknown>;
+  const errorData = data as {
+    'Error Message'?: unknown;
+    'Note'?: unknown;
+    'Information'?: unknown;
+  };
   return (
     typeof errorData['Error Message'] === 'string' ||
     typeof errorData['Note'] === 'string' ||
