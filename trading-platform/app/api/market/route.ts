@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import YahooFinance from 'yahoo-finance2';
+import {
+  handleApiError,
+  validationError,
+} from '@/app/lib/error-handler';
 
 // Define explicit types for Yahoo Finance responses
 interface YahooChartResult {
@@ -25,7 +29,8 @@ interface YahooQuoteResult {
   regularMarketChangePercent: number;
   regularMarketVolume: number;
   marketState: string;
-  [key: string]: unknown;
+  // Use a more specific type for additional properties
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 const yf = new YahooFinance();
@@ -50,12 +55,12 @@ export async function GET(request: Request) {
 
   // Input validation and sanitization
   if (!symbol) {
-    return NextResponse.json({ error: 'Symbol is required' }, { status: 400 });
+    return validationError('Symbol is required', 'symbol');
   }
 
   // Validate symbol format (alphanumeric, dots, commas, and caret for indices)
   if (!/^[A-Z0-9.,^]+$/.test(symbol)) {
-    return NextResponse.json({ error: 'Invalid symbol format' }, { status: 400 });
+    return validationError('Invalid symbol format', 'symbol');
   }
 
   // Validate symbol length to prevent DoS
@@ -68,12 +73,12 @@ export async function GET(request: Request) {
 
   // Validate type parameter
   if (type && !['history', 'quote'].includes(type)) {
-    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 });
+    return validationError('Invalid type parameter', 'type');
   }
 
   // Validate market parameter
   if (market && !['japan', 'usa'].includes(market)) {
-    return NextResponse.json({ error: 'Invalid market parameter' }, { status: 400 });
+    return validationError('Invalid market parameter', 'market');
   }
 
   const yahooSymbol = formatSymbol(symbol, market || undefined);
@@ -112,14 +117,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json({ data: ohlcv });
       } catch (innerError: unknown) {
-        const errorMsg = innerError instanceof Error ? innerError.message : 'Unknown historical error';
-        console.error(`yf.chart failed for ${yahooSymbol}:`, errorMsg);
-        
-        return NextResponse.json({ 
-          error: 'Failed to fetch historical data', 
-          details: 'The market data provider is temporarily unavailable.',
-          debug: process.env.NODE_ENV !== 'production' ? errorMsg : undefined
-        }, { status: 502 });
+        return handleApiError(innerError, 'market/history', 502);
       }
     } 
     
@@ -130,8 +128,8 @@ export async function GET(request: Request) {
         try {
           const result = await yf.quote(symbols[0]) as unknown as YahooQuoteResult;
           if (!result) throw new Error('Symbol not found');
-          
-          return NextResponse.json({ 
+
+          return NextResponse.json({
             symbol: symbol,
             price: result.regularMarketPrice,
             change: result.regularMarketChange,
@@ -140,9 +138,7 @@ export async function GET(request: Request) {
             marketState: result.marketState
           });
         } catch (quoteError: unknown) {
-          const errorMsg = quoteError instanceof Error ? quoteError.message : 'Quote error';
-          console.error(`yf.quote failed for ${symbols[0]}:`, errorMsg);
-          return NextResponse.json({ error: 'Quote not found' }, { status: 404 });
+          return handleApiError(quoteError, 'market/quote', 404);
         }
       } else {
         try {
@@ -159,21 +155,14 @@ export async function GET(request: Request) {
             }));
           return NextResponse.json({ data });
         } catch (batchError: unknown) {
-          const errorMsg = batchError instanceof Error ? batchError.message : 'Batch error';
-          console.error('Batch quote failed:', errorMsg);
-          return NextResponse.json({ data: [], error: 'Batch fetch failed' }); 
+          return handleApiError(batchError, 'market/batch-quote', 502);
         }
       }
     }
 
-    return NextResponse.json({ error: 'Invalid type parameter. Use "history" or "quote".' }, { status: 400 });
+    return validationError('Invalid type parameter. Use "history" or "quote".', 'type');
 
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`Market API Root Error (${yahooSymbol}):`, errorMessage);
-    return NextResponse.json({ 
-      error: 'Failed to fetch market data',
-      details: 'An internal error occurred while processing your request.'
-    }, { status: 500 });
+    return handleApiError(error, 'market/api', 500);
   }
 }
