@@ -57,9 +57,9 @@ export function useStockData() {
       const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
 
       const [data, idxData, signalData] = await Promise.all([
-        fetchOHLCV(stock.symbol, stock.market, stock.price),
-        fetchOHLCV(indexSymbol, stock.market),
-        fetchSignal(stock)
+        fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal),
+        fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal),
+        fetchSignal(stock, controller.signal)
       ]);
 
       if (controller.signal.aborted || !isMountedRef.current) return;
@@ -75,7 +75,7 @@ export function useStockData() {
 
       // 4. Background sync for long-term data (keep independent)
       // This is for background calculations, so we don't await it
-      fetchOHLCV(stock.symbol, stock.market).catch(e => {
+      fetchOHLCV(stock.symbol, stock.market, undefined, controller.signal).catch(e => {
         if (isMountedRef.current && !controller.signal.aborted) {
           console.warn('Background sync failed:', e);
         }
