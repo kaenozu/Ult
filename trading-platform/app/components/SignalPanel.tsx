@@ -16,6 +16,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai'>('signal');
   const [calculatingHitRate, setCalculatingHitRate] = useState(false);
   const [preciseHitRate, setPreciseHitRate] = useState<{ hitRate: number, trades: number }>({ hitRate: 0, trades: 0 });
+  const [error, setError] = useState<string | null>(null);
   const { aiStatus, processAITrades } = useTradingStore();
 
   // 詳細な的中率を非同期で計算（長期データを使用）
@@ -23,6 +24,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     const calculateFullPerformance = async () => {
       if (!stock.symbol) return;
       setCalculatingHitRate(true);
+      setError(null);
       try {
         // APIを直接叩いて、過去2年分のデータを的中率計算用に取得
         const twoYearsAgo = new Date();
@@ -30,6 +32,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         const startDate = twoYearsAgo.toISOString().split('T')[0];
         
         const response = await fetch(`/api/market?type=history&symbol=${stock.symbol}&market=${stock.market}&startDate=${startDate}`);
+        if (!response.ok) {
+           throw new Error(`Failed to fetch history: ${response.statusText}`);
+        }
         const resultData = await response.json();
         
         if (resultData.data && resultData.data.length > 100) {
@@ -42,6 +47,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         }
       } catch (e) {
         console.error('Precise hit rate fetch failed:', e);
+        setError('的中率の計算に失敗しました');
       } finally {
         setCalculatingHitRate(false);
       }
@@ -169,11 +175,13 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               <div className={cn('text-lg font-black tabular-nums', aiPerformance.hitRate >= 50 ? 'text-white' : 'text-red-400')}>
                 {calculatingHitRate ? (
                   <span className="text-xs text-[#92adc9] animate-pulse">計算中...</span>
+                ) : error ? (
+                   <span className="text-xs text-red-400" title={error}>エラー</span>
                 ) : (
                   `${aiPerformance.hitRate}%`
                 )}
               </div>
-              {!calculatingHitRate && (
+              {!calculatingHitRate && !error && (
                 <div className="text-[8px] text-[#92adc9]/60">過去{aiPerformance.trades}回の試行</div>
               )}
             </div>
