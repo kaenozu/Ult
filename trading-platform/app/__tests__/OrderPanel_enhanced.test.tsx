@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { OrderPanel } from '../components/OrderPanel';
-import { useTradingStore } from '../store/tradingStore';
 import '@testing-library/jest-dom';
 
 // Use actual store but mock addPosition
