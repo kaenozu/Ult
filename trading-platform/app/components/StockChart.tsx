@@ -33,7 +33,7 @@ interface ChartContext {
 }
 
 // 需給の壁 (Volume Profile) Plugin
-const volumeProfilePlugin = {
+export const volumeProfilePlugin = {
   id: 'volumeProfile',
   afterDatasetsDraw: (chart: Chart, _args: unknown, options: VolumeProfilePluginOptions) => {
     if (!options.enabled || !options.data || options.data.length === 0) return;
