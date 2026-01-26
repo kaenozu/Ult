@@ -146,7 +146,7 @@ export const StockChart = memo(function StockChart({
     targetArr[hoveredIdx] = stopArr[hoveredIdx] = currentPrice;
 
     const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    const confidenceFactor = (110 - pastSignal.confidence) / 25;
+    const confidenceFactor = (110 - pastSignal.confidence) / 100;
     const momentum = pastSignal.predictedChange / 100;
 
     for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
@@ -214,11 +214,15 @@ export const StockChart = memo(function StockChart({
     }
 
     targetArr[lastIdx] = stopArr[lastIdx] = currentPrice;
-    const steps = extendedData.labels.length - 1 - lastIdx;
+    const steps = FORECAST_CONE.STEPS;
     for (let i = 1; i <= steps; i++) {
-      const ratio = i / steps;
-      targetArr[lastIdx + i] = currentPrice + (target - currentPrice) * ratio;
-      stopArr[lastIdx + i] = currentPrice + (stop - currentPrice) * ratio;
+      if (lastIdx + i < extendedData.labels.length) {
+        const timeRatio = i / steps;
+        const centerPrice = currentPrice * (1 + (momentum * timeRatio));
+        const spread = (stockATR * timeRatio) * confidenceFactor;
+        targetArr[lastIdx + i] = centerPrice + spread;
+        stopArr[lastIdx + i] = centerPrice - spread;
+      }
     }
 
     const color = signal.type === 'BUY' ? '16, 185, 129' : signal.type === 'SELL' ? '239, 68, 68' : '146, 173, 201';
@@ -253,9 +257,9 @@ export const StockChart = memo(function StockChart({
       {
         label: market === 'japan' ? '日経平均 (相対)' : 'NASDAQ (相対)',
         data: normalizedIndexData,
-        borderColor: CHART_GRID.FUTURE_AREA_COLOR,
-        backgroundColor: 'rgba(148, 163, 184, 0.05)',
-        fill: true,
+        borderColor: '#60a5fa',  // 明るい青（ダークテーマ用）
+        backgroundColor: 'rgba(96, 165, 250, 0.05)',
+        fill: false,  // 塗りつぶしを無効化（線のみ表示）
         pointRadius: 0,
         borderWidth: 1,
         tension: CHART_CONFIG.TENSION,
@@ -335,7 +339,18 @@ export const StockChart = memo(function StockChart({
     interaction: { mode: 'index', intersect: false },
     onHover: (_, elements) => setHoveredIndex(elements.length > 0 ? elements[0].index : null),
     plugins: {
-      legend: { display: false },
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: {
+          color: '#92adc9',
+          font: { size: 11 },
+          usePointStyle: true,
+          boxWidth: 8,
+          padding: 10,
+        }
+      },
       tooltip: { enabled: false },
       volumeProfile: {
         enabled: true,
