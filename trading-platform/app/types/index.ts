@@ -390,7 +390,7 @@ export class APIError extends Error {
     message: string,
     public readonly code: string,
     public readonly statusCode?: number,
-    public readonly details?: unknown
+    public readonly details?: Record<string, unknown> | unknown
   ) {
     super(message);
     this.name = 'APIError';
