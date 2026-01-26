@@ -27,7 +27,8 @@ interface MarketResponse<T> {
 
 class MarketDataClient {
   private cache: Map<string, { data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData; timestamp: number }> = new Map();
-  private cacheDuration: number = 5 * 60 * 1000; 
+  private cacheDuration: number = 5 * 60 * 1000;
+  private pendingRequests: Map<string, Promise<any>> = new Map();
 
   private async fetchWithRetry<T>(
     url: string, 
@@ -76,45 +77,65 @@ class MarketDataClient {
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
     if (cached) return { success: true, data: cached, source: 'cache' };
 
+    // Request Deduplication
+    if (this.pendingRequests.has(cacheKey)) {
+      try {
+        const data = await this.pendingRequests.get(cacheKey) as OHLCV[];
+        return { success: true, data, source: 'aggregated' }; // 'aggregated' to indicate shared request
+      } catch (err) {
+        // Fallback to error handling below if shared promise fails
+      }
+    }
+
     let source: 'api' | 'idb' | 'cache' | 'error' = 'error';
 
-    try {
-      // 1. Try to get data from local DB
-      const localData = await idbClient.getData(symbol);
-      let finalData: OHLCV[] = localData;
-      source = 'idb';
+    const fetchPromise = (async () => {
+      try {
+        // 1. Try to get data from local DB
+        const localData = await idbClient.getData(symbol);
+        let finalData: OHLCV[] = localData;
+        source = 'idb';
 
-      const now = new Date();
-      // Use local noon to avoid timezone/market-close issues for "needs update" check
-      const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
+        const now = new Date();
+        // Use local noon to avoid timezone/market-close issues for "needs update" check
+        const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
 
-      // Update if no data, or if latest data is older than 24 hours
-      const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
+        // Update if no data, or if latest data is older than 24 hours
+        const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
 
-      if (needsUpdate) {
-        let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
-        if (lastDataDate) {
-          const startDate = new Date(lastDataDate);
-          startDate.setDate(startDate.getDate() + 1);
-          fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
+        if (needsUpdate) {
+          let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
+          if (lastDataDate) {
+            const startDate = new Date(lastDataDate);
+            startDate.setDate(startDate.getDate() + 1);
+            fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
+          }
+
+          const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
+
+          if (newData && newData.length > 0) {
+            finalData = await idbClient.mergeAndSave(symbol, newData);
+            source = 'api';
+          } else if (!lastDataDate) {
+            throw new Error('No historical data available');
+          }
         }
 
-        const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
-
-        if (newData && newData.length > 0) {
-          finalData = await idbClient.mergeAndSave(symbol, newData);
-          source = 'api';
-        } else if (!lastDataDate) {
-          throw new Error('No historical data available');
-        }
+        const interpolatedData = this.interpolateOHLCV(finalData);
+        this.setCache(cacheKey, interpolatedData);
+        return interpolatedData;
+      } finally {
+        this.pendingRequests.delete(cacheKey);
       }
+    })();
 
-      const interpolatedData = this.interpolateOHLCV(finalData);
-      this.setCache(cacheKey, interpolatedData);
-      return { success: true, data: interpolatedData, source };
+    this.pendingRequests.set(cacheKey, fetchPromise);
+
+    try {
+      const data = await fetchPromise;
+      return { success: true, data, source };
     } catch (err: unknown) {
       if (signal?.aborted) {
-        // Silent return on abort
         return { success: false, data: null, source: 'error', error: 'Aborted' };
       }
       console.error(`Fetch OHLCV failed for ${symbol}:`, err);
