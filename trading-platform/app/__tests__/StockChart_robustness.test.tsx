@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { StockChart } from '../components/StockChart';
+import { OHLCV } from '../types';
 import '@testing-library/jest-dom';
 
 // Mock Chart.js to avoid canvas errors in Node environment
@@ -10,7 +11,7 @@ jest.mock('react-chartjs-2', () => ({
 }));
 
 describe('StockChart Edge Case Tests', () => {
-  const emptyData: any[] = [];
+  const emptyData: OHLCV[] = [];
   const normalData = [
     { date: '2026-01-01', open: 100, high: 110, low: 90, close: 105, volume: 1000 }
   ];
