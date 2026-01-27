@@ -83,14 +83,18 @@ export class MarketDataClient {
       const quotes: QuoteData[] = [];
       
       for (const item of data.slice(-50).reverse()) {
-        const latest = item.data[item.data.length - 1];
+        const latest = Array.isArray(item) ? item[item.length - 1] : item;
+        const close = parseFloat(latest['4. close'] ?? latest.close);
+        const open = parseFloat(latest['1. open'] ?? latest.open);
+        const volume = parseInt(latest['5. volume'] ?? latest.volume ?? '0');
+
         quotes.push({
           symbol,
-          price: latest['4. close'],
-          change: parseFloat(latest['4. close']) - parseFloat(latest['1. open']),
-          changePercent: ((parseFloat(latest['4. close']) - parseFloat(latest['1. open'])) / parseFloat(latest['1. open']) * 100,
-          volume: parseInt(latest['5. volume']),
-          marketState: latest['4. close'] >= latest['1. open'] ? 'up' : latest['4. close'] < latest['3. low'] ? 'down' : 'sideways',
+          price: close,
+          change: close - open,
+          changePercent: ((close - open) / open) * 100,
+          volume,
+          marketState: close >= open ? 'up' : close < parseFloat(latest['3. low'] ?? latest.low) ? 'down' : 'sideways',
         });
       }
 
