@@ -42,6 +42,27 @@ export class AlertService {
     return AlertService.instance;
   }
 
+  /**
+   * Resets the service state (alerts and settings) to defaults.
+   * Useful for testing cleanup.
+   */
+  public reset(): void {
+    this.alerts = [];
+    this.settings = {
+      enabled: true,
+      types: {
+        MARKET: true,
+        STOCK: true,
+        COMPOSITE: true,
+      },
+      severities: {
+        HIGH: true,
+        MEDIUM: true,
+        LOW: true,
+      },
+    };
+  }
+
   generateId(): string {
     return `alert-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -96,8 +117,8 @@ export class AlertService {
       trend === 'UP'
         ? `${symbol}が+${changePercent.toFixed(2)}%急騰。上昇トレンド継続中。`
         : trend === 'DOWN'
-        ? `${symbol}が-${Math.abs(changePercent).toFixed(2)}%急落。下降トレンド継続中。`
-        : `${symbol}は横ばい状態。${changePercent.toFixed(2)}%変動。`;
+          ? `${symbol}が-${Math.abs(changePercent).toFixed(2)}%急落。下降トレンド継続中。`
+          : `${symbol}は横ばい状態。${changePercent.toFixed(2)}%変動。`;
 
     const alert: Alert = {
       id: this.generateId(),
@@ -214,14 +235,14 @@ export class AlertService {
 
     const correlationText =
       Math.abs(correlation) >= 0.7 ? '強い相関' :
-      Math.abs(correlation) >= 0.5 ? '中程度の相関' : '弱い相関';
+        Math.abs(correlation) >= 0.5 ? '中程度の相関' : '弱い相関';
 
     const message =
       marketTrend === 'UP' && stockSignal === 'BUY'
         ? `市場上昇トレンド（${correlationText}）とBUYシグナルが一致。強気複合シグナル発生。`
         : marketTrend === 'DOWN' && stockSignal === 'SELL'
-        ? `市場下降トレンド（${correlationText}）とSELLシグナルが一致。弱気複合シグナル発生。`
-        : `市場${marketTrend}トレンドと${stockSignal}シグナルが交差。`;
+          ? `市場下降トレンド（${correlationText}）とSELLシグナルが一致。弱気複合シグナル発生。`
+          : `市場${marketTrend}トレンドと${stockSignal}シグナルが交差。`;
 
     const alert: Alert = {
       id: this.generateId(),
