@@ -197,7 +197,22 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
   const backtestResult: BacktestResult = useMemo(() => {
     if (!ohlcv || ohlcv.length === 0) {
-      return { totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalProfitPercent: 0, maxDrawdown: 0, profitFactor: 0, trades: [] };
+      return {
+        symbol: stock.symbol,
+        totalTrades: 0,
+        winningTrades: 0,
+        losingTrades: 0,
+        winRate: 0,
+        totalReturn: 0,
+        avgProfit: 0,
+        avgLoss: 0,
+        profitFactor: 0,
+        maxDrawdown: 0,
+        sharpeRatio: 0,
+        trades: [],
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString()
+      };
     }
     return runBacktest(stock.symbol, ohlcv, stock.market);
   }, [stock.symbol, ohlcv, stock.market]);
@@ -319,8 +334,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             </div>
             <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
               <div className="text-[10px] text-[#92adc9]">合計損益</div>
-              <div className={cn('text-lg font-bold', backtestResult.totalProfitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
-                {backtestResult.totalProfitPercent > 0 ? '+' : ''}{backtestResult.totalProfitPercent}%
+              <div className={cn('text-lg font-bold', backtestResult.totalReturn >= 0 ? 'text-green-500' : 'text-red-500')}>
+                {backtestResult.totalReturn > 0 ? '+' : ''}{backtestResult.totalReturn}%
               </div>
             </div>
           </div>

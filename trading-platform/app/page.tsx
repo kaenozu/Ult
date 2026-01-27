@@ -13,10 +13,8 @@ import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
 
 export default function Workstation() {
-  const portfolio = usePortfolioStore(state => state.portfolio);
-  const closePosition = usePortfolioStore(state => state.closePosition);
-  const watchlist = useWatchlistStore(state => state.watchlist);
-  const journal = usePortfolioStore(state => state.journal);
+  const { portfolio, closePosition, journal } = usePortfolioStore();
+  const { watchlist } = useWatchlistStore();
   const {
     selectedStock,
     chartData,

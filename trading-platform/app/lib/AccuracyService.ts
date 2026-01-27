@@ -116,16 +116,25 @@ class AccuracyService {
     /**
      * 統計情報の計算
      */
-    calculateStats(trades: BacktestTrade[]): BacktestResult {
+    calculateStats(trades: BacktestTrade[], symbol: string, startDate: string, endDate: string): BacktestResult {
         const winningTrades = trades.filter(t => t.profitPercent > 0).length;
         const losingTrades = trades.filter(t => t.profitPercent <= 0).length;
         const totalTrades = trades.length;
         const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
 
-        const totalProfitPercent = trades.reduce((sum, t) => sum + t.profitPercent, 0);
+        const totalReturn = trades.reduce((sum, t) => sum + t.profitPercent, 0);
 
-        const grossProfit = trades.filter(t => t.profitPercent > 0).reduce((sum, t) => sum + t.profitPercent, 0);
-        const grossLoss = Math.abs(trades.filter(t => t.profitPercent < 0).reduce((sum, t) => sum + t.profitPercent, 0));
+        const winningTradesData = trades.filter(t => t.profitPercent > 0);
+        const losingTradesData = trades.filter(t => t.profitPercent <= 0);
+        const avgProfit = winningTradesData.length > 0
+            ? winningTradesData.reduce((sum, t) => sum + t.profitPercent, 0) / winningTradesData.length
+            : 0;
+        const avgLoss = losingTradesData.length > 0
+            ? losingTradesData.reduce((sum, t) => sum + t.profitPercent, 0) / losingTradesData.length
+            : 0;
+
+        const grossProfit = winningTradesData.reduce((sum, t) => sum + t.profitPercent, 0);
+        const grossLoss = Math.abs(losingTradesData.reduce((sum, t) => sum + t.profitPercent, 0));
         const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
 
         // Max Drawdown calculation
@@ -140,15 +149,30 @@ class AccuracyService {
             if (drawdown > maxDrawdown) maxDrawdown = drawdown;
         }
 
+        // Simplified Sharpe Ratio calculation (risk-free rate assumed 0)
+        const returns = trades.map(t => t.profitPercent);
+        const avgReturn = returns.length > 0 ? returns.reduce((sum, r) => sum + r, 0) / returns.length : 0;
+        const variance = returns.length > 0
+            ? returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length
+            : 0;
+        const stdDev = Math.sqrt(variance);
+        const sharpeRatio = stdDev > 0 ? avgReturn / stdDev : 0;
+
         return {
+            symbol,
             totalTrades,
             winningTrades,
             losingTrades,
             winRate: parseFloat(winRate.toFixed(1)),
-            totalProfitPercent: parseFloat(totalProfitPercent.toFixed(1)),
-            maxDrawdown: parseFloat(maxDrawdown.toFixed(1)),
+            totalReturn: parseFloat(totalReturn.toFixed(1)),
+            avgProfit: parseFloat(avgProfit.toFixed(2)),
+            avgLoss: parseFloat(avgLoss.toFixed(2)),
             profitFactor: parseFloat(profitFactor.toFixed(2)),
-            trades: [...trades].reverse()
+            maxDrawdown: parseFloat(maxDrawdown.toFixed(1)),
+            sharpeRatio: parseFloat(sharpeRatio.toFixed(2)),
+            trades: [...trades].reverse(),
+            startDate,
+            endDate
         };
     }
 
@@ -160,10 +184,25 @@ class AccuracyService {
         let currentPosition: { type: 'BUY' | 'SELL', price: number, date: string } | null = null;
 
         const minPeriod = OPTIMIZATION.MIN_DATA_PERIOD;
+        const startDate = data[0]?.date || new Date().toISOString();
+        const endDate = data[data.length - 1]?.date || new Date().toISOString();
+
         if (data.length < minPeriod) {
             return {
-                totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0,
-                totalProfitPercent: 0, maxDrawdown: 0, profitFactor: 0, trades: []
+                symbol,
+                totalTrades: 0,
+                winningTrades: 0,
+                losingTrades: 0,
+                winRate: 0,
+                totalReturn: 0,
+                avgProfit: 0,
+                avgLoss: 0,
+                profitFactor: 0,
+                maxDrawdown: 0,
+                sharpeRatio: 0,
+                trades: [],
+                startDate,
+                endDate
             };
         }
 
@@ -218,11 +257,12 @@ class AccuracyService {
                         : (currentPosition.price - exitPrice) / (currentPosition.price || 1);
 
                     trades.push({
-                        entryDate: currentPosition.date,
-                        exitDate: nextDay.date,
+                        symbol,
                         type: currentPosition.type,
                         entryPrice: currentPosition.price,
                         exitPrice: exitPrice,
+                        entryDate: currentPosition.date,
+                        exitDate: nextDay.date,
                         profitPercent: rawProfit * 100,
                         reason: exitReason
                     });
@@ -231,7 +271,7 @@ class AccuracyService {
             }
         }
 
-        return this.calculateStats(trades);
+        return this.calculateStats(trades, symbol, startDate, endDate);
     }
 
     /**

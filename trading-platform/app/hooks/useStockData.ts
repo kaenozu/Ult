@@ -9,9 +9,8 @@ import { useUIStore } from '@/app/store/uiStore';
  * Includes proper cleanup to prevent memory leaks
  */
 export function useStockData() {
-  const watchlist = useWatchlistStore(state => state.watchlist);
-  const storeSelectedStock = useUIStore(state => state.selectedStock);
-  const setSelectedStock = useUIStore(state => state.setSelectedStock);
+  const { watchlist } = useWatchlistStore();
+  const { selectedStock: storeSelectedStock, setSelectedStock } = useUIStore();
 
   const [chartData, setChartData] = useState<OHLCV[]>([]);
   const [indexData, setIndexData] = useState<OHLCV[]>([]);
