@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
 import { formatCurrency, cn, getConfidenceColor } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { useAIStore } from '@/app/store/aiStore';
 import { calculateAIHitRate } from '@/app/lib/analysis';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
 import { SignalCard } from './SignalCard';
@@ -27,7 +27,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const [previousSignal, setPreviousSignal] = useState<Signal | null>(null);
   const [previousForecastConfidence, setPreviousForecastConfidence] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { aiStatus, processAITrades } = useTradingStore();
+  const { aiStatus, processAITrades } = useAIStore();
   const { createStockAlert, createCompositeAlert } = useAlertStore();
 
   // 詳細な的中率を非同期で計算（長期データを使用）
@@ -178,7 +178,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         level: displaySignal.supplyDemand.brokenLevel?.level,
         levelType: displaySignal.supplyDemand.brokenLevel?.type,
         confidence: displaySignal.supplyDemand.breakoutConfidence === 'high' ? 85 :
-                   displaySignal.supplyDemand.breakoutConfidence === 'medium' ? 65 : 45,
+          displaySignal.supplyDemand.breakoutConfidence === 'medium' ? 65 : 45,
       },
     });
   }, [displaySignal?.supplyDemand?.breakoutDetected, displaySignal?.supplyDemand, stock.symbol, createStockAlert]);
@@ -197,7 +197,22 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
   const backtestResult: BacktestResult = useMemo(() => {
     if (!ohlcv || ohlcv.length === 0) {
-      return { totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalProfitPercent: 0, maxDrawdown: 0, profitFactor: 0, trades: [] };
+      return {
+        symbol: stock.symbol,
+        totalTrades: 0,
+        winningTrades: 0,
+        losingTrades: 0,
+        winRate: 0,
+        totalReturn: 0,
+        avgProfit: 0,
+        avgLoss: 0,
+        profitFactor: 0,
+        maxDrawdown: 0,
+        sharpeRatio: 0,
+        trades: [],
+        startDate: new Date().toISOString(),
+        endDate: new Date().toISOString()
+      };
     }
     return runBacktest(stock.symbol, ohlcv, stock.market);
   }, [stock.symbol, ohlcv, stock.market]);
@@ -223,7 +238,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-3 h-full flex-col">
       <div className="flex justify-between items-center mb-2">
-         <div className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5">
+        <div className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5">
           <button
             onClick={() => setActiveTab('signal')}
             className={cn(
@@ -274,15 +289,15 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             <div className={cn(
               'w-2 h-2 rounded-full',
               wsStatus === 'OPEN' ? 'bg-green-500' :
-              wsStatus === 'CONNECTING' ? 'bg-yellow-500' :
-              wsStatus === 'ERROR' ? 'bg-red-500' :
-              'bg-gray-500'
+                wsStatus === 'CONNECTING' ? 'bg-yellow-500' :
+                  wsStatus === 'ERROR' ? 'bg-red-500' :
+                    'bg-gray-500'
             )} />
             <span className="text-[10px] text-[#92adc9]">
               {wsStatus === 'OPEN' ? '接続済' :
-               wsStatus === 'CONNECTING' ? '接続中...' :
-               wsStatus === 'ERROR' ? 'エラー' :
-               '未接続'}
+                wsStatus === 'CONNECTING' ? '接続中...' :
+                  wsStatus === 'ERROR' ? 'エラー' :
+                    '未接続'}
             </span>
             {wsStatus === 'ERROR' || wsStatus === 'CLOSED' ? (
               <button
@@ -310,40 +325,40 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       ) : activeTab === 'backtest' ? (
         <div className="flex-1 overflow-auto">
           {/* ... existing backtest code ... */}
-         <div className="grid grid-cols-2 gap-2 mb-4">
-           <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
-             <div className="text-[10px] text-[#92adc9]">勝率</div>
-             <div className={cn('text-lg font-bold', backtestResult.winRate >= 50 ? 'text-green-500' : 'text-red-500')}>
-               {backtestResult.winRate}%
-             </div>
-           </div>
-           <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
-             <div className="text-[10px] text-[#92adc9]">合計損益</div>
-             <div className={cn('text-lg font-bold', backtestResult.totalProfitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
-               {backtestResult.totalProfitPercent > 0 ? '+' : ''}{backtestResult.totalProfitPercent}%
-             </div>
-           </div>
-         </div>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
+              <div className="text-[10px] text-[#92adc9]">勝率</div>
+              <div className={cn('text-lg font-bold', backtestResult.winRate >= 50 ? 'text-green-500' : 'text-red-500')}>
+                {backtestResult.winRate}%
+              </div>
+            </div>
+            <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
+              <div className="text-[10px] text-[#92adc9]">合計損益</div>
+              <div className={cn('text-lg font-bold', backtestResult.totalReturn >= 0 ? 'text-green-500' : 'text-red-500')}>
+                {backtestResult.totalReturn > 0 ? '+' : ''}{backtestResult.totalReturn}%
+              </div>
+            </div>
+          </div>
 
-         <div className="space-y-2">
-           <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のシミュレーション</div>
-           {backtestResult.trades.slice(0, 5).map((trade, i) => (
-             <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
-               <div>
-                 <div className="flex items-center gap-2">
-                   <span className={cn('font-bold', trade.type === 'BUY' ? 'text-green-500' : 'text-red-500')}>
-                     {trade.type === 'BUY' ? '買い' : '売り'}
-                   </span>
-                   <span className="text-[#92adc9]">{trade.entryDate}</span>
-                 </div>
-               </div>
-               <div className={cn('font-bold', trade.profitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
-                 {trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent.toFixed(1)}%
-               </div>
-             </div>
-           ))}
-         </div>
-       </div>
+          <div className="space-y-2">
+            <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のシミュレーション</div>
+            {backtestResult.trades.slice(0, 5).map((trade: any, i: number) => (
+              <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={cn('font-bold', trade.type === 'BUY' ? 'text-green-500' : 'text-red-500')}>
+                      {trade.type === 'BUY' ? '買い' : '売り'}
+                    </span>
+                    <span className="text-[#92adc9]">{trade.entryDate}</span>
+                  </div>
+                </div>
+                <div className={cn('font-bold', trade.profitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
+                  {trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent.toFixed(1)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : activeTab === 'forecast' ? (
         <div className="flex-1 overflow-auto space-y-4">
           {signal?.forecastCone ? (
@@ -399,8 +414,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           )}
         </div>
       ) : activeTab === 'ai' ? (
-       <div className="flex-1 overflow-auto space-y-4">
-         <div className="bg-[#1a2632] p-3 rounded-lg border border-[#233648] flex justify-between items-center">
+        <div className="flex-1 overflow-auto space-y-4">
+          <div className="bg-[#1a2632] p-3 rounded-lg border border-[#233648] flex justify-between items-center">
             <div>
               <div className="text-[10px] text-[#92adc9] uppercase font-bold">AI仮想口座合計損益</div>
               <div className={cn('text-xl font-black', aiStatus.totalProfit >= 0 ? 'text-green-400' : 'text-red-400')}>
@@ -411,46 +426,46 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               <div className="text-[10px] text-[#92adc9] uppercase font-bold">仮想残高</div>
               <div className="text-sm font-bold text-white">{formatCurrency(aiStatus.virtualBalance, stock.market === 'japan' ? 'JPY' : 'USD')}</div>
             </div>
-         </div>
+          </div>
 
-         <div className="space-y-3">
-           <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider">AI売買履歴と自己反省</div>
-           {aiTrades.length === 0 ? (
-             <div className="text-xs text-[#92adc9] text-center py-8 bg-[#192633]/20 rounded-lg border border-dashed border-[#233648]">
-               この銘柄での売買履歴はまだありません。
-             </div>
-           ) : (
-             aiTrades.map((trade, i) => (
-               <div key={i} className="bg-[#192633]/50 rounded-lg border border-[#233648] overflow-hidden">
-                 <div className="p-2 flex justify-between items-center border-b border-[#233648]/50 bg-black/20">
-                   <div className="flex items-center gap-2">
-                     <span className={cn('text-[10px] font-black px-1.5 py-0.5 rounded', trade.type === 'BUY' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400')}>
-                       {trade.type === 'BUY' ? '買い' : '売り'}
-                     </span>
-                     <span className="text-[10px] text-[#92adc9]">{trade.entryDate.split('T')[0]}</span>
-                   </div>
-                   {trade.status === 'CLOSED' && (
-                     <span className={cn('text-[10px] font-bold', (trade.profitPercent || 0) >= 0 ? 'text-green-400' : 'text-red-400')}>
-                       {(trade.profitPercent || 0) >= 0 ? '+' : ''}{(trade.profitPercent || 0).toFixed(2)}%
-                     </span>
-                   )}
-                 </div>
-                 <div className="p-2">
-                   <div className="text-[10px] text-[#92adc9] mb-1 flex justify-between">
-                     <span>Entry: {formatCurrency(trade.entryPrice, stock.market === 'japan' ? 'JPY' : 'USD')}</span>
-                     {trade.status === 'CLOSED' && <span>Exit: {formatCurrency(trade.exitPrice || 0, stock.market === 'japan' ? 'JPY' : 'USD')}</span>}
-                   </div>
-                   {trade.reflection && (
-                     <div className="mt-2 text-[11px] text-white/80 leading-relaxed bg-black/40 p-2 rounded italic border-l-2 border-primary/50">
-                       「{trade.reflection}」
-                     </div>
-                   )}
-                 </div>
-               </div>
-             ))
-           )}
-         </div>
-       </div>
+          <div className="space-y-3">
+            <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider">AI売買履歴と自己反省</div>
+            {aiTrades.length === 0 ? (
+              <div className="text-xs text-[#92adc9] text-center py-8 bg-[#192633]/20 rounded-lg border border-dashed border-[#233648]">
+                この銘柄での売買履歴はまだありません。
+              </div>
+            ) : (
+              aiTrades.map((trade: any, i: number) => (
+                <div key={i} className="bg-[#192633]/50 rounded-lg border border-[#233648] overflow-hidden">
+                  <div className="p-2 flex justify-between items-center border-b border-[#233648]/50 bg-black/20">
+                    <div className="flex items-center gap-2">
+                      <span className={cn('text-[10px] font-black px-1.5 py-0.5 rounded', trade.type === 'BUY' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400')}>
+                        {trade.type === 'BUY' ? '買い' : '売り'}
+                      </span>
+                      <span className="text-[10px] text-[#92adc9]">{trade.entryDate.split('T')[0]}</span>
+                    </div>
+                    {trade.status === 'CLOSED' && (
+                      <span className={cn('text-[10px] font-bold', (trade.profitPercent || 0) >= 0 ? 'text-green-400' : 'text-red-400')}>
+                        {(trade.profitPercent || 0) >= 0 ? '+' : ''}{(trade.profitPercent || 0).toFixed(2)}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-2">
+                    <div className="text-[10px] text-[#92adc9] mb-1 flex justify-between">
+                      <span>Entry: {formatCurrency(trade.entryPrice, stock.market === 'japan' ? 'JPY' : 'USD')}</span>
+                      {trade.status === 'CLOSED' && <span>Exit: {formatCurrency(trade.exitPrice || 0, stock.market === 'japan' ? 'JPY' : 'USD')}</span>}
+                    </div>
+                    {trade.reflection && (
+                      <div className="mt-2 text-[11px] text-white/80 leading-relaxed bg-black/40 p-2 rounded italic border-l-2 border-primary/50">
+                        「{trade.reflection}」
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       ) : null}
     </div>
   );
