@@ -118,7 +118,7 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
           <BellOff className="w-5 h-5 text-[#92adc9]/50" />
         )}
         {unreadCount > 0 && settings.enabled && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+          <span data-testid="unread-badge" className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -351,8 +351,8 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                         {/* Type Badge */}
                         <span className={cn('text-[10px] font-bold uppercase', getTypeColor(alert.type))}>
                           {alert.type === 'MARKET' ? '市場' :
-                           alert.type === 'STOCK' ? '銘柄' :
-                           alert.type === 'COMPOSITE' ? '複合' : ''}
+                            alert.type === 'STOCK' ? '銘柄' :
+                              alert.type === 'COMPOSITE' ? '複合' : ''}
                         </span>
 
                         {/* Time */}
@@ -381,19 +381,19 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                             <span className={cn(
                               'px-2 py-0.5 rounded text-[10px] font-bold',
                               alert.actionable.type === 'BUY' ? 'bg-green-500/20 text-green-400' :
-                              alert.actionable.type === 'SELL' ? 'bg-red-500/20 text-red-400' :
-                              'bg-[#233648]/50 text-[#92adc9]'
+                                alert.actionable.type === 'SELL' ? 'bg-red-500/20 text-red-400' :
+                                  'bg-[#233648]/50 text-[#92adc9]'
                             )}>
                               {alert.actionable.type === 'BUY' ? '買い' :
-                               alert.actionable.type === 'SELL' ? '売り' :
-                               '維持'}
+                                alert.actionable.type === 'SELL' ? '売り' :
+                                  '維持'}
                             </span>
                             <span className="text-xs text-[#92adc9]">
-                              信頼度: {alert.actionable.confidence}%
+                              信頼度: <span data-testid="alert-confidence">{alert.actionable.confidence}%</span>
                             </span>
                             {alert.actionable.targetPrice && (
                               <span className="text-xs text-[#92adc9]/60">
-                                目標: {alert.actionable.targetPrice.toFixed(2)}
+                                目標: <span data-testid="alert-target-price">{alert.actionable.targetPrice.toFixed(2)}</span>
                               </span>
                             )}
                           </div>

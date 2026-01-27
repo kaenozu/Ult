@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom'
+import { TextEncoder, TextDecoder } from 'util';
+
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
 // Mock fetch
 if (!global.fetch) {
@@ -14,6 +18,10 @@ if (!global.fetch) {
 // Mock IndexedDB
 const mockIDB = {
   open: jest.fn().mockReturnValue({
+    result: {
+      createObjectStore: jest.fn(),
+      transaction: jest.fn(),
+    },
     onupgradeneeded: null,
     onsuccess: null,
     onerror: null,
@@ -29,9 +37,9 @@ if (typeof window !== 'undefined') {
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() { }
+  unobserve() { }
+  disconnect() { }
 };
 
 // Mock ScrollTo
@@ -41,5 +49,36 @@ if (typeof window !== 'undefined') {
 
 // Mock Canvas (needed for Chart.js)
 if (typeof HTMLCanvasElement !== 'undefined') {
-  HTMLCanvasElement.prototype.getContext = jest.fn();
+  // eslint-disable-next-line
+  HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
+    fillRect: jest.fn(),
+    clearRect: jest.fn(),
+    getImageData: jest.fn(),
+    putImageData: jest.fn(),
+    createImageData: jest.fn(),
+    setTransform: jest.fn(),
+    drawImage: jest.fn(), // Needed for some Chart.js features
+    save: jest.fn(),
+    restore: jest.fn(),
+    beginPath: jest.fn(),
+    moveTo: jest.fn(),
+    lineTo: jest.fn(),
+    closePath: jest.fn(),
+    stroke: jest.fn(),
+    translate: jest.fn(),
+    scale: jest.fn(),
+    rotate: jest.fn(),
+    arc: jest.fn(),
+    fill: jest.fn(),
+    measureText: jest.fn(() => ({ width: 0 })),
+    transform: jest.fn(),
+    rect: jest.fn(),
+    clip: jest.fn(),
+    createLinearGradient: jest.fn(() => ({
+      addColorStop: jest.fn()
+    })),
+  }));
 }
+
+// Mock WebSocket hook removed per test refactoring (handled locally in tests)
+
