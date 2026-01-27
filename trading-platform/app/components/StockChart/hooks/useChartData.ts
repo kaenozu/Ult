@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { OHLCV, Signal } from '@/app/types';
-import { FORECAST_CONE } from '@/app/constants';
+import { FORECAST_CONE } from '@/app/lib/constants';
 
 export const useChartData = (
   data: OHLCV[],

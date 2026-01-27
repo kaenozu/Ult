@@ -7,7 +7,7 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
-import { CANDLESTICK, SMA as SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG } from '@/app/constants';
+import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG } from '@/app/lib/constants';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';

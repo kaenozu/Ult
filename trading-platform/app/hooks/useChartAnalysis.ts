@@ -5,10 +5,10 @@ import { analyzeStock } from '@/app/lib/analysis';
 import {
     GHOST_FORECAST,
     FORECAST_CONE,
-    SMA as SMA_CONFIG,
+    SMA_CONFIG,
     BOLLINGER_BANDS,
     OPTIMIZATION,
-} from '@/app/constants';
+} from '@/app/lib/constants';
 
 interface UseChartAnalysisProps {
     data: OHLCV[];
