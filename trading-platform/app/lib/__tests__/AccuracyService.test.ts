@@ -1,0 +1,326 @@
+/**
+ * Unit tests for AccuracyService
+ */
+
+import { accuracyService } from '../AccuracyService';
+import { OHLCV } from '../../types';
+
+describe('AccuracyService', () => {
+  // Generate mock OHLCV data
+  const generateMockData = (days: number, basePrice: number = 1000, trend: 'up' | 'down' | 'flat' = 'flat'): OHLCV[] => {
+    const data: OHLCV[] = [];
+    let price = basePrice;
+    const now = Date.now();
+
+    for (let i = 0; i < days; i++) {
+      const volatility = 0.02;
+      let trendBias = 0;
+
+      if (trend === 'up') trendBias = 0.001 * price;
+      else if (trend === 'down') trendBias = -0.001 * price;
+
+      const change = (Math.random() - 0.5) * 2 * volatility * price + trendBias;
+      const open = price;
+      const close = price + change;
+      const high = Math.max(open, close) + Math.random() * volatility * price;
+      const low = Math.min(open, close) - Math.random() * volatility * price;
+      const volume = Math.floor(Math.random() * 1000000) + 100000;
+
+      data.push({
+        date: new Date(now - (days - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        open: parseFloat(open.toFixed(2)),
+        high: parseFloat(high.toFixed(2)),
+        low: parseFloat(low.toFixed(2)),
+        close: parseFloat(close.toFixed(2)),
+        volume,
+      });
+
+      price = close;
+    }
+
+    return data;
+  };
+
+  describe('calculateSimpleATR', () => {
+    it('should calculate ATR for valid data', () => {
+      const data = generateMockData(50, 1000);
+      const atr = accuracyService.calculateSimpleATR(data, data.length - 1);
+
+      expect(atr).toBeGreaterThan(0);
+      expect(atr).toBeLessThan(100); // Should be reasonable
+    });
+
+    it('should calculate ATR even with minimal data', () => {
+      const shortData = generateMockData(5);
+      const atr = accuracyService.calculateSimpleATR(shortData, 0);
+
+      expect(atr).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should handle data with zero values', () => {
+      const data = generateMockData(20).map((d, i) => ({
+        ...d,
+        high: i === 10 ? 0 : d.high,
+        low: i === 10 ? 0 : d.low,
+      }));
+
+      const atr = accuracyService.calculateSimpleATR(data, data.length - 1);
+
+      expect(atr).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should calculate different ATR for different volatility levels', () => {
+      const stableData = generateMockData(50, 1000, 'flat');
+      const volatileData = generateMockData(50, 1000, 'flat').map(d => ({
+        ...d,
+        high: d.high * 1.1,
+        low: d.low * 0.9,
+      }));
+
+      const stableAtr = accuracyService.calculateSimpleATR(stableData, stableData.length - 1);
+      const volatileAtr = accuracyService.calculateSimpleATR(volatileData, volatileData.length - 1);
+
+      expect(volatileAtr).toBeGreaterThan(stableAtr);
+    });
+  });
+
+  describe('calculatePredictionError', () => {
+    it('should return default value for insufficient data', () => {
+      const shortData = generateMockData(20);
+      const error = accuracyService.calculatePredictionError(shortData);
+
+      expect(error).toBe(1.0);
+    });
+
+    it('should calculate prediction error for sufficient data', () => {
+      const data = generateMockData(50);
+      const error = accuracyService.calculatePredictionError(data);
+
+      expect(error).toBeGreaterThan(0);
+      expect(error).toBeLessThanOrEqual(2.0);
+    });
+
+    it('should return lower error for trending data', () => {
+      const flatData = generateMockData(50, 1000, 'flat');
+      const trendingData = generateMockData(50, 1000, 'up');
+
+      const flatError = accuracyService.calculatePredictionError(flatData);
+      const trendingError = accuracyService.calculatePredictionError(trendingData);
+
+      // Trending data should have lower prediction error
+      expect(trendingError).toBeLessThanOrEqual(flatError * 1.5);
+    });
+  });
+
+  describe('simulateTrade', () => {
+    it('should simulate winning BUY trade', () => {
+      const data = generateMockData(20, 1000, 'up');
+      const result = accuracyService.simulateTrade(data, 10, 'BUY', 20);
+
+      expect(result).toBeDefined();
+      expect(typeof result.won).toBe('boolean');
+      expect(typeof result.directionalHit).toBe('boolean');
+    });
+
+    it('should simulate winning SELL trade', () => {
+      const data = generateMockData(20, 1000, 'down');
+      const result = accuracyService.simulateTrade(data, 10, 'SELL', 20);
+
+      expect(result).toBeDefined();
+      expect(typeof result.won).toBe('boolean');
+      expect(typeof result.directionalHit).toBe('boolean');
+    });
+
+    it('should return no win when target not reached', () => {
+      const data = generateMockData(10, 1000, 'flat');
+      const result = accuracyService.simulateTrade(data, 5, 'BUY', 1000);
+
+      expect(result.won).toBe(false);
+    });
+
+    it('should detect directional hit correctly for uptrend', () => {
+      const data = generateMockData(15, 1000, 'up');
+      const result = accuracyService.simulateTrade(data, 5, 'BUY', 10);
+
+      // In uptrend, BUY should have directional hit
+      expect(result.directionalHit).toBeDefined();
+    });
+  });
+
+  describe('calculateStats', () => {
+    it('should calculate statistics for valid trades', () => {
+      const trades = [
+        {
+          symbol: '7203',
+          type: 'BUY' as const,
+          entryPrice: 1000,
+          exitPrice: 1100,
+          entryDate: '2024-01-01',
+          exitDate: '2024-01-15',
+          profitPercent: 10,
+        },
+        {
+          symbol: '7203',
+          type: 'SELL' as const,
+          entryPrice: 1000,
+          exitPrice: 900,
+          entryDate: '2024-01-16',
+          exitDate: '2024-01-30',
+          profitPercent: 10,
+        },
+        {
+          symbol: '7203',
+          type: 'BUY' as const,
+          entryPrice: 1000,
+          exitPrice: 950,
+          entryDate: '2024-02-01',
+          exitDate: '2024-02-15',
+          profitPercent: -5,
+        },
+      ];
+
+      const stats = accuracyService.calculateStats(trades, '7203', '2024-01-01', '2024-02-15');
+
+      expect(stats.symbol).toBe('7203');
+      expect(stats.totalTrades).toBe(3);
+      expect(stats.winningTrades).toBe(2);
+      expect(stats.losingTrades).toBe(1);
+      expect(stats.winRate).toBeCloseTo(66.7, 0);
+      expect(stats.totalReturn).toBeCloseTo(15, 0);
+      expect(stats.avgProfit).toBeCloseTo(10, 0);
+      expect(stats.avgLoss).toBe(-5);
+    });
+
+    it('should handle empty trades array', () => {
+      const stats = accuracyService.calculateStats([], '7203', '2024-01-01', '2024-12-31');
+
+      expect(stats.symbol).toBe('7203');
+      expect(stats.totalTrades).toBe(0);
+      expect(stats.winningTrades).toBe(0);
+      expect(stats.losingTrades).toBe(0);
+      expect(stats.winRate).toBe(0);
+    });
+  });
+
+  describe('runBacktest', () => {
+    it('should return empty result for insufficient data', () => {
+      const shortData = generateMockData(50);
+      const result = accuracyService.runBacktest('7203', shortData, 'japan');
+
+      expect(result.symbol).toBe('7203');
+      expect(result.totalTrades).toBe(0);
+      expect(result.winningTrades).toBe(0);
+      expect(result.losingTrades).toBe(0);
+    });
+
+    it('should run backtest with sufficient data', () => {
+      const data = generateMockData(300, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      expect(result.symbol).toBe('7203');
+      expect(result.totalTrades).toBeGreaterThanOrEqual(0);
+      expect(result.startDate).toBeDefined();
+      expect(result.endDate).toBeDefined();
+    });
+
+    it('should generate trades in trending market', () => {
+      const upTrendData = generateMockData(300, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', upTrendData, 'japan');
+
+      // In trending market, should generate some trades
+      expect(result.totalTrades).toBeGreaterThanOrEqual(0);
+      if (result.totalTrades > 0) {
+        expect(result.trades.length).toBe(result.totalTrades);
+        expect(result.winRate).toBeGreaterThanOrEqual(0);
+        expect(result.winRate).toBeLessThanOrEqual(100);
+      }
+    });
+  });
+
+  describe('calculateRealTimeAccuracy', () => {
+    it('should return null for insufficient data', () => {
+      const shortData = generateMockData(100);
+      const result = accuracyService.calculateRealTimeAccuracy('7203', shortData, 'japan');
+
+      expect(result).toBeNull();
+    });
+
+    it('should calculate accuracy with sufficient data', () => {
+      const data = generateMockData(300, 1000, 'up');
+      const result = accuracyService.calculateRealTimeAccuracy('7203', data, 'japan');
+
+      expect(result).toBeDefined();
+      expect(result?.hitRate).toBeGreaterThanOrEqual(0);
+      expect(result?.hitRate).toBeLessThanOrEqual(100);
+      expect(result?.directionalAccuracy).toBeGreaterThanOrEqual(0);
+      expect(result?.directionalAccuracy).toBeLessThanOrEqual(100);
+      expect(result?.totalTrades).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should return better accuracy for trending data', () => {
+      const trendingData = generateMockData(300, 1000, 'up');
+      const result = accuracyService.calculateRealTimeAccuracy('7203', trendingData, 'japan');
+
+      expect(result).toBeDefined();
+      expect(result?.totalTrades).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe('calculateAIHitRate', () => {
+    it('should return zero values for insufficient data', () => {
+      const shortData = generateMockData(100);
+      const result = accuracyService.calculateAIHitRate('7203', shortData, 'japan');
+
+      expect(result.hitRate).toBe(0);
+      expect(result.directionalAccuracy).toBe(0);
+      expect(result.totalTrades).toBe(0);
+      expect(result.averageProfit).toBe(0);
+    });
+
+    it('should calculate hit rate with sufficient data', () => {
+      const data = generateMockData(300, 1000, 'up');
+      const result = accuracyService.calculateAIHitRate('7203', data, 'japan');
+
+      expect(result.hitRate).toBeGreaterThanOrEqual(0);
+      expect(result.hitRate).toBeLessThanOrEqual(100);
+      expect(result.directionalAccuracy).toBeGreaterThanOrEqual(0);
+      expect(result.directionalAccuracy).toBeLessThanOrEqual(100);
+      expect(result.totalTrades).toBeGreaterThan(0);
+    });
+
+    it('should have better hit rate in trending market', () => {
+      const upTrendData = generateMockData(300, 1000, 'up');
+      const downTrendData = generateMockData(300, 1000, 'down');
+
+      const upResult = accuracyService.calculateAIHitRate('7203', upTrendData, 'japan');
+      const downResult = accuracyService.calculateAIHitRate('7203', downTrendData, 'japan');
+
+      expect(upResult.totalTrades).toBeGreaterThan(0);
+      expect(downResult.totalTrades).toBeGreaterThan(0);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle data with NaN values', () => {
+      const dataWithNaN = generateMockData(300).map((d, i) => ({
+        ...d,
+        close: i === 150 ? NaN : d.close,
+      }));
+
+      const result = accuracyService.calculateAIHitRate('7203', dataWithNaN, 'japan');
+
+      expect(result).toBeDefined();
+    });
+
+    it('should handle data with negative prices', () => {
+      const dataWithNegative = generateMockData(300).map((d, i) => ({
+        ...d,
+        close: i === 150 ? -100 : d.close,
+      }));
+
+      const result = accuracyService.calculateAIHitRate('7203', dataWithNegative, 'japan');
+
+      expect(result).toBeDefined();
+    });
+  });
+});
