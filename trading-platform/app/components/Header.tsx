@@ -6,6 +6,7 @@ import { useTradingStore } from '@/app/store/tradingStore';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { ALL_STOCKS, fetchStockMetadata } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
+import { NotificationCenter } from './NotificationCenter';
 
 export function Header() {
   const { portfolio, isConnected, toggleConnection, setCash, addToWatchlist, setSelectedStock, watchlist } = useTradingStore();
@@ -124,6 +125,7 @@ export function Header() {
             </span>
             {isEditingCash ? (
               <input
+                id="cashInput"
                 ref={inputRef}
                 type="number"
                 value={cashInput}
@@ -160,6 +162,8 @@ export function Header() {
             {isSearchingAPI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           </div>
           <input
+            id="stockSearch"
+            name="stockSearch"
             className="block w-64 p-2 pl-10 text-sm text-white bg-[#192633] border border-[#233648] rounded-lg focus:ring-primary focus:border-primary placeholder-[#92adc9]"
             placeholder="銘柄名、コードで検索"
             type="text"
@@ -208,17 +212,14 @@ export function Header() {
             </div>
           )}
         </div>
+        <NotificationCenter />
         <button
-          onClick={toggleConnection}
-          className="flex items-center gap-2"
-          aria-label={isConnected ? "サーバーから切断" : "サーバーに接続"}
-          title={isConnected ? "切断" : "接続"}
+          onClick={() => alert('設定機能は現在開発中です')}
+          className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
+          aria-label="設定"
+          title="設定"
         >
-          <span className={`flex h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-          <span className="text-xs font-medium text-[#92adc9]">
-            {isConnected ? '接続済み' : '未接続'}
-          </span>
-          {isConnected ? <Wifi className="w-4 h-4 text-green-500" /> : <WifiOff className="w-4 h-4 text-red-500" />}
+          <Settings className="w-5 h-5" />
         </button>
         <button
           onClick={() => alert('設定機能は現在開発中です')}
