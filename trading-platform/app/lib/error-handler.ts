@@ -88,6 +88,7 @@ function extractErrorInfo(error: unknown): { type: ErrorType; message: string; c
     return {
       type: ErrorType.INTERNAL,
       message: error.message || ERROR_MESSAGES[ErrorType.INTERNAL].message,
+      code: ErrorType.INTERNAL,
       details: ERROR_MESSAGES[ErrorType.INTERNAL].details,
     };
   }
@@ -97,13 +98,29 @@ function extractErrorInfo(error: unknown): { type: ErrorType; message: string; c
     return {
       type: ErrorType.INTERNAL,
       message: error,
+      code: ErrorType.INTERNAL,
     };
+  }
+
+  // プレーンオブジェクトで code を持つ場合
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const apiError = error as { code: string; message?: string };
+    const errorInfo = ERROR_MESSAGES[apiError.code];
+    if (errorInfo) {
+      return {
+        type: apiError.code as ErrorType,
+        message: errorInfo.message,
+        code: apiError.code,
+        details: errorInfo.details,
+      };
+    }
   }
 
   // その他の型
   return {
     type: ErrorType.INTERNAL,
     message: ERROR_MESSAGES[ErrorType.INTERNAL].message,
+    code: ErrorType.INTERNAL,
     details: ERROR_MESSAGES[ErrorType.INTERNAL].details,
   };
 }
