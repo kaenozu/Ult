@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { OrderPanel } from '@/app/components/OrderPanel';
+import { AlertPanel } from '@/app/components/AlertPanel';
 import { cn } from '@/app/lib/utils';
 import { Stock, Signal, OHLCV } from '@/app/types';
 
@@ -23,7 +24,7 @@ export const RightSidebar = ({
   ohlcv,
   loading
 }: RightSidebarProps) => {
-  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order'>('signal');    
+  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order' | 'alert'>('signal');    
 
   return (
     <aside className={cn(
@@ -40,6 +41,15 @@ export const RightSidebar = ({
           )}
         >
           分析 & シグナル
+        </button>
+        <button
+          onClick={() => setRightPanelMode('alert')}
+          className={cn(
+            'flex-1 py-2 text-xs font-bold transition-colors',
+            rightPanelMode === 'alert' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
+          )}
+        >
+          アラート
         </button>
         <button
           onClick={() => setRightPanelMode('order')}
@@ -60,6 +70,11 @@ export const RightSidebar = ({
               signal={chartSignal}
               ohlcv={ohlcv}
               loading={loading}
+            />
+          ) : rightPanelMode === 'alert' ? (
+            <AlertPanel
+              symbol={displayStock.symbol}
+              stockPrice={displayStock.price}
             />
           ) : (
             <OrderPanel
