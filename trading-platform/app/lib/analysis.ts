@@ -2,51 +2,16 @@ import { OHLCV, Signal } from '../types';
 import { calculateRSI, calculateSMA } from './utils';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
-
-const FORECAST_CONE = {
-  STEPS: 5,
-  LOOKBACK_DAYS: 60,
-};
-
-const RSI_CONFIG = {
-  DEFAULT_PERIOD: 14,
-  OVERSOLD: 30,
-  OVERBOUGHT: 70,
-  PERIOD_OPTIONS: [10, 14, 20],
-};
-
-const SMA_CONFIG = {
-  SHORT_PERIOD: 10,
-  MEDIUM_PERIOD: 50,
-  LONG_PERIOD: 200,
-  PERIOD_OPTIONS: [10, 20, 50, 100],
-};
-
-const OPTIMIZATION = {
-  REQUIRED_DATA_PERIOD: 100,
-  MIN_DATA_PERIOD: 60,
-  VOLUME_PROFILE_BINS: 20,
-};
-
-const SIGNAL_THRESHOLDS = {
-  MIN_CONFIDENCE: 50,
-  HIGH_CONFIDENCE: 80,
-};
-
-const RISK_MANAGEMENT = {
-  BULL_TARGET_MULTIPLIER: 1.5,
-  BEAR_TARGET_MULTIPLIER: 1.5,
-};
-
-const PRICE_CALCULATION = {
-  DEFAULT_ERROR_MULTIPLIER: 100,
-  DEFAULT_ATR_RATIO: 0.02,
-};
-
-const VOLATILITY = {
-  DEFAULT_ATR_PERIOD: 14,
-  CALCULATION_PERIOD: 30,
-};
+import {
+  FORECAST_CONE,
+  RSI_CONFIG,
+  SMA_CONFIG,
+  OPTIMIZATION,
+  SIGNAL_THRESHOLDS,
+  RISK_MANAGEMENT,
+  PRICE_CALCULATION,
+  VOLATILITY
+} from './constants';
 
 /**
  * 予測コーン（Forecast Cone）の計算
