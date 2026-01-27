@@ -48,7 +48,7 @@ export default function Screener() {
   };
   const [stocks, setStocks] = useState<Stock[]>([...JAPAN_STOCKS, ...USA_STOCKS]);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analyzedStocks, setAnalyzedStocks] = useState<{ symbol: string, signal?: Signal }[]>([]);
+  const [analyzedStocks, setAnalyzedStocks] = useState<{symbol: string, signal?: Signal}[]>([]);
   const [isTechAnalysisDone, setIsTechAnalysisDone] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -62,7 +62,7 @@ export default function Screener() {
       const allStocks = [...JAPAN_STOCKS, ...USA_STOCKS];
       const symbols = allStocks.map(s => s.symbol);
       const quotes = await marketClient.fetchQuotes(symbols);
-
+      
       if (mounted && quotes.length > 0) {
         setStocks(prev => prev.map(s => {
           const q = quotes.find(q => q.symbol === s.symbol);
@@ -71,7 +71,7 @@ export default function Screener() {
               ...s,
               price: q.price,
               change: q.change,
-              changePercent: q.changePercent,
+              changePercent: q.changePercent, 
               volume: q.volume,
             };
           }
@@ -87,7 +87,7 @@ export default function Screener() {
     setIsTechAnalysisDone(false);
     setAnalyzedStocks([]);
     setAnalyzing(true);
-
+    
     const candidates = stocks.filter(stock => {
       if (filters.priceMin && stock.price < parseFloat(filters.priceMin)) return false;
       if (filters.priceMax && stock.price > parseFloat(filters.priceMax)) return false;
@@ -95,28 +95,28 @@ export default function Screener() {
       return true;
     });
 
-    const results: { symbol: string, signal?: Signal }[] = [];
+    const results: {symbol: string, signal?: Signal}[] = [];
     const CHUNK_SIZE = 5;
 
     for (let i = 0; i < candidates.length; i += CHUNK_SIZE) {
-      const chunk = candidates.slice(i, i + CHUNK_SIZE);
-
-      await Promise.all(chunk.map(async (stock) => {
-        try {
-          const signalResult = await marketClient.fetchSignal(stock);
-          if (signalResult.success && signalResult.data) {
-            const signal = signalResult.data;
-            const ohlcv = await fetchOHLCV(stock.symbol, stock.market, stock.price);
-            const techMatch = filterByTechnicals(stock, ohlcv, techFilters);
-
-            if (techMatch) {
-              results.push({ symbol: stock.symbol, signal });
+        const chunk = candidates.slice(i, i + CHUNK_SIZE);
+        
+        await Promise.all(chunk.map(async (stock) => {
+            try {
+                const signalResult = await marketClient.fetchSignal(stock);
+                if (signalResult.success && signalResult.data) {
+                    const signal = signalResult.data;
+                    const ohlcv = await fetchOHLCV(stock.symbol, stock.market, stock.price);
+                    const techMatch = filterByTechnicals(stock, ohlcv, techFilters);
+                    
+                    if (techMatch) {
+                        results.push({ symbol: stock.symbol, signal });
+                    }
+                }
+            } catch (e) {
+                console.error(`Failed to analyze ${stock.symbol}`, e);
             }
-          }
-        } catch (e) {
-          console.error(`Failed to analyze ${stock.symbol}`, e);
-        }
-      }));
+        }));
     }
 
     setAnalyzedStocks(results);
@@ -133,14 +133,14 @@ export default function Screener() {
       if (filters.volumeMin && stock.volume < parseFloat(filters.volumeMin)) return false;
       if (filters.sector && stock.sector !== filters.sector) return false;
       if (filters.market && stock.market !== filters.market) return false;
-
+      
       if (isTechAnalysisDone) {
-        const analysisResult = analyzedStocks.find(as => as.symbol === stock.symbol);
-        if (!analysisResult) return false;
-        if (filters.signal !== 'ANY' && analysisResult.signal?.type !== filters.signal) return false;
-        if (filters.minConfidence && (analysisResult.signal?.confidence || 0) < parseFloat(filters.minConfidence)) return false;
+         const analysisResult = analyzedStocks.find(as => as.symbol === stock.symbol);
+         if (!analysisResult) return false;
+         if (filters.signal !== 'ANY' && analysisResult.signal?.type !== filters.signal) return false;
+         if (filters.minConfidence && (analysisResult.signal?.confidence || 0) < parseFloat(filters.minConfidence)) return false;
       }
-
+      
       return true;
     }).sort((a, b) => {
       let aVal = a[sortField];
@@ -227,7 +227,7 @@ export default function Screener() {
                 <label className="text-[10px] text-[#92adc9] font-bold">推奨シグナル</label>
                 <div className="flex bg-[#192633] p-0.5 rounded-md">
                   {['BUY', 'SELL', 'ANY'].map((s) => (
-                    <button key={s} onClick={() => { setFilters(prev => ({ ...prev, signal: s })); }}
+                    <button key={s} onClick={() => { setFilters(prev => ({ ...prev, signal: s })); setIsTechAnalysisDone(false); }}
                       className={cn("flex-1 py-1.5 text-[10px] font-bold rounded transition-all", filters.signal === s ? "bg-primary text-white shadow-sm" : "text-[#92adc9] hover:text-white")}>
                       {s === 'BUY' ? '買い' : s === 'SELL' ? '売り' : '全て'}
                     </button>
@@ -236,47 +236,7 @@ export default function Screener() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center"><label className="text-[10px] text-[#92adc9] font-bold">最小信頼度 (%)</label><span className="text-[10px] text-primary font-black">{filters.minConfidence}%</span></div>
-                <input id="minConfidence" name="minConfidence" type="range" min="0" max="100" step="5" value={filters.minConfidence} onChange={(e) => { setFilters(prev => ({ ...prev, minConfidence: e.target.value })); }} className="w-full accent-primary h-1.5 bg-[#192633] rounded-lg appearance-none cursor-pointer" />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">基本条件</span>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-[#92adc9]">価格下限</label>
-                  <input type="number" placeholder="Min" value={filters.priceMin} onChange={e => setFilters(prev => ({ ...prev, priceMin: e.target.value }))} className="bg-[#192633] border border-[#233648] rounded px-2 py-1 text-xs" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-[#92adc9]">価格上限</label>
-                  <input type="number" placeholder="Max" value={filters.priceMax} onChange={e => setFilters(prev => ({ ...prev, priceMax: e.target.value }))} className="bg-[#192633] border border-[#233648] rounded px-2 py-1 text-xs" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-[#92adc9]">市場</label>
-                <select value={filters.market} onChange={e => setFilters(prev => ({ ...prev, market: e.target.value }))} className="bg-[#192633] border border-[#233648] rounded px-2 py-1 text-xs">
-                  <option value="">全て</option>
-                  <option value="japan">日本市場</option>
-                  <option value="usa">米国市場</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-[#92adc9]">騰落率下限</label>
-                  <input type="number" placeholder="Min %" value={filters.changeMin} onChange={e => setFilters(prev => ({ ...prev, changeMin: e.target.value }))} className="bg-[#192633] border border-[#233648] rounded px-2 py-1 text-xs" />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-[#92adc9]">騰落率上限</label>
-                  <input type="number" placeholder="Max %" value={filters.changeMax} onChange={e => setFilters(prev => ({ ...prev, changeMax: e.target.value }))} className="bg-[#192633] border border-[#233648] rounded px-2 py-1 text-xs" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-[#92adc9]">最小出来高</label>
-                <input type="number" placeholder="Min Volume" value={filters.volumeMin} onChange={e => setFilters(prev => ({ ...prev, volumeMin: e.target.value }))} className="bg-[#192633] border border-[#233648] rounded px-2 py-1 text-xs" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-[#92adc9]">セクター</label>
-                <input type="text" placeholder="Sector" value={filters.sector} onChange={e => setFilters(prev => ({ ...prev, sector: e.target.value }))} className="bg-[#192633] border border-[#233648] rounded px-2 py-1 text-xs" />
+                <input id="minConfidence" name="minConfidence" type="range" min="0" max="100" step="5" value={filters.minConfidence} onChange={(e) => { setFilters(prev => ({ ...prev, minConfidence: e.target.value })); setIsTechAnalysisDone(false); }} className="w-full accent-primary h-1.5 bg-[#192633] rounded-lg appearance-none cursor-pointer" />
               </div>
             </div>
 
@@ -365,33 +325,33 @@ export default function Screener() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#233648]/50">
-                  {filteredStocks.map((stock) => {
-                    const analysis = analyzedStocks.find(as => as.symbol === stock.symbol);
-                    return (
-                      <tr key={stock.symbol} className="hover:bg-[#192633] cursor-pointer transition-colors" onClick={() => handleStockClick(stock)}>
-                        <td className="px-3 py-3 font-bold text-white truncate">{stock.symbol}</td>
-                        <td className="px-3 py-3 text-[#92adc9] truncate" title={stock.name}>{stock.name}</td>
-                        {isTechAnalysisDone && (
-                          <>
-                            <td className="px-3 py-3 text-center">
-                              {analysis?.signal ? <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold", analysis.signal.type === 'BUY' ? "bg-green-500/20 text-green-400" : analysis.signal.type === 'SELL' ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400")}>{analysis.signal.type === 'BUY' ? '買い' : analysis.signal.type === 'SELL' ? '売り' : '維持'}</span> : '-'}
-                            </td>
-                            <td className="px-3 py-3 text-right">
-                              {analysis?.signal ? <span className={cn("font-bold", analysis.signal.confidence >= 80 ? "text-green-500" : analysis.signal.confidence >= 60 ? "text-yellow-500" : "text-red-500")}>{analysis.signal.confidence}%</span> : '-'}
-                            </td>
-                          </>
-                        )}
-                        <td className="px-3 py-3">
-                          <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-bold', stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400')}>{stock.market === 'japan' ? 'JP' : 'US'}</span>
-                        </td>
-                        <td className="px-3 py-3 text-right text-white font-medium">{stock.market === 'japan' ? formatCurrency(stock.price, 'JPY') : formatCurrency(stock.price, 'USD')}</td>
-                        <td className={cn('px-3 py-3 text-right font-bold', getChangeColor(stock.change))}>{formatPercent(stock.changePercent)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <tbody className="divide-y divide-[#233648]/50">
+                {filteredStocks.map((stock) => {
+                  const analysis = analyzedStocks.find(as => as.symbol === stock.symbol);
+                  return (
+                    <tr key={stock.symbol} className="hover:bg-[#192633] cursor-pointer transition-colors" onClick={() => handleStockClick(stock)}>
+                      <td className="px-3 py-3 font-bold text-white truncate">{stock.symbol}</td>
+                      <td className="px-3 py-3 text-[#92adc9] truncate" title={stock.name}>{stock.name}</td>
+                      {isTechAnalysisDone && (
+                        <>
+                          <td className="px-3 py-3 text-center">
+                            {analysis?.signal ? <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold", analysis.signal.type === 'BUY' ? "bg-green-500/20 text-green-400" : analysis.signal.type === 'SELL' ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400")}>{analysis.signal.type === 'BUY' ? '買い' : analysis.signal.type === 'SELL' ? '売り' : '維持'}</span> : '-'}
+                          </td>
+                          <td className="px-3 py-3 text-right">
+                            {analysis?.signal ? <span className={cn("font-bold", analysis.signal.confidence >= 80 ? "text-green-500" : analysis.signal.confidence >= 60 ? "text-yellow-500" : "text-red-500")}>{analysis.signal.confidence}%</span> : '-'}
+                          </td>
+                        </>
+                      )}
+                      <td className="px-3 py-3">
+                        <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-bold', stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400')}>{stock.market === 'japan' ? 'JP' : 'US'}</span>
+                      </td>
+                      <td className="px-3 py-3 text-right text-white font-medium">{stock.market === 'japan' ? formatCurrency(stock.price, 'JPY') : formatCurrency(stock.price, 'USD')}</td>
+                      <td className={cn('px-3 py-3 text-right font-bold', getChangeColor(stock.change))}>{formatPercent(stock.changePercent)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
             </div>
           </div>
         </main>

@@ -38,7 +38,7 @@ describe('calculateVolumeProfile', () => {
     ];
 
     const profile = calculateVolumeProfile(mockData);
-    
+
     // Find the wall closest to 100
     const wallAt100 = profile.find(p => Math.abs(p.price - 100) < 5);
     expect(wallAt100).toBeDefined();
@@ -47,26 +47,26 @@ describe('calculateVolumeProfile', () => {
 
   it('should distribute volume across price range (High to Low)', () => {
     const mockData: OHLCV[] = [
-      { 
-        date: '2026-01-01', 
-        open: 100, 
-        high: 200, 
+      {
+        date: '2026-01-01',
+        open: 100,
+        high: 200,
         low: 100, // Bottom half
-        close: 150, 
-        volume: 1000 
+        close: 150,
+        volume: 1000
       },
-      { 
-        date: '2026-01-02', 
-        open: 100, 
-        high: 100, 
+      {
+        date: '2026-01-02',
+        open: 100,
+        high: 100,
         low: 0, // Top half
-        close: 50, 
-        volume: 1000 
+        close: 50,
+        volume: 1000
       }
     ];
 
     const profile = calculateVolumeProfile(mockData);
-    
+
     // Expect some walls to be found within the range
     expect(profile.length).toBeGreaterThan(0);
     // The max volume should have strength 1

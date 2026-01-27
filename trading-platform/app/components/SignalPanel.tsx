@@ -223,58 +223,38 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-3 h-full flex-col">
       <div className="flex justify-between items-center mb-2">
-        <div
-          className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5"
-          role="tablist"
-          aria-label="分析パネル"
-        >
+         <div className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5">
           <button
-            role="tab"
-            id="tab-signal"
-            aria-selected={activeTab === 'signal'}
-            aria-controls="panel-signal"
             onClick={() => setActiveTab('signal')}
             className={cn(
-              'px-3 py-1 text-xs font-medium rounded transition-colors focus-visible:ring-2 focus-visible:ring-primary focus:outline-none',
+              'px-3 py-1 text-xs font-medium rounded transition-colors',
               activeTab === 'signal' ? 'bg-[#233648] text-white' : 'text-[#92adc9] hover:text-white'
             )}
           >
             シグナル
           </button>
           <button
-            role="tab"
-            id="tab-backtest"
-            aria-selected={activeTab === 'backtest'}
-            aria-controls="panel-backtest"
             onClick={() => setActiveTab('backtest')}
             className={cn(
-              'px-3 py-1 text-xs font-medium rounded transition-colors focus-visible:ring-2 focus-visible:ring-primary focus:outline-none',
+              'px-3 py-1 text-xs font-medium rounded transition-colors',
               activeTab === 'backtest' ? 'bg-[#233648] text-white' : 'text-[#92adc9] hover:text-white'
             )}
           >
             バックテスト
           </button>
           <button
-            role="tab"
-            id="tab-forecast"
-            aria-selected={activeTab === 'forecast'}
-            aria-controls="panel-forecast"
             onClick={() => setActiveTab('forecast')}
             className={cn(
-              'px-3 py-1 text-xs font-medium rounded transition-colors focus-visible:ring-2 focus-visible:ring-primary focus:outline-none',
+              'px-3 py-1 text-xs font-medium rounded transition-colors',
               activeTab === 'forecast' ? 'bg-[#233648] text-white' : 'text-[#92adc9] hover:text-white'
             )}
           >
             予測コーン
           </button>
           <button
-            role="tab"
-            id="tab-ai"
-            aria-selected={activeTab === 'ai'}
-            aria-controls="panel-ai"
             onClick={() => setActiveTab('ai')}
             className={cn(
-              'px-3 py-1 text-xs font-medium rounded transition-colors focus-visible:ring-2 focus-visible:ring-primary focus:outline-none',
+              'px-3 py-1 text-xs font-medium rounded transition-colors',
               activeTab === 'ai' ? 'bg-[#233648] text-white' : 'text-[#92adc9] hover:text-white'
             )}
           >
@@ -318,29 +298,17 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       </div>
 
       {activeTab === 'signal' ? (
-        <div
-          role="tabpanel"
-          id="panel-signal"
-          aria-labelledby="tab-signal"
-          className="h-full"
-        >
-          <SignalCard
-            signal={displaySignal}
-            stock={stock}
-            isLive={!!liveSignal}
-            aiHitRate={aiPerformance.hitRate}
-            aiTradesCount={aiPerformance.trades}
-            calculatingHitRate={calculatingHitRate}
-            error={error}
-          />
-        </div>
+        <SignalCard
+          signal={displaySignal}
+          stock={stock}
+          isLive={!!liveSignal}
+          aiHitRate={aiPerformance.hitRate}
+          aiTradesCount={aiPerformance.trades}
+          calculatingHitRate={calculatingHitRate}
+          error={error}
+        />
       ) : activeTab === 'backtest' ? (
-        <div
-          role="tabpanel"
-          id="panel-backtest"
-          aria-labelledby="tab-backtest"
-          className="flex-1 overflow-auto"
-        >
+        <div className="flex-1 overflow-auto">
           {/* ... existing backtest code ... */}
          <div className="grid grid-cols-2 gap-2 mb-4">
            <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
@@ -377,12 +345,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
          </div>
        </div>
       ) : activeTab === 'forecast' ? (
-        <div
-          role="tabpanel"
-          id="panel-forecast"
-          aria-labelledby="tab-forecast"
-          className="flex-1 overflow-auto space-y-4"
-        >
+        <div className="flex-1 overflow-auto space-y-4">
           {signal?.forecastCone ? (
             <>
               <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-2">
@@ -436,13 +399,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           )}
         </div>
       ) : activeTab === 'ai' ? (
-        <div
-          role="tabpanel"
-          id="panel-ai"
-          aria-labelledby="tab-ai"
-          className="flex-1 overflow-auto space-y-4"
-        >
-          <div className="bg-[#1a2632] p-3 rounded-lg border border-[#233648] flex justify-between items-center">
+       <div className="flex-1 overflow-auto space-y-4">
+         <div className="bg-[#1a2632] p-3 rounded-lg border border-[#233648] flex justify-between items-center">
             <div>
               <div className="text-[10px] text-[#92adc9] uppercase font-bold">AI仮想口座合計損益</div>
               <div className={cn('text-xl font-black', aiStatus.totalProfit >= 0 ? 'text-green-400' : 'text-red-400')}>
