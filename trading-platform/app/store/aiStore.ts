@@ -1,34 +1,11 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { AIStatus, Signal } from '../types';
-import { AI_TRADING } from '@/app/lib/constants';
-import { aiTradeService } from '@/app/lib/AITradeService';
+import { useTradingStore } from './tradingStore';
 
-interface AIState {
-    aiStatus: AIStatus;
-    processAITrades: (symbol: string, currentPrice: number, signal: Signal | null) => void;
-}
+export const useAIStore = () => {
+    const aiStatus = useTradingStore((state) => state.aiStatus);
+    const processAITrades = useTradingStore((state) => state.processAITrades);
 
-const initialAIStatus: AIStatus = {
-    virtualBalance: AI_TRADING.INITIAL_VIRTUAL_BALANCE,
-    totalProfit: 0,
-    trades: [],
+    return {
+        aiStatus,
+        processAITrades,
+    };
 };
-
-export const useAIStore = create<AIState>()(
-    persist(
-        (set, get) => ({
-            aiStatus: initialAIStatus,
-
-            processAITrades: (symbol, currentPrice, signal) => {
-                const result = aiTradeService.processTrades(symbol, currentPrice, signal, get().aiStatus);
-                if (result) {
-                    set({ aiStatus: result.newStatus });
-                }
-            },
-        }),
-        {
-            name: 'trading-platform-ai',
-        }
-    )
-);

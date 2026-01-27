@@ -6,15 +6,16 @@
 import { OHLCV, Signal } from '../types';
 import { analysisService } from './AnalysisService';
 import { accuracyService } from './AccuracyService';
+import { volumeAnalysisService } from './VolumeAnalysis';
 
 export const analyzeStock = analysisService.analyzeStock.bind(analysisService);
 export const optimizeParameters = analysisService.optimizeParameters.bind(analysisService);
 export const calculateAIHitRate = accuracyService.calculateAIHitRate.bind(accuracyService);
 export const calculatePredictionError = accuracyService.calculatePredictionError.bind(accuracyService);
 
-// 互換性のために残す（将来的には削除検討）
+// 互換性のために残す
 export function calculateVolumeProfile(data: OHLCV[]) {
-  return analysisService.calculateForecastCone(data); // 実際には volumeResistance が analysisService で使われているので不要かもしれないが、一部で直接呼ばれている可能性あり
+  return volumeAnalysisService.calculateVolumeProfile(data);
 }
 
 // 内部計算用だった関数をラップ
