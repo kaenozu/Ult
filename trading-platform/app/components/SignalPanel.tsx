@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
 import { formatCurrency, cn, getConfidenceColor } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
@@ -6,6 +6,7 @@ import { useTradingStore } from '@/app/store/tradingStore';
 import { calculateAIHitRate } from '@/app/lib/analysis';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
 import { SignalCard } from './SignalCard';
+import { useAlertStore } from '@/app/store/alertStore';
 
 const FORECAST_CONE = {
   STEPS: 5,
@@ -23,8 +24,11 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
   const [calculatingHitRate, setCalculatingHitRate] = useState(false);
   const [preciseHitRate, setPreciseHitRate] = useState<{ hitRate: number, trades: number }>({ hitRate: 0, trades: 0 });
+  const [previousSignal, setPreviousSignal] = useState<Signal | null>(null);
+  const [previousForecastConfidence, setPreviousForecastConfidence] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { aiStatus, processAITrades } = useTradingStore();
+  const { createStockAlert, createCompositeAlert } = useAlertStore();
 
   // 詳細な的中率を非同期で計算（長期データを使用）
   useEffect(() => {
@@ -66,6 +70,32 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     return preciseHitRate;
   }, [preciseHitRate]);
 
+  // 的中率変化を監視
+  useEffect(() => {
+    if (!calculatingHitRate && preciseHitRate.trades > 0) {
+      const currentHitRate = preciseHitRate.hitRate;
+
+      // 前回の的中率を保存（簡易的にlocalStorageで）
+      const previousHitRate = parseInt(localStorage.getItem(`hitrate-${stock.symbol}`) || '0');
+
+      if (previousHitRate > 0) {
+        const dropPercent = (previousHitRate - currentHitRate) / previousHitRate;
+
+        if (dropPercent >= 0.2) {
+          createStockAlert({
+            symbol: stock.symbol,
+            alertType: 'ACCURACY_DROP',
+            details: {
+              hitRate: currentHitRate,
+            },
+          });
+        }
+      }
+
+      localStorage.setItem(`hitrate-${stock.symbol}`, currentHitRate.toString());
+    }
+  }, [calculatingHitRate, preciseHitRate, stock.symbol, createStockAlert]);
+
   const { status: wsStatus, lastMessage, connect, disconnect, reconnect } = useWebSocket('ws://localhost:8000/ws/signals');
   const [liveSignal, setLiveSignal] = useState<Signal | null>(null);
 
@@ -96,6 +126,74 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       processAITrades(stock.symbol, stock.price, displaySignal);
     }
   }, [stock.symbol, stock.price, displaySignal, processAITrades]);
+
+  // シグナル変化を監視してアラートを生成
+  useEffect(() => {
+    if (!displaySignal || !previousSignal) return;
+
+    if (displaySignal.type !== previousSignal.type) {
+      createStockAlert({
+        symbol: stock.symbol,
+        alertType: 'TREND_REVERSAL',
+        details: {},
+      });
+    }
+    setPreviousSignal(displaySignal);
+  }, [displaySignal, previousSignal, stock.symbol, createStockAlert]);
+
+  // 予測コーン信頼度変化を監視
+  useEffect(() => {
+    if (!displaySignal?.forecastCone) return;
+
+    const currentConfidence = displaySignal.forecastCone.confidence;
+
+    if (previousForecastConfidence !== null) {
+      const confidenceChange = Math.abs(currentConfidence - previousForecastConfidence);
+      const changePercent = confidenceChange / previousForecastConfidence;
+
+      if (changePercent >= 0.15) {
+        createStockAlert({
+          symbol: stock.symbol,
+          alertType: 'FORECAST_CHANGE',
+          details: {
+            confidence: currentConfidence,
+            previousConfidence: previousForecastConfidence,
+          },
+        });
+      }
+    }
+
+    setPreviousForecastConfidence(currentConfidence);
+  }, [displaySignal?.forecastCone?.confidence, previousForecastConfidence, stock.symbol, createStockAlert]);
+
+  // ブレイクアウトを監視
+  useEffect(() => {
+    if (!displaySignal?.supplyDemand?.breakoutDetected) return;
+
+    createStockAlert({
+      symbol: stock.symbol,
+      alertType: 'BREAKOUT',
+      details: {
+        price: displaySignal.supplyDemand.currentPrice,
+        level: displaySignal.supplyDemand.brokenLevel?.level,
+        levelType: displaySignal.supplyDemand.brokenLevel?.type,
+        confidence: displaySignal.supplyDemand.breakoutConfidence === 'high' ? 85 :
+                   displaySignal.supplyDemand.breakoutConfidence === 'medium' ? 65 : 45,
+      },
+    });
+  }, [displaySignal?.supplyDemand?.breakoutDetected, displaySignal?.supplyDemand, stock.symbol, createStockAlert]);
+
+  // 複合アラート（市場相関+シグナル）
+  useEffect(() => {
+    if (!displaySignal?.marketContext || !displaySignal) return;
+
+    createCompositeAlert({
+      symbol: stock.symbol,
+      marketTrend: displaySignal.marketContext.indexTrend,
+      stockSignal: displaySignal.type,
+      correlation: displaySignal.marketContext.correlation || 0,
+    });
+  }, [displaySignal?.marketContext, displaySignal?.type, stock.symbol, createCompositeAlert]);
 
   const backtestResult: BacktestResult = useMemo(() => {
     if (!ohlcv || ohlcv.length === 0) {
