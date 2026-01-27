@@ -1,6 +1,7 @@
 import { OHLCV } from '@/app/types';
 import { analyzeStock } from './analysis';
-import { BACKTEST_CONFIG } from '@/app/constants';
+import { BACKTEST_CONFIG, RSI_CONFIG, SMA_CONFIG } from '@/app/constants';
+import { calculateRSI, calculateSMA } from './utils';
 
 export interface BacktestResult {
   totalTrades: number;
@@ -33,14 +34,24 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
     return createEmptyResult();
   }
 
+  // Pre-calculate indicators to avoid recalculation in loop (O(N^2) -> O(N))
+  const closes = data.map(d => d.close);
+  const indicators = new Map<string, number[]>();
+
+  for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
+    indicators.set(`rsi-${rsiP}`, calculateRSI(closes, rsiP));
+  }
+  for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
+    indicators.set(`sma-${smaP}`, calculateSMA(closes, smaP));
+  }
+
   // Simulate trading day by day
   // We use a window of past data to generate a signal for "today"
   for (let i = minPeriod; i < data.length - 1; i++) {
     const nextDay = data[i + 1]; // Execution happens next open or close
 
-    // Generate signal using optimized slice
-    const historicalWindow = data.slice(Math.max(0, i - BACKTEST_CONFIG.MIN_DATA_PERIOD + 10), i + 1);
-    const signal = analyzeStock(symbol, historicalWindow, market);
+    // Generate signal using optimized analyzeStock with pre-calculated indicators and endIndex
+    const signal = analyzeStock(symbol, data, market, { endIndex: i + 1, indicators });
 
     // Logic:
     // If NO position and signal is BUY/SELL -> Open Position
