@@ -132,6 +132,45 @@ export interface Signal {
     price: number;
     strength: number; // 0 to 1
   }[];
+  forecastCone?: {
+    bearish: {
+      lower: number[];   // 悲観的下限
+      upper: number[];   // 悲観的上限
+    };
+    bullish: {
+      lower: number[];   // 楽観的下限
+      upper: number[];   // 楽観的上限
+    };
+    base: number[];      // ベースライン
+    confidence: number; // コーン全体の信頼度
+  };
+  supplyDemand?: {
+    currentPrice: number;
+    resistanceLevels: {
+      price: number;
+      volume: number;
+      strength: number;
+      type: 'support' | 'resistance';
+      level: 'strong' | 'medium' | 'weak';
+    }[];
+    supportLevels: {
+      price: number;
+      volume: number;
+      strength: number;
+      type: 'support' | 'resistance';
+      level: 'strong' | 'medium' | 'weak';
+    }[];
+    volumeProfileStrength: number;
+    breakoutDetected: boolean;
+    brokenLevel?: {
+      price: number;
+      volume: number;
+      strength: number;
+      type: 'support' | 'resistance';
+      level: 'strong' | 'medium' | 'weak';
+    };
+    breakoutConfidence: 'low' | 'medium' | 'high';
+  };
 }
 
 export interface PaperTrade {

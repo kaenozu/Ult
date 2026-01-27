@@ -72,8 +72,6 @@ const ERROR_MESSAGES: Record<string, { message: string; details?: string }> = {
 function extractErrorInfo(error: unknown): { type: ErrorType; message: string; code?: string; details?: string } {
   // カスタムエラークラスの処理
   if (error instanceof Error) {
-    const errorName = error.name;
-
     // APIError系のエラー
     if ('code' in error) {
       const apiError = error as { code: string; message: string };
