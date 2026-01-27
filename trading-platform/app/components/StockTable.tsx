@@ -2,7 +2,9 @@
 
 import { Stock } from '@/app/types';
 import { formatCurrency, formatPercent, getChangeColor, cn } from '@/app/lib/utils';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { useUIStore } from '@/app/store/uiStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 import { useEffect, memo, useCallback, useMemo } from 'react';
 
@@ -54,18 +56,18 @@ const StockRow = memo(({
       </td>
     )}
     <td className="w-8 px-1">
-        <button
-            onClick={(e) => {
-                e.stopPropagation();
-                onRemove(stock.symbol);
-            }}
-            aria-label={`${stock.name}をウォッチリストから削除`}
-            className="p-1 text-[#92adc9] hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-        >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-        </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(stock.symbol);
+        }}
+        aria-label={`${stock.name}をウォッチリストから削除`}
+        className="p-1 text-[#92adc9] hover:text-red-400 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
     </td>
   </tr>
 ));
@@ -81,9 +83,10 @@ interface StockTableProps {
 }
 
 export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) => {
-  const setSelectedStock = useTradingStore(state => state.setSelectedStock);
-  const batchUpdateStockData = useTradingStore(state => state.batchUpdateStockData);
-  const removeFromWatchlist = useTradingStore(state => state.removeFromWatchlist);
+  const setSelectedStock = useUIStore(state => state.setSelectedStock);
+  const batchUpdateStockData = useWatchlistStore(state => state.batchUpdateStockData);
+  const removeFromWatchlist = useWatchlistStore(state => state.removeFromWatchlist);
+  const updatePositionPrices = usePortfolioStore(state => state.updatePositionPrices);
 
   const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
 
@@ -94,7 +97,7 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
       if (symbols.length === 0) return;
 
       const quotes = await marketClient.fetchQuotes(symbols);
-      
+
       if (mounted && quotes.length > 0) {
         const updates = quotes
           .filter(q => q && q.symbol)
@@ -110,6 +113,11 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
 
         if (updates.length > 0) {
           batchUpdateStockData(updates);
+          updatePositionPrices(updates.map(u => ({
+            symbol: u.symbol,
+            price: u.data.price!,
+            change: u.data.change!
+          })));
         }
       }
     };

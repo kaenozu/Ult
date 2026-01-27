@@ -1,16 +1,17 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useUIStore } from '@/app/store/uiStore';
 
 /**
  * Custom hook for fetching and managing stock data
  * Includes proper cleanup to prevent memory leaks
  */
 export function useStockData() {
-  const watchlist = useTradingStore(state => state.watchlist);
-  const storeSelectedStock = useTradingStore(state => state.selectedStock);
-  const setSelectedStock = useTradingStore(state => state.setSelectedStock);
+  const watchlist = useWatchlistStore(state => state.watchlist);
+  const storeSelectedStock = useUIStore(state => state.selectedStock);
+  const setSelectedStock = useUIStore(state => state.setSelectedStock);
 
   const [chartData, setChartData] = useState<OHLCV[]>([]);
   const [indexData, setIndexData] = useState<OHLCV[]>([]);

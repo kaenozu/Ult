@@ -8,14 +8,15 @@ import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
 import { RightSidebar } from '@/app/components/RightSidebar';
 import { BottomPanel } from '@/app/components/BottomPanel';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
 
 export default function Workstation() {
-  const portfolio = useTradingStore(state => state.portfolio);
-  const closePosition = useTradingStore(state => state.closePosition);
-  const watchlist = useTradingStore(state => state.watchlist);
-  const journal = useTradingStore(state => state.journal);
+  const portfolio = usePortfolioStore(state => state.portfolio);
+  const closePosition = usePortfolioStore(state => state.closePosition);
+  const watchlist = useWatchlistStore(state => state.watchlist);
+  const journal = usePortfolioStore(state => state.journal);
   const {
     selectedStock,
     chartData,
@@ -87,15 +88,15 @@ export default function Workstation() {
       <main className="flex-1 flex overflow-hidden relative">
         {/* Mobile Backdrop (Left) */}
         {isSidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-30 lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
-        
+
         {/* Mobile Backdrop (Right) */}
         {isRightSidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 z-30 lg:hidden"
             onClick={() => setIsRightSidebarOpen(false)}
           />
@@ -144,14 +145,14 @@ export default function Workstation() {
               {/* Main Chart Visualization */}
               <div className="flex-1 relative p-4 flex flex-col">
                 <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
-            <StockChart
-              data={chartData}
-              indexData={indexData}
-              loading={loading}
-              error={error}
-              market={selectedStock?.market}
-              signal={chartSignal}
-            />
+                  <StockChart
+                    data={chartData}
+                    indexData={indexData}
+                    loading={loading}
+                    error={error}
+                    market={selectedStock?.market}
+                    signal={chartSignal}
+                  />
                 </div>
 
                 {/* RSI Sub-chart */}
