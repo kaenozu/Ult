@@ -21,10 +21,10 @@ export default function Journal() {
 
   const totalProfit = closedTrades.reduce((sum, t) => sum + (t.profit || 0), 0);
   const avgWin = winningTrades > 0
-    ? closedTrades.filter(t => (t.profit || 0) > 0).reduce((sum, t) => sum + (t.profit || 0), 0) / winningTrades
+    ? closedTrades.filter(t => (t.profit || 0) > 0).reduce((sum, t) => sum + (t.profit as number), 0) / winningTrades
     : 0;
   const avgLoss = losingTrades > 0
-    ? closedTrades.filter(t => (t.profit || 0) < 0).reduce((sum, t) => sum + (t.profit || 0), 0) / losingTrades
+    ? closedTrades.filter(t => (t.profit || 0) < 0).reduce((sum, t) => sum + (t.profit as number), 0) / losingTrades
     : 0;
 
   const profitFactor = Math.abs(avgLoss) > 0 ? avgWin / Math.abs(avgLoss) : avgWin > 0 ? Infinity : 0;
