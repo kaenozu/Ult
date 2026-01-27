@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { calculateSMA, calculateBollingerBands } from '@/app/lib/utils';
-import { SMA as SMA_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
+import { SMA_CONFIG, BOLLINGER_BANDS } from '@/app/lib/constants';
 
 export const useTechnicalIndicators = (prices: number[]) => {
   const sma20 = useMemo(() => calculateSMA(prices, SMA_CONFIG.SHORT_PERIOD), [prices]);

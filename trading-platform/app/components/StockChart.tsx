@@ -12,9 +12,9 @@ import {
   CANDLESTICK,
   CHART_GRID,
   CHART_CONFIG,
-  SMA as SMA_CONFIG,
+  SMA_CONFIG,
   BOLLINGER_BANDS,
-} from '@/app/constants';
+} from '@/app/lib/constants';
 import { useChartAnalysis } from '@/app/hooks/useChartAnalysis';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
