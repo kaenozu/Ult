@@ -34,7 +34,7 @@ export const MACD_CONFIG = {
 };
 
 export const OPTIMIZATION = {
-    REQUIRED_DATA_PERIOD: 100,
+    REQUIRED_DATA_PERIOD: 252,  // 1年分（営業日）に拡大
     MIN_DATA_PERIOD: 60,
     VOLUME_PROFILE_BINS: 20,
     TREND_ANALYSIS_MIN_PERIOD: 30,
@@ -42,7 +42,7 @@ export const OPTIMIZATION = {
 
 export const SIGNAL_THRESHOLDS = {
     MIN_CONFIDENCE: 50,
-    HIGH_CONFIDENCE: 80,
+    HIGH_CONFIDENCE: 70,  // 80%から70%に変更して現実的な基準に
     STRONG_CORRELATION: 0.4,
     BULL_RSI_THRESHOLD: 30,
     BEAR_RSI_THRESHOLD: 70,
@@ -56,7 +56,7 @@ export const RISK_MANAGEMENT = {
 };
 
 export const PRICE_CALCULATION = {
-    DEFAULT_ERROR_MULTIPLIER: 2.5,
+    DEFAULT_ERROR_MULTIPLIER: 2.2,  // 2.5から2.2に変更して信頼度向上
     DEFAULT_ATR_RATIO: 0.02,
     MIN_CONFIDENCE: 30,
     MAX_CONFIDENCE: 98,
@@ -184,7 +184,7 @@ export const SIGNAL_COLORS = {
 };
 
 export const CONFIDENCE_COLORS = {
-    HIGH_THRESHOLD: 60,
+    HIGH_THRESHOLD: 55,  // 60%から55%に変更
     HIGH: 'text-yellow-500',
     MEDIUM_THRESHOLD: 40,
     MEDIUM: 'text-blue-400',
