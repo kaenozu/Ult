@@ -3,22 +3,16 @@
  * Refactored to use APIClient for common functionality
  */
 
-import { getAPIClient } from './APIClient';
-import {
-  OHLCV,
-  AlphaVantageRSI,
-  AlphaVantageSMA,
-  AlphaVantageEMA,
-  AlphaVantageMACD,
-  AlphaVantageBollingerBands
-} from '@/app/types';
+import { APIClient } from './APIClient';
+import { idbClient } from './idb';
+import { idbClient } from './idb';
 
 interface CacheItem<T> {
   data: T;
   timestamp: number;
 }
 
-export interface QuoteData {
+interface QuoteData {
   symbol: string;
   price: number;
   change: number;
@@ -28,7 +22,7 @@ export interface QuoteData {
 }
 
 export class MarketDataClient {
-  private cache: Map<string, CacheItem<unknown>> = new Map();
+  private cache: Map<string, CacheItem<any>> = new Map();
   private readonly cacheDuration: number = 5 * 60 * 1000; // 5 minutes
   private readonly maxRetries: number = 3;
 
@@ -38,7 +32,7 @@ export class MarketDataClient {
       this.cache.delete(key);
       return null;
     }
-    return item.data as T;
+    return item.data;
   }
 
   private setCache<T>(key: string, data: T): void {
@@ -69,51 +63,34 @@ export class MarketDataClient {
     }
   }
 
-  async fetchDailyBars(symbol: string): Promise<{ data: OHLCV[]; source: string }> {
+  async fetchDailyBars(symbol: string): Promise<{ data: any[]; source: string }> {
     return this.fetchFromCacheOrAPI(`daily-${symbol}`, async () => {
-      const client = getAPIClient();
-      const rawData = await client.getDailyBars(symbol);
-
-      if (!rawData || !rawData['Time Series (Daily)']) {
-        return { data: [], source: 'api' };
-      }
-
-      const parsedData = client.parseOHLCVFromTimeSeries(rawData['Time Series (Daily)'] as Record<string, Record<string, string>>);
-      return { data: parsedData, source: 'api' };
+      const client = APIClient.getInstance();
+      return await client.getDailyBars(symbol);
     });
   }
 
   async fetchQuotes(symbols: string[]): Promise<QuoteData[]> {
     const key = `quotes-${symbols.join(',')}`;
     return this.fetchFromCacheOrAPI<QuoteData[]>(key, async () => {
-      // Logic uses getDailyBars for now, simplified for this context
-      const client = getAPIClient();
+      const client = APIClient.getInstance();
       const data = await client.getDailyBars(symbols[0]);
-
-      if (!data || !data['Time Series (Daily)']) {
+      
+      if (!data || data.length === 0) {
         return [];
       }
 
-      const timeSeries = data['Time Series (Daily)'];
       const quotes: QuoteData[] = [];
-
-      const dates = Object.keys(timeSeries).sort();
-      const recentDates = dates.slice(-50);
-
-      for (const date of recentDates) {
-        const latest = timeSeries[date] as Record<string, string>;
-        const open = parseFloat(latest['1. open']);
-        const close = parseFloat(latest['4. close']);
-        const low = parseFloat(latest['3. low']);
-        const volume = parseInt(latest['5. volume']);
-
+      
+      for (const item of data.slice(-50).reverse()) {
+        const latest = item.data[item.data.length - 1];
         quotes.push({
-          symbol: symbols[0],
-          price: close,
-          change: close - open,
-          changePercent: ((close - open) / open) * 100,
-          volume: volume,
-          marketState: close >= open ? 'up' : close < low ? 'down' : 'sideways',
+          symbol,
+          price: latest['4. close'],
+          change: parseFloat(latest['4. close']) - parseFloat(latest['1. open']),
+          changePercent: ((parseFloat(latest['4. close']) - parseFloat(latest['1. open'])) / parseFloat(latest['1. open']) * 100,
+          volume: parseInt(latest['5. volume']),
+          marketState: latest['4. close'] >= latest['1. open'] ? 'up' : latest['4. close'] < latest['3. low'] ? 'down' : 'sideways',
         });
       }
 
@@ -122,37 +99,37 @@ export class MarketDataClient {
     });
   }
 
-  async fetchRSI(symbol: string): Promise<AlphaVantageRSI> {
+  async fetchRSI(symbol: string): Promise<any> {
     return this.fetchFromCacheOrAPI(`rsi-${symbol}`, async () => {
-      const client = getAPIClient();
+      const client = APIClient.getInstance();
       return await client.getRSI(symbol);
     });
   }
 
-  async fetchSMA(symbol: string): Promise<AlphaVantageSMA> {
+  async fetchSMA(symbol: string): Promise<any> {
     return this.fetchFromCacheOrAPI(`sma-${symbol}`, async () => {
-      const client = getAPIClient();
+      const client = APIClient.getInstance();
       return await client.getSMA(symbol);
     });
   }
 
-  async fetchEMA(symbol: string): Promise<AlphaVantageEMA> {
+  async fetchEMA(symbol: string): Promise<any> {
     return this.fetchFromCacheOrAPI(`ema-${symbol}`, async () => {
-      const client = getAPIClient();
+      const client = APIClient.getInstance();
       return await client.getEMA(symbol);
     });
   }
 
-  async fetchMACD(symbol: string): Promise<AlphaVantageMACD> {
+  async fetchMACD(symbol: string): Promise<any> {
     return this.fetchFromCacheOrAPI(`macd-${symbol}`, async () => {
-      const client = getAPIClient();
+      const client = APIClient.getInstance();
       return await client.getMACD(symbol);
     });
   }
 
-  async fetchBollingerBands(symbol: string): Promise<AlphaVantageBollingerBands> {
+  async fetchBollingerBands(symbol: string): Promise<any> {
     return this.fetchFromCacheOrAPI(`bb-${symbol}`, async () => {
-      const client = getAPIClient();
+      const client = APIClient.getInstance();
       return await client.getBollingerBands(symbol);
     });
   }
@@ -160,9 +137,9 @@ export class MarketDataClient {
   async fetchQuote(symbol: string, market: 'japan' | 'usa' = 'japan'): Promise<QuoteData | null> {
     const key = `quote-${symbol}-${market}`;
     return this.fetchFromCacheOrAPI<QuoteData | null>(key, async () => {
-      const client = getAPIClient();
+      const client = APIClient.getInstance();
       const data = await client.getGlobalQuote(symbol);
-
+      
       if (!data) {
         return null;
       }

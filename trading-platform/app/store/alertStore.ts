@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Alert, AlertSettings, DEFAULT_ALERT_SETTINGS } from '@/app/lib/alertTypes';
-import { alertService } from '@/app/lib/alertService';
+import { AlertService, alertService } from '@/app/lib/alertService';
 
 interface AlertState {
   alerts: Alert[];
