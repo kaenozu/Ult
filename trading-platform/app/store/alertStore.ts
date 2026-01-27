@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Alert, AlertSettings, DEFAULT_ALERT_SETTINGS } from '@/app/lib/alertTypes';
-import { AlertService, alertService } from '@/app/lib/alertService';
+import { alertService } from '@/app/lib/alertService';
 
 interface AlertState {
   alerts: Alert[];
@@ -45,7 +45,7 @@ export const useAlertStore = create<AlertState>((set, get) => ({
     alertService.addAlert(alert);
     return {
       alerts: [alert, ...state.alerts].slice(0, 50),
-      unreadCount: state.unreadCount + 1,
+      unreadCount: state.unreadCount + (alert.acknowledged ? 0 : 1),
     };
   }),
 

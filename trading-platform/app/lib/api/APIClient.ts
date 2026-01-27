@@ -100,16 +100,16 @@ export class APIClient {
   private extractTimeSeriesData(
     data: Record<string, unknown>,
     keyName: string
-  ): Record<string, { timestamp: string; values: Record<string, string> }> | undefined {
+  ): Record<string, Record<string, string>> | undefined {
     const timeSeries = data[keyName];
     if (!timeSeries) {
       return undefined;
     }
 
     const entries: [string, Record<string, string>][] = Object.entries(timeSeries)
-      .filter(([timestamp, values]) => {
+      .filter(([_, values]) => {
         if (!values || typeof values !== 'object') return false;
-        return '1. open' in values && '2. high' in values && '3. low' in values && '4. close' in values && '5. volume' in values;
+        return '1. open' in values && '4. close' in values;
       })
       .map(([timestamp, values]) => [timestamp, values as Record<string, string>]);
 
@@ -117,7 +117,7 @@ export class APIClient {
       return undefined;
     }
 
-    return Object.fromEntries(entries) as Record<string, { timestamp: string; values: Record<string, string> }>;
+    return Object.fromEntries(entries);
   }
 
   /**
@@ -126,16 +126,16 @@ export class APIClient {
   private extractIndicatorData(
     data: Record<string, unknown>,
     keyName: string
-  ): Record<string, { timestamp: string; value: number }> | undefined {
+  ): Record<string, Record<string, string>> | undefined {
     const indicatorData = data[keyName];
     if (!indicatorData || typeof indicatorData !== 'object') {
       return undefined;
     }
 
     const entries: [string, Record<string, string>][] = Object.entries(indicatorData)
-      .filter(([timestamp, values]) => {
+      .filter(([_, values]) => {
         if (!values || typeof values !== 'object') return false;
-        return !isNaN(parseFloat(values));
+        return true;
       })
       .map(([timestamp, values]) => [timestamp, values as Record<string, string>]);
 
@@ -143,7 +143,7 @@ export class APIClient {
       return undefined;
     }
 
-    return Object.fromEntries(entries) as Record<string, { timestamp: string; value: number }>;
+    return Object.fromEntries(entries);
   }
 
   /**
@@ -151,10 +151,9 @@ export class APIClient {
    */
   async fetch<T>(
     functionName: string,
-    endpoint: string,
     params: Record<string, string | number>
   ): Promise<T> {
-    const url = new URLSearchParams(params).toString();
+    const url = new URLSearchParams(params as any).toString();
     const fullUrl = `${this.config.baseUrl}?${url}`;
 
     try {
@@ -174,7 +173,6 @@ export class APIClient {
   async getDailyBars(symbol: string, outputsize: 'compact' | 'full' = 'compact') {
     return this.fetch<AlphaVantageTimeSeriesDaily>(
       'getDailyBars',
-      endpoint,
       {
         function: 'TIME_SERIES_DAILY',
         symbol,
@@ -206,8 +204,18 @@ export class APIClient {
 
     return this.fetch<AlphaVantageTimeSeriesIntraday>(
       'getIntraday',
-      endpoint,
       params
+    );
+  }
+
+  async getGlobalQuote(symbol: string) {
+    return this.fetch<any>(
+      'getGlobalQuote',
+      {
+        function: 'GLOBAL_QUOTE',
+        symbol,
+        apikey: this.config.apiKey,
+      }
     );
   }
 
@@ -221,7 +229,6 @@ export class APIClient {
   ) {
     return this.fetch<AlphaVantageRSI>(
       'getRSI',
-      endpoint,
       {
         function: 'RSI',
         symbol,
@@ -243,7 +250,6 @@ export class APIClient {
   ) {
     return this.fetch<AlphaVantageSMA>(
       'getSMA',
-      endpoint,
       {
         function: 'SMA',
         symbol,
@@ -265,7 +271,6 @@ export class APIClient {
   ) {
     return this.fetch<AlphaVantageEMA>(
       'getEMA',
-      endpoint,
       {
         function: 'EMA',
         symbol,
@@ -288,7 +293,6 @@ export class APIClient {
   ) {
     return this.fetch<AlphaVantageMACD>(
       'getMACD',
-      endpoint,
       {
         function: 'MACD',
         symbol,
@@ -311,7 +315,6 @@ export class APIClient {
   ) {
     return this.fetch<AlphaVantageBollingerBands>(
       'getBollingerBands',
-      endpoint,
       {
         function: 'BBANDS',
         symbol,
@@ -327,7 +330,7 @@ export class APIClient {
   /**
    * Parse time series data to OHLCV array
    */
-  parseOHLCVFromTimeSeries(timeSeries: Record<string, { timestamp: string; values: Record<string, string> }>): Array<{
+  parseOHLCVFromTimeSeries(timeSeries: Record<string, Record<string, string>>): Array<{
     date: string;
     open: number;
     high: number;
@@ -342,16 +345,16 @@ export class APIClient {
       low: parseFloat(values['3. low']),
       close: parseFloat(values['4. close']),
       volume: parseInt(values['5. volume']),
-    })).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    })).sort((a, b) => a.date.localeCompare(b.date));
   }
 
   /**
    * Parse indicator data to array of values
    */
-  parseIndicatorFromData(indicatorData: Record<string, { timestamp: string; value: number }>): number[] {
+  parseIndicatorFromData(indicatorData: Record<string, { value: string }>): number[] {
     return Object.entries(indicatorData)
-      .map(([timestamp, values]) => parseFloat(values.value))
-      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      .map(([_, values]) => parseFloat(values.value))
+      .sort((a, b) => a - b);
   }
 }
 
