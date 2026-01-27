@@ -1,0 +1,12 @@
+{
+  "name": "best-practices-implementer",
+  "description": "ベストプラクティスに基づくコードレビューから実装・PR作成までを自動化するエージェントスキル。セキュリティ、パフォーマンス、コード品質の問題を検出し、修正してプルリクエストを作成する。",
+  "version": "1.0.0",
+  "rules": [
+    "comprehensive-review",
+    "issue-prioritization",
+    "automated-fix",
+    "testing-validation",
+    "pr-creation"
+  ]
+}
