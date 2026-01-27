@@ -124,6 +124,7 @@ export function Header() {
             </span>
             {isEditingCash ? (
               <input
+                id="cashInput"
                 ref={inputRef}
                 type="number"
                 value={cashInput}
@@ -160,6 +161,8 @@ export function Header() {
             {isSearchingAPI ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           </div>
           <input
+            id="stockSearch"
+            name="stockSearch"
             className="block w-64 p-2 pl-10 text-sm text-white bg-[#192633] border border-[#233648] rounded-lg focus:ring-primary focus:border-primary placeholder-[#92adc9]"
             placeholder="銘柄名、コードで検索"
             type="text"
