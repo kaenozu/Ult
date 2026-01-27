@@ -1,10 +1,12 @@
 import { filterByTechnicals } from '../lib/screener-utils';
-import { calculateRSI, calculateSMA } from '../lib/utils';
+import { technicalIndicatorService } from '../lib/TechnicalIndicatorService';
 import { Stock, OHLCV } from '../types';
 
-jest.mock('../lib/utils', () => ({
-    calculateRSI: jest.fn(),
-    calculateSMA: jest.fn(),
+jest.mock('../lib/TechnicalIndicatorService', () => ({
+    technicalIndicatorService: {
+        calculateRSI: jest.fn(),
+        calculateSMA: jest.fn(),
+    },
 }));
 
 describe('screener-utils', () => {
@@ -21,7 +23,7 @@ describe('screener-utils', () => {
     });
 
     it('filters by RSI Max', () => {
-        (calculateRSI as jest.Mock).mockReturnValue([0, 0, 70]); // last RSI is 70
+        (technicalIndicatorService.calculateRSI as jest.Mock).mockReturnValue([0, 0, 70]); // last RSI is 70
 
         // Pass if RSI <= 80
         expect(filterByTechnicals(mockStock, mockOHLCV, { rsiMax: '80' })).toBe(true);
@@ -30,7 +32,7 @@ describe('screener-utils', () => {
     });
 
     it('filters by RSI Min', () => {
-        (calculateRSI as jest.Mock).mockReturnValue([0, 0, 30]); // last RSI is 30
+        (technicalIndicatorService.calculateRSI as jest.Mock).mockReturnValue([0, 0, 30]); // last RSI is 30
 
         // Pass if RSI >= 20
         expect(filterByTechnicals(mockStock, mockOHLCV, { rsiMin: '20' })).toBe(true);
@@ -39,30 +41,30 @@ describe('screener-utils', () => {
     });
 
     it('filters by uptrend', () => {
-        (calculateSMA as jest.Mock).mockReturnValue([0, 0, 90]); // SMA50 is 90, Price is 100
+        (technicalIndicatorService.calculateSMA as jest.Mock).mockReturnValue([0, 0, 90]); // SMA50 is 90, Price is 100
 
         // Pass if price > SMA50
         expect(filterByTechnicals(mockStock, mockOHLCV, { trend: 'uptrend' })).toBe(true);
 
         // Fail if price <= SMA50 (SMA is 110)
-        (calculateSMA as jest.Mock).mockReturnValue([0, 0, 110]);
+        (technicalIndicatorService.calculateSMA as jest.Mock).mockReturnValue([0, 0, 110]);
         expect(filterByTechnicals(mockStock, mockOHLCV, { trend: 'uptrend' })).toBe(false);
     });
 
     it('filters by downtrend', () => {
-        (calculateSMA as jest.Mock).mockReturnValue([0, 0, 110]); // SMA50 is 110, Price is 100
+        (technicalIndicatorService.calculateSMA as jest.Mock).mockReturnValue([0, 0, 110]); // SMA50 is 110, Price is 100
 
         // Pass if price < SMA50
         expect(filterByTechnicals(mockStock, mockOHLCV, { trend: 'downtrend' })).toBe(true);
 
         // Fail if price >= SMA50 (SMA is 90)
-        (calculateSMA as jest.Mock).mockReturnValue([0, 0, 90]);
+        (technicalIndicatorService.calculateSMA as jest.Mock).mockReturnValue([0, 0, 90]);
         expect(filterByTechnicals(mockStock, mockOHLCV, { trend: 'downtrend' })).toBe(false);
     });
 
     it('ignores trend when set to all', () => {
         expect(filterByTechnicals(mockStock, mockOHLCV, { trend: 'all' })).toBe(true);
-        expect(calculateSMA).not.toHaveBeenCalled();
+        expect(technicalIndicatorService.calculateSMA).not.toHaveBeenCalled();
     });
 
     it('handles missing OHLCV elegantly', () => {

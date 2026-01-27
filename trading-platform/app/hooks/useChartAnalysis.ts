@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { OHLCV, Signal } from '@/app/types';
-import { calculateSMA, calculateBollingerBands } from '@/app/lib/utils';
+import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
 import { analyzeStock } from '@/app/lib/analysis';
 import {
     GHOST_FORECAST,
@@ -65,13 +65,13 @@ export function useChartAnalysis({
 
     // 3. Technical Indicators
     const sma20 = useMemo(() =>
-        showSMA ? calculateSMA(extendedData.prices, SMA_CONFIG.SHORT_PERIOD) : [],
+        showSMA ? technicalIndicatorService.calculateSMA(extendedData.prices, SMA_CONFIG.SHORT_PERIOD) : [],
         [extendedData.prices, showSMA]
     );
 
     const { upper, lower } = useMemo(() =>
         showBollinger
-            ? calculateBollingerBands(extendedData.prices, SMA_CONFIG.SHORT_PERIOD, BOLLINGER_BANDS.STD_DEVIATION)
+            ? technicalIndicatorService.calculateBollingerBands(extendedData.prices, SMA_CONFIG.SHORT_PERIOD, BOLLINGER_BANDS.STD_DEVIATION)
             : { upper: [], lower: [] },
         [extendedData.prices, showBollinger]
     );
