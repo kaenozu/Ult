@@ -430,8 +430,8 @@ export function analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'u
   const recentCloses = closes.slice(-RSI_CONFIG.DEFAULT_PERIOD);
   const atr = (Math.max(...recentCloses) - Math.min(...recentCloses)) / 2;
   const targetPercent = Math.max(atr / currentPrice, PRICE_CALCULATION.DEFAULT_ATR_RATIO);
-  const targetPrice = type === 'BUY' ? currentPrice * (1 + targetPercent * 2) : type === 'SELL' ? currentPrice * (1 - targetPercent * 2) : currentPrice;
-  const stopLoss = type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice;
+  const targetPrice = Math.max(0.01, type === 'BUY' ? currentPrice * (1 + targetPercent * 2) : type === 'SELL' ? currentPrice * (1 - targetPercent * 2) : currentPrice);
+  const stopLoss = Math.max(0.01, type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice);
   let confidence = 50 + (type === 'HOLD' ? 0 : Math.min(Math.abs(50 - lastRSI) * 1.5, 45));
 
   // Market correlation analysis
