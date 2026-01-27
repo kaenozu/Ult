@@ -188,20 +188,20 @@ test.describe('Trader Pro - ナビゲーション', () => {
   test('ヒートマップ: マーケット切り替え', async ({ page }) => {
     await page.goto('/heatmap');
 
-    // GLOBALボタンをクリック
-    await page.click('button:has-text("GLOBAL")');
+    // Globalボタンをクリック
+    await page.click('button:has-text("Global")');
     await page.waitForTimeout(1000);
-    await expect(page.locator('button:has-text("GLOBAL")')).toHaveClass(/focus/);
+    await expect(page.locator('button:has-text("Global")')).toHaveClass(/bg-primary/);
 
     // JAPANボタンをクリック
     await page.click('button:has-text("JAPAN")');
     await page.waitForTimeout(1000);
-    await expect(page.locator('button:has-text("JAPAN")')).toHaveClass(/focus/);
+    await expect(page.locator('button:has-text("JAPAN")')).toHaveClass(/bg-primary/);
 
     // USAボタンをクリック
     await page.click('button:has-text("USA")');
     await page.waitForTimeout(1000);
-    await expect(page.locator('button:has-text("USA")')).toHaveClass(/focus/);
+    await expect(page.locator('button:has-text("USA")')).toHaveClass(/bg-primary/);
   });
 });
 
