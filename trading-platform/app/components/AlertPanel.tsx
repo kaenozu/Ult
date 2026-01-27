@@ -143,6 +143,7 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                 </div>
               </div>
               <button
+                data-testid="notifications-enabled-toggle"
                 onClick={() => handleUpdateSettings('enabled', !settings.enabled)}
                 className={cn(
                   'w-14 h-7 rounded-full transition-colors relative',
@@ -321,7 +322,7 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-orange-400" />
-              <span className="text-xs font-bold text-white">
+              <span data-testid="unread-count-text" className="text-xs font-bold text-white">
                 未読アラート: {unreadAlerts.length}件
               </span>
             </div>
@@ -374,8 +375,8 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                       {getSeverityIcon(alert.severity)}
                       <span>
                         {alert.severity === 'HIGH' ? '高優先度' :
-                         alert.severity === 'MEDIUM' ? '中優先度' :
-                         '低優先度'}
+                          alert.severity === 'MEDIUM' ? '中優先度' :
+                            '低優先度'}
                       </span>
                     </div>
 
@@ -426,28 +427,28 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                     <div className={cn(
                       'px-2.5 py-1 rounded text-[10px] font-bold',
                       alert.actionable.type === 'BUY' ? 'bg-green-500/20 text-green-400' :
-                      alert.actionable.type === 'SELL' ? 'bg-red-500/20 text-red-400' :
-                      'bg-[#233648]/50 text-[#92adc9]'
+                        alert.actionable.type === 'SELL' ? 'bg-red-500/20 text-red-400' :
+                          'bg-[#233648]/50 text-[#92adc9]'
                     )}>
                       {alert.actionable.type === 'BUY' ? '買い' :
-                       alert.actionable.type === 'SELL' ? '売り' :
-                       '維持'}
+                        alert.actionable.type === 'SELL' ? '売り' :
+                          '維持'}
                     </div>
 
                     {/* Confidence */}
                     <div className="text-xs text-[#92adc9]">
-                      信頼度: <span className="font-bold text-white">{alert.actionable.confidence}%</span>
+                      信頼度: <span data-testid="alert-confidence" className="font-bold text-white">{alert.actionable.confidence}%</span>
                     </div>
 
                     {/* Target/Stop Loss */}
                     {alert.actionable.targetPrice && (
                       <div className="text-xs text-[#92adc9]">
-                        目標: {alert.actionable.targetPrice.toFixed(2)}
+                        目標: <span data-testid="alert-target-price">{alert.actionable.targetPrice.toFixed(2)}</span>
                       </div>
                     )}
                     {alert.actionable.stopLoss && (
                       <div className="text-xs text-[#92adc9]">
-                        損切: {alert.actionable.stopLoss.toFixed(2)}
+                        損切: <span data-testid="alert-stop-loss">{alert.actionable.stopLoss.toFixed(2)}</span>
                       </div>
                     )}
                   </div>

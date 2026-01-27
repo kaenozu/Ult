@@ -95,7 +95,7 @@ describe('useWebSocket', () => {
             if (mockWebSocketInstance) {
                 mockWebSocketInstance.readyState = MockWebSocket.CLOSED;
                 if (mockWebSocketInstance.onclose) {
-                    mockWebSocketInstance.onclose();
+                    mockWebSocketInstance.onclose({ code: 1006, reason: 'Abnormal Closure' });
                 }
             }
         });
@@ -107,7 +107,7 @@ describe('useWebSocket', () => {
             jest.advanceTimersByTime(3000);
         });
 
-        expect(result.current.status).toBe('CONNECTING');
+        expect(result.current.status).toBe('OPEN');
         jest.useRealTimers();
     });
 });

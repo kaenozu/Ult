@@ -95,8 +95,8 @@ export function Header() {
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
-    return ALL_STOCKS.filter(s => 
-      s.symbol.toLowerCase().includes(query) || 
+    return ALL_STOCKS.filter(s =>
+      s.symbol.toLowerCase().includes(query) ||
       s.name.toLowerCase().includes(query)
     ).slice(0, 8);
   }, [searchQuery]);
@@ -169,58 +169,74 @@ export function Header() {
             type="text"
             value={searchQuery}
             onChange={(e) => {
-                setSearchInput(e.target.value);
-                setShowResults(true);
+              setSearchInput(e.target.value);
+              setShowResults(true);
             }}
             onFocus={() => setShowResults(true)}
             onKeyDown={handleSearchKeyDown}
             aria-label="銘柄検索"
           />
-          
+
           {showResults && searchResults.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-[#141e27] border border-[#233648] rounded-lg shadow-2xl z-50 overflow-hidden">
-                <div className="px-3 py-2 border-b border-[#233648] bg-[#192633]/50">
-                    <span className="text-[10px] font-bold text-[#92adc9] uppercase tracking-wider">検索結果</span>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                    {searchResults.map((stock) => (
-                        <button
-                            key={stock.symbol}
-                            onClick={() => handleStockSelect(stock)}
-                            className="w-full flex items-center justify-between px-4 py-2 hover:bg-[#192633] transition-colors group"
-                        >
-                            <div className="flex flex-col items-start">
-                                <span className="font-bold text-white text-sm">{stock.symbol}</span>
-                                <span className="text-[10px] text-[#92adc9]">{stock.name}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <span className={cn(
-                                    "text-[10px] px-1.5 py-0.5 rounded font-bold",
-                                    stock.market === 'japan' ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400"
-                                )}>
-                                    {stock.market === 'japan' ? 'JP' : 'US'}
-                                </span>
-                                {watchlist.some(s => s.symbol === stock.symbol) ? (
-                                    <span className="text-[10px] text-green-500 font-bold">追加済み</span>
-                                ) : (
-                                    <Plus className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                                )}
-                            </div>
-                        </button>
-                    ))}
-                </div>
+              <div className="px-3 py-2 border-b border-[#233648] bg-[#192633]/50">
+                <span className="text-[10px] font-bold text-[#92adc9] uppercase tracking-wider">検索結果</span>
+              </div>
+              <div className="max-h-64 overflow-y-auto">
+                {searchResults.map((stock) => (
+                  <button
+                    key={stock.symbol}
+                    onClick={() => handleStockSelect(stock)}
+                    className="w-full flex items-center justify-between px-4 py-2 hover:bg-[#192633] transition-colors group"
+                  >
+                    <div className="flex flex-col items-start">
+                      <span className="font-bold text-white text-sm">{stock.symbol}</span>
+                      <span className="text-[10px] text-[#92adc9]">{stock.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={cn(
+                        "text-[10px] px-1.5 py-0.5 rounded font-bold",
+                        stock.market === 'japan' ? "bg-blue-500/20 text-blue-400" : "bg-red-500/20 text-red-400"
+                      )}>
+                        {stock.market === 'japan' ? 'JP' : 'US'}
+                      </span>
+                      {watchlist.some(s => s.symbol === stock.symbol) ? (
+                        <span className="text-[10px] text-green-500 font-bold">追加済み</span>
+                      ) : (
+                        <Plus className="w-3.5 h-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all duration-300",
+            isConnected
+              ? "bg-green-500/10 border-green-500/30 text-green-400"
+              : "bg-red-500/10 border-red-500/30 text-red-400"
+          )}>
+            <div className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+            )} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">
+              {isConnected ? '接続済み' : '切断中'}
+            </span>
+          </div>
+          <button
+            onClick={toggleConnection}
+            className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
+            aria-label={isConnected ? "切断" : "接続"}
+            title={isConnected ? "切断" : "接続"}
+          >
+            {isConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
+          </button>
+        </div>
         <NotificationCenter />
-        <button
-          onClick={() => alert('設定機能は現在開発中です')}
-          className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
-          aria-label="設定"
-          title="設定"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
         <button
           onClick={() => alert('設定機能は現在開発中です')}
           className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"

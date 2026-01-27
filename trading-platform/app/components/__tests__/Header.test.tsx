@@ -28,6 +28,10 @@ jest.mock('lucide-react', () => ({
     Loader2: () => <span data-testid="icon-loader" />
 }));
 
+jest.mock('../NotificationCenter', () => ({
+    NotificationCenter: () => <div data-testid="notification-center">NotificationCenter</div>
+}));
+
 describe('Header', () => {
     const mockSetCash = jest.fn();
     const mockAddToWatchlist = jest.fn();
