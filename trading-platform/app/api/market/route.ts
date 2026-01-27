@@ -89,6 +89,10 @@ export async function GET(request: Request) {
       let period1: string;
 
       if (startDateParam) {
+        // Validate date format (YYYY-MM-DD)
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(startDateParam) || isNaN(Date.parse(startDateParam))) {
+          return validationError('Invalid startDate format. Use YYYY-MM-DD.', 'startDate');
+        }
         period1 = startDateParam;
       } else {
         const startDate = new Date();
