@@ -27,6 +27,11 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const [previousSignal, setPreviousSignal] = useState<Signal | null>(null);
   const [previousForecastConfidence, setPreviousForecastConfidence] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Backtest state
+  const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null);
+  const [isBacktesting, setIsBacktesting] = useState(false);
+
   const { aiStatus, processAITrades } = useAIStore();
   const { createStockAlert, createCompositeAlert } = useAlertStore();
 
@@ -113,9 +118,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     }
   }, [lastMessage, stock.symbol]);
 
-  // Reset live signal when stock changes
+  // Reset live signal and backtest when stock changes
   useEffect(() => {
     setLiveSignal(null);
+    setBacktestResult(null);
   }, [stock.symbol]);
 
   const displaySignal = liveSignal || signal;
@@ -195,27 +201,45 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     });
   }, [displaySignal?.marketContext, displaySignal?.type, stock.symbol, createCompositeAlert]);
 
-  const backtestResult: BacktestResult = useMemo(() => {
-    if (!ohlcv || ohlcv.length === 0) {
-      return {
-        symbol: stock.symbol,
-        totalTrades: 0,
-        winningTrades: 0,
-        losingTrades: 0,
-        winRate: 0,
-        totalReturn: 0,
-        avgProfit: 0,
-        avgLoss: 0,
-        profitFactor: 0,
-        maxDrawdown: 0,
-        sharpeRatio: 0,
-        trades: [],
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString()
-      };
+  // Lazy load backtest result
+  useEffect(() => {
+    if (loading) return;
+
+    if (activeTab === 'backtest' && !backtestResult && !isBacktesting) {
+      if (!ohlcv || ohlcv.length === 0) {
+        setBacktestResult({
+            symbol: stock.symbol,
+            totalTrades: 0,
+            winningTrades: 0,
+            losingTrades: 0,
+            winRate: 0,
+            totalReturn: 0,
+            avgProfit: 0,
+            avgLoss: 0,
+            profitFactor: 0,
+            maxDrawdown: 0,
+            sharpeRatio: 0,
+            trades: [],
+            startDate: new Date().toISOString(),
+            endDate: new Date().toISOString()
+        });
+        return;
+      }
+
+      setIsBacktesting(true);
+      // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
+      setTimeout(() => {
+        try {
+          const result = runBacktest(stock.symbol, ohlcv, stock.market);
+          setBacktestResult(result);
+        } catch (e) {
+            console.error("Backtest failed", e);
+        } finally {
+          setIsBacktesting(false);
+        }
+      }, 50);
     }
-    return runBacktest(stock.symbol, ohlcv, stock.market);
-  }, [stock.symbol, ohlcv, stock.market]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading]);
 
   const aiTrades = useMemo(() => {
     return aiStatus.trades.filter(t => t.symbol === stock.symbol);
@@ -238,8 +262,16 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-3 h-full flex-col">
       <div className="flex justify-between items-center mb-2">
-        <div className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5">
+        <div
+          className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5"
+          role="tablist"
+          aria-label="分析パネル"
+        >
           <button
+            id="tab-signal"
+            role="tab"
+            aria-selected={activeTab === 'signal'}
+            aria-controls="panel-signal"
             onClick={() => setActiveTab('signal')}
             className={cn(
               'px-3 py-1 text-xs font-medium rounded transition-colors',
@@ -249,6 +281,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             シグナル
           </button>
           <button
+            id="tab-backtest"
+            role="tab"
+            aria-selected={activeTab === 'backtest'}
+            aria-controls="panel-backtest"
             onClick={() => setActiveTab('backtest')}
             className={cn(
               'px-3 py-1 text-xs font-medium rounded transition-colors',
@@ -258,6 +294,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             バックテスト
           </button>
           <button
+            id="tab-forecast"
+            role="tab"
+            aria-selected={activeTab === 'forecast'}
+            aria-controls="panel-forecast"
             onClick={() => setActiveTab('forecast')}
             className={cn(
               'px-3 py-1 text-xs font-medium rounded transition-colors',
@@ -267,6 +307,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             予測コーン
           </button>
           <button
+            id="tab-ai"
+            role="tab"
+            aria-selected={activeTab === 'ai'}
+            aria-controls="panel-ai"
             onClick={() => setActiveTab('ai')}
             className={cn(
               'px-3 py-1 text-xs font-medium rounded transition-colors',
@@ -313,54 +357,64 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       </div>
 
       {activeTab === 'signal' ? (
-        <SignalCard
-          signal={displaySignal}
-          stock={stock}
-          isLive={!!liveSignal}
-          aiHitRate={aiPerformance.hitRate}
-          aiTradesCount={aiPerformance.trades}
-          calculatingHitRate={calculatingHitRate}
-          error={error}
-        />
+        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full">
+            <SignalCard
+            signal={displaySignal}
+            stock={stock}
+            isLive={!!liveSignal}
+            aiHitRate={aiPerformance.hitRate}
+            aiTradesCount={aiPerformance.trades}
+            calculatingHitRate={calculatingHitRate}
+            error={error}
+            />
+        </div>
       ) : activeTab === 'backtest' ? (
-        <div className="flex-1 overflow-auto">
-          {/* ... existing backtest code ... */}
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
-              <div className="text-[10px] text-[#92adc9]">勝率</div>
-              <div className={cn('text-lg font-bold', backtestResult.winRate >= 50 ? 'text-green-500' : 'text-red-500')}>
-                {backtestResult.winRate}%
-              </div>
+        <div role="tabpanel" id="panel-backtest" aria-labelledby="tab-backtest" className="flex-1 overflow-auto">
+          {isBacktesting || !backtestResult ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2">
+                <div className="w-6 h-6 border-2 border-[#233648] border-t-blue-500 rounded-full animate-spin" />
+                <span className="text-xs text-[#92adc9]">バックテスト実行中...</span>
             </div>
-            <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
-              <div className="text-[10px] text-[#92adc9]">合計損益</div>
-              <div className={cn('text-lg font-bold', backtestResult.totalReturn >= 0 ? 'text-green-500' : 'text-red-500')}>
-                {backtestResult.totalReturn > 0 ? '+' : ''}{backtestResult.totalReturn}%
-              </div>
-            </div>
-          </div>
+          ) : (
+            <>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
+                    <div className="text-[10px] text-[#92adc9]">勝率</div>
+                    <div className={cn('text-lg font-bold', backtestResult.winRate >= 50 ? 'text-green-500' : 'text-red-500')}>
+                        {backtestResult.winRate}%
+                    </div>
+                    </div>
+                    <div className="bg-[#192633]/50 p-2 rounded border border-[#233648]">
+                    <div className="text-[10px] text-[#92adc9]">合計損益</div>
+                    <div className={cn('text-lg font-bold', backtestResult.totalReturn >= 0 ? 'text-green-500' : 'text-red-500')}>
+                        {backtestResult.totalReturn > 0 ? '+' : ''}{backtestResult.totalReturn}%
+                    </div>
+                    </div>
+                </div>
 
-          <div className="space-y-2">
-            <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のシミュレーション</div>
-            {backtestResult.trades.slice(0, 5).map((trade: any, i: number) => (
-              <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className={cn('font-bold', trade.type === 'BUY' ? 'text-green-500' : 'text-red-500')}>
-                      {trade.type === 'BUY' ? '買い' : '売り'}
-                    </span>
-                    <span className="text-[#92adc9]">{trade.entryDate}</span>
-                  </div>
+                <div className="space-y-2">
+                    <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のシミュレーション</div>
+                    {backtestResult.trades.slice(0, 5).map((trade: any, i: number) => (
+                    <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
+                        <div>
+                        <div className="flex items-center gap-2">
+                            <span className={cn('font-bold', trade.type === 'BUY' ? 'text-green-500' : 'text-red-500')}>
+                            {trade.type === 'BUY' ? '買い' : '売り'}
+                            </span>
+                            <span className="text-[#92adc9]">{trade.entryDate}</span>
+                        </div>
+                        </div>
+                        <div className={cn('font-bold', trade.profitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
+                        {trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent.toFixed(1)}%
+                        </div>
+                    </div>
+                    ))}
                 </div>
-                <div className={cn('font-bold', trade.profitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
-                  {trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent.toFixed(1)}%
-                </div>
-              </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       ) : activeTab === 'forecast' ? (
-        <div className="flex-1 overflow-auto space-y-4">
+        <div role="tabpanel" id="panel-forecast" aria-labelledby="tab-forecast" className="flex-1 overflow-auto space-y-4">
           {signal?.forecastCone ? (
             <>
               <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-2">
@@ -414,7 +468,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           )}
         </div>
       ) : activeTab === 'ai' ? (
-        <div className="flex-1 overflow-auto space-y-4">
+        <div role="tabpanel" id="panel-ai" aria-labelledby="tab-ai" className="flex-1 overflow-auto space-y-4">
           <div className="bg-[#1a2632] p-3 rounded-lg border border-[#233648] flex justify-between items-center">
             <div>
               <div className="text-[10px] text-[#92adc9] uppercase font-bold">AI仮想口座合計損益</div>
