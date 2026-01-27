@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Stock, Signal, OHLCV } from '@/app/types';
+import { Stock, Signal, OHLCV, BacktestTrade, PaperTrade } from '@/app/types';
 import { formatCurrency, cn, getConfidenceColor } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { useAIStore } from '@/app/store/aiStore';
@@ -105,11 +105,11 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   }, [wsStatus]);
 
   useEffect(() => {
-    if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE' && lastMessage.data.symbol === stock.symbol) {
-      setLiveSignal(lastMessage.data);
-    } else if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE' && lastMessage.data.symbol !== stock.symbol) {
-      // Different symbol, ignore or maybe clear if we switched?
-      // Actually, if we switched stock, we should clear liveSignal until we get a new one
+    if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE') {
+      const data = lastMessage.data as { symbol: string } | undefined;
+      if (data && data.symbol === stock.symbol) {
+        setLiveSignal(lastMessage.data as Signal);
+      }
     }
   }, [lastMessage, stock.symbol]);
 
@@ -342,7 +342,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
           <div className="space-y-2">
             <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のシミュレーション</div>
-            {backtestResult.trades.slice(0, 5).map((trade: any, i: number) => (
+            {backtestResult.trades.slice(0, 5).map((trade: BacktestTrade, i: number) => (
               <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
                 <div>
                   <div className="flex items-center gap-2">
@@ -435,7 +435,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
                 この銘柄での売買履歴はまだありません。
               </div>
             ) : (
-              aiTrades.map((trade: any, i: number) => (
+              aiTrades.map((trade: PaperTrade, i: number) => (
                 <div key={i} className="bg-[#192633]/50 rounded-lg border border-[#233648] overflow-hidden">
                   <div className="p-2 flex justify-between items-center border-b border-[#233648]/50 bg-black/20">
                     <div className="flex items-center gap-2">
