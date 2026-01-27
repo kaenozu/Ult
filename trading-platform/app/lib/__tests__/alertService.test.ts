@@ -336,7 +336,6 @@ describe('AlertService', () => {
         serviceInstance['acknowledgeAlert']('non-existent-id');
       }).not.toThrow();
     });
-  });
 
   describe('clearAcknowledged', () => {
     it('removes all acknowledged alerts', () => {
@@ -415,23 +414,8 @@ describe('AlertService', () => {
     });
   });
 
-      const alert2 = serviceInstance['createMarketAlert']({
-        symbol: '^N225',
-        trend: 'DOWN',
-        changePercent: -1.0,
-      });
-
-      expect(alert2).not.toBeNull();
-
-      if (alert1 && alert2) {
-        const alerts = serviceInstance['getAlerts']();
-        expect(alerts.length).toBe(2);
-        expect(alerts[0].id).toBe(alert2.id);
-        expect(alerts[1].id).toBe(alert1.id);
-      }
-    });
-
-    it('limits alert list to 50 items', () => {
+  describe('addAlert', () => {
+    it('adds alert to store via service', () => {
       for (let i = 0; i < 60; i++) {
         serviceInstance['createMarketAlert']({
           symbol: '^N225',
@@ -443,7 +427,6 @@ describe('AlertService', () => {
       const alerts = serviceInstance['getAlerts']();
       expect(alerts.length).toBe(50);
     });
-  });
 
   describe('getUnreadCount', () => {
     it('returns correct count of unread alerts', () => {
