@@ -1,6 +1,6 @@
 import { OHLCV } from '@/app/types';
 import { analyzeStock } from './analysis';
-import { BACKTEST_CONFIG, BACKTEST_METRICS } from '@/app/constants';
+import { BACKTEST_CONFIG } from '@/app/constants';
 
 export interface BacktestResult {
   totalTrades: number;
@@ -38,10 +38,8 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
   for (let i = minPeriod; i < data.length - 1; i++) {
     const nextDay = data[i + 1]; // Execution happens next open or close
 
-    // Slice data up to current day for analysis
-    const historicalWindow = data.slice(0, i + 1);
-
-    // Generate signal
+    // Generate signal using optimized slice
+    const historicalWindow = data.slice(Math.max(0, i - BACKTEST_CONFIG.MIN_DATA_PERIOD + 10), i + 1);
     const signal = analyzeStock(symbol, historicalWindow, market);
 
     // Logic:
@@ -65,34 +63,29 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
 
       let shouldExit = false;
       let exitReason = '';
+      const change = (nextDay.close - currentPosition.price) / currentPosition.price;
 
-      if (currentPosition.type === 'BUY' && signal.type === 'SELL') {
-        shouldExit = true;
-        exitReason = 'Signal Reversal';
-      } else if (currentPosition.type === 'SELL' && signal.type === 'BUY') {
-        shouldExit = true;
-        exitReason = 'Signal Reversal';
+      if (currentPosition.type === 'BUY') {
+        if (signal.type === 'SELL') {
+          shouldExit = true;
+          exitReason = 'Signal Reversal';
+        } else if (change > BACKTEST_CONFIG.BULL_TAKE_PROFIT) {
+          shouldExit = true;
+          exitReason = `Take Profit (+${BACKTEST_CONFIG.BULL_TAKE_PROFIT * 100}%)`;
+        } else if (change < -BACKTEST_CONFIG.BULL_STOP_LOSS) {
+          shouldExit = true;
+          exitReason = `Stop Loss (-${BACKTEST_CONFIG.BULL_STOP_LOSS * 100}%)`;
+        }
       } else {
-        // Simple stop/target for backtest simplicity if no signal reversal
-        const change = (nextDay.close - currentPosition.price) / currentPosition.price;
-        if (currentPosition.type === 'BUY') {
-          if (change > BACKTEST_CONFIG.BULL_TAKE_PROFIT) {
-            shouldExit = true;
-            exitReason = `Take Profit (+${BACKTEST_CONFIG.BULL_TAKE_PROFIT * 100}%)`;
-          }
-          if (change < -BACKTEST_CONFIG.BULL_STOP_LOSS) {
-            shouldExit = true;
-            exitReason = `Stop Loss (-${BACKTEST_CONFIG.BULL_STOP_LOSS * 100}%)`;
-          }
-        } else {
-          if (change < -BACKTEST_CONFIG.BEAR_TAKE_PROFIT) {
-            shouldExit = true;
-            exitReason = `Take Profit (+${BACKTEST_CONFIG.BEAR_TAKE_PROFIT * 100}%)`;
-          }
-          if (change > BACKTEST_CONFIG.BEAR_STOP_LOSS) {
-            shouldExit = true;
-            exitReason = `Stop Loss (-${BACKTEST_CONFIG.BEAR_STOP_LOSS * 100}%)`;
-          }
+        if (signal.type === 'BUY') {
+          shouldExit = true;
+          exitReason = 'Signal Reversal';
+        } else if (change < -BACKTEST_CONFIG.BEAR_TAKE_PROFIT) {
+          shouldExit = true;
+          exitReason = `Take Profit (+${BACKTEST_CONFIG.BEAR_TAKE_PROFIT * 100}%)`;
+        } else if (change > BACKTEST_CONFIG.BEAR_STOP_LOSS) {
+          shouldExit = true;
+          exitReason = `Stop Loss (-${BACKTEST_CONFIG.BEAR_STOP_LOSS * 100}%)`;
         }
       }
 
@@ -137,9 +130,9 @@ function calculateStats(trades: BacktestTrade[]): BacktestResult {
   const losingTrades = trades.filter(t => t.profitPercent <= 0).length;
   const totalTrades = trades.length;
   const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
-  
+
   const totalProfitPercent = trades.reduce((sum, t) => sum + t.profitPercent, 0);
-  
+
   const grossProfit = trades.filter(t => t.profitPercent > 0).reduce((sum, t) => sum + t.profitPercent, 0);
   const grossLoss = Math.abs(trades.filter(t => t.profitPercent < 0).reduce((sum, t) => sum + t.profitPercent, 0));
   const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
@@ -148,7 +141,7 @@ function calculateStats(trades: BacktestTrade[]): BacktestResult {
   let peak = 0;
   let maxDrawdown = 0;
   let equity = 100; // Start at 100%
-  
+
   for (const trade of trades) {
     equity *= (1 + trade.profitPercent / 100);
     if (equity > peak) peak = equity;
