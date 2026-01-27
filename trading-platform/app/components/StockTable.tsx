@@ -143,17 +143,28 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
           </tr>
         </thead>
         <tbody className="divide-y divide-[#233648]/50">
-          {stocks.map((stock) => (
-            <StockRow
-              key={stock.symbol}
-              stock={stock}
-              isSelected={selectedSymbol === stock.symbol}
-              onSelect={handleSelect}
-              onRemove={handleRemove}
-              showChange={showChange}
-              showVolume={showVolume}
-            />
-          ))}
+          {stocks.length === 0 ? (
+            <tr>
+              <td colSpan={showChange ? 4 : 3} className="px-3 py-8 text-center text-[#92adc9]">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-sm font-medium">ウォッチリストは空です</span>
+                  <span className="text-xs opacity-70">銘柄を検索して追加してください</span>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            stocks.map((stock) => (
+              <StockRow
+                key={stock.symbol}
+                stock={stock}
+                isSelected={selectedSymbol === stock.symbol}
+                onSelect={handleSelect}
+                onRemove={handleRemove}
+                showChange={showChange}
+                showVolume={showVolume}
+              />
+            ))
+          )}
         </tbody>
       </table>
     </div>
