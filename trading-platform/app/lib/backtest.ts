@@ -1,6 +1,6 @@
 import { OHLCV } from '@/app/types';
 import { analyzeStock } from './analysis';
-import { BACKTEST_CONFIG } from '@/app/constants';
+import { BACKTEST_CONFIG, OPTIMIZATION } from './constants';
 
 export interface BacktestResult {
   totalTrades: number;
@@ -28,7 +28,7 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
   let currentPosition: { type: 'BUY' | 'SELL', price: number, date: string } | null = null;
 
   // Need minimum period for indicators
-  const minPeriod = BACKTEST_CONFIG.MIN_DATA_PERIOD;
+  const minPeriod = OPTIMIZATION.MIN_DATA_PERIOD;
   if (data.length < minPeriod) {
     return createEmptyResult();
   }
@@ -39,7 +39,7 @@ export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'us
     const nextDay = data[i + 1]; // Execution happens next open or close
 
     // Generate signal using optimized slice
-    const historicalWindow = data.slice(Math.max(0, i - BACKTEST_CONFIG.MIN_DATA_PERIOD + 10), i + 1);
+    const historicalWindow = data.slice(Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10), i + 1);
     const signal = analyzeStock(symbol, historicalWindow, market);
 
     // Logic:
