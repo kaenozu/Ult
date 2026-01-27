@@ -6,13 +6,7 @@ describe('AlertService', () => {
 
   beforeEach(() => {
     serviceInstance = AlertService.getInstance();
-    (serviceInstance as any).alerts = [];
-    (serviceInstance as any).settings.enabled = true;
-    (serviceInstance as any).settings.severities = {
-      HIGH: true,
-      MEDIUM: true,
-      LOW: true,
-    };
+    serviceInstance.reset();
     useAlertStore.getState().alerts = [];
     useAlertStore.getState().unreadCount = 0;
   });

@@ -19,6 +19,8 @@ export const SMA_CONFIG = {
     MEDIUM_PERIOD: 50,
     LONG_PERIOD: 200,
     PERIOD_OPTIONS: [10, 20, 50, 100],
+    COLOR: '#fbbf24',
+    LINE_WIDTH: 2,
 };
 
 export const MACD_CONFIG = {
