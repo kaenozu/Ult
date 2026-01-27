@@ -19,3 +19,7 @@
 ## 2024-05-23 - [Optimization] Hoisting Invariants in Nested Loops
 **Learning:** Pre-calculating derived data (like indicators) outside of nested parameter optimization loops significantly reduces redundancy. Even if the inner loop complexity is O(N), reducing the constant factor (number of passes) matters when N is large.
 **Action:** Look for nested loops where the inner operation allocates or re-calculates data based on outer loop variables.
+
+## 2024-05-23 - [Zustand Performance]
+**Learning:** Subscribing to the entire Zustand store causes re-renders on *any* state change.
+**Action:** Always use granular selectors (e.g., `useStore(s => s.prop)`) to ensure components only re-render when their dependencies update.

@@ -55,4 +55,20 @@ describe('Market API Security Tests', () => {
     const res = await GET(req);
     expect(res.status).toBe(200);
   });
+
+  it('should reject invalid startDate', async () => {
+    const req = createRequest(`/api/market?symbol=AAPL&type=history&startDate=invalid-date`);
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.error).toContain('Invalid startDate format');
+  });
+
+  it('should accept valid startDate', async () => {
+    const req = createRequest(`/api/market?symbol=AAPL&type=history&startDate=2023-01-01`);
+    const res = await GET(req);
+
+    expect(res.status).toBe(200);
+  });
 });

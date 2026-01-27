@@ -27,7 +27,7 @@ export class RateLimiter {
   private minuteRequests: number[] = [];
   private dayRequests: number[] = [];
   private config: RateLimitConfig;
-  
+
   constructor(config?: RateLimitConfig) {
     this.config = config || {
       maxRequestsPerMinute: 5,
@@ -126,15 +126,14 @@ export class RateLimiter {
    */
   async waitForNextRequest(): Promise<void> {
     const waitTime = this.getTimeUntilNextRequest();
-    
+
     if (waitTime > 0) {
-      const minutes = Math.ceil(waitTime / 60000);
-      const seconds = Math.ceil((waitTime % 60000) / 1000);
-      
-      if (seconds < 60) {
-        console.log(`Rate limit: Waiting ${seconds} seconds...`);
-      } else if (minutes < 60) {
+      if (waitTime >= 60000) {
+        const minutes = Math.ceil(waitTime / 60000);
         console.log(`Rate limit: Waiting ${minutes} minutes...`);
+      } else {
+        const seconds = Math.ceil(waitTime / 1000);
+        console.log(`Rate limit: Waiting ${seconds} seconds...`);
       }
 
       await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -194,9 +193,9 @@ export class RateLimiter {
   private getOldestRequest(requests: number[], windowMs: number): number {
     const now = Date.now();
     const windowStart = now - windowMs;
-    
+
     const validRequests = requests.filter(t => t > windowStart);
-    
+
     if (validRequests.length === 0) {
       return now;
     }
