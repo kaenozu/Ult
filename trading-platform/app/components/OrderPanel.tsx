@@ -3,7 +3,7 @@
 import { useState, useId } from 'react';
 import { Stock } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
 
 interface OrderPanelProps {
   stock: Stock;
@@ -11,7 +11,7 @@ interface OrderPanelProps {
 }
 
 export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
-  const { portfolio, addPosition, setCash, addJournalEntry } = useTradingStore();
+  const { portfolio, addPosition, setCash, addJournalEntry } = usePortfolioStore();
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
@@ -47,17 +47,17 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
     });
 
     addJournalEntry({
-        id: Date.now().toString(),
-        symbol: stock.symbol,
-        date: new Date().toISOString().split('T')[0],
-        signalType: side === 'BUY' ? 'BUY' : 'SELL',
-        entryPrice: price,
-        exitPrice: 0,
-        quantity: quantity,
-        profit: 0,
-        profitPercent: 0,
-        notes: `${orderType === 'MARKET' ? '成行' : '指値'}注文`,
-        status: 'OPEN'
+      id: Date.now().toString(),
+      symbol: stock.symbol,
+      date: new Date().toISOString().split('T')[0],
+      signalType: side === 'BUY' ? 'BUY' : 'SELL',
+      entryPrice: price,
+      exitPrice: 0,
+      quantity: quantity,
+      profit: 0,
+      profitPercent: 0,
+      notes: `${orderType === 'MARKET' ? '成行' : '指値'}注文`,
+      status: 'OPEN'
     });
 
     setIsConfirming(false);
@@ -75,7 +75,7 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       <div className="flex justify-between items-center border-b border-[#233648] pb-2">
         <h3 className="text-white font-bold">{stock.symbol} を取引</h3>
         <span className="text-xs text-[#92adc9]">
-            余力: {formatCurrency(portfolio.cash)}
+          余力: {formatCurrency(portfolio.cash)}
         </span>
       </div>
 
@@ -147,12 +147,12 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       {/* Summary */}
       <div className="mt-auto bg-[#192633]/50 rounded-lg p-3 border border-[#233648]">
         <div className="flex justify-between text-xs mb-1">
-            <span className="text-[#92adc9]">概算価格</span>
-            <span className="text-white">{formatCurrency(price)}</span>
+          <span className="text-[#92adc9]">概算価格</span>
+          <span className="text-white">{formatCurrency(price)}</span>
         </div>
         <div className="flex justify-between text-sm font-bold">
-            <span className="text-[#92adc9]">合計概算額</span>
-            <span className="text-white">{formatCurrency(totalCost)}</span>
+          <span className="text-[#92adc9]">合計概算額</span>
+          <span className="text-white">{formatCurrency(totalCost)}</span>
         </div>
       </div>
 
@@ -161,10 +161,10 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
         onClick={() => setIsConfirming(true)}
         disabled={side === 'BUY' && !canAfford}
         className={cn(
-            "w-full py-3 rounded-lg font-bold text-white shadow-lg transition-all",
-            side === 'BUY' 
-                ? (canAfford ? "bg-green-600 hover:bg-green-500" : "bg-[#233648] cursor-not-allowed")
-                : "bg-red-600 hover:bg-red-500"
+          "w-full py-3 rounded-lg font-bold text-white shadow-lg transition-all",
+          side === 'BUY'
+            ? (canAfford ? "bg-green-600 hover:bg-green-500" : "bg-[#233648] cursor-not-allowed")
+            : "bg-red-600 hover:bg-red-500"
         )}
       >
         {side === 'BUY' ? (canAfford ? '買い注文を発注' : '資金不足です') : '空売り注文を発注'}
@@ -178,29 +178,29 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
           aria-modal="true"
           aria-labelledby={modalTitleId}
         >
-            <div className="bg-[#141e27] border border-[#233648] p-4 rounded-lg w-full max-w-xs shadow-2xl">
-                <h4 id={modalTitleId} className="text-white font-bold mb-2">注文の確認</h4>
-                <div className="text-sm text-[#92adc9] mb-4">
-                    {side === 'BUY' ? '買い' : '空売り'} {quantity} {stock.symbol} @ {orderType === 'MARKET' ? '成行' : limitPrice}
-                </div>
-                <div className="flex gap-2">
-                    <button 
-                        onClick={() => setIsConfirming(false)}
-                        className="flex-1 py-2 bg-[#233648] text-white rounded hover:bg-[#324d67]"
-                    >
-                        キャンセル
-                    </button>
-                    <button 
-                        onClick={handleOrder}
-                        className={cn(
-                            "flex-1 py-2 text-white rounded font-bold",
-                            side === 'BUY' ? "bg-green-600 hover:bg-green-500" : "bg-red-600 hover:bg-red-500"
-                        )}
-                    >
-                        注文を確定
-                    </button>
-                </div>
+          <div className="bg-[#141e27] border border-[#233648] p-4 rounded-lg w-full max-w-xs shadow-2xl">
+            <h4 id={modalTitleId} className="text-white font-bold mb-2">注文の確認</h4>
+            <div className="text-sm text-[#92adc9] mb-4">
+              {side === 'BUY' ? '買い' : '空売り'} {quantity} {stock.symbol} @ {orderType === 'MARKET' ? '成行' : limitPrice}
             </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsConfirming(false)}
+                className="flex-1 py-2 bg-[#233648] text-white rounded hover:bg-[#324d67]"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleOrder}
+                className={cn(
+                  "flex-1 py-2 text-white rounded font-bold",
+                  side === 'BUY' ? "bg-green-600 hover:bg-green-500" : "bg-red-600 hover:bg-red-500"
+                )}
+              >
+                注文を確定
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

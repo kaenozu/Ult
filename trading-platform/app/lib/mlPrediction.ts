@@ -1,5 +1,5 @@
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '../types';
-import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from './utils';
+import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { analyzeStock } from './analysis';
 import {
   RSI_CONFIG,
@@ -44,13 +44,13 @@ class MLPredictionService {
     const prices = data.map(d => d.close);
     return {
       symbol: '',
-      sma5: calculateSMA(prices, 5),
-      sma20: calculateSMA(prices, SMA_CONFIG.SHORT_PERIOD),
-      sma50: calculateSMA(prices, SMA_CONFIG.MEDIUM_PERIOD),
-      rsi: calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD),
-      macd: calculateMACD(prices),
-      bollingerBands: calculateBollingerBands(prices),
-      atr: calculateATR(data, RSI_CONFIG.DEFAULT_PERIOD),
+      sma5: technicalIndicatorService.calculateSMA(prices, 5),
+      sma20: technicalIndicatorService.calculateSMA(prices, SMA_CONFIG.SHORT_PERIOD),
+      sma50: technicalIndicatorService.calculateSMA(prices, SMA_CONFIG.MEDIUM_PERIOD),
+      rsi: technicalIndicatorService.calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD),
+      macd: technicalIndicatorService.calculateMACD(prices),
+      bollingerBands: technicalIndicatorService.calculateBollingerBands(prices),
+      atr: technicalIndicatorService.calculateATR(data, RSI_CONFIG.DEFAULT_PERIOD),
     };
   }
 
@@ -173,7 +173,7 @@ class MLPredictionService {
       this.calculateReturns(indexData.slice(-VOLATILITY.CALCULATION_PERIOD))
     );
     const indexPrice = this.last(indexData.map(d => d.close), 0);
-    const indexSMA20 = calculateSMA(indexData.map(d => d.close), SMA_CONFIG.SHORT_PERIOD).pop() || indexPrice;
+    const indexSMA20 = technicalIndicatorService.calculateSMA(indexData.map(d => d.close), SMA_CONFIG.SHORT_PERIOD).pop() || indexPrice;
     const trendDeviation = 1 + MARKET_CORRELATION.TREND_DEVIATION;
     const indexTrend: 'UP' | 'DOWN' | 'NEUTRAL' =
       indexPrice > indexSMA20 * trendDeviation ? 'UP' :

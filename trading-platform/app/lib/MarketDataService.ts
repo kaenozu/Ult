@@ -1,4 +1,5 @@
 import { OHLCV } from '../types';
+import { technicalIndicatorService } from './TechnicalIndicatorService';
 
 export interface MarketIndex {
   symbol: string;
@@ -87,8 +88,8 @@ export class MarketDataService {
     if (data.length < 20) return 'NEUTRAL';
 
     const closes = data.map(d => d.close);
-    const shortSMA = this.calculateSMA(closes, 10);
-    const longSMA = this.calculateSMA(closes, 50);
+    const shortSMA = technicalIndicatorService.calculateSMA(closes, 10);
+    const longSMA = technicalIndicatorService.calculateSMA(closes, 50);
 
     const latestShort = shortSMA[shortSMA.length - 1];
     const latestLong = longSMA[longSMA.length - 1];
@@ -102,14 +103,6 @@ export class MarketDataService {
     return 'NEUTRAL';
   }
 
-  calculateSMA(data: number[], period: number): number[] {
-    const sma: number[] = [];
-    for (let i = period - 1; i < data.length; i++) {
-      const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-      sma.push(sum / period);
-    }
-    return sma;
-  }
 
   calculateCorrelation(stockData: OHLCV[], indexData: OHLCV[]): number {
     if (stockData.length < 50 || indexData.length < 50) {

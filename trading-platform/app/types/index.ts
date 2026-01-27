@@ -258,6 +258,38 @@ export interface ScreenerFilter {
 export type Theme = 'dark' | 'light';
 
 // ============================================================================
+// Backtest Types
+// ============================================================================
+
+export interface BacktestTrade {
+  symbol: string;
+  type: 'BUY' | 'SELL';
+  entryPrice: number;
+  exitPrice: number;
+  entryDate: string;
+  exitDate: string;
+  profitPercent: number;
+  reason?: string;
+}
+
+export interface BacktestResult {
+  symbol: string;
+  totalTrades: number;
+  winningTrades: number;
+  losingTrades: number;
+  winRate: number;
+  totalReturn: number;
+  avgProfit: number;
+  avgLoss: number;
+  profitFactor: number;
+  maxDrawdown: number;
+  sharpeRatio: number;
+  trades: BacktestTrade[];
+  startDate: string;
+  endDate: string;
+}
+
+// ============================================================================
 // API Types
 // ============================================================================
 
