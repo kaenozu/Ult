@@ -1,5 +1,4 @@
-import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, APIError, NetworkError, RateLimitError } from '@/app/types';
-import type { TechnicalIndicator } from './alpha-vantage';
+import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, APIError, NetworkError, RateLimitError, TechnicalIndicator } from '@/app/types';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { idbClient } from './idb';
 
