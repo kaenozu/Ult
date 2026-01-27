@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Stock, Position, Portfolio, JournalEntry, Theme, AIStatus, Signal, PaperTrade } from '../types';
-import { AI_TRADING, POSITION_SIZING, MARKET_CORRELATION } from '@/app/constants';
+import { AI_TRADING, POSITION_SIZING, MARKET_CORRELATION } from '@/app/lib/constants';
 
 interface TradingStore {
   theme: Theme;
@@ -61,15 +61,15 @@ export const useTradingStore = create<TradingStore>()(
       })),
 
       updateStockData: (symbol, data) => set((state) => {
-        const newWatchlist = state.watchlist.map(s => 
+        const newWatchlist = state.watchlist.map(s =>
           s.symbol === symbol ? { ...s, ...data } : s
         );
-        
-        const newPositions = state.portfolio.positions.map(p => 
-          p.symbol === symbol ? { 
-            ...p, 
+
+        const newPositions = state.portfolio.positions.map(p =>
+          p.symbol === symbol ? {
+            ...p,
             currentPrice: data.price ?? p.currentPrice,
-            change: data.change ?? p.change 
+            change: data.change ?? p.change
           } : p
         );
 
@@ -128,7 +128,7 @@ export const useTradingStore = create<TradingStore>()(
           const existing = positions[existingIndex];
           const totalCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
           const totalQty = existing.quantity + newPosition.quantity;
-          
+
           positions[existingIndex] = {
             ...existing,
             quantity: totalQty,
@@ -142,13 +142,13 @@ export const useTradingStore = create<TradingStore>()(
 
         const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
         const totalProfit = positions.reduce((sum, p) => {
-          const pnl = p.side === 'LONG' 
+          const pnl = p.side === 'LONG'
             ? (p.currentPrice - p.avgPrice) * p.quantity
             : (p.avgPrice - p.currentPrice) * p.quantity;
           return sum + pnl;
         }, 0);
         const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
-        
+
         return {
           portfolio: {
             ...state.portfolio,
@@ -167,7 +167,7 @@ export const useTradingStore = create<TradingStore>()(
         const profit = position.side === 'LONG'
           ? (exitPrice - position.avgPrice) * position.quantity
           : (position.avgPrice - exitPrice) * position.quantity;
-          
+
         const profitPercent = position.side === 'LONG'
           ? ((exitPrice - position.avgPrice) / position.avgPrice) * 100
           : ((position.avgPrice - exitPrice) / position.avgPrice) * 100;
@@ -189,7 +189,7 @@ export const useTradingStore = create<TradingStore>()(
         const positions = state.portfolio.positions.filter(p => p.symbol !== symbol);
         const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
         const totalProfit = positions.reduce((sum, p) => {
-          const pnl = p.side === 'LONG' 
+          const pnl = p.side === 'LONG'
             ? (p.currentPrice - p.avgPrice) * p.quantity
             : (p.avgPrice - p.currentPrice) * p.quantity;
           return sum + pnl;
@@ -204,7 +204,7 @@ export const useTradingStore = create<TradingStore>()(
             totalProfit,
             dailyPnL,
             // Return capital + profit to cash
-            cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit, 
+            cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit,
           },
           journal: [...state.journal, entry],
         };

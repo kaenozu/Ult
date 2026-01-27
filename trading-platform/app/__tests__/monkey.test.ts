@@ -1,6 +1,7 @@
 import { analyzeStock } from '../lib/analysis';
 // import { mlPredictionService } from '../lib/mlPrediction';
 import { OHLCV, Stock } from '../types';
+import { OPTIMIZATION } from '../lib/constants';
 
 describe('Logic Monkey Test - Robustness under extreme conditions', () => {
   const generateRandomData = (count: number, startPrice: number, volatility: number): OHLCV[] => {
@@ -35,8 +36,10 @@ describe('Logic Monkey Test - Robustness under extreme conditions', () => {
     volume: 1000
   };
 
+  const TEST_DATA_COUNT = OPTIMIZATION.MIN_DATA_PERIOD * 2; // Ensure enough data
+
   it('should not crash and keep values in range during a Flash Crash (90% drop)', () => {
-    const data = generateRandomData(120, 1000, 0.05);
+    const data = generateRandomData(TEST_DATA_COUNT, 1000, 0.05);
     // Add a sudden massive drop
     data.push({ date: '2026-02-01', open: 1000, high: 1000, low: 100, close: 100, volume: 10000000 });
 
@@ -50,7 +53,7 @@ describe('Logic Monkey Test - Robustness under extreme conditions', () => {
   });
 
   it('should handle Zero Volume environment', () => {
-    const data = generateRandomData(120, 1000, 0.01).map(d => ({ ...d, volume: 0 }));
+    const data = generateRandomData(TEST_DATA_COUNT, 1000, 0.01).map(d => ({ ...d, volume: 0 }));
     const signal = analyzeStock(mockStock.symbol, data, 'japan');
 
     // volumeResistance should be an array (may contain levels even with zero volume)
@@ -61,8 +64,8 @@ describe('Logic Monkey Test - Robustness under extreme conditions', () => {
   it('should handle extreme price gaps (Penny Stock to Luxury Stock)', () => {
     // Starts at 0.1, jumps to 1,000,000
     const data = [
-      ...generateRandomData(60, 0.1, 0.1),
-      ...generateRandomData(60, 1000000, 0.1)
+      ...generateRandomData(OPTIMIZATION.MIN_DATA_PERIOD, 0.1, 0.1),
+      ...generateRandomData(OPTIMIZATION.MIN_DATA_PERIOD, 1000000, 0.1)
     ];
 
     const signal = analyzeStock(mockStock.symbol, data, 'japan');

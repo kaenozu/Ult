@@ -10,7 +10,8 @@ import {
   MARKET_CORRELATION,
   ENSEMBLE_WEIGHTS,
   SIGNAL_THRESHOLDS,
-} from '@/app/constants';
+  OPTIMIZATION,
+} from '@/app/lib/constants';
 
 interface PredictionFeatures {
   rsi: number;
