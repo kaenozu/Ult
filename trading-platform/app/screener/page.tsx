@@ -1,6 +1,6 @@
-'use client';
+'use client'; 
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
 import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
@@ -12,6 +12,7 @@ import { useTradingStore } from '@/app/store/tradingStore';
 
 type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
 type SortDirection = 'asc' | 'desc';
+type PresetType = 'oversold' | 'uptrend';
 
 export default function Screener() {
   const router = useRouter();
@@ -50,6 +51,10 @@ export default function Screener() {
   const [analyzedStocks, setAnalyzedStocks] = useState<{symbol: string, signal?: Signal}[]>([]);
   const [isTechAnalysisDone, setIsTechAnalysisDone] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Debounce timeout and active preset tracking
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [activePreset, setActivePreset] = useState<PresetType | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -154,16 +159,31 @@ export default function Screener() {
     router.push('/');
   };
 
-  const applyPreset = (type: 'oversold' | 'uptrend') => {
-    setFilters({
-      priceMin: '', priceMax: '', changeMin: '', changeMax: '',
-      volumeMin: '', sector: '', market: '',
-      signal: 'BUY', minConfidence: '80',
-    });
-    if (type === 'oversold') setTechFilters({ rsiMax: '30', rsiMin: '', trend: 'all' });
-    else if (type === 'uptrend') setTechFilters({ rsiMax: '', rsiMin: '', trend: 'uptrend' });
-    setIsTechAnalysisDone(false);
-  };
+  const applyPreset = useCallback((type: PresetType) => {
+    // Clear previous debounce
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Immediate visual feedback
+    setActivePreset(type);
+
+    // Debounce the actual filter application
+    debounceTimeoutRef.current = setTimeout(() => {
+      setFilters({
+        priceMin: '', priceMax: '', changeMin: '', changeMax: '',
+        volumeMin: '', sector: '', market: '',
+        signal: 'BUY', minConfidence: '80',
+      });
+      if (type === 'oversold') {
+        setTechFilters({ rsiMax: '30', rsiMin: '', trend: 'all' });
+      } else if (type === 'uptrend') {
+        setTechFilters({ rsiMax: '', rsiMin: '', trend: 'uptrend' });
+      }
+      setIsTechAnalysisDone(false);
+      setActivePreset(null);
+    }, 300); // 300ms debounce
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
@@ -220,13 +240,41 @@ export default function Screener() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">クイック検索</span>
-              <div className="grid grid-cols-1 gap-2">
-                <button onClick={() => applyPreset('oversold')} className="bg-[#192633] hover:bg-[#233648] border border-green-500/30 text-green-400 text-xs py-2 px-3 rounded-lg text-left">🔥 売られすぎ</button>
-                <button onClick={() => applyPreset('uptrend')} className="bg-[#192633] hover:bg-[#233648] border border-blue-500/30 text-blue-400 text-xs py-2 px-3 rounded-lg text-left">🚀 上昇トレンド</button>
-              </div>
-            </div>
+             <div className="flex flex-col gap-2">
+               <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">クイック検索</span>
+               <div className="grid grid-cols-1 gap-2">
+                 <button 
+                   onClick={() => applyPreset('oversold')} 
+                   disabled={activePreset !== null}
+                   className={cn(
+                     "relative text-xs py-2 px-3 rounded-lg text-left transition-all duration-200",
+                     "bg-[#192633] hover:bg-[#233648] border border-green-500/30 text-green-400",
+                     activePreset === 'oversold' && "opacity-60 cursor-not-allowed",
+                     activePreset !== null && activePreset !== 'oversold' && "opacity-50"
+                   )}
+                 >
+                   <span className="flex items-center gap-2">
+                     {activePreset === 'oversold' && <span className="animate-spin">⏳</span>}
+                     🔥 売られすぎ
+                   </span>
+                 </button>
+                 <button 
+                   onClick={() => applyPreset('uptrend')} 
+                   disabled={activePreset !== null}
+                   className={cn(
+                     "relative text-xs py-2 px-3 rounded-lg text-left transition-all duration-200",
+                     "bg-[#192633] hover:bg-[#233648] border border-blue-500/30 text-blue-400",
+                     activePreset === 'uptrend' && "opacity-60 cursor-not-allowed",
+                     activePreset !== null && activePreset !== 'uptrend' && "opacity-50"
+                   )}
+                 >
+                   <span className="flex items-center gap-2">
+                     {activePreset === 'uptrend' && <span className="animate-spin">⏳</span>}
+                     🚀 上昇トレンド
+                   </span>
+                 </button>
+               </div>
+             </div>
 
             <div className="flex flex-col gap-3">
               <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">テクニカル指標</span>
