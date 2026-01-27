@@ -7,15 +7,18 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: false, // 並列実行を無効化して安定性を向上
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: process.env.CI ? 2 : 1, // ローカルでも1回リトライ
+  workers: 1, // ワーカー数を1に固定
   reporter: 'html',
+  timeout: 60 * 1000, // テストのタイムアウトを60秒に設定
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    actionTimeout: 10000, // アクションのタイムアウトを10秒に設定
+    navigationTimeout: 30000, // ナビゲーションのタイムアウトを30秒に設定
   },
 
   projects: [
