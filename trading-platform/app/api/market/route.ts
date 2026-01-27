@@ -11,26 +11,29 @@ interface YahooChartResult {
     currency: string;
     symbol: string;
     regularMarketPrice: number;
+    [key: string]: unknown;
   };
   quotes: {
-    date: Date;
+    date: Date | string;
     open: number | null;
     high: number | null;
     low: number | null;
     close: number | null;
-    volume: number;
+    volume: number | null;
+    [key: string]: unknown;
   }[];
 }
 
 interface YahooQuoteResult {
   symbol: string;
-  regularMarketPrice: number;
-  regularMarketChange: number;
-  regularMarketChangePercent: number;
-  regularMarketVolume: number;
-  marketState: string;
-  // Use a more specific type for additional properties
-  [key: string]: string | number | boolean | null | undefined;
+  regularMarketPrice?: number;
+  regularMarketChange?: number;
+  regularMarketChangePercent?: number;
+  regularMarketVolume?: number;
+  marketState?: string;
+  longName?: string;
+  shortName?: string;
+  [key: string]: unknown; // Safer than 'any' or union of primitives
 }
 
 const yf = new YahooFinance();
@@ -104,7 +107,7 @@ export async function GET(request: Request) {
         // Use simplified options to avoid compatibility issues
         const result = await yf.chart(yahooSymbol, {
           period1: period1,
-        }) as unknown as YahooChartResult;
+        }) as YahooChartResult;
 
         if (!result || !result.quotes || result.quotes.length === 0) {
           return NextResponse.json({ data: [], warning: 'No historical data found' });
@@ -130,7 +133,7 @@ export async function GET(request: Request) {
 
       if (symbols.length === 1) {
         try {
-          const result = await yf.quote(symbols[0]) as unknown as YahooQuoteResult;
+          const result = await yf.quote(symbols[0]) as YahooQuoteResult;
           if (!result) throw new Error('Symbol not found');
 
           return NextResponse.json({
@@ -146,9 +149,9 @@ export async function GET(request: Request) {
         }
       } else {
         try {
-          const results = await yf.quote(symbols) as unknown as (YahooQuoteResult | undefined)[];
+          const results = await yf.quote(symbols) as YahooQuoteResult[];
           const data = results
-            .filter((r): r is YahooQuoteResult => r !== undefined)
+            .filter((r): r is YahooQuoteResult => !!r)
             .map(r => ({
               symbol: r.symbol ? r.symbol.replace('.T', '') : 'UNKNOWN',
               price: r.regularMarketPrice || 0,

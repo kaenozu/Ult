@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ChartOptions, ChartTypeRegistry, TooltipItem } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
-import { CHART_GRID, CHART_CONFIG } from '@/app/constants';
+import { CHART_GRID, CHART_CONFIG } from '@/app/lib/constants';
 import { VolumeProfilePluginOptions } from '../types';
 
 interface UseChartOptionsProps {
@@ -77,22 +77,22 @@ export const useChartOptions = ({
         min: extendedData.labels.length > 105 ? extendedData.labels[extendedData.labels.length - 105] : undefined,
         grid: {
           color: (c: unknown) => {
-             const ctx = c as ChartContext;
-             return ctx.index === hoveredIdx
-            ? CHART_GRID.HOVER_COLOR
-            : (ctx.index >= data.length ? CHART_GRID.FUTURE_AREA_COLOR : CHART_GRID.MAIN_COLOR);
+            const ctx = c as ChartContext;
+            return ctx.index === hoveredIdx
+              ? CHART_GRID.HOVER_COLOR
+              : (ctx.index >= data.length ? CHART_GRID.FUTURE_AREA_COLOR : CHART_GRID.MAIN_COLOR);
           },
           lineWidth: (c: unknown) => {
             const ctx = c as ChartContext;
             return ctx.index === hoveredIdx
-            ? CHART_GRID.HOVER_LINE_WIDTH
-            : (ctx.index === data.length - 1 ? CHART_GRID.CURRENT_PRICE_LINE_WIDTH : 1);
+              ? CHART_GRID.HOVER_LINE_WIDTH
+              : (ctx.index === data.length - 1 ? CHART_GRID.CURRENT_PRICE_LINE_WIDTH : 1);
           }
         },
         ticks: {
           color: (c: unknown) => {
-             const ctx = c as ChartContext;
-             return ctx.index === hoveredIdx ? '#fff' : (ctx.index >= data.length ? '#3b82f6' : '#92adc9');
+            const ctx = c as ChartContext;
+            return ctx.index === hoveredIdx ? '#fff' : (ctx.index >= data.length ? '#3b82f6' : '#92adc9');
           },
           maxTicksLimit: 15,
           font: { size: CHART_GRID.LABEL_FONT_SIZE }

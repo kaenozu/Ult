@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { OHLCV, Signal } from '@/app/types';
 import { analyzeStock } from '@/app/lib/analysis';
-import { GHOST_FORECAST, FORECAST_CONE, OPTIMIZATION } from '@/app/constants';
+import { GHOST_FORECAST, FORECAST_CONE, OPTIMIZATION } from '@/app/lib/constants';
 
 interface UseForecastLayersProps {
   data: OHLCV[];
