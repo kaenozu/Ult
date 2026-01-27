@@ -5,12 +5,15 @@
 export const FORECAST_CONE = {
     STEPS: 5,
     LOOKBACK_DAYS: 60,
+    ATR_MULTIPLIER: 2.0,
 };
 
 export const RSI_CONFIG = {
     DEFAULT_PERIOD: 14,
     OVERSOLD: 30,
     OVERBOUGHT: 70,
+    EXTREME_OVERSOLD: 20,
+    EXTREME_OVERBOUGHT: 80,
     PERIOD_OPTIONS: [10, 14, 20],
 };
 
@@ -38,6 +41,8 @@ export const OPTIMIZATION = {
 export const SIGNAL_THRESHOLDS = {
     MIN_CONFIDENCE: 50,
     HIGH_CONFIDENCE: 80,
+    STRONG_CORRELATION: 0.7,
+    STRONG_MOMENTUM: 2.0,
 };
 
 export const RISK_MANAGEMENT = {
@@ -48,6 +53,8 @@ export const RISK_MANAGEMENT = {
 export const PRICE_CALCULATION = {
     DEFAULT_ERROR_MULTIPLIER: 100,
     DEFAULT_ATR_RATIO: 0.02,
+    MIN_CONFIDENCE: 50,
+    MAX_CONFIDENCE: 100,
 };
 
 export const VOLATILITY = {
