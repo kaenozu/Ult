@@ -6,19 +6,16 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
-import { formatCurrency, calculateSMA, calculateBollingerBands } from '@/app/lib/utils';
-import { analyzeStock } from '@/app/lib/analysis';
+import { formatCurrency } from '@/app/lib/utils';
 import {
   VOLUME_PROFILE,
-  GHOST_FORECAST,
-  FORECAST_CONE,
-  SMA as SMA_CONFIG,
-  BOLLINGER_BANDS,
   CANDLESTICK,
   CHART_GRID,
   CHART_CONFIG,
-  OPTIMIZATION,
+  SMA as SMA_CONFIG,
+  BOLLINGER_BANDS,
 } from '@/app/constants';
+import { useChartAnalysis } from '@/app/hooks/useChartAnalysis';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
@@ -43,7 +40,6 @@ export const volumeProfilePlugin = {
     const currentPrice = options.currentPrice;
 
     ctx.save();
-    // Disable shadow for cleaner look
     ctx.shadowBlur = 0;
 
     options.data.forEach((wall) => {
@@ -55,7 +51,6 @@ export const volumeProfilePlugin = {
       const barWidth = width * VOLUME_PROFILE.MAX_BAR_WIDTH_RATIO * wall.strength;
       const barHeight = (bottom - top) / VOLUME_PROFILE.HEIGHT_DIVISOR;
 
-      // Draw smooth, semi-transparent bars
       const gradient = ctx.createLinearGradient(right - barWidth, 0, right, 0);
       gradient.addColorStop(0, `rgba(${color}, 0)`);
       gradient.addColorStop(1, `rgba(${color}, ${VOLUME_PROFILE.BASE_ALPHA + wall.strength * VOLUME_PROFILE.STRENGTH_ALPHA_ADD})`);
@@ -63,7 +58,6 @@ export const volumeProfilePlugin = {
       ctx.fillStyle = gradient;
       ctx.fillRect(right - barWidth, yPos - barHeight / 2, barWidth, barHeight);
 
-      // Draw very thin indicator line at the right edge
       ctx.fillStyle = `rgba(${color}, ${VOLUME_PROFILE.BASE_ALPHA})`;
       ctx.fillRect(right - 2, yPos - barHeight / 2, 2, barHeight);
     });
@@ -92,168 +86,24 @@ export const StockChart = memo(function StockChart({
   const chartRef = useRef<ChartJS<'line'>>(null);
   const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
 
-  // 1. 基本データと未来予測用のラベル拡張
-  const extendedData = useMemo(() => {
-    const labels = data.map(d => d.date);
-    const prices = data.map(d => d.close);
-    if (signal && data.length > 0) {
-      const lastDate = new Date(data[data.length - 1].date);
-      for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
-        const future = new Date(lastDate);
-        future.setDate(lastDate.getDate() + i);
-        labels.push(future.toISOString().split('T')[0]);
-        prices.push(NaN);
-      }
-    }
-    return { labels, prices };
-  }, [data, signal]);
-
-  // 1.5 市場指数の正規化 (Normalizing Index to Stock scale)
-  const normalizedIndexData = useMemo(() => {
-    if (!indexData || indexData.length < 10 || data.length === 0) return [];
-
-    // 表示期間の開始価格を基準に倍率を計算
-    const stockStartPrice = data[0].close;
-    // indexDataからdata[0].dateに最も近い日の価格を探す
-    const targetDate = data[0].date;
-    const indexStartPoint = indexData.find(d => d.date >= targetDate) || indexData[0];
-    const indexStartPrice = indexStartPoint.close;
-
-    const ratio = stockStartPrice / indexStartPrice;
-
-    // data[i].date に合わせて indexData をマッピング
-    return extendedData.labels.map(label => {
-      const idxPoint = indexData.find(d => d.date === label);
-      return idxPoint ? idxPoint.close * ratio : NaN;
-    });
-  }, [data, indexData, extendedData.labels]);
-
-  const sma20 = useMemo(() => calculateSMA(extendedData.prices, SMA_CONFIG.SHORT_PERIOD), [extendedData.prices]);
-  const { upper, lower } = useMemo(() =>
-    calculateBollingerBands(extendedData.prices, SMA_CONFIG.SHORT_PERIOD, BOLLINGER_BANDS.STD_DEVIATION),
-    [extendedData.prices]
-  );
-
-  // 2. AI Time Travel: Ghost Cloud (過去の予測再現)
-  const ghostForecastDatasets = useMemo(() => {
-    if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) return [];
-    const pastSignal = analyzeStock(data[0].symbol || '', data.slice(0, hoveredIdx + 1), market);
-    if (!pastSignal) return [];
-
-    const targetArr = new Array(extendedData.labels.length).fill(NaN);
-    const stopArr = new Array(extendedData.labels.length).fill(NaN);
-    const currentPrice = data[hoveredIdx].close;
-    targetArr[hoveredIdx] = stopArr[hoveredIdx] = currentPrice;
-
-    const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    const confidenceFactor = (110 - pastSignal.confidence) / 100;
-    const momentum = pastSignal.predictedChange / 100;
-
-    for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
-      if (hoveredIdx + i < extendedData.labels.length) {
-        const timeRatio = i / FORECAST_CONE.STEPS;
-        const centerPrice = currentPrice * (1 + (momentum * timeRatio));
-        const spread = (stockATR * timeRatio) * confidenceFactor;
-        targetArr[hoveredIdx + i] = centerPrice + spread;
-        stopArr[hoveredIdx + i] = centerPrice - spread;
-      }
-    }
-
-    const color = pastSignal.type === 'BUY' ? '34, 197, 94' : pastSignal.type === 'SELL' ? '239, 68, 68' : '100, 116, 139';
-    return [
-      {
-        label: '過去予測(上)',
-        data: targetArr,
-        borderColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_ALPHA})`,
-        backgroundColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_FILL_ALPHA})`,
-        borderWidth: 1,
-        borderDash: [3, 3],
-        pointRadius: 0,
-        fill: '+1',
-        order: -2
-      },
-      {
-        label: '過去予測(下)',
-        data: stopArr,
-        borderColor: `rgba(${color}, ${GHOST_FORECAST.STOP_ALPHA})`,
-        borderWidth: 1,
-        pointRadius: 0,
-        fill: false,
-        order: -2
-      }
-    ];
-  }, [hoveredIdx, data, market, extendedData.labels.length]);
-
-  // 4. 未来予測の予報円 (Forecast Cone)
-  const forecastDatasets = useMemo(() => {
-    if (!signal || data.length === 0) return [];
-    const lastIdx = data.length - 1;
-    const currentPrice = data[lastIdx].close;
-    const targetArr = new Array(extendedData.labels.length).fill(NaN);
-    const stopArr = new Array(extendedData.labels.length).fill(NaN);
-
-    const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    // 予測誤差の影響を抑え、より現実的な範囲にする
-    // predictionErrorは1.0〜2.5程度だが、その影響を0.5〜1.5に制限
-    const errorFactor = Math.min(Math.max(signal.predictionError || 1.0, 0.5), 1.5);
-    // 信頼度に基づく不確実性（40%〜80%の間に収まる）
-    const confidenceUncertainty = 0.4 + ((100 - signal.confidence) / 100) * 0.4;
-    const combinedFactor = errorFactor * confidenceUncertainty;
-
-    // signal.targetPriceとsignal.stopLossをベースにしつつ、適度な幅を追加
-    // momentumの計算を追加（予測騰落率またはトレンドから推定）
-    const momentum = signal.predictedChange ? signal.predictedChange / 100 : 0;
-    const confidenceFactor = (110 - signal.confidence) / 100;
-
-    let target = signal.targetPrice, stop = signal.stopLoss;
-    if (signal.type === 'HOLD') {
-      // HOLDの場合は現在価格から±ATR×係数
-      target = currentPrice + (stockATR * combinedFactor * 2);
-      stop = currentPrice - (stockATR * combinedFactor * 2);
-    } else {
-      // BUY/SELLの場合は目標価格・損切りラインをベースに、適度な不確実性範囲を追加
-      const uncertainty = stockATR * FORECAST_CONE.ATR_MULTIPLIER * combinedFactor;
-      target += (signal.type === 'BUY' ? 1 : -1) * uncertainty;
-      stop -= (signal.type === 'BUY' ? 1 : -1) * uncertainty;
-    }
-
-    targetArr[lastIdx] = stopArr[lastIdx] = currentPrice;
-    const steps = FORECAST_CONE.STEPS;
-    for (let i = 1; i <= steps; i++) {
-      if (lastIdx + i < extendedData.labels.length) {
-        const timeRatio = i / steps;
-        const centerPrice = currentPrice * (1 + (momentum * timeRatio));
-        const spread = (stockATR * timeRatio) * confidenceFactor;
-        targetArr[lastIdx + i] = centerPrice + spread;
-        stopArr[lastIdx + i] = centerPrice - spread;
-      }
-    }
-
-    const color = signal.type === 'BUY' ? '16, 185, 129' : signal.type === 'SELL' ? '239, 68, 68' : '146, 173, 201';
-    return [
-      {
-        label: 'ターゲット',
-        data: targetArr,
-        borderColor: `rgba(${color}, 1)`,
-        backgroundColor: `rgba(${color}, 0.3)`,
-        borderWidth: 3,
-        borderDash: [6, 4],
-        pointRadius: 0,
-        fill: '+1',
-        order: -1
-      },
-      {
-        label: 'リスク',
-        data: stopArr,
-        borderColor: `rgba(${color}, 0.7)`,
-        borderWidth: 3,
-        borderDash: [6, 4],
-        pointRadius: 0,
-        fill: false,
-        order: -1
-      }
-    ];
-  }, [signal, data, extendedData]);
+  // Use the new hook for heavy calculations
+  const {
+    extendedData,
+    normalizedIndexData,
+    sma20,
+    upperBollinger,
+    lowerBollinger,
+    ghostForecastDatasets,
+    forecastDatasets,
+  } = useChartAnalysis({
+    data,
+    indexData,
+    market,
+    signal,
+    hoveredIdx,
+    showSMA,
+    showBollinger,
+  });
 
   const chartData = useMemo(() => ({
     labels: extendedData.labels,
@@ -261,13 +111,13 @@ export const StockChart = memo(function StockChart({
       {
         label: market === 'japan' ? '日経平均 (相対)' : 'NASDAQ (相対)',
         data: normalizedIndexData,
-        borderColor: '#60a5fa',  // 明るい青（ダークテーマ用）
+        borderColor: '#60a5fa',
         backgroundColor: 'rgba(96, 165, 250, 0.05)',
-        fill: false,  // 塗りつぶしを無効化（線のみ表示）
+        fill: false,
         pointRadius: 0,
         borderWidth: 1,
         tension: CHART_CONFIG.TENSION,
-        order: 10 // 最背面に配置
+        order: 10
       },
       {
         label: '現在価格',
@@ -295,7 +145,7 @@ export const StockChart = memo(function StockChart({
       ...(showBollinger ? [
         {
           label: 'BB Upper',
-          data: upper,
+          data: upperBollinger,
           borderColor: BOLLINGER_BANDS.UPPER_COLOR,
           backgroundColor: BOLLINGER_BANDS.UPPER_BACKGROUND,
           borderWidth: 1,
@@ -306,7 +156,7 @@ export const StockChart = memo(function StockChart({
         },
         {
           label: 'BB Lower',
-          data: lower,
+          data: lowerBollinger,
           borderColor: BOLLINGER_BANDS.LOWER_COLOR,
           borderWidth: 1,
           pointRadius: 0,
@@ -316,9 +166,8 @@ export const StockChart = memo(function StockChart({
         }
       ] : []),
     ],
-  }), [extendedData, sma20, upper, lower, showSMA, showBollinger, forecastDatasets, ghostForecastDatasets]);
+  }), [extendedData, normalizedIndexData, sma20, upperBollinger, lowerBollinger, showSMA, showBollinger, forecastDatasets, ghostForecastDatasets, market]);
 
-  // Y軸の範囲を計算（価格変動を見やすくするため）
   const yAxisRange = useMemo(() => {
     if (data.length === 0) return { min: 0, max: 100 };
     const prices = data.map(d => d.close);
@@ -327,9 +176,7 @@ export const StockChart = memo(function StockChart({
     const currentPrice = data[data.length - 1].close;
     const range = maxPrice - minPrice;
 
-    // 価格変動が小さい場合、範囲を制限して変動を見やすくする
-    // 最小範囲は現在価格の±3%、最大範囲はデータの最小値〜最大値
-    const minRange = currentPrice * 0.06; // ±3%
+    const minRange = currentPrice * 0.06;
     const adjustedRange = Math.max(range, minRange);
 
     return {
@@ -390,7 +237,7 @@ export const StockChart = memo(function StockChart({
         }
       }
     },
-  }), [market, data.length, extendedData.labels, hoveredIdx, yAxisRange]);
+  }), [market, data.length, extendedData.labels, hoveredIdx, yAxisRange, signal?.volumeResistance]);
 
   if (error) return (
     <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded" style={{ height }}>

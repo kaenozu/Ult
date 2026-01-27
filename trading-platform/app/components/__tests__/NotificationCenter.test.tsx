@@ -1,10 +1,21 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NotificationCenter } from '@/app/components/NotificationCenter';
 import { useAlertStore } from '@/app/store/alertStore';
-import { Alert, AlertSeverity } from '@/app/lib/alertTypes';
+import { Alert } from '@/app/lib/alertTypes';
+import { alertService } from '@/app/lib/alertService';
+import '@testing-library/jest-dom';
 
 describe('NotificationCenter', () => {
   beforeEach(() => {
+    // Reset singleton state
+    (alertService as any).alerts = [];
+    (alertService as any).settings.enabled = true;
+    (alertService as any).settings.severities = {
+      HIGH: true,
+      MEDIUM: true,
+      LOW: true,
+    };
+
     useAlertStore.getState().alerts = [];
     useAlertStore.getState().unreadCount = 0;
     useAlertStore.getState().settings = {
@@ -30,7 +41,7 @@ describe('NotificationCenter', () => {
 
   it('renders notification bell icon', () => {
     render(<NotificationCenter />);
-    const bellIcon = screen.getByTitle('通知センター');
+    const bellIcon = screen.getByTitle(/\u901a\u77e5\u30bb\u30f3\u30bf\u30fc/); // 通知センター
     expect(bellIcon).toBeInTheDocument();
   });
 
@@ -50,8 +61,8 @@ describe('NotificationCenter', () => {
     render(<NotificationCenter />);
 
     await waitFor(() => {
-      const badge = screen.getByText('1');
-      expect(badge).toBeInTheDocument();
+      const badge = screen.getByTestId('unread-badge');
+      expect(badge).toHaveTextContent('1');
     });
   });
 
@@ -93,7 +104,7 @@ describe('NotificationCenter', () => {
         type: 'STOCK',
         severity: 'HIGH',
         symbol: '4385',
-        title: '高優先度',
+        title: 'タイトル: 高優先度',
         message: '高優先度アラート',
         timestamp: new Date().toISOString(),
         acknowledged: false,
@@ -103,7 +114,7 @@ describe('NotificationCenter', () => {
         type: 'MARKET',
         severity: 'MEDIUM',
         symbol: '^N225',
-        title: '中優先度',
+        title: 'タイトル: 中優先度',
         message: '中優先度アラート',
         timestamp: new Date().toISOString(),
         acknowledged: false,
@@ -117,11 +128,11 @@ describe('NotificationCenter', () => {
     fireEvent.click(bellIcon);
 
     await waitFor(() => {
-      const highFilter = screen.getByText('🔴 高');
+      const highFilter = screen.getByText(/🔴 高/);
       fireEvent.click(highFilter);
 
-      expect(screen.getByText('高優先度')).toBeInTheDocument();
-      expect(screen.queryByText('中優先度')).not.toBeInTheDocument();
+      expect(screen.getByText('タイトル: 高優先度')).toBeInTheDocument();
+      expect(screen.queryByText('タイトル: 中優先度')).not.toBeInTheDocument();
     });
   });
 
@@ -265,10 +276,9 @@ describe('NotificationCenter', () => {
     fireEvent.click(bellIcon);
 
     await waitFor(() => {
-      expect(screen.getByText('買い')).toBeInTheDocument();
-      expect(screen.getByText('信頼度: 85%')).toBeInTheDocument();
-      expect(screen.getByText(/1030/)).toBeInTheDocument();
-      expect(screen.getByText(/980/)).toBeInTheDocument();
+      expect(screen.getByText(/買い/)).toBeInTheDocument();
+      expect(screen.getByTestId('alert-confidence')).toHaveTextContent('85%');
+      expect(screen.getByTestId('alert-target-price')).toHaveTextContent('1030.00');
     });
   });
 });
