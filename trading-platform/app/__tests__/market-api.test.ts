@@ -1,6 +1,5 @@
 /**
  * @jest-environment node
- * Market API Route Tests
  */
 import { NextResponse } from 'next/server';
 
@@ -33,19 +32,20 @@ describe('Market API Route', () => {
     let mockQuote: jest.Mock;
 
     beforeEach(() => {
+        const MockClass = YahooFinance as unknown as jest.Mock;
+        // Capture instance before clearing (since route.ts initializes it once)
+        let instance = MockClass.mock.instances[0];
+
         jest.clearAllMocks();
 
-        const MockClass = YahooFinance as unknown as jest.Mock;
-
         // Check if instance was created
-        if (MockClass.mock.instances.length === 0) {
+        if (!instance) {
             // This acts as a fallback or indicator if route.ts didn't calculate yf yet (lazy?)
             // But logic says it should have.
             // Or we manually construct one for testing spy attachment, but that won't help if route.ts uses a different one.
             console.warn('No YahooFinance instance captured!');
+            instance = new MockClass();
         }
-
-        const instance = MockClass.mock.instances[0] || new MockClass();
 
         // Attach spies
         mockChart = instance.chart = jest.fn();

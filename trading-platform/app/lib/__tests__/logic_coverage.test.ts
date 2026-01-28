@@ -1,12 +1,12 @@
 import {
     formatCurrency, formatVolume, getChangeColor, getSignalColor, getSignalBgColor, getConfidenceColor, truncate,
-    generateDateRange, calculateEMA, calculateRSI, calculateMACD, calculateATR, roundToTickSize, getPriceLimit
+    generateDateRange, roundToTickSize, getPriceLimit
 } from '../utils';
+import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import {
     calculatePredictionError, optimizeParameters, calculateVolumeProfile
 } from '../analysis';
 import { RSI_CONFIG, SMA_CONFIG } from '../../constants';
-// Mock constants if needed, but integration with constants is fine for logic testing
 
 describe('Utils Logic Coverage', () => {
     describe('formatCurrency', () => {
@@ -64,11 +64,11 @@ describe('Utils Logic Coverage', () => {
 
     describe('calculateATR', () => {
         it('returns empty array for empty data', () => {
-            expect(calculateATR([])).toEqual([]);
+            expect(technicalIndicatorService.calculateATR([])).toEqual([]);
         });
         it('calculates ATR correctly', () => {
             const data = Array(20).fill({ high: 110, low: 90, close: 100 });
-            const atr = calculateATR(data, 14);
+            const atr = technicalIndicatorService.calculateATR(data, 14);
             expect(atr.length).toBe(20);
             expect(atr[13]).toBe(20); // First ATR calculation match TR
         });
@@ -92,7 +92,7 @@ describe('Utils Logic Coverage', () => {
         it('handles NaN results gracefully', () => {
             // Not enough data
             const prices = [100, 101];
-            const result = calculateMACD(prices);
+            const result = technicalIndicatorService.calculateMACD(prices);
             expect(result.macd[0]).toBeNaN();
         });
     });
