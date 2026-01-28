@@ -70,12 +70,13 @@ describe('SignalPanel Accessibility', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    const mockStore = {
+      aiStatus: mockAiStatus,
+      processAITrades: jest.fn(),
+    };
     (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
-      const state = {
-        aiStatus: mockAiStatus,
-        processAITrades: jest.fn(),
-      };
-      return selector ? selector(state) : state;
+      return selector ? selector(mockStore) : mockStore;
+    });
     });
     (useWebSocket as unknown as jest.Mock).mockReturnValue({
       status: 'OPEN',

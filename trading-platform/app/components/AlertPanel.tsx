@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAlertStore } from '@/app/store/alertStore';
-import { Alert, AlertSeverity, AlertType } from '@/app/lib/alertTypes';
+import { Alert, AlertSeverity, AlertType, AlertSettings } from '@/app/lib/alertTypes';
 import { cn, formatCurrency } from '@/app/lib/utils';
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Check, X, Filter, Bell, Clock, Target, Zap, Activity, Settings } from 'lucide-react';
 
@@ -102,8 +102,8 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
     acknowledgeAll();
   };
 
-  const handleUpdateSettings = (key: keyof typeof settings, value: any) => {
-    updateSettings({ [key]: value });
+  const handleUpdateSettings = (key: keyof typeof settings, value: Partial<AlertSettings[keyof typeof settings]>) => {
+    updateSettings({ [key]: value } as Partial<AlertSettings>);
   };
 
   return (
