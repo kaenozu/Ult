@@ -1,4 +1,5 @@
-import { calculateSMA, calculateRSI, calculateMACD, calculateBollingerBands, calculateATR, formatCurrency, formatPercent } from '../lib/utils';
+import { formatCurrency, formatPercent, cn, formatNumber, formatVolume, getChangeColor, getSignalColor, getSignalBgColor, getConfidenceColor, truncate, generateDateRange, getTickSize, roundToTickSize, getPriceLimit } from '../lib/utils';
+import { technicalIndicatorService } from '../lib/TechnicalIndicatorService';
 import { OHLCV } from '../types';
 
 describe('Technical Utils (Indicator Calculations)', () => {
@@ -6,19 +7,19 @@ describe('Technical Utils (Indicator Calculations)', () => {
   const mockPrices = Array.from({ length: 100 }, (_, i) => 100 + i + Math.sin(i) * 10);
 
   it('should calculate SMA correctly', () => {
-    const sma3 = calculateSMA(mockPrices, 3);
+    const sma3 = technicalIndicatorService.calculateSMA(mockPrices, 3);
     expect(sma3[0]).toBeNaN();
     expect(sma3[2]).toBeCloseTo((mockPrices[0] + mockPrices[1] + mockPrices[2]) / 3);
   });
 
   it('should calculate RSI correctly', () => {
-    const rsi = calculateRSI(mockPrices, 14);
-    expect(rsi.length).toBe(mockPrices.length + 1);
+    const rsi = technicalIndicatorService.calculateRSI(mockPrices, 14);
+    expect(rsi.length).toBe(mockPrices.length);
     expect(rsi[50]).not.toBeNaN();
   });
 
   it('should calculate MACD correctly', () => {
-    const macd = calculateMACD(mockPrices);
+    const macd = technicalIndicatorService.calculateMACD(mockPrices);
     expect(macd.macd.length).toBe(mockPrices.length);
     expect(macd.signal.length).toBe(mockPrices.length);
     expect(macd.histogram.length).toBe(mockPrices.length);
@@ -27,7 +28,7 @@ describe('Technical Utils (Indicator Calculations)', () => {
   });
 
   it('should calculate Bollinger Bands correctly', () => {
-    const bb = calculateBollingerBands(mockPrices, 20, 2);
+    const bb = technicalIndicatorService.calculateBollingerBands(mockPrices, 20, 2);
     expect(bb.upper.length).toBe(mockPrices.length);
     expect(bb.lower.length).toBe(mockPrices.length);
     expect(bb.upper[50]).toBeGreaterThan(bb.middle[50]);
@@ -43,7 +44,7 @@ describe('Technical Utils (Indicator Calculations)', () => {
       volume: 1000
     }));
 
-    const atr = calculateATR(mockData, 14);
+    const atr = technicalIndicatorService.calculateATR(mockData, 14);
     expect(atr.length).toBe(50);
     expect(atr[49]).toBeGreaterThan(0);
     expect(atr[0]).toBeNaN();
@@ -60,21 +61,6 @@ describe('Technical Utils (Indicator Calculations)', () => {
     expect(formatPercent(0)).toBe('+0.00%');
   });
 
-  // Additional Utils Tests
-  const {
-    cn,
-    formatNumber,
-    formatVolume,
-    getChangeColor,
-    getSignalColor,
-    getSignalBgColor,
-    getConfidenceColor,
-    truncate,
-    generateDateRange,
-    getTickSize,
-    roundToTickSize,
-    getPriceLimit
-  } = require('../lib/utils');
 
   it('should combine class names correctly (cn)', () => {
     expect(cn('class1', 'class2')).toBe('class1 class2');
