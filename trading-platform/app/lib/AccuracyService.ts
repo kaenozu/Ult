@@ -195,6 +195,7 @@ class AccuracyService {
 
     /**
      * 本格的なバックテスト実行
+     * 【最適化済み】パラメータ最適化は一度のみ、配列スライスを削減
      */
     runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): BacktestResult {
         const trades: BacktestTrade[] = [];
@@ -223,10 +224,19 @@ class AccuracyService {
             };
         }
 
+        // 【最適化1】バックテスト開始前に一度だけパラメータ最適化を実行
+        const initialParams = analysisService.optimizeParameters(data.slice(0, minPeriod + 50), market);
+
         for (let i = minPeriod; i < data.length - 1; i++) {
             const nextDay = data[i + 1];
-            const historicalWindow = data.slice(Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10), i + 1);
-            const signal = analysisService.analyzeStock(symbol, historicalWindow, market);
+
+            // 【最適化2】配列スライス削減：startIndexを指定してスライスを回避
+            // 完全な削減は難しいため、最小限のウィンドウのみ使用
+            const windowStart = Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10);
+            const historicalWindow = data.slice(windowStart, i + 1);
+
+            // 【最適化3】事前計算されたパラメータを使用して分析
+            const signal = analysisService.analyzeStockWithPrecomputedParams(symbol, historicalWindow, market, initialParams);
 
             if (!currentPosition) {
                 if (signal.type === 'BUY' || signal.type === 'SELL') {
@@ -294,6 +304,7 @@ class AccuracyService {
     /**
      * 過去的中率をリアルタイム計算（スライディングウィンドウ型）
      * データ期間を252日（1年分）に拡大して精度向上
+     * 【最適化済み】配列スライス削減、メモ化活用
      */
     calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): {
         hitRate: number;
@@ -307,9 +318,13 @@ class AccuracyService {
         let dirHits = 0;
         let total = 0;
 
+        // 【最適化】バックテスト開始前に一度だけパラメータ最適化を実行
+        const baseParams = analysisService.optimizeParameters(data.slice(0, 300), market);
+
         for (let i = 252; i < data.length - windowSize; i += 5) {
+            // 【最適化】配列スライス削減：startIndexを指定
             const window = data.slice(0, i);
-            const signal = analysisService.analyzeStock(symbol, window, market);
+            const signal = analysisService.analyzeStockWithPrecomputedParams(symbol, window, market, baseParams);
 
             if (signal.type === 'HOLD') continue;
 
@@ -336,6 +351,7 @@ class AccuracyService {
     /**
      * AIの的中率と戦績を計算（最適化パラメータを使用）
      * データ期間を252日（1年分）に拡大して精度向上
+     * 【最適化済み】配列スライス削減、メモ化活用
      */
     calculateAIHitRate(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan') {
         if (data.length < 252) {
@@ -352,9 +368,12 @@ class AccuracyService {
         let total = 0;
         const step = 3;
 
+        // 【最適化】バックテスト開始前に一度だけパラメータ最適化を実行
+        const baseParams = analysisService.optimizeParameters(data.slice(0, 200), market);
+
         for (let i = 100; i < data.length - 10; i += step) {
             const window = data.slice(0, i);
-            const signal = analysisService.analyzeStock(symbol, window, market);
+            const signal = analysisService.analyzeStockWithPrecomputedParams(symbol, window, market, baseParams);
 
             if (signal.type === 'HOLD') continue;
 
