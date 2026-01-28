@@ -23,3 +23,7 @@
 ## 2024-05-23 - [Zustand Performance]
 **Learning:** Subscribing to the entire Zustand store causes re-renders on *any* state change.
 **Action:** Always use granular selectors (e.g., `useStore(s => s.prop)`) to ensure components only re-render when their dependencies update.
+
+## 2024-05-24 - [Data Synchronization Complexity]
+**Learning:** Normalizing or synchronizing two time-series arrays using nested loops (Array.find inside Array.map) creates O(N*M) complexity, which becomes a bottleneck (100ms+) with just a few thousand points.
+**Action:** Always convert the reference dataset to a Map<Key, Value> (O(M)) before mapping the target dataset (O(N)), reducing total complexity to O(N+M).
