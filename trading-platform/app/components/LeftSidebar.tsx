@@ -31,17 +31,26 @@ export const LeftSidebar = ({
           <button
             onClick={onClose}
             className="lg:hidden p-1 text-[#92adc9] hover:text-white mr-2"
+            aria-label="サイドバーを閉じる"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <button className="p-1 hover:bg-[#233648] rounded text-[#92adc9] transition-colors">
+          <button
+            className="p-1 hover:bg-[#233648] rounded text-[#92adc9] transition-colors"
+            aria-label="新しい銘柄を追加"
+            title="新しい銘柄を追加"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
           </button>
-          <button className="p-1 hover:bg-[#233648] rounded text-[#92adc9] transition-colors">
+          <button
+            className="p-1 hover:bg-[#233648] rounded text-[#92adc9] transition-colors"
+            aria-label="オプションメニュー"
+            title="オプションメニュー"
+          >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
             </svg>
