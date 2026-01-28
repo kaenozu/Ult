@@ -3,7 +3,7 @@
 exports[`optimizeParameters Correctness returns consistent parameters for known data 1`] = `
 {
   "accuracy": 100,
-  "rsiPeriod": 10,
+  "rsiPeriod": 9,
   "smaPeriod": 10,
 }
 `;

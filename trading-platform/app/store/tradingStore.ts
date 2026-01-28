@@ -2,8 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Stock, Position, Portfolio, JournalEntry, Theme, AIStatus, Signal, PaperTrade } from '../types';
 import { AI_TRADING, POSITION_SIZING, MARKET_CORRELATION } from '@/app/lib/constants';
+import { aiTradeService } from '@/app/lib/AITradeService';
 
-interface TradingStore {
+export interface TradingStore {
   theme: Theme;
   toggleTheme: () => void;
   watchlist: Stock[];
@@ -22,7 +23,7 @@ interface TradingStore {
   setSelectedStock: (stock: Stock | null) => void;
   isConnected: boolean;
   toggleConnection: () => void;
-  aiStatus: AIStatus; // AI専用の仮想口座
+  aiStatus: AIStatus;
   processAITrades: (symbol: string, currentPrice: number, signal: Signal | null) => void;
 }
 
@@ -41,6 +42,11 @@ const initialAIStatus: AIStatus = {
   trades: [],
 };
 
+/**
+ * tradingStore.ts - Master Store
+ * 全てのアプリケーション状態のソース・オブ・トゥルースです。
+ * 分割された各ストア・ファイル（watchlistStore.ts 等）はこのストアのファサードとして機能します。
+ */
 export const useTradingStore = create<TradingStore>()(
   persist(
     (set, get) => ({
@@ -203,7 +209,6 @@ export const useTradingStore = create<TradingStore>()(
             totalValue,
             totalProfit,
             dailyPnL,
-            // Return capital + profit to cash
             cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit,
           },
           journal: [...state.journal, entry],
@@ -235,104 +240,13 @@ export const useTradingStore = create<TradingStore>()(
 
       processAITrades: (symbol, currentPrice, signal) => {
         const { aiStatus } = get();
-        const slippage = POSITION_SIZING.SLIPPAGE_PERCENTAGE;
+        const { portfolio } = get();
 
-        // Check for existing position
-        const openTrade = aiStatus.trades.find(t => t.symbol === symbol && t.status === 'OPEN');
+        // AITradeService を使用して新しい状態を計算
+        const result = aiTradeService.processTrades(symbol, currentPrice, signal, aiStatus);
 
-        if (openTrade) {
-          let shouldClose = false;
-          let reflection = "";
-
-          if (signal) {
-            if (openTrade.type === 'BUY') {
-              if (currentPrice >= signal.targetPrice) {
-                shouldClose = true;
-                reflection = "利確ターゲット到達。AI予測通りの反発を利益に変えました。";
-              } else if (currentPrice <= signal.stopLoss) {
-                shouldClose = true;
-                reflection = "損切りライン接触。想定以上の売り圧力により予測を逸脱。";
-              } else if (signal.type === 'SELL') {
-                shouldClose = true;
-                reflection = "トレンド転換シグナルを検出し、エグジット。";
-              }
-            } else if (openTrade.type === 'SELL') {
-              if (currentPrice <= signal.targetPrice) {
-                shouldClose = true;
-                reflection = "空売り利確成功。目標値での買い戻しを完了。";
-              } else if (currentPrice >= signal.stopLoss) {
-                shouldClose = true;
-                reflection = "上昇トレンドへの回帰を確認。ショートカバーを実行。";
-              } else if (signal.type === 'BUY') {
-                shouldClose = true;
-                reflection = "上昇シグナル発生により、空売りポジションを解消。";
-              }
-            }
-          }
-
-          if (shouldClose) {
-            const exitPrice = openTrade.type === 'BUY' ? currentPrice * (1 - slippage) : currentPrice * (1 + slippage);
-            const profit = openTrade.type === 'BUY'
-              ? (exitPrice - openTrade.entryPrice) * openTrade.quantity
-              : (openTrade.entryPrice - exitPrice) * openTrade.quantity;
-            const profitPercent = (profit / (openTrade.entryPrice * openTrade.quantity)) * 100;
-
-            // マクロ連動型の反省コメントを生成
-            let advancedReflection = reflection;
-            if (signal?.marketContext) {
-              const { indexSymbol, correlation, indexTrend } = signal.marketContext;
-              const isMarketDrag = (openTrade.type === 'BUY' && indexTrend === 'DOWN') || (openTrade.type === 'SELL' && indexTrend === 'UP');
-
-              if (profitPercent < 0 && isMarketDrag && correlation > MARKET_CORRELATION.STRONG_THRESHOLD) {
-                advancedReflection = `${reflection} 個別要因よりも、${indexSymbol}の${indexTrend === 'DOWN' ? '下落' : '上昇'}による市場全体の地合い(r=${correlation.toFixed(2)})に強く引きずられた形です。`;
-              } else if (profitPercent > 0 && !isMarketDrag && correlation > MARKET_CORRELATION.STRONG_THRESHOLD) {
-                advancedReflection = `${reflection} ${indexSymbol}の良好な地合い(r=${correlation.toFixed(2)})が予測を強力に後押ししました。`;
-              }
-            }
-
-            const updatedTrades = aiStatus.trades.map(t =>
-              t.id === openTrade.id
-                ? { ...t, status: 'CLOSED' as const, exitPrice, exitDate: new Date().toISOString(), profitPercent, reflection: advancedReflection }
-                : t
-            );
-
-            set({
-              aiStatus: {
-                ...aiStatus,
-                virtualBalance: aiStatus.virtualBalance + (openTrade.entryPrice * openTrade.quantity) + profit,
-                totalProfit: aiStatus.totalProfit + profit,
-                trades: updatedTrades
-              }
-            });
-            return;
-          }
-        }
-
-        // New Entry Logic (Only for strong signals)
-        const HIGH_CONFIDENCE_THRESHOLD = 80;
-        if (!openTrade && signal && signal.confidence >= HIGH_CONFIDENCE_THRESHOLD && signal.type !== 'HOLD') {
-          const entryPrice = signal.type === 'BUY' ? currentPrice * (1 + slippage) : currentPrice * (1 - slippage);
-          const quantity = Math.floor((aiStatus.virtualBalance * POSITION_SIZING.DEFAULT_RATIO) / entryPrice);
-
-          if (quantity > 0) {
-            const newTrade: PaperTrade = {
-              id: Math.random().toString(36).substring(7),
-              symbol,
-              type: signal.type as 'BUY' | 'SELL',
-              entryPrice,
-              quantity,
-              status: 'OPEN',
-              entryDate: new Date().toISOString(),
-            };
-
-            set({
-              aiStatus: {
-                ...aiStatus,
-                virtualBalance: aiStatus.virtualBalance - (entryPrice * quantity),
-                trades: [newTrade, ...aiStatus.trades]
-              }
-            });
-          }
+        if (result) {
+          set({ aiStatus: result.newStatus });
         }
       }
     }),

@@ -6,7 +6,8 @@ import { Navigation } from '@/app/components/Navigation';
 import { ALL_STOCKS } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
 import { cn, formatPercent } from '@/app/lib/utils';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 
 const SECTORS = [
@@ -80,7 +81,8 @@ function HeatmapBlock({ stock, className, onClick }: HeatmapBlockProps) {
 
 export default function Heatmap() {
   const router = useRouter();
-  const { batchUpdateStockData, setSelectedStock } = useTradingStore();
+  const { batchUpdateStockData } = useWatchlistStore();
+  const { setSelectedStock } = useUIStore();
   const [displayStocks, setDisplayStocks] = useState<Stock[]>(ALL_STOCKS);
   const [selectedSector, setSelectedSector] = useState('全て');
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'japan' | 'usa'>('all');
@@ -92,7 +94,7 @@ export default function Heatmap() {
       try {
         const symbols = ALL_STOCKS.map(s => s.symbol);
         const latestQuotes = await marketClient.fetchQuotes(symbols);
-        
+
         const updates = latestQuotes.map(q => ({
           symbol: q.symbol,
           data: {
@@ -102,9 +104,9 @@ export default function Heatmap() {
             volume: q.volume
           }
         }));
-        
+
         batchUpdateStockData(updates);
-        
+
         const updatedStocks = ALL_STOCKS.map(s => {
           const quote = latestQuotes.find(q => q.symbol === s.symbol);
           return quote ? { ...s, ...quote } : s;
@@ -172,7 +174,7 @@ export default function Heatmap() {
             ))}
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {loading && <div className="flex items-center gap-2 animate-pulse"><div className="size-1.5 rounded-full bg-primary"></div><span className="text-[10px] font-bold text-primary">SYNCING...</span></div>}
           <div className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded flex items-center gap-1.5">
@@ -187,7 +189,7 @@ export default function Heatmap() {
           <div className="p-5 flex flex-col gap-6">
             <div className="flex justify-between items-center">
               <h3 className="text-white text-base font-bold">セクター</h3>
-              <button 
+              <button
                 onClick={() => { setSelectedSector('全て'); setSelectedMarket('all'); }}
                 className="text-primary text-xs font-medium hover:underline"
               >

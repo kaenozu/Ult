@@ -169,8 +169,9 @@ export class APIClient {
 
   /**
    * Get daily OHLCV data
+   * Returns any to allow subclasses to transform the data
    */
-  async getDailyBars(symbol: string, outputsize: 'compact' | 'full' = 'compact') {
+  async getDailyBars(symbol: string, outputsize: 'compact' | 'full' = 'compact'): Promise<any> {
     return this.fetch<AlphaVantageTimeSeriesDaily>(
       'getDailyBars',
       {
@@ -184,12 +185,13 @@ export class APIClient {
 
   /**
    * Get intraday data
+   * Returns any to allow subclasses to transform the data
    */
   async getIntraday(
     symbol: string,
     interval: '1min' | '5min' | '15min' | '30min' | '60min' = '5min',
     month?: string
-  ) {
+  ): Promise<any> {
     const params: Record<string, string | number> = {
       function: 'TIME_SERIES_INTRADAY',
       symbol,
@@ -221,12 +223,13 @@ export class APIClient {
 
   /**
    * Get RSI indicator
+   * Returns any to allow subclasses to transform the data
    */
   async getRSI(
     symbol: string,
     timePeriod: number = 14,
     series: 'open' | 'high' | 'low' | 'close' = 'close'
-  ) {
+  ): Promise<any> {
     return this.fetch<AlphaVantageRSI>(
       'getRSI',
       {
@@ -242,12 +245,13 @@ export class APIClient {
 
   /**
    * Get SMA indicator
+   * Returns any to allow subclasses to transform the data
    */
   async getSMA(
     symbol: string,
     timePeriod: number = 20,
     series: 'open' | 'high' | 'low' | 'close' = 'close'
-  ) {
+  ): Promise<any> {
     return this.fetch<AlphaVantageSMA>(
       'getSMA',
       {
@@ -263,12 +267,13 @@ export class APIClient {
 
   /**
    * Get EMA indicator
+   * Returns any to allow subclasses to transform the data
    */
   async getEMA(
     symbol: string,
     timePeriod: number = 20,
     series: 'open' | 'high' | 'low' | 'close' = 'close'
-  ) {
+  ): Promise<any> {
     return this.fetch<AlphaVantageEMA>(
       'getEMA',
       {
@@ -284,13 +289,14 @@ export class APIClient {
 
   /**
    * Get MACD indicator
+   * Returns any to allow subclasses to transform the data
    */
   async getMACD(
     symbol: string,
     fastPeriod: number = 12,
     slowPeriod: number = 26,
     signalPeriod: number = 9
-  ) {
+  ): Promise<any> {
     return this.fetch<AlphaVantageMACD>(
       'getMACD',
       {
@@ -307,12 +313,13 @@ export class APIClient {
 
   /**
    * Get Bollinger Bands
+   * Returns any to allow subclasses to transform the data
    */
   async getBollingerBands(
     symbol: string,
     timePeriod: number = 20,
     nbdevup: number = 2
-  ) {
+  ): Promise<any> {
     return this.fetch<AlphaVantageBollingerBands>(
       'getBollingerBands',
       {
