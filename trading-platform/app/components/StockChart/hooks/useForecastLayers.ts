@@ -33,8 +33,9 @@ export const useForecastLayers = ({
 
     const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
     const confidenceFactor = (110 - pastSignal.confidence) / 100;
-    const momentum = pastSignal.predictedChange / 100;
+    const momentum = pastSignal.predictedChange ? pastSignal.predictedChange / 100 : 0;
 
+    // Ghost forecast: 常時表示と同じ計算式を使用
     for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
       if (hoveredIdx + i < extendedData.labels.length) {
         const timeRatio = i / FORECAST_CONE.STEPS;

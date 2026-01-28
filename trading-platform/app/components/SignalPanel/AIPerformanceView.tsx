@@ -1,10 +1,10 @@
-import { Stock, AIStatus } from '@/app/types';
+import { Stock, AIStatus, PaperTrade } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 
 interface AIPerformanceViewProps {
   aiStatus: AIStatus;
   stock: Stock;
-  aiTrades: any[]; // Using any to match usage in original file (or define Trade type if available)
+  aiTrades: PaperTrade[];
 }
 
 export function AIPerformanceView({ aiStatus, stock, aiTrades }: AIPerformanceViewProps) {
@@ -30,7 +30,7 @@ export function AIPerformanceView({ aiStatus, stock, aiTrades }: AIPerformanceVi
             この銘柄での売買履歴はまだありません。
           </div>
         ) : (
-          aiTrades.map((trade: any, i: number) => (
+          aiTrades.map((trade: PaperTrade, i: number) => (
             <div key={i} className="bg-[#192633]/50 rounded-lg border border-[#233648] overflow-hidden">
               <div className="p-2 flex justify-between items-center border-b border-[#233648]/50 bg-black/20">
                 <div className="flex items-center gap-2">
