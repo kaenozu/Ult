@@ -17,6 +17,21 @@ export interface TradingStore {
   addPosition: (position: Position) => void;
   closePosition: (symbol: string, exitPrice: number) => void;
   setCash: (amount: number) => void;
+  /**
+   * アトミックな注文実行
+   * 残高確認、ポジション追加、現金減算を単一のトランザクションで実行
+   */
+  executeOrder: (order: {
+    symbol: string;
+    name: string;
+    market: 'japan' | 'usa';
+    side: 'LONG' | 'SHORT';
+    quantity: number;
+    avgPrice: number;
+    currentPrice: number;
+    change: number;
+    entryDate: string;
+  }) => { success: boolean; error?: string };
   journal: JournalEntry[];
   addJournalEntry: (entry: JournalEntry) => void;
   selectedStock: Stock | null;
@@ -222,6 +237,94 @@ export const useTradingStore = create<TradingStore>()(
         },
       })),
 
+      /**
+       * アトミックな注文実行
+       * 残高確認、ポジション追加、現金減算、ジャーナル記録を単一のトランザクションで実行
+       */
+      executeOrder: (order) => {
+        const totalCost = order.avgPrice * order.quantity;
+        let result = { success: false, error: '' };
+        
+        set((state) => {
+          // 1. 残高確認
+          if (order.side === 'LONG' && state.portfolio.cash < totalCost) {
+            result = { success: false, error: 'Insufficient funds' };
+            return state;
+          }
+
+          // 2. ポジション追加（既存ポジションがある場合は平均化）
+          const positions = [...state.portfolio.positions];
+          const existingIndex = positions.findIndex(p => p.symbol === order.symbol && p.side === order.side);
+
+          if (existingIndex >= 0) {
+            const existing = positions[existingIndex];
+            const totalQty = existing.quantity + order.quantity;
+            const newAvgPrice = ((existing.avgPrice * existing.quantity) + (order.avgPrice * order.quantity)) / totalQty;
+
+            positions[existingIndex] = {
+              ...existing,
+              quantity: totalQty,
+              avgPrice: newAvgPrice,
+              currentPrice: order.currentPrice,
+              change: order.change,
+            };
+          } else {
+            positions.push({
+              symbol: order.symbol,
+              name: order.name,
+              market: order.market,
+              side: order.side,
+              quantity: order.quantity,
+              avgPrice: order.avgPrice,
+              currentPrice: order.currentPrice,
+              change: order.change,
+              entryDate: order.entryDate,
+            });
+          }
+
+          // 3. ポートフォリオ計算
+          const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
+          const totalProfit = positions.reduce((sum, p) => {
+            const pnl = p.side === 'LONG'
+              ? (p.currentPrice - p.avgPrice) * p.quantity
+              : (p.avgPrice - p.currentPrice) * p.quantity;
+            return sum + pnl;
+          }, 0);
+          const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+
+          // 4. ジャーナルエントリー作成
+          const entry: JournalEntry = {
+            id: Date.now().toString(),
+            symbol: order.symbol,
+            date: order.entryDate,
+            signalType: order.side === 'LONG' ? 'BUY' : 'SELL',
+            entryPrice: order.avgPrice,
+            exitPrice: 0,
+            quantity: order.quantity,
+            profit: 0,
+            profitPercent: 0,
+            notes: 'Order executed',
+            status: 'OPEN',
+          };
+
+          result = { success: true };
+
+          return {
+            portfolio: {
+              ...state.portfolio,
+              positions,
+              totalValue,
+              totalProfit,
+              dailyPnL,
+              cash: state.portfolio.cash - totalCost,
+            },
+            journal: [...state.journal, entry],
+          };
+        });
+
+        return result;
+      },
+
       journal: [],
 
       addJournalEntry: (entry) => set((state) => ({
@@ -262,3 +365,107 @@ export const useTradingStore = create<TradingStore>()(
     }
   )
 );
+              ...existing,
+              quantity: totalQty,
+              avgPrice: newAvgPrice,
+              currentPrice: order.currentPrice,
+              change: order.change,
+            };
+          } else {
+            positions.push({
+              symbol: order.symbol,
+              name: order.name,
+              market: order.market,
+              side: order.side,
+              quantity: order.quantity,
+              avgPrice: order.avgPrice,
+              currentPrice: order.currentPrice,
+              change: order.change,
+              entryDate: order.entryDate,
+            });
+          }
+
+          // 3. ポートフォリオ計算
+          const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
+          const totalProfit = positions.reduce((sum, p) => {
+            const pnl = p.side === 'LONG'
+              ? (p.currentPrice - p.avgPrice) * p.quantity
+              : (p.avgPrice - p.currentPrice) * p.quantity;
+            return sum + pnl;
+          }, 0);
+          const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+
+          // 4. ジャーナルエントリー作成
+          const entry: JournalEntry = {
+            id: Date.now().toString(),
+            symbol: order.symbol,
+            date: order.entryDate,
+            signalType: order.side === 'LONG' ? 'BUY' : 'SELL',
+            entryPrice: order.avgPrice,
+            exitPrice: 0,
+            quantity: order.quantity,
+            profit: 0,
+            profitPercent: 0,
+            notes: 'Order executed',
+            status: 'OPEN',
+          };
+
+          result = { success: true };
+
+          return {
+            portfolio: {
+              ...state.portfolio,
+              positions,
+              totalValue,
+              totalProfit,
+              dailyPnL,
+              cash: state.portfolio.cash - totalCost,
+            },
+            journal: [...state.journal, entry],
+          };
+        });
+
+        return result;
+      },
+
+      journal: [],
+
+      addJournalEntry: (entry) => set((state) => ({
+        journal: [...state.journal, entry],
+      })),
+
+      selectedStock: null,
+
+      setSelectedStock: (stock) => set({ selectedStock: stock }),
+
+      isConnected: true,
+
+      toggleConnection: () => set((state) => ({ isConnected: !state.isConnected })),
+
+      aiStatus: initialAIStatus,
+
+      processAITrades: (symbol, currentPrice, signal) => {
+        const { aiStatus } = get();
+        const { portfolio } = get();
+
+        // AITradeService を使用して新しい状態を計算
+        const result = aiTradeService.processTrades(symbol, currentPrice, signal, aiStatus);
+
+        if (result) {
+          set({ aiStatus: result.newStatus });
+        }
+      }
+    }),
+    {
+      name: 'trading-platform-storage',
+      partialize: (state) => ({
+        theme: state.theme,
+        watchlist: state.watchlist,
+        journal: state.journal,
+        portfolio: state.portfolio,
+        aiStatus: state.aiStatus,
+      }),
+    }
+  )
+);
+
