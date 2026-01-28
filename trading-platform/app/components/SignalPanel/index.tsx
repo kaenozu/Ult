@@ -63,27 +63,54 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     }
   }, [stock.symbol, stock.price, displaySignal, processAITrades]);
 
-  const backtestResult: BacktestResult = useMemo(() => {
-    if (!ohlcv || ohlcv.length === 0) {
-      return {
-        symbol: stock.symbol,
-        totalTrades: 0,
-        winningTrades: 0,
-        losingTrades: 0,
-        winRate: 0,
-        totalReturn: 0,
-        avgProfit: 0,
-        avgLoss: 0,
-        profitFactor: 0,
-        maxDrawdown: 0,
-        sharpeRatio: 0,
-        trades: [],
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString()
-      };
+  // Backtest state
+  const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null);
+  const [isBacktesting, setIsBacktesting] = useState(false);
+
+  // Reset backtest when stock changes
+  useEffect(() => {
+    setBacktestResult(null);
+  }, [stock.symbol]);
+
+  // Lazy load backtest result
+  useEffect(() => {
+    if (loading) return;
+
+    if (activeTab === 'backtest' && !backtestResult && !isBacktesting) {
+      if (!ohlcv || ohlcv.length === 0) {
+        setBacktestResult({
+          symbol: stock.symbol,
+          totalTrades: 0,
+          winningTrades: 0,
+          losingTrades: 0,
+          winRate: 0,
+          totalReturn: 0,
+          avgProfit: 0,
+          avgLoss: 0,
+          profitFactor: 0,
+          maxDrawdown: 0,
+          sharpeRatio: 0,
+          trades: [],
+          startDate: new Date().toISOString(),
+          endDate: new Date().toISOString()
+        });
+        return;
+      }
+
+      setIsBacktesting(true);
+      // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
+      setTimeout(() => {
+        try {
+          const result = runBacktest(stock.symbol, ohlcv, stock.market);
+          setBacktestResult(result);
+        } catch (e) {
+          console.error("Backtest failed", e);
+        } finally {
+          setIsBacktesting(false);
+        }
+      }, 50);
     }
-    return runBacktest(stock.symbol, ohlcv, stock.market);
-  }, [stock.symbol, ohlcv, stock.market]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading]);
 
   const aiTrades = useMemo(() => {
     return aiStatus.trades.filter(t => t.symbol === stock.symbol);
@@ -178,7 +205,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             />
         </div>
       ) : activeTab === 'backtest' ? (
-        <BacktestView backtestResult={backtestResult} />
+        <BacktestView backtestResult={backtestResult} loading={isBacktesting} />
       ) : activeTab === 'forecast' ? (
         <ForecastView signal={displaySignal} stock={stock} />
       ) : activeTab === 'ai' ? (
