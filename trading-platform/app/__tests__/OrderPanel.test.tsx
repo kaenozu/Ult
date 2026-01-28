@@ -3,8 +3,8 @@ import { OrderPanel } from '../components/OrderPanel';
 import { Stock } from '../types';
 
 // Mock zustand
-jest.mock('@/app/store/tradingStore', () => ({
-  useTradingStore: () => ({
+jest.mock('@/app/store/portfolioStore', () => ({
+  usePortfolioStore: () => ({
     portfolio: { cash: 20000 },
     addPosition: jest.fn(),
     setCash: jest.fn(),
@@ -50,7 +50,7 @@ describe('OrderPanel', () => {
     render(<OrderPanel stock={mockStock} currentPrice={150} />);
 
     // Trigger modal
-    const actionButton = screen.getByText('買い注文を発注');
+    const actionButton = screen.getByText('\u8CB7\u3044\u6CE8\u6587\u3092\u767A\u6CE8');
     fireEvent.click(actionButton);
 
     const modal = screen.getByRole('dialog');

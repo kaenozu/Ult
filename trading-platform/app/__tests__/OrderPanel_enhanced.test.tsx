@@ -4,9 +4,10 @@ import { OrderPanel } from '../components/OrderPanel';
 import '@testing-library/jest-dom';
 
 // Use actual store but mock addPosition
-jest.mock('../store/tradingStore', () => ({
+// Use actual store but mock addPosition
+jest.mock('../store/portfolioStore', () => ({
   ...jest.requireActual('../store/tradingStore'),
-  useTradingStore: () => ({
+  usePortfolioStore: () => ({
     portfolio: { cash: 10000000 },
     addPosition: jest.fn(),
     setCash: jest.fn(),
@@ -30,7 +31,7 @@ describe('OrderPanel Interaction Tests', () => {
     render(<OrderPanel stock={mockStock} currentPrice={10000} />);
 
     // Click the buy order button to show confirmation dialog
-    fireEvent.click(screen.getByText('買い注文を発注'));
+    fireEvent.click(screen.getByText('\u8CB7\u3044\u6CE8\u6587\u3092\u767A\u6CE8'));
 
     // Wait for confirmation dialog to appear
     await waitFor(() => {

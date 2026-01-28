@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
-import { cn, getConfidenceColor } from '@/app/lib/utils';
+import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { useAIStore } from '@/app/store/aiStore';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
@@ -25,7 +25,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   // Custom Hooks
   const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock, ohlcv);
 
-  const { status: wsStatus, lastMessage, connect, disconnect, reconnect } = useWebSocket('ws://localhost:8000/ws/signals');
+  // Use dynamic WebSocket URL for better security and flexibility
+  const { status: wsStatus, lastMessage, connect, disconnect, reconnect } = useWebSocket(getWebSocketUrl('/ws/signals'));
   const [liveSignal, setLiveSignal] = useState<Signal | null>(null);
 
   // Show WebSocket status in console for debugging
