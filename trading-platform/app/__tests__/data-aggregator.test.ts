@@ -36,7 +36,8 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
 
   it('uses cache when available', async () => {
     const mockData = [{ date: '2026-01-01', close: 100 }];
-    (marketClient as any).cache.set('ohlcv-AAPL', { data: mockData, timestamp: Date.now() });
+    // Fix: Cache key now includes interval (default 1d)
+    (marketClient as any).cache.set('ohlcv-AAPL-1d', { data: mockData, timestamp: Date.now() });
 
     const result = await marketClient.fetchOHLCV('AAPL');
     expect(result.source).toBe('cache');
