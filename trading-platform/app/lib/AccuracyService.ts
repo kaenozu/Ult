@@ -381,8 +381,8 @@ class AccuracyService {
         let total = 0;
 
         for (let i = 252; i < data.length - windowSize; i += 5) {
-            const window = data.slice(0, i);
-            const signal = analysisService.analyzeStock(symbol, window, market);
+            // Use endIndex to avoid slicing. slice(0, i) goes up to index i-1.
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, i - 1);
 
             if (signal.type === 'HOLD') continue;
 
@@ -426,8 +426,8 @@ class AccuracyService {
         const step = 3;
 
         for (let i = 100; i < data.length - 10; i += step) {
-            const window = data.slice(0, i);
-            const signal = analysisService.analyzeStock(symbol, window, market);
+            // slice(0, i) -> endIndex = i - 1
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, i - 1);
 
             if (signal.type === 'HOLD') continue;
 
