@@ -11,7 +11,7 @@ interface OrderPanelProps {
 }
 
 export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
-  const { portfolio, addPosition, setCash, addJournalEntry } = usePortfolioStore();
+  const { portfolio, executeOrder } = usePortfolioStore();
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
@@ -32,9 +32,8 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
     if (quantity <= 0) return;
     if (side === 'BUY' && !canAfford) return;
 
-    // Simulate order execution
-    setCash(portfolio.cash - totalCost);
-    addPosition({
+    // アトミックな注文実行
+    const result = executeOrder({
       symbol: stock.symbol,
       name: stock.name,
       market: stock.market,
@@ -46,23 +45,14 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       entryDate: new Date().toISOString().split('T')[0],
     });
 
-    addJournalEntry({
-      id: Date.now().toString(),
-      symbol: stock.symbol,
-      date: new Date().toISOString().split('T')[0],
-      signalType: side === 'BUY' ? 'BUY' : 'SELL',
-      entryPrice: price,
-      exitPrice: 0,
-      quantity: quantity,
-      profit: 0,
-      profitPercent: 0,
-      notes: `${orderType === 'MARKET' ? '成行' : '指値'}注文`,
-      status: 'OPEN'
-    });
-
-    setIsConfirming(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    if (result.success) {
+      setIsConfirming(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } else {
+      // エラー処理（必要に応じて）
+      console.error('Order failed:', result.error);
+    }
   };
 
   return (
