@@ -36,10 +36,16 @@ export const useChartData = (
 
     const ratio = stockStartPrice / indexStartPrice;
 
+    // Create a map for O(1) lookup
+    const indexMap = new Map<string, number>();
+    for (const d of indexData) {
+      indexMap.set(d.date, d.close);
+    }
+
     // data[i].date に合わせて indexData をマッピング
     return extendedData.labels.map(label => {
-      const idxPoint = indexData.find(d => d.date === label);
-      return idxPoint ? idxPoint.close * ratio : NaN;
+      const idxClose = indexMap.get(label);
+      return idxClose !== undefined ? idxClose * ratio : NaN;
     });
   }, [data, indexData, extendedData.labels]);
 
