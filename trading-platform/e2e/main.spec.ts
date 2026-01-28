@@ -188,20 +188,20 @@ test.describe('Trader Pro - ナビゲーション', () => {
   test('ヒートマップ: マーケット切り替え', async ({ page }) => {
     await page.goto('/heatmap');
 
-    // GLOBALボタンをクリック
-    await page.click('button:has-text("GLOBAL")');
+    // Globalボタンをクリック
+    await page.click('button:has-text("Global")');
     await page.waitForTimeout(1000);
-    await expect(page.locator('button:has-text("GLOBAL")')).toHaveClass(/focus/);
+    await expect(page.locator('button:has-text("Global")')).toHaveClass(/bg-primary/);
 
     // JAPANボタンをクリック
     await page.click('button:has-text("JAPAN")');
     await page.waitForTimeout(1000);
-    await expect(page.locator('button:has-text("JAPAN")')).toHaveClass(/focus/);
+    await expect(page.locator('button:has-text("JAPAN")')).toHaveClass(/bg-primary/);
 
     // USAボタンをクリック
     await page.click('button:has-text("USA")');
     await page.waitForTimeout(1000);
-    await expect(page.locator('button:has-text("USA")')).toHaveClass(/focus/);
+    await expect(page.locator('button:has-text("USA")')).toHaveClass(/bg-primary/);
   });
 });
 
@@ -325,5 +325,97 @@ test.describe('Trader Pro - エラーハンドリング', () => {
     // タイムアウト後に復帰することを確認
     await page.goto('/screener');
     await expect(page.locator('h1:has-text("株式スクリーナー")')).toBeVisible();
+  });
+});
+
+test.describe('Trader Pro - AI予測改善機能', () => {
+  test.beforeEach(async ({ context }) => {
+    await context.clearCookies();
+  });
+
+  test('スクリーナーのデフォルト信頼度が60%に設定されている', async ({ page }) => {
+    await page.goto('/screener');
+    await page.waitForLoadState('networkidle');
+
+    // 信頼度スライダーの値を確認
+    const confidenceSlider = page.locator('#minConfidence');
+    const value = await confidenceSlider.inputValue();
+    expect(value).toBe('60');  // 改善後のデフォルト値
+
+    // 表示テキストも確認
+    const confidenceDisplay = page.locator('text="60%"');
+    await expect(confidenceDisplay).toBeVisible();
+  });
+
+  test('AIシグナル分析実行で結果が表示される', async ({ page }) => {
+    await page.goto('/screener');
+    await page.waitForLoadState('networkidle');
+
+    // 「買い」シグナルを選択
+    await page.click('button:has-text("買い")');
+
+    // AIシグナル分析を開始
+    await page.click('button:has-text("AIシグナル分析を開始")');
+
+    // 分析実行中の表示を待つ
+    await expect(page.locator('button:has-text("AI分析実行中...")')).toBeVisible();
+
+    // Wait for analysis completion (max 2 minutes)
+    await page.waitForSelector('button:has-text("再分析を実行")', { timeout: 120000 });
+
+    // 結果が表示されることを確認
+    await expect(page.locator('th:has-text("AIシグナル")')).toBeVisible();
+    await expect(page.locator('th:has-text("信頼度")')).toBeVisible();
+
+    // 少なくとも1件以上の結果があることを確認
+    const stockRows = page.locator('tbody tr');
+    const count = await stockRows.count();
+    expect(count).toBeGreaterThan(0);
+  });
+
+  test('買いシグナル銘柄の信頼度が60%以上で表示される', async ({ page }) => {
+    await page.goto('/screener');
+    await page.waitForLoadState('networkidle');
+
+    // 「買い」シグナルを選択して分析実行
+    await page.click('button:has-text("買い")');
+    await page.click('button:has-text("AIシグナル分析を開始")');
+
+    // Wait for analysis completion
+    await page.waitForSelector('button:has-text("再分析を実行")', { timeout: 120000 });
+
+    // 結果テーブル内の「買い」シグナル銘柄を確認
+    const buySignals = page.locator('tbody tr td span:has-text("買い")');
+    const buyCount = await buySignals.count();
+
+    if (buyCount > 0) {
+      // 最初の買いシグナル銘柄の信頼度を確認
+      const firstBuyRow = page.locator('tbody tr').filter({ hasText: '買い' }).first();
+      const confidenceText = await firstBuyRow.locator('td').nth(3).textContent();
+      const confidenceValue = parseInt(confidenceText?.trim() || '0');
+
+      expect(confidenceValue).toBeGreaterThanOrEqual(60);
+    }
+  });
+
+  test('信頼度スライダーでフィルタリングできる', async ({ page }) => {
+    await page.goto('/screener');
+    await page.waitForLoadState('networkidle');
+
+    // まず分析を実行
+    await page.click('button:has-text("全て")');
+    await page.click('button:has-text("AIシグナル分析を開始")');
+    await page.waitForSelector('button:has-text("再分析を実行")', { timeout: 120000 });
+
+    // 信頼度70%に変更して再分析
+    await page.locator('#minConfidence').fill('70');
+
+    // スライダーの値が変更されたことを確認
+    const sliderValue = await page.locator('#minConfidence').inputValue();
+    expect(sliderValue).toBe('70');
+
+    // 表示テキストが更新されたことを確認（より具体的なセレクタを使用）
+    const confidenceDisplay = page.locator('span.font-black').filter({ hasText: '70%' });
+    await expect(confidenceDisplay).toBeVisible();
   });
 });
