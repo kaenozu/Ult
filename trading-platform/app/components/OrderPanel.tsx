@@ -11,7 +11,7 @@ interface OrderPanelProps {
 }
 
 export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
-  const { portfolio, addPosition, setCash, addJournalEntry } = usePortfolioStore();
+  const { portfolio, executeOrder, addJournalEntry } = usePortfolioStore();
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
@@ -33,17 +33,14 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
     if (side === 'BUY' && !canAfford) return;
 
     // Simulate order execution
-    setCash(portfolio.cash - totalCost);
-    addPosition({
+    executeOrder({
       symbol: stock.symbol,
       name: stock.name,
       market: stock.market,
       side: side === 'BUY' ? 'LONG' : 'SHORT',
       quantity: quantity,
-      avgPrice: price,
-      currentPrice: price,
-      change: stock.change,
-      entryDate: new Date().toISOString().split('T')[0],
+      price: price,
+      type: orderType
     });
 
     addJournalEntry({
