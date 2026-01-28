@@ -62,6 +62,7 @@ export async function GET(request: Request) {
   const type = searchParams.get('type');
   const symbol = searchParams.get('symbol')?.trim().toUpperCase();
   const market = searchParams.get('market');
+  const interval = searchParams.get('interval'); // New: 1m, 5m, 15m, 1h, 4h, 1d
 
   // Input validation and sanitization
   if (!symbol) {
@@ -91,6 +92,12 @@ export async function GET(request: Request) {
     return validationError('Invalid market parameter', 'market');
   }
 
+  // Validate interval parameter (for history type)
+  const validIntervals = ['1m', '5m', '15m', '1h', '4h', '1d', '1wk', '1mo'];
+  if (interval && !validIntervals.includes(interval)) {
+    return validationError('Invalid interval. Use 1m, 5m, 15m, 1h, 4h, 1d, 1wk, or 1mo', 'interval');
+  }
+
   const yahooSymbol = formatSymbol(symbol, market || undefined);
 
   try {
@@ -111,23 +118,59 @@ export async function GET(request: Request) {
       }
 
       try {
-        // Use simplified options to avoid compatibility issues
-        const result = await yf.chart(yahooSymbol, {
-          period1: period1,
-        }) as YahooChartResult;
+        // Map UI interval names to Yahoo Finance interval format
+        // Note: Yahoo Finance doesn't support 4h, so we map 4H to 1h
+        const yahooInterval: '1d' | '1m' | '5m' | '15m' | '1h' | '1wk' | '1mo' | '2m' | '30m' | '60m' | '90m' | '5d' | '3mo' | undefined =
+          interval === 'D' ? '1d' :
+          interval === '1H' ? '1h' :
+          interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
+          interval?.toLowerCase() === '15m' ? '15m' :
+          interval?.toLowerCase() === '1m' ? '1m' :
+          interval?.toLowerCase() === '5m' ? '5m' :
+          undefined;
+
+        // Build chart options - pass interval if specified
+        const result = yahooInterval
+          ? await yf.chart(yahooSymbol, { period1, interval: yahooInterval }) as YahooChartResult
+          : await yf.chart(yahooSymbol, { period1 }) as YahooChartResult;
 
         if (!result || !result.quotes || result.quotes.length === 0) {
           return NextResponse.json({ data: [], warning: 'No historical data found' });
         }
 
-        const ohlcv = result.quotes.map(q => ({
-          date: q.date instanceof Date ? q.date.toISOString().split('T')[0] : String(q.date),
-          open: q.open || 0,
-          high: q.high || 0,
-          low: q.low || 0,
-          close: q.close || 0,
-          volume: q.volume || 0,
-        }));
+        // Format date based on interval type
+        // Daily/Weekly/Monthly: YYYY-MM-DD
+        // Intraday (1m, 5m, 15m, 1h): YYYY-MM-DD HH:mm
+        const isIntraday = yahooInterval && ['1m', '5m', '15m', '1h'].includes(yahooInterval);
+
+        const ohlcv = result.quotes.map(q => {
+          let dateStr: string;
+          if (q.date instanceof Date) {
+            if (isIntraday) {
+              // Format: YYYY-MM-DD HH:mm (e.g., "2026-01-28 09:30")
+              const year = q.date.getFullYear();
+              const month = String(q.date.getMonth() + 1).padStart(2, '0');
+              const day = String(q.date.getDate()).padStart(2, '0');
+              const hours = String(q.date.getHours()).padStart(2, '0');
+              const minutes = String(q.date.getMinutes()).padStart(2, '0');
+              dateStr = `${year}-${month}-${day} ${hours}:${minutes}`;
+            } else {
+              // Format: YYYY-MM-DD for daily/weekly/monthly
+              dateStr = q.date.toISOString().split('T')[0];
+            }
+          } else {
+            dateStr = String(q.date);
+          }
+
+          return {
+            date: dateStr,
+            open: q.open || 0,
+            high: q.high || 0,
+            low: q.low || 0,
+            close: q.close || 0,
+            volume: q.volume || 0,
+          };
+        });
 
         return NextResponse.json({ data: ohlcv });
       } catch (innerError: unknown) {
