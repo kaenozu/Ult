@@ -9,6 +9,7 @@ import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG } from '@/app/lib/constants';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
+export { volumeProfilePlugin };
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
 import { useForecastLayers } from './hooks/useForecastLayers';
