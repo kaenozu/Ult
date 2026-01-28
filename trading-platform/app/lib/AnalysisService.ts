@@ -18,6 +18,13 @@ import { accuracyService } from './AccuracyService';
  * High-level orchestration service for stock analysis.
  */
 class AnalysisService {
+    private parameterCache = new Map<string, { rsiPeriod: number; smaPeriod: number; accuracy: number; dataHash: string }>();
+
+    private generateDataHash(data: OHLCV[]): string {
+        const lastData = data[data.length - 1];
+        return `${data.length}-${lastData?.close || 0}-${lastData?.date || ''}`;
+    }
+
     /**
      * 予測コーン（Forecast Cone）の計算
      */
@@ -77,12 +84,19 @@ class AnalysisService {
 
     /**
      * 銘柄ごとに的中率が最大化するパラメータを探索
+     * 結果をメモ化して計算量を削減
      */
-    optimizeParameters(data: OHLCV[], market: 'japan' | 'usa'): {
+    optimizeParameters(data: OHLCV[], market: 'japan' | 'usa', skipCache: boolean = false): {
         rsiPeriod: number;
         smaPeriod: number;
         accuracy: number;
     } {
+        const dataHash = this.generateDataHash(data);
+        const cacheKey = `${market}-${dataHash}`;
+
+        if (!skipCache && this.parameterCache.has(cacheKey)) {
+            return this.parameterCache.get(cacheKey)!;
+        }
         if (data.length < OPTIMIZATION.REQUIRED_DATA_PERIOD) {
             return { rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, accuracy: 0 };
         }
@@ -120,7 +134,9 @@ class AnalysisService {
             }
         }
 
-        return { rsiPeriod: bestRsiPeriod, smaPeriod: bestSmaPeriod, accuracy: bestAccuracy };
+        const result = { rsiPeriod: bestRsiPeriod, smaPeriod: bestSmaPeriod, accuracy: bestAccuracy };
+        this.parameterCache.set(cacheKey, { ...result, dataHash });
+        return result;
     }
 
     private internalCalculatePerformance(
@@ -177,6 +193,53 @@ class AnalysisService {
         if (rsi < RSI_CONFIG.OVERSOLD) return { type: 'BUY', reason: '売られすぎ水準からの自律反発。' };
         if (rsi > RSI_CONFIG.OVERBOUGHT) return { type: 'SELL', reason: '買われすぎ水準からの反落。' };
         return { type: 'HOLD', reason: '明確な優位性なし。' };
+    }
+
+    /**
+     * 事前に最適化されたパラメータを使って分析を実行（バックテスト用）
+     * 公開メソッドとして公開してAccuracyServiceから呼べるようにする
+     */
+    analyzeStockWithPrecomputedParams(
+        symbol: string,
+        data: OHLCV[],
+        market: 'japan' | 'usa',
+        opt: { rsiPeriod: number; smaPeriod: number; accuracy: number },
+        startIndex: number = -1
+    ): Signal {
+        const closes = data.map(d => d.close);
+
+        // startIndexが指定された場合、その時点までのデータを使用
+        const analysisData = startIndex >= 0 ? data.slice(0, startIndex + 1) : data;
+        const analysisCloses = startIndex >= 0 ? closes.slice(0, startIndex + 1) : closes;
+
+        const lastRSI = technicalIndicatorService.calculateRSI(analysisCloses, opt.rsiPeriod).pop() || 50;
+        const lastSMA = technicalIndicatorService.calculateSMA(analysisCloses, opt.smaPeriod).pop() || analysisCloses[analysisCloses.length - 1];
+        const currentPrice = analysisCloses[analysisCloses.length - 1];
+
+        const { type, reason } = this.determineSignalType(currentPrice, lastSMA, lastRSI, opt);
+
+        const recentCloses = analysisCloses.slice(-RSI_CONFIG.DEFAULT_PERIOD);
+        const atr = (Math.max(...recentCloses) - Math.min(...recentCloses)) / 2;
+        const targetPercent = Math.max(atr / currentPrice, PRICE_CALCULATION.DEFAULT_ATR_RATIO);
+
+        const targetPrice = type === 'BUY' ? currentPrice * (1 + targetPercent * 2) : type === 'SELL' ? currentPrice * (1 - targetPercent * 2) : currentPrice;
+        const stopLoss = type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice;
+
+        let confidence = 50 + (type === 'HOLD' ? 0 : Math.min(Math.abs(50 - lastRSI) * 1.5, 45));
+
+        return {
+            symbol,
+            type,
+            confidence: parseFloat(confidence.toFixed(1)),
+            accuracy: Math.round(opt.accuracy),
+            atr,
+            targetPrice: parseFloat(targetPrice.toFixed(2)),
+            stopLoss: parseFloat(stopLoss.toFixed(2)),
+            reason,
+            predictedChange: parseFloat(((targetPrice - currentPrice) / (currentPrice || 1) * 100).toFixed(2)),
+            predictionDate: new Date().toISOString().split('T')[0],
+            optimizedParams: { rsiPeriod: opt.rsiPeriod, smaPeriod: opt.smaPeriod },
+        };
     }
 
     /**

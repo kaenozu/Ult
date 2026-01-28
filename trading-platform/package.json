@@ -12,7 +12,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ws:server": "node ../scripts/websocket-server.js",
+    "ws:server:dev": "WS_PORT=3001 node ../scripts/websocket-server.js"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
@@ -36,12 +38,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ws": "^8.18.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5"
+    "typescript": "^5",
+    "ws": "^8.19.0"
   }
 }
