@@ -38,7 +38,7 @@ interface YahooQuoteResult {
   [key: string]: unknown; // Safer than 'any' or union of primitives
 }
 
-const yf = new YahooFinance();
+export const yf = new YahooFinance();
 
 function formatSymbol(symbol: string, market?: string): string {
   // Never add suffix to indices (starting with ^)
@@ -133,12 +133,12 @@ export async function GET(request: Request) {
         } else {
           finalInterval =
             interval === 'D' ? '1d' :
-            interval === '1H' ? '1h' :
-            interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
-            interval?.toLowerCase() === '15m' ? '15m' :
-            interval?.toLowerCase() === '1m' ? '1m' :
-            interval?.toLowerCase() === '5m' ? '5m' :
-            undefined;
+              interval === '1H' ? '1h' :
+                interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
+                  interval?.toLowerCase() === '15m' ? '15m' :
+                    interval?.toLowerCase() === '1m' ? '1m' :
+                      interval?.toLowerCase() === '5m' ? '5m' :
+                        undefined;
         }
 
         // Build chart options - pass interval if specified
