@@ -91,8 +91,9 @@ describe('StockTable', () => {
 
     it('gracefully handles empty stock list', () => {
         render(<StockTable stocks={[]} />);
-        // Header row always exists
-        expect(screen.getAllByRole('row')).toHaveLength(1);
+        // Header row + Empty state row
+        expect(screen.getAllByRole('row')).toHaveLength(2);
+        expect(screen.getByText('ウォッチリストは空です')).toBeInTheDocument();
         expect(marketClient.fetchQuotes).not.toHaveBeenCalled();
     });
 });
