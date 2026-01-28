@@ -120,18 +120,30 @@ export async function GET(request: Request) {
       try {
         // Map UI interval names to Yahoo Finance interval format
         // Note: Yahoo Finance doesn't support 4h, so we map 4H to 1h
-        const yahooInterval: '1d' | '1m' | '5m' | '15m' | '1h' | '1wk' | '1mo' | '2m' | '30m' | '60m' | '90m' | '5d' | '3mo' | undefined =
-          interval === 'D' ? '1d' :
-          interval === '1H' ? '1h' :
-          interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
-          interval?.toLowerCase() === '15m' ? '15m' :
-          interval?.toLowerCase() === '1m' ? '1m' :
-          interval?.toLowerCase() === '5m' ? '5m' :
-          undefined;
+        // IMPORTANT: Yahoo Finance doesn't support intraday intervals (1m, 5m, 15m, 1h) for Japanese stocks
+        // We need to check if this is a Japanese stock and an intraday interval
+        const isJapaneseStock = yahooSymbol.endsWith('.T');
+        const isIntradayInterval = interval && ['1m', '5m', '15m', '1h', '4H'].includes(interval);
+
+        let finalInterval: '1d' | '1m' | '5m' | '15m' | '1h' | '1wk' | '1mo' | '2m' | '30m' | '60m' | '90m' | '5d' | '3mo' | undefined;
+
+        if (isJapaneseStock && isIntradayInterval) {
+          // Japanese stocks don't support intraday data, fall back to daily
+          finalInterval = '1d';
+        } else {
+          finalInterval =
+            interval === 'D' ? '1d' :
+            interval === '1H' ? '1h' :
+            interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
+            interval?.toLowerCase() === '15m' ? '15m' :
+            interval?.toLowerCase() === '1m' ? '1m' :
+            interval?.toLowerCase() === '5m' ? '5m' :
+            undefined;
+        }
 
         // Build chart options - pass interval if specified
-        const result = yahooInterval
-          ? await yf.chart(yahooSymbol, { period1, interval: yahooInterval }) as YahooChartResult
+        const result = finalInterval
+          ? await yf.chart(yahooSymbol, { period1, interval: finalInterval }) as YahooChartResult
           : await yf.chart(yahooSymbol, { period1 }) as YahooChartResult;
 
         if (!result || !result.quotes || result.quotes.length === 0) {
@@ -141,7 +153,12 @@ export async function GET(request: Request) {
         // Format date based on interval type
         // Daily/Weekly/Monthly: YYYY-MM-DD
         // Intraday (1m, 5m, 15m, 1h): YYYY-MM-DD HH:mm
-        const isIntraday = yahooInterval && ['1m', '5m', '15m', '1h'].includes(yahooInterval);
+        const isIntraday = finalInterval && ['1m', '5m', '15m', '1h'].includes(finalInterval);
+
+        // Add warning if we fell back to daily data for Japanese stock with intraday interval
+        const warning = isJapaneseStock && isIntradayInterval
+          ? `Note: Intraday data (1m, 5m, 15m, 1h, 4H) is not available for Japanese stocks. Daily data is shown instead.`
+          : undefined;
 
         const ohlcv = result.quotes.map(q => {
           let dateStr: string;
@@ -172,7 +189,7 @@ export async function GET(request: Request) {
           };
         });
 
-        return NextResponse.json({ data: ohlcv });
+        return NextResponse.json({ data: ohlcv, warning });
       } catch (innerError: unknown) {
         return handleApiError(new Error('Failed to fetch historical data'), 'market/history', 502);
       }
