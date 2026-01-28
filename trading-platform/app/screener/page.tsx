@@ -28,7 +28,7 @@ export default function Screener() {
     sector: '',
     market: '',
     signal: 'BUY',
-    minConfidence: '80',
+    minConfidence: '60',  // 80%から60%に変更して現実的な基準に
   });
 
   const [techFilters, setTechFilters] = useState<TechFilters>({
@@ -175,7 +175,7 @@ export default function Screener() {
       setFilters({
         priceMin: '', priceMax: '', changeMin: '', changeMax: '',
         volumeMin: '', sector: '', market: '',
-        signal: 'BUY', minConfidence: '80',
+        signal: 'BUY', minConfidence: '60',  // 80%から60%に変更
       });
       if (type === 'oversold') {
         setTechFilters({ rsiMax: '30', rsiMin: '', trend: 'all' });
@@ -214,7 +214,7 @@ export default function Screener() {
             <div className="flex justify-between items-center">
               <h3 className="text-white text-base font-bold">フィルター</h3>
               <button onClick={() => {
-                setFilters({ priceMin: '', priceMax: '', changeMin: '', changeMax: '', volumeMin: '', sector: '', market: '', signal: 'BUY', minConfidence: '80' });
+                setFilters({ priceMin: '', priceMax: '', changeMin: '', changeMax: '', volumeMin: '', sector: '', market: '', signal: 'BUY', minConfidence: '60' });
                 setTechFilters({ rsiMax: '', rsiMin: '', trend: 'all' });
                 setIsTechAnalysisDone(false);
               }} className="text-primary text-xs font-medium hover:text-primary/80">リセット</button>
