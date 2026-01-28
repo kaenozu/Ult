@@ -170,6 +170,10 @@ describe('Screener Page', () => {
         fireEvent.click(screen.getByText('AIシグナル分析を開始'));
         await waitFor(() => screen.getByText('再分析を実行'));
 
+        // Set confidence to 80 explicitly for this test scenario (since default changed to 60)
+        const slider = document.getElementById('minConfidence') as HTMLInputElement;
+        fireEvent.change(slider, { target: { value: '80' } });
+
         // BUY & 80: Only 7203
         expect(screen.getByText('7203')).toBeInTheDocument();
         expect(screen.queryByText('AAPL')).not.toBeInTheDocument();
@@ -186,7 +190,6 @@ describe('Screener Page', () => {
         // Line 117: setAnalyzedStocks(results); (results only pushed if signalResult.success and data)
         // Correct.
 
-        const slider = document.getElementById('minConfidence') as HTMLInputElement;
         fireEvent.change(slider, { target: { value: '60' } });
         expect(screen.getByText('7203')).toBeInTheDocument();
         expect(screen.getByText('AAPL')).toBeInTheDocument();
