@@ -167,7 +167,7 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
             : "bg-red-600 hover:bg-red-500"
         )}
       >
-        {side === 'BUY' ? (canAfford ? '買い注文を発注' : '資金不足です') : '空売り注文を発注'}
+        {side === 'BUY' ? (canAfford ? '\u8CB7\u3044\u6CE8\u6587\u3092\u767A\u6CE8' : '\u8CC7\u91D1\u4E0D\u8DB3\u3067\u3059') : '\u7A7A\u58F2\u308A\u6CE8\u6587\u3092\u767A\u6CE8'}
       </button>
 
       {/* Confirmation Modal */}
