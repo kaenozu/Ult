@@ -24,7 +24,14 @@ jest.mock('yahoo-finance2', () => {
     });
 });
 
-import { GET } from '@/app/api/market/route';
+jest.mock('@/app/lib/ip-rate-limit', () => ({
+    ipRateLimiter: {
+        check: jest.fn(() => true)
+    },
+    getClientIp: jest.fn(() => '127.0.0.1')
+}));
+
+import { GET, yf } from '@/app/api/market/route';
 import YahooFinance from 'yahoo-finance2';
 
 describe('Market API Route', () => {
@@ -32,30 +39,17 @@ describe('Market API Route', () => {
     let mockQuote: jest.Mock;
 
     beforeEach(() => {
-        const MockClass = YahooFinance as unknown as jest.Mock;
-        // Capture instance before clearing (since route.ts initializes it once)
-        let instance = MockClass.mock.instances[0];
-
         jest.clearAllMocks();
 
-        // Check if instance was created
-        if (!instance) {
-            // This acts as a fallback or indicator if route.ts didn't calculate yf yet (lazy?)
-            // But logic says it should have.
-            // Or we manually construct one for testing spy attachment, but that won't help if route.ts uses a different one.
-            console.warn('No YahooFinance instance captured!');
-            instance = new MockClass();
-        }
-
-        // Attach spies
-        mockChart = instance.chart = jest.fn();
-        mockQuote = instance.quote = jest.fn();
+        // Attach spies to the actual exported instance
+        // We cast to jest.Mock because we know it's a mock from the factory
+        mockChart = yf.chart = jest.fn();
+        mockQuote = yf.quote = jest.fn();
     });
 
     // Polyfill Request if needed (for node env)
     const createRequest = (url: string) => {
         if (typeof Request === 'undefined') {
-            // Minimal polyfill if absolutely necessary (though jsdom should have it)
             return {
                 url: `http://localhost${url}`,
                 method: 'GET'

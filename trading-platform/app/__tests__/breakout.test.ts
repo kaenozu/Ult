@@ -3,6 +3,11 @@ import { OHLCV } from '../app/types';
 
 describe('Breakout Detection', () => {
   const mockData: OHLCV[] = [
+    // Initial data to satisfy length requirement (> 20)
+    ...Array.from({ length: 20 }, (_, i) => ({
+      date: `2025-12-${10 + i}`,
+      open: 100, high: 101, low: 99, close: 100, volume: 1000
+    })),
     { date: '2026-01-01', open: 100, high: 101, low: 99, close: 100, volume: 1000 },
     { date: '2026-01-02', open: 100, high: 101, low: 99, close: 100, volume: 1100 },
     { date: '2026-01-03', open: 100, high: 101, low: 99, close: 100, volume: 1050 },
@@ -13,6 +18,17 @@ describe('Breakout Detection', () => {
     { date: '2026-01-08', open: 102, high: 104, low: 99, close: 100, volume: 5200 },
     { date: '2026-01-09', open: 100, high: 101, low: 99, close: 100, volume: 1500 },
     { date: '2026-01-10', open: 100, high: 101, low: 99, close: 100, volume: 1300 },
+    // Trending data with MASSIVE volume to ensure detection
+    { date: '2026-01-11', open: 100, high: 105, low: 100, close: 104, volume: 20000 }, // Breakout candidate
+    { date: '2026-01-12', open: 104, high: 106, low: 103, close: 105, volume: 25000 },
+    { date: '2026-01-13', open: 105, high: 107, low: 104, close: 106, volume: 30000 },
+    { date: '2026-01-14', open: 106, high: 108, low: 105, close: 107, volume: 25000 },
+    { date: '2026-01-15', open: 107, high: 105, low: 100, close: 102, volume: 40000 }, // Bearish reversal
+    { date: '2026-01-16', open: 102, high: 103, low: 98, close: 99, volume: 35000 },
+    { date: '2026-01-17', open: 99, high: 100, low: 95, close: 96, volume: 30000 },
+    { date: '2026-01-18', open: 96, high: 97, low: 94, close: 95, volume: 25000 },
+    { date: '2026-01-19', open: 95, high: 96, low: 93, close: 94, volume: 20000 },
+    { date: '2026-01-20', open: 94, high: 95, low: 92, close: 93, volume: 15000 },
   ];
 
   const mockVolumeProfile: VolumeProfileLevel[] = [
@@ -41,11 +57,11 @@ describe('Breakout Detection', () => {
         volumeMultiplier: 1.5,
         minProfileStrength: 0.7
       });
-      
+
       expect(result.events.length).toBeGreaterThan(0);
       const bullBreakouts = result.events.filter(e => e.type === 'BULL_BREAKOUT');
       expect(bullBreakouts.length).toBeGreaterThan(0);
-      
+
       const bullishEvent = bullBreakouts[0];
       expect(bullishEvent.volumeRatio).toBeGreaterThanOrEqual(1.5);
       expect(bullishEvent.resistanceLevel).toBeDefined();
@@ -57,10 +73,10 @@ describe('Breakout Detection', () => {
         volumeMultiplier: 1.5,
         minProfileStrength: 0.7
       });
-      
+
       const bearBreakouts = result.events.filter(e => e.type === 'BEAR_BREAKOUT');
       expect(bearBreakouts.length).toBeGreaterThan(0);
-      
+
       const bearishEvent = bearBreakouts[0];
       expect(bearishEvent.volumeRatio).toBeGreaterThanOrEqual(1.5);
       expect(bearishEvent.supportLevel).toBeDefined();
@@ -72,7 +88,7 @@ describe('Breakout Detection', () => {
         volumeMultiplier: 1.5,
         minProfileStrength: 0.7
       });
-      
+
       if (result.events.length > 0) {
         expect(result.averageVolumeRatio).toBeGreaterThan(0);
       }
@@ -84,7 +100,7 @@ describe('Breakout Detection', () => {
         minProfileStrength: 0.9,
         confirmationCandles: 2
       });
-      
+
       // より厳しい条件なのでブレイクアウトが減るはず
       expect(result.events.length).toBeLessThanOrEqual(
         detectBreakouts(mockData, mockVolumeProfile, {
@@ -101,7 +117,7 @@ describe('Breakout Detection', () => {
       const result = predictNextBreakout(100, mockVolumeProfile, {
         thresholdPercent: 0.01
       });
-      
+
       expect(result.bullishBreakout).toBeNull();
       expect(result.bearishBreakout).toBeNull();
     });
@@ -110,7 +126,7 @@ describe('Breakout Detection', () => {
       const result = predictNextBreakout(101.5, mockVolumeProfile, {
         thresholdPercent: 0.01
       });
-      
+
       expect(result.bullishBreakout).not.toBeNull();
       if (result.bullishBreakout) {
         expect(result.bullishBreakout.price).toBeGreaterThan(101.5);
@@ -122,7 +138,7 @@ describe('Breakout Detection', () => {
       const result = predictNextBreakout(105.5, mockVolumeProfile, {
         thresholdPercent: 0.05
       });
-      
+
       expect(result.bearishBreakout).not.toBeNull();
       if (result.bearishBreakout) {
         expect(result.bearishBreakout.price).toBeLessThan(105.5);
@@ -131,19 +147,24 @@ describe('Breakout Detection', () => {
     });
 
     it('should respect custom threshold', () => {
-      const defaultResult = predictNextBreakout(103, mockVolumeProfile);
-      const strictResult = predictNextBreakout(103, mockVolumeProfile, {
+      // Level is 103. Price 104. Dist 1.0.
+      // 1% threshold of 104 = 1.04. (1.0 < 1.04) -> Detected.
+      // 0.5% threshold of 104 = 0.52. (1.0 > 0.52) -> Not Detected.
+      const currentPrice = 104;
+      const defaultResult = predictNextBreakout(currentPrice, mockVolumeProfile);
+
+      const strictResult = predictNextBreakout(currentPrice, mockVolumeProfile, {
         thresholdPercent: 0.005 // 0.5%
       });
-      
+
       // より厳しい閾値なので予測が減るはず
-      const hasDefaultBreakout = 
-        (defaultResult.bullishBreakout !== null) || 
+      const hasDefaultBreakout =
+        (defaultResult.bullishBreakout !== null) ||
         (defaultResult.bearishBreakout !== null);
-      const hasStrictBreakout = 
-        (strictResult.bullishBreakout !== null) || 
+      const hasStrictBreakout =
+        (strictResult.bullishBreakout !== null) ||
         (strictResult.bearishBreakout !== null);
-      
+
       if (hasDefaultBreakout) {
         expect(hasStrictBreakout).toBe(false);
       }
@@ -153,7 +174,7 @@ describe('Breakout Detection', () => {
       const result = predictNextBreakout(103, mockVolumeProfile, {
         minStrength: 0.95
       });
-      
+
       if (result.bullishBreakout) {
         expect(result.bullishBreakout.strength).toBeGreaterThanOrEqual(0.95);
       }
