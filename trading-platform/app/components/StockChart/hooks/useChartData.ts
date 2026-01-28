@@ -23,7 +23,17 @@ export const useChartData = (
     return { labels, prices };
   }, [data, signal]);
 
-  // 1.5 市場指数の正規化 (Normalizing Index to Stock scale)
+  // 1.5 市場指数のマップ作成（indexData のみ依存）
+  const indexMap = useMemo(() => {
+    if (!indexData || indexData.length === 0) return new Map();
+    const map = new Map<string, number>();
+    for (const d of indexData) {
+      map.set(d.date, d.close);
+    }
+    return map;
+  }, [indexData]);
+
+  // 1.6 市場指数の正規化 (Normalizing Index to Stock scale)
   const normalizedIndexData = useMemo(() => {
     if (!indexData || indexData.length < 10 || data.length === 0) return [];
 
@@ -36,18 +46,12 @@ export const useChartData = (
 
     const ratio = stockStartPrice / indexStartPrice;
 
-    // Create a map for O(1) lookup
-    const indexMap = new Map<string, number>();
-    for (const d of indexData) {
-      indexMap.set(d.date, d.close);
-    }
-
     // data[i].date に合わせて indexData をマッピング
     return extendedData.labels.map(label => {
       const idxClose = indexMap.get(label);
       return idxClose !== undefined ? idxClose * ratio : NaN;
     });
-  }, [data, indexData, extendedData.labels]);
+  }, [data, indexData, extendedData, indexMap]);
 
   return { extendedData, normalizedIndexData };
 };
