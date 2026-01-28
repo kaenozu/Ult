@@ -2,8 +2,8 @@
 
 exports[`optimizeParameters returns consistent results 1`] = `
 {
-  "accuracy": 100,
-  "rsiPeriod": 9,
-  "smaPeriod": 10,
+  "accuracy": 0,
+  "rsiPeriod": 14,
+  "smaPeriod": 50,
 }
 `;

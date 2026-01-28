@@ -22,7 +22,9 @@ export default function Workstation() {
     chartSignal,
     loading,
     error,
-    handleStockSelect
+    handleStockSelect,
+    interval,
+    setInterval
   } = useStockData();
 
   const [showSMA, setShowSMA] = useState(true);
@@ -65,8 +67,10 @@ export default function Workstation() {
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="lg:hidden p-4 text-[#92adc9] hover:text-white transition-colors border-r border-[#233648]"
+          aria-label="ウォッチリストを開く"
+          aria-expanded={isSidebarOpen}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
@@ -76,8 +80,10 @@ export default function Workstation() {
         <button
           onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           className="lg:hidden p-4 text-[#92adc9] hover:text-white transition-colors border-l border-[#233648]"
+          aria-label="注文パネルを開く"
+          aria-expanded={isRightSidebarOpen}
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </button>
@@ -138,6 +144,8 @@ export default function Workstation() {
                 setShowSMA={setShowSMA}
                 showBollinger={showBollinger}
                 setShowBollinger={setShowBollinger}
+                interval={interval}
+                setInterval={setInterval}
               />
 
               {/* Main Chart Visualization */}
