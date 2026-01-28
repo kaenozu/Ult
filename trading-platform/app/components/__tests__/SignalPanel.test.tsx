@@ -77,7 +77,6 @@ describe('SignalPanel Accessibility', () => {
     (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
       return selector ? selector(mockStore) : mockStore;
     });
-    });
     (useWebSocket as unknown as jest.Mock).mockReturnValue({
       status: 'OPEN',
       lastMessage: null,
