@@ -18,6 +18,7 @@ export function useStockData() {
   const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [interval, setInterval] = useState<string>('5m'); // Add interval state
 
   // AbortController for canceling pending requests on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -56,10 +57,13 @@ export function useStockData() {
       // Parallel execution for Stock Data, Index Data, and Signals
       const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
 
+      // Map UI interval names to API interval format
+      const apiInterval = interval === 'D' ? '1d' : interval.toLowerCase();
+
       const [data, idxData, signalData] = await Promise.all([
-        fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal),
-        fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal),
-        fetchSignal(stock, controller.signal)
+        fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval),
+        fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal, apiInterval),
+        fetchSignal(stock, controller.signal, apiInterval)
       ]);
 
       if (controller.signal.aborted || !isMountedRef.current) return;
@@ -75,7 +79,7 @@ export function useStockData() {
 
       // 4. Background sync for long-term data (keep independent)
       // This is for background calculations, so we don't await it
-      fetchOHLCV(stock.symbol, stock.market, undefined, controller.signal).catch(e => {
+      fetchOHLCV(stock.symbol, stock.market, undefined, controller.signal, apiInterval).catch(e => {
         if (isMountedRef.current && !controller.signal.aborted) {
           console.warn('Background sync failed:', e);
         }
@@ -90,6 +94,10 @@ export function useStockData() {
         setLoading(false);
       }
     }
+  }, [interval]); // Add interval dependency so it refetches when interval changes
+
+  const handleIntervalChange = useCallback((newInterval: string) => {
+    setInterval(newInterval);
   }, []);
 
   // Fetch data when selected stock or watchlist changes
@@ -115,6 +123,13 @@ export function useStockData() {
     }
   }, [storeSelectedStock, watchlist, selectedStock, setSelectedStock, fetchData]);
 
+  // Refetch data when interval changes
+  useEffect(() => {
+    if (selectedStock) {
+      fetchData(selectedStock);
+    }
+  }, [interval, selectedStock, fetchData]);
+
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);
     setSelectedStock(stock);
@@ -128,6 +143,8 @@ export function useStockData() {
     chartSignal,
     loading,
     error,
-    handleStockSelect
+    handleStockSelect,
+    interval,
+    setInterval: handleIntervalChange
   };
 }
