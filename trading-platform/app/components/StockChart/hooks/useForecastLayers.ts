@@ -11,6 +11,22 @@ interface UseForecastLayersProps {
   hoveredIdx: number | null;
 }
 
+/**
+ * 予測レイヤーフック
+ *
+ * このフックは2種類の予測データを生成します:
+ *
+ * 1. ゴースト予測（ghostForecastDatasets）:
+ *    - チャート上でマウスオーバーした際に表示される過去の予測再現
+ *    - ホバー位置までのデータのみを使用してシグナルを再計算
+ *    - 「あの時点でどう予測されていたか」をタイムトライルして確認する機能
+ *    - 常時表示の予測線とは異なる値を表示する（これは仕様）
+ *
+ * 2. 予測コーン（forecastDatasets）:
+ *    - 常にチャート上に表示される最新の予測
+ *    - 最新の全データを使用したシグナルに基づく予測
+ *    - 未来の価格変動を予測するコーンを表示
+ */
 export const useForecastLayers = ({
   data,
   extendedData,
@@ -35,7 +51,9 @@ export const useForecastLayers = ({
     const confidenceFactor = (110 - pastSignal.confidence) / 100;
     const momentum = pastSignal.predictedChange ? pastSignal.predictedChange / 100 : 0;
 
-    // Ghost forecast: 常時表示と同じ計算式を使用
+    // Ghost forecast: 過去の時点でのシグナル(pastSignal)を使用して、
+    // その時点で利用可能だったデータのみで予測を再現（タイムトラベル機能）
+    // 注: 常時表示の予測線とは異なる値を表示します（これは仕様です）
     for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
       if (hoveredIdx + i < extendedData.labels.length) {
         const timeRatio = i / FORECAST_CONE.STEPS;
@@ -71,7 +89,8 @@ export const useForecastLayers = ({
     ];
   }, [hoveredIdx, data, market, extendedData.labels.length, extendedData.labels]);
 
-  // 4. 未来予測の予報円 (Forecast Cone)
+  // 4. 未来予測の予報円 (Forecast Cone) - 常に表示される最新の予測
+  // 注: 最新の全データを使用したsignalを元に計算（ゴースト予測とは異なります）
   const forecastDatasets = useMemo(() => {
     if (!signal || data.length === 0) return [];
     const lastIdx = data.length - 1;
