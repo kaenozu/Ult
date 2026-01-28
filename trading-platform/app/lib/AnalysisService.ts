@@ -95,6 +95,9 @@ class AnalysisService {
         const rsiCache = new Map<number, number[]>();
         const smaCache = new Map<number, number[]>();
 
+        // Pre-calculate ATR (O(N)) once, instead of inside the nested loop (O(N * M))
+        const atrArray = accuracyService.calculateBatchSimpleATR(data);
+
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
             rsiCache.set(rsiP, technicalIndicatorService.calculateRSI(closes, rsiP));
         }
@@ -109,6 +112,7 @@ class AnalysisService {
                     rsiP,
                     smaP,
                     closes,
+                    atrArray,
                     rsiCache.get(rsiP),
                     smaCache.get(smaP)
                 );
@@ -128,6 +132,7 @@ class AnalysisService {
         rsiP: number,
         smaP: number,
         closes: number[],
+        atrArray: number[],
         preCalcRsi?: number[],
         preCalcSma?: number[]
     ): { hitRate: number; total: number } {
@@ -148,7 +153,8 @@ class AnalysisService {
             if (type === 'HOLD') continue;
 
             total++;
-            const atr = accuracyService.calculateSimpleATR(data, i);
+            // Use pre-calculated ATR (O(1) lookup)
+            const atr = atrArray[i];
             const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, closes[i] * 0.012);
 
             const result = accuracyService.simulateTrade(data, i, type, targetMove);
