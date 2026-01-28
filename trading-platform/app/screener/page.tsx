@@ -229,7 +229,7 @@ export default function Screener() {
                 <label className="text-[10px] text-[#92adc9] font-bold">推奨シグナル</label>
                 <div className="flex bg-[#192633] p-0.5 rounded-md">
                   {['BUY', 'SELL', 'ANY'].map((s) => (
-                    <button key={s} onClick={() => { setFilters(prev => ({ ...prev, signal: s })); setIsTechAnalysisDone(false); }}
+                    <button key={s} onClick={() => { setFilters(prev => ({ ...prev, signal: s })); }}
                       className={cn("flex-1 py-1.5 text-[10px] font-bold rounded transition-all", filters.signal === s ? "bg-primary text-white shadow-sm" : "text-[#92adc9] hover:text-white")}>
                       {s === 'BUY' ? '買い' : s === 'SELL' ? '売り' : '全て'}
                     </button>
@@ -238,7 +238,52 @@ export default function Screener() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center"><label className="text-[10px] text-[#92adc9] font-bold">最小信頼度 (%)</label><span className="text-[10px] text-primary font-black">{filters.minConfidence}%</span></div>
-                <input id="minConfidence" name="minConfidence" type="range" min="0" max="100" step="5" value={filters.minConfidence} onChange={(e) => { setFilters(prev => ({ ...prev, minConfidence: e.target.value })); setIsTechAnalysisDone(false); }} className="w-full accent-primary h-1.5 bg-[#192633] rounded-lg appearance-none cursor-pointer" />
+                <input id="minConfidence" name="minConfidence" type="range" min="0" max="100" step="5" value={filters.minConfidence} onChange={(e) => { setFilters(prev => ({ ...prev, minConfidence: e.target.value })); }} className="w-full accent-primary h-1.5 bg-[#192633] rounded-lg appearance-none cursor-pointer" />
+              </div>
+            </div>
+
+            {/* Basic Filters (Restored) */}
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-semibold text-[#92adc9] uppercase tracking-wider">基本フィルター</span>
+
+              {/* Market */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-[#92adc9] font-bold">市場</label>
+                <select value={filters.market} onChange={(e) => setFilters(prev => ({ ...prev, market: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white">
+                  <option value="">全て</option>
+                  <option value="japan">日本 (JP)</option>
+                  <option value="usa">米国 (US)</option>
+                </select>
+              </div>
+
+              {/* Price */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-[#92adc9] font-bold">価格</label>
+                <div className="flex gap-2">
+                  <input placeholder="Min" type="number" value={filters.priceMin} onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                  <input placeholder="Max" type="number" value={filters.priceMax} onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                </div>
+              </div>
+
+              {/* Change % */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-[#92adc9] font-bold">騰落率 (%)</label>
+                <div className="flex gap-2">
+                  <input placeholder="Min %" type="number" value={filters.changeMin} onChange={(e) => setFilters(prev => ({ ...prev, changeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                  <input placeholder="Max %" type="number" value={filters.changeMax} onChange={(e) => setFilters(prev => ({ ...prev, changeMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                </div>
+              </div>
+
+              {/* Volume */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-[#92adc9] font-bold">出来高</label>
+                <input placeholder="Min Volume" type="number" value={filters.volumeMin} onChange={(e) => setFilters(prev => ({ ...prev, volumeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+              </div>
+
+              {/* Sector */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-[#92adc9] font-bold">セクター</label>
+                <input placeholder="Sector" value={filters.sector} onChange={(e) => setFilters(prev => ({ ...prev, sector: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
               </div>
             </div>
 

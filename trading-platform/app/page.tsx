@@ -22,7 +22,9 @@ export default function Workstation() {
     chartSignal,
     loading,
     error,
-    handleStockSelect
+    handleStockSelect,
+    interval,
+    setInterval
   } = useStockData();
 
   const [showSMA, setShowSMA] = useState(true);
@@ -138,6 +140,8 @@ export default function Workstation() {
                 setShowSMA={setShowSMA}
                 showBollinger={showBollinger}
                 setShowBollinger={setShowBollinger}
+                interval={interval}
+                setInterval={setInterval}
               />
 
               {/* Main Chart Visualization */}
