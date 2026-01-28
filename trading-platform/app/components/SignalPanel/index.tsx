@@ -34,10 +34,11 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   }, [wsStatus]);
 
   useEffect(() => {
-    if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE' && lastMessage.data.symbol === stock.symbol) {
-      setLiveSignal(lastMessage.data);
-    } else if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE' && lastMessage.data.symbol !== stock.symbol) {
-      // Different symbol
+    if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE') {
+      const data = lastMessage.data as { symbol: string } | undefined;
+      if (data && data.symbol === stock.symbol) {
+        setLiveSignal(lastMessage.data as Signal);
+      }
     }
   }, [lastMessage, stock.symbol]);
 
