@@ -10,6 +10,8 @@ interface ChartToolbarProps {
   setShowSMA: (show: boolean) => void;
   showBollinger: boolean;
   setShowBollinger: (show: boolean) => void;
+  interval: string;
+  setInterval: (interval: string) => void;
 }
 
 export function ChartToolbar({
@@ -18,7 +20,9 @@ export function ChartToolbar({
   showSMA,
   setShowSMA,
   showBollinger,
-  setShowBollinger
+  setShowBollinger,
+  interval,
+  setInterval
 }: ChartToolbarProps) {
   return (
     <div className="min-h-10 border-b border-[#233648] flex flex-wrap items-center justify-between px-4 py-1 gap-2 bg-[#192633]/30 shrink-0">
@@ -33,10 +37,11 @@ export function ChartToolbar({
             <button
               key={tf}
               type="button"
-              aria-pressed={tf === '5m'}
+              aria-pressed={tf === interval}
+              onClick={() => setInterval(tf)}
               className={cn(
                 'px-2 py-0.5 text-xs font-medium rounded transition-colors',
-                tf === '5m'
+                tf === interval
                   ? 'bg-primary text-white shadow-sm'
                   : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
               )}

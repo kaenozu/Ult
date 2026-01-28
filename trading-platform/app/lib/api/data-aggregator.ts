@@ -69,9 +69,11 @@ class MarketDataClient {
 
   /**
    * Fetch Historical Data with Smart Persistence (IndexedDB + Delta fetching)
+   * @param interval - Time interval for data (1m, 5m, 15m, 1h, 4h, 1d, etc.)
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal): Promise<FetchResult<OHLCV[]>> {
-    const cacheKey = `ohlcv-${symbol}`;
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string): Promise<FetchResult<OHLCV[]>> {
+    // Include interval in cache key to differentiate cached data by interval
+    const cacheKey = `ohlcv-${symbol}-${interval || '1d'}`;
 
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
     if (cached) return { success: true, data: cached, source: 'cache' };
@@ -90,38 +92,70 @@ class MarketDataClient {
 
     const fetchPromise = (async () => {
       try {
-        // 1. Try to get data from local DB
-        const localData = await idbClient.getData(symbol);
-        let finalData: OHLCV[] = localData;
-        source = 'idb';
+        // Check if this is intraday data (1m, 5m, 15m, 1h)
+        // Intraday data should always be fetched fresh from API, not from IndexedDB
+        const isIntraday = interval && ['1m', '5m', '15m', '1h'].includes(interval);
 
-        const now = new Date();
-        // Use local noon to avoid timezone/market-close issues for "needs update" check
-        const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
+        let finalData: OHLCV[] = [];
 
-        // Update if no data, or if latest data is older than 24 hours
-        const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
+        if (isIntraday) {
+          // For intraday data, always fetch from API with current date
+          // Get last 30 days of intraday data
+          const now = new Date();
+          const startDate = new Date(now);
+          startDate.setDate(startDate.getDate() - 30);
 
-        if (needsUpdate) {
-          let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
-          if (lastDataDate) {
-            const startDate = new Date(lastDataDate);
-            startDate.setDate(startDate.getDate() + 1);
-            fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
-          }
+          let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&interval=${interval}&startDate=${startDate.toISOString().split('T')[0]}`;
 
           const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
 
           if (newData && newData.length > 0) {
-            finalData = await idbClient.mergeAndSave(symbol, newData);
+            finalData = newData;
             source = 'api';
-          } else if (!lastDataDate) {
-            throw new Error('No historical data available');
+          } else {
+            throw new Error('No intraday data available');
+          }
+        } else {
+          // For daily/weekly/monthly data, use IndexedDB for persistence
+          const localData = await idbClient.getData(symbol);
+          finalData = localData;
+          source = 'idb';
+
+          const now = new Date();
+          // Use local noon to avoid timezone/market-close issues for "needs update" check
+          const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
+
+          // Update if no data, or if latest data is older than 24 hours
+          const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
+
+          if (needsUpdate) {
+            let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
+            // Add interval parameter if specified (defaults to daily on API side)
+            if (interval) {
+              fetchUrl += `&interval=${interval}`;
+            }
+            if (lastDataDate) {
+              const startDate = new Date(lastDataDate);
+              startDate.setDate(startDate.getDate() + 1);
+              fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
+            }
+
+            const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
+
+            if (newData && newData.length > 0) {
+              finalData = await idbClient.mergeAndSave(symbol, newData);
+              source = 'api';
+            } else if (!lastDataDate) {
+              throw new Error('No historical data available');
+            }
           }
         }
 
         const interpolatedData = this.interpolateOHLCV(finalData);
-        this.setCache(cacheKey, interpolatedData);
+        // Don't cache intraday data as it becomes stale quickly
+        if (!isIntraday) {
+          this.setCache(cacheKey, interpolatedData);
+        }
         return interpolatedData;
       } finally {
         this.pendingRequests.delete(cacheKey);
@@ -196,11 +230,11 @@ class MarketDataClient {
     }
   }
 
-  async fetchMarketIndex(market: 'japan' | 'usa', signal?: AbortSignal): Promise<OHLCV[]> {
+  async fetchMarketIndex(market: 'japan' | 'usa', signal?: AbortSignal, interval?: string): Promise<OHLCV[]> {
     const symbol = market === 'japan' ? '^N225' : '^IXIC';
     try {
       // 内部のfetchOHLCVが投げるエラーをここで完全にキャッチする
-      const result = await this.fetchOHLCV(symbol, market, undefined, signal).catch(() => ({ success: false, data: [] }));
+      const result = await this.fetchOHLCV(symbol, market, undefined, signal, interval).catch(() => ({ success: false, data: [] }));
       console.log(`[Aggregator] Market index ${symbol} data status: ${result.success ? 'Success' : 'Failed'}`);
       return (result.success && result.data) ? result.data : [];
     } catch (err) {
@@ -210,10 +244,10 @@ class MarketDataClient {
     }
   }
 
-  async fetchSignal(stock: Stock, signal?: AbortSignal): Promise<FetchResult<Signal>> {
+  async fetchSignal(stock: Stock, signal?: AbortSignal, interval?: string): Promise<FetchResult<Signal>> {
     let result: FetchResult<OHLCV[]> | null = null;
     try {
-      result = await this.fetchOHLCV(stock.symbol, stock.market, undefined, signal);
+      result = await this.fetchOHLCV(stock.symbol, stock.market, undefined, signal, interval);
 
       if (!result.success || !result.data || result.data.length < 20) {
         if (signal?.aborted) throw new Error('Aborted');
