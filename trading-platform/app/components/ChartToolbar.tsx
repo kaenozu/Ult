@@ -33,22 +33,32 @@ export function ChartToolbar({
         </div>
         <div className="h-4 w-px bg-[#233648]" />
         <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
-          {['1m', '5m', '15m', '1H', '4H', 'D'].map((tf) => (
-            <button
-              key={tf}
-              type="button"
-              aria-pressed={tf === interval}
-              onClick={() => setInterval(tf)}
-              className={cn(
-                'px-2 py-0.5 text-xs font-medium rounded transition-colors',
-                tf === interval
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
-              )}
-            >
-              {tf}
-            </button>
-          ))}
+          {['1m', '5m', '15m', '1H', '4H', 'D'].map((tf) => {
+            const isIntraday = ['1m', '5m', '15m', '1H', '4H'].includes(tf);
+            const isJapaneseStock = stock?.market === 'japan';
+            const isDisabled = isJapaneseStock && isIntraday && tf !== interval;
+
+            return (
+              <button
+                key={tf}
+                type="button"
+                aria-pressed={tf === interval}
+                disabled={isDisabled}
+                onClick={() => setInterval(tf)}
+                title={isDisabled ? '日本株では日足データのみ利用可能です' : undefined}
+                className={cn(
+                  'px-2 py-0.5 text-xs font-medium rounded transition-colors',
+                  tf === interval
+                    ? 'bg-primary text-white shadow-sm'
+                    : isDisabled
+                    ? 'text-[#92adc9]/30 cursor-not-allowed'
+                    : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
+                )}
+              >
+                {tf}
+              </button>
+            );
+          })}
         </div>
         <div className="h-4 w-px bg-[#233648]" />
         <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
