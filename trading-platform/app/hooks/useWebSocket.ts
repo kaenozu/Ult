@@ -4,7 +4,7 @@ export type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSED' | 'ERROR';
 
 interface WebSocketMessage {
   type: string;
-  data: any;
+  data: unknown;
 }
 
 const WS_ENABLED_KEY = 'trader-pro-websocket-enabled';
@@ -130,7 +130,7 @@ export function useWebSocket(url: string) {
         return () => disconnect();
     }, [connect, disconnect]);
 
-    const sendMessage = useCallback((msg: any) => {
+    const sendMessage = useCallback((msg: unknown) => {
         if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify(msg));
         } else {
