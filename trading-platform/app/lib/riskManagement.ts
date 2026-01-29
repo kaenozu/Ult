@@ -142,7 +142,7 @@ export function calculatePositionSize(
   positionSize = Math.max(minSize, positionSize);
 
   // 最大サイズ制限（資本の一定比率以下）
-  const maxPositionPercent = settings.maxPositionPercent ?? RISK_MANAGEMENT.DEFAULT_MAX_POSITION_PERCENT;
+  const maxPositionPercent = settings.maxPositionPercent ?? RISK_MANAGEMENT.MAX_POSITION_PERCENT;
   const maxPositionValue = capital * (maxPositionPercent / 100);
   const maxPositionSizeByCapital = Math.floor(maxPositionValue / entryPrice);
   positionSize = Math.min(positionSize, maxPositionSizeByCapital);
@@ -269,6 +269,7 @@ export function calculateTakeProfitPrice(
 export const DEFAULT_RISK_SETTINGS: RiskManagementSettings = {
   sizingMethod: 'fixed_ratio',
   fixedRatio: 0.1,
+  maxRiskPercent: 2,
   maxPositionPercent: 20,
   kellyFraction: 0.25,
   stopLoss: {
