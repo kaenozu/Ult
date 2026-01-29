@@ -1,3 +1,4 @@
+
 import { calculateAIHitRate } from '../lib/analysis';
 import { OHLCV } from '../types';
 
@@ -6,9 +7,9 @@ describe('AI Performance Calculation (Hit Rate)', () => {
   const mockData: OHLCV[] = Array.from({ length: 300 }, (_, i) => {
     let price = 1000 + i * 2;
     // 250日目付近で暴落
-    if (i >= 250 && i < 260) price = 1500 - (i - 250) * 20; 
+    if (i >= 250 && i < 260) price = 1500 - (i - 250) * 20;
     // 260日目から急反発
-    if (i >= 260) price = 1300 + (i - 260) * 15; 
+    if (i >= 260) price = 1300 + (i - 260) * 15;
 
     const date = new Date(2025, 0, 1 + i);
     return {
