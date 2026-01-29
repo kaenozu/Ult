@@ -144,7 +144,7 @@ export function useChartAnalysis({
         const momentum = signal.predictedChange ? signal.predictedChange / 100 : 0;
         const confidenceFactor = (110 - signal.confidence) / 100;
 
-        let target = signal.targetPrice;
+        const target = signal.targetPrice;
 
         // Start points
         targetArr[lastIdx] = stopArr[lastIdx] = currentPrice;

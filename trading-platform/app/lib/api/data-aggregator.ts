@@ -105,7 +105,7 @@ class MarketDataClient {
           const startDate = new Date(now);
           startDate.setDate(startDate.getDate() - 30);
 
-          let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&interval=${interval}&startDate=${startDate.toISOString().split('T')[0]}`;
+          const fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&interval=${interval}&startDate=${startDate.toISOString().split('T')[0]}`;
 
           const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
 
