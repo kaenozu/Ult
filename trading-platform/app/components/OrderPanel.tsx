@@ -3,7 +3,7 @@
 import { useState, useId } from 'react';
 import { Stock } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
-import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useTradingStore } from '@/app/store/tradingStore';
 
 interface OrderPanelProps {
   stock: Stock;
@@ -11,7 +11,8 @@ interface OrderPanelProps {
 }
 
 export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
-  const { portfolio, executeOrder } = usePortfolioStore();
+  const cash = useTradingStore(s => s.portfolio.cash);
+  const executeOrder = useTradingStore(s => s.executeOrder);
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
@@ -26,7 +27,7 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
 
   const price = orderType === 'MARKET' ? currentPrice : parseFloat(limitPrice);
   const totalCost = quantity > 0 ? price * quantity : 0;
-  const canAfford = portfolio.cash >= totalCost && quantity > 0;
+  const canAfford = cash >= totalCost && quantity > 0;
 
   const handleOrder = () => {
     if (quantity <= 0) return;
@@ -48,7 +49,6 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } else {
-      // エラー処理（必要に応じて）
       console.error('Order failed:', result.error);
     }
   };
@@ -63,7 +63,7 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       <div className="flex justify-between items-center border-b border-[#233648] pb-2">
         <h3 className="text-white font-bold">{stock.symbol} を取引</h3>
         <span className="text-xs text-[#92adc9]">
-          余力: {formatCurrency(portfolio.cash)}
+          余力: {formatCurrency(cash)}
         </span>
       </div>
 
