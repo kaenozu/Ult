@@ -99,8 +99,8 @@ export const CANDLESTICK = {
     BEAR_COLOR: 'rgba(239, 68, 68, 0.5)',
     MAIN_LINE_COLOR: '#67e8f9',
     LINE_WIDTH: 1,
-    MAIN_LINE_WIDTH: 2,
-    HOVER_RADIUS: 4,
+    MAIN_LINE_WIDTH: 2.5,
+    HOVER_RADIUS: 5,
 };
 
 export const CHART_GRID = {
@@ -109,7 +109,7 @@ export const CHART_GRID = {
     FUTURE_AREA_COLOR: 'rgba(59, 130, 246, 0.2)',
     CURRENT_PRICE_LINE_WIDTH: 3,
     HOVER_LINE_WIDTH: 2,
-    LABEL_FONT_SIZE: 12,
+    LABEL_FONT_SIZE: 13,
 };
 
 export const CHART_CONFIG = {

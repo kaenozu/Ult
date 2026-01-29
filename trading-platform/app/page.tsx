@@ -150,7 +150,7 @@ export default function Workstation() {
               />
 
               {/* Main Chart Visualization */}
-              <div className="flex-1 relative p-4 flex flex-col">
+              <div className="flex-1 relative p-3 flex flex-col">
                 <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
                   <StockChart
                     data={chartData}
@@ -163,7 +163,7 @@ export default function Workstation() {
                 </div>
 
                 {/* RSI Sub-chart */}
-                <div className="h-24 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
+                <div className="h-40 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
                   <SimpleRSIChart data={chartData} />
                 </div>
               </div>
