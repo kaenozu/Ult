@@ -15,7 +15,7 @@ export interface TradingStore {
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
-  executeOrder: (order: { symbol: string; name: string; market: 'japan' | 'usa'; side: 'LONG' | 'SHORT'; quantity: number; price: number; type: 'MARKET' | 'LIMIT' }) => { success: boolean; error?: string };
+  executeOrder: (order: { symbol: string; name: string; market: 'japan' | 'usa'; side: 'LONG' | 'SHORT'; quantity: number; price: number; type: 'MARKET' | 'LIMIT' }) => void;
   closePosition: (symbol: string, exitPrice: number) => void;
   setCash: (amount: number) => void;
   journal: JournalEntry[];
@@ -42,6 +42,18 @@ const initialAIStatus: AIStatus = {
   totalProfit: 0,
   trades: [],
 };
+
+function calculatePortfolioStats(positions: Position[]) {
+  const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
+  const totalProfit = positions.reduce((sum, p) => {
+    const pnl = p.side === 'LONG'
+      ? (p.currentPrice - p.avgPrice) * p.quantity
+      : (p.avgPrice - p.currentPrice) * p.quantity;
+    return sum + pnl;
+  }, 0);
+  const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+  return { totalValue, totalProfit, dailyPnL };
+}
 
 /**
  * tradingStore.ts - Master Store
@@ -80,20 +92,27 @@ export const useTradingStore = create<TradingStore>()(
           } : p
         );
 
-        const dailyPnL = newPositions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+        const stats = calculatePortfolioStats(newPositions);
 
         return {
           watchlist: newWatchlist,
           portfolio: {
             ...state.portfolio,
             positions: newPositions,
-            dailyPnL
+            ...stats
           }
         };
       }),
 
       batchUpdateStockData: (updates) => set((state) => {
         const updateMap = new Map(updates.map(u => [u.symbol, u.data]));
+        const newPositions = state.portfolio.positions.map(p => {
+          const update = updateMap.get(p.symbol);
+          return update && update.price ? { ...p, currentPrice: update.price } : p;
+        });
+
+        // Recalculate stats since prices might have changed
+        const stats = calculatePortfolioStats(newPositions);
 
         return {
           watchlist: state.watchlist.map(s => {
@@ -102,10 +121,8 @@ export const useTradingStore = create<TradingStore>()(
           }),
           portfolio: {
             ...state.portfolio,
-            positions: state.portfolio.positions.map(p => {
-              const update = updateMap.get(p.symbol);
-              return update && update.price ? { ...p, currentPrice: update.price } : p;
-            })
+            positions: newPositions,
+            ...stats
           }
         };
       }),
@@ -113,87 +130,68 @@ export const useTradingStore = create<TradingStore>()(
       portfolio: initialPortfolio,
 
       updatePortfolio: (positions) => set((state) => {
-        const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-        const totalProfit = positions.reduce((sum, p) => sum + (p.currentPrice - p.avgPrice) * p.quantity, 0);
-        const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+        const stats = calculatePortfolioStats(positions);
         return {
           portfolio: {
             ...state.portfolio,
             positions,
-            totalValue,
-            totalProfit,
-            dailyPnL,
+            ...stats,
           },
         };
       }),
 
-      executeOrder: (order) => {
-        const state = get();
+      executeOrder: (order) => set((state) => {
         const totalCost = order.quantity * order.price;
-
-        // Basic check
+        // Basic check, though OrderPanel handles UI disabled state
         if (order.side === 'LONG' && state.portfolio.cash < totalCost) {
-            return { success: false, error: 'Insufficient funds' };
+            return state;
         }
 
-        set((state) => {
-          const positions = [...state.portfolio.positions];
-          const newPosition: Position = {
-              symbol: order.symbol,
-              name: order.name,
-              market: order.market,
-              side: order.side,
-              quantity: order.quantity,
-              avgPrice: order.price,
-              currentPrice: order.price,
-              change: 0,
-              entryDate: new Date().toISOString().split('T')[0],
+        const positions = [...state.portfolio.positions];
+        const newPosition: Position = {
+            symbol: order.symbol,
+            name: order.name,
+            market: order.market,
+            side: order.side,
+            quantity: order.quantity,
+            avgPrice: order.price,
+            currentPrice: order.price,
+            change: 0,
+            entryDate: new Date().toISOString().split('T')[0],
+        };
+
+        const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
+
+        if (existingIndex >= 0) {
+          const existing = positions[existingIndex];
+          const combinedCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
+          const totalQty = existing.quantity + newPosition.quantity;
+
+          positions[existingIndex] = {
+            ...existing,
+            quantity: totalQty,
+            avgPrice: combinedCost / totalQty,
+            currentPrice: newPosition.currentPrice,
           };
+        } else {
+          positions.push(newPosition);
+        }
 
-          const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
+        // Recalculate totals
+        const stats = calculatePortfolioStats(positions);
 
-          if (existingIndex >= 0) {
-            const existing = positions[existingIndex];
-            const combinedCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
-            const totalQty = existing.quantity + newPosition.quantity;
+        // Deduct cash for both BUY and SELL as per original logic (Short selling collateral/margin implied)
+        const newCash = state.portfolio.cash - totalCost;
 
-            positions[existingIndex] = {
-              ...existing,
-              quantity: totalQty,
-              avgPrice: combinedCost / totalQty,
-              currentPrice: newPosition.currentPrice,
-            };
-          } else {
-            positions.push(newPosition);
-          }
-
-          // Recalculate totals
-          const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-          const totalProfit = positions.reduce((sum, p) => {
-            const pnl = p.side === 'LONG'
-              ? (p.currentPrice - p.avgPrice) * p.quantity
-              : (p.avgPrice - p.currentPrice) * p.quantity;
-            return sum + pnl;
-          }, 0);
-          const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
-
-          // Deduct cash for both BUY and SELL as per original logic (Short selling collateral/margin implied)
-          const newCash = state.portfolio.cash - totalCost;
-
-          return {
-            portfolio: {
-              ...state.portfolio,
-              positions,
-              totalValue,
-              totalProfit,
-              dailyPnL,
-              cash: newCash,
-            },
-          };
-        });
-
-        return { success: true };
-      },
+        return {
+          portfolio: {
+            ...state.portfolio,
+            positions,
+            ...stats,
+            cash: newCash,
+          },
+        };
+      }),
 
       addPosition: (newPosition) => set((state) => {
         const positions = [...state.portfolio.positions];
@@ -215,22 +213,13 @@ export const useTradingStore = create<TradingStore>()(
           positions.push(newPosition);
         }
 
-        const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-        const totalProfit = positions.reduce((sum, p) => {
-          const pnl = p.side === 'LONG'
-            ? (p.currentPrice - p.avgPrice) * p.quantity
-            : (p.avgPrice - p.currentPrice) * p.quantity;
-          return sum + pnl;
-        }, 0);
-        const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+        const stats = calculatePortfolioStats(positions);
 
         return {
           portfolio: {
             ...state.portfolio,
             positions,
-            totalValue,
-            totalProfit,
-            dailyPnL,
+            ...stats,
           },
         };
       }),
@@ -262,22 +251,13 @@ export const useTradingStore = create<TradingStore>()(
         };
 
         const positions = state.portfolio.positions.filter(p => p.symbol !== symbol);
-        const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-        const totalProfit = positions.reduce((sum, p) => {
-          const pnl = p.side === 'LONG'
-            ? (p.currentPrice - p.avgPrice) * p.quantity
-            : (p.avgPrice - p.currentPrice) * p.quantity;
-          return sum + pnl;
-        }, 0);
-        const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+        const stats = calculatePortfolioStats(positions);
 
         return {
           portfolio: {
             ...state.portfolio,
             positions,
-            totalValue,
-            totalProfit,
-            dailyPnL,
+            ...stats,
             cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit,
           },
           journal: [...state.journal, entry],
