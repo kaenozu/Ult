@@ -87,8 +87,10 @@ export function useStockData() {
 
     } catch (err) {
       if (controller.signal.aborted || !isMountedRef.current) return;
-      console.error('Data fetch error:', err);
-      setError('Failed to fetch data');
+      // 統一エラーハンドリング
+      const { logError, getUserErrorMessage } = await import('@/app/lib/errors');
+      logError(err, 'useStockData.fetchData');
+      setError(getUserErrorMessage(err));
     } finally {
       if (!controller.signal.aborted && isMountedRef.current) {
         setLoading(false);

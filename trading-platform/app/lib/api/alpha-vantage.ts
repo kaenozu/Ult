@@ -6,13 +6,64 @@
 import { APIClient, getAPIClient } from './APIClient';
 import { NetworkError, APIError, RateLimitError } from '@/app/types';
 
+// ============================================================================
+// Type Definitions for Alpha Vantage API
+// ============================================================================
+
+/** Time series entry from Alpha Vantage API */
+interface AlphaVantageTimeSeriesEntry {
+  '1. open': string;
+  '2. high': string;
+  '3. low': string;
+  '4. close': string;
+  '5. volume': string;
+}
+
+/** Technical indicator entry from Alpha Vantage API */
+interface AlphaVantageIndicatorEntry {
+  RSI?: string;
+  SMA?: string;
+  EMA?: string;
+  MACD?: string;
+  MACD_Signal?: string;
+  MACD_Hist?: string;
+  'Real Upper Band'?: string;
+  'Real Middle Band'?: string;
+  'Real Lower Band'?: string;
+}
+
+/** Symbol search match from Alpha Vantage API */
+interface AlphaVantageSymbolMatch {
+  '1. symbol': string;
+  '2. name': string;
+  '3. type': string;
+  '4. region': string;
+  '9. matchScore': string;
+}
+
+/** Generic Alpha Vantage API response */
+interface AlphaVantageResponse {
+  [key: string]: unknown;
+  bestMatches?: AlphaVantageSymbolMatch[];
+  Note?: string;
+  'Error Message'?: string;
+  Information?: string;
+}
+
+/** API Client configuration */
+interface APIClientConfig {
+  apiKey: string;
+  baseUrl?: string;
+  timeout?: number;
+}
+
 export class AlphaVantageClient extends APIClient {
     async getDailyBars(symbol: string, outputsize: 'compact' | 'full' = 'compact') {
         const raw = await super.getDailyBars(symbol, outputsize);
         const timeSeries = raw['Time Series (Daily)'];
         if (!timeSeries) return { symbol, data: [] };
 
-        const data = Object.entries(timeSeries).map(([timestamp, values]: [string, any]) => ({
+        const data = Object.entries(timeSeries as Record<string, AlphaVantageTimeSeriesEntry>).map(([timestamp, values]) => ({
             timestamp,
             open: parseFloat(values['1. open']),
             high: parseFloat(values['2. high']),
@@ -27,10 +78,10 @@ export class AlphaVantageClient extends APIClient {
     async getIntraday(symbol: string, interval: '1min' | '5min' | '15min' | '30min' | '60min' = '5min') {
         const raw = await super.getIntraday(symbol, interval);
         const key = `Time Series (${interval})`;
-        const timeSeries = (raw as any)[key];
+        const timeSeries = (raw as Record<string, unknown>)[key];
         if (!timeSeries) return { symbol, interval, data: [] };
 
-        const data = Object.entries(timeSeries).map(([timestamp, values]: [string, any]) => ({
+        const data = Object.entries(timeSeries as Record<string, AlphaVantageTimeSeriesEntry>).map(([timestamp, values]) => ({
             timestamp,
             open: parseFloat(values['1. open']),
             high: parseFloat(values['2. high']),
@@ -55,9 +106,9 @@ export class AlphaVantageClient extends APIClient {
         const indicatorData = raw['Technical Analysis: RSI'];
         if (!indicatorData) return { name: 'RSI', data: [] };
 
-        const data = Object.entries(indicatorData).map(([timestamp, values]: [string, any]) => ({
+        const data = Object.entries(indicatorData as Record<string, AlphaVantageIndicatorEntry>).map(([timestamp, values]) => ({
             timestamp,
-            rsi: parseFloat(values['RSI']),
+            rsi: parseFloat(values.RSI ?? '0'),
         })).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
         return { name: 'RSI', data };
@@ -68,9 +119,9 @@ export class AlphaVantageClient extends APIClient {
         const indicatorData = raw['Technical Analysis: SMA'];
         if (!indicatorData) return { name: 'SMA', data: [] };
 
-        const data = Object.entries(indicatorData).map(([timestamp, values]: [string, any]) => ({
+        const data = Object.entries(indicatorData as Record<string, AlphaVantageIndicatorEntry>).map(([timestamp, values]) => ({
             timestamp,
-            sma: parseFloat(values['SMA']),
+            sma: parseFloat(values.SMA ?? '0'),
         })).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
         return { name: 'SMA', data };
@@ -81,9 +132,9 @@ export class AlphaVantageClient extends APIClient {
         const indicatorData = raw['Technical Analysis: EMA'];
         if (!indicatorData) return { name: 'EMA', data: [] };
 
-        const data = Object.entries(indicatorData).map(([timestamp, values]: [string, any]) => ({
+        const data = Object.entries(indicatorData as Record<string, AlphaVantageIndicatorEntry>).map(([timestamp, values]) => ({
             timestamp,
-            ema: parseFloat(values['EMA']),
+            ema: parseFloat(values.EMA ?? '0'),
         })).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
         return { name: 'EMA', data };
@@ -94,11 +145,11 @@ export class AlphaVantageClient extends APIClient {
         const indicatorData = raw['Technical Analysis: MACD'];
         if (!indicatorData) return { name: 'MACD', data: [] };
 
-        const data = Object.entries(indicatorData).map(([timestamp, values]: [string, any]) => ({
+        const data = Object.entries(indicatorData as Record<string, AlphaVantageIndicatorEntry>).map(([timestamp, values]) => ({
             timestamp,
-            macd: parseFloat(values['MACD']),
-            macd_Signal: parseFloat(values['MACD_Signal']),
-            macd_Hist: parseFloat(values['MACD_Hist']),
+            macd: parseFloat(values.MACD ?? '0'),
+            macd_Signal: parseFloat(values.MACD_Signal ?? '0'),
+            macd_Hist: parseFloat(values.MACD_Hist ?? '0'),
         })).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
         return { name: 'MACD', data };
@@ -109,26 +160,26 @@ export class AlphaVantageClient extends APIClient {
         const indicatorData = raw['Technical Analysis: BBANDS'];
         if (!indicatorData) return { name: 'BBANDS', data: [] };
 
-        const data = Object.entries(indicatorData).map(([timestamp, values]: [string, any]) => ({
+        const data = Object.entries(indicatorData as Record<string, AlphaVantageIndicatorEntry>).map(([timestamp, values]) => ({
             timestamp,
-            upperBand: parseFloat(values['Real Upper Band']),
-            middleBand: parseFloat(values['Real Middle Band']),
-            lowerBand: parseFloat(values['Real Lower Band']),
+            upperBand: parseFloat(values['Real Upper Band'] ?? '0'),
+            middleBand: parseFloat(values['Real Middle Band'] ?? '0'),
+            lowerBand: parseFloat(values['Real Lower Band'] ?? '0'),
         })).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
         return { name: 'BBANDS', data };
     }
 
     async searchSymbols(keywords: string) {
-        const response = await this.fetch<any>('SYMBOL_SEARCH', {
+        const response = await this.fetch<AlphaVantageResponse>('SYMBOL_SEARCH', {
             function: 'SYMBOL_SEARCH',
             keywords,
-            apikey: (this as any).config.apiKey
+            apikey: (this as unknown as { config: APIClientConfig }).config.apiKey
         });
 
         if (!response.bestMatches) return [];
 
-        return response.bestMatches.map((match: any) => ({
+        return response.bestMatches.map((match) => ({
             symbol: match['1. symbol'],
             name: match['2. name'],
             type: match['3. type'],
@@ -147,33 +198,36 @@ export const getAlphaVantageClient = () => {
 
     if (!alphaClient) {
         const client = getAPIClient();
-        alphaClient = new AlphaVantageClient({ apiKey: (client as any).config.apiKey });
+        alphaClient = new AlphaVantageClient({ apiKey: (client as unknown as { config: APIClientConfig }).config.apiKey });
     }
 
     return alphaClient;
 };
 
-export const validateAlphaVantageResponse = (data: any) => {
-    if (data['Note']) throw new RateLimitError(data['Note']);
+export const validateAlphaVantageResponse = (data: AlphaVantageResponse): AlphaVantageResponse => {
+    if (data.Note) throw new RateLimitError(data.Note);
     if (data['Error Message']) throw new APIError(data['Error Message'], 'API_ERROR');
-    if (data['Information']) throw new APIError(data['Information'], 'API_INFO');
+    if (data.Information) throw new APIError(data.Information, 'API_INFO');
     return data;
 };
 
-export const extractTimeSeriesData = (data: any, key: string) => {
-    if (!data[key] || typeof data[key] !== 'object' || Object.keys(data[key]).length === 0) {
+export const extractTimeSeriesData = (data: AlphaVantageResponse, key: string): Record<string, AlphaVantageTimeSeriesEntry> | undefined => {
+    const timeSeries = data[key];
+    if (!timeSeries || typeof timeSeries !== 'object' || Object.keys(timeSeries).length === 0) {
         return undefined;
     }
     // Check deep structure
-    const firstKey = Object.keys(data[key])[0];
-    if (!data[key][firstKey] || typeof data[key][firstKey] !== 'object' || Object.keys(data[key][firstKey]).length === 0) {
+    const firstKey = Object.keys(timeSeries)[0];
+    const firstEntry = (timeSeries as Record<string, unknown>)[firstKey];
+    if (!firstEntry || typeof firstEntry !== 'object' || Object.keys(firstEntry).length === 0) {
         return undefined;
     }
 
-    return data[key];
+    return timeSeries as Record<string, AlphaVantageTimeSeriesEntry>;
 };
 
-export const extractTechnicalIndicatorData = (data: any, key: string) => {
-    if (!data[key]) return undefined;
-    return data[key];
+export const extractTechnicalIndicatorData = (data: AlphaVantageResponse, key: string): Record<string, AlphaVantageIndicatorEntry> | undefined => {
+    const indicatorData = data[key];
+    if (!indicatorData || typeof indicatorData !== 'object') return undefined;
+    return indicatorData as Record<string, AlphaVantageIndicatorEntry>;
 };

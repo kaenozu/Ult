@@ -39,10 +39,8 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       market: stock.market,
       side: side === 'BUY' ? 'LONG' : 'SHORT',
       quantity: quantity,
-      avgPrice: price,
-      currentPrice: price,
-      change: stock.change,
-      entryDate: new Date().toISOString().split('T')[0],
+      price: price,
+      type: orderType,
     });
 
     if (result.success) {
