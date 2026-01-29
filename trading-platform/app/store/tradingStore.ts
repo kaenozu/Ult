@@ -27,10 +27,8 @@ export interface TradingStore {
     market: 'japan' | 'usa';
     side: 'LONG' | 'SHORT';
     quantity: number;
-    avgPrice: number;
-    currentPrice: number;
-    change: number;
-    entryDate: string;
+    price: number;
+    type: 'MARKET' | 'LIMIT';
   }) => { success: boolean; error?: string };
   journal: JournalEntry[];
   addJournalEntry: (entry: JournalEntry) => void;
@@ -242,7 +240,8 @@ export const useTradingStore = create<TradingStore>()(
        * 残高確認、ポジション追加、現金減算、ジャーナル記録を単一のトランザクションで実行
        */
       executeOrder: (order) => {
-        const totalCost = order.avgPrice * order.quantity;
+        const totalCost = order.price * order.quantity;
+        const entryDate = new Date().toISOString().split('T')[0];
         let result = { success: false, error: '' };
         
         set((state) => {
@@ -259,14 +258,14 @@ export const useTradingStore = create<TradingStore>()(
           if (existingIndex >= 0) {
             const existing = positions[existingIndex];
             const totalQty = existing.quantity + order.quantity;
-            const newAvgPrice = ((existing.avgPrice * existing.quantity) + (order.avgPrice * order.quantity)) / totalQty;
+            const newAvgPrice = ((existing.avgPrice * existing.quantity) + (order.price * order.quantity)) / totalQty;
 
             positions[existingIndex] = {
               ...existing,
               quantity: totalQty,
               avgPrice: newAvgPrice,
-              currentPrice: order.currentPrice,
-              change: order.change,
+              currentPrice: order.price,
+              change: 0,
             };
           } else {
             positions.push({
@@ -275,10 +274,10 @@ export const useTradingStore = create<TradingStore>()(
               market: order.market,
               side: order.side,
               quantity: order.quantity,
-              avgPrice: order.avgPrice,
-              currentPrice: order.currentPrice,
-              change: order.change,
-              entryDate: order.entryDate,
+              avgPrice: order.price,
+              currentPrice: order.price,
+              change: 0,
+              entryDate: entryDate,
             });
           }
 
@@ -296,9 +295,9 @@ export const useTradingStore = create<TradingStore>()(
           const entry: JournalEntry = {
             id: Date.now().toString(),
             symbol: order.symbol,
-            date: order.entryDate,
+            date: entryDate,
             signalType: order.side === 'LONG' ? 'BUY' : 'SELL',
-            entryPrice: order.avgPrice,
+            entryPrice: order.price,
             exitPrice: 0,
             quantity: order.quantity,
             profit: 0,
