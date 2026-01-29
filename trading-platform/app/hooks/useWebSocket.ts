@@ -43,8 +43,11 @@ export function useWebSocket(url?: string) {
 
     if (!isWebSocketEnabled()) {
       console.log('WebSocket: Connection disabled by user');
-      setStatus('CLOSED');
-      return;
+      // Use setTimeout to avoid synchronous setState in effect
+      const timeoutId = setTimeout(() => {
+        setStatus('CLOSED');
+      }, 0);
+      return () => clearTimeout(timeoutId);
     }
 
     // Create WebSocket client with fallback support
@@ -129,3 +132,9 @@ export function useWebSocket(url?: string) {
 
 // Export types for external use
 export type { WebSocketMessage, WebSocketClient } from '@/app/lib/websocket';
+
+// Export types for external use
+export type { WebSocketMessage, WebSocketClient } from '@/app/lib/websocket';
+
+
+

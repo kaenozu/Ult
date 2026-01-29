@@ -1,0 +1,56 @@
+{
+  "name": "zustand-store-architect",
+  "description": "Zustandを使用した状態管理アーキテクチャを設計・実装する専門スキル。ストア分割、パフォーマンス最適化、永続化戦略を提供する。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "store-separation",
+    "selector-optimization",
+    "persist-middleware",
+    "immer-integration",
+    "devtools-setup"
+  ],
+  "capabilities": [
+    "単一ストア vs 分割ストアの設計判断",
+    "セレクタ関数による最適化",
+    "persistミドルウェアの適切な使用",
+    "Immerによるイミュータブル更新",
+    "Redux DevTools連携"
+  ],
+  "patterns": [
+    "slice-pattern",
+    "selector-pattern",
+    "action-creator",
+    "async-actions",
+    "computed-state"
+  ]
+}
+  "name": "zustand-store-architect",
+  "description": "Zustandを使用した状態管理アーキテクチャを設計・実装する専門スキル。ストア分割、パフォーマンス最適化、永続化戦略を提供する。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "store-separation",
+    "selector-optimization",
+    "persist-middleware",
+    "immer-integration",
+    "devtools-setup"
+  ],
+  "capabilities": [
+    "単一ストア vs 分割ストアの設計判断",
+    "セレクタ関数による最適化",
+    "persistミドルウェアの適切な使用",
+    "Immerによるイミュータブル更新",
+    "Redux DevTools連携"
+  ],
+  "patterns": [
+    "slice-pattern",
+    "selector-pattern",
+    "action-creator",
+    "async-actions",
+    "computed-state"
+  ]
+}
+

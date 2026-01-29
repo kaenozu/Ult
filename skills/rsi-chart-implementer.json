@@ -1,0 +1,52 @@
+{
+  "name": "rsi-chart-implementer",
+  "description": "RSI（相対力指数）チャートの動的実装を専門とするスキル。ハードコードされたSVGチャートをリアルタイムデータ連携可能な動的チャートに変換する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "rsi-calculation",
+    "dynamic-chart-rendering",
+    "real-time-data-binding",
+    "chart-component-pattern"
+  ],
+  "capabilities": [
+    "RSI計算アルゴリズムの実装",
+    "RechartsまたはChart.jsを使用した動的チャート",
+    "WebSocketデータとの連携",
+    "レスポンシブチャートデザイン",
+    "インタラクティブなチャート操作"
+  ],
+  "components": [
+    "RSIIndicator",
+    "RSIChart",
+    "RSITooltip",
+    "RSIOverlays"
+  ]
+}
+  "name": "rsi-chart-implementer",
+  "description": "RSI（相対力指数）チャートの動的実装を専門とするスキル。ハードコードされたSVGチャートをリアルタイムデータ連携可能な動的チャートに変換する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "rsi-calculation",
+    "dynamic-chart-rendering",
+    "real-time-data-binding",
+    "chart-component-pattern"
+  ],
+  "capabilities": [
+    "RSI計算アルゴリズムの実装",
+    "RechartsまたはChart.jsを使用した動的チャート",
+    "WebSocketデータとの連携",
+    "レスポンシブチャートデザイン",
+    "インタラクティブなチャート操作"
+  ],
+  "components": [
+    "RSIIndicator",
+    "RSIChart",
+    "RSITooltip",
+    "RSIOverlays"
+  ]
+}
+
