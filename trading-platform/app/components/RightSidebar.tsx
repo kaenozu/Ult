@@ -34,6 +34,15 @@ export const RightSidebar = ({
     )}>
       <div className="flex border-b border-[#233648] bg-[#192633]">
         <button
+          onClick={() => onClose?.()}
+          className="lg:hidden px-3 py-2 text-[#92adc9] hover:text-white border-r border-[#233648] transition-colors"
+          aria-label="サイドバーを閉じる"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <button
           onClick={() => setRightPanelMode('signal')}
           className={cn(
             'flex-1 py-2 text-xs font-bold transition-colors',
