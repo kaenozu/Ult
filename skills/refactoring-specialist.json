@@ -1,0 +1,56 @@
+{
+  "name": "refactoring-specialist",
+  "description": "コードのリファクタリングを専門とするスキル。重複コードの排除、関心の分離、デザインパターンの適用、コードの可読性向上を行う。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "dry-principle",
+    "single-responsibility",
+    "design-patterns",
+    "naming-conventions",
+    "code-simplification"
+  ],
+  "capabilities": [
+    "重複コードの検出と抽出",
+    "コンポーネントの責務分離",
+    "カスタムフックへの抽出",
+    "ユーティリティ関数の整理",
+    "コードの複雑度削減"
+  ],
+  "patterns": [
+    "extract-component",
+    "extract-hook",
+    "extract-service",
+    "compose-pattern",
+    "factory-pattern"
+  ]
+}
+  "name": "refactoring-specialist",
+  "description": "コードのリファクタリングを専門とするスキル。重複コードの排除、関心の分離、デザインパターンの適用、コードの可読性向上を行う。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "dry-principle",
+    "single-responsibility",
+    "design-patterns",
+    "naming-conventions",
+    "code-simplification"
+  ],
+  "capabilities": [
+    "重複コードの検出と抽出",
+    "コンポーネントの責務分離",
+    "カスタムフックへの抽出",
+    "ユーティリティ関数の整理",
+    "コードの複雑度削減"
+  ],
+  "patterns": [
+    "extract-component",
+    "extract-hook",
+    "extract-service",
+    "compose-pattern",
+    "factory-pattern"
+  ]
+}
+
