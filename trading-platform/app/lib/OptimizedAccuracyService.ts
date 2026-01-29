@@ -111,7 +111,9 @@ export class OptimizedAccuracyService {
         // キャッシュサイズ制限（LRU）
         if (this.paramCache.size > this.CACHE_MAX_SIZE) {
             const firstKey = this.paramCache.keys().next().value;
-            this.paramCache.delete(firstKey);
+            if (firstKey !== undefined) {
+                this.paramCache.delete(firstKey);
+            }
         }
 
         return params;
