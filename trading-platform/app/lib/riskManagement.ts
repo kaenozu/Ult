@@ -1,5 +1,5 @@
 import { OHLCV, Position, PositionSizingMethod, StopLossType, RiskManagementSettings, RiskCalculationResult } from '../types';
-import { RISK_MANAGEMENT, VOLATILITY } from './constants';
+import { RISK_MANAGEMENT, VOLATILITY, POSITION_SIZING } from './constants';
 
 /**
  * ATR（Average True Range）を計算
@@ -21,7 +21,7 @@ export function calculateATR(data: OHLCV[], period: number = 14): number[] {
       const idx = i - j;
       const high = data[idx].high;
       const low = data[idx].low;
-      const prevClose = data[idx + 1]?.close || data[idx].close;
+      const prevClose = data[idx - 1].close;
 
       const tr = Math.max(
         high - low,

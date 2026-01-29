@@ -1,0 +1,54 @@
+{
+  "name": "component-test-expert",
+  "description": "Reactコンポーネントのテストを専門とするスキル。React Testing Library、Jest、モックを使用した包括的なコンポーネントテストを作成する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "testing-library-pattern",
+    "mock-provider-setup",
+    "user-interaction-test",
+    "accessibility-test",
+    "snapshot-strategy"
+  ],
+  "capabilities": [
+    "React Testing Libraryのベストプラクティス",
+    "Zustandストアのモック",
+    "ユーザーインタラクションのシミュレーション",
+    "アクセシビリティテスト",
+    "スナップショットテストの戦略"
+  ],
+  "patterns": [
+    "render-helper",
+    "mock-store-factory",
+    "async-wait-for",
+    "act-pattern"
+  ]
+}
+  "name": "component-test-expert",
+  "description": "Reactコンポーネントのテストを専門とするスキル。React Testing Library、Jest、モックを使用した包括的なコンポーネントテストを作成する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "testing-library-pattern",
+    "mock-provider-setup",
+    "user-interaction-test",
+    "accessibility-test",
+    "snapshot-strategy"
+  ],
+  "capabilities": [
+    "React Testing Libraryのベストプラクティス",
+    "Zustandストアのモック",
+    "ユーザーインタラクションのシミュレーション",
+    "アクセシビリティテスト",
+    "スナップショットテストの戦略"
+  ],
+  "patterns": [
+    "render-helper",
+    "mock-store-factory",
+    "async-wait-for",
+    "act-pattern"
+  ]
+}
+
