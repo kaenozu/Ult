@@ -4,11 +4,11 @@ import { useState, useCallback } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
 import { StockChart } from '@/app/components/StockChart';
+import { SimpleRSIChart } from '@/app/components/SimpleRSIChart';
 import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
 import { RightSidebar } from '@/app/components/RightSidebar';
 import { BottomPanel } from '@/app/components/BottomPanel';
-import { RSIChart } from '@/app/components/RSIChart';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
@@ -163,7 +163,9 @@ export default function Workstation() {
                 </div>
 
                 {/* RSI Sub-chart */}
-                <RSIChart data={chartData} period={14} />
+                <div className="h-24 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
+                  <SimpleRSIChart data={chartData} />
+                </div>
               </div>
             </>
           )}
@@ -196,5 +198,3 @@ export default function Workstation() {
     </div>
   );
 }
-
-
