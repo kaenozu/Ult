@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, memo, useState } from 'react';
+import { useRef, memo, useState, useMemo } from 'react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
@@ -31,11 +31,20 @@ export interface StockChartProps {
   signal?: Signal | null;
 }
 
+// 価格変動幅に基づいてチャート高さを計算（固定高さ）
+function calculateOptimalHeight(data: OHLCV[], defaultHeight: number): number {
+  // 常に固定高さを返す
+  return defaultHeight;
+}
+
 export const StockChart = memo(function StockChart({
-  data, indexData = [], height = 400, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null,
+  data, indexData = [], height: propHeight, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null,
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
   const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
+
+  // 固定高さを使用
+  const dynamicHeight = propHeight ?? 500;
 
   // 1. Data Preparation Hooks
   const { extendedData, normalizedIndexData } = useChartData(data, signal, indexData);
@@ -124,7 +133,7 @@ export const StockChart = memo(function StockChart({
 
   // 4. Loading / Error States
   if (error) return (
-    <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded" style={{ height }}>
+    <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded" style={{ height: dynamicHeight }}>
       <div className="text-center p-4">
         <p className="text-red-400 font-bold">データの取得に失敗しました</p>
         <p className="text-red-300 text-sm mt-1">{error}</p>
@@ -132,7 +141,7 @@ export const StockChart = memo(function StockChart({
     </div>
   );
   if (loading || data.length === 0) return (
-    <div className="relative w-full bg-[#131b23] border border-[#233648] rounded animate-pulse" style={{ height }}>
+    <div className="relative w-full bg-[#131b23] border border-[#233648] rounded animate-pulse" style={{ height: dynamicHeight }}>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="h-8 w-8 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin mb-2"></div>
         <p className="text-xs text-[#92adc9]">データを取得中...</p>
@@ -141,16 +150,16 @@ export const StockChart = memo(function StockChart({
   );
 
   return (
-    <div className="relative w-full group" style={{ height }}>
+    <div className="relative w-full group" style={{ height: dynamicHeight }}>
       {hoveredIdx !== null && hoveredIdx < data.length && (
-        <div className="absolute top-2 left-2 z-20 bg-[#1a2632]/90 border border-[#233648] p-2 rounded shadow-xl pointer-events-none backdrop-blur-sm">
-          <div className="text-[10px] font-black text-primary uppercase border-b border-[#233648] pb-1 mb-1">{extendedData.labels[hoveredIdx]}</div>
-          <div className="text-xs font-bold text-white">{formatCurrency(data[hoveredIdx].close, market === 'japan' ? 'JPY' : 'USD')}</div>
+        <div className="absolute top-2 left-2 z-20 bg-[#1a2632]/90 border border-[#233648] p-3 rounded shadow-xl pointer-events-none backdrop-blur-sm">
+          <div className="text-xs font-black text-primary uppercase border-b border-[#233648] pb-1 mb-1">{extendedData.labels[hoveredIdx]}</div>
+          <div className="text-sm font-bold text-white">{formatCurrency(data[hoveredIdx].close, market === 'japan' ? 'JPY' : 'USD')}</div>
         </div>
       )}
       <Line ref={chartRef} data={chartData} options={options} />
       {showVolume && (
-        <div className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none">
+        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
           <Bar data={{
             labels: extendedData.labels,
             datasets: [{
