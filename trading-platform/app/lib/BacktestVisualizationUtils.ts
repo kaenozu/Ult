@@ -170,7 +170,7 @@ export class BacktestVisualizationUtils {
     const equity = this.generateEquityCurve(result);
 
     for (let i = 1; i < equity.length; i++) {
-      roe.push(parseFloat(((equity[i] - 100) / 100 * 100).toFixed(2)));
+      roe.push(parseFloat((equity[i] - 100).toFixed(2)));
     }
 
     return roe;

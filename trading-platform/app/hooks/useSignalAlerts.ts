@@ -1,117 +1,85 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Stock, Signal } from '@/app/types';
-import { useAlertStore } from '@/app/store/alertStore';
 
 interface UseSignalAlertsProps {
   stock: Stock;
   displaySignal: Signal | null;
-  preciseHitRate: { hitRate: number, trades: number };
+  preciseHitRate: number | null;
   calculatingHitRate: boolean;
 }
 
-export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculatingHitRate }: UseSignalAlertsProps) {
-  const [previousSignal, setPreviousSignal] = useState<Signal | null>(null);
-  const [previousForecastConfidence, setPreviousForecastConfidence] = useState<number | null>(null);
-  const { createStockAlert, createCompositeAlert } = useAlertStore();
+/**
+ * Hook for managing signal alerts and notifications
+ * Handles browser notifications and sound alerts for trading signals
+ */
+export function useSignalAlerts({
+  stock,
+  displaySignal,
+  preciseHitRate,
+  calculatingHitRate
+}: UseSignalAlertsProps) {
+  const lastSignalRef = useRef<Signal | null>(null);
+  const lastAlertTimeRef = useRef<number>(0);
+  const ALERT_COOLDOWN = 60000; // 1 minute cooldown between alerts
 
-  // 的中率変化を監視
   useEffect(() => {
-    if (!calculatingHitRate && preciseHitRate.trades > 0) {
-      const currentHitRate = preciseHitRate.hitRate;
-
-      // クライアントサイドでのみ実行
-      if (typeof window !== 'undefined') {
-        const previousHitRate = parseInt(localStorage.getItem(`hitrate-${stock.symbol}`) || '0');
-
-        if (previousHitRate > 0) {
-          const dropPercent = (previousHitRate - currentHitRate) / previousHitRate;
-
-          if (dropPercent >= 0.2) {
-            createStockAlert({
-              symbol: stock.symbol,
-              alertType: 'ACCURACY_DROP',
-              details: {
-                hitRate: currentHitRate,
-              },
-            });
-          }
-        }
-
-        localStorage.setItem(`hitrate-${stock.symbol}`, currentHitRate.toString());
-      }
-    }
-  }, [calculatingHitRate, preciseHitRate, stock.symbol, createStockAlert]);
-
-  // シグナル変化を監視してアラートを生成
-  useEffect(() => {
-    if (!displaySignal) return;
-
-    if (!previousSignal) {
-        setPreviousSignal(displaySignal);
-        return;
+    // Skip if no signal or same as last signal
+    if (!displaySignal || displaySignal === lastSignalRef.current) {
+      return;
     }
 
-    if (displaySignal.type !== previousSignal.type) {
-      createStockAlert({
-        symbol: stock.symbol,
-        alertType: 'TREND_REVERSAL',
-        details: {},
-      });
+    // Check cooldown
+    const now = Date.now();
+    if (now - lastAlertTimeRef.current < ALERT_COOLDOWN) {
+      return;
     }
-    setPreviousSignal(displaySignal);
-  }, [displaySignal, previousSignal, stock.symbol, createStockAlert]);
 
-  // 予測コーン信頼度変化を監視
-  useEffect(() => {
-    if (!displaySignal?.forecastCone) return;
+    // Update refs
+    lastSignalRef.current = displaySignal;
+    lastAlertTimeRef.current = now;
 
-    const currentConfidence = displaySignal.forecastCone.confidence;
-
-    if (previousForecastConfidence !== null) {
-      const confidenceChange = Math.abs(currentConfidence - previousForecastConfidence);
-      const changePercent = confidenceChange / previousForecastConfidence;
-
-      if (changePercent >= 0.15) {
-        createStockAlert({
-          symbol: stock.symbol,
-          alertType: 'FORECAST_CHANGE',
-          details: {
-            confidence: currentConfidence,
-            previousConfidence: previousForecastConfidence,
-          },
+    // Show notification if enabled
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        const hitRateText = preciseHitRate !== null && !calculatingHitRate
+          ? ` (精度: ${(preciseHitRate * 100).toFixed(1)}%)`
+          : '';
+        
+        new Notification(`Trading Signal: ${stock.symbol}`, {
+          body: `${displaySignal.action.toUpperCase()} - ${displaySignal.reason}${hitRateText}`,
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          tag: `signal-${stock.symbol}`,
+          requireInteraction: false,
         });
       }
     }
 
-    setPreviousForecastConfidence(currentConfidence);
-  }, [displaySignal?.forecastCone?.confidence, previousForecastConfidence, stock.symbol, createStockAlert]);
+    // Play sound alert if enabled
+    const soundEnabled = localStorage.getItem('trader-pro-sound-enabled') !== 'false';
+    if (soundEnabled) {
+      try {
+        const audio = new Audio('/notification.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(() => {
+          // Ignore autoplay errors
+        });
+      } catch {
+        // Ignore audio errors
+      }
+    }
+  }, [displaySignal, stock.symbol, preciseHitRate, calculatingHitRate]);
 
-  // ブレイクアウトを監視
+  // Request notification permission on mount
   useEffect(() => {
-    if (!displaySignal?.supplyDemand?.breakoutDetected) return;
-
-    createStockAlert({
-      symbol: stock.symbol,
-      alertType: 'BREAKOUT',
-      details: {
-        price: displaySignal.supplyDemand.currentPrice,
-        level: displaySignal.supplyDemand.brokenLevel?.level,
-        levelType: displaySignal.supplyDemand.brokenLevel?.type,
-        confidence: displaySignal.supplyDemand.breakoutConfidence === 'high' ? 85 :
-          displaySignal.supplyDemand.breakoutConfidence === 'medium' ? 65 : 45,
-      },
-    });
-  }, [displaySignal?.supplyDemand?.breakoutDetected, displaySignal?.supplyDemand, stock.symbol, createStockAlert]);
-
-  // 複合アラート（市場相関+シグナル）
-  useEffect(() => {
-    if (!displaySignal?.marketContext || !displaySignal) return;
-
-    createCompositeAlert({
-      symbol: stock.symbol,
-      marketTrend: displaySignal.marketContext.indexTrend,
-      stockSignal: displaySignal.type,
-      correlation: displaySignal.marketContext.correlation || 0,
-    });
-  }, [displaySignal?.marketContext, displaySignal?.type, stock.symbol, createCompositeAlert]);
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {
+          // Ignore permission errors
+        });
+      }
+    }
+  }, []);
 }
+
+export default useSignalAlerts;
