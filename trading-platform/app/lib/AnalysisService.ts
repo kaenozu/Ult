@@ -21,6 +21,11 @@ export interface AnalysisContext {
         rsi: Map<number, number[]>;
         sma: Map<number, number[]>;
     };
+    forcedParams?: {
+        rsiPeriod: number;
+        smaPeriod: number;
+        accuracy: number;
+    };
 }
 
 /**
@@ -243,7 +248,12 @@ class AnalysisService {
             };
         }
 
-        const opt = this.optimizeParameters(data, market, context);
+        let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
+        if (context?.forcedParams) {
+            opt = context.forcedParams;
+        } else {
+            opt = this.optimizeParameters(data, market, context);
+        }
 
         const closes = data.map(d => d.close);
         const effectiveEndIndex = context?.endIndex !== undefined ? context.endIndex : data.length - 1;
