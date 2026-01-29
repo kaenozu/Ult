@@ -74,7 +74,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   useSignalAlerts({
       stock,
       displaySignal,
-      preciseHitRate: preciseHitRate?.hitRate || 0,
+      preciseHitRate: { hitRate: preciseHitRate?.hitRate || 0, trades: preciseHitRate?.trades || 0 },
       calculatingHitRate
   });
 

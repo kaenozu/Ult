@@ -287,6 +287,77 @@ export interface BacktestResult {
   trades: BacktestTrade[];
   startDate: string;
   endDate: string;
+  sortinoRatio?: number;
+  calmarRatio?: number;
+  expectancy?: number;
+}
+
+// ============================================================================
+// Risk Management Types
+// ============================================================================
+
+export type PositionSizingMethod =
+  | 'fixed_ratio'      // 固定比率法（総資産のX%）
+  | 'kelly_criterion'  // ケリー基準
+  | 'fixed_amount'     // 固定金額法
+  | 'volatility_based'; // ボラティリティ基準（ATR等）
+
+export type StopLossType =
+  | 'percentage'  // パーセンテージ
+  | 'price'       // 固定価格
+  | 'atr'         // ATRベース
+  | 'trailing';   // トレーリング
+
+export type TakeProfitType =
+  | 'percentage'
+  | 'price'
+  | 'risk_reward_ratio';
+
+export interface RiskManagementSettings {
+  // ポジションサイジング
+  sizingMethod: PositionSizingMethod;
+  fixedRatio?: number;        // fixed_ratio用（0-1）
+  fixedAmount?: number;       // fixed_amount用
+  kellyFraction?: number;     // ケリー基準の適用割合（0-1）
+  atrMultiplier?: number;     // volatility_based用
+  maxPositionPercent?: number; // 1ポジションの最大資産比率
+
+  // ストップロス & 利確
+  stopLoss: {
+    enabled: boolean;
+    type: StopLossType;
+    value: number;
+    trailing?: boolean;
+    breakevenTrigger?: number; // ブレークイーブン移動のトリガー
+  };
+  takeProfit: {
+    enabled: boolean;
+    type: TakeProfitType;
+    value: number;
+    partials?: boolean; // 部分利確
+  };
+
+  // 全体リスク管理
+  maxLossPercent?: number;      // 1トレードの最大許容損失率（対総資産）
+  maxLossPerTrade?: number;     // 1トレードの最大許容損失額
+  dailyLossLimit?: number;      // 1日の最大許容損失率
+  maxDrawdownLimit?: number;    // 許容最大ドローダウン
+
+  // その他
+  maxPositions?: number;
+  useATR?: boolean;
+  atrPeriod?: number;
+  maxCorrelation?: number;
+}
+
+export interface RiskCalculationResult {
+  positionSize: number;
+  stopLossPrice: number;
+  takeProfitPrice: number;
+  riskAmount: number;
+  riskPercent: number;
+  positionRiskPercent: number;
+  maxPositionSize: number;
 }
 
 // ============================================================================

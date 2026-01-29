@@ -210,11 +210,8 @@ export class BacktestVisualizationUtils {
     volatility: number;
     maxDrawdown: number;
     sharpeRatio: number;
-    sortinoRatio: number;
-    calmarRatio: number;
     winRate: number;
     profitFactor: number;
-    expectancy: number;
   } {
     const returns = result.trades.map(t => t.profitPercent);
     const avgReturn = returns.length > 0 ? returns.reduce((sum, r) => sum + r, 0) / returns.length : 0;
@@ -233,11 +230,8 @@ export class BacktestVisualizationUtils {
       volatility: parseFloat(volatility.toFixed(2)),
       maxDrawdown: result.maxDrawdown,
       sharpeRatio: result.sharpeRatio || 0,
-      sortinoRatio: result.sortinoRatio || 0,
-      calmarRatio: result.calmarRatio || 0,
       winRate: result.winRate,
       profitFactor: result.profitFactor,
-      expectancy: result.expectancy || 0,
     };
   }
 }
