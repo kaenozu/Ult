@@ -131,7 +131,6 @@ class AnalysisService {
         }
         for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
             smaCache.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
->>>>>>> main
         }
 
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
@@ -176,11 +175,6 @@ class AnalysisService {
         const limit = (endIndex !== undefined ? endIndex : data.length) - 10;
         const start = (startIndex || 0) + warmup;
 
-        const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
-        const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
-
-        for (let i = start; i < limit; i += step) {
-=======
         const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
         const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
 

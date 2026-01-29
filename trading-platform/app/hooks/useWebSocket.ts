@@ -133,8 +133,5 @@ export function useWebSocket(url?: string) {
 // Export types for external use
 export type { WebSocketMessage, WebSocketClient } from '@/app/lib/websocket';
 
-// Export types for external use
-export type { WebSocketMessage, WebSocketClient } from '@/app/lib/websocket';
-
 
 
