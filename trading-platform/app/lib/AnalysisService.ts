@@ -14,6 +14,15 @@ import {
 } from './constants';
 import { accuracyService } from './AccuracyService';
 
+export interface AnalysisContext {
+    startIndex?: number;
+    endIndex?: number;
+    preCalculatedIndicators?: {
+        rsi: Map<number, number[]>;
+        sma: Map<number, number[]>;
+    };
+}
+
 /**
  * High-level orchestration service for stock analysis.
  */
@@ -21,11 +30,10 @@ class AnalysisService {
     /**
      * 予測コーン（Forecast Cone）の計算
      */
-    calculateForecastCone(data: OHLCV[], endIndex: number = data.length - 1): Signal['forecastCone'] | undefined {
-        if (endIndex < FORECAST_CONE.LOOKBACK_DAYS - 1) return undefined;
+    calculateForecastCone(data: OHLCV[]): Signal['forecastCone'] | undefined {
+        if (data.length < FORECAST_CONE.LOOKBACK_DAYS) return undefined;
 
-        const start = Math.max(0, endIndex - FORECAST_CONE.LOOKBACK_DAYS + 1);
-        const recentData = data.slice(start, endIndex + 1);
+        const recentData = data.slice(-FORECAST_CONE.LOOKBACK_DAYS);
         const closes = recentData.map(d => d.close);
         const currentPrice = closes[closes.length - 1];
 
@@ -79,12 +87,16 @@ class AnalysisService {
     /**
      * 銘柄ごとに的中率が最大化するパラメータを探索
      */
-    optimizeParameters(data: OHLCV[], market: 'japan' | 'usa', endIndex: number = data.length - 1): {
+    optimizeParameters(data: OHLCV[], market: 'japan' | 'usa', context?: AnalysisContext): {
         rsiPeriod: number;
         smaPeriod: number;
         accuracy: number;
     } {
-        if (endIndex < OPTIMIZATION.REQUIRED_DATA_PERIOD - 1) {
+        const effectiveEndIndex = context?.endIndex !== undefined ? context.endIndex : data.length - 1;
+        const effectiveStartIndex = context?.startIndex !== undefined ? context.startIndex : 0;
+        const effectiveLength = effectiveEndIndex - effectiveStartIndex + 1;
+
+        if (effectiveLength < OPTIMIZATION.REQUIRED_DATA_PERIOD) {
             return { rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, accuracy: 0 };
         }
 
@@ -93,8 +105,23 @@ class AnalysisService {
         let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
 
         const closes = data.map(d => d.close);
-        const rsiCache = new Map<number, number[]>();
-        const smaCache = new Map<number, number[]>();
+
+        let rsiCache: Map<number, number[]>;
+        let smaCache: Map<number, number[]>;
+
+        if (context?.preCalculatedIndicators) {
+            rsiCache = context.preCalculatedIndicators.rsi;
+            smaCache = context.preCalculatedIndicators.sma;
+        } else {
+            rsiCache = new Map<number, number[]>();
+            smaCache = new Map<number, number[]>();
+            for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
+                rsiCache.set(rsiP, technicalIndicatorService.calculateRSI(closes, rsiP));
+            }
+            for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
+                smaCache.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
+            }
+        }
 
         // Pre-calculate ATR (O(N)) once, instead of inside the nested loop (O(N * M))
         const atrArray = accuracyService.calculateBatchSimpleATR(data);
@@ -104,6 +131,7 @@ class AnalysisService {
         }
         for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
             smaCache.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
+>>>>>>> main
         }
 
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
@@ -116,7 +144,8 @@ class AnalysisService {
                     atrArray,
                     rsiCache.get(rsiP),
                     smaCache.get(smaP),
-                    endIndex
+                    effectiveEndIndex,
+                    effectiveStartIndex
                 );
                 if (result.hitRate > bestAccuracy) {
                     bestAccuracy = result.hitRate;
@@ -137,16 +166,25 @@ class AnalysisService {
         atrArray: number[],
         preCalcRsi?: number[],
         preCalcSma?: number[],
-        endIndex: number = data.length - 1
+        endIndex?: number,
+        startIndex?: number
     ): { hitRate: number; total: number } {
         let hits = 0;
         let total = 0;
         const warmup = 100;
         const step = 3;
+        const limit = (endIndex !== undefined ? endIndex : data.length) - 10;
+        const start = (startIndex || 0) + warmup;
+
         const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
         const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
 
-        for (let i = warmup; i < endIndex - 10; i += step) {
+        for (let i = start; i < limit; i += step) {
+=======
+        const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
+        const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
+
+        for (let i = start; i < limit; i += step) {
             if (isNaN(rsi[i]) || isNaN(sma[i])) continue;
 
             let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
@@ -191,8 +229,14 @@ class AnalysisService {
     /**
      * 銘柄の総合分析を実行
      */
-    analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], endIndex: number = data.length - 1): Signal {
-        if (endIndex < OPTIMIZATION.MIN_DATA_PERIOD - 1) {
+    analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
+        // Handle window data for legacy components
+        let windowData = data;
+        if (context?.endIndex !== undefined) {
+             windowData = data.slice(context.startIndex || 0, context.endIndex + 1);
+        }
+
+        if (windowData.length < OPTIMIZATION.MIN_DATA_PERIOD) {
             return {
                 symbol,
                 type: 'HOLD',
@@ -205,19 +249,32 @@ class AnalysisService {
             };
         }
 
-        const opt = this.optimizeParameters(data, market, endIndex);
-        const closes = data.map(d => d.close);
-        const allRSI = technicalIndicatorService.calculateRSI(closes, opt.rsiPeriod);
-        const allSMA = technicalIndicatorService.calculateSMA(closes, opt.smaPeriod);
+        const opt = this.optimizeParameters(data, market, context);
 
-        const lastRSI = allRSI[endIndex] || 50;
-        const lastSMA = allSMA[endIndex] || closes[endIndex];
-        const currentPrice = closes[endIndex];
+        const closes = data.map(d => d.close);
+        const effectiveEndIndex = context?.endIndex !== undefined ? context.endIndex : data.length - 1;
+
+        // Efficient lookup using pre-calculated indicators if available
+        let lastRSI: number;
+        let lastSMA: number;
+
+        if (context?.preCalculatedIndicators) {
+             const rsiArr = context.preCalculatedIndicators.rsi.get(opt.rsiPeriod) || [];
+             const smaArr = context.preCalculatedIndicators.sma.get(opt.smaPeriod) || [];
+             lastRSI = rsiArr[effectiveEndIndex] || 50;
+             lastSMA = smaArr[effectiveEndIndex] || closes[effectiveEndIndex];
+        } else {
+            const rsi = technicalIndicatorService.calculateRSI(closes, opt.rsiPeriod);
+            const sma = technicalIndicatorService.calculateSMA(closes, opt.smaPeriod);
+            lastRSI = rsi[effectiveEndIndex] || 50;
+            lastSMA = sma[effectiveEndIndex] || closes[effectiveEndIndex];
+        }
+
+        const currentPrice = closes[effectiveEndIndex];
 
         const { type, reason } = this.determineSignalType(currentPrice, lastSMA, lastRSI, opt);
 
-        const startRSI = Math.max(0, endIndex - RSI_CONFIG.DEFAULT_PERIOD + 1);
-        const recentCloses = closes.slice(startRSI, endIndex + 1);
+        const recentCloses = windowData.map(d => d.close).slice(-RSI_CONFIG.DEFAULT_PERIOD);
         const atr = (Math.max(...recentCloses) - Math.min(...recentCloses)) / 2;
         const targetPercent = Math.max(atr / currentPrice, PRICE_CALCULATION.DEFAULT_ATR_RATIO);
 
@@ -232,7 +289,7 @@ class AnalysisService {
 
         const indexData = indexDataOverride || marketDataService.getCachedMarketData(relatedIndexSymbol);
         if (indexData && indexData.length >= 50) {
-            const correlation = marketDataService.calculateCorrelation(data, indexData);
+            const correlation = marketDataService.calculateCorrelation(windowData, indexData);
             const indexTrend = marketDataService.calculateTrend(indexData);
 
             marketContext = {
@@ -246,35 +303,9 @@ class AnalysisService {
             }
         }
 
-        const forecastCone = this.calculateForecastCone(data, endIndex);
-        // Note: calculatePredictionError and calculateVolumeProfile should ideally also accept endIndex
-        // For now, if they don't, we might need to slice for them, or update them too.
-        // But since we are here to support endIndex in analyzeStock, let's assume we slice for them if needed,
-        // OR we just update the calls to use sliced data if they are not refactored yet.
-        // Since I can't refactor everything in one go, and the main bottleneck was optimizeParameters.
-        // Let's slice for these specific services to maintain correctness until they are refactored.
-        // Wait, slice is what we wanted to avoid.
-        // But volumeProfile on 250 items (window) vs volumeProfile on 2000 items?
-        // Typically volume profile looks at visible range or recent data.
-        // calculatePredictionError uses last 5 days etc.
-        // Let's check their signatures.
-        // memory says: "Helper functions in analysis.ts (calculateVolumeProfile, calculatePredictionError) accept an endIndex argument..."
-        // Oh, the memory says they DO accept it?
-        // Let's check the code I read earlier.
-        // I read `AccuracyService.ts` which has `calculatePredictionError`.
-        // It takes `data: OHLCV[]`. It loops `i < endIndex = data.length - 5`.
-        // It does NOT accept an explicit endIndex argument in the signature I read.
-        // `calculateVolumeProfile` is in `VolumeAnalysis.ts` (implied).
-
-        // I will use slice for now for these two to ensure correctness, as I am not modifying them in this step.
-        // Actually, if I pass `data` (full), `calculatePredictionError` will use the FULL data to calculate error.
-        // If `endIndex` is 100, and data has 2000. `calculatePredictionError` will look at 2000.
-        // This is WRONG. It acts as "peek ahead".
-        // So I MUST slice for these if I don't update them.
-
-        const dataSlice = data.slice(0, endIndex + 1);
-        const predictionError = accuracyService.calculatePredictionError(dataSlice);
-        const volumeProfile = volumeAnalysisService.calculateVolumeProfile(dataSlice);
+        const forecastCone = this.calculateForecastCone(windowData);
+        const predictionError = accuracyService.calculatePredictionError(windowData);
+        const volumeProfile = volumeAnalysisService.calculateVolumeProfile(windowData);
 
         let finalConfidence = forecastCone
             ? (confidence + forecastCone.confidence) / 2
