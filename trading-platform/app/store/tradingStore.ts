@@ -15,7 +15,7 @@ export interface TradingStore {
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
-  executeOrder: (order: { symbol: string; name: string; market: 'japan' | 'usa'; side: 'LONG' | 'SHORT'; quantity: number; price: number; type: 'MARKET' | 'LIMIT' }) => void;
+  executeOrder: (order: { symbol: string; name: string; market: 'japan' | 'usa'; side: 'LONG' | 'SHORT'; quantity: number; price: number; type: 'MARKET' | 'LIMIT' }) => { success: boolean; error?: string };
   closePosition: (symbol: string, exitPrice: number) => void;
   setCash: (amount: number) => void;
   journal: JournalEntry[];
@@ -140,58 +140,64 @@ export const useTradingStore = create<TradingStore>()(
         };
       }),
 
-      executeOrder: (order) => set((state) => {
-        const totalCost = order.quantity * order.price;
-        // Basic check, though OrderPanel handles UI disabled state
-        if (order.side === 'LONG' && state.portfolio.cash < totalCost) {
-            return state;
-        }
+      executeOrder: (order) => {
+        let result: { success: boolean; error?: string } = { success: false, error: '' };
+        set((state) => {
+          const totalCost = order.quantity * order.price;
+          // Basic check, though OrderPanel handles UI disabled state
+          if (order.side === 'LONG' && state.portfolio.cash < totalCost) {
+              result = { success: false, error: 'Insufficient funds' };
+              return state;
+          }
 
-        const positions = [...state.portfolio.positions];
-        const newPosition: Position = {
-            symbol: order.symbol,
-            name: order.name,
-            market: order.market,
-            side: order.side,
-            quantity: order.quantity,
-            avgPrice: order.price,
-            currentPrice: order.price,
-            change: 0,
-            entryDate: new Date().toISOString().split('T')[0],
-        };
-
-        const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
-
-        if (existingIndex >= 0) {
-          const existing = positions[existingIndex];
-          const combinedCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
-          const totalQty = existing.quantity + newPosition.quantity;
-
-          positions[existingIndex] = {
-            ...existing,
-            quantity: totalQty,
-            avgPrice: combinedCost / totalQty,
-            currentPrice: newPosition.currentPrice,
+          const positions = [...state.portfolio.positions];
+          const newPosition: Position = {
+              symbol: order.symbol,
+              name: order.name,
+              market: order.market,
+              side: order.side,
+              quantity: order.quantity,
+              avgPrice: order.price,
+              currentPrice: order.price,
+              change: 0,
+              entryDate: new Date().toISOString().split('T')[0],
           };
-        } else {
-          positions.push(newPosition);
-        }
 
-        // Recalculate totals
-        const stats = calculatePortfolioStats(positions);
+          const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
 
-        // Deduct cash for both BUY and SELL as per original logic (Short selling collateral/margin implied)
-        const newCash = state.portfolio.cash - totalCost;
+          if (existingIndex >= 0) {
+            const existing = positions[existingIndex];
+            const combinedCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
+            const totalQty = existing.quantity + newPosition.quantity;
 
-        return {
-          portfolio: {
-            ...state.portfolio,
-            positions,
-            ...stats,
-            cash: newCash,
-          },
-        };
-      }),
+            positions[existingIndex] = {
+              ...existing,
+              quantity: totalQty,
+              avgPrice: combinedCost / totalQty,
+              currentPrice: newPosition.currentPrice,
+            };
+          } else {
+            positions.push(newPosition);
+          }
+
+          // Recalculate totals
+          const stats = calculatePortfolioStats(positions);
+
+          // Deduct cash for both BUY and SELL as per original logic (Short selling collateral/margin implied)
+          const newCash = state.portfolio.cash - totalCost;
+
+          result = { success: true };
+          return {
+            portfolio: {
+              ...state.portfolio,
+              positions,
+              ...stats,
+              cash: newCash,
+            },
+          };
+        });
+        return result;
+      },
 
       addPosition: (newPosition) => set((state) => {
         const positions = [...state.portfolio.positions];

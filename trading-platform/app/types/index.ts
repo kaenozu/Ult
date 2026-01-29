@@ -284,9 +284,57 @@ export interface BacktestResult {
   profitFactor: number;
   maxDrawdown: number;
   sharpeRatio: number;
+  sortinoRatio?: number;
+  calmarRatio?: number;
+  expectancy?: number;
   trades: BacktestTrade[];
   startDate: string;
   endDate: string;
+}
+
+// ============================================================================
+// Risk Management Types
+// ============================================================================
+
+export type PositionSizingMethod = 'fixed_ratio' | 'kelly_criterion' | 'fixed_amount' | 'volatility_based';
+
+export type StopLossType = 'percentage' | 'price' | 'atr' | 'trailing';
+
+export interface RiskManagementSettings {
+  sizingMethod: PositionSizingMethod;
+  fixedRatio?: number;
+  maxPositionPercent?: number;
+  kellyFraction?: number;
+  stopLoss: {
+    enabled: boolean;
+    type: StopLossType;
+    value: number;
+    trailing?: boolean;
+  };
+  takeProfit: {
+    enabled: boolean;
+    type: 'percentage' | 'price' | 'risk_reward_ratio';
+    value: number;
+    partials?: boolean;
+  };
+  maxLossPercent?: number;
+  maxLossPerTrade?: number;
+  dailyLossLimit?: number;
+  useATR?: boolean;
+  atrPeriod?: number;
+  atrMultiplier?: number;
+  maxPositions?: number;
+  maxCorrelation?: number;
+}
+
+export interface RiskCalculationResult {
+  positionSize: number;
+  stopLossPrice: number;
+  takeProfitPrice: number;
+  riskAmount: number;
+  riskPercent: number;
+  positionRiskPercent: number;
+  maxPositionSize: number;
 }
 
 // ============================================================================

@@ -73,7 +73,6 @@ export const useChartOptions = ({
       },
       tooltip: { enabled: false },
       // Custom plugin handling needs type casting if TypeScript complains about custom properties
-      // @ts-expect-error - VolumeProfile plugin options
       volumeProfile: {
         enabled: true,
         data: signal?.volumeResistance,
