@@ -103,6 +103,30 @@ describe('Shell Components', () => {
             fireEvent.click(screen.getByText(/取引履歴/));
             expect(screen.getByTestId('HistoryTable')).toBeInTheDocument();
         });
+
+        it('has correct ARIA attributes', () => {
+            render(<BottomPanel {...props} />);
+
+            // Check tablist
+            expect(screen.getByRole('tablist')).toHaveAttribute('aria-label', '取引情報パネル');
+
+            // Check tabs
+            const tabs = screen.getAllByRole('tab');
+            expect(tabs).toHaveLength(3);
+            expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+            expect(tabs[1]).toHaveAttribute('aria-selected', 'false');
+
+            // Check tabpanel
+            const panel = screen.getByRole('tabpanel');
+            expect(panel).toHaveAttribute('id', 'panel-positions');
+            expect(panel).toHaveAttribute('aria-labelledby', 'tab-positions');
+
+            // Switch tab and verify updates
+            fireEvent.click(tabs[1]);
+            expect(tabs[0]).toHaveAttribute('aria-selected', 'false');
+            expect(tabs[1]).toHaveAttribute('aria-selected', 'true');
+            expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'panel-orders');
+        });
     });
 
     describe('ChartToolbar', () => {
