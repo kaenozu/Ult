@@ -29,25 +29,33 @@ export const useChartOptions = ({
   // Y軸の範囲を計算（価格変動を見やすくするため）
   const yAxisRange = useMemo(() => {
     if (data.length === 0) return { min: 0, max: 100 };
-    const prices = data.map(d => d.close);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+
     const currentPrice = data[data.length - 1].close;
-    const range = maxPrice - minPrice;
 
-    // 価格変動が小さい場合、範囲を制限して変動を見やすくする
-    // 最小範囲は現在価格の±3%、最大範囲はデータの最小値〜最大値
-    const minRange = currentPrice * 0.06; // ±3%
-    const adjustedRange = Math.max(range, minRange);
+    // デバッグログ
+    console.log('[Chart Y-Axis]', {
+      currentPrice,
+      calculatedMin: currentPrice * 0.985,
+      calculatedMax: currentPrice * 1.015
+    });
 
+    // 現在価格を中心に±1.5%の固定範囲を設定
     return {
-      min: currentPrice - adjustedRange / 2,
-      max: currentPrice + adjustedRange / 2,
+      min: currentPrice * 0.985,
+      max: currentPrice * 1.015,
     };
   }, [data]);
 
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true, maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      }
+    },
     interaction: { mode: 'index', intersect: false },
     onHover: (_, elements) => setHoveredIndex(elements.length > 0 ? elements[0].index : null),
     plugins: {
@@ -57,10 +65,10 @@ export const useChartOptions = ({
         align: 'end',
         labels: {
           color: '#92adc9',
-          font: { size: 11 },
+          font: { size: 12 },
           usePointStyle: true,
           boxWidth: 8,
-          padding: 10,
+          padding: 12,
         }
       },
       tooltip: { enabled: false },
@@ -105,7 +113,11 @@ export const useChartOptions = ({
         ticks: {
           color: '#92adc9',
           callback: (v) => formatCurrency(Number(v), market === 'japan' ? 'JPY' : 'USD'),
-          font: { size: CHART_GRID.LABEL_FONT_SIZE }
+          font: { size: CHART_GRID.LABEL_FONT_SIZE },
+          padding: 0
+        },
+        border: {
+          display: false
         }
       }
     },
