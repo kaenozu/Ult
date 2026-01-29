@@ -270,6 +270,7 @@ export interface BacktestTrade {
   exitDate: string;
   profitPercent: number;
   reason?: string;
+  exitReason?: string;
 }
 
 export interface BacktestResult {
@@ -284,9 +285,80 @@ export interface BacktestResult {
   profitFactor: number;
   maxDrawdown: number;
   sharpeRatio: number;
+  sortinoRatio?: number;
+  calmarRatio?: number;
+  expectancy?: number;
   trades: BacktestTrade[];
   startDate: string;
   endDate: string;
+}
+
+// ============================================================================
+// Risk Management Types
+// ============================================================================
+
+/**
+ * Position sizing method types
+ */
+export type PositionSizingMethod = 'fixed_ratio' | 'fixed_amount' | 'kelly_criterion' | 'volatility_based' | 'volatility_adjusted' | 'risk_parity';
+
+/**
+ * Stop loss type
+ */
+export type StopLossType = 'percentage' | 'atr' | 'fixed' | 'price' | 'trailing';
+
+/**
+ * Risk management settings
+ */
+export interface RiskManagementSettings {
+  sizingMethod: PositionSizingMethod;
+  fixedRatio?: number;
+  kellyFraction?: number;
+  atrMultiplier?: number;
+  maxRiskPercent: number;
+  maxPositionPercent: number;
+  maxLossPerTrade?: number;
+  maxLossPercent?: number;
+  dailyLossLimit?: number;
+  useATR?: boolean;
+  atrPeriod?: number;
+  maxPositions?: number;
+  maxCorrelation?: number;
+  stopLoss: {
+    enabled: boolean;
+    type: StopLossType;
+    value: number;
+    trailing?: boolean;
+  };
+  takeProfit: {
+    enabled: boolean;
+    type: 'percentage' | 'atr' | 'fixed' | 'price' | 'risk_reward_ratio';
+    value: number;
+    partials?: boolean;
+  };
+  trailingStop?: {
+    enabled: boolean;
+    activationPercent: number;
+    trailPercent: number;
+  };
+}
+
+/**
+ * Risk calculation result
+ */
+export interface RiskCalculationResult {
+  positionSize: number;
+  riskAmount: number;
+  rewardAmount?: number;
+  riskRewardRatio?: number;
+  stopLossPrice?: number;
+  takeProfitPrice?: number;
+  maxLoss?: number;
+  maxGain?: number;
+  capitalAtRisk?: number;
+  riskPercent?: number;
+  positionRiskPercent?: number;
+  maxPositionSize?: number;
 }
 
 // ============================================================================

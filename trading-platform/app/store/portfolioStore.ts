@@ -9,7 +9,7 @@ export const usePortfolioStore = () => {
     const closePosition = useTradingStore((state) => state.closePosition);
     const setCash = useTradingStore((state) => state.setCash);
     const addJournalEntry = useTradingStore((state) => state.addJournalEntry);
-    const updatePositionPrices = useTradingStore((state) => state.batchUpdateStockData); // 旧ストアではこれ
+    const updatePositionPrices = useTradingStore((state) => state.batchUpdateStockData);
 
     return {
         portfolio,

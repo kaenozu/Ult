@@ -35,6 +35,7 @@ jest.mock('../TechnicalIndicatorService', () => ({
 jest.mock('../AccuracyService', () => ({
   accuracyService: {
     calculateSimpleATR: jest.fn(() => 20),
+    calculateBatchSimpleATR: jest.fn((data) => new Array(data.length).fill(20)),
     simulateTrade: jest.fn(() => ({ won: true, directionalHit: true })),
     calculatePredictionError: jest.fn(() => 1.0),
   },

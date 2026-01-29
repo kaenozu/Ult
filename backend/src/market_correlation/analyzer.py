@@ -88,7 +88,7 @@ class MarketCorrelation:
         return covariance / variance
 
     def detect_trend(self, prices: List[float]) -> MarketTrend:
-        """Detect market trend from price series
+        """Detect market trend from price series using linear regression slope
 
         Args:
             prices: List of prices (oldest to newest)
@@ -96,22 +96,40 @@ class MarketCorrelation:
         Returns:
             MarketTrend enum value
         """
-        if len(prices) < 2:
+        if len(prices) < 5:
             return MarketTrend.NEUTRAL
 
-        # Calculate percentage change from oldest to newest
-        oldest = prices[0]
-        newest = prices[-1]
+        n = len(prices)
+        x = list(range(n))
+        y = prices
 
-        if oldest == 0:
+        # Calculate slope using linear regression
+        # slope = (N * Σ(xy) - Σx * Σy) / (N * Σ(x^2) - (Σx)^2)
+
+        sum_x = sum(x)
+        sum_y = sum(y)
+        sum_xy = sum(xi * yi for xi, yi in zip(x, y))
+        sum_x2 = sum(xi ** 2 for xi in x)
+
+        denominator = n * sum_x2 - sum_x ** 2
+        if denominator == 0:
             return MarketTrend.NEUTRAL
 
-        change_pct = (newest - oldest) / oldest
+        slope = (n * sum_xy - sum_x * sum_y) / denominator
 
-        # Threshold: 1% change required for trend
-        if change_pct > 0.01:
+        # Normalize slope by dividing by average price to get percentage change per step
+        avg_price = sum_y / n
+        if avg_price == 0:
+            return MarketTrend.NEUTRAL
+
+        normalized_slope = slope / avg_price
+
+        # Threshold: 0.05% change per step (approx 1% over 20 days)
+        threshold = 0.0005
+
+        if normalized_slope > threshold:
             return MarketTrend.BULLISH
-        elif change_pct < -0.01:
+        elif normalized_slope < -threshold:
             return MarketTrend.BEARISH
         else:
             return MarketTrend.NEUTRAL
