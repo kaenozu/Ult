@@ -110,8 +110,8 @@ export function useWebSocket(url?: string) {
 
   const sendMessage = useCallback((msg: unknown) => {
     if (clientRef.current) {
-      const message: WebSocketMessage = typeof msg === 'object' && msg !== null && 'type' in msg
-        ? { type: String(msg.type) || 'message', data: msg }
+      const message: WebSocketMessage = typeof msg === 'object' && msg !== null
+        ? { type: (msg as any).type || 'message', data: msg }
         : { type: 'message', data: msg };
 
       return clientRef.current.send(message);
@@ -129,9 +129,6 @@ export function useWebSocket(url?: string) {
     isConnected: status === 'OPEN',
   };
 }
-
-// Export types for external use
-export type { WebSocketMessage, WebSocketClient } from '@/app/lib/websocket';
 
 // Export types for external use
 export type { WebSocketMessage, WebSocketClient } from '@/app/lib/websocket';

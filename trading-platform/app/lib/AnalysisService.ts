@@ -14,6 +14,15 @@ import {
 } from './constants';
 import { accuracyService } from './AccuracyService';
 
+export interface AnalysisContext {
+    startIndex?: number;
+    endIndex?: number;
+    preCalculatedIndicators?: {
+        rsi: Map<number, number[]>;
+        sma: Map<number, number[]>;
+    };
+}
+
 /**
  * High-level orchestration service for stock analysis.
  */
@@ -78,12 +87,16 @@ class AnalysisService {
     /**
      * 銘柄ごとに的中率が最大化するパラメータを探索
      */
-    optimizeParameters(data: OHLCV[], market: 'japan' | 'usa'): {
+    optimizeParameters(data: OHLCV[], market: 'japan' | 'usa', context?: AnalysisContext): {
         rsiPeriod: number;
         smaPeriod: number;
         accuracy: number;
     } {
-        if (data.length < OPTIMIZATION.REQUIRED_DATA_PERIOD) {
+        const effectiveEndIndex = context?.endIndex !== undefined ? context.endIndex : data.length - 1;
+        const effectiveStartIndex = context?.startIndex !== undefined ? context.startIndex : 0;
+        const effectiveLength = effectiveEndIndex - effectiveStartIndex + 1;
+
+        if (effectiveLength < OPTIMIZATION.REQUIRED_DATA_PERIOD) {
             return { rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, accuracy: 0 };
         }
 
@@ -92,8 +105,17 @@ class AnalysisService {
         let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
 
         const closes = data.map(d => d.close);
-        const rsiCache = new Map<number, number[]>();
-        const smaCache = new Map<number, number[]>();
+
+        let rsiCache: Map<number, number[]>;
+        let smaCache: Map<number, number[]>;
+
+        if (context?.preCalculatedIndicators) {
+            rsiCache = context.preCalculatedIndicators.rsi;
+            smaCache = context.preCalculatedIndicators.sma;
+        } else {
+            rsiCache = new Map<number, number[]>();
+            smaCache = new Map<number, number[]>();
+        }
 
         // Pre-calculate ATR (O(N)) once, instead of inside the nested loop (O(N * M))
         const atrArray = accuracyService.calculateBatchSimpleATR(data);
@@ -114,7 +136,9 @@ class AnalysisService {
                     closes,
                     atrArray,
                     rsiCache.get(rsiP),
-                    smaCache.get(smaP)
+                    smaCache.get(smaP),
+                    effectiveEndIndex,
+                    effectiveStartIndex
                 );
                 if (result.hitRate > bestAccuracy) {
                     bestAccuracy = result.hitRate;
@@ -134,16 +158,21 @@ class AnalysisService {
         closes: number[],
         atrArray: number[],
         preCalcRsi?: number[],
-        preCalcSma?: number[]
+        preCalcSma?: number[],
+        endIndex?: number,
+        startIndex?: number
     ): { hitRate: number; total: number } {
         let hits = 0;
         let total = 0;
         const warmup = 100;
         const step = 3;
+        const limit = (endIndex !== undefined ? endIndex : data.length) - 10;
+        const start = (startIndex || 0) + warmup;
+
         const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
         const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
 
-        for (let i = warmup; i < data.length - 10; i += step) {
+        for (let i = start; i < limit; i += step) {
             if (isNaN(rsi[i]) || isNaN(sma[i])) continue;
 
             let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
@@ -188,8 +217,14 @@ class AnalysisService {
     /**
      * 銘柄の総合分析を実行
      */
-    analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[]): Signal {
-        if (data.length < OPTIMIZATION.MIN_DATA_PERIOD) {
+    analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
+        // Handle window data for legacy components
+        let windowData = data;
+        if (context?.endIndex !== undefined) {
+             windowData = data.slice(context.startIndex || 0, context.endIndex + 1);
+        }
+
+        if (windowData.length < OPTIMIZATION.MIN_DATA_PERIOD) {
             return {
                 symbol,
                 type: 'HOLD',
@@ -202,15 +237,32 @@ class AnalysisService {
             };
         }
 
-        const opt = this.optimizeParameters(data, market);
+        const opt = this.optimizeParameters(data, market, context);
+
         const closes = data.map(d => d.close);
-        const lastRSI = technicalIndicatorService.calculateRSI(closes, opt.rsiPeriod).pop() || 50;
-        const lastSMA = technicalIndicatorService.calculateSMA(closes, opt.smaPeriod).pop() || closes[closes.length - 1];
-        const currentPrice = closes[closes.length - 1];
+        const effectiveEndIndex = context?.endIndex !== undefined ? context.endIndex : data.length - 1;
+
+        // Efficient lookup using pre-calculated indicators if available
+        let lastRSI: number;
+        let lastSMA: number;
+
+        if (context?.preCalculatedIndicators) {
+             const rsiArr = context.preCalculatedIndicators.rsi.get(opt.rsiPeriod) || [];
+             const smaArr = context.preCalculatedIndicators.sma.get(opt.smaPeriod) || [];
+             lastRSI = rsiArr[effectiveEndIndex] || 50;
+             lastSMA = smaArr[effectiveEndIndex] || closes[effectiveEndIndex];
+        } else {
+            const rsi = technicalIndicatorService.calculateRSI(closes, opt.rsiPeriod);
+            const sma = technicalIndicatorService.calculateSMA(closes, opt.smaPeriod);
+            lastRSI = rsi[effectiveEndIndex] || 50;
+            lastSMA = sma[effectiveEndIndex] || closes[effectiveEndIndex];
+        }
+
+        const currentPrice = closes[effectiveEndIndex];
 
         const { type, reason } = this.determineSignalType(currentPrice, lastSMA, lastRSI, opt);
 
-        const recentCloses = closes.slice(-RSI_CONFIG.DEFAULT_PERIOD);
+        const recentCloses = windowData.map(d => d.close).slice(-RSI_CONFIG.DEFAULT_PERIOD);
         const atr = (Math.max(...recentCloses) - Math.min(...recentCloses)) / 2;
         const targetPercent = Math.max(atr / currentPrice, PRICE_CALCULATION.DEFAULT_ATR_RATIO);
 
@@ -225,7 +277,7 @@ class AnalysisService {
 
         const indexData = indexDataOverride || marketDataService.getCachedMarketData(relatedIndexSymbol);
         if (indexData && indexData.length >= 50) {
-            const correlation = marketDataService.calculateCorrelation(data, indexData);
+            const correlation = marketDataService.calculateCorrelation(windowData, indexData);
             const indexTrend = marketDataService.calculateTrend(indexData);
 
             marketContext = {
@@ -239,9 +291,9 @@ class AnalysisService {
             }
         }
 
-        const forecastCone = this.calculateForecastCone(data);
-        const predictionError = accuracyService.calculatePredictionError(data);
-        const volumeProfile = volumeAnalysisService.calculateVolumeProfile(data);
+        const forecastCone = this.calculateForecastCone(windowData);
+        const predictionError = accuracyService.calculatePredictionError(windowData);
+        const volumeProfile = volumeAnalysisService.calculateVolumeProfile(windowData);
 
         let finalConfidence = forecastCone
             ? (confidence + forecastCone.confidence) / 2
