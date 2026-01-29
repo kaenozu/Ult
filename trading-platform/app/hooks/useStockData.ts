@@ -102,12 +102,11 @@ export function useStockData() {
     setInterval(newInterval);
   }, []);
 
-  // Fetch data when selected stock or watchlist changes
+  // 1. Sync Store/Watchlist -> Local State
   useEffect(() => {
     if (storeSelectedStock) {
       if (selectedStock?.symbol !== storeSelectedStock.symbol) {
         setLocalSelectedStock(storeSelectedStock);
-        fetchData(storeSelectedStock);
       }
     }
     else if (watchlist.length > 0) {
@@ -115,7 +114,6 @@ export function useStockData() {
       if (selectedStock?.symbol !== defaultStock.symbol) {
         setLocalSelectedStock(defaultStock);
         setSelectedStock(defaultStock);
-        fetchData(defaultStock);
       }
     }
     else {
@@ -123,14 +121,14 @@ export function useStockData() {
         setLocalSelectedStock(null);
       }
     }
-  }, [storeSelectedStock, watchlist, selectedStock, setSelectedStock, fetchData]);
+  }, [storeSelectedStock, watchlist, selectedStock, setSelectedStock]);
 
-  // Refetch data when interval changes
+  // 2. Fetch Data when Local State or Interval changes (via fetchData dependency)
   useEffect(() => {
     if (selectedStock) {
       fetchData(selectedStock);
     }
-  }, [interval, selectedStock, fetchData]);
+  }, [selectedStock, fetchData]);
 
   const handleStockSelect = useCallback((stock: Stock) => {
     setLocalSelectedStock(stock);

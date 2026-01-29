@@ -280,7 +280,10 @@ class AccuracyService {
             sma.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
         }
 
-        return { rsi, sma };
+        // Calculate ATR once for the whole dataset using the optimized batch method
+        const atr = this.calculateBatchSimpleATR(data);
+
+        return { rsi, sma, atr };
     }
 
     /**
@@ -316,18 +319,44 @@ class AccuracyService {
         // Optimized: Pre-calculate indicators once
         const preCalculatedIndicators = this.preCalculateIndicators(data);
 
+        // Walk-Forward Optimization Cache
+        let cachedParams: { rsiPeriod: number; smaPeriod: number; accuracy: number } | undefined;
+        let lastOptimizationIndex = -999;
+        const OPTIMIZATION_INTERVAL = 30; // Re-optimize every 30 days
+
         for (let i = minPeriod; i < data.length - 1; i++) {
             const nextDay = data[i + 1];
 
             // Calculate start index to emulate original sliding window
             const windowStartIndex = Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10);
 
-            // Optimized: Use full data + indices
-            const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
+            const context: AnalysisContext = {
                 endIndex: i,
                 startIndex: windowStartIndex,
                 preCalculatedIndicators
-            });
+            };
+
+            // Check if we need to re-optimize
+            if (i - lastOptimizationIndex >= OPTIMIZATION_INTERVAL || !cachedParams) {
+                // Perform full optimization
+                context.forcedParams = undefined;
+                lastOptimizationIndex = i;
+            } else {
+                // Use cached parameters
+                context.forcedParams = cachedParams;
+            }
+
+            // Optimized: Use full data + indices
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, context);
+
+            // Update cache if we just optimized
+            if (!context.forcedParams) {
+                cachedParams = {
+                    rsiPeriod: signal.optimizedParams?.rsiPeriod || RSI_CONFIG.DEFAULT_PERIOD,
+                    smaPeriod: signal.optimizedParams?.smaPeriod || SMA_CONFIG.MEDIUM_PERIOD,
+                    accuracy: signal.accuracy || 0
+                };
+            }
 
             if (!currentPosition) {
                 if (signal.type === 'BUY' || signal.type === 'SELL') {
@@ -472,7 +501,8 @@ class AccuracyService {
             if (signal.type === 'HOLD') continue;
 
             total++;
-            const atr = this.calculateSimpleATR(data, i);
+            // Use pre-calculated ATR if available, fallback to calculation
+            const atr = preCalculatedIndicators?.atr ? preCalculatedIndicators.atr[i] : this.calculateSimpleATR(data, i);
             const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, data[i].close * 0.012);
 
             const result = this.simulateTrade(data, i, signal.type as 'BUY' | 'SELL', targetMove);

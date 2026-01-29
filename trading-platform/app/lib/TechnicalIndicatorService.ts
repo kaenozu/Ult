@@ -26,25 +26,22 @@ class TechnicalIndicatorService {
      */
     calculateEMA(prices: number[], period: number): number[] {
         const ema: number[] = [];
-        if (prices.length === 0) return [];
-
         const multiplier = 2 / (period + 1);
 
         let sum = 0;
-        const initialPeriod = Math.min(period, prices.length);
-        for (let i = 0; i < initialPeriod; i++) {
-            sum += prices[i];
+        for (let i = 0; i < prices.length; i++) {
+            if (i < period - 1) {
+                sum += prices[i];
+                ema.push(NaN);
+            } else if (i === period - 1) {
+                sum += prices[i];
+                ema.push(sum / period);
+            } else {
+                const prevEMA = ema[i - 1];
+                const emaValue = (prices[i] - prevEMA) * multiplier + prevEMA;
+                ema.push(emaValue);
+            }
         }
-        const initialSMA = sum / initialPeriod;
-        ema.push(initialSMA);
-
-        for (let i = 1; i < prices.length; i++) {
-            const emaValue = (prices[i] - ema[ema.length - 1]) * multiplier + ema[ema.length - 1];
-            ema.push(emaValue);
-        }
-
-        // Adjust length to match prices (with NaNs at the beginning if needed, 
-        // although EMA usually starts from first period)
         return ema;
     }
 
@@ -72,22 +69,13 @@ class TechnicalIndicatorService {
                 const rs = avgGain / (avgLoss || 0.0001);
                 rsi.push(100 - 100 / (1 + rs));
             } else {
-                const currentGain = gains[i - 1];
-                const currentLoss = losses[i - 1];
-                // Wilder's Smoothing
-                const prevAvgGain = (100 - (100 / (1 + (rsi[i - 1] / (100 - rsi[i - 1]))))) * (period - 1); // This is complex, let's stick to simple SMA for first pass or fix logic
-                // Simple version consistent with original
-                const avgGain = (gains.slice(i - period, i).reduce((a, b) => a + b, 0) + currentGain) / period;
-                const avgLoss = (losses.slice(i - period, i).reduce((a, b) => a + b, 0) + currentLoss) / period;
+                // Simple SMA version
+                const avgGain = gains.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
+                const avgLoss = losses.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
                 const rs = avgGain / (avgLoss || 0.0001);
                 rsi.push(100 - 100 / (1 + rs));
             }
         }
-
-        // Original code had an extra unshift(NaN) which might be a bug or intentional offset
-        // I will keep it consistent with original for now to avoid breaking charts
-        rsi.unshift(NaN);
-        if (rsi.length > prices.length) rsi.pop();
 
         return rsi;
     }

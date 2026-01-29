@@ -1,27 +1,31 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
-import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useTradingStore } from '@/app/store/tradingStore';
 
 // Mock store
-jest.mock('@/app/store/portfolioStore');
+jest.mock('@/app/store/tradingStore');
 
 describe('OrderPanel', () => {
     const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const };
     const mockAddPosition = jest.fn();
     const mockSetCash = jest.fn();
     const mockAddJournalEntry = jest.fn();
+    const mockExecuteOrder = jest.fn().mockReturnValue({ success: true });
 
-    const defaultStore = {
+    const mockState = {
         portfolio: { cash: 1000000, positions: [] },
         addPosition: mockAddPosition,
         setCash: mockSetCash,
         addJournalEntry: mockAddJournalEntry,
+        executeOrder: mockExecuteOrder,
     };
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (usePortfolioStore as any).mockReturnValue(defaultStore);
+        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
+            return selector ? selector(mockState) : mockState;
+        });
     });
 
     it('renders correctly', () => {
@@ -53,13 +57,11 @@ describe('OrderPanel', () => {
         // Confirm
         fireEvent.click(screen.getByText('注文を確定'));
 
-        expect(mockSetCash).toHaveBeenCalled();
-        expect(mockAddPosition).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockExecuteOrder).toHaveBeenCalledWith(expect.objectContaining({
             symbol: '7203',
             quantity: 100,
             side: 'LONG'
         }));
-        expect(mockAddJournalEntry).toHaveBeenCalled();
 
         // Success message
         expect(screen.getByText('注文を送信しました')).toBeInTheDocument();
