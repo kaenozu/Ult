@@ -1,13 +1,24 @@
 /**
  * backtest.ts - 互換性維持のためのプロキシ
- * 全心的なロジックは AccuracyService に移行しました。
+ * 最適化版 OptimizedAccuracyService を使用
  */
 
 import { OHLCV, BacktestResult } from '@/app/types';
-import { accuracyService } from './AccuracyService';
+import { optimizedAccuracyService } from './OptimizedAccuracyService';
 
 export type { BacktestResult, BacktestTrade } from '@/app/types';
 
+/**
+ * 最適化されたバックテスト実行
+ * Web Worker 対応のため非同期処理も可能
+ */
 export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): BacktestResult {
-  return accuracyService.runBacktest(symbol, data, market);
+  return optimizedAccuracyService.runOptimizedBacktest(symbol, data, market);
+}
+
+/**
+ * キャッシュクリア（メモリ管理用）
+ */
+export function clearBacktestCache(): void {
+  optimizedAccuracyService.clearCache();
 }

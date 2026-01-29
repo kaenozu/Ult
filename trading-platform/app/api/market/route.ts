@@ -160,7 +160,10 @@ export async function GET(request: Request) {
           ? `Note: Intraday data (1m, 5m, 15m, 1h, 4H) is not available for Japanese stocks. Daily data is shown instead.`
           : undefined;
 
-        const ohlcv = result.quotes.map(q => {
+        // データ欠損処理: 前日の終値を追跡
+        let lastValidClose: number | null = null;
+
+        const ohlcv = result.quotes.map((q, index) => {
           let dateStr: string;
           if (q.date instanceof Date) {
             if (isIntraday) {
@@ -179,13 +182,27 @@ export async function GET(request: Request) {
             dateStr = String(q.date);
           }
 
+          // データ欠損処理: nullを0で埋めると価格急落のように見えるため、
+          // 前日の終値で補間する
+          const hasValidClose = q.close !== null && q.close !== undefined && q.close > 0;
+          
+          // 有効な終値を記録
+          if (hasValidClose) {
+            lastValidClose = q.close;
+          }
+          
+          // 補間値の計算
+          const interpolatedClose = hasValidClose ? q.close : (lastValidClose ?? 0);
+          
           return {
             date: dateStr,
-            open: q.open || 0,
-            high: q.high || 0,
-            low: q.low || 0,
-            close: q.close || 0,
-            volume: q.volume || 0,
+            open: q.open ?? interpolatedClose,
+            high: q.high ?? interpolatedClose,
+            low: q.low ?? interpolatedClose,
+            close: interpolatedClose,
+            volume: q.volume ?? 0,
+            // 補間データフラグ（UI表示用）
+            isInterpolated: !hasValidClose,
           };
         });
 
