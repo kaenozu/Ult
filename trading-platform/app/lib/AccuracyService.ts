@@ -9,8 +9,8 @@ import {
     SMA_CONFIG,
     FORECAST_CONE
 } from './constants';
-import { analysisService } from './AnalysisService';
-
+import { analysisService, AnalysisContext } from './AnalysisService';
+import { technicalIndicatorService } from './TechnicalIndicatorService';
 /**
  * Service to handle simulation, backtesting, and accuracy metrics.
  */
@@ -50,6 +50,8 @@ class AccuracyService {
     }
 
     /**
+<<<<<<< HEAD
+=======
      * Optimized batch calculation of Simple ATR (O(N))
      * Replicates the exact logic of calculateSimpleATR but faster.
      */
@@ -266,6 +268,21 @@ class AccuracyService {
         };
     }
 
+    private preCalculateIndicators(data: OHLCV[]): AnalysisContext['preCalculatedIndicators'] {
+        const closes = data.map(d => d.close);
+        const rsi = new Map<number, number[]>();
+        const sma = new Map<number, number[]>();
+
+        for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
+            rsi.set(rsiP, technicalIndicatorService.calculateRSI(closes, rsiP));
+        }
+        for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
+            sma.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
+        }
+
+        return { rsi, sma };
+    }
+
     /**
      * 本格的なバックテスト実行
      */
@@ -296,10 +313,21 @@ class AccuracyService {
             };
         }
 
+        // Optimized: Pre-calculate indicators once
+        const preCalculatedIndicators = this.preCalculateIndicators(data);
+
         for (let i = minPeriod; i < data.length - 1; i++) {
             const nextDay = data[i + 1];
-            const historicalWindow = data.slice(Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10), i + 1);
-            const signal = analysisService.analyzeStock(symbol, historicalWindow, market);
+
+            // Calculate start index to emulate original sliding window
+            const windowStartIndex = Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10);
+
+            // Optimized: Use full data + indices
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
+                endIndex: i,
+                startIndex: windowStartIndex,
+                preCalculatedIndicators
+            });
 
             if (!currentPosition) {
                 if (signal.type === 'BUY' || signal.type === 'SELL') {
@@ -380,9 +408,15 @@ class AccuracyService {
         let dirHits = 0;
         let total = 0;
 
+        // Optimized: Pre-calculate indicators
+        const preCalculatedIndicators = this.preCalculateIndicators(data);
+
         for (let i = 252; i < data.length - windowSize; i += 5) {
-            const window = data.slice(0, i);
-            const signal = analysisService.analyzeStock(symbol, window, market);
+            // Optimized: Use full data + endIndex
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
+                endIndex: i,
+                preCalculatedIndicators
+            });
 
             if (signal.type === 'HOLD') continue;
 
@@ -425,9 +459,15 @@ class AccuracyService {
         let total = 0;
         const step = 3;
 
+        // Optimized: Pre-calculate indicators
+        const preCalculatedIndicators = this.preCalculateIndicators(data);
+
         for (let i = 100; i < data.length - 10; i += step) {
-            const window = data.slice(0, i);
-            const signal = analysisService.analyzeStock(symbol, window, market);
+            // Optimized: Use full data + endIndex
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
+                endIndex: i,
+                preCalculatedIndicators
+            });
 
             if (signal.type === 'HOLD') continue;
 
