@@ -20,6 +20,7 @@ export interface AnalysisContext {
     preCalculatedIndicators?: {
         rsi: Map<number, number[]>;
         sma: Map<number, number[]>;
+        atr?: number[];
     };
 }
 
@@ -124,7 +125,8 @@ class AnalysisService {
         }
 
         // Pre-calculate ATR (O(N)) once, instead of inside the nested loop (O(N * M))
-        const atrArray = accuracyService.calculateBatchSimpleATR(data);
+        // Use cached ATR if available in context
+        const atrArray = context?.preCalculatedIndicators?.atr || accuracyService.calculateBatchSimpleATR(data);
 
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
             rsiCache.set(rsiP, technicalIndicatorService.calculateRSI(closes, rsiP));

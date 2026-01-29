@@ -280,7 +280,10 @@ class AccuracyService {
             sma.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
         }
 
-        return { rsi, sma };
+        // Calculate ATR once for the whole dataset using the optimized batch method
+        const atr = this.calculateBatchSimpleATR(data);
+
+        return { rsi, sma, atr };
     }
 
     /**
@@ -472,7 +475,8 @@ class AccuracyService {
             if (signal.type === 'HOLD') continue;
 
             total++;
-            const atr = this.calculateSimpleATR(data, i);
+            // Use pre-calculated ATR if available, fallback to calculation
+            const atr = preCalculatedIndicators?.atr ? preCalculatedIndicators.atr[i] : this.calculateSimpleATR(data, i);
             const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, data[i].close * 0.012);
 
             const result = this.simulateTrade(data, i, signal.type as 'BUY' | 'SELL', targetMove);
