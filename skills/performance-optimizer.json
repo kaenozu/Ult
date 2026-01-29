@@ -1,0 +1,54 @@
+{
+  "name": "performance-optimizer",
+  "description": "React/Next.jsアプリケーションのパフォーマンス最適化を専門とするスキル。Big O計算量の改善、メモ化、レンダリング最適化を行う。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "big-o-optimization",
+    "memoization-pattern",
+    "render-optimization",
+    "data-structure-selection",
+    "lazy-loading"
+  ],
+  "capabilities": [
+    "O(N×M)からO(N)への計算量改善",
+    "useMemo/useCallbackの適切な使用",
+    "React.memoによるコンポーネント最適化",
+    "Map/Setによるデータ構造最適化",
+    "仮想スクロールとページネーション"
+  ],
+  "patterns": [
+    "chart-data-normalization",
+    "index-data-mapping",
+    "batch-updates",
+    "debounce-throttle"
+  ]
+}
+  "name": "performance-optimizer",
+  "description": "React/Next.jsアプリケーションのパフォーマンス最適化を専門とするスキル。Big O計算量の改善、メモ化、レンダリング最適化を行う。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "big-o-optimization",
+    "memoization-pattern",
+    "render-optimization",
+    "data-structure-selection",
+    "lazy-loading"
+  ],
+  "capabilities": [
+    "O(N×M)からO(N)への計算量改善",
+    "useMemo/useCallbackの適切な使用",
+    "React.memoによるコンポーネント最適化",
+    "Map/Setによるデータ構造最適化",
+    "仮想スクロールとページネーション"
+  ],
+  "patterns": [
+    "chart-data-normalization",
+    "index-data-mapping",
+    "batch-updates",
+    "debounce-throttle"
+  ]
+}
+

@@ -1,0 +1,54 @@
+{
+  "name": "atomic-order-specialist",
+  "description": "取引プラットフォームのアトミックな注文処理を専門とするスキル。競合状態の防止、トランザクション管理、残高チェックを含む安全な注文実行を実装する。",
+  "version": "1.0.0",
+  "priority": "critical",
+  "auto_activate": false,
+  "rules": [
+    "atomic-transaction",
+    "race-condition-prevention",
+    "balance-validation",
+    "position-averaging",
+    "journal-entry-creation"
+  ],
+  "capabilities": [
+    "アトミックな注文実行メソッドの実装",
+    "Zustandストアでの状態管理",
+    "残高確認とポジション追加の統合",
+    "ジャーナルエントリーの自動作成",
+    "エラーハンドリングとロールバック"
+  ],
+  "patterns": [
+    "executeOrder",
+    "validateBalance",
+    "updatePositions",
+    "createJournalEntry"
+  ]
+}
+  "name": "atomic-order-specialist",
+  "description": "取引プラットフォームのアトミックな注文処理を専門とするスキル。競合状態の防止、トランザクション管理、残高チェックを含む安全な注文実行を実装する。",
+  "version": "1.0.0",
+  "priority": "critical",
+  "auto_activate": false,
+  "rules": [
+    "atomic-transaction",
+    "race-condition-prevention",
+    "balance-validation",
+    "position-averaging",
+    "journal-entry-creation"
+  ],
+  "capabilities": [
+    "アトミックな注文実行メソッドの実装",
+    "Zustandストアでの状態管理",
+    "残高確認とポジション追加の統合",
+    "ジャーナルエントリーの自動作成",
+    "エラーハンドリングとロールバック"
+  ],
+  "patterns": [
+    "executeOrder",
+    "validateBalance",
+    "updatePositions",
+    "createJournalEntry"
+  ]
+}
+

@@ -72,9 +72,10 @@ class ConsensusSignalService {
     );
 
     // 各指標からシグナルを生成
-    const rsiSignal = this.generateRSISignal(rsi, closes[closes.length - 1]);
-    const macdSignal = this.generateMACDSignal(macd);
-    const bollingerSignal = this.generateBollingerSignal(bollinger, closes[closes.length - 1]);
+    const currentPrice = closes[closes.length - 1];
+    const rsiSignal = this.generateRSISignal(rsi, currentPrice);
+    const macdSignal = this.generateMACDSignal(macd, currentPrice);
+    const bollingerSignal = this.generateBollingerSignal(bollinger, currentPrice);
 
     // 重みを取得
     const weights = { ...DEFAULT_WEIGHTS, ...customWeights };
@@ -140,7 +141,7 @@ class ConsensusSignalService {
   /**
    * MACDからのシグナル生成
    */
-  private generateMACDSignal(macd: { macd: number[]; signal: number[]; histogram: number[] }): IndicatorSignal {
+  private generateMACDSignal(macd: { macd: number[]; signal: number[]; histogram: number[] }, currentPrice: number): IndicatorSignal {
     const currentMACD = macd.macd[macd.macd.length - 1];
     const currentSignal = macd.signal[macd.signal.length - 1];
     const currentHistogram = macd.histogram[macd.histogram.length - 1];
@@ -151,7 +152,7 @@ class ConsensusSignalService {
 
     // ヒストグラムが正で大きい＝強気
     if (currentHistogram > 0) {
-      const strength = Math.min(Math.abs(currentHistogram) / currentPrice(macd.macd) * 100, 1.0);
+      const strength = Math.min(Math.abs(currentHistogram) / currentPrice * 100, 1.0);
       return {
         type: 'BUY',
         strength: Math.max(strength, 0.3), // 最低0.3
@@ -161,7 +162,7 @@ class ConsensusSignalService {
 
     // ヒストグラムが負で大きい＝弱気
     if (currentHistogram < 0) {
-      const strength = Math.min(Math.abs(currentHistogram) / currentPrice(macd.macd) * 100, 1.0);
+      const strength = Math.min(Math.abs(currentHistogram) / currentPrice * 100, 1.0);
       return {
         type: 'SELL',
         strength: Math.max(strength, 0.3), // 最低0.3
@@ -341,15 +342,6 @@ class ConsensusSignalService {
     return ((clamped - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
   }
 
-  /**
-   * 現在価格を取得（MACD計算用）
-   */
-  private currentPrice(arr: number[]): number {
-    for (let i = arr.length - 1; i >= 0; i--) {
-      if (!isNaN(arr[i])) return arr[i];
-    }
-    return 1;
-  }
 }
 
 export const consensusSignalService = new ConsensusSignalService();

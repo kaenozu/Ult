@@ -1,0 +1,54 @@
+{
+  "name": "api-integration-specialist",
+  "description": "外部API（Alpha Vantage、Yahoo Finance等）との統合を専門とするスキル。レート制限対策、エラーハンドリング、データ変換を実装する。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "rate-limit-handling",
+    "retry-strategy",
+    "data-transformation",
+    "error-normalization",
+    "fallback-mechanism"
+  ],
+  "capabilities": [
+    "APIレート制限の管理",
+    "指数バックオフによるリトライ",
+    "レスポンスデータの正規化",
+    "エラーの統一されたハンドリング",
+    "フォールバックデータソース"
+  ],
+  "providers": [
+    "alpha-vantage",
+    "yahoo-finance",
+    "polygon",
+    "iex-cloud"
+  ]
+}
+  "name": "api-integration-specialist",
+  "description": "外部API（Alpha Vantage、Yahoo Finance等）との統合を専門とするスキル。レート制限対策、エラーハンドリング、データ変換を実装する。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "rate-limit-handling",
+    "retry-strategy",
+    "data-transformation",
+    "error-normalization",
+    "fallback-mechanism"
+  ],
+  "capabilities": [
+    "APIレート制限の管理",
+    "指数バックオフによるリトライ",
+    "レスポンスデータの正規化",
+    "エラーの統一されたハンドリング",
+    "フォールバックデータソース"
+  ],
+  "providers": [
+    "alpha-vantage",
+    "yahoo-finance",
+    "polygon",
+    "iex-cloud"
+  ]
+}
+

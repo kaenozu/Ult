@@ -1,4 +1,3 @@
-```
 import { calculateAIHitRate } from '../lib/analysis';
 import { OHLCV } from '../types';
 
