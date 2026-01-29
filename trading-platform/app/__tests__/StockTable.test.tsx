@@ -1,8 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StockTable } from '../components/StockTable';
-import { useWatchlistStore } from '../store/watchlistStore';
-import { useUIStore } from '../store/uiStore';
-import { usePortfolioStore } from '../store/portfolioStore';
+import { useTradingStore } from '../store/tradingStore';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
@@ -11,27 +9,23 @@ const mockStocks: Stock[] = [
   { symbol: 'AAPL', name: 'Apple Inc.', market: 'usa', sector: 'テクノロジー', price: 180, change: 0, changePercent: 0, volume: 0 },
 ];
 
-jest.mock('../store/watchlistStore');
-jest.mock('../store/uiStore');
-jest.mock('../store/portfolioStore');
+jest.mock('../store/tradingStore');
 
 describe('StockTable Component - Watchlist Actions', () => {
   const mockRemoveFromWatchlist = jest.fn();
   const mockSetSelectedStock = jest.fn();
-  const mockUpdatePositionPrices = jest.fn();
+  const mockBatchUpdateStockData = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (useWatchlistStore as any).mockReturnValue({
-      watchlist: mockStocks,
-      removeFromWatchlist: mockRemoveFromWatchlist,
-      batchUpdateStockData: jest.fn(),
-    });
-    (useUIStore as any).mockReturnValue({
-      setSelectedStock: mockSetSelectedStock,
-    });
-    (usePortfolioStore as any).mockReturnValue({
-      updatePositionPrices: mockUpdatePositionPrices,
+    (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
+      const state = {
+        watchlist: mockStocks,
+        removeFromWatchlist: mockRemoveFromWatchlist,
+        batchUpdateStockData: mockBatchUpdateStockData,
+        setSelectedStock: mockSetSelectedStock,
+      };
+      return selector ? selector(state) : state;
     });
   });
 

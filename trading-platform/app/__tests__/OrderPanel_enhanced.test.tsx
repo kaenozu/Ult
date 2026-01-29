@@ -1,22 +1,32 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { OrderPanel } from '../components/OrderPanel';
+import { useTradingStore } from '../store/tradingStore';
 import '@testing-library/jest-dom';
 
-// Use actual store but mock addPosition
-// Use actual store but mock addPosition
-jest.mock('../store/portfolioStore', () => ({
-  ...jest.requireActual('../store/tradingStore'),
-  usePortfolioStore: () => ({
-    portfolio: { cash: 10000000 },
-    addPosition: jest.fn(),
-    setCash: jest.fn(),
-    addJournalEntry: jest.fn(),
-  }),
-}));
+// Mock useTradingStore
+jest.mock('../store/tradingStore');
 
 describe('OrderPanel Interaction Tests', () => {
   const mockStock = { symbol: '7974', name: '任天堂', price: 10000, market: 'japan' as const };
+  const mockExecuteOrder = jest.fn().mockReturnValue({ success: true });
+  const mockAddPosition = jest.fn();
+  const mockSetCash = jest.fn();
+  const mockAddJournalEntry = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
+        const state = {
+            portfolio: { cash: 10000000, positions: [] },
+            executeOrder: mockExecuteOrder,
+            addPosition: mockAddPosition,
+            setCash: mockSetCash,
+            addJournalEntry: mockAddJournalEntry,
+        };
+        return selector ? selector(state) : state;
+    });
+  });
 
   it('should allow changing quantity and show total cost', async () => {
     render(<OrderPanel stock={mockStock} currentPrice={10000} />);
@@ -27,11 +37,13 @@ describe('OrderPanel Interaction Tests', () => {
     });
   });
 
-  it('should execute buy order and call addPosition after confirmation', async () => {
+  it('should execute buy order and call executeOrder after confirmation', async () => {
     render(<OrderPanel stock={mockStock} currentPrice={10000} />);
 
-    // Click the buy order button to show confirmation dialog
-    fireEvent.click(screen.getByText('\u8CB7\u3044\u6CE8\u6587\u3092\u767A\u6CE8'));
+    // Click the buy order button (text depends on logic, likely "買い注文を発注" or similar if logic allows)
+    // Based on previous test failures, text was "買い注文を発注"
+    // But OrderPanel renders unicode in button: \u8CB7\u3044\u6CE8\u6587\u3092\u767A\u6CE8 which is "買い注文を発注"
+    fireEvent.click(screen.getByText('買い注文を発注'));
 
     // Wait for confirmation dialog to appear
     await waitFor(() => {
@@ -40,6 +52,9 @@ describe('OrderPanel Interaction Tests', () => {
 
     // Click confirm button
     fireEvent.click(screen.getByText('注文を確定'));
+
+    // Verify executeOrder was called
+    expect(mockExecuteOrder).toHaveBeenCalled();
 
     // Wait for success message to appear
     await waitFor(() => {
