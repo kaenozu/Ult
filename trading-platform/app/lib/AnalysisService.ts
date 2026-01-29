@@ -115,6 +115,12 @@ class AnalysisService {
         } else {
             rsiCache = new Map<number, number[]>();
             smaCache = new Map<number, number[]>();
+            for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
+                rsiCache.set(rsiP, technicalIndicatorService.calculateRSI(closes, rsiP));
+            }
+            for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
+                smaCache.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
+            }
         }
 
         // Pre-calculate ATR (O(N)) once, instead of inside the nested loop (O(N * M))
@@ -125,6 +131,7 @@ class AnalysisService {
         }
         for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
             smaCache.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
+>>>>>>> main
         }
 
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
@@ -169,6 +176,11 @@ class AnalysisService {
         const limit = (endIndex !== undefined ? endIndex : data.length) - 10;
         const start = (startIndex || 0) + warmup;
 
+        const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
+        const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
+
+        for (let i = start; i < limit; i += step) {
+=======
         const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
         const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
 

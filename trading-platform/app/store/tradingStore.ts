@@ -15,21 +15,9 @@ export interface TradingStore {
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
+  executeOrder: (order: { symbol: string; name: string; market: 'japan' | 'usa'; side: 'LONG' | 'SHORT'; quantity: number; price: number; type: 'MARKET' | 'LIMIT' }) => void;
   closePosition: (symbol: string, exitPrice: number) => void;
   setCash: (amount: number) => void;
-  /**
-   * アトミックな注文実行
-   * 残高確認、ポジション追加、現金減算を単一のトランザクションで実行
-   */
-  executeOrder: (order: {
-    symbol: string;
-    name: string;
-    market: 'japan' | 'usa';
-    side: 'LONG' | 'SHORT';
-    quantity: number;
-    price: number;
-    type: 'MARKET' | 'LIMIT';
-  }) => { success: boolean; error?: string };
   journal: JournalEntry[];
   addJournalEntry: (entry: JournalEntry) => void;
   selectedStock: Stock | null;
@@ -139,6 +127,68 @@ export const useTradingStore = create<TradingStore>()(
         };
       }),
 
+      executeOrder: (order) => set((state) => {
+        const totalCost = order.quantity * order.price;
+        // Basic check, though OrderPanel handles UI disabled state
+        if (order.side === 'LONG' && state.portfolio.cash < totalCost) {
+            return state;
+        }
+
+        const positions = [...state.portfolio.positions];
+        const newPosition: Position = {
+            symbol: order.symbol,
+            name: order.name,
+            market: order.market,
+            side: order.side,
+            quantity: order.quantity,
+            avgPrice: order.price,
+            currentPrice: order.price,
+            change: 0,
+            entryDate: new Date().toISOString().split('T')[0],
+        };
+
+        const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
+
+        if (existingIndex >= 0) {
+          const existing = positions[existingIndex];
+          const combinedCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
+          const totalQty = existing.quantity + newPosition.quantity;
+
+          positions[existingIndex] = {
+            ...existing,
+            quantity: totalQty,
+            avgPrice: combinedCost / totalQty,
+            currentPrice: newPosition.currentPrice,
+          };
+        } else {
+          positions.push(newPosition);
+        }
+
+        // Recalculate totals
+        const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
+        const totalProfit = positions.reduce((sum, p) => {
+          const pnl = p.side === 'LONG'
+            ? (p.currentPrice - p.avgPrice) * p.quantity
+            : (p.avgPrice - p.currentPrice) * p.quantity;
+          return sum + pnl;
+        }, 0);
+        const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+
+        // Deduct cash for both BUY and SELL as per original logic (Short selling collateral/margin implied)
+        const newCash = state.portfolio.cash - totalCost;
+
+        return {
+          portfolio: {
+            ...state.portfolio,
+            positions,
+            totalValue,
+            totalProfit,
+            dailyPnL,
+            cash: newCash,
+          },
+        };
+      }),
+
       addPosition: (newPosition) => set((state) => {
         const positions = [...state.portfolio.positions];
         const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
@@ -235,95 +285,6 @@ export const useTradingStore = create<TradingStore>()(
         },
       })),
 
-      /**
-       * アトミックな注文実行
-       * 残高確認、ポジション追加、現金減算、ジャーナル記録を単一のトランザクションで実行
-       */
-      executeOrder: (order) => {
-        const totalCost = order.price * order.quantity;
-        const entryDate = new Date().toISOString().split('T')[0];
-        let result = { success: false, error: '' };
-        
-        set((state) => {
-          // 1. 残高確認
-          if (order.side === 'LONG' && state.portfolio.cash < totalCost) {
-            result = { success: false, error: 'Insufficient funds' };
-            return state;
-          }
-
-          // 2. ポジション追加（既存ポジションがある場合は平均化）
-          const positions = [...state.portfolio.positions];
-          const existingIndex = positions.findIndex(p => p.symbol === order.symbol && p.side === order.side);
-
-          if (existingIndex >= 0) {
-            const existing = positions[existingIndex];
-            const totalQty = existing.quantity + order.quantity;
-            const newAvgPrice = ((existing.avgPrice * existing.quantity) + (order.price * order.quantity)) / totalQty;
-
-            positions[existingIndex] = {
-              ...existing,
-              quantity: totalQty,
-              avgPrice: newAvgPrice,
-              currentPrice: order.price,
-              change: 0,
-            };
-          } else {
-            positions.push({
-              symbol: order.symbol,
-              name: order.name,
-              market: order.market,
-              side: order.side,
-              quantity: order.quantity,
-              avgPrice: order.price,
-              currentPrice: order.price,
-              change: 0,
-              entryDate: entryDate,
-            });
-          }
-
-          // 3. ポートフォリオ計算
-          const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-          const totalProfit = positions.reduce((sum, p) => {
-            const pnl = p.side === 'LONG'
-              ? (p.currentPrice - p.avgPrice) * p.quantity
-              : (p.avgPrice - p.currentPrice) * p.quantity;
-            return sum + pnl;
-          }, 0);
-          const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
-
-          // 4. ジャーナルエントリー作成
-          const entry: JournalEntry = {
-            id: Date.now().toString(),
-            symbol: order.symbol,
-            date: entryDate,
-            signalType: order.side === 'LONG' ? 'BUY' : 'SELL',
-            entryPrice: order.price,
-            exitPrice: 0,
-            quantity: order.quantity,
-            profit: 0,
-            profitPercent: 0,
-            notes: 'Order executed',
-            status: 'OPEN',
-          };
-
-          result = { success: true, error: '' };
-
-          return {
-            portfolio: {
-              ...state.portfolio,
-              positions,
-              totalValue,
-              totalProfit,
-              dailyPnL,
-              cash: state.portfolio.cash - totalCost,
-            },
-            journal: [...state.journal, entry],
-          };
-        });
-
-        return result;
-      },
-
       journal: [],
 
       addJournalEntry: (entry) => set((state) => ({
@@ -364,4 +325,3 @@ export const useTradingStore = create<TradingStore>()(
     }
   )
 );
-

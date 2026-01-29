@@ -46,16 +46,16 @@ export class MarketDataService {
         throw new Error(`Failed to fetch market data: ${response.statusText}`);
       }
 
-      const result: { success: boolean; data?: Array<{ date: string; open: string | number; high: string | number; low: string | number; close: string | number; volume: string | number }> } = await response.json();
+      const result = await response.json();
       if (result.success && result.data) {
-        const ohlcv = result.data.map((item) => ({
+        const ohlcv = result.data.map((item: any) => ({
           symbol,
           date: item.date,
-          open: parseFloat(String(item.open)),
-          high: parseFloat(String(item.high)),
-          low: parseFloat(String(item.low)),
-          close: parseFloat(String(item.close)),
-          volume: parseFloat(String(item.volume)) || 0,
+          open: parseFloat(item.open),
+          high: parseFloat(item.high),
+          low: parseFloat(item.low),
+          close: parseFloat(item.close),
+          volume: parseFloat(item.volume) || 0,
         }));
 
         this.marketDataCache.set(symbol, ohlcv);

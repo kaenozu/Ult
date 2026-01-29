@@ -269,7 +269,6 @@ export interface BacktestTrade {
   entryDate: string;
   exitDate: string;
   profitPercent: number;
-  profitAmount?: number;
   reason?: string;
 }
 

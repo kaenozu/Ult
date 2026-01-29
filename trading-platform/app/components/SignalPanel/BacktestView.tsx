@@ -33,7 +33,7 @@ export function BacktestView({ backtestResult, loading }: BacktestViewProps) {
 
             <div className="space-y-2">
                 <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のシミュレーション</div>
-                {backtestResult.trades.slice(0, 5).map((trade, i) => (
+                {backtestResult.trades.slice(0, 5).map((trade: any, i: number) => (
                 <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
                     <div>
                     <div className="flex items-center gap-2">
