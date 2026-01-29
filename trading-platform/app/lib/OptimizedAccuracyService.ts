@@ -1,6 +1,6 @@
 /**
  * OptimizedAccuracyService.ts
- * 
+ *
  * バックテスト計算のパフォーマンス最適化版
  * - メモ化パターンによるパラメータキャッシュ
  * - インクリメンタル計算によるUIブロック防止
@@ -89,7 +89,7 @@ export class OptimizedAccuracyService {
         // キャッシュキー生成
         const dataHash = generateDataHash(data);
         const cacheKey = `${symbol}:${market}:${dataHash}`;
-        
+
         // キャッシュチェック
         const cached = this.paramCache.get(cacheKey);
         if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
@@ -100,7 +100,7 @@ export class OptimizedAccuracyService {
         // キャッシュミス: パラメータ最適化を実行
         console.log('[OptimizedAccuracyService] Cache miss, optimizing parameters for', symbol);
         const params = this.optimizeParameters(data, market);
-        
+
         // キャッシュに保存
         this.paramCache.set(cacheKey, {
             params,
@@ -111,7 +111,11 @@ export class OptimizedAccuracyService {
         // キャッシュサイズ制限（LRU）
         if (this.paramCache.size > this.CACHE_MAX_SIZE) {
             const firstKey = this.paramCache.keys().next().value;
-            this.paramCache.delete(firstKey);
+            // Map.keys().next().value returns undefined if the map is empty, but we checked size > CACHE_MAX_SIZE so it's safe.
+            // TypeScript might think it's possibly undefined.
+            if (firstKey !== undefined) {
+                this.paramCache.delete(firstKey);
+            }
         }
 
         return params;
@@ -123,10 +127,10 @@ export class OptimizedAccuracyService {
      */
     private optimizeParameters(data: OHLCV[], market: 'japan' | 'usa'): OptimizedParams {
         if (data.length < OPTIMIZATION.REQUIRED_DATA_PERIOD) {
-            return { 
-                rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, 
-                smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, 
-                accuracy: 0 
+            return {
+                rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD,
+                smaPeriod: SMA_CONFIG.MEDIUM_PERIOD,
+                accuracy: 0
             };
         }
 
@@ -135,7 +139,7 @@ export class OptimizedAccuracyService {
         let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
 
         const closes = data.map(d => d.close);
-        
+
         // 事前計算: すべての期数のRSIとSMAを一度だけ計算
         const rsiCache = new Map<number, number[]>();
         const smaCache = new Map<number, number[]>();
@@ -162,7 +166,7 @@ export class OptimizedAccuracyService {
                     rsiCache.get(rsiP)!,
                     smaCache.get(smaP)!
                 );
-                
+
                 if (result.hitRate > bestAccuracy) {
                     bestAccuracy = result.hitRate;
                     bestRsiPeriod = rsiP;
@@ -171,10 +175,10 @@ export class OptimizedAccuracyService {
             }
         }
 
-        return { 
-            rsiPeriod: bestRsiPeriod, 
-            smaPeriod: bestSmaPeriod, 
-            accuracy: bestAccuracy 
+        return {
+            rsiPeriod: bestRsiPeriod,
+            smaPeriod: bestSmaPeriod,
+            accuracy: bestAccuracy
         };
     }
 
@@ -210,7 +214,7 @@ export class OptimizedAccuracyService {
             total++;
             const atr = atrArray[i];
             const targetMove = Math.max(
-                atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, 
+                atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER,
                 closes[i] * 0.012
             );
 
@@ -230,7 +234,7 @@ export class OptimizedAccuracyService {
     private calculateBatchSimpleATR(data: OHLCV[]): number[] {
         const period = VOLATILITY.DEFAULT_ATR_PERIOD;
         const results: number[] = new Array(data.length).fill(0);
-        
+
         let currentSum = 0;
         let currentCount = 0;
         let windowStart = 0;
@@ -299,17 +303,17 @@ export class OptimizedAccuracyService {
      * トレードシミュレーション
      */
     private simulateTrade(
-        data: OHLCV[], 
-        startIndex: number, 
-        type: 'BUY' | 'SELL', 
+        data: OHLCV[],
+        startIndex: number,
+        type: 'BUY' | 'SELL',
         targetMove: number
     ): { won: boolean; directionalHit: boolean } {
         const entryPrice = data[startIndex].close;
-        const targetPrice = type === 'BUY' 
-            ? entryPrice + targetMove 
+        const targetPrice = type === 'BUY'
+            ? entryPrice + targetMove
             : entryPrice - targetMove;
-        const stopLoss = type === 'BUY' 
-            ? entryPrice - targetMove 
+        const stopLoss = type === 'BUY'
+            ? entryPrice - targetMove
             : entryPrice + targetMove;
 
         let tradeWon = false;
@@ -332,8 +336,8 @@ export class OptimizedAccuracyService {
         }
 
         const forecastDaysLater = data[maxIndex]?.close || entryPrice;
-        const directionalHit = type === 'BUY' 
-            ? forecastDaysLater > entryPrice 
+        const directionalHit = type === 'BUY'
+            ? forecastDaysLater > entryPrice
             : forecastDaysLater < entryPrice;
 
         return { won: tradeWon && !tradeLost, directionalHit };
@@ -344,21 +348,21 @@ export class OptimizedAccuracyService {
      * 計算量: O(N) - 線形時間（パラメータ最適化はキャッシュ）
      */
     runOptimizedBacktest(
-        symbol: string, 
-        data: OHLCV[], 
+        symbol: string,
+        data: OHLCV[],
         market: 'japan' | 'usa'
     ): BacktestResult {
         const startTime = performance.now();
-        
+
         // 1. 最適化パラメータの取得（キャッシュ対応）
         const optimizedParams = this.getOptimizedParams(symbol, data, market);
-        
+
         // 2. 固定パラメータでバックテスト実行
         const result = this.runBacktestWithFixedParams(symbol, data, market, optimizedParams);
-        
+
         const endTime = performance.now();
         console.log(`[OptimizedAccuracyService] Backtest completed in ${(endTime - startTime).toFixed(2)}ms`);
-        
+
         return result;
     }
 
@@ -367,8 +371,8 @@ export class OptimizedAccuracyService {
      * 計算量: O(N) - 線形時間
      */
     private runBacktestWithFixedParams(
-        symbol: string, 
-        data: OHLCV[], 
+        symbol: string,
+        data: OHLCV[],
         market: 'japan' | 'usa',
         params: OptimizedParams
     ): BacktestResult {
@@ -390,12 +394,12 @@ export class OptimizedAccuracyService {
 
         for (let i = minPeriod; i < data.length - 1; i++) {
             const nextDay = data[i + 1];
-            
+
             // 事前計算済みの値を使用（O(1)）
             const currentRSI = rsiValues[i];
             const currentSMA = smaValues[i];
             const currentPrice = closes[i];
-            
+
             // シグナル判定
             let signalType: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
             if (currentPrice > currentSMA && currentRSI < (RSI_CONFIG.OVERSOLD + 10)) {
@@ -454,7 +458,7 @@ export class OptimizedAccuracyService {
                         entryPrice: currentPosition.price,
                         exitPrice,
                         profitPercent: parseFloat((rawProfit * 100).toFixed(2)),
-                        exitReason,
+                        reason: exitReason,
                         type: currentPosition.type
                     });
 
@@ -492,9 +496,9 @@ export class OptimizedAccuracyService {
      * 統計情報の計算
      */
     private calculateStats(
-        trades: BacktestTrade[], 
-        symbol: string, 
-        startDate: string, 
+        trades: BacktestTrade[],
+        symbol: string,
+        startDate: string,
         endDate: string
     ): BacktestResult {
         const winningTrades = trades.filter(t => t.profitPercent > 0).length;
@@ -506,7 +510,7 @@ export class OptimizedAccuracyService {
 
         const winningTradesData = trades.filter(t => t.profitPercent > 0);
         const losingTradesData = trades.filter(t => t.profitPercent <= 0);
-        
+
         const avgProfit = winningTradesData.length > 0
             ? winningTradesData.reduce((sum, t) => sum + t.profitPercent, 0) / winningTradesData.length
             : 0;
@@ -516,10 +520,10 @@ export class OptimizedAccuracyService {
 
         const grossProfit = winningTradesData.reduce((sum, t) => sum + t.profitPercent, 0);
         const grossLoss = Math.abs(losingTradesData.reduce((sum, t) => sum + t.profitPercent, 0));
-        const profitFactor = grossLoss > 0 
-            ? grossProfit / grossLoss 
-            : grossProfit > 0 
-                ? Infinity 
+        const profitFactor = grossLoss > 0
+            ? grossProfit / grossLoss
+            : grossProfit > 0
+                ? Infinity
                 : 0;
 
         // Max Drawdown calculation
@@ -536,8 +540,8 @@ export class OptimizedAccuracyService {
 
         // Simplified Sharpe Ratio
         const returns = trades.map(t => t.profitPercent);
-        const avgReturn = returns.length > 0 
-            ? returns.reduce((sum, r) => sum + r, 0) / returns.length 
+        const avgReturn = returns.length > 0
+            ? returns.reduce((sum, r) => sum + r, 0) / returns.length
             : 0;
         const variance = returns.length > 0
             ? returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length

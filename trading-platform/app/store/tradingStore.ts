@@ -15,7 +15,7 @@ export interface TradingStore {
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
-  executeOrder: (order: { symbol: string; name: string; market: 'japan' | 'usa'; side: 'LONG' | 'SHORT'; quantity: number; price: number; type: 'MARKET' | 'LIMIT' }) => void;
+  executeOrder: (order: { symbol: string; name: string; market: 'japan' | 'usa'; side: 'LONG' | 'SHORT'; quantity: number; price: number; type: 'MARKET' | 'LIMIT' }) => { success: boolean; error?: string };
   closePosition: (symbol: string, exitPrice: number) => void;
   setCash: (amount: number) => void;
   journal: JournalEntry[];
@@ -127,11 +127,13 @@ export const useTradingStore = create<TradingStore>()(
         };
       }),
 
-      executeOrder: (order) => set((state) => {
+      executeOrder: (order) => {
+        const state = get();
         const totalCost = order.quantity * order.price;
+
         // Basic check, though OrderPanel handles UI disabled state
         if (order.side === 'LONG' && state.portfolio.cash < totalCost) {
-            return state;
+            return { success: false, error: '資金不足です' };
         }
 
         const positions = [...state.portfolio.positions];
@@ -177,7 +179,7 @@ export const useTradingStore = create<TradingStore>()(
         // Deduct cash for both BUY and SELL as per original logic (Short selling collateral/margin implied)
         const newCash = state.portfolio.cash - totalCost;
 
-        return {
+        set({
           portfolio: {
             ...state.portfolio,
             positions,
@@ -186,8 +188,10 @@ export const useTradingStore = create<TradingStore>()(
             dailyPnL,
             cash: newCash,
           },
-        };
-      }),
+        });
+
+        return { success: true };
+      },
 
       addPosition: (newPosition) => set((state) => {
         const positions = [...state.portfolio.positions];

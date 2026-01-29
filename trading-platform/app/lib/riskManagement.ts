@@ -68,28 +68,31 @@ export function calculatePositionSize(
 ): RiskCalculationResult {
   const riskAmount = stopLossPrice
     ? Math.abs(entryPrice - stopLossPrice)
-    : entryPrice * (settings.stopLoss.enabled && settings.stopLoss.type === 'percentage'
-      ? settings.stopLoss.value / 100 * entryPrice
-      : RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PERCENT / 100 * entryPrice);
+    : entryPrice * (RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PERCENT / 100);
 
   const rewardAmount = takeProfitPrice
     ? Math.abs(takeProfitPrice - entryPrice)
-    : entryPrice * (settings.takeProfit.enabled && settings.takeProfit.type === 'percentage'
-      ? settings.takeProfit.value / 100 * entryPrice
-      : RISK_MANAGEMENT.DEFAULT_TAKE_PROFIT_PERCENT / 100 * entryPrice);
+    : entryPrice * (RISK_MANAGEMENT.DEFAULT_TAKE_PROFIT_PERCENT / 100);
 
   let positionSize = 0;
   let methodRiskPercent = 0;  // サイジング方法に応じたリスク率
 
-  switch (settings.sizingMethod) {
-    case 'fixed_ratio':
+  const sizingMethod = settings.positionSizingMethod || 'FIXED_FRACTIONAL';
+
+  switch (sizingMethod) {
+    case 'FIXED_FRACTIONAL':
       // 固定比率法
-      const ratio = settings.fixedRatio ?? 0.1;
+      const ratio = settings.maxRiskPerTrade / 100;
       methodRiskPercent = ratio;
-      positionSize = Math.floor((capital * ratio) / entryPrice);
+      // 1株あたりのリスク額
+      const riskPerShare = riskAmount > 0 ? riskAmount : entryPrice * 0.02;
+      // 許容損失額
+      const maxLoss = capital * ratio;
+
+      positionSize = Math.floor(maxLoss / riskPerShare);
       break;
 
-    case 'kelly_criterion':
+    case 'KELLY_CRITERION':
       // ケリー基準
       // 簡略版: f = (bp * p - q) / b
       // bp = 勝率（勝った時の平均利益/負けた時の平均損失）
@@ -100,7 +103,7 @@ export function calculatePositionSize(
       const winRate = 0.5; // デフォルト50%
       const avgWin = rewardAmount / entryPrice;
       const avgLoss = riskAmount / entryPrice;
-      const kellyFraction = settings.kellyFraction ?? RISK_MANAGEMENT.DEFAULT_KELLY_FRACTION;
+      const kellyFraction = 0.25; // settings.kellyFraction ?? RISK_MANAGEMENT.DEFAULT_KELLY_FRACTION;
 
       if (avgLoss > 0) {
         const kelly = (winRate * avgWin - (1 - winRate) * avgLoss) / avgLoss;
@@ -112,23 +115,10 @@ export function calculatePositionSize(
       }
       break;
 
-    case 'fixed_amount':
+    case 'FIXED_DOLLAR':
       // 固定金額法
       const fixedAmount = capital * 0.1; // デフォルト10%
       positionSize = Math.floor(fixedAmount / entryPrice);
-      methodRiskPercent = 0.1;
-      break;
-
-    case 'volatility_based':
-      // ボラティリティ基準（ATR使用）
-      if (atr && atr > 0) {
-        // ATRベース：資本の2%を1ATRあたりのリスクとしているサイズ
-        const capitalAtRisk = capital * 0.02;
-        const atrMultiplier = settings.atrMultiplier ?? RISK_MANAGEMENT.DEFAULT_ATR_MULTIPLIER;
-        positionSize = Math.floor(capitalAtRisk / (atr * atrMultiplier * entryPrice) * entryPrice);
-      } else {
-        positionSize = Math.floor((capital * 0.1) / entryPrice);
-      }
       methodRiskPercent = 0.1;
       break;
 
@@ -142,18 +132,16 @@ export function calculatePositionSize(
   positionSize = Math.max(minSize, positionSize);
 
   // 最大サイズ制限（資本の一定比率以下）
-  const maxPositionPercent = settings.maxPositionPercent ?? RISK_MANAGEMENT.DEFAULT_MAX_POSITION_PERCENT;
+  const maxPositionPercent = RISK_MANAGEMENT.DEFAULT_MAX_POSITION_PERCENT;
   const maxPositionValue = capital * (maxPositionPercent / 100);
   const maxPositionSizeByCapital = Math.floor(maxPositionValue / entryPrice);
   positionSize = Math.min(positionSize, maxPositionSizeByCapital);
 
   // リスク額とパーセンテージの計算
   const totalRisk = positionSize * riskAmount;
-  const riskPercentOfCapital = (totalRisk / capital) * 100;
-  const riskPercentOfPosition = riskAmount / entryPrice * 100;
 
   // 最大損失リミットのチェック
-  const maxLossLimit = settings.maxLossPerTrade ?? capital * (settings.maxLossPercent ?? 10) / 100;
+  const maxLossLimit = capital * (settings.maxPortfolioRisk / 100);
 
   if (totalRisk > maxLossLimit) {
     // リミット超過の場合はサイズを調整
@@ -161,13 +149,14 @@ export function calculatePositionSize(
   }
 
   return {
-    positionSize,
+    recommendedQuantity: positionSize,
+    maxQuantity: maxPositionSizeByCapital,
     stopLossPrice: stopLossPrice || entryPrice * (1 - RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PERCENT / 100),
     takeProfitPrice: takeProfitPrice || entryPrice * (1 + RISK_MANAGEMENT.DEFAULT_TAKE_PROFIT_PERCENT / 100),
     riskAmount,
-    riskPercent: riskPercentOfCapital,
-    positionRiskPercent: riskPercentOfPosition,
-    maxPositionSize: maxPositionSizeByCapital,
+    rewardAmount,
+    riskRewardRatio: riskAmount > 0 ? rewardAmount / riskAmount : 0,
+    isTradeAllowed: positionSize > 0,
   };
 }
 
@@ -182,27 +171,12 @@ export function calculatePositionSize(
 export function calculateStopLossPrice(
   entryPrice: number,
   side: 'LONG' | 'SHORT',
-  config: RiskManagementSettings['stopLoss'],
+  settings: RiskManagementSettings,
   atr?: number
 ): number {
-  if (!config.enabled) {
-    return entryPrice; // 損切りなし
-  }
-
-  switch (config.type) {
-    case 'percentage':
-      if (side === 'LONG') {
-        return entryPrice * (1 - config.value / 100);
-      } else {
-        return entryPrice * (1 + config.value / 100);
-      }
-
-    case 'price':
-      return config.value;
-
-    case 'atr':
+  if (settings.stopLossType === 'ATR_BASED') {
       if (atr && atr > 0) {
-        const multiplier = config.value; // ATR倍率
+        const multiplier = settings.atrMultiplier;
         if (side === 'LONG') {
           return entryPrice - (atr * multiplier);
         } else {
@@ -210,56 +184,14 @@ export function calculateStopLossPrice(
         }
       }
       return entryPrice;
-
-    case 'trailing':
-      // トラィリングストップの初期価格を計算
-      // 実際の更新はデータ更新時に行う必要がある
-      return calculateStopLossPrice(entryPrice, side, { ...config, type: 'atr' }, atr);
-
-    default:
-      return entryPrice;
-  }
-}
-
-/**
- * 利確価格を計算
- * @param entryPrice - エントリー価格
- * @param side - 'LONG' or 'SHORT'
- * @param stopLossPrice - 損切り価格
- * @param config - 利確設定
- * @returns 利確価格
- */
-export function calculateTakeProfitPrice(
-  entryPrice: number,
-  side: 'LONG' | 'SHORT',
-  stopLossPrice: number,
-  config: RiskManagementSettings['takeProfit']
-): number {
-  if (!config.enabled) {
-    return entryPrice; // 利確なし
-  }
-
-  switch (config.type) {
-    case 'percentage':
+  } else {
+      // FIXED_PERCENT
+      const percent = settings.defaultStopLossPercent;
       if (side === 'LONG') {
-        return entryPrice * (1 + config.value / 100);
+        return entryPrice * (1 - percent / 100);
       } else {
-        return entryPrice * (1 - config.value / 100);
+        return entryPrice * (1 + percent / 100);
       }
-
-    case 'price':
-      return config.value;
-
-    case 'risk_reward_ratio':
-      const risk = Math.abs(entryPrice - stopLossPrice);
-      if (side === 'LONG') {
-        return entryPrice + (risk * config.value);
-      } else {
-        return entryPrice - (risk * config.value);
-      }
-
-    default:
-      return entryPrice;
   }
 }
 
@@ -267,47 +199,13 @@ export function calculateTakeProfitPrice(
  * デフォルトのリスク管理設定
  */
 export const DEFAULT_RISK_SETTINGS: RiskManagementSettings = {
-  sizingMethod: 'fixed_ratio',
-  fixedRatio: 0.1,
-  maxPositionPercent: 20,
-  kellyFraction: 0.25,
-  stopLoss: {
-    enabled: false,
-    type: 'percentage',
-    value: 2,
-    trailing: false,
-  },
-  takeProfit: {
-    enabled: false,
-    type: 'risk_reward_ratio',
-    value: 2,
-    partials: false,
-  },
-  maxLossPercent: 10,
-  dailyLossLimit: 5,
-  useATR: true,
-  atrPeriod: 14,
+  maxRiskPerTrade: 1, // 1%
+  maxPortfolioRisk: 5, // 5%
+  positionSizingMethod: 'FIXED_FRACTIONAL',
+  stopLossType: 'ATR_BASED',
+  defaultStopLossPercent: 2,
   atrMultiplier: 2,
-  maxPositions: 5,
 };
-
-/**
- * 珎日の損失をチェック
- * @param currentDailyLoss - 現日の損失
- * @param settings - リスク管理設定
- * @returns 損失リミットを超えているか
- */
-export function checkDailyLossLimit(
-  currentDailyLoss: number,
-  capital: number,
-  settings: RiskManagementSettings
-): { exceeded: boolean; remaining: number } {
-  const limit = capital * (settings.dailyLossLimit ?? RISK_MANAGEMENT.DEFAULT_DAILY_LOSS_LIMIT) / 100;
-  return {
-    exceeded: currentDailyLoss > limit,
-    remaining: Math.max(0, limit - currentDailyLoss),
-  };
-}
 
 /**
  * ポジションを追加できるかチェック
@@ -324,7 +222,7 @@ export function canAddPosition(
   existingPositions: Position[]
 ): { allowed: boolean; reason?: string } {
   // 最大ポジション数チェック
-  const maxPositions = settings.maxPositions ?? RISK_MANAGEMENT.DEFAULT_MAX_POSITIONS;
+  const maxPositions = RISK_MANAGEMENT.DEFAULT_MAX_POSITIONS;
   if (currentPositions >= maxPositions) {
     return {
       allowed: false,
@@ -333,7 +231,6 @@ export function canAddPosition(
   }
 
   // 相関チェック（同じ市場・似た銘柄の制限）
-  const maxCorrelation = settings.maxCorrelation ?? 0.5;
   // 簡易実装：同じ市場の銘柄数を制限
   const sameMarketCount = existingPositions.filter(p => p.market === existingPositions[0]?.market).length;
   if (sameMarketCount >= 3) {

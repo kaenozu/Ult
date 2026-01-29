@@ -1,6 +1,6 @@
 /**
  * SignalPanel/index-optimized.tsx
- * 
+ *
  * 最適化版 SignalPanel コンポーネント
  * - Web Worker を使用したバックテスト計算
  * - メモ化パターンによるパラメータキャッシュ
@@ -74,7 +74,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   useSignalAlerts({
       stock,
       displaySignal,
-      preciseHitRate: preciseHitRate?.hitRate || 0,
+      preciseHitRate: preciseHitRate ? { hitRate: preciseHitRate.hitRate, trades: preciseHitRate.trades } : { hitRate: 0, trades: 0 },
       calculatingHitRate
   });
 
@@ -205,7 +205,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       {activeTab === 'signal' && (
         <div className="flex-1 flex flex-col gap-3">
           <SignalCard signal={displaySignal} stock={stock} />
-          
+
           {preciseHitRate && (
             <div className="bg-[#192633] rounded-lg p-3 border border-[#233648]">
               <div className="flex justify-between items-center mb-2">
@@ -236,7 +236,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
                   <span>{backtestProgress}%</span>
                 </div>
                 <div className="h-2 bg-[#233648] rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-blue-500 transition-all duration-300"
                     style={{ width: `${backtestProgress}%` }}
                   />
@@ -251,7 +251,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               データがありません
             </div>
           )}
-          
+
           {backtestError && (
             <div className="mt-2 p-2 bg-red-500/20 border border-red-500/50 rounded text-xs text-red-400">
               エラー: {backtestError}

@@ -76,6 +76,7 @@ export interface Stock {
   volume: number;
   high52w?: number;
   low52w?: number;
+  lastUpdated?: number;
 }
 
 export interface OHLCV {
@@ -258,6 +259,35 @@ export interface ScreenerFilter {
 export type Theme = 'dark' | 'light';
 
 // ============================================================================
+// Risk Management Types
+// ============================================================================
+
+export type PositionSizingMethod = 'FIXED_FRACTIONAL' | 'KELLY_CRITERION' | 'FIXED_DOLLAR';
+export type StopLossType = 'FIXED_PERCENT' | 'ATR_BASED' | 'SUPPORT_RESISTANCE';
+
+export interface RiskManagementSettings {
+  maxRiskPerTrade: number; // 口座資金に対する最大リスク (%)
+  maxPortfolioRisk: number; // ポートフォリオ全体のリスク許容量 (%)
+  positionSizingMethod: PositionSizingMethod;
+  stopLossType: StopLossType;
+  defaultStopLossPercent: number; // 固定ストップロス (%)
+  atrMultiplier: number; // ATRストップロス用倍率
+}
+
+export interface RiskCalculationResult {
+  recommendedQuantity: number;
+  maxQuantity: number;
+  stopLossPrice: number;
+  takeProfitPrice: number;
+  riskAmount: number;
+  rewardAmount: number;
+  riskRewardRatio: number;
+  kellyPercentage?: number;
+  isTradeAllowed: boolean;
+  rejectionReason?: string;
+}
+
+// ============================================================================
 // Backtest Types
 // ============================================================================
 
@@ -284,6 +314,9 @@ export interface BacktestResult {
   profitFactor: number;
   maxDrawdown: number;
   sharpeRatio: number;
+  sortinoRatio?: number;
+  calmarRatio?: number;
+  expectancy?: number;
   trades: BacktestTrade[];
   startDate: string;
   endDate: string;
