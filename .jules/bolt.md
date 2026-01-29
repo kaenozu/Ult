@@ -27,3 +27,7 @@
 ## 2024-05-24 - [Data Synchronization Complexity]
 **Learning:** Normalizing or synchronizing two time-series arrays using nested loops (Array.find inside Array.map) creates O(N*M) complexity, which becomes a bottleneck (100ms+) with just a few thousand points.
 **Action:** Always convert the reference dataset to a Map<Key, Value> (O(M)) before mapping the target dataset (O(N)), reducing total complexity to O(N+M).
+
+## 2024-05-24 - [Legacy Wrappers vs Selectors]
+**Learning:** Wrapper hooks (like `usePortfolioStore`) that return an object spreading multiple state slices are convenient but defeat the purpose of Zustand's selective subscription, causing massive over-rendering (e.g., `OrderPanel` rendering on every price update).
+**Action:** Replace wrapper hooks with direct `useTradingStore` selectors in leaf components to isolate updates.
