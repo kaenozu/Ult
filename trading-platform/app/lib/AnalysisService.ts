@@ -123,6 +123,17 @@ class AnalysisService {
             }
         }
 
+        // Pre-calculate ATR (O(N)) once, instead of inside the nested loop (O(N * M))
+        const atrArray = accuracyService.calculateBatchSimpleATR(data);
+
+        for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
+            rsiCache.set(rsiP, technicalIndicatorService.calculateRSI(closes, rsiP));
+        }
+        for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
+            smaCache.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
+>>>>>>> main
+        }
+
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
             for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
                 const result = this.internalCalculatePerformance(
@@ -130,6 +141,7 @@ class AnalysisService {
                     rsiP,
                     smaP,
                     closes,
+                    atrArray,
                     rsiCache.get(rsiP),
                     smaCache.get(smaP),
                     effectiveEndIndex,
@@ -151,6 +163,7 @@ class AnalysisService {
         rsiP: number,
         smaP: number,
         closes: number[],
+        atrArray: number[],
         preCalcRsi?: number[],
         preCalcSma?: number[],
         endIndex?: number,
@@ -167,6 +180,11 @@ class AnalysisService {
         const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
 
         for (let i = start; i < limit; i += step) {
+=======
+        const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
+        const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
+
+        for (let i = start; i < limit; i += step) {
             if (isNaN(rsi[i]) || isNaN(sma[i])) continue;
 
             let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
@@ -176,7 +194,8 @@ class AnalysisService {
             if (type === 'HOLD') continue;
 
             total++;
-            const atr = accuracyService.calculateSimpleATR(data, i);
+            // Use pre-calculated ATR (O(1) lookup)
+            const atr = atrArray[i];
             const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, closes[i] * 0.012);
 
             const result = accuracyService.simulateTrade(data, i, type, targetMove);

@@ -11,7 +11,6 @@ import {
 } from './constants';
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
-
 /**
  * Service to handle simulation, backtesting, and accuracy metrics.
  */
@@ -48,6 +47,81 @@ class AccuracyService {
         const directionalHit = type === 'BUY' ? forecastDaysLater > entryPrice : forecastDaysLater < entryPrice;
 
         return { won: tradeWon && !tradeLost, directionalHit };
+    }
+
+    /**
+<<<<<<< HEAD
+=======
+     * Optimized batch calculation of Simple ATR (O(N))
+     * Replicates the exact logic of calculateSimpleATR but faster.
+     */
+    calculateBatchSimpleATR(data: OHLCV[]): number[] {
+        const period = VOLATILITY.DEFAULT_ATR_PERIOD;
+        const results: number[] = new Array(data.length).fill(0);
+
+        let currentSum = 0;
+        let currentCount = 0;
+        let windowStart = 0;
+
+        const hlArray: number[] = new Array(data.length);
+        const trArray: number[] = new Array(data.length);
+        const validArray: boolean[] = new Array(data.length);
+
+        for (let i = 0; i < data.length; i++) {
+            const d = data[i];
+            if (!d || d.high === 0 || d.low === 0) {
+                validArray[i] = false;
+                hlArray[i] = 0;
+                trArray[i] = 0;
+                continue;
+            }
+            validArray[i] = true;
+            hlArray[i] = d.high - d.low;
+
+            if (i > 0) {
+                 const prev = data[i-1];
+                 if (prev) {
+                     const highClose = Math.abs(d.high - prev.close);
+                     const lowClose = Math.abs(d.low - prev.close);
+                     trArray[i] = Math.max(hlArray[i], highClose, lowClose);
+                 } else {
+                     trArray[i] = hlArray[i];
+                 }
+            } else {
+                trArray[i] = hlArray[i];
+            }
+        }
+
+        for (let i = 0; i < data.length; i++) {
+            // Add new element i
+            if (validArray[i]) {
+                currentCount++;
+                if (i === windowStart) {
+                    currentSum += hlArray[i];
+                } else {
+                    currentSum += trArray[i];
+                }
+            }
+
+            if (i - windowStart + 1 > period) {
+                // Remove windowStart
+                if (validArray[windowStart]) {
+                    currentCount--;
+                    currentSum -= hlArray[windowStart];
+                }
+                windowStart++;
+
+                // Adjust the new windowStart to contribute HL instead of TR
+                if (windowStart <= i && validArray[windowStart]) {
+                     currentSum -= trArray[windowStart];
+                     currentSum += hlArray[windowStart];
+                }
+            }
+
+            results[i] = currentCount > 0 ? currentSum / currentCount : 0;
+        }
+
+        return results;
     }
 
     /**
