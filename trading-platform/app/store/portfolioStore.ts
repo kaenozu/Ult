@@ -9,7 +9,10 @@ export const usePortfolioStore = () => {
     const closePosition = useTradingStore((state) => state.closePosition);
     const setCash = useTradingStore((state) => state.setCash);
     const addJournalEntry = useTradingStore((state) => state.addJournalEntry);
-    const updatePositionPrices = useTradingStore((state) => state.batchUpdateStockData); // 旧ストアではこれ
+    const updatePositionPrices = useTradingStore((state) => state.batchUpdateStockData);
+    
+    // アトミックな注文実行関数を追加
+    const executeOrder = useTradingStore((state) => state.executeOrder);
 
     return {
         portfolio,
@@ -21,5 +24,6 @@ export const usePortfolioStore = () => {
         setCash,
         addJournalEntry,
         updatePositionPrices,
+        executeOrder, // 新規追加
     };
 };
