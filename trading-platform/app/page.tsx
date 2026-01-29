@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
 import { StockChart } from '@/app/components/StockChart';
+import { SimpleRSIChart } from '@/app/components/SimpleRSIChart';
 import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
 import { RightSidebar } from '@/app/components/RightSidebar';
@@ -163,18 +164,7 @@ export default function Workstation() {
 
                 {/* RSI Sub-chart */}
                 <div className="h-24 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
-                  <span className="absolute top-1 left-2 text-[10px] text-[#92adc9] font-medium">RSI (14)</span>
-                  <div className="absolute top-0 left-0 right-0 bottom-0 grid grid-rows-2 grid-cols-1 pointer-events-none">
-                    <div className="border-b border-[#233648]/20 border-dashed"></div>
-                  </div>
-                  <svg className="w-full h-full" preserveAspectRatio="none">
-                    <path
-                      d="M0,50 C50,40 100,60 150,30 S300,80 400,50 S500,20 600,40 S800,60 1200,45"
-                      fill="none"
-                      stroke="#a855f7"
-                      strokeWidth="1.5"
-                    />
-                  </svg>
+                  <SimpleRSIChart data={chartData} />
                 </div>
               </div>
             </>
