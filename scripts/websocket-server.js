@@ -10,14 +10,56 @@
 
 const { WebSocketServer } = require('ws');
 const { createServer } = require('http');
+const { URL } = require('url');
 
 // Configuration
 const PORT = parseInt(process.env.WS_PORT || process.env.PORT || '3001', 10);
 const HOST = process.env.WS_HOST || '0.0.0.0';
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
 
 // Create HTTP server for WebSocket upgrade
 const server = createServer();
-const wss = new WebSocketServer({ server, path: '/ws' });
+// 🛡️ Sentinel: Enforce Origin validation (CSWSH protection)
+// Removed 'server' option to handle upgrade manually
+const wss = new WebSocketServer({ noServer: true, path: '/ws' });
+
+server.on('upgrade', (request, socket, head) => {
+  const { origin } = request.headers;
+  let allowed = false;
+
+  // Validate path
+  const protocol = request.headers['x-forwarded-proto'] || 'http';
+  const host = request.headers.host || `localhost:${PORT}`;
+  const { pathname } = new URL(request.url, `${protocol}://${host}`);
+
+  if (pathname !== '/ws') {
+    socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+
+  // Validate Origin
+  if (!origin) {
+    // Block missing origin (common in scripts/bots)
+    console.log('[WebSocket] Blocked connection with missing Origin header');
+    allowed = false;
+  } else {
+    allowed = ALLOWED_ORIGINS.includes(origin);
+    if (!allowed) {
+      console.log(`[WebSocket] Blocked connection from unauthorized origin: ${origin}`);
+    }
+  }
+
+  if (!allowed) {
+    socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
 
 // Track connected clients
 const clients = new Map();
