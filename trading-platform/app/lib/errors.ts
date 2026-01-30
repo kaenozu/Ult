@@ -1,117 +1,262 @@
 /**
- * errors.ts
+ * Trading Platform Error Types
  * 
- * シンプルなエラーハンドリングユーティリティ
- * 個人開発向けに必要最小限の機能を提供
+ * Comprehensive error handling and type definitions
  */
 
-/**
- * アプリケーションエラークラス
- */
-export class AppError extends Error {
+// Base Error Classes
+export class TradingError extends Error {
+  constructor(public message: string, public code?: string) {
+    super(message);
+    this.name = 'TradingError';
+  }
+}
+
+export class ValidationError extends TradingError {
+  constructor(public field: string, message: string, public severity: 'low' | 'medium' | 'high' = 'low') {
+    super(`Validation error for ${field}: ${message}`, 'VALIDATION_ERROR');
+    this.name = 'ValidationError';
+  }
+}
+
+export class ConnectionError extends TradingError {
+  constructor(public endpoint: string, message: string) {
+    super(`Connection to ${endpoint} failed: ${message}`, 'CONNECTION_ERROR');
+    this.name = 'ConnectionError';
+  }
+}
+
+export class ApiError extends TradingError {
+  constructor(
+    public endpoint: string,
+    public status: number,
+    public response: unknown
+  ) {
+    super(`API error: ${status} from ${endpoint}`, 'API_ERROR');
+    this.name = 'ApiError';
+  }
+
+  get statusCode(): number {
+    return this.status;
+  }
+}
+
+export class RateLimitError extends TradingError {
+  constructor(public retryAfter?: number) {
+    super(
+      retryAfter 
+        ? `Rate limit exceeded, try again after ${retryAfter} seconds` 
+        : 'Rate limit exceeded', 
+      'RATE_LIMIT_ERROR'
+    );
+    this.name = 'RateLimitError';
+  }
+}
+
+export class AuthenticationError extends TradingError {
+  constructor() {
+    super('Authentication failed', 'AUTHENTICATION_ERROR');
+    this.name = 'AuthenticationError';
+  }
+}
+
+// Strategy and Trading Errors
+export class StrategyError extends TradingError {
+  constructor(public strategyName: string, message: string) {
+    super(`Strategy ${strategyName}: ${message}`, 'STRATEGY_ERROR');
+    this.name = 'StrategyError';
+  }
+}
+
+export class RiskManagementError extends TradingError {
+  constructor(
+    public symbol?: string,
+    public reason?: string,
+    public severity: 'warning' | 'error' | 'critical' = 'error'
+  ) {
+    super(`Risk management failed${symbol ? ` for ${symbol}` : ''}${reason ? `: ${reason}` : ''}`, 'RISK_MANAGEMENT_ERROR');
+    this.name = 'RiskManagementError';
+  }
+}
+
+export class OrderError extends TradingError {
+  constructor(
+    public orderId?: string,
+    public symbol?: string,
+    public reason?: string
+  ) {
+    super(`Order ${orderId}: ${reason || 'Unknown error'}`, 'ORDER_ERROR');
+    this.name = 'OrderError';
+  }
+}
+
+export class ExecutionError extends TradingError {
+  constructor(
+    public orderId?: string,
+    public symbol?: string,
+    public reason?: string
+  ) {
+    super(`Execution ${orderId}: ${reason || 'Unknown error'}`, 'EXECUTION_ERROR');
+    this.name = 'ExecutionError';
+  }
+}
+
+// Data Errors
+export class DataError extends TradingError {
+  constructor(
+    public symbol?: string,
+    public dataType?: string,
+    public reason?: string
+  ) {
+    super(`Data ${dataType ? dataType : 'error'}${symbol ? ` for ${symbol}` : ''}${reason ? `: ${reason}` : ''}`, 'DATA_ERROR');
+    this.name = 'DataError';
+  }
+}
+
+export class SymbolNotFoundError extends DataError {
+  constructor(public symbol: string) {
+    super(symbol, 'symbol', 'Symbol not found');
+    this.name = 'SymbolNotFoundError';
+  }
+}
+
+export class DataNotAvailableError extends DataError {
+  constructor(
+    public symbol?: string,
+    public dataType?: string
+  ) {
+    super(symbol, dataType, 'Data not available');
+    this.name = 'DataNotAvailableError';
+  }
+}
+
+// Risk Control Errors
+export class PositionLimitError extends RiskManagementError {
+  constructor(public symbol: string, public currentSize: number, public limit: number) {
+    super(symbol, `Position size ${currentSize} exceeds limit ${limit}`, 'error');
+    this.name = 'PositionLimitError';
+  }
+}
+
+export class DrawdownLimitError extends RiskManagementError {
+  constructor(public currentDrawdown: number, public limit: number) {
+    super(undefined, `Drawdown ${currentDrawdown} exceeds limit ${limit}`, 'critical');
+    this.name = 'DrawdownLimitError';
+  }
+}
+
+export class CapitalLimitError extends RiskManagementError {
+  constructor(public availableCapital: number, public requiredCapital: number) {
+    super(undefined, `Available capital ${availableCapital} < required ${requiredCapital}`, 'error');
+    this.name = 'CapitalLimitError';
+  }
+}
+
+// Configuration Errors
+export class ConfigurationError extends TradingError {
+  constructor(public configPath: string, message: string) {
+    super(`Configuration error ${configPath}: ${message}`, 'CONFIGURATION_ERROR');
+    this.name = 'ConfigurationError';
+  }
+}
+
+// System Errors
+export class SystemError extends TradingError {
+  constructor(message: string) {
+    super(`System error: ${message}`, 'SYSTEM_ERROR');
+    this.name = 'SystemError';
+  }
+}
+
+export class TimeoutError extends SystemError {
+  constructor(public operation: string, public timeout: number) {
+    super(`${operation} timed out after ${timeout}ms`);
+    this.name = 'TimeoutError';
+  }
+}
+
+export class ResourceLimitError extends SystemError {
+  constructor(public resource: string) {
+    super(`${resource} limit reached`);
+    this.name = 'ResourceLimitError';
+  }
+}
+
+// Recovery Types
+export type ErrorRecovery = {
+  canRecover: boolean;
+  recoveryAction: string;
+  retryDelay?: number;
+  retryCount?: number;
+  fatal: boolean;
+};
+
+export type ErrorContext = {
+  timestamp: number;
+  operation: string;
+  symbol?: string;
+  orderId?: string;
+  metadata: Record<string, unknown>;
+};
+
+export type ErrorHandler = {
+  handleError: (error: TradingError, context?: ErrorContext) => ErrorRecovery;
+  reportError: (error: TradingError, context?: ErrorContext) => Promise<void>;
+  canRecover: (error: TradingError) => boolean;
+};
+
+// Additional exports for compatibility
+
+export class AppError extends TradingError {
   constructor(
     message: string,
     public code: string = 'UNKNOWN',
     public severity: 'low' | 'medium' | 'high' = 'medium'
   ) {
-    super(message);
+    super(message, code);
     this.name = 'AppError';
   }
 }
 
-/**
- * APIエラークラス
- */
-export class ApiError extends AppError {
-  constructor(
-    message: string,
-    public statusCode: number = 500,
-    severity: 'low' | 'medium' | 'high' = 'medium'
-  ) {
-    super(message, `API_${statusCode}`, severity);
-    this.name = 'ApiError';
-  }
-}
-
-/**
- * バリデーションエラークラス
- */
-export class ValidationError extends AppError {
-  constructor(message: string) {
-    super(message, 'VALIDATION', 'low');
-    this.name = 'ValidationError';
-  }
-}
-
-/**
- * エラーをAppErrorにラップ
- */
-export function handleError(error: unknown, context?: string): AppError {
-  if (error instanceof AppError) {
+export function handleError(error: unknown, context?: string): TradingError {
+  if (error instanceof TradingError) {
     return error;
   }
-
-  const message = error instanceof Error 
-    ? `${context ? `[${context}] ` : ''}${error.message}`
-    : `${context ? `[${context}] ` : ''}Unknown error occurred`;
-
-  return new AppError(message, 'UNKNOWN', 'medium');
-}
-
-/**
- * エラーをコンソールに出力（開発時のみ詳細表示）
- */
-export function logError(error: unknown, context?: string): void {
-  const appError = handleError(error, context);
-  
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`[${appError.code}] ${appError.message}`, {
-      severity: appError.severity,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-  } else {
-    // 本番環境では最小限の情報のみ
-    console.error(`[${appError.code}] ${appError.message}`);
+  if (error instanceof Error) {
+    return new AppError(context ? `[${context}] ${error.message}` : error.message);
   }
+  return new AppError(context ? `[${context}] Unknown error occurred` : 'Unknown error occurred');
 }
 
-/**
- * ユーザーフレンドリーなエラーメッセージを取得
- */
+export function logError(error: unknown, context: string): void {
+  console.error(`[${context}]`, error);
+}
+
 export function getUserErrorMessage(error: unknown): string {
-  if (error instanceof AppError) {
-    // エラーコードに基づいてユーザーメッセージを返す
-    switch (error.code) {
-      case 'VALIDATION':
-        return error.message;
-      case 'API_404':
-        return 'データが見つかりませんでした';
-      case 'API_429':
-        return 'リクエストが多すぎます。しばらく待ってからお試しください';
-      case 'API_500':
-      case 'API_502':
-        return 'サーバーエラーが発生しました。しばらく待ってからお試しください';
-      default:
-        return 'エラーが発生しました。もう一度お試しください';
-    }
+  if (error instanceof ValidationError) {
+    return error.message;
   }
-
+  if (error instanceof ApiError) {
+    if (error.status === 404) return 'データが見つかりませんでした';
+    if (error.status === 429) return 'リクエストが多すぎます。しばらく待ってからお試しください';
+  }
   return 'エラーが発生しました。もう一度お試しください';
 }
 
-/**
- * 非同期関数のエラーをラップ
- */
+export interface WithErrorHandlingResult<T> {
+  data: T | null;
+  error: AppError | null;
+}
+
 export async function withErrorHandling<T>(
   fn: () => Promise<T>,
   context?: string
-): Promise<{ data: T | null; error: AppError | null }> {
+): Promise<WithErrorHandlingResult<T>> {
   try {
     const data = await fn();
     return { data, error: null };
-  } catch (error) {
-    const appError = handleError(error, context);
-    logError(error, context);
-    return { data: null, error: appError };
+  } catch (err) {
+    const error = handleError(err, context);
+    return { data: null, error: error instanceof AppError ? error : new AppError(error.message) };
   }
 }

@@ -1,0 +1,71 @@
+{
+  "name": "state-management-optimizer",
+  "description": "Guidelines and patterns for optimizing state management in React applications using Zustand",
+  "version": "1.0.0",
+  "patterns": {
+    "selective_subscription": [
+      "Use selectors to subscribe to specific state slices",
+      "Implement shallow comparison for array/object states",
+      "Avoid subscribing to entire store when only subset is needed"
+    ],
+    "atomic_updates": [
+      "Update only the parts of state that change",
+      "Use Immer for immutable updates",
+      "Batch related updates together"
+    ],
+    "derived_state": [
+      "Calculate derived state in selectors",
+      "Memoize expensive derivations",
+      "Avoid storing redundant derived data"
+    ]
+  },
+  "best_practices": {
+    "selector_design": [
+      "Keep selectors focused and specific",
+      "Use parametric selectors for dynamic queries",
+      "Compose selectors from smaller ones"
+    ],
+    "store_organization": [
+      "Separate concerns into multiple stores if needed",
+      "Use middleware for logging, persistence, etc.",
+      "Keep actions pure when possible"
+    ],
+    "performance_monitoring": [
+      "Track re-render frequency",
+      "Measure selector execution time",
+      "Monitor store update patterns"
+    ]
+  },
+  "code_examples": {
+    "selective_selector": {
+      "description": "Example of selective subscription",
+      "code": "// Bad: Subscribes to entire store\nexport const BadComponent = () => {\n  const state = useStore(); // Re-renders on ANY state change\n};\n\n// Good: Subscribes to specific slice\nexport const GoodComponent = () => {\n  const selectedId = useStore(state => state.selectedPositionId);\n  const position = useStore(state => \n    state.positions.find(p => p.id === selectedId)\n  );\n};"
+    },
+    "custom_hooks": {
+      "description": "Example of custom hooks for common patterns",
+      "code": "export function useSelectedPosition() {\n  const selectedId = usePortfolioStore(state => state.selectedPositionId);\n  return usePortfolioStore(state => \n    state.positions.find(p => p.symbol === selectedId)\n  );\n}\n\nexport function usePortfolioSummary() {\n  return usePortfolioStore(state => ({\n    totalValue: state.totalValue,\n    totalProfit: state.totalProfit,\n    positionCount: state.positions.length\n  }));\n}"
+    },
+    "parametric_selector": {
+      "description": "Example of parametric selector factory",
+      "code": "export const selectPositionById = (id: string) => \n  (state: PortfolioState) => \n    state.positions.find(p => p.id === id);\n\nexport const selectPositionsByMarket = (market: 'japan' | 'usa') =>\n  (state: PortfolioState) =>\n    state.positions.filter(p => p.market === market);"
+    }
+  },
+  "metrics": {
+    "performance_indicators": [
+      "Component re-render count",
+      "Selector execution time",
+      "Store update frequency",
+      "Memory usage growth"
+    ],
+    "optimization_targets": {
+      "re_render_count": "Minimize per user action",
+      "selector_time": "< 1ms per execution",
+      "update_frequency": "Batch related changes"
+    }
+  },
+  "related_skills": [
+    "chart-performance-optimizer",
+    "api-batch-processor",
+    "react-fundamentals"
+  ]
+}
