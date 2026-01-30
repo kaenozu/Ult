@@ -164,6 +164,34 @@ export interface Signal {
     };
     breakoutConfidence: 'low' | 'medium' | 'high';
   };
+  /**
+   * Market regime information for adaptive strategy selection
+   */
+  regimeInfo?: {
+    regime: 'TRENDING' | 'RANGING' | 'UNKNOWN';
+    trendDirection: 'UP' | 'DOWN' | 'NEUTRAL';
+    volatility: 'HIGH' | 'MEDIUM' | 'LOW';
+    adx: number;
+    atr: number;
+    confidence: 'INITIAL' | 'CONFIRMED';
+    daysInRegime: number;
+  };
+  /**
+   * Recommended trading strategy based on market regime
+   */
+  recommendedStrategy?: string;
+  /**
+   * Human-readable regime description
+   */
+  regimeDescription?: string;
+  /**
+   * Strategy weight multiplier (0-1) based on regime suitability
+   */
+  strategyWeight?: number;
+  /**
+   * Position size adjustment factor based on volatility and regime
+   */
+  positionSizeAdjustment?: number;
 }
 
 export interface PaperTrade {
