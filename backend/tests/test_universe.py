@@ -149,3 +149,42 @@ class TestStockUniverse:
         assert result["success"] is True
         assert result["added"] is False  # Already existed
         assert "message" in result
+
+    def test_validate_symbol_non_alphanumeric(self):
+        """Test rejecting non-alphanumeric symbols (line 126)"""
+        universe = StockUniverse()
+        assert universe.is_valid_symbol("AAPL@") is False
+        assert universe.is_valid_symbol("GOO-GL") is False
+        assert universe.is_valid_symbol("TSLA!") is False
+
+    def test_add_if_valid_duplicate_returns_false(self):
+        """Test that add_if_valid returns False for duplicate symbols (line 143)"""
+        universe = StockUniverse()
+        universe.add("AAPL")
+
+        # Adding duplicate should return False
+        result = universe.add_if_valid("AAPL")
+        assert result is False
+        assert universe.count() == 1  # Only one AAPL
+
+    def test_load_nonexistent_file_raises_error(self):
+        """Test loading from nonexistent file raises FileNotFoundError (line 181)"""
+        with pytest.raises(FileNotFoundError, match="not found"):
+            StockUniverse.load("/nonexistent/path/universe.json")
+
+    def test_load_invalid_file_format_raises_error(self):
+        """Test loading file with invalid format raises ValueError (line 187)"""
+        import tempfile
+        import json
+
+        # Create a file without 'symbols' key
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump({"invalid": "data"}, f)
+            file_path = f.name
+
+        try:
+            with pytest.raises(ValueError, match="missing 'symbols' key"):
+                StockUniverse.load(file_path)
+        finally:
+            import os
+            os.unlink(file_path)

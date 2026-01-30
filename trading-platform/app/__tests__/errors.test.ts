@@ -26,19 +26,19 @@ describe('Error Handling', () => {
 
   describe('ApiError', () => {
     it('should create ApiError with status code', () => {
-      const error = new ApiError('API error', 404);
-      expect(error.message).toBe('API error');
+      const error = new ApiError('/api/test', 404, { message: 'Not found' });
+      expect(error.message).toBe('API error: 404 from /api/test');
       expect(error.statusCode).toBe(404);
-      expect(error.code).toBe('API_404');
+      expect(error.code).toBe('API_ERROR');
       expect(error.name).toBe('ApiError');
     });
   });
 
   describe('ValidationError', () => {
     it('should create ValidationError', () => {
-      const error = new ValidationError('Invalid input');
-      expect(error.message).toBe('Invalid input');
-      expect(error.code).toBe('VALIDATION');
+      const error = new ValidationError('field', 'Invalid input');
+      expect(error.message).toBe('Validation error for field: Invalid input');
+      expect(error.code).toBe('VALIDATION_ERROR');
       expect(error.severity).toBe('low');
     });
   });
@@ -72,17 +72,17 @@ describe('Error Handling', () => {
 
   describe('getUserErrorMessage', () => {
     it('should return validation message as-is', () => {
-      const error = new ValidationError('Invalid symbol');
-      expect(getUserErrorMessage(error)).toBe('Invalid symbol');
+      const error = new ValidationError('symbol', 'Invalid symbol');
+      expect(getUserErrorMessage(error)).toBe('Validation error for symbol: Invalid symbol');
     });
 
     it('should return Japanese message for API 404', () => {
-      const error = new ApiError('Not found', 404);
+      const error = new ApiError('/api/test', 404, { message: 'Not found' });
       expect(getUserErrorMessage(error)).toBe('データが見つかりませんでした');
     });
 
     it('should return Japanese message for API 429', () => {
-      const error = new ApiError('Too many requests', 429);
+      const error = new ApiError('/api/test', 429, { message: 'Too many requests' });
       expect(getUserErrorMessage(error)).toBe('リクエストが多すぎます。しばらく待ってからお試しください');
     });
 

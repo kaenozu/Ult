@@ -1,15 +1,27 @@
-import { useTradingStore } from './tradingStore';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { Stock } from '../types';
 
-export const useUIStore = () => {
-    const selectedStock = useTradingStore((state) => state.selectedStock);
-    const setSelectedStock = useTradingStore((state) => state.setSelectedStock);
-    const isConnected = useTradingStore((state) => state.isConnected);
-    const toggleConnection = useTradingStore((state) => state.toggleConnection);
+interface UIStore {
+  selectedStock: Stock | null;
+  setSelectedStock: (stock: Stock | null) => void;
+  isConnected: boolean;
+  toggleConnection: () => void;
+}
 
-    return {
-        selectedStock,
-        setSelectedStock,
-        isConnected,
-        toggleConnection,
-    };
-};
+export const useUIStore = create<UIStore>()(
+  persist(
+    (set) => ({
+      selectedStock: null,
+
+      setSelectedStock: (stock) => set({ selectedStock: stock }),
+
+      isConnected: true,
+
+      toggleConnection: () => set((state) => ({ isConnected: !state.isConnected })),
+    }),
+    {
+      name: 'ui-storage',
+    }
+  )
+);
