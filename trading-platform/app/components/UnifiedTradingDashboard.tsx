@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Ca
 import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/Tabs';
+import { cn } from '@/app/lib/utils';
 import { 
   Play, 
   Square, 
@@ -247,7 +248,29 @@ export function UnifiedTradingDashboard() {
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <PortfolioPanel portfolio={portfolio} onClosePosition={closePosition} />
-              <SignalPanel signals={signals} onPlaceOrder={placeOrder} />
+              <div className="bg-[#141e27] p-4 rounded-lg">
+                <h3 className="text-sm font-medium text-[#92adc9] mb-3">取引シグナル</h3>
+                <div className="space-y-2">
+                  {signals && signals.length > 0 ? (
+                    signals.slice(0, 5).map((sig) => (
+                      <div key={sig.symbol} className="flex justify-between items-center p-2 bg-[#192633] rounded">
+                        <div>
+                          <span className="font-bold text-white">{sig.symbol}</span>
+                          <span className={cn(
+                            "ml-2 text-xs px-2 py-0.5 rounded",
+                            sig.type.includes('BUY') ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                          )}>
+                            {sig.type}
+                          </span>
+                        </div>
+                        <span className="text-xs text-[#92adc9">{sig.confidence}%</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-[#92adc9] text-center py-4">シグナルなし</p>
+                  )}
+                </div>
+              </div>
             </div>
           </TabsContent>
 
@@ -260,11 +283,47 @@ export function UnifiedTradingDashboard() {
           </TabsContent>
 
           <TabsContent value="signals">
-            <SignalPanel 
-              signals={signals} 
-              onPlaceOrder={placeOrder}
-              detailed 
-            />
+            <div className="bg-[#141e27] p-4 rounded-lg">
+              <h3 className="text-sm font-medium text-[#92adc9] mb-3">シグナル詳細</h3>
+              <div className="space-y-4">
+                {signals && signals.length > 0 ? (
+                  signals.map((sig) => (
+                    <div key={sig.symbol} className="p-4 bg-[#192633] rounded-lg">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-bold text-white text-lg">{sig.symbol}</span>
+                        <span className={cn(
+                          "text-xs px-2 py-1 rounded",
+                          sig.type.includes('BUY') ? "bg-green-500/20 text-green-400" : 
+                          sig.type.includes('SELL') ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"
+                        )}>
+                          {sig.type}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-[#92adc9]">信頼度:</span>
+                          <span className="text-white">{sig.confidence}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#92adc9]">エントリー:</span>
+                          <span className="text-white">${sig.entryPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#92adc9]">利益目標:</span>
+                          <span className="text-white">${sig.targetPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#92adc9]">損切り:</span>
+                          <span className="text-white">${sig.stopLoss.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-[#92adc9] text-center py-4">シグナルなし</p>
+                )}
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="risk">
@@ -272,10 +331,7 @@ export function UnifiedTradingDashboard() {
           </TabsContent>
 
           <TabsContent value="alerts">
-            <AlertPanel 
-              alerts={alerts} 
-              onCreateAlert={createAlert}
-            />
+            <AlertPanel symbol={selectedSymbol} />
           </TabsContent>
 
           <TabsContent value="market">
