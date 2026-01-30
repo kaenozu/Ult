@@ -1,16 +1,19 @@
 'use client';
 
 import { useState, useId } from 'react';
-import { Stock } from '@/app/types';
+import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { useTradingStore } from '@/app/store/tradingStore';
+import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
+import { DynamicRiskMetrics } from './DynamicRiskMetrics';
 
 interface OrderPanelProps {
   stock: Stock;
   currentPrice: number;
+  ohlcv?: OHLCV[];
 }
 
-export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
+export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
   const cash = useTradingStore(s => s.portfolio.cash);
   const executeOrder = useTradingStore(s => s.executeOrder);
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
@@ -19,6 +22,19 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
   const [limitPrice, setLimitPrice] = useState<string>(currentPrice.toString());
   const [isConfirming, setIsConfirming] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // 動的リスク管理設定
+  const [riskConfig, setRiskConfig] = useState<DynamicRiskConfig>({
+    enableTrailingStop: true,
+    trailingStopATRMultiple: 2.0,
+    trailingStopMinPercent: 1.0,
+    enableVolatilityAdjustment: true,
+    volatilityMultiplier: 1.5,
+    enableDynamicPositionSizing: true,
+    maxRiskPerTrade: 2.0,
+    minRiskRewardRatio: 2.0,
+  });
+  const [showRiskSettings, setShowRiskSettings] = useState(false);
 
   const orderTypeId = useId();
   const quantityId = useId();
@@ -126,6 +142,133 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
             onChange={(e) => setLimitPrice(e.target.value)}
             className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
           />
+        </div>
+      )}
+
+      {/* Risk Management Settings Toggle */}
+      <button
+        onClick={() => setShowRiskSettings(!showRiskSettings)}
+        className="flex items-center justify-between w-full py-2 text-xs font-bold text-[#92adc9] hover:text-white transition-colors border-t border-[#233648] mt-2"
+        aria-expanded={showRiskSettings}
+      >
+        <span>リスク管理設定</span>
+        <svg
+          className={cn("w-4 h-4 transition-transform", showRiskSettings && "rotate-180")}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {/* Risk Management Settings Panel */}
+      {showRiskSettings && (
+        <div className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3">
+          {/* Trailing Stop Toggle */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
+            <button
+              onClick={() => setRiskConfig(prev => ({ ...prev, enableTrailingStop: !prev.enableTrailingStop }))}
+              className={cn(
+                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
+                riskConfig.enableTrailingStop ? "bg-green-500" : "bg-[#233648]"
+              )}
+              role="switch"
+              aria-checked={riskConfig.enableTrailingStop}
+            >
+              <span
+                className={cn(
+                  "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
+                  riskConfig.enableTrailingStop ? "translate-x-5" : "translate-x-1"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Volatility Adjustment Toggle */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-[#92adc9]">ボラティリティ調整</span>
+            <button
+              onClick={() => setRiskConfig(prev => ({ ...prev, enableVolatilityAdjustment: !prev.enableVolatilityAdjustment }))}
+              className={cn(
+                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
+                riskConfig.enableVolatilityAdjustment ? "bg-green-500" : "bg-[#233648]"
+              )}
+              role="switch"
+              aria-checked={riskConfig.enableVolatilityAdjustment}
+            >
+              <span
+                className={cn(
+                  "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
+                  riskConfig.enableVolatilityAdjustment ? "translate-x-5" : "translate-x-1"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Kelly-based Position Sizing Toggle */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-[#92adc9]">ケリー基準ポジションサイジング</span>
+            <button
+              onClick={() => setRiskConfig(prev => ({ ...prev, enableDynamicPositionSizing: !prev.enableDynamicPositionSizing }))}
+              className={cn(
+                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
+                riskConfig.enableDynamicPositionSizing ? "bg-green-500" : "bg-[#233648]"
+              )}
+              role="switch"
+              aria-checked={riskConfig.enableDynamicPositionSizing}
+            >
+              <span
+                className={cn(
+                  "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
+                  riskConfig.enableDynamicPositionSizing ? "translate-x-5" : "translate-x-1"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* Volatility Level Selector */}
+          <div className="pt-2 border-t border-[#233648]/50">
+            <span className="text-[10px] text-[#92adc9] block mb-2">ボラティリティ係数</span>
+            <div className="grid grid-cols-4 gap-1">
+              {[
+                { value: 1.3, label: '低', color: 'bg-blue-500' },
+                { value: 1.0, label: '中', color: 'bg-yellow-500' },
+                { value: 0.7, label: '高', color: 'bg-orange-500' },
+                { value: 0.4, label: '極端', color: 'bg-red-500' },
+              ].map(({ value, label, color }) => (
+                <button
+                  key={value}
+                  onClick={() => setRiskConfig(prev => ({ ...prev, volatilityMultiplier: value }))}
+                  className={cn(
+                    "px-2 py-1 text-[10px] font-bold rounded transition-all",
+                    riskConfig.volatilityMultiplier === value
+                      ? `${color} text-white`
+                      : "bg-[#233648] text-[#92adc9] hover:text-white"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Risk Metrics Display */}
+          {ohlcv.length > 0 && (
+            <div className="pt-2 border-t border-[#233648]/50 space-y-2">
+              <span className="text-[10px] text-[#92adc9] block">計算されたリスク指標</span>
+              <DynamicRiskMetrics
+                stock={stock}
+                currentPrice={price}
+                side={side}
+                ohlcv={ohlcv}
+                cash={cash}
+                config={riskConfig}
+              />
+            </div>
+          )}
         </div>
       )}
 
