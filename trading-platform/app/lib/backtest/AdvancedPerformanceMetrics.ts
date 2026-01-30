@@ -245,7 +245,7 @@ export class AdvancedPerformanceMetrics {
       ...riskMetrics,
       ...tradeMetrics,
       ...distributionMetrics,
-    };
+    } as AdvancedMetrics;
   }
 
   /**

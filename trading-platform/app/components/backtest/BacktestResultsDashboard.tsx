@@ -13,11 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/Ta
 import { BacktestResult, BacktestTrade } from '@/app/types';
 import { 
   AdvancedPerformanceMetrics,
-  AdvancedMetrics,
-  DrawdownAnalysis,
-  TradeAnalysis,
-  ReturnDistribution 
-} from '@/app/lib/backtest';
+  type AdvancedMetrics,
+  type DrawdownAnalysis,
+  type TradeAnalysis,
+  type ReturnDistribution 
+} from '@/app/lib/backtest/index';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -470,8 +470,8 @@ function TradeHistoryTable({ trades }: { trades: BacktestTrade[] }) {
 
   const sortedTrades = useMemo(() => {
     return [...trades].sort((a, b) => {
-      const aVal = a[sortField];
-      const bVal = b[sortField];
+      const aVal = a[sortField] ?? 0;
+      const bVal = b[sortField] ?? 0;
       if (sortDirection === 'asc') {
         return aVal > bVal ? 1 : -1;
       }

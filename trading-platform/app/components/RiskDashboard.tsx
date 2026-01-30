@@ -14,7 +14,7 @@ interface RiskDashboardProps {
 }
 
 export function RiskDashboard({ stock, currentPrice, ohlcv, config }: RiskDashboardProps) {
-  const portfolio = usePortfolioStore(s => s.portfolio);
+  const { portfolio } = usePortfolioStore();
   const position = portfolio.positions.find(p => p.symbol === stock.symbol);
 
   const riskMetrics = useMemo(() => {

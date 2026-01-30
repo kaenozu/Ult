@@ -157,7 +157,7 @@ export const AdvancedIndicatorsChart = memo(function AdvancedIndicatorsChart({
         borderColor: '#233648',
         borderWidth: 1,
         padding: 10,
-        titleFont: { size: 12, weight: 'bold' },
+        titleFont: { size: 12, weight: 'bold' as const },
         bodyFont: { size: 11 },
         displayColors: true,
         boxPadding: 4,
@@ -192,7 +192,7 @@ export const AdvancedIndicatorsChart = memo(function AdvancedIndicatorsChart({
         max: 100,
         ticks: {
           ...commonOptions.scales.y.ticks,
-          callback: (value: number) => value + '%',
+          callback: (value: number | string) => value + '%',
         },
       },
     },
