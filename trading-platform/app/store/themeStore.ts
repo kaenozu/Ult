@@ -1,11 +1,20 @@
-import { useTradingStore } from './tradingStore';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { Theme } from '../types';
 
-export const useThemeStore = () => {
-    const theme = useTradingStore((state) => state.theme);
-    const toggleTheme = useTradingStore((state) => state.toggleTheme);
+interface ThemeStore {
+  theme: Theme;
+  toggleTheme: () => void;
+}
 
-    return {
-        theme,
-        toggleTheme,
-    };
-};
+export const useThemeStore = create<ThemeStore>()(
+  persist(
+    (set) => ({
+      theme: 'dark',
+      toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+    }),
+    {
+      name: 'theme-storage',
+    }
+  )
+);
