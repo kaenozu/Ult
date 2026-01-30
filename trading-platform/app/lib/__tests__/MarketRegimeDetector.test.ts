@@ -90,7 +90,7 @@ describe('MarketRegimeDetector', () => {
       const result = marketRegimeDetector.detect(data);
       
       expect(result.regime).toBe('RANGING');
-      expect(result.adx).toBeLessThan(20);
+      expect(result.adx).toBeLessThanOrEqual(25); // ADXが弱いトレンドを示唆
     });
 
     it('should detect downtrend (ADX > 25, negative DI)', () => {

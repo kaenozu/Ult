@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+playwright_scraper.egg-info/PKG-INFO
+playwright_scraper.egg-info/SOURCES.txt
+playwright_scraper.egg-info/dependency_links.txt
+playwright_scraper.egg-info/entry_points.txt
+playwright_scraper.egg-info/requires.txt
+playwright_scraper.egg-info/top_level.txt
+tests/test_config.py
+tests/test_exceptions.py
+tests/test_scraper.py

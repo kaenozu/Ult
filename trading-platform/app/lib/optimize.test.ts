@@ -26,7 +26,17 @@ describe('optimizeParameters Correctness', () => {
     const result = optimizeParameters(data, 'usa');
 
     // We snapshot the result to ensure it doesn't change
-    expect(result).toMatchSnapshot();
+    expect(result).toMatchInlineSnapshot({
+  rsiPeriod: 10,
+  smaPeriod: 10,
+  accuracy: 100
+}, `
+{
+  "accuracy": 100,
+  "rsiPeriod": 10,
+  "smaPeriod": 10,
+}
+`);
 
     // Also sanity check
     expect(result.accuracy).toBeGreaterThanOrEqual(0);

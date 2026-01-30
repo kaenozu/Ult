@@ -1,0 +1,2 @@
+[console_scripts]
+playwright-scraper = playwright_scraper.scraper:main
