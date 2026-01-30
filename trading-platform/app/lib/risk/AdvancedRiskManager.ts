@@ -114,7 +114,7 @@ export interface OptimizationResult {
 // Default Configuration
 // ============================================================================
 
-const DEFAULT_RISK_LIMITS: RiskLimits = {
+export const DEFAULT_RISK_LIMITS: RiskLimits = {
   maxPositionSize: 20, // 20% of portfolio
   maxSectorExposure: 30, // 30% per sector
   maxSingleTradeRisk: 2, // 2% per trade

@@ -108,7 +108,7 @@ export interface StrategyAction {
 // Default Configuration
 // ============================================================================
 
-const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
+export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
   initialCapital: 100000,
   commission: 0.1, // 0.1%
   slippage: 0.05, // 0.05%

@@ -84,7 +84,7 @@ export interface LatencyMetrics {
 // Default Configuration
 // ============================================================================
 
-const DEFAULT_EXECUTION_CONFIG: ExecutionConfig = {
+export const DEFAULT_EXECUTION_CONFIG: ExecutionConfig = {
   maxLatency: 50, // 50ms max latency
   slippageTolerance: 0.1, // 0.1%
   partialFillThreshold: 95, // 95% fill threshold

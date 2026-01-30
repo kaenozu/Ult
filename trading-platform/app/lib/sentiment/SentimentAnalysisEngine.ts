@@ -85,7 +85,7 @@ export interface SentimentConfig {
 // Default Configuration
 // ============================================================================
 
-const DEFAULT_SENTIMENT_CONFIG: SentimentConfig = {
+export const DEFAULT_SENTIMENT_CONFIG: SentimentConfig = {
   analysisWindow: 24 * 60 * 60 * 1000, // 24 hours
   updateInterval: 5 * 60 * 1000, // 5 minutes
   sentimentThreshold: 0.3,

@@ -112,7 +112,7 @@ export interface MarketData {
 // Default Configuration
 // ============================================================================
 
-const DEFAULT_PAPER_TRADING_CONFIG: PaperTradingConfig = {
+export const DEFAULT_PAPER_TRADING_CONFIG: PaperTradingConfig = {
   initialCapital: 1000000,
   commissionRate: 0.1, // 0.1%
   slippageRate: 0.05, // 0.05%

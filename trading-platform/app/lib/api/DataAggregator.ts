@@ -23,7 +23,7 @@ interface CacheEntry<T> {
 interface BatchRequest<T> {
   keys: string[];
   priority: number;
-  fetcher: () => Promise<T>;
+  fetcher: (keys: string[]) => Promise<T>;
   resolve: (value: T) => void;
   reject: (error: Error) => void;
 }
@@ -348,7 +348,7 @@ export class DataAggregator {
       const batchRequest: BatchRequest<Map<string, T>> = {
         keys,
         priority: 1,
-        fetcher: () => fetcher(keys),
+        fetcher: (batchKeys: string[]) => fetcher(batchKeys),
         resolve: (data) => resolve(data as Map<string, T>),
         reject: (error) => reject(error),
       };
@@ -435,7 +435,7 @@ export class DataAggregator {
     // For now, execute each request sequentially
     for (const request of batch) {
       try {
-        const result = await request.fetcher();
+        const result = await request.fetcher(request.keys);
         if (result instanceof Map) {
           for (const [key, value] of result) {
             results.set(key, value);
