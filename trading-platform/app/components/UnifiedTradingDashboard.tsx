@@ -258,9 +258,10 @@ export function UnifiedTradingDashboard() {
                           <span className="font-bold text-white">{sig.symbol}</span>
                           <span className={cn(
                             "ml-2 text-xs px-2 py-0.5 rounded",
-                            sig.type.includes('BUY') ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+                            sig.direction === 'BUY' ? "bg-green-500/20 text-green-400" : 
+                            sig.direction === 'SELL' ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"
                           )}>
-                            {sig.type}
+                            {sig.direction}
                           </span>
                         </div>
                         <span className="text-xs text-[#92adc9">{sig.confidence}%</span>
@@ -293,10 +294,10 @@ export function UnifiedTradingDashboard() {
                         <span className="font-bold text-white text-lg">{sig.symbol}</span>
                         <span className={cn(
                           "text-xs px-2 py-1 rounded",
-                          sig.type.includes('BUY') ? "bg-green-500/20 text-green-400" : 
-                          sig.type.includes('SELL') ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"
+                          sig.direction === 'BUY' ? "bg-green-500/20 text-green-400" : 
+                          sig.direction === 'SELL' ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"
                         )}>
-                          {sig.type}
+                          {sig.direction}
                         </span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
