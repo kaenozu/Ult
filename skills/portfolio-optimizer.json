@@ -1,0 +1,176 @@
+{
+  "name": "Portfolio Optimizer",
+  "slug": "portfolio-optimizer",
+  "version": "1.0.0",
+  "description": "Optimizes investment portfolios using Modern Portfolio Theory (MPT)",
+  "author": "ULT Trading Platform",
+  "license": "MIT",
+  "tags": ["trading", "portfolio-management", "optimization", "modern-portfolio-theory", "risk-adjusted-returns"],
+  "capabilities": [
+    "Calculate optimal portfolio weights using Modern Portfolio Theory",
+    "Generate efficient frontier with multiple risk-return points",
+    "Support multiple optimization objectives (Max Sharpe, Min Variance, Risk Parity)",
+    "Calculate comprehensive risk metrics (VaR, CVaR, Sortino, Max Drawdown)",
+    "Handle sector allocation constraints",
+    "Calculate diversification ratios",
+    "Support target return optimization"
+  ],
+  "use_cases": [
+    {
+      "scenario": "Maximize Risk-Adjusted Returns",
+      "description": "Find the portfolio with the highest Sharpe ratio",
+      "example": "Optimize portfolio for max Sharpe with 40% max weight per asset"
+    },
+    {
+      "scenario": "Minimize Portfolio Risk",
+      "description": "Find the lowest volatility portfolio",
+      "example": "Get minimum variance portfolio from historical returns"
+    },
+    {
+      "scenario": "Risk Parity Allocation",
+      "description": "Equalize risk contribution from each asset",
+      "example": "Create risk parity portfolio across 5 sector ETFs"
+    },
+    {
+      "scenario": "Target Return Optimization",
+      "description": "Find portfolio achieving specific return target",
+      "example": "Optimize for 10% annual return with minimum risk"
+    },
+    {
+      "scenario": "Risk Analysis",
+      "description": "Analyze existing portfolio risk metrics",
+      "example": "Calculate VaR, CVaR, and max drawdown for current holdings"
+    }
+  ],
+  "configuration": {
+    "riskFreeRate": {
+      "type": "number",
+      "default": 2.0,
+      "description": "Annual risk-free rate percentage for Sharpe ratio calculation"
+    },
+    "tradingDaysPerYear": {
+      "type": "number",
+      "default": 252,
+      "description": "Number of trading days per year"
+    },
+    "maxIterations": {
+      "type": "number",
+      "default": 1000,
+      "description": "Maximum iterations for optimization algorithm"
+    },
+    "convergenceThreshold": {
+      "type": "number",
+      "default": 1e-8,
+      "description": "Convergence threshold for optimization"
+    },
+    "maxCorrelation": {
+      "type": "number",
+      "default": 0.99,
+      "description": "Maximum allowed correlation between assets"
+    },
+    "sectorConcentrationLimit": {
+      "type": "number",
+      "default": 0.4,
+      "description": "Maximum weight allowed per sector"
+    }
+  },
+  "input_format": {
+    "type": "object",
+    "properties": {
+      "assets": {
+        "type": "array",
+        "description": "Array of asset data with historical returns",
+        "items": {
+          "type": "object",
+          "properties": {
+            "symbol": { "type": "string" },
+            "sector": { "type": "string" },
+            "returns": { "type": "array", "items": { "type": "number" } },
+            "currentPrice": { "type": "number" },
+            "companyName": { "type": "string" }
+          }
+        }
+      },
+      "constraints": {
+        "type": "object",
+        "description": "Optimization constraints",
+        "properties": {
+          "minWeight": { "type": "number" },
+          "maxWeight": { "type": "number" },
+          "targetReturn": { "type": "number" },
+          "maxRisk": { "type": "number" },
+          "sectorLimits": { "type": "object" }
+        }
+      }
+    }
+  },
+  "output_format": {
+    "type": "object",
+    "properties": {
+      "weights": {
+        "type": "object",
+        "description": "Map of symbol to allocation weight"
+      },
+      "expectedReturn": {
+        "type": "number",
+        "description": "Expected annual return percentage"
+      },
+      "expectedVolatility": {
+        "type": "number",
+        "description": "Expected annual volatility percentage"
+      },
+      "sharpeRatio": {
+        "type": "number",
+        "description": "Risk-adjusted return ratio"
+      },
+      "sortinoRatio": {
+        "type": "number",
+        "description": "Downside risk-adjusted return"
+      },
+      "maxDrawdown": {
+        "type": "number",
+        "description": "Maximum expected drawdown percentage"
+      },
+      "efficientFrontier": {
+        "type": "array",
+        "description": "Efficient frontier points"
+      },
+      "optimizationType": {
+        "type": "string",
+        "enum": ["MAX_SHARPE", "MIN_VARIANCE", "RISK_PARITY", "TARGET_RETURN"]
+      }
+    }
+  },
+  "examples": [
+    {
+      "description": "Optimize for maximum Sharpe ratio",
+      "code": "const result = portfolioOptimizer.optimize(assets, { maxWeight: 0.3 });"
+    },
+    {
+      "description": "Generate efficient frontier",
+      "code": "const frontier = portfolioOptimizer.generateEfficientFrontier(assets, 50);"
+    },
+    {
+      "description": "Calculate risk metrics",
+      "code": "const metrics = portfolioOptimizer.calculateRiskMetrics(assets, weights, benchmarkReturns);"
+    },
+    {
+      "description": "Get sector allocation",
+      "code": "const sectors = portfolioOptimizer.aggregateBySector(assets, weights);"
+    }
+  ],
+  "best_practices": [
+    "Use at least 2 years of historical data for reliable covariance estimation",
+    "Apply sector constraints to avoid concentration risk",
+    "Rebalance portfolios quarterly to maintain target allocation",
+    "Consider transaction costs when rebalancing",
+    "Use efficient frontier to understand risk-return tradeoffs",
+    "Combine with market regime detection for dynamic allocation"
+  ],
+  "related_skills": ["flash-crash-detector", "gap-risk-manager", "composite-alert-engine"],
+  "integration_points": [
+    "RiskManagement for position sizing",
+    "AlertSystem for allocation change alerts",
+    "TechnicalIndicatorService for return calculations"
+  ]
+}
