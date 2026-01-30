@@ -160,7 +160,7 @@ describe.skip('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
   });
 
   it('handles fetchMarketIndex failure gracefully', async () => {
-    const spy = jest.spyOn(marketClient, 'fetchOHLCV').mockResolvedValue({ success: false, data: null, source: 'error' });
+    const spy = jest.spyOn(marketClient, 'fetchOHLCV').mockResolvedValue({ success: false, data: null, error: 'Failed', source: 'error' });
     const result = await marketClient.fetchMarketIndex('japan');
     // エラー時はdataが空配列になることを確認
     expect(result.data).toEqual([]);

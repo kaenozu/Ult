@@ -43,8 +43,10 @@ describe('Market API Route', () => {
 
         // Attach spies to the actual exported instance
         // We cast to jest.Mock because we know it's a mock from the factory
-        mockChart = yf.chart = jest.fn();
-        mockQuote = yf.quote = jest.fn();
+        (yf as any).chart = jest.fn();
+        (yf as any).quote = jest.fn();
+        mockChart = (yf as any).chart;
+        mockQuote = (yf as any).quote;
     });
 
     // Polyfill Request if needed (for node env)

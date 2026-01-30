@@ -93,6 +93,8 @@ describe('StockChart', () => {
       predictedChange: 5,
       targetPrice: 1000,
       stopLoss: 900,
+      reason: 'Test reason',
+      predictionDate: '2026-01-25',
       volumeResistance: [
         { price: 100, strength: 0.8 },
         { price: 110, strength: 0.4 }
@@ -112,7 +114,9 @@ describe('StockChart', () => {
       confidence: 80,
       predictedChange: 5,
       targetPrice: 1000,
-      stopLoss: 900
+      stopLoss: 900,
+      reason: 'Test reason',
+      predictionDate: '2026-01-25'
     };
 
     // Need minimal data for ghost forecast

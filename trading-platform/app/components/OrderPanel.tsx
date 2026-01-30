@@ -12,13 +12,14 @@ interface OrderPanelProps {
 
 export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
   const cash = useTradingStore(s => s.portfolio.cash);
-  const executeOrder = useTradingStore(s => s.executeOrder);
+  const executeOrderAtomic = useTradingStore(s => s.executeOrderAtomic);
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
   const [limitPrice, setLimitPrice] = useState<string>(currentPrice.toString());
   const [isConfirming, setIsConfirming] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const orderTypeId = useId();
   const quantityId = useId();
@@ -33,8 +34,11 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
     if (quantity <= 0) return;
     if (side === 'BUY' && !canAfford) return;
 
-    // 注文実行
-    executeOrder({
+    // Clear any previous error
+    setErrorMessage(null);
+
+    // 注文実行（アトミック）
+    const result = executeOrderAtomic({
       symbol: stock.symbol,
       name: stock.name,
       market: stock.market,
@@ -44,10 +48,16 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       type: orderType,
     });
 
-    // 事前チェックで条件を満たしている場合、成功と見なす
-    setIsConfirming(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    if (result.success) {
+      // 注文成功
+      setIsConfirming(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } else {
+      // 注文失敗 - エラーメッセージを表示
+      setErrorMessage(result.error || '注文の実行に失敗しました');
+      setIsConfirming(false);
+    }
   };
 
   return (
@@ -55,6 +65,18 @@ export function OrderPanel({ stock, currentPrice }: OrderPanelProps) {
       {showSuccess && (
         <div className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
           注文を送信しました
+        </div>
+      )}
+      {errorMessage && (
+        <div className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+          {errorMessage}
+          <button 
+            onClick={() => setErrorMessage(null)}
+            className="ml-2 text-white/80 hover:text-white"
+            aria-label="エラーを閉じる"
+          >
+            ✕
+          </button>
         </div>
       )}
       <div className="flex justify-between items-center border-b border-[#233648] pb-2">
