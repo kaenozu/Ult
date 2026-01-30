@@ -1,80 +1,106 @@
-# Phase 2 Quality Improvement - Pull Request
+# Phase 3 Enhancement Pull Request
 
-## Summary
-This PR implements Phase 2 quality improvements including property-based testing, enhanced test coverage, E2E testing, and CI/CD integration.
+## Overview
+This pull request implements Phase 3 of the trading platform enhancements, focusing on market risk management, portfolio optimization, and advanced alerting capabilities.
 
-## Changes
+## Changes Summary
 
-### 1. Property-based Testing (ID: 5.2)
-- Added `@fast-check/jest` for property-based testing
-- Created comprehensive property-based tests for `TechnicalIndicatorService`:
-  - SMA (Simple Moving Average) tests
-  - EMA (Exponential Moving Average) tests
-  - RSI (Relative Strength Index) tests
-  - Bollinger Bands tests
-  - MACD tests
-  - ATR (Average True Range) tests
+### New Features (Improvement Proposal IDs: 2.2, 2.3, 4.2, 4.4)
 
-**File:** `trading-platform/app/lib/__tests__/TechnicalIndicatorService.property.test.ts`
+#### 1. Flash Crash Detection (ID: 2.2)
+- **File**: `app/lib/market/FlashCrashDetector.ts`
+- **Description**: Detects rapid price drops and flash crashes with configurable thresholds
+- **Key Features**:
+  - Configurable price drop percentage threshold
+  - Volume spike detection
+  - Severity-based alerts (LOW/MEDIUM/HIGH/CRITICAL)
+  - Recommended trading actions (HALT/REDUCE/MONITOR)
+  - Real-time monitoring with configurable intervals
 
-### 2. Test Coverage Enhancement (ID: 5.3)
-- Added ML Prediction Service tests
-- Added Risk Management tests
-- Added comprehensive unit tests for all major functions
+#### 2. Gap Risk Management (ID: 2.3)
+- **File**: `app/lib/market/GapRiskManager.ts`
+- **Description**: Manages gap risk with adaptive stop-loss calculations
+- **Key Features**:
+  - Gap percent calculation and risk assessment
+  - Historical gap statistics tracking
+  - Adaptive stop-loss price calculation
+  - Position size adjustment recommendations
+  - Portfolio-wide gap risk assessment
 
-**Files:**
-- `trading-platform/app/lib/__tests__/mlPrediction.test.ts`
-- `trading-platform/app/lib/__tests__/riskManagement.test.ts`
+#### 3. Portfolio Optimization (ID: 4.2)
+- **File**: `app/lib/portfolio/PortfolioOptimizer.ts`
+- **Description**: Implements Modern Portfolio Theory for optimal asset allocation
+- **Key Features**:
+  - Maximum Sharpe Ratio optimization
+  - Minimum Variance portfolio
+  - Risk Parity allocation
+  - Target Return optimization
+  - Efficient frontier generation
+  - Comprehensive risk metrics (VaR, CVaR, Sortino, Max Drawdown)
+  - Sector allocation constraints
 
-### 3. E2E Testing
-- Created trading workflow E2E tests with Playwright
-- Tests cover:
-  - Stock selection and chart display
-  - Time interval switching
-  - Order panel functionality
-  - Technical indicator toggles
-  - Portfolio tracking
-  - Trade journal navigation
-  - Screener functionality
-  - Heatmap navigation
-  - Error handling
-  - Responsive design
+#### 4. Enhanced Alert System (ID: 4.4)
+- **File**: `app/lib/alerts/EnhancedAlertSystem.ts`
+- **Description**: Extends the base AlertSystem with composite conditions and pattern detection
+- **Key Features**:
+  - Composite alerts with AND/OR logic
+  - Nested condition support
+  - Chart pattern detection (doji, engulfing, stars, etc.)
+  - Market anomaly detection
+  - Adaptive threshold learning
+  - Learning data tracking
 
-**File:** `trading-platform/e2e/trading-workflow.spec.ts`
+### Agent Skills
+Reusable Agent Skill definitions for the implemented features:
+- `skills/flash-crash-detector.json`
+- `skills/portfolio-optimizer.json`
+- `skills/composite-alert-engine.json`
 
-### 4. CI/CD Quality Gates
-- Added `lint-staged` for pre-commit linting
-- Added `husky` for git hooks
-- Updated `package.json` with proper test and lint scripts
+## Files Changed
 
-**File:** `trading-platform/package.json`
-
-### 5. Agent Skills
-- Created `property-test-expert.json` for property-based testing guidelines
-- Created `e2e-test-specialist.json` for E2E testing guidelines
-
-**Files:**
-- `skills/property-test-expert.json`
-- `skills/e2e-test-specialist.json`
-
-## Testing
-Run tests with:
-```bash
-# Unit tests
-cd trading-platform && npm test
-
-# Property-based tests
-cd trading-platform && npm test -- --testPathPattern="property"
-
-# E2E tests
-cd trading-platform && npm run test:e2e
+### New Files
+```
+skills/flash-crash-detector.json
+skills/portfolio-optimizer.json
+skills/composite-alert-engine.json
+trading-platform/app/lib/market/FlashCrashDetector.ts
+trading-platform/app/lib/market/GapRiskManager.ts
+trading-platform/app/lib/portfolio/PortfolioOptimizer.ts
+trading-platform/app/lib/alerts/EnhancedAlertSystem.ts
 ```
 
-## Checklist
-- [x] Property-based tests implemented
-- [x] ML Prediction Service tests added
-- [x] Risk Management tests added
-- [x] E2E trading workflow tests created
-- [x] lint-staged and husky configured
-- [x] Agent skill files created
-- [x] Tests pass locally
+## Testing Recommendations
+1. Test flash crash detection with various price drop scenarios
+2. Verify gap risk calculations with historical gap data
+3. Validate portfolio optimization results against known benchmarks
+4. Test composite alert conditions with different logic combinations
+5. Verify pattern detection accuracy with historical price data
+
+## Breaking Changes
+None. All changes are additive and backward compatible.
+
+## Dependencies
+None new external dependencies added.
+
+## Review Checklist
+- [x] Code follows existing style guidelines
+- [x] TypeScript types are properly defined
+- [x] Error handling is implemented
+- [x] Documentation is updated
+- [x] Agent Skill files are properly formatted JSON
+
+## Related Issues
+- Improvement Proposal ID: 2.2 (Flash Crash Detection)
+- Improvement Proposal ID: 2.3 (Gap Risk Management)
+- Improvement Proposal ID: 4.2 (Portfolio Optimization)
+- Improvement Proposal ID: 4.4 (Enhanced Alert System)
+
+---
+
+## Reviewers
+Please review the implementation and provide feedback on:
+1. Code quality and maintainability
+2. Algorithm correctness (especially portfolio optimization)
+3. Edge case handling
+4. Performance considerations
+5. Integration with existing codebase
