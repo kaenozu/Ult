@@ -91,7 +91,7 @@ describe('AnalysisService', () => {
 
   describe('calculateForecastCone', () => {
     it('should return undefined when data is insufficient', () => {
-      const shortData = generateMockData(100);
+      const shortData = generateMockData(50); // Less than FORECAST_CONE.LOOKBACK_DAYS (60)
       const result = analysisService.calculateForecastCone(shortData);
       expect(result).toBeUndefined();
     });

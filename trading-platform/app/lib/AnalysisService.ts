@@ -13,6 +13,7 @@ import {
     VOLATILITY
 } from './constants';
 import { accuracyService } from './AccuracyService';
+import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
 
 export interface AnalysisContext {
     startIndex?: number;
@@ -228,6 +229,47 @@ class AnalysisService {
     }
 
     /**
+     * Calculate regime-based confidence adjustment
+     */
+    private calculateRegimeAdjustedConfidence(
+        baseConfidence: number,
+        regime: RegimeDetectionResult,
+        signalType: 'BUY' | 'SELL' | 'HOLD'
+    ): number {
+        let adjustedConfidence = baseConfidence;
+
+        // Reduce confidence if regime is not confirmed
+        if (regime.confidence === 'INITIAL') {
+            adjustedConfidence *= 0.9;
+        }
+
+        // Reduce confidence in high volatility
+        if (regime.volatility === 'HIGH') {
+            adjustedConfidence *= 0.85;
+        }
+
+        // Adjust based on regime-signal alignment
+        if (regime.regime === 'TRENDING') {
+            if ((signalType === 'BUY' && regime.trendDirection === 'UP') ||
+                (signalType === 'SELL' && regime.trendDirection === 'DOWN')) {
+                // Aligned with trend - boost confidence
+                adjustedConfidence *= 1.1;
+            } else if (signalType !== 'HOLD') {
+                // Against trend - reduce confidence
+                adjustedConfidence *= 0.8;
+            }
+        } else if (regime.regime === 'RANGING') {
+            // Mean reversion signals work better in ranging markets
+            if (signalType !== 'HOLD') {
+                adjustedConfidence *= 1.05;
+            }
+        }
+
+        // Cap at 100
+        return Math.min(100, adjustedConfidence);
+    }
+
+    /**
      * 銘柄の総合分析を実行
      */
     analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
@@ -236,6 +278,19 @@ class AnalysisService {
         if (context?.endIndex !== undefined) {
              windowData = data.slice(context.startIndex || 0, context.endIndex + 1);
         }
+
+        // Detect market regime first (even for insufficient data)
+        const regimeResult = marketRegimeDetector.detect(windowData);
+        const strategyRec = marketRegimeDetector.getRecommendedStrategy(
+            regimeResult.regime,
+            regimeResult.trendDirection,
+            regimeResult.volatility
+        );
+        const regimeDescription = marketRegimeDetector.getRegimeDescription(
+            regimeResult.regime,
+            regimeResult.trendDirection,
+            regimeResult.volatility
+        );
 
         if (windowData.length < OPTIMIZATION.MIN_DATA_PERIOD) {
             return {
@@ -247,6 +302,19 @@ class AnalysisService {
                 reason: 'データ不足',
                 predictedChange: 0,
                 predictionDate: '',
+                regimeInfo: {
+                    regime: regimeResult.regime,
+                    trendDirection: regimeResult.trendDirection,
+                    volatility: regimeResult.volatility,
+                    adx: regimeResult.adx,
+                    atr: regimeResult.atr,
+                    confidence: regimeResult.confidence,
+                    daysInRegime: regimeResult.daysInRegime,
+                },
+                recommendedStrategy: strategyRec.primary,
+                regimeDescription,
+                strategyWeight: strategyRec.weight,
+                positionSizeAdjustment: strategyRec.positionSizeAdjustment,
             };
         }
 
@@ -317,6 +385,9 @@ class AnalysisService {
             ? (confidence + forecastCone.confidence) / 2
             : confidence;
 
+        // Apply regime-based confidence adjustment
+        finalConfidence = this.calculateRegimeAdjustedConfidence(finalConfidence, regimeResult, type);
+
         if (marketContext && marketContext.correlation !== 0) {
             finalConfidence = finalConfidence * (1 - Math.abs(marketContext.correlation) * 0.1);
         }
@@ -337,6 +408,20 @@ class AnalysisService {
             volumeResistance: volumeProfile,
             forecastCone,
             marketContext,
+            // Market regime information
+            regimeInfo: {
+                regime: regimeResult.regime,
+                trendDirection: regimeResult.trendDirection,
+                volatility: regimeResult.volatility,
+                adx: regimeResult.adx,
+                atr: regimeResult.atr,
+                confidence: regimeResult.confidence,
+                daysInRegime: regimeResult.daysInRegime,
+            },
+            recommendedStrategy: strategyRec.primary,
+            regimeDescription,
+            strategyWeight: strategyRec.weight,
+            positionSizeAdjustment: strategyRec.positionSizeAdjustment,
         };
     }
 }
