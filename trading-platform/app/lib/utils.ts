@@ -238,12 +238,13 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   avgLoss /= period;
 
   for (let i = 0; i < prices.length; i++) {
-    if (i <= period) {
+    if (i < period) {
       result.push(NaN);
-    } else if (i === period + 1) {
+    } else if (i === period) {
       const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
       result.push(rsi);
     } else {
+      // For subsequent periods (Wilder's Smoothing)
       const change = changes[i - 1];
       const gain = change >= 0 ? change : 0;
       const loss = change < 0 ? Math.abs(change) : 0;
@@ -262,7 +263,8 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
 /**
  * Calculate Exponential Moving Average (EMA)
  */
-function calculateEMA(prices: number[], period: number): number[] {
+export function calculateEMA(prices: number[], period: number): number[] {
+  if (prices.length === 0) return [];
   const result: number[] = [];
   const multiplier = 2 / (period + 1);
 
