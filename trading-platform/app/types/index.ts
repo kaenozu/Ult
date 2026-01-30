@@ -192,6 +192,30 @@ export interface Signal {
    * Position size adjustment factor based on volatility and regime
    */
   positionSizeAdjustment?: number;
+  /**
+   * Exit strategy configuration for the signal
+   */
+  exitStrategy?: {
+    primary: string;
+    strategies: string[];
+    trailingStop?: {
+      enabled: boolean;
+      atrMultiplier: number;
+      currentLevel: number;
+    };
+    timeBased?: {
+      enabled: boolean;
+      maxHoldingDays: number;
+      decayFactor: number;
+    };
+    compoundConditions?: {
+      enabled: boolean;
+      conditions: string[];
+      requireAll: boolean;
+    };
+    recommendedATR: number;
+    exitReasons: string[];
+  };
 }
 
 export interface PaperTrade {
