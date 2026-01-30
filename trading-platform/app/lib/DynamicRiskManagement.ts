@@ -4,9 +4,9 @@
  * ボラティリティに応じた動的なストップロス調整、トレイリングストップの実装
  */
 
-import { OHLCV, Position, RiskManagementSettings, RiskCalculationResult } from '../types';
+import { OHLCV, RiskManagementSettings, RiskCalculationResult } from '../types';
 import { RISK_MANAGEMENT, VOLATILITY } from './constants';
-import { calculateATR, getLatestATR } from './riskManagement';
+import { getLatestATR } from './riskManagement';
 
 export interface TrailingStopState {
     enabled: boolean;
@@ -194,7 +194,7 @@ class DynamicRiskManagement {
         }
 
         // 最高値/最安値の更新
-        let newState = { ...currentState };
+        const newState = { ...currentState };
         
         if (side === 'LONG') {
             newState.highestHigh = Math.max(currentState.highestHigh, currentPrice);

@@ -8,7 +8,7 @@ jest.mock('next/font/google', () => ({
 
 describe('RootLayout', () => {
     it('renders children correctly', () => {
-        const { container } = render(
+        render(
             <RootLayout>
                 <div data-testid="child">Child Content</div>
             </RootLayout>

@@ -7,6 +7,13 @@ Analyzes supply and demand zones from volume-by-price data.
 from typing import List, Dict, Tuple, Optional
 from .models import Zone, ZoneType, BreakoutEvent
 
+# Constants for zone identification
+ZONE_STRENGTH_DEFAULT = 0.5
+ZONE_VOLUME_THRESHOLD_MULTIPLIER = 0.5  # 50% of average volume
+
+# Constants for breakout detection
+BREAKOUT_VOLUME_SURGE_MULTIPLIER = 1.5  # 50% volume surge for confirmation
+
 
 class SupplyDemandAnalyzer:
     """Analyzes supply and demand zones"""
@@ -67,10 +74,10 @@ class SupplyDemandAnalyzer:
             if max_volume > min_volume:
                 strength = (volume - min_volume) / (max_volume - min_volume)
             else:
-                strength = 0.5
+                strength = ZONE_STRENGTH_DEFAULT
 
             # Only include significant zones (volume above average)
-            if volume >= avg_volume * 0.5:  # 50% of average or more
+            if volume >= avg_volume * ZONE_VOLUME_THRESHOLD_MULTIPLIER:
                 zones.append(Zone(
                     price=price,
                     volume=volume,
@@ -109,7 +116,7 @@ class SupplyDemandAnalyzer:
         for zone in resistance_zones:
             if current_price > zone.price:
                 # Price broke through resistance
-                is_confirmed = current_volume >= average_volume * 1.5  # 50% volume surge
+                is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
 
                 return BreakoutEvent(
                     direction="bullish",
@@ -124,7 +131,7 @@ class SupplyDemandAnalyzer:
         for zone in support_zones:
             if current_price < zone.price:
                 # Price broke through support
-                is_confirmed = current_volume >= average_volume * 1.5  # 50% volume surge
+                is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
 
                 return BreakoutEvent(
                     direction="bearish",

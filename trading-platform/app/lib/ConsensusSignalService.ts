@@ -9,7 +9,6 @@
 
 import { OHLCV } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
-import { RSI_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from './constants';
 
 /**
  * 各指標からのシグナル

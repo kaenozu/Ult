@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
-import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
+import { getWebSocketUrl } from '@/app/lib/utils';
 import { BacktestResult } from '@/app/lib/backtest';
 import { useAIStore } from '@/app/store/aiStore';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
@@ -11,6 +11,8 @@ import { useAIPerformance } from '@/app/hooks/useAIPerformance';
 import { BacktestView } from './BacktestView';
 import { ForecastView } from './ForecastView';
 import { AIPerformanceView } from './AIPerformanceView';
+import { SignalPanelLoading } from './SignalPanelLoading';
+import { SignalPanelTabs } from './SignalPanelTabs';
 
 interface SignalPanelProps {
   stock: Stock;
@@ -152,80 +154,18 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   }, [aiStatus.trades, stock.symbol]);
 
   if (loading || !displaySignal) {
-    return (
-      <div className="bg-[#141e27] p-4 flex flex-col gap-3 h-full">
-        <div className="flex justify-between items-center text-xs">
-          <div className="h-4 w-24 bg-[#233648] rounded animate-pulse" />
-          <div className="h-4 w-12 bg-[#233648] rounded animate-pulse" />
-        </div>
-        <div className="flex-1 bg-[#192633]/50 rounded-lg border border-[#233648] animate-pulse flex items-center justify-center">
-          <span className="text-[#92adc9]/50 text-xs">市場データを分析中...</span>
-        </div>
-      </div>
-    );
+    return <SignalPanelLoading />;
   }
-
-  // Helper for tab props to ensure accessibility and DRY
-  const getTabProps = (tabName: 'signal' | 'backtest' | 'ai' | 'forecast', label: string) => ({
-    role: 'tab',
-    id: `tab-${tabName}`,
-    'aria-selected': activeTab === tabName,
-    'aria-controls': `panel-${tabName}`,
-    tabIndex: activeTab === tabName ? 0 : -1,
-    onClick: () => setActiveTab(tabName),
-    className: cn(
-      'px-3 py-1 text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#233648]',
-      activeTab === tabName ? 'bg-[#233648] text-white' : 'text-[#92adc9] hover:text-white'
-    ),
-    children: label
-  });
 
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-3 h-full flex-col">
-      <div className="flex justify-between items-center mb-2">
-        {/* Tab List */}
-        <div className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5" role="tablist" aria-label="分析パネル">
-          <button {...getTabProps('signal', 'シグナル')} />
-          <button {...getTabProps('backtest', 'バックテスト')} />
-          <button {...getTabProps('forecast', '予測コーン')} />
-          <button {...getTabProps('ai', 'AI戦績')} />
-        </div>
-
-        <div className="flex items-center gap-3">
-          {activeTab === 'signal' && (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-[#92adc9]">信頼度:</span>
-              <span className={cn('font-bold', getConfidenceColor(displaySignal.confidence))}>
-                {displaySignal.confidence}%
-              </span>
-            </div>
-          )}
-          <div className="flex items-center gap-1.5">
-            <div className={cn(
-              'w-2 h-2 rounded-full',
-              wsStatus === 'OPEN' ? 'bg-green-500' :
-                wsStatus === 'CONNECTING' ? 'bg-yellow-500' :
-                  wsStatus === 'ERROR' ? 'bg-red-500' :
-                    'bg-gray-500'
-            )} />
-            <span className="text-[10px] text-[#92adc9]">
-              {wsStatus === 'OPEN' ? '接続済' :
-                wsStatus === 'CONNECTING' ? '接続中...' :
-                  wsStatus === 'ERROR' ? 'エラー' :
-                    '未接続'}
-            </span>
-            {wsStatus === 'ERROR' || wsStatus === 'CLOSED' ? (
-              <button
-                onClick={reconnect}
-                className="text-[10px] text-blue-400 hover:text-blue-300 underline"
-                title="WebSocketを再接続"
-              >
-                再接続
-              </button>
-            ) : null}
-          </div>
-        </div>
-      </div>
+      <SignalPanelTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        signal={displaySignal}
+        wsStatus={wsStatus}
+        onReconnect={reconnect}
+      />
 
       {activeTab === 'signal' ? (
         <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full">

@@ -10,8 +10,7 @@ import {
     internalError,
     ErrorType
 } from '../lib/error-handler';
-import { NextResponse } from 'next/server';
-import { APIError, ValidationError, NetworkError, RateLimitError } from '../types';
+import { APIError, ValidationError } from '../types';
 
 // Mock NextResponse
 jest.mock('next/server', () => ({

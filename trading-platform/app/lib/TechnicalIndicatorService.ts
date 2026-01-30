@@ -1,12 +1,43 @@
 import { OHLCV } from '../types/shared';
 
 /**
- * Service for calculating technical indicators.
- * Centralizes logic previously scattered in utils.ts and analysis.ts.
+ * テクニカル指標計算サービス
+ * 
+ * 株価データから各種テクニカル指標を計算するサービスクラス。
+ * utils.tsとanalysis.tsに散在していたロジックを一元化。
+ * 
+ * 対応指標:
+ * - SMA（単純移動平均）
+ * - EMA（指数平滑移動平均）
+ * - RSI（相対力指数）
+ * - MACD（移動平均収束拡散）
+ * - ボリンジャーバンド
+ * - ATR（平均真実範囲）
+ * 
+ * @example
+ * ```typescript
+ * const service = new TechnicalIndicatorService();
+ * const sma = service.calculateSMA(prices, 20);
+ * const rsi = service.calculateRSI(prices, 14);
+ * ```
  */
 class TechnicalIndicatorService {
     /**
-     * Simple Moving Average (SMA)
+     * 単純移動平均（SMA）を計算する
+     * 
+     * 指定された期間の単純移動平均を計算する。
+     * 期間未満のデータポイントはNaNを返す。
+     * 
+     * @param prices - 終値の配列
+     * @param period - 移動平均の期間
+     * @returns SMA値の配列（期間未満はNaN）
+     * 
+     * @example
+     * ```typescript
+     * const prices = [100, 102, 101, 103, 105];
+     * const sma3 = service.calculateSMA(prices, 3);
+     * // [NaN, NaN, 101, 102, 103]
+     * ```
      */
     calculateSMA(prices: number[], period: number): number[] {
         const sma: number[] = [];
@@ -38,7 +69,20 @@ class TechnicalIndicatorService {
     }
 
     /**
-     * Exponential Moving Average (EMA)
+     * 指数平滑移動平均（EMA）を計算する
+     * 
+     * 直近の価格により重みを置いた移動平均を計算する。
+     * SMAよりも直近の価格変動に敏感に反応する。
+     * 
+     * @param prices - 終値の配列
+     * @param period - EMAの期間
+     * @returns EMA値の配列（期間未満はNaN）
+     * 
+     * @example
+     * ```typescript
+     * const prices = [100, 102, 101, 103, 105];
+     * const ema3 = service.calculateEMA(prices, 3);
+     * ```
      */
     calculateEMA(prices: number[], period: number): number[] {
         const ema: number[] = [];
@@ -62,7 +106,22 @@ class TechnicalIndicatorService {
     }
 
     /**
-     * Relative Strength Index (RSI)
+     * 相対力指数（RSI）を計算する
+     * 
+     * 価格変動の勢いを測定するオシレーター指標。
+     * 0-100の範囲で、70以上は買われすぎ、30以下は売られすぎを示唆。
+     * 
+     * @param prices - 終値の配列
+     * @param period - RSIの計算期間（デフォルト: 14）
+     * @returns RSI値の配列（0-100、期間未満はNaN）
+     * 
+     * @example
+     * ```typescript
+     * const prices = [100, 102, 101, 103, 105, 104, 106];
+     * const rsi = service.calculateRSI(prices, 14);
+     * // RSI > 70: 買われすぎ（売りシグナル）
+     * // RSI < 30: 売られすぎ（買いシグナル）
+     * ```
      */
     calculateRSI(prices: number[], period: number = 14): number[] {
         const rsi: number[] = [];
@@ -97,7 +156,25 @@ class TechnicalIndicatorService {
     }
 
     /**
-     * Moving Average Convergence Divergence (MACD)
+     * 移動平均収束拡散（MACD）を計算する
+     * 
+     * 短期EMAと長期EMAの差からトレンドの勢いと方向性を測定する。
+     * ゴールデンクロス（MACDがシグナルを上抜け）: 買いシグナル
+     * デッドクロス（MACDがシグナルを下抜け）: 売りシグナル
+     * 
+     * @param prices - 終値の配列
+     * @param fastPeriod - 短期EMAの期間（デフォルト: 12）
+     * @param slowPeriod - 長期EMAの期間（デフォルト: 26）
+     * @param signalPeriod - シグナル線の期間（デフォルト: 9）
+     * @returns MACD、シグナル線、ヒストグラムの配列
+     * 
+     * @example
+     * ```typescript
+     * const prices = [100, 102, 101, 103, 105, 104, 106];
+     * const { macd, signal, histogram } = service.calculateMACD(prices);
+     * // macd > signal: 買いシグナル
+     * // macd < signal: 売りシグナル
+     * ```
      */
     calculateMACD(
         prices: number[],
@@ -132,7 +209,24 @@ class TechnicalIndicatorService {
     }
 
     /**
-     * Bollinger Bands
+     * ボリンジャーバンドを計算する
+     * 
+     * 移動平均と標準偏差から価格の変動範囲を示すバンドを計算する。
+     * 価格が上限を超えた場合: 買われすぎの可能性
+     * 価格が下限を下回った場合: 売られすぎの可能性
+     * 
+     * @param prices - 終値の配列
+     * @param period - SMAの期間（デフォルト: 20）
+     * @param stdDev - 標準偏差の倍率（デフォルト: 2）
+     * @returns 上限線、中心線（SMA）、下限線の配列
+     * 
+     * @example
+     * ```typescript
+     * const prices = [100, 102, 101, 103, 105, 104, 106];
+     * const { upper, middle, lower } = service.calculateBollingerBands(prices);
+     * // price > upper: 買われすぎ
+     * // price < lower: 売られすぎ
+     * ```
      */
     calculateBollingerBands(
         prices: number[],
@@ -161,7 +255,24 @@ class TechnicalIndicatorService {
     }
 
     /**
-     * Average True Range (ATR)
+     * 平均真実範囲（ATR）を計算する
+     * 
+     * 価格のボラティリティ（変動性）を測定する指標。
+     * リスク管理や損切り・利確の目安として使用される。
+     * 
+     * True Range = max(High-Low, |High-前日Close|, |Low-前日Close|)
+     * ATR = True Rangeの移動平均
+     * 
+     * @param ohlcv - OHLCVデータ配列
+     * @param period - ATRの計算期間（デフォルト: 14）
+     * @returns ATR値の配列（期間未満はNaN）
+     * 
+     * @example
+     * ```typescript
+     * const atr = service.calculateATR(ohlcvData, 14);
+     * // ATRが大きい: 高ボラティリティ
+     * // ATRが小さい: 低ボラティリティ
+     * ```
      */
     calculateATR(ohlcv: OHLCV[], period: number = 14): number[] {
         if (ohlcv.length === 0) return [];
@@ -191,4 +302,17 @@ class TechnicalIndicatorService {
     }
 }
 
+/**
+ * TechnicalIndicatorServiceのシングルトンインスタンス
+ * 
+ * アプリケーション全体で共有されるテクニカル指標計算サービス。
+ * 
+ * @example
+ * ```typescript
+ * import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
+ * 
+ * const sma = technicalIndicatorService.calculateSMA(prices, 20);
+ * const rsi = technicalIndicatorService.calculateRSI(prices, 14);
+ * ```
+ */
 export const technicalIndicatorService = new TechnicalIndicatorService();

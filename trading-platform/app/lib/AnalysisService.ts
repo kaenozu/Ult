@@ -4,17 +4,9 @@ import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
 import {
     FORECAST_CONE,
-    RSI_CONFIG,
-    SMA_CONFIG,
-    OPTIMIZATION,
-    SIGNAL_THRESHOLDS,
-    RISK_MANAGEMENT,
-    PRICE_CALCULATION,
-    VOLATILITY
 } from './constants';
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
-import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
 import { signalFilterService, FilterResult, DEFAULT_SIGNAL_FILTER_CONFIG } from './SignalFilterService';
 
 export interface AnalysisContext {

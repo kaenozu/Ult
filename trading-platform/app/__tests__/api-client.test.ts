@@ -72,7 +72,6 @@ describe('MarketDataClient', () => {
 
     it('should handle fetch failure', async () => {
       // モックの設定
-      const error = new Error('Network error');
       (marketClient.fetchOHLCV as jest.MockedFunction<typeof marketClient.fetchOHLCV>)
         .mockResolvedValue({ success: false, data: null, source: 'error', error: 'Network error' });
 

@@ -11,6 +11,8 @@ import {
     RSI_CONFIG,
     SIGNAL_THRESHOLDS,
     VOLATILITY,
+    TECHNICAL_INDICATORS,
+    DATA_REQUIREMENTS,
 } from './constants';
 
 export interface FilterResult {
@@ -39,9 +41,9 @@ export const DEFAULT_SIGNAL_FILTER_CONFIG: SignalFilterConfig = {
     enableStochasticFilter: true,
     enableWilliamsRFilter: true,
     minVolumeMultiplier: 1.2,
-    minADX: 25,
-    stochasticPeriod: 14,
-    williamsRPeriod: 14,
+    minADX: TECHNICAL_INDICATORS.ADX_TRENDING_THRESHOLD,
+    stochasticPeriod: TECHNICAL_INDICATORS.STOCHASTIC_PERIOD,
+    williamsRPeriod: TECHNICAL_INDICATORS.WILLIAMS_R_PERIOD,
 };
 
 class SignalFilterService {
@@ -61,12 +63,12 @@ class SignalFilterService {
         let confidence = signal.confidence;
         let passed = true;
 
-        if (data.length < 50) {
+        if (data.length < DATA_REQUIREMENTS.MIN_DATA_PERIOD) {
             return {
                 passed: false,
                 confidence: 0,
                 reasons: ['データ不足'],
-                filteredReason: 'データが不足しています（最低50日分必要）',
+                filteredReason: `データが不足しています（最低${DATA_REQUIREMENTS.MIN_DATA_PERIOD}日分必要）`,
             };
         }
 
@@ -181,8 +183,8 @@ class SignalFilterService {
         signalType: 'BUY' | 'SELL' | 'HOLD'
     ): { passed: boolean; reason: string; confidenceBonus: number } {
         const closes = data.map(d => d.close);
-        const sma20 = technicalIndicatorService.calculateSMA(closes, 20);
-        const sma50 = technicalIndicatorService.calculateSMA(closes, 50);
+        const sma20 = technicalIndicatorService.calculateSMA(closes, TECHNICAL_INDICATORS.SMA_PERIOD_MEDIUM);
+        const sma50 = technicalIndicatorService.calculateSMA(closes, TECHNICAL_INDICATORS.SMA_PERIOD_LONG);
 
         const currentPrice = data[index].close;
         const currentSMA20 = sma20[index];
@@ -245,7 +247,7 @@ class SignalFilterService {
         minADX: number,
         signalType: 'BUY' | 'SELL' | 'HOLD'
     ): { passed: boolean; reason: string; confidenceBonus: number } {
-        const adxResult = advancedTechnicalIndicators.calculateADX(data, 14);
+        const adxResult = advancedTechnicalIndicators.calculateADX(data, TECHNICAL_INDICATORS.ADX_PERIOD);
         const { adx, plusDI, minusDI } = adxResult;
 
         if (index >= adx.length || isNaN(adx[index]) || isNaN(plusDI[index]) || isNaN(minusDI[index])) {

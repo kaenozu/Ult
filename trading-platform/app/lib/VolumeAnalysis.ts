@@ -1,4 +1,5 @@
 import { OHLCV } from '../types';
+import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from './constants';
 
 export interface VolumeProfile {
   price: number;
@@ -22,8 +23,8 @@ export interface VolumeAnalysisResult {
 }
 
 export class VolumeAnalysisService {
-  private readonly PROFILE_BINS = 20;
-  private readonly MIN_PROFILE_DAYS = 60;
+  private readonly PROFILE_BINS = TECHNICAL_INDICATORS.VOLUME_PROFILE_BINS;
+  private readonly MIN_PROFILE_DAYS = TECHNICAL_INDICATORS.VOLUME_PROFILE_MIN_DAYS;
 
   calculateVolumeProfile(data: OHLCV[]): VolumeProfile[] {
     if (data.length === 0) return [];

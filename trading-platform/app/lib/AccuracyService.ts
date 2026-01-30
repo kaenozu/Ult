@@ -1,4 +1,4 @@
-import { OHLCV, Signal, BacktestResult, BacktestTrade } from '../types';
+import { OHLCV, BacktestResult, BacktestTrade } from '../types';
 import {
     VOLATILITY,
     OPTIMIZATION,

@@ -6,34 +6,14 @@
  */
 
 import { EventEmitter } from 'events';
+import { Position, Portfolio } from '@/app/types';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export interface Position {
-  id: string;
-  symbol: string;
-  side: 'LONG' | 'SHORT';
-  quantity: number;
-  entryPrice: number;
-  currentPrice: number;
-  stopLoss?: number;
-  takeProfit?: number;
-  openTime: number;
-  unrealizedPnL: number;
-  unrealizedPnLPercent: number;
-}
-
-export interface Portfolio {
-  cash: number;
-  positions: Position[];
-  totalValue: number;
-  marginUsed: number;
-  marginAvailable: number;
-  dailyPnL: number;
-  totalPnL: number;
-}
+// Position and Portfolio types are now imported from '@/app/types' to avoid duplication
+export type { Position, Portfolio };
 
 export interface RiskMetrics {
   var: number; // Value at Risk
@@ -144,10 +124,9 @@ export class AdvancedRiskManager extends EventEmitter {
       cash: 0,
       positions: [],
       totalValue: 0,
-      marginUsed: 0,
-      marginAvailable: 0,
       dailyPnL: 0,
-      totalPnL: 0,
+      totalProfit: 0,
+      orders: [],
     };
     this.metrics = this.initializeMetrics();
   }
@@ -200,7 +179,7 @@ export class AdvancedRiskManager extends EventEmitter {
     const riskAmount = params.capital * (riskPercent / 100);
     
     let positionSize: number;
-    let reasoning: string[] = [];
+    const reasoning: string[] = [];
 
     if (params.stopLossPrice) {
       const riskPerShare = Math.abs(params.entryPrice - params.stopLossPrice);
@@ -392,8 +371,9 @@ export class AdvancedRiskManager extends EventEmitter {
     // Concentration risk
     const concentrationRisk = this.calculateConcentrationRisk();
 
-    // Leverage
-    const leverage = portfolio.marginUsed / (portfolio.totalValue || 1);
+    // Leverage (calculated from positions value vs total value)
+    const positionsValue = portfolio.positions.reduce((sum, pos) => sum + (pos.currentPrice * pos.quantity), 0);
+    const leverage = positionsValue / (portfolio.totalValue || 1);
 
     // Sharpe and Sortino ratios
     const sharpeRatio = this.calculateSharpeRatio(portfolioReturns);
@@ -548,6 +528,7 @@ export class AdvancedRiskManager extends EventEmitter {
       const weight = (position.currentPrice * position.quantity) / totalValue;
       hhi += weight * weight;
     }
+    if (!isFinite(hhi)) return 0;
 
     // Normalize to 0-1 range
     const n = this.portfolio.positions.length || 1;

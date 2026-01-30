@@ -49,7 +49,7 @@ if (typeof window !== 'undefined') {
 
 // Mock Canvas (needed for Chart.js)
 if (typeof HTMLCanvasElement !== 'undefined') {
-  // eslint-disable-next-line
+   
   HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
     fillRect: jest.fn(),
     clearRect: jest.fn(),

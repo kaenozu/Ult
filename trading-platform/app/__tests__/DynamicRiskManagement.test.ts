@@ -3,7 +3,7 @@
  * 動的リスク管理サービスのテスト
  */
 
-import { dynamicRiskManagement, DEFAULT_DYNAMIC_RISK_CONFIG } from '../lib/DynamicRiskManagement';
+import { dynamicRiskManagement } from '../lib/DynamicRiskManagement';
 import { OHLCV, RiskManagementSettings } from '../types';
 
 describe('DynamicRiskManagement', () => {

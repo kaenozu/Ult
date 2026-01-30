@@ -93,12 +93,10 @@ describe('SignalFilterService', () => {
 
         it('should pass signal with all filters enabled', () => {
             const data = generateMockData(100);
-            
+
             // 価格がSMA20以上、SMA20がSMA50以上（上昇トレンド）
-            const closes = data.map(d => d.close);
             const sma20 = 50;
-            const sma50 = 48;
-            
+
             // データを調整してトレンド条件を満たすようにする
             for (let i = 50; i < data.length; i++) {
                 data[i].close = sma20 + (i - 50) * 0.1;
@@ -153,9 +151,8 @@ describe('SignalFilterService', () => {
 
         it('should filter BUY signal with wrong trend', () => {
             const data = generateMockData(100);
-            
+
             // 価格がSMA20以下（下降トレンド）
-            const closes = data.map(d => d.close);
             for (let i = 50; i < data.length; i++) {
                 data[i].close = 40; // SMA20以下
                 data[i].high = data[i].close + 1;

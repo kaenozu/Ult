@@ -3,7 +3,7 @@
  */
 
 import { mlPredictionService } from '@/app/lib/mlPrediction';
-import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
+import { Stock, OHLCV, TechnicalIndicator } from '@/app/types';
 
 // モックデータの作成
 const mockStock: Stock = {

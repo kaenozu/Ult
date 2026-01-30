@@ -35,9 +35,9 @@ export class BacktestVisualizationUtils {
    */
   static calculateCumulativeReturns(result: BacktestResult): CumulativeReturnDataPoint[] {
     const data: CumulativeReturnDataPoint[] = [];
-    let equity = 100;
-    let peak = 100;
-    let initialEquity = 100;
+    const initialEquity = 100;
+    let equity = initialEquity;
+    let peak = initialEquity;
 
     result.trades.forEach((trade, index) => {
       equity *= (1 + trade.profitPercent / 100);

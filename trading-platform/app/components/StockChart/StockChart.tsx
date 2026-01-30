@@ -4,9 +4,8 @@ import { useRef, memo, useState, useMemo } from 'react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
-import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG } from '@/app/lib/constants';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 export { volumeProfilePlugin };
@@ -14,6 +13,10 @@ import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
 import { useForecastLayers } from './hooks/useForecastLayers';
 import { useChartOptions } from './hooks/useChartOptions';
+import { ChartTooltip } from './ChartTooltip';
+import { ChartLoading } from './ChartLoading';
+import { ChartError } from './ChartError';
+import { ChartVolume } from './ChartVolume';
 
 // Register ChartJS components and custom plugin
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
@@ -132,45 +135,19 @@ export const StockChart = memo(function StockChart({
   };
 
   // 4. Loading / Error States
-  if (error) return (
-    <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded" style={{ height: dynamicHeight }}>
-      <div className="text-center p-4">
-        <p className="text-red-400 font-bold">データの取得に失敗しました</p>
-        <p className="text-red-300 text-sm mt-1">{error}</p>
-      </div>
-    </div>
-  );
-  if (loading || data.length === 0) return (
-    <div className="relative w-full bg-[#131b23] border border-[#233648] rounded animate-pulse" style={{ height: dynamicHeight }}>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="h-8 w-8 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin mb-2"></div>
-        <p className="text-xs text-[#92adc9]">データを取得中...</p>
-      </div>
-    </div>
-  );
+  if (error) return <ChartError error={error} height={dynamicHeight} />;
+  if (loading || data.length === 0) return <ChartLoading height={dynamicHeight} />;
 
   return (
     <div className="relative w-full group" style={{ height: dynamicHeight }}>
-      {hoveredIdx !== null && hoveredIdx < data.length && (
-        <div className="absolute top-2 left-2 z-20 bg-[#1a2632]/90 border border-[#233648] p-3 rounded shadow-xl pointer-events-none backdrop-blur-sm">
-          <div className="text-xs font-black text-primary uppercase border-b border-[#233648] pb-1 mb-1">{extendedData.labels[hoveredIdx]}</div>
-          <div className="text-sm font-bold text-white">{formatCurrency(data[hoveredIdx].close, market === 'japan' ? 'JPY' : 'USD')}</div>
-        </div>
-      )}
+      <ChartTooltip
+        hoveredIdx={hoveredIdx}
+        data={data}
+        labels={extendedData.labels}
+        market={market}
+      />
       <Line ref={chartRef} data={chartData} options={options} />
-      {showVolume && (
-        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
-          <Bar data={{
-            labels: extendedData.labels,
-            datasets: [{
-              data: data.map(d => d.volume),
-              backgroundColor: data.map((d, i) =>
-                i === 0 || d.close >= data[i - 1].close ? CANDLESTICK.BULL_COLOR : CANDLESTICK.BEAR_COLOR
-              )
-            }]
-          }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />
-        </div>
-      )}
+      {showVolume && <ChartVolume data={data} labels={extendedData.labels} />}
     </div>
   );
 });

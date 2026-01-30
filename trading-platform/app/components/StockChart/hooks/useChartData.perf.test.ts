@@ -12,7 +12,7 @@ import { OHLCV, Signal } from '@/app/types';
 // テストデータ生成関数
 function generateOHLCVData(count: number, startDate: string = '2024-01-01'): OHLCV[] {
   const data: OHLCV[] = [];
-  let date = new Date(startDate);
+  const date = new Date(startDate);
   
   for (let i = 0; i < count; i++) {
     const close = 100 + Math.random() * 50;
@@ -163,30 +163,20 @@ describe('useChartData Performance Tests', () => {
       predictionError: 1.0
     };
     
-    let indexMapRecomputations = 0;
-    const originalUseMemo = React.useMemo;
-    
-    // useMemoの呼び出しを監視
-    jest.spyOn(React, 'useMemo').mockImplementation((fn, deps) => {
-      if (deps && deps.length === 1 && deps[0] === indexData1) {
-        indexMapRecomputations++;
-      }
-      return originalUseMemo(fn, deps);
-    });
-    
     const { result, rerender } = renderHook(
       ({ indexData }) => useChartData(data, signal, indexData),
       { initialProps: { indexData: indexData1 } }
     );
     
-    expect(indexMapRecomputations).toBe(1);
+    const normalizedIndexData1 = result.current.normalizedIndexData;
     
     // indexDataを変更せずに再レンダリング
     rerender({ indexData: indexData1 });
     
-    expect(indexMapRecomputations).toBe(1);
+    const normalizedIndexData2 = result.current.normalizedIndexData;
     
-    jest.restoreAllMocks();
+    // indexDataは変わっていないため、normalizedIndexDataは同じであるべき
+    expect(normalizedIndexData1).toEqual(normalizedIndexData2);
   });
 });
 

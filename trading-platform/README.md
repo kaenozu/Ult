@@ -1,6 +1,35 @@
-# 📈 Trader Pro - 株式取引予測プラットフォーム
+# 📈 ULT Trading Platform - 株式取引予測プラットフォーム
 
 AI予測シグナルとテクニカル分析を活用した、次世代株式取引支援プラットフォームです。日本市場と米国市場のリアルタイム分析に対応し、プロフェッショナルなトレーディングツールを提供します。
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-14+-black.svg)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://react.dev/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+---
+
+## 🎯 プロジェクト概要
+
+**ULT Trading Platform** は、個人投資家向けに設計された高度な株式分析・取引支援システムです。機械学習による価格予測、テクニカル指標分析、リスク管理機能を統合し、データ駆動型の投資判断をサポートします。
+
+### 対応市場
+- 🇯🇵 日本市場（日経225、東証プライム）
+- 🇺🇸 米国市場（S&P 500、NASDAQ）
+
+### アーキテクチャ
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    ULT Trading Platform                      │
+├─────────────────────────────────────────────────────────────┤
+│  Frontend (Next.js 14)    │  Backend (Python)               │
+│  ├─ React 18              │  ├─ 市場相関分析エンジン        │
+│  ├─ TypeScript 5.0+       │  ├─ 需給分析エンジン            │
+│  ├─ Zustand (状態管理)    │  ├─ 取引ジャーナル分析          │
+│  ├─ Chart.js (チャート)   │  └─ 銘柄ユニバース管理          │
+│  └─ Tailwind CSS (UI)     │                                 │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## ✨ 主要機能
 
@@ -9,30 +38,35 @@ AI予測シグナルとテクニカル分析を活用した、次世代株式取
 - **市場相関分析**: 日経平均・NASDAQとの連動性を考慮した予測
 - **自己矯正機能**: 過去の予測誤差に基づく精度向上
 - **信頼度スコア**: 30-98%の信頼度で予測精度を可視化
+- **コンセンサスシグナル**: 複数モデルの予測を統合した統合シグナル
 
 ### 📊 テクニカル分析
-- **主要指標**: RSI, SMA, MACD, ボリンジャーバンド, ATR
-- **需給の壁**: 价格帯別出来高の可視化
+- **主要指標**: RSI, SMA, MACD, ボリンジャーバンド, ATR, EMA
+- **高度な指標**: ボリュームプロファイル、需給の壁、ブレイクアウト検出
 - **マルチタイムフレーム**: 日足、週足、月足分析
 - **カスタマイズ可能**: インジケーターの表示/非表示切り替え
+- **リアルタイム計算**: クライアントサイドでの高速インジケーター計算
 
 ### 🎯 取引機能
 - **シグナル生成**: BUY/SELL/HOLDの明確な取引シグナル
-- **リスク管理**: 自動計算された損切り・利確ターゲット
+- **リスク管理**: 動的リスク管理、自動計算された損切り・利確ターゲット
 - **ペーパートレード**: AIによる自動売買シミュレーション
-- **ポートフォリオ管理**: 保有ポジション・損益のリアルタイム追踪
+- **ポートフォリオ管理**: 保有ポジション・損益のリアルタイム追跡
+- **バックテスト**: 戦略の過去データ検証機能
 
 ### 📱 モダンUI
 - **レスポンシブデザイン**: デスクトップ・タブレット・モバイル対応
 - **ダークテーマ**: プロフェッショナルな取引インターフェース
 - **リアルタイム更新**: WebSocketによるライブデータ反映
 - **インタラクティブチャート**: Chart.jsによる高品質なグラフ表示
+- **エラーバウンダリ**: グレースフルなエラーハンドリング
 
 ## 🚀 クイックスタート
 
 ### 前提条件
 - Node.js 18+ 
 - npm 9+ または yarn 1.22+
+- Python 3.10+（バックエンド分析エンジン用）
 - Git
 
 ### インストール
@@ -40,13 +74,18 @@ AI予測シグナルとテクニカル分析を活用した、次世代株式取
 ```bash
 # リポジトリをクローン
 git clone https://github.com/kaenozu/Ult.git
-cd Ult/trading-platform
+cd Ult
 
-# 依存関係をインストール
+# フロントエンドのセットアップ
+cd trading-platform
 npm install
 
 # 環境変数を設定
 cp .env.example .env.local
+
+# バックエンドのセットアップ（オプション）
+cd ../backend
+pip install -r requirements.txt
 ```
 
 ### 環境設定
@@ -55,16 +94,23 @@ cp .env.example .env.local
 
 ```env
 # Alpha Vantage APIキー（無料プランでOK）
+# https://www.alphavantage.co/support/#api-key で取得
 ALPHA_VANTAGE_API_KEY=your_api_key_here
 
 # Next.js設定
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# オプション: バックエンドAPI URL
+BACKEND_API_URL=http://localhost:8000
 ```
 
-### 開起動動
+詳細な環境変数の説明は [`.env.example`](.env.example) を参照してください。
+
+### 開発サーバー起動
 
 ```bash
-# 開発サーバーを起動
+# フロントエンド開発サーバー起動
+cd trading-platform
 npm run dev
 
 # ブラウザで開く
@@ -91,11 +137,17 @@ npx tsc --noEmit
 # リント
 npm run lint
 
+# リント自動修正
+npm run lint:fix
+
 # テスト実行
 npm test
 
 # カバレッジ付きテスト
 npm run test:coverage
+
+# E2Eテスト（Playwright）
+npm run test:e2e
 ```
 
 ### 🧪 テスト戦略
@@ -116,26 +168,37 @@ npm run auto-runner watch --tasks=build,test
 ### 📁 プロジェクト構造
 
 ```
-trading-platform/
-├── app/                          # Next.js App Router
-│   ├── components/               # Reactコンポーネント
-│   │   ├── StockChart.tsx       # メインチャート
-│   │   ├── SignalPanel.tsx      # AIシグナル表示
-│   │   ├── OrderPanel.tsx       # 注文パネル
-│   │   └── ...
-│   ├── lib/                     # ビジネスロジック
-│   │   ├── mlPrediction.ts      # AI予測エンジン
-│   │   ├── analysis.ts          # テクニカル分析
-│   │   ├── api/               # APIクライアント
-│   │   └── utils.ts           # ユーティリティ関数
-│   ├── store/                  # Zustand状態管理
-│   ├── types/                  # TypeScript型定義
-│   └── __tests__/             # テストファイル
-├── skills/                    # 自動化スクリプト
-│   ├── tdd-developer.js       # TDDワークフロー
-│   ├── frontend-tester.js     # フロントエンドテスト
-│   └── auto-runner.js        # 自動タスク実行
-└── public/                   # 静的リソース
+Ult/
+├── trading-platform/            # フロントエンド (Next.js)
+│   ├── app/                     # Next.js App Router
+│   │   ├── components/          # Reactコンポーネント
+│   │   │   ├── StockChart/     # チャートコンポーネント
+│   │   │   ├── SignalPanel/    # AIシグナル表示
+│   │   │   ├── OrderPanel.tsx  # 注文パネル
+│   │   │   └── ...
+│   │   ├── lib/                # ビジネスロジック
+│   │   │   ├── MarketDataService.ts      # 市場データ管理
+│   │   │   ├── TechnicalIndicatorService.ts # テクニカル指標
+│   │   │   ├── ConsensusSignalService.ts # 統合シグナル
+│   │   │   ├── api/            # APIクライアント
+│   │   │   └── utils.ts        # ユーティリティ関数
+│   │   ├── store/              # Zustand状態管理
+│   │   ├── types/              # TypeScript型定義
+│   │   └── __tests__/          # テストファイル
+│   ├── docs/                   # プロジェクトドキュメント
+│   └── public/                 # 静的リソース
+│
+├── backend/                     # バックエンド (Python)
+│   ├── src/
+│   │   ├── market_correlation/ # 市場相関分析
+│   │   ├── supply_demand/      # 需給分析
+│   │   ├── trade_journal_analyzer/ # 取引分析
+│   │   └── ult_universe/       # 銘柄ユニバース
+│   └── tests/                  # バックエンドテスト
+│
+├── docs/                        # 統合ドキュメント
+├── skills/                      # 自動化スクリプト
+└── scripts/                     # ユーティリティスクリプト
 ```
 
 ## 🎯 使い方
@@ -396,8 +459,22 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
 ### v1.1 (計画中)
 - [ ] ポートフォリオ分析機能
 - [ ] バックテスト機能強化
-- [ ] モバイルアプリ版
 - [ ] WebSocketリアルタイム接続
+- [ ] 高度なリスク管理機能
+
+### v1.2 (将来展望)
+- [ ] モバイルアプリ版
+- [ ] ソーシャル取引機能
+- [ ] 機械学習モデルの継続的学習
+
+---
+
+## 📚 関連ドキュメント
+
+- [CODE_QUALITY_IMPROVEMENTS.md](./CODE_QUALITY_IMPROVEMENTS.md) - コード品質向上の記録
+- [COMPREHENSIVE_CODE_REVIEW_REPORT.md](../COMPREHENSIVE_CODE_REVIEW_REPORT.md) - 包括的コードレビュー
+- [REFACTORING_REPORT.md](../REFACTORING_REPORT.md) - リファクタリング提案
+- [REMAINING_TECH_DEBT_ROADMAP.md](../REMAINING_TECH_DEBT_ROADMAP.md) - 技術的負債対応計画
 
 ### v1.2 (検討中)
 - [ ] 暗号資産対応
