@@ -246,7 +246,7 @@ export function createOrderEvent(
 ): Omit<AuditEvent, 'id' | 'timestamp'> {
   return {
     userId,
-    type: success ? 'ORDER_PLACED' : 'ORDER_PLACED',
+    type: 'ORDER_PLACED',
     ipAddress,
     userAgent,
     details: orderDetails,
