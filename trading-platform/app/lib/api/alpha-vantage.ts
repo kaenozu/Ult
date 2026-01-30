@@ -198,7 +198,7 @@ export const getAlphaVantageClient = () => {
 
     if (!alphaClient) {
         const client = getAPIClient();
-        alphaClient = new AlphaVantageClient({ apiKey: client.config.apiKey });
+        alphaClient = new AlphaVantageClient({ apiKey: client.getApiKey() });
     }
 
     return alphaClient;
