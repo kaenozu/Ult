@@ -89,6 +89,7 @@ export const RightSidebar = ({
             <OrderPanel
               stock={displayStock}
               currentPrice={displayStock.price}
+              ohlcv={ohlcv}
             />
           )
         )}

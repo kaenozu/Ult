@@ -10,6 +10,12 @@ interface ChartToolbarProps {
   setShowSMA: (show: boolean) => void;
   showBollinger: boolean;
   setShowBollinger: (show: boolean) => void;
+  showStochastic: boolean;
+  setShowStochastic: (show: boolean) => void;
+  showADX: boolean;
+  setShowADX: (show: boolean) => void;
+  showWilliamsR: boolean;
+  setShowWilliamsR: (show: boolean) => void;
   interval: string;
   setInterval: (interval: string) => void;
 }
@@ -21,6 +27,12 @@ export function ChartToolbar({
   setShowSMA,
   showBollinger,
   setShowBollinger,
+  showStochastic,
+  setShowStochastic,
+  showADX,
+  setShowADX,
+  showWilliamsR,
+  setShowWilliamsR,
   interval,
   setInterval
 }: ChartToolbarProps) {
@@ -83,6 +95,39 @@ export function ChartToolbar({
             )}
           >
             BB
+          </button>
+          <button
+            type="button"
+            aria-pressed={showStochastic}
+            onClick={() => setShowStochastic(!showStochastic)}
+            className={cn(
+              'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+              showStochastic ? 'bg-purple-500/20 text-purple-400' : 'text-[#92adc9] hover:text-white'
+            )}
+          >
+            STO
+          </button>
+          <button
+            type="button"
+            aria-pressed={showADX}
+            onClick={() => setShowADX(!showADX)}
+            className={cn(
+              'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+              showADX ? 'bg-green-500/20 text-green-400' : 'text-[#92adc9] hover:text-white'
+            )}
+          >
+            ADX
+          </button>
+          <button
+            type="button"
+            aria-pressed={showWilliamsR}
+            onClick={() => setShowWilliamsR(!showWilliamsR)}
+            className={cn(
+              'px-2 py-0.5 text-[10px] font-bold rounded transition-colors',
+              showWilliamsR ? 'bg-pink-500/20 text-pink-400' : 'text-[#92adc9] hover:text-white'
+            )}
+          >
+            %R
           </button>
         </div>
         <div className="h-4 w-px bg-[#233648]" />
