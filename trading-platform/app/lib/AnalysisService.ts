@@ -13,6 +13,8 @@ import {
     VOLATILITY
 } from './constants';
 import { accuracyService } from './AccuracyService';
+import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
+import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
 
 export interface AnalysisContext {
     startIndex?: number;
@@ -228,6 +230,142 @@ class AnalysisService {
     }
 
     /**
+     * Calculate regime-based confidence adjustment
+     */
+    private calculateRegimeAdjustedConfidence(
+        baseConfidence: number,
+        regime: RegimeDetectionResult,
+        signalType: 'BUY' | 'SELL' | 'HOLD'
+    ): number {
+        let adjustedConfidence = baseConfidence;
+
+        // Reduce confidence if regime is not confirmed
+        if (regime.confidence === 'INITIAL') {
+            adjustedConfidence *= 0.9;
+        }
+
+        // Reduce confidence in high volatility
+        if (regime.volatility === 'HIGH') {
+            adjustedConfidence *= 0.85;
+        }
+
+        // Adjust based on regime-signal alignment
+        if (regime.regime === 'TRENDING') {
+            if ((signalType === 'BUY' && regime.trendDirection === 'UP') ||
+                (signalType === 'SELL' && regime.trendDirection === 'DOWN')) {
+                // Aligned with trend - boost confidence
+                adjustedConfidence *= 1.1;
+            } else if (signalType !== 'HOLD') {
+                // Against trend - reduce confidence
+                adjustedConfidence *= 0.8;
+            }
+        } else if (regime.regime === 'RANGING') {
+            // Mean reversion signals work better in ranging markets
+            if (signalType !== 'HOLD') {
+                adjustedConfidence *= 1.05;
+            }
+        }
+
+        // Cap at 100
+        return Math.min(100, adjustedConfidence);
+    }
+
+    /**
+     * Calculate exit strategies based on market regime and signal type
+     */
+    private calculateExitStrategies(
+        signalType: 'BUY' | 'SELL' | 'HOLD',
+        currentPrice: number,
+        atr: number,
+        regime: RegimeDetectionResult
+    ): Signal['exitStrategy'] {
+        if (signalType === 'HOLD' || atr <= 0) {
+            return undefined;
+        }
+
+        const strategies: string[] = [];
+        const exitReasons: string[] = [];
+        
+        // Determine primary strategy based on regime
+        let primary = 'TRAILING_ATR';
+        
+        if (regime.regime === 'TRENDING') {
+            if (regime.volatility === 'HIGH') {
+                primary = 'TRAILING_ATR';
+                strategies.push('TIME_BASED', 'HIGH_LOW');
+                exitReasons.push('ATR trailing stop for high volatility trending market');
+                exitReasons.push('Time-based exit to limit exposure');
+            } else {
+                primary = 'TRAILING_ATR';
+                strategies.push('PARABOLIC_SAR');
+                exitReasons.push('ATR trailing stop for trend following');
+                exitReasons.push('Parabolic SAR for trend reversal detection');
+            }
+        } else if (regime.regime === 'RANGING') {
+            if (regime.volatility === 'HIGH') {
+                primary = 'COMPOUND';
+                strategies.push('TIME_BASED', 'HIGH_LOW');
+                exitReasons.push('Compound conditions for ranging market with high volatility');
+                exitReasons.push('Time-based exit for range-bound markets');
+            } else {
+                primary = 'HIGH_LOW';
+                strategies.push('TIME_BASED');
+                exitReasons.push('High/low breakout detection for ranging market');
+            }
+        } else {
+            // Unknown regime - use conservative approach
+            primary = 'TRAILING_ATR';
+            strategies.push('TIME_BASED');
+            exitReasons.push('Conservative ATR trailing stop');
+        }
+
+        // Calculate ATR-based trailing stop
+        const atrMultiplier = regime.volatility === 'HIGH' ? 3 : regime.volatility === 'LOW' ? 1.5 : 2;
+        const trailingStopLevel = signalType === 'BUY' 
+            ? currentPrice - (atr * atrMultiplier)
+            : currentPrice + (atr * atrMultiplier);
+
+        // Calculate time-based parameters
+        const maxHoldingDays = regime.regime === 'TRENDING' ? 10 : 5;
+        const decayFactor = regime.volatility === 'HIGH' ? 0.15 : 0.1;
+
+        // Build compound conditions if needed
+        const compoundConditions: string[] = [];
+        if (primary === 'COMPOUND' || strategies.includes('COMPOUND')) {
+            if (signalType === 'BUY') {
+                compoundConditions.push('RSI > 70 (overbought)');
+                compoundConditions.push('Price touches upper Bollinger Band');
+            } else {
+                compoundConditions.push('RSI < 30 (oversold)');
+                compoundConditions.push('Price touches lower Bollinger Band');
+            }
+            compoundConditions.push('MACD signal crossover');
+        }
+
+        return {
+            primary,
+            strategies: [primary, ...strategies],
+            trailingStop: {
+                enabled: true,
+                atrMultiplier,
+                currentLevel: parseFloat(trailingStopLevel.toFixed(2)),
+            },
+            timeBased: {
+                enabled: true,
+                maxHoldingDays,
+                decayFactor,
+            },
+            compoundConditions: compoundConditions.length > 0 ? {
+                enabled: true,
+                conditions: compoundConditions,
+                requireAll: regime.regime === 'RANGING' && regime.volatility !== 'HIGH',
+            } : undefined,
+            recommendedATR: parseFloat(atr.toFixed(2)),
+            exitReasons,
+        };
+    }
+
+    /**
      * 銘柄の総合分析を実行
      */
     analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
@@ -236,6 +374,19 @@ class AnalysisService {
         if (context?.endIndex !== undefined) {
              windowData = data.slice(context.startIndex || 0, context.endIndex + 1);
         }
+
+        // Detect market regime first (even for insufficient data)
+        const regimeResult = marketRegimeDetector.detect(windowData);
+        const strategyRec = marketRegimeDetector.getRecommendedStrategy(
+            regimeResult.regime,
+            regimeResult.trendDirection,
+            regimeResult.volatility
+        );
+        const regimeDescription = marketRegimeDetector.getRegimeDescription(
+            regimeResult.regime,
+            regimeResult.trendDirection,
+            regimeResult.volatility
+        );
 
         if (windowData.length < OPTIMIZATION.MIN_DATA_PERIOD) {
             return {
@@ -247,6 +398,20 @@ class AnalysisService {
                 reason: 'データ不足',
                 predictedChange: 0,
                 predictionDate: '',
+                regimeInfo: {
+                    regime: regimeResult.regime,
+                    trendDirection: regimeResult.trendDirection,
+                    volatility: regimeResult.volatility,
+                    adx: regimeResult.adx,
+                    atr: regimeResult.atr,
+                    confidence: regimeResult.confidence,
+                    daysInRegime: regimeResult.daysInRegime,
+                },
+                recommendedStrategy: strategyRec.primary,
+                regimeDescription,
+                strategyWeight: strategyRec.weight,
+                positionSizeAdjustment: strategyRec.positionSizeAdjustment,
+                exitStrategy: undefined,
             };
         }
 
@@ -317,9 +482,15 @@ class AnalysisService {
             ? (confidence + forecastCone.confidence) / 2
             : confidence;
 
+        // Apply regime-based confidence adjustment
+        finalConfidence = this.calculateRegimeAdjustedConfidence(finalConfidence, regimeResult, type);
+
         if (marketContext && marketContext.correlation !== 0) {
             finalConfidence = finalConfidence * (1 - Math.abs(marketContext.correlation) * 0.1);
         }
+
+        // Calculate exit strategy for BUY/SELL signals
+        const exitStrategy = this.calculateExitStrategies(type, currentPrice, atr, regimeResult);
 
         return {
             symbol,
@@ -337,6 +508,21 @@ class AnalysisService {
             volumeResistance: volumeProfile,
             forecastCone,
             marketContext,
+            // Market regime information
+            regimeInfo: {
+                regime: regimeResult.regime,
+                trendDirection: regimeResult.trendDirection,
+                volatility: regimeResult.volatility,
+                adx: regimeResult.adx,
+                atr: regimeResult.atr,
+                confidence: regimeResult.confidence,
+                daysInRegime: regimeResult.daysInRegime,
+            },
+            recommendedStrategy: strategyRec.primary,
+            regimeDescription,
+            strategyWeight: strategyRec.weight,
+            positionSizeAdjustment: strategyRec.positionSizeAdjustment,
+            exitStrategy,
         };
     }
 }

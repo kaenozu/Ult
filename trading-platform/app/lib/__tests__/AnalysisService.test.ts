@@ -91,7 +91,7 @@ describe('AnalysisService', () => {
 
   describe('calculateForecastCone', () => {
     it('should return undefined when data is insufficient', () => {
-      const shortData = generateMockData(100);
+      const shortData = generateMockData(50); // Less than FORECAST_CONE.LOOKBACK_DAYS (60)
       const result = analysisService.calculateForecastCone(shortData);
       expect(result).toBeUndefined();
     });
@@ -209,6 +209,90 @@ describe('AnalysisService', () => {
 
       expect(result.type).toBe('HOLD');
       expect(result.confidence).toBe(0);
+    });
+  });
+
+  describe('exit strategy integration', () => {
+    it('should include exitStrategy in signal for BUY/SELL signals', () => {
+      const data = generateMockData(252);
+      const result = analysisService.analyzeStock(mockSymbol, data, mockMarket);
+
+      if (result.type === 'BUY' || result.type === 'SELL') {
+        expect(result.exitStrategy).toBeDefined();
+        expect(result.exitStrategy?.primary).toBeDefined();
+        expect(result.exitStrategy?.strategies).toBeDefined();
+        expect(result.exitStrategy?.strategies.length).toBeGreaterThan(0);
+        expect(result.exitStrategy?.recommendedATR).toBeGreaterThan(0);
+        expect(result.exitStrategy?.exitReasons).toBeDefined();
+        expect(result.exitStrategy?.exitReasons.length).toBeGreaterThan(0);
+      }
+    });
+
+    it('should not include exitStrategy for HOLD signals with insufficient data', () => {
+      const shortData = generateMockData(50);
+      const result = analysisService.analyzeStock(mockSymbol, shortData, mockMarket);
+
+      expect(result.type).toBe('HOLD');
+      expect(result.exitStrategy).toBeUndefined();
+    });
+
+    it('should include trailing stop configuration when signal is not HOLD', () => {
+      const data = generateMockData(252);
+      const result = analysisService.analyzeStock(mockSymbol, data, mockMarket);
+
+      if (result.type !== 'HOLD') {
+        expect(result.exitStrategy?.trailingStop).toBeDefined();
+        expect(result.exitStrategy?.trailingStop?.enabled).toBe(true);
+        expect(result.exitStrategy?.trailingStop?.atrMultiplier).toBeGreaterThan(0);
+        expect(result.exitStrategy?.trailingStop?.currentLevel).toBeGreaterThan(0);
+      }
+    });
+
+    it('should include time-based exit configuration when signal is not HOLD', () => {
+      const data = generateMockData(252);
+      const result = analysisService.analyzeStock(mockSymbol, data, mockMarket);
+
+      if (result.type !== 'HOLD') {
+        expect(result.exitStrategy?.timeBased).toBeDefined();
+        expect(result.exitStrategy?.timeBased?.enabled).toBe(true);
+        expect(result.exitStrategy?.timeBased?.maxHoldingDays).toBeGreaterThan(0);
+        expect(result.exitStrategy?.timeBased?.decayFactor).toBeGreaterThan(0);
+      }
+    });
+
+    it('should select appropriate primary strategy based on regime', () => {
+      const data = generateMockData(252);
+      const result = analysisService.analyzeStock(mockSymbol, data, mockMarket);
+
+      if (result.type !== 'HOLD' && result.regimeInfo) {
+        const validStrategies = ['TRAILING_ATR', 'COMPOUND', 'HIGH_LOW', 'PARABOLIC_SAR', 'TIME_BASED'];
+        expect(validStrategies).toContain(result.exitStrategy?.primary);
+      }
+    });
+
+    it('should include multiple exit strategies in the strategies array', () => {
+      const data = generateMockData(252);
+      const result = analysisService.analyzeStock(mockSymbol, data, mockMarket);
+
+      if (result.type !== 'HOLD') {
+        expect(result.exitStrategy?.strategies.length).toBeGreaterThanOrEqual(1);
+        // Primary strategy should be first in the array
+        expect(result.exitStrategy?.strategies[0]).toBe(result.exitStrategy?.primary);
+      }
+    });
+
+    it('should have exit reasons that explain the strategy selection', () => {
+      const data = generateMockData(252);
+      const result = analysisService.analyzeStock(mockSymbol, data, mockMarket);
+
+      if (result.type !== 'HOLD') {
+        expect(result.exitStrategy?.exitReasons.length).toBeGreaterThan(0);
+        // Each reason should be a non-empty string
+        result.exitStrategy?.exitReasons.forEach(reason => {
+          expect(typeof reason).toBe('string');
+          expect(reason.length).toBeGreaterThan(0);
+        });
+      }
     });
   });
 });
