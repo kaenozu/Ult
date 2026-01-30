@@ -78,15 +78,8 @@ export interface Stock {
   low52w?: number;
 }
 
-export interface OHLCV {
-  symbol?: string;
-  date: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
+// Re-export shared types for backward compatibility
+export type { SharedOHLCV as OHLCV } from './shared';
 
 export interface TechnicalIndicator {
   symbol: string;
