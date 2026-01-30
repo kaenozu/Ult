@@ -1,13 +1,9 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { Header } from '../Header';
-import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useUIStore } from '@/app/store/uiStore';
-import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useTradingStore } from '@/app/store/tradingStore';
 
-jest.mock('@/app/store/portfolioStore');
-jest.mock('@/app/store/uiStore');
-jest.mock('@/app/store/watchlistStore');
+jest.mock('@/app/store/tradingStore');
 
 // Mock data
 jest.mock('@/app/data/stocks', () => ({
@@ -39,21 +35,19 @@ describe('Header', () => {
     const mockSetSelectedStock = jest.fn();
     const mockToggleConnection = jest.fn();
 
+    const initialMockState = {
+        portfolio: { cash: 1000000, positions: [], dailyPnL: 5000, totalValue: 1005000 },
+        setCash: mockSetCash,
+        isConnected: true,
+        toggleConnection: mockToggleConnection,
+        setSelectedStock: mockSetSelectedStock,
+        watchlist: [],
+        addToWatchlist: mockAddToWatchlist,
+    };
+
     beforeEach(() => {
         jest.clearAllMocks();
-        (usePortfolioStore as any).mockReturnValue({
-            portfolio: { cash: 1000000, positions: [], dailyPnL: 5000, totalValue: 1005000 },
-            setCash: mockSetCash,
-        });
-        (useUIStore as any).mockReturnValue({
-            isConnected: true,
-            toggleConnection: mockToggleConnection,
-            setSelectedStock: mockSetSelectedStock,
-        });
-        (useWatchlistStore as any).mockReturnValue({
-            watchlist: [],
-            addToWatchlist: mockAddToWatchlist,
-        });
+        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => selector(initialMockState));
     });
 
     it('renders header info', () => {
@@ -104,10 +98,11 @@ describe('Header', () => {
     });
 
     it('shows "Added" status for watchlisted item', () => {
-        (useWatchlistStore as any).mockReturnValue({
+        const watchedState = {
+             ...initialMockState,
             watchlist: [{ symbol: '7203' }], // Toyota is watched
-            addToWatchlist: mockAddToWatchlist,
-        });
+        };
+        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => selector(watchedState));
 
         render(<Header />);
         const input = screen.getByPlaceholderText('銘柄名、コードで検索');
