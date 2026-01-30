@@ -230,17 +230,30 @@ class MarketDataClient {
     }
   }
 
-  async fetchMarketIndex(market: 'japan' | 'usa', signal?: AbortSignal, interval?: string): Promise<OHLCV[]> {
+  async fetchMarketIndex(market: 'japan' | 'usa', signal?: AbortSignal, interval?: string): Promise<{
+    data: OHLCV[];
+    error?: string;
+  }> {
     const symbol = market === 'japan' ? '^N225' : '^IXIC';
     try {
-      // 内部のfetchOHLCVが投げるエラーをここで完全にキャッチする
-      const result = await this.fetchOHLCV(symbol, market, undefined, signal, interval).catch(() => ({ success: false, data: [] }));
-      console.log(`[Aggregator] Market index ${symbol} data status: ${result.success ? 'Success' : 'Failed'}`);
-      return (result.success && result.data) ? result.data : [];
+      const result = await this.fetchOHLCV(symbol, market, undefined, signal, interval);
+      if (!result.success || !result.data) {
+        return {
+          data: [],
+          error: result.error || `Failed to fetch market index ${symbol}`
+        };
+      }
+      return { data: result.data };
     } catch (err) {
-      if (signal?.aborted) return [];
-      console.warn(`[Aggregator] Silent failure fetching market index ${symbol}:`, err);
-      return [];
+      if (signal?.aborted) {
+        return { data: [], error: 'Request aborted' };
+      }
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.warn(`[Aggregator] Error fetching market index ${symbol}:`, errorMessage);
+      return {
+        data: [],
+        error: `Market index fetch failed: ${errorMessage}`
+      };
     }
   }
 
@@ -257,7 +270,11 @@ class MarketDataClient {
       // マクロデータの取得（相関分析用）- 失敗しても全体を止めないフェイルセーフ設計
       let indexData: OHLCV[] = [];
       try {
-        indexData = await this.fetchMarketIndex(stock.market, signal);
+        const indexResult = await this.fetchMarketIndex(stock.market, signal);
+        indexData = indexResult.data;
+        if (indexResult.error) {
+          console.warn(`[Aggregator] Macro data fetch warning for ${stock.symbol}:`, indexResult.error);
+        }
       } catch (err) {
         console.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol} due to error:`, err);
       }

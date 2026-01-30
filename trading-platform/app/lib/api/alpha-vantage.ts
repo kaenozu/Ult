@@ -174,7 +174,7 @@ export class AlphaVantageClient extends APIClient {
         const response = await this.fetch<AlphaVantageResponse>('SYMBOL_SEARCH', {
             function: 'SYMBOL_SEARCH',
             keywords,
-            apikey: (this as unknown as { config: APIClientConfig }).config.apiKey
+            apikey: this.config.apiKey
         });
 
         if (!response.bestMatches) return [];
@@ -198,7 +198,7 @@ export const getAlphaVantageClient = () => {
 
     if (!alphaClient) {
         const client = getAPIClient();
-        alphaClient = new AlphaVantageClient({ apiKey: (client as unknown as { config: APIClientConfig }).config.apiKey });
+        alphaClient = new AlphaVantageClient({ apiKey: client.getApiKey() });
     }
 
     return alphaClient;
