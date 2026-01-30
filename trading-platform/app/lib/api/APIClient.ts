@@ -42,6 +42,13 @@ export class APIClient {
   }
 
   /**
+   * Get the API key
+   */
+  get apiKey(): string {
+    return this.config.apiKey;
+  }
+
+  /**
    * Perform a fetch with timeout and error handling
    */
   private async fetchWithTimeout(url: string, options: FetchOptions = {}): Promise<Response> {
