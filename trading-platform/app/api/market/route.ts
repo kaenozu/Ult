@@ -163,7 +163,8 @@ export async function GET(request: Request) {
         // データ欠損処理: 前日の終値を追跡
         let lastValidClose: number | null = null;
 
-        const ohlcv = result.quotes.map((q, index) => {
+        const ohlcv = result.quotes
+          .map((q, index) => {
           let dateStr: string;
           if (q.date instanceof Date) {
             if (isIntraday) {
@@ -182,29 +183,45 @@ export async function GET(request: Request) {
             dateStr = String(q.date);
           }
 
-          // データ欠損処理: nullを0で埋めると価格急落のように見えるため、
-          // 前日の終値で補間する
-          const hasValidClose = q.close !== null && q.close !== undefined && q.close > 0;
+          // データ欠損処理: nullまたはNaNまたは負の値を無効と見なす
+          const hasValidClose = q.close != null && typeof q.close === 'number' && !isNaN(q.close) && q.close > 0;
+          const hasValidOpen = q.open != null && typeof q.open === 'number' && !isNaN(q.open) && q.open > 0;
+          const hasValidHigh = q.high != null && typeof q.high === 'number' && !isNaN(q.high) && q.high > 0;
+          const hasValidLow = q.low != null && typeof q.low === 'number' && !isNaN(q.low) && q.low > 0;
+          const hasValidVolume = q.volume != null && typeof q.volume === 'number' && !isNaN(q.volume) && q.volume >= 0;
           
           // 有効な終値を記録
           if (hasValidClose) {
             lastValidClose = q.close;
           }
           
-          // 補間値の計算
-          const interpolatedClose = hasValidClose ? q.close : (lastValidClose ?? 0);
+          // データ欠損処理オプション: 除外モードと補完モード
+          const excludeInvalidData = process.env.EXCLUDE_INVALID_OHLC_DATA === 'true';
+          
+          // 無効なデータの処理
+          const processedOpen = hasValidOpen ? q.open : (hasValidClose ? q.close : (excludeInvalidData ? null : (lastValidClose ?? 0)));
+          const processedHigh = hasValidHigh ? q.high : (hasValidClose ? q.close : (excludeInvalidData ? null : (lastValidClose ?? 0)));
+          const processedLow = hasValidLow ? q.low : (hasValidClose ? q.close : (excludeInvalidData ? null : (lastValidClose ?? 0)));
+          const processedClose = hasValidClose ? q.close : (excludeInvalidData ? null : (lastValidClose ?? 0));
+          const processedVolume = hasValidVolume ? q.volume : (excludeInvalidData ? null : 0);
+          
+          // 除外モードの場合、無効なデータをスキップ
+          if (excludeInvalidData && (!hasValidClose || processedOpen === null || processedHigh === null || processedLow === null || processedVolume === null)) {
+            return null; // 後でフィルター処理を行う
+          }
           
           return {
             date: dateStr,
-            open: q.open ?? interpolatedClose,
-            high: q.high ?? interpolatedClose,
-            low: q.low ?? interpolatedClose,
-            close: interpolatedClose,
-            volume: q.volume ?? 0,
+            open: processedOpen as number,
+            high: processedHigh as number,
+            low: processedLow as number,
+            close: processedClose as number,
+            volume: processedVolume as number,
             // 補間データフラグ（UI表示用）
             isInterpolated: !hasValidClose,
           };
-        });
+        })
+        .filter(item => item !== null);  // 無効なデータポイントを除外
 
         return NextResponse.json({ data: ohlcv, warning });
       } catch (innerError: unknown) {

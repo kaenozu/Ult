@@ -33,16 +33,37 @@ export const useChartData = (
     return map;
   }, [indexData]);
 
+  // 1.5.1 市場指数の日付配列作成（二分探索用）
+  const indexDates = useMemo(() => {
+    if (!indexData || indexData.length === 0) return [];
+    return indexData.map(d => d.date);
+  }, [indexData]);
+
   // 1.6 市場指数の正規化 (Normalizing Index to Stock scale)
   const normalizedIndexData = useMemo(() => {
     if (!indexData || indexData.length < 10 || data.length === 0) return [];
 
     // 表示期間の開始価格を基準に倍率を計算
     const stockStartPrice = data[0].close;
-    // indexDataからdata[0].dateに最も近い日の価格を探す
+    // indexDataからdata[0].dateに最も近い日の価格を探す（二分探索でO(log M)）
     const targetDate = data[0].date;
-    const indexStartPoint = indexData.find(d => d.date >= targetDate) || indexData[0];
-    const indexStartPrice = indexStartPoint.close;
+    
+    // 二分探索でtargetDate以上の最初の要素を見つける
+    let left = 0;
+    let right = indexDates.length - 1;
+    let foundIndex = 0;
+    
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      if (indexDates[mid] >= targetDate) {
+        foundIndex = mid;
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+    }
+    
+    const indexStartPrice = indexMap.get(indexDates[foundIndex]) || indexData[0].close;
 
     const ratio = stockStartPrice / indexStartPrice;
 
@@ -51,7 +72,7 @@ export const useChartData = (
       const idxClose = indexMap.get(label);
       return idxClose !== undefined ? idxClose * ratio : NaN;
     });
-  }, [data, indexData, extendedData, indexMap]);
+  }, [data, indexData, extendedData, indexMap, indexDates]);
 
   return { extendedData, normalizedIndexData };
 };

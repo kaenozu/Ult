@@ -57,6 +57,8 @@ customModes:
       - edit
       - command
     customInstructions: Always ensure code follows TypeScript strict guidelines. Aim for 100% type safety. Implement comprehensive error handling. Maintain clean and maintainable code structure.
+<<<<<<< HEAD
+=======
   - slug: docs-specialist
     name: Documentation Specialist
     roleDefinition: |

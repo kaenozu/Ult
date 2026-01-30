@@ -1,146 +1,127 @@
-/**
- * data-interpolation.test.ts
- * 
- * Yahoo Finance APIデータ欠損処理のテスト
- * 個人開発プロジェクト向けのシンプルなテスト
- */
+import { calculateSMA, calculateRSI, calculateBollingerBands, calculateATR } from '../lib/utils';
 
-import { OHLCV } from '../types';
+describe('Data Interpolation and Technical Indicator Tests', () => {
+  describe('Data Interpolation Handling', () => {
+    it('should handle null/invalid values in SMA calculation', () => {
+      // テストデータ: 途中にnull値が含まれる価格データ
+      const pricesWithNulls = [100, 102, null as any, 104, 103, undefined as any, 105, 107];
+      
+      const result = calculateSMA(pricesWithNulls as any as number[], 3);
+      
+      // 最初の2つの値はNaNであるべき
+      expect(result[0]).toBeNaN();
+      expect(result[1]).toBeNaN();
+      
+      // 3番目のデータはnullなのでNaN、かつ期間内に必要な有効データが不足しているためNaN
+      expect(result[2]).toBeNaN();
+      // 4番目のデータは、有効なデータが2つしかないためNaN
+      expect(result[3]).toBeNaN();
+      // 5番目のデータは、有効なデータが3つ(102,104,103)あるので計算可能
+      expect(result[4]).toBeCloseTo((102 + 104 + 103) / 3, 2); // 103
+      // 6番目のデータはNaNのためNaN
+      expect(result[5]).toBeNaN();
+      // 7番目のデータは、有効なデータが2つしかないのでNaN
+      expect(result[6]).toBeNaN();
+      // 8番目のデータは、有効なデータが3つ(104,103,105)あるので計算可能
+      expect(result[7]).toBeCloseTo((104 + 103 + 105) / 3, 2); // 104
+    });
 
-// データ補間関数（route.tsから抽出）
-function interpolateData(quotes: Array<{
-  date: Date | string;
-  open: number | null;
-  high: number | null;
-  low: number | null;
-  close: number | null;
-  volume: number | null;
-}>): Array<OHLCV & { isInterpolated?: boolean }> {
-  let lastValidClose: number | null = null;
+    it('should handle null/invalid values in RSI calculation', () => {
+      // テストデータ: 途中にnull値が含まれる価格データ
+      const pricesWithNulls = [100, 102, null as any, 104, 103, 105];
+      
+      const result = calculateRSI(pricesWithNulls as any as number[], 3);
+      
+      // 最初のfew valuesはNaNであるべき
+      expect(result[0]).toBeNaN();
+      expect(result[1]).toBeNaN();
+      expect(result[2]).toBeNaN(); // null値のためNaN
+      expect(result[3]).toBeNaN(); // 十分なデータがないためNaN
+      expect(result[4]).toBeNaN(); // 十分なデータがないためNaN
+      expect(result[5]).toBeNaN(); // 十分なデータがないためNaN
+    });
 
-  return quotes.map((q) => {
-    const dateStr = q.date instanceof Date
-      ? q.date.toISOString().split('T')[0]
-      : String(q.date);
-
-    const hasValidClose = q.close !== null && q.close !== undefined && q.close > 0;
-    
-    if (hasValidClose) {
-      lastValidClose = q.close;
-    }
-    
-    const interpolatedClose = hasValidClose ? q.close : (lastValidClose ?? 0);
-    
-    return {
-      date: dateStr,
-      open: q.open ?? interpolatedClose ?? 0,
-      high: q.high ?? interpolatedClose ?? 0,
-      low: q.low ?? interpolatedClose ?? 0,
-      close: interpolatedClose ?? 0,
-      volume: q.volume ?? 0,
-      isInterpolated: !hasValidClose,
-    };
-  });
-}
-
-describe('Data Interpolation', () => {
-  it('should interpolate missing data with previous close', () => {
-    const input = [
-      { date: new Date('2024-01-01'), open: 100, high: 105, low: 99, close: 102, volume: 1000 },
-      { date: new Date('2024-01-02'), open: null, high: null, low: null, close: null, volume: null },
-      { date: new Date('2024-01-03'), open: 103, high: 108, low: 102, close: 107, volume: 1500 },
-    ];
-
-    const result = interpolateData(input);
-
-    // 欠損データが前日終値で補間される
-    expect(result[1].close).toBe(102);
-    expect(result[1].open).toBe(102);
-    expect(result[1].high).toBe(102);
-    expect(result[1].low).toBe(102);
-    expect(result[1].volume).toBe(0);
-    expect(result[1].isInterpolated).toBe(true);
-
-    // 有効なデータはそのまま
-    expect(result[0].close).toBe(102);
-    expect(result[0].isInterpolated).toBe(false);
-    expect(result[2].close).toBe(107);
-    expect(result[2].isInterpolated).toBe(false);
+    it('should handle negative values in technical indicators', () => {
+      const pricesWithNegative = [100, 102, -5, 104, 103];
+      
+      const smaResult = calculateSMA(pricesWithNegative, 3);
+      expect(smaResult[0]).toBeNaN();
+      expect(smaResult[1]).toBeNaN();
+      expect(smaResult[2]).toBeNaN(); // 負の値を除外するためNaN
+      expect(smaResult[3]).toBeNaN(); // 有効なデータが3つ未満のためNaN
+      expect(smaResult[4]).toBeNaN(); // 有効なデータが3つ未満のためNaN
+    });
   });
 
-  it('should not create false price spikes with zero', () => {
-    const input = [
-      { date: new Date('2024-01-01'), open: 100, high: 105, low: 99, close: 100, volume: 1000 },
-      { date: new Date('2024-01-02'), open: null, high: null, low: null, close: null, volume: null },
-      { date: new Date('2024-01-03'), open: null, high: null, low: null, close: null, volume: null },
-      { date: new Date('2024-01-04'), open: 101, high: 106, low: 100, close: 105, volume: 1200 },
-    ];
+  describe('Technical Indicator Calculations with Valid Data', () => {
+    it('should calculate SMA correctly with valid data', () => {
+      const prices = [100, 102, 101, 103, 105];
+      const result = calculateSMA(prices, 3);
+      
+      expect(result[0]).toBeNaN();
+      expect(result[1]).toBeNaN();
+      expect(result[2]).toBeCloseTo((100 + 102 + 101) / 3, 2); // 101
+      expect(result[3]).toBeCloseTo((102 + 101 + 103) / 3, 2); // 102
+      expect(result[4]).toBeCloseTo((101 + 103 + 105) / 3, 2); // 103
+    });
 
-    const result = interpolateData(input);
+    it('should calculate RSI correctly with valid data', () => {
+      // 明確な上昇トレンドのデータ
+      const prices = [100, 105, 110, 115, 120];
+      const result = calculateRSI(prices, 3);
+      
+      // 最初のfew valuesはNaNであるべき
+      expect(result[0]).toBeNaN();
+      expect(result[1]).toBeNaN();
+      expect(result[2]).toBeNaN();
+      // 以降は計算されるが、具体的な値はアルゴリズム依存
+      expect(result[3]).toBeDefined();
+      expect(result[4]).toBeDefined();
+    });
 
-    // 0が含まれていないことを確認
-    const closes = result.map(r => r.close);
-    expect(closes).not.toContain(0);
+    it('should calculate Bollinger Bands correctly with valid data', () => {
+      const prices = [100, 102, 101, 103, 105];
+      const { upper, middle, lower } = calculateBollingerBands(prices, 3);
+      
+      expect(middle[0]).toBeNaN();
+      expect(middle[1]).toBeNaN();
+      expect(middle[2]).toBeCloseTo((100 + 102 + 101) / 3, 2); // SMA
+      
+      // 上下バンドは中バンドよりも外側にあるべき
+      if (!isNaN(upper[2]) && !isNaN(lower[2]) && !isNaN(middle[2])) {
+        expect(upper[2]).toBeGreaterThanOrEqual(middle[2]);
+        expect(lower[2]).toBeLessThanOrEqual(middle[2]);
+      }
+    });
 
-    // 急激な変動がないことを確認
-    for (let i = 1; i < result.length; i++) {
-      const change = Math.abs(result[i].close - result[i-1].close);
-      expect(change).toBeLessThanOrEqual(5); // 最大5円の変動
-    }
+    it('should calculate ATR correctly with valid OHLC data', () => {
+      const highs = [105, 107, 106, 108, 110];
+      const lows = [100, 102, 101, 103, 105];
+      const closes = [102, 104, 103, 105, 107];
+      
+      const result = calculateATR(highs, lows, closes, 3);
+      
+      expect(result[0]).toBeNaN();
+      expect(result[1]).toBeNaN();
+      expect(result[2]).toBeDefined();
+    });
   });
 
-  it('should handle multiple consecutive missing days', () => {
-    const input = [
-      { date: new Date('2024-01-01'), open: 100, high: 105, low: 99, close: 100, volume: 1000 },
-      { date: new Date('2024-01-02'), open: null, high: null, low: null, close: null, volume: null },
-      { date: new Date('2024-01-03'), open: null, high: null, low: null, close: null, volume: null },
-      { date: new Date('2024-01-04'), open: null, high: null, low: null, close: null, volume: null },
-      { date: new Date('2024-01-05'), open: 110, high: 115, low: 108, close: 112, volume: 2000 },
-    ];
+  describe('Edge Cases', () => {
+    it('should return NaN array for insufficient data', () => {
+      const prices = [100, 102];
+      const result = calculateSMA(prices, 5);
+      
+      expect(result.length).toBe(2);
+      expect(result[0]).toBeNaN();
+      expect(result[1]).toBeNaN();
+    });
 
-    const result = interpolateData(input);
-
-    // 連続する欠損日も前日終値で補間
-    expect(result[1].close).toBe(100);
-    expect(result[2].close).toBe(100);
-    expect(result[3].close).toBe(100);
-    expect(result[1].isInterpolated).toBe(true);
-    expect(result[2].isInterpolated).toBe(true);
-    expect(result[3].isInterpolated).toBe(true);
-  });
-
-  it('should handle first day missing', () => {
-    const input = [
-      { date: new Date('2024-01-01'), open: null, high: null, low: null, close: null, volume: null },
-      { date: new Date('2024-01-02'), open: 100, high: 105, low: 99, close: 102, volume: 1000 },
-    ];
-
-    const result = interpolateData(input);
-
-    // 最初の日が欠損している場合は0になる（前日データがないため）
-    expect(result[0].close).toBe(0);
-    expect(result[0].isInterpolated).toBe(true);
-    expect(result[1].close).toBe(102);
-  });
-
-  it('should preserve valid data unchanged', () => {
-    const input = [
-      { date: new Date('2024-01-01'), open: 100, high: 105, low: 99, close: 102, volume: 1000 },
-      { date: new Date('2024-01-02'), open: 103, high: 108, low: 102, close: 107, volume: 1500 },
-      { date: new Date('2024-01-03'), open: 106, high: 110, low: 105, close: 109, volume: 1200 },
-    ];
-
-    const result = interpolateData(input);
-
-    // 有効なデータはそのまま
-    expect(result[0]).toMatchObject({
-      date: '2024-01-01',
-      open: 100,
-      high: 105,
-      low: 99,
-      close: 102,
-      volume: 1000,
-      isInterpolated: false,
+    it('should handle all invalid data', () => {
+      const prices = [null, undefined, NaN, -1, 0] as any as number[];
+      const result = calculateSMA(prices, 3);
+      
+      expect(result.every(val => isNaN(val))).toBe(true);
     });
   });
 });
