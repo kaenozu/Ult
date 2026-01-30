@@ -106,7 +106,7 @@ class AITradeService {
 
             if (quantity > 0) {
                 const newTrade: PaperTrade = {
-                    id: Math.random().toString(36).substring(7),
+                    id: crypto.randomUUID(),
                     symbol,
                     type: signal.type as 'BUY' | 'SELL',
                     entryPrice,

@@ -8,10 +8,12 @@ export class IpRateLimiter {
   private counters = new Map<string, RateLimitRecord>();
   private interval: number; // in milliseconds
   private limit: number;
+  private maxEntries: number; // Maximum entries to prevent memory bloat
 
-  constructor(limit: number, intervalMs: number) {
+  constructor(limit: number, intervalMs: number, maxEntries: number = 10000) {
     this.limit = limit;
     this.interval = intervalMs;
+    this.maxEntries = maxEntries;
   }
 
   /**
@@ -43,14 +45,43 @@ export class IpRateLimiter {
   }
 
   private prune(now: number) {
-     // Only prune if we have a significant number of entries to avoid overhead on small maps
-     if (this.counters.size > 5000) {
-         for (const [key, value] of this.counters.entries()) {
-             if (now > value.resetTime) {
-                 this.counters.delete(key);
-             }
-         }
-     }
+    const keysToDelete: string[] = [];
+
+    // First, remove expired entries
+    for (const [key, value] of this.counters.entries()) {
+      if (now > value.resetTime) {
+        keysToDelete.push(key);
+      }
+    }
+
+    for (const key of keysToDelete) {
+      this.counters.delete(key);
+    }
+
+    // If still over limit, remove oldest entries (LRU eviction)
+    if (this.counters.size > this.maxEntries) {
+      const entries = Array.from(this.counters.entries());
+      // Sort by resetTime (oldest first)
+      entries.sort((a, b) => a[1].resetTime - b[1].resetTime);
+
+      const toRemove = entries.slice(0, entries.length - this.maxEntries);
+      for (const [key] of toRemove) {
+        this.counters.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Get current metrics for monitoring
+   */
+  getMetrics(): {
+    totalEntries: number;
+    maxEntries: number;
+  } {
+    return {
+      totalEntries: this.counters.size,
+      maxEntries: this.maxEntries,
+    };
   }
 }
 

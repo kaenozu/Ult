@@ -175,3 +175,205 @@ export function getWebSocketUrl(path: string = '/ws/signals'): string {
 
   return `ws://localhost:8000${path}`;
 }
+
+// ============================================
+// Technical Indicator Functions
+// ============================================
+
+/**
+ * Calculate Simple Moving Average (SMA)
+ */
+export function calculateSMA(prices: number[], period: number): number[] {
+  const result: number[] = [];
+  for (let i = 0; i < prices.length; i++) {
+    if (i < period - 1) {
+      result.push(NaN);
+    } else {
+      const slice = prices.slice(i - period + 1, i + 1);
+      const avg = slice.reduce((sum, p) => sum + p, 0) / period;
+      result.push(avg);
+    }
+  }
+  return result;
+}
+
+/**
+ * Calculate Relative Strength Index (RSI)
+ */
+export function calculateRSI(prices: number[], period: number = 14): number[] {
+  const result: number[] = [];
+  const changes: number[] = [];
+
+  for (let i = 1; i < prices.length; i++) {
+    changes.push(prices[i] - prices[i - 1]);
+  }
+
+  let avgGain = 0;
+  let avgLoss = 0;
+
+  // Initialize with first period
+  for (let i = 0; i < period && i < changes.length; i++) {
+    if (changes[i] >= 0) {
+      avgGain += changes[i];
+    } else {
+      avgLoss += Math.abs(changes[i]);
+    }
+  }
+  avgGain /= period;
+  avgLoss /= period;
+
+  for (let i = 0; i < prices.length; i++) {
+    if (i <= period) {
+      result.push(NaN);
+    } else if (i === period + 1) {
+      const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+      result.push(rsi);
+    } else {
+      const change = changes[i - 1];
+      const gain = change >= 0 ? change : 0;
+      const loss = change < 0 ? Math.abs(change) : 0;
+
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+      const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+      result.push(rsi);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Calculate Exponential Moving Average (EMA)
+ */
+function calculateEMA(prices: number[], period: number): number[] {
+  const result: number[] = [];
+  const multiplier = 2 / (period + 1);
+
+  // Start with SMA
+  let sum = 0;
+  for (let i = 0; i < period && i < prices.length; i++) {
+    sum += prices[i];
+    result.push(NaN);
+  }
+
+  const sma = sum / period;
+  result[period - 1] = sma;
+
+  // Calculate EMA
+  for (let i = period; i < prices.length; i++) {
+    const ema = (prices[i] - result[i - 1]) * multiplier + result[i - 1];
+    result.push(ema);
+  }
+
+  return result;
+}
+
+/**
+ * Calculate Moving Average Convergence Divergence (MACD)
+ */
+export function calculateMACD(
+  prices: number[],
+  fastPeriod: number = 12,
+  slowPeriod: number = 26,
+  signalPeriod: number = 9
+): { macd: number[]; signal: number[]; histogram: number[] } {
+  const fastEMA = calculateEMA(prices, fastPeriod);
+  const slowEMA = calculateEMA(prices, slowPeriod);
+
+  const macdLine: number[] = [];
+  for (let i = 0; i < prices.length; i++) {
+    if (isNaN(fastEMA[i]) || isNaN(slowEMA[i])) {
+      macdLine.push(NaN);
+    } else {
+      macdLine.push(fastEMA[i] - slowEMA[i]);
+    }
+  }
+
+  const signalLine = calculateEMA(macdLine, signalPeriod);
+
+  const histogram: number[] = [];
+  for (let i = 0; i < prices.length; i++) {
+    if (isNaN(macdLine[i]) || isNaN(signalLine[i])) {
+      histogram.push(NaN);
+    } else {
+      histogram.push(macdLine[i] - signalLine[i]);
+    }
+  }
+
+  return { macd: macdLine, signal: signalLine, histogram };
+}
+
+/**
+ * Calculate Bollinger Bands
+ */
+export function calculateBollingerBands(
+  prices: number[],
+  period: number = 20,
+  standardDeviations: number = 2
+): { upper: number[]; middle: number[]; lower: number[] } {
+  const middle = calculateSMA(prices, period);
+  const upper: number[] = [];
+  const lower: number[] = [];
+
+  for (let i = 0; i < prices.length; i++) {
+    if (i < period - 1) {
+      upper.push(NaN);
+      lower.push(NaN);
+    } else {
+      const slice = prices.slice(i - period + 1, i + 1);
+      const mean = middle[i];
+      const squaredDiffs = slice.map(p => Math.pow(p - mean, 2));
+      const stdDev = Math.sqrt(squaredDiffs.reduce((sum, d) => sum + d, 0) / period);
+
+      upper.push(mean + standardDeviations * stdDev);
+      lower.push(mean - standardDeviations * stdDev);
+    }
+  }
+
+  return { upper, middle, lower };
+}
+
+/**
+ * Calculate Average True Range (ATR)
+ */
+export function calculateATR(
+  highs: number[],
+  lows: number[],
+  closes: number[],
+  period: number = 14
+): number[] {
+  const trueRanges: number[] = [];
+
+  for (let i = 0; i < highs.length; i++) {
+    if (i === 0) {
+      trueRanges.push(highs[i] - lows[i]);
+    } else {
+      const tr = Math.max(
+        highs[i] - lows[i],
+        Math.abs(highs[i] - closes[i - 1]),
+        Math.abs(lows[i] - closes[i - 1])
+      );
+      trueRanges.push(tr);
+    }
+  }
+
+  const result: number[] = [];
+  let atr = 0;
+
+  for (let i = 0; i < trueRanges.length; i++) {
+    if (i < period) {
+      atr += trueRanges[i];
+      result.push(NaN);
+      if (i === period - 1) {
+        result[i] = atr / period;
+      }
+    } else {
+      atr = (result[i - 1] * (period - 1) + trueRanges[i]) / period;
+      result.push(atr);
+    }
+  }
+
+  return result;
+}
