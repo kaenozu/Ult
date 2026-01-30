@@ -153,10 +153,10 @@ export class AuditLogger {
    * Get recent events
    */
   getRecent(limit?: number): AuditEvent[] {
-    const sorted = [...this.events].sort(
-      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-    );
-    return limit ? sorted.slice(0, limit) : sorted;
+    // イベントは既に時系列順なので、配列全体をソートするよりも
+    // 末尾からスライスして逆順にする方がはるかに効率的です。
+    const items = limit ? this.events.slice(-limit) : [...this.events];
+    return items.reverse();
   }
 
   /**
