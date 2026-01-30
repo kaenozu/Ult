@@ -1,5 +1,6 @@
-import { Signal, Stock } from '@/app/types';
+import { Signal, Stock, OHLCV } from '@/app/types';
 import { getConfidenceColor, cn, formatCurrency } from '@/app/lib/utils';
+import { SignalFilterView } from './SignalPanel/SignalFilterView';
 
 interface SignalCardProps {
     signal: Signal;
@@ -9,6 +10,7 @@ interface SignalCardProps {
     aiTradesCount?: number;
     calculatingHitRate?: boolean;
     error?: string | null;
+    ohlcv?: OHLCV[];
 }
 
 export function SignalCard({
@@ -18,7 +20,8 @@ export function SignalCard({
     aiHitRate,
     aiTradesCount = 0,
     calculatingHitRate = false,
-    error = null
+    error = null,
+    ohlcv = []
 }: SignalCardProps) {
     const isBuy = signal.type === 'BUY';
     const isSell = signal.type === 'SELL';
@@ -93,6 +96,9 @@ export function SignalCard({
                     )}
                 </div>
             </div>
+
+            {/* Signal Filter View */}
+            <SignalFilterView signal={signal} ohlcv={ohlcv} />
 
             {/* Market Context */}
             {signal.marketContext && (

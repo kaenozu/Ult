@@ -9,3 +9,8 @@
 **Vulnerability:** The WebSocket server (`scripts/websocket-server.js`) accepted connections from any Origin, allowing Cross-Site WebSocket Hijacking (CSWSH). A malicious site could connect to the local WebSocket server and send/receive messages on behalf of the user.
 **Learning:** Standalone scripts often bypass standard framework security protections (like Next.js headers). Explicit Origin validation is mandatory for WebSockets.
 **Prevention:** Always validate the `Origin` header during the WebSocket handshake (`upgrade` event). Use an allowlist of trusted origins (e.g., `http://localhost:3000`).
+
+## 2026-05-23 - IP Spoofing Prevention in Rate Limiting
+**Vulnerability:** The `getClientIp` function naively trusted the first IP in the `X-Forwarded-For` header. Attackers can easily spoof this by appending their own IP to a forged header, bypassing IP-based rate limits.
+**Learning:** In modern cloud environments, relying solely on `X-Forwarded-For` is dangerous without knowing the full proxy chain.
+**Prevention:** Prioritize immutable platform-specific headers like `CF-Connecting-IP` (Cloudflare) or `X-Real-IP` (when set by a trusted ingress) before falling back to `X-Forwarded-For`.
