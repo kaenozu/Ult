@@ -185,13 +185,28 @@ export function getWebSocketUrl(path: string = '/ws/signals'): string {
  */
 export function calculateSMA(prices: number[], period: number): number[] {
   const result: number[] = [];
+  let sum = 0;
+
   for (let i = 0; i < prices.length; i++) {
+    sum += prices[i];
+
+    if (i >= period) {
+      sum -= prices[i - period];
+    }
+
     if (i < period - 1) {
       result.push(NaN);
     } else {
-      const slice = prices.slice(i - period + 1, i + 1);
-      const avg = slice.reduce((sum, p) => sum + p, 0) / period;
-      result.push(avg);
+      // If sum is NaN, it might be due to a NaN value in the current window or history.
+      // We fallback to slice/reduce to ensure correctness and attempt to recover the sum.
+      if (isNaN(sum)) {
+        const slice = prices.slice(i - period + 1, i + 1);
+        const freshSum = slice.reduce((s, p) => s + p, 0);
+        result.push(freshSum / period);
+        sum = freshSum; // Reset sum to valid value if possible
+      } else {
+        result.push(sum / period);
+      }
     }
   }
   return result;
