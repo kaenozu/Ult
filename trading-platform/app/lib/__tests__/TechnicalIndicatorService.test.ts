@@ -20,6 +20,19 @@ describe('TechnicalIndicatorService', () => {
             const sma = technicalIndicatorService.calculateSMA(prices, 3);
             expect(sma).toEqual([NaN, NaN]);
         });
+
+        it('handles NaNs in data robustly (recovering from poisoned window)', () => {
+             const prices = [10, NaN, 20, 30, 40];
+             const sma = technicalIndicatorService.calculateSMA(prices, 2);
+             // i=0: NaN
+             // i=1: [10, NaN] -> NaN (initial period)
+             // i=2: [NaN, 20] -> NaN
+             // i=3: [20, 30] -> 25
+             // i=4: [30, 40] -> 35
+             expect(sma[2]).toBeNaN();
+             expect(sma[3]).toBe(25);
+             expect(sma[4]).toBe(35);
+        });
     });
 
     describe('calculateEMA', () => {

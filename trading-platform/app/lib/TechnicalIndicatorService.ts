@@ -10,12 +10,28 @@ class TechnicalIndicatorService {
      */
     calculateSMA(prices: number[], period: number): number[] {
         const sma: number[] = [];
+        let sum = 0;
+
         for (let i = 0; i < prices.length; i++) {
+            sum += prices[i];
+
+            if (i >= period) {
+                sum -= prices[i - period];
+            }
+
             if (i < period - 1) {
                 sma.push(NaN);
             } else {
-                const sum = prices.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-                sma.push(sum / period);
+                // If sum is NaN, it might be due to a NaN value in the current window or history.
+                // We fallback to slice/reduce to ensure correctness and attempt to recover the sum.
+                if (isNaN(sum)) {
+                    const slice = prices.slice(i - period + 1, i + 1);
+                    const freshSum = slice.reduce((a, b) => a + b, 0);
+                    sma.push(freshSum / period);
+                    sum = freshSum; // Reset sum to valid value if possible
+                } else {
+                    sma.push(sum / period);
+                }
             }
         }
         return sma;
