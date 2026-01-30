@@ -204,6 +204,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               aiTradesCount={preciseHitRate.trades}
               calculatingHitRate={calculatingHitRate}
               error={error}
+              ohlcv={ohlcv}
             />
         </div>
       ) : activeTab === 'backtest' ? (
