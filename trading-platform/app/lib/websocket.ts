@@ -22,6 +22,43 @@ export interface WebSocketMessage<T = unknown> {
   type: WebSocketMessageType | string;
   data: T;
   timestamp?: number;
+  id?: string;
+}
+
+/**
+ * Validates WebSocket message structure
+ * Ensures message has required fields and proper types
+ */
+function validateWebSocketMessage(message: unknown): message is WebSocketMessage {
+  if (!message || typeof message !== 'object') {
+    return false;
+  }
+
+  const msg = message as Record<string, unknown>;
+
+  // Check required 'type' field
+  if (!('type' in msg) || typeof msg.type !== 'string') {
+    return false;
+  }
+
+  // Check optional 'data' field - can be any type but must exist if provided
+  if ('data' in msg && msg.data === undefined) {
+    return false;
+  }
+
+  // Check optional 'timestamp' - must be number if provided
+  if ('timestamp' in msg && msg.timestamp !== undefined) {
+    if (typeof msg.timestamp !== 'number' || isNaN(msg.timestamp)) {
+      return false;
+    }
+  }
+
+  // Check optional 'id' - must be string if provided
+  if ('id' in msg && msg.id !== undefined && typeof msg.id !== 'string') {
+    return false;
+  }
+
+  return true;
 }
 
 export interface WebSocketConfig {
@@ -125,7 +162,15 @@ export class WebSocketClient {
 
       this.ws.onmessage = (event) => {
         try {
-          const message: WebSocketMessage = JSON.parse(event.data);
+          const parsed = JSON.parse(event.data);
+          
+          // Validate message structure
+          if (!validateWebSocketMessage(parsed)) {
+            console.error('[WebSocket] Invalid message structure received');
+            return;
+          }
+          
+          const message: WebSocketMessage = parsed;
           this.options.onMessage?.(message);
         } catch (error) {
           console.error('[WebSocket] Failed to parse message:', error);
@@ -162,17 +207,19 @@ export class WebSocketClient {
   }
 
   /**
-   * Schedule reconnection attempt
-   */
+    * Schedule reconnection attempt with exponential backoff
+    */
   private scheduleReconnect(): void {
     if (this.reconnectTimeoutId) {
       clearTimeout(this.reconnectTimeoutId);
     }
 
     this.reconnectAttempts++;
+    // 指数バックオフを使用して再接続間隔を増やす
+    // 初回: 2秒, 2回目: 4秒, 3回目: 8秒, 4回目: 16秒, 5回目: 32秒
     const delay = Math.min(
       this.config.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1),
-      30000
+      60000 // 最大60秒
     );
 
     console.log(`[WebSocket] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})`);
@@ -306,7 +353,7 @@ export const DEFAULT_WS_CONFIG: WebSocketConfig = {
     ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:3001/ws`
     : 'ws://localhost:3001/ws',
   reconnectInterval: 2000,
-  maxReconnectAttempts: 5,
+  maxReconnectAttempts: 10, // 5から10に増加してより堅牢に
   enableFallback: true,
   fallbackPollingInterval: 5000,
 };
