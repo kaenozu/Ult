@@ -1,0 +1,76 @@
+{
+  "name": "api-batch-processor",
+  "description": "Guidelines and patterns for implementing API batch processing, caching, and request deduplication",
+  "version": "1.0.0",
+  "patterns": {
+    "caching": [
+      "Implement TTL-based cache expiration",
+      "Use LRU eviction for large caches",
+      "Cache both successful and failed responses appropriately"
+    ],
+    "request_deduplication": [
+      "Track pending requests by key",
+      "Return existing promise for duplicate requests",
+      "Clear pending requests on completion or error"
+    ],
+    "batch_processing": [
+      "Queue requests and process in batches",
+      "Implement priority-based queuing",
+      "Set maximum batch size and wait time"
+    ],
+    "rate_limiting": [
+      "Track request timestamps",
+      "Implement per-minute and per-hour limits",
+      "Add exponential backoff for retries"
+    ]
+  },
+  "best_practices": {
+    "cache_management": [
+      "Use consistent cache key naming convention",
+      "Separate cache by data type and symbol",
+      "Implement cache warming for critical data"
+    ],
+    "error_handling": [
+      "Distinguish between API errors and network errors",
+      "Implement circuit breaker pattern",
+      "Provide fallback data when cache is stale"
+    ],
+    "monitoring": [
+      "Track cache hit/miss ratios",
+      "Monitor batch processing efficiency",
+      "Alert on rate limit violations"
+    ]
+  },
+  "code_examples": {
+    "cache_with_ttl": {
+      "description": "Example of cache with TTL expiration",
+      "code": "private getFromCache<T>(key: string): T | null {\n  const entry = this.cache.get(key);\n  if (!entry) return null;\n  if (Date.now() - entry.timestamp > this.cacheTTL) {\n    this.cache.delete(key);\n    return null;\n  }\n  return entry.data as T;\n}"
+    },
+    "request_deduplication": {
+      "description": "Example of request deduplication",
+      "code": "async fetchWithCache<T>(key: string, fetcher: () => Promise<T>): Promise<T> {\n  if (this.pendingRequests.has(key)) {\n    return this.pendingRequests.get(key)! as Promise<T>;\n  }\n  \n  const promise = fetcher().finally(() => {\n    this.pendingRequests.delete(key);\n  });\n  \n  this.pendingRequests.set(key, promise);\n  return promise;\n}"
+    },
+    "batch_fetch": {
+      "description": "Example of batch fetching",
+      "code": "async fetchBatch<T>(\n  keys: string[],\n  fetcher: (keys: string[]) => Promise<Map<string, T>>\n): Promise<Map<string, T>> {\n  const uncachedKeys = keys.filter(k => !this.getFromCache(k));\n  const cached = keys.filter(k => this.getFromCache(k));\n  \n  const result = new Map();\n  for (const key of cached) {\n    result.set(key, this.getFromCache(key));\n  }\n  \n  if (uncachedKeys.length > 0) {\n    const fetched = await fetcher(uncachedKeys);\n    for (const [key, data] of fetched) {\n      this.setCache(key, data);\n      result.set(key, data);\n    }\n  }\n  \n  return result;\n}"
+    }
+  },
+  "metrics": {
+    "performance_indicators": [
+      "Cache hit ratio",
+      "Request deduplication rate",
+      "Batch processing efficiency",
+      "API call reduction percentage"
+    ],
+    "optimization_targets": {
+      "cache_hit_ratio": "> 70%",
+      "deduplication_rate": "> 20%",
+      "batch_efficiency": "> 3 items per batch"
+    }
+  },
+  "related_skills": [
+    "chart-performance-optimizer",
+    "state-management-optimizer",
+    "web-performance"
+  ]
+}

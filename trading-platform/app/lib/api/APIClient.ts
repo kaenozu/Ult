@@ -44,7 +44,7 @@ export class APIClient {
   /**
    * Get the API key
    */
-  get apiKey(): string {
+  public getApiKey(): string {
     return this.config.apiKey;
   }
 

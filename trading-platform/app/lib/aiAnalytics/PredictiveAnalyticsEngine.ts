@@ -115,7 +115,7 @@ export interface ModelConfig {
 // Default Configuration
 // ============================================================================
 
-const DEFAULT_MODEL_CONFIG: ModelConfig = {
+export const DEFAULT_MODEL_CONFIG: ModelConfig = {
   randomForest: {
     nEstimators: 200,
     maxDepth: 15,
