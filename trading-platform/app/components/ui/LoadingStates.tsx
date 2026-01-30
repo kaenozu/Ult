@@ -340,7 +340,10 @@ export const LoadingWrapper = memo(function LoadingWrapper({
       const timer = setTimeout(() => setShowSkeleton(true), delay);
       return () => clearTimeout(timer);
     } else {
-      setShowSkeleton(isLoading);
+      // 非同期で状態を更新
+      queueMicrotask(() => {
+        setShowSkeleton(isLoading);
+      });
     }
   }, [isLoading, delay]);
 
