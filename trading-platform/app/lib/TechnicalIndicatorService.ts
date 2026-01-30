@@ -1,4 +1,4 @@
-import { OHLCV } from '../types';
+import { OHLCV } from '../types/shared';
 
 /**
  * Service for calculating technical indicators.
