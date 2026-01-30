@@ -13,7 +13,7 @@ export class TradingError extends Error {
 }
 
 export class ValidationError extends TradingError {
-  constructor(public field: string, message: string) {
+  constructor(public field: string, message: string, public severity: 'low' | 'medium' | 'high' = 'low') {
     super(`Validation error for ${field}: ${message}`, 'VALIDATION_ERROR');
     this.name = 'ValidationError';
   }
@@ -34,6 +34,10 @@ export class ApiError extends TradingError {
   ) {
     super(`API error: ${status} from ${endpoint}`, 'API_ERROR');
     this.name = 'ApiError';
+  }
+
+  get statusCode(): number {
+    return this.status;
   }
 }
 
@@ -200,3 +204,59 @@ export type ErrorHandler = {
   reportError: (error: TradingError, context?: ErrorContext) => Promise<void>;
   canRecover: (error: TradingError) => boolean;
 };
+
+// Additional exports for compatibility
+
+export class AppError extends TradingError {
+  constructor(
+    message: string,
+    public code: string = 'UNKNOWN',
+    public severity: 'low' | 'medium' | 'high' = 'medium'
+  ) {
+    super(message, code);
+    this.name = 'AppError';
+  }
+}
+
+export function handleError(error: unknown, context?: string): TradingError {
+  if (error instanceof TradingError) {
+    return error;
+  }
+  if (error instanceof Error) {
+    return new AppError(context ? `[${context}] ${error.message}` : error.message);
+  }
+  return new AppError(context ? `[${context}] Unknown error occurred` : 'Unknown error occurred');
+}
+
+export function logError(error: unknown, context: string): void {
+  console.error(`[${context}]`, error);
+}
+
+export function getUserErrorMessage(error: unknown): string {
+  if (error instanceof ValidationError) {
+    return error.message;
+  }
+  if (error instanceof ApiError) {
+    if (error.status === 404) return 'データが見つかりませんでした';
+    if (error.status === 429) return 'リクエストが多すぎます。しばらく待ってからお試しください';
+  }
+  return 'エラーが発生しました。もう一度お試しください';
+}
+
+export interface WithErrorHandlingResult<T> {
+  data: T | null;
+  error: AppError | null;
+}
+
+export async function withErrorHandling<T>(
+  fn: () => Promise<T>,
+  context?: string
+): Promise<WithErrorHandlingResult<T>> {
+  try {
+    const data = await fn();
+    return { data, error: null };
+  } catch (err) {
+    const error = handleError(err, context);
+    return { data: null, error: error instanceof AppError ? error : new AppError(error.message) };
+  }
+}
