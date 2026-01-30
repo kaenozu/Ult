@@ -14,6 +14,7 @@ import {
 } from './constants';
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
+import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
 
 export interface AnalysisContext {
     startIndex?: number;
@@ -270,6 +271,101 @@ class AnalysisService {
     }
 
     /**
+     * Calculate exit strategies based on market regime and signal type
+     */
+    private calculateExitStrategies(
+        signalType: 'BUY' | 'SELL' | 'HOLD',
+        currentPrice: number,
+        atr: number,
+        regime: RegimeDetectionResult
+    ): Signal['exitStrategy'] {
+        if (signalType === 'HOLD' || atr <= 0) {
+            return undefined;
+        }
+
+        const strategies: string[] = [];
+        const exitReasons: string[] = [];
+        
+        // Determine primary strategy based on regime
+        let primary = 'TRAILING_ATR';
+        
+        if (regime.regime === 'TRENDING') {
+            if (regime.volatility === 'HIGH') {
+                primary = 'TRAILING_ATR';
+                strategies.push('TIME_BASED', 'HIGH_LOW');
+                exitReasons.push('ATR trailing stop for high volatility trending market');
+                exitReasons.push('Time-based exit to limit exposure');
+            } else {
+                primary = 'TRAILING_ATR';
+                strategies.push('PARABOLIC_SAR');
+                exitReasons.push('ATR trailing stop for trend following');
+                exitReasons.push('Parabolic SAR for trend reversal detection');
+            }
+        } else if (regime.regime === 'RANGING') {
+            if (regime.volatility === 'HIGH') {
+                primary = 'COMPOUND';
+                strategies.push('TIME_BASED', 'HIGH_LOW');
+                exitReasons.push('Compound conditions for ranging market with high volatility');
+                exitReasons.push('Time-based exit for range-bound markets');
+            } else {
+                primary = 'HIGH_LOW';
+                strategies.push('TIME_BASED');
+                exitReasons.push('High/low breakout detection for ranging market');
+            }
+        } else {
+            // Unknown regime - use conservative approach
+            primary = 'TRAILING_ATR';
+            strategies.push('TIME_BASED');
+            exitReasons.push('Conservative ATR trailing stop');
+        }
+
+        // Calculate ATR-based trailing stop
+        const atrMultiplier = regime.volatility === 'HIGH' ? 3 : regime.volatility === 'LOW' ? 1.5 : 2;
+        const trailingStopLevel = signalType === 'BUY' 
+            ? currentPrice - (atr * atrMultiplier)
+            : currentPrice + (atr * atrMultiplier);
+
+        // Calculate time-based parameters
+        const maxHoldingDays = regime.regime === 'TRENDING' ? 10 : 5;
+        const decayFactor = regime.volatility === 'HIGH' ? 0.15 : 0.1;
+
+        // Build compound conditions if needed
+        const compoundConditions: string[] = [];
+        if (primary === 'COMPOUND' || strategies.includes('COMPOUND')) {
+            if (signalType === 'BUY') {
+                compoundConditions.push('RSI > 70 (overbought)');
+                compoundConditions.push('Price touches upper Bollinger Band');
+            } else {
+                compoundConditions.push('RSI < 30 (oversold)');
+                compoundConditions.push('Price touches lower Bollinger Band');
+            }
+            compoundConditions.push('MACD signal crossover');
+        }
+
+        return {
+            primary,
+            strategies: [primary, ...strategies],
+            trailingStop: {
+                enabled: true,
+                atrMultiplier,
+                currentLevel: parseFloat(trailingStopLevel.toFixed(2)),
+            },
+            timeBased: {
+                enabled: true,
+                maxHoldingDays,
+                decayFactor,
+            },
+            compoundConditions: compoundConditions.length > 0 ? {
+                enabled: true,
+                conditions: compoundConditions,
+                requireAll: regime.regime === 'RANGING' && regime.volatility !== 'HIGH',
+            } : undefined,
+            recommendedATR: parseFloat(atr.toFixed(2)),
+            exitReasons,
+        };
+    }
+
+    /**
      * 銘柄の総合分析を実行
      */
     analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
@@ -315,6 +411,7 @@ class AnalysisService {
                 regimeDescription,
                 strategyWeight: strategyRec.weight,
                 positionSizeAdjustment: strategyRec.positionSizeAdjustment,
+                exitStrategy: undefined,
             };
         }
 
@@ -392,6 +489,9 @@ class AnalysisService {
             finalConfidence = finalConfidence * (1 - Math.abs(marketContext.correlation) * 0.1);
         }
 
+        // Calculate exit strategy for BUY/SELL signals
+        const exitStrategy = this.calculateExitStrategies(type, currentPrice, atr, regimeResult);
+
         return {
             symbol,
             type,
@@ -422,6 +522,7 @@ class AnalysisService {
             regimeDescription,
             strategyWeight: strategyRec.weight,
             positionSizeAdjustment: strategyRec.positionSizeAdjustment,
+            exitStrategy,
         };
     }
 }
