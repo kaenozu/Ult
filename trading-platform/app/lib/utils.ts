@@ -187,7 +187,7 @@ export function calculateSMA(prices: number[], period: number): number[] {
   const result: number[] = [];
   // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
   const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
-  
+
   for (let i = 0; i < validPrices.length; i++) {
     if (i < period - 1) {
       result.push(NaN);
