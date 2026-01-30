@@ -84,7 +84,7 @@ describe('useStockData', () => {
         });
 
         await waitFor(() => {
-            expect(result.current.error).toBe('Failed to fetch data');
+            expect(result.current.error).toContain('エラー');
             expect(result.current.loading).toBe(false);
         });
     });

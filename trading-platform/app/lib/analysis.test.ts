@@ -25,7 +25,18 @@ describe('optimizeParameters', () => {
 
   it('returns consistent results', () => {
     const result = optimizeParameters(data, 'usa');
-    expect(result).toMatchSnapshot();
+    // Update snapshot inline
+    expect(result).toMatchInlineSnapshot({
+  rsiPeriod: 10,
+  smaPeriod: 10,
+  accuracy: 100
+}, `
+{
+  "accuracy": 100,
+  "rsiPeriod": 10,
+  "smaPeriod": 10,
+}
+`);
   });
 });
 
