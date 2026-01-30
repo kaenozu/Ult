@@ -3,6 +3,11 @@
  * 
  * Advanced rate limiting with configurable windows, blocking, and metrics.
  * Replaces the basic rate limiter in api/rate-limiter.ts.
+ * 
+ * IMPROVEMENTS (2026-01-30):
+ * - Added LRU cache with size limit to prevent memory leaks
+ * - Added automatic cleanup of expired entries
+ * - Added configurable max keys limit
  */
 
 import { RateLimitConfig, RateLimitResult } from '../types/shared';
@@ -11,18 +16,62 @@ interface RateLimitRecord {
   count: number;
   resetTime: number;
   blockedUntil?: number;
+  lastAccessed: number;
+}
+
+interface AdvancedRateLimiterOptions {
+  maxKeys?: number;
+  cleanupIntervalMs?: number;
+  defaultConfig?: Partial<RateLimitConfig>;
 }
 
 export class AdvancedRateLimiter {
   private limits = new Map<string, RateLimitRecord>();
+  private readonly maxKeys: number;
   private readonly defaultConfig: RateLimitConfig;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
-  constructor(defaultConfig?: Partial<RateLimitConfig>) {
+  constructor(options: AdvancedRateLimiterOptions = {}) {
+    this.maxKeys = options.maxKeys ?? 1000;
     this.defaultConfig = {
-      windowMs: defaultConfig?.windowMs ?? 60 * 1000,      // 1 minute
-      maxRequests: defaultConfig?.maxRequests ?? 25,       // 25 requests per window
-      blockDurationMs: defaultConfig?.blockDurationMs ?? 60 * 1000, // 1 minute block
+      windowMs: options.defaultConfig?.windowMs ?? 60 * 1000,      // 1 minute
+      maxRequests: options.defaultConfig?.maxRequests ?? 25,       // 25 requests per window
+      blockDurationMs: options.defaultConfig?.blockDurationMs ?? 60 * 1000, // 1 minute block
     };
+
+    // Start periodic cleanup
+    const cleanupIntervalMs = options.cleanupIntervalMs ?? 60 * 1000; // 1 minute
+    this.cleanupInterval = setInterval(() => this.cleanupExpiredEntries(), cleanupIntervalMs);
+  }
+
+  /**
+   * Cleanup expired entries to prevent memory leaks
+   */
+  private cleanupExpiredEntries(): void {
+    const now = Date.now();
+    const keysToDelete: string[] = [];
+
+    for (const [key, record] of this.limits.entries()) {
+      // Delete if window expired and not blocked
+      if (now > record.resetTime && (!record.blockedUntil || now > record.blockedUntil)) {
+        keysToDelete.push(key);
+      }
+    }
+
+    for (const key of keysToDelete) {
+      this.limits.delete(key);
+    }
+
+    // If still over limit, remove oldest entries
+    if (this.limits.size > this.maxKeys) {
+      const entries = Array.from(this.limits.entries());
+      entries.sort((a, b) => a[1].lastAccessed - b[1].lastAccessed);
+      
+      const toRemove = entries.slice(0, entries.length - this.maxKeys);
+      for (const [key] of toRemove) {
+        this.limits.delete(key);
+      }
+    }
   }
 
   /**
@@ -35,13 +84,23 @@ export class AdvancedRateLimiter {
     const mergedConfig = { ...this.defaultConfig, ...config };
     const now = Date.now();
     
+    // LRU eviction: Remove oldest if at capacity and key doesn't exist
+    if (this.limits.size >= this.maxKeys && !this.limits.has(key)) {
+      this.evictLRU();
+    }
+    
     const record = this.limits.get(key) || { 
       count: 0, 
-      resetTime: now + mergedConfig.windowMs 
+      resetTime: now + mergedConfig.windowMs,
+      lastAccessed: now
     };
+
+    // Update last accessed time
+    record.lastAccessed = now;
 
     // Check if blocked
     if (record.blockedUntil && now < record.blockedUntil) {
+      this.limits.set(key, record);
       return {
         allowed: false,
         remaining: 0,
@@ -54,6 +113,7 @@ export class AdvancedRateLimiter {
     if (now > record.resetTime) {
       record.count = 0;
       record.resetTime = now + mergedConfig.windowMs;
+      record.blockedUntil = undefined;
     }
 
     // Check request limit
@@ -81,6 +141,25 @@ export class AdvancedRateLimiter {
   }
 
   /**
+   * Evict least recently used entry
+   */
+  private evictLRU(): void {
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+
+    for (const [key, record] of this.limits.entries()) {
+      if (record.lastAccessed < oldestTime) {
+        oldestTime = record.lastAccessed;
+        oldestKey = key;
+      }
+    }
+
+    if (oldestKey) {
+      this.limits.delete(oldestKey);
+    }
+  }
+
+  /**
    * Get current status without incrementing
    */
   getStatus(key: string, config?: Partial<RateLimitConfig>): RateLimitResult {
@@ -96,6 +175,9 @@ export class AdvancedRateLimiter {
         resetTime: now + mergedConfig.windowMs,
       };
     }
+
+    // Update last accessed
+    record.lastAccessed = now;
 
     // Check if blocked
     if (record.blockedUntil && now < record.blockedUntil) {
@@ -152,11 +234,23 @@ export class AdvancedRateLimiter {
   }
 
   /**
+   * Clean up resources (call on shutdown)
+   */
+  destroy(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+    this.limits.clear();
+  }
+
+  /**
    * Get metrics for monitoring
    */
   getMetrics(): {
     activeKeys: number;
     blockedKeys: number;
+    maxKeys: number;
   } {
     let blockedKeys = 0;
     const now = Date.now();
@@ -170,6 +264,7 @@ export class AdvancedRateLimiter {
     return {
       activeKeys: this.limits.size,
       blockedKeys,
+      maxKeys: this.maxKeys,
     };
   }
 
@@ -201,4 +296,14 @@ export function getAdvancedRateLimiter(): AdvancedRateLimiter {
     rateLimiterInstance = new AdvancedRateLimiter();
   }
   return rateLimiterInstance;
+}
+
+/**
+ * Reset the singleton instance (for testing)
+ */
+export function resetAdvancedRateLimiter(): void {
+  if (rateLimiterInstance) {
+    rateLimiterInstance.destroy();
+    rateLimiterInstance = null;
+  }
 }

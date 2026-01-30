@@ -31,7 +31,7 @@ export interface FetchOptions {
 }
 
 export class APIClient {
-  private config: APIConfig;
+  protected config: APIConfig;
 
   constructor(config: APIConfig) {
     this.config = {
@@ -382,11 +382,25 @@ export function getAPIClient(): APIClient {
     }
 
     // Prevent usage of example keys
-    const insecurePatterns = ['your_api_key_here', 'example', 'placeholder', 'xxx', 'test_key'];
+    const insecurePatterns = [
+      'your_api_key_here', 'example', 'placeholder', 'xxx', 'test_key',
+      'dummy', 'fake', 'sample', 'demo', 'test', 'key', 'apikey', 'secret',
+      '1234567890', 'abcdefg', 'qwerty', 'password', 'admin'
+    ];
     if (insecurePatterns.some(pattern => apiKey.toLowerCase().includes(pattern))) {
       throw new APIError(
         'Insecure API key detected. Please set a real API key in environment variables.',
         'INSECURE_API_KEY'
+      );
+    }
+
+    // Entropy-based validation (real API keys have high entropy)
+    const uniqueChars = new Set(apiKey).size;
+    const entropy = uniqueChars / apiKey.length;
+    if (entropy < 0.5 && apiKey.length < 20) {
+      throw new APIError(
+        'API key has insufficient entropy. Please use a valid Alpha Vantage API key.',
+        'LOW_ENTROPY_API_KEY'
       );
     }
 
