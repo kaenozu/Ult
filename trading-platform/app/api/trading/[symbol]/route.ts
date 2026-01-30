@@ -3,13 +3,14 @@ import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPl
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { symbol: string } }
+  context: { params: Promise<{ symbol: string }> }
 ) {
   try {
     const platform = getGlobalTradingPlatform();
-    const symbol = params.symbol.toUpperCase();
-    const signal = platform.getSignal(symbol);
-    const marketData = platform.getMarketData(symbol);
+    const { symbol } = await context.params;
+    const upperSymbol = symbol.toUpperCase();
+    const signal = platform.getSignal(upperSymbol);
+    const marketData = platform.getMarketData(upperSymbol);
 
     return NextResponse.json({ signal, marketData });
   } catch (error) {
