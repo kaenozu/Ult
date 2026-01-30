@@ -50,7 +50,12 @@ class MLPredictionService {
       rsi: calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD),
       macd: calculateMACD(prices),
       bollingerBands: calculateBollingerBands(prices),
-      atr: calculateATR(data, RSI_CONFIG.DEFAULT_PERIOD),
+      atr: calculateATR(
+        data.map(d => d.high),
+        data.map(d => d.low),
+        data.map(d => d.close),
+        RSI_CONFIG.DEFAULT_PERIOD
+      ),
     };
   }
 
