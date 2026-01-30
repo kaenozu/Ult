@@ -90,16 +90,16 @@ class TestSupplyDemandAnalyzer:
         current_price = 101.0
         current_volume = 10000  # 2x average volume
 
-        breakout = analyzer.detect_breakout(
+        breakouts = analyzer.detect_breakout(
             zones=zones,
             current_price=current_price,
             current_volume=current_volume,
             average_volume=5000
         )
 
-        assert breakout is not None
-        assert breakout.direction == "bullish"
-        assert breakout.is_confirmed is True
+        assert len(breakouts) > 0
+        assert breakouts[0].direction == "bullish"
+        assert breakouts[0].is_confirmed is True
 
     def test_detect_breakout_no_volume_confirmation(self):
         """Test that breakout without volume is not confirmed"""
@@ -111,7 +111,7 @@ class TestSupplyDemandAnalyzer:
         current_price = 101.0
         current_volume = 2000  # Lower than average
 
-        breakout = analyzer.detect_breakout(
+        breakouts = analyzer.detect_breakout(
             zones=zones,
             current_price=current_price,
             current_volume=current_volume,
@@ -119,8 +119,8 @@ class TestSupplyDemandAnalyzer:
         )
 
         # Should detect breakout but not confirmed
-        assert breakout is not None
-        assert breakout.is_confirmed is False
+        assert len(breakouts) > 0
+        assert breakouts[0].is_confirmed is False
 
     def test_no_breakout_when_within_range(self):
         """Test that no breakout is detected when price is within range"""
@@ -132,14 +132,14 @@ class TestSupplyDemandAnalyzer:
         current_price = 99.0
         current_volume = 10000
 
-        breakout = analyzer.detect_breakout(
+        breakouts = analyzer.detect_breakout(
             zones=zones,
             current_price=current_price,
             current_volume=current_volume,
             average_volume=5000
         )
 
-        assert breakout is None
+        assert len(breakouts) == 0
 
     def test_zone_strength_classification(self):
         """Test zone strength classification (strong/medium/weak)"""
@@ -242,14 +242,14 @@ class TestSupplyDemandAnalyzer:
         """Test breakout detection with empty zones (line 105)"""
         analyzer = SupplyDemandAnalyzer()
 
-        breakout = analyzer.detect_breakout(
+        breakouts = analyzer.detect_breakout(
             zones=[],
             current_price=100.0,
             current_volume=10000,
             average_volume=5000
         )
 
-        assert breakout is None
+        assert len(breakouts) == 0
 
     def test_detect_breakout_bearish_with_volume(self):
         """Test detecting bearish breakout with volume confirmation (lines 125-129)"""
@@ -262,16 +262,16 @@ class TestSupplyDemandAnalyzer:
         current_price = 99.0
         current_volume = 10000  # 2x average volume
 
-        breakout = analyzer.detect_breakout(
+        breakouts = analyzer.detect_breakout(
             zones=zones,
             current_price=current_price,
             current_volume=current_volume,
             average_volume=5000
         )
 
-        assert breakout is not None
-        assert breakout.direction == "bearish"
-        assert breakout.is_confirmed is True
+        assert len(breakouts) > 0
+        assert breakouts[0].direction == "bearish"
+        assert breakouts[0].is_confirmed is True
 
     def test_detect_breakout_bearish_no_volume_confirmation(self):
         """Test detecting bearish breakout without volume confirmation (lines 125-129)"""
@@ -283,7 +283,7 @@ class TestSupplyDemandAnalyzer:
         current_price = 99.0
         current_volume = 2000  # Lower than average
 
-        breakout = analyzer.detect_breakout(
+        breakouts = analyzer.detect_breakout(
             zones=zones,
             current_price=current_price,
             current_volume=current_volume,
@@ -291,8 +291,8 @@ class TestSupplyDemandAnalyzer:
         )
 
         # Should detect breakout but not confirmed
-        assert breakout is not None
-        assert breakout.is_confirmed is False
+        assert len(breakouts) > 0
+        assert breakouts[0].is_confirmed is False
 
     def test_get_nearest_support_no_support_zones(self):
         """Test finding nearest support when no support zones exist (line 152)"""

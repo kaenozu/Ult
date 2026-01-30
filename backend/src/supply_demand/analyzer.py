@@ -96,8 +96,8 @@ class SupplyDemandAnalyzer:
         current_price: float,
         current_volume: int,
         average_volume: int
-    ) -> Optional[BreakoutEvent]:
-        """Detect breakout from support or resistance zone
+    ) -> List[BreakoutEvent]:
+        """Detect all breakouts from support or resistance zones
 
         Args:
             zones: List of support/resistance zones
@@ -106,10 +106,12 @@ class SupplyDemandAnalyzer:
             average_volume: Average trading volume
 
         Returns:
-            BreakoutEvent if breakout detected, None otherwise
+            List of BreakoutEvent objects for all detected breakouts
         """
+        breakouts: List[BreakoutEvent] = []
+
         if not zones:
-            return None
+            return breakouts
 
         # Check for bullish breakout (price above resistance)
         resistance_zones = [z for z in zones if z.zone_type == ZoneType.RESISTANCE]
@@ -118,13 +120,13 @@ class SupplyDemandAnalyzer:
                 # Price broke through resistance
                 is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
 
-                return BreakoutEvent(
+                breakouts.append(BreakoutEvent(
                     direction="bullish",
                     price=current_price,
                     zone=zone,
                     volume=current_volume,
                     is_confirmed=is_confirmed
-                )
+                ))
 
         # Check for bearish breakout (price below support)
         support_zones = [z for z in zones if z.zone_type == ZoneType.SUPPORT]
@@ -133,15 +135,15 @@ class SupplyDemandAnalyzer:
                 # Price broke through support
                 is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
 
-                return BreakoutEvent(
+                breakouts.append(BreakoutEvent(
                     direction="bearish",
                     price=current_price,
                     zone=zone,
                     volume=current_volume,
                     is_confirmed=is_confirmed
-                )
+                ))
 
-        return None
+        return breakouts
 
     def get_nearest_support(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
         """Find nearest support zone below current price
