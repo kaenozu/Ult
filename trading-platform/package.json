@@ -13,8 +13,10 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "lint": "eslint",
+    "lint:fix": "eslint --fix",
     "ws:server": "node ../scripts/websocket-server.js",
-    "ws:server:dev": "WS_PORT=3001 node ../scripts/websocket-server.js"
+    "ws:server:dev": "WS_PORT=3001 node ../scripts/websocket-server.js",
+    "prepare": "husky install"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
@@ -29,6 +31,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@fast-check/jest": "^1.8.2",
     "@playwright/test": "^1.48.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/dom": "^10.4.1",
@@ -41,11 +44,23 @@
     "@types/ws": "^8.18.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
+    "fast-check": "^4.5.3",
+    "husky": "^9.1.6",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "lint-staged": "^15.2.10",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "typescript": "^5",
     "ws": "^8.19.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "jest --passWithNoTests --findRelatedTests"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   }
 }

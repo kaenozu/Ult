@@ -29,6 +29,10 @@ const customJestConfig = {
   },
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/'],
   coverageReporters: ['text', 'lcov', 'html'],
+  // Add fast-check module name mapper for proper resolution
+  moduleNameMapper: {
+    '^fast-check$': '<rootDir>/node_modules/fast-check/lib/esm/entry/main.js',
+  },
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
