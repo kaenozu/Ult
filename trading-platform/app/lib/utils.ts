@@ -145,6 +145,22 @@ export function getPriceLimit(referencePrice: number): number {
 }
 
 /**
+ * Calculate returns from a series of prices
+ */
+export function calculateReturns(prices: number[]): number[] {
+  const returns: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    if (prices[i-1] !== 0 && !isNaN(prices[i]) && !isNaN(prices[i-1])) {
+        const ret = (prices[i] - prices[i - 1]) / prices[i - 1];
+        returns.push(ret);
+    } else {
+        returns.push(0);
+    }
+  }
+  return returns;
+}
+
+/**
  * Get the WebSocket URL based on the current environment.
  * Prioritizes process.env.NEXT_PUBLIC_WS_URL, then falls back to window location or localhost.
  * Ensures the protocol matches the current page's security (wss: for https:).

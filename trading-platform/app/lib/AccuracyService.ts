@@ -209,24 +209,24 @@ class AccuracyService {
      * 統計情報の計算
      */
     calculateStats(trades: BacktestTrade[], symbol: string, startDate: string, endDate: string): BacktestResult {
-        const winningTrades = trades.filter(t => t.profitPercent > 0).length;
-        const losingTrades = trades.filter(t => t.profitPercent <= 0).length;
+        const winningTrades = trades.filter(t => (t.profitPercent || 0) > 0).length;
+        const losingTrades = trades.filter(t => (t.profitPercent || 0) <= 0).length;
         const totalTrades = trades.length;
         const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
 
-        const totalReturn = trades.reduce((sum, t) => sum + t.profitPercent, 0);
+        const totalReturn = trades.reduce((sum, t) => sum + (t.profitPercent || 0), 0);
 
-        const winningTradesData = trades.filter(t => t.profitPercent > 0);
-        const losingTradesData = trades.filter(t => t.profitPercent <= 0);
+        const winningTradesData = trades.filter(t => (t.profitPercent || 0) > 0);
+        const losingTradesData = trades.filter(t => (t.profitPercent || 0) <= 0);
         const avgProfit = winningTradesData.length > 0
-            ? winningTradesData.reduce((sum, t) => sum + t.profitPercent, 0) / winningTradesData.length
+            ? winningTradesData.reduce((sum, t) => sum + (t.profitPercent || 0), 0) / winningTradesData.length
             : 0;
         const avgLoss = losingTradesData.length > 0
-            ? losingTradesData.reduce((sum, t) => sum + t.profitPercent, 0) / losingTradesData.length
+            ? losingTradesData.reduce((sum, t) => sum + (t.profitPercent || 0), 0) / losingTradesData.length
             : 0;
 
-        const grossProfit = winningTradesData.reduce((sum, t) => sum + t.profitPercent, 0);
-        const grossLoss = Math.abs(losingTradesData.reduce((sum, t) => sum + t.profitPercent, 0));
+        const grossProfit = winningTradesData.reduce((sum, t) => sum + (t.profitPercent || 0), 0);
+        const grossLoss = Math.abs(losingTradesData.reduce((sum, t) => sum + (t.profitPercent || 0), 0));
         const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
 
         // Max Drawdown calculation
@@ -235,14 +235,14 @@ class AccuracyService {
         let equity = 100;
 
         for (const trade of trades) {
-            equity *= (1 + trade.profitPercent / 100);
+            equity *= (1 + (trade.profitPercent || 0) / 100);
             if (equity > peak) peak = equity;
             const drawdown = (peak - equity) / peak * 100;
             if (drawdown > maxDrawdown) maxDrawdown = drawdown;
         }
 
         // Simplified Sharpe Ratio calculation (risk-free rate assumed 0)
-        const returns = trades.map(t => t.profitPercent);
+        const returns = trades.map(t => t.profitPercent || 0);
         const avgReturn = returns.length > 0 ? returns.reduce((sum, r) => sum + r, 0) / returns.length : 0;
         const variance = returns.length > 0
             ? returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length

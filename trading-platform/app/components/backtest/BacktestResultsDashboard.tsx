@@ -63,7 +63,7 @@ export function BacktestResultsDashboard({
   }, [result]);
 
   const returnDistribution = useMemo(() => {
-    const returns = result.trades.map(t => t.profitPercent);
+    const returns = result.trades.map(t => t.profitPercent).filter((p): p is number => p !== undefined);
     return AdvancedPerformanceMetrics.calculateReturnDistribution(returns);
   }, [result]);
 
@@ -384,7 +384,7 @@ function calculateEquityCurve(result: BacktestResult): number[] {
   let currentEquity = 100;
 
   for (const trade of result.trades) {
-    currentEquity *= (1 + trade.profitPercent / 100);
+    currentEquity *= (1 + (trade.profitPercent || 0) / 100);
     equity.push(parseFloat(currentEquity.toFixed(2)));
   }
 
@@ -513,12 +513,12 @@ function TradeHistoryTable({ trades }: { trades: BacktestTrade[] }) {
                     </span>
                   </td>
                   <td className="py-2 text-right text-gray-300">¥{trade.entryPrice.toLocaleString()}</td>
-                  <td className="py-2 text-right text-gray-300">¥{trade.exitPrice.toLocaleString()}</td>
+                  <td className="py-2 text-right text-gray-300">{trade.exitPrice ? `¥${trade.exitPrice.toLocaleString()}` : '-'}</td>
                   <td className={cn(
                     "py-2 text-right font-medium",
-                    trade.profitPercent > 0 ? 'text-green-400' : 'text-red-400'
+                    (trade.profitPercent || 0) > 0 ? 'text-green-400' : 'text-red-400'
                   )}>
-                    {trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent.toFixed(2)}%
+                    {(trade.profitPercent || 0) > 0 ? '+' : ''}{(trade.profitPercent || 0).toFixed(2)}%
                   </td>
                   <td className="py-2 text-gray-400 text-xs">{trade.exitReason}</td>
                 </tr>

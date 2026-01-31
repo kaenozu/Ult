@@ -232,7 +232,7 @@ export class AdvancedPerformanceMetrics {
     result: BacktestResult,
     benchmarkReturns?: number[]
   ): AdvancedMetrics {
-    const returns = result.trades.map(t => t.profitPercent);
+    const returns = result.trades.map(t => t.profitPercent || 0);
     const equity = this.calculateEquityCurve(result);
     
     const basicMetrics = this.calculateBasicMetrics(result, returns, equity);
@@ -361,15 +361,15 @@ export class AdvancedPerformanceMetrics {
    */
   private static calculateTradeMetrics(result: BacktestResult): Partial<AdvancedMetrics> {
     const trades = result.trades;
-    const winningTrades = trades.filter(t => t.profitPercent > 0);
-    const losingTrades = trades.filter(t => t.profitPercent <= 0);
+    const winningTrades = trades.filter(t => (t.profitPercent || 0) > 0);
+    const losingTrades = trades.filter(t => (t.profitPercent || 0) <= 0);
 
     const totalTrades = trades.length;
     const winRate = totalTrades > 0 ? (winningTrades.length / totalTrades) * 100 : 0;
     const lossRate = totalTrades > 0 ? (losingTrades.length / totalTrades) * 100 : 0;
 
-    const grossProfit = winningTrades.reduce((sum, t) => sum + t.profitPercent, 0);
-    const grossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.profitPercent, 0));
+    const grossProfit = winningTrades.reduce((sum, t) => sum + (t.profitPercent || 0), 0);
+    const grossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + (t.profitPercent || 0), 0));
 
     const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit > 0 ? Infinity : 0;
     const lossFactor = grossProfit > 0 ? grossLoss / grossProfit : grossLoss > 0 ? Infinity : 0;
@@ -380,31 +380,31 @@ export class AdvancedPerformanceMetrics {
     const payoffRatio = averageLoss !== 0 ? Math.abs(averageWin / averageLoss) : 0;
 
     const averageTrade = totalTrades > 0
-      ? trades.reduce((sum, t) => sum + t.profitPercent, 0) / totalTrades
+      ? trades.reduce((sum, t) => sum + (t.profitPercent || 0), 0) / totalTrades
       : 0;
 
     const expectancy = (winRate / 100) * averageWin - (lossRate / 100) * Math.abs(averageLoss);
     const expectedValue = expectancy * totalTrades;
 
-    const largestWin = winningTrades.length > 0 ? Math.max(...winningTrades.map(t => t.profitPercent)) : 0;
-    const largestLoss = losingTrades.length > 0 ? Math.min(...losingTrades.map(t => t.profitPercent)) : 0;
+    const largestWin = winningTrades.length > 0 ? Math.max(...winningTrades.map(t => t.profitPercent || 0)) : 0;
+    const largestLoss = losingTrades.length > 0 ? Math.min(...losingTrades.map(t => t.profitPercent || 0)) : 0;
 
     // Holding periods
     const holdingPeriods = trades.map(t => {
       const entry = new Date(t.entryDate);
-      const exit = new Date(t.exitDate);
+      const exit = new Date(t.exitDate || new Date().toISOString());
       return Math.max(1, (exit.getTime() - entry.getTime()) / (1000 * 60 * 60 * 24));
     });
 
     const winHoldingPeriods = winningTrades.map(t => {
       const entry = new Date(t.entryDate);
-      const exit = new Date(t.exitDate);
+      const exit = new Date(t.exitDate || new Date().toISOString());
       return Math.max(1, (exit.getTime() - entry.getTime()) / (1000 * 60 * 60 * 24));
     });
 
     const lossHoldingPeriods = losingTrades.map(t => {
       const entry = new Date(t.entryDate);
-      const exit = new Date(t.exitDate);
+      const exit = new Date(t.exitDate || new Date().toISOString());
       return Math.max(1, (exit.getTime() - entry.getTime()) / (1000 * 60 * 60 * 24));
     });
 
@@ -581,18 +581,18 @@ export class AdvancedPerformanceMetrics {
    */
   static analyzeTrades(result: BacktestResult): TradeAnalysis {
     const trades = [...result.trades].sort((a, b) => 
-      new Date(a.exitDate).getTime() - new Date(b.exitDate).getTime()
+      new Date(a.exitDate || new Date().toISOString()).getTime() - new Date(b.exitDate || new Date().toISOString()).getTime()
     );
 
     // Best and worst trades
-    const sortedByPnL = [...trades].sort((a, b) => b.profitPercent - a.profitPercent);
+    const sortedByPnL = [...trades].sort((a, b) => (b.profitPercent || 0) - (a.profitPercent || 0));
     const bestTrade = sortedByPnL[0] || trades[0];
     const worstTrade = sortedByPnL[sortedByPnL.length - 1] || trades[0];
 
     // Longest and shortest trades
     const tradesWithDuration = trades.map(t => ({
       ...t,
-      duration: (new Date(t.exitDate).getTime() - new Date(t.entryDate).getTime()) / (1000 * 60 * 60 * 24),
+      duration: (new Date(t.exitDate || new Date().toISOString()).getTime() - new Date(t.entryDate).getTime()) / (1000 * 60 * 60 * 24),
     }));
     const sortedByDuration = [...tradesWithDuration].sort((a, b) => b.duration - a.duration);
     const longestTrade = sortedByDuration[0] || trades[0];
@@ -759,7 +759,7 @@ export class AdvancedPerformanceMetrics {
     let currentEquity = 100;
 
     for (const trade of result.trades) {
-      currentEquity *= (1 + trade.profitPercent / 100);
+      currentEquity *= (1 + (trade.profitPercent || 0) / 100);
       equity.push(parseFloat(currentEquity.toFixed(2)));
     }
 
@@ -788,7 +788,7 @@ export class AdvancedPerformanceMetrics {
     let currentLosses = 0;
 
     for (const trade of trades) {
-      if (trade.profitPercent > 0) {
+      if ((trade.profitPercent || 0) > 0) {
         currentWins++;
         currentLosses = 0;
         maxConsecutiveWins = Math.max(maxConsecutiveWins, currentWins);
@@ -810,7 +810,7 @@ export class AdvancedPerformanceMetrics {
     let isWinStreak = false;
 
     for (const trade of trades) {
-      const isWin = trade.profitPercent > 0;
+      const isWin = (trade.profitPercent || 0) > 0;
 
       if (currentStreak.length === 0 || isWin === isWinStreak) {
         currentStreak.push(trade);
@@ -821,8 +821,8 @@ export class AdvancedPerformanceMetrics {
           const streak: ConsecutiveTrade = {
             count: currentStreak.length,
             startDate: currentStreak[0].entryDate,
-            endDate: currentStreak[currentStreak.length - 1].exitDate,
-            totalPnL: parseFloat(currentStreak.reduce((sum, t) => sum + t.profitPercent, 0).toFixed(2)),
+            endDate: currentStreak[currentStreak.length - 1].exitDate || '',
+            totalPnL: parseFloat(currentStreak.reduce((sum, t) => sum + (t.profitPercent || 0), 0).toFixed(2)),
             trades: [...currentStreak],
           };
 
@@ -843,8 +843,8 @@ export class AdvancedPerformanceMetrics {
       const streak: ConsecutiveTrade = {
         count: currentStreak.length,
         startDate: currentStreak[0].entryDate,
-        endDate: currentStreak[currentStreak.length - 1].exitDate,
-        totalPnL: parseFloat(currentStreak.reduce((sum, t) => sum + t.profitPercent, 0).toFixed(2)),
+        endDate: currentStreak[currentStreak.length - 1].exitDate || '',
+        totalPnL: parseFloat(currentStreak.reduce((sum, t) => sum + (t.profitPercent || 0), 0).toFixed(2)),
         trades: [...currentStreak],
       };
 
@@ -859,11 +859,11 @@ export class AdvancedPerformanceMetrics {
   }
 
   private static calculateTradeDistribution(trades: BacktestTrade[]): TradeDistribution {
-    const winningTrades = trades.filter(t => t.profitPercent > 0);
-    const losingTrades = trades.filter(t => t.profitPercent <= 0);
+    const winningTrades = trades.filter(t => (t.profitPercent || 0) > 0);
+    const losingTrades = trades.filter(t => (t.profitPercent || 0) <= 0);
 
-    const profits = winningTrades.map(t => t.profitPercent);
-    const losses = losingTrades.map(t => Math.abs(t.profitPercent));
+    const profits = winningTrades.map(t => t.profitPercent || 0);
+    const losses = losingTrades.map(t => Math.abs(t.profitPercent || 0));
 
     const avgProfit = profits.length > 0 ? profits.reduce((a, b) => a + b, 0) / profits.length : 0;
     const avgLoss = losses.length > 0 ? losses.reduce((a, b) => a + b, 0) / losses.length : 0;
@@ -925,7 +925,7 @@ export class AdvancedPerformanceMetrics {
     const monthlyMap = new Map<string, { return: number; trades: number; wins: number; losses: number }>();
 
     for (const trade of trades) {
-      const date = new Date(trade.exitDate);
+      const date = new Date(trade.exitDate || new Date().toISOString());
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       if (!monthlyMap.has(key)) {
@@ -933,9 +933,9 @@ export class AdvancedPerformanceMetrics {
       }
 
       const data = monthlyMap.get(key)!;
-      data.return += trade.profitPercent;
+      data.return += (trade.profitPercent || 0);
       data.trades++;
-      if (trade.profitPercent > 0) {
+      if ((trade.profitPercent || 0) > 0) {
         data.wins++;
       } else {
         data.losses++;
@@ -963,16 +963,16 @@ export class AdvancedPerformanceMetrics {
     const yearlyMap = new Map<number, { return: number; trades: number; wins: number; losses: number; maxDrawdown: number }>();
 
     for (const trade of trades) {
-      const year = new Date(trade.exitDate).getFullYear();
+      const year = new Date(trade.exitDate || new Date().toISOString()).getFullYear();
 
       if (!yearlyMap.has(year)) {
         yearlyMap.set(year, { return: 0, trades: 0, wins: 0, losses: 0, maxDrawdown: 0 });
       }
 
       const data = yearlyMap.get(year)!;
-      data.return += trade.profitPercent;
+      data.return += (trade.profitPercent || 0);
       data.trades++;
-      if (trade.profitPercent > 0) {
+      if ((trade.profitPercent || 0) > 0) {
         data.wins++;
       } else {
         data.losses++;

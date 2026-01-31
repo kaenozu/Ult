@@ -4,7 +4,7 @@
  * このモジュールは、ML予測結果から取引シグナルを生成する機能を提供します。
  */
 
-import { Stock, OHLCV, Signal } from '../types';
+import { Stock, OHLCV, Signal } from '@/app/types';
 import { ModelPrediction } from '../types/prediction-types';
 import { analyzeStock } from '@/app/lib/analysis';
 import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION } from '@/app/lib/constants';

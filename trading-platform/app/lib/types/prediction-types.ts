@@ -2,7 +2,7 @@
  * 予測関連の型定義
  */
 
-import { TechnicalIndicator } from '../types';
+import { TechnicalIndicator } from '@/app/types';
 
 export interface PredictionFeatures {
   rsi: number;

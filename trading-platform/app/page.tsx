@@ -11,11 +11,13 @@ import { RightSidebar } from '@/app/components/RightSidebar';
 import { BottomPanel } from '@/app/components/BottomPanel';
 import { AdvancedIndicatorsChart } from '@/app/components/StockChart/AdvancedIndicatorsChart';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
 
 export default function Workstation() {
-  const { portfolio, closePosition, journal } = usePortfolioStore();
+  const { portfolio, closePosition } = usePortfolioStore();
+  const { journal } = useJournalStore();
   const { watchlist } = useWatchlistStore();
   const {
     selectedStock,

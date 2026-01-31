@@ -2,20 +2,22 @@
 
 import { useState, useRef, useEffect, useMemo, memo } from 'react';
 import { Search, Settings, User, Wifi, WifiOff, Edit2, Plus, Loader2 } from 'lucide-react';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useUIStore } from '@/app/store/uiStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { ALL_STOCKS, fetchStockMetadata } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
 import { NotificationCenter } from './NotificationCenter';
 
 export const Header = memo(function Header() {
-  const portfolio = useTradingStore(s => s.portfolio);
-  const setCash = useTradingStore(s => s.setCash);
-  const isConnected = useTradingStore(s => s.isConnected);
-  const toggleConnection = useTradingStore(s => s.toggleConnection);
-  const setSelectedStock = useTradingStore(s => s.setSelectedStock);
-  const watchlist = useTradingStore(s => s.watchlist);
-  const addToWatchlist = useTradingStore(s => s.addToWatchlist);
+  const portfolio = usePortfolioStore(s => s.portfolio);
+  const setCash = usePortfolioStore(s => s.setCash);
+  const isConnected = useUIStore(s => s.isConnected);
+  const toggleConnection = useUIStore(s => s.toggleConnection);
+  const setSelectedStock = useUIStore(s => s.setSelectedStock);
+  const watchlist = useWatchlistStore(s => s.watchlist);
+  const addToWatchlist = useWatchlistStore(s => s.addToWatchlist);
 
   const [isEditingCash, setIsEditingCash] = useState(false);
   const [cashInput, setCashInput] = useState('');

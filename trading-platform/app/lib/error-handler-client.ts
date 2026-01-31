@@ -7,7 +7,14 @@
  * - エラーログの収集
  */
 
-import { toast } from 'sonner'; // 一般的な通知ライブラリを仮定
+// import { toast } from 'sonner'; // 一般的な通知ライブラリを仮定
+
+// Mock toast for now
+const toast = {
+  error: (message: string, options?: any) => console.error(message, options),
+  warning: (message: string, options?: any) => console.warn(message, options),
+  success: (message: string, options?: any) => console.log(message, options),
+};
 
 /**
  * エラーのカテゴリ

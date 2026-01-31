@@ -314,12 +314,13 @@ export interface BacktestTrade {
   symbol: string;
   type: 'BUY' | 'SELL';
   entryPrice: number;
-  exitPrice: number;
+  exitPrice?: number;
   entryDate: string;
-  exitDate: string;
-  profitPercent: number;
+  exitDate?: string;
+  profitPercent?: number;
   reason?: string;
   exitReason?: string;
+  status?: 'OPEN' | 'CLOSED';
 }
 
 export interface BacktestResult {

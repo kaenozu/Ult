@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { Navigation } from '@/app/components/Navigation';
-import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useJournalStore } from '@/app/store/journalStore';
 import { cn, formatCurrency, formatPercent } from '@/app/lib/utils';
 
 export default function Journal() {
-  const { journal } = usePortfolioStore();
+  const { journal } = useJournalStore();
   const [activeTab, setActiveTab] = useState<'trades' | 'analysis'>('trades');
 
   const closedTrades = journal.filter(entry => entry.status === 'CLOSED');

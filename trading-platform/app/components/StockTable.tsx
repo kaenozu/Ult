@@ -2,7 +2,8 @@
 
 import { Stock } from '@/app/types';
 import { formatCurrency, formatPercent, getChangeColor, cn } from '@/app/lib/utils';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { useUIStore } from '@/app/store/uiStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 import { useEffect, memo, useCallback, useMemo } from 'react';
 
@@ -81,9 +82,9 @@ interface StockTableProps {
 }
 
 export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) => {
-  const setSelectedStock = useTradingStore(s => s.setSelectedStock);
-  const batchUpdateStockData = useTradingStore(s => s.batchUpdateStockData);
-  const removeFromWatchlist = useTradingStore(s => s.removeFromWatchlist);
+  const setSelectedStock = useUIStore(s => s.setSelectedStock);
+  const batchUpdateStockData = useWatchlistStore(s => s.batchUpdateStockData);
+  const removeFromWatchlist = useWatchlistStore(s => s.removeFromWatchlist);
 
   const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
 
