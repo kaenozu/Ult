@@ -7,7 +7,7 @@ import { useTradingStore } from '@/app/store/tradingStore';
 jest.mock('@/app/store/tradingStore');
 
 describe('OrderPanel', () => {
-    const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const, sector: 'Automotive', volume: 1000000 };
+    const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const };
     const mockAddPosition = jest.fn();
     const mockSetCash = jest.fn();
     const mockAddJournalEntry = jest.fn();

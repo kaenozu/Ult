@@ -1,0 +1,313 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { Stock, Position, Portfolio, JournalEntry, Theme, AIStatus, Signal, PaperTrade } from '../types';
+import { AI_TRADING, POSITION_SIZING, MARKET_CORRELATION } from '@/app/lib/constants';
+import { aiTradeService } from '@/app/lib/AITradeService';
+
+export interface TradingStore {
+  theme: Theme;
+  toggleTheme: () => void;
+  watchlist: Stock[];
+  addToWatchlist: (stock: Stock) => void;
+  removeFromWatchlist: (symbol: string) => void;
+  updateStockData: (symbol: string, data: Partial<Stock>) => void;
+  batchUpdateStockData: (updates: { symbol: string, data: Partial<Stock> }[]) => void;
+  portfolio: Portfolio;
+  updatePortfolio: (positions: Position[]) => void;
+  addPosition: (position: Position) => void;
+  executeOrder: (order: { symbol: string; name: string; market: 'japan' | 'usa'; side: 'LONG' | 'SHORT'; quantity: number; price: number; type: 'MARKET' | 'LIMIT' }) => void;
+  closePosition: (symbol: string, exitPrice: number) => void;
+  setCash: (amount: number) => void;
+  journal: JournalEntry[];
+  addJournalEntry: (entry: JournalEntry) => void;
+  selectedStock: Stock | null;
+  setSelectedStock: (stock: Stock | null) => void;
+  isConnected: boolean;
+  toggleConnection: () => void;
+  aiStatus: AIStatus;
+  processAITrades: (symbol: string, currentPrice: number, signal: Signal | null) => void;
+}
+
+const initialPortfolio: Portfolio = {
+  positions: [],
+  orders: [],
+  totalValue: 0,
+  totalProfit: 0,
+  dailyPnL: 0,
+  cash: AI_TRADING.INITIAL_VIRTUAL_BALANCE,
+};
+
+const initialAIStatus: AIStatus = {
+  virtualBalance: AI_TRADING.INITIAL_VIRTUAL_BALANCE,
+  totalProfit: 0,
+  trades: [],
+};
+
+function calculatePortfolioStats(positions: Position[]) {
+  const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
+  const totalProfit = positions.reduce((sum, p) => {
+    const pnl = p.side === 'LONG'
+      ? (p.currentPrice - p.avgPrice) * p.quantity
+      : (p.avgPrice - p.currentPrice) * p.quantity;
+    return sum + pnl;
+  }, 0);
+  const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+  return { totalValue, totalProfit, dailyPnL };
+}
+
+/**
+ * tradingStore.ts - Master Store
+ * 全てのアプリケーション状態のソース・オブ・トゥルースです。
+ * 分割された各ストア・ファイル（watchlistStore.ts 等）はこのストアのファサードとして機能します。
+ */
+export const useTradingStore = create<TradingStore>()(
+  persist(
+    (set, get) => ({
+      theme: 'dark',
+      toggleTheme: () => set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+
+      watchlist: [],
+
+      addToWatchlist: (stock) => set((state) => {
+        if (state.watchlist.find(s => s.symbol === stock.symbol)) {
+          return state;
+        }
+        return { watchlist: [...state.watchlist, stock] };
+      }),
+
+      removeFromWatchlist: (symbol) => set((state) => ({
+        watchlist: state.watchlist.filter(s => s.symbol !== symbol),
+      })),
+
+      updateStockData: (symbol, data) => set((state) => {
+        const newWatchlist = state.watchlist.map(s =>
+          s.symbol === symbol ? { ...s, ...data } : s
+        );
+
+        const newPositions = state.portfolio.positions.map(p =>
+          p.symbol === symbol ? {
+            ...p,
+            currentPrice: data.price ?? p.currentPrice,
+            change: data.change ?? p.change
+          } : p
+        );
+
+        const stats = calculatePortfolioStats(newPositions);
+
+        return {
+          watchlist: newWatchlist,
+          portfolio: {
+            ...state.portfolio,
+            positions: newPositions,
+            ...stats
+          }
+        };
+      }),
+
+      batchUpdateStockData: (updates) => set((state) => {
+        const updateMap = new Map(updates.map(u => [u.symbol, u.data]));
+        const newPositions = state.portfolio.positions.map(p => {
+          const update = updateMap.get(p.symbol);
+          return update && update.price ? { ...p, currentPrice: update.price } : p;
+        });
+
+        // Recalculate stats since prices might have changed
+        const stats = calculatePortfolioStats(newPositions);
+
+        return {
+          watchlist: state.watchlist.map(s => {
+            const update = updateMap.get(s.symbol);
+            return update ? { ...s, ...update } : s;
+          }),
+          portfolio: {
+            ...state.portfolio,
+            positions: newPositions,
+            ...stats
+          }
+        };
+      }),
+
+      portfolio: initialPortfolio,
+
+      updatePortfolio: (positions) => set((state) => {
+        const stats = calculatePortfolioStats(positions);
+        return {
+          portfolio: {
+            ...state.portfolio,
+            positions,
+            ...stats,
+          },
+        };
+      }),
+
+      executeOrder: (order) => set((state) => {
+        const totalCost = order.quantity * order.price;
+        // Basic check, though OrderPanel handles UI disabled state
+        if (order.side === 'LONG' && state.portfolio.cash < totalCost) {
+            return state;
+        }
+
+        const positions = [...state.portfolio.positions];
+        const newPosition: Position = {
+            symbol: order.symbol,
+            name: order.name,
+            market: order.market,
+            side: order.side,
+            quantity: order.quantity,
+            avgPrice: order.price,
+            currentPrice: order.price,
+            change: 0,
+            entryDate: new Date().toISOString().split('T')[0],
+        };
+
+        const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
+
+        if (existingIndex >= 0) {
+          const existing = positions[existingIndex];
+          const combinedCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
+          const totalQty = existing.quantity + newPosition.quantity;
+
+          positions[existingIndex] = {
+            ...existing,
+            quantity: totalQty,
+            avgPrice: combinedCost / totalQty,
+            currentPrice: newPosition.currentPrice,
+          };
+        } else {
+          positions.push(newPosition);
+        }
+
+        // Recalculate totals
+        const stats = calculatePortfolioStats(positions);
+
+        // Deduct cash for both BUY and SELL as per original logic (Short selling collateral/margin implied)
+        const newCash = state.portfolio.cash - totalCost;
+
+        return {
+          portfolio: {
+            ...state.portfolio,
+            positions,
+            ...stats,
+            cash: newCash,
+          },
+        };
+      }),
+
+      addPosition: (newPosition) => set((state) => {
+        const positions = [...state.portfolio.positions];
+        const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
+
+        if (existingIndex >= 0) {
+          const existing = positions[existingIndex];
+          const totalCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
+          const totalQty = existing.quantity + newPosition.quantity;
+
+          positions[existingIndex] = {
+            ...existing,
+            quantity: totalQty,
+            avgPrice: totalCost / totalQty,
+            currentPrice: newPosition.currentPrice,
+            change: newPosition.change
+          };
+        } else {
+          positions.push(newPosition);
+        }
+
+        const stats = calculatePortfolioStats(positions);
+
+        return {
+          portfolio: {
+            ...state.portfolio,
+            positions,
+            ...stats,
+          },
+        };
+      }),
+
+      closePosition: (symbol, exitPrice) => set((state) => {
+        const position = state.portfolio.positions.find(p => p.symbol === symbol);
+        if (!position) return state;
+
+        const profit = position.side === 'LONG'
+          ? (exitPrice - position.avgPrice) * position.quantity
+          : (position.avgPrice - exitPrice) * position.quantity;
+
+        const profitPercent = position.side === 'LONG'
+          ? ((exitPrice - position.avgPrice) / position.avgPrice) * 100
+          : ((position.avgPrice - exitPrice) / position.avgPrice) * 100;
+
+        const entry: JournalEntry = {
+          id: Date.now().toString(),
+          symbol,
+          date: position.entryDate,
+          signalType: position.side === 'LONG' ? 'BUY' : 'SELL',
+          entryPrice: position.avgPrice,
+          exitPrice,
+          quantity: position.quantity,
+          profit,
+          profitPercent,
+          notes: '',
+          status: 'CLOSED',
+        };
+
+        const positions = state.portfolio.positions.filter(p => p.symbol !== symbol);
+        const stats = calculatePortfolioStats(positions);
+
+        return {
+          portfolio: {
+            ...state.portfolio,
+            positions,
+            ...stats,
+            cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit,
+          },
+          journal: [...state.journal, entry],
+        };
+      }),
+
+      setCash: (amount) => set((state) => ({
+        portfolio: {
+          ...state.portfolio,
+          cash: amount,
+        },
+      })),
+
+      journal: [],
+
+      addJournalEntry: (entry) => set((state) => ({
+        journal: [...state.journal, entry],
+      })),
+
+      selectedStock: null,
+
+      setSelectedStock: (stock) => set({ selectedStock: stock }),
+
+      isConnected: true,
+
+      toggleConnection: () => set((state) => ({ isConnected: !state.isConnected })),
+
+      aiStatus: initialAIStatus,
+
+      processAITrades: (symbol, currentPrice, signal) => {
+        const { aiStatus } = get();
+        const { portfolio } = get();
+
+        // AITradeService を使用して新しい状態を計算
+        const result = aiTradeService.processTrades(symbol, currentPrice, signal, aiStatus);
+
+        if (result) {
+          set({ aiStatus: result.newStatus });
+        }
+      }
+    }),
+    {
+      name: 'trading-platform-storage',
+      partialize: (state) => ({
+        theme: state.theme,
+        watchlist: state.watchlist,
+        journal: state.journal,
+        portfolio: state.portfolio,
+        aiStatus: state.aiStatus,
+      }),
+    }
+  )
+);

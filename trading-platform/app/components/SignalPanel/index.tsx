@@ -1,10 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
 import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
-import { BacktestResult } from '@/app/lib/backtest';
+import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { useAIStore } from '@/app/store/aiStore';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
-import { useBacktestWorker } from '@/app/hooks/useBacktestWorker';
 import { SignalCard } from '../SignalCard';
 import { useSignalAlerts } from '@/app/hooks/useSignalAlerts';
 import { useAIPerformance } from '@/app/hooks/useAIPerformance';
@@ -66,27 +65,16 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     }
   }, [stock.symbol, stock.price, displaySignal, processAITrades]);
 
-  // Web Worker hook for backtest
-  const {
-    runBacktest: runBacktestAsync,
-    cancelBacktest,
-    isRunning: isBacktesting,
-    progress: backtestProgress,
-    currentStep: backtestStep,
-    error: backtestError
-  } = useBacktestWorker();
-
   // Backtest state
   const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null);
+  const [isBacktesting, setIsBacktesting] = useState(false);
 
   // Reset backtest when stock changes
   useEffect(() => {
     setBacktestResult(null);
-    // Cancel any running backtest
-    cancelBacktest();
-  }, [stock.symbol, cancelBacktest]);
+  }, [stock.symbol]);
 
-  // Lazy load backtest result using Web Worker
+  // Lazy load backtest result
   useEffect(() => {
     if (loading) return;
 
@@ -111,41 +99,20 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         return;
       }
 
-      // Run backtest asynchronously using Web Worker
-      const executeBacktest = async () => {
+      setIsBacktesting(true);
+      // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
+      setTimeout(() => {
         try {
-          const result = await runBacktestAsync(stock.symbol, ohlcv, stock.market);
+          const result = runBacktest(stock.symbol, ohlcv, stock.market);
           setBacktestResult(result);
         } catch (e) {
-          console.error("Backtest failed:", e);
-          // Set empty result on error
-          setBacktestResult({
-            symbol: stock.symbol,
-            totalTrades: 0,
-            winningTrades: 0,
-            losingTrades: 0,
-            winRate: 0,
-            totalReturn: 0,
-            avgProfit: 0,
-            avgLoss: 0,
-            profitFactor: 0,
-            maxDrawdown: 0,
-            sharpeRatio: 0,
-            trades: [],
-            startDate: new Date().toISOString(),
-            endDate: new Date().toISOString()
-          });
+          console.error("Backtest failed", e);
+        } finally {
+          setIsBacktesting(false);
         }
-      };
-
-      executeBacktest();
-
-      // Cleanup: cancel backtest on unmount or tab change
-      return () => {
-        cancelBacktest();
-      };
+      }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, runBacktestAsync, cancelBacktest]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading]);
 
   const aiTrades = useMemo(() => {
     return aiStatus.trades.filter(t => t.symbol === stock.symbol);
@@ -237,17 +204,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               aiTradesCount={preciseHitRate.trades}
               calculatingHitRate={calculatingHitRate}
               error={error}
-              ohlcv={ohlcv}
             />
         </div>
       ) : activeTab === 'backtest' ? (
-        <BacktestView 
-          backtestResult={backtestResult} 
-          loading={isBacktesting} 
-          progress={backtestProgress}
-          currentStep={backtestStep}
-          error={backtestError}
-        />
+        <BacktestView backtestResult={backtestResult} loading={isBacktesting} />
       ) : activeTab === 'forecast' ? (
         <ForecastView signal={displaySignal} stock={stock} />
       ) : activeTab === 'ai' ? (

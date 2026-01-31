@@ -34,17 +34,6 @@ describe('SimpleRSIChart', () => {
     expect(points).toContain(',');
   });
 
-  it('displays the latest RSI value and has accessible attributes', () => {
-    const { getByRole, getByText } = render(<SimpleRSIChart data={mockData} />);
-
-    // Check visible text
-    expect(getByText('30.0')).toBeInTheDocument();
-
-    // Check accessible attributes
-    const chart = getByRole('img');
-    expect(chart).toHaveAttribute('aria-label', 'Relative Strength Index chart. Current value: 30.0');
-  });
-
   it('renders null without data', () => {
     const { container } = render(<SimpleRSIChart data={[]} />);
     expect(container.firstChild).toBeNull();

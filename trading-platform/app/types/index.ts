@@ -193,10 +193,6 @@ export interface Signal {
    */
   positionSizeAdjustment?: number;
   /**
-   * Filter reasons when signal was filtered out
-   */
-  filterReasons?: string[];
-  /**
    * Exit strategy configuration for the signal
    */
   exitStrategy?: {
