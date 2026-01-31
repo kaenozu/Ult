@@ -14,6 +14,8 @@ import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useStockData } from '@/app/hooks/useStockData';
+import { Button } from '@/app/components/ui/Button';
+import { Search } from 'lucide-react';
 
 export default function Workstation() {
   const { portfolio, closePosition } = usePortfolioStore();
@@ -140,6 +142,14 @@ export default function Workstation() {
               <p className="text-sm max-w-xs">
                 ウォッチリストから銘柄を選択するか、上の検索ボックスから銘柄を探して取引を開始してください。
               </p>
+              <Button
+                onClick={() => document.getElementById('stockSearch')?.focus()}
+                className="mt-6 gap-2"
+                variant="default"
+              >
+                <Search className="w-4 h-4" />
+                銘柄を検索する
+              </Button>
             </div>
           ) : (
             <>
