@@ -181,6 +181,24 @@ export function getWebSocketUrl(path: string = '/ws/signals'): string {
 // ============================================
 
 /**
+ * Calculate returns (percentage change)
+ */
+export function calculateReturns(prices: number[]): number[] {
+  if (prices.length < 2) return [];
+  const returns: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    const prev = prices[i - 1];
+    const curr = prices[i];
+    if (prev !== 0 && !isNaN(prev) && !isNaN(curr)) {
+        returns.push((curr - prev) / prev);
+    } else {
+        returns.push(0);
+    }
+  }
+  return returns;
+}
+
+/**
  * Calculate Simple Moving Average (SMA)
  */
 export function calculateSMA(prices: number[], period: number): number[] {
@@ -248,10 +266,15 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   }
 
   for (let i = 0; i < validPrices.length; i++) {
-    if (i <= period) {
+    if (i < period) {
       result.push(NaN);
-    } else if (i === period + 1) {
-      const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+    } else if (i === period) {
+      let rsi;
+      if (avgLoss === 0) {
+        rsi = avgGain === 0 ? 50 : 100;
+      } else {
+        rsi = 100 - (100 / (1 + avgGain / avgLoss));
+      }
       result.push(isFinite(rsi) ? rsi : NaN);
     } else {
       const change = changes[i - 1];
@@ -266,7 +289,12 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
         avgGain = (avgGain * (period - 1) + gain) / period;
         avgLoss = (avgLoss * (period - 1) + loss) / period;
 
-        const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        let rsi;
+        if (avgLoss === 0) {
+          rsi = avgGain === 0 ? 50 : 100;
+        } else {
+          rsi = 100 - (100 / (1 + avgGain / avgLoss));
+        }
         result.push(isFinite(rsi) ? rsi : NaN);
       }
     }
@@ -278,43 +306,54 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
 /**
  * Calculate Exponential Moving Average (EMA)
  */
-function calculateEMA(prices: number[], period: number): number[] {
+export function calculateEMA(prices: number[], period: number): number[] {
   // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
   const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
   const result: number[] = [];
   const multiplier = 2 / (period + 1);
 
-  // 有効な価格データのみでSMAを計算
   let sum = 0;
   let validCount = 0;
-  for (let i = 0; i < period && i < validPrices.length; i++) {
-    if (!isNaN(validPrices[i])) {
-      sum += validPrices[i];
-      validCount++;
-    }
-    result.push(NaN);
-  }
+  let initialized = false;
 
-  // 有効なデータが十分にある場合のみSMAを計算
-  if (validCount >= period) {
-    const sma = sum / validCount;
-    result[period - 1] = sma;
+  for (let i = 0; i < validPrices.length; i++) {
+    const val = validPrices[i];
 
-    // Calculate EMA
-    for (let i = period; i < validPrices.length; i++) {
-      if (isNaN(validPrices[i])) {
-        result.push(NaN);
-      } else if (!isNaN(result[i - 1])) {
-        const ema = (validPrices[i] - result[i - 1]) * multiplier + result[i - 1];
-        result.push(ema);
-      } else {
-        result.push(NaN);
-      }
-    }
-  } else {
-    // 有効なデータが不足している場合はすべてNaN
-    for (let i = period; i < validPrices.length; i++) {
-      result.push(NaN);
+    if (!initialized) {
+        // Not initialized yet, try to build SMA
+        if (!isNaN(val)) {
+            sum += val;
+            validCount++;
+        }
+
+        // We push NaN until we hit the 'period'-th valid value
+        if (validCount === period && !isNaN(val)) {
+            // Note: validCount increments even if we don't push value, but we only init when we have 'period' valid values
+            // Wait, if we have [10, NaN, 20]. period=2.
+            // i=0: sum=10. count=1.
+            // i=1: sum=10. count=1.
+            // i=2: sum=30. count=2. Init!
+            const sma = sum / period;
+            result.push(sma);
+            initialized = true;
+        } else {
+            result.push(NaN);
+        }
+    } else {
+        // Initialized
+        if (!isNaN(val) && !isNaN(result[i - 1])) {
+            const ema = (val - result[i - 1]) * multiplier + result[i - 1];
+            result.push(ema);
+        } else {
+            // If current value is invalid, we can't update EMA properly.
+            // Option: Propagate NaN, or hold previous value.
+            // Propagating NaN is safer to indicate missing data.
+            result.push(NaN);
+            // NOTE: Once NaN is pushed, next iteration result[i-1] is NaN, so it propagates NaN forever?
+            // This might be undesirable if data comes back.
+            // If data comes back, maybe we should re-initialize?
+            // For now, let's just push NaN. Robust re-init is complex.
+        }
     }
   }
 
