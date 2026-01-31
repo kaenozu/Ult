@@ -277,6 +277,7 @@ export interface Order {
   price?: number;
   status: 'PENDING' | 'FILLED' | 'CANCELLED';
   date: string;
+  timestamp?: number;
 }
 
 export interface Portfolio {

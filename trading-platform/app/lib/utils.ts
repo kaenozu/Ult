@@ -276,9 +276,26 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
 }
 
 /**
+ * Calculate returns from price data
+ */
+export function calculateReturns(prices: number[]): number[] {
+  const returns: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    const prev = prices[i - 1];
+    const curr = prices[i];
+    if (prev && curr) {
+      returns.push((curr - prev) / prev);
+    } else {
+      returns.push(0);
+    }
+  }
+  return returns;
+}
+
+/**
  * Calculate Exponential Moving Average (EMA)
  */
-function calculateEMA(prices: number[], period: number): number[] {
+export function calculateEMA(prices: number[], period: number): number[] {
   // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
   const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
   const result: number[] = [];
