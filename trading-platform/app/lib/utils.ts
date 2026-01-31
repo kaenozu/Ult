@@ -185,27 +185,22 @@ export function getWebSocketUrl(path: string = '/ws/signals'): string {
  */
 export function calculateSMA(prices: number[], period: number): number[] {
   const result: number[] = [];
-  let sum = 0;
+  // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
+  const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
 
-  for (let i = 0; i < prices.length; i++) {
-    sum += prices[i];
-
-    if (i >= period) {
-      sum -= prices[i - period];
-    }
-
+  for (let i = 0; i < validPrices.length; i++) {
     if (i < period - 1) {
       result.push(NaN);
     } else {
-      // If sum is NaN, it might be due to a NaN value in the current window or history.
-      // We fallback to slice/reduce to ensure correctness and attempt to recover the sum.
-      if (isNaN(sum)) {
-        const slice = prices.slice(i - period + 1, i + 1);
-        const freshSum = slice.reduce((s, p) => s + p, 0);
-        result.push(freshSum / period);
-        sum = freshSum; // Reset sum to valid value if possible
+      const slice = validPrices.slice(i - period + 1, i + 1);
+      // 有効な値のみを合計
+      const validValues = slice.filter(val => !isNaN(val));
+      if (validValues.length < period) {
+        // 期間内のデータが不足している場合はNaNを返す
+        result.push(NaN);
       } else {
-        result.push(sum / period);
+        const avg = validValues.reduce((sum, p) => sum + p, 0) / period;
+        result.push(avg);
       }
     }
   }
@@ -216,44 +211,64 @@ export function calculateSMA(prices: number[], period: number): number[] {
  * Calculate Relative Strength Index (RSI)
  */
 export function calculateRSI(prices: number[], period: number = 14): number[] {
+  // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
+  const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
   const result: number[] = [];
   const changes: number[] = [];
 
-  for (let i = 1; i < prices.length; i++) {
-    changes.push(prices[i] - prices[i - 1]);
+  for (let i = 1; i < validPrices.length; i++) {
+    // 有効な価格データのみで変化量を計算
+    if (!isNaN(validPrices[i]) && !isNaN(validPrices[i - 1])) {
+      changes.push(validPrices[i] - validPrices[i - 1]);
+    } else {
+      changes.push(NaN); // 無効なデータの場合はNaNを挿入
+    }
   }
 
   let avgGain = 0;
   let avgLoss = 0;
 
-  // Initialize with first period
+  // 有効な変化量のみを使用して初期化
+  let validChangesCount = 0;
   for (let i = 0; i < period && i < changes.length; i++) {
-    if (changes[i] >= 0) {
-      avgGain += changes[i];
-    } else {
-      avgLoss += Math.abs(changes[i]);
+    if (!isNaN(changes[i])) {
+      if (changes[i] >= 0) {
+        avgGain += changes[i];
+      } else {
+        avgLoss += Math.abs(changes[i]);
+      }
+      validChangesCount++;
     }
   }
-  avgGain /= period;
-  avgLoss /= period;
+  
+  // 有効な変化量がある場合のみ平均を計算
+  if (validChangesCount > 0) {
+    avgGain /= validChangesCount;
+    avgLoss /= validChangesCount;
+  }
 
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period) {
+  for (let i = 0; i < validPrices.length; i++) {
+    if (i <= period) {
       result.push(NaN);
-    } else if (i === period) {
+    } else if (i === period + 1) {
       const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
-      result.push(rsi);
+      result.push(isFinite(rsi) ? rsi : NaN);
     } else {
-      // For subsequent periods (Wilder's Smoothing)
       const change = changes[i - 1];
-      const gain = change >= 0 ? change : 0;
-      const loss = change < 0 ? Math.abs(change) : 0;
+      
+      // 無効な変化量の場合はNaNを返す
+      if (isNaN(change)) {
+        result.push(NaN);
+      } else {
+        const gain = change >= 0 ? change : 0;
+        const loss = change < 0 ? Math.abs(change) : 0;
 
-      avgGain = (avgGain * (period - 1) + gain) / period;
-      avgLoss = (avgLoss * (period - 1) + loss) / period;
+        avgGain = (avgGain * (period - 1) + gain) / period;
+        avgLoss = (avgLoss * (period - 1) + loss) / period;
 
-      const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
-      result.push(rsi);
+        const rsi = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        result.push(isFinite(rsi) ? rsi : NaN);
+      }
     }
   }
 
@@ -263,25 +278,44 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
 /**
  * Calculate Exponential Moving Average (EMA)
  */
-export function calculateEMA(prices: number[], period: number): number[] {
-  if (prices.length === 0) return [];
+function calculateEMA(prices: number[], period: number): number[] {
+  // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
+  const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
   const result: number[] = [];
   const multiplier = 2 / (period + 1);
 
-  // Start with SMA
+  // 有効な価格データのみでSMAを計算
   let sum = 0;
-  for (let i = 0; i < period && i < prices.length; i++) {
-    sum += prices[i];
+  let validCount = 0;
+  for (let i = 0; i < period && i < validPrices.length; i++) {
+    if (!isNaN(validPrices[i])) {
+      sum += validPrices[i];
+      validCount++;
+    }
     result.push(NaN);
   }
 
-  const sma = sum / period;
-  result[period - 1] = sma;
+  // 有効なデータが十分にある場合のみSMAを計算
+  if (validCount >= period) {
+    const sma = sum / validCount;
+    result[period - 1] = sma;
 
-  // Calculate EMA
-  for (let i = period; i < prices.length; i++) {
-    const ema = (prices[i] - result[i - 1]) * multiplier + result[i - 1];
-    result.push(ema);
+    // Calculate EMA
+    for (let i = period; i < validPrices.length; i++) {
+      if (isNaN(validPrices[i])) {
+        result.push(NaN);
+      } else if (!isNaN(result[i - 1])) {
+        const ema = (validPrices[i] - result[i - 1]) * multiplier + result[i - 1];
+        result.push(ema);
+      } else {
+        result.push(NaN);
+      }
+    }
+  } else {
+    // 有効なデータが不足している場合はすべてNaN
+    for (let i = period; i < validPrices.length; i++) {
+      result.push(NaN);
+    }
   }
 
   return result;
@@ -334,18 +368,29 @@ export function calculateBollingerBands(
   const upper: number[] = [];
   const lower: number[] = [];
 
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period - 1) {
+  // 有効な数値のみを含む配列を作成
+  const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
+
+  for (let i = 0; i < validPrices.length; i++) {
+    if (i < period - 1 || isNaN(middle[i])) {
       upper.push(NaN);
       lower.push(NaN);
     } else {
-      const slice = prices.slice(i - period + 1, i + 1);
+      const slice = validPrices.slice(i - period + 1, i + 1);
       const mean = middle[i];
-      const squaredDiffs = slice.map(p => Math.pow(p - mean, 2));
-      const stdDev = Math.sqrt(squaredDiffs.reduce((sum, d) => sum + d, 0) / period);
+      
+      // 有効な価格データのみで標準偏差を計算
+      const validSlice = slice.filter(p => !isNaN(p));
+      if (validSlice.length < period) {
+        upper.push(NaN);
+        lower.push(NaN);
+      } else {
+        const squaredDiffs = validSlice.map(p => Math.pow(p - mean, 2));
+        const stdDev = Math.sqrt(squaredDiffs.reduce((sum, d) => sum + d, 0) / period);
 
-      upper.push(mean + standardDeviations * stdDev);
-      lower.push(mean - standardDeviations * stdDev);
+        upper.push(mean + standardDeviations * stdDev);
+        lower.push(mean - standardDeviations * stdDev);
+      }
     }
   }
 
@@ -361,34 +406,70 @@ export function calculateATR(
   closes: number[],
   period: number = 14
 ): number[] {
+  // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
+  const validHighs = highs.map(h => (h != null && typeof h === 'number' && !isNaN(h) && h > 0) ? h : NaN);
+  const validLows = lows.map(l => (l != null && typeof l === 'number' && !isNaN(l) && l > 0) ? l : NaN);
+  const validCloses = closes.map(c => (c != null && typeof c === 'number' && !isNaN(c) && c > 0) ? c : NaN);
+
   const trueRanges: number[] = [];
 
-  for (let i = 0; i < highs.length; i++) {
+  for (let i = 0; i < validHighs.length; i++) {
     if (i === 0) {
-      trueRanges.push(highs[i] - lows[i]);
+      // 初期値：high - low（ただし、有効な値のみ使用）
+      if (!isNaN(validHighs[i]) && !isNaN(validLows[i])) {
+        trueRanges.push(validHighs[i] - validLows[i]);
+      } else {
+        trueRanges.push(NaN);
+      }
     } else {
-      const tr = Math.max(
-        highs[i] - lows[i],
-        Math.abs(highs[i] - closes[i - 1]),
-        Math.abs(lows[i] - closes[i - 1])
-      );
-      trueRanges.push(tr);
+      // 有効な値がない場合はNaN
+      if (!isNaN(validHighs[i]) && !isNaN(validLows[i]) && !isNaN(validCloses[i - 1])) {
+        const tr = Math.max(
+          validHighs[i] - validLows[i],
+          Math.abs(validHighs[i] - validCloses[i - 1]),
+          Math.abs(validLows[i] - validCloses[i - 1])
+        );
+        trueRanges.push(tr);
+      } else {
+        trueRanges.push(NaN);
+      }
     }
   }
 
   const result: number[] = [];
-  let atr = 0;
+  let sum = 0;
+  let validCount = 0;
 
   for (let i = 0; i < trueRanges.length; i++) {
     if (i < period) {
-      atr += trueRanges[i];
+      // 有効なTrue Rangeのみを合計
+      if (!isNaN(trueRanges[i])) {
+        sum += trueRanges[i];
+        validCount++;
+      }
       result.push(NaN);
+      
+      // 有効なデータが十分に蓄積されたら初期ATRを計算
       if (i === period - 1) {
-        result[i] = atr / period;
+        if (validCount >= period) {
+          result[i] = sum / validCount;
+        } else {
+          // 有効なデータが不足している場合はNaN
+          result[i] = NaN;
+        }
       }
     } else {
-      atr = (result[i - 1] * (period - 1) + trueRanges[i]) / period;
-      result.push(atr);
+      // 有効なTrue Rangeがある場合のみ計算を継続
+      if (isNaN(trueRanges[i])) {
+        result.push(NaN);
+      } else if (!isNaN(result[i - 1])) {
+        // ATR = [(Prior ATR × (period-1)) + Current TR] / period
+        const atr = (result[i - 1] * (period - 1) + trueRanges[i]) / period;
+        result.push(atr);
+      } else {
+        // 以前のATRが無効な場合は現在のTRもNaNにする
+        result.push(NaN);
+      }
     }
   }
 

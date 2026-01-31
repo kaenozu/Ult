@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { OHLCV } from '@/app/types';
 import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
+import { cn } from '@/app/lib/utils';
 
 interface SimpleRSIChartProps {
   data: OHLCV[];
@@ -15,6 +16,13 @@ export function SimpleRSIChart({ data, height = 96 }: SimpleRSIChartProps) {
     const closes = data.map(d => d.close);
     return technicalIndicatorService.calculateRSI(closes, 14);
   }, [data]);
+
+  const lastRsi = useMemo(() => {
+    for (let i = rsiValues.length - 1; i >= 0; i--) {
+      if (!isNaN(rsiValues[i])) return rsiValues[i];
+    }
+    return null;
+  }, [rsiValues]);
 
   if (!data || data.length === 0) return null;
 
@@ -30,8 +38,24 @@ export function SimpleRSIChart({ data, height = 96 }: SimpleRSIChartProps) {
   }).filter(Boolean).join(' ');
 
   return (
-    <div className="w-full h-full relative">
-        <span className="absolute top-1 left-2 text-[10px] text-[#92adc9] font-medium z-10">RSI (14)</span>
+    <div
+      className="w-full h-full relative"
+      role="img"
+      aria-label={`Relative Strength Index chart. Current value: ${lastRsi !== null ? lastRsi.toFixed(1) : 'N/A'}`}
+    >
+        <span className="absolute top-1 left-2 text-[10px] text-[#92adc9] font-medium z-10" aria-hidden="true">
+            RSI (14)
+            {lastRsi !== null && (
+                <span className={cn(
+                    "ml-1 font-bold",
+                    lastRsi > 70 ? "text-red-400" :
+                    lastRsi < 30 ? "text-green-400" :
+                    "text-white"
+                )}>
+                    {lastRsi.toFixed(1)}
+                </span>
+            )}
+        </span>
 
         {/* Threshold Lines (70 and 30) */}
         <div className="absolute inset-0 pointer-events-none">
