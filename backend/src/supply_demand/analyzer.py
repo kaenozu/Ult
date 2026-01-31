@@ -4,8 +4,11 @@ Supply/Demand Analyzer
 Analyzes supply and demand zones from volume-by-price data.
 """
 
-from typing import List, Dict, Tuple, Optional
+import numpy as np
+from typing import List, Dict, Tuple, Optional, Union
+from collections import defaultdict
 from .models import Zone, ZoneType, BreakoutEvent
+from backend.src.cache.cache_manager import cached
 
 # Constants for zone identification
 ZONE_STRENGTH_DEFAULT = 0.5
@@ -18,8 +21,11 @@ BREAKOUT_VOLUME_SURGE_MULTIPLIER = 1.5  # 50% volume surge for confirmation
 class SupplyDemandAnalyzer:
     """Analyzes supply and demand zones"""
 
-    def calculate_volume_by_price(self, data: List[Tuple[float, int]]) -> Dict[float, int]:
-        """Calculate volume distribution by price levels
+    def calculate_volume_by_price(
+        self,
+        data: List[Tuple[float, Union[int, float]]]
+    ) -> Dict[float, Union[int, float]]:
+        """Calculate volume distribution by price levels using numpy vectorization
 
         Args:
             data: List of (price, volume) tuples
@@ -27,22 +33,28 @@ class SupplyDemandAnalyzer:
         Returns:
             Dictionary mapping price to total volume
         """
-        volume_by_price = {}
+        if not data:
+            return {}
+        
+        # Convert to numpy arrays for vectorized operations
+        data_array = np.array(data, dtype=object)
+        prices = np.array([float(d[0]) for d in data])
+        volumes = np.array([float(d[1]) for d in data])
+        
+        # Get unique prices and sum volumes for each price
+        unique_prices, indices = np.unique(prices, return_inverse=True)
+        summed_volumes = np.bincount(indices, weights=volumes)
+        
+        # Convert back to dictionary
+        return dict(zip(unique_prices.tolist(), summed_volumes.tolist()))
 
-        for price, volume in data:
-            if price in volume_by_price:
-                volume_by_price[price] += volume
-            else:
-                volume_by_price[price] = volume
-
-        return volume_by_price
-
+    @cached(ttl=30, max_size=500)
     def identify_levels(
         self,
-        volume_by_price: Dict[float, int],
+        volume_by_price: Dict[float, Union[int, float]],
         current_price: float
     ) -> List[Zone]:
-        """Identify support and resistance levels from volume profile
+        """Identify support and resistance levels using numpy vectorization
 
         Args:
             volume_by_price: Dictionary of price to volume
@@ -54,38 +66,39 @@ class SupplyDemandAnalyzer:
         if not volume_by_price:
             return []
 
-        # Calculate volume statistics
-        volumes = list(volume_by_price.values())
-        max_volume = max(volumes)
-        min_volume = min(volumes)
-        avg_volume = sum(volumes) / len(volumes)
+        # Convert to numpy arrays for vectorized operations
+        prices = np.array(list(volume_by_price.keys()), dtype=np.float64)
+        volumes = np.array(list(volume_by_price.values()), dtype=np.float64)
 
+        # Calculate volume statistics using numpy
+        max_volume = np.max(volumes)
+        min_volume = np.min(volumes)
+        avg_volume = np.mean(volumes)
+
+        # Determine zone types using vectorized operations
+        zone_types = np.where(prices < current_price, ZoneType.SUPPORT, ZoneType.RESISTANCE)
+
+        # Calculate strengths using vectorized operations
+        if max_volume > min_volume:
+            strengths = (volumes - min_volume) / (max_volume - min_volume)
+        else:
+            strengths = np.full_like(volumes, ZONE_STRENGTH_DEFAULT)
+
+        # Filter significant zones (volume above average)
+        significant_mask = volumes >= avg_volume * ZONE_VOLUME_THRESHOLD_MULTIPLIER
+        
+        # Create zone objects for significant levels
         zones = []
-
-        for price, volume in volume_by_price.items():
-            # Determine zone type based on current price
-            if price < current_price:
-                zone_type = ZoneType.SUPPORT
-            else:
-                zone_type = ZoneType.RESISTANCE
-
-            # Calculate strength based on volume relative to max
-            # Higher volume = stronger zone
-            if max_volume > min_volume:
-                strength = (volume - min_volume) / (max_volume - min_volume)
-            else:
-                strength = ZONE_STRENGTH_DEFAULT
-
-            # Only include significant zones (volume above average)
-            if volume >= avg_volume * ZONE_VOLUME_THRESHOLD_MULTIPLIER:
+        for i in range(len(prices)):
+            if significant_mask[i]:
                 zones.append(Zone(
-                    price=price,
-                    volume=volume,
-                    zone_type=zone_type,
-                    strength=strength
+                    price=float(prices[i]),
+                    volume=int(volumes[i]),
+                    zone_type=zone_types[i],
+                    strength=float(strengths[i])
                 ))
 
-        # Sort by strength (strongest first)
+        # Sort by strength (strongest first) using numpy argsort
         zones.sort(key=lambda z: z.strength, reverse=True)
 
         return zones
@@ -94,8 +107,8 @@ class SupplyDemandAnalyzer:
         self,
         zones: List[Zone],
         current_price: float,
-        current_volume: int,
-        average_volume: int
+        current_volume: Union[int, float],
+        average_volume: Union[int, float]
     ) -> List[BreakoutEvent]:
         """Detect all breakouts from support or resistance zones
 
@@ -113,40 +126,53 @@ class SupplyDemandAnalyzer:
         if not zones:
             return breakouts
 
+        # Convert zones to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
         # Check for bullish breakout (price above resistance)
-        resistance_zones = [z for z in zones if z.zone_type == ZoneType.RESISTANCE]
-        for zone in resistance_zones:
-            if current_price > zone.price:
-                # Price broke through resistance
-                is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
-
-                breakouts.append(BreakoutEvent(
-                    direction="bullish",
-                    price=current_price,
-                    zone=zone,
-                    volume=current_volume,
-                    is_confirmed=is_confirmed
-                ))
+        resistance_mask = zone_types == ZoneType.RESISTANCE
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) > 0:
+            bullish_breakout_mask = current_price > resistance_prices
+            is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
+            
+            for i, zone in enumerate(resistance_zones):
+                if bullish_breakout_mask[i]:
+                    breakouts.append(BreakoutEvent(
+                        direction="bullish",
+                        price=current_price,
+                        zone=zone,
+                        volume=int(current_volume),
+                        is_confirmed=is_confirmed
+                    ))
 
         # Check for bearish breakout (price below support)
-        support_zones = [z for z in zones if z.zone_type == ZoneType.SUPPORT]
-        for zone in support_zones:
-            if current_price < zone.price:
-                # Price broke through support
-                is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
-
-                breakouts.append(BreakoutEvent(
-                    direction="bearish",
-                    price=current_price,
-                    zone=zone,
-                    volume=current_volume,
-                    is_confirmed=is_confirmed
-                ))
+        support_mask = zone_types == ZoneType.SUPPORT
+        support_prices = zone_prices[support_mask]
+        support_zones = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) > 0:
+            bearish_breakout_mask = current_price < support_prices
+            is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
+            
+            for i, zone in enumerate(support_zones):
+                if bearish_breakout_mask[i]:
+                    breakouts.append(BreakoutEvent(
+                        direction="bearish",
+                        price=current_price,
+                        zone=zone,
+                        volume=int(current_volume),
+                        is_confirmed=is_confirmed
+                    ))
 
         return breakouts
 
+    @cached(ttl=30, max_size=500)
     def get_nearest_support(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
-        """Find nearest support zone below current price
+        """Find nearest support zone below current price using numpy vectorization
 
         Args:
             zones: List of zones
@@ -155,17 +181,27 @@ class SupplyDemandAnalyzer:
         Returns:
             Nearest support zone or None
         """
-        support_zones = [z for z in zones if z.zone_type == ZoneType.SUPPORT and z.price < current_price]
-
-        if not support_zones:
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
             return None
 
-        # Find closest support below current price
-        support_zones.sort(key=lambda z: z.price, reverse=True)  # Highest first
-        return support_zones[0]
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
 
     def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
-        """Find nearest resistance zone above current price
+        """Find nearest resistance zone above current price using numpy vectorization
 
         Args:
             zones: List of zones
@@ -174,11 +210,647 @@ class SupplyDemandAnalyzer:
         Returns:
             Nearest resistance zone or None
         """
-        resistance_zones = [z for z in zones if z.zone_type == ZoneType.RESISTANCE and z.price > current_price]
-
-        if not resistance_zones:
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
             return None
 
-        # Find closest resistance above current price
-        resistance_zones.sort(key=lambda z: z.price)  # Lowest first
-        return resistance_zones[0]
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+
+        
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+
+
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+
+        
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+
+
+
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+
+        
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+
+
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+
+        
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+        # Filter support zones below current price
+        support_mask = (zone_types == ZoneType.SUPPORT) & (zone_prices < current_price)
+        support_prices = zone_prices[support_mask]
+        support_zones_list = [zones[i] for i in range(len(zones)) if support_mask[i]]
+        
+        if len(support_prices) == 0:
+            return None
+
+        # Find closest support below current price using numpy argmax
+        nearest_idx = np.argmax(support_prices)
+        return support_zones_list[nearest_idx]
+
+    def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
+        """Find nearest resistance zone above current price using numpy vectorization
+
+        Args:
+            zones: List of zones
+            current_price: Current market price
+
+        Returns:
+            Nearest resistance zone or None
+        """
+        if not zones:
+            return None
+        
+        # Convert to numpy arrays for vectorized operations
+        zone_prices = np.array([z.price for z in zones])
+        zone_types = np.array([z.zone_type for z in zones])
+        
+        # Filter resistance zones above current price
+        resistance_mask = (zone_types == ZoneType.RESISTANCE) & (zone_prices > current_price)
+        resistance_prices = zone_prices[resistance_mask]
+        resistance_zones_list = [zones[i] for i in range(len(zones)) if resistance_mask[i]]
+        
+        if len(resistance_prices) == 0:
+            return None
+
+        # Find closest resistance above current price using numpy argmin
+        nearest_idx = np.argmin(resistance_prices)
+        return resistance_zones_list[nearest_idx]
+
+
+
+

@@ -127,7 +127,7 @@ describe('Technical Utils (Indicator Calculations)', () => {
   it('should calculate price limit correctly', () => {
     expect(getPriceLimit(90)).toBe(30);
     expect(getPriceLimit(150)).toBe(50);
-    expect(getPriceLimit(300000)).toBe(70000); // Fixed expectation
+    expect(getPriceLimit(300000)).toBe(50000); // 300,000円以下の価格制限
     expect(getPriceLimit(10000000)).toBe(300000);
 
     // Additional case

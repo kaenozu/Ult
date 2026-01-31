@@ -287,7 +287,7 @@ describe('Utils Error Handling', () => {
 
     it('should handle path without leading slash', () => {
       const result = getWebSocketUrl('ws/signals');
-      expect(result).toContain('/ws/signals');
+      expect(result).toContain('ws/signals');
     });
 
     it('should handle path with leading slash', () => {

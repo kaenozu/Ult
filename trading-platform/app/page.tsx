@@ -3,13 +3,12 @@
 import { useState, useCallback } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
-import { StockChart } from '@/app/components/StockChart';
+import { LazyStockChart, LazyAdvancedIndicatorsChart } from '@/app/components/lazy/LazyComponents';
 import { SimpleRSIChart } from '@/app/components/SimpleRSIChart';
 import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
 import { RightSidebar } from '@/app/components/RightSidebar';
 import { BottomPanel } from '@/app/components/BottomPanel';
-import { AdvancedIndicatorsChart } from '@/app/components/StockChart/AdvancedIndicatorsChart';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
@@ -162,7 +161,7 @@ export default function Workstation() {
               {/* Main Chart Visualization */}
               <div className="flex-1 relative p-3 flex flex-col">
                 <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
-                  <StockChart
+                  <LazyStockChart
                     data={chartData}
                     indexData={indexData}
                     loading={loading}
@@ -180,7 +179,7 @@ export default function Workstation() {
                 {/* Advanced Technical Indicators */}
                 {(showStochastic || showADX || showWilliamsR) && (
                   <div className="mt-1">
-                    <AdvancedIndicatorsChart
+                    <LazyAdvancedIndicatorsChart
                       data={chartData}
                       showStochastic={showStochastic}
                       showADX={showADX}

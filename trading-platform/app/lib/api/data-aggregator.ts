@@ -313,67 +313,125 @@ class MarketDataClient {
     if (data.length < 2) return data;
 
     const sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const filledWithGaps = this.fillGaps(sorted);
+    
+    return this.interpolateValues(filledWithGaps);
+  }
 
-    const filledWithGaps: OHLCV[] = [];
+  private fillGaps(sorted: OHLCV[]): OHLCV[] {
+    const filled: OHLCV[] = [];
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const WEEKEND_DAYS = [0, 6]; // Sunday, Saturday
+
     for (let i = 0; i < sorted.length; i++) {
-      filledWithGaps.push(sorted[i]);
+      filled.push(sorted[i]);
 
-      if (i < sorted.length - 1) {
-        const current = new Date(sorted[i].date);
-        const next = new Date(sorted[i + 1].date);
-        const diffDays = Math.floor((next.getTime() - current.getTime()) / (1000 * 60 * 60 * 24));
+      if (i >= sorted.length - 1) continue;
 
-        if (diffDays > 1) {
-          for (let d = 1; d < diffDays; d++) {
-            const gapDate = new Date(current);
-            gapDate.setDate(current.getDate() + d);
-            const dayOfWeek = gapDate.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-              filledWithGaps.push({
-                date: gapDate.toISOString().split('T')[0],
-                open: 0, high: 0, low: 0, close: 0, volume: 0
-              });
-            }
-          }
+      const current = new Date(sorted[i].date);
+      const next = new Date(sorted[i + 1].date);
+      const diffDays = Math.floor((next.getTime() - current.getTime()) / MS_PER_DAY);
+
+      if (diffDays <= 1) continue;
+
+      for (let d = 1; d < diffDays; d++) {
+        const gapDate = new Date(current);
+        gapDate.setDate(current.getDate() + d);
+        
+        if (!WEEKEND_DAYS.includes(gapDate.getDay())) {
+          filled.push(this.createGapOHLCV(gapDate));
         }
       }
     }
 
-    const result = [...filledWithGaps];
-    const fields: (keyof Pick<OHLCV, 'open' | 'high' | 'low' | 'close'>)[] = ['open', 'high', 'low', 'close'];
+    return filled;
+  }
 
-    for (const field of fields) {
-      for (let i = 0; i < result.length; i++) {
-        if (result[i][field] === 0) {
-          let prevIdx = i - 1;
-          while (prevIdx >= 0 && result[prevIdx][field] === 0) prevIdx--;
-          let nextIdx = i + 1;
-          while (nextIdx < result.length && result[nextIdx][field] === 0) nextIdx++;
+  private createGapOHLCV(date: Date): OHLCV {
+    return {
+      date: date.toISOString().split('T')[0],
+      open: 0,
+      high: 0,
+      low: 0,
+      close: 0,
+      volume: 0
+    };
+  }
 
-          if (prevIdx >= 0 && nextIdx < result.length) {
-            const prevVal = result[prevIdx][field] as number;
-            const nextVal = result[nextIdx][field] as number;
-            const gap = nextIdx - prevIdx;
-            const diff = nextVal - prevVal;
-            result[i][field] = Number((prevVal + (diff * (i - prevIdx)) / gap).toFixed(2));
-          } else if (prevIdx >= 0) {
-            result[i][field] = result[prevIdx][field];
-          } else if (nextIdx < result.length) {
-            result[i][field] = result[nextIdx][field];
-          }
-        }
-      }
+  private interpolateValues(data: OHLCV[]): OHLCV[] {
+    const result = [...data];
+    const priceFields: (keyof Pick<OHLCV, 'open' | 'high' | 'low' | 'close'>)[] = ['open', 'high', 'low', 'close'];
+
+    for (const field of priceFields) {
+      this.interpolateField(result, field);
     }
-
-    for (let i = 0; i < result.length; i++) {
-      if (result[i].volume === 0) {
-        let prevIdx = i - 1;
-        while (prevIdx >= 0 && result[prevIdx].volume === 0) prevIdx--;
-        if (prevIdx >= 0) result[i].volume = result[prevIdx].volume;
-      }
-    }
-
+    
+    this.interpolateVolume(result);
     return result;
+  }
+
+  private interpolateField(result: OHLCV[], field: keyof Pick<OHLCV, 'open' | 'high' | 'low' | 'close'>): void {
+    for (let i = 0; i < result.length; i++) {
+      if (result[i][field] !== 0) continue;
+
+      const prevIdx = this.findNearestValidIndex(result, i, field, -1);
+      const nextIdx = this.findNearestValidIndex(result, i, field, 1);
+
+      result[i][field] = this.calculateInterpolatedValue(result, i, prevIdx, nextIdx, field);
+    }
+  }
+
+  private findNearestValidIndex(
+    result: OHLCV[],
+    startIdx: number,
+    field: keyof Pick<OHLCV, 'open' | 'high' | 'low' | 'close'>,
+    direction: -1 | 1
+  ): number {
+    let idx = startIdx + direction;
+    while (idx >= 0 && idx < result.length && result[idx][field] === 0) {
+      idx += direction;
+    }
+    return idx;
+  }
+
+  private calculateInterpolatedValue(
+    result: OHLCV[],
+    currentIdx: number,
+    prevIdx: number,
+    nextIdx: number,
+    field: keyof Pick<OHLCV, 'open' | 'high' | 'low' | 'close'>
+  ): number {
+    if (prevIdx >= 0 && nextIdx < result.length) {
+      const prevVal = result[prevIdx][field] as number;
+      const nextVal = result[nextIdx][field] as number;
+      const gap = nextIdx - prevIdx;
+      const diff = nextVal - prevVal;
+      return Number((prevVal + (diff * (currentIdx - prevIdx)) / gap).toFixed(2));
+    }
+    
+    if (prevIdx >= 0) return result[prevIdx][field] as number;
+    if (nextIdx < result.length) return result[nextIdx][field] as number;
+    
+    return 0;
+  }
+
+  private interpolateVolume(result: OHLCV[]): void {
+    for (let i = 0; i < result.length; i++) {
+      if (result[i].volume !== 0) continue;
+
+      const prevIdx = this.findNearestValidVolumeIndex(result, i);
+      if (prevIdx >= 0) {
+        result[i].volume = result[prevIdx].volume;
+      }
+    }
+  }
+
+  private findNearestValidVolumeIndex(result: OHLCV[], startIdx: number): number {
+    let idx = startIdx - 1;
+    while (idx >= 0 && result[idx].volume === 0) {
+      idx--;
+    }
+    return idx;
   }
 }
 

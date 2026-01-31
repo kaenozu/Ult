@@ -6,8 +6,10 @@ Analyzes correlation between individual stocks and market indices.
 
 import math
 import statistics
+import numpy as np
 from typing import List, Dict, Any
 from .models import MarketTrend
+from backend.src.cache.cache_manager import cached
 
 # Constants for trend detection
 MIN_DATA_POINTS = 5
@@ -21,8 +23,9 @@ HIGH_CORRELATION_THRESHOLD = 0.6
 class MarketCorrelation:
     """Analyzes market correlation and generates composite signals"""
 
+    @cached(ttl=60, max_size=500)
     def calculate_correlation(self, stock_prices: List[float], index_prices: List[float]) -> float:
-        """Calculate Pearson correlation coefficient
+        """Calculate Pearson correlation coefficient using numpy vectorization
 
         Args:
             stock_prices: List of stock prices
@@ -36,22 +39,23 @@ class MarketCorrelation:
         if len(stock_prices) < 2:
             raise ValueError("Need at least 2 data points")
 
-        # Calculate means
-        stock_mean = statistics.mean(stock_prices)
-        index_mean = statistics.mean(index_prices)
+        # Convert to numpy arrays for vectorized operations
+        stock_arr = np.array(stock_prices, dtype=np.float64)
+        index_arr = np.array(index_prices, dtype=np.float64)
 
-        # Calculate correlation
-        numerator = sum((s - stock_mean) * (i - index_mean) for s, i in zip(stock_prices, index_prices))
-        stock_std = math.sqrt(sum((s - stock_mean) ** 2 for s in stock_prices))
-        index_std = math.sqrt(sum((i - index_mean) ** 2 for i in index_prices))
-
-        if stock_std == 0 or index_std == 0:
+        # Use numpy's optimized correlation coefficient function
+        correlation_matrix = np.corrcoef(stock_arr, index_arr)
+        
+        # Prevent division by zero: if no price variation, correlation is undefined (return 0.0)
+        # This handles cases where all prices are identical (zero standard deviation)
+        if np.isnan(correlation_matrix[0, 1]):
             return 0.0
 
-        return numerator / (stock_std * index_std)
+        return correlation_matrix[0, 1]
 
+    @cached(ttl=60, max_size=500)
     def calculate_beta(self, stock_prices: List[float], index_prices: List[float]) -> float:
-        """Calculate beta value (stock sensitivity to market)
+        """Calculate beta value using numpy vectorization
 
         Args:
             stock_prices: List of stock prices
@@ -65,11 +69,13 @@ class MarketCorrelation:
         if len(stock_prices) < 2:
             raise ValueError("Need at least 2 data points")
 
-        # Calculate returns
-        stock_returns = [(stock_prices[i] - stock_prices[i-1]) / stock_prices[i-1]
-                         for i in range(1, len(stock_prices))]
-        index_returns = [(index_prices[i] - index_prices[i-1]) / index_prices[i-1]
-                         for i in range(1, len(index_prices))]
+        # Convert to numpy arrays for vectorized operations
+        stock_arr = np.array(stock_prices, dtype=np.float64)
+        index_arr = np.array(index_prices, dtype=np.float64)
+
+        # Calculate returns using numpy vectorization
+        stock_returns = np.diff(stock_arr) / stock_arr[:-1]
+        index_returns = np.diff(index_arr) / index_arr[:-1]
 
         if len(stock_returns) != len(index_returns):
             raise ValueError("Returns calculation error")
@@ -78,23 +84,24 @@ class MarketCorrelation:
         if n < 2:
             return 1.0
 
-        # Calculate means
-        stock_mean = statistics.mean(stock_returns)
-        index_mean = statistics.mean(index_returns)
+        # Calculate means using numpy
+        stock_mean = np.mean(stock_returns)
+        index_mean = np.mean(index_returns)
 
-        # Calculate covariance (population)
-        covariance = sum((s - stock_mean) * (i - index_mean) for s, i in zip(stock_returns, index_returns)) / n
+        # Calculate covariance and variance using numpy vectorization
+        covariance = np.mean((stock_returns - stock_mean) * (index_returns - index_mean))
+        variance = np.var(index_returns)
 
-        # Calculate variance (population)
-        variance = sum((i - index_mean) ** 2 for i in index_returns) / n
-
+        # Prevent division by zero: if market has no movement, beta is neutral (1.0)
+        # This handles cases where index prices are flat (zero variance)
         if variance == 0:
-            return 1.0  # No market movement, beta is neutral
+            return 1.0
 
         return covariance / variance
 
+    @cached(ttl=120, max_size=500)
     def detect_trend(self, prices: List[float]) -> MarketTrend:
-        """Detect market trend from price series using linear regression slope
+        """Detect market trend using numpy vectorization for linear regression
 
         Args:
             prices: List of prices (oldest to newest)
@@ -105,26 +112,23 @@ class MarketCorrelation:
         if len(prices) < MIN_DATA_POINTS:
             return MarketTrend.NEUTRAL
 
-        n = len(prices)
-        x = list(range(n))
-        y = prices
+        # Convert to numpy array for vectorized operations
+        prices_arr = np.array(prices, dtype=np.float64)
+        n = len(prices_arr)
+        
+        # Create x values (0, 1, 2, ..., n-1)
+        x = np.arange(n)
 
-        # Calculate slope using linear regression
-        # slope = (N * Σ(xy) - Σx * Σy) / (N * Σ(x^2) - (Σx)^2)
-
-        sum_x = sum(x)
-        sum_y = sum(y)
-        sum_xy = sum(xi * yi for xi, yi in zip(x, y))
-        sum_x2 = sum(xi ** 2 for xi in x)
-
-        denominator = n * sum_x2 - sum_x ** 2
-        if denominator == 0:
-            return MarketTrend.NEUTRAL
-
-        slope = (n * sum_xy - sum_x * sum_y) / denominator
+        # Use numpy's polyfit for linear regression (more optimized)
+        # Returns coefficients [slope, intercept]
+        coeffs = np.polyfit(x, prices_arr, 1)
+        slope = coeffs[0]
 
         # Normalize slope by dividing by average price to get percentage change per step
-        avg_price = sum_y / n
+        avg_price = np.mean(prices_arr)
+        
+        # Prevent division by zero: if average price is zero, cannot normalize
+        # Return neutral trend as percentage change is undefined
         if avg_price == 0:
             return MarketTrend.NEUTRAL
 
@@ -139,6 +143,7 @@ class MarketCorrelation:
         else:
             return MarketTrend.NEUTRAL
 
+    @cached(ttl=30, max_size=500)
     def generate_composite_signal(
         self,
         market_trend: MarketTrend,
@@ -229,3 +234,30 @@ class MarketCorrelation:
             "individual_signal": individual_signal,
             "correlation": correlation
         }
+            "market_trend": str(market_trend),
+            "individual_signal": individual_signal,
+            "correlation": correlation
+        }
+
+
+
+            "market_trend": str(market_trend),
+            "individual_signal": individual_signal,
+            "correlation": correlation
+        }
+
+
+
+        }
+
+            "reasoning": reasoning,
+            "market_trend": str(market_trend),
+            "individual_signal": individual_signal,
+            "correlation": correlation
+        }
+            "market_trend": str(market_trend),
+            "individual_signal": individual_signal,
+            "correlation": correlation
+        }
+
+

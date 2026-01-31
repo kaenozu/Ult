@@ -5,7 +5,8 @@
  * connection management, and type-safe messaging.
  */
 
-import { WebSocketStatus } from '@/app/hooks/useWebSocket';
+// WebSocket status type
+export type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSED' | 'ERROR';
 
 // WebSocket message types
 export type WebSocketMessageType =
@@ -23,6 +24,27 @@ export interface WebSocketMessage<T = unknown> {
   data: T;
   timestamp?: number;
   id?: string;
+}
+
+/**
+ * WebSocket configuration
+ */
+export interface WebSocketConfig {
+  url: string;
+  reconnectInterval?: number;
+  maxReconnectAttempts?: number;
+  enableFallback?: boolean;
+  fallbackPollingInterval?: number;
+}
+
+/**
+ * WebSocket client options
+ */
+export interface WebSocketClientOptions {
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onMessage?: (message: WebSocketMessage) => void;
+  onError?: (error: Event) => void;
 }
 
 /**
@@ -47,283 +69,183 @@ function validateWebSocketMessage(message: unknown): message is WebSocketMessage
   }
 
   // Check optional 'timestamp' - must be number if provided
-  if ('timestamp' in msg && msg.timestamp !== undefined) {
-    if (typeof msg.timestamp !== 'number' || isNaN(msg.timestamp)) {
-      return false;
-    }
-  }
-
-  // Check optional 'id' - must be string if provided
-  if ('id' in msg && msg.id !== undefined && typeof msg.id !== 'string') {
+  if ('timestamp' in msg && typeof msg.timestamp !== 'number') {
     return false;
   }
 
   return true;
 }
 
-export interface WebSocketConfig {
-  url: string;
-  protocols?: string | string[];
-  reconnectInterval?: number;
-  maxReconnectAttempts?: number;
-  enableFallback?: boolean;
-  fallbackPollingInterval?: number;
-}
-
-export interface WebSocketClientOptions {
-  onOpen?: (event: Event) => void;
-  onMessage?: (message: WebSocketMessage) => void;
-  onError?: (event: Event) => void;
-  onClose?: (event: CloseEvent) => void;
-  onStatusChange?: (status: WebSocketStatus) => void;
-}
-
 /**
- * WebSocket Client with fallback support
+ * WebSocket Client Class
+ * Manages WebSocket connection, reconnection, and message handling
  */
 export class WebSocketClient {
   private ws: WebSocket | null = null;
-  private config: Required<WebSocketConfig>;
+  private config: WebSocketConfig;
   private options: WebSocketClientOptions;
-  private reconnectAttempts = 0;
+  private reconnectAttempts: number = 0;
   private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  private fallbackIntervalId: ReturnType<typeof setInterval> | null = null;
-  private isManualClose = false;
-  private status: WebSocketStatus = 'CLOSED';
   private messageQueue: WebSocketMessage[] = [];
+  private isConnecting: boolean = false;
+  private status: WebSocketStatus = WebSocketStatus.DISCONNECTED;
+  private manualClose: boolean = false;
 
-  constructor(config: WebSocketConfig, options: WebSocketClientOptions = {}) {
-    this.config = {
-      url: config.url,
-      protocols: config.protocols || [],
-      reconnectInterval: config.reconnectInterval || 2000,
-      maxReconnectAttempts: config.maxReconnectAttempts || 5,
-      enableFallback: config.enableFallback ?? true,
-      fallbackPollingInterval: config.fallbackPollingInterval || 5000,
-    };
-    this.options = options;
-  }
-
-  /**
-   * Get current connection status
-   */
-  getStatus(): WebSocketStatus {
-    return this.status;
-  }
-
-  /**
-   * Check if WebSocket is connected
-   */
-  isConnected(): boolean {
-    return this.status === 'OPEN' && this.ws?.readyState === WebSocket.OPEN;
-  }
-
-  /**
-   * Update status and notify listeners
-   */
-  private setStatus(newStatus: WebSocketStatus): void {
-    if (this.status !== newStatus) {
-      this.status = newStatus;
-      this.options.onStatusChange?.(newStatus);
-    }
+  constructor(config: WebSocketConfig, options?: WebSocketClientOptions) {
+    this.config = config;
+    this.options = options || {};
+    this.reconnectAttempts = 0;
+    this.reconnectTimeoutId = null;
+    this.messageQueue = [];
+    this.isConnecting = false;
+    this.status = WebSocketStatus.DISCONNECTED;
+    this.manualClose = false;
   }
 
   /**
    * Connect to WebSocket server
    */
   connect(): void {
-    this.isManualClose = false;
-
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('[WebSocket] Already connected');
+    if (this.isConnecting || this.status === WebSocketStatus.CONNECTING) {
+      console.log('[WebSocket] Already connecting or connected');
       return;
     }
 
-    if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
-      console.log('[WebSocket] Max reconnect attempts reached');
-      this.startFallback();
-      return;
-    }
+    this.isConnecting = true;
+    this.status = WebSocketStatus.CONNECTING;
 
     try {
-      this.setStatus('CONNECTING');
-      console.log(`[WebSocket] Connecting to ${this.config.url}...`);
-
-      this.ws = new WebSocket(this.config.url, this.config.protocols);
-
-      this.ws.onopen = (event) => {
-        console.log('[WebSocket] Connected');
-        this.reconnectAttempts = 0;
-        this.setStatus('OPEN');
-        this.stopFallback();
-        this.flushMessageQueue();
-        this.options.onOpen?.(event);
-      };
-
-      this.ws.onmessage = (event) => {
-        try {
-          const parsed = JSON.parse(event.data);
-          
-          // Validate message structure
-          if (!validateWebSocketMessage(parsed)) {
-            console.error('[WebSocket] Invalid message structure received');
-            return;
-          }
-          
-          const message: WebSocketMessage = parsed;
-          this.options.onMessage?.(message);
-        } catch (error) {
-          console.error('[WebSocket] Failed to parse message:', error);
-        }
-      };
-
-      this.ws.onerror = (event) => {
-        console.error('[WebSocket] Error occurred');
-        this.setStatus('ERROR');
-        this.options.onError?.(event);
-      };
-
-      this.ws.onclose = (event) => {
-        console.log(`[WebSocket] Connection closed: ${event.code} ${event.reason}`);
-        this.setStatus('CLOSED');
-        this.options.onClose?.(event);
-
-        if (!this.isManualClose && this.reconnectAttempts < this.config.maxReconnectAttempts) {
-          this.scheduleReconnect();
-        } else if (!this.isManualClose && this.config.enableFallback) {
-          this.startFallback();
-        }
-      };
+      this.ws = new WebSocket(this.config.url);
+      
+      this.ws.onopen = () => this.handleOpen();
+      this.ws.onmessage = (event: MessageEvent) => this.handleMessage(event);
+      this.ws.onerror = (event: Event) => this.handleError(event);
+      this.ws.onclose = (event: CloseEvent) => this.handleClose(event);
+      
+      this.ws.binaryType = 'arraybuffer';
+      
+      console.log('[WebSocket] Connecting to:', this.config.url);
     } catch (error) {
-      console.error('[WebSocket] Connection failed:', error);
-      this.setStatus('ERROR');
+      console.error('[WebSocket] Failed to create WebSocket:', error);
+      this.handleError(error as Event);
+      this.status = WebSocketStatus.ERROR;
+      this.isConnecting = false;
+    }
+  }
 
-      if (this.reconnectAttempts < this.config.maxReconnectAttempts) {
-        this.scheduleReconnect();
-      } else if (this.config.enableFallback) {
-        this.startFallback();
+  /**
+   * Handle WebSocket open event
+   */
+  private handleOpen(): void {
+    console.log('[WebSocket] Connected to:', this.config.url);
+    this.status = WebSocketStatus.OPEN;
+    this.isConnecting = false;
+    this.reconnectAttempts = 0;
+    this.options.onConnect?.();
+  }
+
+  /**
+   * Handle incoming WebSocket messages
+   */
+  private handleMessage(event: MessageEvent): void {
+    try {
+      const data = event.data as ArrayBuffer;
+      const decoded = new TextDecoder().decode(data);
+      const message: WebSocketMessage = JSON.parse(decoded);
+
+      if (!validateWebSocketMessage(message)) {
+        console.error('[WebSocket] Invalid message format:', message);
+        return;
       }
+
+      this.options.onMessage?.(message);
+    } catch (error) {
+      console.error('[WebSocket] Failed to parse message:', error);
     }
   }
 
   /**
-    * Schedule reconnection attempt with exponential backoff
-    */
-  private scheduleReconnect(): void {
-    if (this.reconnectTimeoutId) {
-      clearTimeout(this.reconnectTimeoutId);
-    }
-
-    this.reconnectAttempts++;
-    // 指数バックオフを使用して再接続間隔を増やす
-    // 初回: 2秒, 2回目: 4秒, 3回目: 8秒, 4回目: 16秒, 5回目: 32秒
-    const delay = Math.min(
-      this.config.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1),
-      60000 // 最大60秒
-    );
-
-    console.log(`[WebSocket] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})`);
-
-    this.reconnectTimeoutId = setTimeout(() => {
-      this.connect();
-    }, delay);
-  }
-
-  /**
-   * Start fallback polling mode
+   * Handle WebSocket error event
    */
-  private startFallback(): void {
-    if (this.fallbackIntervalId) {
-      return; // Already in fallback mode
-    }
-
-    console.log('[WebSocket] Starting fallback polling mode');
-
-    this.fallbackIntervalId = setInterval(() => {
-      // Simulate receiving a fallback message
-      this.options.onMessage?.({
-        type: 'fallback',
-        data: {
-          message: 'Using fallback polling mode',
-          timestamp: Date.now(),
-        },
-      });
-    }, this.config.fallbackPollingInterval);
+  private handleError(event: Event): void {
+    console.error('[WebSocket] Error:', event);
+    this.status = WebSocketStatus.ERROR;
+    this.options.onError?.(event);
+    
+    // Schedule reconnection attempt with exponential backoff
+    this.scheduleReconnect();
   }
 
   /**
-   * Stop fallback polling mode
+   * Handle WebSocket close event
    */
-  private stopFallback(): void {
-    if (this.fallbackIntervalId) {
-      clearInterval(this.fallbackIntervalId);
-      this.fallbackIntervalId = null;
-      console.log('[WebSocket] Stopped fallback polling mode');
+  private handleClose(event: CloseEvent): void {
+    console.log('[WebSocket] Connection closed:', event.code, event.reason);
+    
+    if (this.manualClose) {
+      console.log('[WebSocket] Manual close detected, not reconnecting');
+      this.manualClose = false;
+      return;
     }
-  }
-
-  /**
-   * Send a message through WebSocket
-   */
-  send<T = unknown>(message: WebSocketMessage<T>): boolean {
-    if (this.isConnected()) {
-      try {
-        this.ws!.send(JSON.stringify(message));
-        return true;
-      } catch (error) {
-        console.error('[WebSocket] Failed to send message:', error);
-        return false;
-      }
-    } else {
-      // Queue message for later delivery
-      this.messageQueue.push(message);
-      console.log('[WebSocket] Message queued (not connected)');
-      return false;
-    }
-  }
-
-  /**
-   * Flush queued messages when connection is established
-   */
-  private flushMessageQueue(): void {
-    if (this.messageQueue.length > 0) {
-      console.log(`[WebSocket] Sending ${this.messageQueue.length} queued messages`);
-      this.messageQueue.forEach((message) => {
-        this.send(message);
-      });
-      this.messageQueue = [];
-    }
+    
+    this.status = WebSocketStatus.DISCONNECTED;
+    this.ws = null;
+    
+    // Schedule reconnection attempt with exponential backoff
+    this.scheduleReconnect();
   }
 
   /**
    * Disconnect from WebSocket server
    */
   disconnect(): void {
-    this.isManualClose = true;
+    if (!this.ws) {
+      console.log('[WebSocket] Already disconnected');
+      return;
+    }
 
+    console.log('[WebSocket] Disconnecting...');
+    
+    this.manualClose = true;
+    
+    if (this.ws) {
+      this.ws.close(1000, 'Client disconnecting');
+    }
+    
+    this.ws = null;
+    this.status = WebSocketStatus.DISCONNECTED;
+    
+    this.options.onDisconnect?.();
+  }
+
+  /**
+   * Schedule reconnection attempt with exponential backoff
+   */
+  private scheduleReconnect(): void {
     if (this.reconnectTimeoutId) {
       clearTimeout(this.reconnectTimeoutId);
       this.reconnectTimeoutId = null;
     }
-
-    this.stopFallback();
-
-    if (this.ws) {
-      this.ws.close(1000, 'Client disconnecting');
-      this.ws = null;
+    
+    if (this.manualClose) {
+      console.log('[WebSocket] Manual close detected, not reconnecting');
+      return;
     }
-
-    this.setStatus('CLOSED');
-    console.log('[WebSocket] Disconnected');
-  }
-
-  /**
-   * Reconnect to WebSocket server
-   */
-  reconnect(): void {
-    this.disconnect();
-    this.reconnectAttempts = 0;
-    this.connect();
+    
+    this.reconnectAttempts++;
+    
+    // 指数バックオフを使用して再接続間隔を増やす
+    // 初回: 2秒, 2回目: 4秒, 3回目: 8秒, 4回目: 16秒, 5回目: 32秒
+    const delay = Math.min(
+      this.config.reconnectInterval || 2000 * Math.pow(2, this.reconnectAttempts - 1),
+      60000 // 最大60秒
+    );
+    
+    console.log(`[WebSocket] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})`);
+    
+    this.reconnectTimeoutId = setTimeout(() => {
+      this.connect();
+    }, delay);
   }
 
   /**
@@ -331,18 +253,23 @@ export class WebSocketClient {
    */
   destroy(): void {
     this.disconnect();
+    
     this.messageQueue = [];
+  }
+
+  /**
+   * Create a new WebSocket client instance
+   */
+  static create(config: WebSocketConfig, options?: WebSocketClientOptions): WebSocketClient {
+    return new WebSocketClient(config, options);
   }
 }
 
 /**
- * Create a new WebSocket client instance
+ * Factory function to create a WebSocket client
  */
-export function createWebSocketClient(
-  config: WebSocketConfig,
-  options?: WebSocketClientOptions
-): WebSocketClient {
-  return new WebSocketClient(config, options);
+export function createWebSocketClient(config: WebSocketConfig, options?: WebSocketClientOptions): WebSocketClient {
+  return WebSocketClient.create(config, options);
 }
 
 /**
@@ -353,7 +280,7 @@ export const DEFAULT_WS_CONFIG: WebSocketConfig = {
     ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:3001/ws`
     : 'ws://localhost:3001/ws',
   reconnectInterval: 2000,
-  maxReconnectAttempts: 10, // 5から10に増加してより堅牢に
+  maxReconnectAttempts: 10,
   enableFallback: true,
   fallbackPollingInterval: 5000,
 };

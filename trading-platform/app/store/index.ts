@@ -8,14 +8,12 @@ import { useJournalStore } from './journalStore';
 import { useUIStore } from './uiStore';
 import { useAIStore } from './aiStore';
 
-// Master Store - 全てのストアを統合
 export const useTradingStore = create<{}>()(
   persist(
     () => ({}),
     {
       name: 'trading-platform-storage',
       partialize: () => {
-        // 各ストアのpartializeを統合
         const themeState = useThemeStore.getState();
         const watchlistState = useWatchlistStore.getState();
         const portfolioState = usePortfolioStore.getState();
@@ -34,7 +32,8 @@ export const useTradingStore = create<{}>()(
   )
 );
 
-// 各ストアの状態とアクションをエクスポート
+export { useTradingStore as default };
+
 export {
   useThemeStore,
   useWatchlistStore,

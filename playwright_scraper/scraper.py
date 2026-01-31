@@ -74,8 +74,10 @@ def setup_logging(config: ScrapingConfig) -> logging.Logger:
     logger = logging.getLogger("playwright_scraper")
     logger.setLevel(getattr(logging, config.log_level.upper()))
     
-    # Clear existing handlers
-    logger.handlers.clear()
+    # Clear only our module's handlers to avoid affecting other loggers
+    # This prevents clearing root logger handlers which could affect other libraries
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
     
     # Create log directory
     log_dir = Path(config.log_dir)

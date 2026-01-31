@@ -6,20 +6,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(value: number, currency: 'JPY' | 'USD' = 'JPY'): string {
-  if (currency === 'JPY') {
-    return new Intl.NumberFormat('ja-JP', {
-      style: 'currency',
-      currency: 'JPY',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  }
-  return new Intl.NumberFormat('en-US', {
+export type CurrencyCode = 'JPY' | 'USD' | 'EUR' | 'GBP';
+
+export function formatCurrency(value: number, currency: CurrencyCode = 'JPY'): string {
+  const currencyConfig: Record<CurrencyCode, { locale: string; fractionDigits: number }> = {
+    JPY: { locale: 'ja-JP', fractionDigits: 0 },
+    USD: { locale: 'en-US', fractionDigits: 2 },
+    EUR: { locale: 'de-DE', fractionDigits: 2 },
+    GBP: { locale: 'en-GB', fractionDigits: 2 },
+  };
+
+  const config = currencyConfig[currency];
+  return new Intl.NumberFormat(config.locale, {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    currency: currency,
+    minimumFractionDigits: config.fractionDigits,
+    maximumFractionDigits: config.fractionDigits,
   }).format(value);
 }
 
@@ -95,54 +97,102 @@ export function generateDateRange(days: number): string[] {
   return dates;
 }
 
-export function getTickSize(price: number): number {
-  if (price <= 3000) return 1;
-  if (price <= 5000) return 5;
-  if (price <= 10000) return 10;
-  if (price <= 30000) return 50;
-  if (price <= 50000) return 100;
-  if (price <= 100000) return 500;
-  if (price <= 300000) return 1000;
-  if (price <= 500000) return 5000;
-  if (price <= 1000000) return 10000;
-  if (price <= 3000000) return 50000;
-  if (price <= 5000000) return 100000;
-  return 500000;
+export type MarketType = 'japan' | 'usa';
+
+/**
+ * Get the tick size for a given price
+ * Supports both Japanese and US stock markets
+ *
+ * Japanese stock tick sizes follow Tokyo Stock Exchange rules:
+ * - Price ≤ ¥3,000: ¥1
+ * - Price ≤ ¥5,000: ¥5
+ * - Price ≤ ¥10,000: ¥10
+ * - Price ≤ ¥30,000: ¥50
+ * - Price ≤ ¥50,000: ¥100
+ * - Price ≤ ¥100,000: ¥500
+ * - Price ≤ ¥300,000: ¥1,000
+ * - Price ≤ ¥500,000: ¥5,000
+ * - Price ≤ ¥1,000,000: ¥10,000
+ * - Price ≤ ¥3,000,000: ¥50,000
+ * - Price ≤ ¥5,000,000: ¥100,000
+ * - Price > ¥5,000,000: ¥500,000
+ *
+ * US stocks typically use $0.01 (1 cent) tick size
+ */
+// Threshold configuration for tick sizes (TSE rules)
+const TICK_SIZE_THRESHOLDS = [
+  { max: 3000, value: 1 },
+  { max: 5000, value: 5 },
+  { max: 10000, value: 10 },
+  { max: 30000, value: 50 },
+  { max: 50000, value: 100 },
+  { max: 100000, value: 500 },
+  { max: 300000, value: 1000 },
+  { max: 500000, value: 5000 },
+  { max: 1000000, value: 10000 },
+  { max: 3000000, value: 50000 },
+  { max: 5000000, value: 100000 },
+] as const;
+
+const DEFAULT_LARGE_TICK_SIZE = 500000;
+
+function getThresholdValue<T>(
+  value: number,
+  thresholds: readonly { max: number; value: T }[],
+  defaultValue: T
+): T {
+  for (const { max, value: threshold } of thresholds) {
+    if (value <= max) return threshold;
+  }
+  return defaultValue;
 }
 
-export function roundToTickSize(price: number, market: 'japan' | 'usa' = 'japan'): number {
+export function getTickSize(price: number, market: MarketType = 'japan'): number {
   if (market === 'usa') {
-    return Number(price.toFixed(2));
+    return 0.01;
   }
-  const tickSize = getTickSize(price);
+  return getThresholdValue(price, TICK_SIZE_THRESHOLDS, DEFAULT_LARGE_TICK_SIZE);
+}
+
+export function roundToTickSize(price: number, market: MarketType = 'japan'): number {
+  const tickSize = getTickSize(price, market);
+  if (market === 'usa') {
+    return Math.round(price / tickSize) * tickSize;
+  }
   return Math.round(price / tickSize) * tickSize;
 }
 
+// Threshold configuration for price limits
+const PRICE_LIMIT_THRESHOLDS = [
+  { max: 100, value: 30 },
+  { max: 200, value: 50 },
+  { max: 500, value: 80 },
+  { max: 700, value: 100 },
+  { max: 1000, value: 150 },
+  { max: 1500, value: 300 },
+  { max: 2000, value: 400 },
+  { max: 3000, value: 500 },
+  { max: 5000, value: 700 },
+  { max: 7000, value: 1000 },
+  { max: 10000, value: 1500 },
+  { max: 15000, value: 3000 },
+  { max: 20000, value: 4000 },
+  { max: 30000, value: 5000 },
+  { max: 50000, value: 7000 },
+  { max: 70000, value: 10000 },
+  { max: 100000, value: 15000 },
+  { max: 150000, value: 30000 },
+  { max: 200000, value: 40000 },
+  { max: 300000, value: 50000 },
+  { max: 500000, value: 70000 },
+  { max: 700000, value: 100000 },
+  { max: 1000000, value: 150000 },
+] as const;
+
+const DEFAULT_PRICE_LIMIT = 300000;
+
 export function getPriceLimit(referencePrice: number): number {
-  if (referencePrice < 100) return 30;
-  if (referencePrice < 200) return 50;
-  if (referencePrice < 500) return 80;
-  if (referencePrice < 700) return 100;
-  if (referencePrice < 1000) return 150;
-  if (referencePrice < 1500) return 300;
-  if (referencePrice < 2000) return 400;
-  if (referencePrice < 3000) return 500;
-  if (referencePrice < 5000) return 700;
-  if (referencePrice < 7000) return 1000;
-  if (referencePrice < 10000) return 1500;
-  if (referencePrice < 15000) return 3000;
-  if (referencePrice < 20000) return 4000;
-  if (referencePrice < 30000) return 5000;
-  if (referencePrice < 50000) return 7000;
-  if (referencePrice < 70000) return 10000;
-  if (referencePrice < 100000) return 15000;
-  if (referencePrice < 150000) return 30000;
-  if (referencePrice < 200000) return 40000;
-  if (referencePrice < 300000) return 50000;
-  if (referencePrice < 500000) return 70000;
-  if (referencePrice < 700000) return 100000;
-  if (referencePrice < 1000000) return 150000;
-  return 300000;
+  return getThresholdValue(referencePrice, PRICE_LIMIT_THRESHOLDS, DEFAULT_PRICE_LIMIT);
 }
 
 /**

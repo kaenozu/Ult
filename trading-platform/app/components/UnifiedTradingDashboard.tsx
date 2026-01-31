@@ -7,7 +7,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useUnifiedTrading } from '@/app/hooks/useUnifiedTrading';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -35,9 +35,9 @@ import { SignalPanel } from './SignalPanel';
 import { RiskPanel } from './RiskPanel';
 import { AlertPanel } from './AlertPanel';
 import { MarketDataPanel } from './MarketDataPanel';
-import { BacktestPanel } from './BacktestPanel';
+import { LazyBacktestPanel } from '@/app/components/lazy/LazyComponents';
 
-export function UnifiedTradingDashboard() {
+export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboard() {
   const {
     isRunning,
     status,
@@ -344,7 +344,7 @@ export function UnifiedTradingDashboard() {
           </TabsContent>
 
           <TabsContent value="backtest">
-            <BacktestPanel />
+            <LazyBacktestPanel />
           </TabsContent>
         </Tabs>
       </main>

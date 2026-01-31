@@ -1,12 +1,49 @@
 /**
  * Trading Platform Unified Error Handling
- * 
+ *
  * このモジュールは、アプリケーション全体で統一されたエラーハンドリングを提供します。
  * - 標準化されたエラークラス
  * - エラーロギングユーティリティ
  * - ユーザー向けエラーメッセージ生成
  * - エラーハンドリングラッパー
  */
+
+// ============================================================================
+// Error Codes - Centralized Management
+// ============================================================================
+
+export const ERROR_CODES = {
+  // Base errors
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+  APP_ERROR: 'APP_ERROR',
+  
+  // API errors
+  API_ERROR: 'API_ERROR',
+  NOT_FOUND_ERROR: 'NOT_FOUND_ERROR',
+  RATE_LIMIT_ERROR: 'RATE_LIMIT_ERROR',
+  AUTHENTICATION_ERROR: 'AUTHENTICATION_ERROR',
+  NETWORK_ERROR: 'NETWORK_ERROR',
+  
+  // Validation errors
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  INPUT_ERROR: 'INPUT_ERROR',
+  
+  // Data errors
+  DATA_ERROR: 'DATA_ERROR',
+  DATA_NOT_AVAILABLE: 'DATA_NOT_AVAILABLE',
+  
+  // Trading errors
+  TRADING_ERROR: 'TRADING_ERROR',
+  ORDER_ERROR: 'ORDER_ERROR',
+  RISK_MANAGEMENT_ERROR: 'RISK_MANAGEMENT_ERROR',
+  
+  // System errors
+  SYSTEM_ERROR: 'SYSTEM_ERROR',
+  TIMEOUT_ERROR: 'TIMEOUT_ERROR',
+  CONFIGURATION_ERROR: 'CONFIGURATION_ERROR',
+} as const;
+
+export type ErrorCode = typeof ERROR_CODES[keyof typeof ERROR_CODES];
 
 // ============================================================================
 // Error Severity Levels
@@ -22,12 +59,12 @@ export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
  * 全てのカスタムエラーの基底クラス
  */
 export class TradingError extends Error {
-  readonly code: string;
+  readonly code: ErrorCode;
   readonly severity: ErrorSeverity;
   
   constructor(
     message: string,
-    code: string = 'UNKNOWN_ERROR',
+    code: ErrorCode = ERROR_CODES.UNKNOWN_ERROR,
     severity: ErrorSeverity = 'medium'
   ) {
     super(message);
@@ -45,7 +82,7 @@ export class TradingError extends Error {
 export class AppError extends TradingError {
   constructor(
     message: string,
-    code: string = 'APP_ERROR',
+    code: ErrorCode = ERROR_CODES.APP_ERROR,
     severity: ErrorSeverity = 'medium'
   ) {
     super(message, code, severity);
@@ -72,10 +109,10 @@ export class ApiError extends TradingError {
     statusCode?: number,
     response?: unknown
   ) {
-    const code = statusCode === 404 ? 'NOT_FOUND_ERROR' :
-      statusCode === 429 ? 'RATE_LIMIT_ERROR' :
-      statusCode === 401 || statusCode === 403 ? 'AUTHENTICATION_ERROR' :
-      'API_ERROR';
+    const code: ErrorCode = statusCode === 404 ? ERROR_CODES.NOT_FOUND_ERROR :
+      statusCode === 429 ? ERROR_CODES.RATE_LIMIT_ERROR :
+      statusCode === 401 || statusCode === 403 ? ERROR_CODES.AUTHENTICATION_ERROR :
+      ERROR_CODES.API_ERROR;
     const severity: ErrorSeverity = statusCode && statusCode >= 500 ? 'high' : 'medium';
     
     super(message, code, severity);
@@ -100,7 +137,7 @@ export class NetworkError extends TradingError {
     message: string = 'ネットワークエラーが発生しました',
     originalError?: unknown
   ) {
-    super(message, 'NETWORK_ERROR', 'high');
+    super(message, ERROR_CODES.NETWORK_ERROR, 'high');
     this.originalError = originalError;
     this.name = 'NetworkError';
     Object.setPrototypeOf(this, NetworkError.prototype);
@@ -120,7 +157,7 @@ export class RateLimitError extends TradingError {
     message: string = 'リクエスト回数の上限を超えました',
     retryAfter?: number
   ) {
-    super(message, 'RATE_LIMIT_ERROR', 'medium');
+    super(message, ERROR_CODES.RATE_LIMIT_ERROR, 'medium');
     this.statusCode = 429;
     this.retryAfter = retryAfter;
     this.name = 'RateLimitError';
@@ -135,7 +172,7 @@ export class AuthenticationError extends TradingError {
   constructor(
     message: string = '認証に失敗しました'
   ) {
-    super(message, 'AUTHENTICATION_ERROR', 'high');
+    super(message, ERROR_CODES.AUTHENTICATION_ERROR, 'high');
     this.name = 'AuthenticationError';
     Object.setPrototypeOf(this, AuthenticationError.prototype);
   }
@@ -156,7 +193,7 @@ export class ValidationError extends TradingError {
     message: string,
     severity: ErrorSeverity = 'low'
   ) {
-    super(`Validation error for ${field}: ${message}`, 'VALIDATION_ERROR', severity);
+    super(`Validation error for ${field}: ${message}`, ERROR_CODES.VALIDATION_ERROR, severity);
     this.field = field;
     this.name = 'ValidationError';
     Object.setPrototypeOf(this, ValidationError.prototype);
@@ -173,7 +210,7 @@ export class InputError extends TradingError {
     field: string,
     message: string
   ) {
-    super(`Validation error for ${field}: ${message}`, 'INPUT_ERROR', 'low');
+    super(`Validation error for ${field}: ${message}`, ERROR_CODES.INPUT_ERROR, 'low');
     this.field = field;
     this.name = 'InputError';
     Object.setPrototypeOf(this, InputError.prototype);
@@ -196,7 +233,7 @@ export class DataError extends TradingError {
     symbol?: string,
     dataType?: string
   ) {
-    super(message, 'DATA_ERROR', 'medium');
+    super(message, ERROR_CODES.DATA_ERROR, 'medium');
     this.symbol = symbol;
     this.dataType = dataType;
     this.name = 'DataError';
@@ -218,7 +255,7 @@ export class NotFoundError extends TradingError {
   ) {
     super(
       `${resourceType === 'symbol' ? '銘柄' : 'リソース'}「${resource}」が見つかりません`,
-      'NOT_FOUND_ERROR',
+      ERROR_CODES.NOT_FOUND_ERROR,
       'low'
     );
     this.symbol = resource;
@@ -241,10 +278,10 @@ export class DataNotAvailableError extends TradingError {
     dataType?: string
   ) {
     super(
-      symbol 
+      symbol
         ? `${symbol}のデータが利用できません`
         : 'データが利用できません',
-      'DATA_NOT_AVAILABLE',
+      ERROR_CODES.DATA_NOT_AVAILABLE,
       'medium'
     );
     this.symbol = symbol;
@@ -270,7 +307,7 @@ export class TradingOperationError extends TradingError {
     symbol?: string,
     orderId?: string
   ) {
-    super(message, 'TRADING_ERROR', 'high');
+    super(message, ERROR_CODES.TRADING_ERROR, 'high');
     this.symbol = symbol;
     this.orderId = orderId;
     this.name = 'TradingOperationError';
@@ -292,7 +329,7 @@ export class OrderError extends TradingError {
     orderId?: string,
     reason?: string
   ) {
-    super(`Order error: ${message}`, 'ORDER_ERROR', 'high');
+    super(`Order error: ${message}`, ERROR_CODES.ORDER_ERROR, 'high');
     this.symbol = symbol;
     this.orderId = orderId;
     this.reason = reason;
@@ -313,7 +350,7 @@ export class RiskManagementError extends TradingError {
     symbol?: string,
     reason?: string
   ) {
-    super(`Risk management: ${message}`, 'RISK_MANAGEMENT_ERROR', 'critical');
+    super(`Risk management: ${message}`, ERROR_CODES.RISK_MANAGEMENT_ERROR, 'critical');
     this.symbol = symbol;
     this.reason = reason;
     this.name = 'RiskManagementError';
@@ -335,7 +372,7 @@ export class SystemError extends TradingError {
     message: string,
     operation?: string
   ) {
-    super(message, 'SYSTEM_ERROR', 'critical');
+    super(message, ERROR_CODES.SYSTEM_ERROR, 'critical');
     this.operation = operation;
     this.name = 'SystemError';
     Object.setPrototypeOf(this, SystemError.prototype);
@@ -353,7 +390,7 @@ export class TimeoutError extends TradingError {
     operation: string,
     timeoutMs: number
   ) {
-    super(`${operation}がタイムアウトしました（${timeoutMs}ms）`, 'TIMEOUT_ERROR', 'high');
+    super(`${operation}がタイムアウトしました（${timeoutMs}ms）`, ERROR_CODES.TIMEOUT_ERROR, 'high');
     this.operation = operation;
     this.timeoutMs = timeoutMs;
     this.name = 'TimeoutError';
@@ -371,7 +408,7 @@ export class ConfigurationError extends TradingError {
     configKey: string,
     message: string
   ) {
-    super(`Configuration error [${configKey}]: ${message}`, 'CONFIGURATION_ERROR', 'high');
+    super(`Configuration error [${configKey}]: ${message}`, ERROR_CODES.CONFIGURATION_ERROR, 'high');
     this.configKey = configKey;
     this.name = 'ConfigurationError';
     Object.setPrototypeOf(this, ConfigurationError.prototype);
@@ -408,7 +445,7 @@ export class ExecutionError extends TradingError {
   readonly reason?: string;
   
   constructor(orderId?: string, symbol?: string, reason?: string) {
-    super(`Execution ${orderId}: ${reason || 'Unknown error'}`, 'EXECUTION_ERROR', 'high');
+    super(`Execution ${orderId}: ${reason || 'Unknown error'}`, ERROR_CODES.TRADING_ERROR, 'high');
     this.orderId = orderId;
     this.symbol = symbol;
     this.reason = reason;
