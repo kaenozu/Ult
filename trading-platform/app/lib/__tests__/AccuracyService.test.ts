@@ -6,25 +6,29 @@ import { accuracyService } from '../AccuracyService';
 import { OHLCV } from '../../types';
 
 describe('AccuracyService', () => {
-  // Generate mock OHLCV data
+  // Generate mock OHLCV data with deterministic sine wave for reliable signals
   const generateMockData = (days: number, basePrice: number = 1000, trend: 'up' | 'down' | 'flat' = 'flat'): OHLCV[] => {
     const data: OHLCV[] = [];
-    let price = basePrice;
     const now = Date.now();
 
     for (let i = 0; i < days; i++) {
-      const volatility = 0.02;
-      let trendBias = 0;
+      // Deterministic trend + sine wave to ensure RSI oscillation
+      let trendFactor = 0;
+      if (trend === 'up') trendFactor = i * 0.005;
+      if (trend === 'down') trendFactor = -i * 0.005;
 
-      if (trend === 'up') trendBias = 0.001 * price;
-      else if (trend === 'down') trendBias = -0.001 * price;
+      // Sine wave with period 20 days (approx business month)
+      const cycle = Math.sin((i / 20) * Math.PI * 2) * 0.03;
 
-      const change = (Math.random() - 0.5) * 2 * volatility * price + trendBias;
-      const open = price;
-      const close = price + change;
-      const high = Math.max(open, close) + Math.random() * volatility * price;
-      const low = Math.min(open, close) - Math.random() * volatility * price;
-      const volume = Math.floor(Math.random() * 1000000) + 100000;
+      const priceFactor = 1 + trendFactor + cycle;
+      const close = basePrice * priceFactor;
+
+      // Add some 'noise' for High/Low but keep Close deterministic
+      const volatility = 0.01;
+      const open = close * (1 + (i % 2 === 0 ? -0.005 : 0.005)); // Alternating open
+      const high = Math.max(open, close) * (1 + volatility);
+      const low = Math.min(open, close) * (1 - volatility);
+      const volume = 1000000 + Math.floor(Math.sin(i) * 500000);
 
       data.push({
         date: new Date(now - (days - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -34,8 +38,6 @@ describe('AccuracyService', () => {
         close: parseFloat(close.toFixed(2)),
         volume,
       });
-
-      price = close;
     }
 
     return data;
