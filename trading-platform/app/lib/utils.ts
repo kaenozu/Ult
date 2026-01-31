@@ -181,6 +181,24 @@ export function getWebSocketUrl(path: string = '/ws/signals'): string {
 // ============================================
 
 /**
+ * Calculate returns (percentage change)
+ */
+export function calculateReturns(prices: number[]): number[] {
+  if (prices.length < 2) return [];
+  const returns: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    const prev = prices[i - 1];
+    const curr = prices[i];
+    if (prev !== 0 && !isNaN(prev) && !isNaN(curr)) {
+        returns.push((curr - prev) / prev);
+    } else {
+        returns.push(0);
+    }
+  }
+  return returns;
+}
+
+/**
  * Calculate Simple Moving Average (SMA)
  */
 export function calculateSMA(prices: number[], period: number): number[] {
