@@ -4,7 +4,7 @@
  * このモジュールは、OHLCVデータから各種テクニカル指標を計算する機能を提供します。
  */
 
-import { OHLCV, TechnicalIndicator } from '../types';
+import { OHLCV, TechnicalIndicator } from '../../types';
 import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from '@/app/lib/utils';
 
 /**

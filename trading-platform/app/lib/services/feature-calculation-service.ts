@@ -4,7 +4,7 @@
  * このモジュールは、MLモデルの入力となる特徴量を計算する機能を提供します。
  */
 
-import { OHLCV } from '../types';
+import { OHLCV } from '../../types';
 import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
 
 export interface PredictionFeatures {
