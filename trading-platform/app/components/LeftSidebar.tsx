@@ -3,11 +3,12 @@
 import { StockTable } from '@/app/components/StockTable';
 import { cn } from '@/app/lib/utils';
 import { Stock } from '@/app/types';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
 
 interface LeftSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  watchlist: Stock[];
+  watchlist: Stock[]; // Kept for prop compatibility, but StockTable uses store now
   onSelect: (stock: Stock) => void;
   selectedSymbol?: string;
 }
@@ -19,6 +20,10 @@ export const LeftSidebar = ({
   onSelect,
   selectedSymbol
 }: LeftSidebarProps) => {
+  // We can use the store directly or props. StockTable uses store internally now too.
+  // But LeftSidebar receives watchlist as prop in page.tsx likely.
+  // Let's stick to props if they are passed, but StockTable inside uses store actions.
+
   return (
     <aside className={cn(
       "w-80 min-w-[300px] flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 transition-transform duration-300 ease-in-out z-40",

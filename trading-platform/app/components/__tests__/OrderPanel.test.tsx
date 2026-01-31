@@ -1,30 +1,32 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useOrderExecutionStore } from '@/app/store/orderExecutionStore';
 
-// Mock store
-jest.mock('@/app/store/tradingStore');
+// Mock stores
+jest.mock('@/app/store/portfolioStore');
+jest.mock('@/app/store/orderExecutionStore');
 
 describe('OrderPanel', () => {
     const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const, sector: 'Automotive', volume: 1000000 };
-    const mockAddPosition = jest.fn();
-    const mockSetCash = jest.fn();
-    const mockAddJournalEntry = jest.fn();
-    const mockExecuteOrder = jest.fn().mockReturnValue({ success: true });
+    const mockExecuteOrderAtomic = jest.fn().mockReturnValue({ success: true });
 
-    const mockState = {
+    const mockPortfolioState = {
         portfolio: { cash: 1000000, positions: [] },
-        addPosition: mockAddPosition,
-        setCash: mockSetCash,
-        addJournalEntry: mockAddJournalEntry,
-        executeOrder: mockExecuteOrder,
+    };
+
+    const mockOrderExecutionState = {
+        executeOrderAtomic: mockExecuteOrderAtomic,
     };
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
-            return selector ? selector(mockState) : mockState;
+        (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
+            return selector ? selector(mockPortfolioState) : mockPortfolioState;
+        });
+        (useOrderExecutionStore as unknown as jest.Mock).mockImplementation((selector) => {
+            return selector ? selector(mockOrderExecutionState) : mockOrderExecutionState;
         });
     });
 
@@ -57,7 +59,7 @@ describe('OrderPanel', () => {
         // Confirm
         fireEvent.click(screen.getByText('注文を確定'));
 
-        expect(mockExecuteOrder).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockExecuteOrderAtomic).toHaveBeenCalledWith(expect.objectContaining({
             symbol: '7203',
             quantity: 100,
             side: 'LONG'
