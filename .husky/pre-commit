@@ -1,15 +1,16 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+# Get the repository root directory
+REPO_ROOT="$(git rev-parse --show-toplevel)"
 
 # Run security audit in trading-platform
 echo "🔒 Running security audit..."
-cd trading-platform && npm audit --audit-level=high
+cd "$REPO_ROOT/trading-platform" && npm audit --audit-level=high
 audit_result=$?
 
 if [ $audit_result -ne 0 ]; then
   echo "⚠️  Security vulnerabilities found! Please review and fix before committing."
   echo "Run 'npm audit' for details and 'npm audit fix' to attempt automatic fixes."
+  exit 1
 fi
 
 # Run lint-staged for code quality
-cd /home/runner/work/Ult/Ult/trading-platform && npx lint-staged
+cd "$REPO_ROOT/trading-platform" && npx lint-staged
