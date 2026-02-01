@@ -11,6 +11,7 @@ import {
 } from './constants';
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
+import { measurePerformance } from './performance';
 /**
  * Service to handle simulation, backtesting, and accuracy metrics.
  */
@@ -288,34 +289,38 @@ class AccuracyService {
      * 本格的なバックテスト実行
      */
     runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): BacktestResult {
-        const trades: BacktestTrade[] = [];
-        let currentPosition: { type: 'BUY' | 'SELL', price: number, date: string } | null = null;
+        return measurePerformance(`backtest.${symbol}`, () => {
+            const trades: BacktestTrade[] = [];
+            let currentPosition: { type: 'BUY' | 'SELL', price: number, date: string } | null = null;
 
-        const minPeriod = OPTIMIZATION.MIN_DATA_PERIOD;
-        const startDate = data[0]?.date || new Date().toISOString();
-        const endDate = data[data.length - 1]?.date || new Date().toISOString();
+            const minPeriod = OPTIMIZATION.MIN_DATA_PERIOD;
+            const startDate = data[0]?.date || new Date().toISOString();
+            const endDate = data[data.length - 1]?.date || new Date().toISOString();
 
-        if (data.length < minPeriod) {
-            return {
-                symbol,
-                totalTrades: 0,
-                winningTrades: 0,
-                losingTrades: 0,
-                winRate: 0,
-                totalReturn: 0,
-                avgProfit: 0,
-                avgLoss: 0,
-                profitFactor: 0,
-                maxDrawdown: 0,
-                sharpeRatio: 0,
-                trades: [],
-                startDate,
-                endDate
-            };
-        }
+            if (data.length < minPeriod) {
+                return {
+                    symbol,
+                    totalTrades: 0,
+                    winningTrades: 0,
+                    losingTrades: 0,
+                    winRate: 0,
+                    totalReturn: 0,
+                    avgProfit: 0,
+                    avgLoss: 0,
+                    profitFactor: 0,
+                    maxDrawdown: 0,
+                    sharpeRatio: 0,
+                    trades: [],
+                    startDate,
+                    endDate
+                };
+            }
 
-        // Optimized: Pre-calculate indicators once
-        const preCalculatedIndicators = this.preCalculateIndicators(data);
+            // Optimized: Pre-calculate indicators once
+            const preCalculatedIndicators = measurePerformance(
+                `backtest.${symbol}.preCalculateIndicators`,
+                () => this.preCalculateIndicators(data)
+            );
 
         // Walk-Forward Optimization Cache
         let cachedParams: { rsiPeriod: number; smaPeriod: number; accuracy: number } | undefined;
@@ -417,6 +422,7 @@ class AccuracyService {
         }
 
         return this.calculateStats(trades, symbol, startDate, endDate);
+        });
     }
 
     /**
