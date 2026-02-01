@@ -132,12 +132,12 @@ export class OnlineLearning {
     
     // 重みを更新
     let weightsUpdated = 0;
-    for (const [feature, gradient] of gradients.entries()) {
+    gradients.forEach((gradient, feature) => {
       const currentWeight = this.modelState.weights.get(feature) || 0;
       const newWeight = currentWeight - this.config.learningRate * gradient;
       this.modelState.weights.set(feature, newWeight);
       weightsUpdated++;
-    }
+    });
     
     // バイアスを更新
     this.modelState.bias -= this.config.learningRate * this.calculateBiasGradient(weightedBatch);
@@ -172,10 +172,10 @@ export class OnlineLearning {
     // 各特徴量の寄与を計算
     const featureVector = this.extractFeatureVector(features);
     
-    for (const [feature, value] of featureVector.entries()) {
+    featureVector.forEach((value, feature) => {
       const weight = this.modelState.weights.get(feature) || 0;
       prediction += weight * value;
-    }
+    });
     
     return this.sigmoid(prediction);
   }
@@ -240,16 +240,16 @@ export class OnlineLearning {
       const prediction = this.predict(sample.features);
       const error = (prediction - this.normalizeLabel(sample.label)) * sample.weight;
       
-      for (const [feature, value] of featureVector.entries()) {
+      featureVector.forEach((value, feature) => {
         const currentGradient = gradients.get(feature) || 0;
         gradients.set(feature, currentGradient + error * value);
-      }
+      });
     }
     
     // 平均化
-    for (const [feature, gradient] of gradients.entries()) {
+    gradients.forEach((gradient, feature) => {
       gradients.set(feature, gradient / batch.length);
-    }
+    });
     
     return gradients;
   }
