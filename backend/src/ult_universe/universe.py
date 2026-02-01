@@ -5,41 +5,40 @@ Manages a collection of stock symbols for monitoring and analysis.
 """
 
 import json
-import re
 from pathlib import Path
 from typing import Dict, List, Set, Any
+
+# Default major US stocks
+DEFAULT_US_STOCKS = [
+    "AAPL",  # Apple
+    "MSFT",  # Microsoft
+    "GOOGL",  # Alphabet/Google
+    "AMZN",  # Amazon
+    "TSLA",  # Tesla
+    "META",  # Meta (Facebook)
+    "NVDA",  # NVIDIA
+    "JPM",  # JPMorgan Chase
+    "V",  # Visa
+    "WMT",  # Walmart
+]
+
+# Default major Japanese stocks
+DEFAULT_JP_STOCKS = [
+    "7203",  # Toyota Motor
+    "6758",  # Sony Group
+    "9984",  # SoftBank Group
+    "8035",  # Tokyo Electron
+    "4519",  # Shin-Etsu Chemical
+    "6702",  # Konica Minolta
+    "8604",  # Nomura Holdings
+    "6954",  # Fanuc
+    "6367",  # Nidec
+    "6501",  # Hitachi
+]
 
 
 class StockUniverse:
     """Manages a universe of stock symbols"""
-
-    # Default major US stocks
-    DEFAULT_US_STOCKS = [
-        "AAPL",  # Apple
-        "MSFT",  # Microsoft
-        "GOOGL",  # Alphabet/Google
-        "AMZN",  # Amazon
-        "TSLA",  # Tesla
-        "META",  # Meta (Facebook)
-        "NVDA",  # NVIDIA
-        "JPM",  # JPMorgan Chase
-        "V",  # Visa
-        "WMT",  # Walmart
-    ]
-
-    # Default major Japanese stocks
-    DEFAULT_JP_STOCKS = [
-        "7203",  # Toyota Motor
-        "6758",  # Sony Group
-        "9984",  # SoftBank Group
-        "8035",  # Tokyo Electron
-        "4519",  # Shin-Etsu Chemical
-        "6702",  # Konica Minolta
-        "8604",  # Nomura Holdings
-        "6954",  # Fanuc
-        "6367",  # Nidec
-        "6501",  # Hitachi
-    ]
 
     def __init__(self):
         """Initialize an empty universe"""
@@ -104,28 +103,6 @@ class StockUniverse:
         """Remove all symbols from the universe"""
         self._symbols.clear()
 
-    def _is_us_stock(self, symbol: str) -> bool:
-        """Check if symbol is a US stock (letters only, 2-5 chars)
-
-        Args:
-            symbol: Stock symbol to check
-
-        Returns:
-            True if valid US stock symbol format
-        """
-        return bool(re.match(r'^[A-Z]{2,5}$', symbol))
-
-    def _is_jp_stock(self, symbol: str) -> bool:
-        """Check if symbol is a Japanese stock (4 digits)
-
-        Args:
-            symbol: Stock symbol to check
-
-        Returns:
-            True if valid Japanese stock symbol format
-        """
-        return bool(re.match(r'^\d{4}$', symbol))
-
     def is_valid_symbol(self, symbol: str) -> bool:
         """Validate symbol format
 
@@ -136,23 +113,18 @@ class StockUniverse:
             True if valid format, False otherwise
 
         Rules:
-        - US stocks: 2-5 uppercase letters (e.g., AAPL, MSFT)
-        - Japanese stocks: exactly 4 digits (e.g., 7203, 6758)
+        - Must be 2-6 characters (US stocks) or 4 digits (Japanese stocks)
+        - Must be alphanumeric
         - Cannot be empty or single character
         """
-        symbol = symbol.strip().upper()
+        symbol = symbol.strip()
         if not symbol:
             return False
-
-        # Check US stock format (2-5 letters) - minimum 2 characters
-        if self._is_us_stock(symbol):
-            return True
-
-        # Check Japanese stock format (4 digits)
-        if self._is_jp_stock(symbol):
-            return True
-
-        return False
+        if len(symbol) < 2 or len(symbol) > 6:
+            return False
+        if not symbol.isalnum():
+            return False
+        return True
 
     def add_if_valid(self, symbol: str) -> bool:
         """Add a symbol if it passes validation
@@ -225,7 +197,7 @@ class StockUniverse:
 
         This adds 20 major stocks (10 US + 10 Japanese) to monitor.
         """
-        for symbol in self.DEFAULT_US_STOCKS + self.DEFAULT_JP_STOCKS:
+        for symbol in DEFAULT_US_STOCKS + DEFAULT_JP_STOCKS:
             self.add_if_valid(symbol)
 
     def add_on_demand(self, symbol: str) -> Dict[str, Any]:

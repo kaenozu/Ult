@@ -3,18 +3,23 @@
 import { useState, useCallback } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
-import { LazyStockChart, LazyAdvancedIndicatorsChart } from '@/app/components/lazy/LazyComponents';
+import { StockChart } from '@/app/components/StockChart';
 import { SimpleRSIChart } from '@/app/components/SimpleRSIChart';
 import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
 import { RightSidebar } from '@/app/components/RightSidebar';
 import { BottomPanel } from '@/app/components/BottomPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useJournalStore } from '@/app/store/journalStore';
 import { useStockData } from '@/app/hooks/useStockData';
+import { Button } from '@/app/components/ui/Button';
+import { Search } from 'lucide-react';
 
 export default function Workstation() {
-  const { portfolio, closePosition, journal } = usePortfolioStore();
+  const { portfolio, closePosition } = usePortfolioStore();
+  const { journal } = useJournalStore();
   const { watchlist } = useWatchlistStore();
   const {
     selectedStock,
@@ -30,9 +35,6 @@ export default function Workstation() {
 
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
-  const [showStochastic, setShowStochastic] = useState(false);
-  const [showADX, setShowADX] = useState(false);
-  const [showWilliamsR, setShowWilliamsR] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
@@ -88,7 +90,7 @@ export default function Workstation() {
           aria-expanded={isRightSidebarOpen}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
         </button>
       </div>
@@ -137,6 +139,14 @@ export default function Workstation() {
               <p className="text-sm max-w-xs">
                 ウォッチリストから銘柄を選択するか、上の検索ボックスから銘柄を探して取引を開始してください。
               </p>
+              <Button
+                onClick={() => document.getElementById('stockSearch')?.focus()}
+                className="mt-6 gap-2"
+                variant="default"
+              >
+                <Search className="w-4 h-4" />
+                銘柄を検索する
+              </Button>
             </div>
           ) : (
             <>
@@ -148,12 +158,6 @@ export default function Workstation() {
                 setShowSMA={setShowSMA}
                 showBollinger={showBollinger}
                 setShowBollinger={setShowBollinger}
-                showStochastic={showStochastic}
-                setShowStochastic={setShowStochastic}
-                showADX={showADX}
-                setShowADX={setShowADX}
-                showWilliamsR={showWilliamsR}
-                setShowWilliamsR={setShowWilliamsR}
                 interval={interval}
                 setInterval={setInterval}
               />
@@ -161,7 +165,7 @@ export default function Workstation() {
               {/* Main Chart Visualization */}
               <div className="flex-1 relative p-3 flex flex-col">
                 <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
-                  <LazyStockChart
+                  <StockChart
                     data={chartData}
                     indexData={indexData}
                     loading={loading}
@@ -175,18 +179,6 @@ export default function Workstation() {
                 <div className="h-40 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
                   <SimpleRSIChart data={chartData} />
                 </div>
-
-                {/* Advanced Technical Indicators */}
-                {(showStochastic || showADX || showWilliamsR) && (
-                  <div className="mt-1">
-                    <LazyAdvancedIndicatorsChart
-                      data={chartData}
-                      showStochastic={showStochastic}
-                      showADX={showADX}
-                      showWilliamsR={showWilliamsR}
-                    />
-                  </div>
-                )}
               </div>
             </>
           )}

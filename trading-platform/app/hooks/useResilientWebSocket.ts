@@ -182,10 +182,7 @@ export function useResilientWebSocket(
         durationIntervalRef.current = null;
       }
       if (status !== 'CLOSED') {
-        // 非同期で状態を更新
-        queueMicrotask(() => {
-          setConnectionDuration(0);
-        });
+        setConnectionDuration(0);
       }
     }
 

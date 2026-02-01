@@ -1,108 +1,150 @@
 /**
  * AdvancedRiskManager.ts
  * 
- * 株取引で勝つための高度なリスク管理システム
- * 
- * 【機能】
- * - ポジションサイジング（ケリー基準、固定比率法、ボラティリティ調整）
- * - 動的ストップロス（ATRベース、トレーリングストップ、シャンデリア）
- * - ポートフォリオリスク管理（最大ドローダウン、相関リスク）
- * - 日次/週次損失制限
+ * 高度なリスク管理システム。動的ポジションサイジング、ポートフォリオ最適化、
+ * リアルタイムリスクモニタリングを提供します。
  */
 
-import { OHLCV, Position, RiskManagementSettings } from '@/app/types';
-
-// Extended Position interface for risk management
-interface RiskPosition extends Position {
-  entryPrice: number;
-  unrealizedPnl?: number;
-}
+import { EventEmitter } from 'events';
+import { Position, Portfolio } from '@/app/types';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export interface PositionSizingInput {
-  accountBalance: number;
+// Position and Portfolio types are now imported from '@/app/types' to avoid duplication
+export type { Position, Portfolio };
+
+export interface RiskMetrics {
+  var: number; // Value at Risk
+  cvar: number; // Conditional VaR
+  beta: number;
+  sharpeRatio: number;
+  sortinoRatio: number;
+  maxDrawdown: number;
+  currentDrawdown: number;
+  volatility: number;
+  correlationMatrix: Map<string, Map<string, number>>;
+  concentrationRisk: number;
+  leverage: number;
+}
+
+export interface PositionSizingParams {
+  capital: number;
   entryPrice: number;
-  stopLossPrice: number;
-  takeProfitPrice?: number;
-  volatility: number; // ATR / Price
-  winRate?: number; // 過去の勝率
-  avgWinLossRatio?: number; // 平均利益/損失比
-  marketRegime: 'BULL' | 'BEAR' | 'SIDEWAYS';
-  correlationWithPortfolio?: number; // ポートフォリオとの相関
+  stopLossPrice?: number;
+  riskPercent?: number;
+  method: 'fixed' | 'kelly' | 'optimal_f' | 'fixed_ratio' | 'volatility_based';
+  volatility?: number;
+  winRate?: number;
+  avgWin?: number;
+  avgLoss?: number;
 }
 
 export interface PositionSizingResult {
-  recommendedSize: number; // 株数
-  positionValue: number; // ポジション価値
-  riskAmount: number; // リスク額
-  riskPercent: number; // リスク率（%）
-  method: string;
-  kellyFraction?: number; // ケリー基準の分数
+  recommendedSize: number;
+  riskAmount: number;
+  riskPercent: number;
+  positionValue: number;
+  maxPositionSize: number;
+  reasoning: string[];
 }
 
-export interface StopLossConfig {
-  type: 'fixed' | 'atr' | 'trailing' | 'chandelier' | 'parabolic_sar' | 'volatility';
-  value: number;
-  atrMultiplier?: number;
-  trailingPercent?: number;
-  chandelierPeriod?: number;
+export interface RiskLimits {
+  maxPositionSize: number; // Max position as % of portfolio
+  maxSectorExposure: number; // Max sector exposure as %
+  maxSingleTradeRisk: number; // Max risk per trade as %
+  maxDailyLoss: number; // Max daily loss as %
+  maxDrawdown: number; // Max drawdown before trading halt
+  maxLeverage: number; // Max leverage ratio
+  minCashReserve: number; // Minimum cash reserve as %
 }
 
-export interface StopLossResult {
-  stopLossPrice: number;
-  shouldExit: boolean;
-  exitReason: string;
-  adjustedStop?: number; // トレーリングストップの場合
+export interface RiskAlert {
+  type: 'position_limit' | 'drawdown' | 'correlation' | 'volatility' | 'concentration' | 'margin';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+  symbol?: string;
+  currentValue: number;
+  limitValue: number;
+  timestamp: number;
 }
 
-export interface PortfolioRiskMetrics {
-  totalExposure: number; // 総エクスポージャー
-  maxDrawdown: number; // 最大ドローダウン
-  dailyLossLimit: number; // 日次損失制限
-  weeklyLossLimit: number; // 週次損失制限
-  currentDailyLoss: number; // 現在の日次損失
-  currentWeeklyLoss: number; // 現在の週次損失
-  var95: number; // Value at Risk (95%)
-  var99: number; // Value at Risk (99%)
-  correlationRisk: number; // 相関リスクスコア
+export interface PortfolioOptimizationParams {
+  symbols: string[];
+  expectedReturns: Map<string, number>;
+  covariances: Map<string, Map<string, number>>;
+  constraints: {
+    minWeight?: number;
+    maxWeight?: number;
+    targetReturn?: number;
+    maxRisk?: number;
+  };
 }
 
-export interface RiskLimitConfig {
-  maxRiskPerTrade: number; // % of account
-  maxDailyLoss: number; // % of account
-  maxWeeklyLoss: number; // % of account
-  maxDrawdown: number; // % from peak
-  maxPositionSize: number; // % of account
-  maxCorrelationExposure: number; // max correlation between positions
-  minRiskRewardRatio: number;
+export interface OptimizationResult {
+  weights: Map<string, number>;
+  expectedReturn: number;
+  expectedRisk: number;
+  sharpeRatio: number;
+  efficientFrontier: Array<{ return: number; risk: number }>;
 }
 
-export const DEFAULT_RISK_LIMITS: RiskLimitConfig = {
-  maxRiskPerTrade: 2.0,
-  maxDailyLoss: 5.0,
-  maxWeeklyLoss: 10.0,
-  maxDrawdown: 20.0,
-  maxPositionSize: 20.0,
-  maxCorrelationExposure: 0.7,
-  minRiskRewardRatio: 2.0,
+// ============================================================================
+// Default Configuration
+// ============================================================================
+
+export const DEFAULT_RISK_LIMITS: RiskLimits = {
+  maxPositionSize: 20, // 20% of portfolio
+  maxSectorExposure: 30, // 30% per sector
+  maxSingleTradeRisk: 2, // 2% per trade
+  maxDailyLoss: 5, // 5% daily loss limit
+  maxDrawdown: 15, // 15% max drawdown
+  maxLeverage: 2, // 2x leverage
+  minCashReserve: 10, // 10% cash reserve
 };
 
 // ============================================================================
 // Advanced Risk Manager
 // ============================================================================
 
-export class AdvancedRiskManager {
-  private config: RiskLimitConfig;
-  private dailyLosses: Map<string, number> = new Map(); // date -> loss
-  private weeklyLosses: Map<string, number> = new Map(); // week -> loss
-  private peakEquity: number = 0;
-  private currentDrawdown: number = 0;
+export class AdvancedRiskManager extends EventEmitter {
+  private limits: RiskLimits;
+  private portfolio: Portfolio;
+  private metrics: RiskMetrics;
+  private priceHistory: Map<string, number[]> = new Map();
+  private returnsHistory: Map<string, number[]> = new Map();
+  private alerts: RiskAlert[] = [];
+  private isTradingHalted: boolean = false;
 
-  constructor(config: Partial<RiskLimitConfig> = {}) {
-    this.config = { ...DEFAULT_RISK_LIMITS, ...config };
+  constructor(limits: Partial<RiskLimits> = {}) {
+    super();
+    this.limits = { ...DEFAULT_RISK_LIMITS, ...limits };
+    this.portfolio = {
+      cash: 0,
+      positions: [],
+      totalValue: 0,
+      dailyPnL: 0,
+      totalProfit: 0,
+      orders: [],
+    };
+    this.metrics = this.initializeMetrics();
+  }
+
+  private initializeMetrics(): RiskMetrics {
+    return {
+      var: 0,
+      cvar: 0,
+      beta: 1,
+      sharpeRatio: 0,
+      sortinoRatio: 0,
+      maxDrawdown: 0,
+      currentDrawdown: 0,
+      volatility: 0,
+      correlationMatrix: new Map(),
+      concentrationRisk: 0,
+      leverage: 0,
+    };
   }
 
   // ============================================================================
@@ -110,605 +152,709 @@ export class AdvancedRiskManager {
   // ============================================================================
 
   /**
-   * 固定比率法によるポジションサイジング
-   * 口座残高の固定%をリスクとして使用
+   * ポジションサイズを計算
    */
-  calculateFixedRatioSizing(input: PositionSizingInput): PositionSizingResult {
-    const { accountBalance, entryPrice, stopLossPrice } = input;
-    
-    const riskAmount = accountBalance * (this.config.maxRiskPerTrade / 100);
-    const priceRisk = Math.abs(entryPrice - stopLossPrice);
-    
-    if (priceRisk === 0) {
-      return this.createZeroRiskResult();
-    }
-    
-    const shares = Math.floor(riskAmount / priceRisk);
-    const positionValue = shares * entryPrice;
-    
-    // 最大ポジションサイズ制限
-    const maxPositionValue = accountBalance * (this.config.maxPositionSize / 100);
-    const adjustedShares = Math.min(shares, Math.floor(maxPositionValue / entryPrice));
-    
-    return {
-      recommendedSize: adjustedShares,
-      positionValue: adjustedShares * entryPrice,
-      riskAmount: adjustedShares * priceRisk,
-      riskPercent: (adjustedShares * priceRisk / accountBalance) * 100,
-      method: 'Fixed Ratio',
-    };
-  }
-
-  /**
-   * ケリー基準によるポジションサイジング
-   * 最適なベットサイズを数学的に計算
-   * 
-   * f* = (p * b - q) / b
-   * p = 勝率
-   * q = 負率 (1 - p)
-   * b = 平均利益/平均損失（オッズ）
-   */
-  calculateKellyCriterionSizing(input: PositionSizingInput): PositionSizingResult {
-    const { accountBalance, entryPrice, stopLossPrice, winRate = 0.5, avgWinLossRatio = 1.5 } = input;
-    
-    const p = winRate;
-    const q = 1 - p;
-    const b = avgWinLossRatio;
-    
-    // ケリー分数計算
-    let kellyFraction = (p * b - q) / b;
-    
-    // フルケリーはリスクが高いのでハーフケリーを使用
-    kellyFraction = Math.max(0, Math.min(kellyFraction * 0.5, 0.25));
-    
-    const priceRisk = Math.abs(entryPrice - stopLossPrice);
-    
-    if (priceRisk === 0) {
-      return this.createZeroRiskResult();
-    }
-    
-    // ケリー基準に基づくリスク額
-    const riskAmount = accountBalance * kellyFraction;
-    const shares = Math.floor(riskAmount / priceRisk);
-    
-    // 最大ポジション制限
-    const maxPositionValue = accountBalance * (this.config.maxPositionSize / 100);
-    const adjustedShares = Math.min(shares, Math.floor(maxPositionValue / entryPrice));
-    
-    return {
-      recommendedSize: adjustedShares,
-      positionValue: adjustedShares * entryPrice,
-      riskAmount: adjustedShares * priceRisk,
-      riskPercent: (adjustedShares * priceRisk / accountBalance) * 100,
-      method: 'Kelly Criterion (Half)',
-      kellyFraction: Math.round(kellyFraction * 100 * 100) / 100,
-    };
-  }
-
-  /**
-   * ボラティリティ調整型ポジションサイジング
-   * ボラティリティが高いほどポジションを小さく
-   */
-  calculateVolatilityAdjustedSizing(input: PositionSizingInput): PositionSizingResult {
-    const { accountBalance, entryPrice, stopLossPrice, volatility } = input;
-    
-    const baseRiskPercent = this.config.maxRiskPerTrade;
-    
-    // ボラティリティ調整係数（高ボラティリティ = 小さいポジション）
-    const volatilityAdjustment = Math.max(0.3, Math.min(1.0, 0.02 / volatility));
-    
-    const adjustedRiskPercent = baseRiskPercent * volatilityAdjustment;
-    const riskAmount = accountBalance * (adjustedRiskPercent / 100);
-    
-    const priceRisk = Math.abs(entryPrice - stopLossPrice);
-    
-    if (priceRisk === 0) {
-      return this.createZeroRiskResult();
-    }
-    
-    const shares = Math.floor(riskAmount / priceRisk);
-    const maxPositionValue = accountBalance * (this.config.maxPositionSize / 100);
-    const adjustedShares = Math.min(shares, Math.floor(maxPositionValue / entryPrice));
-    
-    return {
-      recommendedSize: adjustedShares,
-      positionValue: adjustedShares * entryPrice,
-      riskAmount: adjustedShares * priceRisk,
-      riskPercent: (adjustedShares * priceRisk / accountBalance) * 100,
-      method: `Volatility Adjusted (${Math.round(volatilityAdjustment * 100)}%)`,
-    };
-  }
-
-  /**
-   * 最適なポジションサイジング方法を選択
-   */
-  calculateOptimalPositionSize(
-    input: PositionSizingInput,
-    method: 'fixed' | 'kelly' | 'volatility' | 'adaptive' = 'adaptive'
-  ): PositionSizingResult {
-    switch (method) {
+  calculatePositionSize(params: PositionSizingParams): PositionSizingResult {
+    switch (params.method) {
       case 'fixed':
-        return this.calculateFixedRatioSizing(input);
+        return this.fixedPositionSizing(params);
       case 'kelly':
-        return this.calculateKellyCriterionSizing(input);
-      case 'volatility':
-        return this.calculateVolatilityAdjustedSizing(input);
-      case 'adaptive':
+        return this.kellyCriterionSizing(params);
+      case 'optimal_f':
+        return this.optimalFSizing(params);
+      case 'fixed_ratio':
+        return this.fixedRatioSizing(params);
+      case 'volatility_based':
+        return this.volatilityBasedSizing(params);
       default:
-        return this.calculateAdaptivePositionSize(input);
+        return this.fixedPositionSizing(params);
     }
   }
 
   /**
-   * アダプティブポジションサイジング
-   * 市場状況に応じて最適な方法を自動選択
+   * 固定ポジションサイジング
    */
-  private calculateAdaptivePositionSize(input: PositionSizingInput): PositionSizingResult {
-    const { volatility, winRate, marketRegime } = input;
+  private fixedPositionSizing(params: PositionSizingParams): PositionSizingResult {
+    const riskPercent = params.riskPercent || this.limits.maxSingleTradeRisk;
+    const riskAmount = params.capital * (riskPercent / 100);
     
-    // 勝率データがあればケリー基準を優先
-    if (winRate && winRate > 0.4 && winRate < 0.8) {
-      return this.calculateKellyCriterionSizing(input);
-    }
-    
-    // 高ボラティリティ時はボラティリティ調整
-    if (volatility > 0.03) {
-      return this.calculateVolatilityAdjustedSizing(input);
-    }
-    
-    // デフォルトは固定比率法
-    return this.calculateFixedRatioSizing(input);
-  }
+    let positionSize: number;
+    const reasoning: string[] = [];
 
-  // ============================================================================
-  // Stop Loss Management
-  // ============================================================================
-
-  /**
-   * ATRベースのストップロスを計算
-   */
-  calculateATRStopLoss(
-    entryPrice: number,
-    currentPrice: number,
-    atr: number,
-    side: 'LONG' | 'SHORT',
-    multiplier: number = 2
-  ): StopLossResult {
-    const stopDistance = atr * multiplier;
-    let stopLossPrice: number;
-    
-    if (side === 'LONG') {
-      stopLossPrice = entryPrice - stopDistance;
+    if (params.stopLossPrice) {
+      const riskPerShare = Math.abs(params.entryPrice - params.stopLossPrice);
+      positionSize = Math.floor(riskAmount / riskPerShare);
+      reasoning.push(`Stop loss based sizing: ${riskPerShare.toFixed(2)} risk per share`);
     } else {
-      stopLossPrice = entryPrice + stopDistance;
+      positionSize = Math.floor((params.capital * (riskPercent / 100)) / params.entryPrice);
+      reasoning.push(`Fixed percentage sizing: ${riskPercent}% of capital`);
     }
-    
-    const shouldExit = side === 'LONG' 
-      ? currentPrice <= stopLossPrice 
-      : currentPrice >= stopLossPrice;
-    
+
+    const positionValue = positionSize * params.entryPrice;
+    const maxPositionSize = Math.floor((params.capital * (this.limits.maxPositionSize / 100)) / params.entryPrice);
+
     return {
-      stopLossPrice,
-      shouldExit,
-      exitReason: shouldExit ? 'ATR Stop Loss Triggered' : 'Within Risk Limit',
+      recommendedSize: Math.min(positionSize, maxPositionSize),
+      riskAmount,
+      riskPercent,
+      positionValue,
+      maxPositionSize,
+      reasoning,
     };
   }
 
   /**
-   * トレーリングストップを計算
+   * ケリー基準によるサイジング
    */
-  calculateTrailingStop(
-    entryPrice: number,
-    currentPrice: number,
-    highestPrice: number,
-    lowestPrice: number,
-    side: 'LONG' | 'SHORT',
-    trailPercent: number = 5
-  ): StopLossResult {
-    let stopLossPrice: number;
-    let adjustedStop: number | undefined;
-    
-    if (side === 'LONG') {
-      // ロング：高値からtrailPercent%下がったら
-      const trailDistance = highestPrice * (trailPercent / 100);
-      adjustedStop = highestPrice - trailDistance;
-      stopLossPrice = Math.max(entryPrice * 0.95, adjustedStop); // 最低5%は確保
+  private kellyCriterionSizing(params: PositionSizingParams): PositionSizingResult {
+    const winRate = params.winRate || 0.5;
+    const avgWin = params.avgWin || 0.02;
+    const avgLoss = params.avgLoss || 0.01;
+
+    // Kelly formula: f = (bp - q) / b
+    // where b = avgWin/avgLoss, p = winRate, q = 1 - p
+    const b = avgWin / avgLoss;
+    const q = 1 - winRate;
+    const kellyFraction = (b * winRate - q) / b;
+
+    // Use half-Kelly for safety
+    const safeFraction = Math.max(0, kellyFraction * 0.5);
+    const riskPercent = safeFraction * 100;
+    const riskAmount = params.capital * safeFraction;
+
+    let positionSize: number;
+    if (params.stopLossPrice) {
+      const riskPerShare = Math.abs(params.entryPrice - params.stopLossPrice);
+      positionSize = Math.floor(riskAmount / riskPerShare);
     } else {
-      // ショート：安値からtrailPercent%上がったら
-      const trailDistance = lowestPrice * (trailPercent / 100);
-      adjustedStop = lowestPrice + trailDistance;
-      stopLossPrice = Math.min(entryPrice * 1.05, adjustedStop); // 最低5%は確保
+      positionSize = Math.floor((params.capital * safeFraction) / params.entryPrice);
     }
-    
-    const shouldExit = side === 'LONG'
-      ? currentPrice <= stopLossPrice
-      : currentPrice >= stopLossPrice;
-    
+
+    const positionValue = positionSize * params.entryPrice;
+    const maxPositionSize = Math.floor((params.capital * (this.limits.maxPositionSize / 100)) / params.entryPrice);
+
     return {
-      stopLossPrice,
-      shouldExit,
-      exitReason: shouldExit ? 'Trailing Stop Triggered' : 'Trailing',
-      adjustedStop,
+      recommendedSize: Math.min(positionSize, maxPositionSize),
+      riskAmount,
+      riskPercent,
+      positionValue,
+      maxPositionSize,
+      reasoning: [
+        `Kelly Criterion: f = ${kellyFraction.toFixed(4)}`,
+        `Win rate: ${(winRate * 100).toFixed(1)}%, Avg win/loss: ${(avgWin / avgLoss).toFixed(2)}`,
+        `Using half-Kelly for safety: ${safeFraction.toFixed(4)}`,
+      ],
     };
   }
 
   /**
-   * シャンデリアエグジットを計算
-   * ATRベースのトレーリングストップ
+   * Optimal F サイジング
    */
-  calculateChandelierExit(
-    data: OHLCV[],
-    currentPrice: number,
-    side: 'LONG' | 'SHORT',
-    period: number = 22,
-    atrMultiplier: number = 3
-  ): StopLossResult {
-    // 期間の高値/安値を取得
-    const highs = data.slice(-period).map(d => d.high);
-    const lows = data.slice(-period).map(d => d.low);
-    const highestHigh = Math.max(...highs);
-    const lowestLow = Math.min(...lows);
-    
-    // ATR計算
-    const atr = this.calculateATR(data, 14);
-    const currentATR = atr[atr.length - 1] || currentPrice * 0.02;
-    
-    let stopLossPrice: number;
-    
-    if (side === 'LONG') {
-      stopLossPrice = highestHigh - currentATR * atrMultiplier;
+  private optimalFSizing(params: PositionSizingParams): PositionSizingResult {
+    // Simplified Optimal F calculation
+    // In production, this would use historical trade data
+    const optimalF = 0.25; // Conservative default
+    const riskPercent = optimalF * 100;
+    const riskAmount = params.capital * optimalF;
+
+    let positionSize: number;
+    if (params.stopLossPrice) {
+      const riskPerShare = Math.abs(params.entryPrice - params.stopLossPrice);
+      positionSize = Math.floor(riskAmount / riskPerShare);
     } else {
-      stopLossPrice = lowestLow + currentATR * atrMultiplier;
+      positionSize = Math.floor((params.capital * optimalF) / params.entryPrice);
     }
-    
-    const shouldExit = side === 'LONG'
-      ? currentPrice <= stopLossPrice
-      : currentPrice >= stopLossPrice;
-    
+
+    const positionValue = positionSize * params.entryPrice;
+    const maxPositionSize = Math.floor((params.capital * (this.limits.maxPositionSize / 100)) / params.entryPrice);
+
     return {
-      stopLossPrice,
-      shouldExit,
-      exitReason: shouldExit ? 'Chandelier Exit Triggered' : 'Within Chandelier',
+      recommendedSize: Math.min(positionSize, maxPositionSize),
+      riskAmount,
+      riskPercent,
+      positionValue,
+      maxPositionSize,
+      reasoning: [`Optimal F sizing: f = ${optimalF}`],
     };
   }
 
   /**
-   * 時間ベースのストップロス
-   * 一定時間経過後に強制決済
+   * 固定比率サイジング
    */
-  calculateTimeStopLoss(
-    entryTime: Date,
-    currentTime: Date,
-    maxHoldingHours: number = 24
-  ): StopLossResult {
-    const hoursElapsed = (currentTime.getTime() - entryTime.getTime()) / (1000 * 60 * 60);
-    const shouldExit = hoursElapsed >= maxHoldingHours;
+  private fixedRatioSizing(params: PositionSizingParams): PositionSizingResult {
+    const delta = 0.1; // Fixed ratio delta
+    const currentEquity = params.capital;
+    const basePosition = Math.floor((currentEquity * 0.02) / params.entryPrice); // 2% base
     
-    return {
-      stopLossPrice: 0, // 時間ベースでは価格は関係ない
-      shouldExit,
-      exitReason: shouldExit ? `Time Stop (${hoursElapsed.toFixed(1)}h elapsed)` : 'Within Time Limit',
-    };
-  }
+    // Calculate number of deltas
+    const deltas = Math.floor(currentEquity / (params.capital * delta));
+    const positionSize = basePosition * Math.max(1, deltas);
 
-  // ============================================================================
-  // Portfolio Risk Management
-  // ============================================================================
+    const riskPercent = 2 * Math.max(1, deltas);
+    const riskAmount = params.capital * (riskPercent / 100);
+    const positionValue = positionSize * params.entryPrice;
+    const maxPositionSize = Math.floor((params.capital * (this.limits.maxPositionSize / 100)) / params.entryPrice);
 
-  /**
-   * ポートフォリオリスクメトリクスを計算
-   */
-  calculatePortfolioRisk(
-    positions: RiskPosition[],
-    accountBalance: number,
-    priceHistory: Map<string, OHLCV[]>
-  ): PortfolioRiskMetrics {
-    // 総エクスポージャー
-    const totalExposure = positions.reduce((sum, pos) => 
-      sum + (pos.entryPrice * pos.quantity), 0
-    );
-    
-    // 現在のドローダウン
-    const currentEquity = accountBalance + positions.reduce((sum, pos) => 
-      sum + (pos.unrealizedPnl || 0), 0
-    );
-    
-    if (currentEquity > this.peakEquity) {
-      this.peakEquity = currentEquity;
-    }
-    
-    this.currentDrawdown = ((this.peakEquity - currentEquity) / this.peakEquity) * 100;
-    
-    // VaR計算（簡易版）
-    const returns = this.calculatePortfolioReturns(positions, priceHistory);
-    const var95 = this.calculateVaR(returns, 0.05) * totalExposure;
-    const var99 = this.calculateVaR(returns, 0.01) * totalExposure;
-    
-    // 相関リスク
-    const correlationRisk = this.calculateCorrelationRisk(positions, priceHistory);
-    
-    // 日次/週次損失
-    const today = new Date().toISOString().split('T')[0];
-    const currentWeek = this.getWeekNumber(new Date());
-    
     return {
-      totalExposure,
-      maxDrawdown: this.currentDrawdown,
-      dailyLossLimit: accountBalance * (this.config.maxDailyLoss / 100),
-      weeklyLossLimit: accountBalance * (this.config.maxWeeklyLoss / 100),
-      currentDailyLoss: this.dailyLosses.get(today) || 0,
-      currentWeeklyLoss: this.weeklyLosses.get(currentWeek.toString()) || 0,
-      var95,
-      var99,
-      correlationRisk,
+      recommendedSize: Math.min(positionSize, maxPositionSize),
+      riskAmount,
+      riskPercent,
+      positionValue,
+      maxPositionSize,
+      reasoning: [`Fixed ratio sizing: ${deltas} deltas, base position ${basePosition}`],
     };
   }
 
   /**
-   * 新規ポジションがリスク制限内かチェック
+   * ボラティリティベースサイジング
    */
-  canOpenPosition(
-    newPosition: RiskPosition,
-    existingPositions: RiskPosition[],
-    accountBalance: number,
-    priceHistory: Map<string, OHLCV[]>
-  ): { allowed: boolean; reason?: string } {
-    const portfolioRisk = this.calculatePortfolioRisk(existingPositions, accountBalance, priceHistory);
+  private volatilityBasedSizing(params: PositionSizingParams): PositionSizingResult {
+    const volatility = params.volatility || 20; // Default 20% annualized volatility
+    const targetVolatility = 10; // Target 10% volatility
     
-    // 日次損失制限チェック
-    if (portfolioRisk.currentDailyLoss >= portfolioRisk.dailyLossLimit) {
-      return { allowed: false, reason: 'Daily loss limit reached' };
-    }
-    
-    // 週次損失制限チェック
-    if (portfolioRisk.currentWeeklyLoss >= portfolioRisk.weeklyLossLimit) {
-      return { allowed: false, reason: 'Weekly loss limit reached' };
-    }
-    
-    // ドローダウン制限チェック
-    if (portfolioRisk.maxDrawdown >= this.config.maxDrawdown) {
-      return { allowed: false, reason: 'Max drawdown limit reached' };
-    }
-    
-    // 総エクスポージャーチェック
-    const newExposure = newPosition.entryPrice * newPosition.quantity;
-    const totalExposure = portfolioRisk.totalExposure + newExposure;
-    if (totalExposure > accountBalance * (this.config.maxPositionSize * 3 / 100)) {
-      return { allowed: false, reason: 'Max total exposure would be exceeded' };
-    }
-    
-    // 相関リスクチェック
-    if (portfolioRisk.correlationRisk > this.config.maxCorrelationExposure) {
-      return { allowed: false, reason: 'Correlation risk too high' };
-    }
-    
-    return { allowed: true };
-  }
+    // Scale position size inversely with volatility
+    const volatilityFactor = targetVolatility / volatility;
+    const baseRiskPercent = this.limits.maxSingleTradeRisk;
+    const riskPercent = baseRiskPercent * volatilityFactor;
+    const riskAmount = params.capital * (riskPercent / 100);
 
-  /**
-   * 損失を記録
-   */
-  recordLoss(loss: number): void {
-    const today = new Date().toISOString().split('T')[0];
-    const currentWeek = this.getWeekNumber(new Date()).toString();
-    
-    // 日次損失を更新
-    const currentDaily = this.dailyLosses.get(today) || 0;
-    this.dailyLosses.set(today, currentDaily + loss);
-    
-    // 週次損失を更新
-    const currentWeekly = this.weeklyLosses.get(currentWeek) || 0;
-    this.weeklyLosses.set(currentWeek, currentWeekly + loss);
-  }
+    let positionSize: number;
+    if (params.stopLossPrice) {
+      const riskPerShare = Math.abs(params.entryPrice - params.stopLossPrice);
+      positionSize = Math.floor(riskAmount / riskPerShare);
+    } else {
+      positionSize = Math.floor((params.capital * (riskPercent / 100)) / params.entryPrice);
+    }
 
-  /**
-   * リスクリワード比を検証
-   */
-  validateRiskRewardRatio(
-    entryPrice: number,
-    stopLoss: number,
-    takeProfit: number
-  ): { valid: boolean; ratio: number } {
-    const risk = Math.abs(entryPrice - stopLoss);
-    const reward = Math.abs(takeProfit - entryPrice);
-    const ratio = risk > 0 ? reward / risk : 0;
-    
+    const positionValue = positionSize * params.entryPrice;
+    const maxPositionSize = Math.floor((params.capital * (this.limits.maxPositionSize / 100)) / params.entryPrice);
+
     return {
-      valid: ratio >= this.config.minRiskRewardRatio,
-      ratio: Math.round(ratio * 100) / 100,
+      recommendedSize: Math.min(positionSize, maxPositionSize),
+      riskAmount,
+      riskPercent,
+      positionValue,
+      maxPositionSize,
+      reasoning: [
+        `Volatility based sizing: ${volatility.toFixed(2)}% volatility`,
+        `Volatility factor: ${volatilityFactor.toFixed(2)}`,
+      ],
     };
   }
 
   // ============================================================================
-  // Private Helper Methods
+  // Risk Metrics Calculation
   // ============================================================================
 
-  private createZeroRiskResult(): PositionSizingResult {
-    return {
-      recommendedSize: 0,
-      positionValue: 0,
-      riskAmount: 0,
-      riskPercent: 0,
-      method: 'Error: Zero Risk',
+  /**
+   * リスクメトリクスを更新
+   */
+  updateRiskMetrics(portfolio: Portfolio): RiskMetrics {
+    this.portfolio = portfolio;
+
+    // Calculate returns
+    const portfolioReturns = this.calculatePortfolioReturns();
+    
+    // VaR and CVaR
+    const var95 = this.calculateVaR(portfolioReturns, 0.95);
+    const cvar95 = this.calculateCVaR(portfolioReturns, 0.95);
+
+    // Volatility
+    const volatility = this.calculateVolatility(portfolioReturns);
+
+    // Drawdown
+    const { maxDrawdown, currentDrawdown } = this.calculateDrawdown();
+
+    // Correlation matrix
+    const correlationMatrix = this.calculateCorrelationMatrix();
+
+    // Concentration risk
+    const concentrationRisk = this.calculateConcentrationRisk();
+
+    // Leverage (calculated from positions value vs total value)
+    const positionsValue = portfolio.positions.reduce((sum, pos) => sum + (pos.currentPrice * pos.quantity), 0);
+    const leverage = positionsValue / (portfolio.totalValue || 1);
+
+    // Sharpe and Sortino ratios
+    const sharpeRatio = this.calculateSharpeRatio(portfolioReturns);
+    const sortinoRatio = this.calculateSortinoRatio(portfolioReturns);
+
+    this.metrics = {
+      var: var95,
+      cvar: cvar95,
+      beta: this.calculateBeta(),
+      sharpeRatio,
+      sortinoRatio,
+      maxDrawdown,
+      currentDrawdown,
+      volatility,
+      correlationMatrix,
+      concentrationRisk,
+      leverage,
     };
+
+    // Check risk limits
+    this.checkRiskLimits();
+
+    this.emit('metrics_updated', this.metrics);
+    return this.metrics;
   }
 
-  private calculateATR(data: OHLCV[], period: number): number[] {
-    const atr: number[] = [];
+  /**
+   * VaRを計算
+   */
+  private calculateVaR(returns: number[], confidence: number): number {
+    if (returns.length < 30) return 0;
     
-    for (let i = 0; i < data.length; i++) {
-      if (i < period) {
-        atr.push(NaN);
-        continue;
-      }
-      
-      let sum = 0;
-      for (let j = 0; j < period; j++) {
-        const idx = i - j;
-        const tr = Math.max(
-          data[idx].high - data[idx].low,
-          Math.abs(data[idx].high - data[idx - 1].close),
-          Math.abs(data[idx].low - data[idx - 1].close)
-        );
-        sum += tr;
-      }
-      atr.push(sum / period);
+    const sorted = [...returns].sort((a, b) => a - b);
+    const index = Math.floor((1 - confidence) * sorted.length);
+    return -sorted[index] * this.portfolio.totalValue;
+  }
+
+  /**
+   * CVaR (Expected Shortfall) を計算
+   */
+  private calculateCVaR(returns: number[], confidence: number): number {
+    if (returns.length < 30) return 0;
+    
+    const sorted = [...returns].sort((a, b) => a - b);
+    const varIndex = Math.floor((1 - confidence) * sorted.length);
+    const tailReturns = sorted.slice(0, varIndex);
+    
+    if (tailReturns.length === 0) return 0;
+    
+    const avgTailReturn = tailReturns.reduce((a, b) => a + b, 0) / tailReturns.length;
+    return -avgTailReturn * this.portfolio.totalValue;
+  }
+
+  /**
+   * ボラティリティを計算
+   */
+  private calculateVolatility(returns: number[]): number {
+    if (returns.length < 2) return 0;
+    
+    const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+    return Math.sqrt(variance) * Math.sqrt(252); // Annualized
+  }
+
+  /**
+   * ドローダウンを計算
+   */
+  private calculateDrawdown(): { maxDrawdown: number; currentDrawdown: number } {
+    const values = this.priceHistory.get('portfolio') || [];
+    if (values.length < 2) return { maxDrawdown: 0, currentDrawdown: 0 };
+
+    let peak = values[0];
+    let maxDrawdown = 0;
+
+    for (const value of values) {
+      if (value > peak) peak = value;
+      const drawdown = (peak - value) / peak;
+      if (drawdown > maxDrawdown) maxDrawdown = drawdown;
     }
-    
-    return atr;
+
+    const currentDrawdown = (peak - values[values.length - 1]) / peak;
+
+    return { maxDrawdown, currentDrawdown };
   }
 
-  private calculatePortfolioReturns(
-    positions: RiskPosition[],
-    priceHistory: Map<string, OHLCV[]>
-  ): number[] {
+  /**
+   * ポートフォリオリターンを計算
+   */
+  private calculatePortfolioReturns(): number[] {
+    const values = this.priceHistory.get('portfolio') || [];
     const returns: number[] = [];
-    
-    for (const position of positions) {
-      const history = priceHistory.get(position.symbol);
-      if (history && history.length > 1) {
-        for (let i = 1; i < history.length; i++) {
-          const ret = (history[i].close - history[i-1].close) / history[i-1].close;
-          returns.push(ret);
-        }
-      }
+
+    for (let i = 1; i < values.length; i++) {
+      returns.push((values[i] - values[i - 1]) / values[i - 1]);
     }
-    
+
     return returns;
   }
 
-  private calculateVaR(returns: number[], confidence: number): number {
-    if (returns.length === 0) return 0;
-    
-    const sorted = [...returns].sort((a, b) => a - b);
-    const index = Math.floor(sorted.length * confidence);
-    return Math.abs(sorted[index] || 0);
+  /**
+   * 相関行列を計算
+   */
+  private calculateCorrelationMatrix(): Map<string, Map<string, number>> {
+    const matrix = new Map<string, Map<string, number>>();
+    const symbols = Array.from(this.returnsHistory.keys());
+
+    for (const symbol1 of symbols) {
+      const row = new Map<string, number>();
+      const returns1 = this.returnsHistory.get(symbol1) || [];
+
+      for (const symbol2 of symbols) {
+        const returns2 = this.returnsHistory.get(symbol2) || [];
+        const correlation = this.calculateCorrelation(returns1, returns2);
+        row.set(symbol2, correlation);
+      }
+
+      matrix.set(symbol1, row);
+    }
+
+    return matrix;
   }
 
-  private calculateCorrelationRisk(
-    positions: RiskPosition[],
-    priceHistory: Map<string, OHLCV[]>
-  ): number {
-    if (positions.length < 2) return 0;
+  /**
+   * 相関係数を計算
+   */
+  private calculateCorrelation(x: number[], y: number[]): number {
+    const n = Math.min(x.length, y.length);
+    if (n < 2) return 0;
+
+    const sumX = x.slice(0, n).reduce((a, b) => a + b, 0);
+    const sumY = y.slice(0, n).reduce((a, b) => a + b, 0);
+    const sumXY = x.slice(0, n).reduce((sum, xi, i) => sum + xi * y[i], 0);
+    const sumX2 = x.slice(0, n).reduce((sum, xi) => sum + xi * xi, 0);
+    const sumY2 = y.slice(0, n).reduce((sum, yi) => sum + yi * yi, 0);
+
+    const numerator = n * sumXY - sumX * sumY;
+    const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+
+    return denominator === 0 ? 0 : numerator / denominator;
+  }
+
+  /**
+   * 集中度リスクを計算
+   */
+  private calculateConcentrationRisk(): number {
+    const totalValue = this.portfolio.totalValue;
+    if (totalValue === 0) return 0;
+
+    // Herfindahl-Hirschman Index
+    let hhi = 0;
+    for (const position of this.portfolio.positions) {
+      const weight = (position.currentPrice * position.quantity) / totalValue;
+      hhi += weight * weight;
+    }
+    if (!isFinite(hhi)) return 0;
+
+    // Normalize to 0-1 range
+    const n = this.portfolio.positions.length || 1;
+    return (hhi - 1 / n) / (1 - 1 / n);
+  }
+
+  /**
+   * ベータを計算
+   */
+  private calculateBeta(): number {
+    // Simplified beta calculation
+    // In production, compare against market index
+    return 1;
+  }
+
+  /**
+   * シャープレシオを計算
+   */
+  private calculateSharpeRatio(returns: number[]): number {
+    if (returns.length < 2) return 0;
     
-    let totalCorrelation = 0;
-    let count = 0;
+    const riskFreeRate = 0.02 / 252; // Daily risk-free rate
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const volatility = this.calculateVolatility(returns) / Math.sqrt(252);
     
-    for (let i = 0; i < positions.length; i++) {
-      for (let j = i + 1; j < positions.length; j++) {
-        const corr = this.calculateCorrelation(
-          priceHistory.get(positions[i].symbol) || [],
-          priceHistory.get(positions[j].symbol) || []
-        );
-        totalCorrelation += Math.abs(corr);
-        count++;
+    return volatility === 0 ? 0 : (avgReturn - riskFreeRate) / volatility;
+  }
+
+  /**
+   * ソルティノレシオを計算
+   */
+  private calculateSortinoRatio(returns: number[]): number {
+    if (returns.length < 2) return 0;
+    
+    const riskFreeRate = 0.02 / 252;
+    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+    
+    const downsideReturns = returns.filter((r) => r < 0);
+    const downsideDeviation = Math.sqrt(
+      downsideReturns.reduce((sum, r) => sum + r * r, 0) / downsideReturns.length
+    );
+    
+    return downsideDeviation === 0 ? 0 : (avgReturn - riskFreeRate) / downsideDeviation;
+  }
+
+  // ============================================================================
+  // Risk Limit Checking
+  // ============================================================================
+
+  /**
+   * リスク制限をチェック
+   */
+  private checkRiskLimits(): void {
+    // Check drawdown
+    if (this.metrics.currentDrawdown > this.limits.maxDrawdown / 100) {
+      this.addAlert({
+        type: 'drawdown',
+        severity: 'critical',
+        message: `Maximum drawdown exceeded: ${(this.metrics.currentDrawdown * 100).toFixed(2)}%`,
+        currentValue: this.metrics.currentDrawdown,
+        limitValue: this.limits.maxDrawdown / 100,
+        timestamp: Date.now(),
+      });
+      this.haltTrading();
+    }
+
+    // Check leverage
+    if (this.metrics.leverage > this.limits.maxLeverage) {
+      this.addAlert({
+        type: 'margin',
+        severity: 'high',
+        message: `Leverage limit exceeded: ${this.metrics.leverage.toFixed(2)}x`,
+        currentValue: this.metrics.leverage,
+        limitValue: this.limits.maxLeverage,
+        timestamp: Date.now(),
+      });
+    }
+
+    // Check concentration
+    if (this.metrics.concentrationRisk > 0.5) {
+      this.addAlert({
+        type: 'concentration',
+        severity: 'medium',
+        message: `High concentration risk: ${(this.metrics.concentrationRisk * 100).toFixed(2)}%`,
+        currentValue: this.metrics.concentrationRisk,
+        limitValue: 0.5,
+        timestamp: Date.now(),
+      });
+    }
+
+    // Check position limits
+    for (const position of this.portfolio.positions) {
+      const positionValue = position.currentPrice * position.quantity;
+      const positionWeight = positionValue / this.portfolio.totalValue;
+
+      if (positionWeight > this.limits.maxPositionSize / 100) {
+        this.addAlert({
+          type: 'position_limit',
+          severity: 'high',
+          message: `Position limit exceeded for ${position.symbol}`,
+          symbol: position.symbol,
+          currentValue: positionWeight,
+          limitValue: this.limits.maxPositionSize / 100,
+          timestamp: Date.now(),
+        });
       }
     }
-    
-    return count > 0 ? totalCorrelation / count : 0;
   }
 
-  private calculateCorrelation(data1: OHLCV[], data2: OHLCV[]): number {
-    if (data1.length < 20 || data2.length < 20) return 0;
-    
-    const returns1 = data1.slice(-20).map((d, i, arr) => 
-      i === 0 ? 0 : (d.close - arr[i-1].close) / arr[i-1].close
-    ).slice(1);
-    
-    const returns2 = data2.slice(-20).map((d, i, arr) => 
-      i === 0 ? 0 : (d.close - arr[i-1].close) / arr[i-1].close
-    ).slice(1);
-    
-    const n = Math.min(returns1.length, returns2.length);
-    const mean1 = returns1.slice(0, n).reduce((a, b) => a + b, 0) / n;
-    const mean2 = returns2.slice(0, n).reduce((a, b) => a + b, 0) / n;
-    
-    let numerator = 0;
-    let denom1 = 0;
-    let denom2 = 0;
-    
-    for (let i = 0; i < n; i++) {
-      const diff1 = returns1[i] - mean1;
-      const diff2 = returns2[i] - mean2;
-      numerator += diff1 * diff2;
-      denom1 += diff1 * diff1;
-      denom2 += diff2 * diff2;
+  /**
+   * アラートを追加
+   */
+  private addAlert(alert: RiskAlert): void {
+    this.alerts.push(alert);
+    this.emit('risk_alert', alert);
+
+    // Keep only last 100 alerts
+    if (this.alerts.length > 100) {
+      this.alerts = this.alerts.slice(-100);
     }
-    
-    return denom1 > 0 && denom2 > 0 ? numerator / Math.sqrt(denom1 * denom2) : 0;
   }
 
-  private getWeekNumber(date: Date): number {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  /**
+   * 取引を停止
+   */
+  private haltTrading(): void {
+    if (!this.isTradingHalted) {
+      this.isTradingHalted = true;
+      this.emit('trading_halted', { reason: 'Risk limit exceeded' });
+    }
+  }
+
+  /**
+   * 取引を再開
+   */
+  resumeTrading(): void {
+    this.isTradingHalted = false;
+    this.emit('trading_resumed');
   }
 
   // ============================================================================
-  // Configuration
+  // Portfolio Optimization (Modern Portfolio Theory)
   // ============================================================================
 
-  updateConfig(newConfig: Partial<RiskLimitConfig>): void {
-    this.config = { ...this.config, ...newConfig };
+  /**
+   * ポートフォリオを最適化
+   */
+  optimizePortfolio(params: PortfolioOptimizationParams): OptimizationResult {
+    const { symbols, expectedReturns, covariances, constraints } = params;
+    const n = symbols.length;
+
+    // Initialize equal weights
+    const weights = new Map<string, number>();
+    symbols.forEach((s) => weights.set(s, 1 / n));
+
+    // Calculate expected portfolio return
+    let expectedReturn = 0;
+    symbols.forEach((s) => {
+      expectedReturn += (expectedReturns.get(s) || 0) * (weights.get(s) || 0);
+    });
+
+    // Calculate portfolio risk
+    let portfolioVariance = 0;
+    symbols.forEach((s1) => {
+      symbols.forEach((s2) => {
+        const w1 = weights.get(s1) || 0;
+        const w2 = weights.get(s2) || 0;
+        const cov = covariances.get(s1)?.get(s2) || 0;
+        portfolioVariance += w1 * w2 * cov;
+      });
+    });
+    const expectedRisk = Math.sqrt(portfolioVariance);
+
+    // Calculate Sharpe ratio
+    const riskFreeRate = 0.02;
+    const sharpeRatio = expectedRisk === 0 ? 0 : (expectedReturn - riskFreeRate) / expectedRisk;
+
+    // Generate efficient frontier
+    const efficientFrontier = this.calculateEfficientFrontier(params);
+
+    return {
+      weights,
+      expectedReturn,
+      expectedRisk,
+      sharpeRatio,
+      efficientFrontier,
+    };
   }
 
-  getConfig(): RiskLimitConfig {
-    return { ...this.config };
+  /**
+   * 効率的フロンティアを計算
+   */
+  private calculateEfficientFrontier(params: PortfolioOptimizationParams): Array<{ return: number; risk: number }> {
+    const frontier: Array<{ return: number; risk: number }> = [];
+    const { symbols, expectedReturns, covariances } = params;
+
+    // Generate portfolio combinations
+    const steps = 20;
+    for (let i = 0; i <= steps; i++) {
+      const targetReturn = (i / steps) * 0.3; // 0% to 30%
+      
+      // Simplified: find minimum risk portfolio for target return
+      let minRisk = Infinity;
+      
+      // In production, use quadratic programming
+      // For now, use random sampling
+      for (let j = 0; j < 100; j++) {
+        const weights = this.generateRandomWeights(symbols.length);
+        const portfolioReturn = symbols.reduce((sum, s, idx) => 
+          sum + (expectedReturns.get(s) || 0) * weights[idx], 0);
+        
+        if (Math.abs(portfolioReturn - targetReturn) < 0.01) {
+          const risk = this.calculatePortfolioRisk(weights, symbols, covariances);
+          if (risk < minRisk) minRisk = risk;
+        }
+      }
+
+      if (minRisk !== Infinity) {
+        frontier.push({ return: targetReturn, risk: minRisk });
+      }
+    }
+
+    return frontier;
   }
 
-  reset(): void {
-    this.dailyLosses.clear();
-    this.weeklyLosses.clear();
-    this.peakEquity = 0;
-    this.currentDrawdown = 0;
+  /**
+   * ランダムな重みを生成
+   */
+  private generateRandomWeights(n: number): number[] {
+    const weights = Array(n).fill(0).map(() => Math.random());
+    const sum = weights.reduce((a, b) => a + b, 0);
+    return weights.map((w) => w / sum);
+  }
+
+  /**
+   * ポートフォリオリスクを計算
+   */
+  private calculatePortfolioRisk(
+    weights: number[],
+    symbols: string[],
+    covariances: Map<string, Map<string, number>>
+  ): number {
+    let variance = 0;
+    for (let i = 0; i < symbols.length; i++) {
+      for (let j = 0; j < symbols.length; j++) {
+        const cov = covariances.get(symbols[i])?.get(symbols[j]) || 0;
+        variance += weights[i] * weights[j] * cov;
+      }
+    }
+    return Math.sqrt(variance);
+  }
+
+  // ============================================================================
+  // Data Management
+  // ============================================================================
+
+  /**
+   * 価格データを追加
+   */
+  addPriceData(symbol: string, price: number): void {
+    if (!this.priceHistory.has(symbol)) {
+      this.priceHistory.set(symbol, []);
+    }
+
+    const prices = this.priceHistory.get(symbol)!;
+    prices.push(price);
+
+    // Keep last 252 days (1 year)
+    if (prices.length > 252) {
+      this.priceHistory.set(symbol, prices.slice(-252));
+    }
+
+    // Calculate return
+    if (prices.length > 1) {
+      const return_value = (price - prices[prices.length - 2]) / prices[prices.length - 2];
+      
+      if (!this.returnsHistory.has(symbol)) {
+        this.returnsHistory.set(symbol, []);
+      }
+      
+      const returns = this.returnsHistory.get(symbol)!;
+      returns.push(return_value);
+      
+      if (returns.length > 251) {
+        this.returnsHistory.set(symbol, returns.slice(-251));
+      }
+    }
+  }
+
+  /**
+   * リスクメトリクスを取得
+   */
+  getRiskMetrics(): RiskMetrics {
+    return this.metrics;
+  }
+
+  /**
+   * アラートを取得
+   */
+  getAlerts(): RiskAlert[] {
+    return this.alerts;
+  }
+
+  /**
+   * 取引停止状態を確認
+   */
+  isHalted(): boolean {
+    return this.isTradingHalted;
   }
 }
 
 // ============================================================================
-// Singleton Export
+// Singleton Instance
 // ============================================================================
 
-export const advancedRiskManager = new AdvancedRiskManager();
-export default AdvancedRiskManager;
+let globalRiskManager: AdvancedRiskManager | null = null;
 
-// Additional exports for compatibility
-export type RiskMetrics = PortfolioRiskMetrics;
-export type { RiskPosition };
-export type Portfolio = PortfolioRiskMetrics;
-export type RiskLimits = RiskLimitConfig;
-export interface RiskAlert {
-  type: 'warning' | 'critical';
-  message: string;
-  timestamp: string;
-}
-export interface PortfolioOptimizationParams {
-  targetReturn: number;
-  maxRisk: number;
-  constraints: {
-    minWeight: number;
-    maxWeight: number;
-  };
-}
-export interface OptimizationResult {
-  weights: Map<string, number>;
-  expectedReturn: number;
-  expectedRisk: number;
-  sharpeRatio: number;
-}
-export interface PositionSizingParams {
-  accountBalance: number;
-  riskPercent: number;
-  entryPrice: number;
-  stopLossPrice: number;
-}
-
-// Helper functions for global access
-export function getGlobalRiskManager(): AdvancedRiskManager {
-  return advancedRiskManager;
+export function getGlobalRiskManager(limits?: Partial<RiskLimits>): AdvancedRiskManager {
+  if (!globalRiskManager) {
+    globalRiskManager = new AdvancedRiskManager(limits);
+  }
+  return globalRiskManager;
 }
 
 export function resetGlobalRiskManager(): void {
-  advancedRiskManager.reset();
+  globalRiskManager = null;
 }
+
+export default AdvancedRiskManager;

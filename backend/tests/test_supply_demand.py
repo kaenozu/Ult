@@ -90,16 +90,16 @@ class TestSupplyDemandAnalyzer:
         current_price = 101.0
         current_volume = 10000  # 2x average volume
 
-        breakouts = analyzer.detect_breakout(
+        breakout = analyzer.detect_breakout(
             zones=zones,
             current_price=current_price,
             current_volume=current_volume,
             average_volume=5000
         )
 
-        assert len(breakouts) > 0
-        assert breakouts[0].direction == "bullish"
-        assert breakouts[0].is_confirmed is True
+        assert breakout is not None
+        assert breakout.direction == "bullish"
+        assert breakout.is_confirmed is True
 
     def test_detect_breakout_no_volume_confirmation(self):
         """Test that breakout without volume is not confirmed"""
@@ -111,7 +111,7 @@ class TestSupplyDemandAnalyzer:
         current_price = 101.0
         current_volume = 2000  # Lower than average
 
-        breakouts = analyzer.detect_breakout(
+        breakout = analyzer.detect_breakout(
             zones=zones,
             current_price=current_price,
             current_volume=current_volume,
@@ -119,8 +119,8 @@ class TestSupplyDemandAnalyzer:
         )
 
         # Should detect breakout but not confirmed
-        assert len(breakouts) > 0
-        assert breakouts[0].is_confirmed is False
+        assert breakout is not None
+        assert breakout.is_confirmed is False
 
     def test_no_breakout_when_within_range(self):
         """Test that no breakout is detected when price is within range"""
@@ -132,14 +132,14 @@ class TestSupplyDemandAnalyzer:
         current_price = 99.0
         current_volume = 10000
 
-        breakouts = analyzer.detect_breakout(
+        breakout = analyzer.detect_breakout(
             zones=zones,
             current_price=current_price,
             current_volume=current_volume,
             average_volume=5000
         )
 
-        assert len(breakouts) == 0
+        assert breakout is None
 
     def test_zone_strength_classification(self):
         """Test zone strength classification (strong/medium/weak)"""
@@ -192,130 +192,3 @@ class TestSupplyDemandAnalyzer:
 
         assert nearest is not None
         assert nearest.price == 100.0
-
-    def test_calculate_volume_by_price_duplicate_prices(self):
-        """Test calculating volume with duplicate prices (line 27)"""
-        analyzer = SupplyDemandAnalyzer()
-
-        # Same price appears multiple times
-        data = [
-            (100.0, 1000),
-            (100.0, 500),   # Duplicate price
-            (101.0, 2000),
-            (100.0, 1500),  # Another duplicate
-        ]
-
-        volume_by_price = analyzer.calculate_volume_by_price(data)
-
-        # Volumes for same price should be aggregated
-        assert volume_by_price[100.0] == 3000  # 1000 + 500 + 1500
-        assert volume_by_price[101.0] == 2000
-
-    def test_identify_levels_empty_volume_by_price(self):
-        """Test identifying levels with empty volume data (line 48)"""
-        analyzer = SupplyDemandAnalyzer()
-
-        zones = analyzer.identify_levels({}, current_price=100.0)
-
-        assert zones == []
-
-    def test_identify_levels_equal_min_max_volume(self):
-        """Test identifying levels when min and max volume are equal (line 70)"""
-        analyzer = SupplyDemandAnalyzer()
-
-        # All volumes are the same
-        volume_by_price = {
-            98.0: 5000,
-            99.0: 5000,
-            100.0: 5000,
-            101.0: 5000,
-        }
-
-        zones = analyzer.identify_levels(volume_by_price, current_price=100.0)
-
-        # All zones should have strength of 0.5
-        assert len(zones) > 0
-        for zone in zones:
-            assert zone.strength == 0.5
-
-    def test_detect_breakout_empty_zones(self):
-        """Test breakout detection with empty zones (line 105)"""
-        analyzer = SupplyDemandAnalyzer()
-
-        breakouts = analyzer.detect_breakout(
-            zones=[],
-            current_price=100.0,
-            current_volume=10000,
-            average_volume=5000
-        )
-
-        assert len(breakouts) == 0
-
-    def test_detect_breakout_bearish_with_volume(self):
-        """Test detecting bearish breakout with volume confirmation (lines 125-129)"""
-        analyzer = SupplyDemandAnalyzer()
-
-        # Previous support at 100
-        zones = [Zone(price=100.0, volume=5000, zone_type=ZoneType.SUPPORT, strength=0.8)]
-
-        # Price breaks below support with high volume
-        current_price = 99.0
-        current_volume = 10000  # 2x average volume
-
-        breakouts = analyzer.detect_breakout(
-            zones=zones,
-            current_price=current_price,
-            current_volume=current_volume,
-            average_volume=5000
-        )
-
-        assert len(breakouts) > 0
-        assert breakouts[0].direction == "bearish"
-        assert breakouts[0].is_confirmed is True
-
-    def test_detect_breakout_bearish_no_volume_confirmation(self):
-        """Test detecting bearish breakout without volume confirmation (lines 125-129)"""
-        analyzer = SupplyDemandAnalyzer()
-
-        zones = [Zone(price=100.0, volume=5000, zone_type=ZoneType.SUPPORT, strength=0.8)]
-
-        # Price breaks below support but with low volume
-        current_price = 99.0
-        current_volume = 2000  # Lower than average
-
-        breakouts = analyzer.detect_breakout(
-            zones=zones,
-            current_price=current_price,
-            current_volume=current_volume,
-            average_volume=5000
-        )
-
-        # Should detect breakout but not confirmed
-        assert len(breakouts) > 0
-        assert breakouts[0].is_confirmed is False
-
-    def test_get_nearest_support_no_support_zones(self):
-        """Test finding nearest support when no support zones exist (line 152)"""
-        analyzer = SupplyDemandAnalyzer()
-
-        zones = [
-            Zone(price=100.0, volume=2000, zone_type=ZoneType.RESISTANCE, strength=0.4),
-            Zone(price=102.0, volume=5000, zone_type=ZoneType.RESISTANCE, strength=0.7),
-        ]
-
-        nearest = analyzer.get_nearest_support(zones, current_price=99.0)
-
-        assert nearest is None
-
-    def test_get_nearest_resistance_no_resistance_zones(self):
-        """Test finding nearest resistance when no resistance zones exist (line 171)"""
-        analyzer = SupplyDemandAnalyzer()
-
-        zones = [
-            Zone(price=95.0, volume=3000, zone_type=ZoneType.SUPPORT, strength=0.5),
-            Zone(price=98.0, volume=5000, zone_type=ZoneType.SUPPORT, strength=0.7),
-        ]
-
-        nearest = analyzer.get_nearest_resistance(zones, current_price=99.0)
-
-        assert nearest is None

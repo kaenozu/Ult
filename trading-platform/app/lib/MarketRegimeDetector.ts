@@ -3,20 +3,15 @@
  * 
  * Detects market regimes (trending vs ranging) and volatility levels
  * to enable adaptive trading strategies.
- * 
- * Enhanced with:
- * - ADX + SMA + Volatility combined regime detection
- * - Trend direction filtering (UP trend: BUY only, DOWN trend: SELL only)
- * - Signal strength adjustment based on regime confidence
  */
 
 import { OHLCV } from '@/app/types';
-import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS, RISK_PARAMS } from './constants';
+import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from './constants';
 
-export type MarketRegime = 'TRENDING_UP' | 'TRENDING_DOWN' | 'RANGING' | 'UNKNOWN';
+export type MarketRegime = 'TRENDING' | 'RANGING' | 'UNKNOWN';
 export type VolatilityRegime = 'HIGH' | 'MEDIUM' | 'LOW';
 export type TrendDirection = 'UP' | 'DOWN' | 'NEUTRAL';
-export type RegimeConfidence = 'INITIAL' | 'CONFIRMED' | 'STRONG';
+export type RegimeConfidence = 'INITIAL' | 'CONFIRMED';
 
 export interface RegimeDetectionResult {
   regime: MarketRegime;
@@ -28,11 +23,6 @@ export interface RegimeDetectionResult {
   confidence: RegimeConfidence;
   daysInRegime: number;
   timestamp: string;
-  // Enhanced fields
-  smaAlignment: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
-  priceVsSMA: 'ABOVE' | 'BELOW' | 'AT';
-  signalRestriction: 'BUY_ONLY' | 'SELL_ONLY' | 'BOTH' | 'NONE';
-  recommendedPositionSize: number; // 0-1 multiplier
 }
 
 export interface StrategyRecommendation {
@@ -40,7 +30,6 @@ export interface StrategyRecommendation {
   secondary: string[];
   weight: number;
   positionSizeAdjustment: number;
-  allowedSignals: ('BUY' | 'SELL')[];
 }
 
 class MarketRegimeDetector {
@@ -51,45 +40,37 @@ class MarketRegimeDetector {
 
   /**
    * Detect market regime based on OHLCV data
-   * Uses ADX + SMA + Volatility for comprehensive regime detection
+   * Uses ADX (Average Directional Index) for trend strength
    */
   detect(data: OHLCV[]): RegimeDetectionResult {
     if (data.length < DATA_REQUIREMENTS.MIN_DATA_POINTS) {
-      return this.createDefaultResult();
+      return {
+        regime: 'UNKNOWN',
+        trendDirection: 'NEUTRAL',
+        volatility: 'MEDIUM',
+        adx: 0,
+        atr: 0,
+        atrRatio: 1,
+        confidence: 'INITIAL',
+        daysInRegime: 0,
+        timestamp: new Date().toISOString(),
+      };
     }
 
     const adx = this.calculateADX(data, TECHNICAL_INDICATORS.ADX_PERIOD);
     const atr = this.calculateATR(data, TECHNICAL_INDICATORS.ATR_PERIOD);
     const volatility = this.detectVolatility(data);
     const trendDirection = this.calculateTrendDirection(data);
-    const smaAlignment = this.calculateSMAAlignment(data);
-    const priceVsSMA = this.calculatePriceVsSMA(data);
 
-    // Enhanced regime detection combining ADX, SMA, and volatility
+    // Determine regime based on ADX
     let regime: MarketRegime;
-    
     if (adx > TECHNICAL_INDICATORS.ADX_TRENDING_THRESHOLD) {
-      // Strong trend detected by ADX
-      if (trendDirection === 'UP' && smaAlignment === 'BULLISH') {
-        regime = 'TRENDING_UP';
-      } else if (trendDirection === 'DOWN' && smaAlignment === 'BEARISH') {
-        regime = 'TRENDING_DOWN';
-      } else {
-        // ADX says trending but SMA disagrees - use previous regime or ranging
-        regime = this.currentRegime !== 'UNKNOWN' ? this.currentRegime : 'RANGING';
-      }
+      regime = 'TRENDING';
     } else if (adx < TECHNICAL_INDICATORS.ADX_RANGING_THRESHOLD) {
-      // Clear ranging market
       regime = 'RANGING';
     } else {
-      // Transition zone - use SMA alignment to decide
-      if (smaAlignment === 'BULLISH' && trendDirection === 'UP') {
-        regime = 'TRENDING_UP';
-      } else if (smaAlignment === 'BEARISH' && trendDirection === 'DOWN') {
-        regime = 'TRENDING_DOWN';
-      } else {
-        regime = 'RANGING';
-      }
+      // Transition zone - use previous regime if available
+      regime = this.currentRegime !== 'UNKNOWN' ? this.currentRegime : 'RANGING';
     }
 
     // Calculate ATR ratio for volatility context
@@ -98,14 +79,6 @@ class MarketRegimeDetector {
 
     // Handle regime persistence
     const confidence = this.updateRegimePersistence(regime, trendDirection);
-
-    // Determine signal restrictions based on regime
-    const signalRestriction = this.getSignalRestriction(regime, smaAlignment);
-
-    // Calculate recommended position size based on regime confidence and volatility
-    const recommendedPositionSize = this.calculateRecommendedPositionSize(
-      regime, volatility, confidence, adx
-    );
 
     const result: RegimeDetectionResult = {
       regime,
@@ -117,151 +90,9 @@ class MarketRegimeDetector {
       confidence,
       daysInRegime: this.daysInRegime,
       timestamp: new Date().toISOString(),
-      smaAlignment,
-      priceVsSMA,
-      signalRestriction,
-      recommendedPositionSize,
     };
 
     return result;
-  }
-
-  /**
-   * Create default result for insufficient data
-   */
-  private createDefaultResult(): RegimeDetectionResult {
-    return {
-      regime: 'UNKNOWN',
-      trendDirection: 'NEUTRAL',
-      volatility: 'MEDIUM',
-      adx: 0,
-      atr: 0,
-      atrRatio: 1,
-      confidence: 'INITIAL',
-      daysInRegime: 0,
-      timestamp: new Date().toISOString(),
-      smaAlignment: 'NEUTRAL',
-      priceVsSMA: 'AT',
-      signalRestriction: 'NONE',
-      recommendedPositionSize: 0,
-    };
-  }
-
-  /**
-   * Calculate SMA alignment (Bullish: SMA20 > SMA50, Bearish: SMA20 < SMA50)
-   */
-  private calculateSMAAlignment(data: OHLCV[]): 'BULLISH' | 'BEARISH' | 'NEUTRAL' {
-    if (data.length < TECHNICAL_INDICATORS.SMA_PERIOD_LONG) {
-      return 'NEUTRAL';
-    }
-
-    const closes = data.map(d => d.close);
-    const sma20 = this.calculateSMA(closes, TECHNICAL_INDICATORS.SMA_PERIOD_MEDIUM);
-    const sma50 = this.calculateSMA(closes, TECHNICAL_INDICATORS.SMA_PERIOD_LONG);
-
-    if (sma20 > sma50 * 1.02) {
-      return 'BULLISH';
-    } else if (sma20 < sma50 * 0.98) {
-      return 'BEARISH';
-    }
-    return 'NEUTRAL';
-  }
-
-  /**
-   * Calculate price position relative to SMA20
-   */
-  private calculatePriceVsSMA(data: OHLCV[]): 'ABOVE' | 'BELOW' | 'AT' {
-    if (data.length < TECHNICAL_INDICATORS.SMA_PERIOD_MEDIUM) {
-      return 'AT';
-    }
-
-    const closes = data.map(d => d.close);
-    const sma20 = this.calculateSMA(closes, TECHNICAL_INDICATORS.SMA_PERIOD_MEDIUM);
-    const latestPrice = closes[closes.length - 1];
-
-    if (latestPrice > sma20 * 1.01) {
-      return 'ABOVE';
-    } else if (latestPrice < sma20 * 0.99) {
-      return 'BELOW';
-    }
-    return 'AT';
-  }
-
-  /**
-   * Calculate Simple Moving Average
-   */
-  private calculateSMA(data: number[], period: number): number {
-    if (data.length < period) {
-      return data.reduce((a, b) => a + b, 0) / data.length;
-    }
-    const sum = data.slice(-period).reduce((a, b) => a + b, 0);
-    return sum / period;
-  }
-
-  /**
-   * Determine signal restrictions based on regime and SMA alignment
-   */
-  private getSignalRestriction(
-    regime: MarketRegime,
-    smaAlignment: 'BULLISH' | 'BEARISH' | 'NEUTRAL'
-  ): 'BUY_ONLY' | 'SELL_ONLY' | 'BOTH' | 'NONE' {
-    switch (regime) {
-      case 'TRENDING_UP':
-        return 'BUY_ONLY';
-      case 'TRENDING_DOWN':
-        return 'SELL_ONLY';
-      case 'RANGING':
-        // In ranging markets, allow both but with caution
-        return 'BOTH';
-      default:
-        return 'NONE';
-    }
-  }
-
-  /**
-   * Calculate recommended position size based on regime and market conditions
-   */
-  private calculateRecommendedPositionSize(
-    regime: MarketRegime,
-    volatility: VolatilityRegime,
-    confidence: RegimeConfidence,
-    adx: number
-  ): number {
-    let baseSize = 1.0;
-
-    // Adjust for regime type
-    if (regime === 'TRENDING_UP' || regime === 'TRENDING_DOWN') {
-      baseSize = 1.0;
-    } else if (regime === 'RANGING') {
-      baseSize = 0.5; // Reduce size in ranging markets
-    } else {
-      baseSize = 0;
-    }
-
-    // Adjust for volatility
-    if (volatility === 'HIGH') {
-      baseSize *= 0.5;
-    } else if (volatility === 'LOW') {
-      baseSize *= 1.2;
-    }
-
-    // Adjust for confidence
-    if (confidence === 'STRONG') {
-      baseSize *= 1.0;
-    } else if (confidence === 'CONFIRMED') {
-      baseSize *= 0.8;
-    } else {
-      baseSize *= 0.5;
-    }
-
-    // Adjust for trend strength (ADX)
-    if (adx > 40) {
-      baseSize *= 1.1;
-    } else if (adx < 20) {
-      baseSize *= 0.7;
-    }
-
-    return Math.min(1.0, Math.max(0, baseSize));
   }
 
   /**
@@ -278,7 +109,7 @@ class MarketRegimeDetector {
 
     if (ratio > 2.0) {
       return 'HIGH';
-    } else if (ratio < 0.8) {
+    } else if (ratio < 1.0) {
       return 'LOW';
     }
     return 'MEDIUM';
@@ -376,7 +207,7 @@ class MarketRegimeDetector {
   }
 
   /**
-   * Calculate trend direction based on price movement and SMA
+   * Calculate trend direction based on price movement
    */
   private calculateTrendDirection(data: OHLCV[]): TrendDirection {
     if (data.length < DATA_REQUIREMENTS.TREND_CALCULATION_PERIOD) {
@@ -388,14 +219,9 @@ class MarketRegimeDetector {
     const lastPrice = recent[recent.length - 1].close;
     const change = ((lastPrice - firstPrice) / firstPrice) * 100;
 
-    // Also consider SMA alignment for confirmation
-    const closes = data.map(d => d.close);
-    const sma20 = this.calculateSMA(closes, TECHNICAL_INDICATORS.SMA_PERIOD_MEDIUM);
-    const priceVsSMA20 = ((lastPrice - sma20) / sma20) * 100;
-
-    if (change > 3 && priceVsSMA20 > 1) {
+    if (change > 3) {
       return 'UP';
-    } else if (change < -3 && priceVsSMA20 < -1) {
+    } else if (change < -3) {
       return 'DOWN';
     }
     return 'NEUTRAL';
@@ -443,10 +269,8 @@ class MarketRegimeDetector {
     // Same regime - increment counter
     this.daysInRegime++;
 
-    // Require minimum 3 days for confirmation, 7 days for strong
-    if (this.daysInRegime >= 7) {
-      return 'STRONG';
-    } else if (this.daysInRegime >= 3) {
+    // Require minimum 3 days for confirmation
+    if (this.daysInRegime >= 3) {
       return 'CONFIRMED';
     }
 
@@ -461,13 +285,17 @@ class MarketRegimeDetector {
     trendDirection: TrendDirection,
     volatility: VolatilityRegime
   ): string {
-    const regimeText = regime === 'TRENDING_UP' ? '上昇トレンド' :
-                       regime === 'TRENDING_DOWN' ? '下降トレンド' :
-                       regime === 'RANGING' ? 'レンジ' : '不明';
+    const regimeText = regime === 'TRENDING' ? 'トレンド' : 'レンジ';
+    const directionText = trendDirection === 'UP' ? '上昇' : 
+                          trendDirection === 'DOWN' ? '下落' : '中立';
     const volaText = volatility === 'HIGH' ? '高ボラ' : 
                      volatility === 'LOW' ? '低ボラ' : '中ボラ';
 
-    return `${regimeText}相場 (${volaText})`;
+    if (regime === 'TRENDING') {
+      return `${directionText}${regimeText}相場 (${volaText})`;
+    } else {
+      return `${regimeText}相場 (${volaText})`;
+    }
   }
 
   /**
@@ -478,56 +306,35 @@ class MarketRegimeDetector {
     trendDirection: TrendDirection,
     volatility: VolatilityRegime
   ): StrategyRecommendation {
-    if (regime === 'TRENDING_UP') {
+    if (regime === 'TRENDING') {
       if (volatility === 'HIGH') {
         return {
           primary: 'TrendFollowing',
           secondary: ['Breakout'],
           weight: 0.6,
-          positionSizeAdjustment: 0.5,
-          allowedSignals: ['BUY'],
+          positionSizeAdjustment: 0.5, // Reduce size in high vol
         };
       }
       return {
         primary: 'TrendFollowing',
         secondary: ['Momentum'],
-        weight: 0.8,
+        weight: 0.7,
         positionSizeAdjustment: 1.0,
-        allowedSignals: ['BUY'],
-      };
-    } else if (regime === 'TRENDING_DOWN') {
-      if (volatility === 'HIGH') {
-        return {
-          primary: 'TrendFollowing',
-          secondary: ['Breakout'],
-          weight: 0.6,
-          positionSizeAdjustment: 0.5,
-          allowedSignals: ['SELL'],
-        };
-      }
-      return {
-        primary: 'TrendFollowing',
-        secondary: ['Momentum'],
-        weight: 0.8,
-        positionSizeAdjustment: 1.0,
-        allowedSignals: ['SELL'],
       };
     } else if (regime === 'RANGING') {
       if (volatility === 'HIGH') {
         return {
           primary: 'MeanReversion',
           secondary: ['Breakout'],
-          weight: 0.4,
-          positionSizeAdjustment: 0.3,
-          allowedSignals: ['BUY', 'SELL'],
+          weight: 0.5,
+          positionSizeAdjustment: 0.5,
         };
       }
       return {
         primary: 'MeanReversion',
         secondary: [],
-        weight: 0.6,
-        positionSizeAdjustment: 0.5,
-        allowedSignals: ['BUY', 'SELL'],
+        weight: 0.8,
+        positionSizeAdjustment: 1.0,
       };
     }
 
@@ -537,48 +344,7 @@ class MarketRegimeDetector {
       secondary: [],
       weight: 0,
       positionSizeAdjustment: 0,
-      allowedSignals: [],
     };
-  }
-
-  /**
-   * Check if a signal is allowed in current regime
-   */
-  isSignalAllowed(regime: RegimeDetectionResult, signal: 'BUY' | 'SELL'): boolean {
-    if (regime.signalRestriction === 'NONE') {
-      return false;
-    }
-    if (regime.signalRestriction === 'BUY_ONLY') {
-      return signal === 'BUY';
-    }
-    if (regime.signalRestriction === 'SELL_ONLY') {
-      return signal === 'SELL';
-    }
-    return true; // BOTH
-  }
-
-  /**
-   * Get signal strength multiplier based on regime alignment
-   */
-  getSignalStrengthMultiplier(regime: RegimeDetectionResult, signal: 'BUY' | 'SELL'): number {
-    // If signal aligns with trend, boost confidence
-    if (regime.regime === 'TRENDING_UP' && signal === 'BUY') {
-      return 1.3;
-    }
-    if (regime.regime === 'TRENDING_DOWN' && signal === 'SELL') {
-      return 1.3;
-    }
-    
-    // If signal opposes trend, reduce confidence
-    if (regime.regime === 'TRENDING_UP' && signal === 'SELL') {
-      return 0.3; // Strong penalty for counter-trend
-    }
-    if (regime.regime === 'TRENDING_DOWN' && signal === 'BUY') {
-      return 0.3;
-    }
-
-    // Ranging market - neutral
-    return 1.0;
   }
 
   /**
