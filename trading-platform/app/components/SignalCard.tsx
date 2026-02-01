@@ -1,5 +1,6 @@
 import { Signal, Stock } from '@/app/types';
 import { getConfidenceColor, cn, formatCurrency } from '@/app/lib/utils';
+import { sanitizeString } from '@/app/lib/sanitize';
 
 interface SignalCardProps {
     signal: Signal;
@@ -104,7 +105,7 @@ export function SignalCard({
                         <div className="flex justify-between items-center">
                             <span className="text-[#92adc9]">参照インデックス</span>
                             <span className="text-xs text-white font-medium">
-                                {signal.marketContext.indexSymbol === '^N225' ? '日経225' : 'S&P 500'}
+                                {sanitizeString(signal.marketContext.indexSymbol) === '^N225' ? '日経225' : 'S&P 500'}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -266,7 +267,7 @@ export function SignalCard({
                                             {signal.supplyDemand.breakoutConfidence === 'high' ? '🔥' : signal.supplyDemand.breakoutConfidence === 'medium' ? '⚠️' : '❌'}
                                         </div>
                                         <span className="text-[10px] text-white/80">
-                                            {signal.supplyDemand.brokenLevel ? `レベル${signal.supplyDemand.brokenLevel.level}を突破 (${signal.supplyDemand.brokenLevel.level === 'strong' ? '強い' : '中程度'})` : '未突破'}
+                                            {signal.supplyDemand.brokenLevel ? `レベル${sanitizeString(signal.supplyDemand.brokenLevel.level)}を突破 (${sanitizeString(signal.supplyDemand.brokenLevel.level) === 'strong' ? '強い' : '中程度'})` : '未突破'}
                                         </span>
                                     </div>
                                     <div className="text-[10px] text-[#92adc9]">
