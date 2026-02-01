@@ -16,6 +16,7 @@ jest.mock('../lib/api/data-aggregator', () => ({
     marketClient: {
         fetchQuotes: jest.fn(),
         fetchSignal: jest.fn(),
+        fetchMarketIndex: jest.fn(),
     },
 }));
 
@@ -53,6 +54,13 @@ describe('Screener Page', () => {
             { symbol: '7203', price: 3100, change: 100, changePercent: 3.3, volume: 1100000 },
             { symbol: 'AAPL', price: 185, change: 5, changePercent: 2.7, volume: 5500000 },
         ]);
+
+        // Mock fetchMarketIndex for pre-warming cache
+        (marketClient.fetchMarketIndex as jest.Mock).mockResolvedValue({
+            data: [
+                { date: '2026-01-01', open: 1000, high: 1050, low: 990, close: 1020, volume: 1000000 }
+            ]
+        });
 
         (useTradingStore as any).setState({
             addToWatchlist: mockAddToWatchlist,
@@ -156,11 +164,37 @@ describe('Screener Page', () => {
 
         // Mock signal: 7203=BUY(90), AAPL=SELL(70), MSFT=null
         (marketClient.fetchSignal as jest.Mock).mockImplementation((stock) => {
-            if (stock.symbol === '7203') return Promise.resolve({ success: true, data: { type: 'BUY', confidence: 90 } });
-            if (stock.symbol === 'AAPL') return Promise.resolve({ success: true, data: { type: 'SELL', confidence: 70 } });
+            if (stock.symbol === '7203') return Promise.resolve({ 
+                success: true, 
+                data: { 
+                    symbol: '7203',
+                    type: 'BUY', 
+                    confidence: 90,
+                    targetPrice: 3200,
+                    stopLoss: 2900,
+                    reason: 'Test reason',
+                    predictedChange: 3.0,
+                    predictionDate: '2026-01-01'
+                } 
+            });
+            if (stock.symbol === 'AAPL') return Promise.resolve({ 
+                success: true, 
+                data: { 
+                    symbol: 'AAPL',
+                    type: 'SELL', 
+                    confidence: 70,
+                    targetPrice: 180,
+                    stopLoss: 190,
+                    reason: 'Test reason',
+                    predictedChange: -2.0,
+                    predictionDate: '2026-01-01'
+                } 
+            });
             return Promise.resolve({ success: true, data: null });
         });
-        (fetchOHLCV as jest.Mock).mockResolvedValue([{ close: 100 }]);
+        (fetchOHLCV as jest.Mock).mockResolvedValue(
+            Array(30).fill({ date: '2026-01-01', open: 100, high: 105, low: 95, close: 100, volume: 1000 })
+        );
         (filterByTechnicals as jest.Mock).mockReturnValue(true);
 
         render(<Screener />);
@@ -229,9 +263,20 @@ describe('Screener Page', () => {
     it('performs AI screening successfully', async () => {
         (marketClient.fetchSignal as jest.Mock).mockResolvedValue({
             success: true,
-            data: { type: 'BUY', confidence: 85 }
+            data: { 
+                symbol: '7203',
+                type: 'BUY', 
+                confidence: 85,
+                targetPrice: 3200,
+                stopLoss: 2900,
+                reason: 'Test reason',
+                predictedChange: 3.0,
+                predictionDate: '2026-01-01'
+            }
         });
-        (fetchOHLCV as jest.Mock).mockResolvedValue([{ close: 100 }]);
+        (fetchOHLCV as jest.Mock).mockResolvedValue(
+            Array(30).fill({ date: '2026-01-01', open: 100, high: 105, low: 95, close: 100, volume: 1000 })
+        );
         (filterByTechnicals as jest.Mock).mockReturnValue(true);
 
         render(<Screener />);
@@ -312,6 +357,10 @@ describe('Screener Page', () => {
 
     it('handles technical analysis failure', async () => {
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+        (fetchOHLCV as jest.Mock).mockResolvedValue(
+            Array(30).fill({ date: '2026-01-01', open: 100, high: 105, low: 95, close: 100, volume: 1000 })
+        );
+        (filterByTechnicals as jest.Mock).mockReturnValue(true);
         (marketClient.fetchSignal as jest.Mock).mockRejectedValue(new Error('Analysis Failed'));
 
         render(<Screener />);
