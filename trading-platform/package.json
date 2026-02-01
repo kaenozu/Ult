@@ -16,6 +16,9 @@
     "lint:fix": "eslint --fix",
     "ws:server": "node ../scripts/websocket-server.js",
     "ws:server:dev": "WS_PORT=3001 node ../scripts/websocket-server.js",
+    "db:migrate:status": "node ../scripts/db-migrate.js status",
+    "db:migrate:create": "node ../scripts/db-migrate.js create",
+    "db:migrate:validate": "node ../scripts/db-migrate.js validate",
     "docs:generate": "echo 'OpenAPI spec is generated dynamically at /api/openapi.json'",
     "docs:serve": "npm run dev",
     "prepare": "husky install"
