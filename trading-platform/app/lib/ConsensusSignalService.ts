@@ -342,6 +342,78 @@ class ConsensusSignalService {
     return ((clamped - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
   }
 
+  /**
+   * マルチ時間枠分析を使用した強化コンセンサスシグナル生成
+   * 
+   * 複数の時間枠から整合性を確認し、より信頼性の高いシグナルを生成します。
+   */
+  async generateEnhancedConsensus(
+    data: OHLCV[],
+    dataByTimeFrame?: Map<string, OHLCV[]>,
+    customWeights?: Partial<ConsensusWeights>
+  ): Promise<ConsensusSignal> {
+    // まず基本コンセンサスを生成
+    const baseConsensus = this.generateConsensus(data, customWeights);
+
+    // マルチ時間枠データがない場合は基本コンセンサスを返す
+    if (!dataByTimeFrame || dataByTimeFrame.size === 0) {
+      return baseConsensus;
+    }
+
+    try {
+      // MultiTimeFrameStrategyを動的にインポート
+      const { multiTimeFrameStrategy } = await import('./strategies/MultiTimeFrameStrategy');
+
+      // シンボルはデータから推定（実際の使用では引数で渡すべき）
+      const symbol = 'UNKNOWN';
+      
+      // マルチ時間枠分析を実行
+      const mtfAnalysis = await multiTimeFrameStrategy.analyzeMultipleTimeFrames(
+        symbol,
+        dataByTimeFrame as any
+      );
+
+      // 時間枠間の整合性に基づいて信頼度を調整
+      let enhancedConfidence = baseConsensus.confidence;
+      let finalType = baseConsensus.type;
+      let additionalReason = '';
+
+      if (mtfAnalysis.alignment >= 0.7) {
+        // 高い整合性の場合、信頼度を上げる
+        enhancedConfidence = Math.min(baseConsensus.confidence + 15, 95);
+        additionalReason = ` [MTF: 複数時間枠で高い整合性 ${(mtfAnalysis.alignment * 100).toFixed(0)}%]`;
+      } else if (mtfAnalysis.divergenceDetected) {
+        // 乖離が検出された場合、信頼度を下げる
+        enhancedConfidence = Math.floor(baseConsensus.confidence * 0.7);
+        additionalReason = ` [MTF: 時間枠間で乖離を検出]`;
+        
+        // 乖離が大きい場合はHOLDに変更
+        if (mtfAnalysis.alignment < 0.4) {
+          finalType = 'HOLD';
+          additionalReason += ' 様子見を推奨';
+        }
+      }
+
+      // マルチ時間枠のトレンド方向も考慮
+      if (mtfAnalysis.trendDirection === 'bullish' && baseConsensus.type === 'BUY') {
+        enhancedConfidence = Math.min(enhancedConfidence + 5, 95);
+      } else if (mtfAnalysis.trendDirection === 'bearish' && baseConsensus.type === 'SELL') {
+        enhancedConfidence = Math.min(enhancedConfidence + 5, 95);
+      }
+
+      return {
+        ...baseConsensus,
+        type: finalType,
+        confidence: enhancedConfidence,
+        reason: baseConsensus.reason + additionalReason,
+      };
+    } catch (error) {
+      // エラーが発生した場合は基本コンセンサスを返す
+      console.error('Multi-timeframe consensus analysis failed:', error);
+      return baseConsensus;
+    }
+  }
+
 }
 
 export const consensusSignalService = new ConsensusSignalService();
