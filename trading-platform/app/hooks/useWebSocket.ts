@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createWebSocketClient, DEFAULT_WS_CONFIG, WebSocketClient } from '@/app/lib/websocket';
+import { createMessageBatcher, MessageBatch } from '@/app/lib/websocket/message-batcher';
 
 export type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSED' | 'ERROR' | 'DISCONNECTED';
 
@@ -31,10 +32,30 @@ export function useWebSocket(url?: string) {
   const [status, setStatus] = useState<WebSocketStatus>('CLOSED');
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const clientRef = useRef<WebSocketClient | null>(null);
+  const batcherRef = useRef(createMessageBatcher({
+    batchWindowMs: 150,
+    maxBatchSize: 50,
+    enableDeduplication: true,
+    enableStats: true,
+  }));
   const isInitializedRef = useRef(false);
 
   // Build WebSocket URL
   const wsUrl = url || DEFAULT_WS_CONFIG.url;
+
+  // Memoized batch handler to update lastMessage with batched messages
+  const handleBatch = useCallback((batch: MessageBatch) => {
+    // Use the most recent message from the batch
+    if (batch.messages.length > 0) {
+      const latestMessage = batch.messages[batch.messages.length - 1];
+      setLastMessage(latestMessage as WebSocketMessage);
+    }
+  }, []);
+
+  // Initialize message batcher callback
+  useEffect(() => {
+    batcherRef.current.onBatch(handleBatch);
+  }, [handleBatch]);
 
   // Initialize WebSocket client
   useEffect(() => {
@@ -61,7 +82,8 @@ export function useWebSocket(url?: string) {
           console.log('WebSocket connected to:', wsUrl);
         },
         onMessage: (message) => {
-          setLastMessage(message);
+          // Add message to batcher instead of direct setState
+          batcherRef.current.addMessage(message);
         },
         onError: () => {
           console.error('WebSocket error occurred');
@@ -82,6 +104,10 @@ export function useWebSocket(url?: string) {
 
     // Cleanup on unmount
     return () => {
+      // Clear the batch callback before flushing to prevent state updates on unmounted component
+      batcherRef.current.onBatch(() => {});
+      batcherRef.current.flush(); // Flush any pending messages
+      batcherRef.current.destroy();
       client.destroy();
       clientRef.current = null;
       isInitializedRef.current = false;
