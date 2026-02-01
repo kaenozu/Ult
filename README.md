@@ -79,7 +79,16 @@
 ```bash
 git clone https://github.com/kaenozu/Ult.git
 cd Ult
+
+# Git hooksのセットアップ（推奨）
+# 大きなファイルの誤コミットを防止します
+.githooks/setup.sh
 ```
+
+**Git hooksについて**: 
+- `.githooks/setup.sh`を実行すると、10MB以上のファイルのコミットを自動的に防止するpre-commitフックがインストールされます
+- これにより、リポジトリサイズの肥大化を防ぎます
+- 詳細は [docs/REPOSITORY_SIZE_OPTIMIZATION.md](docs/REPOSITORY_SIZE_OPTIMIZATION.md) を参照してください
 
 #### 2. フロントエンドのセットアップ
 
@@ -260,6 +269,9 @@ cd backend
    git add .
    git commit -m "feat: add new feature"
    ```
+   
+   **注意**: Pre-commitフックが大きなファイル（>10MB）を検出した場合、コミットは自動的に拒否されます。
+   大きなファイルは `.gitignore` に追加するか、Git LFS を使用してください。
 
 5. **プルリクエストの作成**
 
@@ -267,10 +279,14 @@ cd backend
 
 ## 📖 詳細ドキュメント
 
+### プロジェクト管理
+
+- **[docs/REPOSITORY_SIZE_OPTIMIZATION.md](./docs/REPOSITORY_SIZE_OPTIMIZATION.md)** - リポジトリサイズ最適化ガイド
+- **[REMAINING_TECH_DEBT_ROADMAP.md](./REMAINING_TECH_DEBT_ROADMAP.md)** - 技術的負債と改善計画
+
 ### コアコンポーネント
 
 - **[trading-platform/README.md](./trading-platform/README.md)** - フロントエンドの詳細ドキュメント
-- **[REMAINING_TECH_DEBT_ROADMAP.md](./REMAINING_TECH_DEBT_ROADMAP.md)** - 技術的負債と改善計画
 
 ### 主要サービスクラス
 
