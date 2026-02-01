@@ -64,7 +64,7 @@ export const StockChart = memo(function StockChart({
     signal
   });
 
-  // 3. Assemble Chart Data (memoized for performance)
+  // 3. Assemble Chart Data with memoization for performance
   const chartData = useMemo(() => ({
     labels: extendedData.labels,
     datasets: [
@@ -126,8 +126,19 @@ export const StockChart = memo(function StockChart({
         }
       ] : []),
     ],
-  }), [extendedData.labels, extendedData.prices, normalizedIndexData, showSMA, showBollinger,
-    sma20, upper, lower, forecastDatasets, ghostForecastDatasets, market]);
+  }), [
+    extendedData.labels,
+    extendedData.prices,
+    normalizedIndexData,
+    forecastDatasets,
+    ghostForecastDatasets,
+    sma20,
+    upper,
+    lower,
+    showSMA,
+    showBollinger,
+    market
+  ]);
 
   // 4. Loading / Error States
   if (error) return (
