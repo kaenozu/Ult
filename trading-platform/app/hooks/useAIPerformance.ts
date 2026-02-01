@@ -14,11 +14,16 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
     const currentMarket = stock.market;
 
     const calculateFullPerformance = async () => {
-      if (!currentSymbol) return;
-
       if (isMounted) {
         setCalculatingHitRate(true);
         setError(null);
+      }
+
+      if (!currentSymbol) {
+        if (isMounted) {
+          setCalculatingHitRate(false);
+        }
+        return;
       }
 
       try {

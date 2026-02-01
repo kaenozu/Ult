@@ -25,14 +25,18 @@ describe('useAIPerformance', () => {
     { date: '2023-01-01', open: 100, high: 110, low: 90, close: 105, volume: 1000 }
   ];
 
-  const mockHistoryData = Array.from({ length: 150 }, (_, i) => ({
-    date: `2023-${String(Math.floor(i / 30) + 1).padStart(2, '0')}-${String((i % 30) + 1).padStart(2, '0')}`,
-    open: 100 + i,
-    high: 110 + i,
-    low: 90 + i,
-    close: 105 + i,
-    volume: 1000
-  }));
+  const mockHistoryData = Array.from({ length: 150 }, (_, i) => {
+    const date = new Date('2023-01-01');
+    date.setDate(date.getDate() + i);
+    return {
+      date: date.toISOString().split('T')[0],
+      open: 100 + i,
+      high: 110 + i,
+      low: 90 + i,
+      close: 105 + i,
+      volume: 1000
+    };
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
