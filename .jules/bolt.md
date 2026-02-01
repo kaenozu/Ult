@@ -31,3 +31,7 @@
 ## 2024-05-24 - [Legacy Wrappers vs Selectors]
 **Learning:** Wrapper hooks (like `usePortfolioStore`) that return an object spreading multiple state slices are convenient but defeat the purpose of Zustand's selective subscription, causing massive over-rendering (e.g., `OrderPanel` rendering on every price update).
 **Action:** Replace wrapper hooks with direct `useTradingStore` selectors in leaf components to isolate updates.
+
+## 2026-02-17 - [Broken Tests in Master]
+**Learning:** The test suite `app/__tests__/utils-technical-indicators.test.ts` was already failing before any changes, specifically regarding NaN handling in technical indicators. This complicates verification of optimizations.
+**Action:** When verifying optimizations, establish a baseline failure state before changes to distinguish regressions from pre-existing issues.
