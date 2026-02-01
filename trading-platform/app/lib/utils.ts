@@ -483,18 +483,25 @@ export function calculateBollingerBands(
       upper.push(NaN);
       lower.push(NaN);
     } else {
-      const slice = validPrices.slice(i - period + 1, i + 1);
       const mean = middle[i];
+      let sumSq = 0;
+      let validCount = 0;
 
-      // 有効な価格データのみで標準偏差を計算
-      const validSlice = slice.filter(p => !isNaN(p));
-      if (validSlice.length < period) {
+      // Calculate variance directly without array allocation
+      for (let j = 0; j < period; j++) {
+        const val = validPrices[i - j];
+        if (!isNaN(val)) {
+          const diff = val - mean;
+          sumSq += diff * diff;
+          validCount++;
+        }
+      }
+
+      if (validCount < period) {
         upper.push(NaN);
         lower.push(NaN);
       } else {
-        const squaredDiffs = validSlice.map(p => Math.pow(p - mean, 2));
-        const stdDev = Math.sqrt(squaredDiffs.reduce((sum, d) => sum + d, 0) / period);
-
+        const stdDev = Math.sqrt(sumSq / period);
         upper.push(mean + standardDeviations * stdDev);
         lower.push(mean - standardDeviations * stdDev);
       }
