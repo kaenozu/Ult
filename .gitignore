@@ -32,4 +32,13 @@ build/
 # OS
 .DS_Store
 Thumbs.db
-package.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.coverage
+htmlcov/
+.pytest_cache/
