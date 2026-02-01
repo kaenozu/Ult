@@ -10,6 +10,7 @@ import { useAIPerformance } from '@/app/hooks/useAIPerformance';
 import { BacktestView } from './BacktestView';
 import { ForecastView } from './ForecastView';
 import { AIPerformanceView } from './AIPerformanceView';
+import { usePerformanceMonitor } from '@/app/lib/performance';
 
 /**
  * SignalPanelコンポーネントのプロパティ
@@ -53,6 +54,9 @@ interface SignalPanelProps {
  * @returns {JSX.Element} シグナルパネルUI
  */
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
+  // Performance monitoring
+  const { measure, measureAsync } = usePerformanceMonitor('SignalPanel');
+  
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
   const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
 
@@ -143,7 +147,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
       setTimeout(() => {
         try {
-          const result = runBacktest(stock.symbol, ohlcv, stock.market);
+          const result = measure('runBacktest', () => 
+            runBacktest(stock.symbol, ohlcv, stock.market)
+          );
           setBacktestResult(result);
         } catch (e) {
           console.error("Backtest failed", e);
@@ -152,7 +158,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         }
       }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measure]);
 
   const aiTrades: PaperTrade[] = useMemo(() => {
     return trades
