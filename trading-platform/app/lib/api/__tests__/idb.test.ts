@@ -1,171 +1,235 @@
 /**
- * Tests for IndexedDB Client
- *
- * Tests local data storage operations
+ * idb.test.ts
+ * 
+ * IndexedDBラッパーのテスト
+ * データ保存、取得、削除、インデックスのテスト
  */
 
-import { IndexedDBClient, idbClient } from '../idb';
-import { OHLCV } from '@/app/types';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { IDBHelper } from '../idb';
 
-describe('IndexedDB Client', () => {
-  let client: IndexedDBClient;
-  let mockOpenRequest: unknown;
-  let mockDB: unknown;
-  let mockStore: unknown;
+describe('IDBHelper', () => {
+  let db: IDBHelper;
+  const DB_NAME = 'test-db';
+  const STORE_NAME = 'test-store';
 
-  beforeEach(() => {
-    client = new IndexedDBClient();
+  beforeEach(async () => {
+    db = new IDBHelper(DB_NAME, 1, {
+      [STORE_NAME]: { keyPath: 'id', autoIncrement: true },
+    });
+    await db.open();
+  });
 
-    // Create mock store
-    mockStore = {
-      get: jest.fn(() => ({ onsuccess: null, onerror: null, result: [] })),
-      put: jest.fn(() => ({ onsuccess: null, onerror: null })),
-      clear: jest.fn(() => ({ onsuccess: null, onerror: null })),
-    };
+  afterEach(async () => {
+    await db.clear(STORE_NAME);
+    await db.close();
+  });
 
-    // Create mock DB
-    mockDB = {
-      transaction: jest.fn(() => ({
-        objectStore: jest.fn(() => mockStore)
-      })),
-      objectStoreNames: { contains: jest.fn(() => true) },
-    };
+  describe('データベース接続', () => {
+    it('データベースを開くことができる', async () => {
+      const testDb = new IDBHelper('test-db-2', 1, {
+        'test-store': { keyPath: 'id', autoIncrement: true },
+      });
+      await testDb.open();
+      
+      expect(testDb.isOpen()).toBe(true);
+      await testDb.close();
+    });
 
-    // Create mock open request
-    mockOpenRequest = {
-      onsuccess: null,
-      onerror: null,
-      onupgradeneeded: null,
-      result: mockDB,
-    };
-
-    jest.spyOn(window.indexedDB, 'open').mockImplementation(() => {
-      setTimeout(() => {
-        if (mockOpenRequest.onsuccess) {
-          mockOpenRequest.onsuccess({ target: mockOpenRequest });
-        }
-      }, 0);
-      return mockOpenRequest;
+    it('データベースを閉じることができる', async () => {
+      await db.close();
+      expect(db.isOpen()).toBe(false);
     });
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  describe('init', () => {
-    it('should be instance of IndexedDBClient', () => {
-      expect(client).toBeInstanceOf(IndexedDBClient);
+  describe('データ操作', () => {
+    it('データを追加できる', async () => {
+      const data = { name: 'Test', value: 123 };
+      const result = await db.add(STORE_NAME, data);
+      
+      expect(result).toBeDefined();
+      expect(result.id).toBeDefined();
     });
 
-    it('should export singleton instance', () => {
-      expect(idbClient).toBeInstanceOf(IndexedDBClient);
+    it('データを取得できる', async () => {
+      const data = { name: 'Test', value: 123 };
+      const added = await db.add(STORE_NAME, data);
+      const retrieved = await db.get(STORE_NAME, added.id);
+      
+      expect(retrieved).toEqual({ ...data, id: added.id });
     });
 
-    it('should initialize successfully', async () => {
-      const initPromise = client.init();
-      if (mockOpenRequest.onsuccess) {
-        mockOpenRequest.onsuccess({ target: mockOpenRequest });
-      }
-      await expect(initPromise).resolves.toBeUndefined();
-    });
-  });
-
-  describe('getData', () => {
-    it('should retrieve data from store', async () => {
-      const mockResult = [{ date: '2023-01-01', close: 100 }];
-      const getRequest = { result: mockResult, onsuccess: null, onerror: null };
-
-      // Auto-trigger onsuccess for store.get
-      (mockStore as any).get.mockImplementation(() => {
-        setTimeout(() => {
-          if (getRequest.onsuccess) (getRequest.onsuccess as any)();
-        }, 0);
-        return getRequest;
-      });
-
-      const result = await client.getData('AAPL');
-
-      expect(result).toEqual(mockResult);
-      expect((mockStore as any).get).toHaveBeenCalledWith('AAPL');
+    it('存在しないデータを取得するとundefinedを返す', async () => {
+      const result = await db.get(STORE_NAME, 999);
+      
+      expect(result).toBeUndefined();
     });
 
-    it('should return empty array on null result', async () => {
-      const getRequest = { result: null, onsuccess: null, onerror: null };
-      (mockStore as any).get.mockImplementation(() => {
-        setTimeout(() => {
-          if (getRequest.onsuccess) (getRequest.onsuccess as any)();
-        }, 0);
-        return getRequest;
-      });
-
-      const result = await client.getData('AAPL');
-      expect(result).toEqual([]);
+    it('データを更新できる', async () => {
+      const data = { name: 'Test', value: 123 };
+      const added = await db.add(STORE_NAME, data);
+      
+      const updated = await db.put(STORE_NAME, { ...data, id: added.id, value: 456 });
+      const retrieved = await db.get(STORE_NAME, added.id);
+      
+      expect(retrieved?.value).toBe(456);
     });
-  });
 
-  describe('saveData', () => {
-    it('should save sorted data', async () => {
-      const data = [
-        { date: '2023-01-02', close: 110 } as any,
-        { date: '2023-01-01', close: 100 } as any
-      ];
+    it('データを削除できる', async () => {
+      const data = { name: 'Test', value: 123 };
+      const added = await db.add(STORE_NAME, data);
+      
+      await db.delete(STORE_NAME, added.id);
+      const retrieved = await db.get(STORE_NAME, added.id);
+      
+      expect(retrieved).toBeUndefined();
+    });
 
-      const putRequest = { onsuccess: null, onerror: null };
-      (mockStore as any).put.mockImplementation(() => {
-        setTimeout(() => {
-          if (putRequest.onsuccess) (putRequest.onsuccess as any)();
-        }, 0);
-        return putRequest;
-      });
+    it('すべてのデータを取得できる', async () => {
+      const data1 = { name: 'Test1', value: 123 };
+      const data2 = { name: 'Test2', value: 456 };
+      const data3 = { name: 'Test3', value: 789 };
+      
+      await db.add(STORE_NAME, data1);
+      await db.add(STORE_NAME, data2);
+      await db.add(STORE_NAME, data3);
+      
+      const all = await db.getAll(STORE_NAME);
+      
+      expect(all).toHaveLength(3);
+      expect(all.map(item => item.name)).toEqual(['Test1', 'Test2', 'Test3']);
+    });
 
-      await client.saveData('AAPL', data);
-
-      expect((mockStore as any).put).toHaveBeenCalled();
-      const savedData = (mockStore as any).put.mock.calls[0][0];
-      expect(savedData[0].date).toBe('2023-01-01');
+    it('ストアをクリアできる', async () => {
+      const data1 = { name: 'Test1', value: 123 };
+      const data2 = { name: 'Test2', value: 456 };
+      
+      await db.add(STORE_NAME, data1);
+      await db.add(STORE_NAME, data2);
+      
+      await db.clear(STORE_NAME);
+      const all = await db.getAll(STORE_NAME);
+      
+      expect(all).toHaveLength(0);
     });
   });
 
-  describe('mergeAndSave', () => {
-    it('should merge and save data', async () => {
-      const existing = [{ date: '2023-01-01', close: 100 } as any];
-      const getRequest = { result: existing, onsuccess: null };
-      (mockStore as any).get.mockImplementation(() => {
-        setTimeout(() => {
-          if (getRequest.onsuccess) (getRequest.onsuccess as any)();
-        }, 0);
-        return getRequest;
+  describe('インデックス操作', () => {
+    beforeEach(async () => {
+      // インデックス付きのストアを作成
+      const indexedDb = new IDBHelper('test-db-indexed', 1, {
+        'indexed-store': {
+          keyPath: 'id',
+          autoIncrement: true,
+          indexes: [
+            { name: 'name', keyPath: 'name', options: { unique: false } },
+            { name: 'value', keyPath: 'value', options: { unique: false } },
+          ],
+        },
       });
+      await indexedDb.open();
+      db = indexedDb;
+    });
 
-      const putRequest = { onsuccess: null };
-      (mockStore as any).put.mockImplementation(() => {
-        setTimeout(() => {
-          if (putRequest.onsuccess) (putRequest.onsuccess as any)();
-        }, 0);
-        return putRequest;
-      });
+    it('インデックスを使用してデータを検索できる', async () => {
+      const data1 = { name: 'Test1', value: 123 };
+      const data2 = { name: 'Test2', value: 456 };
+      const data3 = { name: 'Test1', value: 789 };
+      
+      await db.add('indexed-store', data1);
+      await db.add('indexed-store', data2);
+      await db.add('indexed-store', data3);
+      
+      const results = await db.getByIndex('indexed-store', 'name', 'Test1');
+      
+      expect(results).toHaveLength(2);
+      expect(results.map(item => item.value)).toEqual([123, 789]);
+    });
 
-      const newData = [{ date: '2023-01-02', close: 110 } as any];
-
-      const result = await client.mergeAndSave('AAPL', newData);
-      expect(result).toHaveLength(2);
-      expect((mockStore as any).put).toHaveBeenCalled();
+    it('インデックスを使用して範囲検索ができる', async () => {
+      const data1 = { name: 'Test1', value: 100 };
+      const data2 = { name: 'Test2', value: 200 };
+      const data3 = { name: 'Test3', value: 300 };
+      const data4 = { name: 'Test4', value: 400 };
+      
+      await db.add('indexed-store', data1);
+      await db.add('indexed-store', data2);
+      await db.add('indexed-store', data3);
+      await db.add('indexed-store', data4);
+      
+      const results = await db.getByIndexRange('indexed-store', 'value', 200, 300);
+      
+      expect(results).toHaveLength(2);
+      expect(results.map(item => item.value)).toEqual([200, 300]);
     });
   });
 
-  describe('clearAllData', () => {
-    it('should clear object store', async () => {
-      const clearRequest = { onsuccess: null, onerror: null };
-      (mockStore as any).clear.mockImplementation(() => {
-        setTimeout(() => {
-          if (clearRequest.onsuccess) (clearRequest.onsuccess as any)();
-        }, 0);
-        return clearRequest;
-      });
+  describe('エラーハンドリング', () => {
+    it('存在しないストアにアクセスするとエラーを投げる', async () => {
+      await expect(db.get('non-existent-store', 1)).rejects.toThrow();
+    });
 
-      await client.clearAllData();
-      expect((mockStore as any).clear).toHaveBeenCalled();
+    it('重複キーで追加するとエラーを投げる', async () => {
+      const data = { id: 1, name: 'Test', value: 123 };
+      await db.add(STORE_NAME, data);
+      
+      await expect(db.add(STORE_NAME, data)).rejects.toThrow();
+    });
+  });
+
+  describe('トランザクション', () => {
+    it('複数の操作をアトミックに実行できる', async () => {
+      const data1 = { name: 'Test1', value: 123 };
+      const data2 = { name: 'Test2', value: 456 };
+      const data3 = { name: 'Test3', value: 789 };
+      
+      await db.transaction([STORE_NAME], async (store) => {
+        await store.add(data1);
+        await store.add(data2);
+        await store.add(data3);
+      });
+      
+      const all = await db.getAll(STORE_NAME);
+      
+      expect(all).toHaveLength(3);
+    });
+
+    it('トランザクション内でエラーが発生するとロールバックされる', async () => {
+      const data1 = { name: 'Test1', value: 123 };
+      const data2 = { name: 'Test2', value: 456 };
+      
+      await expect(
+        db.transaction([STORE_NAME], async (store) => {
+          await store.add(data1);
+          await store.add(data2);
+          throw new Error('Transaction error');
+        })
+      ).rejects.toThrow('Transaction error');
+      
+      const all = await db.getAll(STORE_NAME);
+      
+      // トランザクションがロールバックされたため、データが追加されていない
+      expect(all).toHaveLength(0);
+    });
+  });
+
+  describe('パフォーマンス', () => {
+    it('大量のデータを効率的に追加できる', async () => {
+      const batchSize = 1000;
+      const startTime = performance.now();
+      
+      const promises = Array.from({ length: batchSize }, (_, i) =>
+        db.add(STORE_NAME, { name: `Test${i}`, value: i })
+      );
+      
+      await Promise.all(promises);
+      const endTime = performance.now();
+      
+      const all = await db.getAll(STORE_NAME);
+      expect(all).toHaveLength(batchSize);
+      
+      // パフォーマンスチェック: 1000件の追加が1秒以内で完了する
+      expect(endTime - startTime).toBeLessThan(1000);
     });
   });
 });

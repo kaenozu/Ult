@@ -2,7 +2,7 @@
  * 注文処理のアトミック性と競合状態のテスト
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { useTradingStore } from '../store/tradingStore';
 import { OrderRequest } from '../types/order';
 
