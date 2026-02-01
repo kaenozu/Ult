@@ -66,19 +66,40 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSD');
 
-  // Format currency
-  const formatCurrency = (value: number) => {
+  // Format currency (memoized)
+  const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('ja-JP', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
     }).format(value);
-  };
+  }, []);
 
-  // Format percentage
-  const formatPercent = (value: number) => {
+  // Format percentage (memoized)
+  const formatPercent = useCallback((value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-  };
+  }, []);
+
+  // Memoize portfolio stats
+  const portfolioStats = useMemo(() => {
+    if (!portfolio) return null;
+    
+    return {
+      totalValue: portfolio.totalValue,
+      totalPnL: portfolio.totalPnL,
+      totalPnLPercent: portfolio.totalPnLPercent,
+      dailyPnL: portfolio.dailyPnL
+    };
+  }, [portfolio]);
+
+  // Memoize risk level
+  const riskLevel = useMemo(() => {
+    if (!riskMetrics) return '-';
+    
+    if (riskMetrics.currentDrawdown > 10) return 'HIGH';
+    if (riskMetrics.currentDrawdown > 5) return 'MEDIUM';
+    return 'LOW';
+  }, [riskMetrics]);
 
   return (
     <div className="min-h-screen bg-[#0a0e14] text-white">
