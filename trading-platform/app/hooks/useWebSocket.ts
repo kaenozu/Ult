@@ -57,7 +57,7 @@ export function useWebSocket(url?: string) {
         url: wsUrl,
       },
       {
-        onOpen: () => {
+        onConnect: () => {
           console.log('WebSocket connected to:', wsUrl);
         },
         onMessage: (message) => {

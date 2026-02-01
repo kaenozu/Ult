@@ -1,17 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export interface JournalEntry {
-    id: string;
-    date: string;
-    symbol: string;
-    type: 'BUY' | 'SELL';
-    price: number;
-    quantity: number;
-    notes: string;
-    tags: string[];
-    screenshots?: string[];
-}
+import { JournalEntry } from '@/app/types';
 
 interface JournalStore {
     journal: JournalEntry[];
