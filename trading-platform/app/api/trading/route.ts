@@ -2,9 +2,48 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { ipRateLimiter, getClientIp } from '@/app/lib/ip-rate-limit';
 import { rateLimitError } from '@/app/lib/error-handler';
+import crypto from 'crypto';
+
+/**
+ * Validate API Key securely (Timing Safe)
+ */
+function validateAuth(req: NextRequest): NextResponse | null {
+  const apiKey = process.env.TRADING_API_KEY;
+  if (!apiKey) {
+    console.error('[SECURITY] TRADING_API_KEY not configured. Blocking request to /api/trading');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 401 });
+  }
+
+  const headerApiKey = req.headers.get('x-api-key');
+  if (!headerApiKey) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const a = Buffer.from(apiKey);
+    const b = Buffer.from(headerApiKey);
+
+    if (a.length !== b.length) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!crypto.timingSafeEqual(a, b)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  } catch (error) {
+    // Buffer conversion or other error
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  return null; // Authorized
+}
 
 // GET - Platform status
 export async function GET(req: NextRequest) {
+  // 🛡️ Sentinel: Enforce Authentication
+  const authResponse = validateAuth(req);
+  if (authResponse) return authResponse;
+
   try {
     const platform = getGlobalTradingPlatform();
     const status = platform.getStatus();
@@ -30,12 +69,16 @@ export async function GET(req: NextRequest) {
 
 // POST - Control actions
 export async function POST(req: NextRequest) {
+  // 🛡️ Sentinel: Enforce Authentication
+  const authResponse = validateAuth(req);
+  if (authResponse) return authResponse;
+
   // Rate limiting for trading actions
   const clientIp = getClientIp(req);
   if (!ipRateLimiter.check(clientIp)) {
     return rateLimitError();
   }
-  
+
   try {
     const body = await req.json();
     const platform = getGlobalTradingPlatform();
@@ -44,15 +87,15 @@ export async function POST(req: NextRequest) {
       case 'start':
         await platform.start();
         return NextResponse.json({ success: true });
-      
+
       case 'stop':
         await platform.stop();
         return NextResponse.json({ success: true });
-      
+
       case 'reset':
         platform.reset();
         return NextResponse.json({ success: true });
-      
+
       case 'place_order':
         // Input validation
         if (!body.symbol || typeof body.symbol !== 'string' || body.symbol.trim().length === 0) {
@@ -73,7 +116,7 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           );
         }
-        
+
         await platform.placeOrder(
           body.symbol,
           body.side,
@@ -81,7 +124,7 @@ export async function POST(req: NextRequest) {
           body.options
         );
         return NextResponse.json({ success: true });
-      
+
       case 'close_position':
         if (!body.symbol || typeof body.symbol !== 'string' || body.symbol.trim().length === 0) {
           return NextResponse.json(
@@ -91,7 +134,7 @@ export async function POST(req: NextRequest) {
         }
         await platform.closePosition(body.symbol);
         return NextResponse.json({ success: true });
-      
+
       case 'create_alert':
         if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
           return NextResponse.json(
@@ -123,7 +166,7 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           );
         }
-        
+
         platform.createAlert(
           body.name,
           body.symbol,
@@ -132,11 +175,11 @@ export async function POST(req: NextRequest) {
           body.value
         );
         return NextResponse.json({ success: true });
-      
+
       case 'update_config':
         platform.updateConfig(body.config);
         return NextResponse.json({ success: true });
-      
+
       default:
         return NextResponse.json(
           { error: 'Unknown action' },
