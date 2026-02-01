@@ -196,7 +196,7 @@ export class PatternRecognizer {
    */
   evaluatePatternReliability(
     pattern: PatternResult,
-    historicalData: OHLCV[]
+    _historicalData: OHLCV[]
   ): PatternReliability {
     // Simplified implementation
     // In a real system, this would analyze historical occurrences

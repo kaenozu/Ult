@@ -210,7 +210,6 @@ export class WaveletAnalyzer {
   predictFromWavelets(data: OHLCV[], horizon: number = 5): WaveletPrediction {
     // Denoise the signal first
     const denoisingResult = this.denoiseWithWavelets(data);
-    const denoised = denoisingResult.denoised;
     
     // Perform DWT on denoised signal
     const dwt = this.performDiscreteWaveletTransform(data);
