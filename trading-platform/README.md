@@ -177,6 +177,38 @@ npm run test:coverage
 npm run test:e2e
 ```
 
+### 📚 API Documentation
+
+This platform provides comprehensive OpenAPI (Swagger) documentation for all API endpoints.
+
+**Access the API Documentation:**
+- Local: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+- OpenAPI JSON: [http://localhost:3000/api/openapi.json](http://localhost:3000/api/openapi.json)
+
+**Available API Endpoints:**
+
+#### Market Data (`/api/market`)
+- **GET** - Fetch historical price data or real-time quotes
+- Parameters: `type`, `symbol`, `market`, `interval`, `startDate`
+- Supports both Japanese (Nikkei 225) and US markets (S&P 500, NASDAQ)
+
+#### Trading Platform (`/api/trading`)
+- **GET** - Get platform status, portfolio, signals, and risk metrics
+- **POST** - Execute trading actions (start/stop, place order, close position, create alert)
+- Requires JWT authentication
+
+#### Symbol-Specific Data (`/api/trading/{symbol}`)
+- **GET** - Get trading signal and market data for a specific symbol
+- Requires JWT authentication
+
+The API documentation provides:
+- Complete request/response schemas
+- Parameter validation rules
+- Example values
+- Error responses
+- Try-it-out functionality
+```
+
 ### 🧪 テスト戦略
 
 当プロジェクトではTDD（テスト駆動開発）を採用しています：

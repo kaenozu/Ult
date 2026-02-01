@@ -9,8 +9,9 @@
 
 import { Navigation } from '@/app/components/Navigation';
 import { UniverseManagerPanel } from '@/app/components/UniverseManagerPanel';
+import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
-export default function UniversePage() {
+function UniverseContent() {
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
       {/* Mock Data Banner */}
@@ -106,5 +107,13 @@ export default function UniversePage() {
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>
+  );
+}
+
+export default function UniversePage() {
+  return (
+    <ErrorBoundary name="UniversePage">
+      <UniverseContent />
+    </ErrorBoundary>
   );
 }
