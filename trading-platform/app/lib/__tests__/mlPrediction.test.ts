@@ -6,69 +6,6 @@ import { mlPredictionService } from '../mlPrediction';
 import { Stock, OHLCV } from '../../types';
 import { ENSEMBLE_WEIGHTS } from '../constants';
 
-// Mock technicalIndicatorService
-jest.mock('../services/technical-indicator-service', () => ({
-  technicalIndicatorService: {
-    calculateSMA: jest.fn((prices: number[], period: number) => {
-      const sma: number[] = [];
-      for (let i = 0; i < prices.length; i++) {
-        if (i < period - 1) {
-          sma.push(NaN);
-        } else {
-          const sum = prices.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-          sma.push(sum / period);
-        }
-      }
-      return sma;
-    }),
-    calculateRSI: jest.fn((prices: number[], period: number = 14) => {
-      const rsi: number[] = [];
-      const gains: number[] = [];
-      const losses: number[] = [];
-      for (let i = 1; i < prices.length; i++) {
-        const change = prices[i] - prices[i - 1];
-        gains.push(change > 0 ? change : 0);
-        losses.push(change < 0 ? -change : 0);
-      }
-      for (let i = 0; i < prices.length; i++) {
-        if (i < period) {
-          rsi.push(NaN);
-        } else {
-          const avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
-          const avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
-          const rs = avgGain / (avgLoss || 0.0001);
-          rsi.push(100 - 100 / (1 + rs));
-        }
-      }
-      return rsi;
-    }),
-    calculateMACD: jest.fn(() => ({
-      macd: [],
-      signal: [],
-      histogram: [],
-    })),
-    calculateBollingerBands: jest.fn(() => ({
-      upper: [],
-      middle: [],
-      lower: [],
-    })),
-    calculateATR: jest.fn(() => []),
-    calculateIndicators: jest.fn((data: OHLCV[]) => {
-      const prices = data.map(d => d.close);
-      // Simple mock implementation
-      return {
-        sma5: prices.map(p => p),
-        sma20: prices.map(p => p),
-        sma50: prices.map(p => p),
-        rsi: prices.map(() => 50),
-        macd: { macd: [], signal: [], histogram: [] },
-        bollingerBands: { upper: [], middle: [], lower: [] },
-        atr: [],
-      };
-    }),
-  },
-}));
-
 // Mock constants
 jest.mock('../constants', () => ({
   RSI_CONFIG: {
@@ -205,11 +142,11 @@ describe('MLPredictionService', () => {
       const indicators = mlPredictionService.calculateIndicators(ohlcvData);
       const prediction = mlPredictionService.predict(mockStock, ohlcvData, indicators);
 
-      const expectedEnsemble = 
+      const expectedEnsemble =
         prediction.rfPrediction * ENSEMBLE_WEIGHTS.RF +
         prediction.xgbPrediction * ENSEMBLE_WEIGHTS.XGB +
         prediction.lstmPrediction * ENSEMBLE_WEIGHTS.LSTM;
-      
+
       expect(prediction.ensemblePrediction).toBeCloseTo(expectedEnsemble, 5);
     });
   });
@@ -242,7 +179,7 @@ describe('MLPredictionService', () => {
         close: 101 + i,
         volume: 1000000,
       }));
-      
+
       const indicators = mlPredictionService.calculateIndicators(risingOHLCV);
       const prediction = mlPredictionService.predict(mockStock, risingOHLCV, indicators);
       const signal = mlPredictionService.generateSignal(mockStock, risingOHLCV, prediction, indicators);
@@ -262,7 +199,7 @@ describe('MLPredictionService', () => {
         close: 199 - i,
         volume: 1000000,
       }));
-      
+
       const indicators = mlPredictionService.calculateIndicators(fallingOHLCV);
       const prediction = mlPredictionService.predict(mockStock, fallingOHLCV, indicators);
       const signal = mlPredictionService.generateSignal(mockStock, fallingOHLCV, prediction, indicators);
@@ -281,7 +218,7 @@ describe('MLPredictionService', () => {
         close: 101 + i,
         volume: 1000000,
       }));
-      
+
       const indicators = mlPredictionService.calculateIndicators(risingOHLCV);
       const prediction = mlPredictionService.predict(mockStock, risingOHLCV, indicators);
       const signal = mlPredictionService.generateSignal(mockStock, risingOHLCV, prediction, indicators);
@@ -302,7 +239,7 @@ describe('MLPredictionService', () => {
         close: 199 - i,
         volume: 1000000,
       }));
-      
+
       const indicators = mlPredictionService.calculateIndicators(fallingOHLCV);
       const prediction = mlPredictionService.predict(mockStock, fallingOHLCV, indicators);
       const signal = mlPredictionService.generateSignal(mockStock, fallingOHLCV, prediction, indicators);
@@ -344,7 +281,7 @@ describe('MLPredictionService', () => {
         close: 100,
         volume: 1000000,
       }));
-      
+
       const indicators = mlPredictionService.calculateIndicators(flatData);
       const prediction = mlPredictionService.predict(mockStock, flatData, indicators);
       const signal = mlPredictionService.generateSignal(mockStock, flatData, prediction, indicators);
