@@ -69,3 +69,17 @@ export type {
   RiskControlConfig,
   MarketCrashData,
 } from './AutomaticRiskController';
+
+// TRADING-023: Dynamic Risk Adjustment
+export {
+  DynamicRiskAdjuster,
+  createDynamicRiskAdjuster,
+  DEFAULT_ADJUSTER_CONFIG,
+} from './DynamicRiskAdjuster';
+
+export type {
+  DynamicRiskAdjustment,
+  DynamicRiskAdjusterConfig,
+  MarketCondition,
+  PerformanceMetrics,
+} from './DynamicRiskAdjuster';
