@@ -281,4 +281,60 @@ describe('NotificationCenter', () => {
       expect(screen.getByTestId('alert-target-price')).toHaveTextContent('1030.00');
     });
   });
+
+  it('has accessible toggle buttons', async () => {
+    render(<NotificationCenter />);
+
+    const bellIcon = screen.getByTitle('通知センター');
+    fireEvent.click(bellIcon);
+
+    await waitFor(() => {
+      const settingsButton = screen.getByTitle('設定');
+      fireEvent.click(settingsButton);
+    });
+
+    const toggleButton = screen.getByLabelText('通知機能');
+    expect(toggleButton).toHaveAttribute('role', 'switch');
+    expect(toggleButton).toHaveAttribute('aria-checked', 'true');
+
+    fireEvent.click(toggleButton);
+    expect(toggleButton).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('has accessible dropdown trigger', () => {
+    render(<NotificationCenter />);
+    const bellIcon = screen.getByTitle('通知センター');
+
+    expect(bellIcon).toHaveAttribute('aria-haspopup', 'true');
+    expect(bellIcon).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(bellIcon);
+    expect(bellIcon).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('has accessible alert list', async () => {
+    const alert: Alert = {
+      id: 'test-list-1',
+      type: 'STOCK',
+      severity: 'HIGH',
+      symbol: '4385',
+      title: 'テスト',
+      message: 'テストメッセージ',
+      timestamp: new Date().toISOString(),
+      acknowledged: false,
+    };
+
+    useAlertStore.getState().addAlert(alert);
+    render(<NotificationCenter />);
+
+    const bellIcon = screen.getByTitle('通知センター');
+    fireEvent.click(bellIcon);
+
+    await waitFor(() => {
+      const list = screen.getByRole('list');
+      const listItems = screen.getAllByRole('listitem');
+      expect(list).toBeInTheDocument();
+      expect(listItems).toHaveLength(1);
+    });
+  });
 });
