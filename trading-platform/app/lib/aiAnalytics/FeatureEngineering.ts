@@ -6,7 +6,13 @@
  */
 
 import { OHLCV } from '../../types/shared';
-import { TechnicalIndicatorCalculator } from './PredictiveAnalyticsEngine';
+import {
+  calculateSMA,
+  calculateRSI,
+  calculateMACD,
+  calculateBollingerBands,
+  calculateATR,
+} from '../utils';
 
 /**
  * 拡張テクニカル特徴量
@@ -75,15 +81,17 @@ export class FeatureEngineering {
 
     const prices = data.map(d => d.close);
     const volumes = data.map(d => d.volume);
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
     
     // 基本指標の計算
-    const rsi = TechnicalIndicatorCalculator.calculateRSI(prices, 14);
-    const sma5 = TechnicalIndicatorCalculator.calculateSMA(prices, 5);
-    const sma20 = TechnicalIndicatorCalculator.calculateSMA(prices, 20);
-    const sma50 = TechnicalIndicatorCalculator.calculateSMA(prices, 50);
-    const macd = TechnicalIndicatorCalculator.calculateMACD(prices);
-    const bollingerBands = TechnicalIndicatorCalculator.calculateBollingerBands(prices, 20, 2);
-    const atr = TechnicalIndicatorCalculator.calculateATR(data, 14);
+    const rsi = calculateRSI(prices, 14);
+    const sma5 = calculateSMA(prices, 5);
+    const sma20 = calculateSMA(prices, 20);
+    const sma50 = calculateSMA(prices, 50);
+    const macd = calculateMACD(prices);
+    const bollingerBands = calculateBollingerBands(prices, 20, 2);
+    const atr = calculateATR(highs, lows, prices, 14);
     
     // 現在値の取得
     const currentRSI = this.last(rsi, 50);
@@ -97,7 +105,7 @@ export class FeatureEngineering {
     const sma50Dev = (currentPrice - this.last(sma50, currentPrice)) / currentPrice * 100;
     const priceMomentum = this.calculateMomentum(prices, 10);
     const volumeRatio = currentVolume / (averageVolume || 1);
-    const volatility = TechnicalIndicatorCalculator.calculateVolatility(prices.slice(-20), 20);
+    const volatility = this.calculateVolatility(prices.slice(-20), 20);
     const macdSignal = this.last(macd.macd, 0) - this.last(macd.signal, 0);
     const bollingerPosition = this.calculateBollingerPosition(
       currentPrice,
@@ -310,6 +318,23 @@ export class FeatureEngineering {
     if (volatility < 15) return 'LOW';
     if (volatility > 30) return 'HIGH';
     return 'NORMAL';
+  }
+
+  /**
+   * ボラティリティを計算（年率換算）
+   */
+  private calculateVolatility(prices: number[], period: number): number {
+    if (prices.length < 2) return 0;
+
+    const returns: number[] = [];
+    for (let i = 1; i < prices.length; i++) {
+      returns.push(Math.log(prices[i] / prices[i - 1]));
+    }
+
+    const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+
+    return Math.sqrt(variance) * Math.sqrt(252) * 100; // Annualized volatility
   }
 
   /**
