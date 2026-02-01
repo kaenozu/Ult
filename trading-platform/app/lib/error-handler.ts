@@ -1,13 +1,20 @@
 /**
- * 共通エラーハンドラー
+ * 共通エラーハンドラー (Next.js API Routes)
  *
- * このモジュールは、アプリケーション全体で統一されたエラーハンドリングを提供します。
- * - APIルート用のHTTPレスポンス生成
+ * このモジュールは、Next.js APIルート専用のHTTPレスポンス生成を提供します。
+ * コアエラー処理は @/app/lib/errors で統一されており、このファイルは
+ * そのラッパーとして機能します。
+ * 
+ * - APIルート用のHTTPレスポンス生成 (NextResponse)
  * - ユーザー向けエラーメッセージの標準化
- * - エラーログの統一
+ * - エラーログの統一 (コアロガーに委譲)
+ * 
+ * @see {@link @/app/lib/errors} - コアエラークラスとユーティリティ
+ * @see {@link @/app/lib/errorHandler} - エラーリカバリーサービス
  */
 
 import { NextResponse } from 'next/server';
+import { logError as coreLogError } from '@/app/lib/errors';
 // import type { APIError, NetworkError, RateLimitError } from '@/app/types';
 
 /**
@@ -199,22 +206,15 @@ export function handleApiError(
 
 /**
  * エラーログの出力
+ * 
+ * @deprecated Use logError from @/app/lib/errors directly for consistency
+ * This wrapper is kept for backward compatibility with API routes
  *
  * @param error - エラーオブジェクト
  * @param context - エラーが発生したコンテキスト
  */
 export function logError(error: unknown, context: string): void {
-  const timestamp = new Date().toISOString();
-
-  if (error instanceof Error) {
-    console.error(`[${timestamp}] Error in ${context}:`, {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
-    });
-  } else {
-    console.error(`[${timestamp}] Error in ${context}:`, error);
-  }
+  coreLogError(error, context);
 }
 
 /**

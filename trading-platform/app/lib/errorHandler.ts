@@ -1,7 +1,18 @@
 /**
- * Error Handler Service
+ * Error Handler Service (エラーリカバリーサービス)
  * 
- * Comprehensive error handling and recovery mechanism
+ * このモジュールは、エラーのリカバリー戦略と監視を提供します。
+ * コアエラー処理は @/app/lib/errors で統一されており、このサービスは
+ * リカバリーロジックと分析機能に特化しています。
+ *
+ * 主な機能:
+ * - エラータイプごとのリカバリー戦略決定
+ * - エラー監視とレポート（Sentry連携準備済み）
+ * - エラー統計とアナリティクス
+ * - バッチ処理のエラーハンドリング
+ * 
+ * @see {@link @/app/lib/errors} - コアエラークラスとユーティリティ
+ * @see {@link @/app/lib/error-handler} - API routes用HTTPレスポンス生成
  */
 
 import {
@@ -249,6 +260,7 @@ export class ErrorHandler {
 
   /**
    * Generate user-friendly message from error
+   * @deprecated Use getUserErrorMessage from @/app/lib/errors directly
    */
   getUserFriendlyMessage(error: TradingError): string {
     return getUserErrorMessage(error);

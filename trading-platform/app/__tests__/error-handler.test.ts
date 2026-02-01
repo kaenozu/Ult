@@ -38,9 +38,8 @@ describe('error-handler', () => {
             const error = new Error('Test Error');
             logError(error, 'TestContext');
             expect(mockConsoleError).toHaveBeenCalledWith(
-                expect.stringContaining('Error in TestContext'),
+                expect.stringContaining('[TestContext] Error:'),
                 expect.objectContaining({
-                    name: 'Error',
                     message: 'Test Error',
                     stack: expect.any(String)
                 })
@@ -51,7 +50,7 @@ describe('error-handler', () => {
             const error = { foo: 'bar' };
             logError(error, 'TestContext');
             expect(mockConsoleError).toHaveBeenCalledWith(
-                expect.stringContaining('Error in TestContext'),
+                expect.stringContaining('[TestContext] Unknown error:'),
                 error
             );
         });

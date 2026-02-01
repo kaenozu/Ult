@@ -1,11 +1,64 @@
 /**
- * Trading Platform Unified Error Handling
+ * Trading Platform Unified Error Handling (統一エラーハンドリング)
  * 
- * このモジュールは、アプリケーション全体で統一されたエラーハンドリングを提供します。
- * - 標準化されたエラークラス
- * - エラーロギングユーティリティ
- * - ユーザー向けエラーメッセージ生成
- * - エラーハンドリングラッパー
+ * このモジュールは、アプリケーション全体で統一されたエラーハンドリングの
+ * コア実装を提供します。
+ * 
+ * ## アーキテクチャ
+ * 
+ * ### このファイル (errors.ts) - コアエラーシステム
+ * - 標準化されたエラークラス (TradingError, AppError, ApiError, etc.)
+ * - エラーロギングユーティリティ (logError)
+ * - ユーザー向けエラーメッセージ生成 (getUserErrorMessage)
+ * - エラーハンドリングラッパー (handleError, withErrorHandling)
+ * 
+ * ### 関連モジュール
+ * - **@/app/lib/error-handler.ts** - Next.js APIルート専用HTTPレスポンス生成
+ *   - handleApiError, validationError, notFoundError, rateLimitError
+ *   - NextResponseでのエラーレスポンス構築
+ * 
+ * - **@/app/lib/errorHandler.ts** - エラーリカバリーサービス
+ *   - ErrorHandler クラス: リカバリー戦略、監視、統計
+ *   - Sentry連携準備（本番環境での外部エラートラッキング）
+ * 
+ * ## 使用方法
+ * 
+ * ### UI/フロントエンド
+ * ```typescript
+ * import { getUserErrorMessage } from '@/app/lib/errors';
+ * 
+ * try {
+ *   await fetchData();
+ * } catch (error) {
+ *   const message = getUserErrorMessage(error);
+ *   showToast(message);
+ * }
+ * ```
+ * 
+ * ### API Routes
+ * ```typescript
+ * import { handleApiError } from '@/app/lib/error-handler';
+ * 
+ * export async function GET(request: Request) {
+ *   try {
+ *     const data = await getData();
+ *     return NextResponse.json(data);
+ *   } catch (error) {
+ *     return handleApiError(error, 'getData');
+ *   }
+ * }
+ * ```
+ * 
+ * ### サービス層（リカバリー必要時）
+ * ```typescript
+ * import { errorHandler } from '@/app/lib/errorHandler';
+ * 
+ * const result = await errorHandler.handleWithFallback(
+ *   'fetchMarketData',
+ *   () => api.fetchData(),
+ *   () => getCachedData()
+ * );
+ * ```
  */
 
 // ============================================================================
