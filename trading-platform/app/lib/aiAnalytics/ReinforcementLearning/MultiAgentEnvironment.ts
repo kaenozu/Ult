@@ -178,7 +178,8 @@ export class MultiAgentEnvironment {
   private computeMarketImpact(tradeVolume: number): number {
     // Simple market impact model
     // Impact increases with square root of volume
-    const baseVolume = this.marketData[this.currentStep]?.volume || 1000000;
+    const safeStep = Math.min(this.currentStep, this.marketData.length - 1);
+    const baseVolume = this.marketData[safeStep]?.volume || 1000000;
     const volumeRatio = tradeVolume / baseVolume;
     return Math.sqrt(volumeRatio) * 0.001; // 0.1% impact per unit volume
   }
@@ -261,7 +262,8 @@ export class MultiAgentEnvironment {
    * Get current price from market data
    */
   private getCurrentPrice(): number {
-    return this.marketData[this.currentStep]?.close || 0;
+    const safeStep = Math.min(this.currentStep, this.marketData.length - 1);
+    return this.marketData[safeStep]?.close || 100;
   }
 
   /**

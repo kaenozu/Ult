@@ -11,8 +11,8 @@ import {
   MultiAgentEnvironment,
   DEFAULT_RL_CONFIG,
   DEFAULT_ENVIRONMENT_CONFIG,
-  ActionType,
 } from './index';
+import { ActionType } from './types';
 
 /**
  * Example 1: Basic training loop with single agent
@@ -114,7 +114,7 @@ export function evaluateAgentExample(
     // Select action without exploration
     const action = agent.selectAction(state, false);
 
-    if (action.type !== 0) { // HOLD = 0
+    if (action.type !== ActionType.HOLD) {
       trades++;
     }
 
@@ -234,7 +234,7 @@ export function backtestExample(
   while (true) {
     const action = agent.selectAction(state, false);
 
-    if (action.type !== 0) { // HOLD = 0
+    if (action.type !== ActionType.HOLD) {
       const currentPrice = testData[environment['currentIndex']].close;
       const actionNames = ['HOLD', 'BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE', 'SELL_SMALL', 'SELL_MEDIUM', 'SELL_LARGE'];
       trades.push({

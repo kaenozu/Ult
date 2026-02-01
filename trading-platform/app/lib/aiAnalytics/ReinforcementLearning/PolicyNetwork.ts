@@ -77,7 +77,7 @@ export class PolicyNetwork {
     const lastLayer = this.layers[this.layers.length - 1];
     const logits = this.dense(input, lastLayer.weights, lastLayer.bias);
     const actionProbs = this.softmax(logits);
-    const logProbs = logits.map(x => Math.log(Math.max(x, 1e-8)));
+    const logProbs = actionProbs.map(x => Math.log(Math.max(x, 1e-8)));
     const entropy = this.computeEntropy(actionProbs);
 
     return { actionProbs, logProbs, entropy };
