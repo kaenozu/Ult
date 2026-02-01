@@ -76,6 +76,17 @@ export const VOLUME_PROFILE = {
     HEIGHT_DIVISOR: 25,
     BASE_ALPHA: 0.4,
     STRENGTH_ALPHA_ADD: 0.2,
+    RESISTANCE_RGB: '239, 68, 68',
+    SUPPORT_RGB: '34, 197, 94',
+};
+
+export const CHART_DIMENSIONS = {
+    DEFAULT_HEIGHT: 500,
+};
+
+export const CHART_COLORS = {
+    INDEX_LINE: '#60a5fa',
+    INDEX_FILL: 'rgba(96, 165, 250, 0.05)',
 };
 
 export const BOLLINGER_BANDS = {
