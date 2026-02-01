@@ -11,6 +11,8 @@ import { mlPredictionService } from '../lib/mlPrediction';
 
 jest.mock('../lib/api/idb', () => ({
   idbClient: {
+    init: jest.fn().mockResolvedValue(undefined),
+    clearAllData: jest.fn().mockResolvedValue(undefined),
     getData: jest.fn(),
     saveData: jest.fn(),
     mergeAndSave: jest.fn(),
