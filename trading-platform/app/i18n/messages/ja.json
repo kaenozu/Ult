@@ -57,5 +57,11 @@
     "title": "エラーが発生しました",
     "titleWithName": "{name} エラー",
     "description": "予期せぬエラーが発生しました。"
+  },
+  "errorPage": {
+    "title": "問題が発生しました",
+    "description": "アプリケーションの実行中に予期せぬエラーが発生しました。",
+    "tryAgain": "もう一度試す",
+    "unknownError": "不明なエラー"
   }
 }
