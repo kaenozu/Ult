@@ -6,6 +6,7 @@ import {
   rateLimitError,
 } from '@/app/lib/error-handler';
 import { ipRateLimiter, getClientIp } from '@/app/lib/ip-rate-limit';
+import { isTSEOpen, getMarketStatusMessage, formatNextOpenTime } from '@/app/lib/market-hours';
 
 // Define explicit types for Yahoo Finance responses
 interface YahooChartResult {
@@ -220,13 +221,29 @@ export async function GET(request: Request) {
           const result = await yf.quote(symbols[0]) as YahooQuoteResult;
           if (!result) throw new Error('Symbol not found');
 
+          // Check if this is a Japanese stock and get market status
+          const isJapanese = market === 'japan' || symbols[0].endsWith('.T');
+          let tseStatus;
+          if (isJapanese) {
+            tseStatus = isTSEOpen();
+          }
+
           return NextResponse.json({
             symbol: symbol,
             price: result.regularMarketPrice,
             change: result.regularMarketChange,
             changePercent: result.regularMarketChangePercent,
             volume: result.regularMarketVolume,
-            marketState: result.marketState
+            marketState: result.marketState,
+            // Add TSE-specific status for Japanese stocks
+            ...(tseStatus && {
+              tseStatus: {
+                isOpen: tseStatus.isOpen,
+                message: getMarketStatusMessage(tseStatus),
+                tradingSession: tseStatus.tradingSession,
+                nextOpenTime: tseStatus.nextOpenTime ? formatNextOpenTime(tseStatus.nextOpenTime) : undefined,
+              }
+            })
           });
         } catch (quoteError: unknown) {
           return handleApiError(quoteError, 'market/quote', 404);
@@ -236,14 +253,31 @@ export async function GET(request: Request) {
           const results = await yf.quote(symbols) as YahooQuoteResult[];
           const data = results
             .filter((r): r is YahooQuoteResult => !!r)
-            .map(r => ({
-              symbol: r.symbol ? r.symbol.replace('.T', '') : 'UNKNOWN',
-              price: r.regularMarketPrice || 0,
-              change: r.regularMarketChange || 0,
-              changePercent: r.regularMarketChangePercent || 0,
-              volume: r.regularMarketVolume || 0,
-              marketState: r.marketState || 'UNKNOWN'
-            }));
+            .map(r => {
+              const isJapanese = r.symbol?.endsWith('.T');
+              let tseStatus;
+              if (isJapanese) {
+                tseStatus = isTSEOpen();
+              }
+
+              return {
+                symbol: r.symbol ? r.symbol.replace('.T', '') : 'UNKNOWN',
+                price: r.regularMarketPrice || 0,
+                change: r.regularMarketChange || 0,
+                changePercent: r.regularMarketChangePercent || 0,
+                volume: r.regularMarketVolume || 0,
+                marketState: r.marketState || 'UNKNOWN',
+                // Add TSE-specific status for Japanese stocks
+                ...(tseStatus && {
+                  tseStatus: {
+                    isOpen: tseStatus.isOpen,
+                    message: getMarketStatusMessage(tseStatus),
+                    tradingSession: tseStatus.tradingSession,
+                    nextOpenTime: tseStatus.nextOpenTime ? formatNextOpenTime(tseStatus.nextOpenTime) : undefined,
+                  }
+                })
+              };
+            });
           return NextResponse.json({ data });
         } catch (batchError: unknown) {
           return handleApiError(batchError, 'market/batch-quote', 502);
