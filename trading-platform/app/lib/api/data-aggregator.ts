@@ -1,4 +1,5 @@
-import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, APIError, NetworkError, RateLimitError, TechnicalIndicator } from '@/app/types';
+import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, TechnicalIndicator } from '@/app/types';
+import { ApiError as APIError, NetworkError, RateLimitError } from '@/app/lib/errors';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { idbClient } from './idb';
 
@@ -455,10 +456,11 @@ export function handleApiError(error: unknown, context: string): APIError {
     if (error.message.includes('429') || error.message.includes('rate limit')) {
       return new RateLimitError(error.message);
     }
-    return new APIError(error.message, 'UNKNOWN_ERROR', undefined, error);
+    // ApiError constructor: (message, endpoint?, statusCode?, response?)
+    return new APIError(error.message, context, undefined, error);
   }
 
-  return new APIError(String(error), 'UNKNOWN_ERROR', undefined, error);
+  return new APIError(String(error), context, undefined, error);
 }
 
 /**
