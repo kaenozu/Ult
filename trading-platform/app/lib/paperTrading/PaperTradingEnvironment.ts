@@ -636,17 +636,13 @@ export class PaperTradingEnvironment extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalPaperTrading: PaperTradingEnvironment | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalPaperTrading(config?: Partial<PaperTradingConfig>): PaperTradingEnvironment {
-  if (!globalPaperTrading) {
-    globalPaperTrading = new PaperTradingEnvironment(config);
-  }
-  return globalPaperTrading;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<PaperTradingConfig>) => new PaperTradingEnvironment(config)
+);
 
-export function resetGlobalPaperTrading(): void {
-  globalPaperTrading = null;
-}
+export const getGlobalPaperTrading = getInstance;
+export const resetGlobalPaperTrading = resetInstance;
 
 export default PaperTradingEnvironment;

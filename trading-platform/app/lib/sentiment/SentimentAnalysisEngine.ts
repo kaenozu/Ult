@@ -645,20 +645,13 @@ export class SentimentAnalysisEngine extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalSentimentEngine: SentimentAnalysisEngine | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalSentimentEngine(config?: Partial<SentimentConfig>): SentimentAnalysisEngine {
-  if (!globalSentimentEngine) {
-    globalSentimentEngine = new SentimentAnalysisEngine(config);
-  }
-  return globalSentimentEngine;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<SentimentConfig>) => new SentimentAnalysisEngine(config)
+);
 
-export function resetGlobalSentimentEngine(): void {
-  if (globalSentimentEngine) {
-    globalSentimentEngine.stop();
-    globalSentimentEngine = null;
-  }
-}
+export const getGlobalSentimentEngine = getInstance;
+export const resetGlobalSentimentEngine = resetInstance;
 
 export default SentimentAnalysisEngine;
