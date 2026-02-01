@@ -12,6 +12,7 @@
  */
 
 import { WebSocketStatus as BaseWebSocketStatus } from '@/app/hooks/useWebSocket';
+import { BUFFER_LIMITS } from './constants';
 
 // ============================================================================
 // Type Definitions
@@ -591,7 +592,7 @@ export class ResilientWebSocketClient {
     this.stateHistory.push(transition);
 
     // Keep only last 100 transitions
-    if (this.stateHistory.length > 100) {
+    if (this.stateHistory.length > BUFFER_LIMITS.STATE_HISTORY) {
       this.stateHistory.shift();
     }
 
@@ -725,7 +726,7 @@ export class ResilientWebSocketClient {
     this.messageQueue.push(queuedMessage);
 
     // Limit queue size to prevent memory issues
-    if (this.messageQueue.length > 1000) {
+    if (this.messageQueue.length > BUFFER_LIMITS.MESSAGE_QUEUE) {
       console.warn('[WebSocket] Message queue full, dropping oldest message');
       this.messageQueue.shift();
     }
