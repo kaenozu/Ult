@@ -267,12 +267,18 @@ export class TestHelpers {
   /**
    * Suppress console output during test
    */
-  static suppressConsole(fn: () => void | Promise<void>) {
+  static suppressConsole(fn: () => void | Promise<void>): void | Promise<void> {
     const spy = this.spyOnConsole();
     try {
-      return fn();
-    } finally {
+      const result = fn();
+      if (result instanceof Promise) {
+        return result.finally(() => spy.restore());
+      }
       spy.restore();
+      return result;
+    } catch (error) {
+      spy.restore();
+      throw error;
     }
   }
 }
