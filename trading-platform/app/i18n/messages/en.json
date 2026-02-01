@@ -57,5 +57,11 @@
     "title": "An error occurred",
     "titleWithName": "{name} Error",
     "description": "An unexpected error occurred."
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred while running the application.",
+    "tryAgain": "Try again",
+    "unknownError": "Unknown Error"
   }
 }
