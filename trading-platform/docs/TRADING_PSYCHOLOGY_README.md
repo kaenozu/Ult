@@ -284,6 +284,43 @@ npm test psychologyStore.test.ts
 - ✅ 感情スコア平均: 8/10以上
 - ✅ 取引計画遵守率: 80%以上
 
+## 制限事項と今後の改善
+
+### 現在の制限事項
+
+1. **簡易的な損益判定**: 
+   - 現在の実装では、BUY注文を損失、SELL注文を利益として簡易判定しています
+   - 実際の損益は`JournalEntry`の`profit`フィールドを使用する必要があります
+   - 今後、実際の損益データと統合する予定です
+
+2. **恐怖バイアス検出**: 
+   - 保有時間の計算が未実装のため、連続損失後の売却を恐怖バイアスとして検出しています
+   - 実際の保有時間データと統合して、より正確な検出を行う予定です
+
+3. **Date型のシリアライゼーション**:
+   - 現在、alertsのtimestampのみがISO文字列に変換されます
+   - その他のDate型フィールドも適切に処理する必要があります
+
+### 推奨される使用方法
+
+実際の損益データを使用する場合は、以下のように`JournalEntry`を作成してください：
+
+```typescript
+const entry: JournalEntry = {
+  id: 'trade-1',
+  symbol: 'AAPL',
+  date: '2024-01-01',
+  signalType: 'BUY',
+  entryPrice: 150,
+  exitPrice: 160,  // 実際の終値
+  quantity: 10,
+  profit: 100,     // 実際の損益を必ず記録
+  profitPercent: 6.67,
+  status: 'CLOSED',
+  // ... psychology fields
+};
+```
+
 ## 依存関係
 
 - TRADING-016: 取引心理学と行動ファイナンス分析システムの実装

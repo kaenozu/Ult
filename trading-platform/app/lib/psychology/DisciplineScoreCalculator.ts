@@ -104,6 +104,14 @@ export class DisciplineScoreCalculator {
 
   /**
    * 平均感情スコアを計算 (1-10)
+   * 
+   * Emotion Scoring Formula:
+   * - Input ranges: fear (1-5), greed (1-5), confidence (1-5), stress (1-5)
+   * - Fear: Lower is better (1=5pts, 5=1pt) - fear hinders decision making
+   * - Greed: Moderate is ideal (3=3pts) - too much or too little is problematic
+   * - Confidence: Higher is better (1-5 scale) - confident trades perform better
+   * - Stress: Lower is better (1=5pts, 5=1pt) - stress impairs judgment
+   * - Total range: 0-16 points, normalized to 1-10 scale
    */
   private calculateAverageEmotionScore(entries: JournalEntry[]): number {
     const entriesWithEmotion = entries.filter(e => e.emotionAfter);
@@ -115,14 +123,14 @@ export class DisciplineScoreCalculator {
       
       const { fear, greed, confidence, stress } = entry.emotionAfter;
       
-      // 恐怖とストレスは低いほど良い、自信は高いほど良い、欲は中程度が良い
-      const emotionScore =
-        (5 - fear) + // fear: 1 is good (5 points), 5 is bad (1 point)
-        (3 - Math.abs(greed - 3)) + // greed: 3 is ideal (3 points)
-        confidence + // confidence: higher is better
-        (5 - stress); // stress: lower is better
+      // Calculate component scores
+      const fearScore = (5 - fear); // fear: 1 is good (5 points), 5 is bad (1 point)
+      const greedScore = (3 - Math.abs(greed - 3)); // greed: 3 is ideal (3 points)
+      const confidenceScore = confidence; // confidence: higher is better (1-5)
+      const stressScore = (5 - stress); // stress: lower is better
       
-      // 0-16 range, normalize to 1-10
+      // Total: 0-16 range, normalize to 1-10
+      const emotionScore = fearScore + greedScore + confidenceScore + stressScore;
       return sum + ((emotionScore / 16) * 9 + 1);
     }, 0);
     

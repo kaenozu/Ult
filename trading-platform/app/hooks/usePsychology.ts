@@ -5,18 +5,13 @@
  * 心理監視、クーリングオフ、規律スコアの計算を簡単に使えるようにする
  */
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { usePsychologyStore } from '@/app/store/psychologyStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { PsychologyMonitor } from '@/app/lib/risk/PsychologyMonitor';
 import { CoolingOffManager } from '@/app/lib/risk/CoolingOffManager';
 import { DisciplineScoreCalculator } from '@/app/lib/psychology/DisciplineScoreCalculator';
 import { Order } from '@/app/types';
-
-// Singleton instances
-let psychologyMonitor: PsychologyMonitor | null = null;
-let coolingOffManager: CoolingOffManager | null = null;
-let disciplineCalculator: DisciplineScoreCalculator | null = null;
 
 /**
  * 心理管理フック
@@ -25,16 +20,21 @@ export function usePsychology() {
   const psychologyState = usePsychologyStore();
   const { journal } = useJournalStore();
 
+  // Use refs to maintain singleton instances per component
+  const psychologyMonitorRef = useRef<PsychologyMonitor | null>(null);
+  const coolingOffManagerRef = useRef<CoolingOffManager | null>(null);
+  const disciplineCalculatorRef = useRef<DisciplineScoreCalculator | null>(null);
+
   // Initialize services
   useEffect(() => {
-    if (!psychologyMonitor) {
-      psychologyMonitor = new PsychologyMonitor();
+    if (!psychologyMonitorRef.current) {
+      psychologyMonitorRef.current = new PsychologyMonitor();
     }
-    if (!coolingOffManager) {
-      coolingOffManager = new CoolingOffManager();
+    if (!coolingOffManagerRef.current) {
+      coolingOffManagerRef.current = new CoolingOffManager();
     }
-    if (!disciplineCalculator) {
-      disciplineCalculator = new DisciplineScoreCalculator();
+    if (!disciplineCalculatorRef.current) {
+      disciplineCalculatorRef.current = new DisciplineScoreCalculator();
     }
   }, []);
 
@@ -42,18 +42,18 @@ export function usePsychology() {
    * 取引を記録し、心理分析を実行
    */
   const recordTrade = (order: Order) => {
-    if (!psychologyMonitor) return;
+    if (!psychologyMonitorRef.current) return;
 
-    psychologyMonitor.recordTrade(order);
+    psychologyMonitorRef.current.recordTrade(order);
 
     // Generate alerts
-    const alerts = psychologyMonitor.generatePsychologyAlerts();
+    const alerts = psychologyMonitorRef.current.generatePsychologyAlerts();
     alerts.forEach(alert => psychologyState.addAlert(alert));
 
     // Check if cooling off should be triggered
-    const metrics = psychologyMonitor.analyzeTradingBehavior();
-    if (metrics.consecutiveLosses >= 3 && coolingOffManager) {
-      const cooldown = coolingOffManager.enforceCoolingOff({
+    const metrics = psychologyMonitorRef.current.analyzeTradingBehavior();
+    if (metrics.consecutiveLosses >= 3 && coolingOffManagerRef.current) {
+      const cooldown = coolingOffManagerRef.current.enforceCoolingOff({
         type: 'consecutive_losses',
         severity: Math.min(10, metrics.consecutiveLosses),
         triggerValue: metrics.consecutiveLosses
@@ -66,9 +66,9 @@ export function usePsychology() {
    * バイアス分析を実行
    */
   const analyzeBias = (order: Order) => {
-    if (!psychologyMonitor) return null;
+    if (!psychologyMonitorRef.current) return null;
 
-    const analysis = psychologyMonitor.detectBiases(order);
+    const analysis = psychologyMonitorRef.current.detectBiases(order);
     psychologyState.setBiasAnalysis(analysis);
     return analysis;
   };
@@ -77,17 +77,17 @@ export function usePsychology() {
    * 取引可否をチェック
    */
   const canTrade = () => {
-    if (!coolingOffManager) return { allowed: true };
-    return coolingOffManager.canTrade();
+    if (!coolingOffManagerRef.current) return { allowed: true };
+    return coolingOffManagerRef.current.canTrade();
   };
 
   /**
    * 規律スコアを計算
    */
   const calculateDisciplineScore = () => {
-    if (!disciplineCalculator) return null;
+    if (!disciplineCalculatorRef.current) return null;
 
-    const score = disciplineCalculator.calculateDisciplineScore(
+    const score = disciplineCalculatorRef.current.calculateDisciplineScore(
       journal,
       psychologyState.cooldownRecords
     );
@@ -99,9 +99,9 @@ export function usePsychology() {
    * 改善エリアを特定
    */
   const identifyImprovements = () => {
-    if (!disciplineCalculator || !psychologyState.disciplineScore) return [];
+    if (!disciplineCalculatorRef.current || !psychologyState.disciplineScore) return [];
 
-    return disciplineCalculator.identifyImprovementAreas(
+    return disciplineCalculatorRef.current.identifyImprovementAreas(
       psychologyState.disciplineScore
     );
   };
@@ -110,9 +110,9 @@ export function usePsychology() {
    * クーリングオフを手動で開始
    */
   const startManualCooldown = (minutes: number = 60) => {
-    if (!coolingOffManager) return;
+    if (!coolingOffManagerRef.current) return;
 
-    const cooldown = coolingOffManager.enforceCoolingOff({
+    const cooldown = coolingOffManagerRef.current.enforceCoolingOff({
       type: 'manual',
       severity: Math.ceil(minutes / 60), // 1-10 scale based on hours
       triggerValue: minutes
@@ -124,9 +124,9 @@ export function usePsychology() {
    * クーリングオフを手動で終了
    */
   const endManualCooldown = () => {
-    if (!coolingOffManager) return false;
+    if (!coolingOffManagerRef.current) return false;
 
-    const success = coolingOffManager.manualEndCooldown();
+    const success = coolingOffManagerRef.current.manualEndCooldown();
     if (success) {
       psychologyState.endCooldown();
     }
@@ -188,9 +188,9 @@ export function usePsychology() {
     updateCalendarDay: psychologyState.updateCalendarDay,
     setCurrentEmotion: psychologyState.setCurrentEmotion,
 
-    // Services
-    psychologyMonitor,
-    coolingOffManager,
-    disciplineCalculator
+    // Services (refs for advanced usage)
+    psychologyMonitor: psychologyMonitorRef.current,
+    coolingOffManager: coolingOffManagerRef.current,
+    disciplineCalculator: disciplineCalculatorRef.current
   };
 }
