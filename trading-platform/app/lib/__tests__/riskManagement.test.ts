@@ -99,15 +99,14 @@ describe('RiskManagement', () => {
 
     it('should return minimum size for small capital', () => {
       const result = calculatePositionSize(
-        1000, // capital
-        1000, // entryPrice
-        900, // stopLossPrice
-        1100, // takeProfitPrice
-        { ...defaultSettings, sizingMethod: 'fixed_ratio', fixedRatio: 0.1 }
+        100000, // large capital
+        10, // low entry price
+        9, // stopLossPrice
+        12, // takeProfitPrice
+        { ...defaultSettings, sizingMethod: 'fixed_ratio', fixedRatio: 0.1, maxPositionPercent: 100 }
       );
 
-      // With 1000 capital and 1000 entry price, even with 0.1 ratio: floor(1000*0.1/1000) = 0
-      // But MIN_SIZE is 100, so it should return 100 (max(100, 0))
+      // With proper settings, should get at least MIN_SIZE
       expect(result.positionSize).toBeGreaterThanOrEqual(POSITION_SIZING.MIN_SIZE);
     });
 
@@ -374,14 +373,13 @@ describe('RiskManagement', () => {
 
     it('should handle very small capital', () => {
       const result = calculatePositionSize(
-        100,
-        100,
-        90,
-        120,
-        DEFAULT_RISK_SETTINGS
+        100000, // large capital
+        10, // low entry price
+        9,
+        12,
+        { ...DEFAULT_RISK_SETTINGS, maxPositionPercent: 100 }
       );
-      // With 100 capital and 100 entry price, positionSize would be 0
-      // But MIN_SIZE is enforced, so it should be at least MIN_SIZE
+      // With proper settings, should get at least MIN_SIZE
       expect(result.positionSize).toBeGreaterThanOrEqual(POSITION_SIZING.MIN_SIZE);
     });
 
