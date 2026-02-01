@@ -138,7 +138,7 @@ export function withAsyncPerformanceTracking<T extends (...args: any[]) => Promi
   const functionName = name || fn.name || 'anonymous';
   
   return async (...args: Parameters<T>) => {
-    return await measurePerformanceAsync(functionName, () => fn(...args));
+    return measurePerformanceAsync(functionName, () => fn(...args));
   } as T;
 }
 
