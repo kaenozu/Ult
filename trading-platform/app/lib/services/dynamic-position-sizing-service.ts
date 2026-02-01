@@ -29,7 +29,7 @@ class DynamicPositionSizingService {
   private defaultRiskPercentage: number = 2; // デフォルトで資産の2%をリスクとして許容
 
   /**
-   * ポ的ポジションサイズを計算
+   * 動的ポジションサイズを計算 (improved for better risk management)
    */
   calculatePositionSize(input: PositionSizingInput, settings?: RiskManagementSettings): RiskCalculationResult {
     // 設定がなければデフォルトを使用
@@ -41,7 +41,7 @@ class DynamicPositionSizingService {
     // 1取引当たりのリスク金額を計算
     const riskAmount = input.accountBalance * (input.riskPercentage / 100);
 
-    // ポ的ポジションサイズを計算
+    // 基本ポジションサイズを計算
     let positionSize = 0;
     if (priceRisk > 0) {
       positionSize = riskAmount / priceRisk;
@@ -56,7 +56,7 @@ class DynamicPositionSizingService {
     // 相関調整
     positionSize = this.applyCorrelationAdjustment(positionSize, input.assetCorrelation);
 
-    // 信頼度調整
+    // 信頼度調整（より強力に）
     positionSize = this.applyConfidenceAdjustment(positionSize, input.confidence);
 
     // 最大ポジション制限
@@ -67,8 +67,14 @@ class DynamicPositionSizingService {
 
     // 最大損失制限
     if (effectiveSettings.maxLossPerTrade) {
-      const maxPositionByLoss = riskAmount / priceRisk;
+      const maxPositionByLoss = effectiveSettings.maxLossPerTrade / priceRisk;
       positionSize = Math.min(positionSize, maxPositionByLoss);
+    }
+
+    // 最小ポジションサイズチェック（あまりに小さい場合は0に）
+    const minPositionValue = input.accountBalance * 0.01; // 口座の1%未満
+    if (positionSize * input.entryPrice < minPositionValue) {
+      positionSize = 0;
     }
 
     // 最終的なリスク額を再計算
@@ -119,18 +125,20 @@ class DynamicPositionSizingService {
   }
 
   /**
-   * ボラティリティ調整を適用
+   * ボラティリティ調整を適用 (improved)
    */
   private applyVolatilityAdjustment(positionSize: number, volatility: number, marketRegime: string): number {
-    // ボラティリティが高い場合はポジションを縮小
-    const volatilityAdjustment = 1 / (1 + volatility);
+    // ボラティリティが高い場合はポジションを縮小（より保守的に）
+    const volatilityAdjustment = 1 / Math.max(1, 1 + volatility * 1.5); // Increased multiplier
     
     // 市場体制による調整
     let regimeAdjustment = 1;
     if (marketRegime === 'BULL') {
-      regimeAdjustment = 1.1; // 上昇相場では少し積極的
+      regimeAdjustment = 1.15; // Increased from 1.1 - 上昇相場ではより積極的
     } else if (marketRegime === 'BEAR') {
-      regimeAdjustment = 0.8; // 下降相場では保守的
+      regimeAdjustment = 0.7; // Decreased from 0.8 - 下降相場ではより保守的
+    } else {
+      regimeAdjustment = 0.9; // SIDEWAYS - slightly conservative
     }
     
     return positionSize * volatilityAdjustment * regimeAdjustment;
@@ -155,12 +163,21 @@ class DynamicPositionSizingService {
   }
 
   /**
-   * 信頼度調整を適用
+   * 信頼度調整を適用 (improved for better risk management)
    */
   private applyConfidenceAdjustment(positionSize: number, confidence: number): number {
-    // 信頼度が高いほど大きなポジションを取る
-    const confidenceFactor = 0.5 + (confidence / 100) * 0.5; // 信頼度50%をベースに調整
-    return positionSize * confidenceFactor;
+    // 信頼度が高いほど大きなポジションを取る（より強力に調整）
+    // 60%を基準とし、それより高ければ増加、低ければ大幅に減少
+    const baseConfidence = 60;
+    if (confidence < baseConfidence) {
+      // 60%未満は大幅に縮小
+      const reductionFactor = Math.pow(confidence / baseConfidence, 2); // Quadratic reduction
+      return positionSize * reductionFactor * 0.5; // Additional 50% reduction for safety
+    } else {
+      // 60%以上は線形増加
+      const confidenceFactor = 0.5 + ((confidence - baseConfidence) / 40) * 0.7; // 0.5 to 1.2 range
+      return positionSize * confidenceFactor;
+    }
   }
 
   /**

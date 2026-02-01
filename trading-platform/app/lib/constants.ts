@@ -10,10 +10,10 @@ export const FORECAST_CONE = {
 
 export const RSI_CONFIG = {
     DEFAULT_PERIOD: 14,
-    OVERSOLD: 30,
-    OVERBOUGHT: 70,
-    EXTREME_OVERSOLD: 20,
-    EXTREME_OVERBOUGHT: 80,
+    OVERSOLD: 35, // Adjusted from 30 for better entry signals
+    OVERBOUGHT: 65, // Adjusted from 70 for better exit signals
+    EXTREME_OVERSOLD: 25, // Adjusted from 20 for more reliable signals
+    EXTREME_OVERBOUGHT: 75, // Adjusted from 80 for more reliable signals
     PERIOD_OPTIONS: [10, 14, 20],
 };
 
@@ -39,10 +39,11 @@ export const OPTIMIZATION = {
 };
 
 export const SIGNAL_THRESHOLDS = {
-    MIN_CONFIDENCE: 50,
-    HIGH_CONFIDENCE: 80,
-    STRONG_CORRELATION: 0.7,
+    MIN_CONFIDENCE: 60, // Increased from 50 to improve signal quality
+    HIGH_CONFIDENCE: 85, // Increased from 80 for stronger signals
+    STRONG_CORRELATION: 0.75, // Increased from 0.7 for better market sync
     STRONG_MOMENTUM: 2.0,
+    MEDIUM_CONFIDENCE: 70, // New threshold for medium confidence signals
 };
 
 export const RISK_MANAGEMENT = {

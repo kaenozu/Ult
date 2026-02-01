@@ -43,24 +43,31 @@ export class SignalGenerationService {
       prediction.ensemblePrediction
     );
 
+    // Apply signal quality thresholds for better accuracy
     const finalConfidence = Math.min(
-      Math.max(prediction.confidence + confidenceAdj, PRICE_CALCULATION.MIN_CONFIDENCE), 
+      Math.max(prediction.confidence + confidenceAdj, SIGNAL_THRESHOLDS.MIN_CONFIDENCE), 
       PRICE_CALCULATION.MAX_CONFIDENCE
     );
-    const isStrong = finalConfidence >= 80;
+    const isStrong = finalConfidence >= SIGNAL_THRESHOLDS.HIGH_CONFIDENCE;
 
-    // 2. シグナルタイプの決定
+    // 2. シグナルタイプの決定 (improved thresholds for better accuracy)
     let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-    if (prediction.ensemblePrediction > 1.0 && finalConfidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) {
+    // Use dynamic thresholds based on confidence level
+    const predictionThreshold = finalConfidence >= SIGNAL_THRESHOLDS.HIGH_CONFIDENCE ? 0.8 : 1.2;
+    const minConfidenceForSignal = Math.max(BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE, SIGNAL_THRESHOLDS.MIN_CONFIDENCE);
+    
+    if (prediction.ensemblePrediction > predictionThreshold && finalConfidence >= minConfidenceForSignal) {
       type = 'BUY';
-    } else if (prediction.ensemblePrediction < -1.0 && finalConfidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) {
+    } else if (prediction.ensemblePrediction < -predictionThreshold && finalConfidence >= minConfidenceForSignal) {
       type = 'SELL';
     }
 
     // 3. 自己矯正 (Self-Correction): 誤差係数による補正と、ターゲット価格の再計算
     const errorFactor = baseAnalysis.predictionError || 1.0;
     const ERROR_THRESHOLD = 1.2;
-    const TARGET_MULTIPLIER = 1.5;
+    // Improved target multiplier based on confidence
+    const TARGET_MULTIPLIER = finalConfidence >= SIGNAL_THRESHOLDS.HIGH_CONFIDENCE ? 2.0 : 1.5;
+    const STOP_LOSS_RATIO = 0.5; // Stop loss is 50% of target distance
 
     // ML予測に基づいた動的なターゲット価格の算出
     const atr = baseAnalysis.atr || (currentPrice * PRICE_CALCULATION.DEFAULT_ATR_RATIO);
@@ -68,20 +75,22 @@ export class SignalGenerationService {
     let stopLoss = currentPrice;
 
     if (type === 'BUY') {
-      // 予測騰落率かATRの大きい方を採用
+      // 予測騰落率かATRの大きい方を採用し、信頼度により調整
+      const confidenceMultiplier = 0.7 + (finalConfidence / 100) * 0.6; // 0.7 to 1.3
       const move = Math.max(
         currentPrice * (Math.abs(prediction.ensemblePrediction) / 100), 
         atr * TARGET_MULTIPLIER
-      );
+      ) * confidenceMultiplier;
       targetPrice = currentPrice + move;
-      stopLoss = currentPrice - (move / 2);
+      stopLoss = currentPrice - (move * STOP_LOSS_RATIO);
     } else if (type === 'SELL') {
+      const confidenceMultiplier = 0.7 + (finalConfidence / 100) * 0.6;
       const move = Math.max(
         currentPrice * (Math.abs(prediction.ensemblePrediction) / 100), 
         atr * TARGET_MULTIPLIER
-      );
+      ) * confidenceMultiplier;
       targetPrice = currentPrice - move;
-      stopLoss = currentPrice + (move / 2);
+      stopLoss = currentPrice + (move * STOP_LOSS_RATIO);
     } else {
       // HOLDの場合はターゲットを現在値に固定
       targetPrice = currentPrice;
@@ -266,7 +275,7 @@ export class SignalGenerationService {
       );
 
       // 時間枠間の整合性チェック
-      const alignmentBonus = Math.floor(mtfAnalysis.alignment * 20); // 最大+20%の信頼度ボーナス
+      const alignmentBonus = Math.floor(mtfAnalysis.alignment * 25); // Increased from 20 to 25
       const enhancedConfidence = Math.min(baseSignal.confidence + alignmentBonus, 100);
 
       // 乖離が検出された場合は信頼度を下げる
@@ -275,19 +284,19 @@ export class SignalGenerationService {
       let additionalReason = '';
 
       if (mtfAnalysis.divergenceDetected) {
-        finalConfidence = Math.floor(enhancedConfidence * 0.8);
+        finalConfidence = Math.floor(enhancedConfidence * 0.75); // More conservative from 0.8
         additionalReason += ' ⚠ 複数時間枠間で乖離が検出されています。';
         
-        // 乖離が大きい場合はHOLDに変更
-        if (mtfAnalysis.alignment < 0.5) {
+        // 乖離が大きい場合はHOLDに変更（より保守的に）
+        if (mtfAnalysis.alignment < 0.6) { // Increased from 0.5
           finalType = 'HOLD';
           additionalReason += ' 時間枠間の整合性が低いため、様子見を推奨します。';
         }
       } else {
         // 時間枠が整合している場合、推奨シグナルを使用
-        if (mtfAnalysis.primarySignal !== 'HOLD' && mtfAnalysis.confidence >= 70) {
+        if (mtfAnalysis.primarySignal !== 'HOLD' && mtfAnalysis.confidence >= 75) { // Increased from 70
           finalType = mtfAnalysis.primarySignal;
-          additionalReason += ` ✓ 複数時間枠で整合性が確認されました（整合率: ${(mtfAnalysis.alignment * 100).toFixed(0)}%）。`;
+          additionalReason += ` ✓ 複数時間枠で高整合性確認（整合率: ${(mtfAnalysis.alignment * 100).toFixed(0)}%）。`;
         }
       }
 
@@ -308,6 +317,110 @@ export class SignalGenerationService {
       console.error('Multi-timeframe analysis failed:', error);
       return baseSignal;
     }
+  }
+
+  /**
+   * エントリータイミングの最適性を評価
+   * 
+   * より良いエントリータイミングのために複数要因を評価します
+   */
+  evaluateEntryTiming(
+    currentPrice: number,
+    indicators: any,
+    signal: Signal
+  ): {
+    score: number; // 0-100のスコア（高いほど良いタイミング）
+    recommendation: 'IMMEDIATE' | 'WAIT' | 'AVOID';
+    reasons: string[];
+  } {
+    let score = 50; // Base score
+    const reasons: string[] = [];
+
+    // RSIによる評価
+    if (indicators.rsi && indicators.rsi.length > 0) {
+      const currentRSI = indicators.rsi[indicators.rsi.length - 1];
+      if (signal.type === 'BUY' && currentRSI < 40) {
+        score += 15;
+        reasons.push('RSIが良好な買いゾーン');
+      } else if (signal.type === 'SELL' && currentRSI > 60) {
+        score += 15;
+        reasons.push('RSIが良好な売りゾーン');
+      } else if (signal.type === 'BUY' && currentRSI > 65) {
+        score -= 20;
+        reasons.push('RSI過熱気味、タイミング待ちを推奨');
+      } else if (signal.type === 'SELL' && currentRSI < 35) {
+        score -= 20;
+        reasons.push('RSI売られ過ぎ、タイミング待ちを推奨');
+      }
+    }
+
+    // MACDヒストグラムによる評価
+    if (indicators.macd && indicators.macd.histogram && indicators.macd.histogram.length > 1) {
+      const currentHist = indicators.macd.histogram[indicators.macd.histogram.length - 1];
+      const previousHist = indicators.macd.histogram[indicators.macd.histogram.length - 2];
+      
+      if (signal.type === 'BUY' && currentHist > previousHist && currentHist > 0) {
+        score += 10;
+        reasons.push('MACDモメンタム加速中');
+      } else if (signal.type === 'SELL' && currentHist < previousHist && currentHist < 0) {
+        score += 10;
+        reasons.push('MACDモメンタム減速中');
+      }
+    }
+
+    // ボラティリティによる評価
+    if (signal.atr) {
+      const atrPercent = (signal.atr / currentPrice) * 100;
+      if (atrPercent < 1.5) {
+        score -= 10;
+        reasons.push('ボラティリティ低く、動きづらい可能性');
+      } else if (atrPercent > 5) {
+        score -= 15;
+        reasons.push('ボラティリティ過大、リスク高');
+      } else if (atrPercent >= 2 && atrPercent <= 4) {
+        score += 10;
+        reasons.push('適度なボラティリティ');
+      }
+    }
+
+    // 信頼度による評価
+    if (signal.confidence >= SIGNAL_THRESHOLDS.HIGH_CONFIDENCE) {
+      score += 20;
+      reasons.push('高信頼度シグナル');
+    } else if (signal.confidence < SIGNAL_THRESHOLDS.MEDIUM_CONFIDENCE) {
+      score -= 15;
+      reasons.push('信頼度がやや低い');
+    }
+
+    // 市場相関による評価
+    if (signal.marketContext && Math.abs(signal.marketContext.correlation) > SIGNAL_THRESHOLDS.STRONG_CORRELATION) {
+      const isAligned = 
+        (signal.type === 'BUY' && signal.marketContext.indexTrend === 'UP') ||
+        (signal.type === 'SELL' && signal.marketContext.indexTrend === 'DOWN');
+      
+      if (isAligned) {
+        score += 15;
+        reasons.push('市場トレンドと整合');
+      } else {
+        score -= 10;
+        reasons.push('市場トレンドと逆行');
+      }
+    }
+
+    // 最終スコアを0-100に制限
+    score = Math.max(0, Math.min(100, score));
+
+    // 推奨を決定
+    let recommendation: 'IMMEDIATE' | 'WAIT' | 'AVOID';
+    if (score >= 70) {
+      recommendation = 'IMMEDIATE';
+    } else if (score >= 50) {
+      recommendation = 'WAIT';
+    } else {
+      recommendation = 'AVOID';
+    }
+
+    return { score, recommendation, reasons };
   }
 }
 
