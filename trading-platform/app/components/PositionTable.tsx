@@ -2,7 +2,7 @@
 
 import { Position } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
 const PositionRow = memo(({
   position,
@@ -70,13 +70,21 @@ interface PositionTableProps {
 }
 
 export const PositionTable = memo(({ positions, onClose }: PositionTableProps) => {
-  const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-  const totalProfit = positions.reduce((sum, p) => {
-    const pnl = p.side === 'LONG' 
-      ? (p.currentPrice - p.avgPrice) * p.quantity
-      : (p.avgPrice - p.currentPrice) * p.quantity;
-    return sum + pnl;
-  }, 0);
+  // Memoize calculations for performance
+  const totalValue = useMemo(() => 
+    positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0), 
+    [positions]
+  );
+
+  const totalProfit = useMemo(() => 
+    positions.reduce((sum, p) => {
+      const pnl = p.side === 'LONG' 
+        ? (p.currentPrice - p.avgPrice) * p.quantity
+        : (p.avgPrice - p.currentPrice) * p.quantity;
+      return sum + pnl;
+    }, 0),
+    [positions]
+  );
 
   return (
     <div className="flex-1 overflow-auto">
