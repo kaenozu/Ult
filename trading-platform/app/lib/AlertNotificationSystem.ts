@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import type { AlertData, NotificationChannelConfig } from '../types';
 
 export interface AlertCondition {
   id: string;
@@ -18,7 +19,7 @@ export interface Alert {
   severity: 'info' | 'warning' | 'critical';
   timestamp: number;
   acknowledged: boolean;
-  data?: any;
+  data?: AlertData;
 }
 
 export type NotificationChannelType = 'email' | 'sms' | 'push' | 'webhook' | 'slack';
@@ -26,7 +27,7 @@ export type NotificationChannelType = 'email' | 'sms' | 'push' | 'webhook' | 'sl
 export interface NotificationChannel {
   type: NotificationChannelType;
   enabled: boolean;
-  config: any;
+  config: NotificationChannelConfig;
 }
 
 export class AlertNotificationSystem extends EventEmitter {
@@ -104,7 +105,7 @@ export class AlertNotificationSystem extends EventEmitter {
   }
 
   // Alert Management
-  createAlert(conditionId: string, message: string, severity: 'info' | 'warning' | 'critical', data?: any): string {
+  createAlert(conditionId: string, message: string, severity: 'info' | 'warning' | 'critical', data?: AlertData): string {
     const id = this.generateId();
     const alert: Alert = {
       id,
@@ -156,7 +157,7 @@ export class AlertNotificationSystem extends EventEmitter {
   }
 
   // Channel Management
-  configureChannel(type: NotificationChannelType, config: any): void {
+  configureChannel(type: NotificationChannelType, config: NotificationChannelConfig): void {
     const channel = this.channels.get(type);
     if (channel) {
       channel.config = config;
@@ -191,7 +192,7 @@ export class AlertNotificationSystem extends EventEmitter {
     });
   }
 
-  private sendNotification(type: NotificationChannelType, alert: Alert, config: any): void {
+  private sendNotification(type: NotificationChannelType, alert: Alert, config: NotificationChannelConfig): void {
     // Emit event for UI to handle
     this.emit('notification', { type, alert, config });
 

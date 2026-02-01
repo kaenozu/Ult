@@ -40,7 +40,7 @@ interface TradingStore {
   toggleConnection: () => void;
 
   // Market Data (Mock for compatibility)
-  batchUpdateStockData: (data: any[]) => void;
+  batchUpdateStockData: (data: Stock[]) => void;
 }
 
 // Helper for portfolio stats with caching
@@ -246,14 +246,17 @@ export const useTradingStore = create<TradingStore>()(
          const price = order.price;
          const orderCost = price * order.quantity;
 
+         // Determine position side based on order side
+         const isLongPosition = order.side === 'BUY' || order.side === 'LONG';
+
          // Basic validation
-         if ((order.side === 'BUY' || order.side === 'LONG' as any) && portfolio.cash < orderCost) {
+         if (isLongPosition && portfolio.cash < orderCost) {
            return state; // Insufficient funds
          }
 
          // Update cash
          let newCash = portfolio.cash;
-         if (order.side === 'BUY' || order.side === 'LONG' as any) {
+         if (isLongPosition) {
            newCash -= orderCost;
          } else {
            // Short selling logic often requires margin, keeping simple here
@@ -264,7 +267,7 @@ export const useTradingStore = create<TradingStore>()(
          const newPosition: Position = {
            symbol: order.symbol,
            name: order.symbol,
-           side: (order.side === 'BUY' || order.side === 'LONG' as any) ? 'LONG' : 'SHORT',
+           side: isLongPosition ? 'LONG' : 'SHORT',
            quantity: order.quantity,
            avgPrice: price,
            currentPrice: price,
