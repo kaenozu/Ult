@@ -4,16 +4,18 @@
  * This server provides real-time data streaming for market data, signals, and alerts.
  *
  * Usage:
- *   node scripts/websocket-server.js
- *   or with custom port: PORT=3001 node scripts/websocket-server.js
+ *   npx ts-node scripts/websocket-server.ts
+ *   or with custom port: PORT=3001 npx ts-node scripts/websocket-server.ts
  */
 
 import { WebSocketServer, WebSocket } from 'ws';
-import { createServer } from 'http';
+import { createServer, IncomingMessage } from 'http';
+import { URL } from 'url';
 
 // Configuration
 const PORT = parseInt(process.env.WS_PORT || process.env.PORT || '3001', 10);
 const HOST = process.env.WS_HOST || '0.0.0.0';
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
 
 // Types
 interface WebSocketMessage {
@@ -30,7 +32,9 @@ interface ClientInfo {
 
 // Create HTTP server for WebSocket upgrade
 const server = createServer();
-const wss = new WebSocketServer({ server, path: '/ws' });
+// 🛡️ Sentinel: Enforce Origin validation (CSWSH protection)
+// Removed 'server' option to handle upgrade manually
+const wss = new WebSocketServer({ noServer: true, path: '/ws' });
 
 // Track connected clients
 const clients = new Map<string, ClientInfo>();
@@ -84,6 +88,45 @@ function sendToClient(clientId: string, message: WebSocketMessage): boolean {
 
   return false;
 }
+
+// 🛡️ Sentinel: Handle upgrade with Origin validation
+server.on('upgrade', (request: IncomingMessage, socket, head) => {
+  const origin = request.headers.origin;
+  let allowed = false;
+
+  // Validate path
+  const protocol = request.headers['x-forwarded-proto'] || 'http';
+  const host = request.headers.host || `localhost:${PORT}`;
+  const { pathname } = new URL(request.url || '/', `${protocol}://${host}`);
+
+  if (pathname !== '/ws') {
+    socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+
+  // Validate Origin
+  if (!origin) {
+    // Block missing origin (common in scripts/bots)
+    console.log('[WebSocket] Blocked connection with missing Origin header');
+    allowed = false;
+  } else {
+    allowed = ALLOWED_ORIGINS.includes(origin);
+    if (!allowed) {
+      console.log(`[WebSocket] Blocked connection from unauthorized origin: ${origin}`);
+    }
+  }
+
+  if (!allowed) {
+    socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+    socket.destroy();
+    return;
+  }
+
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
 
 /**
  * Handle new WebSocket connections
@@ -150,23 +193,27 @@ wss.on('connection', (ws: WebSocket) => {
       }
     } catch (error) {
       console.error(`[WebSocket] Error parsing message from ${clientId}:`, error);
+      ws.send(JSON.stringify({
+        type: 'error',
+        data: { message: 'Invalid message format' },
+        timestamp: Date.now(),
+      }));
     }
   });
 
-  // Handle connection close
+  // Handle client disconnect
   ws.on('close', (code: number, reason: Buffer) => {
-    clients.delete(clientId);
     console.log(`[WebSocket] Client disconnected: ${clientId} (code: ${code}, reason: ${reason.toString()})`);
+    clients.delete(clientId);
     console.log(`[WebSocket] Total clients: ${clients.size}`);
   });
 
-  // Handle connection errors
+  // Handle errors
   ws.on('error', (error: Error) => {
     console.error(`[WebSocket] Error for client ${clientId}:`, error);
-    clients.delete(clientId);
   });
 
-  // Handle pong responses (for heartbeat)
+  // Setup heartbeat
   ws.on('pong', () => {
     const clientInfo = clients.get(clientId);
     if (clientInfo) {
@@ -175,41 +222,29 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
-/**
- * Heartbeat check to detect stale connections
- */
+// Heartbeat interval to detect dead connections
 const heartbeatInterval = setInterval(() => {
-  wss.clients.forEach((ws) => {
-    const clientInfo = Array.from(clients.values()).find(
-      (info) => info.ws === ws
-    );
-
-    if (clientInfo) {
-      if (!clientInfo.isAlive) {
-        console.log(`[WebSocket] Terminating stale connection: ${clientInfo.id}`);
-        ws.terminate();
-        clients.delete(clientInfo.id);
-        return;
-      }
-
-      clientInfo.isAlive = false;
-      ws.ping();
+  clients.forEach((clientInfo, clientId) => {
+    if (!clientInfo.isAlive) {
+      console.log(`[WebSocket] Terminating inactive client: ${clientId}`);
+      clientInfo.ws.terminate();
+      clients.delete(clientId);
+      return;
     }
+
+    clientInfo.isAlive = false;
+    clientInfo.ws.ping();
   });
 }, HEARTBEAT_INTERVAL);
 
-/**
- * Handle server shutdown gracefully
- */
-function shutdown() {
-  console.log('[WebSocket] Shutting down server...');
-
-  // Stop heartbeat
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n[WebSocket] Shutting down server...');
   clearInterval(heartbeatInterval);
 
   // Close all client connections
-  wss.clients.forEach((ws) => {
-    ws.close(1000, 'Server shutting down');
+  clients.forEach((clientInfo) => {
+    clientInfo.ws.close(1000, 'Server shutting down');
   });
 
   // Close server
@@ -217,47 +252,13 @@ function shutdown() {
     console.log('[WebSocket] Server closed');
     process.exit(0);
   });
-
-  // Force shutdown after 5 seconds
-  setTimeout(() => {
-    console.error('[WebSocket] Forced shutdown');
-    process.exit(1);
-  }, 5000);
-}
-
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
-
-/**
- * Start the server
- */
-server.listen(PORT, HOST, () => {
-  console.log('');
-  console.log('==========================================');
-  console.log('  Trader Pro WebSocket Server');
-  console.log('==========================================');
-  console.log(`  Host: ${HOST}`);
-  console.log(`  Port: ${PORT}`);
-  console.log(`  Path: /ws`);
-  console.log(`  URL: ws://${HOST}:${PORT}/ws`);
-  console.log('==========================================');
-  console.log('');
 });
 
-/**
- * Example: Broadcast market data (for testing)
- * Uncomment to enable periodic test broadcasts
- */
-// const TEST_BROADCAST_INTERVAL = 5000; // 5 seconds
-// setInterval(() => {
-//   if (clients.size > 0) {
-//     broadcast({
-//       type: 'market_data',
-//       data: {
-//         symbol: 'AAPL',
-//         price: 150 + Math.random() * 10,
-//         change: (Math.random() - 0.5) * 5,
-//       },
-//     });
-//   }
-// }, TEST_BROADCAST_INTERVAL);
+// Start server
+server.listen(PORT, HOST, () => {
+  console.log(`[WebSocket] Server running on ws://${HOST}:${PORT}/ws`);
+  console.log(`[WebSocket] Allowed origins: ${ALLOWED_ORIGINS.join(', ')}`);
+});
+
+// Export for testing
+export { broadcast, sendToClient, wss };

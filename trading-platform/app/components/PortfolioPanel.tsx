@@ -18,7 +18,7 @@ interface PortfolioPanelProps {
   detailed?: boolean;
 }
 
-export function PortfolioPanel({ portfolio, onClosePosition, detailed = false }: PortfolioPanelProps) {
+export const PortfolioPanel = React.memo(function PortfolioPanel({ portfolio, onClosePosition, detailed = false }: PortfolioPanelProps) {
   if (!portfolio) {
     return (
       <Card className="bg-[#1e293b] border-[#334155]">

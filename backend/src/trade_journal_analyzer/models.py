@@ -7,6 +7,7 @@ Defines data models for journal analysis.
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import List
 
 
 class TradeStatus(Enum):
@@ -28,13 +29,13 @@ class JournalEntry:
     profit_percent: float
     signal_type: str  # MANUAL, RSI, MACD, etc.
     indicator: str
-    status: str  # OPEN, CLOSED, CANCELLED
+    status: TradeStatus  # Changed from str to TradeStatus Enum
     notes: str = ""
 
     @property
     def is_closed(self) -> bool:
         """Check if trade is closed"""
-        return self.status == "CLOSED"
+        return self.status == TradeStatus.CLOSED
 
     @property
     def is_profitable(self) -> bool:
@@ -62,7 +63,7 @@ class BiasAlert:
     bias_type: str  # overtrading, chasing_losses, revenge_trading, etc.
     severity: str  # low, medium, high
     message: str
-    recommendations: list[str]
+    recommendations: List[str]  # Changed from list[str] to List[str] for consistency
 
     def __str__(self) -> str:
         return f"[{self.severity.upper()}] {self.bias_type}: {self.message}"
