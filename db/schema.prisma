@@ -1,0 +1,141 @@
+// This is your Prisma schema file for future SQL database implementation
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Can be changed to "mysql" or "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Market Data Models
+// ============================================================================
+
+model MarketData {
+  id        String   @id @default(cuid())
+  symbol    String
+  date      DateTime
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  volume    BigInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([symbol, date])
+  @@index([symbol])
+  @@index([date])
+  @@map("market_data")
+}
+
+// ============================================================================
+// Trade Journal Models
+// ============================================================================
+
+model TradeJournal {
+  id             String       @id @default(cuid())
+  timestamp      DateTime
+  symbol         String
+  entryPrice     Float        @map("entry_price")
+  exitPrice      Float?       @map("exit_price")
+  profit         Float?
+  profitPercent  Float?       @map("profit_percent")
+  signalType     String       @map("signal_type")
+  indicator      String
+  status         TradeStatus  @default(OPEN)
+  notes          String?      @db.Text
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([symbol])
+  @@index([timestamp])
+  @@index([status])
+  @@map("trade_journal")
+}
+
+enum TradeStatus {
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+// ============================================================================
+// Supply/Demand Zone Models
+// ============================================================================
+
+model SupplyDemandZone {
+  id        String   @id @default(cuid())
+  symbol    String
+  price     Float
+  volume    BigInt
+  zoneType  ZoneType @map("zone_type")
+  strength  Float    // 0.0 to 1.0
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([symbol])
+  @@index([zoneType])
+  @@map("supply_demand_zones")
+}
+
+enum ZoneType {
+  SUPPORT
+  RESISTANCE
+}
+
+model BreakoutEvent {
+  id          String   @id @default(cuid())
+  symbol      String
+  direction   String   // "bullish" or "bearish"
+  price       Float
+  volume      BigInt
+  isConfirmed Boolean  @map("is_confirmed")
+  zoneId      String?  @map("zone_id")
+  timestamp   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([symbol])
+  @@index([timestamp])
+  @@map("breakout_events")
+}
+
+// ============================================================================
+// User Preferences & Settings (Future)
+// ============================================================================
+
+model UserPreference {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  key       String
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([userId])
+  @@map("user_preferences")
+}
+
+// ============================================================================
+// Cache Metadata
+// ============================================================================
+
+model CacheMetadata {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  symbol    String?
+  dataType  String   @map("data_type") // "ohlcv", "indicator", "prediction"
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([symbol])
+  @@index([dataType])
+  @@index([expiresAt])
+  @@map("cache_metadata")
+}
