@@ -1,7 +1,7 @@
 /**
  * Performance Monitor
  * 
- * Provides performance tracking and metrics collection for the ULT Trading Platform.
+ * Provides performance tracking and metrics collection for ULT Trading Platform.
  * Tracks render times, API calls, and other performance-critical operations.
  */
 
@@ -78,7 +78,7 @@ class PerformanceMonitor {
   /**
    * Record a performance metric
    */
-  private recordMetric(name: string, value: number): void {
+  recordMetric(name: string, value: number): void {
     if (!this.metrics.has(name)) {
       this.metrics.set(name, []);
     }
@@ -337,4 +337,3 @@ export function trackWebVitals() {
 if (typeof window !== 'undefined') {
   trackWebVitals();
 }
-

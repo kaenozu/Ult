@@ -150,7 +150,7 @@ export function useChartAnalysis({
             if (lastIdx + i < extendedData.labels.length) {
                 const timeRatio = i / steps;
                 const centerPrice = currentPrice * (1 + (momentum * timeRatio));
-                const spread = (stockATR * timeRatio) * confidenceFactor;
+                const spread = (stockATR * timeRatio) * (confidenceUncertainty * errorFactor);
                 targetArr[lastIdx + i] = centerPrice + spread;
                 stopArr[lastIdx + i] = centerPrice - spread;
             }

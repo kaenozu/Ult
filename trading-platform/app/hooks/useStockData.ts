@@ -18,7 +18,7 @@ export function useStockData() {
   const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [interval, setInterval] = useState<string>('5m'); // Add interval state
+  const [timeFrame, setTimeFrame] = useState<string>('5m'); // Renamed from interval to avoid shadowing
 
   // AbortController for canceling pending requests on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -54,17 +54,19 @@ export function useStockData() {
     setChartSignal(null);
 
     try {
-      // Parallel execution for Stock Data, Index Data, and Signals
       const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
 
       // Map UI interval names to API interval format
-      const apiInterval = interval === 'D' ? '1d' : interval.toLowerCase();
+      const apiInterval = timeFrame === 'D' ? '1d' : timeFrame.toLowerCase();
 
-      const [data, idxData, signalData] = await Promise.all([
-        fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval),
-        fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal, apiInterval),
-        fetchSignal(stock, controller.signal, apiInterval)
-      ]);
+      // 1. Kick off all requests in parallel
+      const stockDataPromise = fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval);
+      const indexDataPromise = fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal, apiInterval);
+      const signalPromise = fetchSignal(stock, controller.signal, apiInterval);
+
+      // 2. Await Critical Data (OHLCV) first
+      // We use Promise.all for stock and index because the chart needs both to render relative comparison properly
+      const [data, idxData] = await Promise.all([stockDataPromise, indexDataPromise]);
 
       if (controller.signal.aborted || !isMountedRef.current) return;
 
@@ -73,12 +75,23 @@ export function useStockData() {
         return;
       }
 
+      // 3. Render Chart immediately with available data
       setChartData(data);
       setIndexData(idxData);
-      setChartSignal(signalData);
+      setLoading(false); // Stop spinner here!
 
-      // 4. Background sync for long-term data (keep independent)
-      // This is for background calculations, so we don't await it
+      // 4. Handle Signal (Non-blocking)
+      try {
+        const signalData = await signalPromise;
+        if (!controller.signal.aborted && isMountedRef.current) {
+          setChartSignal(signalData);
+        }
+      } catch (signalErr) {
+        console.warn('Signal fetch failed (non-critical):', signalErr);
+        // Do not set global error, just log. The user still has the chart.
+      }
+
+      // 5. Background sync for long-term data (keep independent)
       fetchOHLCV(stock.symbol, stock.market, undefined, controller.signal, apiInterval).catch(e => {
         if (isMountedRef.current && !controller.signal.aborted) {
           console.warn('Background sync failed:', e);
@@ -96,10 +109,10 @@ export function useStockData() {
         setLoading(false);
       }
     }
-  }, [interval, watchlist]); // Add interval dependency so it refetches when interval changes
+  }, [timeFrame, watchlist]); // Add timeFrame dependency so it refetches when interval changes
 
-  const handleIntervalChange = useCallback((newInterval: string) => {
-    setInterval(newInterval);
+  const handleTimeFrameChange = useCallback((newTimeFrame: string) => {
+    setTimeFrame(newTimeFrame);
   }, []);
 
   // 1. Sync Store/Watchlist -> Local State
@@ -144,7 +157,7 @@ export function useStockData() {
     loading,
     error,
     handleStockSelect,
-    interval,
-    setInterval: handleIntervalChange
+    interval: timeFrame,
+    setInterval: handleTimeFrameChange
   };
 }

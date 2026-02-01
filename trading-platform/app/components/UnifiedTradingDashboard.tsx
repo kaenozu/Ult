@@ -14,12 +14,12 @@ import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/Tabs';
 import { cn } from '@/app/lib/utils';
-import { 
-  Play, 
-  Square, 
-  RotateCcw, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Play,
+  Square,
+  RotateCcw,
+  TrendingUp,
+  TrendingDown,
   AlertTriangle,
   Activity,
   Wallet,
@@ -66,19 +66,40 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSD');
 
-  // Format currency
-  const formatCurrency = (value: number) => {
+  // Format currency (memoized)
+  const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('ja-JP', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
     }).format(value);
-  };
+  }, []);
 
-  // Format percentage
-  const formatPercent = (value: number) => {
+  // Format percentage (memoized)
+  const formatPercent = useCallback((value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-  };
+  }, []);
+
+  // Memoize portfolio stats
+  const portfolioStats = useMemo(() => {
+    if (!portfolio) return null;
+
+    return {
+      totalValue: portfolio.totalValue,
+      totalPnL: portfolio.totalPnL,
+      totalPnLPercent: portfolio.totalPnLPercent,
+      dailyPnL: portfolio.dailyPnL
+    };
+  }, [portfolio]);
+
+  // Memoize risk level
+  const riskLevel = useMemo(() => {
+    if (!riskMetrics) return '-';
+
+    if (riskMetrics.currentDrawdown > 10) return 'HIGH';
+    if (riskMetrics.currentDrawdown > 5) return 'MEDIUM';
+    return 'LOW';
+  }, [riskMetrics]);
 
   return (
     <div className="min-h-screen bg-[#0a0e14] text-white">
@@ -89,7 +110,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
               Pro Trading Platform
             </h1>
-            <Badge 
+            <Badge
               variant={isRunning ? 'success' : 'secondary'}
               className={isRunning ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}
             >
@@ -109,7 +130,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
                 <span>{error.message}</span>
               </div>
             )}
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -201,10 +222,9 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Risk Level</p>
-                  <p className={`text-2xl font-bold ${
-                    riskMetrics && riskMetrics.currentDrawdown > 10 ? 'text-red-400' : 
-                    riskMetrics && riskMetrics.currentDrawdown > 5 ? 'text-yellow-400' : 'text-green-400'
-                  }`}>
+                  <p className={`text-2xl font-bold ${riskMetrics && riskMetrics.currentDrawdown > 10 ? 'text-red-400' :
+                      riskMetrics && riskMetrics.currentDrawdown > 5 ? 'text-yellow-400' : 'text-green-400'
+                    }`}>
                     {riskMetrics ? `${riskMetrics.currentDrawdown.toFixed(1)}%` : '-'}
                   </p>
                 </div>
@@ -258,8 +278,8 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
                           <span className="font-bold text-white">{sig.symbol}</span>
                           <span className={cn(
                             "ml-2 text-xs px-2 py-0.5 rounded",
-                            sig.direction === 'BUY' ? "bg-green-500/20 text-green-400" : 
-                            sig.direction === 'SELL' ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"
+                            sig.direction === 'BUY' ? "bg-green-500/20 text-green-400" :
+                              sig.direction === 'SELL' ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"
                           )}>
                             {sig.direction}
                           </span>
@@ -276,10 +296,10 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
           </TabsContent>
 
           <TabsContent value="portfolio">
-            <PortfolioPanel 
-              portfolio={portfolio} 
+            <PortfolioPanel
+              portfolio={portfolio}
               onClosePosition={closePosition}
-              detailed 
+              detailed
             />
           </TabsContent>
 
@@ -294,8 +314,8 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
                         <span className="font-bold text-white text-lg">{sig.symbol}</span>
                         <span className={cn(
                           "text-xs px-2 py-1 rounded",
-                          sig.direction === 'BUY' ? "bg-green-500/20 text-green-400" : 
-                          sig.direction === 'SELL' ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"
+                          sig.direction === 'BUY' ? "bg-green-500/20 text-green-400" :
+                            sig.direction === 'SELL' ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"
                         )}>
                           {sig.direction}
                         </span>
@@ -336,7 +356,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
           </TabsContent>
 
           <TabsContent value="market">
-            <MarketDataPanel 
+            <MarketDataPanel
               symbols={['BTCUSD', 'ETHUSD', 'SOLUSD', 'ADAUSD']}
               selectedSymbol={selectedSymbol}
               onSelectSymbol={setSelectedSymbol}
@@ -350,6 +370,6 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
       </main>
     </div>
   );
-}
+});
 
 export default UnifiedTradingDashboard;

@@ -10,7 +10,7 @@ This module tests the Trade Journal Analyzer which handles:
 
 import pytest
 from datetime import datetime, timedelta
-from trade_journal_analyzer import TradeJournalAnalyzer, JournalEntry, TradePattern, BiasAlert
+from trade_journal_analyzer import TradeJournalAnalyzer, JournalEntry
 
 
 class TestTradeJournalAnalyzer:

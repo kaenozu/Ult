@@ -278,8 +278,8 @@ class UserEducationModuleService {
 
     // 学習時間の計算（簡易版）
     const totalLearningTime = completedModules.reduce((sum, progress) => {
-      const module = this.getLearningModule(progress.moduleId);
-      return sum + (module?.duration || 0);
+      const learningModule = this.getLearningModule(progress.moduleId);
+      return sum + (learningModule?.duration || 0);
     }, 0);
 
     // 平均クイズスコア
@@ -294,9 +294,9 @@ class UserEducationModuleService {
     // 最も学習したカテゴリ
     const categoryCount: Record<string, number> = {};
     for (const progress of completedModules) {
-      const module = this.getLearningModule(progress.moduleId);
-      if (module) {
-        categoryCount[module.category] = (categoryCount[module.category] || 0) + 1;
+      const learningModule = this.getLearningModule(progress.moduleId);
+      if (learningModule) {
+        categoryCount[learningModule.category] = (categoryCount[learningModule.category] || 0) + 1;
       }
     }
     const topCategories = Object.entries(categoryCount)
