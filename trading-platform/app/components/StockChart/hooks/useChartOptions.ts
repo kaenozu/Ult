@@ -32,13 +32,6 @@ export const useChartOptions = ({
 
     const currentPrice = data[data.length - 1].close;
 
-    // デバッグログ
-    console.log('[Chart Y-Axis]', {
-      currentPrice,
-      calculatedMin: currentPrice * 0.985,
-      calculatedMax: currentPrice * 1.015
-    });
-
     // 現在価格を中心に±1.5%の固定範囲を設定
     return {
       min: currentPrice * 0.985,
