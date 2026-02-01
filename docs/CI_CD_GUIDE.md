@@ -38,6 +38,7 @@ graph TB
 | ワークフロー | ファイル | 実行条件 | 所要時間 | 説明 |
 |------------|---------|---------|---------|------|
 | CI | `ci.yml` | Push/PR | 10-15分 | 統合パイプライン |
+| **Quality Gates** | `quality-gates.yml` | **PR** | **8-12分** | **品質ゲート統合チェック** |
 | Lint | `lint.yml` | Push/PR | 2-3分 | ESLint + 型チェック |
 | Test | `test.yml` | Push/PR | 3-5分 | 単体テスト |
 | E2E | `e2e.yml` | Push/PR | 5-8分 | E2Eテスト |
@@ -50,7 +51,58 @@ graph TB
 
 ## 各ワークフローの詳細
 
-### 1. CI Workflow (`ci.yml`)
+### 1. Quality Gates Workflow (`quality-gates.yml`) ⭐ NEW
+
+**目的**: PR の品質基準を自動的に検証し、マージ前に品質を保証
+
+**実行内容**:
+1. **テストカバレッジチェック**: ≥80%（lines, branches, functions, statements）
+2. **TypeScript 型チェック**: エラー 0 件
+3. **ESLint チェック**: エラー 0 件
+4. **セキュリティスキャン**: High/Critical 脆弱性 0 件
+5. **バンドルサイズ分析**: ビルドサイズの監視
+
+**品質基準（必須）**:
+- ✅ Test Coverage ≥ 80%
+- ✅ TypeScript errors = 0
+- ✅ ESLint errors = 0
+- ✅ High/Critical vulnerabilities = 0
+- ✅ Build succeeds
+
+**成果物**:
+- 品質レポート（`quality-report.md`）
+- カバレッジレポート（HTML/LCOV）
+
+**ローカル実行**:
+```bash
+cd trading-platform
+
+# 1. カバレッジチェック
+npm run test:coverage
+
+# 2. 型チェック
+npx tsc --noEmit
+
+# 3. Lint チェック
+npm run lint
+
+# 4. セキュリティチェック
+npm audit --audit-level=high
+
+# 5. ビルドチェック
+npm run build
+```
+
+**失敗時の対処**:
+- カバレッジ不足: テストを追加して 80% 以上を達成
+- 型エラー: TypeScript エラーをすべて修正
+- Lint エラー: `npm run lint:fix` で自動修正
+- 脆弱性: `npm audit fix` で修正、または手動対応
+- ビルド失敗: エラーメッセージを確認して修正
+
+---
+
+### 2. CI Workflow (`ci.yml`)
 
 **目的**: 全ワークフローを統合し、PR マージの品質を保証
 
@@ -64,7 +116,7 @@ graph TB
 
 **成功条件**: すべてのサブワークフローが成功
 
-### 2. Lint Workflow (`lint.yml`)
+### 3. Lint Workflow (`lint.yml`)
 
 **目的**: コード品質とスタイルの一貫性を確保
 
@@ -79,7 +131,7 @@ npm run lint
 npx tsc --noEmit
 ```
 
-### 3. Test Workflow (`test.yml`)
+### 4. Test Workflow (`test.yml`)
 
 **目的**: 単体テストとコードカバレッジの測定
 
@@ -96,7 +148,7 @@ npm run test:coverage
 
 **カバレッジ目標**: 80%以上
 
-### 4. E2E Workflow (`e2e.yml`)
+### 5. E2E Workflow (`e2e.yml`)
 
 **目的**: ユーザーフローの動作確認
 
@@ -122,7 +174,7 @@ npm run test:e2e:ui
 - WebSocket 耐久性
 - モンキーテスト
 
-### 5. Backend Workflow (`backend.yml`)
+### 6. Backend Workflow (`backend.yml`)
 
 **目的**: Python バックエンドの品質保証
 
@@ -140,7 +192,7 @@ cd backend
 python -m pytest tests/ -v --cov=src
 ```
 
-### 6. Build Workflow (`build.yml`)
+### 7. Build Workflow (`build.yml`)
 
 **目的**: 本番ビルドの成功を保証
 
@@ -155,7 +207,7 @@ cd trading-platform
 npm run build
 ```
 
-### 7. Security Workflow (`security.yml`)
+### 8. Security Workflow (`security.yml`)
 
 **目的**: 依存関係の脆弱性検出
 
@@ -179,7 +231,7 @@ pip install safety
 safety check --file requirements.txt
 ```
 
-### 8. Monkey Test Workflow (`monkey-test.yml`)
+### 9. Monkey Test Workflow (`monkey-test.yml`)
 
 **目的**: ランダム操作による予期しないバグの検出
 
@@ -208,24 +260,28 @@ node scripts/monkey-test.js
 
 ## ローカルでの実行
 
-### 全テストの実行
+### 全テストの実行（Quality Gates 相当）
 
 ```bash
-# 1. Lint
 cd trading-platform
+
+# 1. Lint
 npm run lint
 npx tsc --noEmit
 
-# 2. Test
+# 2. Test (with coverage ≥80%)
 npm run test:coverage
 
-# 3. Build
+# 3. Security
+npm audit --audit-level=high
+
+# 4. Build
 npm run build
 
-# 4. E2E
+# 5. E2E
 npm run test:e2e
 
-# 5. Backend
+# 6. Backend
 cd ../backend
 python -m pytest tests/ -v --cov=src
 ```
@@ -330,8 +386,10 @@ npm run build
 - [ ] ローカルで `npm run lint` が成功する
 - [ ] ローカルで `npx tsc --noEmit` が成功する
 - [ ] ローカルで `npm test` が成功する
+- [ ] ローカルで `npm run test:coverage` が 80% 以上のカバレッジを達成
 - [ ] ローカルで `npm run build` が成功する
 - [ ] ローカルで `npm run test:e2e` が成功する
+- [ ] ローカルで `npm audit --audit-level=high` がクリーン
 - [ ] `.env.example` に必要な環境変数が記載されている
 - [ ] GitHub Secrets に必要な値が設定されている
 
@@ -367,16 +425,19 @@ npx husky add .git/hooks/pre-commit "npm run lint && npm test"
 - `fix/*`: バグ修正
 - `hotfix/*`: 緊急修正
 
-### 3. PR 作成前のチェック
+### 3. PR 作成前のチェック（Quality Gates）
 
 ```bash
-# 全チェックを一度に実行
+# 全チェックを一度に実行（Quality Gates 相当）
 cd trading-platform
 npm run lint && \
 npx tsc --noEmit && \
-npm test && \
+npm run test:coverage && \
+npm audit --audit-level=high && \
 npm run build && \
 npm run test:e2e
+
+echo "✅ All quality gates passed!"
 ```
 
 ### 4. CI の高速化
