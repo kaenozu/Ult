@@ -49,7 +49,7 @@ ULT Trading Platform への貢献に興味を持っていただき、ありが�
    # .env.local を編集して API キーを設定
    ```
 
-   > **⚠️ 重要: Lockfile ポリシー**
+   > **⚠️ 重要: lockfile ポリシー**
    > 
    > このプロジェクトでは、`trading-platform/package-lock.json` を唯一の正規lockfileとして使用します。
    > - ルートの `package-lock.json` は使用しません（削除済み）
