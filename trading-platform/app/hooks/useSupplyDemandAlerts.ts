@@ -58,10 +58,12 @@ export const useSupplyDemandAlerts = ({ data, signal, symbol }: UseSupplyDemandA
           approachingNow.add(level.price);
           
           // Only alert if this level wasn't previously being approached
+          // Note: Using TREND_REVERSAL type temporarily for approaching levels
+          // TODO: Consider adding LEVEL_APPROACHING type in future enhancement
           if (!previousApproachingRef.current.has(level.price)) {
             createStockAlert({
               symbol,
-              alertType: 'TREND_REVERSAL', // Using existing alert type for approaching levels
+              alertType: 'TREND_REVERSAL',
               details: {
                 price: level.price,
                 level: level.level,
@@ -83,10 +85,12 @@ export const useSupplyDemandAlerts = ({ data, signal, symbol }: UseSupplyDemandA
           approachingNow.add(level.price);
           
           // Only alert if this level wasn't previously being approached
+          // Note: Using TREND_REVERSAL type temporarily for approaching levels
+          // TODO: Consider adding LEVEL_APPROACHING type in future enhancement
           if (!previousApproachingRef.current.has(level.price)) {
             createStockAlert({
               symbol,
-              alertType: 'TREND_REVERSAL', // Using existing alert type for approaching levels
+              alertType: 'TREND_REVERSAL',
               details: {
                 price: level.price,
                 level: level.level,

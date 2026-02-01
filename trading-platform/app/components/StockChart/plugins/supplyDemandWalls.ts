@@ -22,6 +22,9 @@ export interface SupplyDemandWallsOptions {
 
 /**
  * Enhanced plugin to visualize supply/demand walls with proper color coding
+ * @param chart - Chart.js chart instance
+ * @param _args - Chart.js plugin arguments (unused, but required by plugin interface)
+ * @param options - Plugin configuration options
  */
 export const supplyDemandWallsPlugin = {
   id: 'supplyDemandWalls',
