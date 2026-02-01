@@ -12,8 +12,6 @@ const customJestConfig = {
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you soon)
     '^@/(.*)$': '<rootDir>/$1',
-    // Add fast-check module name mapper for proper resolution
-    '^fast-check$': '<rootDir>/node_modules/fast-check/lib/esm/entry/main.js',
   },
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
