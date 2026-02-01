@@ -844,17 +844,13 @@ export class AdvancedRiskManager extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalRiskManager: AdvancedRiskManager | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalRiskManager(limits?: Partial<RiskLimits>): AdvancedRiskManager {
-  if (!globalRiskManager) {
-    globalRiskManager = new AdvancedRiskManager(limits);
-  }
-  return globalRiskManager;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (limits?: Partial<RiskLimits>) => new AdvancedRiskManager(limits)
+);
 
-export function resetGlobalRiskManager(): void {
-  globalRiskManager = null;
-}
+export const getGlobalRiskManager = getInstance;
+export const resetGlobalRiskManager = resetInstance;
 
 export default AdvancedRiskManager;

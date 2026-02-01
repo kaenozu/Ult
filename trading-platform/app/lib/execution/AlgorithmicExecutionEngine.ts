@@ -749,20 +749,13 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalExecutionEngine: AlgorithmicExecutionEngine | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalExecutionEngine(config?: Partial<ExecutionConfig>): AlgorithmicExecutionEngine {
-  if (!globalExecutionEngine) {
-    globalExecutionEngine = new AlgorithmicExecutionEngine(config);
-  }
-  return globalExecutionEngine;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<ExecutionConfig>) => new AlgorithmicExecutionEngine(config)
+);
 
-export function resetGlobalExecutionEngine(): void {
-  if (globalExecutionEngine) {
-    globalExecutionEngine.stop();
-    globalExecutionEngine = null;
-  }
-}
+export const getGlobalExecutionEngine = getInstance;
+export const resetGlobalExecutionEngine = resetInstance;
 
 export default AlgorithmicExecutionEngine;

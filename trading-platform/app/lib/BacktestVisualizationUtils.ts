@@ -60,6 +60,7 @@ export class BacktestVisualizationUtils {
 
   /**
    * 取引結果のヒストグラムデータを生成
+   * Optimized: Single pass for min/max calculation
    */
   static calculateTradeDistribution(result: BacktestResult, binCount: number = 20): TradeDistribution {
     const profits = result.trades.map(t => t.profitPercent || 0);
@@ -67,8 +68,14 @@ export class BacktestVisualizationUtils {
       return { bins: [], avg: 0, median: 0, stdDev: 0 };
     }
 
-    const min = Math.min(...profits);
-    const max = Math.max(...profits);
+    // Single pass for min/max
+    let min = Infinity;
+    let max = -Infinity;
+    for (const p of profits) {
+      if (p < min) min = p;
+      if (p > max) max = p;
+    }
+    
     const binWidth = (max - min) / binCount;
 
     // Calculate bins

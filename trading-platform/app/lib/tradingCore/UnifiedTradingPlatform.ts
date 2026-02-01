@@ -623,17 +623,13 @@ export class UnifiedTradingPlatform extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalTradingPlatform: UnifiedTradingPlatform | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalTradingPlatform(config?: Partial<PlatformConfig>): UnifiedTradingPlatform {
-  if (!globalTradingPlatform) {
-    globalTradingPlatform = new UnifiedTradingPlatform(config);
-  }
-  return globalTradingPlatform;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<PlatformConfig>) => new UnifiedTradingPlatform(config)
+);
 
-export function resetGlobalTradingPlatform(): void {
-  globalTradingPlatform = null;
-}
+export const getGlobalTradingPlatform = getInstance;
+export const resetGlobalTradingPlatform = resetInstance;
 
 export default UnifiedTradingPlatform;

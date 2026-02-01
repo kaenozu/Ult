@@ -235,10 +235,14 @@ export class PortfolioOptimizer extends EventEmitter {
     const covarianceMatrix = this.calculateCovarianceMatrix(assets, mergedOptions);
     const expectedReturns = this.calculateExpectedReturns(assets, mergedOptions);
 
-    // リターンの範囲を計算
+    // リターンの範囲を計算 (Optimized: single pass for min/max)
     const returns = assets.map(a => this.calculateAnnualizedReturn(a.returns, mergedOptions.tradingDaysPerYear));
-    const minReturn = Math.min(...returns);
-    const maxReturn = Math.max(...returns);
+    let minReturn = Infinity;
+    let maxReturn = -Infinity;
+    for (const ret of returns) {
+      if (ret < minReturn) minReturn = ret;
+      if (ret > maxReturn) maxReturn = ret;
+    }
 
     const frontier: EfficientFrontierPoint[] = [];
     const step = (maxReturn - minReturn) / (points - 1);

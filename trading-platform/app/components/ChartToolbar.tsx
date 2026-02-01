@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 
@@ -14,7 +15,7 @@ interface ChartToolbarProps {
   setInterval: (interval: string) => void;
 }
 
-export function ChartToolbar({
+export const ChartToolbar = memo(function ChartToolbar({
   stock,
   latestData,
   showSMA,
@@ -111,4 +112,4 @@ export function ChartToolbar({
       )}
     </div>
   );
-}
+});

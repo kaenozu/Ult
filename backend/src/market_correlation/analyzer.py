@@ -57,9 +57,10 @@ class MarketCorrelation:
         index_mean = statistics.mean(index_prices)
 
         # Calculate correlation
-        numerator = sum((s - stock_mean) * (i - index_mean) for s, i in zip(stock_prices, index_prices))
-        stock_std = math.sqrt(sum((s - stock_mean) ** 2 for s in stock_prices))
-        index_std = math.sqrt(sum((i - index_mean) ** 2 for i in index_prices))
+        numerator = sum((stock_price - stock_mean) * (index_price - index_mean) 
+                       for stock_price, index_price in zip(stock_prices, index_prices))
+        stock_std = math.sqrt(sum((stock_price - stock_mean) ** 2 for stock_price in stock_prices))
+        index_std = math.sqrt(sum((index_price - index_mean) ** 2 for index_price in index_prices))
 
         if stock_std == 0 or index_std == 0:
             return 0.0
@@ -82,16 +83,16 @@ class MarketCorrelation:
             raise ValueError("Need at least 2 data points")
 
         # Calculate returns
-        stock_returns = [(stock_prices[i] - stock_prices[i-1]) / stock_prices[i-1]
-                         for i in range(1, len(stock_prices))]
-        index_returns = [(index_prices[i] - index_prices[i-1]) / index_prices[i-1]
-                         for i in range(1, len(index_prices))]
+        stock_returns = [(stock_prices[index] - stock_prices[index-1]) / stock_prices[index-1]
+                         for index in range(1, len(stock_prices))]
+        index_returns = [(index_prices[index] - index_prices[index-1]) / index_prices[index-1]
+                         for index in range(1, len(index_prices))]
 
         if len(stock_returns) != len(index_returns):
             raise ValueError("Returns calculation error")
 
-        n = len(stock_returns)
-        if n < 2:
+        returns_count = len(stock_returns)
+        if returns_count < 2:
             return 1.0
 
         # Calculate means
@@ -99,10 +100,11 @@ class MarketCorrelation:
         index_mean = statistics.mean(index_returns)
 
         # Calculate covariance (population)
-        covariance = sum((s - stock_mean) * (i - index_mean) for s, i in zip(stock_returns, index_returns)) / n
+        covariance = sum((stock_return - stock_mean) * (index_return - index_mean) 
+                        for stock_return, index_return in zip(stock_returns, index_returns)) / returns_count
 
         # Calculate variance (population)
-        variance = sum((i - index_mean) ** 2 for i in index_returns) / n
+        variance = sum((index_return - index_mean) ** 2 for index_return in index_returns) / returns_count
 
         if variance == 0:
             return 1.0  # No market movement, beta is neutral
@@ -121,30 +123,30 @@ class MarketCorrelation:
         if len(prices) < MIN_DATA_POINTS:
             return MarketTrend.NEUTRAL
 
-        n = len(prices)
-        x = list(range(n))
-        y = prices
+        price_count = len(prices)
+        time_indices = list(range(price_count))
+        price_values = prices
 
         # Calculate slope using linear regression
         # slope = (N * Σ(xy) - Σx * Σy) / (N * Σ(x^2) - (Σx)^2)
 
-        sum_x = sum(x)
-        sum_y = sum(y)
-        sum_xy = sum(xi * yi for xi, yi in zip(x, y))
-        sum_x2 = sum(xi ** 2 for xi in x)
+        sum_time_indices = sum(time_indices)
+        sum_prices = sum(price_values)
+        sum_products = sum(time_idx * price for time_idx, price in zip(time_indices, price_values))
+        sum_squared_indices = sum(time_idx ** 2 for time_idx in time_indices)
 
-        denominator = n * sum_x2 - sum_x ** 2
+        denominator = price_count * sum_squared_indices - sum_time_indices ** 2
         if denominator == 0:
             return MarketTrend.NEUTRAL
 
-        slope = (n * sum_xy - sum_x * sum_y) / denominator
+        slope = (price_count * sum_products - sum_time_indices * sum_prices) / denominator
 
         # Normalize slope by dividing by average price to get percentage change per step
-        avg_price = sum_y / n
-        if avg_price == 0:
+        average_price = sum_prices / price_count
+        if average_price == 0:
             return MarketTrend.NEUTRAL
 
-        normalized_slope = slope / avg_price
+        normalized_slope = slope / average_price
 
         threshold = TREND_DETECTION_THRESHOLD
 

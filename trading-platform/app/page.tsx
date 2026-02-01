@@ -1,20 +1,29 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
-import { StockChart } from '@/app/components/StockChart';
-import { SimpleRSIChart } from '@/app/components/SimpleRSIChart';
 import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
-import { RightSidebar } from '@/app/components/RightSidebar';
-import { BottomPanel } from '@/app/components/BottomPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';
+
+// Lazy load heavy components with chart.js dependencies
+const StockChart = lazy(() => import('@/app/components/StockChart').then(m => ({ default: m.StockChart })));
+const SimpleRSIChart = lazy(() => import('@/app/components/SimpleRSIChart').then(m => ({ default: m.SimpleRSIChart })));
+const RightSidebar = lazy(() => import('@/app/components/RightSidebar').then(m => ({ default: m.RightSidebar })));
+const BottomPanel = lazy(() => import('@/app/components/BottomPanel').then(m => ({ default: m.BottomPanel })));
+
+// Loading placeholder for charts
+const ChartLoader = () => (
+  <div className="w-full h-full flex items-center justify-center bg-[#131b23]">
+    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+  </div>
+);
 
 export default function Workstation() {
   const { portfolio, closePosition } = usePortfolioStore();
@@ -164,41 +173,49 @@ export default function Workstation() {
               {/* Main Chart Visualization */}
               <div className="flex-1 relative p-3 flex flex-col">
                 <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
-                  <StockChart
-                    data={chartData}
-                    indexData={indexData}
-                    loading={loading}
-                    error={error}
-                    market={selectedStock?.market}
-                    signal={chartSignal}
-                  />
+                  <Suspense fallback={<ChartLoader />}>
+                    <StockChart
+                      data={chartData}
+                      indexData={indexData}
+                      loading={loading}
+                      error={error}
+                      market={selectedStock?.market}
+                      signal={chartSignal}
+                    />
+                  </Suspense>
                 </div>
 
                 {/* RSI Sub-chart */}
                 <div className="h-40 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
-                  <SimpleRSIChart data={chartData} />
+                  <Suspense fallback={<ChartLoader />}>
+                    <SimpleRSIChart data={chartData} />
+                  </Suspense>
                 </div>
               </div>
             </>
           )}
 
           {/* Bottom Panel: Positions & Orders */}
-          <BottomPanel
-            portfolio={portfolio}
-            journal={journal}
-            onClosePosition={handleClosePosition}
-          />
+          <Suspense fallback={<div className="h-48 bg-[#131b23] border-t border-[#233648]" />}>
+            <BottomPanel
+              portfolio={portfolio}
+              journal={journal}
+              onClosePosition={handleClosePosition}
+            />
+          </Suspense>
         </section>
 
         {/* Right Sidebar: Level 2 & Signal Panel */}
-        <RightSidebar
-          isOpen={isRightSidebarOpen}
-          onClose={() => setIsRightSidebarOpen(false)}
-          displayStock={displayStock}
-          chartSignal={chartSignal}
-          ohlcv={chartData}
-          loading={loading}
-        />
+        <Suspense fallback={<div className="w-80 bg-[#131b23] border-l border-[#233648]" />}>
+          <RightSidebar
+            isOpen={isRightSidebarOpen}
+            onClose={() => setIsRightSidebarOpen(false)}
+            displayStock={displayStock}
+            chartSignal={chartSignal}
+            ohlcv={chartData}
+            loading={loading}
+          />
+        </Suspense>
       </main>
 
       <Navigation />
