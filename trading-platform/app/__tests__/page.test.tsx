@@ -10,7 +10,8 @@ jest.mock('../components/Navigation', () => ({ Navigation: () => <div>Navigation
 jest.mock('../components/StockTable', () => ({ StockTable: () => <div>StockTable</div> }));
 jest.mock('../components/PositionTable', () => ({ PositionTable: () => <div>PositionTable</div> }));
 jest.mock('../components/HistoryTable', () => ({ HistoryTable: () => <div>HistoryTable</div> }));
-jest.mock('../components/SignalPanel', () => ({ SignalPanel: () => <div>SignalPanel</div> }));jest.mock('../components/StockChart', () => ({ StockChart: () => <div>StockChart</div> }));
+jest.mock('../components/SignalPanel', () => ({ SignalPanel: () => <div>SignalPanel</div> }));
+jest.mock('../components/StockChart', () => ({ StockChart: () => <div>StockChart</div> }));
 jest.mock('../components/OrderPanel', () => ({ OrderPanel: () => <div>OrderPanel</div> }));
 
 // Mock next/navigation

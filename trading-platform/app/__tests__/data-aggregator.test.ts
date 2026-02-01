@@ -11,6 +11,8 @@ import { mlPredictionService } from '../lib/mlPrediction';
 
 jest.mock('../lib/api/idb', () => ({
   idbClient: {
+    init: jest.fn().mockResolvedValue(undefined),
+    clearAllData: jest.fn().mockResolvedValue(undefined),
     getData: jest.fn(),
     saveData: jest.fn(),
     mergeAndSave: jest.fn(),
@@ -27,7 +29,7 @@ jest.mock('../lib/mlPrediction', () => ({
 
 global.fetch = jest.fn() as any;
 
-describe.skip('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
+describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset singleton cache if possible (or use new symbols)
