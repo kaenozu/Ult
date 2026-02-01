@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { StockTable } from '@/app/components/StockTable';
 import { cn } from '@/app/lib/utils';
 import { Stock } from '@/app/types';
@@ -13,13 +14,13 @@ interface LeftSidebarProps {
   selectedSymbol?: string;
 }
 
-export const LeftSidebar = ({
+export const LeftSidebar = memo(function LeftSidebar({
   isOpen,
   onClose,
   watchlist,
   onSelect,
   selectedSymbol
-}: LeftSidebarProps) => {
+}: LeftSidebarProps) {
   // We can use the store directly or props. StockTable uses store internally now too.
   // But LeftSidebar receives watchlist as prop in page.tsx likely.
   // Let's stick to props if they are passed, but StockTable inside uses store actions.
@@ -69,4 +70,4 @@ export const LeftSidebar = ({
       />
     </aside>
   );
-};
+});
