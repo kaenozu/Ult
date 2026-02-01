@@ -123,9 +123,9 @@ export function withPerformanceTracking<T extends (...args: any[]) => any>(
 ): T {
   const functionName = name || fn.name || 'anonymous';
   
-  const wrapped = ((...args: Parameters<T>) => {
+  const wrapped = (...args: Parameters<T>) => {
     return measurePerformance(functionName, () => fn(...args));
-  });
+  };
   return wrapped as T;
 }
 
