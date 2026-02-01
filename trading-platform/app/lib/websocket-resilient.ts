@@ -400,6 +400,9 @@ export class ResilientWebSocketClient {
       console.log('[WebSocket] Max reconnect attempts reached, entering fallback mode');
       this.transitionTo('FALLBACK');
       this.startFallback();
+      
+      // Schedule periodic reconnection attempts even in fallback mode
+      this.scheduleReconnectFromFallback();
       return;
     }
 
@@ -500,6 +503,17 @@ export class ResilientWebSocketClient {
       const metrics = this.metricsTracker.getMetrics();
       this.options.onMetricsUpdate?.(metrics);
       this.emit('metricsUpdate', metrics);
+      
+      // Intelligent fallback: If quality is consistently poor, consider fallback
+      if (this.status === 'OPEN' && metrics.quality === 'poor') {
+        // Check if we've been in poor quality for too long
+        const poorQualityThreshold = 60000; // 1 minute
+        if (metrics.uptime > poorQualityThreshold && metrics.packetLossRate > 10) {
+          console.warn('[WebSocket] Connection quality is poor, considering fallback...');
+          // Optionally trigger fallback or alert
+          // For now, just log - actual fallback happens on connection errors
+        }
+      }
     }, 1000);
   }
   
@@ -782,6 +796,21 @@ export class ResilientWebSocketClient {
       this.fallbackIntervalId = null;
       console.log('[WebSocket] Stopped fallback polling mode');
     }
+  }
+
+  /**
+   * Schedule reconnection attempt from fallback mode
+   * Periodically tries to recover WebSocket connection
+   */
+  private scheduleReconnectFromFallback(): void {
+    // Try to reconnect every 30 seconds when in fallback mode
+    setTimeout(() => {
+      if (this.status === 'FALLBACK' && !this.isManualClose) {
+        console.log('[WebSocket] Attempting to recover from fallback mode...');
+        this.reconnectAttempts = 0; // Reset attempts for recovery
+        this.connect();
+      }
+    }, 30000);
   }
 
   /**
