@@ -6,7 +6,7 @@
 
 import { OHLCV, Stock, Signal, BacktestResult, BacktestTrade } from '../types';
 import { mlPredictionService } from './mlPrediction';
-import { calculateReturns } from './utils';
+  // import { calculateReturns } from './utils';
 
 export interface BacktestConfig {
   initialCapital: number;
@@ -126,7 +126,8 @@ class BacktestService {
           : currentPosition.value - currentValue;
           
         equity = config.initialCapital + trades.reduce((sum, trade) => {
-          if (trade.status === 'CLOSED') {
+          // Check if trade is effectively closed (has exit price)
+          if (trade.exitPrice !== undefined) {
             return sum + (trade.profitPercent! / 100 * config.initialCapital);
           }
           return sum;
@@ -261,9 +262,9 @@ class BacktestService {
             symbol: trade.signal.symbol,
             type: direction,
             entryPrice: price,
-            exitPrice: undefined,
+            exitPrice: 0, // Placeholder
             entryDate: currentCandle.date,
-            exitDate: undefined,
+            exitDate: '', // Placeholder
             profitPercent: 0,
             reason: trade.signal.reason
           };
@@ -381,7 +382,7 @@ class BacktestService {
     startDate: string,
     endDate: string
   ): BacktestResult {
-    const closedTrades = trades.filter(trade => trade.status === 'CLOSED' || trade.exitPrice !== undefined);
+    const closedTrades = trades.filter(trade => trade.exitPrice !== 0 && trade.exitDate !== '');
     
     const totalTrades = closedTrades.length;
     const winningTrades = closedTrades.filter(trade => (trade.profitPercent || 0) > 0).length;
