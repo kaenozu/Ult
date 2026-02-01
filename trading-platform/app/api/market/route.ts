@@ -53,6 +53,13 @@ function formatSymbol(symbol: string, market?: string): string {
   return symbol;
 }
 
+/**
+ * Check if a symbol represents a Japanese stock
+ */
+function isJapaneseStock(symbol: string, market?: string): boolean {
+  return market === 'japan' || symbol.endsWith('.T');
+}
+
 export async function GET(request: Request) {
   const clientIp = getClientIp(request);
   if (!ipRateLimiter.check(clientIp)) {
@@ -222,9 +229,8 @@ export async function GET(request: Request) {
           if (!result) throw new Error('Symbol not found');
 
           // Check if this is a Japanese stock and get market status
-          const isJapanese = market === 'japan' || symbols[0].endsWith('.T');
           let tseStatus;
-          if (isJapanese) {
+          if (isJapaneseStock(symbols[0], market || undefined)) {
             tseStatus = isTSEOpen();
           }
 
@@ -254,9 +260,8 @@ export async function GET(request: Request) {
           const data = results
             .filter((r): r is YahooQuoteResult => !!r)
             .map(r => {
-              const isJapanese = r.symbol?.endsWith('.T');
               let tseStatus;
-              if (isJapanese) {
+              if (isJapaneseStock(r.symbol || '', market || undefined)) {
                 tseStatus = isTSEOpen();
               }
 

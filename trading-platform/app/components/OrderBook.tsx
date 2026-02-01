@@ -35,15 +35,19 @@ export function OrderBook({ stock }: OrderBookProps) {
   }, [stock?.market, currentTime]);
 
   useEffect(() => {
-    // Update time every minute for Japanese stocks
+    // Update time periodically for Japanese stocks
     if (stock?.market === 'japan') {
+      // Use shorter interval during market hours, longer when closed
+      const status = isTSEOpen(new Date(currentTime));
+      const updateInterval = status.isOpen ? 60000 : 300000; // 1 min when open, 5 min when closed
+      
       const interval = setInterval(() => {
         setCurrentTime(Date.now());
-      }, 60000);
+      }, updateInterval);
 
       return () => clearInterval(interval);
     }
-  }, [stock?.market]);
+  }, [stock?.market, currentTime]);
 
   const basePrice = stock?.price || 100;
 

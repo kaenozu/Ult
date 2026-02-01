@@ -74,18 +74,33 @@ export interface MarketStatus {
 
 /**
  * Convert current time to Japan Standard Time (JST)
+ * JST is UTC+9 (no daylight saving time)
+ * 
+ * @param date - Date object (can be in any timezone)
+ * @returns Date object representing the same moment in JST
  */
 function toJST(date: Date = new Date()): Date {
-  // JST is UTC+9
-  const utc = date.getTime() + date.getTimezoneOffset() * 60000;
-  return new Date(utc + 9 * 3600000);
+  // Create a new date with the UTC time components set to JST
+  // This ensures we're working with the correct time regardless of local system timezone
+  const utcYear = date.getUTCFullYear();
+  const utcMonth = date.getUTCMonth();
+  const utcDate = date.getUTCDate();
+  const utcHours = date.getUTCHours();
+  const utcMinutes = date.getUTCMinutes();
+  const utcSeconds = date.getUTCSeconds();
+  const utcMilliseconds = date.getUTCMilliseconds();
+  
+  // JST is UTC+9, so add 9 hours to UTC time
+  const jstDate = new Date(Date.UTC(utcYear, utcMonth, utcDate, utcHours + 9, utcMinutes, utcSeconds, utcMilliseconds));
+  
+  return jstDate;
 }
 
 /**
  * Check if a date is a weekend
  */
 function isWeekend(date: Date): boolean {
-  const day = date.getDay();
+  const day = date.getUTCDay();
   return day === 0 || day === 6; // Sunday or Saturday
 }
 
@@ -93,7 +108,11 @@ function isWeekend(date: Date): boolean {
  * Check if a date is a Japanese national holiday
  */
 function isJapaneseHoliday(date: Date): boolean {
-  const dateStr = date.toISOString().split('T')[0];
+  // Format as YYYY-MM-DD using UTC methods
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
   return dateStr in JAPANESE_HOLIDAYS_2025_2026;
 }
 
@@ -101,8 +120,8 @@ function isJapaneseHoliday(date: Date): boolean {
  * Check if date is a year-end holiday
  */
 function isYearEndHoliday(date: Date): boolean {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
   const monthDay = `${month}-${day}`;
   return YEAR_END_HOLIDAYS.includes(monthDay);
 }
@@ -111,7 +130,10 @@ function isYearEndHoliday(date: Date): boolean {
  * Get the name of the holiday if applicable
  */
 function getHolidayName(date: Date): string | undefined {
-  const dateStr = date.toISOString().split('T')[0];
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const dateStr = `${year}-${month}-${day}`;
   return JAPANESE_HOLIDAYS_2025_2026[dateStr];
 }
 
@@ -122,29 +144,29 @@ function getNextOpenTime(currentJST: Date): Date {
   const nextOpen = new Date(currentJST);
   
   // If currently during lunch break (11:30-12:30), return 12:30 today
-  const hours = currentJST.getHours();
-  const minutes = currentJST.getMinutes();
+  const hours = currentJST.getUTCHours();
+  const minutes = currentJST.getUTCMinutes();
   const timeInMinutes = hours * 60 + minutes;
   const lunchStart = 11 * 60 + 30; // 11:30
   const lunchEnd = 12 * 60 + 30; // 12:30
   
   if (timeInMinutes >= lunchStart && timeInMinutes < lunchEnd) {
-    nextOpen.setHours(12, 30, 0, 0);
+    nextOpen.setUTCHours(12, 30, 0, 0);
     return nextOpen;
   }
   
   // If after market close (after 15:00), move to next day
   if (timeInMinutes >= 15 * 60) {
-    nextOpen.setDate(nextOpen.getDate() + 1);
+    nextOpen.setUTCDate(nextOpen.getUTCDate() + 1);
   }
   
   // Find the next business day
   while (isWeekend(nextOpen) || isJapaneseHoliday(nextOpen) || isYearEndHoliday(nextOpen)) {
-    nextOpen.setDate(nextOpen.getDate() + 1);
+    nextOpen.setUTCDate(nextOpen.getUTCDate() + 1);
   }
   
   // Set to market open time (9:00 AM)
-  nextOpen.setHours(9, 0, 0, 0);
+  nextOpen.setUTCHours(9, 0, 0, 0);
   
   return nextOpen;
 }
@@ -156,21 +178,21 @@ function getLastCloseTime(currentJST: Date): Date {
   const lastClose = new Date(currentJST);
   
   // If before market open today (before 9:00), use previous day
-  const hours = currentJST.getHours();
-  const minutes = currentJST.getMinutes();
+  const hours = currentJST.getUTCHours();
+  const minutes = currentJST.getUTCMinutes();
   const timeInMinutes = hours * 60 + minutes;
   
   if (timeInMinutes < 9 * 60) {
-    lastClose.setDate(lastClose.getDate() - 1);
+    lastClose.setUTCDate(lastClose.getUTCDate() - 1);
   }
   
   // Find the previous business day
   while (isWeekend(lastClose) || isJapaneseHoliday(lastClose) || isYearEndHoliday(lastClose)) {
-    lastClose.setDate(lastClose.getDate() - 1);
+    lastClose.setUTCDate(lastClose.getUTCDate() - 1);
   }
   
   // Set to market close time (3:00 PM)
-  lastClose.setHours(15, 0, 0, 0);
+  lastClose.setUTCHours(15, 0, 0, 0);
   
   return lastClose;
 }
@@ -226,8 +248,8 @@ export function isTSEOpen(date: Date = new Date()): MarketStatus {
   }
   
   // Check trading hours
-  const hours = jstTime.getHours();
-  const minutes = jstTime.getMinutes();
+  const hours = jstTime.getUTCHours();
+  const minutes = jstTime.getUTCMinutes();
   const timeInMinutes = hours * 60 + minutes;
   
   // Market hours in minutes
@@ -295,15 +317,19 @@ export function formatNextOpenTime(date: Date): string {
   const jstDate = toJST(date);
   const now = toJST();
   
-  const dayDiff = Math.floor((jstDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  // Compare dates at day level to avoid DST issues
+  const jstDateOnly = new Date(jstDate.getUTCFullYear(), jstDate.getUTCMonth(), jstDate.getUTCDate());
+  const nowDateOnly = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  
+  const dayDiff = Math.floor((jstDateOnly.getTime() - nowDateOnly.getTime()) / (1000 * 60 * 60 * 24));
   
   if (dayDiff === 0) {
-    return `本日 ${jstDate.getHours()}:${String(jstDate.getMinutes()).padStart(2, '0')}`;
+    return `本日 ${jstDate.getUTCHours()}:${String(jstDate.getUTCMinutes()).padStart(2, '0')}`;
   } else if (dayDiff === 1) {
-    return `明日 ${jstDate.getHours()}:${String(jstDate.getMinutes()).padStart(2, '0')}`;
+    return `明日 ${jstDate.getUTCHours()}:${String(jstDate.getUTCMinutes()).padStart(2, '0')}`;
   } else {
-    const month = jstDate.getMonth() + 1;
-    const day = jstDate.getDate();
-    return `${month}月${day}日 ${jstDate.getHours()}:${String(jstDate.getMinutes()).padStart(2, '0')}`;
+    const month = jstDate.getUTCMonth() + 1;
+    const day = jstDate.getUTCDate();
+    return `${month}月${day}日 ${jstDate.getUTCHours()}:${String(jstDate.getUTCMinutes()).padStart(2, '0')}`;
   }
 }
