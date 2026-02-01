@@ -38,7 +38,7 @@ describe('error-handler', () => {
             const error = new Error('Test Error');
             logError(error, 'TestContext');
             expect(mockConsoleError).toHaveBeenCalledWith(
-                expect.stringContaining('Error in TestContext'),
+                expect.stringContaining('[TestContext] Error:'),
                 expect.objectContaining({
                     name: 'Error',
                     message: 'Test Error',
@@ -51,7 +51,7 @@ describe('error-handler', () => {
             const error = { foo: 'bar' };
             logError(error, 'TestContext');
             expect(mockConsoleError).toHaveBeenCalledWith(
-                expect.stringContaining('Error in TestContext'),
+                expect.stringContaining('[TestContext] Unknown error:'),
                 error
             );
         });
@@ -95,7 +95,7 @@ describe('error-handler', () => {
             expect(response.body).toEqual(expect.objectContaining({
                 error: '入力内容を確認してください',
                 code: 'VALIDATION_ERROR',
-                details: '無効なパラメータが含まれています' // The fallback details from mapping
+                details: 'Field: fieldA' // Extracted from the error's field property
             }));
         });
 
