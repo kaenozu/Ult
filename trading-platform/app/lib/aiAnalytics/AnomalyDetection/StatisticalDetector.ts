@@ -124,22 +124,4 @@ export class StatisticalDetector {
     }
     return returns;
   }
-
-  /**
-   * Detect outliers using IQR method
-   */
-  private detectOutliersIQR(value: number, dataset: number[]): boolean {
-    const sorted = [...dataset].sort((a, b) => a - b);
-    const q1Index = Math.floor(sorted.length * 0.25);
-    const q3Index = Math.floor(sorted.length * 0.75);
-    
-    const q1 = sorted[q1Index];
-    const q3 = sorted[q3Index];
-    const iqr = q3 - q1;
-    
-    const lowerBound = q1 - this.config.iqrMultiplier * iqr;
-    const upperBound = q3 + this.config.iqrMultiplier * iqr;
-    
-    return value < lowerBound || value > upperBound;
-  }
 }

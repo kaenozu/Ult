@@ -21,6 +21,9 @@ interface TreeNode {
   depth: number;
 }
 
+// Euler-Mascheroni constant used in isolation forest path length calculations
+const EULER_MASCHERONI_CONSTANT = 0.5772156649;
+
 export class IsolationForest {
   private config: IsolationForestConfig;
   private trees: TreeNode[] = [];
@@ -172,7 +175,7 @@ export class IsolationForest {
   private estimateAveragePathLength(n: number): number {
     if (n <= 1) return 0;
     if (n === 2) return 1;
-    const c = 2 * (Math.log(n - 1) + 0.5772156649) - (2 * (n - 1) / n);
+    const c = 2 * (Math.log(n - 1) + EULER_MASCHERONI_CONSTANT) - (2 * (n - 1) / n);
     return c;
   }
 
@@ -181,7 +184,7 @@ export class IsolationForest {
    */
   private expectedAveragePathLength(n: number): number {
     if (n <= 1) return 0;
-    return 2 * (Math.log(n - 1) + 0.5772156649) - (2 * (n - 1) / n);
+    return 2 * (Math.log(n - 1) + EULER_MASCHERONI_CONSTANT) - (2 * (n - 1) / n);
   }
 
   /**
