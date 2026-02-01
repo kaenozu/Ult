@@ -44,7 +44,7 @@ NEXT_PUBLIC_ENABLE_WEB_VITALS=true
 
 Automatically tracks:
 - **LCP (Largest Contentful Paint)**: Target < 2.5s
-- **FID (First Input Delay)**: Target < 100ms
+- **INP (Interaction to Next Paint)**: Target < 200ms
 - **CLS (Cumulative Layout Shift)**: Target < 0.1
 - **FCP (First Contentful Paint)**: Target < 1.8s
 - **TTFB (Time to First Byte)**: Target < 800ms
@@ -142,7 +142,7 @@ Configured budgets will trigger warnings:
 | Metric | Budget | Warning Threshold |
 |--------|--------|-------------------|
 | LCP | 2500ms | 2000ms |
-| FID | 100ms | 75ms |
+| INP | 200ms | 150ms |
 | CLS | 0.1 | 0.05 |
 | FCP | 1800ms | 1500ms |
 | TTFB | 800ms | 600ms |

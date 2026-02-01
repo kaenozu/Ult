@@ -27,13 +27,13 @@ jest.mock('web-vitals', () => ({
       navigationType: 'navigate',
     });
   }),
-  onFID: jest.fn((callback) => {
-    // Simulate FID metric
+  onINP: jest.fn((callback) => {
+    // Simulate INP metric (replaces FID in web-vitals v4)
     callback({
-      name: 'FID',
-      value: 50,
-      delta: 50,
-      id: 'test-fid-id',
+      name: 'INP',
+      value: 150,
+      delta: 150,
+      id: 'test-inp-id',
       navigationType: 'navigate',
     });
   }),
