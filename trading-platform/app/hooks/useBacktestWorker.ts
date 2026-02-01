@@ -103,6 +103,8 @@ export function useBacktestWorker(): UseBacktestWorkerReturn {
 
   // Initialize worker
   useEffect(() => {
+    let isMounted = true;
+    
     // Create worker
     workerRef.current = new Worker(
       new URL('../workers/backtest.worker.ts', import.meta.url)
@@ -114,12 +116,14 @@ export function useBacktestWorker(): UseBacktestWorkerReturn {
 
       switch (type) {
         case 'BACKTEST_PROGRESS':
-          setProgress(payload.progress);
-          setCurrentStep(payload.currentStep);
+          if (isMounted) {
+            setProgress(payload.progress);
+            setCurrentStep(payload.currentStep);
+          }
           break;
 
         case 'BACKTEST_COMPLETE':
-          if (pendingRequestRef.current?.requestId === payload.requestId) {
+          if (isMounted && pendingRequestRef.current?.requestId === payload.requestId) {
             setIsRunning(false);
             setProgress(100);
             setExecutionTime(payload.executionTimeMs);
@@ -129,7 +133,7 @@ export function useBacktestWorker(): UseBacktestWorkerReturn {
           break;
 
         case 'BACKTEST_ERROR':
-          if (pendingRequestRef.current?.requestId === payload.requestId) {
+          if (isMounted && pendingRequestRef.current?.requestId === payload.requestId) {
             setIsRunning(false);
             setError(payload.error || 'Unknown error');
             pendingRequestRef.current.reject(new Error(payload.error || 'Unknown error'));
@@ -142,8 +146,10 @@ export function useBacktestWorker(): UseBacktestWorkerReturn {
     // Handle worker errors
     workerRef.current.onerror = (error) => {
       console.error('[useBacktestWorker] Worker error:', error);
-      setIsRunning(false);
-      setError('Worker error occurred');
+      if (isMounted) {
+        setIsRunning(false);
+        setError('Worker error occurred');
+      }
       
       if (pendingRequestRef.current) {
         pendingRequestRef.current.reject(new Error('Worker error'));
@@ -153,6 +159,7 @@ export function useBacktestWorker(): UseBacktestWorkerReturn {
 
     // Cleanup
     return () => {
+      isMounted = false;
       workerRef.current?.terminate();
       workerRef.current = null;
     };
