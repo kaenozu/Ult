@@ -1,0 +1,473 @@
+/**
+ * Psychology Monitor
+ * 
+ * TRADING-003: 心理管理自動化の導入
+ * トレーダーの心理状態監視、過度なリスクテイク防止、感情的な取引の抑制
+ */
+
+import { Order, Position } from '@/app/types';
+import {
+  TradingBehaviorMetrics,
+  PsychologyAlert,
+  TradingSession
+} from '@/app/types/risk';
+
+export class PsychologyMonitor {
+  private tradingHistory: Order[] = [];
+  private sessions: TradingSession[] = [];
+  private currentSession: TradingSession | null = null;
+  private alerts: PsychologyAlert[] = [];
+
+  /**
+   * トレーディング行動を分析
+   */
+  analyzeTradingBehavior(): TradingBehaviorMetrics {
+    if (this.tradingHistory.length === 0) {
+      return this.getDefaultMetrics();
+    }
+
+    const completedTrades = this.tradingHistory.filter(
+      order => order.status === 'FILLED'
+    );
+
+    const wins = completedTrades.filter(trade => {
+      // 簡易的な利益判定（実際にはentry/exit価格を比較する必要がある）
+      return trade.side === 'SELL'; // 仮の実装
+    });
+
+    const losses = completedTrades.filter(trade => {
+      return trade.side === 'BUY' && trade.status === 'FILLED';
+    });
+
+    const winRate = completedTrades.length > 0
+      ? wins.length / completedTrades.length
+      : 0;
+
+    const lossRate = 1 - winRate;
+
+    // 連続勝ち負けを計算
+    const { consecutiveWins, consecutiveLosses } = this.calculateConsecutiveResults();
+
+    // オーバートレーディングスコアを計算
+    const overTradingScore = this.calculateOverTradingScore();
+
+    // 感情的トレーディングスコアを計算
+    const emotionalTradingScore = this.calculateEmotionalTradingScore();
+
+    // 平均保有時間を計算（時間単位）
+    const averageHoldTime = this.calculateAverageHoldTime();
+
+    return {
+      averageHoldTime,
+      winRate,
+      lossRate,
+      avgWinSize: 0, // TODO: 実際の損益データから計算
+      avgLossSize: 0, // TODO: 実際の損益データから計算
+      profitFactor: 0, // TODO: 実際の損益データから計算
+      consecutiveWins,
+      consecutiveLosses,
+      overTradingScore,
+      emotionalTradingScore
+    };
+  }
+
+  /**
+   * 心理状態アラートを生成
+   */
+  generatePsychologyAlerts(): PsychologyAlert[] {
+    const metrics = this.analyzeTradingBehavior();
+    const newAlerts: PsychologyAlert[] = [];
+
+    // オーバートレーディングの検出
+    if (metrics.overTradingScore > 70) {
+      newAlerts.push({
+        type: 'overtrading',
+        severity: metrics.overTradingScore > 85 ? 'high' : 'medium',
+        message: `過度な取引が検出されました。スコア: ${metrics.overTradingScore.toFixed(0)}`,
+        recommendation: '取引頻度を減らし、質の高いセットアップのみに焦点を当ててください。',
+        timestamp: new Date()
+      });
+    }
+
+    // リベンジトレーディングの検出
+    if (metrics.consecutiveLosses >= 3) {
+      newAlerts.push({
+        type: 'revenge_trading',
+        severity: metrics.consecutiveLosses >= 5 ? 'high' : 'medium',
+        message: `連続損失が${metrics.consecutiveLosses}回続いています。`,
+        recommendation: '一時的に取引を停止し、戦略を見直してください。',
+        timestamp: new Date()
+      });
+    }
+
+    // 感情的トレーディングの検出
+    if (metrics.emotionalTradingScore > 70) {
+      newAlerts.push({
+        type: metrics.consecutiveWins >= 3 ? 'greed' : 'fear',
+        severity: metrics.emotionalTradingScore > 85 ? 'high' : 'medium',
+        message: `感情的な取引パターンが検出されました。スコア: ${metrics.emotionalTradingScore.toFixed(0)}`,
+        recommendation: '冷静さを取り戻し、トレーディングプランに従ってください。',
+        timestamp: new Date()
+      });
+    }
+
+    // 疲労の検出
+    if (this.currentSession && this.isTraderFatigued()) {
+      newAlerts.push({
+        type: 'fatigue',
+        severity: 'medium',
+        message: '長時間の取引により疲労が検出されました。',
+        recommendation: '休憩を取り、明日再開してください。',
+        timestamp: new Date()
+      });
+    }
+
+    this.alerts.push(...newAlerts);
+    return newAlerts;
+  }
+
+  /**
+   * トレーディングセッションを開始
+   */
+  startSession(): void {
+    this.currentSession = {
+      startTime: new Date(),
+      tradesCount: 0,
+      profitLoss: 0,
+      emotionalState: 'calm',
+      decisionQuality: 100
+    };
+  }
+
+  /**
+   * トレーディングセッションを終了
+   */
+  endSession(): void {
+    if (this.currentSession) {
+      this.currentSession.endTime = new Date();
+      this.sessions.push(this.currentSession);
+      this.currentSession = null;
+    }
+  }
+
+  /**
+   * 取引を記録
+   */
+  recordTrade(order: Order): void {
+    this.tradingHistory.push(order);
+
+    if (this.currentSession) {
+      this.currentSession.tradesCount++;
+      this.updateEmotionalState();
+      this.updateDecisionQuality();
+    }
+
+    // リアルタイムでアラートをチェック
+    const alerts = this.generatePsychologyAlerts();
+    if (alerts.length > 0) {
+      this.notifyAlerts(alerts);
+    }
+  }
+
+  /**
+   * 過度なリスクテイクをチェック
+   */
+  checkExcessiveRiskTaking(
+    proposedPosition: { size: number; riskAmount: number },
+    normalRiskAmount: number
+  ): {
+    isExcessive: boolean;
+    riskMultiplier: number;
+    recommendation: string;
+  } {
+    const riskMultiplier = proposedPosition.riskAmount / normalRiskAmount;
+
+    const isExcessive = riskMultiplier > 1.5;
+
+    let recommendation = '';
+    if (isExcessive) {
+      if (riskMultiplier > 2.0) {
+        recommendation = '極めて危険：通常の2倍以上のリスクです。ポジションサイズを大幅に縮小してください。';
+      } else {
+        recommendation = '警告：通常より50%以上高いリスクです。ポジションサイズの見直しを推奨します。';
+      }
+    }
+
+    return {
+      isExcessive,
+      riskMultiplier,
+      recommendation
+    };
+  }
+
+  /**
+   * 取引ルール違反をチェック
+   */
+  checkRuleViolation(
+    order: Order,
+    rules: {
+      maxTradesPerDay?: number;
+      maxLossPerDay?: number;
+      requiredStopLoss?: boolean;
+    }
+  ): {
+    hasViolation: boolean;
+    violations: string[];
+  } {
+    const violations: string[] = [];
+
+    // 1日の最大取引回数チェック
+    if (rules.maxTradesPerDay) {
+      const todayTrades = this.getTodayTrades();
+      if (todayTrades.length >= rules.maxTradesPerDay) {
+        violations.push(`1日の最大取引回数（${rules.maxTradesPerDay}回）を超えています。`);
+      }
+    }
+
+    // 1日の最大損失チェック
+    if (rules.maxLossPerDay) {
+      const todayLoss = this.getTodayLoss();
+      if (todayLoss >= rules.maxLossPerDay) {
+        violations.push(`1日の最大損失額（$${rules.maxLossPerDay}）に達しています。`);
+      }
+    }
+
+    // ストップロスの必須チェック
+    if (rules.requiredStopLoss) {
+      // TODO: orderにstopLossが設定されているかチェック
+    }
+
+    return {
+      hasViolation: violations.length > 0,
+      violations
+    };
+  }
+
+  /**
+   * アラートを取得
+   */
+  getAlerts(severity?: PsychologyAlert['severity']): PsychologyAlert[] {
+    if (severity) {
+      return this.alerts.filter(alert => alert.severity === severity);
+    }
+    return this.alerts;
+  }
+
+  /**
+   * アラートをクリア
+   */
+  clearAlerts(): void {
+    this.alerts = [];
+  }
+
+  // ============================================================================
+  // Private Helper Methods
+  // ============================================================================
+
+  /**
+   * 連続勝ち負けを計算
+   */
+  private calculateConsecutiveResults(): {
+    consecutiveWins: number;
+    consecutiveLosses: number;
+  } {
+    let consecutiveWins = 0;
+    let consecutiveLosses = 0;
+    let currentStreak = 0;
+    let isWinStreak = true;
+
+    // 最新の取引から遡って計算
+    for (let i = this.tradingHistory.length - 1; i >= 0; i--) {
+      const trade = this.tradingHistory[i];
+      // 簡易的な勝ち負け判定
+      const isWin = trade.side === 'SELL';
+
+      if (i === this.tradingHistory.length - 1) {
+        isWinStreak = isWin;
+        currentStreak = 1;
+      } else if ((isWin && isWinStreak) || (!isWin && !isWinStreak)) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+
+    if (isWinStreak) {
+      consecutiveWins = currentStreak;
+    } else {
+      consecutiveLosses = currentStreak;
+    }
+
+    return { consecutiveWins, consecutiveLosses };
+  }
+
+  /**
+   * オーバートレーディングスコアを計算
+   */
+  private calculateOverTradingScore(): number {
+    const recentTrades = this.getRecentTrades(24); // 過去24時間
+
+    // 1時間あたりの取引数
+    const tradesPerHour = recentTrades.length / 24;
+
+    // 正常な取引頻度を1時間に1回とする
+    const normalFrequency = 1;
+    const overTradingRatio = tradesPerHour / normalFrequency;
+
+    // 0-100のスコアに変換
+    return Math.min(100, overTradingRatio * 50);
+  }
+
+  /**
+   * 感情的トレーディングスコアを計算
+   */
+  private calculateEmotionalTradingScore(): number {
+    let score = 0;
+
+    // 連続勝ち負けによる感情的傾向
+    const { consecutiveWins, consecutiveLosses } = this.calculateConsecutiveResults();
+
+    if (consecutiveWins >= 3) {
+      score += consecutiveWins * 10; // 過信
+    }
+
+    if (consecutiveLosses >= 3) {
+      score += consecutiveLosses * 15; // 恐怖・報復
+    }
+
+    // 急激な取引頻度の変化
+    const recentTrades = this.getRecentTrades(6);
+    const previousTrades = this.getRecentTrades(12).slice(0, -6);
+
+    if (recentTrades.length > previousTrades.length * 2) {
+      score += 30; // 急激な増加
+    }
+
+    return Math.min(100, score);
+  }
+
+  /**
+   * 平均保有時間を計算
+   */
+  private calculateAverageHoldTime(): number {
+    // TODO: 実際のentry/exit時間から計算
+    return 4; // デフォルト4時間
+  }
+
+  /**
+   * トレーダーの疲労を判定
+   */
+  private isTraderFatigued(): boolean {
+    if (!this.currentSession) return false;
+
+    const sessionDuration = Date.now() - this.currentSession.startTime.getTime();
+    const hoursTrading = sessionDuration / (1000 * 60 * 60);
+
+    // 4時間以上の連続取引で疲労と判定
+    return hoursTrading >= 4;
+  }
+
+  /**
+   * 感情状態を更新
+   */
+  private updateEmotionalState(): void {
+    if (!this.currentSession) return;
+
+    const metrics = this.analyzeTradingBehavior();
+
+    if (metrics.consecutiveWins >= 3) {
+      this.currentSession.emotionalState = 'excited';
+    } else if (metrics.consecutiveLosses >= 3) {
+      this.currentSession.emotionalState = 'fearful';
+    } else if (this.isTraderFatigued()) {
+      this.currentSession.emotionalState = 'tired';
+    } else {
+      this.currentSession.emotionalState = 'calm';
+    }
+  }
+
+  /**
+   * 意思決定の質を更新
+   */
+  private updateDecisionQuality(): void {
+    if (!this.currentSession) return;
+
+    const metrics = this.analyzeTradingBehavior();
+
+    let quality = 100;
+
+    // オーバートレーディングで減点
+    quality -= metrics.overTradingScore * 0.3;
+
+    // 感情的取引で減点
+    quality -= metrics.emotionalTradingScore * 0.3;
+
+    // 疲労で減点
+    if (this.isTraderFatigued()) {
+      quality -= 20;
+    }
+
+    this.currentSession.decisionQuality = Math.max(0, quality);
+  }
+
+  /**
+   * 最近の取引を取得
+   */
+  private getRecentTrades(hours: number): Order[] {
+    const cutoffTime = Date.now() - hours * 60 * 60 * 1000;
+    return this.tradingHistory.filter(
+      trade => (trade.timestamp || 0) >= cutoffTime
+    );
+  }
+
+  /**
+   * 今日の取引を取得
+   */
+  private getTodayTrades(): Order[] {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTimestamp = today.getTime();
+
+    return this.tradingHistory.filter(
+      trade => (trade.timestamp || 0) >= todayTimestamp
+    );
+  }
+
+  /**
+   * 今日の損失を計算
+   */
+  private getTodayLoss(): number {
+    // TODO: 実際の損益計算を実装
+    return 0;
+  }
+
+  /**
+   * アラートを通知
+   */
+  private notifyAlerts(alerts: PsychologyAlert[]): void {
+    // TODO: 実際の通知システムと連携
+    console.warn('Psychology Alerts:', alerts);
+  }
+
+  /**
+   * デフォルトメトリクスを取得
+   */
+  private getDefaultMetrics(): TradingBehaviorMetrics {
+    return {
+      averageHoldTime: 0,
+      winRate: 0,
+      lossRate: 0,
+      avgWinSize: 0,
+      avgLossSize: 0,
+      profitFactor: 0,
+      consecutiveWins: 0,
+      consecutiveLosses: 0,
+      overTradingScore: 0,
+      emotionalTradingScore: 0
+    };
+  }
+}
+
+export const createPsychologyMonitor = (): PsychologyMonitor => {
+  return new PsychologyMonitor();
+};

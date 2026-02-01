@@ -634,3 +634,25 @@ export interface APIErrorResult {
  * Union type for API responses
  */
 export type APIResponse<T> = APIResult<T> | APIErrorResult;
+
+// ============================================================================
+// TRADING-003: Enhanced Risk Management Types
+// ============================================================================
+
+export type {
+  PositionSizingConfig,
+  SizingResult,
+  CorrelationAnalysis,
+  CorrelationMatrix,
+  ConcentrationRisk,
+  HedgeRecommendation,
+  StressScenario,
+  StressTestResult,
+  MonteCarloConfig,
+  MonteCarloResult,
+  TradingBehaviorMetrics,
+  PsychologyAlert,
+  TradingSession,
+  MarketData,
+  RiskMetrics,
+} from './risk';
