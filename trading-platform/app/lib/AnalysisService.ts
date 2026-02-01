@@ -45,18 +45,18 @@ class AnalysisService {
         const closes = recentData.map(d => d.close);
         const currentPrice = closes[closes.length - 1];
 
-        const returns = [];
-        for (let i = 1; i < closes.length; i++) {
-            returns.push((closes[i] - closes[i - 1]) / (closes[i - 1] || 1));
+        const priceReturns = [];
+        for (let index = 1; index < closes.length; index++) {
+            priceReturns.push((closes[index] - closes[index - 1]) / (closes[index - 1] || 1));
         }
 
-        const meanReturn = returns.reduce((a, b) => a + b, 0) / (returns.length || 1);
-        const stdReturn = Math.sqrt(
-            returns.reduce((sum, r) => sum + Math.pow(r - meanReturn, 2), 0) / (returns.length || 1)
+        const meanPriceReturn = priceReturns.reduce((accumulator, returnValue) => accumulator + returnValue, 0) / (priceReturns.length || 1);
+        const stdDeviation = Math.sqrt(
+            priceReturns.reduce((accumulator, returnValue) => accumulator + Math.pow(returnValue - meanPriceReturn, 2), 0) / (priceReturns.length || 1)
         );
 
         const atr = (Math.max(...closes) - Math.min(...closes)) / (closes.length || 1);
-        const volatility = stdReturn * Math.sqrt(FORECAST_CONE.STEPS);
+        const volatility = stdDeviation * Math.sqrt(FORECAST_CONE.STEPS);
 
         const bearishLower: number[] = [currentPrice];
         const bearishUpper: number[] = [currentPrice];
@@ -76,7 +76,7 @@ class AnalysisService {
             bearishUpper.push((basePrice - priceVariation * 0.5) * bearishFactor);
             bullishLower.push((basePrice + priceVariation * 0.5) * bullishFactor);
             bullishUpper.push((basePrice + priceVariation * 1.5) * bullishFactor);
-            base.push(basePrice * (1 + meanReturn));
+            base.push(basePrice * (1 + meanPriceReturn));
         }
 
         const confidence = Math.min(
