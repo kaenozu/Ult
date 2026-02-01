@@ -918,18 +918,3 @@ export interface ReturnDistribution {
   kurtosis: number;
 }
 
-// Default config export
-export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
-  initialCapital: 1000000,
-  commission: 0.1,
-  slippage: 0.05,
-  spread: 0.01,
-  maxPositionSize: 20,
-  maxDrawdown: 20,
-  allowShort: false,
-  useStopLoss: true,
-  useTakeProfit: true,
-  riskPerTrade: 2,
-  maxOpenPositions: 10,
-  rebalanceFrequency: 'daily',
-};
