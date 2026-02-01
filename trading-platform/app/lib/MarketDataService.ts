@@ -1,6 +1,8 @@
 import { OHLCV } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { logError } from '@/app/lib/errors';
+import { dataQualityChecker, dataCompletionPipeline, dataLatencyMonitor } from './data';
+import type { MarketData } from '@/app/types/data-quality';
 
 /**
  * 市場インデックスの定義
@@ -71,6 +73,9 @@ export const MARKET_INDICES: MarketIndex[] = [
 export class MarketDataService {
   private marketDataCache = new Map<string, OHLCV[]>();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  private qualityCheckEnabled = true;
+  private dataCompletionEnabled = true;
+  private latencyMonitoringEnabled = true;
 
   /**
    * 市場データを取得する
@@ -99,6 +104,7 @@ export class MarketDataService {
     }
 
     try {
+      const fetchStartTime = Date.now();
       const response = await fetch(`/api/market?type=history&symbol=${symbol}`);
       if (!response.ok) {
         throw new Error(`Failed to fetch market data: ${response.statusText}`);
@@ -106,7 +112,7 @@ export class MarketDataService {
 
       const result = await response.json();
       if (result.success && result.data) {
-        const ohlcv = result.data.map((item: { date: string; open: string; high: string; low: string; close: string; volume: string | number }) => ({
+        let ohlcv = result.data.map((item: { date: string; open: string; high: string; low: string; close: string; volume: string | number }) => ({
           symbol,
           date: item.date,
           open: parseFloat(item.open),
@@ -116,7 +122,33 @@ export class MarketDataService {
           volume: parseFloat(String(item.volume)) || 0,
         }));
 
+        // Record data latency
+        if (this.latencyMonitoringEnabled && ohlcv.length > 0) {
+          const latestDataTime = new Date(ohlcv[ohlcv.length - 1].date).getTime();
+          dataLatencyMonitor.recordLatency(symbol, latestDataTime, Date.now(), 'api');
+        }
+
+        // Apply quality checks
+        if (this.qualityCheckEnabled) {
+          ohlcv = this.applyQualityChecks(symbol, ohlcv);
+        }
+
+        // Apply data completion
+        if (this.dataCompletionEnabled) {
+          const completionResult = await dataCompletionPipeline.complete(ohlcv, symbol);
+          if (completionResult.success) {
+            ohlcv = completionResult.data;
+          }
+        }
+
         this.marketDataCache.set(symbol, ohlcv);
+        
+        // Log fetch performance
+        const fetchDuration = Date.now() - fetchStartTime;
+        if (fetchDuration > 5000) {
+          console.warn(`Slow market data fetch for ${symbol}: ${fetchDuration}ms`);
+        }
+
         return ohlcv;
       }
 
@@ -125,6 +157,46 @@ export class MarketDataService {
       logError(error, `MarketDataService.fetchMarketData(${symbol})`);
       return [];
     }
+  }
+
+  /**
+   * Apply quality checks to market data
+   * 
+   * @param symbol - Symbol for the data
+   * @param data - OHLCV data array
+   * @returns Filtered data array with only valid entries
+   */
+  private applyQualityChecks(symbol: string, data: OHLCV[]): OHLCV[] {
+    const validData: OHLCV[] = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const item = data[i];
+      const prevItem = i > 0 ? data[i - 1] : undefined;
+
+      const marketData: MarketData = {
+        symbol,
+        timestamp: new Date(item.date).getTime(),
+        ohlcv: item,
+        previousClose: prevItem?.close,
+        previousVolume: prevItem?.volume,
+        source: 'api'
+      };
+
+      const report = dataQualityChecker.check(marketData);
+      
+      if (report.isValid) {
+        validData.push(item);
+      } else {
+        console.warn(`Quality check failed for ${symbol} on ${item.date}:`, report.errors);
+      }
+
+      // Log warnings if any
+      if (report.warnings.length > 0) {
+        console.info(`Quality warnings for ${symbol} on ${item.date}:`, report.warnings);
+      }
+    }
+
+    return validData;
   }
 
   /**
@@ -307,6 +379,69 @@ export class MarketDataService {
     if (dataLength >= 252) return 'high';    // 1 year of daily data
     if (dataLength >= 126) return 'medium'; // 6 months
     return 'low';                             // < 6 months
+  }
+
+  /**
+   * Enable or disable quality checking
+   * 
+   * @param enabled - Whether to enable quality checking
+   */
+  setQualityCheckEnabled(enabled: boolean): void {
+    this.qualityCheckEnabled = enabled;
+  }
+
+  /**
+   * Enable or disable data completion
+   * 
+   * @param enabled - Whether to enable data completion
+   */
+  setDataCompletionEnabled(enabled: boolean): void {
+    this.dataCompletionEnabled = enabled;
+  }
+
+  /**
+   * Enable or disable latency monitoring
+   * 
+   * @param enabled - Whether to enable latency monitoring
+   */
+  setLatencyMonitoringEnabled(enabled: boolean): void {
+    this.latencyMonitoringEnabled = enabled;
+  }
+
+  /**
+   * Get data quality report for cached data
+   * 
+   * @param symbol - Symbol to check
+   * @returns Summary of data quality or null if no cached data
+   */
+  getDataQualityReport(symbol: string): {
+    totalPoints: number;
+    validPoints: number;
+    completeness: number;
+    freshness: string;
+    avgLatency: number;
+  } | null {
+    const data = this.marketDataCache.get(symbol);
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    // Get completion stats
+    const completionStats = dataCompletionPipeline.getStats(data);
+
+    // Get freshness info
+    const freshness = dataLatencyMonitor.checkFreshness(symbol);
+
+    // Get latency stats
+    const latencyStats = dataLatencyMonitor.getStats(symbol);
+
+    return {
+      totalPoints: data.length,
+      validPoints: data.length,
+      completeness: completionStats.completeness,
+      freshness: freshness.staleness,
+      avgLatency: latencyStats?.avgLatencyMs || 0
+    };
   }
 }
 
