@@ -26,7 +26,7 @@ const ChartLoader = () => (
   </div>
 );
 
-function WorkstationContent() {
+function HomePageContent() {
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
   const { watchlist } = useWatchlistStore();
@@ -229,10 +229,10 @@ function WorkstationContent() {
   );
 }
 
-export default function Workstation() {
+export default function HomePage() {
   return (
     <ErrorBoundary name="HomePage">
-      <WorkstationContent />
+      <HomePageContent />
     </ErrorBoundary>
   );
 }
