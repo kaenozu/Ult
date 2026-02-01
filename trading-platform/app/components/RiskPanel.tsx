@@ -9,6 +9,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { RiskMetrics } from '@/app/lib/risk/AdvancedRiskManager';
+import { DRAWDOWN_THRESHOLDS } from '@/app/lib/constants';
 import { Shield, AlertTriangle, TrendingDown, Activity } from 'lucide-react';
 
 interface RiskPanelProps {
