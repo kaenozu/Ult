@@ -3,6 +3,57 @@ import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPl
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireAuth } from '@/app/lib/auth';
 
+/**
+ * @swagger
+ * /api/trading:
+ *   get:
+ *     summary: Get trading platform status
+ *     description: Retrieve the current status of the trading platform including portfolio, signals, risk metrics, and recent alerts
+ *     tags:
+ *       - Trading
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successful response with platform status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   $ref: '#/components/schemas/TradingStatus'
+ *                 portfolio:
+ *                   $ref: '#/components/schemas/Portfolio'
+ *                 signals:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Signal'
+ *                 riskMetrics:
+ *                   $ref: '#/components/schemas/RiskMetrics'
+ *                 alerts:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Alert'
+ *       401:
+ *         description: Unauthorized - Invalid or missing authentication token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET - Platform status
 export async function GET(req: NextRequest) {
   // Require authentication
@@ -36,6 +87,144 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * @swagger
+ * /api/trading:
+ *   post:
+ *     summary: Execute trading actions
+ *     description: Control the trading platform or execute trading operations
+ *     tags:
+ *       - Trading
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             oneOf:
+ *               - type: object
+ *                 properties:
+ *                   action:
+ *                     type: string
+ *                     enum: [start]
+ *                     description: Start the trading platform
+ *                 required: [action]
+ *               - type: object
+ *                 properties:
+ *                   action:
+ *                     type: string
+ *                     enum: [stop]
+ *                     description: Stop the trading platform
+ *                 required: [action]
+ *               - type: object
+ *                 properties:
+ *                   action:
+ *                     type: string
+ *                     enum: [reset]
+ *                     description: Reset the trading platform
+ *                 required: [action]
+ *               - type: object
+ *                 properties:
+ *                   action:
+ *                     type: string
+ *                     enum: [place_order]
+ *                   symbol:
+ *                     type: string
+ *                     description: Stock symbol
+ *                     example: "7203"
+ *                   side:
+ *                     type: string
+ *                     enum: [BUY, SELL]
+ *                     description: Order side
+ *                   quantity:
+ *                     type: number
+ *                     description: Order quantity (must be positive)
+ *                     example: 100
+ *                   options:
+ *                     type: object
+ *                     description: Additional order options
+ *                 required: [action, symbol, side, quantity]
+ *               - type: object
+ *                 properties:
+ *                   action:
+ *                     type: string
+ *                     enum: [close_position]
+ *                   symbol:
+ *                     type: string
+ *                     description: Stock symbol
+ *                     example: "7203"
+ *                 required: [action, symbol]
+ *               - type: object
+ *                 properties:
+ *                   action:
+ *                     type: string
+ *                     enum: [create_alert]
+ *                   name:
+ *                     type: string
+ *                     description: Alert name
+ *                     example: "Price above 2500"
+ *                   symbol:
+ *                     type: string
+ *                     description: Stock symbol
+ *                     example: "7203"
+ *                   type:
+ *                     type: string
+ *                     description: Alert type
+ *                   operator:
+ *                     type: string
+ *                     enum: [">", "<", ">=", "<=", "=="]
+ *                     description: Comparison operator
+ *                   value:
+ *                     type: number
+ *                     description: Threshold value
+ *                     example: 2500
+ *                 required: [action, name, symbol, type, operator, value]
+ *               - type: object
+ *                 properties:
+ *                   action:
+ *                     type: string
+ *                     enum: [update_config]
+ *                   config:
+ *                     type: object
+ *                     description: Configuration object
+ *                 required: [action, config]
+ *     responses:
+ *       200:
+ *         description: Action executed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *       400:
+ *         description: Bad request - Invalid action or parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized - Invalid or missing authentication token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST - Control actions
 export async function POST(req: NextRequest) {
   // Require authentication
