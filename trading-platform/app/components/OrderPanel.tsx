@@ -9,12 +9,37 @@ import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 import { DynamicRiskMetrics } from './DynamicRiskMetrics';
 import { OrderRequest } from '@/app/types/order';
 
+/**
+ * OrderPanelコンポーネントのプロパティ
+ * @property stock - 取引対象の銘柄情報
+ * @property currentPrice - 現在の株価
+ * @property ohlcv - OHLCVデータ（ボラティリティ計算に使用）
+ */
 interface OrderPanelProps {
   stock: Stock;
   currentPrice: number;
   ohlcv?: OHLCV[];
 }
 
+/**
+ * 注文パネルコンポーネント
+ * 
+ * 株式の売買注文を作成・実行するためのUIコンポーネント。
+ * 成行注文と指値注文に対応し、動的リスク管理機能を提供する。
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <OrderPanel 
+ *   stock={{ symbol: 'AAPL', name: 'Apple Inc.', market: 'usa' }}
+ *   currentPrice={150.25}
+ *   ohlcv={historicalData}
+ * />
+ * ```
+ * 
+ * @param {OrderPanelProps} props - コンポーネントのプロパティ
+ * @returns {JSX.Element} 注文パネルUI
+ */
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
   const { portfolio } = usePortfolioStore();
   const executeOrderAtomicV2 = useExecuteOrderAtomicV2();

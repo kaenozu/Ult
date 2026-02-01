@@ -10,24 +10,30 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Play, BarChart3 } from 'lucide-react';
+import { usePerformanceMonitor } from '@/app/lib/performance';
 
 export function BacktestPanel() {
+  const { measureAsync } = usePerformanceMonitor('BacktestPanel');
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<any>(null);
 
-  const runBacktest = () => {
+  const runBacktest = async () => {
     setIsRunning(true);
-    // Simulate backtest
-    setTimeout(() => {
-      setResults({
-        totalReturn: 25.5,
-        sharpeRatio: 1.8,
-        maxDrawdown: 12.3,
-        winRate: 58.2,
-        totalTrades: 156,
+    try {
+      // Simulate backtest
+      await measureAsync('simulateBacktest', async () => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setResults({
+          totalReturn: 25.5,
+          sharpeRatio: 1.8,
+          maxDrawdown: 12.3,
+          winRate: 58.2,
+          totalTrades: 156,
+        });
       });
+    } finally {
       setIsRunning(false);
-    }, 2000);
+    }
   };
 
   return (
