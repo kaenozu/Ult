@@ -320,10 +320,10 @@ export class FeatureEngineering {
    * ATR比率を計算
    * 
    * @param atr - ATR配列
-   * @param currentPrice - 現在価格
+   * @param _currentPrice - 現在価格（将来の拡張用に保持）
    * @returns ATR比率
    */
-  private calculateATRRatio(atr: number[], currentPrice: number): number {
+  private calculateATRRatio(atr: number[], _currentPrice: number): number {
     const validATR = atr.filter(v => !isNaN(v));
     if (validATR.length < 2) return 1;
     
@@ -400,8 +400,12 @@ export class FeatureEngineering {
 
   /**
    * ボラティリティを計算（年率換算）
+   * 
+   * @param prices - 価格配列
+   * @param _period - 期間（将来の拡張用に保持）
+   * @returns 年率換算ボラティリティ
    */
-  private calculateVolatility(prices: number[], period: number): number {
+  private calculateVolatility(prices: number[], _period: number): number {
     if (prices.length < 2) return 0;
 
     const returns: number[] = [];
@@ -462,7 +466,6 @@ export class FeatureEngineering {
 
     let positiveScore = 0;
     let negativeScore = 0;
-    let totalWords = 0;
 
     for (const text of newsTexts) {
       const lowerText = text.toLowerCase();
@@ -471,7 +474,6 @@ export class FeatureEngineering {
       for (const keyword of positiveKeywords) {
         const matches = (lowerText.match(new RegExp(keyword, 'g')) || []).length;
         positiveScore += matches;
-        totalWords += lowerText.split(/\s+/).length;
       }
       
       // ネガティブキーワードのカウント

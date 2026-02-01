@@ -6,7 +6,6 @@
  */
 
 import { ExtendedTechnicalFeatures } from './FeatureEngineering';
-import { BaseModelPrediction } from './EnsembleModel';
 
 /**
  * 学習サンプル
