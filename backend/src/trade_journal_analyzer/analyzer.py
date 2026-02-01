@@ -9,6 +9,12 @@ from typing import List, Dict, Any
 from collections import defaultdict
 from .models import JournalEntry, TradePattern, BiasAlert
 
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
 # Constants for bias detection
 OVERTRADING_MIN_ENTRIES = 20
 OVERTRADING_MAX_TIME_SPAN_DAYS = 1
@@ -32,6 +38,8 @@ class TradeJournalAnalyzer:
     def __init__(self):
         """Initialize an empty analyzer"""
         self._entries: List[JournalEntry] = []
+        self._patterns_cache: Dict[str, List[TradePattern]] = {}
+        self._cache_timestamp: float = 0
 
     def add_entry(self, entry: JournalEntry) -> None:
         """Add a journal entry
@@ -98,7 +106,7 @@ class TradeJournalAnalyzer:
         return alerts
 
     def extract_patterns(self, min_trades: int = DEFAULT_MIN_TRADES_FOR_PATTERN) -> List[TradePattern]:
-        """Extract trading patterns from journal
+        """Extract trading patterns from journal with caching
 
         Args:
             min_trades: Minimum number of trades to consider a pattern
@@ -108,7 +116,16 @@ class TradeJournalAnalyzer:
         """
         if len(self._entries) < min_trades:
             return []
-
+        
+        # Check cache (valid for 60 seconds)
+        import time
+        cache_key = f"{min_trades}_{len(self._entries)}"
+        current_time = time.time()
+        
+        if (cache_key in self._patterns_cache and 
+            current_time - self._cache_timestamp < 60):
+            return self._patterns_cache[cache_key]
+        
         patterns = []
 
         # Analyze by time of day
@@ -121,6 +138,10 @@ class TradeJournalAnalyzer:
 
         # Sort by win rate
         patterns.sort(key=lambda p: p.win_rate, reverse=True)
+        
+        # Cache results
+        self._patterns_cache[cache_key] = patterns
+        self._cache_timestamp = current_time
 
         return patterns
 

@@ -11,13 +11,9 @@ import { Stock } from '@/app/types';
 import { NotificationCenter } from './NotificationCenter';
 
 export const Header = memo(function Header() {
-  const portfolio = usePortfolioStore(s => s.portfolio);
-  const setCash = usePortfolioStore(s => s.setCash);
-  const isConnected = useUIStore(s => s.isConnected);
-  const toggleConnection = useUIStore(s => s.toggleConnection);
-  const setSelectedStock = useUIStore(s => s.setSelectedStock);
-  const watchlist = useWatchlistStore(s => s.watchlist);
-  const addToWatchlist = useWatchlistStore(s => s.addToWatchlist);
+  const { portfolio, setCash } = usePortfolioStore();
+  const { isConnected, toggleConnection, setSelectedStock } = useUIStore();
+  const { watchlist, addToWatchlist } = useWatchlistStore();
 
   const [isEditingCash, setIsEditingCash] = useState(false);
   const [cashInput, setCashInput] = useState('');

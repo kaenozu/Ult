@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Stock, Portfolio, Position, Order, AIStatus, Theme as AppTheme, Signal as AIAnalysis, OHLCV as MarketData } from '../types';
+import { OrderRequest, OrderResult } from '../types/order';
 import { AI_TRADING } from '../lib/constants';
 
 // Define the comprehensive state interface used by legacy components
@@ -18,7 +19,7 @@ interface TradingStore {
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   addPosition: (position: Position) => void;
-  closePosition: (symbol: string, exitPrice: number) => void;
+  closePosition: (symbol: string, exitPrice: number) => OrderResult;
   setCash: (amount: number) => void;
 
   // AI & Analysis
@@ -28,6 +29,7 @@ interface TradingStore {
   // Order Execution
   executeOrder: (symbol: string, side: 'LONG' | 'SHORT', quantity: number, price: number) => Promise<boolean>;
   executeOrderAtomic: (order: Order) => void;
+  executeOrderAtomicV2: (order: OrderRequest) => OrderResult;
 
   // Deprecated but potentially used fields
   selectedStock: Stock | null;
@@ -41,8 +43,36 @@ interface TradingStore {
   batchUpdateStockData: (data: any[]) => void;
 }
 
-// Helper for portfolio stats
-function calculatePortfolioStats(positions: Position[]) {
+// Helper for portfolio stats with caching
+interface PortfolioState {
+  positions: Position[];
+  orders: Order[];
+  totalValue: number;
+  totalProfit: number;
+  dailyPnL: number;
+  cash: number;
+  _statsCache?: {
+    timestamp: number;
+    positionsHash: string;
+    stats: { totalValue: number; totalProfit: number; dailyPnL: number };
+  };
+}
+
+function calculatePortfolioStats(positions: Position[], cache?: PortfolioState['_statsCache']) {
+  // Check cache validity (1 second TTL)
+  const positionsHash = JSON.stringify(positions.map(p => ({
+    symbol: p.symbol,
+    quantity: p.quantity,
+    currentPrice: p.currentPrice,
+    change: p.change
+  })));
+  
+  if (cache && cache.positionsHash === positionsHash && 
+      Date.now() - cache.timestamp < 1000) {
+    return cache.stats;
+  }
+  
+  // New calculation
   const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
   const totalProfit = positions.reduce((sum, p) => {
     const pnl = p.side === 'LONG'
@@ -51,7 +81,58 @@ function calculatePortfolioStats(positions: Position[]) {
     return sum + pnl;
   }, 0);
   const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
-  return { totalValue, totalProfit, dailyPnL };
+  
+  const stats = { totalValue, totalProfit, dailyPnL };
+  
+  return {
+    ...stats,
+    _cache: {
+      timestamp: Date.now(),
+      positionsHash,
+      stats
+    }
+  };
+}
+
+// Incremental update helper for portfolio stats
+function updatePortfolioStatsIncremental(
+  currentStats: { totalValue: number; totalProfit: number; dailyPnL: number },
+  changedPosition: Position,
+  previousPosition?: Position
+): { totalValue: number; totalProfit: number; dailyPnL: number } {
+  if (previousPosition) {
+    // Calculate delta for changed position
+    const valueDelta = changedPosition.currentPrice * changedPosition.quantity - 
+                      previousPosition.currentPrice * previousPosition.quantity;
+    const profitDelta = (changedPosition.side === 'LONG'
+      ? (changedPosition.currentPrice - changedPosition.avgPrice) * changedPosition.quantity
+      : (changedPosition.avgPrice - changedPosition.currentPrice) * changedPosition.quantity
+    ) - (previousPosition.side === 'LONG'
+      ? (previousPosition.currentPrice - previousPosition.avgPrice) * previousPosition.quantity
+      : (previousPosition.avgPrice - previousPosition.currentPrice) * previousPosition.quantity
+    );
+    const pnlDelta = (changedPosition.change * changedPosition.quantity) - 
+                     (previousPosition.change * previousPosition.quantity);
+    
+    return {
+      totalValue: currentStats.totalValue + valueDelta,
+      totalProfit: currentStats.totalProfit + profitDelta,
+      dailyPnL: currentStats.dailyPnL + pnlDelta
+    };
+  } else {
+    // Add new position
+    const value = changedPosition.currentPrice * changedPosition.quantity;
+    const profit = changedPosition.side === 'LONG'
+      ? (changedPosition.currentPrice - changedPosition.avgPrice) * changedPosition.quantity
+      : (changedPosition.avgPrice - changedPosition.currentPrice) * changedPosition.quantity;
+    const pnl = changedPosition.change * changedPosition.quantity;
+    
+    return {
+      totalValue: currentStats.totalValue + value,
+      totalProfit: currentStats.totalProfit + profit,
+      dailyPnL: currentStats.dailyPnL + pnl
+    };
+  }
 }
 
 export const useTradingStore = create<TradingStore>()(
@@ -111,26 +192,41 @@ export const useTradingStore = create<TradingStore>()(
           portfolio: { ...state.portfolio, positions, ...stats }
         };
       }),
-      closePosition: (symbol, exitPrice) => set((state) => {
-        const position = state.portfolio.positions.find(p => p.symbol === symbol);
-        if (!position) return state;
+      closePosition: (symbol, exitPrice) => {
+        let result: OrderResult = { success: false };
+        
+        set((state) => {
+          const position = state.portfolio.positions.find(p => p.symbol === symbol);
+          if (!position) {
+            result = { success: false, error: 'Position not found' };
+            return state;
+          }
 
-        const profit = position.side === 'LONG'
-          ? (exitPrice - position.avgPrice) * position.quantity
-          : (position.avgPrice - exitPrice) * position.quantity;
+          const profit = position.side === 'LONG'
+            ? (exitPrice - position.avgPrice) * position.quantity
+            : (position.avgPrice - exitPrice) * position.quantity;
 
-        const positions = state.portfolio.positions.filter(p => p.symbol !== symbol);
-        const stats = calculatePortfolioStats(positions);
+          const positions = state.portfolio.positions.filter(p => p.symbol !== symbol);
+          const stats = calculatePortfolioStats(positions);
+          const newCash = state.portfolio.cash + (position.avgPrice * position.quantity) + profit;
 
-        return {
-          portfolio: {
-            ...state.portfolio,
-            positions,
-            ...stats,
-            cash: state.portfolio.cash + (position.avgPrice * position.quantity) + profit,
-          },
-        };
-      }),
+          result = {
+            success: true,
+            remainingCash: newCash,
+          };
+
+          return {
+            portfolio: {
+              ...state.portfolio,
+              positions,
+              ...stats,
+              cash: newCash,
+            },
+          };
+        });
+        
+        return result;
+      },
       setCash: (amount) => set((state) => ({
         portfolio: { ...state.portfolio, cash: amount },
       })),
@@ -159,7 +255,7 @@ export const useTradingStore = create<TradingStore>()(
         return true;
       },
 
-      executeOrderAtomic: (order) => set((state) => {
+       executeOrderAtomic: (order) => set((state) => {
          const { portfolio } = state;
          const price = order.price || 0;
          const orderCost = price * order.quantity;
@@ -224,7 +320,100 @@ export const useTradingStore = create<TradingStore>()(
              ...stats
            }
          };
-      }),
+       }),
+
+      /**
+       * アトミックな注文実行（OrderRequestを使用）
+       * 残高確認、ポジション追加、現金減算を単一のトランザクションで実行
+       * @param order 注文リクエスト
+       * @returns 注文結果
+       */
+      executeOrderAtomicV2: (order: OrderRequest): OrderResult => {
+        let result: OrderResult = { success: false };
+        
+        set((state) => {
+          const { portfolio } = state;
+          const totalCost = order.quantity * order.price;
+          
+          // 1. バリデーション（読み取り）
+          if (order.side === 'LONG' && portfolio.cash < totalCost) {
+            result = { 
+              success: false, 
+              error: `Insufficient funds. Required: ${totalCost}, Available: ${portfolio.cash}` 
+            };
+            return state;
+          }
+
+          // 2. 既存ポジションチェック
+          const existingPosition = portfolio.positions.find(p => p.symbol === order.symbol && p.side === order.side);
+          
+          // 3. 新しいポジション作成
+          const newPosition: Position = existingPosition
+            ? {
+                ...existingPosition,
+                quantity: existingPosition.quantity + order.quantity,
+                avgPrice: (existingPosition.avgPrice * existingPosition.quantity + order.price * order.quantity) 
+                         / (existingPosition.quantity + order.quantity),
+                currentPrice: order.price,
+              }
+            : {
+                symbol: order.symbol,
+                name: order.name,
+                market: order.market,
+                side: order.side,
+                quantity: order.quantity,
+                avgPrice: order.price,
+                currentPrice: order.price,
+                change: 0,
+                entryDate: new Date().toISOString(),
+              };
+
+          // 4. アトミックな状態更新（単一のset）
+          const newCash = order.side === 'LONG' 
+            ? portfolio.cash - totalCost 
+            : portfolio.cash + totalCost;
+          
+          const positions = existingPosition
+            ? portfolio.positions.map(p => 
+                p.symbol === order.symbol && p.side === order.side ? newPosition : p
+              )
+            : [...portfolio.positions, newPosition];
+          
+          const stats = calculatePortfolioStats(positions);
+          
+          result = {
+            success: true,
+            orderId: `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            remainingCash: newCash,
+            newPosition,
+          };
+
+          return {
+            portfolio: {
+              ...portfolio,
+              cash: newCash,
+              positions,
+              orders: [
+                ...portfolio.orders,
+                {
+                  id: result.orderId!,
+                  symbol: order.symbol,
+                  side: order.side === 'LONG' ? 'BUY' : 'SELL',
+                  type: order.orderType,
+                  quantity: order.quantity,
+                  price: order.price,
+                  status: 'FILLED',
+                  date: new Date().toISOString(),
+                  timestamp: Date.now(),
+                }
+              ],
+              ...stats,
+            },
+          };
+        });
+
+        return result;
+      },
 
       selectedStock: null,
       setSelectedStock: (stock) => set({ selectedStock: stock }),

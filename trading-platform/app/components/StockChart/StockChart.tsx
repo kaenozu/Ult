@@ -126,8 +126,8 @@ export const StockChart = memo(function StockChart({
         }
       ] : []),
     ],
-  }), [extendedData.labels, extendedData.prices, normalizedIndexData, showSMA, showBollinger, 
-      sma20, upper, lower, forecastDatasets, ghostForecastDatasets, market]);
+  }), [extendedData.labels, extendedData.prices, normalizedIndexData, showSMA, showBollinger,
+    sma20, upper, lower, forecastDatasets, ghostForecastDatasets, market]);
 
   // 4. Loading / Error States
   if (error) return (

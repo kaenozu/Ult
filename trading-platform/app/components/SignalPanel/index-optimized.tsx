@@ -8,7 +8,7 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Stock, Signal, OHLCV } from '@/app/types';
+import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
 import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
 import { BacktestResult } from '@/app/types';
 import { useAIStore } from '@/app/store/aiStore';
@@ -30,10 +30,12 @@ interface SignalPanelProps {
 
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
-  const { aiStatus, processAITrades } = useAIStore();
+  const { aiStatus, processAITrades, trades } = useAIStore();
 
   // Custom Hooks
   const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock, ohlcv);
+
+
 
   // Web Worker hook for backtest
   const {
@@ -72,10 +74,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
   // Alert Logic Hook
   useSignalAlerts({
-      stock,
-      displaySignal,
-      preciseHitRate: preciseHitRate || { hitRate: 0, trades: 0 },
-      calculatingHitRate
+    stock,
+    displaySignal,
+    preciseHitRate: preciseHitRate || { hitRate: 0, trades: 0 },
+    calculatingHitRate
   });
 
   // 自動売買プロセスをトリガー
@@ -158,9 +160,26 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     };
   }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, runBacktestAsync, cancelBacktest]);
 
-  const aiTrades = useMemo(() => {
-    return aiStatus.trades.filter(t => t.symbol === stock.symbol);
-  }, [aiStatus.trades, stock.symbol]);
+  const aiTrades: PaperTrade[] = useMemo(() => {
+    return trades
+      .filter(t => t.symbol === stock.symbol)
+      .map(o => ({
+        id: o.id,
+        symbol: o.symbol,
+        type: (o.side === 'BUY' || o.side === 'LONG' as any) ? 'BUY' : 'SELL',
+        entryPrice: o.price || 0,
+        quantity: o.quantity,
+        status: o.status === 'FILLED' ? 'CLOSED' : 'OPEN', // Simplified
+        entryDate: o.date,
+        profitPercent: 0, // Placeholder
+      }));
+  }, [trades, stock.symbol]);
+
+  const aiStatusData: import('@/app/types').AIStatus = useMemo(() => ({
+    virtualBalance: 10000000, // Placeholder
+    totalProfit: 0,
+    trades: aiTrades
+  }), [aiTrades]);
 
   if (loading || !displaySignal) {
     return (
@@ -205,7 +224,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       {activeTab === 'signal' && (
         <div className="flex-1 flex flex-col gap-3">
           <SignalCard signal={displaySignal} stock={stock} />
-          
+
           {preciseHitRate && (
             <div className="bg-[#192633] rounded-lg p-3 border border-[#233648]">
               <div className="flex justify-between items-center mb-2">
@@ -236,7 +255,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
                   <span>{backtestProgress}%</span>
                 </div>
                 <div className="h-2 bg-[#233648] rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-blue-500 transition-all duration-300"
                     style={{ width: `${backtestProgress}%` }}
                   />
@@ -251,7 +270,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
               データがありません
             </div>
           )}
-          
+
           {backtestError && (
             <div className="mt-2 p-2 bg-red-500/20 border border-red-500/50 rounded text-xs text-red-400">
               エラー: {backtestError}
@@ -264,7 +283,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       {activeTab === 'ai' && (
         <div className="flex-1">
           <AIPerformanceView
-            aiStatus={aiStatus}
+            aiStatus={aiStatusData}
             stock={stock}
             aiTrades={aiTrades}
           />
