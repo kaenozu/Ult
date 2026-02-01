@@ -1,0 +1,19 @@
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup Files
+*.backup
+*.dump
+*.sql.gz
+
+# Local Development
+.env.local
+.env.development.local
+
+# Generated Files
+prisma/migrations/dev.db
+
+# Logs
+migration-logs/
