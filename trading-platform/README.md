@@ -165,6 +165,55 @@ npm run frontend-tester full-check
 npm run auto-runner watch --tasks=build,test
 ```
 
+### 📊 テストカバレッジ
+
+プロジェクトではJestを使用してテストカバレッジを計測しています：
+
+```bash
+# カバレッジ付きテスト実行
+npm run test:coverage
+
+# カバレッジレポートは `coverage/` ディレクトリに生成されます
+# - coverage/lcov-report/index.html: HTML形式のカバレッジレポート
+# - coverage/coverage-final.json: JSON形式のカバレッジデータ
+# - coverage/lcov.info: LCOV形式のカバレッジデータ
+```
+
+**カバレッジ目標**:
+- ステートメント: 80%
+- ブランチ: 80%
+- 関数: 80%
+- 行: 80%
+
+現在のカバレッジ状況は、CI/CDパイプラインで自動的に確認されます。
+
+### 🚀 CI/CDパイプライン
+
+GitHub Actionsを使用したCI/CDパイプラインが実装されています：
+
+```yaml
+# .github/workflows/ci.yml
+```
+
+**パイプラインの機能**:
+- 自動テスト実行（Jest）
+- カバレッジレポートの生成とアップロード（Codecov）
+- リントチェック（ESLint）
+- 型チェック（TypeScript）
+- ビルド検証
+- E2Eテスト（Playwright）
+
+**トリガー条件**:
+- `main` ブランチへのpush
+- `develop` ブランチへのpush
+- `main` ブランチへのPull Request
+- `develop` ブランチへのPull Request
+
+**ワークフロー**:
+1. `test` ジョブ: テスト、リント、型チェックを実行
+2. `build` ジョブ: テスト成功後にビルドを実行
+3. `e2e` ジョブ: テスト成功後にE2Eテストを実行
+
 ### 📁 プロジェクト構造
 
 ```

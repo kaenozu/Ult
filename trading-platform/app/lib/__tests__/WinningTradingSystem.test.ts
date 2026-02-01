@@ -4,7 +4,7 @@
  * 統合トレーディングシステムのテスト
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import WinningTradingSystem, { DEFAULT_SYSTEM_CONFIG } from '../WinningTradingSystem';
 import { OHLCV } from '@/app/types';
 import { StrategyType } from '../strategies';

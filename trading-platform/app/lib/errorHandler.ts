@@ -105,7 +105,7 @@ export class ErrorHandler {
         fatal: true,
       };
     } else if (error instanceof ApiError) {
-      if (error.status === 429) { // Too many requests
+      if (error.statusCode === 429) { // Too many requests
         recovery = {
           canRecover: true,
           recoveryAction: 'retry',
@@ -113,7 +113,7 @@ export class ErrorHandler {
           retryCount: 3,
           fatal: false,
         };
-      } else if (error.status >= 500) { // Server errors
+      } else if (error.statusCode && error.statusCode >= 500) { // Server errors
         recovery = {
           canRecover: true,
           recoveryAction: 'retry',
