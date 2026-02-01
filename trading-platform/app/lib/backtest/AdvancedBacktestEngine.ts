@@ -552,17 +552,13 @@ export class AdvancedBacktestEngine extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalBacktestEngine: AdvancedBacktestEngine | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalBacktestEngine(config?: Partial<BacktestConfig>): AdvancedBacktestEngine {
-  if (!globalBacktestEngine) {
-    globalBacktestEngine = new AdvancedBacktestEngine(config);
-  }
-  return globalBacktestEngine;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<BacktestConfig>) => new AdvancedBacktestEngine(config)
+);
 
-export function resetGlobalBacktestEngine(): void {
-  globalBacktestEngine = null;
-}
+export const getGlobalBacktestEngine = getInstance;
+export const resetGlobalBacktestEngine = resetInstance;
 
 export default AdvancedBacktestEngine;

@@ -1033,19 +1033,13 @@ export class MultiAssetBacktestEngine extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalMultiAssetBacktestEngine: MultiAssetBacktestEngine | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalMultiAssetBacktestEngine(
-  config?: Partial<MultiAssetBacktestConfig>
-): MultiAssetBacktestEngine {
-  if (!globalMultiAssetBacktestEngine) {
-    globalMultiAssetBacktestEngine = new MultiAssetBacktestEngine(config);
-  }
-  return globalMultiAssetBacktestEngine;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<MultiAssetBacktestConfig>) => new MultiAssetBacktestEngine(config)
+);
 
-export function resetGlobalMultiAssetBacktestEngine(): void {
-  globalMultiAssetBacktestEngine = null;
-}
+export const getGlobalMultiAssetBacktestEngine = getInstance;
+export const resetGlobalMultiAssetBacktestEngine = resetInstance;
 
 export default MultiAssetBacktestEngine;

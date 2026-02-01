@@ -1020,17 +1020,13 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalAnalyticsEngine: PredictiveAnalyticsEngine | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalAnalyticsEngine(config?: Partial<ModelConfig>): PredictiveAnalyticsEngine {
-  if (!globalAnalyticsEngine) {
-    globalAnalyticsEngine = new PredictiveAnalyticsEngine(config);
-  }
-  return globalAnalyticsEngine;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<ModelConfig>) => new PredictiveAnalyticsEngine(config)
+);
 
-export function resetGlobalAnalyticsEngine(): void {
-  globalAnalyticsEngine = null;
-}
+export const getGlobalAnalyticsEngine = getInstance;
+export const resetGlobalAnalyticsEngine = resetInstance;
 
 export default PredictiveAnalyticsEngine;
