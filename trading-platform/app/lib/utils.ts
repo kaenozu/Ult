@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { TECHNICAL_INDICATORS } from './constants';
+import { getConfig } from './config/env-validator';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -213,15 +214,17 @@ export function calculateReturns(prices: number[]): number[] {
 
 /**
  * Get the WebSocket URL based on the current environment.
- * Prioritizes process.env.NEXT_PUBLIC_WS_URL, then falls back to window location or localhost.
+ * Uses validated environment configuration first, then falls back to window location or localhost.
  * Ensures the protocol matches the current page's security (wss: for https:).
  *
  * @param path - The path to append to the base URL (e.g. '/ws/signals')
  * @returns The complete WebSocket URL
  */
 export function getWebSocketUrl(path: string = '/ws/signals'): string {
-  // Use environment variable if available (e.g. in production build)
-  const envUrl = process.env.NEXT_PUBLIC_WS_URL;
+  // Use validated environment configuration
+  const config = getConfig();
+  const envUrl = config.websocket.url;
+  
   if (envUrl) {
     // Remove trailing slash if present to avoid double slashes
     const baseUrl = envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;

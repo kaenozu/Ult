@@ -9,6 +9,7 @@ import { cn, formatPercent } from '@/app/lib/utils';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
+import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
 const SECTORS = [
   '全て',
@@ -79,7 +80,7 @@ function HeatmapBlock({ stock, className, onClick }: HeatmapBlockProps) {
   );
 }
 
-export default function Heatmap() {
+function HeatmapContent() {
   const router = useRouter();
   const { batchUpdateStockData } = useWatchlistStore();
   const { setSelectedStock } = useUIStore();
@@ -259,5 +260,13 @@ export default function Heatmap() {
       </div>
       <Navigation />
     </div>
+  );
+}
+
+export default function Heatmap() {
+  return (
+    <ErrorBoundary name="HeatmapPage">
+      <HeatmapContent />
+    </ErrorBoundary>
   );
 }
