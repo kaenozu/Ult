@@ -135,12 +135,8 @@ class AnalysisService {
         // Use cached ATR if available in context
         const atrArray = context?.preCalculatedIndicators?.atr || accuracyService.calculateBatchSimpleATR(data);
 
-        for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
-            rsiCache.set(rsiP, technicalIndicatorService.calculateRSI(closes, rsiP));
-        }
-        for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
-            smaCache.set(smaP, technicalIndicatorService.calculateSMA(closes, smaP));
-        }
+        // RSI and SMA are already calculated and cached above (lines 120-132)
+        // No need to recalculate them here - removed duplicate calculations
 
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
             for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
