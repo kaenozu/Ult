@@ -264,8 +264,8 @@ export class WinRateMaximizer {
     // テクニカル指標を計算
     const rsi = technicalIndicatorService.calculateRSI(closes, 14);
     const macd = technicalIndicatorService.calculateMACD(closes);
-    // ADXの代わりにトレンド強度を計算
-    const adx = this.calculateTrendStrength(closes);
+    // トレンド強度を計算（ADXの代替）
+    const trendStrength = this.calculateTrendStrength(closes);
     const bb = technicalIndicatorService.calculateBollingerBands(closes, 20, 2);
     const sma20 = technicalIndicatorService.calculateSMA(closes, 20);
     const sma50 = technicalIndicatorService.calculateSMA(closes, 50);
@@ -302,7 +302,7 @@ export class WinRateMaximizer {
       momentum,
       rsi: rsi[rsi.length - 1] || 50, // 最新のRSI値
       macd: macd.histogram[macd.histogram.length - 1] || 0,
-      adx,
+      adx: trendStrength,
       bbPosition,
       smaAlignment,
     };
@@ -680,7 +680,7 @@ export class WinRateMaximizer {
     }
     
     if (conditions.adx > 25) {
-      reasons.push(`ADX=${conditions.adx.toFixed(1)}、強いトレンドを確認`);
+      reasons.push(`トレンド強度=${conditions.adx.toFixed(1)}、強いトレンドを確認`);
     }
     
     return reasons;
@@ -721,15 +721,11 @@ export class WinRateMaximizer {
   getOptimizationStats(): {
     totalScenarios: number;
     avgWinRate: number;
-    bestStrategy: string | null;
-    worstStrategy: string | null;
   } {
     if (this.scenarios.length === 0) {
       return {
         totalScenarios: 0,
         avgWinRate: 0,
-        bestStrategy: null,
-        worstStrategy: null,
       };
     }
     
@@ -739,8 +735,6 @@ export class WinRateMaximizer {
     return {
       totalScenarios: this.scenarios.length,
       avgWinRate,
-      bestStrategy: null, // TODO: 実装
-      worstStrategy: null, // TODO: 実装
     };
   }
 }
