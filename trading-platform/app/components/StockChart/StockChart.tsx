@@ -31,17 +31,14 @@ export interface StockChartProps {
   signal?: Signal | null;
 }
 
-// 価格変動幅に基づいてチャート高さを計算（固定高さ）
-
-
 export const StockChart = memo(function StockChart({
   data, indexData = [], height: propHeight, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null,
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
   const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
 
-  // 固定高さを使用
-  const dynamicHeight = propHeight ?? CHART_DIMENSIONS.DEFAULT_HEIGHT;
+  // Use height from props or default constant
+  const chartHeight = propHeight ?? CHART_DIMENSIONS.DEFAULT_HEIGHT;
 
   // 1. Data Preparation Hooks
   const { extendedData, normalizedIndexData } = useChartData(data, signal, indexData);
@@ -142,7 +139,7 @@ export const StockChart = memo(function StockChart({
 
   // 4. Loading / Error States
   if (error) return (
-    <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded" style={{ height: dynamicHeight }}>
+    <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded" style={{ height: chartHeight }}>
       <div className="text-center p-4">
         <p className="text-red-400 font-bold">データの取得に失敗しました</p>
         <p className="text-red-300 text-sm mt-1">{error}</p>
@@ -150,7 +147,7 @@ export const StockChart = memo(function StockChart({
     </div>
   );
   if (loading || data.length === 0) return (
-    <div className="relative w-full bg-[#131b23] border border-[#233648] rounded animate-pulse" style={{ height: dynamicHeight }}>
+    <div className="relative w-full bg-[#131b23] border border-[#233648] rounded animate-pulse" style={{ height: chartHeight }}>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="h-8 w-8 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin mb-2"></div>
         <p className="text-xs text-[#92adc9]">データを取得中...</p>
@@ -159,7 +156,7 @@ export const StockChart = memo(function StockChart({
   );
 
   return (
-    <div className="relative w-full group" style={{ height: dynamicHeight }}>
+    <div className="relative w-full group" style={{ height: chartHeight }}>
       {hoveredIdx !== null && hoveredIdx < data.length && (
         <div className="absolute top-2 left-2 z-20 bg-[#1a2632]/90 border border-[#233648] p-3 rounded shadow-xl pointer-events-none backdrop-blur-sm">
           <div className="text-xs font-black text-primary uppercase border-b border-[#233648] pb-1 mb-1">{extendedData.labels[hoveredIdx]}</div>
