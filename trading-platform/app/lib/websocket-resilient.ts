@@ -12,6 +12,7 @@
  */
 
 import { WebSocketStatus as BaseWebSocketStatus } from '@/app/hooks/useWebSocket';
+import { getConfig } from './config/env-validator';
 
 // ============================================================================
 // Type Definitions
@@ -805,8 +806,10 @@ export function createResilientWebSocketClient(
 // Default Configuration
 // ============================================================================
 
+const config = getConfig();
+
 export const DEFAULT_RESILIENT_WS_CONFIG: WebSocketConfig = {
-  url: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001',
+  url: config.websocket.url,
   reconnectInterval: 2000,
   maxReconnectAttempts: 5,
   enableFallback: true,
