@@ -10,6 +10,7 @@ import { useAIPerformance } from '@/app/hooks/useAIPerformance';
 import { BacktestView } from './BacktestView';
 import { ForecastView } from './ForecastView';
 import { AIPerformanceView } from './AIPerformanceView';
+import { usePerformanceMonitor } from '@/app/lib/performance';
 
 interface SignalPanelProps {
   stock: Stock;
@@ -19,6 +20,9 @@ interface SignalPanelProps {
 }
 
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
+  // Performance monitoring
+  const { measureAsync } = usePerformanceMonitor('SignalPanel');
+  
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
   const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
 
@@ -108,17 +112,19 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       setIsBacktesting(true);
       // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
       setTimeout(() => {
-        try {
-          const result = runBacktest(stock.symbol, ohlcv, stock.market);
-          setBacktestResult(result);
-        } catch (e) {
-          console.error("Backtest failed", e);
-        } finally {
-          setIsBacktesting(false);
-        }
+        measureAsync('runBacktest', async () => {
+          try {
+            const result = runBacktest(stock.symbol, ohlcv, stock.market);
+            setBacktestResult(result);
+          } catch (e) {
+            console.error("Backtest failed", e);
+          } finally {
+            setIsBacktesting(false);
+          }
+        });
       }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measureAsync]);
 
   const aiTrades: PaperTrade[] = useMemo(() => {
     return trades
