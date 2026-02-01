@@ -141,6 +141,7 @@ export function withAsyncPerformanceTracking<T extends (...args: any[]) => Promi
   const wrapped = async (...args: Parameters<T>) => {
     return measurePerformanceAsync(functionName, () => fn(...args));
   };
+  
   return wrapped as T;
 }
 
