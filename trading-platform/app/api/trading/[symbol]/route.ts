@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
-import { ipRateLimiter, getClientIp } from '@/app/lib/ip-rate-limit';
-import { rateLimitError } from '@/app/lib/error-handler';
+import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireAuth } from '@/app/lib/auth';
 
 export async function GET(
@@ -10,15 +9,11 @@ export async function GET(
 ) {
   // Require authentication
   const authError = requireAuth(req);
-  if (authError) {
-    return authError;
-  }
+  if (authError) return authError;
 
   // Rate limiting
-  const clientIp = getClientIp(req);
-  if (!ipRateLimiter.check(clientIp)) {
-    return rateLimitError();
-  }
+  const rateLimitResponse = checkRateLimit(req);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     const platform = getGlobalTradingPlatform();
