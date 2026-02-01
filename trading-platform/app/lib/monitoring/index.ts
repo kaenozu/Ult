@@ -10,7 +10,7 @@
  */
 
 import * as Sentry from '@sentry/nextjs';
-import { onCLS, onFID, onLCP, onFCP, onTTFB, Metric } from 'web-vitals';
+import { onCLS, onINP, onLCP, onFCP, onTTFB, Metric } from 'web-vitals';
 
 // ============================================================================
 // Type Definitions
@@ -68,7 +68,7 @@ export interface PerformanceBudget {
 
 const PERFORMANCE_BUDGETS: PerformanceBudget[] = [
   { metric: 'LCP', budget: 2500, warning: 2000 },
-  { metric: 'FID', budget: 100, warning: 75 },
+  { metric: 'INP', budget: 200, warning: 150 },
   { metric: 'CLS', budget: 0.1, warning: 0.05 },
   { metric: 'FCP', budget: 1800, warning: 1500 },
   { metric: 'TTFB', budget: 800, warning: 600 },
@@ -79,7 +79,7 @@ const PERFORMANCE_BUDGETS: PerformanceBudget[] = [
 // Web Vitals thresholds
 const WEB_VITALS_THRESHOLDS = {
   LCP: { good: 2500, poor: 4000 },
-  FID: { good: 100, poor: 300 },
+  INP: { good: 200, poor: 500 },
   CLS: { good: 0.1, poor: 0.25 },
   FCP: { good: 1800, poor: 3000 },
   TTFB: { good: 800, poor: 1800 },
@@ -223,7 +223,7 @@ class MonitoringService {
 
     // Track all Core Web Vitals
     onCLS(reportWebVital);
-    onFID(reportWebVital);
+    onINP(reportWebVital);
     onLCP(reportWebVital);
     onFCP(reportWebVital);
     onTTFB(reportWebVital);
