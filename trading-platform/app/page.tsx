@@ -17,6 +17,7 @@ const StockChart = lazy(() => import('@/app/components/StockChart').then(m => ({
 const SimpleRSIChart = lazy(() => import('@/app/components/SimpleRSIChart').then(m => ({ default: m.SimpleRSIChart })));
 const RightSidebar = lazy(() => import('@/app/components/RightSidebar').then(m => ({ default: m.RightSidebar })));
 const BottomPanel = lazy(() => import('@/app/components/BottomPanel').then(m => ({ default: m.BottomPanel })));
+const UserExperienceEnhancements = lazy(() => import('@/app/components/UserExperienceEnhancements').then(m => ({ default: m.UserExperienceEnhancements })));
 
 // Loading placeholder for charts
 const ChartLoader = () => (
@@ -219,6 +220,11 @@ export default function Workstation() {
       </main>
 
       <Navigation />
+
+      {/* User Experience Enhancements */}
+      <Suspense fallback={null}>
+        <UserExperienceEnhancements />
+      </Suspense>
 
       {/* Disclaimer */}
       <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">
