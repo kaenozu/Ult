@@ -3,15 +3,14 @@ import {
     calculateSMA,
     calculateEMA,
     calculateRSI,
-    calculateBollingerBands,
     calculateMACD,
+    calculateBollingerBands,
     calculateATR as utilsCalculateATR
 } from './utils';
 
 /**
  * Service for calculating technical indicators.
- * Centralizes logic previously scattered in utils.ts and analysis.ts.
- * Refactored to delegate calculations to utils.ts to eliminate code duplication.
+ * Delegates actual calculation to utils.ts to ensure consistency.
  */
 class TechnicalIndicatorService {
     /**
