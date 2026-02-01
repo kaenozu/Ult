@@ -233,10 +233,12 @@ export class SentimentIntegrationService extends EventEmitter {
       .sort((a, b) => b.publishedAt - a.publishedAt)
       .slice(0, 5);
 
+    // Get social collector for consistent engagement scoring
+    const socialCollector = this.socialCollector;
     const topSocial = socialPosts
       .sort((a, b) => {
-        const scoreA = a.likes + a.shares * 2 + a.comments;
-        const scoreB = b.likes + b.shares * 2 + b.comments;
+        const scoreA = socialCollector.calculateEngagementScore(a);
+        const scoreB = socialCollector.calculateEngagementScore(b);
         return scoreB - scoreA;
       })
       .slice(0, 5);
