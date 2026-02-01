@@ -157,6 +157,7 @@ class AccuracyService {
     /**
      * 予測誤差（Prediction Error）を計算
      * SMAとEMAのアンサンブルで精度向上
+     * Optimized to O(N) using sliding window for SMA
      */
     calculatePredictionError(data: OHLCV[]): number {
         if (data.length < VOLATILITY.CALCULATION_PERIOD + 5) return 1.0;
@@ -169,24 +170,33 @@ class AccuracyService {
         const alpha = 2 / (period + 1);
         let ema = data[0]?.close || 0;
 
-        for (let i = Math.max(0, data.length - VOLATILITY.CALCULATION_PERIOD); i < endIndex; i++) {
+        // Sliding window for SMA - O(N) optimization
+        let smaSum = 0;
+        let smaCount = 0;
+        let windowStart = 0;
+
+        const startIndex = Math.max(0, data.length - VOLATILITY.CALCULATION_PERIOD);
+
+        for (let i = startIndex; i < endIndex; i++) {
             const current = data[i];
             const actualFuture = data[i + 5].close;
 
-            // SMA計算
-            let sma = 0;
-            if (i >= period - 1) {
-                let sum = 0;
-                for (let j = i - period + 1; j <= i; j++) {
-                    sum += data[j].close;
-                }
-                sma = sum / period;
-            } else {
-                sma = current.close;
+            // Update sliding window for SMA
+            smaSum += current.close;
+            smaCount++;
+
+            // Remove old values from window
+            if (smaCount > period) {
+                smaSum -= data[windowStart].close;
+                windowStart++;
+                smaCount--;
             }
 
+            // Calculate SMA from sliding window
+            const sma = smaCount > 0 ? smaSum / smaCount : current.close;
+
             // EMA計算
-            if (i > 0) {
+            if (i > startIndex) {
                 ema = alpha * current.close + (1 - alpha) * ema;
             } else {
                 ema = current.close;
