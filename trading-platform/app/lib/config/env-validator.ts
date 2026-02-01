@@ -133,7 +133,14 @@ export function validateEnvironment(): EnvironmentConfig {
     );
 
     // Logging Configuration
-    const logLevel = getOptionalEnv('LOG_LEVEL', isDevelopment ? 'debug' : 'info') as 'debug' | 'info' | 'warn' | 'error';
+    const logLevelRaw = getOptionalEnv('LOG_LEVEL', isDevelopment ? 'debug' : 'info');
+    const validLogLevels = ['debug', 'info', 'warn', 'error'];
+    if (!validLogLevels.includes(logLevelRaw)) {
+      throw new EnvironmentValidationError(
+        `Invalid LOG_LEVEL: ${logLevelRaw}. Must be one of: ${validLogLevels.join(', ')}`
+      );
+    }
+    const logLevel = logLevelRaw as 'debug' | 'info' | 'warn' | 'error';
     const loggingEnabled = getBooleanEnv('ENABLE_LOGGING', true);
 
     // Analytics Configuration
