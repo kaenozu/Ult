@@ -257,7 +257,14 @@ export const useTradingStore = create<TradingStore>()(
 
        executeOrderAtomic: (order) => set((state) => {
          const { portfolio } = state;
-         const price = order.price || 0;
+         
+         // Critical validation: Reject invalid prices
+         if (!order.price || order.price <= 0 || !Number.isFinite(order.price)) {
+           console.error('Invalid order price:', order.price);
+           return state;
+         }
+         
+         const price = order.price;
          const orderCost = price * order.quantity;
 
          // Basic validation
@@ -299,6 +306,13 @@ export const useTradingStore = create<TradingStore>()(
            const existing = positions[existingIndex];
            const totalCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
            const totalQty = existing.quantity + newPosition.quantity;
+           
+           // Protect against division by zero
+           if (totalQty <= 0) {
+             console.error('Invalid total quantity:', totalQty);
+             return state;
+           }
+           
            positions[existingIndex] = {
              ...existing,
              quantity: totalQty,
