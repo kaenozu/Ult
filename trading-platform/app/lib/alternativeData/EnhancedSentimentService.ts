@@ -5,7 +5,32 @@
  * より包括的なセンチメント分析を提供します。
  */
 
-import { EventEmitter } from 'events';
+// Simple EventEmitter implementation for browser/Node compatibility
+class EventEmitter {
+  private events: Map<string, Function[]> = new Map();
+
+  on(event: string, listener: Function): void {
+    if (!this.events.has(event)) {
+      this.events.set(event, []);
+    }
+    this.events.get(event)!.push(listener);
+  }
+
+  emit(event: string, ...args: unknown[]): void {
+    const listeners = this.events.get(event);
+    if (listeners) {
+      listeners.forEach(listener => listener(...args));
+    }
+  }
+
+  removeAllListeners(event?: string): void {
+    if (event) {
+      this.events.delete(event);
+    } else {
+      this.events.clear();
+    }
+  }
+}
 import { AlternativeDataCollector, CollectedData, DataSourceType } from './DataCollector';
 import SentimentAnalysisEngine, { 
   NewsArticle, 
