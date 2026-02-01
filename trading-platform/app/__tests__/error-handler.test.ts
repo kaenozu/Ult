@@ -8,7 +8,8 @@ import {
     notFoundError,
     rateLimitError,
     internalError,
-    ErrorType
+    ErrorType,
+    ERROR_MESSAGES
 } from '../lib/error-handler';
 import { APIError, ValidationError } from '../types';
 
@@ -114,7 +115,7 @@ describe('error-handler', () => {
 
             expect(response.status).toBe(400);
             expect(response.body).toEqual(expect.objectContaining({
-                error: '入力内容を確認してください',
+                error: ERROR_MESSAGES.VALIDATION_ERROR.message,
                 code: 'VALIDATION_ERROR',
                 details: 'Field: fieldA' // Extracted from the error's field property
             }));
@@ -177,7 +178,7 @@ describe('error-handler', () => {
             const error = { code: 'VALIDATION_ERROR' }; // Should trigger mapping with details
             const response = handleApiError(error) as MockResponse;
             expect(response.body).toHaveProperty('details');
-            expect(response.body.details).toBe('無効なパラメータが含まれています');
+            expect(response.body.details).toBe(ERROR_MESSAGES.VALIDATION_ERROR.details);
         });
     });
 
