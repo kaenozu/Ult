@@ -12,6 +12,12 @@ export async function GET(req: NextRequest) {
     return authError;
   }
 
+  // Rate limiting
+  const clientIp = getClientIp(req);
+  if (!ipRateLimiter.check(clientIp)) {
+    return rateLimitError();
+  }
+
   try {
     const platform = getGlobalTradingPlatform();
     const status = platform.getStatus();
