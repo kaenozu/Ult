@@ -29,7 +29,7 @@ jest.mock('../lib/mlPrediction', () => ({
 
 global.fetch = jest.fn() as any;
 
-describe.skip('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
+describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset singleton cache if possible (or use new symbols)
