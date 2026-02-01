@@ -45,9 +45,12 @@ test.describe('Error Handling - Network and API Issues', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
 
+    let timeoutOccurred = false;
+
     // Simulate slow API response (timeout)
     await page.route('**/api/market/**', async (route) => {
-      await new Promise(resolve => setTimeout(resolve, 35000)); // 35 second delay
+      // Don't actually delay 35 seconds in tests - just simulate timeout response
+      timeoutOccurred = true;
       route.fulfill({
         status: 504,
         contentType: 'application/json',
@@ -61,8 +64,10 @@ test.describe('Error Handling - Network and API Issues', () => {
       await searchBox.fill('9984');
       await searchBox.press('Enter');
       
-      // Wait for timeout error
-      await page.waitForTimeout(5000);
+      // Wait for timeout error to be processed
+      await page.waitForResponse(response => 
+        response.url().includes('/api/market/') && response.status() === 504
+      ).catch(() => null);
     }
 
     // Should show timeout error
