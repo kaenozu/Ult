@@ -2,7 +2,7 @@
 /**
  * data-aggregator.test.ts
  * 
- * 注意: このテストはAPIシグネチャ変更により一時的に無効化
+ * Re-enabled after fixing API signature compatibility issues
  */
 
 import { marketClient } from '../lib/api/data-aggregator';
@@ -27,7 +27,7 @@ jest.mock('../lib/mlPrediction', () => ({
 
 global.fetch = jest.fn() as any;
 
-describe.skip('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
+describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset singleton cache if possible (or use new symbols)
@@ -160,7 +160,7 @@ describe.skip('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
   });
 
   it('handles fetchMarketIndex failure gracefully', async () => {
-    const spy = jest.spyOn(marketClient, 'fetchOHLCV').mockResolvedValue({ success: false, data: null, source: 'error', error: 'Test error' });
+    const spy = jest.spyOn(marketClient, 'fetchOHLCV').mockResolvedValue({ success: false, data: null, source: 'error', error: 'Test error' } as any);
     const result = await marketClient.fetchMarketIndex('japan');
     // エラー時はdataが空配列になることを確認
     expect(result.data).toEqual([]);
