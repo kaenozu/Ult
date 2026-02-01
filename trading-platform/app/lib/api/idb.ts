@@ -6,14 +6,23 @@ const DB_VERSION = 1;
 
 export class IndexedDBClient {
   private db: IDBDatabase | null = null;
+  private initPromise: Promise<void> | null = null;
 
   async init(): Promise<void> {
+    // If already initialized, return immediately
     if (this.db) return;
 
-    return new Promise((resolve, reject) => {
+    // If initialization is in progress, return the existing promise
+    if (this.initPromise) return this.initPromise;
+
+    // Start new initialization
+    this.initPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        this.initPromise = null; // Reset on error to allow retry
+        reject(request.error);
+      };
       request.onsuccess = () => {
         this.db = request.result;
         resolve();
@@ -34,6 +43,8 @@ export class IndexedDBClient {
         // Add future migration logic here (e.g., if (oldVersion < 2) { ... })
       };
     });
+
+    return this.initPromise;
   }
 
   async clearAllData(): Promise<void> {
