@@ -43,7 +43,10 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   const limitPriceId = useId();
   const modalTitleId = useId();
 
-  const price = orderType === 'MARKET' ? currentPrice : parseFloat(limitPrice);
+  const parsedPrice = parseFloat(limitPrice);
+  const price = orderType === 'MARKET' 
+    ? currentPrice 
+    : (Number.isNaN(parsedPrice) || parsedPrice <= 0 ? currentPrice : parsedPrice);
   const totalCost = quantity > 0 ? price * quantity : 0;
   const canAfford = cash >= totalCost && quantity > 0;
 
