@@ -15,10 +15,17 @@ import {
   WebSocketError,
   StateTransition,
   mapToLegacyStatus,
+  ConnectionMetrics,
 } from '@/app/lib/websocket-resilient';
 
 // Re-export types for backward compatibility
-export type { WebSocketStatus, WebSocketMessage, WebSocketError, StateTransition };
+export type { 
+  WebSocketStatus, 
+  WebSocketMessage, 
+  WebSocketError, 
+  StateTransition,
+  ConnectionMetrics,
+};
 
 /**
  * Hook options
@@ -41,6 +48,7 @@ interface UseResilientWebSocketReturn {
   isConnected: boolean;
   lastMessage: WebSocketMessage | null;
   error: WebSocketError | null;
+  metrics: ConnectionMetrics | null;
   sendMessage: (message: Omit<WebSocketMessage, 'id' | 'timestamp'>) => boolean;
   connect: () => void;
   disconnect: () => void;
@@ -93,6 +101,7 @@ export function useResilientWebSocket(
   const [status, setStatus] = useState<WebSocketStatus>('CLOSED');
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
   const [error, setError] = useState<WebSocketError | null>(null);
+  const [metrics, setMetrics] = useState<ConnectionMetrics | null>(null);
   const [connectionDuration, setConnectionDuration] = useState(0);
   const [stateHistory, setStateHistory] = useState<StateTransition[]>([]);
 
@@ -144,6 +153,9 @@ export function useResilientWebSocket(
         },
         onStateTransition: (transition) => {
           setStateHistory(prev => [...prev, transition]);
+        },
+        onMetricsUpdate: (newMetrics) => {
+          setMetrics(newMetrics);
         },
         fallbackDataFetcher,
       }
@@ -252,6 +264,7 @@ export function useResilientWebSocket(
     isConnected: status === 'OPEN',
     lastMessage,
     error,
+    metrics,
     sendMessage,
     connect,
     disconnect,
