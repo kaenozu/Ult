@@ -96,4 +96,63 @@ describe('SignalCard', () => {
         // Basic check for dollar sign or format, assuming formatCurrency works
         // Ideally checking specific output if known
     });
+
+    describe('XSS Protection', () => {
+        it('should sanitize malicious indexSymbol in marketContext', () => {
+            const maliciousSignal = {
+                ...baseSignal,
+                marketContext: {
+                    indexSymbol: '<script>alert("XSS")</script>^N225',
+                    correlation: 0.8,
+                    indexTrend: 'UP' as const
+                }
+            };
+            const { container } = render(<SignalCard stock={mockStockJP} signal={maliciousSignal} />);
+            
+            // Should not contain script tags
+            expect(container.innerHTML).not.toContain('<script>');
+            expect(container.innerHTML).not.toContain('alert("XSS")');
+        });
+
+        it('should sanitize malicious brokenLevel data', () => {
+            const maliciousSignal = {
+                ...baseSignal,
+                supplyDemand: {
+                    currentPrice: 1000,
+                    resistanceLevels: [],
+                    supportLevels: [],
+                    volumeProfileStrength: 0.5,
+                    breakoutDetected: true,
+                    brokenLevel: {
+                        price: 1000,
+                        volume: 100,
+                        strength: 0.8,
+                        type: 'resistance' as const,
+                        level: '<img src=x onerror="alert(1)">' as any
+                    },
+                    breakoutConfidence: 'high' as const
+                }
+            };
+            const { container } = render(<SignalCard stock={mockStockJP} signal={maliciousSignal} />);
+            
+            // Should not contain img tag with onerror
+            expect(container.innerHTML).not.toContain('onerror');
+            expect(container.innerHTML).not.toContain('<img');
+        });
+
+        it('should handle normal text without breaking functionality', () => {
+            const normalSignal = {
+                ...baseSignal,
+                marketContext: {
+                    indexSymbol: '^N225',
+                    correlation: 0.8,
+                    indexTrend: 'UP' as const
+                }
+            };
+            render(<SignalCard stock={mockStockJP} signal={normalSignal} />);
+            
+            // Should display normally
+            expect(screen.getByText('日経225')).toBeInTheDocument();
+        });
+    });
 });

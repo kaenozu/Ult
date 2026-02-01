@@ -9,13 +9,21 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
 
   useEffect(() => {
     let isMounted = true;
+    // Capture the current symbol to detect race conditions
+    const currentSymbol = stock.symbol;
+    const currentMarket = stock.market;
 
     const calculateFullPerformance = async () => {
-      if (!stock.symbol) return;
-
       if (isMounted) {
         setCalculatingHitRate(true);
         setError(null);
+      }
+
+      if (!currentSymbol) {
+        if (isMounted) {
+          setCalculatingHitRate(false);
+        }
+        return;
       }
 
       try {
@@ -23,7 +31,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
         twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
         const startDate = twoYearsAgo.toISOString().split('T')[0];
 
-        const response = await fetch(`/api/market?type=history&symbol=${stock.symbol}&market=${stock.market}&startDate=${startDate}`);
+        const response = await fetch(`/api/market?type=history&symbol=${currentSymbol}&market=${currentMarket}&startDate=${startDate}`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch history: ${response.statusText}`);
@@ -31,29 +39,32 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
 
         const resultData = await response.json();
 
-        if (isMounted) {
+        // Verify the symbol hasn't changed (race condition check)
+        if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
           if (resultData.data && resultData.data.length > 100) {
-            const result = calculateAIHitRate(stock.symbol, resultData.data, stock.market);
+            const result = calculateAIHitRate(currentSymbol, resultData.data, currentMarket);
             setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           } else {
             // データが不十分な場合は表示用データで代用試行
-            const result = calculateAIHitRate(stock.symbol, ohlcv, stock.market);
+            const result = calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
             setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           }
         }
       } catch (e) {
         console.error('Precise hit rate fetch failed:', e);
-        if (isMounted) {
+        // Verify the symbol hasn't changed before setting error state
+        if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
           // Fallback to provided OHLCV
           try {
-             const result = calculateAIHitRate(stock.symbol, ohlcv, stock.market);
+             const result = calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
              setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           } catch {
              setError('的中率の計算に失敗しました');
           }
         }
       } finally {
-        if (isMounted) {
+        // Only update loading state if still on the same symbol
+        if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
           setCalculatingHitRate(false);
         }
       }

@@ -12,6 +12,20 @@ import {
   SIGNAL_THRESHOLDS,
 } from '@/app/lib/constants';
 
+/**
+ * 機械学習予測に使用する特徴量
+ * @property rsi - RSI値（相対力指数）
+ * @property rsiChange - RSI変化量
+ * @property sma5 - 5日移動平均からの乖離率（%）
+ * @property sma20 - 20日移動平均からの乖離率（%）
+ * @property sma50 - 50日移動平均からの乖離率（%）
+ * @property priceMomentum - 価格モメンタム（%）
+ * @property volumeRatio - 出来高比率
+ * @property volatility - ボラティリティ
+ * @property macdSignal - MACDシグナル
+ * @property bollingerPosition - ボリンジャーバンド内の位置（%）
+ * @property atrPercent - ATR比率（%）
+ */
 interface PredictionFeatures {
   rsi: number;
   rsiChange: number;
@@ -26,6 +40,14 @@ interface PredictionFeatures {
   atrPercent: number;
 }
 
+/**
+ * 機械学習モデル予測結果
+ * @property rfPrediction - Random Forest予測値
+ * @property xgbPrediction - XGBoost予測値
+ * @property lstmPrediction - LSTM予測値
+ * @property ensemblePrediction - アンサンブル予測値
+ * @property confidence - 予測信頼度（0-100）
+ */
 interface ModelPrediction {
   rfPrediction: number;
   xgbPrediction: number;
@@ -34,11 +56,34 @@ interface ModelPrediction {
   confidence: number;
 }
 
+/**
+ * 機械学習予測サービス
+ * 
+ * Random Forest、XGBoost、LSTMの3つのモデルを組み合わせたアンサンブル予測を提供。
+ * 市場相関分析と自己矯正機能を含む高度な株価予測を行う。
+ * 
+ * @example
+ * ```typescript
+ * const mlService = new MLPredictionService();
+ * const indicators = mlService.calculateIndicators(ohlcvData);
+ * const prediction = mlService.predict(stock, ohlcvData, indicators);
+ * const signal = mlService.generateSignal(stock, ohlcvData, prediction, indicators);
+ * ```
+ */
 class MLPredictionService {
   private readonly weights = ENSEMBLE_WEIGHTS;
 
   /**
    * 予測に必要な全てのテクニカル指標を一括計算
+   * 
+   * @param data - OHLCVデータ配列
+   * @returns 計算されたテクニカル指標（SMA、RSI、MACD、ボリンジャーバンド、ATR）
+   * 
+   * @example
+   * ```typescript
+   * const indicators = mlService.calculateIndicators(ohlcvData);
+   * console.log(indicators.rsi[indicators.rsi.length - 1]); // 最新のRSI値
+   * ```
    */
   calculateIndicators(data: OHLCV[]): TechnicalIndicator & { atr: number[] } {
     const prices = data.map(d => d.close);
@@ -61,6 +106,21 @@ class MLPredictionService {
 
   /**
    * MLモデル群（RF, XGB, LSTM）による統合予測
+   * 
+   * 3つの異なる機械学習モデルを使用して株価を予測し、
+   * アンサンブル手法で統合した予測値と信頼度を返す。
+   * 
+   * @param stock - 銘柄情報
+   * @param data - OHLCVデータ配列
+   * @param ind - 計算済みテクニカル指標
+   * @returns 各モデルの予測値とアンサンブル予測結果
+   * 
+   * @example
+   * ```typescript
+   * const prediction = mlService.predict(stock, ohlcvData, indicators);
+   * console.log(`予測値: ${prediction.ensemblePrediction}`);
+   * console.log(`信頼度: ${prediction.confidence}%`);
+   * ```
    */
   predict(stock: Stock, data: OHLCV[], ind: TechnicalIndicator & { atr: number[] }): ModelPrediction {
     const prices = data.map(d => d.close), volumes = data.map(d => d.volume);
@@ -92,6 +152,24 @@ class MLPredictionService {
 
   /**
    * 最終的なシグナルを生成（市場相関と自己矯正を含む）
+   * 
+   * 機械学習予測、テクニカル指標、市場相関を総合的に分析し、
+   * BUY/SELL/HOLDのシグナルを生成する。
+   * 
+   * @param stock - 銘柄情報
+   * @param data - OHLCVデータ配列
+   * @param pred - 機械学習予測結果
+   * @param ind - テクニカル指標
+   * @param indexData - 市場インデックスデータ（オプション）
+   * @returns 売買シグナル、予測価格、信頼度を含むSignalオブジェクト
+   * 
+   * @example
+   * ```typescript
+   * const signal = mlService.generateSignal(stock, ohlcvData, prediction, indicators, indexData);
+   * if (signal.type === 'BUY' && signal.confidence >= 80) {
+   *   console.log('強気シグナル検出！');
+   * }
+   * ```
    */
   generateSignal(stock: Stock, data: OHLCV[], pred: ModelPrediction, ind: TechnicalIndicator & { atr: number[] }, indexData?: OHLCV[]): Signal {
     const currentPrice = data[data.length - 1].close;
