@@ -133,7 +133,36 @@ class ScrapingConfig:
     
     @staticmethod
     def _is_valid_url(url: str) -> bool:
-        """Check if URL has valid format."""
+        """Check if URL has valid format.
+        
+        Uses a comprehensive regex pattern that validates:
+        - Protocol (http:// or https://)
+        - Domain names (including subdomains)
+        - IP addresses
+        - Optional port numbers
+        - Path components
+        
+        Args:
+            url: URL string to validate
+            
+        Returns:
+            True if URL format is valid, False otherwise
+        """
+        # Comprehensive URL validation pattern
+        # Breakdown:
+        # ^https?://          - Must start with http:// or https://
+        # (?:                 - Non-capturing group for hostname options
+        #   (?:               - Domain name option
+        #     [A-Z0-9]        - First character must be alphanumeric
+        #     (?:[A-Z0-9-]{0,61}[A-Z0-9])?  - Optional middle characters (max 63 total)
+        #     \.              - Dot separator
+        #   )+                - One or more domain parts
+        #   [A-Z]{2,6}\.?     - TLD (2-6 letters, optional trailing dot)
+        #   |localhost        - Or localhost
+        #   |\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}  - Or IPv4 address
+        # )                   - End hostname group
+        # (?::\d+)?           - Optional port number
+        # (?:/?|[/?]\S+)$     - Optional path (starts with / or ?)
         pattern = re.compile(
             r'^https?://'  # http:// or https://
             r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+[A-Z]{2,6}\.?|'  # domain

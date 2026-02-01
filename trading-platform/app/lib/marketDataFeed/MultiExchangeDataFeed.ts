@@ -55,6 +55,16 @@ export interface ExchangeConnection {
 }
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+const DEFAULT_HEARTBEAT_INTERVAL = 30000;
+const DEFAULT_RECONNECT_INTERVAL = 2000;
+const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
+const DEFAULT_STALE_DATA_THRESHOLD = 5000;
+const DEFAULT_PRICE_DEVIATION_THRESHOLD = 0.02;
+
+// ============================================================================
 // Exchange Configurations
 // ============================================================================
 
@@ -65,9 +75,9 @@ export const DEFAULT_EXCHANGE_CONFIGS: ExchangeConfig[] = [
     restUrl: 'https://api.binance.com/api/v3',
     symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT'],
     priority: 1,
-    reconnectInterval: 2000,
-    maxReconnectAttempts: 10,
-    heartbeatInterval: 30000,
+    reconnectInterval: DEFAULT_RECONNECT_INTERVAL,
+    maxReconnectAttempts: DEFAULT_MAX_RECONNECT_ATTEMPTS,
+    heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
   },
   {
     name: 'coinbase',
@@ -77,7 +87,7 @@ export const DEFAULT_EXCHANGE_CONFIGS: ExchangeConfig[] = [
     priority: 2,
     reconnectInterval: 3000,
     maxReconnectAttempts: 8,
-    heartbeatInterval: 30000,
+    heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
   },
   {
     name: 'kraken',
@@ -87,7 +97,7 @@ export const DEFAULT_EXCHANGE_CONFIGS: ExchangeConfig[] = [
     priority: 3,
     reconnectInterval: 2500,
     maxReconnectAttempts: 8,
-    heartbeatInterval: 30000,
+    heartbeatInterval: DEFAULT_HEARTBEAT_INTERVAL,
   },
   {
     name: 'bybit',
@@ -95,11 +105,278 @@ export const DEFAULT_EXCHANGE_CONFIGS: ExchangeConfig[] = [
     restUrl: 'https://api.bybit.com/v5',
     symbols: ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'ADAUSDT'],
     priority: 4,
-    reconnectInterval: 2000,
-    maxReconnectAttempts: 10,
+    reconnectInterval: DEFAULT_RECONNECT_INTERVAL,
+    maxReconnectAttempts: DEFAULT_MAX_RECONNECT_ATTEMPTS,
     heartbeatInterval: 20000,
   },
 ];
+
+// ============================================================================
+// Exchange Message Types
+// ============================================================================
+
+interface BinanceTickerMessage {
+  e: string;
+  s: string;
+  c: string;
+  b: string;
+  a: string;
+  v: string;
+  o: string;
+  h: string;
+  l: string;
+  w: string;
+}
+
+interface CoinbaseTickerMessage {
+  type: string;
+  product_id: string;
+  price: string;
+  best_bid: string;
+  best_ask: string;
+  volume_24h: string;
+  open_24h: string;
+  high_24h: string;
+  low_24h: string;
+}
+
+interface KrakenTickerData {
+  c: [string, string];
+  v: [string, string];
+  h: [string, string];
+  l: [string, string];
+  p: [string, string];
+  b?: [string, string];
+  a?: [string, string];
+}
+
+interface BybitTickerMessage {
+  topic: string;
+  data: {
+    symbol: string;
+    lastPrice: string;
+    bid1Price: string;
+    ask1Price: string;
+    volume24h: string;
+    prevPrice24h: string;
+    highPrice24h: string;
+    lowPrice24h: string;
+    openInterest?: string;
+  };
+}
+
+// ============================================================================
+// Type Guards
+// ============================================================================
+
+function isBinanceTicker(data: unknown): data is BinanceTickerMessage {
+  return typeof data === 'object' && data !== null && (data as Record<string, unknown>).e === '24hrTicker';
+}
+
+function isCoinbaseTicker(data: unknown): data is CoinbaseTickerMessage {
+  return typeof data === 'object' && data !== null && (data as Record<string, unknown>).type === 'ticker';
+}
+
+function isKrickerTickerData(data: unknown): data is KrakenTickerData {
+  return typeof data === 'object' && data !== null && 'c' in data;
+}
+
+function isBybitTicker(data: unknown): data is BybitTickerMessage {
+  if (typeof data !== 'object' || data === null) return false;
+  const topic = (data as Record<string, unknown>).topic;
+  return typeof topic === 'string' && topic.includes('tickers');
+}
+
+// ============================================================================
+// Exchange-specific Message Builders
+// ============================================================================
+
+const ExchangeMessageBuilders = {
+  binance: {
+    buildWsUrl: (config: ExchangeConfig): string => {
+      const streams = config.symbols.map((s) => `${s.toLowerCase()}@ticker`).join('/');
+      return `${config.wsUrl}/${streams}`;
+    },
+    createSubscribe: (symbol: string): unknown => ({
+      method: 'SUBSCRIBE',
+      params: [`${symbol.toLowerCase()}@ticker`],
+      id: Date.now(),
+    }),
+    createUnsubscribe: (symbol: string): unknown => ({
+      method: 'UNSUBSCRIBE',
+      params: [`${symbol.toLowerCase()}@ticker`],
+      id: Date.now(),
+    }),
+    createPing: (): null => null,
+  },
+  coinbase: {
+    buildWsUrl: (config: ExchangeConfig): string => config.wsUrl,
+    createSubscribe: (symbol: string): unknown => ({
+      type: 'subscribe',
+      product_ids: [symbol],
+      channels: ['ticker'],
+    }),
+    createUnsubscribe: (symbol: string): unknown => ({
+      type: 'unsubscribe',
+      product_ids: [symbol],
+      channels: ['ticker'],
+    }),
+    createPing: (): unknown => ({ type: 'heartbeat', on: true }),
+  },
+  kraken: {
+    buildWsUrl: (config: ExchangeConfig): string => config.wsUrl,
+    createSubscribe: (symbol: string): unknown => ({
+      event: 'subscribe',
+      pair: [symbol],
+      subscription: { name: 'ticker' },
+    }),
+    createUnsubscribe: (symbol: string): unknown => ({
+      event: 'unsubscribe',
+      pair: [symbol],
+      subscription: { name: 'ticker' },
+    }),
+    createPing: (): unknown => ({ event: 'ping' }),
+  },
+  bybit: {
+    buildWsUrl: (config: ExchangeConfig): string => config.wsUrl,
+    createSubscribe: (symbol: string): unknown => ({
+      op: 'subscribe',
+      args: [`tickers.${symbol}`],
+    }),
+    createUnsubscribe: (symbol: string): unknown => ({
+      op: 'unsubscribe',
+      args: [`tickers.${symbol}`],
+    }),
+    createPing: (): unknown => ({ op: 'ping' }),
+  },
+};
+
+// ============================================================================
+// Exchange-specific Parsers
+// ============================================================================
+
+const ExchangeParsers = {
+  binance: (data: unknown, timestamp: number): MarketData | null => {
+    if (!isBinanceTicker(data)) return null;
+
+    const symbol = String(data.s);
+    const price = parseFloat(data.c);
+    const open = parseFloat(data.o);
+
+    return {
+      symbol: normalizeSymbol(symbol),
+      exchange: 'binance',
+      price,
+      bid: parseFloat(data.b),
+      ask: parseFloat(data.a),
+      volume: parseFloat(data.v),
+      timestamp,
+      change: price - open,
+      changePercent: ((price - open) / open) * 100,
+      high24h: parseFloat(data.h),
+      low24h: parseFloat(data.l),
+      vwap: parseFloat(data.w),
+    };
+  },
+  coinbase: (data: unknown, timestamp: number): MarketData | null => {
+    if (!isCoinbaseTicker(data)) return null;
+
+    const price = parseFloat(data.price);
+    const open24h = parseFloat(data.open_24h);
+
+    return {
+      symbol: normalizeSymbol(data.product_id),
+      exchange: 'coinbase',
+      price,
+      bid: parseFloat(data.best_bid),
+      ask: parseFloat(data.best_ask),
+      volume: parseFloat(data.volume_24h),
+      timestamp,
+      change: price - open24h,
+      changePercent: ((price - open24h) / open24h) * 100,
+      high24h: parseFloat(data.high_24h),
+      low24h: parseFloat(data.low_24h),
+    };
+  },
+  kraken: (data: unknown, timestamp: number): MarketData | null => {
+    if (!Array.isArray(data) || data.length < 4) return null;
+    
+    const tickerData = data[1] as KrakenTickerData;
+    const symbol = String(data[3]);
+
+    if (!isKrickerTickerData(tickerData)) return null;
+
+    const c = tickerData.c;
+    const v = tickerData.v;
+    const h = tickerData.h;
+    const l = tickerData.l;
+    const p = tickerData.p;
+    const b = tickerData.b;
+    const a = tickerData.a;
+
+    const price = parseFloat(c[0]);
+    const openPrice = parseFloat(p[0]);
+
+    return {
+      symbol: normalizeSymbol(symbol),
+      exchange: 'kraken',
+      price,
+      bid: parseFloat(b?.[0] || '0'),
+      ask: parseFloat(a?.[0] || '0'),
+      volume: parseFloat(v[1]),
+      timestamp,
+      change: price - openPrice,
+      changePercent: ((price - openPrice) / openPrice) * 100,
+      high24h: parseFloat(h[1]),
+      low24h: parseFloat(l[1]),
+    };
+  },
+  bybit: (data: unknown, timestamp: number): MarketData | null => {
+    if (!isBybitTicker(data)) return null;
+
+    const ticker = data.data;
+    const price = parseFloat(ticker.lastPrice);
+    const open = parseFloat(ticker.prevPrice24h);
+
+    return {
+      symbol: normalizeSymbol(ticker.symbol),
+      exchange: 'bybit',
+      price,
+      bid: parseFloat(ticker.bid1Price),
+      ask: parseFloat(ticker.ask1Price),
+      volume: parseFloat(ticker.volume24h),
+      timestamp,
+      change: price - open,
+      changePercent: ((price - open) / open) * 100,
+      high24h: parseFloat(ticker.highPrice24h),
+      low24h: parseFloat(ticker.lowPrice24h),
+      openInterest: parseFloat(ticker.openInterest || '0'),
+    };
+  },
+};
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+function normalizeSymbol(symbol: string): string {
+  return symbol
+    .replace(/-/g, '')
+    .replace(/\//g, '')
+    .replace('USDT', 'USD')
+    .replace('XBT', 'BTC');
+}
+
+function calculateWeightedPrice(prices: MarketData[]): number {
+  const totalVolume = prices.reduce((sum, p) => sum + p.volume, 0);
+  return prices.reduce((sum, p) => sum + p.price * p.volume, 0) / totalVolume;
+}
+
+function calculateVolumeWeightedMetrics(prices: MarketData[]): { vwap: number; totalVolume: number } {
+  const totalVolume = prices.reduce((sum, p) => sum + p.volume, 0);
+  const vwap = prices.reduce((sum, p) => sum + p.price * p.volume, 0) / totalVolume;
+  return { vwap, totalVolume };
+}
 
 // ============================================================================
 // MultiExchangeDataFeed Class
@@ -118,8 +395,8 @@ export class MultiExchangeDataFeed extends EventEmitter {
     this.config = {
       exchanges: DEFAULT_EXCHANGE_CONFIGS,
       aggregationMethod: 'best_price',
-      staleDataThreshold: 5000,
-      priceDeviationThreshold: 0.02,
+      staleDataThreshold: DEFAULT_STALE_DATA_THRESHOLD,
+      priceDeviationThreshold: DEFAULT_PRICE_DEVIATION_THRESHOLD,
       ...config,
     };
   }
@@ -128,67 +405,39 @@ export class MultiExchangeDataFeed extends EventEmitter {
   // Public Methods
   // ============================================================================
 
-  /**
-   * 全取引所への接続を開始
-   */
   async connect(): Promise<void> {
     console.log('[MultiExchangeDataFeed] Starting connections to all exchanges...');
     
-    const connectPromises = this.config.exchanges.map(async (exchangeConfig) => {
-      await this.connectToExchange(exchangeConfig);
-    });
+    const connectPromises = this.config.exchanges.map((exchangeConfig) =>
+      this.connectToExchange(exchangeConfig)
+    );
 
     await Promise.allSettled(connectPromises);
     this.emit('ready');
   }
 
-  /**
-   * 全接続を切断
-   */
   disconnect(): void {
     console.log('[MultiExchangeDataFeed] Disconnecting from all exchanges...');
     
-    // Clear all intervals and timeouts
-    this.heartbeatIntervals.forEach((interval) => clearInterval(interval));
-    this.reconnectTimeouts.forEach((timeout) => clearTimeout(timeout));
-    this.heartbeatIntervals.clear();
-    this.reconnectTimeouts.clear();
-
-    // Close all WebSocket connections
-    this.connections.forEach((conn) => {
-      if (conn.ws) {
-        conn.ws.close(1000, 'Manual disconnect');
-      }
-    });
-
+    this.clearAllTimers();
+    this.closeAllConnections();
+    
     this.connections.clear();
     this.emit('disconnected');
   }
 
-  /**
-   * 統合された市場データを取得
-   */
   getAggregatedData(symbol: string): MarketData | undefined {
     return this.aggregatedData.get(symbol);
   }
 
-  /**
-   * 全統合データを取得
-   */
   getAllAggregatedData(): Map<string, MarketData> {
     return new Map(this.aggregatedData);
   }
 
-  /**
-   * 特定の取引所からの生データを取得
-   */
   getRawData(exchange: string, symbol: string): MarketData | undefined {
     return this.rawData.get(exchange)?.get(symbol);
   }
 
-  /**
-   * 接続状態を取得
-   */
   getConnectionStatus(): Map<string, string> {
     const status = new Map<string, string>();
     this.connections.forEach((conn, name) => {
@@ -197,9 +446,6 @@ export class MultiExchangeDataFeed extends EventEmitter {
     return status;
   }
 
-  /**
-   * サブスクリプションを追加
-   */
   subscribe(symbols: string[]): void {
     symbols.forEach((symbol) => {
       this.connections.forEach((conn, exchangeName) => {
@@ -211,9 +457,6 @@ export class MultiExchangeDataFeed extends EventEmitter {
     });
   }
 
-  /**
-   * サブスクリプションを解除
-   */
   unsubscribe(symbols: string[]): void {
     symbols.forEach((symbol) => {
       this.connections.forEach((conn) => {
@@ -227,8 +470,23 @@ export class MultiExchangeDataFeed extends EventEmitter {
   }
 
   // ============================================================================
-  // Private Methods
+  // Private Methods - Connection Management
   // ============================================================================
+
+  private clearAllTimers(): void {
+    this.heartbeatIntervals.forEach((interval) => clearInterval(interval));
+    this.reconnectTimeouts.forEach((timeout) => clearTimeout(timeout));
+    this.heartbeatIntervals.clear();
+    this.reconnectTimeouts.clear();
+  }
+
+  private closeAllConnections(): void {
+    this.connections.forEach((conn) => {
+      if (conn.ws) {
+        conn.ws.close(1000, 'Manual disconnect');
+      }
+    });
+  }
 
   private async connectToExchange(config: ExchangeConfig): Promise<void> {
     const conn: ExchangeConnection = {
@@ -246,128 +504,76 @@ export class MultiExchangeDataFeed extends EventEmitter {
       const wsUrl = this.buildWebSocketUrl(config);
       conn.ws = new WebSocket(wsUrl);
 
-      conn.ws.onopen = () => {
-        console.log(`[${config.name}] WebSocket connected`);
-        conn.status = 'connected';
-        conn.reconnectAttempts = 0;
-        this.emit('exchange_connected', config.name);
-
-        // Subscribe to symbols
-        config.symbols.forEach((symbol) => {
-          this.subscribeToSymbol(conn, symbol, config);
-        });
-
-        // Start heartbeat
-        this.startHeartbeat(conn, config);
-      };
-
-      conn.ws.onmessage = (event) => {
-        conn.lastMessage = Date.now();
-        this.handleMessage(config.name, event.data);
-      };
-
-      conn.ws.onerror = (error) => {
-        console.error(`[${config.name}] WebSocket error:`, error);
-        conn.status = 'error';
-        this.emit('exchange_error', config.name, error);
-      };
-
-      conn.ws.onclose = () => {
-        console.log(`[${config.name}] WebSocket closed`);
-        conn.status = 'disconnected';
-        this.emit('exchange_disconnected', config.name);
-        this.scheduleReconnect(config);
-      };
+      this.setupWebSocketHandlers(conn, config);
     } catch (error) {
-      console.error(`[${config.name}] Failed to connect:`, error);
-      conn.status = 'error';
-      this.scheduleReconnect(config);
+      this.handleConnectionError(conn, config, error);
     }
   }
 
+  private setupWebSocketHandlers(conn: ExchangeConnection, config: ExchangeConfig): void {
+    if (!conn.ws) return;
+
+    conn.ws.onopen = () => {
+      console.log(`[${config.name}] WebSocket connected`);
+      conn.status = 'connected';
+      conn.reconnectAttempts = 0;
+      this.emit('exchange_connected', config.name);
+
+      config.symbols.forEach((symbol) => {
+        this.subscribeToSymbol(conn, symbol, config);
+      });
+
+      this.startHeartbeat(conn, config);
+    };
+
+    conn.ws.onmessage = (event) => {
+      conn.lastMessage = Date.now();
+      this.handleMessage(config.name, event.data);
+    };
+
+    conn.ws.onerror = (error) => {
+      console.error(`[${config.name}] WebSocket error:`, error);
+      conn.status = 'error';
+      this.emit('exchange_error', config.name, error);
+    };
+
+    conn.ws.onclose = () => {
+      console.log(`[${config.name}] WebSocket closed`);
+      conn.status = 'disconnected';
+      this.emit('exchange_disconnected', config.name);
+      this.scheduleReconnect(config);
+    };
+  }
+
+  private handleConnectionError(conn: ExchangeConnection, config: ExchangeConfig, error: unknown): void {
+    console.error(`[${config.name}] Failed to connect:`, error);
+    conn.status = 'error';
+    this.scheduleReconnect(config);
+  }
+
   private buildWebSocketUrl(config: ExchangeConfig): string {
-    switch (config.name) {
-      case 'binance':
-        const streams = config.symbols.map((s) => `${s.toLowerCase()}@ticker`).join('/');
-        return `${config.wsUrl}/${streams}`;
-      case 'coinbase':
-        return config.wsUrl;
-      case 'kraken':
-        return config.wsUrl;
-      case 'bybit':
-        return config.wsUrl;
-      default:
-        return config.wsUrl;
-    }
+    const builder = ExchangeMessageBuilders[config.name as keyof typeof ExchangeMessageBuilders];
+    return builder ? builder.buildWsUrl(config) : config.wsUrl;
   }
 
   private subscribeToSymbol(conn: ExchangeConnection, symbol: string, config: ExchangeConfig): void {
     if (!conn.ws || conn.ws.readyState !== WebSocket.OPEN) return;
 
-    const subscribeMsg = this.createSubscribeMessage(config.name, symbol);
-    conn.ws.send(JSON.stringify(subscribeMsg));
-    conn.symbols.add(symbol);
-  }
-
-  private createSubscribeMessage(exchange: string, symbol: string): unknown {
-    switch (exchange) {
-      case 'binance':
-        return {
-          method: 'SUBSCRIBE',
-          params: [`${symbol.toLowerCase()}@ticker`],
-          id: Date.now(),
-        };
-      case 'coinbase':
-        return {
-          type: 'subscribe',
-          product_ids: [symbol],
-          channels: ['ticker'],
-        };
-      case 'kraken':
-        return {
-          event: 'subscribe',
-          pair: [symbol],
-          subscription: { name: 'ticker' },
-        };
-      case 'bybit':
-        return {
-          op: 'subscribe',
-          args: [`tickers.${symbol}`],
-        };
-      default:
-        return {};
+    const builder = ExchangeMessageBuilders[config.name as keyof typeof ExchangeMessageBuilders];
+    if (builder) {
+      conn.ws.send(JSON.stringify(builder.createSubscribe(symbol)));
+      conn.symbols.add(symbol);
     }
   }
 
   private createUnsubscribeMessage(exchange: string, symbol: string): unknown {
-    switch (exchange) {
-      case 'binance':
-        return {
-          method: 'UNSUBSCRIBE',
-          params: [`${symbol.toLowerCase()}@ticker`],
-          id: Date.now(),
-        };
-      case 'coinbase':
-        return {
-          type: 'unsubscribe',
-          product_ids: [symbol],
-          channels: ['ticker'],
-        };
-      case 'kraken':
-        return {
-          event: 'unsubscribe',
-          pair: [symbol],
-          subscription: { name: 'ticker' },
-        };
-      case 'bybit':
-        return {
-          op: 'unsubscribe',
-          args: [`tickers.${symbol}`],
-        };
-      default:
-        return {};
-    }
+    const builder = ExchangeMessageBuilders[exchange as keyof typeof ExchangeMessageBuilders];
+    return builder ? builder.createUnsubscribe(symbol) : {};
   }
+
+  // ============================================================================
+  // Private Methods - Message Handling
+  // ============================================================================
 
   private handleMessage(exchange: string, data: string): void {
     try {
@@ -375,16 +581,8 @@ export class MultiExchangeDataFeed extends EventEmitter {
       const marketData = this.parseExchangeMessage(exchange, parsed);
 
       if (marketData) {
-        // Store raw data
-        if (!this.rawData.has(exchange)) {
-          this.rawData.set(exchange, new Map());
-        }
-        this.rawData.get(exchange)!.set(marketData.symbol, marketData);
-
-        // Emit raw data event
+        this.storeRawData(exchange, marketData);
         this.emit('raw_data', exchange, marketData);
-
-        // Aggregate data
         this.aggregateData(marketData.symbol);
       }
     } catch (error) {
@@ -392,184 +590,64 @@ export class MultiExchangeDataFeed extends EventEmitter {
     }
   }
 
-  private parseExchangeMessage(exchange: string, data: unknown): MarketData | null {
-    const timestamp = Date.now();
-
-    switch (exchange) {
-      case 'binance':
-        return this.parseBinanceMessage(data, timestamp);
-      case 'coinbase':
-        return this.parseCoinbaseMessage(data, timestamp);
-      case 'kraken':
-        return this.parseKrakenMessage(data, timestamp);
-      case 'bybit':
-        return this.parseBybitMessage(data, timestamp);
-      default:
-        return null;
+  private storeRawData(exchange: string, marketData: MarketData): void {
+    if (!this.rawData.has(exchange)) {
+      this.rawData.set(exchange, new Map());
     }
+    this.rawData.get(exchange)!.set(marketData.symbol, marketData);
   }
 
-  private parseBinanceMessage(data: unknown, timestamp: number): MarketData | null {
-    if (typeof data !== 'object' || data === null) return null;
-    const d = data as Record<string, unknown>;
-    
-    if (d.e !== '24hrTicker') return null;
-
-    const symbol = String(d.s);
-    const price = parseFloat(String(d.c));
-    const open = parseFloat(String(d.o));
-
-    return {
-      symbol: this.normalizeSymbol(symbol),
-      exchange: 'binance',
-      price,
-      bid: parseFloat(String(d.b)),
-      ask: parseFloat(String(d.a)),
-      volume: parseFloat(String(d.v)),
-      timestamp,
-      change: price - open,
-      changePercent: ((price - open) / open) * 100,
-      high24h: parseFloat(String(d.h)),
-      low24h: parseFloat(String(d.l)),
-      vwap: parseFloat(String(d.w)),
-    };
+  private parseExchangeMessage(exchange: string, data: unknown): MarketData | null {
+    const parser = ExchangeParsers[exchange as keyof typeof ExchangeParsers];
+    return parser ? parser(data, Date.now()) : null;
   }
 
-  private parseCoinbaseMessage(data: unknown, timestamp: number): MarketData | null {
-    if (typeof data !== 'object' || data === null) return null;
-    const d = data as Record<string, unknown>;
-    
-    if (d.type !== 'ticker') return null;
-
-    const price = parseFloat(String(d.price));
-    const open24h = parseFloat(String(d.open_24h));
-
-    return {
-      symbol: this.normalizeSymbol(String(d.product_id)),
-      exchange: 'coinbase',
-      price,
-      bid: parseFloat(String(d.best_bid)),
-      ask: parseFloat(String(d.best_ask)),
-      volume: parseFloat(String(d.volume_24h)),
-      timestamp,
-      change: price - open24h,
-      changePercent: ((price - open24h) / open24h) * 100,
-      high24h: parseFloat(String(d.high_24h)),
-      low24h: parseFloat(String(d.low_24h)),
-    };
-  }
-
-  private parseKrakenMessage(data: unknown, timestamp: number): MarketData | null {
-    if (!Array.isArray(data) || data.length < 4) return null;
-    
-    const tickerData = data[1] as Record<string, unknown>;
-    const symbol = String(data[3]);
-
-    const c = tickerData.c as [string, string];
-    const v = tickerData.v as [string, string];
-    const h = tickerData.h as [string, string];
-    const l = tickerData.l as [string, string];
-    const p = tickerData.p as [string, string];
-    const b = tickerData.b as [string, string] | undefined;
-    const a = tickerData.a as [string, string] | undefined;
-
-    const price = parseFloat(c[0]);
-    const openPrice = parseFloat(p[0]);
-
-    return {
-      symbol: this.normalizeSymbol(symbol),
-      exchange: 'kraken',
-      price,
-      bid: parseFloat(b?.[0] || '0'),
-      ask: parseFloat(a?.[0] || '0'),
-      volume: parseFloat(v[1]),
-      timestamp,
-      change: price - openPrice,
-      changePercent: ((price - openPrice) / openPrice) * 100,
-      high24h: parseFloat(h[1]),
-      low24h: parseFloat(l[1]),
-    };
-  }
-
-  private parseBybitMessage(data: unknown, timestamp: number): MarketData | null {
-    if (typeof data !== 'object' || data === null) return null;
-    const d = data as Record<string, unknown>;
-    
-    if (d.topic?.toString().indexOf('tickers') === -1) return null;
-
-    const ticker = d.data as Record<string, unknown>;
-    const price = parseFloat(String(ticker.lastPrice));
-    const open = parseFloat(String(ticker.prevPrice24h));
-
-    return {
-      symbol: this.normalizeSymbol(String(ticker.symbol)),
-      exchange: 'bybit',
-      price,
-      bid: parseFloat(String(ticker.bid1Price)),
-      ask: parseFloat(String(ticker.ask1Price)),
-      volume: parseFloat(String(ticker.volume24h)),
-      timestamp,
-      change: price - open,
-      changePercent: ((price - open) / open) * 100,
-      high24h: parseFloat(String(ticker.highPrice24h)),
-      low24h: parseFloat(String(ticker.lowPrice24h)),
-      openInterest: parseFloat(String(ticker.openInterest) || '0'),
-    };
-  }
-
-  private normalizeSymbol(symbol: string): string {
-    // Normalize symbol format across exchanges
-    return symbol
-      .replace(/-/g, '')
-      .replace(/\//g, '')
-      .replace('USDT', 'USD')
-      .replace('XBT', 'BTC');
-  }
+  // ============================================================================
+  // Private Methods - Data Aggregation
+  // ============================================================================
 
   private aggregateData(symbol: string): void {
-    const prices: MarketData[] = [];
-
-    // Collect data from all exchanges
-    this.rawData.forEach((exchangeData) => {
-      const data = exchangeData.get(symbol);
-      if (data && Date.now() - data.timestamp < this.config.staleDataThreshold) {
-        prices.push(data);
-      }
-    });
-
+    const prices = this.collectValidPrices(symbol);
     if (prices.length === 0) return;
 
-    let aggregated: MarketData;
+    const aggregated = this.createAggregatedData(prices);
 
-    switch (this.config.aggregationMethod) {
-      case 'best_price':
-        aggregated = this.aggregateByBestPrice(prices);
-        break;
-      case 'vwap':
-        aggregated = this.aggregateByVWAP(prices);
-        break;
-      case 'primary':
-        aggregated = prices[0];
-        break;
-      default:
-        aggregated = this.aggregateByBestPrice(prices);
-    }
-
-    // Detect and filter outlier prices
     if (this.isValidAggregation(aggregated, prices)) {
       this.aggregatedData.set(symbol, aggregated);
       this.emit('aggregated_data', symbol, aggregated);
     }
   }
 
+  private collectValidPrices(symbol: string): MarketData[] {
+    const prices: MarketData[] = [];
+    const now = Date.now();
+
+    this.rawData.forEach((exchangeData) => {
+      const data = exchangeData.get(symbol);
+      if (data && now - data.timestamp < this.config.staleDataThreshold) {
+        prices.push(data);
+      }
+    });
+
+    return prices;
+  }
+
+  private createAggregatedData(prices: MarketData[]): MarketData {
+    switch (this.config.aggregationMethod) {
+      case 'best_price':
+        return this.aggregateByBestPrice(prices);
+      case 'vwap':
+        return this.aggregateByVWAP(prices);
+      case 'primary':
+      default:
+        return prices[0];
+    }
+  }
+
   private aggregateByBestPrice(prices: MarketData[]): MarketData {
     const bestBid = Math.max(...prices.map((p) => p.bid));
     const bestAsk = Math.min(...prices.map((p) => p.ask));
-    const midPrice = (bestBid + bestAsk) / 2;
-
-    // Weight by volume
-    const totalVolume = prices.reduce((sum, p) => sum + p.volume, 0);
-    const weightedPrice = prices.reduce((sum, p) => sum + p.price * p.volume, 0) / totalVolume;
+    const { vwap: weightedPrice, totalVolume } = calculateVolumeWeightedMetrics(prices);
 
     return {
       symbol: prices[0].symbol,
@@ -587,8 +665,7 @@ export class MultiExchangeDataFeed extends EventEmitter {
   }
 
   private aggregateByVWAP(prices: MarketData[]): MarketData {
-    const totalVolume = prices.reduce((sum, p) => sum + p.volume, 0);
-    const vwap = prices.reduce((sum, p) => sum + p.price * p.volume, 0) / totalVolume;
+    const { vwap, totalVolume } = calculateVolumeWeightedMetrics(prices);
 
     return {
       symbol: prices[0].symbol,
@@ -606,45 +683,39 @@ export class MultiExchangeDataFeed extends EventEmitter {
   }
 
   private isValidAggregation(aggregated: MarketData, sources: MarketData[]): boolean {
-    // Check for significant price deviations
     const avgPrice = sources.reduce((sum, p) => sum + p.price, 0) / sources.length;
     const deviation = Math.abs(aggregated.price - avgPrice) / avgPrice;
 
     return deviation <= this.config.priceDeviationThreshold;
   }
 
+  // ============================================================================
+  // Private Methods - Heartbeat & Reconnection
+  // ============================================================================
+
   private startHeartbeat(conn: ExchangeConnection, config: ExchangeConfig): void {
     const interval = setInterval(() => {
       if (conn.ws?.readyState === WebSocket.OPEN) {
-        // Send ping based on exchange protocol
-        const pingMsg = this.createPingMessage(config.name);
-        if (pingMsg) {
-          conn.ws.send(JSON.stringify(pingMsg));
-        }
-
-        // Check for stale data
-        if (Date.now() - conn.lastMessage > config.heartbeatInterval * 2) {
-          console.warn(`[${config.name}] Stale data detected, reconnecting...`);
-          conn.ws.close();
-        }
+        this.sendPing(conn, config);
+        this.checkStaleData(conn, config);
       }
     }, config.heartbeatInterval);
 
     this.heartbeatIntervals.set(config.name, interval);
   }
 
-  private createPingMessage(exchange: string): unknown | null {
-    switch (exchange) {
-      case 'binance':
-        return null; // Binance handles ping automatically
-      case 'coinbase':
-        return { type: 'heartbeat', on: true };
-      case 'kraken':
-        return { event: 'ping' };
-      case 'bybit':
-        return { op: 'ping' };
-      default:
-        return null;
+  private sendPing(conn: ExchangeConnection, config: ExchangeConfig): void {
+    const builder = ExchangeMessageBuilders[config.name as keyof typeof ExchangeMessageBuilders];
+    const pingMsg = builder ? builder.createPing() : null;
+    if (pingMsg) {
+      conn.ws?.send(JSON.stringify(pingMsg));
+    }
+  }
+
+  private checkStaleData(conn: ExchangeConnection, config: ExchangeConfig): void {
+    if (Date.now() - conn.lastMessage > config.heartbeatInterval * 2) {
+      console.warn(`[${config.name}] Stale data detected, reconnecting...`);
+      conn.ws?.close();
     }
   }
 
