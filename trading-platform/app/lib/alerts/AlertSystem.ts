@@ -653,17 +653,11 @@ export class AlertSystem extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalAlertSystem: AlertSystem | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalAlertSystem(): AlertSystem {
-  if (!globalAlertSystem) {
-    globalAlertSystem = new AlertSystem();
-  }
-  return globalAlertSystem;
-}
+const { getInstance, resetInstance } = createSingleton(() => new AlertSystem());
 
-export function resetGlobalAlertSystem(): void {
-  globalAlertSystem = null;
-}
+export const getGlobalAlertSystem = getInstance;
+export const resetGlobalAlertSystem = resetInstance;
 
 export default AlertSystem;
