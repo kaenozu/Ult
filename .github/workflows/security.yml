@@ -32,6 +32,19 @@ jobs:
           cache: 'npm'
           cache-dependency-path: trading-platform/package-lock.json
 
+      - name: Verify package-lock.json integrity
+        working-directory: ./trading-platform
+        run: |
+          # Ensure package-lock.json is in sync with package.json
+          echo "Verifying package-lock.json integrity..."
+          npm install --package-lock-only --ignore-scripts
+          if ! git diff --exit-code package-lock.json; then
+            echo "ERROR: package-lock.json is out of sync with package.json"
+            echo "Please run 'npm install' and commit the updated package-lock.json"
+            exit 1
+          fi
+          echo "✓ package-lock.json integrity verified"
+
       - name: Install dependencies
         working-directory: ./trading-platform
         run: npm ci

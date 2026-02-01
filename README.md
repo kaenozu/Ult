@@ -303,6 +303,7 @@ cd backend
 ### コアコンポーネント
 
 - **[trading-platform/README.md](./trading-platform/README.md)** - フロントエンドの詳細ドキュメント
+- **[DEPENDENCIES.md](./DEPENDENCIES.md)** - 依存関係の説明と目的
 - **[REMAINING_TECH_DEBT_ROADMAP.md](./REMAINING_TECH_DEBT_ROADMAP.md)** - 技術的負債と改善計画
 
 ### 主要サービスクラス
@@ -370,6 +371,8 @@ npm run test:e2e:headed
 ---
 
 ## 🔒 セキュリティ
+
+依存関係のセキュリティ管理については **[SECURITY.md](./SECURITY.md)** を参照してください。
 
 ### 環境変数の管理
 
@@ -485,6 +488,7 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
 ### ドキュメント
 
 - [フロントエンド詳細ドキュメント](./trading-platform/README.md)
+- [依存関係ドキュメント](./DEPENDENCIES.md)
 - [API仕様](./docs/api.md)（将来実装予定）
 - [技術的負債ロードマップ](./REMAINING_TECH_DEBT_ROADMAP.md)
 
