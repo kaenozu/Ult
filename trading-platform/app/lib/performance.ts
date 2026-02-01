@@ -47,7 +47,7 @@ export function measurePerformance<T>(name: string, fn: () => T): T {
   const start = performance.now();
   
   // Create start mark before execution
-  if (typeof window !== 'undefined' && window.performance && window.performance.mark) {
+  if (typeof window !== 'undefined' && window.performance) {
     try {
       performance.mark(`${name}-start`);
     } catch (e) {
@@ -60,7 +60,7 @@ export function measurePerformance<T>(name: string, fn: () => T): T {
     const duration = performance.now() - start;
     
     // Create end mark and measure after execution
-    if (typeof window !== 'undefined' && window.performance && window.performance.measure) {
+    if (typeof window !== 'undefined' && window.performance) {
       try {
         performance.mark(`${name}-end`);
         performance.measure(name, `${name}-start`, `${name}-end`);
@@ -169,9 +169,9 @@ export function usePerformanceMonitor(
     trackUnmount = true,
   } = options;
 
-  const mountTimeRef = useRef<number>();
+  const mountTimeRef = useRef<number | undefined>(undefined);
   const renderCountRef = useRef<number>(0);
-  const lastRenderTimeRef = useRef<number>();
+  const lastRenderTimeRef = useRef<number | undefined>(undefined);
 
   // マウント時の計測
   useEffect(() => {
