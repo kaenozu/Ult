@@ -214,33 +214,6 @@ export class PatternRecognizer {
       recommendedAction: baseSuccessRate > 0.6 ? 'ENTER' : 'WAIT'
     };
   }
-
-  /**
-   * Calculate confidence score for a pattern
-   */
-  private calculateConfidence(
-    pattern: CandlestickPatternResult | null,
-    window: OHLCV[]
-  ): number {
-    if (!pattern) return 0;
-    
-    // Base confidence from pattern
-    let confidence = pattern.confidence;
-    
-    // Adjust based on volume if available
-    if (window.length > 1) {
-      const latestVolume = window[window.length - 1].volume;
-      const avgVolume = window.reduce((sum, d) => sum + d.volume, 0) / window.length;
-      
-      if (avgVolume > 0) {
-        const volumeRatio = latestVolume / avgVolume;
-        // Higher volume increases confidence
-        confidence *= Math.min(1.2, 1 + (volumeRatio - 1) * 0.2);
-      }
-    }
-    
-    return Math.min(0.95, confidence);
-  }
 }
 
 /**
