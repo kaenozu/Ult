@@ -272,7 +272,9 @@ class ConsensusSignalService {
 
     // コンフィデンス（0-100）を計算
     const confidence = Math.min(Math.abs(weightedScore) * 100, 95);
-    const finalConfidence = type === 'HOLD' ? Math.max(confidence, ALERT_SEVERITY_THRESHOLDS.MIN_HOLD_CONFIDENCE) : Math.max(confidence, ALERT_SEVERITY_THRESHOLDS.MIN_STANDARD_CONFIDENCE);
+    const finalConfidence = type === 'HOLD'
+      ? Math.max(confidence, ALERT_SEVERITY_THRESHOLDS.MIN_HOLD_CONFIDENCE)
+      : Math.max(confidence, ALERT_SEVERITY_THRESHOLDS.MIN_STANDARD_CONFIDENCE);
 
     // 理由を生成
     const signals = { rsi: rsiSignal, macd: macdSignal, bollinger: bollingerSignal };

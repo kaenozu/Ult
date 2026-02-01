@@ -98,8 +98,14 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
       sum + Math.abs(s.changePercent || 0), 0) / stocks.length;
     
     // 高ボラティリティ時は短い間隔、低ボラティリティ時は長い間隔
-    const newInterval = avgVolatility > VOLATILITY_THRESHOLDS.HIGH ? POLLING_INTERVALS.HIGH_VOLATILITY : 
-                        avgVolatility > VOLATILITY_THRESHOLDS.MEDIUM_HIGH ? POLLING_INTERVALS.MEDIUM_VOLATILITY : POLLING_INTERVALS.LOW_VOLATILITY;
+    let newInterval: number;
+    if (avgVolatility > VOLATILITY_THRESHOLDS.HIGH) {
+      newInterval = POLLING_INTERVALS.HIGH_VOLATILITY;
+    } else if (avgVolatility > VOLATILITY_THRESHOLDS.MEDIUM_HIGH) {
+      newInterval = POLLING_INTERVALS.MEDIUM_VOLATILITY;
+    } else {
+      newInterval = POLLING_INTERVALS.LOW_VOLATILITY;
+    }
     
     if (newInterval !== pollingInterval) {
       setPollingInterval(newInterval);
