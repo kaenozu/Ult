@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-
-// JWT secret from environment variable
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-in-production';
-
-// JWT expiration time (default: 24 hours)
-const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '24h';
+import { getConfig } from './config/env-validator';
 
 export interface JWTPayload {
   userId: string;
@@ -34,6 +29,10 @@ export function verifyAuthToken(req: NextRequest): JWTPayload | null {
       return null;
     }
 
+    // Get validated configuration
+    const config = getConfig();
+    const JWT_SECRET = config.jwt.secret;
+
     // Verify and decode token
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
     return decoded;
@@ -55,8 +54,13 @@ export function generateAuthToken(userId: string, username?: string): string {
     username,
   };
 
+  // Get validated configuration
+  const config = getConfig();
+  const JWT_SECRET = config.jwt.secret;
+  const JWT_EXPIRATION = config.jwt.expiration;
+
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRATION,
+    expiresIn: JWT_EXPIRATION as jwt.SignOptions['expiresIn'],
   });
 }
 
