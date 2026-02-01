@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Locale, defaultLocale } from './config';
 import { getMessages, translate } from './utils';
 
@@ -15,6 +15,17 @@ const I18nContext = createContext<I18nContextType | undefined>(undefined);
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(defaultLocale);
   const messages = getMessages(locale);
+
+  // Initialize locale from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLocale = localStorage.getItem('locale') as Locale;
+      if (savedLocale && (savedLocale === 'ja' || savedLocale === 'en')) {
+        setLocaleState(savedLocale);
+        document.documentElement.lang = savedLocale;
+      }
+    }
+  }, []);
 
   const t = useCallback((key: string, params?: Record<string, string | number>) => {
     return translate(messages, key, params);

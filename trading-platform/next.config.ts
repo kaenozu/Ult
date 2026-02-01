@@ -1,10 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Configure next-intl
-  experimental: {
-    // Enable next-intl support
-  },
   async headers() {
     return [
       {
