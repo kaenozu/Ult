@@ -64,6 +64,9 @@ const DEFAULT_RATE_LIMIT: RateLimitConfig = {
 // Union type for cacheable data
 type CacheableData = OHLCV | OHLCV[] | Signal | TechnicalIndicator | Stock | Stock[];
 
+// Type for batch request results - can be either a single value or a map of values
+type BatchResult<T> = T | Map<string, T>;
+
 export class DataAggregator {
   // Cache
   private cache: Map<string, CacheEntry<CacheableData>> = new Map();
@@ -72,8 +75,8 @@ export class DataAggregator {
   // Request deduplication
   private pendingRequests: Map<string, Promise<CacheableData>> = new Map();
 
-  // Batch processing
-  private batchQueue: Array<BatchRequest<CacheableData | Map<string, CacheableData>>> = [];
+  // Batch processing - supports both single and batch results
+  private batchQueue: Array<BatchRequest<BatchResult<CacheableData>>> = [];
   private batchTimer: NodeJS.Timeout | null = null;
   private batchOptions: BatchOptions;
 
@@ -432,7 +435,7 @@ export class DataAggregator {
 
   private async batchFetcher(
     keys: string[],
-    batch: Array<BatchRequest<CacheableData | Map<string, CacheableData>>>
+    batch: Array<BatchRequest<BatchResult<CacheableData>>>
   ): Promise<Map<string, CacheableData>> {
     // This is a simplified batch fetcher
     // In production, you would implement actual batching logic
@@ -447,13 +450,18 @@ export class DataAggregator {
             results.set(key, value);
           }
         } else if (Array.isArray(result)) {
+          // Handle array results - distribute to keys
           for (let i = 0; i < request.keys.length && i < result.length; i++) {
-            results.set(request.keys[i], result[i] as CacheableData);
+            const item = result[i];
+            // Type narrowing: ensure item is part of CacheableData
+            if (item !== null && item !== undefined) {
+              results.set(request.keys[i], item as CacheableData);
+            }
           }
         } else {
           // Single result - use first key
-          if (request.keys.length > 0) {
-            results.set(request.keys[0], result);
+          if (request.keys.length > 0 && result !== null && result !== undefined) {
+            results.set(request.keys[0], result as CacheableData);
           }
         }
       } catch (error) {

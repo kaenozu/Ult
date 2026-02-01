@@ -45,6 +45,8 @@ export class RequestDeduplicator {
     const pending = this.pendingRequests.get(key);
     if (pending) {
       console.debug(`[RequestDeduplicator] Request already pending: ${key}`);
+      // Type assertion is safe here because we control what goes into pendingRequests
+      // Each promise is always stored with the same generic type T for a given key
       return pending as Promise<T>;
     }
 
