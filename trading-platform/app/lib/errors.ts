@@ -13,7 +13,7 @@
  * - エラーハンドリングラッパー (handleError, withErrorHandling)
  * 
  * ### 関連モジュール
- * - **@/app/lib/error-handler.ts** - Next.js APIルート専用HTTPレスポンス生成
+ * - **@/app/lib/error-handler.ts** - Next.js API ルート専用HTTPレスポンス生成
  *   - handleApiError, validationError, notFoundError, rateLimitError
  *   - NextResponseでのエラーレスポンス構築
  * 

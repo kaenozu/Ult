@@ -208,7 +208,13 @@ export function handleApiError(
  * エラーログの出力
  * 
  * @deprecated Use logError from @/app/lib/errors directly for consistency
- * This wrapper is kept for backward compatibility with API routes
+ * This wrapper is kept for backward compatibility with existing API routes.
+ * Migration guide: Replace `logError(error, context)` with:
+ * ```typescript
+ * import { logError } from '@/app/lib/errors';
+ * logError(error, context);
+ * ```
+ * Will be removed in version 2.0.0
  *
  * @param error - エラーオブジェクト
  * @param context - エラーが発生したコンテキスト

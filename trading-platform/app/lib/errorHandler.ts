@@ -260,7 +260,15 @@ export class ErrorHandler {
 
   /**
    * Generate user-friendly message from error
+   * 
    * @deprecated Use getUserErrorMessage from @/app/lib/errors directly
+   * This method is a simple wrapper around getUserErrorMessage.
+   * Migration guide: Replace `errorHandler.getUserFriendlyMessage(error)` with:
+   * ```typescript
+   * import { getUserErrorMessage } from '@/app/lib/errors';
+   * const message = getUserErrorMessage(error);
+   * ```
+   * Will be removed in version 2.0.0
    */
   getUserFriendlyMessage(error: TradingError): string {
     return getUserErrorMessage(error);
