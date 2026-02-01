@@ -27,7 +27,7 @@ interface MarketResponse<T> {
 class MarketDataClient {
   private cache: Map<string, { data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData; timestamp: number }> = new Map();
   private cacheDuration: number = 5 * 60 * 1000;
-  private pendingRequests: Map<string, Promise<any>> = new Map();
+  private pendingRequests: Map<string, Promise<OHLCV[] | Signal | TechnicalIndicator | QuoteData>> = new Map();
 
   private async fetchWithRetry<T>(
     url: string,

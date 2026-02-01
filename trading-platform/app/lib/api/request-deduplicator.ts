@@ -11,8 +11,8 @@ interface CacheEntry<T> {
 }
 
 export class RequestDeduplicator {
-  private pendingRequests = new Map<string, Promise<any>>();
-  private cache = new Map<string, CacheEntry<any>>();
+  private pendingRequests = new Map<string, Promise<unknown>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private readonly CACHE_TTL = 5000; // 5 seconds default TTL
   private readonly MAX_CACHE_SIZE = 1000;
   private readonly MAX_PENDING_REQUESTS = 50;

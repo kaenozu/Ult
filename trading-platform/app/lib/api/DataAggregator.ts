@@ -61,16 +61,19 @@ const DEFAULT_RATE_LIMIT: RateLimitConfig = {
 // DataAggregator Class
 // ============================================================================
 
+// Union type for cacheable data
+type CacheableData = OHLCV | OHLCV[] | Signal | TechnicalIndicator | Stock | Stock[];
+
 export class DataAggregator {
   // Cache
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  private cache: Map<string, CacheEntry<CacheableData>> = new Map();
   private readonly cacheTTL: number;
 
   // Request deduplication
-  private pendingRequests: Map<string, Promise<any>> = new Map();
+  private pendingRequests: Map<string, Promise<CacheableData>> = new Map();
 
   // Batch processing
-  private batchQueue: BatchRequest<any>[] = [];
+  private batchQueue: Array<BatchRequest<CacheableData | Map<string, CacheableData>>> = [];
   private batchTimer: NodeJS.Timeout | null = null;
   private batchOptions: BatchOptions;
 
@@ -409,13 +412,16 @@ export class DataAggregator {
 
       // Resolve individual requests
       for (const request of batch) {
-        const requestResults = new Map<string, any>();
+        const requestResults = new Map<string, CacheableData>();
         for (const key of request.keys) {
           if (results.has(key)) {
-            requestResults.set(key, results.get(key));
+            const value = results.get(key);
+            if (value !== undefined) {
+              requestResults.set(key, value);
+            }
           }
         }
-        request.resolve(requestResults);
+        request.resolve(requestResults as typeof request extends BatchRequest<infer R> ? R : never);
       }
     } catch (error) {
       for (const request of batch) {
@@ -426,11 +432,11 @@ export class DataAggregator {
 
   private async batchFetcher(
     keys: string[],
-    batch: BatchRequest<any>[]
-  ): Promise<Map<string, any>> {
+    batch: Array<BatchRequest<CacheableData | Map<string, CacheableData>>>
+  ): Promise<Map<string, CacheableData>> {
     // This is a simplified batch fetcher
     // In production, you would implement actual batching logic
-    const results = new Map<string, any>();
+    const results = new Map<string, CacheableData>();
 
     // For now, execute each request sequentially
     for (const request of batch) {
@@ -442,7 +448,12 @@ export class DataAggregator {
           }
         } else if (Array.isArray(result)) {
           for (let i = 0; i < request.keys.length && i < result.length; i++) {
-            results.set(request.keys[i], result[i]);
+            results.set(request.keys[i], result[i] as CacheableData);
+          }
+        } else {
+          // Single result - use first key
+          if (request.keys.length > 0) {
+            results.set(request.keys[0], result);
           }
         }
       } catch (error) {
