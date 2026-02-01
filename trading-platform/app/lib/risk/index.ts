@@ -6,16 +6,38 @@
 
 // Advanced Risk Manager
 export {
-  default as AdvancedRiskManager,
-  advancedRiskManager,
+  AdvancedRiskManager as default,
+  AdvancedRiskManager,
   DEFAULT_RISK_LIMITS,
 } from './AdvancedRiskManager';
 
 export type {
-  PositionSizingInput,
+  RiskMetrics,
+  PositionSizingParams,
   PositionSizingResult,
-  StopLossConfig,
-  StopLossResult,
-  PortfolioRiskMetrics,
-  RiskLimitConfig,
+  RiskLimits,
+  RiskAlert,
+  PortfolioOptimizationParams,
+  OptimizationResult,
 } from './AdvancedRiskManager';
+
+// TRADING-003: Enhanced Risk Management Components
+export {
+  DynamicPositionSizing,
+  createDynamicPositionSizing,
+} from './DynamicPositionSizing';
+
+export {
+  CorrelationManager,
+  createCorrelationManager,
+} from './CorrelationManager';
+
+export {
+  StressTestEngine,
+  createStressTestEngine,
+} from './StressTestEngine';
+
+export {
+  PsychologyMonitor,
+  createPsychologyMonitor,
+} from './PsychologyMonitor';
