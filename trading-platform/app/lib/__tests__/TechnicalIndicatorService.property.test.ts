@@ -5,7 +5,7 @@
 import { describe, it, expect } from '@jest/globals';
 import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import type { SharedOHLCV } from '../../types/shared';
-import * as fc from 'fast-check';
+import fc from 'fast-check';
 
 // Helper to generate valid price data (positive numbers only)
 const positivePriceArb = (minLength: number, maxLength: number): fc.Arbitrary<number[]> => 
