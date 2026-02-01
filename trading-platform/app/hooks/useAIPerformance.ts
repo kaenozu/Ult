@@ -48,7 +48,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
           try {
              const result = calculateAIHitRate(stock.symbol, ohlcv, stock.market);
              setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
-          } catch (fallbackError) {
+          } catch {
              setError('的中率の計算に失敗しました');
           }
         }

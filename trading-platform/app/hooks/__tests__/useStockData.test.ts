@@ -35,7 +35,7 @@ describe('useStockData', () => {
             setSelectedStock: mockSetSelectedStock
         }));
 
-        const { result } = renderHook(() => useStockData());
+        renderHook(() => useStockData());
 
         await waitFor(() => {
             expect(mockSetSelectedStock).toHaveBeenCalledWith(mockStock);

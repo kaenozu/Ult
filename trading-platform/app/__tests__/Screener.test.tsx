@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Screener from '../screener/page';
 import { useTradingStore } from '../store/tradingStore';
 import { marketClient } from '../lib/api/data-aggregator';
-import { fetchOHLCV, JAPAN_STOCKS, USA_STOCKS } from '../data/stocks';
+import { fetchOHLCV } from '../data/stocks';
 import { filterByTechnicals } from '../lib/screener-utils';
 import { useRouter } from 'next/navigation';
 import '@testing-library/jest-dom';

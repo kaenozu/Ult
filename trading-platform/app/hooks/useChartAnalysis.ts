@@ -139,12 +139,8 @@ export function useChartAnalysis({
         const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
         const errorFactor = Math.min(Math.max(signal.predictionError || 1.0, 0.5), 1.5);
         const confidenceUncertainty = 0.4 + ((100 - signal.confidence) / 100) * 0.4;
-        const combinedFactor = errorFactor * confidenceUncertainty;
 
         const momentum = signal.predictedChange ? signal.predictedChange / 100 : 0;
-        const confidenceFactor = (110 - signal.confidence) / 100;
-
-        const target = signal.targetPrice;
 
         // Start points
         targetArr[lastIdx] = stopArr[lastIdx] = currentPrice;

@@ -4,7 +4,7 @@
  * エラーハンドリングのテスト
  */
 
-import { AppError, ApiError, ValidationError, handleError, logError, getUserErrorMessage, withErrorHandling } from '../lib/errors';
+import { AppError, ApiError, ValidationError, handleError, getUserErrorMessage, withErrorHandling } from '../lib/errors';
 
 describe('Error Handling', () => {
   describe('AppError', () => {

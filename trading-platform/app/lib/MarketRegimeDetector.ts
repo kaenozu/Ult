@@ -6,6 +6,7 @@
  */
 
 import { OHLCV } from '@/app/types';
+import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from './constants';
 
 export type MarketRegime = 'TRENDING' | 'RANGING' | 'UNKNOWN';
 export type VolatilityRegime = 'HIGH' | 'MEDIUM' | 'LOW';
@@ -42,7 +43,7 @@ class MarketRegimeDetector {
    * Uses ADX (Average Directional Index) for trend strength
    */
   detect(data: OHLCV[]): RegimeDetectionResult {
-    if (data.length < 20) {
+    if (data.length < DATA_REQUIREMENTS.MIN_DATA_POINTS) {
       return {
         regime: 'UNKNOWN',
         trendDirection: 'NEUTRAL',
@@ -56,16 +57,16 @@ class MarketRegimeDetector {
       };
     }
 
-    const adx = this.calculateADX(data, 14);
-    const atr = this.calculateATR(data, 14);
+    const adx = this.calculateADX(data, TECHNICAL_INDICATORS.ADX_PERIOD);
+    const atr = this.calculateATR(data, TECHNICAL_INDICATORS.ATR_PERIOD);
     const volatility = this.detectVolatility(data);
     const trendDirection = this.calculateTrendDirection(data);
 
     // Determine regime based on ADX
     let regime: MarketRegime;
-    if (adx > 25) {
+    if (adx > TECHNICAL_INDICATORS.ADX_TRENDING_THRESHOLD) {
       regime = 'TRENDING';
-    } else if (adx < 20) {
+    } else if (adx < TECHNICAL_INDICATORS.ADX_RANGING_THRESHOLD) {
       regime = 'RANGING';
     } else {
       // Transition zone - use previous regime if available
@@ -73,7 +74,7 @@ class MarketRegimeDetector {
     }
 
     // Calculate ATR ratio for volatility context
-    const avgATR = this.calculateAverageATR(data, 14);
+    const avgATR = this.calculateAverageATR(data, TECHNICAL_INDICATORS.ATR_PERIOD);
     const atrRatio = avgATR > 0 ? atr / avgATR : 1;
 
     // Handle regime persistence
@@ -98,12 +99,12 @@ class MarketRegimeDetector {
    * Detect volatility regime based on ATR ratio
    */
   detectVolatility(data: OHLCV[]): VolatilityRegime {
-    if (data.length < 20) {
+    if (data.length < DATA_REQUIREMENTS.MIN_DATA_POINTS) {
       return 'MEDIUM';
     }
 
-    const atr = this.calculateATR(data, 14);
-    const avgATR = this.calculateAverageATR(data, 14);
+    const atr = this.calculateATR(data, TECHNICAL_INDICATORS.ATR_PERIOD);
+    const avgATR = this.calculateAverageATR(data, TECHNICAL_INDICATORS.ATR_PERIOD);
     const ratio = avgATR > 0 ? atr / avgATR : 1;
 
     if (ratio > 2.0) {
@@ -120,7 +121,7 @@ class MarketRegimeDetector {
    * ADX > 25: Trending market
    * ADX < 20: Ranging market
    */
-  calculateADX(data: OHLCV[], period: number = 14): number {
+  calculateADX(data: OHLCV[], period: number = TECHNICAL_INDICATORS.ADX_PERIOD): number {
     if (data.length < period * 2) {
       return 0;
     }
@@ -170,7 +171,7 @@ class MarketRegimeDetector {
   /**
    * Calculate ATR (Average True Range)
    */
-  calculateATR(data: OHLCV[], period: number = 14): number {
+  calculateATR(data: OHLCV[], period: number = TECHNICAL_INDICATORS.ATR_PERIOD): number {
     if (data.length < period + 1) {
       return 0;
     }
@@ -189,7 +190,7 @@ class MarketRegimeDetector {
   /**
    * Calculate average ATR over the entire data period
    */
-  private calculateAverageATR(data: OHLCV[], period: number = 14): number {
+  private calculateAverageATR(data: OHLCV[], period: number = TECHNICAL_INDICATORS.ATR_PERIOD): number {
     if (data.length < period * 2) {
       return this.calculateATR(data, period);
     }
@@ -209,11 +210,11 @@ class MarketRegimeDetector {
    * Calculate trend direction based on price movement
    */
   private calculateTrendDirection(data: OHLCV[]): TrendDirection {
-    if (data.length < 20) {
+    if (data.length < DATA_REQUIREMENTS.TREND_CALCULATION_PERIOD) {
       return 'NEUTRAL';
     }
 
-    const recent = data.slice(-20);
+    const recent = data.slice(-DATA_REQUIREMENTS.TREND_CALCULATION_PERIOD);
     const firstPrice = recent[0].close;
     const lastPrice = recent[recent.length - 1].close;
     const change = ((lastPrice - firstPrice) / firstPrice) * 100;

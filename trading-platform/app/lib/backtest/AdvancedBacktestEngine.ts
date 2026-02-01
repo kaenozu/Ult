@@ -6,20 +6,14 @@
  */
 
 import { EventEmitter } from 'events';
+import { OHLCV } from '@/app/types';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export interface OHLCV {
-  date: string;
-  timestamp: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
+// OHLCV type is now imported from '@/app/types' to avoid duplication
+export type { OHLCV };
 
 export interface Trade {
   id: string;
@@ -226,7 +220,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
       config: this.config,
       startDate: data[0].date,
       endDate: data[data.length - 1].date,
-      duration: Math.floor((data[data.length - 1].timestamp - data[0].timestamp) / (1000 * 60 * 60 * 24)),
+      duration: Math.floor((new Date(data[data.length - 1].date).getTime() - new Date(data[0].date).getTime()) / (1000 * 60 * 60 * 24)),
     };
 
     strategy.onEnd?.(result);
