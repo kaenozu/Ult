@@ -35,6 +35,8 @@ from playwright.async_api import (
     async_playwright,
 )
 
+from .config import ScrapingConfig
+
 
 # =============================================================================
 # Data Models
@@ -55,55 +57,6 @@ class ScrapedItem:
         return asdict(self)
 
 
-@dataclass
-class ScrapingConfig:
-    """Configuration for the scraping session."""
-    
-    # URL and authentication
-    url: str = ""
-    username: str = ""
-    password: str = ""
-    
-    # Browser settings
-    headless: bool = True
-    viewport_width: int = 1920
-    viewport_height: int = 1080
-    
-    # Selectors
-    login_username_selector: str = "input[type='text'], input[name='username'], input[name='email'], #username, #email"
-    login_password_selector: str = "input[type='password'], input[name='password'], #password"
-    login_button_selector: str = "button[type='submit'], input[type='submit'], .login-btn, #login-btn"
-    data_container_selector: str = ".data-container, .items-list, [data-testid='items']"
-    item_selector: str = ".item, .data-row, [data-testid='item']"
-    next_page_selector: str = ".next-page, .pagination-next, [aria-label='Next page']"
-    
-    # Pagination
-    max_pages: int = 10
-    
-    # Retry settings
-    max_retries: int = 3
-    base_delay: float = 1.0
-    max_delay: float = 60.0
-    
-    # Request interception
-    block_images: bool = False
-    block_stylesheets: bool = False
-    block_javascript: bool = False
-    allowed_urls: List[Pattern] = field(default_factory=list)
-    blocked_urls: List[Pattern] = field(default_factory=list)
-    
-    # Output
-    output_dir: str = "./output"
-    json_filename: Optional[str] = None
-    csv_filename: Optional[str] = None
-    
-    # Logging
-    log_dir: str = "./logs"
-    log_level: str = "INFO"
-    log_max_bytes: int = 10 * 1024 * 1024  # 10MB
-    log_backup_count: int = 5
-
-
 # =============================================================================
 # Logging Setup
 # =============================================================================
@@ -121,8 +74,10 @@ def setup_logging(config: ScrapingConfig) -> logging.Logger:
     logger = logging.getLogger("playwright_scraper")
     logger.setLevel(getattr(logging, config.log_level.upper()))
     
-    # Clear existing handlers
-    logger.handlers.clear()
+    # Clear only our module's handlers to avoid affecting other loggers
+    # This prevents clearing root logger handlers which could affect other libraries
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
     
     # Create log directory
     log_dir = Path(config.log_dir)

@@ -1,5 +1,10 @@
 # Gitリポジトリのすべてのブランチを安全にマージするPowerShellスクリプト
-# 使用方法: .\scripts\merge-all-branches.ps1
+# 使用方法: .\scripts\merge-all-branches.ps1 [-SkipTests]
+
+# パラメータ定義
+param(
+    [switch]$SkipTests = $false
+)
 
 # エラーが発生したらスクリプトを停止
 $ErrorActionPreference = "Stop"

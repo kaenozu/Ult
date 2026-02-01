@@ -4,8 +4,10 @@ Supply/Demand Models
 Defines data models for supply/demand analysis.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Literal
 
 
 class ZoneType(Enum):
@@ -34,12 +36,12 @@ class Zone:
 @dataclass
 class BreakoutEvent:
     """Represents a breakout event"""
-    direction: str  # "bullish" or "bearish"
+    direction: Literal["bullish", "bearish"]
     price: float
     zone: Zone
     volume: int
     is_confirmed: bool  # True if volume confirms the breakout
-    timestamp: float = 0.0  # Unix timestamp
+    timestamp: datetime = field(default_factory=datetime.now)  # Changed from float to datetime with default
 
     def __str__(self) -> str:
         """Return string representation"""

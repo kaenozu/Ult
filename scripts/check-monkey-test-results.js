@@ -26,7 +26,14 @@ function checkResults() {
   console.log(`   Failed: ${report.summary.failed}`);
   console.log(`   Success Rate: ${report.summary.successRate}\n`);
 
-  const failureRate = (report.summary.failed / report.summary.total) * 100;
+  // Guard against division by zero
+  const total = report.summary.total || 0;
+  if (total === 0) {
+    console.error('❌ No tests were run (total is 0)');
+    process.exit(1);
+  }
+
+  const failureRate = (report.summary.failed / total) * 100;
 
   if (failureRate > FAILURE_THRESHOLD) {
     console.error(`❌ Failure rate (${failureRate.toFixed(2)}%) exceeds threshold (${FAILURE_THRESHOLD}%)`);

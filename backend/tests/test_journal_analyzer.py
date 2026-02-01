@@ -181,8 +181,16 @@ class TestTradeJournalAnalyzer:
         indicator: str = "PRICE"
     ) -> JournalEntry:
         """Helper to create a journal entry"""
+        from trade_journal_analyzer.models import TradeStatus
+
         if timestamp is None:
             timestamp = datetime.now()
+
+        # Convert string status to TradeStatus enum
+        if isinstance(status, str):
+            status_enum = TradeStatus(status)
+        else:
+            status_enum = status
 
         return JournalEntry(
             id=f"entry_{timestamp.timestamp()}",
@@ -194,5 +202,5 @@ class TestTradeJournalAnalyzer:
             profit_percent=profit_percent,
             signal_type=signal_type,
             indicator=indicator,
-            status=status
+            status=status_enum
         )

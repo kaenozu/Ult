@@ -96,7 +96,7 @@ export function useStockData() {
         setLoading(false);
       }
     }
-  }, [interval]); // Add interval dependency so it refetches when interval changes
+  }, [interval, watchlist]); // Add interval dependency so it refetches when interval changes
 
   const handleIntervalChange = useCallback((newInterval: string) => {
     setInterval(newInterval);

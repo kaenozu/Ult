@@ -11,6 +11,8 @@ A robust web scraping solution using Playwright with features including:
 - CLI with configurable parameters
 """
 
+import importlib.metadata
+
 from .config import ScrapingConfig, merge_configs
 from .exceptions import (
     AuthenticationError,
@@ -38,7 +40,12 @@ from .scraper import (
     setup_logging,
 )
 
-__version__ = "1.0.0"
+# Dynamically load version from package metadata
+try:
+    __version__ = importlib.metadata.version("playwright-scraper")
+except importlib.metadata.PackageNotFoundError:
+    # Fallback version if package is not installed
+    __version__ = "1.0.0"
 __all__ = [
     # Core classes
     "PlaywrightScraper",
