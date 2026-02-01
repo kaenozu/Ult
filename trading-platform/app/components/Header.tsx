@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, memo, useCallback } from 'react';
-import { Search, Settings, User, Wifi, WifiOff, Edit2, Plus, Loader2 } from 'lucide-react';
+import { Search, Settings, User, Edit2, Plus, Loader2 } from 'lucide-react';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
@@ -9,11 +9,22 @@ import { formatCurrency, cn } from '@/app/lib/utils';
 import { ALL_STOCKS, fetchStockMetadata } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
 import { NotificationCenter } from './NotificationCenter';
+import { LocaleSwitcher } from './LocaleSwitcher';
+import { useTranslations } from '@/app/i18n/provider';
+import { ConnectionQualityIndicator } from './ConnectionQualityIndicator';
+import { useResilientWebSocket } from '@/app/hooks/useResilientWebSocket';
 
 export const Header = memo(function Header() {
+  const t = useTranslations();
   const { portfolio, setCash } = usePortfolioStore();
-  const { isConnected, toggleConnection, setSelectedStock } = useUIStore();
+  const { setSelectedStock } = useUIStore();
   const { watchlist, addToWatchlist } = useWatchlistStore();
+
+  // Use resilient WebSocket with metrics
+  const { status: wsStatus, metrics, reconnect } = useResilientWebSocket({
+    enabled: true,
+    reconnectOnMount: true,
+  });
 
   const [isEditingCash, setIsEditingCash] = useState(false);
   const [cashInput, setCashInput] = useState('');
@@ -126,7 +137,7 @@ export const Header = memo(function Header() {
         <div className="flex gap-10 text-sm tabular-nums">
           <div className="flex flex-col leading-tight group cursor-pointer relative" onClick={handleCashClick}>
             <span className="text-[#92adc9] text-[10px] uppercase font-semibold tracking-wider flex items-center gap-1">
-              余力 <Edit2 className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              {t('header.cash')} <Edit2 className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </span>
             {isEditingCash ? (
               <input
@@ -149,14 +160,14 @@ export const Header = memo(function Header() {
             )}
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-[#92adc9] text-[10px] uppercase font-semibold tracking-wider">当日損益</span>
+            <span className="text-[#92adc9] text-[10px] uppercase font-semibold tracking-wider">{t('header.dailyPnL')}</span>
             <span className={`font-bold text-[15px] ${dailyPnL >= 0 ? 'text-green-500' : 'text-red-500'}`}>
               {dailyPnL >= 0 ? '+' : ''}{formatCurrency(dailyPnL)}
               <span className="text-[10px] opacity-80 ml-1 font-medium">({dailyPnLPercent >= 0 ? '+' : ''}{dailyPnLPercent.toFixed(1)}%)</span>
             </span>
           </div>
           <div className="flex flex-col leading-tight">
-            <span className="text-[#92adc9] text-[10px] uppercase font-semibold tracking-wider">保有銘柄</span>
+            <span className="text-[#92adc9] text-[10px] uppercase font-semibold tracking-wider">{t('header.holdings')}</span>
             <span className="font-bold text-white text-[15px] text-center">{portfolio.positions.length}</span>
           </div>
         </div>
@@ -170,7 +181,7 @@ export const Header = memo(function Header() {
             id="stockSearch"
             name="stockSearch"
             className="block w-64 p-2 pl-10 text-sm text-white bg-[#192633] border border-[#233648] rounded-lg focus:ring-primary focus:border-primary placeholder-[#92adc9]"
-            placeholder="銘柄名、コードで検索"
+            placeholder={t('header.searchPlaceholder')}
             type="text"
             value={searchQuery}
             onChange={(e) => {
@@ -179,7 +190,7 @@ export const Header = memo(function Header() {
             }}
             onFocus={() => setShowResults(true)}
             onKeyDown={handleSearchKeyDown}
-            aria-label="銘柄検索"
+            aria-label={t('header.searchLabel')}
           />
 
           {showResults && searchResults.length > 0 && (
@@ -218,27 +229,14 @@ export const Header = memo(function Header() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <div className={cn(
-            "flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all duration-300",
-            isConnected
-              ? "bg-green-500/10 border-green-500/30 text-green-400"
-              : "bg-red-500/10 border-red-500/30 text-red-400"
-          )}>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              {isConnected ? '接続済み' : '切断中'}
-            </span>
-          </div>
-          <button
-            onClick={toggleConnection}
-            className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
-            aria-label={isConnected ? "切断" : "接続"}
-            title={isConnected ? "切断" : "接続"}
-          >
-            {isConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
-          </button>
+          <ConnectionQualityIndicator 
+            status={wsStatus}
+            metrics={metrics}
+            onReconnect={reconnect}
+          />
         </div>
         <NotificationCenter />
+        <LocaleSwitcher />
         <button
           onClick={() => alert('設定機能は現在開発中です')}
           className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
