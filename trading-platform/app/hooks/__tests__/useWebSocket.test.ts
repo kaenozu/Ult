@@ -102,7 +102,9 @@ describe('useWebSocket', () => {
     // or manually trigger the onMessage callback
     act(() => {
       if (mockWebSocketInstance && mockWebSocketInstance.onmessage) {
-        // ResilientWebSocketClient expects JSON string, not ArrayBuffer
+        // ResilientWebSocketClient expects JSON string messages (standard WebSocket behavior)
+        // The legacy client used ArrayBuffer encoding, but the resilient client follows
+        // the standard WebSocket API pattern of accepting/sending JSON strings
         mockWebSocketInstance.onmessage({ data: JSON.stringify(testMessage) });
       }
     });

@@ -10,8 +10,15 @@ import {
 import { createMessageBatcher, MessageBatch } from '@/app/lib/websocket/message-batcher';
 
 // Legacy status type for backward compatibility
+// Note: ResilientWebSocketClient uses an extended status type that includes
+// 'RECONNECTING', 'CLOSING', and 'FALLBACK' states. This type maintains
+// backward compatibility with existing components that expect the simpler
+// 4-state model. The mapToLegacyStatus function handles the mapping.
 export type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSED' | 'ERROR' | 'DISCONNECTED';
 
+// Local WebSocketMessage interface for backward compatibility
+// Note: This matches the ResilientWebSocketMessage type but provides
+// a stable interface for consumers of this hook
 interface WebSocketMessage {
   type: string;
   data: unknown;
@@ -91,6 +98,8 @@ export function useWebSocket(url?: string) {
         },
         onMessage: (message) => {
           // Add message to batcher instead of direct setState
+          // Note: ResilientWebSocketMessage is structurally compatible with WebSocketMessage
+          // Both have the same required fields: type, data, timestamp?, id?
           batcherRef.current.addMessage(message as WebSocketMessage);
         },
         onError: (error) => {

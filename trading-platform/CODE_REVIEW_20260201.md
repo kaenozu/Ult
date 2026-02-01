@@ -45,7 +45,7 @@ The "Trader Pro" codebase demonstrates a high level of maturity, leveraging a mo
 2.  **Clean Chart Logic**: Simplify `StockChart.tsx` by removing the unused `calculateOptimalHeight` or implementing it fully.
 
 ### Long-term Improvements
-1.  **Unify WebSocket Clients**: `websocket.ts` and `websocket-resilient.ts` exist. Ensure `websocket-resilient.ts` is the single source of truth and deprecate the other.
+1.  ~~**Unify WebSocket Clients**: `websocket.ts` and `websocket-resilient.ts` exist. Ensure `websocket-resilient.ts` is the single source of truth and deprecate the other.~~ ✅ **COMPLETED**: WebSocket clients have been unified. All code now uses `websocket-resilient.ts` as the single source of truth. The deprecated `websocket.ts` file has been removed.
 2.  **Performance Optimization**: The `lib` directory is heavy. Consider code-splitting large service files if bundle size becomes an issue.
 
 ## 4. Conclusion
