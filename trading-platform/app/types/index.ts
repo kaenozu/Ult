@@ -580,50 +580,13 @@ export type AlphaVantageResponse =
 // Error Types
 // ============================================================================
 
-/**
- * Custom error class for API-related errors
- */
-export class APIError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-    public readonly statusCode?: number,
-    public readonly details?: Record<string, unknown> | unknown
-  ) {
-    super(message);
-    this.name = 'APIError';
-  }
-}
-
-/**
- * Network error for connectivity issues
- */
-export class NetworkError extends APIError {
-  constructor(message: string, details?: unknown) {
-    super(message, 'NETWORK_ERROR', undefined, details);
-    this.name = 'NetworkError';
-  }
-}
-
-/**
- * Validation error for invalid input
- */
-export class ValidationError extends APIError {
-  constructor(message: string, public readonly field?: string) {
-    super(message, 'VALIDATION_ERROR', 400, { field });
-    this.name = 'ValidationError';
-  }
-}
-
-/**
- * Rate limit error for API throttling
- */
-export class RateLimitError extends APIError {
-  constructor(message: string = 'Rate limit exceeded') {
-    super(message, 'RATE_LIMIT_ERROR', 429);
-    this.name = 'RateLimitError';
-  }
-}
+// Re-export unified error classes for backward compatibility
+export { 
+  ApiError as APIError, 
+  NetworkError, 
+  ValidationError, 
+  RateLimitError 
+} from '../lib/errors';
 
 /**
  * Type guard for Alpha Vantage Error Response
