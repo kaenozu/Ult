@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
+import { requireAuth } from '@/app/lib/auth';
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ symbol: string }> }
 ) {
+  // Require authentication
+  const authError = requireAuth(req);
+  if (authError) {
+    return authError;
+  }
+
   try {
     const platform = getGlobalTradingPlatform();
     const { symbol } = await context.params;
