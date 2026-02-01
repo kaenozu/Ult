@@ -51,47 +51,26 @@ interface PortfolioState {
   totalProfit: number;
   dailyPnL: number;
   cash: number;
-  _statsCache?: {
-    timestamp: number;
-    positionsHash: string;
-    stats: { totalValue: number; totalProfit: number; dailyPnL: number };
-  };
 }
 
-function calculatePortfolioStats(positions: Position[], cache?: PortfolioState['_statsCache']) {
-  // Check cache validity (1 second TTL)
-  const positionsHash = JSON.stringify(positions.map(p => ({
-    symbol: p.symbol,
-    quantity: p.quantity,
-    currentPrice: p.currentPrice,
-    change: p.change
-  })));
-  
-  if (cache && cache.positionsHash === positionsHash && 
-      Date.now() - cache.timestamp < 1000) {
-    return cache.stats;
-  }
-  
-  // New calculation
-  const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
-  const totalProfit = positions.reduce((sum, p) => {
+function calculatePortfolioStats(positions: Position[]) {
+  let totalValue = 0;
+  let totalProfit = 0;
+  let dailyPnL = 0;
+
+  for (let i = 0; i < positions.length; i++) {
+    const p = positions[i];
+    const value = p.currentPrice * p.quantity;
     const pnl = p.side === 'LONG'
       ? (p.currentPrice - p.avgPrice) * p.quantity
       : (p.avgPrice - p.currentPrice) * p.quantity;
-    return sum + pnl;
-  }, 0);
-  const dailyPnL = positions.reduce((sum, p) => sum + (p.change * p.quantity), 0);
+
+    totalValue += value;
+    totalProfit += pnl;
+    dailyPnL += p.change * p.quantity;
+  }
   
-  const stats = { totalValue, totalProfit, dailyPnL };
-  
-  return {
-    ...stats,
-    _cache: {
-      timestamp: Date.now(),
-      positionsHash,
-      stats
-    }
-  };
+  return { totalValue, totalProfit, dailyPnL };
 }
 
 // Incremental update helper for portfolio stats
