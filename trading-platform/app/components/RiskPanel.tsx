@@ -44,13 +44,13 @@ export function RiskPanel({ riskMetrics }: RiskPanelProps) {
             label="Current Drawdown"
             value={formatPercent(riskMetrics.currentDrawdown)}
             icon={<TrendingDown className="w-4 h-4" />}
-            color={riskMetrics.currentDrawdown > 10 ? 'red' : riskMetrics.currentDrawdown > 5 ? 'yellow' : 'green'}
+            color={riskMetrics.currentDrawdown > DRAWDOWN_THRESHOLDS.CRITICAL ? 'red' : riskMetrics.currentDrawdown > DRAWDOWN_THRESHOLDS.WARNING ? 'yellow' : 'green'}
           />
           <RiskMetric
             label="Max Drawdown"
             value={formatPercent(riskMetrics.maxDrawdown)}
             icon={<AlertTriangle className="w-4 h-4" />}
-            color={riskMetrics.maxDrawdown > 15 ? 'red' : 'yellow'}
+            color={riskMetrics.maxDrawdown > DRAWDOWN_THRESHOLDS.MAX_ALERT ? 'red' : 'yellow'}
           />
         </div>
 

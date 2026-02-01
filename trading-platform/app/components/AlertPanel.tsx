@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAlertStore } from '@/app/store/alertStore';
 import { Alert, AlertSeverity, AlertType, AlertSettings } from '@/app/lib/alertTypes';
 import { cn, formatCurrency } from '@/app/lib/utils';
+import { TIME_DURATION_MS } from '@/app/lib/constants';
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Check, X, Filter, Bell, Clock, Target, Zap, Activity, Settings } from 'lucide-react';
 
 interface AlertPanelProps {
@@ -88,10 +89,10 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
 
-    if (diff < 60000) return 'たった今';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}分前`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}時間前`;
-    return `${Math.floor(diff / 86400000)}日前`;
+    if (diff < TIME_DURATION_MS.MINUTE) return 'たった今';
+    if (diff < TIME_DURATION_MS.HOUR) return `${Math.floor(diff / TIME_DURATION_MS.MINUTE)}分前`;
+    if (diff < TIME_DURATION_MS.DAY) return `${Math.floor(diff / TIME_DURATION_MS.HOUR)}時間前`;
+    return `${Math.floor(diff / TIME_DURATION_MS.DAY)}日前`;
   };
 
   const handleAcknowledge = (id: string) => {

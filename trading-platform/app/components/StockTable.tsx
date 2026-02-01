@@ -5,6 +5,7 @@ import { formatCurrency, formatPercent, getChangeColor, cn } from '@/app/lib/uti
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
+import { POLLING_INTERVALS, VOLATILITY_THRESHOLDS } from '@/app/lib/constants';
 import { useEffect, memo, useCallback, useMemo, useState, useRef } from 'react';
 
 // Memoized Stock Row
@@ -84,7 +85,7 @@ interface StockTableProps {
 export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) => {
   const { setSelectedStock } = useUIStore();
   const { batchUpdateStockData, removeFromWatchlist } = useWatchlistStore();
-  const [pollingInterval, setPollingInterval] = useState(60000);
+  const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
@@ -97,8 +98,8 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
       sum + Math.abs(s.changePercent || 0), 0) / stocks.length;
     
     // 高ボラティリティ時は短い間隔、低ボラティリティ時は長い間隔
-    const newInterval = avgVolatility > 2 ? 30000 : 
-                        avgVolatility > 1 ? 45000 : 60000;
+    const newInterval = avgVolatility > VOLATILITY_THRESHOLDS.HIGH ? POLLING_INTERVALS.HIGH_VOLATILITY : 
+                        avgVolatility > VOLATILITY_THRESHOLDS.MEDIUM_HIGH ? POLLING_INTERVALS.MEDIUM_VOLATILITY : POLLING_INTERVALS.LOW_VOLATILITY;
     
     if (newInterval !== pollingInterval) {
       setPollingInterval(newInterval);

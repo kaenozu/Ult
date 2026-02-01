@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { TECHNICAL_INDICATORS } from './constants';
+import { TECHNICAL_INDICATORS, DISPLAY_THRESHOLDS, CONFIDENCE_THRESHOLDS } from './constants';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -38,11 +38,11 @@ export function formatPercent(value: number): string {
 }
 
 export function formatVolume(value: number): string {
-  if (value >= 1000000) {
-    return `${(value / 1000000).toFixed(1)}M`;
+  if (value >= DISPLAY_THRESHOLDS.MILLION) {
+    return `${(value / DISPLAY_THRESHOLDS.MILLION).toFixed(1)}M`;
   }
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(1)}K`;
+  if (value >= DISPLAY_THRESHOLDS.THOUSAND) {
+    return `${(value / DISPLAY_THRESHOLDS.THOUSAND).toFixed(1)}K`;
   }
   return value.toString();
 }
@@ -76,8 +76,8 @@ export function getSignalBgColor(signal: 'BUY' | 'SELL' | 'HOLD'): string {
 }
 
 export function getConfidenceColor(confidence: number): string {
-  if (confidence >= 80) return 'text-green-500';
-  if (confidence >= 60) return 'text-yellow-500';
+  if (confidence >= CONFIDENCE_THRESHOLDS.HIGH_CONFIDENCE) return 'text-green-500';
+  if (confidence >= CONFIDENCE_THRESHOLDS.MEDIUM_CONFIDENCE) return 'text-yellow-500';
   return 'text-red-500';
 }
 
