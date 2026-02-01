@@ -125,7 +125,7 @@ class MLPredictionService {
   predict(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): ModelPrediction {
     const prices = data.map(d => d.close), volumes = data.map(d => d.volume);
     const currentPrice = prices[prices.length - 1];
-    const averageVolume = volumes.reduce((sum, vol) => sum + vol, 0) / volumes.length;
+    const averageVolume = volumes.reduce((sum, volume) => sum + volume, 0) / volumes.length;
 
     // フィーチャー抽出
     const features: PredictionFeatures = {
@@ -307,7 +307,7 @@ class MLPredictionService {
 
   private calculateVolatility(prices: number[]): number {
     if (prices.length < 2) return 0;
-    const returns = prices.slice(1).map((price, i) => (price - prices[i]) / prices[i]);
+    const returns = prices.slice(1).map((price, index) => (price - prices[index]) / prices[index]);
     const averageReturn = returns.reduce((sum, returnValue) => sum + returnValue, 0) / returns.length;
     const variance = returns.reduce((sum, returnValue) => sum + Math.pow(returnValue - averageReturn, 2), 0) / returns.length;
     return Math.sqrt(variance) * Math.sqrt(252) * 100;

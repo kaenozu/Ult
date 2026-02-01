@@ -52,7 +52,7 @@ class AnalysisService {
 
         const meanPriceReturn = priceReturns.reduce((accumulator, returnValue) => accumulator + returnValue, 0) / (priceReturns.length || 1);
         const stdDeviation = Math.sqrt(
-            priceReturns.reduce((sumSquaredDiff, returnValue) => sumSquaredDiff + Math.pow(returnValue - meanPriceReturn, 2), 0) / (priceReturns.length || 1)
+            priceReturns.reduce((accumulator, returnValue) => accumulator + Math.pow(returnValue - meanPriceReturn, 2), 0) / (priceReturns.length || 1)
         );
 
         const atr = (Math.max(...closes) - Math.min(...closes)) / (closes.length || 1);
