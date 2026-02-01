@@ -279,16 +279,27 @@ export class WebSocketClient {
       return;
     }
 
+    const maxAttempts = this.config.maxReconnectAttempts || 10;
+    
+    // Check if max reconnect attempts exceeded
+    if (this.reconnectAttempts >= maxAttempts) {
+      console.error(`[WebSocket] Max reconnect attempts (${maxAttempts}) exceeded. Giving up.`);
+      this.status = WebSocketStatus.ERROR;
+      this.options.onStatusChange?.(this.status);
+      return;
+    }
+
     this.reconnectAttempts++;
 
     // 指数バックオフを使用して再接続間隔を増やす
     // 初回: 2秒, 2回目: 4秒, 3回目: 8秒, 4回目: 16秒, 5回目: 32秒
+    const baseInterval = this.config.reconnectInterval || 2000;
     const delay = Math.min(
-      this.config.reconnectInterval || 2000 * Math.pow(2, this.reconnectAttempts - 1),
+      baseInterval * Math.pow(2, this.reconnectAttempts - 1),
       60000 // 最大60秒
     );
 
-    console.log(`[WebSocket] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})`);
+    console.log(`[WebSocket] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${maxAttempts})`);
 
     this.reconnectTimeoutId = setTimeout(() => {
       this.connect();
@@ -299,9 +310,16 @@ export class WebSocketClient {
    * Clean up resources
    */
   destroy(): void {
+    // Clear any pending reconnect timeout
+    if (this.reconnectTimeoutId) {
+      clearTimeout(this.reconnectTimeoutId);
+      this.reconnectTimeoutId = null;
+    }
+
     this.disconnect();
 
     this.messageQueue = [];
+    this.reconnectAttempts = 0;
   }
 
   /**
