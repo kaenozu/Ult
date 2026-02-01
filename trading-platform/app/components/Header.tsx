@@ -131,6 +131,7 @@ export const Header = memo(function Header() {
             {isEditingCash ? (
               <input
                 id="cashInput"
+                name="cashInput"
                 ref={inputRef}
                 type="number"
                 value={cashInput}
@@ -141,6 +142,7 @@ export const Header = memo(function Header() {
                   if (e.key === 'Escape') setIsEditingCash(false);
                 }}
                 className="font-bold text-white text-[15px] bg-[#192633] border border-[#233648] rounded px-1 py-0 w-28 -ml-1 focus:outline-none focus:border-primary"
+                aria-label="余力を編集"
               />
             ) : (
               <span className="font-bold text-white text-[15px] group-hover:text-primary transition-colors">

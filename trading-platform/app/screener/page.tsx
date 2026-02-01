@@ -267,8 +267,8 @@ export default function Screener() {
 
               {/* Market */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-[#92adc9] font-bold">市場</label>
-                <select value={filters.market} onChange={(e) => setFilters(prev => ({ ...prev, market: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white">
+                <label htmlFor="marketFilter" className="text-[10px] text-[#92adc9] font-bold">市場</label>
+                <select id="marketFilter" name="marketFilter" value={filters.market} onChange={(e) => setFilters(prev => ({ ...prev, market: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white">
                   <option value="">全て</option>
                   <option value="japan">日本 (JP)</option>
                   <option value="usa">米国 (US)</option>
@@ -279,8 +279,8 @@ export default function Screener() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] text-[#92adc9] font-bold">価格</label>
                 <div className="flex gap-2">
-                  <input placeholder="Min" type="number" value={filters.priceMin} onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
-                  <input placeholder="Max" type="number" value={filters.priceMax} onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                  <input id="priceMin" name="priceMin" placeholder="Min" type="number" value={filters.priceMin} onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" aria-label="最小価格" />
+                  <input id="priceMax" name="priceMax" placeholder="Max" type="number" value={filters.priceMax} onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" aria-label="最大価格" />
                 </div>
               </div>
 
@@ -288,21 +288,21 @@ export default function Screener() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] text-[#92adc9] font-bold">騰落率 (%)</label>
                 <div className="flex gap-2">
-                  <input placeholder="Min %" type="number" value={filters.changeMin} onChange={(e) => setFilters(prev => ({ ...prev, changeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
-                  <input placeholder="Max %" type="number" value={filters.changeMax} onChange={(e) => setFilters(prev => ({ ...prev, changeMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                  <input id="changeMin" name="changeMin" placeholder="Min %" type="number" value={filters.changeMin} onChange={(e) => setFilters(prev => ({ ...prev, changeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" aria-label="最小騰落率" />
+                  <input id="changeMax" name="changeMax" placeholder="Max %" type="number" value={filters.changeMax} onChange={(e) => setFilters(prev => ({ ...prev, changeMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" aria-label="最大騰落率" />
                 </div>
               </div>
 
               {/* Volume */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-[#92adc9] font-bold">出来高</label>
-                <input placeholder="Min Volume" type="number" value={filters.volumeMin} onChange={(e) => setFilters(prev => ({ ...prev, volumeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                <label htmlFor="volumeMin" className="text-[10px] text-[#92adc9] font-bold">出来高</label>
+                <input id="volumeMin" name="volumeMin" placeholder="Min Volume" type="number" value={filters.volumeMin} onChange={(e) => setFilters(prev => ({ ...prev, volumeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" aria-label="最小出来高" />
               </div>
 
               {/* Sector */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] text-[#92adc9] font-bold">セクター</label>
-                <input placeholder="Sector" value={filters.sector} onChange={(e) => setFilters(prev => ({ ...prev, sector: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                <label htmlFor="sectorFilter" className="text-[10px] text-[#92adc9] font-bold">セクター</label>
+                <input id="sectorFilter" name="sectorFilter" placeholder="Sector" value={filters.sector} onChange={(e) => setFilters(prev => ({ ...prev, sector: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" aria-label="セクター" />
               </div>
             </div>
 

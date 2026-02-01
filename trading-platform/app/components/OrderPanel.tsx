@@ -139,6 +139,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
         <label htmlFor={orderTypeId} className="text-[10px] uppercase text-[#92adc9] font-bold">注文種別</label>
         <select
           id={orderTypeId}
+          name="orderType"
           value={orderType}
           onChange={(e) => setOrderType(e.target.value as 'MARKET' | 'LIMIT')}
           className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
@@ -153,6 +154,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
         <label htmlFor={quantityId} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
         <input
           id={quantityId}
+          name="quantity"
           type="number"
           min="1"
           value={quantity}
@@ -167,6 +169,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
           <label htmlFor={limitPriceId} className="text-[10px] uppercase text-[#92adc9] font-bold">指値価格</label>
           <input
             id={limitPriceId}
+            name="limitPrice"
             type="number"
             value={limitPrice}
             onChange={(e) => setLimitPrice(e.target.value)}
