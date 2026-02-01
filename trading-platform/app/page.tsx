@@ -12,6 +12,7 @@ import { useStockData } from '@/app/hooks/useStockData';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';
 import { useTranslations } from '@/app/i18n/provider';
+import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
 // Lazy load heavy components with chart.js dependencies
 const StockChart = lazy(() => import('@/app/components/StockChart').then(m => ({ default: m.StockChart })));
@@ -227,5 +228,13 @@ export default function Workstation() {
         {t('page.disclaimer')}
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <ErrorBoundary name="HomePage">
+      <HomePageContent />
+    </ErrorBoundary>
   );
 }

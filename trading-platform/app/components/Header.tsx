@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, memo, useCallback } from 'react';
-import { Search, Settings, User, Wifi, WifiOff, Edit2, Plus, Loader2 } from 'lucide-react';
+import { Search, Settings, User, Edit2, Plus, Loader2 } from 'lucide-react';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
@@ -11,12 +11,20 @@ import { Stock } from '@/app/types';
 import { NotificationCenter } from './NotificationCenter';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { useTranslations } from '@/app/i18n/provider';
+import { ConnectionQualityIndicator } from './ConnectionQualityIndicator';
+import { useResilientWebSocket } from '@/app/hooks/useResilientWebSocket';
 
 export const Header = memo(function Header() {
   const t = useTranslations();
   const { portfolio, setCash } = usePortfolioStore();
-  const { isConnected, toggleConnection, setSelectedStock } = useUIStore();
+  const { setSelectedStock } = useUIStore();
   const { watchlist, addToWatchlist } = useWatchlistStore();
+
+  // Use resilient WebSocket with metrics
+  const { status: wsStatus, metrics, reconnect } = useResilientWebSocket({
+    enabled: true,
+    reconnectOnMount: true,
+  });
 
   const [isEditingCash, setIsEditingCash] = useState(false);
   const [cashInput, setCashInput] = useState('');
@@ -221,25 +229,11 @@ export const Header = memo(function Header() {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <div className={cn(
-            "flex items-center gap-2 px-2.5 py-1 rounded-full border transition-all duration-300",
-            isConnected
-              ? "bg-green-500/10 border-green-500/30 text-green-400"
-              : "bg-red-500/10 border-red-500/30 text-red-400"
-          )}>
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-wider">
-              {isConnected ? '接続済み' : '切断中'}
-            </span>
-          </div>
-          <button
-            onClick={toggleConnection}
-            className="p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-colors"
-            aria-label={isConnected ? "切断" : "接続"}
-            title={isConnected ? "切断" : "接続"}
-          >
-            {isConnected ? <Wifi className="w-5 h-5" /> : <WifiOff className="w-5 h-5" />}
-          </button>
+          <ConnectionQualityIndicator 
+            status={wsStatus}
+            metrics={metrics}
+            onReconnect={reconnect}
+          />
         </div>
         <NotificationCenter />
         <LocaleSwitcher />
