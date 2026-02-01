@@ -111,6 +111,10 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
         onClick={handleToggleNotifications}
         className="relative p-2 hover:bg-[#233648] rounded-lg transition-colors"
         title="通知センター"
+        aria-label="通知センター"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        aria-controls="notification-dropdown"
       >
         {settings.enabled ? (
           <Bell className="w-5 h-5 text-[#92adc9]" />
@@ -126,7 +130,10 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-[480px] bg-[#141e27] rounded-lg border border-[#233648] shadow-2xl z-50 max-h-[600px] flex flex-col">
+        <div
+          id="notification-dropdown"
+          className="absolute right-0 top-full mt-2 w-[480px] bg-[#141e27] rounded-lg border border-[#233648] shadow-2xl z-50 max-h-[600px] flex flex-col"
+        >
           {/* Header */}
           <div className="p-3 border-b border-[#233648] flex items-center justify-between">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -167,14 +174,18 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
               <div className="space-y-3">
                 {/* Main Toggle */}
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-[#92adc9]">通知機能</label>
+                  <label htmlFor="notification-toggle" className="text-xs text-[#92adc9]">通知機能</label>
                   <button
+                    id="notification-toggle"
+                    role="switch"
+                    aria-checked={settings.enabled}
                     onClick={() => updateSettings({ enabled: !settings.enabled })}
                     className={cn(
-                      'w-12 h-6 rounded-full transition-colors relative',
+                      'w-12 h-6 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-[#1a2632]',
                       settings.enabled ? 'bg-green-500' : 'bg-[#233648]'
                     )}
                   >
+                    <span className="sr-only">通知機能を{settings.enabled ? '無効にする' : '有効にする'}</span>
                     <div
                       className={cn(
                         'absolute top-1 w-4 h-4 bg-white rounded-full transition-transform',
@@ -194,13 +205,16 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                       { key: 'COMPOSITE', label: '複合シグナル' },
                     ].map(({ key, label }) => (
                       <div key={key} className="flex items-center justify-between">
-                        <span className="text-xs text-white/80">{label}</span>
+                        <span id={`type-label-${key}`} className="text-xs text-white/80">{label}</span>
                         <button
+                          role="switch"
+                          aria-labelledby={`type-label-${key}`}
+                          aria-checked={settings.types[key as keyof typeof settings.types]}
                           onClick={() => updateSettings({
                             types: { ...settings.types, [key]: !settings.types[key as keyof typeof settings.types] }
                           })}
                           className={cn(
-                            'w-10 h-5 rounded-full transition-colors relative',
+                            'w-10 h-5 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-[#1a2632]',
                             settings.types[key as keyof typeof settings.types] ? 'bg-green-500' : 'bg-[#233648]'
                           )}
                         >
@@ -226,13 +240,16 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                       { key: 'LOW', label: '🟢 低' },
                     ].map(({ key, label }) => (
                       <div key={key} className="flex items-center justify-between">
-                        <span className="text-xs text-white/80">{label}</span>
+                        <span id={`severity-label-${key}`} className="text-xs text-white/80">{label}</span>
                         <button
+                          role="switch"
+                          aria-labelledby={`severity-label-${key}`}
+                          aria-checked={settings.severities[key as keyof typeof settings.severities]}
                           onClick={() => updateSettings({
                             severities: { ...settings.severities, [key]: !settings.severities[key as keyof typeof settings.severities] }
                           })}
                           className={cn(
-                            'w-10 h-5 rounded-full transition-colors relative',
+                            'w-10 h-5 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-[#1a2632]',
                             settings.severities[key as keyof typeof settings.severities] ? 'bg-green-500' : 'bg-[#233648]'
                           )}
                         >
@@ -258,13 +275,16 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                       { key: 'push', label: 'プッシュ通知' },
                     ].map(({ key, label }) => (
                       <div key={key} className="flex items-center justify-between">
-                        <span className="text-xs text-white/80">{label}</span>
+                        <span id={`notify-label-${key}`} className="text-xs text-white/80">{label}</span>
                         <button
+                          role="switch"
+                          aria-labelledby={`notify-label-${key}`}
+                          aria-checked={settings.notifications[key as keyof typeof settings.notifications]}
                           onClick={() => updateSettings({
                             notifications: { ...settings.notifications, [key]: !settings.notifications[key as keyof typeof settings.notifications] }
                           })}
                           className={cn(
-                            'w-10 h-5 rounded-full transition-colors relative',
+                            'w-10 h-5 rounded-full transition-colors relative focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-[#1a2632]',
                             settings.notifications[key as keyof typeof settings.notifications] ? 'bg-green-500' : 'bg-[#233648]'
                           )}
                         >
@@ -321,15 +341,16 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
           )}
 
           {/* Alerts List */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto" role="list">
             {filteredAlerts.length === 0 ? (
-              <div className="p-8 text-center text-[#92adc9] text-sm">
+              <div className="p-8 text-center text-[#92adc9] text-sm" role="status">
                 {settings.enabled ? '通知はありません' : '通知機能が無効になっています'}
               </div>
             ) : (
               filteredAlerts.map((alert) => (
                 <div
                   key={alert.id}
+                  role="listitem"
                   className={cn(
                     'p-3 border-b border-[#233648] hover:bg-[#1a2632] transition-colors cursor-pointer',
                     !alert.acknowledged && 'bg-[#233648]/30'
