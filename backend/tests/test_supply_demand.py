@@ -8,8 +8,7 @@ This module tests the Supply/Demand Analysis which handles:
 - Zone strength identification
 """
 
-import pytest
-from supply_demand import SupplyDemandAnalyzer, Zone, ZoneType, BreakoutEvent
+from supply_demand import SupplyDemandAnalyzer, Zone, ZoneType
 
 
 class TestSupplyDemandAnalyzer:
