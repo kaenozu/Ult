@@ -1,17 +1,22 @@
 # Temporary and build files
 nul
 *.log
+logs/
 *.html
 *.tmp
+*.temp
 
 # Dependencies
 node_modules/
+.pnp
+.pnp.js
 
 # Build artifacts
 .next/
 out/
 dist/
 build/
+*.tsbuildinfo
 
 # Tool directories
 .agent/
@@ -21,6 +26,9 @@ build/
 .env
 .env.local
 .env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # IDE
 .vscode/
@@ -28,10 +36,14 @@ build/
 *.swp
 *.swo
 *~
+*.sublime-*
 
 # OS
 .DS_Store
 Thumbs.db
+*.pid
+*.seed
+*.pid.lock
 
 # Python
 __pycache__/
@@ -40,17 +52,55 @@ __pycache__/
 *.so
 .Python
 .coverage
+.coverage.*
 htmlcov/
 .pytest_cache/
-venv/
-env/
+*.egg-info/
+.eggs/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
-# Test reports
+# Testing
 coverage/
-playwright-report/
-test-results/
-monkey-test-report.json
-npm-audit-report.json
-security-report.txt
-coverage.xml
-*.lcov
+.nyc_output/
+junit.xml
+
+# Logs (comprehensive)
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.yarn-integrity
+
+# Large files (prevent accidental commits)
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+*.iso
+*.dmg
+*.pkg
+
+# Media files (if large)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache

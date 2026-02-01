@@ -73,6 +73,7 @@ describe('SignalPanel Accessibility', () => {
     const mockStore = {
       aiStatus: mockAiStatus,
       processAITrades: jest.fn(),
+      portfolio: { orders: [] },
     };
     (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
       return selector ? selector(mockStore) : mockStore;
