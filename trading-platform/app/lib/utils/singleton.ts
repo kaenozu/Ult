@@ -6,6 +6,15 @@
  */
 
 /**
+ * Type for classes that may have cleanup methods
+ */
+interface MaybeCleanable {
+  cleanup?: () => void;
+  stop?: () => void;
+  disconnect?: () => void;
+}
+
+/**
  * Creates a singleton factory for a given class or constructor
  * 
  * @example
@@ -50,14 +59,15 @@ export function createSingleton<T, TConfig = undefined>(
      */
     resetInstance: (): void => {
       // Call cleanup methods if available
-      if (instance && typeof (instance as any).stop === 'function') {
-        (instance as any).stop();
+      const cleanable = instance as MaybeCleanable | null;
+      if (cleanable && typeof cleanable.stop === 'function') {
+        cleanable.stop();
       }
-      if (instance && typeof (instance as any).cleanup === 'function') {
-        (instance as any).cleanup();
+      if (cleanable && typeof cleanable.cleanup === 'function') {
+        cleanable.cleanup();
       }
-      if (instance && typeof (instance as any).disconnect === 'function') {
-        (instance as any).disconnect();
+      if (cleanable && typeof cleanable.disconnect === 'function') {
+        cleanable.disconnect();
       }
       instance = null;
     },
@@ -87,35 +97,37 @@ export function createSingleton<T, TConfig = undefined>(
  * ```
  */
 export abstract class Singleton<T> {
-  private static instances = new Map<any, any>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static instances = new Map<new () => any, any>();
 
   protected constructor() {}
 
-  public static getInstance<T>(this: new () => T): T {
+  public static getInstance<T>(this: { new (): T }): T {
     if (!Singleton.instances.has(this)) {
       Singleton.instances.set(this, new this());
     }
     return Singleton.instances.get(this);
   }
 
-  public static resetInstance<T>(this: new () => T): void {
+  public static resetInstance<T>(this: { new (): T }): void {
     const instance = Singleton.instances.get(this);
     if (instance) {
       // Call cleanup methods if available
-      if (typeof (instance as any).cleanup === 'function') {
-        (instance as any).cleanup();
+      const cleanable = instance as MaybeCleanable;
+      if (typeof cleanable.cleanup === 'function') {
+        cleanable.cleanup();
       }
-      if (typeof (instance as any).stop === 'function') {
-        (instance as any).stop();
+      if (typeof cleanable.stop === 'function') {
+        cleanable.stop();
       }
-      if (typeof (instance as any).disconnect === 'function') {
-        (instance as any).disconnect();
+      if (typeof cleanable.disconnect === 'function') {
+        cleanable.disconnect();
       }
     }
     Singleton.instances.delete(this);
   }
 
-  public static hasInstance<T>(this: new () => T): boolean {
+  public static hasInstance<T>(this: { new (): T }): boolean {
     return Singleton.instances.has(this);
   }
 }
