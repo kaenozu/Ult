@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, memo } from 'react';
+import { useState, useRef, useEffect, useMemo, memo, useCallback } from 'react';
 import { Search, Settings, User, Wifi, WifiOff, Edit2, Plus, Loader2 } from 'lucide-react';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
@@ -44,20 +44,36 @@ export const Header = memo(function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleCashClick = () => {
+  const handleCashClick = useCallback(() => {
     setCashInput(portfolio.cash.toString());
     setIsEditingCash(true);
-  };
+  }, [portfolio.cash]);
 
-  const handleCashSubmit = () => {
+  const handleCashSubmit = useCallback(() => {
     const newCash = parseFloat(cashInput);
     if (!isNaN(newCash) && newCash >= 0) {
       setCash(newCash);
     }
     setIsEditingCash(false);
-  };
+  }, [cashInput, setCash]);
 
-  const handleSearchKeyDown = async (e: React.KeyboardEvent) => {
+  const handleStockSelect = useCallback((stock: Stock) => {
+    addToWatchlist(stock);
+    setSelectedStock(stock);
+    setSearchInput('');
+    setShowResults(false);
+  }, [addToWatchlist, setSelectedStock, setSearchInput, setShowResults]);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return ALL_STOCKS.filter(s =>
+      s.symbol.toLowerCase().includes(query) ||
+      s.name.toLowerCase().includes(query)
+    ).slice(0, 8);
+  }, [searchQuery]);
+
+  const handleSearchKeyDown = useCallback(async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       const query = searchQuery.trim().toUpperCase();
       if (!query) return;
@@ -95,23 +111,7 @@ export const Header = memo(function Header() {
     } else if (e.key === 'Escape') {
       setShowResults(false);
     }
-  };
-
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const query = searchQuery.toLowerCase();
-    return ALL_STOCKS.filter(s =>
-      s.symbol.toLowerCase().includes(query) ||
-      s.name.toLowerCase().includes(query)
-    ).slice(0, 8);
-  }, [searchQuery]);
-
-  const handleStockSelect = (stock: Stock) => {
-    addToWatchlist(stock);
-    setSelectedStock(stock);
-    setSearchInput('');
-    setShowResults(false);
-  };
+  }, [searchQuery, searchResults, handleStockSelect, setShowResults]);
 
   return (
     <header className="h-14 flex items-center justify-between px-4 border-b border-[#233648] bg-[#101922] shrink-0 z-10">
