@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { alertNotificationSystem, AlertCondition, Alert, NotificationChannelType } from '@/app/lib/AlertNotificationSystem';
+import type { NotificationChannelConfig } from '@/app/types';
 
 interface AlertNotificationState {
   conditions: AlertCondition[];
   alerts: Alert[];
-  channels: Map<NotificationChannelType, { enabled: boolean; config: any }>;
+  channels: Map<NotificationChannelType, { enabled: boolean; config: NotificationChannelConfig }>;
   
   // Condition actions
   addCondition: (condition: Omit<AlertCondition, 'id' | 'createdAt'>) => string;
@@ -18,7 +19,7 @@ interface AlertNotificationState {
   
   // Channel actions
   toggleChannel: (type: NotificationChannelType, enabled: boolean) => void;
-  configureChannel: (type: NotificationChannelType, config: any) => void;
+  configureChannel: (type: NotificationChannelType, config: NotificationChannelConfig) => void;
   
   // Monitoring
   startMonitoring: (intervalMs?: number) => void;
