@@ -12,7 +12,6 @@ import { BottomPanel } from '@/app/components/BottomPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
-import { useJournalStore } from '@/app/store/journalStore';
 import { useStockData } from '@/app/hooks/useStockData';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';

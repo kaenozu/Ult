@@ -4,13 +4,13 @@
  * Comprehensive error handling and recovery mechanism
  */
 
-import { 
-  TradingError, 
-  ConnectionError, 
-  ApiError, 
-  RateLimitError, 
+import {
+  TradingError,
+  ConnectionError,
+  ApiError,
+  RateLimitError,
   AuthenticationError,
-  StrategyError, 
+  StrategyError,
   RiskManagementError,
   OrderError,
   ExecutionError,
@@ -26,7 +26,8 @@ import {
   ResourceLimitError,
   ValidationError,
   ErrorRecovery,
-  ErrorContext
+  ErrorContext,
+  getUserErrorMessage
 } from '@/app/lib/errors';
 
 export class ErrorHandler {
@@ -198,7 +199,7 @@ export class ErrorHandler {
         [errorData.name]: (errorStats[errorData.name] || 0) + 1,
         'total': (errorStats['total'] || 0) + 1,
       };
-      
+
       // Store statistics in localStorage
       if (typeof window !== 'undefined') {
         localStorage.setItem('trading_error_stats', JSON.stringify(newStats));
@@ -250,33 +251,7 @@ export class ErrorHandler {
    * Generate user-friendly message from error
    */
   getUserFriendlyMessage(error: TradingError): string {
-    switch (error.constructor.name) {
-      case 'RateLimitError':
-        return 'API rate limit reached. Please wait before trying again.';
-      case 'ConnectionError':
-        return 'Connection error. Please check your internet connection.';
-      case 'DataNotAvailableError':
-        return 'Market data temporarily unavailable. Trying again...';
-      case 'AuthenticationError':
-        return 'Authentication failed. Please check your credentials.';
-      case 'SymbolNotFoundError':
-        return `Symbol ${(error as any).symbol} not found in our database.`;
-      case 'PositionLimitError':
-        const posError = error as PositionLimitError;
-        return `Position size limit exceeded. Current: ${posError.currentSize}, Max: ${posError.limit}`;
-      case 'DrawdownLimitError':
-        const ddError = error as DrawdownLimitError;
-        return `Drawdown limit exceeded: ${ddError.currentDrawdown.toFixed(2)}%`;
-      case 'CapitalLimitError':
-        const capError = error as CapitalLimitError;
-        return `Insufficient capital. Available: ${capError.availableCapital}, Required: ${capError.requiredCapital}`;
-      case 'ConfigurationError':
-        return 'Configuration error. Please check your settings.';
-      case 'StrategyError':
-        return `Strategy execution failed. ${error.message}`;
-      default:
-        return 'An unexpected error occurred. Please try again later.';
-    }
+    return getUserErrorMessage(error);
   }
 
   /**
@@ -375,11 +350,11 @@ export class ErrorHandler {
           operation: 'batch_process',
           metadata: { item },
         });
-        
+
         if (onError) {
           onError(item, typedError);
         }
-        
+
         results.push({ item, error: typedError });
       }
     }

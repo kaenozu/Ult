@@ -11,18 +11,18 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/Tabs';
 import { BacktestResult, BacktestTrade } from '@/app/types';
-import { 
+import {
   AdvancedPerformanceMetrics,
   type AdvancedMetrics,
   type DrawdownAnalysis,
   type TradeAnalysis,
-  type ReturnDistribution 
+  type ReturnDistribution
 } from '@/app/lib/backtest/index';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Activity, 
-  BarChart3, 
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  BarChart3,
   PieChart,
   Calendar,
   Clock,
@@ -37,16 +37,26 @@ import {
 import { cn } from '@/app/lib/utils';
 
 interface BacktestResultsDashboardProps {
-  result: BacktestResult;
+  result?: BacktestResult | null;
   benchmarkReturns?: number[];
   className?: string;
 }
 
-export function BacktestResultsDashboard({ 
-  result, 
+export function BacktestResultsDashboard({
+  result,
   benchmarkReturns,
-  className 
+  className
 }: BacktestResultsDashboardProps) {
+  if (!result) {
+    return (
+      <Card className={className}>
+        <CardContent className="p-6 text-center text-gray-500">
+          No backtest results available.
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Calculate all metrics
   const metrics = useMemo(() => {
     return AdvancedPerformanceMetrics.calculateAllMetrics(result, benchmarkReturns);
@@ -65,10 +75,13 @@ export function BacktestResultsDashboard({
   const returnDistribution = useMemo(() => {
     // Filter undefined values and ensure type safety
     const returns = result.trades
-        .map(t => t.profitPercent)
-        .filter((p): p is number => typeof p === 'number');
+      .map(t => t.profitPercent)
+      .filter((p): p is number => typeof p === 'number');
     return AdvancedPerformanceMetrics.calculateReturnDistribution(returns);
   }, [result]);
+
+  const rowCount = result.trades.length;
+  const [activeTab, setActiveTab] = useState("overview");
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -81,14 +94,14 @@ export function BacktestResultsDashboard({
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <MetricBadge 
-            label="総リターン" 
+          <MetricBadge
+            label="総リターン"
             value={`${result.totalReturn > 0 ? '+' : ''}${result.totalReturn}%`}
             positive={result.totalReturn > 0}
             icon={TrendingUp}
           />
-          <MetricBadge 
-            label="シャープレシオ" 
+          <MetricBadge
+            label="シャープレシオ"
             value={metrics.sharpeRatio.toFixed(2)}
             positive={metrics.sharpeRatio > 1}
             icon={Activity}
@@ -97,7 +110,7 @@ export function BacktestResultsDashboard({
       </div>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5 bg-[#1e293b]">
           <TabsTrigger value="overview">概要</TabsTrigger>
           <TabsTrigger value="performance">パフォーマンス</TabsTrigger>
@@ -109,29 +122,29 @@ export function BacktestResultsDashboard({
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <MetricCard 
-              title="総リターン" 
+            <MetricCard
+              title="総リターン"
               value={`${result.totalReturn > 0 ? '+' : ''}${result.totalReturn}%`}
               subtitle={`年率: ${metrics.annualizedReturn.toFixed(1)}%`}
               icon={TrendingUp}
               positive={result.totalReturn > 0}
             />
-            <MetricCard 
-              title="勝率" 
+            <MetricCard
+              title="勝率"
               value={`${result.winRate}%`}
               subtitle={`${result.winningTrades}勝 / ${result.losingTrades}敗`}
               icon={Target}
               positive={result.winRate > 50}
             />
-            <MetricCard 
-              title="プロフィットファクター" 
+            <MetricCard
+              title="プロフィットファクター"
               value={result.profitFactor?.toFixed(2) || '0.00'}
               subtitle={`ペイオフ比: ${metrics.payoffRatio.toFixed(2)}`}
               icon={BarChart3}
               positive={(result.profitFactor || 0) > 1}
             />
-            <MetricCard 
-              title="最大ドローダウン" 
+            <MetricCard
+              title="最大ドローダウン"
               value={`-${result.maxDrawdown}%`}
               subtitle={`期間: ${drawdownAnalysis.maxDrawdownDuration}日`}
               icon={AlertTriangle}
@@ -221,9 +234,9 @@ export function BacktestResultsDashboard({
                     <span className="text-red-400 font-medium">{metrics.averageLossHoldingPeriod.toFixed(1)} 日</span>
                   </div>
                   <div className="h-2 bg-[#0f172a] rounded-full overflow-hidden mt-4">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-green-500 to-red-500"
-                      style={{ 
+                      style={{
                         width: '100%',
                         background: `linear-gradient(to right, #22c55e ${metrics.winRate}%, #ef4444 ${metrics.winRate}%)`
                       }}
@@ -242,43 +255,43 @@ export function BacktestResultsDashboard({
         {/* Performance Tab */}
         <TabsContent value="performance" className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <MetricCard 
-              title="シャープレシオ" 
+            <MetricCard
+              title="シャープレシオ"
               value={metrics.sharpeRatio.toFixed(2)}
               subtitle="リスク調整後リターン"
               icon={Activity}
               positive={metrics.sharpeRatio > 1}
             />
-            <MetricCard 
-              title="ソルティノレシオ" 
+            <MetricCard
+              title="ソルティノレシオ"
               value={metrics.sortinoRatio.toFixed(2)}
               subtitle="下方リスク調整後"
               icon={TrendingDown}
               positive={metrics.sortinoRatio > 1}
             />
-            <MetricCard 
-              title="カルマーレシオ" 
+            <MetricCard
+              title="カルマーレシオ"
               value={metrics.calmarRatio.toFixed(2)}
               subtitle="最大DD調整後"
               icon={Shield}
               positive={metrics.calmarRatio > 1}
             />
-            <MetricCard 
-              title="リカバリーファクター" 
+            <MetricCard
+              title="リカバリーファクター"
               value={metrics.recoveryFactor.toFixed(2)}
               subtitle="リターン / 最大DD"
               icon={Zap}
               positive={metrics.recoveryFactor > 1}
             />
-            <MetricCard 
-              title="オメガレシオ" 
+            <MetricCard
+              title="オメガレシオ"
               value={metrics.omegaRatio.toFixed(2)}
               subtitle="上方ポテンシャル / 下方リスク"
               icon={PieChart}
               positive={metrics.omegaRatio > 1}
             />
-            <MetricCard 
-              title="ペイントレシオ" 
+            <MetricCard
+              title="ペイントレシオ"
               value={metrics.painRatio.toFixed(2)}
               subtitle="アルサー指数調整後"
               icon={Percent}
@@ -336,29 +349,29 @@ export function BacktestResultsDashboard({
         {/* Risk Tab */}
         <TabsContent value="risk" className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <MetricCard 
-              title="最大ドローダウン" 
+            <MetricCard
+              title="最大ドローダウン"
               value={`-${metrics.maxDrawdown.toFixed(2)}%`}
               subtitle={`期間: ${metrics.maxDrawdownDuration}日`}
               icon={AlertTriangle}
               positive={false}
             />
-            <MetricCard 
-              title="平均ドローダウン" 
+            <MetricCard
+              title="平均ドローダウン"
               value={`-${metrics.averageDrawdown.toFixed(2)}%`}
               subtitle={`頻度: ${drawdownAnalysis.drawdownFrequency}回`}
               icon={TrendingDown}
               positive={false}
             />
-            <MetricCard 
-              title="アルサー指数" 
+            <MetricCard
+              title="アルサー指数"
               value={metrics.ulcerIndex.toFixed(2)}
               subtitle="深さと期間の組み合わせ"
               icon={Activity}
               positive={metrics.ulcerIndex < 5}
             />
-            <MetricCard 
-              title="VaR (95%)" 
+            <MetricCard
+              title="VaR (95%)"
               value={`${metrics.valueAtRisk95.toFixed(2)}%`}
               subtitle="1日の最大損失想定"
               icon={Shield}
@@ -414,15 +427,15 @@ function getSharpeLabel(sharpe: number): string {
 // Sub-components
 // ============================================================================
 
-function MetricCard({ 
-  title, 
-  value, 
-  subtitle, 
+function MetricCard({
+  title,
+  value,
+  subtitle,
   icon: Icon,
-  positive 
-}: { 
-  title: string; 
-  value: string; 
+  positive
+}: {
+  title: string;
+  value: string;
   subtitle: string;
   icon: React.ElementType;
   positive: boolean;
@@ -445,13 +458,13 @@ function MetricCard({
   );
 }
 
-function MetricBadge({ 
-  label, 
-  value, 
+function MetricBadge({
+  label,
+  value,
   positive,
   icon: Icon
-}: { 
-  label: string; 
+}: {
+  label: string;
   value: string;
   positive: boolean;
   icon: React.ElementType;
@@ -616,7 +629,7 @@ function ReturnDistributionPanel({ distribution }: { distribution: ReturnDistrib
                   {bin.binStart.toFixed(1)}% 〜 {bin.binEnd.toFixed(1)}%
                 </div>
                 <div className="flex-1 h-6 bg-[#0f172a] rounded overflow-hidden">
-                  <div 
+                  <div
                     className={cn(
                       "h-full transition-all",
                       bin.binStart >= 0 ? 'bg-green-500/60' : 'bg-red-500/60'

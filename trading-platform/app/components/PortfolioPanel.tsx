@@ -104,7 +104,7 @@ export const PortfolioPanel = React.memo(function PortfolioPanel({ portfolio, on
       </CardContent>
     </Card>
   );
-}
+});
 
 function PositionRow({
   position,

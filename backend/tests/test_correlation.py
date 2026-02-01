@@ -9,7 +9,6 @@ This module tests the Market Correlation Analysis which handles:
 """
 
 import pytest
-from datetime import datetime, timedelta
 from market_correlation import MarketCorrelation, MarketTrend
 
 

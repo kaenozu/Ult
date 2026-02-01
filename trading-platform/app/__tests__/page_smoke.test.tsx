@@ -12,23 +12,27 @@ jest.mock('@/app/components/RightSidebar', () => ({ RightSidebar: () => <div dat
 jest.mock('@/app/components/BottomPanel', () => ({ BottomPanel: () => <div data-testid="BottomPanel" /> }));
 
 // Mock hooks
-import { useTradingStore } from '@/app/store/tradingStore';
 import { useStockData } from '@/app/hooks/useStockData';
-
-jest.mock('@/app/store/tradingStore', () => ({
-    useTradingStore: jest.fn()
+jest.mock('@/app/store/portfolioStore', () => ({
+    usePortfolioStore: jest.fn()
+}));
+jest.mock('@/app/store/journalStore', () => ({
+    useJournalStore: jest.fn()
+}));
+jest.mock('@/app/store/watchlistStore', () => ({
+    useWatchlistStore: jest.fn()
 }));
 
 jest.mock('@/app/hooks/useStockData', () => ({
     useStockData: jest.fn()
 }));
 
-const mockStore = {
+const mockPortfolioStore = {
     portfolio: { cash: 1000, positions: [] },
-    closePosition: jest.fn(),
-    watchlist: [],
-    journal: []
+    closePosition: jest.fn()
 };
+const mockJournalStore = { journal: [] };
+const mockWatchlistStore = { watchlist: [] };
 
 const mockStockData = {
     selectedStock: null,
@@ -37,13 +41,17 @@ const mockStockData = {
     chartSignal: null,
     loading: false,
     error: null,
-    handleStockSelect: jest.fn()
+    handleStockSelect: jest.fn(),
+    interval: '5m',
+    setInterval: jest.fn()
 };
 
 describe('Page (Workstation)', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        (useTradingStore as unknown as jest.Mock).mockReturnValue(mockStore);
+        (require('@/app/store/portfolioStore').usePortfolioStore as jest.Mock).mockReturnValue(mockPortfolioStore);
+        (require('@/app/store/journalStore').useJournalStore as jest.Mock).mockReturnValue(mockJournalStore);
+        (require('@/app/store/watchlistStore').useWatchlistStore as jest.Mock).mockReturnValue(mockWatchlistStore);
         (useStockData as unknown as jest.Mock).mockReturnValue(mockStockData);
     });
 
