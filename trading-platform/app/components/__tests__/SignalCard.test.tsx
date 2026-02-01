@@ -8,21 +8,15 @@ describe('SignalCard', () => {
         symbol: '7203',
         name: 'Toyota',
         market: 'japan' as const,
-        sector: 'Auto',
-        price: 2000,
-        change: 0,
-        changePercent: 0,
-        volume: 1000000
+        description: 'Test',
+        sector: 'Auto'
     };
     const mockStockUS = {
         symbol: 'AAPL',
         name: 'Apple',
         market: 'usa' as const,
-        sector: 'Tech',
-        price: 150,
-        change: 0,
-        changePercent: 0,
-        volume: 50000000
+        description: 'Test',
+        sector: 'Tech'
     };
 
     const baseSignal = {

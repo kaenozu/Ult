@@ -47,11 +47,8 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
     if (!displaySignal) return;
 
     if (!previousSignal) {
-      // 初回表示時は非同期で状態を更新
-      queueMicrotask(() => {
         setPreviousSignal(displaySignal);
-      });
-      return;
+        return;
     }
 
     if (displaySignal.type !== previousSignal.type) {
@@ -61,10 +58,7 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
         details: {},
       });
     }
-    // 非同期で状態を更新
-    queueMicrotask(() => {
-      setPreviousSignal(displaySignal);
-    });
+    setPreviousSignal(displaySignal);
   }, [displaySignal, previousSignal, stock.symbol, createStockAlert]);
 
   // 予測コーン信頼度変化を監視
@@ -89,10 +83,7 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
       }
     }
 
-    // 非同期で状態を更新
-    queueMicrotask(() => {
-      setPreviousForecastConfidence(currentConfidence);
-    });
+    setPreviousForecastConfidence(currentConfidence);
   }, [displaySignal?.forecastCone?.confidence, previousForecastConfidence, stock.symbol, createStockAlert]);
 
   // ブレイクアウトを監視

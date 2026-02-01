@@ -341,7 +341,7 @@ describe('ExitStrategy', () => {
       position.highestPrice = 110;
 
       // Price makes new high
-      exitStrategy.updatePositionHighLow(position, 115, 105);
+      exitStrategy.updatePositionHighLow(position, 115);
 
       expect(position.highestPrice).toBe(115);
     });

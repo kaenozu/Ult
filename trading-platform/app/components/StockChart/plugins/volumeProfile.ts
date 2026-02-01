@@ -20,7 +20,7 @@ export const volumeProfilePlugin = {
       if (yPos === undefined || yPos < top || yPos > bottom) return;
 
       const isAbove = wall.price > currentPrice;
-      const color = isAbove ? '239, 68, 68' : '34, 197, 94';
+      const color = isAbove ? VOLUME_PROFILE.RESISTANCE_RGB : VOLUME_PROFILE.SUPPORT_RGB;
       const barWidth = width * VOLUME_PROFILE.MAX_BAR_WIDTH_RATIO * wall.strength;
       const barHeight = (bottom - top) / VOLUME_PROFILE.HEIGHT_DIVISOR;
 

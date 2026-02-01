@@ -9,7 +9,6 @@ import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
 import { RightSidebar } from '@/app/components/RightSidebar';
 import { BottomPanel } from '@/app/components/BottomPanel';
-import { AdvancedIndicatorsChart } from '@/app/components/StockChart/AdvancedIndicatorsChart';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
@@ -36,9 +35,6 @@ export default function Workstation() {
 
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
-  const [showStochastic, setShowStochastic] = useState(false);
-  const [showADX, setShowADX] = useState(false);
-  const [showWilliamsR, setShowWilliamsR] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
@@ -162,12 +158,6 @@ export default function Workstation() {
                 setShowSMA={setShowSMA}
                 showBollinger={showBollinger}
                 setShowBollinger={setShowBollinger}
-                showStochastic={showStochastic}
-                setShowStochastic={setShowStochastic}
-                showADX={showADX}
-                setShowADX={setShowADX}
-                showWilliamsR={showWilliamsR}
-                setShowWilliamsR={setShowWilliamsR}
                 interval={interval}
                 setInterval={setInterval}
               />
@@ -189,18 +179,6 @@ export default function Workstation() {
                 <div className="h-40 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
                   <SimpleRSIChart data={chartData} />
                 </div>
-
-                {/* Advanced Technical Indicators */}
-                {(showStochastic || showADX || showWilliamsR) && (
-                  <div className="mt-1">
-                    <AdvancedIndicatorsChart
-                      data={chartData}
-                      showStochastic={showStochastic}
-                      showADX={showADX}
-                      showWilliamsR={showWilliamsR}
-                    />
-                  </div>
-                )}
               </div>
             </>
           )}
