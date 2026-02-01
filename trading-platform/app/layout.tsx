@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { I18nProvider } from "@/app/i18n/provider";
 import "./globals.css";
 import { MonitoringProvider } from "./components/MonitoringProvider";
 
@@ -22,9 +23,12 @@ export default function RootLayout({
     <html lang="ja" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
         <MonitoringProvider>
-          {children}
+          <I18nProvider>
+            {children}
+          </I18nProvider>
         </MonitoringProvider>
       </body>
     </html>
   );
 }
+
