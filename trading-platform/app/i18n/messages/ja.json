@@ -1,0 +1,61 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "search": "検索",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "close": "閉じる",
+    "ok": "OK",
+    "yes": "はい",
+    "no": "いいえ"
+  },
+  "header": {
+    "title": "Trader Pro - 株式取引予測プラットフォーム",
+    "searchPlaceholder": "銘柄名、コードで検索",
+    "searchLabel": "銘柄検索",
+    "holdings": "保有銘柄",
+    "cash": "現金",
+    "portfolioValue": "ポートフォリオ評価額",
+    "dailyPnL": "日次損益",
+    "toggleSidebar": "ウォッチリストを開く",
+    "toggleOrderPanel": "注文パネルを開く"
+  },
+  "page": {
+    "dataFetchError": "データの取得に失敗しました",
+    "noStockSelected": "銘柄が未選択です",
+    "noStockSelectedDescription": "ウォッチリストから銘柄を選択するか、上の検索ボックスから銘柄を探して取引を開始してください。",
+    "searchStock": "銘柄を検索する",
+    "disclaimer": "投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。"
+  },
+  "chart": {
+    "intervalDailyOnly": "日本株では日足データのみ利用可能です"
+  },
+  "orderPanel": {
+    "title": "注文パネル",
+    "targetStock": "取引対象の銘柄情報"
+  },
+  "sidebar": {
+    "addStock": "新しい銘柄を追加",
+    "addStockLabel": "新しい銘柄を追加"
+  },
+  "table": {
+    "symbol": "銘柄",
+    "price": "価格",
+    "position": "ポジション",
+    "value": "評価額",
+    "pnl": "損益"
+  },
+  "alerts": {
+    "stockEvent": "銘柄イベント",
+    "stock": "銘柄"
+  },
+  "riskMetrics": {
+    "targetPrice": "目標価格 (R:R {ratio})"
+  },
+  "errorBoundary": {
+    "title": "エラーが発生しました",
+    "titleWithName": "{name} エラー",
+    "description": "予期せぬエラーが発生しました。"
+  }
+}
