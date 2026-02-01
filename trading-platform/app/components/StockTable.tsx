@@ -5,7 +5,7 @@ import { formatCurrency, formatPercent, getChangeColor, cn } from '@/app/lib/uti
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
-import { useEffect, memo, useCallback, useMemo } from 'react';
+import { useEffect, memo, useCallback, useMemo, useState, useRef } from 'react';
 
 // Memoized Stock Row
 const StockRow = memo(({
@@ -82,11 +82,28 @@ interface StockTableProps {
 }
 
 export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) => {
-  const setSelectedStock = useUIStore(s => s.setSelectedStock);
-  const batchUpdateStockData = useWatchlistStore(s => s.batchUpdateStockData);
-  const removeFromWatchlist = useWatchlistStore(s => s.removeFromWatchlist);
+  const { setSelectedStock } = useUIStore();
+  const { batchUpdateStockData, removeFromWatchlist } = useWatchlistStore();
+  const [pollingInterval, setPollingInterval] = useState(60000);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
+
+  // 市場の変動性に基づいてポーリング間隔を動的に調整
+  useEffect(() => {
+    if (stocks.length === 0) return;
+
+    const avgVolatility = stocks.reduce((sum, s) => 
+      sum + Math.abs(s.changePercent || 0), 0) / stocks.length;
+    
+    // 高ボラティリティ時は短い間隔、低ボラティリティ時は長い間隔
+    const newInterval = avgVolatility > 2 ? 30000 : 
+                        avgVolatility > 1 ? 45000 : 60000;
+    
+    if (newInterval !== pollingInterval) {
+      setPollingInterval(newInterval);
+    }
+  }, [stocks, pollingInterval]);
 
   useEffect(() => {
     let mounted = true;
@@ -116,12 +133,15 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
     };
 
     fetchQuotes();
-    const interval = setInterval(fetchQuotes, 60000);
+    intervalRef.current = setInterval(fetchQuotes, pollingInterval);
+    
     return () => {
       mounted = false;
-      clearInterval(interval);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
-  }, [symbolKey, batchUpdateStockData]);
+  }, [symbolKey, batchUpdateStockData, pollingInterval]);
 
   const handleSelect = useCallback((stock: Stock) => {
     setSelectedStock(stock);

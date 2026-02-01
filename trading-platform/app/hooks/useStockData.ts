@@ -54,17 +54,19 @@ export function useStockData() {
     setChartSignal(null);
 
     try {
-      // Parallel execution for Stock Data, Index Data, and Signals
       const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
 
       // Map UI interval names to API interval format
       const apiInterval = timeFrame === 'D' ? '1d' : timeFrame.toLowerCase();
 
-      const [data, idxData, signalData] = await Promise.all([
-        fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval),
-        fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal, apiInterval),
-        fetchSignal(stock, controller.signal, apiInterval)
-      ]);
+      // 1. Kick off all requests in parallel
+      const stockDataPromise = fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval);
+      const indexDataPromise = fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal, apiInterval);
+      const signalPromise = fetchSignal(stock, controller.signal, apiInterval);
+
+      // 2. Await Critical Data (OHLCV) first
+      // We use Promise.all for stock and index because the chart needs both to render relative comparison properly
+      const [data, idxData] = await Promise.all([stockDataPromise, indexDataPromise]);
 
       if (controller.signal.aborted || !isMountedRef.current) return;
 
@@ -73,12 +75,23 @@ export function useStockData() {
         return;
       }
 
+      // 3. Render Chart immediately with available data
       setChartData(data);
       setIndexData(idxData);
-      setChartSignal(signalData);
+      setLoading(false); // Stop spinner here!
 
-      // 4. Background sync for long-term data (keep independent)
-      // This is for background calculations, so we don't await it
+      // 4. Handle Signal (Non-blocking)
+      try {
+        const signalData = await signalPromise;
+        if (!controller.signal.aborted && isMountedRef.current) {
+          setChartSignal(signalData);
+        }
+      } catch (signalErr) {
+        console.warn('Signal fetch failed (non-critical):', signalErr);
+        // Do not set global error, just log. The user still has the chart.
+      }
+
+      // 5. Background sync for long-term data (keep independent)
       fetchOHLCV(stock.symbol, stock.market, undefined, controller.signal, apiInterval).catch(e => {
         if (isMountedRef.current && !controller.signal.aborted) {
           console.warn('Background sync failed:', e);
