@@ -60,7 +60,7 @@ export function generateAuthToken(userId: string, username?: string): string {
   const JWT_EXPIRATION = config.jwt.expiration;
 
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRATION,
+    expiresIn: JWT_EXPIRATION as jwt.SignOptions['expiresIn'],
   });
 }
 
