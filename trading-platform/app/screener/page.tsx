@@ -97,23 +97,42 @@ export default function Screener() {
       return true;
     });
 
+    // Pre-warm cache for market indices to avoid redundant fetches per stock
+    const marketsToFetch = new Set(candidates.map(s => s.market));
+    await Promise.all(
+      Array.from(marketsToFetch).map(market => 
+        marketClient.fetchMarketIndex(market).catch(() => {
+          console.warn(`Failed to pre-fetch ${market} index`);
+        })
+      )
+    );
+
     const results: { symbol: string, signal?: Signal }[] = [];
-    const CHUNK_SIZE = 5;
+    // Increased chunk size from 5 to 10 for faster parallel processing
+    const CHUNK_SIZE = 10;
 
     for (let i = 0; i < candidates.length; i += CHUNK_SIZE) {
       const chunk = candidates.slice(i, i + CHUNK_SIZE);
 
       await Promise.all(chunk.map(async (stock) => {
         try {
+          // Fetch OHLCV data once for both signal generation and technical filtering
+          const ohlcv = await fetchOHLCV(stock.symbol, stock.market, stock.price);
+          
+          // Early exit if insufficient data for technical analysis
+          if (ohlcv.length < 20) {
+            console.warn(`Insufficient data for ${stock.symbol}`);
+            return;
+          }
+
+          // Check technical filters first to avoid expensive signal calculation if not needed
+          const techMatch = filterByTechnicals(stock, ohlcv, techFilters);
+          if (!techMatch) return;
+
+          // Only generate AI signal for stocks that pass technical filters
           const signalResult = await marketClient.fetchSignal(stock);
           if (signalResult.success && signalResult.data) {
-            const signal = signalResult.data;
-            const ohlcv = await fetchOHLCV(stock.symbol, stock.market, stock.price);
-            const techMatch = filterByTechnicals(stock, ohlcv, techFilters);
-
-            if (techMatch) {
-              results.push({ symbol: stock.symbol, signal });
-            }
+            results.push({ symbol: stock.symbol, signal: signalResult.data });
           }
         } catch (e) {
           console.error(`Failed to analyze ${stock.symbol}`, e);
