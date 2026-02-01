@@ -41,3 +41,17 @@ export {
   PsychologyMonitor,
   createPsychologyMonitor,
 } from './PsychologyMonitor';
+
+// TRADING-023: Real-time Risk Monitoring
+export {
+  RealTimeRiskCalculator,
+  createRealTimeRiskCalculator,
+  DEFAULT_RISK_CONFIG,
+} from './RealTimeRiskCalculator';
+
+export type {
+  RealTimeRiskMetrics,
+  PositionRisk,
+  RiskCalculationConfig,
+  VaRMethod,
+} from './RealTimeRiskCalculator';
