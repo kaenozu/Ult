@@ -4,6 +4,35 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
+// Mock Request and Response for Next.js API routes testing
+if (typeof Request === 'undefined') {
+  global.Request = class Request {
+    constructor(input, init) {
+      this.url = typeof input === 'string' ? input : input.url;
+      this.method = init?.method || 'GET';
+      this.headers = new Map(Object.entries(init?.headers || {}));
+    }
+  };
+}
+
+if (typeof Response === 'undefined') {
+  global.Response = class Response {
+    constructor(body, init) {
+      this.body = body;
+      this.status = init?.status || 200;
+      this.headers = new Map(Object.entries(init?.headers || {}));
+    }
+    
+    json() {
+      return Promise.resolve(typeof this.body === 'string' ? JSON.parse(this.body) : this.body);
+    }
+  };
+}
+
+if (typeof Headers === 'undefined') {
+  global.Headers = class Headers extends Map {};
+}
+
 // Mock fetch
 if (!global.fetch) {
   global.fetch = jest.fn(() =>
