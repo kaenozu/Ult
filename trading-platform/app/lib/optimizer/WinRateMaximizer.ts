@@ -300,8 +300,8 @@ export class WinRateMaximizer {
       volatility,
       volume,
       momentum,
-      rsi,
-      macd: macd.histogram[macd.histogram.length - 1],
+      rsi: rsi[rsi.length - 1] || 50, // 最新のRSI値
+      macd: macd.histogram[macd.histogram.length - 1] || 0,
       adx,
       bbPosition,
       smaAlignment,
@@ -442,7 +442,8 @@ export class WinRateMaximizer {
     // エントリータイミングの分析
     const avgEntryRSI = successfulScenarios.reduce((sum, s) => sum + s.indicators.rsi, 0) / successfulScenarios.length;
     const closes = data.map(d => d.close);
-    const currentRSI = technicalIndicatorService.calculateRSI(closes, 14);
+    const currentRSIArray = technicalIndicatorService.calculateRSI(closes, 14);
+    const currentRSI = currentRSIArray[currentRSIArray.length - 1] || 50;
     
     // RSIが最適範囲内か判定
     const rsiDiff = Math.abs(currentRSI - avgEntryRSI);

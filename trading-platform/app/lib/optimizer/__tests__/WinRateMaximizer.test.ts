@@ -17,7 +17,7 @@ function generateMockOHLCV(count: number, basePrice: number = 100): OHLCV[] {
     price += change;
     
     data.push({
-      timestamp: new Date(Date.now() - (count - i) * 60000).toISOString(),
+      date: new Date(Date.now() - (count - i) * 60000).toISOString(),
       open: price - 1,
       high: price + 2,
       low: price - 2,
@@ -313,7 +313,7 @@ describe('WinRateMaximizer', () => {
     
     it('極端な市場条件でも動作する', () => {
       const data: OHLCV[] = Array(100).fill(null).map((_, i) => ({
-        timestamp: new Date(Date.now() - (100 - i) * 60000).toISOString(),
+        date: new Date(Date.now() - (100 - i) * 60000).toISOString(),
         open: 100,
         high: 150,
         low: 50,
