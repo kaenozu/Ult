@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createWebSocketClient, DEFAULT_WS_CONFIG, WebSocketClient } from '@/app/lib/websocket';
+import { 
+  createResilientWebSocketClient, 
+  DEFAULT_RESILIENT_WS_CONFIG, 
+  ResilientWebSocketClient,
+  WebSocketStatus as ResilientWebSocketStatus,
+  WebSocketMessage as ResilientWebSocketMessage,
+  mapToLegacyStatus
+} from '@/app/lib/websocket-resilient';
 import { createMessageBatcher, MessageBatch } from '@/app/lib/websocket/message-batcher';
 
+// Legacy status type for backward compatibility
 export type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSED' | 'ERROR' | 'DISCONNECTED';
 
 interface WebSocketMessage {
@@ -31,7 +39,7 @@ function setWebSocketEnabled(enabled: boolean) {
 export function useWebSocket(url?: string) {
   const [status, setStatus] = useState<WebSocketStatus>('CLOSED');
   const [lastMessage, setLastMessage] = useState<WebSocketMessage | null>(null);
-  const clientRef = useRef<WebSocketClient | null>(null);
+  const clientRef = useRef<ResilientWebSocketClient | null>(null);
   const batcherRef = useRef(createMessageBatcher({
     batchWindowMs: 150,
     maxBatchSize: 50,
@@ -41,7 +49,7 @@ export function useWebSocket(url?: string) {
   const isInitializedRef = useRef(false);
 
   // Build WebSocket URL
-  const wsUrl = url || DEFAULT_WS_CONFIG.url;
+  const wsUrl = url || DEFAULT_RESILIENT_WS_CONFIG.url;
 
   // Memoized batch handler to update lastMessage with batched messages
   const handleBatch = useCallback((batch: MessageBatch) => {
@@ -71,28 +79,29 @@ export function useWebSocket(url?: string) {
       return () => clearTimeout(timeoutId);
     }
 
-    // Create WebSocket client with fallback support
-    const client = createWebSocketClient(
+    // Create resilient WebSocket client with fallback support
+    const client = createResilientWebSocketClient(
       {
-        ...DEFAULT_WS_CONFIG,
+        ...DEFAULT_RESILIENT_WS_CONFIG,
         url: wsUrl,
       },
       {
-        onConnect: () => {
+        onOpen: () => {
           console.log('WebSocket connected to:', wsUrl);
         },
         onMessage: (message) => {
           // Add message to batcher instead of direct setState
-          batcherRef.current.addMessage(message);
+          batcherRef.current.addMessage(message as WebSocketMessage);
         },
-        onError: () => {
-          console.error('WebSocket error occurred');
+        onError: (error) => {
+          console.error('WebSocket error occurred:', error);
         },
         onClose: (event) => {
           console.log('WebSocket closed:', event.code, event.reason);
         },
         onStatusChange: (newStatus) => {
-          setStatus(newStatus);
+          // Map resilient status to legacy status for backward compatibility
+          setStatus(mapToLegacyStatus(newStatus));
         },
       }
     );
@@ -156,8 +165,9 @@ export function useWebSocket(url?: string) {
   };
 }
 
-// Export types for external use
-export type { WebSocketMessage, WebSocketClient } from '@/app/lib/websocket';
+// Export types for external use - now pointing to resilient implementation
+export type { ResilientWebSocketClient as WebSocketClient } from '@/app/lib/websocket-resilient';
+export type { WebSocketMessage };
 
 
 

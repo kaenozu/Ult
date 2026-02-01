@@ -102,16 +102,14 @@ describe('useWebSocket', () => {
     // or manually trigger the onMessage callback
     act(() => {
       if (mockWebSocketInstance && mockWebSocketInstance.onmessage) {
-        // WebSocketClient expects ArrayBuffer, not string
-        const encoder = new TextEncoder();
-        const buffer = encoder.encode(JSON.stringify(testMessage));
-        mockWebSocketInstance.onmessage({ data: buffer });
+        // ResilientWebSocketClient expects JSON string, not ArrayBuffer
+        mockWebSocketInstance.onmessage({ data: JSON.stringify(testMessage) });
       }
     });
 
-    // Wait for state update
+    // Wait for state update and message batching (150ms batch window + margin)
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 200));
     });
 
     // Message should be set (may need to check with more flexibility)
@@ -142,8 +140,8 @@ describe('useWebSocket', () => {
       }
     });
 
-    // After close, status should be DISCONNECTED (not CLOSED) since it's not a manual close
-    expect(['CLOSED', 'DISCONNECTED']).toContain(result.current.status);
+    // After close, status should be ERROR (resilient client behavior for unexpected close)
+    expect(['CLOSED', 'DISCONNECTED', 'ERROR']).toContain(result.current.status);
 
     // Fast forward through reconnection attempts
     // First attempt: 2000ms (2^1 * 1000)
