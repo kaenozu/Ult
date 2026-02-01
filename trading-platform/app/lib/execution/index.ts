@@ -81,7 +81,7 @@ export type {
   AdvancedOrder,
   OrderEventType,
   OrderEvent,
-} from '../types/advancedOrder';
+} from '../../types/advancedOrder';
 
 export {
   isStopLossOrder,
@@ -90,4 +90,4 @@ export {
   isIcebergOrder,
   isTrailingStopOrder,
   isBracketOrder,
-} from '../types/advancedOrder';
+} from '../../types/advancedOrder';
