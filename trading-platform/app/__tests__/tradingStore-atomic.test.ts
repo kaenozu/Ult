@@ -11,7 +11,7 @@ import { useTradingStore } from '../store/tradingStore';
 import { act, renderHook } from '@testing-library/react';
 
 // テストを一時的にスキップ（シグネチャ変更のため）
-describe.skip('TradingStore Atomic Order Execution', () => {
+describe('TradingStore Atomic Order Execution', () => {
   beforeEach(() => {
     // ストアの状態をリセット
     const { result } = renderHook(() => useTradingStore());
