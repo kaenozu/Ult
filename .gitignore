@@ -1,6 +1,7 @@
 # Temporary and build files
 nul
 *.log
+logs/
 *.html
 *.tmp
 
