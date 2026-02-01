@@ -187,6 +187,7 @@ export const ALERT_TEMPLATES: AlertTemplate[] = [
 
 export class AlertSystem extends EventEmitter {
   private conditions: Map<string, AlertCondition> = new Map();
+  private conditionsBySymbol: Map<string, Set<string>> = new Map(); // symbol -> condition IDs
   private history: AlertHistory = {
     triggers: [],
     triggeredConditions: new Set(),
@@ -226,6 +227,13 @@ export class AlertSystem extends EventEmitter {
     };
 
     this.conditions.set(condition.id, condition);
+    
+    // Update symbol index
+    if (!this.conditionsBySymbol.has(symbol)) {
+      this.conditionsBySymbol.set(symbol, new Set());
+    }
+    this.conditionsBySymbol.get(symbol)!.add(condition.id);
+    
     this.emit('condition_created', condition);
 
     return condition;
@@ -257,9 +265,22 @@ export class AlertSystem extends EventEmitter {
    * アラート条件を削除
    */
   deleteCondition(conditionId: string): boolean {
+    const condition = this.conditions.get(conditionId);
     const deleted = this.conditions.delete(conditionId);
     if (deleted) {
       this.history.triggeredConditions.delete(conditionId);
+      
+      // Remove from symbol index
+      if (condition) {
+        const symbolConditions = this.conditionsBySymbol.get(condition.symbol);
+        if (symbolConditions) {
+          symbolConditions.delete(conditionId);
+          if (symbolConditions.size === 0) {
+            this.conditionsBySymbol.delete(condition.symbol);
+          }
+        }
+      }
+      
       this.emit('condition_deleted', conditionId);
     }
     return deleted;
@@ -274,6 +295,25 @@ export class AlertSystem extends EventEmitter {
 
     const updated = { ...condition, ...updates };
     this.conditions.set(conditionId, updated);
+    
+    // Update symbol index if symbol changed
+    if (updates.symbol && updates.symbol !== condition.symbol) {
+      // Remove from old symbol
+      const oldSymbolConditions = this.conditionsBySymbol.get(condition.symbol);
+      if (oldSymbolConditions) {
+        oldSymbolConditions.delete(conditionId);
+        if (oldSymbolConditions.size === 0) {
+          this.conditionsBySymbol.delete(condition.symbol);
+        }
+      }
+      
+      // Add to new symbol
+      if (!this.conditionsBySymbol.has(updates.symbol)) {
+        this.conditionsBySymbol.set(updates.symbol, new Set());
+      }
+      this.conditionsBySymbol.get(updates.symbol)!.add(conditionId);
+    }
+    
     this.emit('condition_updated', updated);
 
     return updated;
@@ -314,24 +354,27 @@ export class AlertSystem extends EventEmitter {
       });
     }
 
-    // Check all conditions for this symbol
-    this.conditions.forEach((condition) => {
-      if (!condition.enabled) return;
-      if (condition.symbol !== data.symbol) return;
+    // Use symbol index to check only relevant conditions
+    const conditionIds = this.conditionsBySymbol.get(data.symbol);
+    if (conditionIds) {
+      for (const conditionId of conditionIds) {
+        const condition = this.conditions.get(conditionId);
+        if (!condition || !condition.enabled) continue;
 
-      const trigger = this.checkCondition(condition, data);
-      if (trigger) {
-        triggered.push(trigger);
-        this.history.triggers.push(trigger);
-        condition.triggerCount++;
-        condition.triggeredAt = Date.now();
+        const trigger = this.checkCondition(condition, data);
+        if (trigger) {
+          triggered.push(trigger);
+          this.history.triggers.push(trigger);
+          condition.triggerCount++;
+          condition.triggeredAt = Date.now();
 
-        this.emit('alert_triggered', trigger);
+          this.emit('alert_triggered', trigger);
 
-        // Send notifications
-        this.sendNotifications(condition, trigger);
+          // Send notifications
+          this.sendNotifications(condition, trigger);
+        }
       }
-    });
+    }
 
     // Update last values
     if (!this.lastValues.has(data.symbol)) {

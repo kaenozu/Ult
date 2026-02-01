@@ -1,5 +1,12 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
+
+// Mock store BEFORE importing components that use it
+jest.mock('@/app/store/tradingStore', () => ({
+    useTradingStore: jest.fn()
+}));
+
+import { useTradingStore } from '@/app/store/tradingStore';
 import { LeftSidebar } from '../LeftSidebar';
 import { RightSidebar } from '../RightSidebar';
 import { BottomPanel } from '../BottomPanel';
@@ -21,12 +28,6 @@ jest.mock('lucide-react', () => ({
     Filter: () => <span data-testid="icon" />,
     Moon: () => <span data-testid="icon" />,
     Sun: () => <span data-testid="icon" />
-}));
-
-// Mock store
-import { useTradingStore } from '@/app/store/tradingStore';
-jest.mock('@/app/store/tradingStore', () => ({
-    useTradingStore: jest.fn()
 }));
 
 jest.mock('next/navigation', () => ({

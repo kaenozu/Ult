@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { createWebSocketClient, DEFAULT_WS_CONFIG, WebSocketClient } from '@/app/lib/websocket';
 import { createMessageBatcher, MessageBatch } from '@/app/lib/websocket/message-batcher';
 
-export type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSED' | 'ERROR';
+export type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSED' | 'ERROR' | 'DISCONNECTED';
 
 interface WebSocketMessage {
   type: string;
@@ -78,7 +78,7 @@ export function useWebSocket(url?: string) {
         url: wsUrl,
       },
       {
-        onOpen: () => {
+        onConnect: () => {
           console.log('WebSocket connected to:', wsUrl);
         },
         onMessage: (message) => {

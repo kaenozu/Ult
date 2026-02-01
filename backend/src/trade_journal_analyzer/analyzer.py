@@ -32,6 +32,9 @@ class TradeJournalAnalyzer:
     def __init__(self):
         """Initialize an empty analyzer"""
         self._entries: List[JournalEntry] = []
+        self._patterns_cache: Dict[str, List[TradePattern]] = {}
+        self._cache_timestamp: float = 0
+        self._entries_version: int = 0
 
     def add_entry(self, entry: JournalEntry) -> None:
         """Add a journal entry
@@ -40,6 +43,7 @@ class TradeJournalAnalyzer:
             entry: Journal entry to add
         """
         self._entries.append(entry)
+        self._entries_version += 1
 
     def calculate_win_rate(self) -> float:
         """Calculate overall win rate
@@ -68,37 +72,45 @@ class TradeJournalAnalyzer:
             # Check if entries are clustered in time
             time_span = self._get_time_span()
             if time_span and time_span < timedelta(days=OVERTRADING_MAX_TIME_SPAN_DAYS):
-                trades_per_day = len(self._entries) / max(time_span.total_seconds() / SECONDS_PER_DAY, 1)
+                trades_per_day = len(self._entries) / max(
+                    time_span.total_seconds() / SECONDS_PER_DAY, 1
+                )
                 if trades_per_day > OVERTRADING_THRESHOLD_TRADES_PER_DAY:
-                    alerts.append(BiasAlert(
-                        bias_type="overtrading",
-                        severity="high",
-                        message=f"Overtrading detected: {len(self._entries)} trades in {time_span.days + 1} days",
-                        recommendations=[
-                            "Reduce trading frequency",
-                            "Focus on quality over quantity",
-                            "Take breaks between trades"
-                        ]
-                    ))
+                    alerts.append(
+                        BiasAlert(
+                            bias_type="overtrading",
+                            severity="high",
+                            message=f"Overtrading detected: {len(self._entries)} trades in {time_span.days + 1} days",
+                            recommendations=[
+                                "Reduce trading frequency",
+                                "Focus on quality over quantity",
+                                "Take breaks between trades",
+                            ],
+                        )
+                    )
 
         # Detect chasing losses (quick re-entries after losses)
         loss_sequences = self._find_loss_sequences()
         if loss_sequences:
-            alerts.append(BiasAlert(
-                bias_type="chasing_losses",
-                severity="medium",
-                message=f"Chasing losses detected: {len(loss_sequences)} instances",
-                recommendations=[
-                    "Stop trading after a loss",
-                    "Take a break to reset emotions",
-                    "Review your strategy before re-entering"
-                ]
-            ))
+            alerts.append(
+                BiasAlert(
+                    bias_type="chasing_losses",
+                    severity="medium",
+                    message=f"Chasing losses detected: {len(loss_sequences)} instances",
+                    recommendations=[
+                        "Stop trading after a loss",
+                        "Take a break to reset emotions",
+                        "Review your strategy before re-entering",
+                    ],
+                )
+            )
 
         return alerts
 
-    def extract_patterns(self, min_trades: int = DEFAULT_MIN_TRADES_FOR_PATTERN) -> List[TradePattern]:
-        """Extract trading patterns from journal
+    def extract_patterns(
+        self, min_trades: int = DEFAULT_MIN_TRADES_FOR_PATTERN
+    ) -> List[TradePattern]:
+        """Extract trading patterns from journal with caching
 
         Args:
             min_trades: Minimum number of trades to consider a pattern
@@ -108,6 +120,16 @@ class TradeJournalAnalyzer:
         """
         if len(self._entries) < min_trades:
             return []
+
+        # Check cache (valid for 60 seconds)
+        import time
+
+        cache_key = f"{min_trades}_{len(self._entries)}_{self._entries_version}"
+        current_time = time.time()
+
+        cached = self._patterns_cache.get(cache_key)
+        if cached is not None and current_time - self._cache_timestamp < 60:
+            return cached
 
         patterns = []
 
@@ -122,6 +144,10 @@ class TradeJournalAnalyzer:
         # Sort by win rate
         patterns.sort(key=lambda p: p.win_rate, reverse=True)
 
+        # Cache results
+        self._patterns_cache[cache_key] = patterns
+        self._cache_timestamp = current_time
+
         return patterns
 
     def get_performance_by_symbol(self) -> Dict[str, Dict[str, Any]]:
@@ -130,12 +156,9 @@ class TradeJournalAnalyzer:
         Returns:
             Dictionary mapping symbol to performance metrics
         """
-        symbol_stats = defaultdict(lambda: {
-            "trades": [],
-            "total_profit": 0,
-            "wins": 0,
-            "losses": 0
-        })
+        symbol_stats: Dict[str, Dict[str, Any]] = defaultdict(
+            lambda: {"trades": [], "total_profit": 0.0, "wins": 0, "losses": 0}
+        )
 
         for entry in self._entries:
             if entry.is_closed:
@@ -154,14 +177,18 @@ class TradeJournalAnalyzer:
                 result[symbol] = {
                     "total_trades": len(stats["trades"]),
                     "total_profit": stats["total_profit"],
-                    "win_rate": (stats["wins"] / len(stats["trades"])) * 100 if len(stats["trades"]) > 0 else 0,
+                    "win_rate": (stats["wins"] / len(stats["trades"])) * 100
+                    if len(stats["trades"]) > 0
+                    else 0,
                     "wins": stats["wins"],
-                    "losses": stats["losses"]
+                    "losses": stats["losses"],
                 }
 
         return result
 
-    def generate_recommendations(self, patterns: List[TradePattern]) -> List[Dict[str, Any]]:
+    def generate_recommendations(
+        self, patterns: List[TradePattern]
+    ) -> List[Dict[str, Any]]:
         """Generate recommendations based on discovered patterns
 
         Args:
@@ -173,14 +200,21 @@ class TradeJournalAnalyzer:
         recommendations = []
 
         for pattern in patterns:
-            if pattern.win_rate > MEDIUM_WIN_RATE_THRESHOLD and pattern.confidence > MIN_CONFIDENCE_FOR_RECOMMENDATION:
-                recommendations.append({
-                    "type": "trading_strategy",
-                    "priority": "high" if pattern.win_rate > HIGH_WIN_RATE_THRESHOLD else "medium",
-                    "description": pattern.description,
-                    "expected_win_rate": pattern.win_rate,
-                    "action": f"Increase trades matching this pattern: {pattern.description}"
-                })
+            if (
+                pattern.win_rate > MEDIUM_WIN_RATE_THRESHOLD
+                and pattern.confidence > MIN_CONFIDENCE_FOR_RECOMMENDATION
+            ):
+                recommendations.append(
+                    {
+                        "type": "trading_strategy",
+                        "priority": "high"
+                        if pattern.win_rate > HIGH_WIN_RATE_THRESHOLD
+                        else "medium",
+                        "description": pattern.description,
+                        "expected_win_rate": pattern.win_rate,
+                        "action": f"Increase trades matching this pattern: {pattern.description}",
+                    }
+                )
 
         return recommendations
 
@@ -204,12 +238,12 @@ class TradeJournalAnalyzer:
         sorted_entries = sorted(self._entries, key=lambda e: e.timestamp)
 
         # Find sequences: loss within 30 minutes followed by another trade
-        current_sequence = []
+        current_sequence: List[JournalEntry] = []
 
         for entry in sorted_entries:
             if entry.is_closed and not entry.is_profitable:
                 if current_sequence:
-                    # Check if this loss is within 30 minutes of the last
+                    # Check if this loss is within 30 minutes of last
                     time_diff = entry.timestamp - current_sequence[-1].timestamp
                     if time_diff.total_seconds() <= LOSS_SEQUENCE_TIME_WINDOW_SECONDS:
                         current_sequence.append(entry)
@@ -235,7 +269,14 @@ class TradeJournalAnalyzer:
     def _analyze_time_patterns(self, min_trades: int) -> List[TradePattern]:
         """Analyze patterns by time of day"""
         # Group entries by hour
-        hourly_stats = defaultdict(lambda: {"trades": 0, "wins": 0, "total_profit": 0, "total_profit_percent": 0})
+        hourly_stats: Dict[int, Dict[str, Any]] = defaultdict(
+            lambda: {
+                "trades": 0,
+                "wins": 0,
+                "total_profit": 0.0,
+                "total_profit_percent": 0.0,
+            }
+        )
 
         for entry in self._entries:
             if entry.is_closed:
@@ -253,7 +294,7 @@ class TradeJournalAnalyzer:
             if stats["trades"] >= min_trades:
                 win_rate = (stats["wins"] / stats["trades"]) * 100
                 if win_rate > MIN_WIN_RATE_FOR_PATTERN:
-                    hour_name = f"{hour:02d}:00-{(hour+1)%24:02d}"
+                    hour_name = f"{hour:02d}:00-{(hour + 1) % 24:02d}"
 
                     # Determine time period
                     if 6 <= hour < 12:
@@ -263,20 +304,32 @@ class TradeJournalAnalyzer:
                     else:
                         period = "Evening"
 
-                    patterns.append(TradePattern(
-                        description=f"{period} trades ({hour_name})",
-                        win_rate=win_rate,
-                        total_trades=stats["trades"],
-                        avg_profit_percent=stats["total_profit_percent"] / stats["trades"],
-                        confidence=min(stats["trades"] / MAX_CONFIDENCE_TRADE_DIVISOR, 1.0),
-                        factors={"time_period": period, "hour_range": hour_name}
-                    ))
+                    patterns.append(
+                        TradePattern(
+                            description=f"{period} trades ({hour_name})",
+                            win_rate=win_rate,
+                            total_trades=stats["trades"],
+                            avg_profit_percent=stats["total_profit_percent"]
+                            / stats["trades"],
+                            confidence=min(
+                                stats["trades"] / MAX_CONFIDENCE_TRADE_DIVISOR, 1.0
+                            ),
+                            factors={"time_period": period, "hour_range": hour_name},
+                        )
+                    )
 
         return patterns
 
     def _analyze_symbol_patterns(self, min_trades: int) -> List[TradePattern]:
         """Analyze patterns by symbol"""
-        symbol_stats = defaultdict(lambda: {"trades": [], "wins": 0, "total_profit": 0, "total_profit_percent": 0})
+        symbol_stats: Dict[str, Dict[str, Any]] = defaultdict(
+            lambda: {
+                "trades": [],
+                "wins": 0,
+                "total_profit": 0.0,
+                "total_profit_percent": 0.0,
+            }
+        )
 
         for entry in self._entries:
             if entry.is_closed:
@@ -291,13 +344,18 @@ class TradeJournalAnalyzer:
         for symbol, stats in symbol_stats.items():
             if len(stats["trades"]) >= min_trades:
                 win_rate = (stats["wins"] / len(stats["trades"])) * 100
-                patterns.append(TradePattern(
-                    description=f"{symbol} trading",
-                    win_rate=win_rate,
-                    total_trades=len(stats["trades"]),
-                    avg_profit_percent=stats["total_profit_percent"] / len(stats["trades"]),
-                    confidence=min(len(stats["trades"]) / MAX_CONFIDENCE_TRADE_DIVISOR, 1.0),
-                    factors={"symbol": symbol}
-                ))
+                patterns.append(
+                    TradePattern(
+                        description=f"{symbol} trading",
+                        win_rate=win_rate,
+                        total_trades=len(stats["trades"]),
+                        avg_profit_percent=stats["total_profit_percent"]
+                        / len(stats["trades"]),
+                        confidence=min(
+                            len(stats["trades"]) / MAX_CONFIDENCE_TRADE_DIVISOR, 1.0
+                        ),
+                        factors={"symbol": symbol},
+                    )
+                )
 
         return patterns

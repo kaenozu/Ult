@@ -4,9 +4,10 @@ import { useState, useId } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useOrderExecutionStore } from '@/app/store/orderExecutionStore';
+import { useExecuteOrderAtomicV2 } from '@/app/store/orderExecutionStore';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 import { DynamicRiskMetrics } from './DynamicRiskMetrics';
+import { OrderRequest } from '@/app/types/order';
 
 interface OrderPanelProps {
   stock: Stock;
@@ -15,8 +16,9 @@ interface OrderPanelProps {
 }
 
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
-  const cash = usePortfolioStore(s => s.portfolio.cash);
-  const executeOrderAtomic = useOrderExecutionStore(s => s.executeOrderAtomic);
+  const { portfolio } = usePortfolioStore();
+  const executeOrderAtomicV2 = useExecuteOrderAtomicV2();
+  const cash = portfolio.cash;
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
@@ -54,23 +56,29 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
     // Clear any previous error
     setErrorMessage(null);
 
-    // 注文実行（アトミック）
-    executeOrderAtomic({
-      id: `ord_${Date.now()}`,
+    // 注文リクエスト作成
+    const orderRequest: OrderRequest = {
       symbol: stock.symbol,
-      status: 'FILLED',
-      date: new Date().toISOString(),
-      timestamp: Date.now(),
-      side: side === 'BUY' ? 'LONG' : 'SHORT' as any,
+      name: stock.name,
+      market: stock.market,
+      side: side === 'BUY' ? 'LONG' : 'SHORT',
       quantity: quantity,
       price: price,
-      type: orderType,
-    });
+      orderType: orderType,
+    };
 
-    // 注文成功 (Assume success for now)
-    setIsConfirming(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    // アトミックな注文実行
+    const result = executeOrderAtomicV2(orderRequest);
+
+    if (result.success) {
+      // 注文成功
+      setIsConfirming(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } else {
+      // 注文失敗
+      setErrorMessage(result.error || '注文の実行に失敗しました');
+    }
   };
 
   return (

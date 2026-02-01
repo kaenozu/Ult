@@ -201,11 +201,11 @@ export function getPriceLimit(referencePrice: number): number {
 export function calculateReturns(prices: number[]): number[] {
   const returns: number[] = [];
   for (let i = 1; i < prices.length; i++) {
-    if (prices[i-1] !== 0 && !isNaN(prices[i]) && !isNaN(prices[i-1])) {
-        const ret = (prices[i] - prices[i - 1]) / prices[i - 1];
-        returns.push(ret);
+    if (prices[i - 1] !== 0 && !isNaN(prices[i]) && !isNaN(prices[i - 1])) {
+      const ret = (prices[i] - prices[i - 1]) / prices[i - 1];
+      returns.push(ret);
     } else {
-        returns.push(0);
+      returns.push(0);
     }
   }
   return returns;
@@ -247,23 +247,7 @@ export function getWebSocketUrl(path: string = '/ws/signals'): string {
 // Technical Indicator Functions
 // ============================================
 
-/**
- * Calculate returns (percentage change)
- */
-export function calculateReturns(prices: number[]): number[] {
-  if (prices.length < 2) return [];
-  const returns: number[] = [];
-  for (let i = 1; i < prices.length; i++) {
-    const prev = prices[i - 1];
-    const curr = prices[i];
-    if (prev !== 0 && !isNaN(prev) && !isNaN(curr)) {
-        returns.push((curr - prev) / prev);
-    } else {
-        returns.push(0);
-    }
-  }
-  return returns;
-}
+
 
 /**
  * Calculate Simple Moving Average (SMA)
@@ -340,7 +324,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
       validChangesCount++;
     }
   }
-  
+
   // 有効な変化量がある場合のみ平均を計算
   if (validChangesCount > 0) {
     avgGain /= validChangesCount;
@@ -360,7 +344,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
       result.push(isFinite(rsi) ? rsi : NaN);
     } else {
       const change = changes[i - 1];
-      
+
       // 無効な変化量の場合はNaNを返す
       if (isNaN(change)) {
         result.push(NaN);
@@ -385,22 +369,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   return result;
 }
 
-/**
- * Calculate returns from price data
- */
-export function calculateReturns(prices: number[]): number[] {
-  const returns: number[] = [];
-  for (let i = 1; i < prices.length; i++) {
-    const prev = prices[i - 1];
-    const curr = prices[i];
-    if (prev && curr) {
-      returns.push((curr - prev) / prev);
-    } else {
-      returns.push(0);
-    }
-  }
-  return returns;
-}
+
 
 /**
  * Calculate Exponential Moving Average (EMA)
@@ -419,40 +388,40 @@ export function calculateEMA(prices: number[], period: number): number[] {
     const val = validPrices[i];
 
     if (!initialized) {
-        // Not initialized yet, try to build SMA
-        if (!isNaN(val)) {
-            sum += val;
-            validCount++;
-        }
+      // Not initialized yet, try to build SMA
+      if (!isNaN(val)) {
+        sum += val;
+        validCount++;
+      }
 
-        // We push NaN until we hit the 'period'-th valid value
-        if (validCount === period && !isNaN(val)) {
-            // Note: validCount increments even if we don't push value, but we only init when we have 'period' valid values
-            // Wait, if we have [10, NaN, 20]. period=2.
-            // i=0: sum=10. count=1.
-            // i=1: sum=10. count=1.
-            // i=2: sum=30. count=2. Init!
-            const sma = sum / period;
-            result.push(sma);
-            initialized = true;
-        } else {
-            result.push(NaN);
-        }
+      // We push NaN until we hit the 'period'-th valid value
+      if (validCount === period && !isNaN(val)) {
+        // Note: validCount increments even if we don't push value, but we only init when we have 'period' valid values
+        // Wait, if we have [10, NaN, 20]. period=2.
+        // i=0: sum=10. count=1.
+        // i=1: sum=10. count=1.
+        // i=2: sum=30. count=2. Init!
+        const sma = sum / period;
+        result.push(sma);
+        initialized = true;
+      } else {
+        result.push(NaN);
+      }
     } else {
-        // Initialized
-        if (!isNaN(val) && !isNaN(result[i - 1])) {
-            const ema = (val - result[i - 1]) * multiplier + result[i - 1];
-            result.push(ema);
-        } else {
-            // If current value is invalid, we can't update EMA properly.
-            // Option: Propagate NaN, or hold previous value.
-            // Propagating NaN is safer to indicate missing data.
-            result.push(NaN);
-            // NOTE: Once NaN is pushed, next iteration result[i-1] is NaN, so it propagates NaN forever?
-            // This might be undesirable if data comes back.
-            // If data comes back, maybe we should re-initialize?
-            // For now, let's just push NaN. Robust re-init is complex.
-        }
+      // Initialized
+      if (!isNaN(val) && !isNaN(result[i - 1])) {
+        const ema = (val - result[i - 1]) * multiplier + result[i - 1];
+        result.push(ema);
+      } else {
+        // If current value is invalid, we can't update EMA properly.
+        // Option: Propagate NaN, or hold previous value.
+        // Propagating NaN is safer to indicate missing data.
+        result.push(NaN);
+        // NOTE: Once NaN is pushed, next iteration result[i-1] is NaN, so it propagates NaN forever?
+        // This might be undesirable if data comes back.
+        // If data comes back, maybe we should re-initialize?
+        // For now, let's just push NaN. Robust re-init is complex.
+      }
     }
   }
 
@@ -516,7 +485,7 @@ export function calculateBollingerBands(
     } else {
       const slice = validPrices.slice(i - period + 1, i + 1);
       const mean = middle[i];
-      
+
       // 有効な価格データのみで標準偏差を計算
       const validSlice = slice.filter(p => !isNaN(p));
       if (validSlice.length < period) {
@@ -586,7 +555,7 @@ export function calculateATR(
         validCount++;
       }
       result.push(NaN);
-      
+
       // 有効なデータが十分に蓄積されたら初期ATRを計算
       if (i === period - 1) {
         if (validCount >= period) {

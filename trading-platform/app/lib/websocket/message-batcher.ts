@@ -77,7 +77,7 @@ export class MessageBatcher {
   }
 
   /**
-   * Set the callback to be invoked when a batch is ready
+   * Set callback to be invoked when a batch is ready
    */
   onBatch(callback: (batch: MessageBatch) => void): void {
     this.onBatchCallback = callback;
@@ -139,7 +139,7 @@ export class MessageBatcher {
   }
 
   /**
-   * Schedule batch processing after the configured window
+   * Schedule batch processing after configured window
    */
   private scheduleBatch(): void {
     this.batchTimeoutId = setTimeout(() => {
@@ -148,7 +148,7 @@ export class MessageBatcher {
   }
 
   /**
-   * Process the current batch of messages
+   * Process current batch of messages
    */
   private processBatch(): void {
     if (this.isProcessing || this.messageBuffer.size === 0) {
@@ -290,4 +290,3 @@ export const defaultMessageBatcher = createMessageBatcher({
   enableDeduplication: true,
   enableStats: true,
 });
-
