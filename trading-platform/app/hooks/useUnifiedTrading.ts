@@ -11,7 +11,6 @@ import {
   PlatformConfig,
   PlatformStatus,
   TradingSignal,
-  OHLCV,
 } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { PaperPortfolio } from '@/app/lib/paperTrading/PaperTradingEnvironment';
 import { AlertTrigger } from '@/app/lib/alerts/AlertSystem';

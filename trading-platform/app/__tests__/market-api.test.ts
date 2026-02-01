@@ -1,7 +1,6 @@
 /**
  * @jest-environment node
  */
-import { NextResponse } from 'next/server';
 
 // Mock next/server to avoid runtime issues in test env
 jest.mock('next/server', () => ({
@@ -32,7 +31,6 @@ jest.mock('@/app/lib/ip-rate-limit', () => ({
 }));
 
 import { GET, yf } from '@/app/api/market/route';
-import YahooFinance from 'yahoo-finance2';
 
 describe('Market API Route', () => {
     let mockChart: jest.Mock;

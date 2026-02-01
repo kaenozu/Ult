@@ -6,7 +6,7 @@ Manages a collection of stock symbols for monitoring and analysis.
 
 import json
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Any
 
 # Default major US stocks
 DEFAULT_US_STOCKS = [
@@ -200,7 +200,7 @@ class StockUniverse:
         for symbol in DEFAULT_US_STOCKS + DEFAULT_JP_STOCKS:
             self.add_if_valid(symbol)
 
-    def add_on_demand(self, symbol: str) -> Dict[str, any]:
+    def add_on_demand(self, symbol: str) -> Dict[str, Any]:
         """Add a symbol on-demand with validation and feedback
 
         This method is used when a user enters a symbol that needs to be

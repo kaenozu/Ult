@@ -1,11 +1,12 @@
 /**
  * テクニカル指標計算サービス
- * 
+ *
  * このモジュールは、OHLCVデータから各種テクニカル指標を計算する機能を提供します。
  */
 
 import { OHLCV, TechnicalIndicator } from '../../types';
 import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from '@/app/lib/utils';
+import { ValidationError } from '@/app/lib/errors';
 
 /**
  * テクニカル指標計算サービス
@@ -108,7 +109,7 @@ export class TechnicalIndicatorService {
    */
   calculateMacdSignalDifference(macd: number[], signal: number[]): number[] {
     if (macd.length !== signal.length) {
-      throw new Error('MACD and signal arrays must have the same length');
+      throw new ValidationError('macd/signal', 'MACD and signal arrays must have the same length');
     }
     return macd.map((val, i) => val - signal[i]);
   }
