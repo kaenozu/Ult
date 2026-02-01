@@ -55,3 +55,17 @@ export type {
   RiskCalculationConfig,
   VaRMethod,
 } from './RealTimeRiskCalculator';
+
+// TRADING-023: Automatic Risk Control
+export {
+  AutomaticRiskController,
+  createAutomaticRiskController,
+  DEFAULT_CONTROL_CONFIG,
+} from './AutomaticRiskController';
+
+export type {
+  RiskControlAction,
+  PositionReductionProposal,
+  RiskControlConfig,
+  MarketCrashData,
+} from './AutomaticRiskController';
