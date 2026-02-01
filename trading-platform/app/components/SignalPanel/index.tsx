@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Stock, Signal, OHLCV } from '@/app/types';
+import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
 import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { useAIStore } from '@/app/store/aiStore';
@@ -20,7 +20,8 @@ interface SignalPanelProps {
 
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
-  const { aiStatus, processAITrades } = useAIStore();
+  const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
+
 
   // Custom Hooks
   const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock, ohlcv);
@@ -52,10 +53,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
   // Alert Logic Hook
   useSignalAlerts({
-      stock,
-      displaySignal,
-      preciseHitRate: { hitRate: preciseHitRate?.hitRate || 0, trades: preciseHitRate?.trades || 0 },
-      calculatingHitRate
+    stock,
+    displaySignal,
+    preciseHitRate: { hitRate: preciseHitRate?.hitRate || 0, trades: preciseHitRate?.trades || 0 },
+    calculatingHitRate
   });
 
   // 自動売買プロセスをトリガー
@@ -114,9 +115,26 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     }
   }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading]);
 
-  const aiTrades = useMemo(() => {
-    return aiStatus.trades.filter(t => t.symbol === stock.symbol);
-  }, [aiStatus.trades, stock.symbol]);
+  const aiTrades: PaperTrade[] = useMemo(() => {
+    return trades
+      .filter(t => t.symbol === stock.symbol)
+      .map(o => ({
+        id: o.id,
+        symbol: o.symbol,
+        type: (o.side === 'BUY' || o.side === 'LONG' as any) ? 'BUY' : 'SELL',
+        entryPrice: o.price || 0,
+        quantity: o.quantity,
+        status: o.status === 'FILLED' ? 'CLOSED' : 'OPEN',
+        entryDate: o.date,
+        profitPercent: 0,
+      }));
+  }, [trades, stock.symbol]);
+
+  const aiStatusData: import('@/app/types').AIStatus = useMemo(() => ({
+    virtualBalance: 10000000,
+    totalProfit: 0,
+    trades: aiTrades
+  }), [aiTrades]);
 
   if (loading || !displaySignal) {
     return (
@@ -196,22 +214,22 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
       {activeTab === 'signal' ? (
         <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full">
-            <SignalCard
-              signal={displaySignal}
-              stock={stock}
-              isLive={!!liveSignal}
-              aiHitRate={preciseHitRate.hitRate}
-              aiTradesCount={preciseHitRate.trades}
-              calculatingHitRate={calculatingHitRate}
-              error={error}
-            />
+          <SignalCard
+            signal={displaySignal}
+            stock={stock}
+            isLive={!!liveSignal}
+            aiHitRate={preciseHitRate.hitRate}
+            aiTradesCount={preciseHitRate.trades}
+            calculatingHitRate={calculatingHitRate}
+            error={error}
+          />
         </div>
       ) : activeTab === 'backtest' ? (
         <BacktestView backtestResult={backtestResult} loading={isBacktesting} />
       ) : activeTab === 'forecast' ? (
         <ForecastView signal={displaySignal} stock={stock} />
       ) : activeTab === 'ai' ? (
-        <AIPerformanceView aiStatus={aiStatus} stock={stock} aiTrades={aiTrades} />
+        <AIPerformanceView aiStatus={aiStatusData} stock={stock} aiTrades={aiTrades} />
       ) : null}
     </div>
   );

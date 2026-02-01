@@ -9,6 +9,12 @@ import statistics
 from typing import List, Dict, Any
 from .models import MarketTrend
 
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
 # Constants for trend detection
 MIN_DATA_POINTS = 5
 TREND_DETECTION_THRESHOLD = 0.0005  # 0.05% change per step (approx 1% over 20 days)
@@ -22,7 +28,7 @@ class MarketCorrelation:
     """Analyzes market correlation and generates composite signals"""
 
     def calculate_correlation(self, stock_prices: List[float], index_prices: List[float]) -> float:
-        """Calculate Pearson correlation coefficient
+        """Calculate Pearson correlation coefficient using NumPy if available
 
         Args:
             stock_prices: List of stock prices
@@ -36,6 +42,16 @@ class MarketCorrelation:
         if len(stock_prices) < 2:
             raise ValueError("Need at least 2 data points")
 
+        # Use NumPy for vectorized operations if available
+        if HAS_NUMPY:
+            stock_array = np.array(stock_prices)
+            index_array = np.array(index_prices)
+            
+            # Single pass calculation using NumPy
+            correlation_matrix = np.corrcoef(stock_array, index_array)
+            return float(correlation_matrix[0, 1])
+        
+        # Fallback to pure Python implementation
         # Calculate means
         stock_mean = statistics.mean(stock_prices)
         index_mean = statistics.mean(index_prices)
