@@ -11,6 +11,7 @@ import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';
+import { useTranslations } from '@/app/i18n/provider';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
 // Lazy load heavy components with chart.js dependencies
@@ -26,7 +27,8 @@ const ChartLoader = () => (
   </div>
 );
 
-function HomePageContent() {
+export default function Workstation() {
+  const t = useTranslations();
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
   const { watchlist } = useWatchlistStore();
@@ -68,7 +70,7 @@ function HomePageContent() {
       <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-[#92adc9] mb-2">データの取得に失敗しました</p>
+            <p className="text-[#92adc9] mb-2">{t('page.dataFetchError')}</p>
             <p className="text-red-400">{error}</p>
           </div>
         </div>
@@ -82,7 +84,7 @@ function HomePageContent() {
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="lg:hidden p-4 text-[#92adc9] hover:text-white transition-colors border-r border-[#233648]"
-          aria-label="ウォッチリストを開く"
+          aria-label={t('header.toggleSidebar')}
           aria-expanded={isSidebarOpen}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -95,7 +97,7 @@ function HomePageContent() {
         <button
           onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
           className="lg:hidden p-4 text-[#92adc9] hover:text-white transition-colors border-l border-[#233648]"
-          aria-label="注文パネルを開く"
+          aria-label={t('header.toggleOrderPanel')}
           aria-expanded={isRightSidebarOpen}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -134,7 +136,7 @@ function HomePageContent() {
         <section className="flex-1 flex flex-col min-w-0 bg-[#101922] relative">
           {error && (
             <div className="bg-red-500/10 border-b border-red-500/20 p-2 text-red-500 text-xs text-center font-medium animate-pulse">
-              データの取得に失敗しました: {error}
+              {t('page.dataFetchError')}: {error}
             </div>
           )}
           {!displayStock ? (
@@ -144,9 +146,9 @@ function HomePageContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">銘柄が未選択です</h2>
+              <h2 className="text-xl font-bold text-white mb-2">{t('page.noStockSelected')}</h2>
               <p className="text-sm max-w-xs">
-                ウォッチリストから銘柄を選択するか、上の検索ボックスから銘柄を探して取引を開始してください。
+                {t('page.noStockSelectedDescription')}
               </p>
               <Button
                 onClick={() => document.getElementById('stockSearch')?.focus()}
@@ -154,7 +156,7 @@ function HomePageContent() {
                 variant="default"
               >
                 <Search className="w-4 h-4" />
-                銘柄を検索する
+                {t('page.searchStock')}
               </Button>
             </div>
           ) : (
@@ -223,7 +225,7 @@ function HomePageContent() {
 
       {/* Disclaimer */}
       <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">
-        投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
+        {t('page.disclaimer')}
       </div>
     </div>
   );
