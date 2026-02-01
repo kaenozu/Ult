@@ -6,6 +6,7 @@
 
 import { RiskManagementSettings, RiskCalculationResult } from '../types';
 import { calculateATR } from '@/app/lib/utils';
+import { RISK_MANAGEMENT } from '@/app/lib/constants';
 
 export interface PositionSizingInput {
   entryPrice: number;
@@ -72,7 +73,8 @@ class DynamicPositionSizingService {
     }
 
     // 最小ポジションサイズチェック（あまりに小さい場合は0に）
-    const minPositionValue = input.accountBalance * 0.01; // 口座の1%未満
+    const minPositionPercent = RISK_MANAGEMENT.MIN_POSITION_PERCENT / 100;
+    const minPositionValue = input.accountBalance * minPositionPercent;
     if (positionSize * input.entryPrice < minPositionValue) {
       positionSize = 0;
     }
@@ -172,7 +174,7 @@ class DynamicPositionSizingService {
     if (confidence < baseConfidence) {
       // 60%未満は大幅に縮小
       const reductionFactor = Math.pow(confidence / baseConfidence, 2); // Quadratic reduction
-      return positionSize * reductionFactor * 0.5; // Additional 50% reduction for safety
+      return positionSize * reductionFactor * RISK_MANAGEMENT.LOW_CONFIDENCE_REDUCTION;
     } else {
       // 60%以上は線形増加
       const confidenceFactor = 0.5 + ((confidence - baseConfidence) / 40) * 0.7; // 0.5 to 1.2 range

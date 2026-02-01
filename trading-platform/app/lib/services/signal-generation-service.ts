@@ -5,8 +5,9 @@
  */
 
 import { Stock, OHLCV, Signal, ModelPrediction } from '../../types';
+import { EntryTimingRecommendation } from '../../types/shared';
 import { analyzeStock } from '@/app/lib/analysis';
-import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION } from '@/app/lib/constants';
+import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION, RISK_MANAGEMENT } from '@/app/lib/constants';
 
 interface MarketCorrelationResult {
   marketInfo: {
@@ -67,7 +68,6 @@ export class SignalGenerationService {
     const ERROR_THRESHOLD = 1.2;
     // Improved target multiplier based on confidence
     const TARGET_MULTIPLIER = finalConfidence >= SIGNAL_THRESHOLDS.HIGH_CONFIDENCE ? 2.0 : 1.5;
-    const STOP_LOSS_RATIO = 0.5; // Stop loss is 50% of target distance
 
     // ML予測に基づいた動的なターゲット価格の算出
     const atr = baseAnalysis.atr || (currentPrice * PRICE_CALCULATION.DEFAULT_ATR_RATIO);
@@ -82,7 +82,7 @@ export class SignalGenerationService {
         atr * TARGET_MULTIPLIER
       ) * confidenceMultiplier;
       targetPrice = currentPrice + move;
-      stopLoss = currentPrice - (move * STOP_LOSS_RATIO);
+      stopLoss = currentPrice - (move * RISK_MANAGEMENT.STOP_LOSS_RATIO);
     } else if (type === 'SELL') {
       const confidenceMultiplier = 0.7 + (finalConfidence / 100) * 0.6;
       const move = Math.max(
@@ -90,7 +90,7 @@ export class SignalGenerationService {
         atr * TARGET_MULTIPLIER
       ) * confidenceMultiplier;
       targetPrice = currentPrice - move;
-      stopLoss = currentPrice + (move * STOP_LOSS_RATIO);
+      stopLoss = currentPrice + (move * RISK_MANAGEMENT.STOP_LOSS_RATIO);
     } else {
       // HOLDの場合はターゲットを現在値に固定
       targetPrice = currentPrice;
@@ -330,7 +330,7 @@ export class SignalGenerationService {
     signal: Signal
   ): {
     score: number; // 0-100のスコア（高いほど良いタイミング）
-    recommendation: 'IMMEDIATE' | 'WAIT' | 'AVOID';
+    recommendation: EntryTimingRecommendation;
     reasons: string[];
   } {
     let score = 50; // Base score
@@ -411,7 +411,7 @@ export class SignalGenerationService {
     score = Math.max(0, Math.min(100, score));
 
     // 推奨を決定
-    let recommendation: 'IMMEDIATE' | 'WAIT' | 'AVOID';
+    let recommendation: EntryTimingRecommendation;
     if (score >= 70) {
       recommendation = 'IMMEDIATE';
     } else if (score >= 50) {

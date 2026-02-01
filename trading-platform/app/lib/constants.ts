@@ -56,6 +56,9 @@ export const RISK_MANAGEMENT = {
     MAX_POSITION_PERCENT: 20,
     DEFAULT_DAILY_LOSS_LIMIT: 5,
     DEFAULT_MAX_POSITIONS: 10,
+    STOP_LOSS_RATIO: 0.5, // Stop loss is 50% of target distance
+    MIN_POSITION_PERCENT: 1.0, // Minimum position size as % of account
+    LOW_CONFIDENCE_REDUCTION: 0.5, // Additional reduction for low confidence (<60%)
 };
 
 export const PRICE_CALCULATION = {
