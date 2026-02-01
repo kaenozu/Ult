@@ -9,9 +9,16 @@
  * - Event emitter interface for state changes
  * - Graceful degradation with fallback polling
  * - Comprehensive error categorization
+ * - Connection quality monitoring (latency, packet loss, throughput)
  */
 
 import { WebSocketStatus as BaseWebSocketStatus } from '@/app/hooks/useWebSocket';
+import { 
+  ConnectionMetricsTracker, 
+  createConnectionMetricsTracker,
+  type ConnectionMetrics 
+} from '@/app/lib/websocket/ConnectionMetrics';
+import { getConfig } from './config/env-validator';
 
 // ============================================================================
 // Type Definitions
@@ -86,7 +93,7 @@ export interface WebSocketConfig {
 }
 
 /** Event listener types */
-type EventType = 'open' | 'message' | 'error' | 'close' | 'statusChange' | 'stateTransition';
+type EventType = 'open' | 'message' | 'error' | 'close' | 'statusChange' | 'stateTransition' | 'metricsUpdate';
 type EventListener<T = unknown> = (data: T) => void;
 
 /** WebSocket client options */
@@ -97,6 +104,7 @@ export interface WebSocketClientOptions {
   onClose?: (event: CloseEvent) => void;
   onStatusChange?: (status: WebSocketStatus) => void;
   onStateTransition?: (transition: StateTransition) => void;
+  onMetricsUpdate?: (metrics: ConnectionMetrics) => void;
   fallbackDataFetcher?: () => Promise<unknown>;
 }
 
@@ -279,18 +287,21 @@ export class ResilientWebSocketClient {
   private reconnectAttempts = 0;
   private messageQueue: QueuedMessage[] = [];
   private eventListeners: Map<EventType, Set<EventListener>> = new Map();
+  private metricsTracker: ConnectionMetricsTracker;
 
   // Timer references
   private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
   private heartbeatTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private fallbackIntervalId: ReturnType<typeof setInterval> | null = null;
+  private metricsUpdateIntervalId: ReturnType<typeof setInterval> | null = null;
 
   // State tracking
   private isManualClose = false;
   private lastPongTime = 0;
   private stateHistory: StateTransition[] = [];
   private connectionStartTime: number = 0;
+  private currentPingSequence = 0;
 
   constructor(config: WebSocketConfig, options: WebSocketClientOptions = {}) {
     this.config = {
@@ -306,6 +317,10 @@ export class ResilientWebSocketClient {
       maxBackoffDelay: config.maxBackoffDelay || 30000,
     };
     this.options = options;
+    this.metricsTracker = createConnectionMetricsTracker();
+    
+    // Start metrics update interval
+    this.startMetricsUpdate();
   }
 
   // ========================================================================
@@ -339,6 +354,13 @@ export class ResilientWebSocketClient {
    */
   getStateHistory(): StateTransition[] {
     return [...this.stateHistory];
+  }
+
+  /**
+   * Get connection quality metrics
+   */
+  getMetrics(): ConnectionMetrics {
+    return this.metricsTracker.getMetrics();
   }
 
   /**
@@ -379,6 +401,9 @@ export class ResilientWebSocketClient {
       console.log('[WebSocket] Max reconnect attempts reached, entering fallback mode');
       this.transitionTo('FALLBACK');
       this.startFallback();
+      
+      // Schedule periodic reconnection attempts even in fallback mode
+      this.scheduleReconnectFromFallback();
       return;
     }
 
@@ -463,11 +488,34 @@ export class ResilientWebSocketClient {
     this.messageQueue = [];
     this.eventListeners.clear();
     this.stateHistory = [];
+    this.stopMetricsUpdate();
   }
 
   // ========================================================================
   // Private Methods
   // ========================================================================
+  
+  /**
+   * Start metrics update interval
+   */
+  private startMetricsUpdate(): void {
+    // Update metrics every second
+    this.metricsUpdateIntervalId = setInterval(() => {
+      const metrics = this.metricsTracker.getMetrics();
+      this.options.onMetricsUpdate?.(metrics);
+      this.emit('metricsUpdate', metrics);
+    }, 1000);
+  }
+  
+  /**
+   * Stop metrics update interval
+   */
+  private stopMetricsUpdate(): void {
+    if (this.metricsUpdateIntervalId) {
+      clearInterval(this.metricsUpdateIntervalId);
+      this.metricsUpdateIntervalId = null;
+    }
+  }
 
   /**
    * Setup WebSocket event handlers
@@ -483,6 +531,10 @@ export class ResilientWebSocketClient {
       this.stopFallback();
       this.startHeartbeat();
       this.flushMessageQueue();
+      
+      // Reset and start metrics tracking
+      this.metricsTracker.recordConnectionEstablished();
+      
       this.options.onOpen?.(event);
       this.emit('open', event);
     };
@@ -490,11 +542,20 @@ export class ResilientWebSocketClient {
     this.ws.onmessage = (event) => {
       try {
         const message: WebSocketMessage = JSON.parse(event.data);
+        
+        // Record message received for metrics
+        const messageSize = event.data.length || 0;
+        this.metricsTracker.recordMessageReceived(messageSize);
 
         // Handle pong messages
         if (message.type === 'pong') {
           this.lastPongTime = Date.now();
           this.clearHeartbeatTimeout();
+          
+          // Record pong for latency tracking
+          if (message.id) {
+            this.metricsTracker.recordPongReceived(message.id);
+          }
           return;
         }
 
@@ -515,12 +576,17 @@ export class ResilientWebSocketClient {
     this.ws.onclose = (event) => {
       console.log(`[WebSocket] Connection closed: ${event.code} ${event.reason}`);
       this.stopHeartbeat();
+      
+      // Record connection lost
+      this.metricsTracker.recordConnectionLost();
 
       const wsError = categorizeError(event);
 
       if (this.isManualClose) {
         this.transitionTo('CLOSED');
       } else {
+        // Record reconnection attempt
+        this.metricsTracker.recordReconnection();
         this.handleUnexpectedClose(wsError);
       }
 
@@ -633,8 +699,19 @@ export class ResilientWebSocketClient {
 
     this.heartbeatIntervalId = setInterval(() => {
       if (this.isConnected()) {
-        // Send ping
-        this.send({ type: 'ping', data: { timestamp: Date.now() } });
+        // Generate sequence ID for this ping
+        this.currentPingSequence++;
+        const sequenceId = `ping-${this.currentPingSequence}`;
+        
+        // Record ping sent for metrics
+        this.metricsTracker.recordPingSent(sequenceId);
+        
+        // Send ping with sequence ID
+        this.send({ 
+          type: 'ping', 
+          data: { timestamp: Date.now() },
+          id: sequenceId
+        });
 
         // Set timeout for pong response
         this.heartbeatTimeoutId = setTimeout(() => {
@@ -709,6 +786,26 @@ export class ResilientWebSocketClient {
       this.fallbackIntervalId = null;
       console.log('[WebSocket] Stopped fallback polling mode');
     }
+  }
+
+  /**
+   * Schedule reconnection attempt from fallback mode
+   * Periodically tries to recover WebSocket connection
+   */
+  private scheduleReconnectFromFallback(): void {
+    // Try to reconnect every 30 seconds when in fallback mode
+    const attemptReconnect = () => {
+      if (this.status === 'FALLBACK' && !this.isManualClose) {
+        console.log('[WebSocket] Attempting to recover from fallback mode...');
+        this.reconnectAttempts = 0; // Reset attempts for recovery
+        this.connect();
+        
+        // Schedule next attempt if still in fallback
+        setTimeout(attemptReconnect, 30000);
+      }
+    };
+    
+    setTimeout(attemptReconnect, 30000);
   }
 
   /**
@@ -805,8 +902,10 @@ export function createResilientWebSocketClient(
 // Default Configuration
 // ============================================================================
 
+const config = getConfig();
+
 export const DEFAULT_RESILIENT_WS_CONFIG: WebSocketConfig = {
-  url: process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001',
+  url: config.websocket.url,
   reconnectInterval: 2000,
   maxReconnectAttempts: 5,
   enableFallback: true,
@@ -816,6 +915,12 @@ export const DEFAULT_RESILIENT_WS_CONFIG: WebSocketConfig = {
   enableJitter: true,
   maxBackoffDelay: 30000,
 };
+
+// ============================================================================
+// Re-exports
+// ============================================================================
+
+export type { ConnectionMetrics, ConnectionQuality } from '@/app/lib/websocket/ConnectionMetrics';
 
 // ============================================================================
 // Backward Compatibility
