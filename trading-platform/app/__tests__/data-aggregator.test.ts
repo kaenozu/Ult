@@ -54,8 +54,8 @@ describe.skip('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
   it('deduplicates pending requests', async () => {
     (idbClient.getData as jest.Mock).mockReturnValue(new Promise(() => { })); // Never resolves
 
-    const p1 = marketClient.fetchOHLCV('DEDUP');
-    const p2 = marketClient.fetchOHLCV('DEDUP');
+    marketClient.fetchOHLCV('DEDUP');
+    marketClient.fetchOHLCV('DEDUP');
 
     expect((marketClient as any).pendingRequests.size).toBe(1);
   });
@@ -84,7 +84,7 @@ describe.skip('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
       json: async () => ({ data: [{ symbol: 'S0', price: 100 }] })
     });
 
-    const quotes = await marketClient.fetchQuotes(symbols);
+    await marketClient.fetchQuotes(symbols);
     expect(global.fetch).toHaveBeenCalledTimes(2); // 60 symbols / 50 chunk size = 2 calls
   });
 

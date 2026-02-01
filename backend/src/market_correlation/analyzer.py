@@ -9,6 +9,14 @@ import statistics
 from typing import List, Dict, Any
 from .models import MarketTrend
 
+# Constants for trend detection
+MIN_DATA_POINTS = 5
+TREND_DETECTION_THRESHOLD = 0.0005  # 0.05% change per step (approx 1% over 20 days)
+
+# Constants for correlation-based signal generation
+LOW_CORRELATION_THRESHOLD = 0.4
+HIGH_CORRELATION_THRESHOLD = 0.6
+
 
 class MarketCorrelation:
     """Analyzes market correlation and generates composite signals"""
@@ -27,8 +35,6 @@ class MarketCorrelation:
             raise ValueError("Price series must have the same length")
         if len(stock_prices) < 2:
             raise ValueError("Need at least 2 data points")
-
-        n = len(stock_prices)
 
         # Calculate means
         stock_mean = statistics.mean(stock_prices)
@@ -96,7 +102,7 @@ class MarketCorrelation:
         Returns:
             MarketTrend enum value
         """
-        if len(prices) < 5:
+        if len(prices) < MIN_DATA_POINTS:
             return MarketTrend.NEUTRAL
 
         n = len(prices)
@@ -124,8 +130,7 @@ class MarketCorrelation:
 
         normalized_slope = slope / avg_price
 
-        # Threshold: 0.05% change per step (approx 1% over 20 days)
-        threshold = 0.0005
+        threshold = TREND_DETECTION_THRESHOLD
 
         if normalized_slope > threshold:
             return MarketTrend.BULLISH
@@ -160,7 +165,7 @@ class MarketCorrelation:
         # Adjust based on market trend
         if individual_signal == "buy":
             if market_trend == MarketTrend.BULLISH:
-                if correlation < 0.4:
+                if correlation < LOW_CORRELATION_THRESHOLD:
                     # Bullish market + buy signal + low correlation = strong buy
                     base_rec = "buy"
                     confidence = "high"
@@ -171,7 +176,7 @@ class MarketCorrelation:
                     confidence = "high"
                     reasoning = "Bullish market supporting individual signal"
             elif market_trend == MarketTrend.BEARISH:
-                if correlation > 0.6:
+                if correlation > HIGH_CORRELATION_THRESHOLD:
                     # Bearish market + buy signal + high correlation = caution
                     base_rec = "wait"
                     confidence = "low"
@@ -189,7 +194,7 @@ class MarketCorrelation:
 
         elif individual_signal == "sell":
             if market_trend == MarketTrend.BEARISH:
-                if correlation < 0.4:
+                if correlation < LOW_CORRELATION_THRESHOLD:
                     base_rec = "sell"
                     confidence = "high"
                     reasoning = "Bearish market with individual weakness (low correlation)"
@@ -198,7 +203,7 @@ class MarketCorrelation:
                     confidence = "high"
                     reasoning = "Bearish market supporting individual signal"
             elif market_trend == MarketTrend.BULLISH:
-                if correlation > 0.6:
+                if correlation > HIGH_CORRELATION_THRESHOLD:
                     base_rec = "wait"
                     confidence = "low"
                     reasoning = "Bullish market overriding individual signal (high correlation)"

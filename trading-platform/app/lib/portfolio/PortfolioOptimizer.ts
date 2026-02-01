@@ -942,7 +942,7 @@ export class PortfolioOptimizer extends EventEmitter {
     // 最小/最大ウェイトを適用
     for (const asset of assets) {
       const currentWeight = weights.get(asset.symbol) || 0;
-      let newWeight = Math.max(constraints.minWeight, Math.min(constraints.maxWeight, currentWeight));
+      const newWeight = Math.max(constraints.minWeight, Math.min(constraints.maxWeight, currentWeight));
       result.set(asset.symbol, newWeight);
       totalWeight += newWeight;
     }

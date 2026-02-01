@@ -218,7 +218,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
       return this.createRejectedResult(order, 'No order book available');
     }
 
-    let fills: Array<{ price: number; quantity: number; timestamp: number }> = [];
+    const fills: Array<{ price: number; quantity: number; timestamp: number }> = [];
     let remainingQty = order.quantity;
     let totalValue = 0;
 

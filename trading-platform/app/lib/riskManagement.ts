@@ -1,5 +1,5 @@
 import { OHLCV, Position, PositionSizingMethod, StopLossType, RiskManagementSettings, RiskCalculationResult } from '../types';
-import { RISK_MANAGEMENT, VOLATILITY, POSITION_SIZING } from './constants';
+import { RISK_MANAGEMENT, VOLATILITY, POSITION_SIZING, TECHNICAL_INDICATORS, DATA_REQUIREMENTS, RISK_PARAMS } from './constants';
 
 /**
  * ATR（Average True Range）を計算
@@ -7,7 +7,7 @@ import { RISK_MANAGEMENT, VOLATILITY, POSITION_SIZING } from './constants';
  * @param period - ATR期間（デフォルト14）
  * @returns ATR値の配列
  */
-export function calculateATR(data: OHLCV[], period: number = 14): number[] {
+export function calculateATR(data: OHLCV[], period: number = TECHNICAL_INDICATORS.ATR_PERIOD): number[] {
   if (data.length < period + 1) {
     return [];
   }
@@ -43,7 +43,7 @@ export function calculateATR(data: OHLCV[], period: number = 14): number[] {
  * @param period - ATR期間
  * @returns 最新のATR値、または計算不可の場合はundefined
  */
-export function getLatestATR(data: OHLCV[], period: number = 14): number | undefined {
+export function getLatestATR(data: OHLCV[], period: number = TECHNICAL_INDICATORS.ATR_PERIOD): number | undefined {
   const atrValues = calculateATR(data, period);
   return atrValues.length > 0 ? atrValues[atrValues.length - 1] : undefined;
 }
@@ -84,7 +84,7 @@ export function calculatePositionSize(
   switch (settings.sizingMethod) {
     case 'fixed_ratio':
       // 固定比率法
-      const ratio = settings.fixedRatio ?? 0.1;
+      const ratio = settings.fixedRatio ?? RISK_PARAMS.FIXED_RATIO_DEFAULT;
       methodRiskPercent = ratio;
       positionSize = Math.floor((capital * ratio) / entryPrice);
       break;
@@ -97,7 +97,7 @@ export function calculatePositionSize(
       // q = 負率 = 1 - p
       // b = 資けた時の平均損失
       // より正確なケリー基準には過去の取引成績が必要だが、ここでは簡易版を実装
-      const winRate = 0.5; // デフォルト50%
+      const winRate = 0.5; // デフォルト50% (統計的な確率のため定数化不要)
       const avgWin = rewardAmount / entryPrice;
       const avgLoss = riskAmount / entryPrice;
       const kellyFraction = settings.kellyFraction ?? RISK_MANAGEMENT.DEFAULT_KELLY_FRACTION;
@@ -108,33 +108,33 @@ export function calculatePositionSize(
         positionSize = Math.floor((capital * adjustedKelly) / entryPrice);
         methodRiskPercent = adjustedKelly;
       } else {
-        positionSize = Math.floor((capital * 0.1) / entryPrice);
+        positionSize = Math.floor((capital * RISK_PARAMS.FIXED_RATIO_DEFAULT) / entryPrice);
       }
       break;
 
     case 'fixed_amount':
       // 固定金額法
-      const fixedAmount = capital * 0.1; // デフォルト10%
+      const fixedAmount = capital * RISK_PARAMS.FIXED_RATIO_DEFAULT; // デフォルト10%
       positionSize = Math.floor(fixedAmount / entryPrice);
-      methodRiskPercent = 0.1;
+      methodRiskPercent = RISK_PARAMS.FIXED_RATIO_DEFAULT;
       break;
 
     case 'volatility_based':
       // ボラティリティ基準（ATR使用）
       if (atr && atr > 0) {
         // ATRベース：資本の2%を1ATRあたりのリスクとしているサイズ
-        const capitalAtRisk = capital * 0.02;
+        const capitalAtRisk = capital * (RISK_PARAMS.DEFAULT_RISK_PERCENT / 100);
         const atrMultiplier = settings.atrMultiplier ?? RISK_MANAGEMENT.DEFAULT_ATR_MULTIPLIER;
         positionSize = Math.floor(capitalAtRisk / (atr * atrMultiplier * entryPrice) * entryPrice);
       } else {
-        positionSize = Math.floor((capital * 0.1) / entryPrice);
+        positionSize = Math.floor((capital * RISK_PARAMS.FIXED_RATIO_DEFAULT) / entryPrice);
       }
-      methodRiskPercent = 0.1;
+      methodRiskPercent = RISK_PARAMS.FIXED_RATIO_DEFAULT;
       break;
 
     default:
-      positionSize = Math.floor((capital * 0.1) / entryPrice);
-      methodRiskPercent = 0.1;
+      positionSize = Math.floor((capital * RISK_PARAMS.FIXED_RATIO_DEFAULT) / entryPrice);
+      methodRiskPercent = RISK_PARAMS.FIXED_RATIO_DEFAULT;
   }
 
   // 最小サイズ制限
@@ -268,27 +268,27 @@ export function calculateTakeProfitPrice(
  */
 export const DEFAULT_RISK_SETTINGS: RiskManagementSettings = {
   sizingMethod: 'fixed_ratio',
-  fixedRatio: 0.1,
-  maxRiskPercent: 2,
-  maxPositionPercent: 20,
-  kellyFraction: 0.25,
+  fixedRatio: RISK_PARAMS.FIXED_RATIO_DEFAULT,
+  maxRiskPercent: RISK_PARAMS.DEFAULT_RISK_PERCENT,
+  maxPositionPercent: RISK_PARAMS.DEFAULT_MAX_POSITION_PERCENT,
+  kellyFraction: RISK_PARAMS.DEFAULT_KELLY_FRACTION,
   stopLoss: {
     enabled: false,
     type: 'percentage',
-    value: 2,
+    value: RISK_PARAMS.DEFAULT_STOP_LOSS_PCT,
     trailing: false,
   },
   takeProfit: {
     enabled: false,
     type: 'risk_reward_ratio',
-    value: 2,
+    value: RISK_PARAMS.ATR_TAKE_PROFIT_MULTIPLIER,
     partials: false,
   },
   maxLossPercent: 10,
-  dailyLossLimit: 5,
+  dailyLossLimit: RISK_PARAMS.DEFAULT_DAILY_LOSS_LIMIT,
   useATR: true,
-  atrPeriod: 14,
-  atrMultiplier: 2,
+  atrPeriod: TECHNICAL_INDICATORS.ATR_PERIOD,
+  atrMultiplier: TECHNICAL_INDICATORS.ATR_MULTIPLIER_DEFAULT,
   maxPositions: 5,
 };
 

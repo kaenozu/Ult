@@ -9,7 +9,7 @@
  * - High/Low based exits
  */
 
-import { OHLCV } from '@/app/types';
+
 
 export type ExitReason = 
   | 'TRAILING_STOP'
@@ -267,7 +267,7 @@ class ExitStrategy {
     }
 
     const conditionsMet: string[] = [];
-    let conditionResults: boolean[] = [];
+    const conditionResults: boolean[] = [];
 
     for (const condition of config.conditions) {
       // Support both snake_case and camelCase indicator keys

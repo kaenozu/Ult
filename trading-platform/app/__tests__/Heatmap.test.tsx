@@ -20,14 +20,6 @@ jest.mock('../components/Navigation', () => ({
     Navigation: () => <div data-testid="navigation">Navigation</div>,
 }));
 
-const MOCK_ALL_STOCKS = [
-    { symbol: '7203', name: 'トヨタ', market: 'japan', sector: '自動車', price: 3000 },
-    { symbol: '7267', name: 'ホンダ', market: 'japan', sector: '自動車', price: 1800 },
-    { symbol: 'AAPL', name: 'Apple', market: 'usa', sector: 'テクノロジー', price: 180 },
-    { symbol: 'OTHER', name: 'Other', market: 'japan', sector: undefined, price: 100 },
-    { symbol: 'NO_QUOTE', name: 'No Quote', market: 'japan', sector: '金融', price: 1000 },
-];
-
 jest.mock('../data/stocks', () => ({
     ALL_STOCKS: [
         { symbol: '7203', name: 'トヨタ', market: 'japan', sector: '自動車', price: 3000 },

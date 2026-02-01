@@ -10,7 +10,6 @@ import {
   createResilientWebSocketClient,
   DEFAULT_RESILIENT_WS_CONFIG,
   ResilientWebSocketClient,
-  WebSocketConfig,
   WebSocketStatus,
   WebSocketMessage,
   WebSocketError,

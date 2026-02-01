@@ -1,12 +1,26 @@
 import { OHLCV } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
+import { logError } from '@/app/lib/errors';
 
+/**
+ * 市場インデックスの定義
+ * @property symbol - 銘柄シンボル（例: ^N225, ^GSPC）
+ * @property name - 市場名
+ * @property market - 市場区分（'japan' | 'usa'）
+ */
 export interface MarketIndex {
   symbol: string;
   name: string;
   market: 'japan' | 'usa';
 }
 
+/**
+ * 市場データの構造
+ * @property symbol - 銘柄シンボル
+ * @property data - OHLCVデータ配列
+ * @property trend - 現在のトレンド方向
+ * @property changePercent - 変動率（%）
+ */
 export interface MarketData {
   symbol: string;
   data: OHLCV[];
@@ -14,6 +28,15 @@ export interface MarketData {
   changePercent: number;
 }
 
+/**
+ * 相関分析データ
+ * @property symbol - 銘柄シンボル
+ * @property correlation - 相関係数（-1〜1）
+ * @property beta - ベータ値
+ * @property indexSymbol - インデックスシンボル
+ * @property indexTrend - インデックスのトレンド
+ * @property confidence - 信頼度（'low' | 'medium' | 'high'）
+ */
 export interface CorrelationData {
   symbol: string;
   correlation: number;
@@ -23,15 +46,50 @@ export interface CorrelationData {
   confidence: 'low' | 'medium' | 'high';
 }
 
+/**
+ * 主要市場インデックスの定義
+ * 日本市場（日経225）と米国市場（S&P 500）をサポート
+ */
 export const MARKET_INDICES: MarketIndex[] = [
   { symbol: '^N225', name: '日経225', market: 'japan' },
   { symbol: '^GSPC', name: 'S&P 500', market: 'usa' },
 ];
 
+/**
+ * 市場データ管理サービス
+ * 
+ * 市場データの取得、キャッシュ管理、相関分析、トレンド計算を担当するサービスクラス。
+ * クライアントサイドで動作し、APIからのデータ取得とキャッシュ制御を行う。
+ * 
+ * @example
+ * ```typescript
+ * const service = new MarketDataService();
+ * const data = await service.fetchMarketData('^N225');
+ * const trend = service.calculateTrend(data);
+ * ```
+ */
 export class MarketDataService {
   private marketDataCache = new Map<string, OHLCV[]>();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
+  /**
+   * 市場データを取得する
+   * 
+   * キャッシュが有効な場合はキャッシュから返却し、
+   * 無効な場合はAPIから新規取得する。
+   * 
+   * @param symbol - 銘柄シンボル（例: '^N225', 'AAPL'）
+   * @returns OHLCVデータ配列。エラー時は空配列を返す
+   * @throws エラーは内部で捕捉され、空配列を返す
+   * 
+   * @example
+   * ```typescript
+   * const data = await marketDataService.fetchMarketData('^N225');
+   * if (data.length > 0) {
+   *   console.log(`取得データ数: ${data.length}`);
+   * }
+   * ```
+   */
   async fetchMarketData(symbol: string): Promise<OHLCV[]> {
     const now = Date.now();
     const cached = this.marketDataCache.get(symbol);
@@ -48,14 +106,14 @@ export class MarketDataService {
 
       const result = await response.json();
       if (result.success && result.data) {
-        const ohlcv = result.data.map((item: any) => ({
+        const ohlcv = result.data.map((item: { date: string; open: string; high: string; low: string; close: string; volume: string | number }) => ({
           symbol,
           date: item.date,
           open: parseFloat(item.open),
           high: parseFloat(item.high),
           low: parseFloat(item.low),
           close: parseFloat(item.close),
-          volume: parseFloat(item.volume) || 0,
+          volume: parseFloat(String(item.volume)) || 0,
         }));
 
         this.marketDataCache.set(symbol, ohlcv);
@@ -64,15 +122,34 @@ export class MarketDataService {
 
       return [];
     } catch (error) {
-      console.error(`Error fetching market data for ${symbol}:`, error);
+      logError(error, `MarketDataService.fetchMarketData(${symbol})`);
       return [];
     }
   }
 
+  /**
+   * キャッシュされた市場データを取得する
+   * 
+   * @param symbol - 銘柄シンボル
+   * @returns キャッシュされたOHLCVデータ、存在しない場合はundefined
+   */
   getCachedMarketData(symbol: string): OHLCV[] | undefined {
     return this.marketDataCache.get(symbol);
   }
 
+  /**
+   * すべての主要市場インデックスのデータを取得する
+   * 
+   * MARKET_INDICESに定義されたすべてのインデックスのデータを
+   * 並列で取得してMapとして返す。
+   * 
+   * @returns シンボルをキーとするOHLCVデータのMap
+   * @example
+   * ```typescript
+   * const allData = await service.getAllMarketData();
+   * const n225Data = allData.get('^N225');
+   * ```
+   */
   async getAllMarketData(): Promise<Map<string, OHLCV[]>> {
     const dataMap = new Map<string, OHLCV[]>();
 
@@ -84,6 +161,23 @@ export class MarketDataService {
     return dataMap;
   }
 
+  /**
+   * トレンド方向を計算する
+   * 
+   * 短期SMA（10日）と長期SMA（50日）のゴールデンクロス/デッドクロス、
+   * および現在価格との関係からトレンドを判定する。
+   * 
+   * @param data - OHLCVデータ配列（最低20データポイント必要）
+   * @returns 'UP' | 'DOWN' | 'NEUTRAL'
+   * 
+   * @example
+   * ```typescript
+   * const trend = service.calculateTrend(ohlcvData);
+   * if (trend === 'UP') {
+   *   console.log('上昇トレンド');
+   * }
+   * ```
+   */
   calculateTrend(data: OHLCV[]): 'UP' | 'DOWN' | 'NEUTRAL' {
     if (data.length < 20) return 'NEUTRAL';
 
@@ -103,7 +197,24 @@ export class MarketDataService {
     return 'NEUTRAL';
   }
 
-
+  /**
+   * 株価データと市場インデックスの相関係数を計算する
+   * 
+   * ピアソンの相関係数を使用し、-1（完全な負の相関）から
+   * 1（完全な正の相関）の範囲で返す。
+   * 
+   * @param stockData - 個別銘柄のOHLCVデータ
+   * @param indexData - 市場インデックスのOHLCVデータ
+   * @returns 相関係数（-1〜1）。データ不足時は0
+   * 
+   * @example
+   * ```typescript
+   * const correlation = service.calculateCorrelation(stockData, indexData);
+   * if (correlation > 0.7) {
+   *   console.log('市場と強い正の相関あり');
+   * }
+   * ```
+   */
   calculateCorrelation(stockData: OHLCV[], indexData: OHLCV[]): number {
     if (stockData.length < 50 || indexData.length < 50) {
       return 0;
@@ -145,6 +256,18 @@ export class MarketDataService {
     return covariance / (stockStd * indexStd);
   }
 
+  /**
+   * ベータ値を計算する
+   * 
+   * 個別銘柄の市場全体に対する感応度を示す指標。
+   * β > 1: 市場よりも変動が大きい
+   * β = 1: 市場と同じ変動
+   * β < 1: 市場よりも変動が小さい
+   * 
+   * @param stockData - 個別銘柄のOHLCVデータ
+   * @param indexData - 市場インデックスのOHLCVデータ
+   * @returns ベータ値。データ不足時は0
+   */
   calculateBeta(stockData: OHLCV[], indexData: OHLCV[]): number {
     const correlation = this.calculateCorrelation(stockData, indexData);
 
@@ -155,6 +278,12 @@ export class MarketDataService {
     return correlation * (stockStd / indexStd);
   }
 
+  /**
+   * 標準偏差を計算する
+   * 
+   * @param data - 数値配列
+   * @returns 標準偏差。データ不足時は0
+   */
   calculateStd(data: number[]): number {
     if (data.length < 2) return 0;
 
@@ -163,6 +292,17 @@ export class MarketDataService {
     return Math.sqrt(variance);
   }
 
+  /**
+   * 相関分析の信頼度を判定する
+   * 
+   * データポイント数に基づいて信頼度を判定する。
+   * - high: 1年分以上のデータ（252営業日）
+   * - medium: 6ヶ月分以上のデータ（126営業日）
+   * - low: 6ヶ月未満のデータ
+   * 
+   * @param dataLength - データポイント数
+   * @returns 信頼度レベル（'low' | 'medium' | 'high'）
+   */
   getCorrelationConfidence(dataLength: number): 'low' | 'medium' | 'high' {
     if (dataLength >= 252) return 'high';    // 1 year of daily data
     if (dataLength >= 126) return 'medium'; // 6 months
@@ -170,4 +310,9 @@ export class MarketDataService {
   }
 }
 
+/**
+ * MarketDataServiceのシングルトンインスタンス
+ * 
+ * アプリケーション全体で共有される市場データサービスインスタンス。
+ */
 export const marketDataService = new MarketDataService();

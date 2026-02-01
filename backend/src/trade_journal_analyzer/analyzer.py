@@ -4,10 +4,26 @@ Trade Journal Analyzer
 Analyzes trading journals to extract patterns and detect biases.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import List, Dict, Any
 from collections import defaultdict
 from .models import JournalEntry, TradePattern, BiasAlert
+
+# Constants for bias detection
+OVERTRADING_MIN_ENTRIES = 20
+OVERTRADING_MAX_TIME_SPAN_DAYS = 1
+OVERTRADING_THRESHOLD_TRADES_PER_DAY = 20
+LOSS_SEQUENCE_TIME_WINDOW_SECONDS = 1800  # 30 minutes
+LOSS_SEQUENCE_MIN_LENGTH = 2
+
+# Constants for pattern analysis
+DEFAULT_MIN_TRADES_FOR_PATTERN = 3
+MIN_WIN_RATE_FOR_PATTERN = 50  # percentage
+HIGH_WIN_RATE_THRESHOLD = 80
+MEDIUM_WIN_RATE_THRESHOLD = 60
+MIN_CONFIDENCE_FOR_RECOMMENDATION = 0.5
+MAX_CONFIDENCE_TRADE_DIVISOR = 10
+SECONDS_PER_DAY = 86400
 
 
 class TradeJournalAnalyzer:
@@ -48,12 +64,12 @@ class TradeJournalAnalyzer:
         alerts = []
 
         # Detect overtrading (too many trades in short period)
-        if len(self._entries) >= 20:
+        if len(self._entries) >= OVERTRADING_MIN_ENTRIES:
             # Check if entries are clustered in time
             time_span = self._get_time_span()
-            if time_span and time_span < timedelta(days=1):
-                trades_per_day = len(self._entries) / max(time_span.total_seconds() / 86400, 1)
-                if trades_per_day > 20:
+            if time_span and time_span < timedelta(days=OVERTRADING_MAX_TIME_SPAN_DAYS):
+                trades_per_day = len(self._entries) / max(time_span.total_seconds() / SECONDS_PER_DAY, 1)
+                if trades_per_day > OVERTRADING_THRESHOLD_TRADES_PER_DAY:
                     alerts.append(BiasAlert(
                         bias_type="overtrading",
                         severity="high",
@@ -81,7 +97,7 @@ class TradeJournalAnalyzer:
 
         return alerts
 
-    def extract_patterns(self, min_trades: int = 3) -> List[TradePattern]:
+    def extract_patterns(self, min_trades: int = DEFAULT_MIN_TRADES_FOR_PATTERN) -> List[TradePattern]:
         """Extract trading patterns from journal
 
         Args:
@@ -157,10 +173,10 @@ class TradeJournalAnalyzer:
         recommendations = []
 
         for pattern in patterns:
-            if pattern.win_rate > 60 and pattern.confidence > 0.5:
+            if pattern.win_rate > MEDIUM_WIN_RATE_THRESHOLD and pattern.confidence > MIN_CONFIDENCE_FOR_RECOMMENDATION:
                 recommendations.append({
                     "type": "trading_strategy",
-                    "priority": "high" if pattern.win_rate > 80 else "medium",
+                    "priority": "high" if pattern.win_rate > HIGH_WIN_RATE_THRESHOLD else "medium",
                     "description": pattern.description,
                     "expected_win_rate": pattern.win_rate,
                     "action": f"Increase trades matching this pattern: {pattern.description}"
@@ -184,9 +200,6 @@ class TradeJournalAnalyzer:
         """
         sequences = []
 
-        if len(self._entries) < 2:
-            return sequences
-
         # Sort entries by timestamp
         sorted_entries = sorted(self._entries, key=lambda e: e.timestamp)
 
@@ -198,23 +211,23 @@ class TradeJournalAnalyzer:
                 if current_sequence:
                     # Check if this loss is within 30 minutes of the last
                     time_diff = entry.timestamp - current_sequence[-1].timestamp
-                    if time_diff.total_seconds() <= 1800:  # 30 minutes
+                    if time_diff.total_seconds() <= LOSS_SEQUENCE_TIME_WINDOW_SECONDS:
                         current_sequence.append(entry)
                     else:
-                        # Save current sequence if it has 2+ losses
-                        if len(current_sequence) >= 2:
+                        # Save current sequence if it has minimum required losses
+                        if len(current_sequence) >= LOSS_SEQUENCE_MIN_LENGTH:
                             sequences.append(current_sequence)
                         current_sequence = [entry]
                 else:
                     current_sequence = [entry]
             else:
-                # Save current sequence if it has 2+ losses
-                if len(current_sequence) >= 2:
+                # Save current sequence if it has minimum required losses
+                if len(current_sequence) >= LOSS_SEQUENCE_MIN_LENGTH:
                     sequences.append(current_sequence)
                 current_sequence = []
 
         # Add any remaining sequence
-        if len(current_sequence) >= 2:
+        if len(current_sequence) >= LOSS_SEQUENCE_MIN_LENGTH:
             sequences.append(current_sequence)
 
         return sequences
@@ -239,7 +252,7 @@ class TradeJournalAnalyzer:
         for hour, stats in hourly_stats.items():
             if stats["trades"] >= min_trades:
                 win_rate = (stats["wins"] / stats["trades"]) * 100
-                if win_rate > 50:  # Only include if above 50%
+                if win_rate > MIN_WIN_RATE_FOR_PATTERN:
                     hour_name = f"{hour:02d}:00-{(hour+1)%24:02d}"
 
                     # Determine time period
@@ -255,7 +268,7 @@ class TradeJournalAnalyzer:
                         win_rate=win_rate,
                         total_trades=stats["trades"],
                         avg_profit_percent=stats["total_profit_percent"] / stats["trades"],
-                        confidence=min(stats["trades"] / 10, 1.0),  # More trades = higher confidence
+                        confidence=min(stats["trades"] / MAX_CONFIDENCE_TRADE_DIVISOR, 1.0),
                         factors={"time_period": period, "hour_range": hour_name}
                     ))
 
@@ -283,7 +296,7 @@ class TradeJournalAnalyzer:
                     win_rate=win_rate,
                     total_trades=len(stats["trades"]),
                     avg_profit_percent=stats["total_profit_percent"] / len(stats["trades"]),
-                    confidence=min(len(stats["trades"]) / 10, 1.0),
+                    confidence=min(len(stats["trades"]) / MAX_CONFIDENCE_TRADE_DIVISOR, 1.0),
                     factors={"symbol": symbol}
                 ))
 

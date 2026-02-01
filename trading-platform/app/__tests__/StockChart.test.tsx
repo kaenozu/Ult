@@ -100,7 +100,7 @@ describe('StockChart', () => {
     };
 
 
-    const { container } = render(<StockChart data={mockData} signal={mockSignalLocal} />);
+    render(<StockChart data={mockData} signal={mockSignalLocal} />);
     // Verify plugin is conceptually registered or component renders
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
