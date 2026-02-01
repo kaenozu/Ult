@@ -54,13 +54,19 @@ const BREAKOUT_CONFIRMATION_PERIOD = 3; // Number of candles to confirm
 class SupplyDemandMaster {
   /**
    * Calculate volume profile by price range
+   * Optimized to avoid unnecessary flatMap and spread operations
    */
   private calculateVolumeProfile(data: OHLCV[], bucketCount: number = 50): VolumeProfileBucket[] {
     if (data.length === 0) return [];
 
-    const prices = data.flatMap(d => [d.high, d.low]);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    // Find min/max prices in a single pass instead of flatMap + spread
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
+    for (const d of data) {
+      if (d.low < minPrice) minPrice = d.low;
+      if (d.high > maxPrice) maxPrice = d.high;
+    }
+
     const bucketSize = (maxPrice - minPrice) / bucketCount;
 
     const buckets: VolumeProfileBucket[] = Array.from({ length: bucketCount }, (_, i) => ({
@@ -74,12 +80,18 @@ class SupplyDemandMaster {
       const priceRange = candle.high - candle.low;
       const volumePerPrice = candle.volume / Math.max(1, priceRange / bucketSize);
 
-      for (let i = 0; i < bucketCount; i++) {
+      // Calculate bucket range once instead of in loop
+      const startBucket = Math.max(0, Math.floor((candle.low - minPrice) / bucketSize));
+      const endBucket = Math.min(bucketCount - 1, Math.floor((candle.high - minPrice) / bucketSize));
+
+      for (let i = startBucket; i <= endBucket; i++) {
         const bucketHigh = minPrice + bucketSize * (i + 1);
         const bucketLow = minPrice + bucketSize * i;
 
-        if (candle.high >= bucketLow && candle.low <= bucketHigh) {
-          const overlap = Math.min(candle.high, bucketHigh) - Math.max(candle.low, bucketLow);
+        const overlap = Math.min(candle.high, bucketHigh) - Math.max(candle.low, bucketLow);
+        
+        // Only process if there's actual overlap (guards against edge cases)
+        if (overlap > 0) {
           const overlapRatio = overlap / Math.max(1, priceRange);
           buckets[i].volume += candle.volume * overlapRatio;
           buckets[i].trades++;
