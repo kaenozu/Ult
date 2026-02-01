@@ -770,7 +770,7 @@ export interface TechnicalIndicators {
  * Notification channel configuration
  */
 export interface NotificationChannelConfig {
-  enabled: boolean;
+  enabled?: boolean;
   sound?: boolean;
   desktop?: boolean;
   webhook?: {
