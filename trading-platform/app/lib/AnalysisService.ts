@@ -15,7 +15,6 @@ import {
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
 import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
-import { signalFilterService, FilterResult, DEFAULT_SIGNAL_FILTER_CONFIG } from './SignalFilterService';
 
 export interface AnalysisContext {
     startIndex?: number;
@@ -369,7 +368,7 @@ class AnalysisService {
     /**
      * 銘柄の総合分析を実行
      */
-    analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext, enableFiltering: boolean = true): Signal {
+    analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
         // Handle window data for legacy components
         let windowData = data;
         if (context?.endIndex !== undefined) {
@@ -492,83 +491,6 @@ class AnalysisService {
 
         // Calculate exit strategy for BUY/SELL signals
         const exitStrategy = this.calculateExitStrategies(type, currentPrice, atr, regimeResult);
-
-        // Apply signal filtering if enabled
-        let filterResult: FilterResult | undefined;
-        if (enableFiltering && type !== 'HOLD') {
-            const baseSignal: Signal = {
-                symbol,
-                type,
-                confidence: parseFloat(finalConfidence.toFixed(1)),
-                accuracy: Math.round(opt.accuracy),
-                atr,
-                targetPrice: parseFloat(targetPrice.toFixed(2)),
-                stopLoss: parseFloat(stopLoss.toFixed(2)),
-                reason,
-                predictedChange: parseFloat(((targetPrice - currentPrice) / (currentPrice || 1) * 100).toFixed(2)),
-                predictionDate: new Date().toISOString().split('T')[0],
-                optimizedParams: { rsiPeriod: opt.rsiPeriod, smaPeriod: opt.smaPeriod },
-                predictionError,
-                volumeResistance: volumeProfile,
-                forecastCone,
-                marketContext,
-                regimeInfo: {
-                    regime: regimeResult.regime,
-                    trendDirection: regimeResult.trendDirection,
-                    volatility: regimeResult.volatility,
-                    adx: regimeResult.adx,
-                    atr: regimeResult.atr,
-                    confidence: regimeResult.confidence,
-                    daysInRegime: regimeResult.daysInRegime,
-                },
-                recommendedStrategy: strategyRec.primary,
-                regimeDescription,
-                strategyWeight: strategyRec.weight,
-                positionSizeAdjustment: strategyRec.positionSizeAdjustment,
-                exitStrategy,
-            };
-            
-            filterResult = signalFilterService.filterSignal(baseSignal, data, DEFAULT_SIGNAL_FILTER_CONFIG);
-            
-            // If filter fails, convert to HOLD with explanation
-            if (!filterResult.passed) {
-                return {
-                    symbol,
-                    type: 'HOLD',
-                    confidence: 0,
-                    accuracy: Math.round(opt.accuracy),
-                    atr,
-                    targetPrice: currentPrice,
-                    stopLoss: currentPrice,
-                    reason: filterResult.filteredReason || 'フィルタ条件を満たしません',
-                    predictedChange: 0,
-                    predictionDate: new Date().toISOString().split('T')[0],
-                    optimizedParams: { rsiPeriod: opt.rsiPeriod, smaPeriod: opt.smaPeriod },
-                    predictionError,
-                    volumeResistance: volumeProfile,
-                    forecastCone,
-                    marketContext,
-                    regimeInfo: {
-                        regime: regimeResult.regime,
-                        trendDirection: regimeResult.trendDirection,
-                        volatility: regimeResult.volatility,
-                        adx: regimeResult.adx,
-                        atr: regimeResult.atr,
-                        confidence: regimeResult.confidence,
-                        daysInRegime: regimeResult.daysInRegime,
-                    },
-                    recommendedStrategy: strategyRec.primary,
-                    regimeDescription,
-                    strategyWeight: strategyRec.weight,
-                    positionSizeAdjustment: strategyRec.positionSizeAdjustment,
-                    exitStrategy,
-                    filterReasons: filterResult.reasons,
-                };
-            }
-            
-            // Update confidence with filter bonus
-            finalConfidence = filterResult.confidence;
-        }
 
         return {
             symbol,

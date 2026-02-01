@@ -7,7 +7,7 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
-import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG } from '@/app/lib/constants';
+import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS } from '@/app/lib/constants';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 export { volumeProfilePlugin };
 import { useChartData } from './hooks/useChartData';
@@ -44,7 +44,7 @@ export const StockChart = memo(function StockChart({
   const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
 
   // 固定高さを使用
-  const dynamicHeight = propHeight ?? 500;
+  const dynamicHeight = propHeight ?? CHART_DIMENSIONS.DEFAULT_HEIGHT;
 
   // 1. Data Preparation Hooks
   const { extendedData, normalizedIndexData } = useChartData(data, signal, indexData);
@@ -74,8 +74,8 @@ export const StockChart = memo(function StockChart({
       {
         label: market === 'japan' ? '日経平均 (相対)' : 'NASDAQ (相対)',
         data: normalizedIndexData,
-        borderColor: '#60a5fa',
-        backgroundColor: 'rgba(96, 165, 250, 0.05)',
+        borderColor: CHART_COLORS.INDEX_LINE,
+        backgroundColor: CHART_COLORS.INDEX_FILL,
         fill: false,
         pointRadius: 0,
         borderWidth: 1,

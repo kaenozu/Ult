@@ -1,5 +1,5 @@
 import { detectBreakouts, predictNextBreakout, BreakoutEvent, VolumeProfileLevel } from '../lib/breakout';
-import { OHLCV } from '../types';
+import { OHLCV } from '../app/types';
 
 describe('Breakout Detection', () => {
   const mockData: OHLCV[] = [

@@ -4,37 +4,15 @@ import { cn } from '@/app/lib/utils';
 interface BacktestViewProps {
   backtestResult: BacktestResult | null;
   loading?: boolean;
-  progress?: number;
-  currentStep?: string;
-  error?: string | null;
 }
 
-export function BacktestView({ 
-  backtestResult, 
-  loading, 
-  progress = 0, 
-  currentStep = '',
-  error 
-}: BacktestViewProps) {
+export function BacktestView({ backtestResult, loading }: BacktestViewProps) {
   return (
     <div className="flex-1 overflow-auto" role="tabpanel" id="panel-backtest" aria-labelledby="tab-backtest">
       {loading || !backtestResult ? (
-        <div className="flex flex-col items-center justify-center h-full gap-3 py-8">
+        <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
             <div className="w-6 h-6 border-2 border-[#233648] border-t-blue-500 rounded-full animate-spin" />
-            <span className="text-xs text-[#92adc9]">
-              {currentStep || 'バックテスト実行中...'}
-            </span>
-            {progress > 0 && (
-              <div className="w-48 h-1.5 bg-[#233648] rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-500 transition-all duration-300 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            )}
-            {error && (
-              <span className="text-xs text-red-400">{error}</span>
-            )}
+            <span className="text-xs text-[#92adc9]">バックテスト実行中...</span>
         </div>
       ) : (
         <>
