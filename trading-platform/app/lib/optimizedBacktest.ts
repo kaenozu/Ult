@@ -306,7 +306,7 @@ class OptimizedBacktestEngine {
     }
 
     return {
-      symbol: data[0].symbol,
+      symbol: data[0]?.symbol || 'UNKNOWN',
       type,
       confidence,
       accuracy: 0,

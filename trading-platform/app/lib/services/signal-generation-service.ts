@@ -233,6 +233,82 @@ export class SignalGenerationService {
     if (type === 'SELL') return "過熱感があり、反落の可能性が高いシグナル。";
     return "中立的なシグナル。市場の方向性を様子見することを推奨。";
   }
+
+  /**
+   * マルチ時間枠分析を使用した強化シグナル生成
+   * 
+   * 複数の時間枠から整合性を確認し、より信頼性の高いシグナルを生成します。
+   */
+  async generateEnhancedSignalWithMultiTimeFrame(
+    stock: Stock, 
+    data: OHLCV[], 
+    prediction: ModelPrediction, 
+    indicators: any,
+    dataByTimeFrame?: Map<string, OHLCV[]>, // TimeFrame -> OHLCV[]
+    indexData?: OHLCV[]
+  ): Promise<Signal> {
+    // まず基本シグナルを生成
+    const baseSignal = this.generateSignal(stock, data, prediction, indicators, indexData);
+
+    // マルチ時間枠データがない場合は基本シグナルを返す
+    if (!dataByTimeFrame || dataByTimeFrame.size === 0) {
+      return baseSignal;
+    }
+
+    try {
+      // MultiTimeFrameStrategyを動的にインポート
+      const { multiTimeFrameStrategy } = await import('../strategies/MultiTimeFrameStrategy');
+
+      // マルチ時間枠分析を実行
+      const mtfAnalysis = await multiTimeFrameStrategy.analyzeMultipleTimeFrames(
+        stock.symbol,
+        dataByTimeFrame as any
+      );
+
+      // 時間枠間の整合性チェック
+      const alignmentBonus = Math.floor(mtfAnalysis.alignment * 20); // 最大+20%の信頼度ボーナス
+      const enhancedConfidence = Math.min(baseSignal.confidence + alignmentBonus, 100);
+
+      // 乖離が検出された場合は信頼度を下げる
+      let finalConfidence = enhancedConfidence;
+      let finalType = baseSignal.type;
+      let additionalReason = '';
+
+      if (mtfAnalysis.divergenceDetected) {
+        finalConfidence = Math.floor(enhancedConfidence * 0.8);
+        additionalReason += ' ⚠ 複数時間枠間で乖離が検出されています。';
+        
+        // 乖離が大きい場合はHOLDに変更
+        if (mtfAnalysis.alignment < 0.5) {
+          finalType = 'HOLD';
+          additionalReason += ' 時間枠間の整合性が低いため、様子見を推奨します。';
+        }
+      } else {
+        // 時間枠が整合している場合、推奨シグナルを使用
+        if (mtfAnalysis.primarySignal !== 'HOLD' && mtfAnalysis.confidence >= 70) {
+          finalType = mtfAnalysis.primarySignal;
+          additionalReason += ` ✓ 複数時間枠で整合性が確認されました（整合率: ${(mtfAnalysis.alignment * 100).toFixed(0)}%）。`;
+        }
+      }
+
+      // マルチ時間枠の推奨理由を追加
+      const mtfReasoningSummary = mtfAnalysis.reasoning.slice(0, 2).join(' ');
+      const enhancedReason = `${baseSignal.reason}${additionalReason} ${mtfReasoningSummary}`;
+
+      return {
+        ...baseSignal,
+        type: finalType,
+        confidence: finalConfidence,
+        reason: enhancedReason,
+        // マルチ時間枠情報を追加
+        regimeDescription: mtfAnalysis.recommendation,
+      };
+    } catch (error) {
+      // エラーが発生した場合は基本シグナルを返す
+      console.error('Multi-timeframe analysis failed:', error);
+      return baseSignal;
+    }
+  }
 }
 
 export const signalGenerationService = new SignalGenerationService();

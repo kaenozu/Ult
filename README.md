@@ -1,6 +1,7 @@
 # 📈 ULT - Ultimate Trading Platform
 
 [![CI](https://github.com/kaenozu/Ult/actions/workflows/ci.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/ci.yml)
+[![Quality Gates](https://github.com/kaenozu/Ult/actions/workflows/quality-gates.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/quality-gates.yml)
 [![Lint](https://github.com/kaenozu/Ult/actions/workflows/lint.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/lint.yml)
 [![Tests](https://github.com/kaenozu/Ult/actions/workflows/test.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/test.yml)
 [![E2E](https://github.com/kaenozu/Ult/actions/workflows/e2e.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/e2e.yml)
@@ -148,6 +149,9 @@ Ult/
 │   ├── app/                   # Next.js App Router
 │   │   ├── components/        # Reactコンポーネント
 │   │   ├── lib/              # ビジネスロジック・サービス
+│   │   │   └── api/          # API・データレイヤー
+│   │   │       ├── idb-migrations.ts  # IndexedDB マイグレーションシステム
+│   │   │       └── idb.ts    # レガシーIndexedDBクライアント
 │   │   ├── store/            # Zustand状態管理
 │   │   ├── types/            # TypeScript型定義
 │   │   └── __tests__/        # テストファイル
@@ -166,7 +170,15 @@ Ult/
 │   │   └── utils/               # ユーティリティ
 │   └── tests/                # バックエンドテスト
 │
+├── db/                        # データベース管理
+│   ├── migrations/            # SQL マイグレーションスクリプト
+│   ├── seeds/                 # シードデータ（開発・本番）
+│   ├── docs/                  # データベースドキュメント
+│   ├── schema.prisma          # Prisma スキーマ定義（将来使用）
+│   └── README.md              # データベース管理ガイド
+│
 ├── scripts/                   # ユーティリティスクリプト
+│   └── db-migrate.js          # マイグレーション管理スクリプト
 ├── docs/                      # プロジェクトドキュメント
 ├── skills/                    # 自動化スクリプト
 └── README.md                  # このファイル
@@ -190,6 +202,16 @@ Python製のバックエンド分析エンジン。高度な市場分析機能�
 - **`src/trade_journal_analyzer/`**: 取引ログ分析
 - **`src/ult_universe/`**: 銘柄スクリーニング・ユニバース管理
 
+#### `db/`
+データベーススキーマとマイグレーション管理。クライアントサイドとサーバーサイドの両方のデータベース戦略をサポート。
+
+- **`migrations/`**: SQL マイグレーションスクリプト（バージョン管理済み）
+- **`seeds/`**: 開発環境と本番環境用のシードデータ
+- **`docs/DATABASE.md`**: 包括的なデータベースドキュメント
+- **`schema.prisma`**: 将来の PostgreSQL 実装用の Prisma スキーマ
+
+詳細は [`db/README.md`](db/README.md) および [`db/docs/DATABASE.md`](db/docs/DATABASE.md) を参照してください。
+
 ---
 
 ## 🔧 開発
@@ -201,13 +223,41 @@ Python製のバックエンド分析エンジン。高度な市場分析機能�
 | ワークフロー | 説明 | トリガー |
 |------------|------|---------|
 | **CI** | 全体的な CI パイプライン統合 | Push, PR |
+| **Quality Gates** | 品質ゲート統合チェック（カバレッジ/型/Lint/セキュリティ/ビルド） | PR |
 | **Lint** | ESLint + TypeScript 型チェック | Push, PR |
 | **Test** | Jest 単体テスト（カバレッジ付き） | Push, PR |
 | **E2E** | Playwright E2E テスト | Push, PR |
 | **Backend** | Python バックエンドテスト | Push (backend/*), PR |
 | **Build** | Next.js ビルド検証 | Push, PR |
 | **Security** | 依存関係脆弱性スキャン | Push, PR, 週次 |
+| **DB Validation** | データベーススキーマ検証 | Push (db/*), PR |
 | **Monkey Test** | ランダム操作テスト | Push, PR, 日次 |
+
+#### Quality Gates（品質ゲート）
+
+すべてのプルリクエストは、以下の品質基準を満たす必要があります：
+
+- ✅ **テストカバレッジ ≥ 80%** （Lines, Branches, Functions, Statements）
+- ✅ **TypeScript エラー = 0**
+- ✅ **ESLint エラー = 0**
+- ✅ **High/Critical 脆弱性 = 0**
+- ✅ **ビルド成功**
+
+詳細は [Quality Gates ドキュメント](./docs/QUALITY_GATES.md) を参照してください。
+
+**ローカルでの確認**:
+```bash
+# 全チェックを一度に実行
+./scripts/quality-gates-check.sh
+
+# または個別に実行
+cd trading-platform
+npm run test:coverage  # カバレッジ
+npx tsc --noEmit       # 型チェック
+npm run lint           # ESLint
+npm audit --audit-level=high  # セキュリティ
+npm run build          # ビルド
+```
 
 #### CI ワークフローの実行順序
 
@@ -257,6 +307,23 @@ npm run test:e2e
 # E2Eテスト（UIモード）
 npm run test:e2e:ui
 ```
+
+### データベース管理コマンド
+
+```bash
+cd trading-platform
+
+# マイグレーション状態の確認
+npm run db:migrate:status
+
+# 新しいマイグレーションの作成
+npm run db:migrate:create
+
+# マイグレーションの検証
+npm run db:migrate:validate
+```
+
+詳細は [`db/README.md`](db/README.md) を参照してください。
 
 ### バックエンド開発コマンド
 
