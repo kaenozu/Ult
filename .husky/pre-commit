@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run security audit in trading-platform
+echo "🔒 Running security audit..."
+cd trading-platform && npm audit --audit-level=high
+audit_result=$?
+
+if [ $audit_result -ne 0 ]; then
+  echo "⚠️  Security vulnerabilities found! Please review and fix before committing."
+  echo "Run 'npm audit' for details and 'npm audit fix' to attempt automatic fixes."
+fi
+
+# Run lint-staged for code quality
+cd /home/runner/work/Ult/Ult/trading-platform && npx lint-staged
