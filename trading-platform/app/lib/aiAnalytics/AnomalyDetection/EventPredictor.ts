@@ -500,8 +500,8 @@ export class EventPredictor {
     uncertainty: { lower: number[]; upper: number[]; std: number[] }
   ): number {
     const avgConfidence = predictions.reduce((sum, p) => sum + p.confidence, 0) / predictions.length;
-    const avgUncertaintyRatio = uncertainty.std.reduce((sum, s) => {
-      const price = predictions[uncertainty.std.indexOf(s)].price;
+    const avgUncertaintyRatio = uncertainty.std.reduce((sum, s, index) => {
+      const price = predictions[index].price;
       return sum + s / price;
     }, 0) / uncertainty.std.length;
     
