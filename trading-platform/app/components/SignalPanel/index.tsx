@@ -68,11 +68,6 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const { status: wsStatus, lastMessage, connect, disconnect, reconnect } = useWebSocket(getWebSocketUrl('/ws/signals'));
   const [liveSignal, setLiveSignal] = useState<Signal | null>(null);
 
-  // Show WebSocket status in console for debugging
-  useEffect(() => {
-    // console.log('WebSocket status:', wsStatus);
-  }, [wsStatus]);
-
   // Memoized WebSocket message handler
   const handleWebSocketMessage = useCallback(() => {
     if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE') {
@@ -104,7 +99,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
   // 自動売買プロセスをトリガー
   useEffect(() => {
-    if (displaySignal && stock.price) {
+    if (displaySignal && stock.price && processAITrades) {
       processAITrades(stock.symbol, stock.price, displaySignal);
     }
   }, [stock.symbol, stock.price, displaySignal, processAITrades]);
