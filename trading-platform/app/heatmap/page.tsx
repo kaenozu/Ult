@@ -90,11 +90,15 @@ function HeatmapContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     const fetchAllQuotes = async () => {
+      if (!mounted) return;
       setLoading(true);
       try {
         const symbols = ALL_STOCKS.map(s => s.symbol);
         const latestQuotes = await marketClient.fetchQuotes(symbols);
+
+        if (!mounted) return; // Check before state updates
 
         const updates = latestQuotes.map(q => ({
           symbol: q.symbol,
@@ -114,13 +118,21 @@ function HeatmapContent() {
         });
         setDisplayStocks(updatedStocks);
       } catch (error) {
-        console.error('Universe sync failed:', error);
+        if (mounted) {
+          console.error('Universe sync failed:', error);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAllQuotes();
+    
+    return () => {
+      mounted = false;
+    };
   }, [batchUpdateStockData]);
 
   const handleStockClick = (stock: Stock) => {
