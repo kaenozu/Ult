@@ -42,3 +42,7 @@ __pycache__/
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Test coverage
+coverage/
+.nyc_output/
