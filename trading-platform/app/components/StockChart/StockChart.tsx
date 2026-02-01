@@ -32,10 +32,7 @@ export interface StockChartProps {
 }
 
 // 価格変動幅に基づいてチャート高さを計算（固定高さ）
-function calculateOptimalHeight(data: OHLCV[], defaultHeight: number): number {
-  // 常に固定高さを返す
-  return defaultHeight;
-}
+
 
 export const StockChart = memo(function StockChart({
   data, indexData = [], height: propHeight, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null,

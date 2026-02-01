@@ -18,7 +18,7 @@ export function useStockData() {
   const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [interval, setInterval] = useState<string>('5m'); // Add interval state
+  const [timeFrame, setTimeFrame] = useState<string>('5m'); // Renamed from interval to avoid shadowing
 
   // AbortController for canceling pending requests on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -58,7 +58,7 @@ export function useStockData() {
       const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
 
       // Map UI interval names to API interval format
-      const apiInterval = interval === 'D' ? '1d' : interval.toLowerCase();
+      const apiInterval = timeFrame === 'D' ? '1d' : timeFrame.toLowerCase();
 
       const [data, idxData, signalData] = await Promise.all([
         fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval),
@@ -96,10 +96,10 @@ export function useStockData() {
         setLoading(false);
       }
     }
-  }, [interval, watchlist]); // Add interval dependency so it refetches when interval changes
+  }, [timeFrame, watchlist]); // Add timeFrame dependency so it refetches when interval changes
 
-  const handleIntervalChange = useCallback((newInterval: string) => {
-    setInterval(newInterval);
+  const handleTimeFrameChange = useCallback((newTimeFrame: string) => {
+    setTimeFrame(newTimeFrame);
   }, []);
 
   // 1. Sync Store/Watchlist -> Local State
@@ -144,7 +144,7 @@ export function useStockData() {
     loading,
     error,
     handleStockSelect,
-    interval,
-    setInterval: handleIntervalChange
+    interval: timeFrame,
+    setInterval: handleTimeFrameChange
   };
 }
