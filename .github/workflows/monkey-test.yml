@@ -59,17 +59,21 @@ jobs:
           echo "Waiting for server to start..."
           
           # Wait for server with timeout
+          SERVER_READY=false
           for i in {1..30}; do
             if curl -sf http://localhost:3000 > /dev/null 2>&1; then
               echo "✅ Server is ready!"
-              exit 0
+              SERVER_READY=true
+              break
             fi
             echo "Waiting... ($i/30)"
             sleep 2
           done
           
-          echo "❌ Server failed to start"
-          exit 1
+          if [ "$SERVER_READY" = false ]; then
+            echo "❌ Server failed to start"
+            exit 1
+          fi
 
       - name: Run Monkey Test
         run: |
@@ -148,17 +152,21 @@ jobs:
           echo "Waiting for server to start..."
           
           # Wait for server with timeout
+          SERVER_READY=false
           for i in {1..30}; do
             if curl -sf http://localhost:3000 > /dev/null 2>&1; then
               echo "✅ Server is ready!"
-              exit 0
+              SERVER_READY=true
+              break
             fi
             echo "Waiting... ($i/30)"
             sleep 2
           done
           
-          echo "❌ Server failed to start"
-          exit 1
+          if [ "$SERVER_READY" = false ]; then
+            echo "❌ Server failed to start"
+            exit 1
+          fi
 
       - name: Run extended Monkey Test
         run: |
