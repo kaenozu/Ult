@@ -1,5 +1,10 @@
 # 📈 ULT - Ultimate Trading Platform
 
+[![CI](https://github.com/kaenozu/Ult/actions/workflows/ci.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/ci.yml)
+[![Lint](https://github.com/kaenozu/Ult/actions/workflows/lint.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/lint.yml)
+[![Tests](https://github.com/kaenozu/Ult/actions/workflows/test.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/test.yml)
+[![E2E](https://github.com/kaenozu/Ult/actions/workflows/e2e.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/e2e.yml)
+[![Security](https://github.com/kaenozu/Ult/actions/workflows/security.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/security.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16+-black.svg)](https://nextjs.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-green.svg)](https://www.python.org/)
@@ -188,6 +193,34 @@ Python製のバックエンド分析エンジン。高度な市場分析機能�
 ---
 
 ## 🔧 開発
+
+### CI/CD
+
+このプロジェクトは GitHub Actions を使用した包括的な CI/CD パイプラインを備えています：
+
+| ワークフロー | 説明 | トリガー |
+|------------|------|---------|
+| **CI** | 全体的な CI パイプライン統合 | Push, PR |
+| **Lint** | ESLint + TypeScript 型チェック | Push, PR |
+| **Test** | Jest 単体テスト（カバレッジ付き） | Push, PR |
+| **E2E** | Playwright E2E テスト | Push, PR |
+| **Backend** | Python バックエンドテスト | Push (backend/*), PR |
+| **Build** | Next.js ビルド検証 | Push, PR |
+| **Security** | 依存関係脆弱性スキャン | Push, PR, 週次 |
+| **Monkey Test** | ランダム操作テスト | Push, PR, 日次 |
+
+#### CI ワークフローの実行順序
+
+```
+Lint ─┐
+      ├─→ E2E ─→ Status Check
+Test ─┤
+      │
+Build ┘
+
+Backend Test (並列実行)
+Security (並列実行)
+```
 
 ### フロントエンド開発コマンド
 
