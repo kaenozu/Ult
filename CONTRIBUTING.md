@@ -49,6 +49,13 @@ ULT Trading Platform への貢献に興味を持っていただき、ありが�
    # .env.local を編集して API キーを設定
    ```
 
+   > **⚠️ 重要: lockfile ポリシー**
+   > 
+   > このプロジェクトでは、`trading-platform/package-lock.json` を唯一の正規lockfileとして使用します。
+   > - ルートの `package-lock.json` は使用しません（削除済み）
+   > - 依存関係のインストールは必ず `trading-platform` ディレクトリ内で実行してください
+   > - これにより、ビルドの安定性とセキュリティが向上します
+
 5. **バックエンドのセットアップ（オプション）**
    ```bash
    cd ../backend

@@ -1,3 +1,12 @@
+/**
+ * Legacy IndexedDB Client
+ * 
+ * This file is maintained for backward compatibility.
+ * For new code, use idb-migrations.ts which provides enhanced migration support.
+ * 
+ * @deprecated Use IndexedDBClient from './idb-migrations' instead
+ */
+
 import { OHLCV } from '@/app/types';
 
 const DB_NAME = 'TraderProDB';
