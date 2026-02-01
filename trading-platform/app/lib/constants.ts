@@ -178,7 +178,7 @@ export const DATA_QUALITY = {
 };
 
 export const API_ENDPOINTS = {
-    ALPHA_VANTAGE: 'https://www.alphavantage.co/query',
+    // Data is fetched from Yahoo Finance via /api/market
 };
 
 // --- From ui.ts ---

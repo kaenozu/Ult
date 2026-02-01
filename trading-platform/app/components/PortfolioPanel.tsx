@@ -18,6 +18,61 @@ interface PortfolioPanelProps {
   detailed?: boolean;
 }
 
+function PositionRow({
+  position,
+  onClose,
+}: {
+  position: PaperPosition;
+  onClose?: (symbol: string) => Promise<void>;
+}) {
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(value);
+  };
+
+  return (
+    <div className="flex items-center justify-between p-3 bg-[#0f172a] rounded-lg">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded ${position.side === 'LONG' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+          {position.side === 'LONG' ? (
+            <TrendingUp className="w-4 h-4 text-green-400" />
+          ) : (
+            <TrendingDown className="w-4 h-4 text-red-400" />
+          )}
+        </div>
+        <div>
+          <p className="font-medium text-white">{position.symbol}</p>
+          <p className="text-xs text-gray-400">
+            {position.quantity} @ {formatCurrency(position.entryPrice)}
+          </p>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className={`font-medium ${position.unrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          {formatCurrency(position.unrealizedPnL)}
+        </p>
+        <p className="text-xs text-gray-400">
+          {position.unrealizedPnLPercent >= 0 ? '+' : ''}
+          {position.unrealizedPnLPercent.toFixed(2)}%
+        </p>
+      </div>
+      {onClose && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onClose(position.symbol)}
+          className="ml-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export const PortfolioPanel = React.memo(function PortfolioPanel({ portfolio, onClosePosition, detailed = false }: PortfolioPanelProps) {
   if (!portfolio) {
     return (
@@ -104,61 +159,6 @@ export const PortfolioPanel = React.memo(function PortfolioPanel({ portfolio, on
       </CardContent>
     </Card>
   );
-}
-
-function PositionRow({
-  position,
-  onClose,
-}: {
-  position: PaperPosition;
-  onClose?: (symbol: string) => Promise<void>;
-}) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
-  return (
-    <div className="flex items-center justify-between p-3 bg-[#0f172a] rounded-lg">
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded ${position.side === 'LONG' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-          {position.side === 'LONG' ? (
-            <TrendingUp className="w-4 h-4 text-green-400" />
-          ) : (
-            <TrendingDown className="w-4 h-4 text-red-400" />
-          )}
-        </div>
-        <div>
-          <p className="font-medium text-white">{position.symbol}</p>
-          <p className="text-xs text-gray-400">
-            {position.quantity} @ {formatCurrency(position.entryPrice)}
-          </p>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className={`font-medium ${position.unrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-          {formatCurrency(position.unrealizedPnL)}
-        </p>
-        <p className="text-xs text-gray-400">
-          {position.unrealizedPnLPercent >= 0 ? '+' : ''}
-          {position.unrealizedPnLPercent.toFixed(2)}%
-        </p>
-      </div>
-      {onClose && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onClose(position.symbol)}
-          className="ml-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      )}
-    </div>
-  );
-}
+});
 
 export default PortfolioPanel;

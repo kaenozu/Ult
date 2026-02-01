@@ -2,12 +2,22 @@ import { Stock, AIStatus, PaperTrade } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 
 interface AIPerformanceViewProps {
-  aiStatus: AIStatus;
+  aiStatus?: AIStatus | string;
   stock: Stock;
   aiTrades: PaperTrade[];
 }
 
-export function AIPerformanceView({ aiStatus, stock, aiTrades }: AIPerformanceViewProps) {
+const defaultAIStatus: AIStatus = {
+  virtualBalance: 1000000,
+  totalProfit: 0,
+  trades: [],
+};
+
+export function AIPerformanceView({ aiStatus: rawAiStatus, stock, aiTrades }: AIPerformanceViewProps) {
+  // Handle both old AIStatus object and new string status
+  const aiStatus: AIStatus = typeof rawAiStatus === 'object' && rawAiStatus !== null
+    ? rawAiStatus as AIStatus
+    : defaultAIStatus;
   return (
     <div className="flex-1 overflow-auto space-y-4" role="tabpanel" id="panel-ai" aria-labelledby="tab-ai">
       <div className="bg-[#1a2632] p-3 rounded-lg border border-[#233648] flex justify-between items-center">

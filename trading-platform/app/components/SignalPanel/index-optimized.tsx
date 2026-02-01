@@ -8,7 +8,7 @@
  */
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Stock, Signal, OHLCV } from '@/app/types';
+import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
 import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
 import { BacktestResult } from '@/app/types';
 import { useAIStore } from '@/app/store/aiStore';
@@ -158,9 +158,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     };
   }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, runBacktestAsync, cancelBacktest]);
 
-  const aiTrades = useMemo(() => {
-    return aiStatus.trades.filter(t => t.symbol === stock.symbol);
-  }, [aiStatus.trades, stock.symbol]);
+  // aiStatus is now a simple 'active' | 'stopped' string
+  // trades are tracked separately in the journal store
+  const aiTrades: PaperTrade[] = [];
 
   if (loading || !displaySignal) {
     return (

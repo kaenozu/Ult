@@ -82,9 +82,8 @@ interface StockTableProps {
 }
 
 export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) => {
-  const setSelectedStock = useUIStore(s => s.setSelectedStock);
-  const batchUpdateStockData = useWatchlistStore(s => s.batchUpdateStockData);
-  const removeFromWatchlist = useWatchlistStore(s => s.removeFromWatchlist);
+  const { setSelectedStock } = useUIStore();
+  const { batchUpdateStockData, removeFromWatchlist } = useWatchlistStore();
 
   const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
 

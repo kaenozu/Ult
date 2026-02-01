@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Stock, Signal, OHLCV } from '@/app/types';
+import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
 import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { useAIStore } from '@/app/store/aiStore';
@@ -114,9 +114,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     }
   }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading]);
 
-  const aiTrades = useMemo(() => {
-    return aiStatus.trades.filter(t => t.symbol === stock.symbol);
-  }, [aiStatus.trades, stock.symbol]);
+  // aiStatus is now a simple 'active' | 'stopped' string
+  const aiTrades: PaperTrade[] = [];
 
   if (loading || !displaySignal) {
     return (

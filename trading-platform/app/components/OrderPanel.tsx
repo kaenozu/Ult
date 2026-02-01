@@ -15,8 +15,9 @@ interface OrderPanelProps {
 }
 
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
-  const cash = usePortfolioStore(s => s.portfolio.cash);
-  const executeOrderAtomic = useOrderExecutionStore(s => s.executeOrderAtomic);
+  const { portfolio } = usePortfolioStore();
+  const cash = portfolio.cash;
+  const { executeOrderAtomic } = useOrderExecutionStore();
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);

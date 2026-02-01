@@ -93,16 +93,14 @@ pip install -r requirements.txt
 `.env.local` ファイルに以下の環境変数を設定：
 
 ```env
-# Alpha Vantage APIキー（無料プランでOK）
-# https://www.alphavantage.co/support/#api-key で取得
-ALPHA_VANTAGE_API_KEY=your_api_key_here
-
 # Next.js設定
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # オプション: バックエンドAPI URL
 BACKEND_API_URL=http://localhost:8000
 ```
+
+**注**: 株価データは Yahoo Finance から取得されるため、APIキーは不要です。
 
 詳細な環境変数の説明は [`.env.example`](.env.example) を参照してください。
 
@@ -242,10 +240,9 @@ Ult/
 
 ### API設定
 
-| API | 用途 | 無料プラン | 有料プラン |
-|-----|------|-----------|-----------|
-| Alpha Vantage | 株価データ | 5回/分, 25回/日 | 制限なし |
-| Yahoo Finance | リアルタイム価格 | 無制限 | - |
+| API | 用途 | 制限 |
+|-----|------|------|
+| Yahoo Finance | 株価データ・リアルタイム価格 | 無料・無制限 |
 
 ### カスタマイズ
 
@@ -333,8 +330,8 @@ npm i -g vercel
 # プロジェクトルートでデプロイ
 vercel --prod
 
-# 環境変数を設定
-vercel env add ALPHA_VANTAGE_API_KEY
+# 環境変数を設定（必要に応じて）
+vercel env add NEXT_PUBLIC_APP_URL
 ```
 
 ### Dockerデプロイ
@@ -357,7 +354,7 @@ CMD ["npm", "start"]
 ```bash
 # ビルドと実行
 docker build -t trader-pro .
-docker run -p 3000:3000 -e ALPHA_VANTAGE_API_KEY=your_key trader-pro
+docker run -p 3000:3000 trader-pro
 ```
 
 ## 🔒 セキュリティベストプラクティス
@@ -365,11 +362,11 @@ docker run -p 3000:3000 -e ALPHA_VANTAGE_API_KEY=your_key trader-pro
 ### 環境変数の保護
 
 ```bash
-# ✅ 正しい: サーバーサイドのみで使用
-ALPHA_VANTAGE_API_KEY=your_key
+# ✅ サーバーサイド環境変数は NEXT_PUBLIC_ プレフィックスをつけない
+SOME_SECRET=your_secret
 
 # ❌ 危険: クライアントサイドに露出
-NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY=your_key
+NEXT_PUBLIC_SECRET=your_secret
 ```
 
 ### 鍵管理のルール
@@ -380,18 +377,6 @@ NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY=your_key
    - Vercel: Project Settings > Environment Variables
    - Docker: `-e` フラグまたは `--env-file`
    - Kubernetes: Secret/ConfigMap
-
-### APIキーの検証
-
-アプリケーションは以下を検証します：
-- キーが設定されているか
-- プレースホルダー値でないか
-- 最小文字数（10文字以上）
-
-```typescript
-// 不安全なキーは自動的に拒否されます
-const insecurePatterns = ['your_api_key_here', 'example', 'placeholder', 'xxx'];
-```
 
 ## 🤝 貢献方法
 

@@ -350,6 +350,6 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
       </main>
     </div>
   );
-}
+});
 
 export default UnifiedTradingDashboard;
