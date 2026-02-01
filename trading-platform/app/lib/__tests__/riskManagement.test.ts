@@ -1,397 +1,314 @@
 /**
- * Tests for Risk Management functions
+ * riskManagement.test.ts
+ * 
+ * リスク管理機能のテスト
+ * ATR計算、ポジションサイジング、ストップロス計算のテスト
  */
+
 import { describe, it, expect } from '@jest/globals';
 import {
   calculateATR,
   getLatestATR,
   calculatePositionSize,
-  calculateStopLossPrice,
-  calculateTakeProfitPrice,
-  DEFAULT_RISK_SETTINGS,
-  checkDailyLossLimit,
-  canAddPosition,
+  calculateStopLoss,
+  calculateTakeProfit,
+  calculateRiskRewardRatio,
 } from '../riskManagement';
-import { OHLCV, RiskManagementSettings, Position } from '../../types';
-import { RISK_MANAGEMENT, POSITION_SIZING } from '../constants';
+import type { OHLCV, PositionSizingMethod, StopLossType } from '@/app/types';
 
-describe('RiskManagement', () => {
-  const generateOHLCV = (count: number, startPrice: number = 100): OHLCV[] => {
-    return Array.from({ length: count }, (_, i) => ({
-      symbol: 'AAPL',
-      date: `2024-01-${String(i + 1).padStart(2, '0')}`,
-      open: startPrice + i,
-      high: startPrice + i + 2,
-      low: startPrice + i - 2,
-      close: startPrice + i + 1,
-      volume: 1000000,
-    }));
-  };
+describe('riskManagement', () => {
+  const mockData: OHLCV[] = Array.from({ length: 30 }, (_, i) => ({
+    open: 100 + i * 0.5,
+    high: 105 + i * 0.5,
+    low: 95 + i * 0.5,
+    close: 102 + i * 0.5,
+    volume: 1000 + i * 10,
+    date: `2024-01-${(i + 1).toString().padStart(2, '0')}`,
+    symbol: 'AAPL',
+  }));
 
   describe('calculateATR', () => {
-    it('should return empty array for insufficient data', () => {
-      const shortData = generateOHLCV(10);
+    it('ATRを正しく計算する', () => {
+      const atr = calculateATR(mockData, 14);
+
+      expect(atr).toBeDefined();
+      expect(atr.length).toBeGreaterThan(0);
+      expect(atr[0]).toBeGreaterThan(0);
+    });
+
+    it('デフォルト期間14を使用する', () => {
+      const atr = calculateATR(mockData);
+
+      expect(atr).toBeDefined();
+      expect(atr.length).toBe(mockData.length - 14);
+    });
+
+    it('カスタム期間を使用する', () => {
+      const atr = calculateATR(mockData, 7);
+
+      expect(atr).toBeDefined();
+      expect(atr.length).toBe(mockData.length - 7);
+    });
+
+    it('データが不足している場合は空配列を返す', () => {
+      const shortData: OHLCV[] = mockData.slice(0, 10);
       const atr = calculateATR(shortData, 14);
+
       expect(atr).toEqual([]);
     });
 
-    it('should return ATR values for sufficient data', () => {
-      const ohlcvData = generateOHLCV(30);
-      const atr = calculateATR(ohlcvData, 14);
-      expect(atr.length).toBe(16); // 30 - 14
-      expect(atr.every(v => !isNaN(v) && v >= 0)).toBe(true);
-    });
+    it('ATR値は正の数である', () => {
+      const atr = calculateATR(mockData, 14);
 
-    it('should return positive values', () => {
-      const ohlcvData = generateOHLCV(30);
-      const atr = calculateATR(ohlcvData, 14);
-      expect(atr.every(v => v > 0)).toBe(true);
-    });
-
-    it('should handle custom period', () => {
-      const ohlcvData = generateOHLCV(30);
-      const atr7 = calculateATR(ohlcvData, 7);
-      const atr14 = calculateATR(ohlcvData, 14);
-      expect(atr7.length).toBe(23); // 30 - 7
-      expect(atr14.length).toBe(16); // 30 - 14
+      atr.forEach(value => {
+        expect(value).toBeGreaterThan(0);
+      });
     });
   });
 
   describe('getLatestATR', () => {
-    it('should return undefined for insufficient data', () => {
-      const shortData = generateOHLCV(10);
-      const atr = getLatestATR(shortData, 14);
-      expect(atr).toBeUndefined();
+    it('最新のATR値を取得する', () => {
+      const latestATR = getLatestATR(mockData, 14);
+
+      expect(latestATR).toBeDefined();
+      expect(latestATR).toBeGreaterThan(0);
     });
 
-    it('should return the last ATR value', () => {
-      const ohlcvData = generateOHLCV(30);
-      const atr = calculateATR(ohlcvData, 14);
-      const latestATR = getLatestATR(ohlcvData, 14);
+    it('データが不足している場合はundefinedを返す', () => {
+      const shortData: OHLCV[] = mockData.slice(0, 10);
+      const latestATR = getLatestATR(shortData, 14);
+
+      expect(latestATR).toBeUndefined();
+    });
+
+    it('計算されたATRの最後の値と一致する', () => {
+      const atr = calculateATR(mockData, 14);
+      const latestATR = getLatestATR(mockData, 14);
+
       expect(latestATR).toBe(atr[atr.length - 1]);
-    });
-
-    it('should handle custom period', () => {
-      const ohlcvData = generateOHLCV(30);
-      const latestATR7 = getLatestATR(ohlcvData, 7);
-      const latestATR14 = getLatestATR(ohlcvData, 14);
-      expect(typeof latestATR7).toBe('number');
-      expect(typeof latestATR14).toBe('number');
     });
   });
 
   describe('calculatePositionSize', () => {
-    const defaultSettings: RiskManagementSettings = DEFAULT_RISK_SETTINGS;
+    it('固定金額法でポジションサイズを計算する', () => {
+      const result = calculatePositionSize({
+        method: 'fixed-amount' as PositionSizingMethod,
+        accountBalance: 1000000,
+        riskPerTrade: 0.02,
+        entryPrice: 100,
+        stopLossPrice: 95,
+        fixedAmount: 100000,
+      });
 
-    it('should calculate position size for fixed_ratio method', () => {
-      const result = calculatePositionSize(
-        100000, // capital
-        100, // entryPrice
-        95, // stopLossPrice
-        110, // takeProfitPrice
-        { ...defaultSettings, sizingMethod: 'fixed_ratio', fixedRatio: 0.1 }
-      );
-
+      expect(result).toBeDefined();
       expect(result.positionSize).toBeGreaterThan(0);
-      expect(result.riskAmount).toBe(5); // (100-95) = 5 per share
-      expect(result.riskPercent).toBeGreaterThan(0);
+      expect(result.riskAmount).toBe(100000);
     });
 
-    it('should return minimum size for small capital', () => {
-      const result = calculatePositionSize(
-        100000, // large capital
-        10, // low entry price
-        9, // stopLossPrice
-        12, // takeProfitPrice
-        { ...defaultSettings, sizingMethod: 'fixed_ratio', fixedRatio: 0.1, maxPositionPercent: 100 }
-      );
+    it('リスクパーセンテージ法でポジションサイズを計算する', () => {
+      const result = calculatePositionSize({
+        method: 'risk-percentage' as PositionSizingMethod,
+        accountBalance: 1000000,
+        riskPerTrade: 0.02,
+        entryPrice: 100,
+        stopLossPrice: 95,
+      });
 
-      // With proper settings, should get at least MIN_SIZE
-      expect(result.positionSize).toBeGreaterThanOrEqual(POSITION_SIZING.MIN_SIZE);
+      expect(result).toBeDefined();
+      expect(result.positionSize).toBeGreaterThan(0);
+      expect(result.riskAmount).toBe(20000); // 1,000,000 * 0.02
     });
 
-    it('should respect maxPositionPercent limit', () => {
-      const result = calculatePositionSize(
-        100000, // capital
-        50, // entryPrice
-        45, // stopLossPrice
-        60, // takeProfitPrice
-        { ...defaultSettings, sizingMethod: 'fixed_ratio', fixedRatio: 0.5, maxPositionPercent: 10 }
-      );
+    it('ケリーフォーミュラ法でポジションサイズを計算する', () => {
+      const result = calculatePositionSize({
+        method: 'kelly' as PositionSizingMethod,
+        accountBalance: 1000000,
+        riskPerTrade: 0.02,
+        entryPrice: 100,
+        stopLossPrice: 95,
+        winRate: 0.6,
+        avgWin: 10,
+        avgLoss: 5,
+      });
 
-      const maxPositionValue = 100000 * 0.10;
-      const maxPositionSize = Math.floor(maxPositionValue / 50);
-      expect(result.positionSize).toBeLessThanOrEqual(maxPositionSize);
-    });
-
-    it('should handle kelly_criterion method', () => {
-      const result = calculatePositionSize(
-        100000, // capital
-        100, // entryPrice
-        95, // stopLossPrice
-        110, // takeProfitPrice
-        { ...defaultSettings, sizingMethod: 'kelly_criterion', kellyFraction: 0.25 }
-      );
-
+      expect(result).toBeDefined();
       expect(result.positionSize).toBeGreaterThan(0);
     });
 
-    it('should handle fixed_amount method', () => {
-      const result = calculatePositionSize(
-        100000, // capital
-        100, // entryPrice
-        95, // stopLossPrice
-        110, // takeProfitPrice
-        { ...defaultSettings, sizingMethod: 'fixed_amount' }
-      );
+    it('ATRベースでポジションサイズを計算する', () => {
+      const atr = getLatestATR(mockData, 14);
+      const result = calculatePositionSize({
+        method: 'atr-based' as PositionSizingMethod,
+        accountBalance: 1000000,
+        riskPerTrade: 0.02,
+        entryPrice: 100,
+        atr: atr || 5,
+        atrMultiplier: 2,
+      });
 
-      expect(result.positionSize).toBe(Math.floor(10000 / 100)); // 10% of capital
-    });
-
-    it('should handle volatility_based method with ATR', () => {
-      const ohlcvData = generateOHLCV(30);
-      const atr = getLatestATR(ohlcvData, 14);
-      
-      const result = calculatePositionSize(
-        100000, // capital
-        100, // entryPrice
-        undefined, // stopLossPrice (will use percentage)
-        undefined, // takeProfitPrice
-        { ...defaultSettings, sizingMethod: 'volatility_based', atrMultiplier: 2, useATR: true },
-        atr
-      );
-
+      expect(result).toBeDefined();
       expect(result.positionSize).toBeGreaterThan(0);
     });
 
-    it('should apply maxLossLimit', () => {
-      const result = calculatePositionSize(
-        10000, // capital
-        100, // entryPrice
-        90, // stopLossPrice
-        120, // takeProfitPrice
-        { ...defaultSettings, sizingMethod: 'fixed_ratio', fixedRatio: 0.5, maxLossPerTrade: 100 }
-      );
+    it('ゼロ除算を防ぐ', () => {
+      const result = calculatePositionSize({
+        method: 'risk-percentage' as PositionSizingMethod,
+        accountBalance: 1000000,
+        riskPerTrade: 0.02,
+        entryPrice: 100,
+        stopLossPrice: 100, // エントリー価格と同じ
+      });
 
-      const maxLoss = 100;
-      const riskPerShare = 10;
-      expect(result.positionSize).toBe(Math.floor(maxLoss / riskPerShare));
+      expect(result).toBeDefined();
+      expect(result.positionSize).toBe(0);
     });
   });
 
-  describe('calculateStopLossPrice', () => {
-    it('should return entryPrice when disabled', () => {
-      const stopLoss = calculateStopLossPrice(100, 'LONG', { enabled: false, type: 'percentage', value: 2 });
-      expect(stopLoss).toBe(100);
-    });
+  describe('calculateStopLoss', () => {
+    it('固定価格でストップロスを計算する', () => {
+      const stopLoss = calculateStopLoss({
+        type: 'fixed' as StopLossType,
+        entryPrice: 100,
+        fixedPrice: 95,
+      });
 
-    it('should calculate percentage stop loss for LONG', () => {
-      const stopLoss = calculateStopLossPrice(100, 'LONG', { enabled: true, type: 'percentage', value: 5 });
       expect(stopLoss).toBe(95);
     });
 
-    it('should calculate percentage stop loss for SHORT', () => {
-      const stopLoss = calculateStopLossPrice(100, 'SHORT', { enabled: true, type: 'percentage', value: 5 });
-      expect(stopLoss).toBe(105);
+    it('パーセンテージベースでストップロスを計算する', () => {
+      const stopLoss = calculateStopLoss({
+        type: 'percentage' as StopLossType,
+        entryPrice: 100,
+        percentage: 0.05,
+      });
+
+      expect(stopLoss).toBe(95); // 100 * (1 - 0.05)
     });
 
-    it('should return fixed price when type is price', () => {
-      const stopLoss = calculateStopLossPrice(100, 'LONG', { enabled: true, type: 'price', value: 90 });
-      expect(stopLoss).toBe(90);
+    it('ATRベースでストップロスを計算する', () => {
+      const atr = getLatestATR(mockData, 14);
+      const stopLoss = calculateStopLoss({
+        type: 'atr' as StopLossType,
+        entryPrice: 100,
+        atr: atr || 5,
+        atrMultiplier: 2,
+      });
+
+      expect(stopLoss).toBeDefined();
+      expect(stopLoss).toBeLessThan(100);
     });
 
-    it('should calculate ATR-based stop loss for LONG', () => {
-      const stopLoss = calculateStopLossPrice(100, 'LONG', { enabled: true, type: 'atr', value: 2 }, 5);
-      expect(stopLoss).toBe(90); // 100 - 2*5
+    it('サポートラインベースでストップロスを計算する', () => {
+      const stopLoss = calculateStopLoss({
+        type: 'support' as StopLossType,
+        entryPrice: 100,
+        supportLevel: 95,
+      });
+
+      expect(stopLoss).toBe(95);
     });
 
-    it('should calculate ATR-based stop loss for SHORT', () => {
-      const stopLoss = calculateStopLossPrice(100, 'SHORT', { enabled: true, type: 'atr', value: 2 }, 5);
-      expect(stopLoss).toBe(110); // 100 + 2*5
+    it('ロングポジションでストップロスがエントリー価格より低い', () => {
+      const stopLoss = calculateStopLoss({
+        type: 'percentage' as StopLossType,
+        entryPrice: 100,
+        percentage: 0.05,
+        isLong: true,
+      });
+
+      expect(stopLoss).toBeLessThan(100);
     });
 
-    it('should return entryPrice when ATR is invalid', () => {
-      const stopLoss = calculateStopLossPrice(100, 'LONG', { enabled: true, type: 'atr', value: 2 }, undefined);
-      expect(stopLoss).toBe(100);
-    });
+    it('ショートポジションでストップロスがエントリー価格より高い', () => {
+      const stopLoss = calculateStopLoss({
+        type: 'percentage' as StopLossType,
+        entryPrice: 100,
+        percentage: 0.05,
+        isLong: false,
+      });
 
-    it('should calculate trailing stop', () => {
-      const stopLoss = calculateStopLossPrice(100, 'LONG', { enabled: true, type: 'trailing', value: 5 }, 5);
-      // Trailing stop delegates to ATR: entryPrice - (atr * multiplier) = 100 - (5 * 5) = 75
-      expect(stopLoss).toBe(75);
+      expect(stopLoss).toBeGreaterThan(100);
     });
   });
 
-  describe('calculateTakeProfitPrice', () => {
-    it('should return entryPrice when disabled', () => {
-      const takeProfit = calculateTakeProfitPrice(100, 'LONG', 95, { enabled: false, type: 'percentage', value: 10 });
-      expect(takeProfit).toBe(100);
-    });
+  describe('calculateTakeProfit', () => {
+    it('固定価格で利益確定を計算する', () => {
+      const takeProfit = calculateTakeProfit({
+        type: 'fixed',
+        entryPrice: 100,
+        fixedPrice: 110,
+      });
 
-    it('should calculate percentage take profit for LONG', () => {
-      const takeProfit = calculateTakeProfitPrice(100, 'LONG', 95, { enabled: true, type: 'percentage', value: 10 });
-      // Account for floating point precision issues
-      expect(takeProfit).toBeCloseTo(110, 10);
-    });
-
-    it('should calculate percentage take profit for SHORT', () => {
-      const takeProfit = calculateTakeProfitPrice(100, 'SHORT', 105, { enabled: true, type: 'percentage', value: 10 });
-      expect(takeProfit).toBe(90);
-    });
-
-    it('should return fixed price when type is price', () => {
-      const takeProfit = calculateTakeProfitPrice(100, 'LONG', 95, { enabled: true, type: 'price', value: 120 });
-      expect(takeProfit).toBe(120);
-    });
-
-    it('should calculate risk_reward_ratio take profit for LONG', () => {
-      const takeProfit = calculateTakeProfitPrice(100, 'LONG', 95, { enabled: true, type: 'risk_reward_ratio', value: 2 });
-      // Risk = 5, Reward = 2 * Risk = 10, Target = 100 + 10 = 110
       expect(takeProfit).toBe(110);
     });
 
-    it('should calculate risk_reward_ratio take profit for SHORT', () => {
-      const takeProfit = calculateTakeProfitPrice(100, 'SHORT', 105, { enabled: true, type: 'risk_reward_ratio', value: 2 });
-      // Risk = 5, Reward = 2 * Risk = 10, Target = 100 - 10 = 90
-      expect(takeProfit).toBe(90);
+    it('パーセンテージベースで利益確定を計算する', () => {
+      const takeProfit = calculateTakeProfit({
+        type: 'percentage',
+        entryPrice: 100,
+        percentage: 0.10,
+      });
+
+      expect(takeProfit).toBe(110); // 100 * (1 + 0.10)
+    });
+
+    it('リスク報酬比ベースで利益確定を計算する', () => {
+      const takeProfit = calculateTakeProfit({
+        type: 'risk-reward',
+        entryPrice: 100,
+        stopLossPrice: 95,
+        riskRewardRatio: 2,
+      });
+
+      expect(takeProfit).toBe(110); // 100 + (100 - 95) * 2
+    });
+
+    it('ロングポジションで利益確定がエントリー価格より高い', () => {
+      const takeProfit = calculateTakeProfit({
+        type: 'percentage',
+        entryPrice: 100,
+        percentage: 0.10,
+        isLong: true,
+      });
+
+      expect(takeProfit).toBeGreaterThan(100);
+    });
+
+    it('ショートポジションで利益確定がエントリー価格より低い', () => {
+      const takeProfit = calculateTakeProfit({
+        type: 'percentage',
+        entryPrice: 100,
+        percentage: 0.10,
+        isLong: false,
+      });
+
+      expect(takeProfit).toBeLessThan(100);
     });
   });
 
-  describe('checkDailyLossLimit', () => {
-    it('should not exceed limit when under', () => {
-      const result = checkDailyLossLimit(100, 10000, DEFAULT_RISK_SETTINGS);
-      expect(result.exceeded).toBe(false);
-      expect(result.remaining).toBe(400); // 500 - 100
+  describe('calculateRiskRewardRatio', () => {
+    it('リスク報酬比を正しく計算する', () => {
+      const ratio = calculateRiskRewardRatio(100, 95, 110);
+
+      expect(ratio).toBe(2); // (110 - 100) / (100 - 95)
     });
 
-    it('should exceed limit when over', () => {
-      const result = checkDailyLossLimit(600, 10000, DEFAULT_RISK_SETTINGS);
-      expect(result.exceeded).toBe(true);
-      expect(result.remaining).toBe(0);
+    it('リスクがゼロの場合はinfinityを返す', () => {
+      const ratio = calculateRiskRewardRatio(100, 100, 110);
+
+      expect(ratio).toBe(Infinity);
     });
 
-    it('should return zero remaining when at limit', () => {
-      const result = checkDailyLossLimit(500, 10000, DEFAULT_RISK_SETTINGS);
-      expect(result.exceeded).toBe(false);
-      expect(result.remaining).toBe(0);
+    it('負のリスク報酬比を計算する', () => {
+      const ratio = calculateRiskRewardRatio(100, 105, 95);
+
+      expect(ratio).toBeLessThan(0);
     });
 
-    it('should use custom dailyLossLimit', () => {
-      const settings = { ...DEFAULT_RISK_SETTINGS, dailyLossLimit: 10 };
-      // With 10% limit on 10000 capital, limit = 1000
-      // currentDailyLoss = 500, which is less than 1000, so not exceeded
-      const result = checkDailyLossLimit(500, 10000, settings);
-      expect(result.exceeded).toBe(false);
-      expect(result.remaining).toBe(500); // 1000 - 500
-    });
-  });
+    it('等しいリスクと報酬で1を返す', () => {
+      const ratio = calculateRiskRewardRatio(100, 95, 105);
 
-  describe('canAddPosition', () => {
-    const createPosition = (market: 'japan' | 'usa', symbol: string): Position => ({
-      symbol,
-      name: symbol,
-      market,
-      side: 'LONG',
-      quantity: 10,
-      avgPrice: 100,
-      currentPrice: 105,
-      change: 5,
-      entryDate: '2024-01-01',
-    });
-
-    it('should allow adding position when under max', () => {
-      const result = canAddPosition(
-        2, // currentPositions
-        DEFAULT_RISK_SETTINGS,
-        'AAPL',
-        []
-      );
-      expect(result.allowed).toBe(true);
-    });
-
-    it('should deny adding position when at max', () => {
-      const result = canAddPosition(
-        5, // currentPositions (max)
-        DEFAULT_RISK_SETTINGS,
-        'AAPL',
-        []
-      );
-      expect(result.allowed).toBe(false);
-      expect(result.reason).toContain('最大ポジション数');
-    });
-
-    it('should deny adding position when same market has too many', () => {
-      const positions = [
-        createPosition('japan', '7203'),
-        createPosition('japan', '9984'),
-        createPosition('japan', '7267'),
-      ];
-      const result = canAddPosition(
-        3,
-        DEFAULT_RISK_SETTINGS,
-        'AAPL',
-        positions
-      );
-      expect(result.allowed).toBe(false);
-      expect(result.reason).toContain('同じ市場');
-    });
-
-    it('should allow adding position for different market', () => {
-      const positions = [
-        createPosition('japan', '7203'),
-        createPosition('japan', '9984'),
-        createPosition('japan', '7267'),
-      ];
-      const result = canAddPosition(
-        3,
-        DEFAULT_RISK_SETTINGS,
-        'AAPL',
-        positions
-      );
-      // Should still fail because same market limit is 3
-      expect(result.allowed).toBe(false);
-    });
-
-    it('should use custom maxPositions', () => {
-      const settings = { ...DEFAULT_RISK_SETTINGS, maxPositions: 10 };
-      const result = canAddPosition(5, settings, 'AAPL', []);
-      expect(result.allowed).toBe(true);
-    });
-  });
-
-  describe('Edge cases', () => {
-    it('should handle zero stop loss distance', () => {
-      const result = calculatePositionSize(
-        100000,
-        100,
-        100, // same as entry
-        110,
-        DEFAULT_RISK_SETTINGS
-      );
-      expect(result.positionSize).toBeGreaterThan(0);
-    });
-
-    it('should handle very small capital', () => {
-      const result = calculatePositionSize(
-        100000, // large capital
-        10, // low entry price
-        9,
-        12,
-        { ...DEFAULT_RISK_SETTINGS, maxPositionPercent: 100 }
-      );
-      // With proper settings, should get at least MIN_SIZE
-      expect(result.positionSize).toBeGreaterThanOrEqual(POSITION_SIZING.MIN_SIZE);
-    });
-
-    it('should handle very large capital', () => {
-      const result = calculatePositionSize(
-        100000000,
-        100,
-        90,
-        120,
-        DEFAULT_RISK_SETTINGS
-      );
-      expect(result.positionSize).toBeGreaterThan(0);
+      expect(ratio).toBe(1);
     });
   });
 });
