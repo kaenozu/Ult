@@ -533,6 +533,7 @@ export function logError(error: unknown, context: string): void {
     });
   } else if (error instanceof Error) {
     console.error(`[${timestamp}] [${context}] ${error.name}:`, {
+      name: error.name,
       message: error.message,
       stack: error.stack,
     });
