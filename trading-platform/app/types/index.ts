@@ -636,6 +636,28 @@ export interface APIErrorResult {
 export type APIResponse<T> = APIResult<T> | APIErrorResult;
 
 // ============================================================================
+// Enhanced Risk Management Types
+// ============================================================================
+
+export type {
+  PositionSizingConfig,
+  SizingResult,
+  CorrelationAnalysis,
+  CorrelationMatrix,
+  ConcentrationRisk,
+  HedgeRecommendation,
+  StressScenario,
+  StressTestResult,
+  MonteCarloConfig,
+  MonteCarloResult,
+  TradingBehaviorMetrics,
+  PsychologyAlert,
+  TradingSession,
+  MarketData,
+  RiskMetrics,
+} from './risk';
+
+// ============================================================================
 // Multi-Timeframe Trading Types
 // ============================================================================
 
