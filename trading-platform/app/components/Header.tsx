@@ -62,7 +62,7 @@ export const Header = memo(function Header() {
     setSelectedStock(stock);
     setSearchInput('');
     setShowResults(false);
-  }, [addToWatchlist, setSelectedStock]);
+  }, [addToWatchlist, setSelectedStock, setSearchInput, setShowResults]);
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -111,7 +111,7 @@ export const Header = memo(function Header() {
     } else if (e.key === 'Escape') {
       setShowResults(false);
     }
-  }, [searchQuery, searchResults, handleStockSelect]);
+  }, [searchQuery, searchResults, handleStockSelect, setShowResults]);
 
   return (
     <header className="h-14 flex items-center justify-between px-4 border-b border-[#233648] bg-[#101922] shrink-0 z-10">
