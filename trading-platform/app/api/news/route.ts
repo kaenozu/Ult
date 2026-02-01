@@ -4,15 +4,31 @@
  * ニュースデータAPI - ニュース記事を取得
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getGlobalNewsCollector } from '@/app/lib/nlp/NewsCollector';
+import { createApiHandler, getQueryParams, successResponse, generateCacheKey } from '@/app/lib/api/UnifiedApiClient';
+import { validateSymbol, validateField } from '@/app/lib/api/ApiValidator';
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
-    const { searchParams } = new URL(request.url);
-    const symbol = searchParams.get('symbol');
-    const keywords = searchParams.get('keywords');
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+export const GET = createApiHandler(
+  async (request: NextRequest) => {
+    const params = getQueryParams(request, ['symbol', 'keywords', 'limit']);
+    const { symbol, keywords, limit: limitStr } = params;
+
+    // Validate symbol if provided
+    if (symbol) {
+      const symbolError = validateSymbol(symbol, false);
+      if (symbolError) return symbolError;
+    }
+
+    // Validate and parse limit
+    const limit = parseInt(limitStr || '20', 10);
+    const limitError = validateField({
+      value: limit,
+      fieldName: 'limit',
+      min: 1,
+      max: 100,
+    });
+    if (limitError) return limitError;
 
     const newsCollector = getGlobalNewsCollector();
 
@@ -30,17 +46,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Limit results
     const limitedArticles = articles.slice(0, limit);
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       data: limitedArticles,
       count: limitedArticles.length,
       total: articles.length,
     });
-  } catch (error) {
-    console.error('[News API] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch news data' },
-      { status: 500 }
-    );
+  },
+  {
+    rateLimit: true,
+    cache: {
+      enabled: true,
+      ttl: 120000, // 2 minutes cache for news
+      keyGenerator: (req) => generateCacheKey(req, 'news'),
+    },
   }
-}
+);

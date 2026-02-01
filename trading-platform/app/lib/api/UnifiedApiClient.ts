@@ -38,9 +38,9 @@ export function createApiHandler<T = unknown>(
 ) {
   const { requireAuth: needsAuth = false, rateLimit = true, cache } = options;
 
-  // Create cache manager if caching is enabled
+  // Create cache manager if caching is enabled - cache the JSON data, not Response objects
   const cacheManager = cache?.enabled 
-    ? new CacheManager<NextResponse<ApiResponse<T>>>({ ttl: cache.ttl })
+    ? new CacheManager<ApiResponse<T>>({ ttl: cache.ttl })
     : null;
 
   return async (request: NextRequest): Promise<NextResponse<ApiResponse<T>>> => {
@@ -61,7 +61,9 @@ export function createApiHandler<T = unknown>(
       if (cacheManager && cache?.keyGenerator) {
         const cacheKey = cache.keyGenerator(request);
         const cached = cacheManager.get(cacheKey);
-        if (cached) return cached;
+        if (cached) {
+          return NextResponse.json(cached, { status: 200 });
+        }
       }
 
       // Execute handler
@@ -70,7 +72,10 @@ export function createApiHandler<T = unknown>(
       // Store in cache if enabled and successful
       if (cacheManager && cache?.keyGenerator && response.status === 200) {
         const cacheKey = cache.keyGenerator(request);
-        cacheManager.set(cacheKey, response);
+        // Clone and read the response to cache the data
+        const clonedResponse = response.clone();
+        const data = await clonedResponse.json() as ApiResponse<T>;
+        cacheManager.set(cacheKey, data);
       }
 
       return response;
@@ -108,7 +113,7 @@ export function getQueryParam(request: NextRequest, param: string): string | nul
 export async function parseJsonBody<T = unknown>(request: NextRequest): Promise<T> {
   try {
     return await request.json() as T;
-  } catch (error) {
+  } catch (_error) {
     throw new Error('Invalid JSON body');
   }
 }
