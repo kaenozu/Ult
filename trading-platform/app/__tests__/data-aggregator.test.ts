@@ -8,6 +8,7 @@
 import { marketClient } from '../lib/api/data-aggregator';
 import { idbClient } from '../lib/api/idb';
 import { mlPredictionService } from '../lib/mlPrediction';
+import type { APIErrorResult } from '@/app/types';
 
 jest.mock('../lib/api/idb', () => ({
   idbClient: {
@@ -160,7 +161,14 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
   });
 
   it('handles fetchMarketIndex failure gracefully', async () => {
-    const spy = jest.spyOn(marketClient, 'fetchOHLCV').mockResolvedValue({ success: false, data: null, source: 'error', error: 'Test error' } as any);
+    // Create a properly typed error result matching FetchResult<OHLCV[]>
+    const errorResult: APIErrorResult = {
+      success: false,
+      data: null,
+      source: 'error',
+      error: 'Test error'
+    };
+    const spy = jest.spyOn(marketClient, 'fetchOHLCV').mockResolvedValue(errorResult);
     const result = await marketClient.fetchMarketIndex('japan');
     // エラー時はdataが空配列になることを確認
     expect(result.data).toEqual([]);
