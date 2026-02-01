@@ -16,7 +16,6 @@ export { ReplayBuffer } from './ReplayBuffer';
 export type {
   State,
   Action,
-  ActionType,
   Experience,
   ExperienceBatch,
   RLConfig,
@@ -38,7 +37,7 @@ export type {
 } from './types';
 
 // Enums
-export { ActionType as ActionTypeEnum } from './types';
+export { ActionType } from './types';
 
 // Default configurations
 export { DEFAULT_RL_CONFIG, DEFAULT_ENVIRONMENT_CONFIG } from './types';
