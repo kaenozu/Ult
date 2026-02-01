@@ -36,27 +36,27 @@ class MarketDataClient {
     backoff: number = 500
   ): Promise<T> {
     try {
-      const res = await fetch(url, options);
+      const httpResponse = await fetch(url, options);
 
-      if (res.status === 429) {
+      if (httpResponse.status === 429) {
         // ... rate limit logic ...
-        const retryAfter = res.headers.get('Retry-After');
+        const retryAfter = httpResponse.headers.get('Retry-After');
         const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : backoff * 4;
         console.warn(`Rate limit (429) hit. Waiting ${waitTime}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         return this.fetchWithRetry(url, options, retries - 1, backoff * 2);
       }
 
-      const json = await res.json() as MarketResponse<T>;
+      const parsedResponse = await httpResponse.json() as MarketResponse<T>;
 
-      if (!res.ok || json.error) {
+      if (!httpResponse.ok || parsedResponse.error) {
         // Combine all error info
-        const debugInfo = json.debug ? ` (Debug: ${json.debug})` : '';
-        const details = json.details ? ` - ${json.details}` : '';
-        throw new Error(`${json.error || res.statusText}${details}${debugInfo}`);
+        const debugInfo = parsedResponse.debug ? ` (Debug: ${parsedResponse.debug})` : '';
+        const details = parsedResponse.details ? ` - ${parsedResponse.details}` : '';
+        throw new Error(`${parsedResponse.error || httpResponse.statusText}${details}${debugInfo}`);
       }
 
-      return json.data as T;
+      return parsedResponse.data as T;
     } catch (err) {
       if (retries > 0) {
         // ... retry logic ...
@@ -188,20 +188,20 @@ class MarketDataClient {
     try {
       const results = await Promise.all(chunks.map(async (chunk) => {
         const symbolStr = chunk.join(',');
-        const res = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
+        const httpResponse = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
 
-        if (res.status === 429) {
+        if (httpResponse.status === 429) {
           await new Promise(resolve => setTimeout(resolve, 2000));
           return this.fetchQuotes(chunk); // Retry chunk
         }
 
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error);
+        const parsedJson = await httpResponse.json();
+        if (!httpResponse.ok) throw new Error(parsedJson.error);
 
-        if (json.data && Array.isArray(json.data)) {
-          return json.data as QuoteData[];
-        } else if (json.symbol) {
-          return [json as QuoteData];
+        if (parsedJson.data && Array.isArray(parsedJson.data)) {
+          return parsedJson.data as QuoteData[];
+        } else if (parsedJson.symbol) {
+          return [parsedJson as QuoteData];
         }
         return [];
       }));

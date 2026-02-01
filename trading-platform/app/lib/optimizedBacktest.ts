@@ -125,32 +125,32 @@ class OptimizedBacktestEngine {
     period: number
   ): number[] {
     const results: number[] = new Array(highs.length).fill(0);
-    const tr: number[] = new Array(highs.length).fill(0);
+    const trueRange: number[] = new Array(highs.length).fill(0);
 
     // Calculate True Range for each bar
     for (let i = 0; i < highs.length; i++) {
       if (i === 0) {
-        tr[i] = highs[i] - lows[i];
+        trueRange[i] = highs[i] - lows[i];
       } else {
-        const hl = highs[i] - lows[i];
-        const hc = Math.abs(highs[i] - closes[i - 1]);
-        const lc = Math.abs(lows[i] - closes[i - 1]);
-        tr[i] = Math.max(hl, hc, lc);
+        const highLowRange = highs[i] - lows[i];
+        const highCloseGap = Math.abs(highs[i] - closes[i - 1]);
+        const lowCloseGap = Math.abs(lows[i] - closes[i - 1]);
+        trueRange[i] = Math.max(highLowRange, highCloseGap, lowCloseGap);
       }
     }
 
     // Calculate ATR using moving average
     let sum = 0;
-    for (let i = 0; i < tr.length; i++) {
+    for (let i = 0; i < trueRange.length; i++) {
       if (i < period) {
-        sum += tr[i];
+        sum += trueRange[i];
         results[i] = 0;
       } else if (i === period) {
-        sum += tr[i];
+        sum += trueRange[i];
         results[i] = sum / period;
       } else {
         // Use exponential smoothing for ATR
-        results[i] = (results[i - 1] * (period - 1) + tr[i]) / period;
+        results[i] = (results[i - 1] * (period - 1) + trueRange[i]) / period;
       }
     }
 
@@ -293,16 +293,16 @@ class OptimizedBacktestEngine {
     }
 
     // Calculate target and stop loss
-    const move = atr * 1.5;
+    const priceMove = atr * 1.5;
     let targetPrice = currentPrice;
     let stopLoss = currentPrice;
 
     if (type === 'BUY') {
-      targetPrice = currentPrice + move;
-      stopLoss = currentPrice - move / 2;
+      targetPrice = currentPrice + priceMove;
+      stopLoss = currentPrice - priceMove / 2;
     } else if (type === 'SELL') {
-      targetPrice = currentPrice - move;
-      stopLoss = currentPrice + move / 2;
+      targetPrice = currentPrice - priceMove;
+      stopLoss = currentPrice + priceMove / 2;
     }
 
     return {
@@ -314,7 +314,7 @@ class OptimizedBacktestEngine {
       targetPrice,
       stopLoss,
       reason: `RSI: ${rsi14.toFixed(1)}, SMA20: ${sma20.toFixed(2)}, MACD: ${(macdLine - macdSignal).toFixed(4)}`,
-      predictedChange: type === 'BUY' ? move / currentPrice * 100 : type === 'SELL' ? -move / currentPrice * 100 : 0,
+      predictedChange: type === 'BUY' ? priceMove / currentPrice * 100 : type === 'SELL' ? -priceMove / currentPrice * 100 : 0,
       predictionDate: data[index].date,
       marketContext: undefined,
       optimizedParams: { rsiPeriod: 14, smaPeriod: 20 },
