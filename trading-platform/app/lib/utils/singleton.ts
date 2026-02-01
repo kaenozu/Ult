@@ -49,12 +49,15 @@ export function createSingleton<T, TConfig = undefined>(
      * Reset the singleton instance (useful for testing)
      */
     resetInstance: (): void => {
-      // Call stop/cleanup if available
+      // Call cleanup methods if available
       if (instance && typeof (instance as any).stop === 'function') {
         (instance as any).stop();
       }
       if (instance && typeof (instance as any).cleanup === 'function') {
         (instance as any).cleanup();
+      }
+      if (instance && typeof (instance as any).disconnect === 'function') {
+        (instance as any).disconnect();
       }
       instance = null;
     },
@@ -97,8 +100,17 @@ export abstract class Singleton<T> {
 
   public static resetInstance<T>(this: new () => T): void {
     const instance = Singleton.instances.get(this);
-    if (instance && typeof (instance as any).cleanup === 'function') {
-      (instance as any).cleanup();
+    if (instance) {
+      // Call cleanup methods if available
+      if (typeof (instance as any).cleanup === 'function') {
+        (instance as any).cleanup();
+      }
+      if (typeof (instance as any).stop === 'function') {
+        (instance as any).stop();
+      }
+      if (typeof (instance as any).disconnect === 'function') {
+        (instance as any).disconnect();
+      }
     }
     Singleton.instances.delete(this);
   }
