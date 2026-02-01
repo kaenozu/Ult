@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // ============================================================================
 // Types
@@ -44,15 +44,7 @@ export function SentimentPanel({ symbol }: SentimentPanelProps): JSX.Element {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchSentimentData();
-    
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchSentimentData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [symbol]);
-
-  const fetchSentimentData = async (): Promise<void> => {
+  const fetchSentimentData = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -76,7 +68,15 @@ export function SentimentPanel({ symbol }: SentimentPanelProps): JSX.Element {
     } finally {
       setLoading(false);
     }
-  };
+  }, [symbol]);
+
+  useEffect(() => {
+    fetchSentimentData();
+    
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchSentimentData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchSentimentData]);
 
   const getSentimentColor = (score: number): string => {
     if (score > 0.6) return 'text-green-600 dark:text-green-400';
