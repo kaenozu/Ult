@@ -45,13 +45,23 @@ export interface PerformanceMark {
  */
 export function measurePerformance<T>(name: string, fn: () => T): T {
   const start = performance.now();
+  
+  // Create start mark before execution
+  if (typeof window !== 'undefined' && window.performance && window.performance.mark) {
+    try {
+      performance.mark(`${name}-start`);
+    } catch (e) {
+      // Performance API may not be available in all contexts
+    }
+  }
+  
   try {
     const result = fn();
     const duration = performance.now() - start;
     
+    // Create end mark and measure after execution
     if (typeof window !== 'undefined' && window.performance && window.performance.measure) {
       try {
-        performance.mark(`${name}-start`);
         performance.mark(`${name}-end`);
         performance.measure(name, `${name}-start`, `${name}-end`);
       } catch (e) {
@@ -127,9 +137,9 @@ export function withAsyncPerformanceTracking<T extends (...args: any[]) => Promi
 ): T {
   const functionName = name || fn.name || 'anonymous';
   
-  return ((...args: Parameters<T>) => {
-    return measurePerformanceAsync(functionName, () => fn(...args));
-  }) as T;
+  return async (...args: Parameters<T>) => {
+    return await measurePerformanceAsync(functionName, () => fn(...args));
+  } as T;
 }
 
 // =============================================================================

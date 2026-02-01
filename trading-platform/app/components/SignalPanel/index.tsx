@@ -21,7 +21,7 @@ interface SignalPanelProps {
 
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
   // Performance monitoring
-  const { measureAsync } = usePerformanceMonitor('SignalPanel');
+  const { measure, measureAsync } = usePerformanceMonitor('SignalPanel');
   
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
   const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
@@ -112,19 +112,19 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       setIsBacktesting(true);
       // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
       setTimeout(() => {
-        measureAsync('runBacktest', async () => {
-          try {
-            const result = runBacktest(stock.symbol, ohlcv, stock.market);
-            setBacktestResult(result);
-          } catch (e) {
-            console.error("Backtest failed", e);
-          } finally {
-            setIsBacktesting(false);
-          }
-        });
+        try {
+          const result = measure('runBacktest', () => 
+            runBacktest(stock.symbol, ohlcv, stock.market)
+          );
+          setBacktestResult(result);
+        } catch (e) {
+          console.error("Backtest failed", e);
+        } finally {
+          setIsBacktesting(false);
+        }
       }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measureAsync]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measure]);
 
   const aiTrades: PaperTrade[] = useMemo(() => {
     return trades

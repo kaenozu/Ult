@@ -17,20 +17,23 @@ export function BacktestPanel() {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<any>(null);
 
-  const runBacktest = () => {
+  const runBacktest = async () => {
     setIsRunning(true);
-    // Simulate backtest
-    measureAsync('simulateBacktest', async () => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setResults({
-        totalReturn: 25.5,
-        sharpeRatio: 1.8,
-        maxDrawdown: 12.3,
-        winRate: 58.2,
-        totalTrades: 156,
+    try {
+      // Simulate backtest
+      await measureAsync('simulateBacktest', async () => {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setResults({
+          totalReturn: 25.5,
+          sharpeRatio: 1.8,
+          maxDrawdown: 12.3,
+          winRate: 58.2,
+          totalTrades: 156,
+        });
       });
+    } finally {
       setIsRunning(false);
-    });
+    }
   };
 
   return (
