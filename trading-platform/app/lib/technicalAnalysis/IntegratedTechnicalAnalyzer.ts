@@ -15,7 +15,15 @@ import {
   ComprehensiveAnalysis,
   IntegratedAnalysisResult,
   IntegratedPrediction,
-  IntegratedForecast
+  IntegratedForecast,
+  CandlestickPatternResult,
+  ChartPatternResult,
+  GeometricPatternResult,
+  CycleDetectionResult,
+  SeasonalityResult,
+  FractalDimensionResult,
+  HurstExponentResult,
+  DiscreteWaveletResult
 } from './types';
 import { mean } from './mathUtils';
 

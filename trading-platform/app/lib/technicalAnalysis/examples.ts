@@ -135,10 +135,10 @@ export class RealTimeAnalyzer {
 /**
  * Example: Batch analysis of multiple symbols
  */
-export async function analyzeMulltipleeSymbols(
+export async function analyzeMultipleSymbols(
   dataBySymbol: Map<string, OHLCV[]>
-): Promise<Map<string, any>> {
-  const results = new Map();
+): Promise<Map<string, AnalysisResult>> {
+  const results = new Map<string, AnalysisResult>();
   
   for (const [symbol, data] of dataBySymbol.entries()) {
     if (data.length < 50) {
@@ -161,11 +161,18 @@ export async function analyzeMulltipleeSymbols(
   return results;
 }
 
+interface AnalysisResult {
+  signal?: string;
+  confidence?: number;
+  riskLevel?: string;
+  error?: string;
+}
+
 /**
  * Example: Filter symbols by technical criteria
  */
 export function filterByTechnicalCriteria(
-  analyses: Map<string, any>,
+  analyses: Map<string, AnalysisResult>,
   criteria: {
     minConfidence?: number;
     allowedSignals?: string[];
