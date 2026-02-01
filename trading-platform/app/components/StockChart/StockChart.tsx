@@ -31,9 +31,6 @@ export interface StockChartProps {
   signal?: Signal | null;
 }
 
-// 価格変動幅に基づいてチャート高さを計算（固定高さ）
-
-
 export const StockChart = memo(function StockChart({
   data, indexData = [], height: propHeight, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null,
 }: StockChartProps) {
