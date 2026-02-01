@@ -90,18 +90,45 @@ pip install -r requirements.txt
 
 ### 環境設定
 
-`.env.local` ファイルに以下の環境変数を設定：
+`.env.local` ファイルに環境変数を設定：
+
+```bash
+# .env.example をコピーして .env.local を作成
+cp .env.example .env.local
+
+# エディタで .env.local を編集
+```
+
+#### 必須環境変数（本番環境）
+
+本番環境では以下の環境変数が必須です：
 
 ```env
-# Alpha Vantage APIキー（無料プランでOK）
-# https://www.alphavantage.co/support/#api-key で取得
-ALPHA_VANTAGE_API_KEY=your_api_key_here
+# JWT認証シークレット（⚠️ 本番環境では必須）
+# 32文字以上のランダムな文字列を使用
+# 生成例: openssl rand -base64 32
+JWT_SECRET=your-secure-secret-key-here
 
-# Next.js設定
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# データベース接続URL（⚠️ 本番環境では必須）
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 
-# オプション: バックエンドAPI URL
-BACKEND_API_URL=http://localhost:8000
+# WebSocketサーバーURL
+# 開発: ws://localhost:3001
+# 本番: wss://your-domain.com/ws
+NEXT_PUBLIC_WS_URL=ws://localhost:3001
+```
+
+#### オプション環境変数
+
+```env
+# ログレベル（開発: debug、本番: info）
+LOG_LEVEL=info
+
+# アナリティクス有効化（開発: false、本番: true）
+ENABLE_ANALYTICS=false
+
+# レート制限（デフォルト: 100）
+RATE_LIMIT_MAX=100
 ```
 
 詳細な環境変数の説明は [`.env.example`](.env.example) を参照してください。
@@ -154,6 +181,38 @@ npm run test:e2e:ui
 
 # 特定のテストファイルのみ実行
 npm run test:e2e -- order-execution.spec.ts
+```
+
+### 📚 API Documentation
+
+This platform provides comprehensive OpenAPI (Swagger) documentation for all API endpoints.
+
+**Access the API Documentation:**
+- Local: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+- OpenAPI JSON: [http://localhost:3000/api/openapi.json](http://localhost:3000/api/openapi.json)
+
+**Available API Endpoints:**
+
+#### Market Data (`/api/market`)
+- **GET** - Fetch historical price data or real-time quotes
+- Parameters: `type`, `symbol`, `market`, `interval`, `startDate`
+- Supports both Japanese (Nikkei 225) and US markets (S&P 500, NASDAQ)
+
+#### Trading Platform (`/api/trading`)
+- **GET** - Get platform status, portfolio, signals, and risk metrics
+- **POST** - Execute trading actions (start/stop, place order, close position, create alert)
+- Requires JWT authentication
+
+#### Symbol-Specific Data (`/api/trading/{symbol}`)
+- **GET** - Get trading signal and market data for a specific symbol
+- Requires JWT authentication
+
+The API documentation provides:
+- Complete request/response schemas
+- Parameter validation rules
+- Example values
+- Error responses
+- Try-it-out functionality
 ```
 
 ### 🧪 テスト戦略
@@ -381,6 +440,25 @@ const weights = {
 
 ## 🔒 セキュリティ
 
+### 環境変数の検証
+
+本プラットフォームは、環境変数の自動検証機能を備えています：
+
+- **本番環境**: JWT_SECRET と DATABASE_URL が必須
+- **開発環境**: デフォルト値で動作可能
+- **型安全**: TypeScriptによる環境変数の型チェック
+- **検証エラー**: 起動時に不適切な設定を検出
+
+```typescript
+// 環境変数の型安全なアクセス
+import { getConfig } from '@/app/lib/config/env-validator';
+
+const config = getConfig();
+// config.jwt.secret - 検証済みの JWT シークレット
+// config.database.url - 検証済みのデータベース URL
+// config.websocket.url - 検証済みの WebSocket URL
+```
+
 ### セキュリティ対策
 
 - ✅ APIキーのサーバーサイド限定
@@ -389,6 +467,8 @@ const weights = {
 - ✅ XSS対策
 - ✅ CSRFトークン
 - ✅ レート制限
+- ✅ JWT認証の強制（本番環境）
+- ✅ 環境変数の検証と型安全
 
 ### セキュリティ監査
 
@@ -414,8 +494,14 @@ npm i -g vercel
 # プロジェクトルートでデプロイ
 vercel --prod
 
-# 環境変数を設定
-vercel env add ALPHA_VANTAGE_API_KEY
+# 必須環境変数を設定
+vercel env add JWT_SECRET
+vercel env add DATABASE_URL
+vercel env add NEXT_PUBLIC_WS_URL
+
+# オプション環境変数
+vercel env add LOG_LEVEL
+vercel env add ENABLE_ANALYTICS
 ```
 
 ### Dockerデプロイ
@@ -438,7 +524,11 @@ CMD ["npm", "start"]
 ```bash
 # ビルドと実行
 docker build -t trader-pro .
-docker run -p 3000:3000 -e ALPHA_VANTAGE_API_KEY=your_key trader-pro
+docker run -p 3000:3000 \
+  -e JWT_SECRET=your-secure-secret \
+  -e DATABASE_URL=postgresql://user:pass@host/db \
+  -e NEXT_PUBLIC_WS_URL=wss://your-domain.com/ws \
+  trader-pro
 ```
 
 ## 🔒 セキュリティベストプラクティス
@@ -446,12 +536,25 @@ docker run -p 3000:3000 -e ALPHA_VANTAGE_API_KEY=your_key trader-pro
 ### 環境変数の保護
 
 ```bash
-# ✅ 正しい: サーバーサイドのみで使用
-ALPHA_VANTAGE_API_KEY=your_key
+# ✅ 正しい: サーバーサイドのみで使用（本番環境必須）
+JWT_SECRET=your-secure-secret-key
+DATABASE_URL=postgresql://user:pass@host/db
 
-# ❌ 危険: クライアントサイドに露出
-NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY=your_key
+# ✅ 正しい: クライアントサイドで必要な場合のみ NEXT_PUBLIC_ プレフィックス
+NEXT_PUBLIC_WS_URL=wss://your-domain.com/ws
+
+# ❌ 危険: サーバー専用のシークレットに NEXT_PUBLIC_ を使わない
+NEXT_PUBLIC_JWT_SECRET=your_key  # ❌ セキュリティリスク！
 ```
+
+### 環境変数の検証
+
+アプリケーションは起動時に以下を自動検証します：
+
+- **本番環境**: JWT_SECRET と DATABASE_URL が設定されているか
+- **JWT_SECRET**: デフォルト値が使用されていないか
+- **型チェック**: 数値型の環境変数が正しい形式か
+- **エラー表示**: 不適切な設定に対する明確なエラーメッセージ
 
 ### 鍵管理のルール
 
@@ -461,18 +564,7 @@ NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY=your_key
    - Vercel: Project Settings > Environment Variables
    - Docker: `-e` フラグまたは `--env-file`
    - Kubernetes: Secret/ConfigMap
-
-### APIキーの検証
-
-アプリケーションは以下を検証します：
-- キーが設定されているか
-- プレースホルダー値でないか
-- 最小文字数（10文字以上）
-
-```typescript
-// 不安全なキーは自動的に拒否されます
-const insecurePatterns = ['your_api_key_here', 'example', 'placeholder', 'xxx'];
-```
+4. **JWT_SECRET生成**: `openssl rand -base64 32` で安全な鍵を生成
 
 ## 🤝 貢献方法
 
