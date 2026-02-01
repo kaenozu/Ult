@@ -78,7 +78,6 @@ if (typeof window !== 'undefined') {
 
 // Mock Canvas (needed for Chart.js)
 if (typeof HTMLCanvasElement !== 'undefined') {
-   
   HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
     fillRect: jest.fn(),
     clearRect: jest.fn(),
