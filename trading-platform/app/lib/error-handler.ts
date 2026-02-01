@@ -45,7 +45,7 @@ export enum ErrorType {
  * ユーザー向けのエラーメッセージマッピング
  * エラーコードからわかりやすいメッセージへ変換
  */
-const ERROR_MESSAGES: Record<string, { message: string; details?: string }> = {
+export const ERROR_MESSAGES: Record<string, { message: string; details?: string }> = {
   VALIDATION_ERROR: {
     message: '入力内容を確認してください',
     details: '無効なパラメータが含まれています',
