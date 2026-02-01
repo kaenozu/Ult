@@ -1,0 +1,61 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "search": "Search",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "header": {
+    "title": "Trader Pro - Stock Trading Platform",
+    "searchPlaceholder": "Search by stock name or code",
+    "searchLabel": "Stock Search",
+    "holdings": "Holdings",
+    "cash": "Cash",
+    "portfolioValue": "Portfolio Value",
+    "dailyPnL": "Daily P&L",
+    "toggleSidebar": "Open Watchlist",
+    "toggleOrderPanel": "Open Order Panel"
+  },
+  "page": {
+    "dataFetchError": "Failed to fetch data",
+    "noStockSelected": "No stock selected",
+    "noStockSelectedDescription": "Select a stock from the watchlist or search above to start trading.",
+    "searchStock": "Search for stocks",
+    "disclaimer": "Investment decisions are your own responsibility. Information on this site is not investment advice."
+  },
+  "chart": {
+    "intervalDailyOnly": "Only daily data is available for Japanese stocks"
+  },
+  "orderPanel": {
+    "title": "Order Panel",
+    "targetStock": "Target stock for trading"
+  },
+  "sidebar": {
+    "addStock": "Add new stock",
+    "addStockLabel": "Add new stock"
+  },
+  "table": {
+    "symbol": "Symbol",
+    "price": "Price",
+    "position": "Position",
+    "value": "Value",
+    "pnl": "P&L"
+  },
+  "alerts": {
+    "stockEvent": "Stock Event",
+    "stock": "Stock"
+  },
+  "riskMetrics": {
+    "targetPrice": "Target Price (R:R {ratio})"
+  },
+  "errorBoundary": {
+    "title": "An error occurred",
+    "titleWithName": "{name} Error",
+    "description": "An unexpected error occurred."
+  }
+}
