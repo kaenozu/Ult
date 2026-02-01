@@ -321,7 +321,7 @@ export class FractalAnalyzer {
     
     // Check if Hurst exponents are similar
     const hursts = results.map(r => r.hurstExponent);
-    const hurst Std = stdDev(hursts);
+    const hurstStd = stdDev(hursts);
     
     // Lower standard deviation = higher consistency
     return Math.max(0, 1 - hurstStd * 2);
@@ -363,7 +363,6 @@ export class FractalAnalyzer {
     const lastPrice = data[data.length - 1].close;
     const returns = calculateReturns(data.map(d => d.close));
     const avgReturn = mean(returns);
-    const volatility = stdDev(returns);
     
     for (let t = 1; t <= horizon; t++) {
       // Use Hurst exponent to adjust predictions

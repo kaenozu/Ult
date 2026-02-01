@@ -97,14 +97,14 @@ export class IntegratedTechnicalAnalyzer {
    * Integrate all analyses into a single result
    */
   private integrateAnalyses(components: {
-    candlestickPatterns: any[];
-    chartPatterns: any[];
-    geometricPatterns: any[];
-    cycleDetection: any;
-    seasonality: any;
-    fractalDimension: any;
-    hurstExponent: any;
-    waveletTransform: any;
+    candlestickPatterns: CandlestickPatternResult[];
+    chartPatterns: ChartPatternResult[];
+    geometricPatterns: GeometricPatternResult[];
+    cycleDetection: CycleDetectionResult;
+    seasonality: SeasonalityResult;
+    fractalDimension: FractalDimensionResult;
+    hurstExponent: HurstExponentResult;
+    waveletTransform: DiscreteWaveletResult;
   }): IntegratedAnalysisResult {
     // Calculate bullish/bearish scores
     let bullishScore = 0;
@@ -216,7 +216,7 @@ export class IntegratedTechnicalAnalyzer {
    */
   private generateComprehensiveRecommendations(
     integrated: IntegratedAnalysisResult,
-    data: OHLCV[]
+    _data: OHLCV[]
   ): string[] {
     const recommendations: string[] = [];
 

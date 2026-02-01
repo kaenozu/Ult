@@ -213,7 +213,7 @@ export class CycleAnalyzer {
   /**
    * Analyze daily patterns (intraday not available, return placeholder)
    */
-  private analyzeDailyPattern(data: OHLCV[]): SeasonalPattern {
+  private analyzeDailyPattern(_data: OHLCV[]): SeasonalPattern {
     return {
       periods: [],
       strength: 0
@@ -239,10 +239,10 @@ export class CycleAnalyzer {
   /**
    * Get seasonality-based recommendations
    */
-  private getSeasonalityRecommendations(data: OHLCV[]): string[] {
+  private getSeasonalityRecommendations(_data: OHLCV[]): string[] {
     const recommendations: string[] = [];
     
-    if (data.length < 20) {
+    if (_data.length < 20) {
       recommendations.push('Insufficient data for seasonality analysis');
       return recommendations;
     }
