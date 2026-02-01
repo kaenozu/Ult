@@ -92,20 +92,33 @@ npm run dev  # 開発サーバー起動
 
 ### 3. コミット前のチェック
 
+**Quality Gates チェック（推奨）**:
+```bash
+# 全品質ゲートを一度に確認（PR前に必須）
+./scripts/quality-gates-check.sh
+```
+
 **必須チェック**:
 ```bash
+cd trading-platform
+
 # Lint
 npm run lint
 
 # 型チェック
 npx tsc --noEmit
 
-# テスト
-npm test
+# テスト（カバレッジ ≥ 80%）
+npm run test:coverage
+
+# セキュリティチェック
+npm audit --audit-level=high
 
 # ビルド
 npm run build
 ```
+
+これらすべてのチェックが通らないと、PR の Quality Gates ワークフローが失敗します。
 
 ### 4. コミット
 
