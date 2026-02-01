@@ -55,7 +55,10 @@ export const StockChart = memo(function StockChart({
     extendedData,
     signal,
     market,
-    hoveredIdx
+    hoveredIdx,
+    accuracyData: accuracyData ? {
+      predictionError: accuracyData.predictionError || 1.0
+    } : null
   });
 
   // 2. Chart Options Hook
