@@ -2,7 +2,7 @@
 
 import { Stock } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { isTSEOpen, getMarketStatusMessage, formatNextOpenTime } from '@/app/lib/market-hours';
 
 interface OrderBookProps {
@@ -17,33 +17,31 @@ interface TSEStatus {
 }
 
 export function OrderBook({ stock }: OrderBookProps) {
-  const [tseStatus, setTseStatus] = useState<TSEStatus | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+  // Memoize TSE status based on current time
+  const tseStatus = useMemo<TSEStatus | null>(() => {
+    if (stock?.market !== 'japan') {
+      return null;
+    }
+
+    const status = isTSEOpen(new Date(currentTime));
+    return {
+      isOpen: status.isOpen,
+      message: getMarketStatusMessage(status),
+      tradingSession: status.tradingSession,
+      nextOpenTime: status.nextOpenTime ? formatNextOpenTime(status.nextOpenTime) : undefined,
+    };
+  }, [stock?.market, currentTime]);
 
   useEffect(() => {
-    // Update TSE status for Japanese stocks
+    // Update time every minute for Japanese stocks
     if (stock?.market === 'japan') {
-      const status = isTSEOpen();
-      setTseStatus({
-        isOpen: status.isOpen,
-        message: getMarketStatusMessage(status),
-        tradingSession: status.tradingSession,
-        nextOpenTime: status.nextOpenTime ? formatNextOpenTime(status.nextOpenTime) : undefined,
-      });
-
-      // Update every minute
       const interval = setInterval(() => {
-        const status = isTSEOpen();
-        setTseStatus({
-          isOpen: status.isOpen,
-          message: getMarketStatusMessage(status),
-          tradingSession: status.tradingSession,
-          nextOpenTime: status.nextOpenTime ? formatNextOpenTime(status.nextOpenTime) : undefined,
-        });
+        setCurrentTime(Date.now());
       }, 60000);
 
       return () => clearInterval(interval);
-    } else {
-      setTseStatus(null);
     }
   }, [stock?.market]);
 
