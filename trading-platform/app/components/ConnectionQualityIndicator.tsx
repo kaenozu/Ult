@@ -114,7 +114,7 @@ function getStatusLabel(status: WebSocketStatus): string {
  * Format latency for display
  */
 function formatLatency(latency: number): string {
-  if (latency === 0 || latency === Infinity) return '-';
+  if (!isFinite(latency) || latency === 0) return '-';
   return `${Math.round(latency)}ms`;
 }
 
