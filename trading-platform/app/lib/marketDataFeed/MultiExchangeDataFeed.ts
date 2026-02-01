@@ -745,20 +745,13 @@ export class MultiExchangeDataFeed extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-let globalDataFeed: MultiExchangeDataFeed | null = null;
+import { createSingleton } from '../utils/singleton';
 
-export function getGlobalDataFeed(config?: Partial<DataFeedConfig>): MultiExchangeDataFeed {
-  if (!globalDataFeed) {
-    globalDataFeed = new MultiExchangeDataFeed(config);
-  }
-  return globalDataFeed;
-}
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<DataFeedConfig>) => new MultiExchangeDataFeed(config)
+);
 
-export function resetGlobalDataFeed(): void {
-  if (globalDataFeed) {
-    globalDataFeed.disconnect();
-    globalDataFeed = null;
-  }
-}
+export const getGlobalDataFeed = getInstance;
+export const resetGlobalDataFeed = resetInstance;
 
 export default MultiExchangeDataFeed;
