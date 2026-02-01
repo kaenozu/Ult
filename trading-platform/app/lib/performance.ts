@@ -123,9 +123,10 @@ export function withPerformanceTracking<T extends (...args: any[]) => any>(
 ): T {
   const functionName = name || fn.name || 'anonymous';
   
-  return ((...args: Parameters<T>) => {
+  const wrapped = (...args: Parameters<T>) => {
     return measurePerformance(functionName, () => fn(...args));
-  }) as T;
+  };
+  return wrapped as T;
 }
 
 /**
@@ -137,9 +138,10 @@ export function withAsyncPerformanceTracking<T extends (...args: any[]) => Promi
 ): T {
   const functionName = name || fn.name || 'anonymous';
   
-  return async (...args: Parameters<T>) => {
+  const wrapped = async (...args: Parameters<T>) => {
     return measurePerformanceAsync(functionName, () => fn(...args));
-  } as T;
+  };
+  return wrapped as T;
 }
 
 // =============================================================================
