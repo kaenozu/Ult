@@ -39,19 +39,19 @@ jobs:
         working-directory: ./trading-platform
         run: |
           echo "Running tests with coverage..."
-          npm run test:coverage > coverage-output.txt 2>&1 || true
+          # Run tests and capture exit code
+          set +e  # Don't exit on error
+          npm run test:coverage
+          TEST_EXIT_CODE=$?
+          set -e  # Re-enable exit on error
           
-          # Extract coverage summary
-          cat coverage-output.txt
-          
-          # Check if coverage meets threshold (configured in jest.config.js)
-          if grep -q "Coverage threshold" coverage-output.txt; then
-            echo "❌ Coverage threshold not met!"
-            echo "coverage_passed=false" >> $GITHUB_OUTPUT
-            exit 1
-          else
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
             echo "✅ Coverage threshold met (≥80%)"
             echo "coverage_passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Coverage threshold not met or tests failed!"
+            echo "coverage_passed=false" >> $GITHUB_OUTPUT
+            exit 1
           fi
 
       # TypeScript Type Check (0 errors)
