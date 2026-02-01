@@ -7,6 +7,7 @@ import {
     calculateBollingerBands,
     calculateATR as utilsCalculateATR
 } from './utils';
+import { TECHNICAL_INDICATORS } from './constants';
 
 /**
  * テクニカル指標計算サービス
@@ -89,7 +90,7 @@ class TechnicalIndicatorService {
      * if (currentRSI < 30) console.log('売られすぎ');
      * ```
      */
-    calculateRSI(prices: number[], period: number = 14): number[] {
+    calculateRSI(prices: number[], period: number = TECHNICAL_INDICATORS.RSI_PERIOD): number[] {
         return calculateRSI(prices, period);
     }
 
@@ -115,9 +116,9 @@ class TechnicalIndicatorService {
      */
     calculateMACD(
         prices: number[],
-        fastPeriod: number = 12,
-        slowPeriod: number = 26,
-        signalPeriod: number = 9
+        fastPeriod: number = TECHNICAL_INDICATORS.MACD_FAST,
+        slowPeriod: number = TECHNICAL_INDICATORS.MACD_SLOW,
+        signalPeriod: number = TECHNICAL_INDICATORS.MACD_SIGNAL
     ): { macd: number[]; signal: number[]; histogram: number[] } {
         return calculateMACD(prices, fastPeriod, slowPeriod, signalPeriod);
     }
@@ -144,8 +145,8 @@ class TechnicalIndicatorService {
      */
     calculateBollingerBands(
         prices: number[],
-        period: number = 20,
-        stdDev: number = 2
+        period: number = TECHNICAL_INDICATORS.BB_PERIOD,
+        stdDev: number = TECHNICAL_INDICATORS.BB_STD_DEV
     ): { upper: number[]; middle: number[]; lower: number[] } {
         return calculateBollingerBands(prices, period, stdDev);
     }
@@ -167,7 +168,7 @@ class TechnicalIndicatorService {
      * const stopLoss = currentPrice - (currentATR * 2); // ATRの2倍でストップロス設定
      * ```
      */
-    calculateATR(ohlcv: OHLCV[], period: number = 14): number[] {
+    calculateATR(ohlcv: OHLCV[], period: number = TECHNICAL_INDICATORS.ATR_PERIOD): number[] {
         const highs = ohlcv.map(d => d.high);
         const lows = ohlcv.map(d => d.low);
         const closes = ohlcv.map(d => d.close);
