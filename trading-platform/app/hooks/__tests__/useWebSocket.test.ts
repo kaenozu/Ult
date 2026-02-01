@@ -109,12 +109,12 @@ describe('useWebSocket', () => {
       }
     });
 
-    // Wait for state update
+    // Wait for batcher to process (150ms batch window + buffer)
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 200));
     });
 
-    // Message should be set (may need to check with more flexibility)
+    // Message should be set after batch processing
     expect(result.current.lastMessage).toBeTruthy();
     if (result.current.lastMessage) {
       expect(result.current.lastMessage.type).toBe('signal');
