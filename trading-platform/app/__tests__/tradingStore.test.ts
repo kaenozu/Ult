@@ -85,7 +85,7 @@ describe('tradingStore', () => {
 
   describe('processAITrades', () => {
     it('enters a LONG position', () => {
-      const signal: Signal = { type: 'BUY', confidence: 90, targetPrice: 110, stopLoss: 90, type: 'BUY' } as any;
+      const signal: Signal = { type: 'BUY', confidence: 90, targetPrice: 110, stopLoss: 90 } as any;
       const { processAITrades } = useTradingStore.getState();
       processAITrades('AAPL', 100, signal);
       expect(useTradingStore.getState().aiStatus.trades).toHaveLength(1);
