@@ -12,10 +12,31 @@ import {
 } from '../lib/error-handler';
 import { APIError, ValidationError } from '../types';
 
-// Mock NextResponse
+// Mock NextResponse - returns a properly typed mock response
+interface MockResponse {
+    body: Record<string, any>;
+    status: number;
+    headers: Headers;
+    ok: boolean;
+    json(): Promise<Record<string, any>>;
+    text(): Promise<string>;
+    clone(): MockResponse;
+}
+
 jest.mock('next/server', () => ({
     NextResponse: {
-        json: jest.fn((body, init) => ({ body, init }))
+        json: jest.fn((body: Record<string, any>, init?: { status?: number }): MockResponse => {
+            const status = init?.status || 200;
+            return {
+                body,
+                status,
+                headers: new Headers(),
+                ok: status >= 200 && status < 300,
+                json: () => Promise.resolve(body),
+                text: () => Promise.resolve(JSON.stringify(body)),
+                clone: function() { return { ...this }; }
+            };
+        })
     }
 }));
 
@@ -25,11 +46,11 @@ describe('error-handler', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env.NODE_ENV = 'test';
+        (process.env as any).NODE_ENV = 'test';
     });
 
     afterAll(() => {
-        process.env.NODE_ENV = originalEnv;
+        (process.env as any).NODE_ENV = originalEnv;
         mockConsoleError.mockRestore();
     });
 
@@ -60,9 +81,9 @@ describe('error-handler', () => {
     describe('handleApiError', () => {
         it('handles standard Error objects', () => {
             const error = new Error('Something went wrong');
-            const response = handleApiError(error);
+            const response = handleApiError(error) as MockResponse;
 
-            expect(response.init?.status).toBe(500);
+            expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
                 error: 'Something went wrong', // Default internal error message
                 code: ErrorType.INTERNAL
@@ -70,8 +91,8 @@ describe('error-handler', () => {
         });
 
         it('handles string errors', () => {
-            const response = handleApiError('String Error');
-            expect(response.init?.status).toBe(500);
+            const response = handleApiError('String Error') as MockResponse;
+            expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
                 error: 'String Error',
                 code: ErrorType.INTERNAL
@@ -79,8 +100,8 @@ describe('error-handler', () => {
         });
 
         it('handles unknown error types', () => {
-            const response = handleApiError(null); // Invalid type
-            expect(response.init?.status).toBe(500);
+            const response = handleApiError(null) as MockResponse; // Invalid type
+            expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
                 code: ErrorType.INTERNAL
             }));
@@ -89,9 +110,9 @@ describe('error-handler', () => {
         // Custom Error Classes Logic
         it('extracts info from ValidationError class', () => {
             const error = new ValidationError('Invalid Input', 'fieldA');
-            const response = handleApiError(error);
+            const response = handleApiError(error) as MockResponse;
 
-            expect(response.init?.status).toBe(400);
+            expect(response.status).toBe(400);
             expect(response.body).toEqual(expect.objectContaining({
                 error: '入力内容を確認してください',
                 code: 'VALIDATION_ERROR',
@@ -102,40 +123,40 @@ describe('error-handler', () => {
         it('extracts info from basic APIError with manual code', () => {
             const error = new APIError('Missing', 'NOT_FOUND', 404);
             const response = handleApiError(error);
-            expect(response.init?.status).toBe(404);
+            expect(response.status).toBe(404);
         });
 
         // Plain Object Fallback Logic
         it('extracts info from plain object with code (VALIDATION)', () => {
             const error = { code: 'VALIDATION_ERROR', message: 'Plain object error' };
-            const response = handleApiError(error);
+            const response = handleApiError(error) as MockResponse;
 
-            expect(response.init?.status).toBe(400);
+            expect(response.status).toBe(400);
             expect(response.body.code).toBe('VALIDATION_ERROR');
         });
 
         it('extracts info from plain object with code (RATE_LIMIT)', () => {
             const error = { code: 'RATE_LIMIT_ERROR', message: 'Slow down' };
             const response = handleApiError(error);
-            expect(response.init?.status).toBe(429);
+            expect(response.status).toBe(429);
         });
 
         it('extracts info from plain object with code (NETWORK)', () => {
             const error = { code: 'NETWORK_ERROR', message: 'No net' };
             const response = handleApiError(error);
-            expect(response.init?.status).toBe(502);
+            expect(response.status).toBe(502);
         });
 
         it('respects explicitly provided status code', () => {
             const error = new Error('Custom Status Error');
             const response = handleApiError(error, 'API', 418);
-            expect(response.init?.status).toBe(418);
+            expect(response.status).toBe(418);
         });
 
         it('includes debug info in non-production', () => {
-            process.env.NODE_ENV = 'development';
+            (process.env as any).NODE_ENV = 'development';
             const error = new Error('Debug Me');
-            const response = handleApiError(error);
+            const response = handleApiError(error) as MockResponse;
 
             expect(response.body).toHaveProperty('debug');
             expect(response.body.debug).toEqual(expect.objectContaining({
@@ -144,17 +165,17 @@ describe('error-handler', () => {
         });
 
         it('excludes debug info in production', () => {
-            process.env.NODE_ENV = 'production';
+            (process.env as any).NODE_ENV = 'production';
             const error = new Error('Hide Me');
-            const response = handleApiError(error);
+            const response = handleApiError(error) as MockResponse;
 
             expect(response.body).not.toHaveProperty('debug');
         });
 
         it('includes details if available in mapping', () => {
-            process.env.NODE_ENV = 'development';
+            (process.env as any).NODE_ENV = 'development';
             const error = { code: 'VALIDATION_ERROR' }; // Should trigger mapping with details
-            const response = handleApiError(error);
+            const response = handleApiError(error) as MockResponse;
             expect(response.body).toHaveProperty('details');
             expect(response.body.details).toBe('無効なパラメータが含まれています');
         });
@@ -162,8 +183,8 @@ describe('error-handler', () => {
 
     describe('Helper functions', () => {
         it('validationError creates 400 response', () => {
-            const res = validationError('Bad Input', 'fieldA');
-            expect(res.init?.status).toBe(400);
+            const res = validationError('Bad Input', 'fieldA') as MockResponse;
+            expect(res.status).toBe(400);
             expect(res.body).toEqual({
                 error: 'Bad Input',
                 code: ErrorType.VALIDATION,
@@ -172,23 +193,23 @@ describe('error-handler', () => {
         });
 
         it('notFoundError creates 404 response', () => {
-            const res = notFoundError();
-            expect(res.init?.status).toBe(404);
+            const res = notFoundError() as MockResponse;
+            expect(res.status).toBe(404);
             expect(res.body.code).toBe(ErrorType.NOT_FOUND);
 
-            const res2 = notFoundError('Custom Not Found');
+            const res2 = notFoundError('Custom Not Found') as MockResponse;
             expect(res2.body.error).toBe('Custom Not Found');
         });
 
         it('rateLimitError creates 429 response', () => {
-            const res = rateLimitError();
-            expect(res.init?.status).toBe(429);
+            const res = rateLimitError() as MockResponse;
+            expect(res.status).toBe(429);
             expect(res.body.code).toBe(ErrorType.RATE_LIMIT);
         });
 
         it('internalError creates 500 response', () => {
-            const res = internalError('Fatal');
-            expect(res.init?.status).toBe(500);
+            const res = internalError('Fatal') as MockResponse;
+            expect(res.status).toBe(500);
             expect(res.body.error).toBe('Fatal');
         });
     });
