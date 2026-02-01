@@ -61,7 +61,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
 
   // Ref to store backtest timer ID for cleanup
-  const backtestTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const backtestTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
   // Custom Hooks

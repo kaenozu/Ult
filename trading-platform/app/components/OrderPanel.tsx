@@ -53,7 +53,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Ref to store success timer ID for cleanup
-  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const successTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cleanup timer on unmount to prevent memory leaks
   useEffect(() => {
