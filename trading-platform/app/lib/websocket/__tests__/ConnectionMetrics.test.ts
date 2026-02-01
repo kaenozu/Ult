@@ -21,8 +21,7 @@ describe('ConnectionMetricsTracker', () => {
     
     // Mock Date.now for deterministic tests
     let mockTime = 1000000;
-    Date.now = jest.fn(() => mockTime) as unknown as () => number;
-    (Date.now as jest.Mock).mockImplementation(() => mockTime++);
+    Date.now = jest.fn().mockImplementation(() => mockTime++) as unknown as () => number;
   });
 
   afterEach(() => {
