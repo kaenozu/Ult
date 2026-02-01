@@ -5,3 +5,7 @@
 ## 2024-05-24 - ARIA Tab Accessibility Pitfall
 **Learning:** Adding `role="tab"` with `tabIndex={-1}` on inactive tabs *without* implementing arrow key navigation (Roving Tabindex) breaks keyboard accessibility entirely. It removes tabs from the natural tab sequence.
 **Action:** For simple tab implementations, either implement full arrow key navigation handlers or avoid setting `tabIndex` manually (letting them default to naturally tabbable `0`), ensuring all tabs remain reachable via Tab key.
+
+## 2026-02-01 - Div-based Toggle Buttons
+**Learning:** Found toggle switches implemented as `div` elements with `onClick` handlers. This pattern is inaccessible to screen readers as it lacks `role="switch"` and keyboard focus support.
+**Action:** Refactor to use native `<button>` elements with `role="switch"` and `aria-checked`. Ensure visual toggle state matches ARIA state.
