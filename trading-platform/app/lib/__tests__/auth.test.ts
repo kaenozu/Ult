@@ -1,5 +1,6 @@
-import { generateAuthToken } from '../auth';
+import { generateAuthToken, verifyAuthToken, requireAuth, getAuthUser } from '../auth';
 import jwt from 'jsonwebtoken';
+import { resetConfig } from '../config/env-validator';
 
 // Simple mock for NextRequest since we only need headers
 class MockNextRequest {
@@ -23,6 +24,12 @@ describe('Authentication Module', () => {
   // Set a test secret for consistent testing
   beforeAll(() => {
     process.env.JWT_SECRET = 'test-secret-key';
+    resetConfig(); // Reset config cache before all tests
+  });
+
+  beforeEach(() => {
+    // Reset config cache before each test to pick up env changes
+    resetConfig();
   });
 
   describe('generateAuthToken', () => {
