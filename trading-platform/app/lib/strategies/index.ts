@@ -16,3 +16,9 @@ export type {
   StrategyResult,
   StrategyConfig,
 } from './WinningStrategyEngine';
+
+// Multi-Timeframe Strategy
+export {
+  MultiTimeFrameStrategy,
+  multiTimeFrameStrategy,
+} from './MultiTimeFrameStrategy';
