@@ -6,6 +6,7 @@ import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 import { useEffect, memo, useCallback, useMemo, useState, useRef } from 'react';
+import { usePerformanceMonitor } from '@/app/lib/performance';
 
 // Memoized Stock Row
 const StockRow = memo(({
@@ -82,6 +83,7 @@ interface StockTableProps {
 }
 
 export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange = true, showVolume = true }: StockTableProps) => {
+  const { measureAsync } = usePerformanceMonitor('StockTable');
   const { setSelectedStock } = useUIStore();
   const { batchUpdateStockData, removeFromWatchlist } = useWatchlistStore();
   const [pollingInterval, setPollingInterval] = useState(60000);
@@ -108,28 +110,30 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
   useEffect(() => {
     let mounted = true;
     const fetchQuotes = async () => {
-      const symbols = symbolKey.split(',').filter(Boolean);
-      if (symbols.length === 0) return;
+      await measureAsync('fetchQuotes', async () => {
+        const symbols = symbolKey.split(',').filter(Boolean);
+        if (symbols.length === 0) return;
 
-      const quotes = await marketClient.fetchQuotes(symbols);
+        const quotes = await marketClient.fetchQuotes(symbols);
 
-      if (mounted && quotes.length > 0) {
-        const updates = quotes
-          .filter(q => q && q.symbol)
-          .map(q => ({
-            symbol: q.symbol,
-            data: {
-              price: q.price,
-              change: q.change,
-              changePercent: q.changePercent,
-              volume: q.volume,
-            }
-          }));
+        if (mounted && quotes.length > 0) {
+          const updates = quotes
+            .filter(q => q && q.symbol)
+            .map(q => ({
+              symbol: q.symbol,
+              data: {
+                price: q.price,
+                change: q.change,
+                changePercent: q.changePercent,
+                volume: q.volume,
+              }
+            }));
 
-        if (updates.length > 0) {
-          batchUpdateStockData(updates);
+          if (updates.length > 0) {
+            batchUpdateStockData(updates);
+          }
         }
-      }
+      });
     };
 
     fetchQuotes();
@@ -141,7 +145,7 @@ export const StockTable = memo(({ stocks, onSelect, selectedSymbol, showChange =
         clearInterval(intervalRef.current);
       }
     };
-  }, [symbolKey, batchUpdateStockData, pollingInterval]);
+  }, [symbolKey, batchUpdateStockData, pollingInterval, measureAsync]);
 
   const handleSelect = useCallback((stock: Stock) => {
     setSelectedStock(stock);
