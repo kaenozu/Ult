@@ -501,13 +501,6 @@ NEXT_PUBLIC_JWT_SECRET=your_key  # ❌ セキュリティリスク！
    - Docker: `-e` フラグまたは `--env-file`
    - Kubernetes: Secret/ConfigMap
 4. **JWT_SECRET生成**: `openssl rand -base64 32` で安全な鍵を生成
-- プレースホルダー値でないか
-- 最小文字数（10文字以上）
-
-```typescript
-// 不安全なキーは自動的に拒否されます
-const insecurePatterns = ['your_api_key_here', 'example', 'placeholder', 'xxx'];
-```
 
 ## 🤝 貢献方法
 

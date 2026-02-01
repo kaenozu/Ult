@@ -216,4 +216,4 @@ RATE_LIMIT_MAX=abc  # ❌ Invalid
 
 - [Environment Variables in Next.js](https://nextjs.org/docs/app/building-your-application/configuring/environment-variables)
 - [Security Best Practices](../../SECURITY.md)
-- [Deployment Guide](../README.md#-デプロイ)
+- [Deployment Guide](../README.md#deployment)

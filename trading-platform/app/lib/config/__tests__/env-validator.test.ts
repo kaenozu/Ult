@@ -236,6 +236,14 @@ describe('Environment Validator', () => {
       expect(() => validateEnvironment()).toThrow(EnvironmentValidationError);
       expect(() => validateEnvironment()).toThrow('Invalid number for RATE_LIMIT_MAX');
     });
+
+    it('should throw error for invalid LOG_LEVEL', () => {
+      process.env.NODE_ENV = 'development';
+      process.env.LOG_LEVEL = 'trace';
+      
+      expect(() => validateEnvironment()).toThrow(EnvironmentValidationError);
+      expect(() => validateEnvironment()).toThrow('Invalid LOG_LEVEL: trace');
+    });
   });
 
   describe('getConfig', () => {
