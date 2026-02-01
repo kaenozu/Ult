@@ -5,6 +5,10 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_call:
+    secrets:
+      ALPHA_VANTAGE_API_KEY:
+        required: false
   workflow_dispatch:
 
 env:

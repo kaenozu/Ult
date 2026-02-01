@@ -42,3 +42,15 @@ __pycache__/
 .coverage
 htmlcov/
 .pytest_cache/
+venv/
+env/
+
+# Test reports
+coverage/
+playwright-report/
+test-results/
+monkey-test-report.json
+npm-audit-report.json
+security-report.txt
+coverage.xml
+*.lcov
