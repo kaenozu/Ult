@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
 import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
@@ -35,7 +35,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     // console.log('WebSocket status:', wsStatus);
   }, [wsStatus]);
 
-  useEffect(() => {
+  // Memoized WebSocket message handler
+  const handleWebSocketMessage = useCallback(() => {
     if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE') {
       const data = lastMessage.data as { symbol: string } | undefined;
       if (data && data.symbol === stock.symbol) {
@@ -43,6 +44,10 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       }
     }
   }, [lastMessage, stock.symbol]);
+
+  useEffect(() => {
+    handleWebSocketMessage();
+  }, [handleWebSocketMessage]);
 
   // Reset live signal when stock changes
   useEffect(() => {
