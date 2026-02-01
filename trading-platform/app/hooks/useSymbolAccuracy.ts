@@ -18,6 +18,13 @@ interface CacheEntry {
 const accuracyCache = new Map<string, CacheEntry>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Constants for error messages (can be moved to i18n later)
+const ERROR_MESSAGES = {
+  CALCULATION_FAILED: '精度計算に失敗しました',
+  INSUFFICIENT_DATA: 'Insufficient data for accuracy calculation',
+  API_FAILED: 'Failed to fetch historical data'
+};
+
 /**
  * useSymbolAccuracy - Hook to fetch and cache prediction accuracy for a symbol
  * 
@@ -53,6 +60,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     // Abort previous request if still running
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
 
     const controller = new AbortController();
@@ -89,7 +97,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
         
         if (!accuracyResult) {
-          throw new Error('Insufficient data for accuracy calculation');
+          throw new Error(ERROR_MESSAGES.INSUFFICIENT_DATA);
         }
 
         const predError = calculatePredictionError(historicalData);
@@ -121,7 +129,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         
         // Only update error state if the symbol hasn't changed
         if (stock.symbol === currentSymbol && stock.market === currentMarket) {
-          setError('精度計算に失敗しました');
+          setError(ERROR_MESSAGES.CALCULATION_FAILED);
           
           // Try to calculate with existing OHLCV data as fallback
           if (ohlcv.length >= 252) {

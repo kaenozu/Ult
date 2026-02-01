@@ -4,6 +4,16 @@ import { Badge } from '@/app/components/ui/Badge';
 import { cn } from '@/app/lib/utils';
 import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
+// Constants for accuracy calculations
+const PERCENTAGE_MULTIPLIER = 100;
+const ERROR_DECIMAL_PLACES = 1;
+
+// Accuracy level thresholds
+const ACCURACY_THRESHOLDS = {
+  HIGH: 60,
+  MEDIUM: 50
+} as const;
+
 interface AccuracyBadgeProps {
   hitRate: number;
   totalTrades: number;
@@ -40,13 +50,13 @@ export function AccuracyBadge({
     icon: React.ReactNode;
     label: string;
   } => {
-    if (rate >= 60) {
+    if (rate >= ACCURACY_THRESHOLDS.HIGH) {
       return {
         variant: 'success',
         icon: <TrendingUp className="w-3 h-3 mr-1" />,
         label: '高精度'
       };
-    } else if (rate >= 50) {
+    } else if (rate >= ACCURACY_THRESHOLDS.MEDIUM) {
       return {
         variant: 'default',
         icon: <TrendingUp className="w-3 h-3 mr-1 opacity-70" />,
@@ -101,7 +111,9 @@ export function AccuracyBadge({
       {predictionError !== undefined && (
         <div className="text-[10px] text-gray-400 flex flex-col">
           <span className="opacity-80">予測誤差</span>
-          <span className="font-mono">{(predictionError * 100).toFixed(1)}%</span>
+          <span className="font-mono">
+            {(predictionError * PERCENTAGE_MULTIPLIER).toFixed(ERROR_DECIMAL_PLACES)}%
+          </span>
         </div>
       )}
     </div>
