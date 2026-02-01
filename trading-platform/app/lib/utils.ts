@@ -304,6 +304,23 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
 }
 
 /**
+ * Calculate returns from price data
+ */
+export function calculateReturns(prices: number[]): number[] {
+  const returns: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    const prev = prices[i - 1];
+    const curr = prices[i];
+    if (prev && curr) {
+      returns.push((curr - prev) / prev);
+    } else {
+      returns.push(0);
+    }
+  }
+  return returns;
+}
+
+/**
  * Calculate Exponential Moving Average (EMA)
  */
 export function calculateEMA(prices: number[], period: number): number[] {

@@ -11,6 +11,7 @@ import { RightSidebar } from '@/app/components/RightSidebar';
 import { BottomPanel } from '@/app/components/BottomPanel';
 import { AdvancedIndicatorsChart } from '@/app/components/StockChart/AdvancedIndicatorsChart';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useStockData } from '@/app/hooks/useStockData';
