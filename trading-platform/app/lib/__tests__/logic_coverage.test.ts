@@ -6,7 +6,7 @@ import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import {
     calculatePredictionError, optimizeParameters, calculateVolumeProfile
 } from '../analysis';
-import { RSI_CONFIG, SMA_CONFIG } from '../constants';
+import { RSI_CONFIG, SMA_CONFIG } from '../../constants';
 
 describe('Utils Logic Coverage', () => {
     describe('formatCurrency', () => {

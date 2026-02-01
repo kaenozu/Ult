@@ -7,7 +7,7 @@ import { Stock, OHLCV } from '../../types';
 import { ENSEMBLE_WEIGHTS } from '../constants';
 
 // Mock technicalIndicatorService
-jest.mock('../TechnicalIndicatorService', () => ({
+jest.mock('../services/technical-indicator-service', () => ({
   technicalIndicatorService: {
     calculateSMA: jest.fn((prices: number[], period: number) => {
       const sma: number[] = [];
@@ -53,6 +53,19 @@ jest.mock('../TechnicalIndicatorService', () => ({
       lower: [],
     })),
     calculateATR: jest.fn(() => []),
+    calculateIndicators: jest.fn((data: OHLCV[]) => {
+      const prices = data.map(d => d.close);
+      // Simple mock implementation
+      return {
+        sma5: prices.map(p => p),
+        sma20: prices.map(p => p),
+        sma50: prices.map(p => p),
+        rsi: prices.map(() => 50),
+        macd: { macd: [], signal: [], histogram: [] },
+        bollingerBands: { upper: [], middle: [], lower: [] },
+        atr: [],
+      };
+    }),
   },
 }));
 

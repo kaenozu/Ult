@@ -4,15 +4,8 @@
  * このモジュールは、RF、XGB、LSTMの各モデルによる予測を実行する機能を提供します。
  */
 
-import { PredictionFeatures } from '../types/prediction-types';
-
-interface ModelPrediction {
-  rfPrediction: number;
-  xgbPrediction: number;
-  lstmPrediction: number;
-  ensemblePrediction: number;
-  confidence: number;
-}
+import { PredictionFeatures } from './feature-calculation-service';
+import { ModelPrediction } from '../../types';
 
 /**
  * ML予測モデルサービス

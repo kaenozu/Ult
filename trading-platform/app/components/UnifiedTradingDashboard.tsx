@@ -90,13 +90,13 @@ export function UnifiedTradingDashboard() {
               Pro Trading Platform
             </h1>
             <Badge 
-              variant={isRunning ? 'success' : 'default'}
+              variant={isRunning ? 'success' : 'secondary'}
               className={isRunning ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}
             >
               {isRunning ? 'Running' : 'Stopped'}
             </Badge>
             {status?.mode && (
-              <Badge variant="info" className="border-blue-500/30 text-blue-400">
+              <Badge variant="outline" className="border-blue-500/30 text-blue-400">
                 {status.mode.toUpperCase()} MODE
               </Badge>
             )}

@@ -176,7 +176,6 @@ class TestPlaywrightScraper:
             scraper = PlaywrightScraper(sample_config)
             # Don't initialize browser for unit tests
             scraper._playwright = Mock()
-            scraper._playwright.stop = AsyncMock()
             scraper.browser = Mock()
             scraper.context = Mock()
             scraper.page = Mock()
@@ -210,10 +209,6 @@ class TestPlaywrightScraper:
     @pytest.mark.asyncio
     async def test_cleanup(self, scraper: PlaywrightScraper):
         """Test resource cleanup."""
-        # Make close methods async
-        scraper.context.close = AsyncMock()
-        scraper.browser.close = AsyncMock()
-
         await scraper.cleanup()
 
         scraper.context.close.assert_called_once()
@@ -251,21 +246,7 @@ class TestPlaywrightScraper:
         scraper.config.username = "test_user"
         scraper.config.password = "test_pass"
 
-        # Track call count for wait_for_selector
-        call_count = [0]
-        
-        async def mock_wait_for_selector(*args, **kwargs):
-            """Mock that returns None for error selectors, element for username selector."""
-            call_count[0] += 1
-            # First call is for username selector (line 385)
-            if call_count[0] == 1:
-                mock_element = AsyncMock()
-                mock_element.text_content = AsyncMock(return_value=None)
-                return mock_element
-            # Subsequent calls are for error selectors (lines 419-422) - return None
-            return None
-        
-        scraper.page.wait_for_selector = AsyncMock(side_effect=mock_wait_for_selector)
+        scraper.page.wait_for_selector = AsyncMock()
         scraper.page.fill = AsyncMock()
         scraper.page.click = AsyncMock()
         scraper.page.wait_for_load_state = AsyncMock()

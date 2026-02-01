@@ -40,7 +40,7 @@ export class BacktestVisualizationUtils {
     let peak = initialEquity;
 
     result.trades.forEach((trade, index) => {
-      equity *= (1 + trade.profitPercent / 100);
+      equity *= (1 + (trade.profitPercent || 0) / 100);
       if (equity > peak) peak = equity;
 
       const drawdown = ((peak - equity) / peak) * 100;
@@ -48,7 +48,7 @@ export class BacktestVisualizationUtils {
 
       data.push({
         index,
-        date: trade.exitDate,
+        date: trade.exitDate || trade.entryDate, // fallback for incomplete trades
         equity: parseFloat(equity.toFixed(2)),
         returnPercent: parseFloat(returnPercent.toFixed(2)),
         drawdown: parseFloat(drawdown.toFixed(2)),
@@ -62,7 +62,7 @@ export class BacktestVisualizationUtils {
    * 取引結果のヒストグラムデータを生成
    */
   static calculateTradeDistribution(result: BacktestResult, binCount: number = 20): TradeDistribution {
-    const profits = result.trades.map(t => t.profitPercent);
+    const profits = result.trades.map(t => t.profitPercent || 0);
     if (profits.length === 0) {
       return { bins: [], avg: 0, median: 0, stdDev: 0 };
     }
@@ -106,6 +106,7 @@ export class BacktestVisualizationUtils {
     const monthlyMap = new Map<string, { return: number; trades: number; wins: number }>();
 
     result.trades.forEach(trade => {
+      if (!trade.exitDate) return;
       const exitDate = new Date(trade.exitDate);
       const monthKey = `${exitDate.getFullYear()}-${String(exitDate.getMonth() + 1).padStart(2, '0')}`;
 
@@ -114,9 +115,9 @@ export class BacktestVisualizationUtils {
       }
 
       const data = monthlyMap.get(monthKey)!;
-      data.return += trade.profitPercent;
+      data.return += (trade.profitPercent || 0);
       data.trades++;
-      if (trade.profitPercent > 0) data.wins++;
+      if ((trade.profitPercent || 0) > 0) data.wins++;
     });
 
     return Array.from(monthlyMap.entries())
@@ -137,7 +138,7 @@ export class BacktestVisualizationUtils {
     let currentEquity = 100;
 
     result.trades.forEach(trade => {
-      currentEquity *= (1 + trade.profitPercent / 100);
+      currentEquity *= (1 + (trade.profitPercent || 0) / 100);
       equity.push(parseFloat(currentEquity.toFixed(2)));
     });
 
@@ -153,7 +154,7 @@ export class BacktestVisualizationUtils {
     let equity = 100;
 
     result.trades.forEach(trade => {
-      equity *= (1 + trade.profitPercent / 100);
+      equity *= (1 + (trade.profitPercent || 0) / 100);
       if (equity > peak) peak = equity;
       const drawdown = ((peak - equity) / peak) * 100;
       drawdowns.push(parseFloat(drawdown.toFixed(2)));
@@ -188,8 +189,8 @@ export class BacktestVisualizationUtils {
 
     for (let i = windowSize; i < result.trades.length; i++) {
       const windowTrades = result.trades.slice(i - windowSize, i);
-      const wins = windowTrades.filter(t => t.profitPercent > 0).length;
-      const avgReturn = windowTrades.reduce((sum, t) => sum + t.profitPercent, 0) / windowSize;
+      const wins = windowTrades.filter(t => (t.profitPercent || 0) > 0).length;
+      const avgReturn = windowTrades.reduce((sum, t) => sum + (t.profitPercent || 0), 0) / windowSize;
 
       rolling.push({
         index: i,
@@ -216,7 +217,7 @@ export class BacktestVisualizationUtils {
     profitFactor: number;
     expectancy: number;
   } {
-    const returns = result.trades.map(t => t.profitPercent);
+    const returns = result.trades.map(t => t.profitPercent || 0);
     const avgReturn = returns.length > 0 ? returns.reduce((sum, r) => sum + r, 0) / returns.length : 0;
     const variance = returns.length > 0 ? returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length : 0;
     const volatility = Math.sqrt(variance);

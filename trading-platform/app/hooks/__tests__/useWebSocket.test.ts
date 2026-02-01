@@ -24,10 +24,11 @@ class MockWebSocket {
   constructor(url: string) {
     this.url = url;
     mockWebSocketInstance = this;
+    const self = this;
     setTimeout(() => {
-      if (mockWebSocketInstance?.onopen) {
-        mockWebSocketInstance.readyState = MockWebSocket.OPEN;
-        mockWebSocketInstance.onopen();
+      if (self.onopen) {
+        self.readyState = MockWebSocket.OPEN;
+        self.onopen();
       }
     }, 10);
   }
@@ -217,4 +218,3 @@ describe('useWebSocket', () => {
     expect(result.current.isConnected).toBe(false);
   });
 });
-
