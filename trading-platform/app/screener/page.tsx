@@ -10,12 +10,13 @@ import { marketClient } from '@/app/lib/api/data-aggregator';
 import { filterByTechnicals, TechFilters } from '@/app/lib/screener-utils';
 import { useUIStore } from '@/app/store/uiStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
 type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
 type SortDirection = 'asc' | 'desc';
 type PresetType = 'oversold' | 'uptrend';
 
-export default function Screener() {
+function ScreenerContent() {
   const router = useRouter();
   const { setSelectedStock } = useUIStore();
   const { addToWatchlist } = useWatchlistStore();
@@ -424,5 +425,13 @@ export default function Screener() {
       </div>
       <Navigation />
     </div>
+  );
+}
+
+export default function Screener() {
+  return (
+    <ErrorBoundary name="ScreenerPage">
+      <ScreenerContent />
+    </ErrorBoundary>
   );
 }
