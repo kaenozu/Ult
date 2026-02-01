@@ -4,7 +4,7 @@ This document summarizes the comprehensive E2E test coverage added to address Is
 
 ## Overview
 
-Added 43 new E2E test cases across 4 test files, covering critical paths for order execution, authentication, error handling, and data integrity.
+Added 46 new E2E test cases across 4 test files, covering critical paths for order execution, authentication, error handling, and data integrity.
 
 ## Test Files Added
 
@@ -188,13 +188,17 @@ These tests integrate with the existing CI/CD pipeline:
 - Avoid brittle selectors (prefer data-testid over classes)
 - Mock external dependencies
 - Keep tests independent (no shared state)
+- Use explicit waits when possible (waitForSelector, waitForLoadState)
+- Short timeouts (100-1000ms) are acceptable for UI stabilization after user actions
 
 ## Known Limitations
 
 1. **Server Dependency**: Tests require a running dev server
 2. **Mock Data**: Some tests use mocked data instead of real API calls
 3. **Browser Support**: Currently only testing in Chromium
-4. **Timing**: Some tests use hardcoded timeouts (should be improved)
+4. **Timing**: Some tests use waitForTimeout for UI stabilization after actions
+   - This is intentional for simulating user interaction delays
+   - Consider replacing with explicit waits (waitForSelector) in future iterations
 
 ## Future Enhancements
 
