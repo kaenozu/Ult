@@ -8,6 +8,13 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR/../trading-platform"
 
+# Validate that trading-platform directory exists
+if [ ! -d "$PROJECT_DIR" ]; then
+  echo "❌ Error: trading-platform directory not found at $PROJECT_DIR"
+  echo "Please run this script from the repository root or scripts directory."
+  exit 1
+fi
+
 cd "$PROJECT_DIR"
 
 echo "========================================="
