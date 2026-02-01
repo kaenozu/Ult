@@ -11,6 +11,7 @@ import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';
+import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
 // Lazy load heavy components with chart.js dependencies
 const StockChart = lazy(() => import('@/app/components/StockChart').then(m => ({ default: m.StockChart })));
@@ -25,7 +26,7 @@ const ChartLoader = () => (
   </div>
 );
 
-export default function Workstation() {
+function HomePageContent() {
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
   const { watchlist } = useWatchlistStore();
@@ -225,5 +226,13 @@ export default function Workstation() {
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <ErrorBoundary name="HomePage">
+      <HomePageContent />
+    </ErrorBoundary>
   );
 }
