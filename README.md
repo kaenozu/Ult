@@ -1,6 +1,7 @@
 # 📈 ULT - Ultimate Trading Platform
 
 [![CI](https://github.com/kaenozu/Ult/actions/workflows/ci.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/ci.yml)
+[![Quality Gates](https://github.com/kaenozu/Ult/actions/workflows/quality-gates.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/quality-gates.yml)
 [![Lint](https://github.com/kaenozu/Ult/actions/workflows/lint.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/lint.yml)
 [![Tests](https://github.com/kaenozu/Ult/actions/workflows/test.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/test.yml)
 [![E2E](https://github.com/kaenozu/Ult/actions/workflows/e2e.yml/badge.svg)](https://github.com/kaenozu/Ult/actions/workflows/e2e.yml)
@@ -201,6 +202,7 @@ Python製のバックエンド分析エンジン。高度な市場分析機能�
 | ワークフロー | 説明 | トリガー |
 |------------|------|---------|
 | **CI** | 全体的な CI パイプライン統合 | Push, PR |
+| **Quality Gates** | 品質ゲート統合チェック（カバレッジ/型/Lint/セキュリティ/ビルド） | PR |
 | **Lint** | ESLint + TypeScript 型チェック | Push, PR |
 | **Test** | Jest 単体テスト（カバレッジ付き） | Push, PR |
 | **E2E** | Playwright E2E テスト | Push, PR |
@@ -208,6 +210,32 @@ Python製のバックエンド分析エンジン。高度な市場分析機能�
 | **Build** | Next.js ビルド検証 | Push, PR |
 | **Security** | 依存関係脆弱性スキャン | Push, PR, 週次 |
 | **Monkey Test** | ランダム操作テスト | Push, PR, 日次 |
+
+#### Quality Gates（品質ゲート）
+
+すべてのプルリクエストは、以下の品質基準を満たす必要があります：
+
+- ✅ **テストカバレッジ ≥ 80%** （Lines, Branches, Functions, Statements）
+- ✅ **TypeScript エラー = 0**
+- ✅ **ESLint エラー = 0**
+- ✅ **High/Critical 脆弱性 = 0**
+- ✅ **ビルド成功**
+
+詳細は [Quality Gates ドキュメント](./docs/QUALITY_GATES.md) を参照してください。
+
+**ローカルでの確認**:
+```bash
+# 全チェックを一度に実行
+./scripts/quality-gates-check.sh
+
+# または個別に実行
+cd trading-platform
+npm run test:coverage  # カバレッジ
+npx tsc --noEmit       # 型チェック
+npm run lint           # ESLint
+npm audit --audit-level=high  # セキュリティ
+npm run build          # ビルド
+```
 
 #### CI ワークフローの実行順序
 
