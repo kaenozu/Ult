@@ -5,16 +5,26 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  schedule:
+    # Run extended tests daily at 2:00 UTC
+    - cron: '0 2 * * *'
   workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'Number of test iterations'
+        required: false
+        default: '30'
+        type: string
 
 env:
   NODE_VERSION: '20'
   BASE_URL: http://localhost:3000
-  ITERATIONS: 30
+  ITERATIONS: ${{ github.event.inputs.iterations || '30' }}
 
 jobs:
   monkey-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       pull-requests: write
       issues: write
@@ -44,9 +54,26 @@ jobs:
         working-directory: ./trading-platform
         run: |
           npm run dev &
+          DEV_PID=$!
+          echo "DEV_PID=$DEV_PID" >> $GITHUB_ENV
           echo "Waiting for server to start..."
-          sleep 10
-          curl -sf http://localhost:3000 > /dev/null || exit 1
+          
+          # Wait for server with timeout
+          SERVER_READY=false
+          for i in {1..30}; do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Server is ready!"
+              SERVER_READY=true
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          if [ "$SERVER_READY" = false ]; then
+            echo "❌ Server failed to start"
+            exit 1
+          fi
 
       - name: Run Monkey Test
         run: |
@@ -98,7 +125,10 @@ jobs:
 
   scheduled-monkey-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: github.event_name == 'schedule'
+    permissions:
+      issues: write
 
     steps:
       - name: Checkout code
@@ -117,7 +147,26 @@ jobs:
         working-directory: ./trading-platform
         run: |
           npm run dev &
-          sleep 10
+          DEV_PID=$!
+          echo "DEV_PID=$DEV_PID" >> $GITHUB_ENV
+          echo "Waiting for server to start..."
+          
+          # Wait for server with timeout
+          SERVER_READY=false
+          for i in {1..30}; do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "✅ Server is ready!"
+              SERVER_READY=true
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          if [ "$SERVER_READY" = false ]; then
+            echo "❌ Server failed to start"
+            exit 1
+          fi
 
       - name: Run extended Monkey Test
         run: |

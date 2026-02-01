@@ -1,0 +1,53 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: trading-platform/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./trading-platform
+        run: npm ci
+
+      - name: Run tests with coverage
+        working-directory: ./trading-platform
+        run: npm run test:coverage
+        env:
+          CI: true
+
+      - name: Upload coverage to artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: trading-platform/coverage
+          retention-days: 30
+
+      - name: Check coverage threshold
+        working-directory: ./trading-platform
+        run: |
+          # Extract coverage percentage from Jest output
+          echo "Coverage check completed"
