@@ -227,6 +227,32 @@ export class WinRateMaximizer {
   }
   
   /**
+   * トレンド強度を計算（ADXの代替）
+   */
+  private calculateTrendStrength(closes: number[]): number {
+    if (closes.length < 20) return 0;
+    
+    // 最近20本のローソク足でのトレンド強度を計算
+    const recent = closes.slice(-20);
+    const first = recent[0];
+    const last = recent[recent.length - 1];
+    const change = ((last - first) / first) * 100;
+    
+    // 変動性を考慮
+    let sumSquaredDiff = 0;
+    for (let i = 1; i < recent.length; i++) {
+      const diff = recent[i] - recent[i - 1];
+      sumSquaredDiff += diff * diff;
+    }
+    const volatility = Math.sqrt(sumSquaredDiff / (recent.length - 1));
+    
+    // トレンド強度 = 変化率の絶対値 / ボラティリティ
+    // 0-100のスケールに正規化
+    const strength = Math.abs(change) / (volatility / first * 100);
+    return Math.min(100, strength * 10);
+  }
+
+  /**
    * 現在の市場条件を分析
    */
   private analyzeCurrentConditions(data: OHLCV[]): TradeScenario['marketConditions'] & TradeScenario['indicators'] {
@@ -238,7 +264,8 @@ export class WinRateMaximizer {
     // テクニカル指標を計算
     const rsi = technicalIndicatorService.calculateRSI(closes, 14);
     const macd = technicalIndicatorService.calculateMACD(closes);
-    const adx = technicalIndicatorService.calculateADX(highs, lows, closes, 14);
+    // ADXの代わりにトレンド強度を計算
+    const adx = this.calculateTrendStrength(closes);
     const bb = technicalIndicatorService.calculateBollingerBands(closes, 20, 2);
     const sma20 = technicalIndicatorService.calculateSMA(closes, 20);
     const sma50 = technicalIndicatorService.calculateSMA(closes, 50);
