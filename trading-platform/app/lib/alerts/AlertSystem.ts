@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { BUFFER_LIMITS } from '../constants';
 
 // ============================================================================
 // Types
@@ -350,7 +351,7 @@ export class AlertSystem extends EventEmitter {
         }
         const values = history.get(indicator)!;
         values.push(value);
-        if (values.length > 100) values.shift();
+        if (values.length > BUFFER_LIMITS.VALUE_HISTORY) values.shift();
       });
     }
 
