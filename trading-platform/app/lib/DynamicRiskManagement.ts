@@ -40,6 +40,21 @@ export function calculateRiskMetrics(
     const riskPerShare = Math.abs(currentPrice - stopLossPrice);
     const maxRiskAmount = cash * (config.maxRiskPerTrade / 100);
 
+    // Check for division by zero or invalid riskPerShare
+    if (riskPerShare <= 0 || !isFinite(riskPerShare)) {
+        return {
+            recommendedQuantity: 0,
+            stopLossPrice,
+            takeProfitPrice: side === 'BUY'
+                ? currentPrice + (currentPrice * 0.02)
+                : currentPrice - (currentPrice * 0.02),
+            riskAmount: 0,
+            riskPercent: 0,
+            rewardRiskRatio: config.minRiskRewardRatio,
+            volatilityScore: 50
+        };
+    }
+
     const recommendedQuantity = Math.floor(maxRiskAmount / riskPerShare);
 
     return {
