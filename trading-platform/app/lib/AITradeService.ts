@@ -1,4 +1,5 @@
 import { Signal, AIStatus, PaperTrade } from '../types';
+import { POSITION_SIZING, MARKET_CORRELATION } from './constants';
 
 /**
  * Service to handle AI trading logic.
