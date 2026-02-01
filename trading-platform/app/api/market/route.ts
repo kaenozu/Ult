@@ -3,9 +3,8 @@ import YahooFinance from 'yahoo-finance2';
 import {
   handleApiError,
   validationError,
-  rateLimitError,
 } from '@/app/lib/error-handler';
-import { ipRateLimiter, getClientIp } from '@/app/lib/ip-rate-limit';
+import { checkRateLimit } from '@/app/lib/api-middleware';
 
 // Define explicit types for Yahoo Finance responses
 interface YahooChartResult {
@@ -53,10 +52,9 @@ function formatSymbol(symbol: string, market?: string): string {
 }
 
 export async function GET(request: Request) {
-  const clientIp = getClientIp(request);
-  if (!ipRateLimiter.check(clientIp)) {
-    return rateLimitError();
-  }
+  // Rate limiting
+  const rateLimitResponse = checkRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
 
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
