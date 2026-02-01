@@ -13,8 +13,9 @@ import { PatternAnalysisPanel } from '@/app/components/PatternAnalysisPanel';
 import { PsychologyWarningPanel } from '@/app/components/PsychologyWarningPanel';
 import { useExtendedJournalStore } from '@/app/store/journalStoreExtended';
 import { cn } from '@/app/lib/utils';
+import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
-export default function AIAdvisorPage() {
+function AIAdvisorContent() {
   const { psychologyState, activeWarnings } = useExtendedJournalStore();
 
   return (
@@ -149,5 +150,13 @@ export default function AIAdvisorPage() {
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>
+  );
+}
+
+export default function AIAdvisorPage() {
+  return (
+    <ErrorBoundary name="AIAdvisorPage">
+      <AIAdvisorContent />
+    </ErrorBoundary>
   );
 }
