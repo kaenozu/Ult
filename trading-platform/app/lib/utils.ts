@@ -145,6 +145,22 @@ export function getPriceLimit(referencePrice: number): number {
 }
 
 /**
+ * Calculate returns from a series of prices
+ */
+export function calculateReturns(prices: number[]): number[] {
+  const returns: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    if (prices[i-1] !== 0 && !isNaN(prices[i]) && !isNaN(prices[i-1])) {
+        const ret = (prices[i] - prices[i - 1]) / prices[i - 1];
+        returns.push(ret);
+    } else {
+        returns.push(0);
+    }
+  }
+  return returns;
+}
+
+/**
  * Get the WebSocket URL based on the current environment.
  * Prioritizes process.env.NEXT_PUBLIC_WS_URL, then falls back to window location or localhost.
  * Ensures the protocol matches the current page's security (wss: for https:).
@@ -206,19 +222,34 @@ export function calculateSMA(prices: number[], period: number): number[] {
   // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
   const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
 
+  let sum = 0;
+  let validCount = 0;
+
   for (let i = 0; i < validPrices.length; i++) {
+    // Add new value
+    const val = validPrices[i];
+    if (!isNaN(val)) {
+      sum += val;
+      validCount++;
+    }
+
+    // Remove old value
+    if (i >= period) {
+      const oldVal = validPrices[i - period];
+      if (!isNaN(oldVal)) {
+        sum -= oldVal;
+        validCount--;
+      }
+    }
+
     if (i < period - 1) {
       result.push(NaN);
     } else {
-      const slice = validPrices.slice(i - period + 1, i + 1);
-      // 有効な値のみを合計
-      const validValues = slice.filter(val => !isNaN(val));
-      if (validValues.length < period) {
-        // 期間内のデータが不足している場合はNaNを返す
-        result.push(NaN);
+      // Check if we have enough valid values (must have NO NaNs in the window)
+      if (validCount === period) {
+        result.push(sum / period);
       } else {
-        const avg = validValues.reduce((sum, p) => sum + p, 0) / period;
-        result.push(avg);
+        result.push(NaN);
       }
     }
   }
