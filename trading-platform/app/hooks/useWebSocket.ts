@@ -104,6 +104,8 @@ export function useWebSocket(url?: string) {
 
     // Cleanup on unmount
     return () => {
+      // Clear the batch callback before flushing to prevent state updates on unmounted component
+      batcherRef.current.onBatch(() => {});
       batcherRef.current.flush(); // Flush any pending messages
       batcherRef.current.destroy();
       client.destroy();
