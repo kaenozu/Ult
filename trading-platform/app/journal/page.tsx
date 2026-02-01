@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { Navigation } from '@/app/components/Navigation';
 import { useJournalStore } from '@/app/store/journalStore';
 import { cn, formatCurrency, formatPercent } from '@/app/lib/utils';
+import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
-export default function Journal() {
+function JournalContent() {
   const { journal } = useJournalStore();
   const [activeTab, setActiveTab] = useState<'trades' | 'analysis'>('trades');
 
@@ -320,5 +321,13 @@ export default function Journal() {
         投資判断は自己責任で行ってください。本サイトの情報は投資助言ではありません。
       </div>
     </div>
+  );
+}
+
+export default function Journal() {
+  return (
+    <ErrorBoundary name="JournalPage">
+      <JournalContent />
+    </ErrorBoundary>
   );
 }
