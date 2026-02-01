@@ -89,9 +89,13 @@ class SupplyDemandMaster {
         const bucketLow = minPrice + bucketSize * i;
 
         const overlap = Math.min(candle.high, bucketHigh) - Math.max(candle.low, bucketLow);
-        const overlapRatio = overlap / Math.max(1, priceRange);
-        buckets[i].volume += candle.volume * overlapRatio;
-        buckets[i].trades++;
+        
+        // Only process if there's actual overlap (guards against edge cases)
+        if (overlap > 0) {
+          const overlapRatio = overlap / Math.max(1, priceRange);
+          buckets[i].volume += candle.volume * overlapRatio;
+          buckets[i].trades++;
+        }
       }
     }
 

@@ -64,6 +64,15 @@ export const Header = memo(function Header() {
     setShowResults(false);
   }, [addToWatchlist, setSelectedStock]);
 
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    return ALL_STOCKS.filter(s =>
+      s.symbol.toLowerCase().includes(query) ||
+      s.name.toLowerCase().includes(query)
+    ).slice(0, 8);
+  }, [searchQuery]);
+
   const handleSearchKeyDown = useCallback(async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       const query = searchQuery.trim().toUpperCase();
@@ -103,15 +112,6 @@ export const Header = memo(function Header() {
       setShowResults(false);
     }
   }, [searchQuery, searchResults, handleStockSelect]);
-
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const query = searchQuery.toLowerCase();
-    return ALL_STOCKS.filter(s =>
-      s.symbol.toLowerCase().includes(query) ||
-      s.name.toLowerCase().includes(query)
-    ).slice(0, 8);
-  }, [searchQuery]);
 
   return (
     <header className="h-14 flex items-center justify-between px-4 border-b border-[#233648] bg-[#101922] shrink-0 z-10">
