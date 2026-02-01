@@ -64,8 +64,8 @@ export const StockChart = memo(function StockChart({
     signal
   });
 
-  // 3. Assemble Chart Data
-  const chartData = {
+  // 3. Assemble Chart Data (memoized for performance)
+  const chartData = useMemo(() => ({
     labels: extendedData.labels,
     datasets: [
       {
@@ -126,7 +126,8 @@ export const StockChart = memo(function StockChart({
         }
       ] : []),
     ],
-  };
+  }), [extendedData.labels, extendedData.prices, normalizedIndexData, showSMA, showBollinger, 
+      sma20, upper, lower, forecastDatasets, ghostForecastDatasets, market]);
 
   // 4. Loading / Error States
   if (error) return (
