@@ -10,7 +10,7 @@ import {
     internalError,
     ErrorType
 } from '../lib/error-handler';
-import { APIError, ValidationError } from '../types';
+import { ApiError as APIError, ValidationError } from '../lib/errors';
 
 // Mock NextResponse - returns a properly typed mock response
 interface MockResponse {
@@ -109,7 +109,7 @@ describe('error-handler', () => {
 
         // Custom Error Classes Logic
         it('extracts info from ValidationError class', () => {
-            const error = new ValidationError('Invalid Input', 'fieldA');
+            const error = new ValidationError('fieldA', 'Invalid Input');
             const response = handleApiError(error) as MockResponse;
 
             expect(response.status).toBe(400);
