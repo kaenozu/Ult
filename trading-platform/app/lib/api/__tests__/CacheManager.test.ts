@@ -111,15 +111,40 @@ describe('CacheManager', () => {
   });
 
   describe('maxSize', () => {
-    it('should enforce max size by removing oldest entry', () => {
-      const smallCache = new CacheManager<string>({ maxSize: 2 });
+    it('should enforce max size by removing least recently accessed entry (LRU)', async () => {
+      const smallCache = new CacheManager<string>({ maxSize: 3 });
+      
+      // Fill cache
+      smallCache.set('key1', 'value1');
+      await new Promise(resolve => setTimeout(resolve, 10)); // Small delay to differentiate timestamps
+      smallCache.set('key2', 'value2');
+      await new Promise(resolve => setTimeout(resolve, 10));
+      smallCache.set('key3', 'value3');
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
+      // Access key1 and key3 to make them recently used
+      smallCache.get('key1'); // Updates lastAccessed for key1
+      await new Promise(resolve => setTimeout(resolve, 10));
+      smallCache.get('key3'); // Updates lastAccessed for key3
+      await new Promise(resolve => setTimeout(resolve, 10));
+      // key2 is now the LRU
+      
+      // Add key4 - should remove key2 (least recently accessed)
+      smallCache.set('key4', 'value4');
+
+      expect(smallCache.get('key2')).toBeUndefined(); // LRU, removed
+      expect(smallCache.get('key1')).toBe('value1'); // Recently accessed, kept
+      expect(smallCache.get('key3')).toBe('value3'); // Recently accessed, kept
+      expect(smallCache.get('key4')).toBe('value4'); // Newest
+    });
+
+    it('should handle maxSize edge case with single entry', () => {
+      const smallCache = new CacheManager<string>({ maxSize: 1 });
       smallCache.set('key1', 'value1');
       smallCache.set('key2', 'value2');
-      smallCache.set('key3', 'value3'); // Should remove key1
 
       expect(smallCache.get('key1')).toBeUndefined();
       expect(smallCache.get('key2')).toBe('value2');
-      expect(smallCache.get('key3')).toBe('value3');
     });
   });
 

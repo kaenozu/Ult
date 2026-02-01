@@ -31,6 +31,10 @@ export interface ApiResponse<T> {
 /**
  * Unified API handler wrapper
  * Automatically handles auth, rate limiting, caching, and error handling
+ * 
+ * NOTE: Cache is shared across all requests to the same handler.
+ * For user-specific data, include user/session identifiers in the cache key
+ * via the keyGenerator function to prevent cache pollution.
  */
 export function createApiHandler<T = unknown>(
   handler: (request: NextRequest) => Promise<NextResponse<ApiResponse<T>>>,

@@ -9,6 +9,7 @@ export interface CacheEntry<T> {
   data: T;
   timestamp: number;
   ttl: number;
+  lastAccessed: number; // Track last access time for true LRU
 }
 
 export interface CacheOptions {
@@ -28,6 +29,7 @@ export class CacheManager<T = unknown> {
 
   /**
    * Get cached value if it exists and hasn't expired
+   * Updates last accessed time for LRU tracking
    */
   get(key: string): T | undefined {
     const entry = this.cache.get(key);
@@ -39,6 +41,13 @@ export class CacheManager<T = unknown> {
       return undefined;
     }
 
+    // Update last accessed time for LRU tracking by creating new entry
+    const now = Date.now();
+    this.cache.set(key, {
+      ...entry,
+      lastAccessed: now,
+    });
+    
     return entry.data;
   }
 
@@ -46,16 +55,29 @@ export class CacheManager<T = unknown> {
    * Set cache value with optional custom TTL
    */
   set(key: string, data: T, ttl?: number): void {
-    // Enforce max size by removing oldest entry
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      if (firstKey) this.cache.delete(firstKey);
+    const now = Date.now();
+    
+    // Enforce max size by removing least recently accessed entry (true LRU)
+    if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+      // Find least recently accessed entry
+      let lruKey: string | undefined;
+      let oldestAccess = Infinity;
+      
+      for (const [k, entry] of this.cache.entries()) {
+        if (entry.lastAccessed < oldestAccess) {
+          oldestAccess = entry.lastAccessed;
+          lruKey = k;
+        }
+      }
+      
+      if (lruKey) this.cache.delete(lruKey);
     }
 
     this.cache.set(key, {
       data,
-      timestamp: Date.now(),
+      timestamp: now,
       ttl: ttl ?? this.defaultTTL,
+      lastAccessed: now,
     });
   }
 

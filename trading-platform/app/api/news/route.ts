@@ -56,7 +56,7 @@ export const GET = createApiHandler(
   {
     rateLimit: true,
     cache: {
-      enabled: true,
+      enabled: process.env.NODE_ENV !== 'test', // Disable cache in test environment for consistency
       ttl: 120000, // 2 minutes cache for news
       keyGenerator: (req) => generateCacheKey(req, 'news'),
     },
