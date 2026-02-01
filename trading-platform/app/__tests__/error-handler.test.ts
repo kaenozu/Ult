@@ -23,16 +23,16 @@ jest.mock('next/server', () => ({
 }));
 
 describe('error-handler', () => {
-    const originalEnv = process.env.NODE_ENV;
+    const originalEnv = { ...process.env };
     const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => { });
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (process.env as any).NODE_ENV = 'test';
+        process.env = { ...originalEnv, NODE_ENV: 'test' };
     });
 
     afterAll(() => {
-        (process.env as any).NODE_ENV = originalEnv;
+        process.env = originalEnv;
         mockConsoleError.mockRestore();
     });
 
@@ -136,7 +136,7 @@ describe('error-handler', () => {
         });
 
         it('includes debug info in non-production', () => {
-            (process.env as any).NODE_ENV = 'development';
+            process.env = { ...originalEnv, NODE_ENV: 'development' };
             const error = new Error('Debug Me');
             const response = handleApiError(error) as any;
 
@@ -147,7 +147,7 @@ describe('error-handler', () => {
         });
 
         it('excludes debug info in production', () => {
-            (process.env as any).NODE_ENV = 'production';
+            process.env = { ...originalEnv, NODE_ENV: 'production' };
             const error = new Error('Hide Me');
             const response = handleApiError(error) as any;
 
@@ -155,7 +155,7 @@ describe('error-handler', () => {
         });
 
         it('includes details if available in mapping', () => {
-            (process.env as any).NODE_ENV = 'development';
+            process.env = { ...originalEnv, NODE_ENV: 'development' };
             const error = { code: 'VALIDATION_ERROR' }; // Should trigger mapping with details
             const response = handleApiError(error) as any;
             expect(response.body).toHaveProperty('details');
