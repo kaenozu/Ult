@@ -18,7 +18,7 @@ BREAKOUT_VOLUME_SURGE_MULTIPLIER = 1.5  # 50% volume surge for confirmation
 class SupplyDemandAnalyzer:
     """Analyzes supply and demand zones"""
 
-    def calculate_volume_by_price(self, data: List[Tuple[float, int]]) -> Dict[float, int]:
+    def calculate_volume_by_price(self, data: List[Tuple[float, int]]) -> Dict[float, float]:
         """Calculate volume distribution by price levels
 
         Args:
@@ -27,7 +27,7 @@ class SupplyDemandAnalyzer:
         Returns:
             Dictionary mapping price to total volume
         """
-        volume_by_price = {}
+        volume_by_price: Dict[float, float] = {}
 
         for price, volume in data:
             if price in volume_by_price:
@@ -39,7 +39,7 @@ class SupplyDemandAnalyzer:
 
     def identify_levels(
         self,
-        volume_by_price: Dict[float, int],
+        volume_by_price: Dict[float, float],
         current_price: float
     ) -> List[Zone]:
         """Identify support and resistance levels from volume profile
@@ -49,7 +49,7 @@ class SupplyDemandAnalyzer:
             current_price: Current market price
 
         Returns:
-            List of Zone objects
+            List of identified zones
         """
         if not volume_by_price:
             return []
@@ -80,7 +80,7 @@ class SupplyDemandAnalyzer:
             if volume >= avg_volume * ZONE_VOLUME_THRESHOLD_MULTIPLIER:
                 zones.append(Zone(
                     price=price,
-                    volume=volume,
+                    volume=int(volume),
                     zone_type=zone_type,
                     strength=strength
                 ))

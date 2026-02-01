@@ -47,7 +47,6 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
     if (!displaySignal) return;
 
     if (!previousSignal) {
-        setPreviousSignal(displaySignal);
         return;
     }
 
@@ -58,8 +57,14 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
         details: {},
       });
     }
-    setPreviousSignal(displaySignal);
   }, [displaySignal, previousSignal, stock.symbol, createStockAlert]);
+
+  // Update previous signal when displaySignal changes
+  useEffect(() => {
+    if (displaySignal) {
+      setPreviousSignal(displaySignal);
+    }
+  }, [displaySignal]);
 
   // 予測コーン信頼度変化を監視
   useEffect(() => {
@@ -82,9 +87,14 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
         });
       }
     }
-
-    setPreviousForecastConfidence(currentConfidence);
   }, [displaySignal?.forecastCone?.confidence, previousForecastConfidence, stock.symbol, createStockAlert]);
+
+  // Update previous forecast confidence when displaySignal changes
+  useEffect(() => {
+    if (displaySignal?.forecastCone) {
+      setPreviousForecastConfidence(displaySignal.forecastCone.confidence);
+    }
+  }, [displaySignal?.forecastCone]);
 
   // ブレイクアウトを監視
   useEffect(() => {

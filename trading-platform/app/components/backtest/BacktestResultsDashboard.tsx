@@ -37,7 +37,7 @@ import {
 import { cn } from '@/app/lib/utils';
 
 interface BacktestResultsDashboardProps {
-  result: BacktestResult;
+  result?: BacktestResult | null;
   benchmarkReturns?: number[];
   className?: string;
 }
@@ -47,6 +47,16 @@ export function BacktestResultsDashboard({
   benchmarkReturns,
   className
 }: BacktestResultsDashboardProps) {
+  if (!result) {
+    return (
+      <Card className={className}>
+        <CardContent className="p-6 text-center text-gray-500">
+          No backtest results available.
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Calculate all metrics
   const metrics = useMemo(() => {
     return AdvancedPerformanceMetrics.calculateAllMetrics(result, benchmarkReturns);
