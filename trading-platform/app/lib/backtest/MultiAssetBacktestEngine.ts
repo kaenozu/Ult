@@ -781,7 +781,8 @@ export class MultiAssetBacktestEngine extends EventEmitter {
 
     // Count trades per month
     for (const trade of this.trades) {
-      const date = new Date(trade.exitDate || new Date().toISOString());
+      if (!trade.exitDate) continue;
+      const date = new Date(trade.exitDate);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       
       if (monthlyMap.has(key)) {
@@ -823,7 +824,8 @@ export class MultiAssetBacktestEngine extends EventEmitter {
 
     // Count trades per year
     for (const trade of this.trades) {
-      const year = new Date(trade.exitDate || new Date().toISOString()).getFullYear();
+      if (!trade.exitDate) continue;
+      const year = new Date(trade.exitDate).getFullYear();
       
       if (yearlyMap.has(year)) {
         yearlyMap.get(year)!.trades++;

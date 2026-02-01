@@ -2,8 +2,8 @@
 
 import { Stock } from '@/app/types';
 import { formatCurrency, formatPercent, getChangeColor, cn } from '@/app/lib/utils';
-import { useUIStore } from '@/app/store/uiStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 import { useEffect, memo, useCallback, useMemo } from 'react';
 

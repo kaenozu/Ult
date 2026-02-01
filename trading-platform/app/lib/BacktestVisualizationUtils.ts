@@ -48,7 +48,7 @@ export class BacktestVisualizationUtils {
 
       data.push({
         index,
-        date: trade.exitDate || '',
+        date: trade.exitDate || trade.entryDate, // fallback for incomplete trades
         equity: parseFloat(equity.toFixed(2)),
         returnPercent: parseFloat(returnPercent.toFixed(2)),
         drawdown: parseFloat(drawdown.toFixed(2)),

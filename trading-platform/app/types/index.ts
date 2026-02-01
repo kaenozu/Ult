@@ -100,6 +100,14 @@ export interface TechnicalIndicator {
   };
 }
 
+export interface ModelPrediction {
+  rfPrediction: number;
+  xgbPrediction: number;
+  lstmPrediction: number;
+  ensemblePrediction: number;
+  confidence: number;
+}
+
 export interface Signal {
   symbol: string;
   type: 'BUY' | 'SELL' | 'HOLD';
@@ -277,6 +285,7 @@ export interface Order {
   price?: number;
   status: 'PENDING' | 'FILLED' | 'CANCELLED';
   date: string;
+  timestamp?: number;
 }
 
 export interface Portfolio {
@@ -318,9 +327,9 @@ export interface BacktestTrade {
   entryDate: string;
   exitDate?: string;
   profitPercent?: number;
+  status?: 'OPEN' | 'CLOSED';
   reason?: string;
   exitReason?: string;
-  status?: 'OPEN' | 'CLOSED';
 }
 
 export interface BacktestResult {

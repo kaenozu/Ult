@@ -50,8 +50,6 @@ class AccuracyService {
     }
 
     /**
-<<<<<<< HEAD
-=======
      * Optimized batch calculation of Simple ATR (O(N))
      * Replicates the exact logic of calculateSimpleATR but faster.
      */

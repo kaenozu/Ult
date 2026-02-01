@@ -21,7 +21,12 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000')
 const server = createServer();
 // 🛡️ Sentinel: Enforce Origin validation (CSWSH protection)
 // Removed 'server' option to handle upgrade manually
-const wss = new WebSocketServer({ noServer: true, path: '/ws' });
+// 🛡️ Sentinel: Enforce maxPayload (1MB) to prevent memory exhaustion DoS
+const wss = new WebSocketServer({
+  noServer: true,
+  path: '/ws',
+  maxPayload: 1024 * 1024 // 1MB limit
+});
 
 server.on('upgrade', (request, socket, head) => {
   const { origin } = request.headers;
@@ -121,10 +126,15 @@ wss.on('connection', (ws) => {
   const clientId = generateClientId();
 
   // Register client
+  // 🛡️ Sentinel: Initialize rate limiting counters
   clients.set(clientId, {
     id: clientId,
     ws,
     isAlive: true,
+    rateLimit: {
+      count: 0,
+      lastReset: Date.now()
+    }
   });
 
   console.log(`[WebSocket] Client connected: ${clientId}`);
@@ -143,6 +153,29 @@ wss.on('connection', (ws) => {
 
   // Handle incoming messages from client
   ws.on('message', (data) => {
+    // 🛡️ Sentinel: Rate Limiting (50 messages/second)
+    const clientInfo = clients.get(clientId);
+    if (clientInfo) {
+      const now = Date.now();
+      const { rateLimit } = clientInfo;
+
+      if (now - rateLimit.lastReset > 1000) {
+        rateLimit.count = 0;
+        rateLimit.lastReset = now;
+      }
+
+      rateLimit.count++;
+
+      if (rateLimit.count > 50) {
+        console.warn(`[WebSocket] Rate limit exceeded for ${clientId}`);
+        ws.send(JSON.stringify({
+          type: 'error',
+          message: 'Rate limit exceeded. Please slow down.'
+        }));
+        return; // Drop message
+      }
+    }
+
     try {
       const message = JSON.parse(data.toString());
 

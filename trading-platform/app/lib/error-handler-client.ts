@@ -7,13 +7,14 @@
  * - エラーログの収集
  */
 
-// import { toast } from 'sonner'; // 一般的な通知ライブラリを仮定
+// import { toast } from 'sonner'; // sonner is not installed. Using console fallback.
 
 // Mock toast for now
 const toast = {
-  error: (message: string, options?: any) => console.error(message, options),
-  warning: (message: string, options?: any) => console.warn(message, options),
-  success: (message: string, options?: any) => console.log(message, options),
+  error: (message: string, options?: any) => console.error(`[Toast Error]: ${message}`, options),
+  warning: (message: string, options?: any) => console.warn(`[Toast Warning]: ${message}`, options),
+  success: (message: string, options?: any) => console.log(`[Toast Success]: ${message}`, options),
+  info: (message: string, options?: any) => console.info(`[Toast Info]: ${message}`, options),
 };
 
 /**

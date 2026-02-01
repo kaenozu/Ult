@@ -232,7 +232,10 @@ export class AdvancedPerformanceMetrics {
     result: BacktestResult,
     benchmarkReturns?: number[]
   ): AdvancedMetrics {
-    const returns = result.trades.map(t => t.profitPercent || 0);
+    const returns = result.trades
+        .map(t => t.profitPercent)
+        .filter((p): p is number => typeof p === 'number');
+
     const equity = this.calculateEquityCurve(result);
     
     const basicMetrics = this.calculateBasicMetrics(result, returns, equity);
@@ -392,19 +395,19 @@ export class AdvancedPerformanceMetrics {
     // Holding periods
     const holdingPeriods = trades.map(t => {
       const entry = new Date(t.entryDate);
-      const exit = new Date(t.exitDate || new Date().toISOString());
+      const exit = t.exitDate ? new Date(t.exitDate) : new Date(); // Use current date for open trades
       return Math.max(1, (exit.getTime() - entry.getTime()) / (1000 * 60 * 60 * 24));
     });
 
     const winHoldingPeriods = winningTrades.map(t => {
       const entry = new Date(t.entryDate);
-      const exit = new Date(t.exitDate || new Date().toISOString());
+      const exit = t.exitDate ? new Date(t.exitDate) : new Date();
       return Math.max(1, (exit.getTime() - entry.getTime()) / (1000 * 60 * 60 * 24));
     });
 
     const lossHoldingPeriods = losingTrades.map(t => {
       const entry = new Date(t.entryDate);
-      const exit = new Date(t.exitDate || new Date().toISOString());
+      const exit = t.exitDate ? new Date(t.exitDate) : new Date();
       return Math.max(1, (exit.getTime() - entry.getTime()) / (1000 * 60 * 60 * 24));
     });
 
@@ -580,9 +583,11 @@ export class AdvancedPerformanceMetrics {
    * トレード分析
    */
   static analyzeTrades(result: BacktestResult): TradeAnalysis {
-    const trades = [...result.trades].sort((a, b) => 
-      new Date(a.exitDate || new Date().toISOString()).getTime() - new Date(b.exitDate || new Date().toISOString()).getTime()
-    );
+    const trades = [...result.trades].sort((a, b) => {
+        const dateA = a.exitDate ? new Date(a.exitDate).getTime() : 0;
+        const dateB = b.exitDate ? new Date(b.exitDate).getTime() : 0;
+        return dateA - dateB;
+    });
 
     // Best and worst trades
     const sortedByPnL = [...trades].sort((a, b) => (b.profitPercent || 0) - (a.profitPercent || 0));
@@ -590,10 +595,13 @@ export class AdvancedPerformanceMetrics {
     const worstTrade = sortedByPnL[sortedByPnL.length - 1] || trades[0];
 
     // Longest and shortest trades
-    const tradesWithDuration = trades.map(t => ({
-      ...t,
-      duration: (new Date(t.exitDate || new Date().toISOString()).getTime() - new Date(t.entryDate).getTime()) / (1000 * 60 * 60 * 24),
-    }));
+    const tradesWithDuration = trades.map(t => {
+        const exitTime = t.exitDate ? new Date(t.exitDate).getTime() : Date.now();
+        return {
+            ...t,
+            duration: (exitTime - new Date(t.entryDate).getTime()) / (1000 * 60 * 60 * 24),
+        };
+    });
     const sortedByDuration = [...tradesWithDuration].sort((a, b) => b.duration - a.duration);
     const longestTrade = sortedByDuration[0] || trades[0];
     const shortestTrade = sortedByDuration[sortedByDuration.length - 1] || trades[0];
@@ -821,7 +829,7 @@ export class AdvancedPerformanceMetrics {
           const streak: ConsecutiveTrade = {
             count: currentStreak.length,
             startDate: currentStreak[0].entryDate,
-            endDate: currentStreak[currentStreak.length - 1].exitDate || '',
+            endDate: currentStreak[currentStreak.length - 1].exitDate || currentStreak[currentStreak.length - 1].entryDate, // handle open
             totalPnL: parseFloat(currentStreak.reduce((sum, t) => sum + (t.profitPercent || 0), 0).toFixed(2)),
             trades: [...currentStreak],
           };
@@ -843,7 +851,7 @@ export class AdvancedPerformanceMetrics {
       const streak: ConsecutiveTrade = {
         count: currentStreak.length,
         startDate: currentStreak[0].entryDate,
-        endDate: currentStreak[currentStreak.length - 1].exitDate || '',
+        endDate: currentStreak[currentStreak.length - 1].exitDate || currentStreak[currentStreak.length - 1].entryDate,
         totalPnL: parseFloat(currentStreak.reduce((sum, t) => sum + (t.profitPercent || 0), 0).toFixed(2)),
         trades: [...currentStreak],
       };
@@ -925,7 +933,8 @@ export class AdvancedPerformanceMetrics {
     const monthlyMap = new Map<string, { return: number; trades: number; wins: number; losses: number }>();
 
     for (const trade of trades) {
-      const date = new Date(trade.exitDate || new Date().toISOString());
+      if (!trade.exitDate) continue;
+      const date = new Date(trade.exitDate);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       if (!monthlyMap.has(key)) {
@@ -963,7 +972,8 @@ export class AdvancedPerformanceMetrics {
     const yearlyMap = new Map<number, { return: number; trades: number; wins: number; losses: number; maxDrawdown: number }>();
 
     for (const trade of trades) {
-      const year = new Date(trade.exitDate || new Date().toISOString()).getFullYear();
+      if (!trade.exitDate) continue;
+      const year = new Date(trade.exitDate).getFullYear();
 
       if (!yearlyMap.has(year)) {
         yearlyMap.set(year, { return: 0, trades: 0, wins: 0, losses: 0, maxDrawdown: 0 });
