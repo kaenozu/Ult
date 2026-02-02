@@ -46,8 +46,8 @@ interface TradingStore {
   toggleAI: () => void;
 
   // Order Execution
-  executeOrder: (symbol: string, side: 'LONG' | 'SHORT', quantity: number, price: number) => Promise<boolean>;
-  executeOrderAtomic: (order: Order) => void;
+  executeOrder: (order: OrderRequest) => OrderResult;
+  /** @deprecated Use executeOrder instead */
   executeOrderAtomicV2: (order: OrderRequest) => OrderResult;
 
   // Deprecated but potentially used fields
@@ -90,47 +90,6 @@ function calculatePortfolioStats(positions: Position[]) {
   }
   
   return { totalValue, totalProfit, dailyPnL };
-}
-
-// Incremental update helper for portfolio stats
-function updatePortfolioStatsIncremental(
-  currentStats: { totalValue: number; totalProfit: number; dailyPnL: number },
-  changedPosition: Position,
-  previousPosition?: Position
-): { totalValue: number; totalProfit: number; dailyPnL: number } {
-  if (previousPosition) {
-    // Calculate delta for changed position
-    const valueDelta = changedPosition.currentPrice * changedPosition.quantity - 
-                      previousPosition.currentPrice * previousPosition.quantity;
-    const profitDelta = (changedPosition.side === 'LONG'
-      ? (changedPosition.currentPrice - changedPosition.avgPrice) * changedPosition.quantity
-      : (changedPosition.avgPrice - changedPosition.currentPrice) * changedPosition.quantity
-    ) - (previousPosition.side === 'LONG'
-      ? (previousPosition.currentPrice - previousPosition.avgPrice) * previousPosition.quantity
-      : (previousPosition.avgPrice - previousPosition.currentPrice) * previousPosition.quantity
-    );
-    const pnlDelta = (changedPosition.change * changedPosition.quantity) - 
-                     (previousPosition.change * previousPosition.quantity);
-    
-    return {
-      totalValue: currentStats.totalValue + valueDelta,
-      totalProfit: currentStats.totalProfit + profitDelta,
-      dailyPnL: currentStats.dailyPnL + pnlDelta
-    };
-  } else {
-    // Add new position
-    const value = changedPosition.currentPrice * changedPosition.quantity;
-    const profit = changedPosition.side === 'LONG'
-      ? (changedPosition.currentPrice - changedPosition.avgPrice) * changedPosition.quantity
-      : (changedPosition.avgPrice - changedPosition.currentPrice) * changedPosition.quantity;
-    const pnl = changedPosition.change * changedPosition.quantity;
-    
-    return {
-      totalValue: currentStats.totalValue + value,
-      totalProfit: currentStats.totalProfit + profit,
-      dailyPnL: currentStats.dailyPnL + pnl
-    };
-  }
 }
 
 export const useTradingStore = create<TradingStore>()(
@@ -236,111 +195,7 @@ export const useTradingStore = create<TradingStore>()(
       })),
 
       // Order Execution
-      executeOrder: async (symbol, side, quantity, price) => {
-        const order: Order = {
-          id: `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          symbol,
-          side: side === 'LONG' ? 'BUY' : 'SELL',
-          type: 'MARKET',
-          quantity,
-          price,
-          status: 'FILLED',
-          date: new Date().toISOString(),
-          timestamp: Date.now()
-        };
-
-        get().executeOrderAtomic(order);
-        return true;
-      },
-
-       executeOrderAtomic: (order) => set((state) => {
-         const { portfolio } = state;
-         
-         // Critical validation: Reject invalid prices
-         if (!order.price || order.price <= 0 || !Number.isFinite(order.price)) {
-           console.error('Invalid order price:', order.price);
-           return state;
-         }
-         
-         const price = order.price;
-         const orderCost = price * order.quantity;
-
-         // Basic validation
-         if (isBuyOrLong(order.side) && portfolio.cash < orderCost) {
-           return state; // Insufficient funds
-         }
-
-         // Update cash
-         let newCash = portfolio.cash;
-         if (isBuyOrLong(order.side)) {
-           newCash -= orderCost;
-         } else {
-           // Short selling logic often requires margin, keeping simple here
-           newCash += orderCost;
-         }
-
-         // Add position
-         const newPosition: Position = {
-           symbol: order.symbol,
-           name: order.symbol,
-           side: orderSideToPositionSide(order.side),
-           quantity: order.quantity,
-           avgPrice: price,
-           currentPrice: price,
-           change: 0,
-           // profit: 0,
-           // profitPercent: 0,
-           market: 'japan', // Default
-           // sector: 'Unknown',
-           // volume: 0,
-           entryDate: new Date().toISOString(),
-         };
-
-         // Reuse addPosition logic inside
-         const positions = [...portfolio.positions];
-         const existingIndex = positions.findIndex(p => p.symbol === newPosition.symbol && p.side === newPosition.side);
-
-         if (existingIndex >= 0) {
-           const existing = positions[existingIndex];
-           const totalCost = (existing.avgPrice * existing.quantity) + (newPosition.avgPrice * newPosition.quantity);
-           const totalQty = existing.quantity + newPosition.quantity;
-           
-           // Protect against division by zero
-           if (totalQty <= 0) {
-             console.error('Invalid total quantity:', totalQty);
-             return state;
-           }
-           
-           positions[existingIndex] = {
-             ...existing,
-             quantity: totalQty,
-             avgPrice: totalCost / totalQty,
-             currentPrice: newPosition.currentPrice
-           };
-         } else {
-           positions.push(newPosition);
-         }
-
-         const stats = calculatePortfolioStats(positions);
-
-         return {
-           portfolio: {
-             ...portfolio,
-             positions,
-             cash: newCash,
-             orders: [...portfolio.orders, order],
-             ...stats
-           }
-         };
-       }),
-
-      /**
-       * アトミックな注文実行（OrderRequestを使用）
-       * 残高確認、ポジション追加、現金減算を単一のトランザクションで実行
-       * @param order 注文リクエスト
-       * @returns 注文結果
-       */
-      executeOrderAtomicV2: (order: OrderRequest): OrderResult => {
+      executeOrder: (order: OrderRequest): OrderResult => {
         let result: OrderResult = { success: false };
         
         set((state) => {
@@ -425,6 +280,14 @@ export const useTradingStore = create<TradingStore>()(
         });
 
         return result;
+      },
+
+      /**
+       * Legacy alias for executeOrder
+       * @deprecated
+       */
+      executeOrderAtomicV2: (order: OrderRequest): OrderResult => {
+        return get().executeOrder(order);
       },
 
       selectedStock: null,
