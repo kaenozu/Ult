@@ -19,6 +19,21 @@ import { PositionSizingResult } from '../risk/AdvancedRiskManager';
 // Types
 // ============================================================================
 
+/**
+ * Open position in backtest
+ */
+export interface BacktestPosition {
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  entryDate: string;
+  entryPrice: number;
+  quantity: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  strategy: string;
+  trailingStop?: number;
+}
+
 export interface BacktestTrade {
   id: string;
   entryDate: string;
@@ -153,13 +168,26 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
 // Winning Backtest Engine
 // ============================================================================
 
+interface TradePosition {
+  symbol: string;
+  side: 'BUY' | 'SELL';
+  entryPrice: number;
+  quantity: number;
+  entryDate: string;
+  entryIndex: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  strategy: string;
+  riskRewardRatio: number;
+}
+
 class WinningBacktestEngine {
   private config: BacktestConfig;
   private trades: BacktestTrade[] = [];
   private equityCurve: number[] = [];
   private currentEquity: number = 0;
   private peakEquity: number = 0;
-  private openPositions: Map<string, any> = new Map();
+  private openPositions: Map<string, TradePosition> = new Map();
 
   constructor(config: Partial<BacktestConfig> = {}) {
     this.config = { ...DEFAULT_BACKTEST_CONFIG, ...config };
@@ -177,9 +205,6 @@ class WinningBacktestEngine {
   ): BacktestResult {
     this.reset();
     
-    console.log(`[WinningBacktestEngine] Starting backtest for ${symbol}`);
-    console.log(`  Initial Capital: ${this.config.initialCapital.toLocaleString()}`);
-    console.log(`  Data Points: ${data.length}`);
     
     // 戦略結果と価格データを同期
     const alignedData = this.alignDataWithSignals(data, strategyResults);
@@ -213,7 +238,6 @@ class WinningBacktestEngine {
       
       // 最大ドローダウンチェック
       if (this.calculateCurrentDrawdown() > this.config.maxDrawdown) {
-        console.log('[WinningBacktestEngine] Max drawdown reached, stopping backtest');
         break;
       }
     }
@@ -396,9 +420,14 @@ class WinningBacktestEngine {
     const price = this.applySlippage(data.close, 'BUY');
     const quantity = this.calculatePositionSize(price, signal.stopLoss);
     
+    // signal.signalが'HOLD'の場合はポジションを開かない
+    if (signal.signal === 'HOLD') {
+      return;
+    }
+    
     this.openPositions.set(symbol, {
       symbol,
-      side: signal.signal,
+      side: signal.signal as 'BUY' | 'SELL',
       entryPrice: price,
       quantity,
       entryDate: data.date,
@@ -411,7 +440,7 @@ class WinningBacktestEngine {
   }
 
   private closePosition(
-    position: any,
+    position: TradePosition,
     data: OHLCV,
     reason: string,
     index: number
@@ -461,7 +490,7 @@ class WinningBacktestEngine {
   }
 
   private checkExitConditions(
-    position: any,
+    position: TradePosition,
     data: OHLCV,
     index: number
   ): { shouldExit: boolean; reason: string } {
@@ -855,16 +884,6 @@ class WinningBacktestEngine {
   }
 
   private logResults(result: BacktestResult): void {
-    console.log('\n[WinningBacktestEngine] Backtest Results');
-    console.log('========================================');
-    console.log(`Final Capital: ${result.finalCapital.toLocaleString()}`);
-    console.log(`Total Return: ${result.metrics.totalReturn.toFixed(2)}%`);
-    console.log(`Sharpe Ratio: ${result.metrics.sharpeRatio.toFixed(2)}`);
-    console.log(`Max Drawdown: ${result.metrics.maxDrawdown.toFixed(2)}%`);
-    console.log(`Win Rate: ${result.metrics.winRate.toFixed(1)}%`);
-    console.log(`Total Trades: ${result.metrics.totalTrades}`);
-    console.log(`Profit Factor: ${result.metrics.profitFactor.toFixed(2)}`);
-    console.log('========================================\n');
   }
 }
 

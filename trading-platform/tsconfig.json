@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "experimentalDecorators": true,
     "baseUrl": ".",
     "plugins": [
       {
@@ -20,7 +21,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/domains/*": ["./app/domains/*"],
+      "@/infrastructure/*": ["./app/infrastructure/*"],
+      "@/ui/*": ["./app/ui/*"],
+      "@/shared/*": ["./app/shared/*"]
     }
   },
   "include": [

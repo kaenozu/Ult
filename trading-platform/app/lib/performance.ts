@@ -69,7 +69,6 @@ export function measurePerformance<T>(name: string, fn: () => T): T {
       }
     }
     
-    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
     
     // Record to global monitor if available
     if (typeof window !== 'undefined' && (window as any).__performanceMonitor) {
@@ -99,7 +98,6 @@ export async function measurePerformanceAsync<T>(
     const result = await fn();
     const duration = performance.now() - start;
     
-    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
     
     // Record to global monitor if available
     if (typeof window !== 'undefined' && (window as any).__performanceMonitor) {
@@ -177,13 +175,11 @@ export function usePerformanceMonitor(
   useEffect(() => {
     if (trackMount) {
       mountTimeRef.current = performance.now();
-      console.log(`[Lifecycle] ${componentName} mounted`);
     }
 
     return () => {
       if (trackUnmount && mountTimeRef.current) {
         const lifeTime = performance.now() - mountTimeRef.current;
-        console.log(
           `[Lifecycle] ${componentName} unmounted after ${lifeTime.toFixed(2)}ms ` +
           `(${renderCountRef.current} renders)`
         );
@@ -199,12 +195,10 @@ export function usePerformanceMonitor(
       
       if (lastRenderTimeRef.current) {
         const timeSinceLastRender = now - lastRenderTimeRef.current;
-        console.log(
           `[Render] ${componentName} #${renderCountRef.current} ` +
           `(${timeSinceLastRender.toFixed(2)}ms since last render)`
         );
       } else {
-        console.log(`[Render] ${componentName} #${renderCountRef.current} (initial)`);
       }
       
       lastRenderTimeRef.current = now;
@@ -248,7 +242,6 @@ export function usePerformanceBenchmark(name: string) {
     }
     resultsRef.current.get(label)!.push(duration);
 
-    console.log(`[Benchmark:${name}] ${label}: ${duration.toFixed(2)}ms`);
     return result;
   }, [name]);
 
@@ -409,9 +402,7 @@ export function getGlobalPerformanceMonitor(): GlobalPerformanceMonitor | null {
 export function printPerformanceReport(): void {
   const monitor = getGlobalPerformanceMonitor();
   if (monitor) {
-    console.log(monitor.getReport());
   } else {
-    console.log('Performance monitor not available');
   }
 }
 

@@ -207,7 +207,6 @@ export class MultiAssetBacktestEngine extends EventEmitter {
    * マルチアセットバックテストを実行
    */
   async runBacktest(): Promise<MultiAssetBacktestResult> {
-    console.log(`[MultiAssetBacktestEngine] Starting backtest for ${this.config.symbols.length} symbols`);
     
     // Validate data
     for (const symbol of this.config.symbols) {

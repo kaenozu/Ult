@@ -14,19 +14,21 @@ import { AlgorithmicExecutionEngine, ExecutionResult, Order } from '../execution
 import { AdvancedBacktestEngine, BacktestResult, Strategy } from '../backtest/AdvancedBacktestEngine';
 import { AlertSystem, AlertCondition, AlertTrigger } from '../alerts/AlertSystem';
 import { PaperTradingEnvironment, PaperPortfolio, PaperTrade } from '../paperTrading/PaperTradingEnvironment';
+import type { OHLCV } from '../../types';
+
+// Re-export OHLCV for backward compatibility
+export type { OHLCV };
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export interface OHLCV {
-  date: string;
+/**
+ * OHLCV with timestamp for internal use
+ * Extends the shared OHLCV type with timestamp field
+ */
+export interface OHLCVWithTimestamp extends Omit<OHLCV, 'symbol'> {
   timestamp: number;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
 }
 
 export interface TradingSignal {
@@ -98,7 +100,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
   private paperTrading: PaperTradingEnvironment;
 
   // Data storage
-  private marketData: Map<string, OHLCV[]> = new Map();
+  private marketData: Map<string, OHLCVWithTimestamp[]> = new Map();
   private signals: Map<string, TradingSignal> = new Map();
   private updateInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -159,7 +161,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
    * プラットフォームを開始
    */
   async start(): Promise<void> {
-    console.log('[UnifiedTradingPlatform] Starting...');
 
     try {
       // Start data feed
@@ -189,7 +190,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
       this.status.isRunning = true;
       this.emit('started', this.status);
-      console.log('[UnifiedTradingPlatform] Started successfully');
     } catch (error) {
       console.error('[UnifiedTradingPlatform] Failed to start:', error);
       this.emit('error', error);
@@ -201,7 +201,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
    * プラットフォームを停止
    */
   async stop(): Promise<void> {
-    console.log('[UnifiedTradingPlatform] Stopping...');
 
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -215,7 +214,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
     this.status.isRunning = false;
     this.emit('stopped', this.status);
-    console.log('[UnifiedTradingPlatform] Stopped');
   }
 
   /**
@@ -255,7 +253,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
     if (!aggregatedData) return;
 
     // Convert to OHLCV and store
-    const ohlcv: OHLCV = {
+    const ohlcv: OHLCVWithTimestamp = {
       date: new Date(aggregatedData.timestamp).toISOString(),
       timestamp: aggregatedData.timestamp,
       open: aggregatedData.price,
@@ -329,7 +327,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
     symbol: string,
     prediction?: PredictionResult,
     sentiment?: AggregatedSentiment,
-    ohlcv?: OHLCV
+    ohlcv?: OHLCVWithTimestamp
   ): TradingSignal | null {
     if (!prediction && !sentiment) return null;
 
@@ -418,7 +416,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
     // Check if trading is halted
     if (this.riskManager.isHalted()) {
-      console.log('[UnifiedTradingPlatform] Trading halted due to risk limits');
       return;
     }
 
@@ -556,7 +553,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
     return this.signals.get(symbol);
   }
 
-  getMarketData(symbol: string): OHLCV[] {
+  getMarketData(symbol: string): OHLCVWithTimestamp[] {
     return this.marketData.get(symbol) || [];
   }
 

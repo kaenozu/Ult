@@ -114,12 +114,10 @@ export class IndexedDBClient {
         const oldVersion = event.oldVersion;
         const newVersion = event.newVersion || DB_VERSION;
 
-        console.log(`[IndexedDB] Upgrade: v${oldVersion} → v${newVersion}`);
 
         // Apply migrations sequentially
         for (const migration of migrations) {
           if (migration.version > oldVersion && migration.version <= newVersion) {
-            console.log(`[IndexedDB] Applying migration: ${migration.name} (v${migration.version})`);
             try {
               migration.up(db, transaction);
               
@@ -139,7 +137,6 @@ export class IndexedDBClient {
           }
         }
 
-        console.log(`[IndexedDB] Upgrade complete: v${newVersion}`);
       };
     });
 
@@ -192,7 +189,6 @@ export class IndexedDBClient {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
-        console.log(`[IndexedDB] Store '${storeName}' cleared`);
         resolve();
       };
     });
@@ -212,7 +208,6 @@ export class IndexedDBClient {
     for (const storeName of storeNames) {
       await this.clearStore(storeName);
     }
-    console.log('[IndexedDB] All data cleared');
   }
 
   /**

@@ -7,6 +7,10 @@
 
 import { EventEmitter } from 'events';
 import { AlertSystem, AlertCondition, AlertTrigger, AlertType, MarketData, ALERT_TEMPLATES } from './AlertSystem';
+import type { OHLCV } from '../../types';
+
+// Re-export OHLCV for backward compatibility
+export type { OHLCV };
 
 // ============================================================================
 // Enhanced Types
@@ -104,19 +108,6 @@ export interface EnhancedMarketData extends MarketData {
   };
   indicators?: Map<string, number>;
   patternData?: OHLCV[];
-}
-
-/**
- * OHLCV 再定義（エクスポート用）
- */
-export interface OHLCV {
-  symbol?: string;
-  date: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
 }
 
 /**

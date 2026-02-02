@@ -123,7 +123,6 @@ export class WebSocketClient {
    */
   connect(): void {
     if (this.isConnecting || this.status === WebSocketStatus.CONNECTING) {
-      console.log('[WebSocket] Already connecting or connected');
       return;
     }
 
@@ -141,7 +140,6 @@ export class WebSocketClient {
 
       this.ws.binaryType = 'arraybuffer';
 
-      console.log('[WebSocket] Connecting to:', this.config.url);
     } catch (error) {
       console.error('[WebSocket] Failed to create WebSocket:', error);
       this.handleError(error as Event);
@@ -154,7 +152,6 @@ export class WebSocketClient {
    * Handle WebSocket open event
    */
   private handleOpen(): void {
-    console.log('[WebSocket] Connected to:', this.config.url);
     this.status = WebSocketStatus.OPEN;
     this.options.onStatusChange?.(this.status);
     this.isConnecting = false;
@@ -199,11 +196,9 @@ export class WebSocketClient {
    * Handle WebSocket close event
    */
   private handleClose(event: CloseEvent): void {
-    console.log('[WebSocket] Connection closed:', event.code, event.reason);
     this.options.onClose?.(event);
 
     if (this.manualClose) {
-      console.log('[WebSocket] Manual close detected, not reconnecting');
       this.manualClose = false;
       this.status = 'CLOSED';
       this.options.onStatusChange?.(this.status);
@@ -224,11 +219,9 @@ export class WebSocketClient {
    */
   disconnect(): void {
     if (!this.ws) {
-      console.log('[WebSocket] Already disconnected');
       return;
     }
 
-    console.log('[WebSocket] Disconnecting...');
 
     this.manualClose = true;
 
@@ -246,7 +239,6 @@ export class WebSocketClient {
    * Force reconnection
    */
   reconnect(): void {
-    console.log('[WebSocket] Force reconnecting...');
     this.disconnect();
     this.manualClose = false; // Reset manual close to allow connecting
     this.connect();
@@ -280,7 +272,6 @@ export class WebSocketClient {
     }
 
     if (this.manualClose) {
-      console.log('[WebSocket] Manual close detected, not reconnecting');
       return;
     }
 
@@ -304,7 +295,6 @@ export class WebSocketClient {
       DEFAULT_MAX_BACKOFF_DELAY // 最大60秒
     );
 
-    console.log(`[WebSocket] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${maxAttempts})`);
 
     this.reconnectTimeoutId = setTimeout(() => {
       this.connect();

@@ -6,10 +6,12 @@ import '@testing-library/jest-dom';
 jest.mock('@/app/components/Header', () => ({ Header: () => <div data-testid="Header" /> }));
 jest.mock('@/app/components/Navigation', () => ({ Navigation: () => <div data-testid="Navigation" /> }));
 jest.mock('@/app/components/StockChart', () => ({ StockChart: () => <div data-testid="StockChart" /> }));
+jest.mock('@/app/components/SimpleRSIChart', () => ({ SimpleRSIChart: () => <div data-testid="SimpleRSIChart" /> }));
 jest.mock('@/app/components/ChartToolbar', () => ({ ChartToolbar: () => <div data-testid="ChartToolbar" /> }));
 jest.mock('@/app/components/LeftSidebar', () => ({ LeftSidebar: () => <div data-testid="LeftSidebar" /> }));
 jest.mock('@/app/components/RightSidebar', () => ({ RightSidebar: () => <div data-testid="RightSidebar" /> }));
 jest.mock('@/app/components/BottomPanel', () => ({ BottomPanel: () => <div data-testid="BottomPanel" /> }));
+jest.mock('@/app/components/UserExperienceEnhancements', () => ({ UserExperienceEnhancements: () => <div data-testid="UserExperienceEnhancements" /> }));
 
 // Mock hooks
 import { useStockData } from '@/app/hooks/useStockData';
@@ -25,6 +27,23 @@ jest.mock('@/app/store/watchlistStore', () => ({
 
 jest.mock('@/app/hooks/useStockData', () => ({
     useStockData: jest.fn()
+}));
+
+jest.mock('@/app/i18n/provider', () => ({
+    useTranslations: () => (key: string) => {
+        const map: Record<string, string> = {
+            'page.dataFetchError': 'データの取得に失敗しました',
+            'page.noStockSelected': '銘柄が未選択です',
+            'page.searchStock': '銘柄を検索',
+            'header.toggleSidebar': 'サイドバー切替',
+            'header.toggleOrderPanel': '注文パネル切替',
+        };
+        return map[key] || key;
+    }
+}));
+
+jest.mock('@/app/hooks/useSymbolAccuracy', () => ({
+    useSymbolAccuracy: () => ({ accuracy: null, loading: false })
 }));
 
 const mockPortfolioStore = {
@@ -82,7 +101,7 @@ describe('Page (Workstation)', () => {
         expect(screen.getByText('API Error')).toBeInTheDocument();
     });
 
-    it('renders main workspace when stock selected', () => {
+    it('renders main workspace when stock selected', async () => {
         (useStockData as unknown as jest.Mock).mockReturnValue({
             ...mockStockData,
             selectedStock: { symbol: '7203', name: 'Toyota' },
@@ -91,9 +110,9 @@ describe('Page (Workstation)', () => {
 
         render(<Page />);
         expect(screen.getByTestId('Header')).toBeInTheDocument();
-        expect(screen.getByTestId('StockChart')).toBeInTheDocument();
-        expect(screen.getByTestId('RightSidebar')).toBeInTheDocument();
-        expect(screen.getByTestId('BottomPanel')).toBeInTheDocument();
+        expect(await screen.findByTestId('StockChart')).toBeInTheDocument();
+        expect(await screen.findByTestId('RightSidebar')).toBeInTheDocument();
+        expect(await screen.findByTestId('BottomPanel')).toBeInTheDocument();
     });
 
     it('toggles mobile sidebars', () => {
@@ -106,7 +125,7 @@ describe('Page (Workstation)', () => {
 
         fireEvent.click(leftToggle);
         // State change happens, but sidebar prop 'isOpen' updates.
-        // Since we mocked LeftSidebar, we checks props if possible, 
+        // Since we mocked LeftSidebar, we checks props if possible,
         // or checks for the backdrop presence which is conditional in real DOM
 
         // Check for backdrop click to close

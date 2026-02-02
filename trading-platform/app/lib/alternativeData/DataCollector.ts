@@ -213,7 +213,6 @@ export class AlternativeDataCollector extends EventEmitter {
    * データ収集を開始
    */
   start(): void {
-    console.log('[AlternativeDataCollector] Starting data collection...');
     
     // 各データソースの定期収集を設定
     this.config.sources.forEach((source) => {
@@ -229,7 +228,6 @@ export class AlternativeDataCollector extends EventEmitter {
    * データ収集を停止
    */
   stop(): void {
-    console.log('[AlternativeDataCollector] Stopping data collection...');
     
     // すべての定期収集を停止
     this.intervalHandles.forEach((handle) => {
@@ -264,20 +262,17 @@ export class AlternativeDataCollector extends EventEmitter {
 
     // 既に収集中の場合はスキップ
     if (this.activeCollections.has(source.type)) {
-      console.log(`[AlternativeDataCollector] Collection already in progress for ${source.type}`);
       return;
     }
 
     // レート制限チェック
     if (!this.checkRateLimit(source)) {
-      console.log(`[AlternativeDataCollector] Rate limit exceeded for ${source.type}`);
       return;
     }
 
     this.activeCollections.add(source.type);
 
     try {
-      console.log(`[AlternativeDataCollector] Collecting data from ${source.name}...`);
       
       // データを取得（モック実装）
       const data = await this.fetchData(source);
@@ -450,7 +445,6 @@ export class AlternativeDataCollector extends EventEmitter {
       return;
     }
 
-    console.log(`[AlternativeDataCollector] Retrying collection from ${source.name} (attempt ${attempt})`);
     
     try {
       await this.collectFromSource(source);
@@ -485,7 +479,6 @@ export class AlternativeDataCollector extends EventEmitter {
    */
   clearCache(): void {
     this.dataCache.clear();
-    console.log('[AlternativeDataCollector] Cache cleared');
   }
 
   /**

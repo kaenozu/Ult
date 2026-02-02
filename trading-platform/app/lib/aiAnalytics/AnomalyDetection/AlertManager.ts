@@ -190,7 +190,6 @@ export class AlertManager {
   ): Promise<void> {
     // In production, this would actually send notifications
     // For now, we'll just log
-    console.log(`[${channel.type}] Alert sent:`, {
       type: alert.type,
       severity: alert.severity,
       message: alert.message,
@@ -222,7 +221,6 @@ export class AlertManager {
    * Execute automatic action
    */
   private async executeAutoAction(alert: CriticalAlert): Promise<void> {
-    console.log(`Auto-executing action: ${alert.recommendedAction}`);
     // In production, this would trigger actual trading actions
   }
 
@@ -271,7 +269,6 @@ export class AlertManager {
    * Apply escalation action
    */
   private async applyEscalation(alert: Alert, rule: EscalationRule): Promise<void> {
-    console.log(`Escalating alert: ${rule.action}`);
     // In production, this would trigger escalation procedures
   }
 
@@ -279,7 +276,6 @@ export class AlertManager {
    * Escalate a critical alert
    */
   private async escalateAlert(alert: CriticalAlert): Promise<void> {
-    console.log(`Escalating critical alert: ${alert.type}`);
     // In production, this would notify senior management, etc.
   }
 

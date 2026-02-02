@@ -112,7 +112,6 @@ export class SocialMediaCollector extends EventEmitter {
       return;
     }
 
-    console.log('[SocialMediaCollector] Starting social media collection...');
     this.isRunning = true;
 
     // Start collection for each enabled source
@@ -129,7 +128,6 @@ export class SocialMediaCollector extends EventEmitter {
    * コレクターを停止
    */
   stop(): void {
-    console.log('[SocialMediaCollector] Stopping social media collection...');
     this.isRunning = false;
 
     // Clear all timers
@@ -164,7 +162,6 @@ export class SocialMediaCollector extends EventEmitter {
    * ソースからデータを取得
    */
   private async fetchFromSource(source: SocialMediaSource): Promise<void> {
-    console.log(`[SocialMediaCollector] Fetching from ${source.platform}...`);
 
     let posts: SocialMediaPost[] = [];
 
@@ -188,7 +185,6 @@ export class SocialMediaCollector extends EventEmitter {
       const newPosts = this.processPosts(posts, source);
       
       if (newPosts.length > 0) {
-        console.log(`[SocialMediaCollector] Found ${newPosts.length} new posts from ${source.platform}`);
         this.emit('posts', { source: source.id, posts: newPosts });
       }
     } catch (error) {
@@ -203,7 +199,6 @@ export class SocialMediaCollector extends EventEmitter {
   private async fetchFromTwitter(source: SocialMediaSource): Promise<SocialMediaPost[]> {
     // Twitter API v2 would be used in production
     // For now, return empty array as placeholder
-    console.log('[SocialMediaCollector] Twitter API integration (placeholder)');
     
     if (!source.apiKey) {
       console.warn('[SocialMediaCollector] Twitter API key not configured');
@@ -219,7 +214,6 @@ export class SocialMediaCollector extends EventEmitter {
    */
   private async fetchFromReddit(source: SocialMediaSource): Promise<SocialMediaPost[]> {
     // Reddit API would be used in production
-    console.log('[SocialMediaCollector] Reddit API integration (placeholder)');
     
     if (!source.apiKey) {
       console.warn('[SocialMediaCollector] Reddit API credentials not configured');
@@ -235,7 +229,6 @@ export class SocialMediaCollector extends EventEmitter {
    */
   private async fetchFromStockTwits(source: SocialMediaSource): Promise<SocialMediaPost[]> {
     // StockTwits API is relatively straightforward
-    console.log('[SocialMediaCollector] StockTwits API integration (placeholder)');
     
     // Placeholder: In production, implement actual StockTwits API calls
     // StockTwits has a public API for trending stocks
@@ -247,7 +240,6 @@ export class SocialMediaCollector extends EventEmitter {
    */
   private async fetchFromTelegram(source: SocialMediaSource): Promise<SocialMediaPost[]> {
     // Telegram Bot API would be used in production
-    console.log('[SocialMediaCollector] Telegram API integration (placeholder)');
     
     // Placeholder: In production, implement actual Telegram Bot API calls
     return [];
@@ -308,7 +300,6 @@ export class SocialMediaCollector extends EventEmitter {
     toDelete.forEach((id) => this.posts.delete(id));
 
     if (toDelete.length > 0) {
-      console.log(`[SocialMediaCollector] Cleaned up ${toDelete.length} old posts`);
     }
   }
 

@@ -1,3 +1,4 @@
+import { requireCSRF } from '/app/lib/csrf/csrf-protection';
 /**
  * GET /api/sentiment/route.ts
  * 
@@ -48,6 +49,9 @@ interface SentimentAction {
 }
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
+  const csrfError = requireCSRF(request);
+  if (csrfError) return csrfError;
+
   async (_request: NextRequest, body: SentimentAction) => {
     // Validate action
     const validationError = validateField({

@@ -406,7 +406,6 @@ export class MultiExchangeDataFeed extends EventEmitter {
   // ============================================================================
 
   async connect(): Promise<void> {
-    console.log('[MultiExchangeDataFeed] Starting connections to all exchanges...');
     
     const connectPromises = this.config.exchanges.map((exchangeConfig) =>
       this.connectToExchange(exchangeConfig)
@@ -417,7 +416,6 @@ export class MultiExchangeDataFeed extends EventEmitter {
   }
 
   disconnect(): void {
-    console.log('[MultiExchangeDataFeed] Disconnecting from all exchanges...');
     
     this.clearAllTimers();
     this.closeAllConnections();
@@ -514,7 +512,6 @@ export class MultiExchangeDataFeed extends EventEmitter {
     if (!conn.ws) return;
 
     conn.ws.onopen = () => {
-      console.log(`[${config.name}] WebSocket connected`);
       conn.status = 'connected';
       conn.reconnectAttempts = 0;
       this.emit('exchange_connected', config.name);
@@ -538,7 +535,6 @@ export class MultiExchangeDataFeed extends EventEmitter {
     };
 
     conn.ws.onclose = () => {
-      console.log(`[${config.name}] WebSocket closed`);
       conn.status = 'disconnected';
       this.emit('exchange_disconnected', config.name);
       this.scheduleReconnect(config);
@@ -733,7 +729,6 @@ export class MultiExchangeDataFeed extends EventEmitter {
     conn.status = 'reconnecting';
 
     const timeout = setTimeout(() => {
-      console.log(`[${config.name}] Attempting reconnect ${conn.reconnectAttempts}/${config.maxReconnectAttempts}`);
       this.connectToExchange(config);
     }, config.reconnectInterval * conn.reconnectAttempts);
 

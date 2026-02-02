@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, BacktestTrade } from './AdvancedBacktestEngine';
+import { BacktestResult, BacktestTrade, BacktestConfig, PerformanceMetrics } from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -198,10 +198,6 @@ export class MonteCarloSimulator extends EventEmitter {
    * モンテカルロシミュレーションを実行
    */
   async runSimulation(originalResult: BacktestResult): Promise<MonteCarloResult> {
-    console.log('[MonteCarloSimulator] Starting simulation');
-    console.log(`  Number of simulations: ${this.config.numSimulations}`);
-    console.log(`  Method: ${this.config.method}`);
-    console.log(`  Original trades: ${originalResult.trades.length}`);
 
     this.emit('start', { numSimulations: this.config.numSimulations });
 
@@ -210,7 +206,6 @@ export class MonteCarloSimulator extends EventEmitter {
     // シミュレーションを実行
     for (let i = 0; i < this.config.numSimulations; i++) {
       if (this.config.verbose) {
-        console.log(`[MonteCarloSimulator] Running simulation ${i + 1}/${this.config.numSimulations}`);
       }
 
       const simulation = await this.runSingleSimulation(originalResult, i);
@@ -226,7 +221,6 @@ export class MonteCarloSimulator extends EventEmitter {
       }
     }
 
-    console.log('[MonteCarloSimulator] Simulation complete');
 
     // 統計を計算
     const probabilities = this.calculateProbabilities(originalResult, simulations);
@@ -329,8 +323,8 @@ export class MonteCarloSimulator extends EventEmitter {
   private calculateMetricsFromEquity(
     equityCurve: number[],
     trades: BacktestTrade[],
-    config: any
-  ): any {
+    config: BacktestConfig
+  ): PerformanceMetrics {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);
 
     const totalReturn = ((equityCurve[equityCurve.length - 1] - config.initialCapital) / config.initialCapital) * 100;

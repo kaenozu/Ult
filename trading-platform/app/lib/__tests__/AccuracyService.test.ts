@@ -240,31 +240,38 @@ describe('AccuracyService', () => {
   });
 
   describe('calculateRealTimeAccuracy', () => {
-    it('should return null for insufficient data', () => {
+    it('should return error for insufficient data', () => {
       const shortData = generateMockData(100);
       const result = accuracyService.calculateRealTimeAccuracy('7203', shortData, 'japan');
 
-      expect(result).toBeNull();
+      expect(result.isErr).toBe(true);
+      if (result.isErr) {
+        expect(result.error.message).toContain('Insufficient data');
+      }
     });
 
     it('should calculate accuracy with sufficient data', () => {
       const data = generateMockData(300, 1000, 'up');
       const result = accuracyService.calculateRealTimeAccuracy('7203', data, 'japan');
 
-      expect(result).toBeDefined();
-      expect(result?.hitRate).toBeGreaterThanOrEqual(0);
-      expect(result?.hitRate).toBeLessThanOrEqual(100);
-      expect(result?.directionalAccuracy).toBeGreaterThanOrEqual(0);
-      expect(result?.directionalAccuracy).toBeLessThanOrEqual(100);
-      expect(result?.totalTrades).toBeGreaterThanOrEqual(0);
+      expect(result.isOk).toBe(true);
+      if (result.isOk) {
+        expect(result.value.hitRate).toBeGreaterThanOrEqual(0);
+        expect(result.value.hitRate).toBeLessThanOrEqual(100);
+        expect(result.value.directionalAccuracy).toBeGreaterThanOrEqual(0);
+        expect(result.value.directionalAccuracy).toBeLessThanOrEqual(100);
+        expect(result.value.totalTrades).toBeGreaterThanOrEqual(0);
+      }
     });
 
     it('should return better accuracy for trending data', () => {
       const trendingData = generateMockData(300, 1000, 'up');
       const result = accuracyService.calculateRealTimeAccuracy('7203', trendingData, 'japan');
 
-      expect(result).toBeDefined();
-      expect(result?.totalTrades).toBeGreaterThanOrEqual(0);
+      expect(result.isOk).toBe(true);
+      if (result.isOk) {
+        expect(result.value.totalTrades).toBeGreaterThanOrEqual(0);
+      }
     });
   });
 
