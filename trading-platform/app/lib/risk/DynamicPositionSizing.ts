@@ -121,13 +121,81 @@ export class DynamicPositionSizing {
     
     const avgCorrelation = count > 0 ? totalCorrelation / count : 0;
     
+    // ポートフォリオ分散状態を考慮
+    // HHI（ハーフィンダール指数）を計算して集中度を評価
+    const hhi = this.calculatePortfolioConcentration();
+    const concentrationFactor = 1 - (hhi * 0.3); // 集中度が高いほど縮小
+    
+    // 相関ブレークダウン検出
+    const correlationBreakdown = this.detectCorrelationBreakdown(symbol);
+    const breakdownFactor = correlationBreakdown ? 0.5 : 1.0;
+    
     // 高相関の場合はポジションサイズを縮小
     // 相関が0.5以上で段階的に縮小
+    let correlationFactor = 1.0;
     if (avgCorrelation > 0.5) {
-      return 1.0 - ((avgCorrelation - 0.5) * 0.5);
+      correlationFactor = 1.0 - ((avgCorrelation - 0.5) * 0.5);
     }
     
-    return 1.0;
+    return correlationFactor * concentrationFactor * breakdownFactor;
+  }
+
+  /**
+   * ポートフォリオ集中度を計算（HHI）
+   */
+  private calculatePortfolioConcentration(): number {
+    if (this.portfolio.positions.length === 0) {
+      return 0;
+    }
+    
+    const totalValue = this.portfolio.totalValue;
+    let hhi = 0;
+    
+    for (const position of this.portfolio.positions) {
+      const positionValue = position.currentPrice * position.quantity;
+      const weight = positionValue / totalValue;
+      hhi += weight * weight;
+    }
+    
+    // Normalize to 0-1 range
+    const n = this.portfolio.positions.length;
+    return (hhi - 1 / n) / (1 - 1 / n);
+  }
+
+  /**
+   * 相関ブレークダウンを検出
+   * 通常は正の相関があるべき資産間で負の相関が発生している場合
+   */
+  private detectCorrelationBreakdown(symbol: string): boolean {
+    const symbolCorrelations = this.correlations.get(symbol);
+    if (!symbolCorrelations) {
+      return false;
+    }
+    
+    // 既存ポジションとの相関が異常に低い、または負の相関が多い場合
+    let negativeCount = 0;
+    let lowCorrelationCount = 0;
+    let totalCount = 0;
+    
+    for (const position of this.portfolio.positions) {
+      const correlation = symbolCorrelations.get(position.symbol) || 0;
+      totalCount++;
+      
+      if (correlation < 0) {
+        negativeCount++;
+      }
+      if (Math.abs(correlation) < 0.1) {
+        lowCorrelationCount++;
+      }
+    }
+    
+    if (totalCount === 0) return false;
+    
+    // 50%以上が負の相関、または70%以上が極端に低い相関の場合、ブレークダウンと判定
+    const negativeRatio = negativeCount / totalCount;
+    const lowCorrelationRatio = lowCorrelationCount / totalCount;
+    
+    return negativeRatio > 0.5 || lowCorrelationRatio > 0.7;
   }
 
   /**
@@ -167,7 +235,7 @@ export class DynamicPositionSizing {
   }
 
   /**
-   * Kelly基準によるポジションサイズ計算
+   * Kelly基準によるポジションサイズ計算（残高変動に応じた動的調整付き）
    */
   calculateKellyCriterion(
     winRate: number,
@@ -183,8 +251,11 @@ export class DynamicPositionSizing {
     
     const kellyFraction = (p * b - q) / b;
     
-    // 安全のため、Kelly基準の25%のみを使用
-    const safeFraction = Math.max(0, kellyFraction * 0.25);
+    // 残高変動に応じた動的調整
+    const balanceAdjustment = this.calculateBalanceAdjustment();
+    
+    // 安全のため、Kelly基準の25%のみを使用し、残高変動で調整
+    const safeFraction = Math.max(0, kellyFraction * 0.25 * balanceAdjustment);
     
     const positionValue = this.portfolio.totalValue * safeFraction;
     const recommendedSize = Math.floor(positionValue / entryPrice);
@@ -196,10 +267,34 @@ export class DynamicPositionSizing {
       confidence: 75, // Kelly基準は統計的に信頼性が高い
       reasons: [
         `Kelly criterion: ${(kellyFraction * 100).toFixed(2)}%`,
-        `Safe fraction (25%): ${(safeFraction * 100).toFixed(2)}%`,
+        `Safe fraction (25%): ${(kellyFraction * 0.25 * 100).toFixed(2)}%`,
+        `Balance adjustment: ${(balanceAdjustment * 100).toFixed(1)}%`,
+        `Final fraction: ${(safeFraction * 100).toFixed(2)}%`,
         `Win rate: ${(winRate * 100).toFixed(1)}%, Win/Loss ratio: ${b.toFixed(2)}`
       ]
     };
+  }
+
+  /**
+   * 残高変動に基づく調整係数を計算
+   * 利益が増えている時は積極的に、損失時は保守的にポジションを調整
+   */
+  private calculateBalanceAdjustment(): number {
+    const currentValue = this.portfolio.totalValue;
+    const initialCapital = this.config.initialCapital || currentValue;
+    
+    // 元本からの変動率を計算
+    const changePercent = ((currentValue - initialCapital) / initialCapital) * 100;
+    
+    // 利益が出ている場合は積極的に（最大1.5倍まで）
+    // 損失が出ている場合は保守的に（最小0.5倍まで）
+    if (changePercent > 0) {
+      // 利益時: 10%利益で1.1倍、20%利益で1.2倍、最大50%利益で1.5倍
+      return Math.min(1.5, 1.0 + (changePercent / 100));
+    } else {
+      // 損失時: -10%損失で0.9倍、-20%損失で0.8倍、-50%損失で0.5倍
+      return Math.max(0.5, 1.0 + (changePercent / 50));
+    }
   }
 
   /**
