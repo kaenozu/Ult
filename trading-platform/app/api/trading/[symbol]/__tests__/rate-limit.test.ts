@@ -15,7 +15,7 @@ jest.mock('@/app/lib/tradingCore/UnifiedTradingPlatform', () => ({
 describe('Trading Symbol API Rate Limiting', () => {
   beforeEach(() => {
     // Reset rate limiter state before each test
-    (ipRateLimiter as any).counters.clear();
+    ipRateLimiter.reset();
   });
 
   const createRequest = (symbol: string) => {

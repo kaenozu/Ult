@@ -66,65 +66,27 @@ export type {
   LatencyMetrics,
 } from './AlgorithmicExecutionEngine';
 
-// Broker Connectors (NEW)
+// Slippage Monitor
 export {
-  BaseBrokerConnector,
-  IBKRConnector,
-  AlpacaConnector,
-  TDAmeritradeConnector,
-  createBrokerConnector,
-} from './BrokerConnectors';
+  SlippageMonitor,
+  getGlobalSlippageMonitor,
+  resetGlobalSlippageMonitor,
+} from './SlippageMonitor';
 
 export type {
-  BrokerCredentials,
-  OrderRequest,
-  BrokerOrder,
-  Position,
-  AccountBalance,
-  OrderBookSnapshot,
-  ExecutionReport,
-  BrokerConfig,
-  OrderType,
-  OrderSide,
-  OrderStatus,
-  TimeInForce,
-  BrokerType,
-} from './BrokerConnectors';
-
-// Order Management System (NEW)
-export {
-  OrderManagementSystem,
-  getGlobalOrderManagementSystem,
-  resetGlobalOrderManagementSystem,
-} from './OrderManagementSystem';
-
-export type {
-  ManagedOrder,
-  OrderFill as OMSOrderFill,
-  OMSConfig,
-  OrderValidationError,
-  OMSStatistics,
-  OrderLifecycleState,
-} from './OrderManagementSystem';
-
-// Execution Quality Monitor (NEW)
-export {
-  ExecutionQualityMonitor,
-  getGlobalExecutionQualityMonitor,
-  resetGlobalExecutionQualityMonitor,
-} from './ExecutionQualityMonitor';
-
-export type {
-  ExecutionMetrics,
-  AggregatedMetrics,
-  VenuePerformance,
+  Order as SlippageOrder,
+  Execution,
+  SlippageRecord,
   SlippageAnalysis,
-  QualityAlert,
-  QualityConfig,
-} from './ExecutionQualityMonitor';
+  SlippageAlert,
+  SlippageMonitorConfig,
+} from './SlippageMonitor';
 
 // Advanced Order Types
 export type {
+  OrderSide,
+  TimeInForce,
+  OrderStatus,
   BaseOrder,
   StopLossOrder,
   TakeProfitOrder,

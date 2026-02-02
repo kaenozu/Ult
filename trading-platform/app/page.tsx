@@ -9,7 +9,7 @@ import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
-import { useSupplyDemandAlerts } from '@/app/hooks/useSupplyDemandAlerts';
+import { useSymbolAccuracy } from '@/app/hooks/useSymbolAccuracy';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';
 import { useTranslations } from '@/app/i18n/provider';
@@ -26,10 +26,10 @@ const UserExperienceEnhancements = lazy(() => import('@/app/components/UserExper
 const ChartLoader = () => (
   <div className="w-full h-full flex items-center justify-center bg-[#131b23]">
     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-  </div>
-);
+  );
+}
 
-function WorkstationContent() {
+function Workstation() {
   const t = useTranslations();
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
@@ -43,7 +43,9 @@ function WorkstationContent() {
     error,
     handleStockSelect,
     interval,
-    setInterval
+    setInterval,
+    fallbackApplied,
+    dataDelayMinutes
   } = useStockData();
 
   const [showSMA, setShowSMA] = useState(true);
@@ -51,16 +53,15 @@ function WorkstationContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
+  // Fetch accuracy data for the selected stock
+  const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(
+    selectedStock || { symbol: '', name: '', market: 'usa', sector: '', price: 0, change: 0, changePercent: 0, volume: 0 },
+    chartData
+  );
+
   const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
     closePosition(symbol, currentPrice);
   }, [closePosition]);
-
-  // Monitor supply/demand levels and trigger alerts
-  useSupplyDemandAlerts({
-    data: chartData,
-    signal: chartSignal,
-    symbol: selectedStock?.symbol || ''
-  });
 
   const displayStock = selectedStock;
 
@@ -180,6 +181,8 @@ function WorkstationContent() {
                 setShowBollinger={setShowBollinger}
                 interval={interval}
                 setInterval={setInterval}
+                fallbackApplied={fallbackApplied}
+                dataDelayMinutes={dataDelayMinutes}
               />
 
               {/* Main Chart Visualization */}
@@ -193,6 +196,12 @@ function WorkstationContent() {
                       error={error}
                       market={selectedStock?.market}
                       signal={chartSignal}
+                      accuracyData={accuracy ? {
+                        hitRate: accuracy.hitRate,
+                        totalTrades: accuracy.totalTrades,
+                        predictionError: accuracy.predictionError,
+                        loading: accuracyLoading
+                      } : null}
                     />
                   </Suspense>
                 </div>
@@ -245,10 +254,10 @@ function WorkstationContent() {
   );
 }
 
-export default function Workstation() {
+export default function HomePage() {
   return (
     <ErrorBoundary name="HomePage">
-      <WorkstationContent />
+      <Workstation />
     </ErrorBoundary>
   );
 }
