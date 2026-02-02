@@ -61,6 +61,11 @@ export function useStockData() {
     setChartSignal(null);
 
     try {
+      if (!stock.symbol) {
+        setLoading(false);
+        return;
+      }
+
       const indexSymbol = stock.market === 'japan' ? '^N225' : '^IXIC';
 
       // Map UI interval names to API interval format
