@@ -140,7 +140,12 @@ export function useResilientWebSocket(
           onMessage?.(message);
         },
         onError: (err) => {
-          console.error('[useResilientWebSocket] Error:', err);
+          console.error('[useResilientWebSocket] Error:', {
+            category: err.category,
+            message: err.message,
+            code: err.code,
+            timestamp: err.timestamp,
+          });
           setError(err);
           onError?.(err);
         },

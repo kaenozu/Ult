@@ -157,8 +157,19 @@ const calculateBackoffDelay = (
 /**
  * Categorize WebSocket errors
  */
-const categorizeError = (error: Error | Event | CloseEvent): WebSocketError => {
+const categorizeError = (error: Error | Event | CloseEvent | ErrorEvent): WebSocketError => {
   const timestamp = Date.now();
+
+  // ErrorEvent (WebSocket error events)
+  if (error instanceof ErrorEvent && error.error) {
+    const actualError = error.error;
+    return {
+      category: 'RECOVERABLE',
+      message: actualError.message || 'WebSocket error occurred',
+      originalError: actualError,
+      timestamp,
+    };
+  }
 
   // Close event analysis
   if ('code' in error) {
@@ -567,8 +578,12 @@ export class ResilientWebSocketClient {
     };
 
     this.ws.onerror = (event) => {
-      console.error('[WebSocket] Error occurred');
       const wsError = categorizeError(event);
+      console.error('[WebSocket] Error occurred:', {
+        category: wsError.category,
+        message: wsError.message,
+        code: wsError.code,
+      });
       this.options.onError?.(wsError);
       this.emit('error', wsError);
     };
