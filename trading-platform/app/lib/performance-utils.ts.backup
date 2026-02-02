@@ -75,9 +75,7 @@ export function measure(name: string, options: MeasureOptions = {}) {
         PerformanceMonitor.record(fullName, duration, 'error');
         throw error;
       }
-    };
-
-    return descriptor;
+    } as T;
   };
 }
 
@@ -136,9 +134,7 @@ export function measureAsync(name: string, options: MeasureOptions = {}) {
         PerformanceMonitor.record(fullName, duration, 'error');
         throw error;
       }
-    };
-
-    return descriptor;
+    } as T;
   };
 }
 
