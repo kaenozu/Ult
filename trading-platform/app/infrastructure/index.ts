@@ -1,9 +1,9 @@
 /**
- * Infrastructure
+ * Infrastructure Layer - Barrel Export
  * 
- * This module exports all infrastructure layer components including
- * API clients, caching, WebSocket management, and storage.
+ * インフラストラクチャ層のエクスポート
  */
 
 export * from './api';
+export * from './cache';
 export * from './websocket';

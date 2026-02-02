@@ -1,16 +1,8 @@
 /**
- * Prediction Domain
+ * Prediction Domain - Barrel Export
  * 
- * This module exports all prediction-related services, models, and types.
- * Use this barrel export for importing prediction functionality.
+ * 予測関連の型定義とサービスをエクスポート
  */
 
-// Services
-export * from './services/ml-model-service';
-export * from './services/tensorflow-model-service';
-export * from './services/advanced-prediction-service';
-export * from './services/integrated-prediction-service';
-export * from './services/enhanced-ml-service';
-
-// Models
-export * from './models/ml';
+export * from './types';
+export * from './services';

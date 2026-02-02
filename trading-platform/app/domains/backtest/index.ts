@@ -1,9 +1,6 @@
 /**
- * Backtest Domain
- * 
- * This module exports all backtest-related functionality including
- * engines, metrics, and strategies.
+ * Backtest Domain - Barrel Export
  */
 
-// Export everything from engine
-export * from './engine';
+export * from './types';
+export * from './services';

@@ -625,6 +625,214 @@ export function getUserErrorMessage(error: unknown): string {
 // Result Types
 // ============================================================================
 
+/**
+ * Result型 - 成功 (Ok) または失敗 (Err) を表現する型
+ * 
+ * エラーハンドリングを型安全に行うためのパターン実装。
+ * throw/catchの代わりにResult型を使うことで、エラー処理を明示的にする。
+ * 
+ * @template T 成功時の値の型
+ * @template E エラーの型（デフォルト: TradingError）
+ * 
+ * @example
+ * ```typescript
+ * function divide(a: number, b: number): Result<number, Error> {
+ *   if (b === 0) {
+ *     return err(new Error('Division by zero'));
+ *   }
+ *   return ok(a / b);
+ * }
+ * 
+ * const result = divide(10, 2);
+ * if (result.isOk) {
+ *   console.log('Result:', result.value);
+ * } else {
+ *   console.error('Error:', result.error);
+ * }
+ * ```
+ */
+export type Result<T, E = TradingError> = Ok<T, E> | Err<T, E>;
+
+/**
+ * 成功結果を表すクラス
+ */
+export class Ok<T, E = TradingError> {
+  readonly isOk = true as const;
+  readonly isErr = false as const;
+  
+  constructor(readonly value: T) {}
+  
+  /**
+   * 値をマップする
+   */
+  map<U>(fn: (value: T) => U): Result<U, E> {
+    return ok(fn(this.value));
+  }
+  
+  /**
+   * 値をマップして新しいResultを返す
+   */
+  flatMap<U>(fn: (value: T) => Result<U, E>): Result<U, E> {
+    return fn(this.value);
+  }
+  
+  /**
+   * エラーをマップする（成功時は何もしない）
+   */
+  mapErr<F>(_fn: (error: E) => F): Result<T, F> {
+    return ok(this.value);
+  }
+  
+  /**
+   * 値を取得する（成功時のみ）
+   */
+  unwrap(): T {
+    return this.value;
+  }
+  
+  /**
+   * 値を取得する、失敗時はデフォルト値を返す
+   */
+  unwrapOr(_defaultValue: T): T {
+    return this.value;
+  }
+  
+  /**
+   * 値を取得する、失敗時はエラーをthrowする
+   */
+  unwrapOrThrow(): T {
+    return this.value;
+  }
+}
+
+/**
+ * 失敗結果を表すクラス
+ */
+export class Err<T, E = TradingError> {
+  readonly isOk = false as const;
+  readonly isErr = true as const;
+  
+  constructor(readonly error: E) {}
+  
+  /**
+   * 値をマップする（失敗時は何もしない）
+   */
+  map<U>(_fn: (value: T) => U): Result<U, E> {
+    return err(this.error);
+  }
+  
+  /**
+   * 値をマップして新しいResultを返す（失敗時は何もしない）
+   */
+  flatMap<U>(_fn: (value: T) => Result<U, E>): Result<U, E> {
+    return err(this.error);
+  }
+  
+  /**
+   * エラーをマップする
+   */
+  mapErr<F>(fn: (error: E) => F): Result<T, F> {
+    return err(fn(this.error));
+  }
+  
+  /**
+   * 値を取得する（失敗時はエラーをthrowする）
+   */
+  unwrap(): T {
+    throw this.error;
+  }
+  
+  /**
+   * 値を取得する、失敗時はデフォルト値を返す
+   */
+  unwrapOr(defaultValue: T): T {
+    return defaultValue;
+  }
+  
+  /**
+   * 値を取得する、失敗時はエラーをthrowする
+   */
+  unwrapOrThrow(): never {
+    throw this.error;
+  }
+}
+
+/**
+ * 成功結果を作成する
+ */
+export function ok<T, E = TradingError>(value: T): Result<T, E> {
+  return new Ok(value);
+}
+
+/**
+ * 失敗結果を作成する
+ */
+export function err<T, E = TradingError>(error: E): Result<T, E> {
+  return new Err(error);
+}
+
+/**
+ * 結果が成功かどうかを判定する型ガード
+ */
+export function isOk<T, E>(result: Result<T, E>): result is Ok<T, E> {
+  return result.isOk;
+}
+
+/**
+ * 結果が失敗かどうかを判定する型ガード
+ */
+export function isErr<T, E>(result: Result<T, E>): result is Err<T, E> {
+  return result.isErr;
+}
+
+/**
+ * 複数のResultをまとめる
+ * すべて成功していれば配列を返し、1つでも失敗していれば最初のエラーを返す
+ */
+export function combineResults<T, E = TradingError>(
+  results: Result<T, E>[]
+): Result<T[], E> {
+  const values: T[] = [];
+  
+  for (const result of results) {
+    if (result.isErr) {
+      return result;
+    }
+    values.push(result.value);
+  }
+  
+  return ok(values);
+}
+
+/**
+ * try-catchをResultに変換する
+ */
+export function tryCatch<T, E = TradingError>(
+  fn: () => T,
+  onError: (error: unknown) => E
+): Result<T, E> {
+  try {
+    return ok(fn());
+  } catch (error) {
+    return err(onError(error));
+  }
+}
+
+/**
+ * 非同期のtry-catchをResultに変換する
+ */
+export async function tryCatchAsync<T, E = TradingError>(
+  fn: () => Promise<T>,
+  onError: (error: unknown) => E
+): Promise<Result<T, E>> {
+  try {
+    const value = await fn();
+    return ok(value);
+  } catch (error) {
+    return err(onError(error));
+  }
+}
+
 export interface WithErrorHandlingResult<T> {
   data: T | null;
   error: TradingError | null;
