@@ -13,9 +13,9 @@ jobs:
   check-repo-size:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       issues: write
       pull-requests: write
-      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
