@@ -156,7 +156,7 @@ export const ConnectionQualityIndicator = memo(function ConnectionQualityIndicat
     
     // If connected but no quality data yet (no measurements), assume 'good'
     return 'good';
-  }, [metrics?.quality, status]);
+  }, [metrics, status]);
   
   const colors = useMemo(() => getQualityColors(quality), [quality]);
   const SignalIcon = useMemo(() => getSignalIcon(quality), [quality]);
