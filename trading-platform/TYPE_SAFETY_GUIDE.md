@@ -123,14 +123,17 @@ function applyStopLoss(price: Price, stopLoss: Percentage) {
   return price * (1 - ratio); // Error: can't multiply branded types directly
 }
 
-// Correct usage
+// Correct usage - cast at the point of use only
 function applyStopLoss(price: Price, stopLoss: Percentage) {
   const ratio = percentageToRatio(stopLoss);
+  // Cast to number only when needed for operations
   const priceValue = price as number;
   const ratioValue = ratio as number;
   return createPrice(priceValue * (1 - ratioValue));
 }
 ```
+
+**Important Note**: Branded types should be cast to their underlying type (`as number`, `as string`) only at the point where you need to perform operations. This maintains type safety throughout your code and only removes the brand when absolutely necessary.
 
 ### Migration from `any` to Proper Types
 

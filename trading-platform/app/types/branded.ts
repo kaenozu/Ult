@@ -159,15 +159,23 @@ export type DateString = Brand<string, 'DateString'>;
  */
 export function createDateString(value: string | Date): DateString {
   if (value instanceof Date) {
+    if (isNaN(value.getTime())) {
+      throw new TypeError('Invalid Date object');
+    }
     return value.toISOString() as DateString;
   }
   if (typeof value !== 'string') {
     throw new TypeError('Date must be a string or Date object');
   }
-  // Basic ISO 8601 validation
+  // Basic ISO 8601 format check
   const isoDateRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/;
   if (!isoDateRegex.test(value)) {
     throw new TypeError('Date must be in ISO 8601 format');
+  }
+  // Validate that the string represents a valid date
+  const date = new Date(value);
+  if (isNaN(date.getTime())) {
+    throw new TypeError('Date string does not represent a valid date');
   }
   return value as DateString;
 }
@@ -222,9 +230,3 @@ export function ratioToPercentage(ratio: Ratio): Percentage {
   return createPercentage((ratio as number) * 100);
 }
 
-/**
- * Safely extract the underlying value from a branded type
- */
-export function unwrapBrandedValue<T>(value: Brand<T, string>): T {
-  return value as unknown as T;
-}
