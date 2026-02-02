@@ -141,7 +141,7 @@ export class AlertNotificationSystem extends EventEmitter {
   }
 
   // Alert Management
-  createAlert(conditionId: string, message: string, severity: 'info' | 'warning' | 'critical', data?: any): string {
+  createAlert(conditionId: string, message: string, severity: 'info' | 'warning' | 'critical', data?: Record<string, unknown>): string {
     const id = this.generateId();
     const alert: Alert = {
       id,
@@ -228,7 +228,7 @@ export class AlertNotificationSystem extends EventEmitter {
     });
   }
 
-  private sendNotification(type: NotificationChannelType, alert: Alert, config: any): void {
+  private sendNotification(type: NotificationChannelType, alert: Alert, config: NotificationChannelConfig): void {
     // Emit event for UI to handle
     this.emit('notification', { type, alert, config });
 

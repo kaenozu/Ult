@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Request } from '@playwright/test';
 
 /**
  * E2Eテスト: チャートインターバル切り替え機能
@@ -223,7 +223,7 @@ test.describe('チャート - インターバル切り替え（米国株）', ()
       const apiRequests: string[] = [];
 
       page.removeAllListeners('request');
-      page.on('request', (request: any) => {
+      page.on('request', (request: Request) => {
         const url = request.url();
         if (url.includes('/api/market') && url.includes('type=history')) {
           apiRequests.push(url);
