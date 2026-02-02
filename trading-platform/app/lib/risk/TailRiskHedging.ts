@@ -370,7 +370,8 @@ export class TailRiskHedging {
 
     if (stdDev === 0) return 0;
 
-    // 3シグマイベント（99.7パーセンタイル）の確率
+    // 3シグマイベント（正規分布で約0.3%の確率）の発生頻度を測定
+    // 3標準偏差以下の極端な負のリターンをカウント
     const threeSigmaThreshold = mean - 3 * stdDev;
     const tailEvents = this.returns.filter(r => r < threeSigmaThreshold).length;
 

@@ -504,21 +504,30 @@ export class EnhancedPortfolioRiskMonitor {
 
   /**
    * 相関ブレークダウンを検出
+   * 
+   * NOTE: This is a placeholder that returns null. In production, this should
+   * detect abnormal correlation patterns such as:
+   * - Assets that normally correlate positively showing negative correlation
+   * - Correlation values significantly different from historical norms
+   * - Market stress indicators based on correlation breakdown
    */
   private detectCorrelationBreakdown(): { severity: number; recommendation: string } | null {
-    const corrMatrix = this.calculateCorrelationMatrix();
-    
-    // 相関行列の異常を検出
-    // 通常正の相関があるべきペアで負の相関が見られる場合など
-    
-    return null; // 簡略化のため
+    // TODO: Implement actual correlation breakdown detection
+    // Requires historical correlation data and real-time correlation monitoring
+    return null;
   }
 
   /**
    * ポートフォリオリターンを計算
+   * 
+   * NOTE: This is a placeholder that returns empty array. In production, this should be
+   * populated with actual portfolio returns calculated from price history.
+   * Callers should use updatePriceHistory() and updateBenchmarkReturns() to provide
+   * real data, or implement custom portfolio return calculation logic.
    */
   private calculatePortfolioReturns(): number[] {
-    // 簡略化：実際には各ポジションの履歴価格から計算
+    // TODO: Implement actual portfolio return calculation from price history
+    // For now, returns empty array - metrics using this will return default values
     return [];
   }
 
@@ -632,11 +641,16 @@ export class EnhancedPortfolioRiskMonitor {
 
   /**
    * 相関行列を計算
+   * 
+   * NOTE: This is a simplified placeholder using fixed correlation values.
+   * In production, this should calculate actual correlations from price history data.
+   * Use updatePriceHistory() to provide real price data for accurate correlation calculation.
    */
   private calculateCorrelationMatrix(): Map<string, Map<string, number>> {
     const matrix = new Map<string, Map<string, number>>();
     
-    // 簡略化：実際には各ポジション間の相関を計算
+    // TODO: Calculate actual correlations from price history
+    // Placeholder: assumes 0.5 correlation between different assets
     for (const pos1 of this.portfolio.positions) {
       const row = new Map<string, number>();
       for (const pos2 of this.portfolio.positions) {

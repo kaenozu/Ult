@@ -338,6 +338,10 @@ export class EnhancedPsychologyMonitor {
 
   /**
    * 基本行動メトリクスを分析
+   * 
+   * NOTE: This returns simplified metrics. In production, winRate, lossRate, 
+   * avgWinSize, avgLossSize, and profitFactor should be calculated from actual
+   * order execution data with realized P&L.
    */
   private analyzeBasicBehavior(): TradingBehaviorMetrics {
     if (this.tradingHistory.length === 0) {
@@ -359,13 +363,14 @@ export class EnhancedPsychologyMonitor {
     const overTradingScore = this.calculateOverTradingScore();
     const emotionalTradingScore = this.calculateEmotionalTradingScore();
     
+    // TODO: Calculate actual win/loss metrics from order P&L data
     return {
-      averageHoldTime: 4,
-      winRate: 0.5,
-      lossRate: 0.5,
-      avgWinSize: 0,
-      avgLossSize: 0,
-      profitFactor: 1,
+      averageHoldTime: 4, // Placeholder
+      winRate: 0.5,       // Placeholder - should be calculated from actual trades
+      lossRate: 0.5,      // Placeholder - should be calculated from actual trades
+      avgWinSize: 0,      // Placeholder - requires P&L data
+      avgLossSize: 0,     // Placeholder - requires P&L data
+      profitFactor: 1,    // Placeholder - requires P&L data
       consecutiveWins,
       consecutiveLosses,
       overTradingScore,
@@ -517,21 +522,26 @@ export class EnhancedPsychologyMonitor {
 
   /**
    * ストップロス無視を検出
+   * 
+   * NOTE: This is a placeholder. In production, this should compare actual exit prices
+   * with predefined stop-loss levels to detect violations.
    */
   private detectStopLossIgnorance(): boolean {
-    // 簡略化：実装には実際のストップロスデータが必要
+    // TODO: Requires Order type to include stopLoss field and actual exit price
     return false;
   }
 
   /**
    * リベンジトレードを検出
+   * 
+   * NOTE: This is a placeholder. In production, this should detect patterns of
+   * increased trading activity immediately following losses, often with larger position sizes.
    */
   private detectRevengeTrading(): boolean {
     if (this.tradingHistory.length < 2) return false;
     
-    // 損失直後の急速な取引
-    const recentTrades = this.tradingHistory.slice(-5);
-    // 簡略化：実装には実際の損益データが必要
+    // TODO: Implement actual revenge trading detection
+    // Requires P&L data to identify losses followed by rapid increased trading
     return false;
   }
 
@@ -626,12 +636,17 @@ export class EnhancedPsychologyMonitor {
 
   /**
    * 連続結果を計算
+   * 
+   * NOTE: This is a simplified placeholder. In production, this should analyze
+   * actual trade outcomes (wins/losses) from executed orders with realized P&L.
+   * Currently returns zeros as we don't have P&L data in the Order type.
    */
   private calculateConsecutiveResults(): {
     consecutiveWins: number;
     consecutiveLosses: number;
   } {
-    // 簡略化
+    // TODO: Implement actual consecutive wins/losses calculation
+    // Requires Order type to include realized P&L or outcome field
     return { consecutiveWins: 0, consecutiveLosses: 0 };
   }
 
