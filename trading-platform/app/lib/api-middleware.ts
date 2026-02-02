@@ -139,3 +139,24 @@ export class ApiHandlerBuilder {
 export function createApiHandler(): ApiHandlerBuilder {
   return new ApiHandlerBuilder();
 }
+
+/**
+ * CSRF Protection
+ * Import and use: import { csrfTokenMiddleware, requireCSRF } from '@/app/lib/csrf/csrf-protection'
+ * 
+ * Usage in API routes:
+ * 
+ * export async function GET(req: NextRequest) {
+ *   // Set CSRF token cookie
+ *   const csrfSet = csrfTokenMiddleware(req);
+ *   if (csrfSet) return csrfSet; // or combine with other responses
+ *   
+ *   // Your GET logic...
+ * }
+ * 
+ * export async function POST(req: NextRequest) {
+ *   // CSRF is automatically validated via middleware wrapper
+ *   const body = await req.json();
+ *   // Your POST logic...
+ * }
+ */
