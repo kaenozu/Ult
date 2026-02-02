@@ -147,9 +147,14 @@ export class AnomalyMonitoringService {
     tailRisk: ReturnType<EventPredictor['assessTailRisk']>;
     correlation: ReturnType<EventPredictor['analyzeRiskCorrelation']>;
   }> {
+    const assetsWithGetReturns = portfolio.assets.map(a => ({
+      ...a,
+      getReturns: () => a.returns,
+    }));
+
     // Convert to required format
     const portfolioData = {
-      assets: portfolio.assets,
+      assets: assetsWithGetReturns,
       totalValue: portfolio.assets.reduce((sum, a) => sum + a.quantity * a.currentPrice, 0),
       cash: 0,
       getHistoricalReturns: () => {
@@ -161,11 +166,6 @@ export class AnomalyMonitoringService {
         return allReturns;
       },
     };
-
-    const assetsWithGetReturns = portfolio.assets.map(a => ({
-      ...a,
-      getReturns: () => a.returns,
-    }));
 
     const tailRisk = this.eventPredictor.assessTailRisk(portfolioData);
     const correlation = this.eventPredictor.analyzeRiskCorrelation(assetsWithGetReturns);

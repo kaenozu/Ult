@@ -3,6 +3,12 @@ import { Stock, OHLCV, Signal } from '@/app/types';
 import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
+import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
+
+interface MarketDataMetadata {
+  fallbackApplied?: boolean;
+  dataDelayMinutes?: number;
+}
 
 /**
  * Custom hook for fetching and managing stock data
@@ -19,6 +25,7 @@ export function useStockData() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeFrame, setTimeFrame] = useState<string>('5m'); // Renamed from interval to avoid shadowing
+  const [metadata, setMetadata] = useState<MarketDataMetadata>({});
 
   // AbortController for canceling pending requests on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -58,6 +65,16 @@ export function useStockData() {
 
       // Map UI interval names to API interval format
       const apiInterval = timeFrame === 'D' ? '1d' : timeFrame.toLowerCase();
+
+      // Determine if fallback will be applied (Japanese stock with intraday interval)
+      const isJapaneseStock = stock.market === 'japan';
+      const fallbackApplied = isJapaneseStock && isIntradayInterval(timeFrame);
+
+      // Set metadata
+      setMetadata({
+        fallbackApplied,
+        dataDelayMinutes: isJapaneseStock ? JAPANESE_MARKET_DELAY_MINUTES : undefined
+      });
 
       // 1. Kick off all requests in parallel
       const stockDataPromise = fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval);
@@ -158,6 +175,8 @@ export function useStockData() {
     error,
     handleStockSelect,
     interval: timeFrame,
-    setInterval: handleTimeFrameChange
+    setInterval: handleTimeFrameChange,
+    fallbackApplied: metadata.fallbackApplied,
+    dataDelayMinutes: metadata.dataDelayMinutes
   };
 }

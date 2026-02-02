@@ -39,7 +39,7 @@ interface SentimentPanelProps {
 // Component
 // ============================================================================
 
-export function SentimentPanel({ symbol }: SentimentPanelProps): JSX.Element {
+export function SentimentPanel({ symbol }: SentimentPanelProps) {
   const [sentimentData, setSentimentData] = useState<SentimentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

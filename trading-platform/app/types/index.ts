@@ -716,3 +716,151 @@ export interface MultiTimeFrameConfig {
   requireHigherTimeFrameConfirmation: boolean;
   divergenceThreshold: number; // Max allowed divergence between timeframes (0-1)
 }
+
+// ============================================================================
+// Additional Types for Type Safety Improvements
+// ============================================================================
+
+/**
+ * Backtest position state
+ */
+export interface BacktestPosition {
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  entryPrice: number;
+  entryDate: string;
+  quantity: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  currentPrice?: number;
+  unrealizedPnL?: number;
+  reason?: string;
+}
+
+/**
+ * Technical indicators data structure
+ */
+export interface TechnicalIndicators {
+  rsi?: number;
+  rsi14?: number;
+  sma5?: number;
+  sma10?: number;
+  sma20?: number;
+  sma50?: number;
+  sma200?: number;
+  ema12?: number;
+  ema26?: number;
+  macd?: number;
+  macdSignal?: number;
+  macdHistogram?: number;
+  bollingerUpper?: number;
+  bollingerMiddle?: number;
+  bollingerLower?: number;
+  atr?: number;
+  atr14?: number;
+  adx?: number;
+  stochasticK?: number;
+  stochasticD?: number;
+  obv?: number;
+  vwap?: number;
+  [key: string]: number | undefined;
+}
+
+/**
+ * Notification channel configuration
+ */
+export interface NotificationChannelConfig {
+  enabled?: boolean;
+  sound?: boolean;
+  desktop?: boolean;
+  webhook?: {
+    url: string;
+    method: 'GET' | 'POST';
+    headers?: Record<string, string>;
+  };
+  email?: {
+    to: string[];
+    from?: string;
+    subject?: string;
+  };
+  slack?: {
+    webhookUrl: string;
+    channel?: string;
+    username?: string;
+  };
+}
+
+/**
+ * Alert configuration
+ */
+export interface AlertConfig {
+  enabled: boolean;
+  priceThreshold?: number;
+  volumeThreshold?: number;
+  changeThreshold?: number;
+  indicators?: Partial<TechnicalIndicators>;
+  condition?: 'above' | 'below' | 'equals' | 'crosses';
+  notificationChannels?: string[];
+  cooldown?: number; // Minutes between alerts
+}
+
+/**
+ * Alert data payload
+ */
+export interface AlertData {
+  symbol: string;
+  type: 'PRICE' | 'VOLUME' | 'INDICATOR' | 'SIGNAL';
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  value?: number;
+  threshold?: number;
+  timestamp: number;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Generic window augmentation for performance tracking
+ */
+declare global {
+  interface Window {
+    __PERFORMANCE_METRICS__?: Map<string, {
+      count: number;
+      totalTime: number;
+      avgTime: number;
+      minTime: number;
+      maxTime: number;
+    }>;
+  }
+}
+
+// ============================================================================
+// Trading Psychology Types
+// ============================================================================
+
+export type {
+  EmotionType,
+  EmotionScore,
+  MentalState,
+  MentalHealthMetrics,
+  DisciplineViolation,
+  ViolationSeverity,
+  DisciplineRules,
+  TradingSession,
+  CoachingRecommendation,
+  CoachingPriority,
+  CoachingType,
+  WarningLevel,
+  PsychologyAnalysisResult,
+  EnhancedJournalEntry,
+  PsychologyState,
+  MentalHealthGaugeProps,
+  EmotionIndicatorProps,
+  DisciplineScoreProps,
+  CoachPanelProps,
+  PsychologyAlertConfig,
+  PsychologyAlert,
+  PsychologyAnalysisRequest,
+  PsychologyAnalysisResponse,
+  DisciplineCheckRequest,
+  DisciplineCheckResponse,
+} from './psychology';

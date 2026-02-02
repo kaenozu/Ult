@@ -5,7 +5,7 @@
  * VaR計算、相関分析、最大ドローダウン制限、ポジション集中度制限などを含みます。
  */
 
-import { Position, Stock, OHLCV } from '../types';
+import { Position, Stock, OHLCV } from '@/app/types';
 import { calculateATR } from '@/app/lib/utils';
 
 export interface PortfolioRiskMetrics {

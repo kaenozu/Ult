@@ -41,3 +41,41 @@ export {
   PsychologyMonitor,
   createPsychologyMonitor,
 } from './PsychologyMonitor';
+
+export {
+  TailRiskHedging,
+  createTailRiskHedging,
+} from './TailRiskHedging';
+
+export type {
+  HedgeStrategy,
+  TailRiskMetrics,
+  HedgeRecommendation,
+  HedgePerformance,
+} from './TailRiskHedging';
+
+export {
+  EnhancedPortfolioRiskMonitor,
+  createEnhancedPortfolioRiskMonitor,
+} from './EnhancedPortfolioRiskMonitor';
+
+export type {
+  SectorExposure,
+  EnhancedRiskMetrics,
+} from './EnhancedPortfolioRiskMonitor';
+
+export {
+  EnhancedPsychologyMonitor,
+  createEnhancedPsychologyMonitor,
+} from './EnhancedPsychologyMonitor';
+
+export type {
+  EnhancedBehaviorMetrics,
+  TiltIndicators,
+  PsychologicalState,
+} from './EnhancedPsychologyMonitor';
+
+export {
+  CoolingOffManager,
+  createCoolingOffManager,
+} from './CoolingOffManager';

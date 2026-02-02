@@ -235,7 +235,7 @@ export class NewsCollector extends EventEmitter {
       url: String(item.url || ''),
       publishedAt: this.parseTimestamp(item.time_published as string),
       symbol: this.extractSymbol(item),
-      author: item.authors && item.authors.length > 0 ? String(item.authors[0]) : 'No Author Specified',
+      author: Array.isArray(item.authors) && item.authors.length > 0 ? String(item.authors[0]) : 'No Author Specified',
     }));
   }
 
