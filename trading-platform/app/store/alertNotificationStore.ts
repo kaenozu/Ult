@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { alertNotificationSystem, AlertCondition, Alert, NotificationChannelType } from '@/app/lib/AlertNotificationSystem';
-import type { NotificationChannelConfig } from '@/app/types';
+import { alertNotificationSystem, AlertCondition, Alert, NotificationChannelType, NotificationChannelConfig } from '@/app/lib/AlertNotificationSystem';
 
 interface AlertNotificationState {
   conditions: AlertCondition[];

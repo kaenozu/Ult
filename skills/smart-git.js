@@ -1,3 +1,4 @@
+const { execSync } = require('child_process');
 const { spawn } = require('child_process');
 
 const message = process.argv[2];
@@ -8,7 +9,7 @@ if (!message) {
   process.exit(1);
 }
 
-// Validate commit message to prevent command injection (from main)
+// Validate commit message to prevent command injection
 const dangerousPatterns = /[;&|`$(){}[\]\\]/;
 if (dangerousPatterns.test(message)) {
   console.error('❌ Error: Commit message contains dangerous characters.');
@@ -16,20 +17,12 @@ if (dangerousPatterns.test(message)) {
   process.exit(1);
 }
 
-console.log('📦 Staging changes...');
-const gitAdd = spawn('git', ['add', '.'], {
-  stdio: 'inherit',
-  shell: false
-});
-
-gitAdd.on('close', (addCode) => {
-  if (addCode !== 0) {
-    console.error(`❌ Git add failed with code ${addCode}.`);
-    process.exit(1);
-  }
+try {
+  console.log('📦 Staging changes...');
+  execSync('git add .', { stdio: 'inherit' });
 
   console.log(`📝 Committing with message: "${message}"...`);
-  // Use spawn with args array to prevent command injection (from main)
+  // Use spawn with args array to prevent command injection
   const gitCommit = spawn('git', ['commit', '-m', message], {
     stdio: 'inherit',
     shell: false
@@ -43,16 +36,7 @@ gitAdd.on('close', (addCode) => {
       process.exit(1);
     }
   });
-
-  gitCommit.on('error', (error) => {
-    console.error('❌ Error executing git commit.');
-    console.error('Details:', error.message);
-    process.exit(1);
-  });
-});
-
-gitAdd.on('error', (error) => {
-  console.error('❌ Error executing git add.');
-  console.error('Details:', error.message);
+} catch (error) {
+  console.error('❌ Error executing git commands.');
   process.exit(1);
-});
+}

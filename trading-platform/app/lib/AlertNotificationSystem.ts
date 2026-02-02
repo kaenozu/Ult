@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import type { AlertData, NotificationChannelConfig } from '../types';
 
 export interface AlertCondition {
   id: string;
@@ -19,10 +18,47 @@ export interface Alert {
   severity: 'info' | 'warning' | 'critical';
   timestamp: number;
   acknowledged: boolean;
-  data?: AlertData;
+  data?: Record<string, unknown>;
 }
 
 export type NotificationChannelType = 'email' | 'sms' | 'push' | 'webhook' | 'slack';
+
+// Specific configuration types for each channel
+export interface EmailChannelConfig {
+  to?: string;
+  from?: string;
+  smtpServer?: string;
+}
+
+export interface SmsChannelConfig {
+  phoneNumber?: string;
+  provider?: string;
+}
+
+export interface PushChannelConfig {
+  deviceToken?: string;
+  platform?: 'ios' | 'android' | 'web';
+}
+
+export interface WebhookChannelConfig {
+  url?: string;
+  method?: 'POST' | 'GET';
+  headers?: Record<string, string>;
+}
+
+export interface SlackChannelConfig {
+  webhookUrl?: string;
+  channel?: string;
+}
+
+// Union type for all possible configurations
+export type NotificationChannelConfig = 
+  | EmailChannelConfig 
+  | SmsChannelConfig 
+  | PushChannelConfig 
+  | WebhookChannelConfig 
+  | SlackChannelConfig 
+  | Record<string, never>; // Empty config
 
 export interface NotificationChannel {
   type: NotificationChannelType;
@@ -105,7 +141,7 @@ export class AlertNotificationSystem extends EventEmitter {
   }
 
   // Alert Management
-  createAlert(conditionId: string, message: string, severity: 'info' | 'warning' | 'critical', data?: AlertData): string {
+  createAlert(conditionId: string, message: string, severity: 'info' | 'warning' | 'critical', data?: Record<string, unknown>): string {
     const id = this.generateId();
     const alert: Alert = {
       id,

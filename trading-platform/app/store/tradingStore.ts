@@ -4,6 +4,25 @@ import { Stock, Portfolio, Position, Order, AIStatus, Theme as AppTheme, Signal 
 import { OrderRequest, OrderResult } from '../types/order';
 import { AI_TRADING } from '../lib/constants';
 
+// Helper function to check if order side is a buy/long position
+function isBuyOrLong(side: Order['side']): boolean {
+  return side === 'BUY' || side === 'LONG';
+}
+
+// Helper function to convert order side to position side
+function orderSideToPositionSide(side: Order['side']): 'LONG' | 'SHORT' {
+  return isBuyOrLong(side) ? 'LONG' : 'SHORT';
+}
+
+// Define stock data update interface
+interface StockDataUpdate {
+  symbol: string;
+  price?: number;
+  change?: number;
+  volume?: number;
+  [key: string]: unknown;
+}
+
 // Define the comprehensive state interface used by legacy components
 interface TradingStore {
   // Theme
@@ -40,7 +59,7 @@ interface TradingStore {
   toggleConnection: () => void;
 
   // Market Data (Mock for compatibility)
-  batchUpdateStockData: (data: Stock[]) => void;
+  batchUpdateStockData: (data: StockDataUpdate[]) => void;
 }
 
 // Helper for portfolio stats with caching
@@ -246,17 +265,14 @@ export const useTradingStore = create<TradingStore>()(
          const price = order.price;
          const orderCost = price * order.quantity;
 
-         // Determine position side based on order side
-         const isLongPosition = order.side === 'BUY' || order.side === 'LONG';
-
          // Basic validation
-         if (isLongPosition && portfolio.cash < orderCost) {
+         if (isBuyOrLong(order.side) && portfolio.cash < orderCost) {
            return state; // Insufficient funds
          }
 
          // Update cash
          let newCash = portfolio.cash;
-         if (isLongPosition) {
+         if (isBuyOrLong(order.side)) {
            newCash -= orderCost;
          } else {
            // Short selling logic often requires margin, keeping simple here
@@ -267,7 +283,7 @@ export const useTradingStore = create<TradingStore>()(
          const newPosition: Position = {
            symbol: order.symbol,
            name: order.symbol,
-           side: isLongPosition ? 'LONG' : 'SHORT',
+           side: orderSideToPositionSide(order.side),
            quantity: order.quantity,
            avgPrice: price,
            currentPrice: price,
