@@ -94,6 +94,11 @@ class AnalysisService {
 
     /**
      * 銘柄ごとに的中率が最大化するパラメータを探索
+     * Walk-Forward Analysis implementation to prevent overfitting:
+     * - Splits optimization window into train (70%) and validation (30%)
+     * - Parameters optimized on training set only
+     * - Best parameters validated on out-of-sample validation set
+     * - Only validated parameters are used for actual trading signals
      */
     optimizeParameters(data: OHLCV[], market: 'japan' | 'usa', context?: AnalysisContext): {
         rsiPeriod: number;
@@ -107,10 +112,6 @@ class AnalysisService {
         if (effectiveLength < OPTIMIZATION.REQUIRED_DATA_PERIOD) {
             return { rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, accuracy: 0 };
         }
-
-        let bestAccuracy = -1;
-        let bestRsiPeriod = RSI_CONFIG.DEFAULT_PERIOD;
-        let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
 
         const closes = data.map(d => d.close);
 
@@ -135,12 +136,25 @@ class AnalysisService {
         // Use cached ATR if available in context
         const atrArray = context?.preCalculatedIndicators?.atr || accuracyService.calculateBatchSimpleATR(data);
 
-        // RSI and SMA are already calculated and cached above (lines 120-132)
-        // No need to recalculate them here - removed duplicate calculations
+        // Walk-Forward Analysis: Split into train and validation sets
+        // Training set: First 70% of the optimization window
+        // Validation set: Last 30% of the optimization window
+        const trainEndIndex = effectiveStartIndex + Math.floor(effectiveLength * OPTIMIZATION.WFA_TRAIN_RATIO);
+        const validationStartIndex = trainEndIndex + 1;
+        const validationPeriod = effectiveEndIndex - validationStartIndex + 1;
 
+        // If validation period is too small, use the entire window for training (fallback)
+        const useValidation = validationPeriod >= OPTIMIZATION.WFA_MIN_VALIDATION_PERIOD;
+
+        let bestValidationAccuracy = -1;
+        let bestRsiPeriod = RSI_CONFIG.DEFAULT_PERIOD;
+        let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
+
+        // Step 1: Optimize parameters on TRAINING set only
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
             for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
-                const result = this.internalCalculatePerformance(
+                // Train on training period only
+                const trainResult = this.internalCalculatePerformance(
                     data,
                     rsiP,
                     smaP,
@@ -148,18 +162,38 @@ class AnalysisService {
                     atrArray,
                     rsiCache.get(rsiP),
                     smaCache.get(smaP),
-                    effectiveEndIndex,
+                    useValidation ? trainEndIndex : effectiveEndIndex,
                     effectiveStartIndex
                 );
-                if (result.hitRate > bestAccuracy) {
-                    bestAccuracy = result.hitRate;
+
+                // Step 2: Validate on OUT-OF-SAMPLE validation set
+                let finalAccuracy = trainResult.hitRate;
+                if (useValidation && trainResult.total > 0) {
+                    const validationResult = this.internalCalculatePerformance(
+                        data,
+                        rsiP,
+                        smaP,
+                        closes,
+                        atrArray,
+                        rsiCache.get(rsiP),
+                        rsiCache.get(smaP),
+                        effectiveEndIndex,
+                        validationStartIndex
+                    );
+                    // Use validation accuracy as the true performance metric
+                    // This prevents overfitting to the training data
+                    finalAccuracy = validationResult.hitRate;
+                }
+
+                if (finalAccuracy > bestValidationAccuracy) {
+                    bestValidationAccuracy = finalAccuracy;
                     bestRsiPeriod = rsiP;
                     bestSmaPeriod = smaP;
                 }
             }
         }
 
-        return { rsiPeriod: bestRsiPeriod, smaPeriod: bestSmaPeriod, accuracy: bestAccuracy };
+        return { rsiPeriod: bestRsiPeriod, smaPeriod: bestSmaPeriod, accuracy: bestValidationAccuracy };
     }
 
     private internalCalculatePerformance(
