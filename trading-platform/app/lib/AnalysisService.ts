@@ -147,8 +147,8 @@ class AnalysisService {
         const useValidation = validationPeriod >= OPTIMIZATION.WFA_MIN_VALIDATION_PERIOD;
 
         let bestValidationAccuracy = -1;
-        let bestRsiPeriod = RSI_CONFIG.DEFAULT_PERIOD;
-        let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
+        let bestRsiPeriod: number = RSI_CONFIG.DEFAULT_PERIOD;
+        let bestSmaPeriod: number = SMA_CONFIG.MEDIUM_PERIOD;
 
         // Step 1: Optimize parameters on TRAINING set only
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
