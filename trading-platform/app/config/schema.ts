@@ -32,7 +32,7 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
   
   // WebSocket
-  WS_PORT: z.string().transform(Number).pipe(z.number().int().positive()).default('3001'),
+  WS_PORT: z.coerce.number().int().positive().default(3001),
   WS_URL: z.string().url().default('ws://localhost:3001'),
   
   // Sentry
@@ -41,22 +41,22 @@ export const envSchema = z.object({
   
   // Market Data
   MARKET_DATA_PROVIDER: z.enum(['yahoo', 'alpha', 'mock']).default('yahoo'),
-  MARKET_DATA_CACHE_DURATION: z.string().transform(Number).pipe(z.number().int().positive()).default('300'),
+  MARKET_DATA_CACHE_DURATION: z.coerce.number().int().positive().default(300),
   
   // Trading
-  DEFAULT_RISK_PERCENT: z.string().transform(Number).pipe(z.number().min(0).max(100)).default('2'),
-  MAX_POSITIONS: z.string().transform(Number).pipe(z.number().int().positive()).default('10'),
-  DEFAULT_STOP_LOSS: z.string().transform(Number).pipe(z.number().positive()).default('5'),
-  DEFAULT_TAKE_PROFIT: z.string().transform(Number).pipe(z.number().positive()).default('10'),
+  DEFAULT_RISK_PERCENT: z.coerce.number().min(0).max(100).default(2),
+  MAX_POSITIONS: z.coerce.number().int().positive().default(10),
+  DEFAULT_STOP_LOSS: z.coerce.number().positive().default(5),
+  DEFAULT_TAKE_PROFIT: z.coerce.number().positive().default(10),
   
   // ML Model
   ML_MODEL_PATH: z.string().default('./models'),
-  ML_PREDICTION_THRESHOLD: z.string().transform(Number).pipe(z.number().min(0).max(1)).default('0.7'),
+  ML_PREDICTION_THRESHOLD: z.coerce.number().min(0).max(1).default(0.7),
   
   // Features
-  ENABLE_REALTIME_DATA: z.enum(['true', 'false']).transform(val => val === 'true').default('false'),
-  ENABLE_ML_PREDICTIONS: z.enum(['true', 'false']).transform(val => val === 'true').default('true'),
-  ENABLE_BACKTEST_CACHE: z.enum(['true', 'false']).transform(val => val === 'true').default('true'),
+  ENABLE_REALTIME_DATA: z.coerce.boolean().default(false),
+  ENABLE_ML_PREDICTIONS: z.coerce.boolean().default(true),
+  ENABLE_BACKTEST_CACHE: z.coerce.boolean().default(true),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
