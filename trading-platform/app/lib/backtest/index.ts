@@ -1,16 +1,23 @@
 export * from './AdvancedPerformanceMetrics';
 export * from './MultiAssetBacktestEngine';
 export * from './WinningBacktestEngine';
+
+// Realistic Backtesting Modules (TRADING-030)
+export * from './SlippageModel';
+export * from './WalkForwardAnalyzer';
+export * from './MonteCarloSimulator';
+export * from './RealisticBacktestOrchestrator';
+
 // Explicit re-exports to avoid naming conflicts
-export type { 
+export type {
   BacktestConfig as AdvancedBacktestConfig
 } from './AdvancedBacktestEngine';
-export { 
-  DEFAULT_BACKTEST_CONFIG as DEFAULT_ADVANCED_CONFIG 
+export {
+  DEFAULT_BACKTEST_CONFIG as DEFAULT_ADVANCED_CONFIG
 } from './AdvancedBacktestEngine';
-export type { 
+export type {
   BacktestConfig as WinningBacktestConfig
 } from './WinningBacktestEngine';
-export { 
-  DEFAULT_BACKTEST_CONFIG as DEFAULT_WINNING_CONFIG 
+export {
+  DEFAULT_BACKTEST_CONFIG as DEFAULT_WINNING_CONFIG
 } from './WinningBacktestEngine';
