@@ -236,11 +236,11 @@ export function setupEventHandlers(): void {
     console.log('✅ Enhanced Sentiment Service started');
   });
   
-  service.on('analysis_completed', (result) => {
+  service.on('analysis_completed', (result: any) => {
     console.log(`📊 Analysis completed for ${result.symbol}`);
   });
   
-  service.on('divergence_alert', ({ symbol, divergence }) => {
+  service.on('divergence_alert', ({ symbol, divergence }: any) => {
     console.log(`⚠️  Divergence Alert for ${symbol}: ${(divergence * 100).toFixed(1)}%`);
   });
   
@@ -249,15 +249,15 @@ export function setupEventHandlers(): void {
     console.log('✅ Data Collector started');
   });
   
-  collector.on('data_collected', (data) => {
+  collector.on('data_collected', (data: any) => {
     console.log(`📥 Data collected from ${data.source.name} (Quality: ${(data.quality.overall * 100).toFixed(1)}%)`);
   });
   
-  collector.on('quality_warning', ({ source, quality }) => {
+  collector.on('quality_warning', ({ source, quality }: any) => {
     console.log(`⚠️  Quality Warning for ${source.name}: ${(quality.overall * 100).toFixed(1)}%`);
   });
   
-  collector.on('collection_error', ({ source, error }) => {
+  collector.on('collection_error', ({ source, error }: any) => {
     console.error(`❌ Collection Error for ${source.name}:`, error);
   });
   

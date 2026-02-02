@@ -204,7 +204,7 @@ export class ExecutionQualityMonitor extends EventEmitter {
       fillLatency,
       totalLatency,
       timestamp: order.filledAt || Date.now(),
-      venue: order.routingDecision?.venue,
+      venue: order.routingDecision?.primaryVenue,
     };
   }
 

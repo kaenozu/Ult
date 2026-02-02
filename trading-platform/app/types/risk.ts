@@ -17,6 +17,7 @@ export interface PositionSizingConfig {
   maxRisk: number; // 最大リスク（ドル）
   volatilityAdjustment: boolean; // ボラティリティ調整の有無
   correlationAdjustment: boolean; // 相関調整の有無
+  initialCapital?: number; // 初期資本（ケリー基準の動的調整用）
 }
 
 export interface SizingResult {
@@ -143,6 +144,27 @@ export interface TradingSession {
   profitLoss: number;
   emotionalState: 'calm' | 'excited' | 'fearful' | 'angry' | 'tired';
   decisionQuality: number; // 0-100
+}
+
+// ============================================================================
+// Cooling-off Management Types
+// ============================================================================
+
+export interface CoolingReason {
+  type: 'consecutive_losses' | 'daily_loss_limit' | 'weekly_loss_limit' | 'overtrading' | 'manual';
+  severity: number; // 1-10
+  triggerValue: number;
+  description: string;
+}
+
+export interface CooldownRecord {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  reason: CoolingReason;
+  duration: number; // minutes
+  wasRespected: boolean;
+  violationCount: number;
 }
 
 // ============================================================================

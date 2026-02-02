@@ -5,7 +5,7 @@
  * 技術指標のクロス、価格レベルの到達、出来高異常、市場マイクロストラクチャーの変化などを検知します。
  */
 
-import { OHLCV, Stock, Signal } from '../types';
+import { OHLCV, Stock, Signal } from '@/app/types';
 import { ProcessedData } from './high-frequency-data-processing-service';
 
 export interface AlertCondition {
@@ -149,22 +149,24 @@ class EnhancedSmartAlertService {
         continue;
       }
 
+      const threshold = Number(condition.threshold);
+
       // 条算子に基づいて条件を評価
       switch (condition.operator) {
         case 'gt':
-          if (!(currentValue > condition.threshold as number)) return false;
+          if (!(currentValue > threshold)) return false;
           break;
         case 'lt':
-          if (!(currentValue < condition.threshold as number)) return false;
+          if (!(currentValue < threshold)) return false;
           break;
         case 'eq':
-          if (!(currentValue === condition.threshold as number)) return false;
+          if (!(currentValue === threshold)) return false;
           break;
         case 'gte':
-          if (!(currentValue >= condition.threshold as number)) return false;
+          if (!(currentValue >= threshold)) return false;
           break;
         case 'lte':
-          if (!(currentValue <= condition.threshold as number)) return false;
+          if (!(currentValue <= threshold)) return false;
           break;
         case 'cross_above':
           // クロス条件は履歴データが必要

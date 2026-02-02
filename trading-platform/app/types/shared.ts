@@ -29,6 +29,15 @@ export interface SharedOHLCV {
 export type PriceData = number[];
 
 // ============================================================================
+// Signal and Entry Timing Types
+// ============================================================================
+
+/**
+ * Entry timing recommendation
+ */
+export type EntryTimingRecommendation = 'IMMEDIATE' | 'WAIT' | 'AVOID';
+
+// ============================================================================
 // Technical Indicator Types
 // ============================================================================
 

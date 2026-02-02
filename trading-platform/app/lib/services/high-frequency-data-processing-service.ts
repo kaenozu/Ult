@@ -5,7 +5,7 @@
  * リアルタイムデータの受信、フィルタリング、集約、分析、そして取引アルゴリズムへの供給を行います。
  */
 
-import { OHLCV, Stock } from '../types';
+import { OHLCV, Stock } from '@/app/types';
 import { realTimeDataService, RealTimeData } from './realtime-data-service';
 import { DataError, logError } from '@/app/lib/errors';
 
@@ -209,11 +209,12 @@ class HighFrequencyDataProcessingService {
     }
 
     // 市場マイクロストラクチャー指標を計算
-    let marketMicrostructure;
+    let marketMicrostructure = { bidAskSpread: 0, orderFlow: 0, liquidity: 0, volatility: 0 };
     if (this.config.enableMarketMicrostructure) {
       const orderBook = this.orderBooks.get(symbol);
       if (orderBook) {
-        marketMicrostructure = this.calculateMarketMicrostructure(bar, orderBook);
+        const result = this.calculateMarketMicrostructure(bar, orderBook);
+        if (result) marketMicrostructure = result;
       }
     }
 
@@ -309,7 +310,7 @@ class HighFrequencyDataProcessingService {
   /**
    * 市場マイクロストラクチャー指標を計算
    */
-  private calculateMarketMicrostructure(bar: OHLCV, orderBook: OrderBookData): ProcessedData['marketMicrostructure'] {
+  private calculateMarketMicrostructure(bar: OHLCV, orderBook: OrderBookData): ProcessedData['marketMicrostructure'] | undefined {
     if (!this.config.enableMarketMicrostructure) return undefined;
 
     // ベッド・アスクスプレッドを計算

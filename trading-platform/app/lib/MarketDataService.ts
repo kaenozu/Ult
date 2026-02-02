@@ -1,8 +1,15 @@
 import { OHLCV } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { logError } from '@/app/lib/errors';
-import { dataQualityChecker, dataCompletionPipeline, dataLatencyMonitor } from './data';
-import type { MarketData } from '@/app/types/data-quality';
+import { 
+  dataQualityChecker, 
+  dataCompletionPipeline, 
+  dataLatencyMonitor,
+  dataQualityValidator,
+  dataPersistenceLayer,
+  marketDataCache
+} from './data';
+import type { MarketData as QualityMarketData } from '@/app/types/data-quality';
 
 /**
  * 市場インデックスの定義
@@ -76,6 +83,43 @@ export class MarketDataService {
   private qualityCheckEnabled = true;
   private dataCompletionEnabled = true;
   private latencyMonitoringEnabled = true;
+  private persistenceEnabled = false; // Disabled by default until initialized
+  private useSmartCache = true;
+  private isInitialized = false;
+
+  /**
+   * Initialize the service with persistence layer
+   */
+  async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+
+    try {
+      // Initialize persistence layer
+      if (typeof window !== 'undefined' && window.indexedDB) {
+        await dataPersistenceLayer.initialize();
+        this.persistenceEnabled = true;
+        console.log('[MarketDataService] Persistence layer initialized');
+      }
+      
+      // Set up cache prefetch strategies
+      if (this.useSmartCache) {
+        marketDataCache.addPrefetchStrategy({
+          name: 'common-symbols',
+          predicate: (key) => key.includes('market-data'),
+          fetcher: async (key) => {
+            const symbol = key.split(':')[1];
+            return this.fetchMarketData(symbol);
+          },
+          priority: 1
+        });
+      }
+
+      this.isInitialized = true;
+    } catch (error) {
+      console.warn('[MarketDataService] Failed to initialize persistence:', error);
+      this.persistenceEnabled = false;
+    }
+  }
 
   /**
    * 市場データを取得する
@@ -97,10 +141,47 @@ export class MarketDataService {
    */
   async fetchMarketData(symbol: string): Promise<OHLCV[]> {
     const now = Date.now();
-    const cached = this.marketDataCache.get(symbol);
 
+    // Try smart cache first
+    if (this.useSmartCache) {
+      const cacheKey = `market-data:${symbol}`;
+      const cached = marketDataCache.get(cacheKey);
+      if (cached) {
+        console.log(`[MarketDataService] Cache hit for ${symbol}`);
+        return cached as OHLCV[];
+      }
+    }
+
+    // Fallback to old cache
+    const cached = this.marketDataCache.get(symbol);
     if (cached && cached.length > 0 && (now - new Date(cached[cached.length - 1].date).getTime()) < this.cacheTimeout) {
       return cached;
+    }
+
+    // Try to load from persistence layer
+    if (this.persistenceEnabled) {
+      try {
+        const persisted = await dataPersistenceLayer.getOHLCV(symbol, {
+          limit: 365,
+          orderBy: 'desc'
+        });
+        if (persisted.length > 0) {
+          const latestDate = new Date(persisted[0].date);
+          const age = now - latestDate.getTime();
+          
+          // If persisted data is fresh enough, use it
+          if (age < this.cacheTimeout) {
+            console.log(`[MarketDataService] Using persisted data for ${symbol}`);
+            this.marketDataCache.set(symbol, persisted);
+            if (this.useSmartCache) {
+              marketDataCache.set(`market-data:${symbol}`, persisted as any);
+            }
+            return persisted;
+          }
+        }
+      } catch (error) {
+        console.warn(`[MarketDataService] Failed to load persisted data:`, error);
+      }
     }
 
     try {
@@ -128,9 +209,9 @@ export class MarketDataService {
           dataLatencyMonitor.recordLatency(symbol, latestDataTime, Date.now(), 'api');
         }
 
-        // Apply quality checks
+        // Apply enhanced quality checks
         if (this.qualityCheckEnabled) {
-          ohlcv = this.applyQualityChecks(symbol, ohlcv);
+          ohlcv = this.applyEnhancedQualityChecks(symbol, ohlcv);
         }
 
         // Apply data completion
@@ -142,6 +223,20 @@ export class MarketDataService {
         }
 
         this.marketDataCache.set(symbol, ohlcv);
+        
+        // Store in smart cache
+        if (this.useSmartCache) {
+          marketDataCache.set(`market-data:${symbol}`, ohlcv as any, this.cacheTimeout);
+        }
+
+        // Persist to IndexedDB
+        if (this.persistenceEnabled) {
+          try {
+            await dataPersistenceLayer.saveOHLCV(ohlcv);
+          } catch (error) {
+            console.warn(`[MarketDataService] Failed to persist data:`, error);
+          }
+        }
         
         // Log fetch performance
         const fetchDuration = Date.now() - fetchStartTime;
@@ -160,6 +255,48 @@ export class MarketDataService {
   }
 
   /**
+   * Apply enhanced quality checks using the new validator
+   * 
+   * @param symbol - Symbol for the data
+   * @param ohlcv - OHLCV data array
+   * @returns Filtered data array with only valid entries
+   */
+  private applyEnhancedQualityChecks(symbol: string, ohlcv: OHLCV[]): OHLCV[] {
+    const validatedData: OHLCV[] = [];
+    
+    for (let i = 0; i < ohlcv.length; i++) {
+      const item = ohlcv[i];
+      const marketData: QualityMarketData = {
+        symbol,
+        timestamp: new Date(item.date).getTime(),
+        ohlcv: item,
+        previousClose: i > 0 ? ohlcv[i - 1].close : undefined,
+        previousVolume: i > 0 ? ohlcv[i - 1].volume : undefined,
+        source: 'api'
+      };
+
+      // Validate with new validator
+      const report = dataQualityValidator.validate(marketData);
+      
+      if (report.isValid) {
+        validatedData.push(item);
+        
+        // Update historical data for anomaly detection
+        dataQualityValidator.updateHistoricalData(symbol, item);
+      } else {
+        console.warn(`Quality check failed for ${symbol} on ${item.date}:`, report.errors);
+      }
+
+      // Log warnings
+      if (report.warnings.length > 0) {
+        console.warn(`Quality warnings for ${symbol} on ${item.date}:`, report.warnings);
+      }
+    }
+
+    return validatedData;
+  }
+
+  /**
    * Apply quality checks to market data
    * 
    * @param symbol - Symbol for the data
@@ -173,7 +310,7 @@ export class MarketDataService {
       const item = data[i];
       const prevItem = i > 0 ? data[i - 1] : undefined;
 
-      const marketData: MarketData = {
+      const marketData: QualityMarketData = {
         symbol,
         timestamp: new Date(item.date).getTime(),
         ohlcv: item,
@@ -442,6 +579,73 @@ export class MarketDataService {
       freshness: freshness.staleness,
       avgLatency: latencyStats?.avgLatencyMs || 0
     };
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    if (this.useSmartCache) {
+      return marketDataCache.getStats();
+    }
+    return {
+      hits: 0,
+      misses: 0,
+      hitRate: 0,
+      size: this.marketDataCache.size,
+      maxSize: 0,
+      evictions: 0
+    };
+  }
+
+  /**
+   * Get persistence statistics
+   */
+  async getPersistenceStats() {
+    if (this.persistenceEnabled) {
+      try {
+        return await dataPersistenceLayer.getStats();
+      } catch (error) {
+        console.warn('[MarketDataService] Failed to get persistence stats:', error);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Create a backup of all persisted data
+   */
+  async createBackup() {
+    if (this.persistenceEnabled) {
+      try {
+        return await dataPersistenceLayer.createBackup();
+      } catch (error) {
+        console.error('[MarketDataService] Failed to create backup:', error);
+        throw error;
+      }
+    }
+    throw new Error('Persistence not enabled');
+  }
+
+  /**
+   * Clear old data to free up space
+   */
+  async clearOldData(symbol: string, daysToKeep: number = 365) {
+    if (this.persistenceEnabled) {
+      try {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+        const beforeDate = cutoffDate.toISOString().split('T')[0];
+        
+        const deleted = await dataPersistenceLayer.deleteOldOHLCV(symbol, beforeDate);
+        console.log(`[MarketDataService] Deleted ${deleted} old records for ${symbol}`);
+        return deleted;
+      } catch (error) {
+        console.error('[MarketDataService] Failed to clear old data:', error);
+        throw error;
+      }
+    }
+    return 0;
   }
 }
 

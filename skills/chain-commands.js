@@ -12,15 +12,36 @@ if (commands.length === 0) {
 // Whitelist of allowed commands for security
 const ALLOWED_COMMANDS = ['git', 'npm', 'yarn', 'node', 'python', 'pytest', 'eslint', 'tsc'];
 
-// Validate commands to prevent command injection
+/**
+ * Validates command to prevent dangerous operations
+ * Combines main's whitelist approach with HEAD's pattern detection
+ * @param {string} cmd - The command to validate
+ * @returns {object} - { valid: boolean, reason: string }
+ */
 function validateCommand(cmd) {
-  // Check for dangerous shell metacharacters
-  const dangerousPatterns = /[;&|`$(){}[\]\\]/;
-  if (dangerousPatterns.test(cmd)) {
+  // Check for dangerous shell metacharacters (from main)
+  const dangerousCharacters = /[;&|`$(){}[\]\\]/;
+  if (dangerousCharacters.test(cmd)) {
     return { valid: false, reason: 'Contains dangerous shell characters' };
   }
 
-  // Parse command to get the base command
+  // Additional dangerous patterns (from HEAD)
+  const dangerousPatterns = [
+    /rm\s+-rf\s+\//, // Prevent deletion of root
+    />\s*\/dev\//, // Prevent writing to device files
+    /curl.*\|\s*bash/, // Prevent piping to shell
+    /wget.*\|\s*sh/, // Prevent piping to shell
+    /eval\s+/, // Prevent eval
+    /exec\s+/, // Prevent exec
+  ];
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(cmd)) {
+      return { valid: false, reason: `Dangerous pattern detected in command: ${cmd}` };
+    }
+  }
+
+  // Parse command to get the base command (from main)
   const baseCommand = cmd.trim().split(/\s+/)[0];
 
   // Check if command is in whitelist
@@ -42,7 +63,7 @@ async function executeCommand(cmd, index, total) {
     const command = parts[0];
     const args = parts.slice(1);
 
-    // Use spawn with shell: false for security
+    // Use spawn with shell: false for security (from main)
     const child = spawn(command, args, {
       stdio: 'inherit',
       shell: false

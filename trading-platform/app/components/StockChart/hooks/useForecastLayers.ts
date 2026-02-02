@@ -9,6 +9,9 @@ interface UseForecastLayersProps {
   signal: Signal | null;
   market: 'japan' | 'usa';
   hoveredIdx: number | null;
+  accuracyData?: {
+    predictionError: number;
+  } | null;
 }
 
 /**
@@ -32,7 +35,8 @@ export const useForecastLayers = ({
   extendedData,
   signal,
   market,
-  hoveredIdx
+  hoveredIdx,
+  accuracyData = null
 }: UseForecastLayersProps) => {
   // 2. AI Time Travel: Ghost Cloud (過去の予測再現)
   const ghostForecastDatasets = useMemo(() => {
@@ -99,7 +103,10 @@ export const useForecastLayers = ({
     const stopArr = new Array(extendedData.labels.length).fill(NaN);
 
     const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    const errorFactor = Math.min(Math.max(signal.predictionError || 1.0, 0.5), 1.5);
+    
+    // Use real-time prediction error from accuracy data if available
+    const predError = accuracyData?.predictionError ?? signal.predictionError ?? 1.0;
+    const errorFactor = Math.min(Math.max(predError, 0.5), 1.5);
     const confidenceUncertainty = 0.4 + ((100 - signal.confidence) / 100) * 0.4;
     const combinedFactor = errorFactor * confidenceUncertainty;
 
@@ -152,7 +159,7 @@ export const useForecastLayers = ({
         order: -1
       }
     ];
-  }, [signal, data, extendedData]);
+  }, [signal, data, extendedData, accuracyData]);
 
   return { ghostForecastDatasets, forecastDatasets };
 };
