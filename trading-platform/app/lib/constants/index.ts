@@ -6,12 +6,22 @@
  */
 
 // 既存の定数を再エクスポート
-export * from './constants';
+export * from './api';
+export * from './backtest';
+export * from './chart';
+export * from './common';
+export * from './intervals';
+export * from './prediction';
+export * from './risk-management';
+export * from './technical-indicators';
+export * from './trading';
+export * from './ui';
 
 /**
  * ML予測モデル関連の定数
+ * (Note: Should eventually move to prediction.ts)
  */
-export const PREDICTION = {
+export const PREDICTION_CONFIG = {
   MODEL_WEIGHTS: { 
     RF: 0.35, 
     XGB: 0.35, 
@@ -49,6 +59,9 @@ export const PREDICTION = {
     BASE: 50,
   },
 } as const;
+
+// Legacy export compatibility
+export const PREDICTION = PREDICTION_CONFIG;
 
 /**
  * ボラティリティ関連の定数

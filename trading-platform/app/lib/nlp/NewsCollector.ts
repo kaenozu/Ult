@@ -106,7 +106,6 @@ export class NewsCollector extends EventEmitter {
       return;
     }
 
-    console.log('[NewsCollector] Starting news collection...');
     this.isRunning = true;
 
     // Start collection for each enabled source
@@ -123,7 +122,6 @@ export class NewsCollector extends EventEmitter {
    * コレクターを停止
    */
   stop(): void {
-    console.log('[NewsCollector] Stopping news collection...');
     this.isRunning = false;
 
     // Clear all timers
@@ -158,7 +156,6 @@ export class NewsCollector extends EventEmitter {
    * ソースからニュースを取得
    */
   private async fetchFromSource(source: NewsSource): Promise<void> {
-    console.log(`[NewsCollector] Fetching from ${source.name}...`);
 
     let articles: NewsArticle[] = [];
 
@@ -179,7 +176,6 @@ export class NewsCollector extends EventEmitter {
       const newArticles = this.processArticles(articles, source);
       
       if (newArticles.length > 0) {
-        console.log(`[NewsCollector] Found ${newArticles.length} new articles from ${source.name}`);
         this.emit('articles', { source: source.id, articles: newArticles });
       }
     } catch (error) {
@@ -273,7 +269,6 @@ export class NewsCollector extends EventEmitter {
   private async fetchFromRSS(source: NewsSource): Promise<NewsArticle[]> {
     // RSS parsing would require a library in production
     // For now, return empty array as placeholder
-    console.log(`[NewsCollector] RSS fetching from ${source.name} (placeholder)`);
     return [];
   }
 
@@ -282,7 +277,6 @@ export class NewsCollector extends EventEmitter {
    */
   private async fetchFromScraper(source: NewsSource): Promise<NewsArticle[]> {
     // Web scraping would be implemented here in production
-    console.log(`[NewsCollector] Scraping from ${source.name} (placeholder)`);
     return [];
   }
 
@@ -335,7 +329,6 @@ export class NewsCollector extends EventEmitter {
     toDelete.forEach((id) => this.articles.delete(id));
 
     if (toDelete.length > 0) {
-      console.log(`[NewsCollector] Cleaned up ${toDelete.length} old articles`);
     }
   }
 

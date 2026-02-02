@@ -127,7 +127,6 @@ export class SentimentIntegrationService extends EventEmitter {
       return;
     }
 
-    console.log('[SentimentIntegration] Starting integrated sentiment analysis...');
     this.isRunning = true;
 
     // Start sentiment engine
@@ -150,7 +149,6 @@ export class SentimentIntegrationService extends EventEmitter {
    * サービスを停止
    */
   stop(): void {
-    console.log('[SentimentIntegration] Stopping integrated sentiment analysis...');
     this.isRunning = false;
 
     this.sentimentEngine.stop();

@@ -9,6 +9,23 @@ jest.mock('@/app/store/portfolioStore');
 jest.mock('@/app/store/uiStore');
 jest.mock('@/app/store/watchlistStore');
 
+jest.mock('@/app/i18n/provider', () => ({
+    useTranslations: () => (key: string) => {
+        const translations: Record<string, string> = {
+            'header.cash': '余力',
+            'header.dailyPnL': '日次損益',
+            'header.holdings': '保有',
+            'header.searchPlaceholder': '銘柄名、コードで検索',
+            'header.searchLabel': '検索',
+            'header.connection.connected': '接続済み',
+            'header.connection.disconnected': '未接続',
+            'header.connection.disconnect': '切断',
+            'header.connection.connect': '接続',
+        };
+        return translations[key] || key;
+    }
+}));
+
 // Mock data
 jest.mock('@/app/data/stocks', () => ({
     ALL_STOCKS: [
@@ -31,6 +48,22 @@ jest.mock('lucide-react', () => ({
 
 jest.mock('../NotificationCenter', () => ({
     NotificationCenter: () => <div data-testid="notification-center">NotificationCenter</div>
+}));
+
+jest.mock('../ConnectionQualityIndicator', () => ({
+    ConnectionQualityIndicator: () => <div data-testid="connection-indicator">Connection</div>
+}));
+
+jest.mock('@/app/hooks/useResilientWebSocket', () => ({
+    useResilientWebSocket: () => ({
+        status: 'CONNECTED',
+        metrics: {},
+        reconnect: jest.fn()
+    })
+}));
+
+jest.mock('../LocaleSwitcher', () => ({
+    LocaleSwitcher: () => <div data-testid="locale-switcher">Locale</div>
 }));
 
 describe('Header', () => {
@@ -60,18 +93,12 @@ describe('Header', () => {
         render(<Header />);
         expect(screen.getByText('TRADER PRO')).toBeInTheDocument();
         expect(screen.getAllByText(/1,000,000/)[0]).toBeInTheDocument();
-        expect(screen.getByText('接続済み')).toBeInTheDocument();
-    });
-
-    it('toggles connection', () => {
-        render(<Header />);
-        fireEvent.click(screen.getByTitle('切断')); // isConnected=true
-        expect(mockToggleConnection).toHaveBeenCalled();
+        expect(screen.getByTestId('connection-indicator')).toBeInTheDocument();
     });
 
     it('edits cash balance', () => {
         render(<Header />);
-        const editTrigger = screen.getByText('余力').parentElement;
+        const editTrigger = screen.getByText('header.cash').parentElement;
         if (editTrigger) fireEvent.click(editTrigger);
 
         const input = screen.getByDisplayValue('1000000');
@@ -83,7 +110,7 @@ describe('Header', () => {
 
     it('searches and selects stock', () => {
         render(<Header />);
-        const input = screen.getByPlaceholderText('銘柄名、コードで検索');
+        const input = screen.getByPlaceholderText('header.searchPlaceholder');
 
         fireEvent.change(input, { target: { value: 'Toyota' } });
         expect(screen.getByText('7203')).toBeInTheDocument(); // In results
@@ -95,7 +122,7 @@ describe('Header', () => {
 
     it('handles exact match on Enter', () => {
         render(<Header />);
-        const input = screen.getByPlaceholderText('銘柄名、コードで検索');
+        const input = screen.getByPlaceholderText('header.searchPlaceholder');
 
         fireEvent.change(input, { target: { value: '7203' } });
         fireEvent.keyDown(input, { key: 'Enter' });
@@ -110,10 +137,34 @@ describe('Header', () => {
         });
 
         render(<Header />);
-        const input = screen.getByPlaceholderText('銘柄名、コードで検索');
+        const input = screen.getByPlaceholderText('header.searchPlaceholder');
         fireEvent.change(input, { target: { value: 'Toyota' } });
 
         expect(screen.getByText('追加済み')).toBeInTheDocument();
         expect(screen.queryByTestId('icon-plus')).toBeNull();
+    });
+
+    it('navigates search results with keyboard', () => {
+        render(<Header />);
+        const input = screen.getByPlaceholderText('header.searchPlaceholder');
+
+        // Search for 'a' to get multiple results (Toyota, Apple)
+        fireEvent.change(input, { target: { value: 'a' } });
+
+        // Results should be visible
+        // Assuming order is as in ALL_STOCKS: Toyota, Apple
+        expect(screen.getByText('7203')).toBeInTheDocument();
+        expect(screen.getByText('AAPL')).toBeInTheDocument();
+
+        // ArrowDown to highlight first item (Toyota)
+        fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+        // ArrowDown to highlight second item (Apple)
+        fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+        // Enter to select highlighted item (Apple)
+        fireEvent.keyDown(input, { key: 'Enter' });
+
+        expect(mockSetSelectedStock).toHaveBeenCalledWith(expect.objectContaining({ symbol: 'AAPL' }));
     });
 });

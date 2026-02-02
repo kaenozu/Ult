@@ -386,19 +386,16 @@ export class ResilientWebSocketClient {
 
     // Prevent multiple simultaneous connection attempts
     if (this.status === 'CONNECTING' || this.status === 'RECONNECTING') {
-      console.log('[WebSocket] Connection already in progress');
       return;
     }
 
     // Check if already connected
     if (this.ws?.readyState === WebSocket.OPEN) {
-      console.log('[WebSocket] Already connected');
       return;
     }
 
     // Check max reconnection attempts
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
-      console.log('[WebSocket] Max reconnect attempts reached, entering fallback mode');
       this.transitionTo('FALLBACK');
       this.startFallback();
       
@@ -411,7 +408,6 @@ export class ResilientWebSocketClient {
       const targetStatus = this.reconnectAttempts > 0 ? 'RECONNECTING' : 'CONNECTING';
       this.transitionTo(targetStatus);
 
-      console.log(`[WebSocket] ${targetStatus === 'RECONNECTING' ? 'Reconnecting' : 'Connecting'} to ${this.config.url}...`);
 
       this.ws = new WebSocket(this.config.url, this.config.protocols);
       this.setupEventHandlers();
@@ -444,7 +440,6 @@ export class ResilientWebSocketClient {
     } else {
       // Queue message for later delivery
       this.queueMessage(messageWithId);
-      console.log(`[WebSocket] Message queued (status: ${this.status})`);
       return false;
     }
   }
@@ -467,14 +462,12 @@ export class ResilientWebSocketClient {
     }
 
     this.transitionTo('CLOSED');
-    console.log('[WebSocket] Disconnected');
   }
 
   /**
    * Reconnect to WebSocket server
    */
   reconnect(): void {
-    console.log('[WebSocket] Manual reconnect requested');
     this.disconnect();
     this.reconnectAttempts = 0;
     this.connect();
@@ -524,7 +517,6 @@ export class ResilientWebSocketClient {
     if (!this.ws) return;
 
     this.ws.onopen = (event) => {
-      console.log('[WebSocket] Connected');
       this.reconnectAttempts = 0;
       this.connectionStartTime = Date.now();
       this.transitionTo('OPEN');
@@ -567,14 +559,13 @@ export class ResilientWebSocketClient {
     };
 
     this.ws.onerror = (event) => {
-      console.error('[WebSocket] Error occurred');
       const wsError = categorizeError(event);
+      console.error('[WebSocket] Error occurred:', wsError.category, '-', wsError.message);
       this.options.onError?.(wsError);
       this.emit('error', wsError);
     };
 
     this.ws.onclose = (event) => {
-      console.log(`[WebSocket] Connection closed: ${event.code} ${event.reason}`);
       this.stopHeartbeat();
       
       // Record connection lost
@@ -607,7 +598,6 @@ export class ResilientWebSocketClient {
         break;
 
       case 'RATE_LIMITED':
-        console.log('[WebSocket] Rate limited, backing off before retry');
         this.transitionTo('ERROR');
         this.scheduleReconnect(60000); // Wait 1 minute
         break;
@@ -684,7 +674,6 @@ export class ResilientWebSocketClient {
       this.config.enableJitter
     );
 
-    console.log(`[WebSocket] Scheduling reconnect in ${Math.round(delay)}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})`);
 
     this.reconnectTimeoutId = setTimeout(() => {
       this.connect();
@@ -752,7 +741,6 @@ export class ResilientWebSocketClient {
   private startFallback(): void {
     if (this.fallbackIntervalId) return;
 
-    console.log('[WebSocket] Starting fallback polling mode');
 
     this.fallbackIntervalId = setInterval(async () => {
       try {
@@ -784,7 +772,6 @@ export class ResilientWebSocketClient {
     if (this.fallbackIntervalId) {
       clearInterval(this.fallbackIntervalId);
       this.fallbackIntervalId = null;
-      console.log('[WebSocket] Stopped fallback polling mode');
     }
   }
 
@@ -796,7 +783,6 @@ export class ResilientWebSocketClient {
     // Try to reconnect every 30 seconds when in fallback mode
     const attemptReconnect = () => {
       if (this.status === 'FALLBACK' && !this.isManualClose) {
-        console.log('[WebSocket] Attempting to recover from fallback mode...');
         this.reconnectAttempts = 0; // Reset attempts for recovery
         this.connect();
         
@@ -834,7 +820,6 @@ export class ResilientWebSocketClient {
   private flushMessageQueue(): void {
     if (this.messageQueue.length === 0) return;
 
-    console.log(`[WebSocket] Sending ${this.messageQueue.length} queued messages`);
 
     const failedMessages: QueuedMessage[] = [];
 

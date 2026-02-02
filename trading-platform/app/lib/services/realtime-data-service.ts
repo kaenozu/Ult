@@ -18,16 +18,13 @@ export interface RealTimeDataCallbacks {
 
 class RealTimeDataService {
   connect(callbacks: RealTimeDataCallbacks): void {
-    console.log('RealTimeDataService: connect (mock)');
     if (callbacks.onConnect) callbacks.onConnect();
   }
 
   disconnect(): void {
-    console.log('RealTimeDataService: disconnect (mock)');
   }
 
   subscribeMultiple(symbols: string[]): void {
-    console.log('RealTimeDataService: subscribeMultiple (mock)', symbols);
   }
 }
 

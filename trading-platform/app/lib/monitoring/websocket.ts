@@ -5,6 +5,7 @@
  */
 
 import { trackWebSocket } from '@/app/lib/monitoring';
+import { logger } from '@/app/core/logger';
 
 /**
  * Monitored WebSocket wrapper
@@ -29,26 +30,27 @@ export class MonitoredWebSocket extends WebSocket {
   private handleOpen(event: Event): void {
     const duration = performance.now() - this.connectionStartTime;
     trackWebSocket('connect', true, duration);
-    console.log(`[WebSocket] Connected in ${duration.toFixed(2)}ms`);
+    logger.info(`[WebSocket] Connected in ${duration.toFixed(2)}ms`, undefined, 'MonitoredWebSocket');
   }
 
   private handleClose(event: CloseEvent): void {
     const duration = performance.now() - this.connectionStartTime;
     const success = event.wasClean;
     
-    trackWebSocket('disconnect', success, duration, 
+    trackWebSocket('disconnect', success, duration,
       success ? undefined : `Code: ${event.code}, Reason: ${event.reason}`
     );
     
-    console.log(
-      `[WebSocket] Disconnected after ${duration.toFixed(2)}ms ` +
-      `(clean: ${success}, messages: ${this.messageCount})`
+    logger.info(
+      `[WebSocket] Disconnected after ${duration.toFixed(2)}ms (clean: ${success}, messages: ${this.messageCount})`,
+      undefined,
+      'MonitoredWebSocket'
     );
   }
 
   private handleError(event: Event): void {
     trackWebSocket('error', false, undefined, 'WebSocket error occurred');
-    console.error('[WebSocket] Error occurred');
+    logger.error('[WebSocket] Error occurred', new Error(String(event)), 'MonitoredWebSocket');
   }
 
   private handleMessage(event: MessageEvent): void {
@@ -57,7 +59,7 @@ export class MonitoredWebSocket extends WebSocket {
     // Track message processing periodically (every 100 messages)
     if (this.messageCount % 100 === 0) {
       trackWebSocket('message', true);
-      console.log(`[WebSocket] Received ${this.messageCount} messages`);
+      logger.info(`[WebSocket] Received ${this.messageCount} messages`, undefined, 'MonitoredWebSocket');
     }
   }
 

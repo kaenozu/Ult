@@ -1,0 +1,46 @@
+{
+  "name": "git-worktree-manager",
+  "description": "Git worktreeを効率的に管理するスキル。複数ブランチの並行作業、worktreeの作成・削除、mainブランチとの同期、コンフリクト解決のための隔離環境を提供する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "triggers": [
+    "git worktree",
+    "並行作業",
+    "複数ブランチを同時に",
+    "worktree作成"
+  ],
+  "rules": [
+    "isolated-environments",
+    "main-sync",
+    "cleanup-strategy",
+    "naming-convention",
+    "storage-management"
+  ],
+  "directory_structure": {
+    "worktrees_root": "../worktrees",
+    "main": "../worktrees/main",
+    "pr_pattern": "../worktrees/pr-{number}",
+    "feature_pattern": "../worktrees/feature-{name}"
+  },
+  "workflow": {
+    "step1": "worktreesルートディレクトリの作成",
+    "step2": "mainブランチ用worktreeの作成",
+    "step3": "PR/featureブランチ用worktreeの作成",
+    "step4": "各worktreeでの作業実行",
+    "step5": "変更のプッシュ",
+    "step6": "worktreeの削除とクリーンアップ"
+  },
+  "commands": [
+    "git worktree add {path} {branch}",
+    "git worktree remove {path}",
+    "git worktree list",
+    "git worktree prune"
+  ],
+  "capabilities": [
+    "複数ブランチの並行チェックアウト",
+    "コンフリクト解決のための隔離環境",
+    "メインリポジトリのクリーンな保持",
+    "worktreeの自動クリーンアップ"
+  ]
+}

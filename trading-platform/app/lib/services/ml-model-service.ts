@@ -17,6 +17,7 @@ import {
   ModelTrainingData
 } from './tensorflow-model-service';
 
+/**
  * ML予測モデルサービス
  */
 export class MLModelService {
@@ -30,6 +31,7 @@ export class MLModelService {
   // Flag to use TensorFlow.js models (set to true after training)
   private useTensorFlowModels = false;
 
+  /**
    * すべてのモデルによる予測を実行（同期版 - ルールベース）
    */
   predict(features: PredictionFeatures): ModelPrediction {
@@ -50,6 +52,7 @@ export class MLModelService {
     };
   }
 
+  /**
    * TensorFlow.jsモデルを使用した予測（非同期版）
    */
   async predictAsync(features: PredictionFeatures): Promise<ModelPrediction> {
@@ -61,6 +64,7 @@ export class MLModelService {
     return this.predict(features);
   }
 
+  /**
    * TensorFlow.jsモデルを使用した予測
    */
   private async predictWithTensorFlow(features: PredictionFeatures): Promise<ModelPrediction> {
@@ -102,6 +106,7 @@ export class MLModelService {
     }
   }
 
+  /**
    * TensorFlow.jsモデルの信頼度を計算
    */
   private calculateTensorFlowConfidence(
@@ -137,6 +142,7 @@ export class MLModelService {
     return Math.min(Math.max(confidence, 50), 95);
   }
 
+  /**
    * モデルを訓練する
    */
   async trainModels(trainingData: ModelTrainingData, epochs = 50): Promise<{
@@ -166,6 +172,7 @@ export class MLModelService {
     };
   }
 
+  /**
    * モデルを保存する
    */
   async saveModels(): Promise<void> {
@@ -174,6 +181,7 @@ export class MLModelService {
     if (this.lstmModel) await this.lstmModel.saveModel('ml-lstm-model');
   }
 
+  /**
    * モデルを読み込む
    */
   async loadModels(): Promise<void> {
@@ -197,12 +205,14 @@ export class MLModelService {
     }
   }
 
+  /**
    * TensorFlow.jsモデルが使用可能かチェック
    */
   isTensorFlowEnabled(): boolean {
     return this.useTensorFlowModels;
   }
 
+  /**
    * モデルのメトリクスを取得
    */
   getModelMetrics(): { ff?: ModelMetrics; gru?: ModelMetrics; lstm?: ModelMetrics } {
@@ -213,6 +223,7 @@ export class MLModelService {
     };
   }
 
+  /**
    * Random Forestによる予測
    */
   private randomForestPredict(f: PredictionFeatures): number {
@@ -241,6 +252,7 @@ export class MLModelService {
     return score * SCALING.RF;
   }
 
+  /**
    * XGBoostによる予測
    */
   private xgboostPredict(f: PredictionFeatures): number {
@@ -270,6 +282,7 @@ export class MLModelService {
     return score * SCALING.XGB;
   }
 
+  /**
    * LSTMによる予測（簡易版）
    */
   private lstmPredict(f: PredictionFeatures): number {
@@ -277,6 +290,7 @@ export class MLModelService {
     return f.priceMomentum * PREDICTION.SCALING.LSTM;
   }
 
+  /**
    * 予測の信頼度を計算
    */
   private calculateConfidence(f: PredictionFeatures, prediction: number): number {

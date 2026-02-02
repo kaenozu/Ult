@@ -30,7 +30,6 @@ export class EnsembleStrategy {
    * Train all base models
    */
   async trainAllModels(trainingData: TrainingData): Promise<void> {
-    console.log('Training ensemble models...');
 
     const inputFeatures = this.countFeatures(trainingData.features[0]);
 
@@ -68,16 +67,13 @@ export class EnsembleStrategy {
     };
 
     // Train LSTM
-    console.log('Training LSTM model...');
     await this.lstmPipeline.trainLSTMModel(trainingData, lstmConfig);
     await this.lstmPipeline.saveModel('lstm-v1');
 
     // Train Transformer
-    console.log('Training Transformer model...');
     await this.transformerPipeline.trainTransformerModel(trainingData, transformerConfig);
     await this.transformerPipeline.saveModel('transformer-v1');
 
-    console.log('All models trained successfully');
   }
 
   /**
@@ -87,7 +83,6 @@ export class EnsembleStrategy {
     try {
       await this.lstmPipeline.loadModel('lstm-v1');
       await this.transformerPipeline.loadModel('transformer-v1');
-      console.log('All models loaded successfully');
     } catch (error) {
       console.error('Error loading models:', error);
       throw new Error('Failed to load ensemble models');

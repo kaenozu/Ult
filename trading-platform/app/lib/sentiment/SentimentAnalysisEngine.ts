@@ -207,7 +207,6 @@ export class SentimentAnalysisEngine extends EventEmitter {
    * エンジンを開始
    */
   start(): void {
-    console.log('[SentimentAnalysisEngine] Starting...');
     this.updateInterval = setInterval(() => {
       this.processAllSymbols();
     }, this.config.updateInterval);
