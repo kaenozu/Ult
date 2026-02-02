@@ -1,4 +1,4 @@
-import { OHLCV, Signal } from '../types';
+import { OHLCV, Signal, Stock } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
@@ -15,6 +15,7 @@ import {
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
 import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
+import { mlIntegrationService } from './services/MLIntegrationService';
 
 export interface AnalysisContext {
     startIndex?: number;
@@ -363,6 +364,7 @@ class AnalysisService {
 
     /**
      * 銘柄の総合分析を実行
+     * ML予測が利用可能な場合は優先的に使用し、そうでない場合はルールベースにフォールバック
      */
     analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
         // Handle window data for legacy components
@@ -409,6 +411,21 @@ class AnalysisService {
                 positionSizeAdjustment: strategyRec.positionSizeAdjustment,
                 exitStrategy: undefined,
             };
+        }
+
+        // Try ML prediction first if available (non-blocking)
+        // Note: This is currently a placeholder for future ML integration
+        // When ML models are trained, they will be used here with graceful fallback
+        // For now, we continue with rule-based predictions
+        const mlAvailable = mlIntegrationService.isAvailable();
+        if (mlAvailable) {
+            // TODO: When models are trained, uncomment this:
+            // const mlPrediction = await mlIntegrationService.predictWithML(
+            //     { symbol } as Stock, 
+            //     data, 
+            //     indexDataOverride
+            // );
+            // if (mlPrediction) return mlPrediction;
         }
 
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
