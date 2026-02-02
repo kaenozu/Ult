@@ -2,19 +2,13 @@
  * @jest-environment node
  */
 import { GET, POST } from '../route';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-// Mock the trading platform to avoid side effects
+// Mock the trading platform
 jest.mock('@/app/lib/tradingCore/UnifiedTradingPlatform', () => ({
   getGlobalTradingPlatform: jest.fn(() => ({
-    getStatus: jest.fn(() => ({ isRunning: true })),
+    getStatus: jest.fn(() => 'running'),
     start: jest.fn(),
-    stop: jest.fn(),
-    reset: jest.fn(),
-    placeOrder: jest.fn(),
-    closePosition: jest.fn(),
-    createAlert: jest.fn(),
-    updateConfig: jest.fn(),
     getPortfolio: jest.fn(() => ({})),
     getSignals: jest.fn(() => []),
     getRiskMetrics: jest.fn(() => ({})),
@@ -22,80 +16,67 @@ jest.mock('@/app/lib/tradingCore/UnifiedTradingPlatform', () => ({
   })),
 }));
 
-// Mock ip-rate-limit
-jest.mock('@/app/lib/ip-rate-limit', () => ({
-  ipRateLimiter: {
-    check: jest.fn(() => true),
-  },
-  getClientIp: jest.fn(() => '127.0.0.1'),
+// Mock rate limiter
+jest.mock('@/app/lib/api-middleware', () => ({
+  checkRateLimit: jest.fn(() => null),
 }));
 
-describe('Admin API Authentication', () => {
-  const originalEnv = process.env;
+// Mock auth middleware
+jest.mock('@/app/lib/auth', () => ({
+  requireAuth: jest.fn(),
+}));
 
+import { requireAuth } from '@/app/lib/auth';
+const mockRequireAuth = requireAuth as jest.Mock;
+
+describe('Trading API Authentication', () => {
   beforeEach(() => {
-    jest.resetModules();
-    process.env = { ...originalEnv };
+    jest.clearAllMocks();
   });
 
-  afterAll(() => {
-    process.env = originalEnv;
-  });
-
-  it('GET /api/trading should return 401 if TRADING_API_KEY is not set', async () => {
-    delete process.env.TRADING_API_KEY;
-
-    const req = new NextRequest('http://localhost:3000/api/trading');
-    const res = await GET(req);
-
-    expect(res.status).toBe(401);
-    const body = await res.json();
-    expect(body.error).toContain('Server configuration error');
-  });
-
-  it('GET /api/trading should return 401 if x-api-key header is missing', async () => {
-    process.env.TRADING_API_KEY = 'secret-key';
-
-    const req = new NextRequest('http://localhost:3000/api/trading');
-    const res = await GET(req);
-
-    expect(res.status).toBe(401);
-    const body = await res.json();
-    expect(body.error).toBe('Unauthorized');
-  });
-
-  it('GET /api/trading should return 401 if x-api-key header is incorrect', async () => {
-    process.env.TRADING_API_KEY = 'secret-key';
-
-    const req = new NextRequest('http://localhost:3000/api/trading', {
-      headers: { 'x-api-key': 'wrong-key' }
+  const createRequest = (method: string = 'GET', body?: any) => {
+    return new NextRequest('http://localhost:3000/api/trading', {
+      method,
+      body: body ? JSON.stringify(body) : undefined,
     });
+  };
+
+  it('GET /api/trading should enforce authentication', async () => {
+    // Simulate unauthorized
+    mockRequireAuth.mockReturnValueOnce(
+      NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    );
+
+    const req = createRequest('GET');
     const res = await GET(req);
 
     expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBe('Unauthorized');
+    expect(mockRequireAuth).toHaveBeenCalled();
   });
 
-  it('GET /api/trading should return 200 if x-api-key header is correct', async () => {
-    process.env.TRADING_API_KEY = 'secret-key';
+  it('GET /api/trading should proceed when authenticated', async () => {
+    // Simulate authorized (returns null)
+    mockRequireAuth.mockReturnValueOnce(null);
 
-    const req = new NextRequest('http://localhost:3000/api/trading', {
-      headers: { 'x-api-key': 'secret-key' }
-    });
+    const req = createRequest('GET');
     const res = await GET(req);
 
     expect(res.status).toBe(200);
+    expect(mockRequireAuth).toHaveBeenCalled();
   });
 
-  it('POST /api/trading should return 401 if x-api-key header is incorrect', async () => {
-    process.env.TRADING_API_KEY = 'secret-key';
+  it('POST /api/trading should enforce authentication', async () => {
+    // Simulate unauthorized
+    mockRequireAuth.mockReturnValueOnce(
+      NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    );
 
-    const req = new NextRequest('http://localhost:3000/api/trading', {
-      method: 'POST',
-      headers: { 'x-api-key': 'wrong-key' },
-      body: JSON.stringify({ action: 'start' })
-    });
+    const req = createRequest('POST', { action: 'start' });
     const res = await POST(req);
 
     expect(res.status).toBe(401);
+    expect(mockRequireAuth).toHaveBeenCalled();
   });
 });
