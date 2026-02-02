@@ -143,11 +143,11 @@ class MonitoringService {
         environment: config.environment,
         tracesSampleRate: config.tracesSampleRate,
         
+        tracePropagationTargets: ['localhost', /^\//],
+        
         // Performance Monitoring
         integrations: [
-          Sentry.browserTracingIntegration({
-            tracePropagationTargets: ['localhost', /^\//],
-          }),
+          Sentry.browserTracingIntegration(),
           Sentry.replayIntegration({
             maskAllText: true,
             blockAllMedia: true,

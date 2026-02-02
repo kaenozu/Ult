@@ -15,7 +15,7 @@ export interface Order {
   id: string;
   symbol: string;
   side: 'BUY' | 'SELL';
-  type: 'MARKET' | 'LIMIT' | 'STOP' | 'STOP_LIMIT' | 'TWAP' | 'VWAP' | 'ICEBERG';
+  type: 'MARKET' | 'LIMIT' | 'STOP' | 'STOP_LIMIT' | 'TWAP' | 'VWAP' | 'ICEBERG' | 'POV';
   quantity: number;
   price?: number;
   stopPrice?: number;
@@ -26,7 +26,7 @@ export interface Order {
 }
 
 export interface ExecutionAlgorithm {
-  type: 'twap' | 'vwap' | 'iceberg' | 'sniper' | 'peg' | 'percentage';
+  type: 'twap' | 'vwap' | 'iceberg' | 'sniper' | 'peg' | 'percentage' | 'pov';
   params: Record<string, number>;
 }
 
@@ -306,6 +306,8 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
         return this.executePeg(order);
       case 'percentage':
         return this.executePercentage(order);
+      case 'pov':
+        return this.executePOV(order);
       default:
         return this.createRejectedResult(order, 'Unknown algorithm type');
     }
@@ -532,6 +534,94 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     }
 
     return this.aggregateFills(order, fills);
+  }
+
+  /**
+   * POV (Percentage of Volume) 注文を実行
+   * Execute POV order - participates at a specified percentage of market volume
+   */
+  private async executePOV(order: Order): Promise<ExecutionResult> {
+    const params = order.algorithm!.params;
+    const targetParticipationRate = params.participationRate || 10; // Default 10% of volume
+    const duration = params.duration || 300; // 5 minutes default
+    const maxSliceSize = params.maxSliceSize || Math.floor(order.quantity * 0.2);
+    const checkInterval = params.checkInterval || 30; // 30 seconds
+
+    const fills: Array<{ price: number; quantity: number; timestamp: number }> = [];
+    const startTime = Date.now();
+    const endTime = startTime + duration * 1000;
+    let totalMarketVolume = 0;
+
+    while (Date.now() < endTime) {
+      const orderBook = this.orderBook.get(order.symbol);
+      if (!orderBook) {
+        await this.delay(1000);
+        continue;
+      }
+
+      // Estimate current market volume increment
+      const currentVolumeIncrement = this.estimateCurrentVolume(orderBook);
+      totalMarketVolume += currentVolumeIncrement;
+
+      // Calculate how much we should have executed by now based on total market volume
+      const targetExecuted = totalMarketVolume * (targetParticipationRate / 100);
+      const actualExecuted = fills.reduce((sum, f) => sum + f.quantity, 0);
+      const deficit = targetExecuted - actualExecuted;
+
+      // Only execute if we're behind target and there's remaining quantity
+      if (deficit > 1 && actualExecuted < order.quantity) {
+        // Calculate slice size based on deficit, but cap it
+        let sliceQty = Math.min(
+          Math.floor(deficit),
+          maxSliceSize,
+          order.quantity - actualExecuted
+        );
+
+        // Ensure minimum slice size for execution
+        if (sliceQty < 1) {
+          sliceQty = Math.min(1, order.quantity - actualExecuted);
+        }
+
+        if (sliceQty > 0) {
+          const sliceOrder: Order = {
+            ...order,
+            id: `${order.id}_pov_${fills.length}`,
+            quantity: sliceQty,
+            type: 'MARKET',
+            algorithm: undefined,
+          };
+
+          const result = await this.executeStandardOrder(sliceOrder);
+          fills.push(...result.fills);
+
+          // Record actual execution
+          const filledQty = fills.reduce((sum, f) => sum + f.quantity, 0);
+          
+          // Stop if fully filled
+          if (filledQty >= order.quantity) {
+            break;
+          }
+        }
+      }
+
+      // Wait before next check
+      await this.delay(checkInterval * 1000);
+    }
+
+    return this.aggregateFills(order, fills);
+  }
+
+  /**
+   * Estimate current market volume from order book
+   */
+  private estimateCurrentVolume(orderBook: OrderBook): number {
+    // Estimate volume from order book depth
+    const bidVolume = orderBook.bids.reduce((sum, b) => sum + b.size, 0);
+    const askVolume = orderBook.asks.reduce((sum, a) => sum + a.size, 0);
+    
+    // Assume order book represents ~10% of actual volume per check interval
+    // This is a simplification - in production, use actual trade data
+    return (bidVolume + askVolume) * 0.1;
   }
 
   // ============================================================================

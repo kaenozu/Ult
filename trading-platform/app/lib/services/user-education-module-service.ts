@@ -41,6 +41,7 @@ export interface UserProgress {
   completed: boolean;
   score?: number; // クイズのスコア
   completedAt?: Date;
+  createdAt?: Date;
   progress: number; // 0-100%
   quizResults?: QuizResult[];
 }

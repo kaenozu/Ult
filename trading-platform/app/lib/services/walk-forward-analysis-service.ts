@@ -5,8 +5,8 @@
  * モードフォワード分析は、過剰適合を防ぎ、戦略の堅牢性を評価するために使用されます。
  */
 
-import { OHLCV, Stock, BacktestResult } from '../types';
-import { backtestService, BacktestConfig } from './backtest-service';
+import { OHLCV, Stock, BacktestResult } from '@/app/types';
+import { backtestService, BacktestConfig } from '@/app/lib/backtest-service';
 import { multipleTradingStrategiesService, StrategyInput } from './multiple-trading-strategies-service';
 
 export interface WalkForwardAnalysisConfig {

@@ -5,7 +5,7 @@
  * ATRベース、価格レベル、時間ベース、トレーリストップなど複数の戦略を含みます。
  */
 
-import { OHLCV } from '../types';
+import { OHLCV } from '@/app/types';
 import { calculateATR } from '@/app/lib/utils';
 
 export interface StopLossStrategy {

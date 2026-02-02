@@ -5,9 +5,12 @@
  * Transformerモデルの概念を取り入れたアテンションメカニズムを実装します。
  */
 
-import { OHLCV, Stock, Signal } from '../types';
-import { ExtendedTechnicalIndicator } from '@/app/lib/types/prediction-types';
+import { OHLCV, Stock, Signal, TechnicalIndicator } from '@/app/types';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
+
+export interface ExtendedTechnicalIndicator extends TechnicalIndicator {
+  atr: number[];
+}
 
 export interface AttentionWeights {
   temporal: number[]; // 時系列に対する重み
@@ -216,8 +219,9 @@ class AdvancedPredictionService {
     // 最新のデータポイントでの乖離率
     const recentDeviations = [];
     for (let i = Math.max(0, sma20.length - 5); i < sma20.length; i++) {
-      if (sma20[i] !== undefined && sma20[i] !== 0) {
-        const deviation = (closes[i] - sma20[i]) / sma20[i];
+      const val = sma20[i];
+      if (val !== undefined && val !== 0) {
+        const deviation = (closes[i] - val) / val;
         recentDeviations.push(Math.abs(deviation));
       }
     }
@@ -228,7 +232,10 @@ class AdvancedPredictionService {
     const avgDeviation = recentDeviations.reduce((sum, dev) => sum + dev, 0) / recentDeviations.length;
     
     // 符号を維持（上昇トレンド:+、下降トレンド:-）
-    const lastDeviation = (closes[closes.length - 1] - sma20[sma20.length - 1]) / sma20[sma20.length - 1];
+    const lastSMA = sma20[sma20.length - 1];
+    const lastDeviation = (lastSMA !== undefined && lastSMA !== 0)
+      ? (closes[closes.length - 1] - lastSMA) / lastSMA
+      : 0;
     
     return lastDeviation >= 0 ? avgDeviation : -avgDeviation;
   }

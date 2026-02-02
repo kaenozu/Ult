@@ -144,27 +144,20 @@ class WinningStrategyEngine {
     // レジームに基づいてシグナル方向を制限
     const allowedSignals = regime.signalRestriction;
     
-    switch (regime.regime) {
-      case 'TRENDING_UP':
+    if (regime.regime === 'TRENDING' && regime.trendDirection === 'UP') {
         // 上昇トレンド: 買いのみ
         result = this.executeTrendFollowingStrategy(data, 'LONG', capital);
-        break;
-        
-      case 'TRENDING_DOWN':
+    } else if (regime.regime === 'TRENDING' && regime.trendDirection === 'DOWN') {
         // 下降トレンド: 売りのみ
         result = this.executeTrendFollowingStrategy(data, 'SHORT', capital);
-        break;
-        
-      case 'RANGING':
+    } else if (regime.regime === 'RANGING') {
         // もみ合い: 両方許可（弱いシグナルで）
         result = this.executeMeanReversionStrategy(data, capital);
         // もみ合い相場では確信度を下げる
         if (result.confidence > 50) {
           result.confidence = Math.round(result.confidence * 0.7);
         }
-        break;
-        
-      default:
+    } else {
         // 不明な場合は複合戦略
         result = this.executeCompositeStrategy(data, capital);
     }

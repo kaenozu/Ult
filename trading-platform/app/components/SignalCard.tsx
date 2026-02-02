@@ -1,6 +1,10 @@
+import { useMemo } from 'react';
 import { Signal, Stock } from '@/app/types';
 import { getConfidenceColor, cn, formatCurrency } from '@/app/lib/utils';
 import { sanitizeString } from '@/app/lib/sanitize';
+import { useRiskManagementStore } from '@/app/store/riskManagementStore';
+import { PositionSizingDisplay } from '@/app/components/PositionSizingDisplay';
+import { getGlobalAnalyticsEngine } from '@/app/lib/aiAnalytics/PredictiveAnalyticsEngine';
 
 interface SignalCardProps {
     signal: Signal;
@@ -23,6 +27,30 @@ export function SignalCard({
 }: SignalCardProps) {
     const isBuy = signal.type === 'BUY';
     const isSell = signal.type === 'SELL';
+    
+    // Get risk management settings
+    const { settings: riskSettings } = useRiskManagementStore();
+    
+    // Calculate position sizing
+    const positionSizing = useMemo(() => {
+        if (!riskSettings.enabled || !signal.stopLoss || !stock.price) {
+            return null;
+        }
+        
+        try {
+            const engine = getGlobalAnalyticsEngine();
+            return engine.calculatePositionSize({
+                accountEquity: riskSettings.accountEquity,
+                riskPerTrade: riskSettings.riskPerTrade,
+                entryPrice: stock.price,
+                stopLossPrice: signal.stopLoss,
+                confidence: signal.confidence,
+            });
+        } catch (error) {
+            console.error('Position sizing calculation error:', error);
+            return null;
+        }
+    }, [riskSettings, signal.stopLoss, signal.confidence, stock.price]);
 
     return (
         <div className={cn(
@@ -184,6 +212,13 @@ export function SignalCard({
                         </div>
                     </div>
                 </div>
+
+                {/* Position Sizing Display */}
+                {riskSettings.enabled && positionSizing && (
+                    <div className="mt-4">
+                        <PositionSizingDisplay result={positionSizing} />
+                    </div>
+                )}
 
                 {/* Supply/Demand Analysis */}
                 {signal.supplyDemand && (

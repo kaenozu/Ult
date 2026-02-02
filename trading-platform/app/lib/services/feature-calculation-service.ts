@@ -1,18 +1,13 @@
 /**
- * 予測特徴量計算サービス（最適化版）
+ * 予測特徴量計算サービス
  * 
  * このモジュールは、MLモデルの入力となる特徴量を計算する機能を提供します。
- * (#526: データパイプライン最適化 - Float64Arrayと高速配列操作を使用)
  */
 
 import { OHLCV } from '../../types';
 import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
-import {
-  toColumnarOHLCV,
-  ColumnarOHLCV,
-  OptimizedArrays,
-  Float64RingBuffer,
-} from './data-pipeline-optimized';
+import { EnhancedPredictionFeatures } from '../types/prediction-types';
+import { enhancedFeatureService } from './enhanced-feature-service';
 
 export interface PredictionFeatures {
   rsi: number;
@@ -29,33 +24,23 @@ export interface PredictionFeatures {
 }
 
 /**
- * 予測特徴量計算サービス（最適化版）
+ * 予測特徴量計算サービス
  */
 export class FeatureCalculationService {
-  private priceBuffer: Float64RingBuffer;
-  private volumeBuffer: Float64RingBuffer;
-
-  constructor(bufferSize: number = 100) {
-    this.priceBuffer = new Float64RingBuffer(bufferSize);
-    this.volumeBuffer = new Float64RingBuffer(bufferSize);
-  }
-
   /**
-   * OHLCVデータから予測に必要な特徴量を計算（最適化版）
+   * OHLCVデータから予測に必要な特徴量を計算
    */
   calculateFeatures(
     data: OHLCV[],
     indicators: any // TechnicalIndicator & { atr: number[] }
   ): PredictionFeatures {
-    // カラム指向構造に変換（Float64Array使用）
-    const columnar = toColumnarOHLCV(data);
-    const prices = columnar.closes;
-    const volumes = columnar.volumes;
+    const prices = data.map(d => d.close);
+    const volumes = data.map(d => d.volume);
     const currentPrice = prices[prices.length - 1];
     const currentVolume = volumes[volumes.length - 1];
-
-    // 高速平均計算
-    const avgVol = OptimizedArrays.average(volumes);
+    
+    // 平均出来高を計算
+    const avgVol = volumes.reduce((a, b) => a + b, 0) / volumes.length;
 
     return {
       rsi: this.getLastValue(indicators.rsi, 0),
@@ -63,45 +48,9 @@ export class FeatureCalculationService {
       sma5: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma5, currentPrice)),
       sma20: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma20, currentPrice)),
       sma50: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma50, currentPrice)),
-      priceMomentum: this.calculatePriceMomentumOptimized(prices, 10),
+      priceMomentum: this.calculatePriceMomentum(prices, 10),
       volumeRatio: currentVolume / (avgVol || 1),
-      volatility: this.calculateVolatilityOptimized(prices, VOLATILITY.CALCULATION_PERIOD),
-      macdSignal: this.calculateMacdSignalDifference(
-        this.getLastValue(indicators.macd.macd, 0),
-        this.getLastValue(indicators.macd.signal, 0)
-      ),
-      bollingerPosition: this.calculateBollingerPosition(
-        currentPrice,
-        this.getLastValue(indicators.bollingerBands.upper, 0),
-        this.getLastValue(indicators.bollingerBands.lower, 0)
-      ),
-      atrPercent: (this.getLastValue(indicators.atr, 0) / currentPrice) * 100,
-    };
-  }
-
-  /**
-   * カラム指向データから直接特徴量を計算
-   */
-  calculateFeaturesFromColumnar(
-    columnar: ColumnarOHLCV,
-    indicators: any
-  ): PredictionFeatures {
-    const prices = columnar.closes;
-    const volumes = columnar.volumes;
-    const currentPrice = prices[prices.length - 1];
-    const currentVolume = volumes[volumes.length - 1];
-
-    const avgVol = OptimizedArrays.average(volumes);
-
-    return {
-      rsi: this.getLastValue(indicators.rsi, 0),
-      rsiChange: this.calculateRsiChange(indicators.rsi),
-      sma5: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma5, currentPrice)),
-      sma20: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma20, currentPrice)),
-      sma50: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma50, currentPrice)),
-      priceMomentum: this.calculatePriceMomentumOptimized(prices, 10),
-      volumeRatio: currentVolume / (avgVol || 1),
-      volatility: this.calculateVolatilityOptimized(prices, VOLATILITY.CALCULATION_PERIOD),
+      volatility: this.calculateVolatility(prices.slice(-VOLATILITY.CALCULATION_PERIOD)),
       macdSignal: this.calculateMacdSignalDifference(
         this.getLastValue(indicators.macd.macd, 0),
         this.getLastValue(indicators.macd.signal, 0)
@@ -118,7 +67,7 @@ export class FeatureCalculationService {
   /**
    * 配列の最後の値を取得
    */
-  private getLastValue(arr: number[] | Float64Array, fallback: number): number {
+  private getLastValue(arr: number[], fallback: number): number {
     return arr.length > 0 ? arr[arr.length - 1] : fallback;
   }
 
@@ -143,46 +92,38 @@ export class FeatureCalculationService {
   }
 
   /**
-   * 価格モメンタムを計算（最適化版）
+   * 価格モメンタムを計算
    */
   calculatePriceMomentum(prices: number[], period: number = 10): number {
-    return this.calculatePriceMomentumOptimized(
-      new Float64Array(prices),
-      period
-    );
-  }
-
-  /**
-   * 価格モメンタムを計算（Float64Array版）
-   */
-  private calculatePriceMomentumOptimized(prices: Float64Array, period: number): number {
     if (prices.length < period + 1) {
       return 0;
     }
-    const currentPrice = prices[prices.length - 1];
-    const pastPrice = prices[prices.length - 1 - period];
+    const currentIndex = prices.length - 1;
+    const pastIndex = currentIndex - period;
+    if (pastIndex < 0) {
+      return 0;
+    }
+    const currentPrice = prices[currentIndex];
+    const pastPrice = prices[pastIndex];
     return ((currentPrice - pastPrice) / pastPrice) * 100;
   }
 
   /**
-   * ボラティリティを計算（最適化版）
+   * ボラティリティを計算
    */
-  private calculateVolatilityOptimized(prices: Float64Array, period: number): number {
+  private calculateVolatility(prices: number[]): number {
     if (prices.length < 2) return 0;
-
-    // 指定期間のデータを取得
-    const startIndex = Math.max(0, prices.length - period);
-    const periodPrices = prices.slice(startIndex);
-
-    if (periodPrices.length < 2) return 0;
-
-    // 高速リターン計算
-    const returns = OptimizedArrays.returns(periodPrices);
-
-    // 高速分散計算
-    const variance = OptimizedArrays.variance(returns);
-
+    const returns = this.calculateReturns(prices);
+    const avg = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avg, 2), 0) / returns.length;
     return Math.sqrt(variance) * Math.sqrt(252) * 100;
+  }
+
+  /**
+   * 価格リターンを計算
+   */
+  private calculateReturns(prices: number[]): number[] {
+    return prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);
   }
 
   /**
@@ -203,18 +144,32 @@ export class FeatureCalculationService {
   }
 
   /**
-   * データをバッファに追加
+   * 拡張特徴量を計算（Phase 1: 時系列特徴量）
+   * 基本特徴量（11次元）+ 新規特徴量（40次元）= 51次元
    */
-  pushData(price: number, volume: number): void {
-    this.priceBuffer.push(price);
-    this.volumeBuffer.push(volume);
-  }
+  calculateEnhancedFeatures(
+    data: OHLCV[],
+    indicators: any // TechnicalIndicator & { atr: number[] }
+  ): EnhancedPredictionFeatures {
+    // 基本特徴量を計算
+    const basicFeatures = this.calculateFeatures(data, indicators);
 
-  /**
-   * バッファから移動平均を計算
-   */
-  getBufferedMovingAverage(period: number): number {
-    return this.priceBuffer.movingAverage(period);
+    // 拡張特徴量を計算
+    const candlestickPatterns = enhancedFeatureService.calculateCandlestickPatterns(data);
+    const priceTrajectory = enhancedFeatureService.calculatePriceTrajectory(data);
+    const volumeProfile = enhancedFeatureService.calculateVolumeProfile(data);
+    const volatilityRegime = enhancedFeatureService.calculateVolatilityRegime(data);
+
+    return {
+      // 基本特徴量（11次元）
+      ...basicFeatures,
+      
+      // 拡張特徴量（40次元）
+      candlestickPatterns,
+      priceTrajectory,
+      volumeProfile,
+      volatilityRegime
+    };
   }
 }
 
