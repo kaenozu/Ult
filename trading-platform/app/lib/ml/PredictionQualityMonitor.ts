@@ -290,7 +290,7 @@ export class PredictionQualityMonitor {
   /**
    * Get prediction latency statistics
    */
-  getLatencyStats(modelVersion: string): {
+  getLatencyStats(_modelVersion: string): {
     mean: number;
     median: number;
     p95: number;
@@ -362,11 +362,11 @@ export class PredictionQualityMonitor {
   /**
    * Export predictions for analysis
    */
-  exportPredictions(modelVersion?: string): PredictionRecord[] {
+  exportPredictions(_modelVersion?: string): PredictionRecord[] {
     const predictions = Array.from(this.predictions.values());
     
-    if (modelVersion) {
-      return predictions.filter(p => p.modelVersion === modelVersion);
+    if (_modelVersion) {
+      return predictions.filter(p => p.modelVersion === _modelVersion);
     }
     
     return predictions;

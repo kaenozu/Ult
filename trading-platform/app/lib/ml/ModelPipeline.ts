@@ -402,7 +402,6 @@ export class ModelPipeline {
     let bestParams: Record<string, number> = {};
 
     // Grid search
-    const keys = Object.keys(paramGrid);
     const combinations = this.generateCombinations(paramGrid);
 
     for (const params of combinations) {

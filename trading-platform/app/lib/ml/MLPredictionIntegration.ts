@@ -33,7 +33,7 @@ export class MLPredictionIntegration {
   async predictWithML(
     stock: Stock,
     ohlcvData: OHLCV[],
-    indexData?: OHLCV[]
+    _indexData?: OHLCV[] // Reserved for future market correlation features
   ): Promise<Signal> {
     if (!this.isModelLoaded) {
       throw new Error('ML models not loaded. Call initialize() first.');
