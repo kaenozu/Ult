@@ -4,6 +4,11 @@
 import { GET, POST } from '../route';
 import { ipRateLimiter } from '@/app/lib/ip-rate-limit';
 
+// Mock auth middleware
+jest.mock('@/app/lib/auth', () => ({
+  requireAuth: jest.fn(() => null),
+}));
+
 // Mock the trading platform
 jest.mock('@/app/lib/tradingCore/UnifiedTradingPlatform', () => ({
   getGlobalTradingPlatform: jest.fn(() => ({
