@@ -43,44 +43,40 @@ export {
   createPsychologyMonitor,
 } from './PsychologyMonitor';
 
-// TRADING-023: Real-time Risk Monitoring
 export {
-  RealTimeRiskCalculator,
-  createRealTimeRiskCalculator,
-  DEFAULT_RISK_CONFIG,
-} from './RealTimeRiskCalculator';
+  TailRiskHedging,
+  createTailRiskHedging,
+} from './TailRiskHedging';
 
 export type {
-  RealTimeRiskMetrics,
-  PositionRisk,
-  RiskCalculationConfig,
-  VaRMethod,
-} from './RealTimeRiskCalculator';
+  HedgeStrategy,
+  TailRiskMetrics,
+  HedgeRecommendation,
+  HedgePerformance,
+} from './TailRiskHedging';
 
-// TRADING-023: Automatic Risk Control
 export {
-  AutomaticRiskController,
-  createAutomaticRiskController,
-  DEFAULT_CONTROL_CONFIG,
-} from './AutomaticRiskController';
+  EnhancedPortfolioRiskMonitor,
+  createEnhancedPortfolioRiskMonitor,
+} from './EnhancedPortfolioRiskMonitor';
 
 export type {
-  RiskControlAction,
-  PositionReductionProposal,
-  RiskControlConfig,
-  MarketCrashData,
-} from './AutomaticRiskController';
+  SectorExposure,
+  EnhancedRiskMetrics,
+} from './EnhancedPortfolioRiskMonitor';
 
-// TRADING-023: Dynamic Risk Adjustment
 export {
-  DynamicRiskAdjuster,
-  createDynamicRiskAdjuster,
-  DEFAULT_ADJUSTER_CONFIG,
-} from './DynamicRiskAdjuster';
+  EnhancedPsychologyMonitor,
+  createEnhancedPsychologyMonitor,
+} from './EnhancedPsychologyMonitor';
 
 export type {
-  DynamicRiskAdjustment,
-  DynamicRiskAdjusterConfig,
-  MarketCondition,
-  PerformanceMetrics,
-} from './DynamicRiskAdjuster';
+  EnhancedBehaviorMetrics,
+  TiltIndicators,
+  PsychologicalState,
+} from './EnhancedPsychologyMonitor';
+
+export {
+  CoolingOffManager,
+  createCoolingOffManager,
+} from './CoolingOffManager';

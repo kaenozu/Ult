@@ -7,6 +7,8 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV } from '../../types/shared';
+import { CompositeTechnicalAnalysisEngine } from './CompositeTechnicalAnalysisEngine';
+import type { CompositeAnalysis } from './CompositeTechnicalAnalysisEngine';
 
 // ============================================================================
 // Types
@@ -78,6 +80,25 @@ export interface PriceForecast {
   }[];
   trend: 'bullish' | 'bearish' | 'sideways';
   strength: number;
+}
+
+export interface PositionSizingInput {
+  accountEquity: number;        // 口座資金
+  riskPerTrade: number;          // 許容リスク率 (%)
+  entryPrice: number;            // エントリー価格
+  stopLossPrice: number;         // 損切り価格
+  confidence?: number;           // シグナル信頼度 (0-100)
+}
+
+export interface PositionSizingResult {
+  recommendedShares: number;     // 推奨購入株数
+  maxLossAmount: number;         // 予想最大損失額
+  riskAmount: number;            // リスク金額
+  positionValue: number;         // ポジション価値
+  riskPercent: number;           // 実際のリスク率
+  stopLossDistance: number;      // 損切り距離
+  stopLossPercent: number;       // 損切りパーセンテージ
+  reasoning: string[];           // 計算根拠
 }
 
 export interface ModelConfig {
@@ -479,155 +500,24 @@ class TechnicalIndicatorCalculator {
 }
 
 // ============================================================================
-// ML Models
-// ============================================================================
-
-class RandomForestModel {
-  private config: ModelConfig['randomForest'];
-  private trees: Array<{ features: number[]; threshold: number; prediction: number }> = [];
-
-  constructor(config: ModelConfig['randomForest']) {
-    this.config = config;
-    this.initializeTrees();
-  }
-
-  private initializeTrees(): void {
-    // Simulated tree initialization
-    // In production, this would load pre-trained models
-    for (let i = 0; i < this.config.nEstimators; i++) {
-      this.trees.push({
-        features: Array(10).fill(0).map(() => Math.random()),
-        threshold: Math.random() * 2 - 1,
-        prediction: Math.random() * 2 - 1,
-      });
-    }
-  }
-
-  predict(features: TechnicalFeatures): number {
-    // Simplified prediction using feature aggregation
-    const featureVector = [
-      features.rsi / 100,
-      features.rsiChange / 10,
-      features.priceMomentum / 10,
-      features.volumeRatio / 5,
-      features.volatility / 50,
-      features.macdSignal / 5,
-      features.bollingerPosition / 100,
-      features.atrPercent / 5,
-      features.williamsR / -100,
-      features.stochasticK / 100,
-    ];
-
-    const predictions = this.trees.map((tree) => {
-      const score = featureVector.reduce((sum, f, i) => sum + f * (tree.features[i] || 0), 0);
-      return score > tree.threshold ? tree.prediction : -tree.prediction;
-    });
-
-    return predictions.reduce((a, b) => a + b, 0) / predictions.length;
-  }
-}
-
-class XGBoostModel {
-  private config: ModelConfig['xgboost'];
-  private weights: number[][] = [];
-  private biases: number[] = [];
-
-  constructor(config: ModelConfig['xgboost']) {
-    this.config = config;
-    this.initializeModel();
-  }
-
-  private initializeModel(): void {
-    // Simulated XGBoost model initialization
-    for (let i = 0; i < this.config.nEstimators; i++) {
-      this.weights.push(Array(10).fill(0).map(() => (Math.random() - 0.5) * 0.1));
-      this.biases.push((Math.random() - 0.5) * 0.1);
-    }
-  }
-
-  predict(features: TechnicalFeatures): number {
-    const featureVector = [
-      features.rsi / 100,
-      features.rsiChange / 10,
-      features.priceMomentum / 10,
-      features.volumeRatio / 5,
-      features.volatility / 50,
-      features.macdSignal / 5,
-      features.bollingerPosition / 100,
-      features.atrPercent / 5,
-      features.adx / 100,
-      features.mfi / 100,
-    ];
-
-    let prediction = 0;
-    const learningRate = this.config.learningRate;
-
-    for (let i = 0; i < this.weights.length; i++) {
-      const treeOutput = featureVector.reduce((sum, f, j) => sum + f * this.weights[i][j], 0) + this.biases[i];
-      prediction += learningRate * Math.tanh(treeOutput);
-    }
-
-    return Math.tanh(prediction);
-  }
-}
-
-class LSTMModel {
-  private config: ModelConfig['lstm'];
-  private hiddenState: number[] = [];
-  private cellState: number[] = [];
-
-  constructor(config: ModelConfig['lstm']) {
-    this.config = config;
-    this.initializeState();
-  }
-
-  private initializeState(): void {
-    this.hiddenState = Array(this.config.hiddenUnits).fill(0);
-    this.cellState = Array(this.config.hiddenUnits).fill(0);
-  }
-
-  predictSequence(data: OHLCV[]): number {
-    if (data.length < this.config.sequenceLength) {
-      return 0;
-    }
-
-    const sequence = data.slice(-this.config.sequenceLength);
-    this.initializeState();
-
-    // Simplified LSTM forward pass
-    for (const candle of sequence) {
-      const normalizedInput = [
-        (candle.close - candle.open) / candle.open,
-        (candle.high - candle.low) / candle.close,
-        candle.volume / 1000000,
-      ];
-
-      // Update hidden state (simplified)
-      for (let i = 0; i < this.config.hiddenUnits; i++) {
-        const inputGate = 1 / (1 + Math.exp(-normalizedInput[0] - this.hiddenState[i] * 0.1));
-        const forgetGate = 1 / (1 + Math.exp(-normalizedInput[1] - this.hiddenState[i] * 0.1));
-        const outputGate = 1 / (1 + Math.exp(-normalizedInput[2] - this.hiddenState[i] * 0.1));
-
-        this.cellState[i] = forgetGate * this.cellState[i] + inputGate * Math.tanh(normalizedInput[0]);
-        this.hiddenState[i] = outputGate * Math.tanh(this.cellState[i]);
-      }
-    }
-
-    // Output layer
-    const output = this.hiddenState.reduce((sum, h) => sum + h, 0) / this.config.hiddenUnits;
-    return Math.tanh(output);
-  }
-}
-
-// ============================================================================
 // Predictive Analytics Engine
 // ============================================================================
 
+/**
+ * PredictiveAnalyticsEngine - 複合テクニカル分析エンジンを使用した予測分析
+ * 
+ * 旧バージョンのランダム要素や固定重みを持つシミュレーションMLモデルを廃止し、
+ * 論理的で解釈可能なテクニカル分析ベースの予測に置き換えました。
+ * 
+ * 【変更点】
+ * - RandomForestModel, XGBoostModel, LSTMModelクラスを削除
+ * - CompositeTechnicalAnalysisEngineを使用
+ * - 説明可能性の向上（Explainable AI）
+ * - 実戦で使える根拠のあるシグナル生成
+ */
 export class PredictiveAnalyticsEngine extends EventEmitter {
   private config: ModelConfig;
-  private rfModel: RandomForestModel;
-  private xgbModel: XGBoostModel;
-  private lstmModel: LSTMModel;
+  private compositeEngine: CompositeTechnicalAnalysisEngine;
   private predictionHistory: Map<string, PredictionResult[]> = new Map();
   private modelAccuracy: Map<string, { correct: number; total: number }> = new Map();
 
@@ -642,9 +532,7 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
       ensemble: { ...DEFAULT_MODEL_CONFIG.ensemble, ...config.ensemble },
     };
 
-    this.rfModel = new RandomForestModel(this.config.randomForest);
-    this.xgbModel = new XGBoostModel(this.config.xgboost);
-    this.lstmModel = new LSTMModel(this.config.lstm);
+    this.compositeEngine = new CompositeTechnicalAnalysisEngine();
   }
 
   /**
@@ -701,30 +589,35 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
   }
 
   /**
-   * MLモデルによる統合予測
+   * 複合テクニカル分析による予測
+   * 
+   * 旧版のランダムMLモデルの代わりに、CompositeTechnicalAnalysisEngineを使用。
+   * 論理的で解釈可能な分析結果を返します。
    */
   predict(symbol: string, data: OHLCV[]): PredictionResult {
     const features = this.calculateFeatures(data);
     const currentPrice = data[data.length - 1].close;
 
-    // Individual model predictions
-    const rfPrediction = this.rfModel.predict(features);
-    const xgbPrediction = this.xgbModel.predict(features);
-    const lstmPrediction = this.lstmModel.predictSequence(data);
+    // 複合テクニカル分析を実行
+    const compositeAnalysis: CompositeAnalysis = this.compositeEngine.analyze(data);
 
-    // Ensemble prediction
-    const weights = this.config.ensemble.weights;
-    const ensemblePrediction = rfPrediction * weights.rf + xgbPrediction * weights.xgb + lstmPrediction * weights.lstm;
+    // CompositeAnalysisから ModelPrediction を生成
+    // 互換性のため、個別モデル予測フィールドは0に設定（使用しない）
+    const rfPrediction = 0; // Legacy field - not used
+    const xgbPrediction = 0; // Legacy field - not used
+    const lstmPrediction = 0; // Legacy field - not used
+    const ensemblePrediction = compositeAnalysis.finalScore; // -1 to 1
 
-    // Calculate confidence
-    const confidence = this.calculateConfidence(features, ensemblePrediction, rfPrediction, xgbPrediction, lstmPrediction);
+    // 方向を変換 ('BUY' -> 'UP', 'SELL' -> 'DOWN')
+    let direction: 'UP' | 'DOWN' | 'NEUTRAL' = 
+      compositeAnalysis.direction === 'BUY' ? 'UP' :
+      compositeAnalysis.direction === 'SELL' ? 'DOWN' :
+      'NEUTRAL';
 
-    // Determine direction
-    let direction: 'UP' | 'DOWN' | 'NEUTRAL' = 'NEUTRAL';
-    if (ensemblePrediction > 0.3) direction = 'UP';
-    else if (ensemblePrediction < -0.3) direction = 'DOWN';
+    // 信頼度 (0-1)
+    const confidence = compositeAnalysis.confidence;
 
-    // Calculate expected return and volatility forecast
+    // 期待リターンとボラティリティ予測
     const expectedReturn = ensemblePrediction * features.volatility;
     const volatilityForecast = features.volatility * (1 + Math.abs(ensemblePrediction) * 0.5);
 
@@ -739,10 +632,10 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
       volatilityForecast,
     };
 
-    // Generate trading signal
-    const signal = this.generateSignal(features, modelPrediction, currentPrice);
+    // トレーディングシグナルを生成（複合分析の説明文を使用）
+    const signal = this.generateSignalFromComposite(compositeAnalysis, features, currentPrice);
 
-    // Generate price forecast
+    // 価格予測を生成
     const forecast = this.generateForecast(currentPrice, modelPrediction, features);
 
     const result: PredictionResult = {
@@ -754,13 +647,13 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
       forecast,
     };
 
-    // Store in history
+    // 履歴に保存
     if (!this.predictionHistory.has(symbol)) {
       this.predictionHistory.set(symbol, []);
     }
     this.predictionHistory.get(symbol)!.push(result);
 
-    // Keep only last 100 predictions
+    // 最新100件のみ保持
     const history = this.predictionHistory.get(symbol)!;
     if (history.length > 100) {
       this.predictionHistory.set(symbol, history.slice(-100));
@@ -771,46 +664,95 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
   }
 
   /**
-   * 信頼度を計算
+   * 複合分析からトレーディングシグナルを生成
+   * 説明可能性を重視し、なぜそのシグナルなのかを明確に示す
    */
-  private calculateConfidence(
+  private generateSignalFromComposite(
+    composite: CompositeAnalysis,
     features: TechnicalFeatures,
-    ensemble: number,
-    rf: number,
-    xgb: number,
-    lstm: number
-  ): number {
-    // Base confidence from model agreement
-    const predictions = [rf, xgb, lstm];
-    const mean = predictions.reduce((a, b) => a + b, 0) / predictions.length;
-    const variance = predictions.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / predictions.length;
-    const modelAgreement = 1 - Math.min(variance * 2, 1);
+    currentPrice: number
+  ): TradingSignal {
+    const { direction, confidence, strength, explainability } = composite;
 
-    // Feature quality factors
-    const volumeQuality = Math.min(features.volumeRatio, 3) / 3;
-    const trendStrength = Math.abs(features.priceMomentum) / 10;
-    const volatilityFactor = Math.max(0, 1 - features.volatility / 100);
+    // シグナルタイプを決定
+    let type: TradingSignal['type'] = 'HOLD';
+    const confidencePercent = confidence * 100;
 
-    // Technical indicator confluence
-    const rsiSignal = features.rsi < 30 || features.rsi > 70 ? 1 : 0;
-    const macdSignal = Math.abs(features.macdSignal) > 1 ? 1 : 0;
-    const bollingerSignal = features.bollingerPosition < 10 || features.bollingerPosition > 90 ? 1 : 0;
-    const indicatorConfluence = (rsiSignal + macdSignal + bollingerSignal) / 3;
+    if (direction === 'BUY') {
+      if (strength === 'STRONG') {
+        type = 'STRONG_BUY';
+      } else if (strength === 'MODERATE' || confidencePercent > 60) {
+        type = 'BUY';
+      } else {
+        type = 'HOLD';
+      }
+    } else if (direction === 'SELL') {
+      if (strength === 'STRONG') {
+        type = 'STRONG_SELL';
+      } else if (strength === 'MODERATE' || confidencePercent > 60) {
+        type = 'SELL';
+      } else {
+        type = 'HOLD';
+      }
+    }
 
-    // Combine factors
-    const confidence = (
-      modelAgreement * 0.4 +
-      volumeQuality * 0.2 +
-      trendStrength * 0.15 +
-      volatilityFactor * 0.15 +
-      indicatorConfluence * 0.1
-    );
+    // 価格ターゲットを計算
+    const atrMultiplier = 2;
+    const volatilityPercent = features.volatility;
+    const targetDistance = (volatilityPercent / 100) * currentPrice * (confidence + 0.5);
+    const stopDistance = (features.atrPercent / 100) * currentPrice * atrMultiplier;
 
-    return Math.min(Math.max(confidence, 0), 1);
+    const targetPrice = direction === 'BUY'
+      ? currentPrice + targetDistance
+      : direction === 'SELL'
+      ? currentPrice - targetDistance
+      : currentPrice;
+
+    const stopLoss = direction === 'BUY'
+      ? currentPrice - stopDistance
+      : direction === 'SELL'
+      ? currentPrice + stopDistance
+      : currentPrice;
+
+    // タイムホライズンを決定
+    let timeHorizon: TradingSignal['timeHorizon'] = 'medium';
+    if (Math.abs(features.priceMomentum) > 5) {
+      timeHorizon = 'short';
+    } else if (features.sma200 !== undefined && Math.abs(features.sma200) < 2) {
+      timeHorizon = 'long';
+    }
+
+    // 説明可能な理由を生成（Explainable AI）
+    const rationale: string[] = [
+      ...explainability.primaryReasons,
+      ...explainability.supportingReasons,
+    ];
+
+    // 警告があれば追加
+    if (explainability.warnings.length > 0) {
+      rationale.push('');
+      rationale.push('【注意事項】');
+      rationale.push(...explainability.warnings);
+    }
+
+    // コンセンサスシグナル情報を追加
+    rationale.push('');
+    rationale.push(`コンセンサスシグナル: ${composite.consensus.type} (確信度: ${composite.consensus.confidence}%)`);
+
+    return {
+      type,
+      confidence: confidencePercent,
+      entryPrice: currentPrice,
+      targetPrice,
+      stopLoss,
+      timeHorizon,
+      rationale,
+    };
   }
 
   /**
-   * トレーディングシグナルを生成
+   * トレーディングシグナルを生成（レガシーメソッド - 互換性のため残す）
+   * @deprecated Use generateSignalFromComposite instead
    */
   private generateSignal(features: TechnicalFeatures, prediction: ModelPrediction, currentPrice: number): TradingSignal {
     const { ensemblePrediction, confidence, direction, volatilityForecast } = prediction;
@@ -940,6 +882,108 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
     const accuracy = this.modelAccuracy.get(symbol);
     if (!accuracy || accuracy.total === 0) return 0.5;
     return accuracy.correct / accuracy.total;
+  }
+
+  /**
+   * ポジションサイジング計算
+   * 
+   * 口座資金とリスク許容度に基づいて、適切なポジションサイズを計算します。
+   * 資金管理の基本原則に従い、1取引あたりのリスクを口座資金の一定割合に抑えます。
+   * 
+   * @param input - ポジションサイジング入力パラメータ
+   * @returns ポジションサイジング結果（推奨株数、最大損失額など）
+   * 
+   * @example
+   * ```typescript
+   * const sizing = engine.calculatePositionSize({
+   *   accountEquity: 1000000,     // 100万円の口座資金
+   *   riskPerTrade: 2,             // 2%のリスク許容
+   *   entryPrice: 1500,            // 1500円でエントリー
+   *   stopLossPrice: 1450,         // 1450円で損切り
+   *   confidence: 75               // 75%の信頼度
+   * });
+   * // => { recommendedShares: 400, maxLossAmount: 20000, ... }
+   * ```
+   */
+  calculatePositionSize(input: PositionSizingInput): PositionSizingResult {
+    const reasoning: string[] = [];
+    
+    // 1. 損切り距離を計算
+    const stopLossDistance = Math.abs(input.entryPrice - input.stopLossPrice);
+    const stopLossPercent = (stopLossDistance / input.entryPrice) * 100;
+    
+    reasoning.push(`エントリー価格: ¥${input.entryPrice.toFixed(2)}`);
+    reasoning.push(`損切り価格: ¥${input.stopLossPrice.toFixed(2)}`);
+    reasoning.push(`損切り距離: ¥${stopLossDistance.toFixed(2)} (${stopLossPercent.toFixed(2)}%)`);
+    
+    // 2. 損切り距離がゼロの場合のエラーハンドリング
+    if (stopLossDistance === 0) {
+      reasoning.push(`⚠️ 損切り距離がゼロです。適切な損切り価格を設定してください。`);
+      return {
+        recommendedShares: 0,
+        maxLossAmount: 0,
+        riskAmount: 0,
+        positionValue: 0,
+        riskPercent: 0,
+        stopLossDistance: 0,
+        stopLossPercent: 0,
+        reasoning
+      };
+    }
+    
+    // 3. 許容リスク金額を計算
+    const riskAmount = input.accountEquity * (input.riskPerTrade / 100);
+    reasoning.push(`許容リスク額: ¥${riskAmount.toFixed(0)} (口座資金の${input.riskPerTrade}%)`);
+    
+    // 4. 基本ポジションサイズを計算
+    // 基本公式: ポジションサイズ = リスク金額 / 1株あたりのリスク
+    let recommendedShares = Math.floor(riskAmount / stopLossDistance);
+    reasoning.push(`基本推奨株数: ${recommendedShares}株`);
+    
+    // 5. 信頼度による調整（オプション）
+    if (input.confidence !== undefined) {
+      const confidenceFactor = input.confidence / 100;
+      // 信頼度が低い場合は控えめに、高い場合はそのまま
+      if (confidenceFactor < 0.7) {
+        const adjustedShares = Math.floor(recommendedShares * confidenceFactor);
+        reasoning.push(`信頼度調整: ${input.confidence}% → ${adjustedShares}株 (調整率: ${(confidenceFactor * 100).toFixed(0)}%)`);
+        recommendedShares = adjustedShares;
+      } else {
+        reasoning.push(`信頼度: ${input.confidence}% (調整なし)`);
+      }
+    }
+    
+    // 5. 最小単位チェック（100株未満は警告）
+    if (recommendedShares < 100) {
+      reasoning.push(`⚠️ 推奨株数が100株未満です。リスク許容度または口座資金を見直してください。`);
+    }
+    
+    // 6. 最終結果を計算
+    const positionValue = recommendedShares * input.entryPrice;
+    const maxLossAmount = recommendedShares * stopLossDistance;
+    const actualRiskPercent = (maxLossAmount / input.accountEquity) * 100;
+    
+    reasoning.push(`ポジション価値: ¥${positionValue.toFixed(0)}`);
+    reasoning.push(`予想最大損失: ¥${maxLossAmount.toFixed(0)} (口座資金の${actualRiskPercent.toFixed(2)}%)`);
+    
+    // 7. ポートフォリオ集中リスクのチェック
+    const positionPercent = (positionValue / input.accountEquity) * 100;
+    if (positionPercent > 20) {
+      reasoning.push(`⚠️ ポジションが口座資金の${positionPercent.toFixed(1)}%を占めます（推奨: 20%以下）`);
+    } else {
+      reasoning.push(`✓ ポジション比率: ${positionPercent.toFixed(1)}% (健全)`);
+    }
+    
+    return {
+      recommendedShares,
+      maxLossAmount,
+      riskAmount,
+      positionValue,
+      riskPercent: actualRiskPercent,
+      stopLossDistance,
+      stopLossPercent,
+      reasoning
+    };
   }
 
   /**

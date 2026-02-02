@@ -59,16 +59,6 @@ function ScreenerContent() {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [activePreset, setActivePreset] = useState<PresetType | null>(null);
 
-  // Cleanup debounce timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-        debounceTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
   useEffect(() => {
     let mounted = true;
     const fetchAllData = async () => {

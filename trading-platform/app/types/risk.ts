@@ -17,6 +17,7 @@ export interface PositionSizingConfig {
   maxRisk: number; // 最大リスク（ドル）
   volatilityAdjustment: boolean; // ボラティリティ調整の有無
   correlationAdjustment: boolean; // 相関調整の有無
+  initialCapital?: number; // 初期資本（ケリー基準の動的調整用）
 }
 
 export interface SizingResult {
@@ -129,7 +130,7 @@ export interface TradingBehaviorMetrics {
 }
 
 export interface PsychologyAlert {
-  type: 'overtrading' | 'revenge_trading' | 'fear' | 'greed' | 'fatigue' | 'fomo' | 'confirmation_bias' | 'loss_aversion';
+  type: 'overtrading' | 'revenge_trading' | 'fear' | 'greed' | 'fatigue';
   severity: 'low' | 'medium' | 'high';
   message: string;
   recommendation: string;
@@ -146,62 +147,14 @@ export interface TradingSession {
 }
 
 // ============================================================================
-// TRADING-025: Enhanced Psychology Features
+// Cooling-off Management Types
 // ============================================================================
-
-export interface BiasAnalysis {
-  hasFOMO: boolean;
-  hasFear: boolean;
-  hasConfirmationBias: boolean;
-  hasLossAversion: boolean;
-  detectedBiases: string[];
-  severity: 'low' | 'medium' | 'high';
-  recommendation: string;
-}
-
-export interface ConsecutiveLossInfo {
-  currentStreak: number;
-  maxStreak: number;
-  totalLosses: number;
-  shouldCoolOff: boolean;
-  coolOffReason?: string;
-}
-
-export interface EmotionLevel {
-  fear: number; // 1-5
-  greed: number; // 1-5
-  confidence: number; // 1-5
-  stress: number; // 1-5
-  overall: number; // 1-5 (average)
-}
-
-export interface TradePlan {
-  id: string;
-  symbol: string;
-  strategy: string;
-  entryReason: string;
-  targetPrice: number;
-  stopLoss: number;
-  riskRewardRatio: number;
-  positionSize: number;
-  createdAt: Date;
-}
-
-export interface TradeReflection {
-  tradeId: string;
-  lessonsLearned: string;
-  whatWorked: string;
-  whatDidntWork: string;
-  emotionalState: EmotionLevel;
-  wouldDoAgain: boolean;
-  improvementAreas: string[];
-  createdAt: Date;
-}
 
 export interface CoolingReason {
   type: 'consecutive_losses' | 'daily_loss_limit' | 'weekly_loss_limit' | 'overtrading' | 'manual';
   severity: number; // 1-10
-  triggerValue: number | string;
+  triggerValue: number;
+  description: string;
 }
 
 export interface CooldownRecord {
@@ -212,50 +165,6 @@ export interface CooldownRecord {
   duration: number; // minutes
   wasRespected: boolean;
   violationCount: number;
-}
-
-export interface DisciplineScore {
-  overall: number; // 0-100
-  planAdherence: number; // 0-30
-  emotionalControl: number; // 0-20
-  lossManagement: number; // 0-20
-  journalConsistency: number; // 0-10
-  coolingOffCompliance: number; // 0-20
-  breakdown: {
-    planAdherenceRate: number; // percentage
-    avgEmotionScore: number; // 1-10
-    maxConsecutiveLosses: number;
-    journalEntryRate: number; // percentage
-    coolingOffRespectRate: number; // percentage
-  };
-}
-
-export interface PsychologyGoals {
-  daily: {
-    maxTrades: number;
-    maxLoss: number;
-    minDisciplineScore: number;
-  };
-  weekly: {
-    maxConsecutiveLosses: number;
-    minJournalRate: number;
-    targetEmotionScore: number;
-  };
-  monthly: {
-    targetDisciplineScore: number;
-    planAdherenceTarget: number;
-  };
-}
-
-export interface TradingCalendarDay {
-  date: string; // YYYY-MM-DD
-  tradesCount: number;
-  profitLoss: number;
-  emotionScore: number;
-  disciplineScore: number;
-  hasViolation: boolean;
-  isCoolingOff: boolean;
-  notes: string;
 }
 
 // ============================================================================

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
 import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
@@ -10,6 +10,7 @@ import { useAIPerformance } from '@/app/hooks/useAIPerformance';
 import { BacktestView } from './BacktestView';
 import { ForecastView } from './ForecastView';
 import { AIPerformanceView } from './AIPerformanceView';
+import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
 import { usePerformanceMonitor } from '@/app/lib/performance';
 
 /**
@@ -59,9 +60,6 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
   const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
-
-  // Ref to store backtest timer ID for cleanup
-  const backtestTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
   // Custom Hooks
@@ -143,7 +141,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
       setIsBacktesting(true);
       // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
-      const timerId = setTimeout(() => {
+      setTimeout(() => {
         try {
           const result = measure('runBacktest', () => 
             runBacktest(stock.symbol, ohlcv, stock.market)
@@ -155,18 +153,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           setIsBacktesting(false);
         }
       }, 50);
-      
-      // Store timer ID for cleanup
-      backtestTimerRef.current = timerId;
     }
-    
-    // Cleanup function to prevent memory leaks
-    return () => {
-      if (backtestTimerRef.current) {
-        clearTimeout(backtestTimerRef.current);
-        backtestTimerRef.current = null;
-      }
-    };
   }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measure]);
 
   const aiTrades: PaperTrade[] = useMemo(() => {
@@ -267,7 +254,17 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       </div>
 
       {activeTab === 'signal' ? (
-        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full">
+        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full flex flex-col gap-3">
+          {/* Low Accuracy Warning */}
+          {displaySignal && displaySignal.type !== 'HOLD' && (
+            <LowAccuracyWarning
+              hitRate={preciseHitRate.hitRate}
+              symbolName={stock.name}
+              signalType={displaySignal.type}
+              threshold={50}
+            />
+          )}
+          
           <SignalCard
             signal={displaySignal}
             stock={stock}
