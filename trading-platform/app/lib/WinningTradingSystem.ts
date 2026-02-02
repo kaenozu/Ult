@@ -18,7 +18,6 @@ import { winningBacktestEngine, BacktestResult } from './backtest';
 import type { PerformanceMetrics } from './backtest/WinningBacktestEngine';
 import { winningAlertEngine, Alert, AlertConfig } from './alerts';
 import { winningAnalytics, PerformanceReport } from './analytics';
-import { marketCorrelationService, MarketSyncData } from './marketCorrelation';
 
 // ============================================================================
 // Types
@@ -35,10 +34,6 @@ export interface TradingSession {
   positions: Map<string, Position>;
   trades: Trade[];
   status: 'RUNNING' | 'PAUSED' | 'STOPPED';
-  marketIndexData?: {
-    nikkei225?: OHLCV[];
-    sp500?: OHLCV[];
-  };
 }
 
 export interface Position {
@@ -177,24 +172,6 @@ class WinningTradingSystem {
     return this.currentSession;
   }
 
-  /**
-   * 市場指数データを更新
-   */
-  updateMarketIndexData(nikkei225?: OHLCV[], sp500?: OHLCV[]): void {
-    if (!this.currentSession) return;
-    
-    if (!this.currentSession.marketIndexData) {
-      this.currentSession.marketIndexData = {};
-    }
-    
-    if (nikkei225) {
-      this.currentSession.marketIndexData.nikkei225 = nikkei225;
-    }
-    if (sp500) {
-      this.currentSession.marketIndexData.sp500 = sp500;
-    }
-  }
-
   // ============================================================================
   // Trading Logic
   // ============================================================================
@@ -218,7 +195,7 @@ class WinningTradingSystem {
 
     // エントリーシグナル
     if (strategyResult.signal !== 'HOLD' && !existingPosition) {
-      this.evaluateEntry(session, symbol, strategyResult, data, data[data.length - 1]);
+      this.evaluateEntry(session, symbol, strategyResult, data[data.length - 1]);
     }
 
     // イグジットシグナル
@@ -237,74 +214,11 @@ class WinningTradingSystem {
     session: TradingSession,
     symbol: string,
     strategyResult: StrategyResult,
-    stockData: OHLCV[],
     currentData: OHLCV
   ): void {
     // ポジション数チェック
     if (session.positions.size >= this.config.maxPositions) {
       return;
-    }
-
-    // 市場相関分析（市場指数データが利用可能な場合）
-    let marketSync: MarketSyncData | null = null;
-    let positionSizeMultiplier = 1.0;
-    
-    if (session.marketIndexData) {
-      // Create Signal object for market sync analysis
-      const signal = {
-        symbol,
-        type: strategyResult.signal,
-        confidence: strategyResult.confidence,
-        targetPrice: strategyResult.takeProfit,
-        stopLoss: strategyResult.stopLoss,
-        reason: strategyResult.strategy,
-        predictedChange: ((strategyResult.takeProfit - strategyResult.entryPrice) / strategyResult.entryPrice) * 100,
-        predictionDate: currentData.date,
-      };
-
-      marketSync = marketCorrelationService.analyzeMarketSync(
-        stockData,
-        session.marketIndexData.nikkei225 || null,
-        session.marketIndexData.sp500 || null,
-        signal
-      );
-
-      // 市場相関に基づいてエントリーをフィルタリング
-      if (marketSync.compositeSignal) {
-        const composite = marketSync.compositeSignal;
-        
-        // 弱気市場での買いシグナルをフィルタリング
-        if (strategyResult.signal === 'BUY' && composite.marketTrend === 'BEARISH') {
-          // 高相関の場合は待機
-          if (composite.correlation > 0.6) {
-            console.log(`[WinningTradingSystem] Entry filtered: BEARISH market with HIGH correlation (${composite.correlation.toFixed(2)})`);
-            return;
-          }
-          // 低相関でも信頼度を減衰
-          if (composite.confidence === 'LOW') {
-            positionSizeMultiplier *= 0.5;
-            console.log(`[WinningTradingSystem] Position size reduced by 50% due to BEARISH market`);
-          }
-        }
-
-        // 強気市場での売りシグナルをフィルタリング
-        if (strategyResult.signal === 'SELL' && composite.marketTrend === 'BULLISH') {
-          // 高相関の場合は待機
-          if (composite.correlation > 0.6) {
-            console.log(`[WinningTradingSystem] Entry filtered: BULLISH market with HIGH correlation (${composite.correlation.toFixed(2)})`);
-            return;
-          }
-        }
-
-        // ベータ値に基づいたポジションサイズ調整
-        if (composite.beta > 1.5) {
-          positionSizeMultiplier *= 0.8; // 高ボラティリティでサイズ削減
-          console.log(`[WinningTradingSystem] Position size reduced by 20% due to high beta (${composite.beta.toFixed(2)})`);
-        } else if (composite.beta < 0.5) {
-          positionSizeMultiplier *= 1.2; // 低ボラティリティでサイズ増加
-          console.log(`[WinningTradingSystem] Position size increased by 20% due to low beta (${composite.beta.toFixed(2)})`);
-        }
-      }
     }
 
     // リスク管理チェック
@@ -321,14 +235,6 @@ class WinningTradingSystem {
       return;
     }
 
-    // 市場相関に基づいてポジションサイズを調整
-    const adjustedSize = Math.floor(positionSize.recommendedSize * positionSizeMultiplier);
-    
-    if (adjustedSize <= 0) {
-      console.log(`[WinningTradingSystem] Position size too small after market correlation adjustment`);
-      return;
-    }
-
     // リスクリワード比チェック
     const riskRewardCheck = advancedRiskManager.validateRiskRewardRatio(
       strategyResult.entryPrice,
@@ -341,30 +247,14 @@ class WinningTradingSystem {
       return;
     }
 
-    // ベータに基づいた目標価格調整
-    let stopLoss = strategyResult.stopLoss;
-    let takeProfit = strategyResult.takeProfit;
-    
-    if (marketSync?.compositeSignal) {
-      const adjusted = marketCorrelationService.getBetaAdjustedTargetPrice(
-        strategyResult.takeProfit,
-        strategyResult.stopLoss,
-        marketSync.compositeSignal.beta,
-        marketSync.compositeSignal.marketTrend
-      );
-      stopLoss = adjusted.stopLoss;
-      takeProfit = adjusted.targetPrice;
-      console.log(`[WinningTradingSystem] Beta-adjusted targets: SL ${stopLoss.toFixed(2)}, TP ${takeProfit.toFixed(2)}`);
-    }
-
     // ポジションを作成
     const position: Position = {
       symbol,
       side: strategyResult.signal === 'BUY' ? 'LONG' : 'SHORT',
       entryPrice: strategyResult.entryPrice,
-      quantity: adjustedSize,
-      stopLoss,
-      takeProfit,
+      quantity: positionSize.recommendedSize,
+      stopLoss: strategyResult.stopLoss,
+      takeProfit: strategyResult.takeProfit,
       entryTime: currentData.date,
       unrealizedPnl: 0,
       strategy: strategyResult.strategy,

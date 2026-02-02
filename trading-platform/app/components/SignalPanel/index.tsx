@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
 import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
@@ -59,9 +59,6 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
   const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
-
-  // Ref to store backtest timer ID for cleanup
-  const backtestTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 
   // Custom Hooks
@@ -143,7 +140,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
       setIsBacktesting(true);
       // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
-      const timerId = setTimeout(() => {
+      setTimeout(() => {
         try {
           const result = measure('runBacktest', () => 
             runBacktest(stock.symbol, ohlcv, stock.market)
@@ -155,18 +152,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           setIsBacktesting(false);
         }
       }, 50);
-      
-      // Store timer ID for cleanup
-      backtestTimerRef.current = timerId;
     }
-    
-    // Cleanup function to prevent memory leaks
-    return () => {
-      if (backtestTimerRef.current) {
-        clearTimeout(backtestTimerRef.current);
-        backtestTimerRef.current = null;
-      }
-    };
   }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measure]);
 
   const aiTrades: PaperTrade[] = useMemo(() => {
