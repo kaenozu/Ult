@@ -10,6 +10,7 @@ export { DataCompletionPipeline, dataCompletionPipeline } from './completion/Dat
 export { MicrostructureAnalyzer, microstructureAnalyzer } from './microstructure/MicrostructureAnalyzer';
 export { DataLatencyMonitor, dataLatencyMonitor } from './latency/DataLatencyMonitor';
 export { SmartDataCache, marketDataCache, indicatorCache, apiCache } from './cache/SmartDataCache';
+export { DataPersistenceLayer, dataPersistenceLayer } from './persistence/DataPersistenceLayer';
 
 // Integration services
 export {
