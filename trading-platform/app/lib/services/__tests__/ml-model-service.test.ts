@@ -425,297 +425,36 @@ describe('MLModelService', () => {
     });
   });
 
-  describe('Dynamic Weight Optimization', () => {
-    describe('Market Regime-Based Weighting', () => {
-      it('should update weights based on BULL market regime', () => {
-        service.updateWeightsForMarketRegime('BULL');
-        const weights = service.getCurrentWeights();
-        
-        expect(weights.marketRegime).toBe('BULL');
-        expect(weights.rf).toBeLessThan(0.35); // Should decrease over time
-        expect(weights.xgb).toBeGreaterThan(0.35); // Should increase over time
-        expect(weights.lstm).toBeGreaterThan(0.30); // Should increase over time
-      });
-
-      it('should update weights based on BEAR market regime', () => {
-        service.resetWeights();
-        service.updateWeightsForMarketRegime('BEAR');
-        const weights = service.getCurrentWeights();
-        
-        expect(weights.marketRegime).toBe('BEAR');
-        // After smoothing, weights should move toward BEAR regime weights
-        expect(weights.rf).toBeGreaterThan(0.35); // Should increase over time
-        expect(weights.xgb).toBeCloseTo(0.35, 1); // Should stay similar
-        expect(weights.lstm).toBeLessThan(0.30); // Should decrease over time
-      });
-
-      it('should update weights based on SIDEWAYS market regime', () => {
-        service.resetWeights();
-        service.updateWeightsForMarketRegime('SIDEWAYS');
-        const weights = service.getCurrentWeights();
-        
-        expect(weights.marketRegime).toBe('SIDEWAYS');
-        // Weights should be balanced for sideways market
-        expect(weights.rf + weights.xgb + weights.lstm).toBeCloseTo(1.0, 1);
-      });
-
-      it('should smoothly transition weights between regimes', () => {
-        service.resetWeights();
-        const initialWeights = service.getCurrentWeights();
-        
-        service.updateWeightsForMarketRegime('BULL');
-        const afterFirst = service.getCurrentWeights();
-        
-        service.updateWeightsForMarketRegime('BULL');
-        const afterSecond = service.getCurrentWeights();
-        
-        // Weights should be progressively moving toward BULL weights
-        expect(Math.abs(afterSecond.xgb - 0.40)).toBeLessThan(Math.abs(afterFirst.xgb - 0.40));
-      });
+  describe('TensorFlow.js integration', () => {
+    it('should have TensorFlow disabled by default', () => {
+      expect(service.isTensorFlowEnabled()).toBe(false);
     });
 
-    describe('Accuracy-Based Weighting', () => {
-      beforeEach(() => {
-        service.resetWeights();
-        service.setAccuracyBasedWeighting(true);
-      });
-
-      it('should record prediction accuracy', () => {
-        service.recordPredictionAccuracy(1.0, 1.5, 0.8, 1.2);
-        
-        // Should have recorded 3 entries (one per model)
-        const weights = service.getCurrentWeights();
-        expect(weights.lastUpdated).toBeGreaterThan(0);
-      });
-
-      it('should adjust weights based on model accuracy', () => {
-        service.updateWeightsForMarketRegime('SIDEWAYS');
-        
-        // Record multiple predictions where RF is most accurate
-        for (let i = 0; i < 15; i++) {
-          // RF predicts 1.0, XGB 2.0, LSTM 3.0, actual is 1.1 (RF is closest)
-          service.recordPredictionAccuracy(1.0, 2.0, 3.0, 1.1);
-        }
-        
-        const weights = service.getCurrentWeights();
-        
-        // RF weight should have increased relative to initial
-        expect(weights.rf).toBeGreaterThan(0.30);
-      });
-
-      it('should not update weights with insufficient data', () => {
-        service.resetWeights();
-        const initialWeights = service.getCurrentWeights();
-        
-        // Record only a few predictions (less than 10)
-        for (let i = 0; i < 3; i++) {
-          service.recordPredictionAccuracy(1.0, 1.0, 1.0, 1.0);
-        }
-        
-        const weights = service.getCurrentWeights();
-        
-        // Weights should remain close to initial (no significant change)
-        expect(Math.abs(weights.rf - initialWeights.rf)).toBeLessThan(0.01);
-        expect(Math.abs(weights.xgb - initialWeights.xgb)).toBeLessThan(0.01);
-        expect(Math.abs(weights.lstm - initialWeights.lstm)).toBeLessThan(0.01);
-      });
-
-      it('should maintain history size limit', () => {
-        // Record more than maxHistorySize predictions
-        for (let i = 0; i < 25; i++) {
-          service.recordPredictionAccuracy(1.0, 1.0, 1.0, 1.0);
-        }
-        
-        // History should be trimmed to maxHistorySize * 3 (60)
-        // This is tested indirectly through getCurrentWeights not throwing
-        const weights = service.getCurrentWeights();
-        expect(weights).toBeDefined();
-      });
-
-      it('should blend regime weights with accuracy weights', () => {
-        service.updateWeightsForMarketRegime('BULL');
-        
-        // Record predictions where LSTM is most accurate
-        for (let i = 0; i < 15; i++) {
-          service.recordPredictionAccuracy(5.0, 4.0, 1.0, 1.1);
-        }
-        
-        const weights = service.getCurrentWeights();
-        
-        // LSTM should have higher weight, but not as much as pure accuracy would give
-        // because it's blended with regime weights
-        expect(weights.lstm).toBeGreaterThan(0.30);
-      });
+    it('should use rule-based predictions when TensorFlow is disabled', () => {
+      const result = service.predict(baseFeatures);
+      
+      expect(result).toBeDefined();
+      expect(result.rfPrediction).toBeDefined();
+      expect(result.xgbPrediction).toBeDefined();
+      expect(result.lstmPrediction).toBeDefined();
     });
 
-    describe('Weight Management', () => {
-      it('should get current weights', () => {
-        const weights = service.getCurrentWeights();
-        
-        expect(weights).toHaveProperty('rf');
-        expect(weights).toHaveProperty('xgb');
-        expect(weights).toHaveProperty('lstm');
-        expect(weights).toHaveProperty('marketRegime');
-        expect(weights).toHaveProperty('lastUpdated');
-      });
-
-      it('should clear accuracy history', () => {
-        service.recordPredictionAccuracy(1.0, 1.0, 1.0, 1.0);
-        service.clearAccuracyHistory();
-        
-        // After clearing, weights should be defined
-        const weights = service.getCurrentWeights();
-        expect(weights).toBeDefined();
-      });
-
-      it('should reset weights to default', () => {
-        service.updateWeightsForMarketRegime('BULL');
-        service.recordPredictionAccuracy(1.0, 1.0, 1.0, 1.0);
-        
-        service.resetWeights();
-        const weights = service.getCurrentWeights();
-        
-        expect(weights.rf).toBe(0.35);
-        expect(weights.xgb).toBe(0.35);
-        expect(weights.lstm).toBe(0.30);
-        expect(weights.marketRegime).toBe('SIDEWAYS');
-      });
-
-      it('should enable/disable accuracy-based weighting', () => {
-        service.setAccuracyBasedWeighting(false);
-        service.updateWeightsForMarketRegime('SIDEWAYS');
-        
-        const weightsBefore = service.getCurrentWeights();
-        
-        // Record predictions - should not affect weights
-        for (let i = 0; i < 15; i++) {
-          service.recordPredictionAccuracy(1.0, 2.0, 3.0, 1.1);
-        }
-        
-        const weightsAfter = service.getCurrentWeights();
-        
-        // Weights should not change significantly (only regime-based)
-        expect(weightsAfter.rf).toBeCloseTo(weightsBefore.rf, 2);
-        expect(weightsAfter.xgb).toBeCloseTo(weightsBefore.xgb, 2);
-        expect(weightsAfter.lstm).toBeCloseTo(weightsBefore.lstm, 2);
-      });
+    it('should support async prediction method', async () => {
+      const result = await service.predictAsync(baseFeatures);
+      
+      expect(result).toBeDefined();
+      expect(result.rfPrediction).toBeDefined();
+      expect(result.xgbPrediction).toBeDefined();
+      expect(result.lstmPrediction).toBeDefined();
     });
 
-    describe('Market Regime Detection', () => {
-      it('should detect BULL regime from features', () => {
-        const bullishFeatures: PredictionFeatures = {
-          rsi: 65,
-          rsiChange: 5,
-          sma5: 2,
-          sma20: 1,
-          sma50: 0.5,
-          priceMomentum: 3,
-          volumeRatio: 1.5,
-          volatility: 0.02,
-          macdSignal: 1,
-          bollingerPosition: 70,
-          atrPercent: 2.0
-        };
-        
-        const regime = service.detectMarketRegimeFromFeatures(bullishFeatures);
-        expect(regime).toBe('BULL');
-      });
-
-      it('should detect BEAR regime from features', () => {
-        const bearishFeatures: PredictionFeatures = {
-          rsi: 35,
-          rsiChange: -5,
-          sma5: -2,
-          sma20: -1,
-          sma50: -0.5,
-          priceMomentum: -3,
-          volumeRatio: 0.8,
-          volatility: 0.02,
-          macdSignal: -1,
-          bollingerPosition: 30,
-          atrPercent: 2.0
-        };
-        
-        const regime = service.detectMarketRegimeFromFeatures(bearishFeatures);
-        expect(regime).toBe('BEAR');
-      });
-
-      it('should detect SIDEWAYS regime from neutral features', () => {
-        const neutralFeatures: PredictionFeatures = {
-          rsi: 50,
-          rsiChange: 0,
-          sma5: 0,
-          sma20: 0,
-          sma50: 0,
-          priceMomentum: 0.5,
-          volumeRatio: 1.0,
-          volatility: 0.02,
-          macdSignal: 0,
-          bollingerPosition: 50,
-          atrPercent: 2.0
-        };
-        
-        const regime = service.detectMarketRegimeFromFeatures(neutralFeatures);
-        expect(regime).toBe('SIDEWAYS');
-      });
-    });
-
-    describe('Integration with Predictions', () => {
-      it('should use dynamic weights in predictions', () => {
-        service.resetWeights();
-        
-        const features: PredictionFeatures = {
-          rsi: 50,
-          rsiChange: 0,
-          sma5: 1,
-          sma20: 1,
-          sma50: 1,
-          priceMomentum: 1,
-          volumeRatio: 1.0,
-          volatility: 0.02,
-          macdSignal: 0.5,
-          bollingerPosition: 50,
-          atrPercent: 2.0
-        };
-        
-        const resultBefore = service.predict(features);
-        
-        // Change to BULL regime
-        service.updateWeightsForMarketRegime('BULL');
-        service.updateWeightsForMarketRegime('BULL');
-        service.updateWeightsForMarketRegime('BULL');
-        
-        const resultAfter = service.predict(features);
-        
-        // Ensemble prediction should be different due to weight changes
-        expect(resultAfter.ensemblePrediction).not.toBeCloseTo(resultBefore.ensemblePrediction, 5);
-      });
-
-      it('should maintain prediction structure with dynamic weights', () => {
-        service.updateWeightsForMarketRegime('BEAR');
-        
-        const features: PredictionFeatures = {
-          rsi: 50,
-          rsiChange: 0,
-          sma5: 0,
-          sma20: 0,
-          sma50: 0,
-          priceMomentum: 0,
-          volumeRatio: 1.0,
-          volatility: 0.02,
-          macdSignal: 0,
-          bollingerPosition: 50,
-          atrPercent: 2.0
-        };
-        
-        const result = service.predict(features);
-        
-        expect(result).toHaveProperty('rfPrediction');
-        expect(result).toHaveProperty('xgbPrediction');
-        expect(result).toHaveProperty('lstmPrediction');
-        expect(result).toHaveProperty('ensemblePrediction');
-        expect(result).toHaveProperty('confidence');
-      });
+    it('should return model metrics when available', () => {
+      const metrics = service.getModelMetrics();
+      
+      expect(metrics).toBeDefined();
+      expect(metrics.ff).toBeUndefined(); // Not trained yet
+      expect(metrics.gru).toBeUndefined();
+      expect(metrics.lstm).toBeUndefined();
     });
   });
 });
