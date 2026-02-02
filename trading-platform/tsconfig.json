@@ -20,7 +20,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/domains/*": ["./app/domains/*"],
+      "@/infrastructure/*": ["./app/infrastructure/*"],
+      "@/ui/*": ["./app/ui/*"],
+      "@/shared/*": ["./app/shared/*"]
     }
   },
   "include": [
