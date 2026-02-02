@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { mlIntegrationService } from '@/app/lib/services/MLIntegrationService';
 
 /**
@@ -10,15 +10,11 @@ import { mlIntegrationService } from '@/app/lib/services/MLIntegrationService';
  * It provides graceful degradation when models are not available.
  */
 export function MLProvider({ children }: { children: React.ReactNode }) {
-  const [initialized, setInitialized] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     // Initialize ML service in the background
     mlIntegrationService
       .initialize()
       .then(() => {
-        setInitialized(true);
         const status = mlIntegrationService.getStatus();
         
         if (status.available) {
@@ -29,8 +25,7 @@ export function MLProvider({ children }: { children: React.ReactNode }) {
       })
       .catch((err) => {
         console.error('[ML Provider] Initialization failed:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
-        setInitialized(true); // Still set initialized to allow app to work
+        // Continue anyway - app works fine without ML models
       });
   }, []);
 
