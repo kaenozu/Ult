@@ -5,9 +5,22 @@
  */
 
 export { DataQualityChecker, dataQualityChecker } from './quality/DataQualityChecker';
+export { DataQualityValidator, dataQualityValidator } from './quality/DataQualityValidator';
 export { DataCompletionPipeline, dataCompletionPipeline } from './completion/DataCompletionPipeline';
 export { MicrostructureAnalyzer, microstructureAnalyzer } from './microstructure/MicrostructureAnalyzer';
 export { DataLatencyMonitor, dataLatencyMonitor } from './latency/DataLatencyMonitor';
+export { SmartDataCache, marketDataCache, indicatorCache, apiCache } from './cache/SmartDataCache';
+
+// Integration services
+export {
+  WebSocketDataFlowService,
+  createWebSocketDataFlowService,
+  type DataFlowConfig,
+  type DataFlowMetrics,
+  type DataFlowAlert,
+  type DataFlowEventType,
+  type DataFlowEventListener,
+} from './integration';
 
 // Re-export types
 export type {

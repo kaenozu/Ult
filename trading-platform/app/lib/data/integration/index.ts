@@ -13,3 +13,11 @@ export {
   type DataFlowEventType,
   type DataFlowEventListener,
 } from './WebSocketDataFlowService';
+
+export {
+  MultiSourceDataAggregator,
+  createMultiSourceDataAggregator,
+  type DataSource,
+  type AggregationConfig,
+  type AggregationResult,
+} from './MultiSourceDataAggregator';
