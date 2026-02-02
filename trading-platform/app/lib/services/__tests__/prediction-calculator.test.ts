@@ -4,13 +4,13 @@
  * Tests the pure prediction logic extracted from MLModelService
  */
 
-import { PredictionCalculator } from '../../implementations/prediction-calculator';
+import { PredictionCalculator } from '../implementations/prediction-calculator';
 import {
   createBaseFeatures,
   createBullishFeatures,
   createBearishFeatures,
   createExtremeFeatures
-} from '../fixtures/test-data-factory';
+} from './fixtures/test-data-factory';
 
 describe('PredictionCalculator', () => {
   let calculator: PredictionCalculator;
