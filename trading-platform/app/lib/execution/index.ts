@@ -66,6 +66,22 @@ export type {
   LatencyMetrics,
 } from './AlgorithmicExecutionEngine';
 
+// Slippage Monitor
+export {
+  SlippageMonitor,
+  getGlobalSlippageMonitor,
+  resetGlobalSlippageMonitor,
+} from './SlippageMonitor';
+
+export type {
+  Order as SlippageOrder,
+  Execution,
+  SlippageRecord,
+  SlippageAnalysis,
+  SlippageAlert,
+  SlippageMonitorConfig,
+} from './SlippageMonitor';
+
 // Advanced Order Types
 export type {
   OrderSide,
