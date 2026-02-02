@@ -43,23 +43,3 @@ export {
   MLPredictionResult,
   RetrainingRecommendation,
 } from './MLService';
-
-// Re-export types using 'export type' for isolatedModules compatibility
-export type {
-  TechnicalFeatures,
-  MacroEconomicFeatures,
-  SentimentFeatures,
-  TimeSeriesFeatures,
-  AllFeatures,
-  ModelType,
-  ModelPerformance,
-  EnsembleModelPrediction,
-  EnsemblePrediction,
-  MarketRegime,
-  PredictionRecord,
-  DriftDetectionResult,
-  ModelMetrics,
-  PerformanceHistory,
-  MLPredictionResult,
-  RetrainingRecommendation,
-} from './FeatureEngineering' or './EnsembleModel' or './ModelDriftDetector' or './MLService';
