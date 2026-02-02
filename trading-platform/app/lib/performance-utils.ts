@@ -1,103 +1,223 @@
 /**
  * performance-utils.ts
  * 
- * Server-safe performance measurement utilities
- * Can be used in both client and server contexts
+ * Standardized performance measurement utilities
+ * Provides decorators and functions for consistent performance tracking
  */
 
+import { PerformanceMonitor } from './utils/performanceMonitor';
+
+// Re-export PerformanceMonitor for convenience
+export { PerformanceMonitor };
+export type { PerformanceMetric, PerformanceStats } from './utils/performanceMonitor';
+
+export type PerformanceSeverity = 'ok' | 'warning' | 'error';
+
+export interface MeasureOptions {
+  threshold?: number;
+  warningThreshold?: number;
+  errorThreshold?: number;
+  context?: Record<string, any>;
+}
+
 /**
- * 同期処理のパフォーマンス計測（サーバー対応版）
- * @param name - 計測対象の名前
- * @param fn - 計測する関数
- * @returns 関数の実行結果
+ * Performance decorator for synchronous methods
+ * Automatically measures and records method execution time
+ * 
+ * @param name - Metric name for tracking
+ * @param options - Measurement options including thresholds
+ * 
+ * @example
+ * class DataService {
+ *   @measure('data-fetch', { threshold: 50 })
+ *   fetchData() {
+ *     // ...
+ *   }
+ * }
  */
-export function measurePerformance<T>(name: string, fn: () => T): T {
+export function measure(name: string, options: MeasureOptions = {}) {
+  const { threshold = 100, warningThreshold, errorThreshold } = options;
+  const warnThreshold = warningThreshold || threshold;
+  const errThreshold = errorThreshold || threshold * 2;
+
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ): PropertyDescriptor {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = function (...args: any[]) {
+      const start = performance.now();
+      const fullName = `${name}`;
+
+      try {
+        const result = originalMethod.apply(this, args);
+        const duration = performance.now() - start;
+
+        // Determine severity based on thresholds
+        let severity: PerformanceSeverity = 'ok';
+        if (duration > errThreshold) {
+          severity = 'error';
+          console.error(`[SLOW-CRITICAL] ${fullName}: ${duration.toFixed(2)}ms (threshold: ${errThreshold}ms)`);
+        } else if (duration > warnThreshold) {
+          severity = 'warning';
+          console.warn(`[SLOW] ${fullName}: ${duration.toFixed(2)}ms (threshold: ${warnThreshold}ms)`);
+        }
+
+        // Record metric
+        PerformanceMonitor.record(fullName, duration, severity);
+
+        return result;
+      } catch (error) {
+        const duration = performance.now() - start;
+        console.error(`[Performance] ${fullName} failed after ${duration.toFixed(2)}ms:`, error);
+        PerformanceMonitor.record(fullName, duration, 'error');
+        throw error;
+      }
+    };
+
+    return descriptor;
+  };
+}
+
+/**
+ * Performance decorator for asynchronous methods
+ * Automatically measures and records async method execution time
+ * 
+ * @param name - Metric name for tracking
+ * @param options - Measurement options including thresholds
+ * 
+ * @example
+ * class APIService {
+ *   @measureAsync('api-call', { threshold: 200 })
+ *   async fetchFromAPI() {
+ *     // ...
+ *   }
+ * }
+ */
+export function measureAsync(name: string, options: MeasureOptions = {}) {
+  const { threshold = 100, warningThreshold, errorThreshold } = options;
+  const warnThreshold = warningThreshold || threshold;
+  const errThreshold = errorThreshold || threshold * 2;
+
+  return function (
+    target: any,
+    propertyKey: string,
+    descriptor: PropertyDescriptor
+  ): PropertyDescriptor {
+    const originalMethod = descriptor.value;
+
+    descriptor.value = async function (...args: any[]) {
+      const start = performance.now();
+      const fullName = `${name}`;
+
+      try {
+        const result = await originalMethod.apply(this, args);
+        const duration = performance.now() - start;
+
+        // Determine severity based on thresholds
+        let severity: PerformanceSeverity = 'ok';
+        if (duration > errThreshold) {
+          severity = 'error';
+          console.error(`[SLOW-CRITICAL] ${fullName}: ${duration.toFixed(2)}ms (threshold: ${errThreshold}ms)`);
+        } else if (duration > warnThreshold) {
+          severity = 'warning';
+          console.warn(`[SLOW] ${fullName}: ${duration.toFixed(2)}ms (threshold: ${warnThreshold}ms)`);
+        }
+
+        // Record metric
+        PerformanceMonitor.record(fullName, duration, severity);
+
+        return result;
+      } catch (error) {
+        const duration = performance.now() - start;
+        console.error(`[Performance] ${fullName} failed after ${duration.toFixed(2)}ms:`, error);
+        PerformanceMonitor.record(fullName, duration, 'error');
+        throw error;
+      }
+    };
+
+    return descriptor;
+  };
+}
+
+/**
+ * Functional wrapper for measuring synchronous operations
+ * Use when decorators are not applicable
+ * 
+ * @param name - Metric name
+ * @param fn - Function to measure
+ * @param options - Measurement options
+ * @returns Function result
+ */
+export function measurePerformance<T>(
+  name: string,
+  fn: () => T,
+  options: MeasureOptions = {}
+): T {
+  const { threshold = 100 } = options;
   const start = performance.now();
-  
-  // Create start mark before execution (only in browser)
-  if (typeof window !== 'undefined' && window.performance) {
-    try {
-      performance.mark(`${name}-start`);
-    } catch (e) {
-      // Performance API may not be available in all contexts
-    }
-  }
-  
+
   try {
     const result = fn();
     const duration = performance.now() - start;
-    
-    // Create end mark and measure after execution (only in browser)
-    if (typeof window !== 'undefined' && window.performance) {
-      try {
-        performance.mark(`${name}-end`);
-        performance.measure(name, `${name}-start`, `${name}-end`);
-      } catch (e) {
-        // Performance API may not be available in all contexts
-      }
+
+    const severity: PerformanceSeverity = duration > threshold * 2 ? 'error' 
+      : duration > threshold ? 'warning' : 'ok';
+
+    if (severity === 'error') {
+      console.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
+    } else if (severity === 'warning') {
+      console.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
     }
-    
-    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
-    
-    // Record to global monitor if available
-    if (typeof window !== 'undefined' && (window as any).__performanceMonitor) {
-      (window as any).__performanceMonitor.recordMetric(name, duration);
-    }
-    
+
+    PerformanceMonitor.record(name, duration, severity);
     return result;
   } catch (error) {
     const duration = performance.now() - start;
     console.error(`[Performance] ${name} failed after ${duration.toFixed(2)}ms:`, error);
+    PerformanceMonitor.record(name, duration, 'error');
     throw error;
   }
 }
 
 /**
- * 非同期処理のパフォーマンス計測（サーバー対応版）
- * @param name - 計測対象の名前
- * @param fn - 計測する非同期関数
- * @returns 関数の実行結果のPromise
+ * Functional wrapper for measuring asynchronous operations
+ * Use when decorators are not applicable
+ * 
+ * @param name - Metric name
+ * @param fn - Async function to measure
+ * @param options - Measurement options
+ * @returns Promise with function result
  */
 export async function measurePerformanceAsync<T>(
   name: string,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
+  options: MeasureOptions = {}
 ): Promise<T> {
+  const { threshold = 100 } = options;
   const start = performance.now();
-  
-  // Create start mark before execution (only in browser)
-  if (typeof window !== 'undefined' && window.performance) {
-    try {
-      performance.mark(`${name}-start`);
-    } catch (e) {
-      // Performance API may not be available in all contexts
-    }
-  }
-  
+
   try {
     const result = await fn();
     const duration = performance.now() - start;
-    
-    // Create end mark and measure after execution (only in browser)
-    if (typeof window !== 'undefined' && window.performance) {
-      try {
-        performance.mark(`${name}-end`);
-        performance.measure(name, `${name}-start`, `${name}-end`);
-      } catch (e) {
-        // Performance API may not be available in all contexts
-      }
+
+    const severity: PerformanceSeverity = duration > threshold * 2 ? 'error' 
+      : duration > threshold ? 'warning' : 'ok';
+
+    if (severity === 'error') {
+      console.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
+    } else if (severity === 'warning') {
+      console.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
     }
-    
-    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
-    
-    // Record to global monitor if available
-    if (typeof window !== 'undefined' && (window as any).__performanceMonitor) {
-      (window as any).__performanceMonitor.recordMetric(name, duration);
-    }
-    
+
+    PerformanceMonitor.record(name, duration, severity);
     return result;
   } catch (error) {
     const duration = performance.now() - start;
     console.error(`[Performance] ${name} failed after ${duration.toFixed(2)}ms:`, error);
+    PerformanceMonitor.record(name, duration, 'error');
     throw error;
   }
 }
