@@ -28,7 +28,7 @@ const ChartLoader = () => (
   </div>
 );
 
-export default function Workstation() {
+function Workstation() {
   const t = useTranslations();
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
@@ -244,7 +244,7 @@ export default function Workstation() {
 export default function HomePage() {
   return (
     <ErrorBoundary name="HomePage">
-      <HomePageContent />
+      <Workstation />
     </ErrorBoundary>
   );
 }

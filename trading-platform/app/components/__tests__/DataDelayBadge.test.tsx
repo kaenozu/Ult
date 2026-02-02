@@ -41,15 +41,17 @@ describe('DataDelayBadge', () => {
   it('should render small size variant', () => {
     const { container } = render(<DataDelayBadge market="japan" size="sm" />);
     
-    const badge = container.querySelector('div');
-    expect(badge).toHaveClass('text-[10px]');
+    // Find the inner badge div with text-[10px]
+    const badge = container.querySelector('.text-\\[10px\\]');
+    expect(badge).toBeInTheDocument();
   });
 
   it('should render medium size variant by default', () => {
     const { container } = render(<DataDelayBadge market="japan" />);
     
-    const badge = container.querySelector('div');
-    expect(badge).toHaveClass('text-xs');
+    // Find the inner badge div with text-xs
+    const badge = container.querySelector('.text-xs');
+    expect(badge).toBeInTheDocument();
   });
 
   it('should have appropriate title attribute for accessibility', () => {
