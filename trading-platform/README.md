@@ -715,3 +715,22 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
   <strong>⚡ AIで次のトレードを予測しよう ⚡</strong><br>
   <sub>※投資判断は自己責任で行ってください</sub>
 </div>
+### CSRF Protection
+
+The platform implements CSRF protection using double-submit cookie pattern. All state-changing operations (POST/PUT/DELETE) require a valid CSRF token.
+
+## CSRF Protection
+
+This platform implements CSRF (Cross-Site Request Forgery) protection using the double-submit cookie pattern:
+
+1. **GET requests** set a secure, httpOnly cookie with a random token
+2. **State-changing requests** (POST/PUT/PATCH) must include the same token in the `x-csrf-token` header
+3. Server validates that cookie token matches header token using timing-safe comparison
+
+All state-changing API endpoints automatically require valid CSRF tokens.
+
+Configuration:
+- `ENABLE_CSRF_PROTECTION` (default: true)
+- `CSRF_TOKEN_LENGTH` (default: 32 bytes)
+
+See `app/lib/csrf/csrf-protection.ts` for implementation details.
