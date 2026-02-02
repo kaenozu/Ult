@@ -1,0 +1,11 @@
+[tool.poetry]
+name = "ult-backend"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.24.0"
+pandas = "^2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+safety = "^3.0.0"
