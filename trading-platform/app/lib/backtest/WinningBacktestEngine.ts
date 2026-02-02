@@ -19,6 +19,21 @@ import { PositionSizingResult } from '../risk/AdvancedRiskManager';
 // Types
 // ============================================================================
 
+/**
+ * Open position in backtest
+ */
+export interface BacktestPosition {
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  entryDate: string;
+  entryPrice: number;
+  quantity: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  strategy: string;
+  trailingStop?: number;
+}
+
 export interface BacktestTrade {
   id: string;
   entryDate: string;
@@ -159,7 +174,7 @@ class WinningBacktestEngine {
   private equityCurve: number[] = [];
   private currentEquity: number = 0;
   private peakEquity: number = 0;
-  private openPositions: Map<string, any> = new Map();
+  private openPositions: Map<string, BacktestPosition> = new Map();
 
   constructor(config: Partial<BacktestConfig> = {}) {
     this.config = { ...DEFAULT_BACKTEST_CONFIG, ...config };
@@ -411,7 +426,7 @@ class WinningBacktestEngine {
   }
 
   private closePosition(
-    position: any,
+    position: BacktestPosition,
     data: OHLCV,
     reason: string,
     index: number
@@ -461,7 +476,7 @@ class WinningBacktestEngine {
   }
 
   private checkExitConditions(
-    position: any,
+    position: BacktestPosition,
     data: OHLCV,
     index: number
   ): { shouldExit: boolean; reason: string } {
