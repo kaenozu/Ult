@@ -205,3 +205,6 @@ export interface RateLimitResult {
 
 // Re-export OHLCV as the primary type name
 export type { SharedOHLCV as OHLCV };
+
+// Re-export optimized data structures
+export type { OHLCVData, OHLCVConverter, OHLCVIterators, RingBuffer, OHLCVRingBuffer, DataPipeline } from './optimized-data';
