@@ -205,6 +205,15 @@ export class RingBuffer<T> {
 
   /**
    * Get item at index (0 = oldest, size-1 = newest)
+   * Returns undefined if index is out of bounds
+   * 
+   * @param index - Index to retrieve (0-based from oldest)
+   * @returns The item at the index, or undefined if out of bounds
+   * @example
+   * const buffer = new RingBuffer<number>(5);
+   * buffer.push(1, 2, 3);
+   * buffer.get(0);  // Returns 1 (oldest)
+   * buffer.get(10); // Returns undefined (out of bounds)
    */
   get(index: number): T | undefined {
     if (index < 0 || index >= this.count) {

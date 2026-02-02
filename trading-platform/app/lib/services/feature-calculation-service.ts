@@ -9,6 +9,7 @@ import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
 import { EnhancedPredictionFeatures } from '../types/prediction-types';
 import { enhancedFeatureService } from './enhanced-feature-service';
 import { OHLCVData, OHLCVConverter, OHLCVIterators, DataPipeline } from '@/app/types/optimized-data';
+import type { ExtendedTechnicalIndicator } from '@/app/types';
 
 export interface PredictionFeatures {
   rsi: number;
@@ -33,7 +34,7 @@ export class FeatureCalculationService {
    */
   calculateFeatures(
     data: OHLCV[],
-    indicators: any // TechnicalIndicator & { atr: number[] }
+    indicators: ExtendedTechnicalIndicator
   ): PredictionFeatures {
     const prices = data.map(d => d.close);
     const volumes = data.map(d => d.volume);
@@ -71,7 +72,7 @@ export class FeatureCalculationService {
    */
   calculateFeaturesOptimized(
     data: OHLCVData,
-    indicators: any // TechnicalIndicator & { atr: number[] }
+    indicators: ExtendedTechnicalIndicator
   ): PredictionFeatures {
     // 最後の価格と出来高を取得（配列コピーなし）
     const currentPrice = data.closes[data.length - 1];
@@ -227,7 +228,7 @@ export class FeatureCalculationService {
    */
   calculateEnhancedFeatures(
     data: OHLCV[],
-    indicators: any // TechnicalIndicator & { atr: number[] }
+    indicators: ExtendedTechnicalIndicator
   ): EnhancedPredictionFeatures {
     // 基本特徴量を計算
     const basicFeatures = this.calculateFeatures(data, indicators);

@@ -100,6 +100,14 @@ export interface TechnicalIndicator {
   };
 }
 
+/**
+ * Extended technical indicators including ATR
+ * Used for feature calculation
+ */
+export interface ExtendedTechnicalIndicator extends TechnicalIndicator {
+  atr: number[];
+}
+
 export interface ModelPrediction {
   rfPrediction: number;
   xgbPrediction: number;
