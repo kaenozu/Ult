@@ -5,6 +5,7 @@ import {
   validationError,
 } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
+import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 
 // Define explicit types for Yahoo Finance responses
 interface YahooChartResult {
@@ -223,11 +224,11 @@ export async function GET(request: Request) {
         // IMPORTANT: Yahoo Finance doesn't support intraday intervals (1m, 5m, 15m, 1h) for Japanese stocks
         // We need to check if this is a Japanese stock and an intraday interval
         const isJapaneseStock = yahooSymbol.endsWith('.T');
-        const isIntradayInterval = interval && ['1m', '5m', '15m', '1h', '4H'].includes(interval);
+        const isIntraday = interval && isIntradayInterval(interval);
 
         let finalInterval: '1d' | '1m' | '5m' | '15m' | '1h' | '1wk' | '1mo' | '2m' | '30m' | '60m' | '90m' | '5d' | '3mo' | undefined;
 
-        if (isJapaneseStock && isIntradayInterval) {
+        if (isJapaneseStock && isIntraday) {
           // Japanese stocks don't support intraday data, fall back to daily
           finalInterval = '1d';
         } else {
@@ -253,15 +254,15 @@ export async function GET(request: Request) {
         // Format date based on interval type
         // Daily/Weekly/Monthly: YYYY-MM-DD
         // Intraday (1m, 5m, 15m, 1h): YYYY-MM-DD HH:mm
-        const isIntraday = finalInterval && ['1m', '5m', '15m', '1h'].includes(finalInterval);
+        const isIntradayFinal = finalInterval && isIntradayInterval(finalInterval);
 
         // Add warning if we fell back to daily data for Japanese stock with intraday interval
-        const warning = isJapaneseStock && isIntradayInterval
+        const warning = isJapaneseStock && isIntraday
           ? `Note: Intraday data (1m, 5m, 15m, 1h, 4H) is not available for Japanese stocks. Daily data is shown instead.`
           : undefined;
 
         // Data delay metadata for Japanese stocks
-        const dataDelayMinutes = isJapaneseStock ? 20 : undefined;
+        const dataDelayMinutes = isJapaneseStock ? JAPANESE_MARKET_DELAY_MINUTES : undefined;
 
         // データ欠損処理: 前日の終値を追跡
         let lastValidClose: number | null = null;
@@ -269,7 +270,7 @@ export async function GET(request: Request) {
         const ohlcv = result.quotes.map((q, index) => {
           let dateStr: string;
           if (q.date instanceof Date) {
-            if (isIntraday) {
+            if (isIntradayFinal) {
               // Format: YYYY-MM-DD HH:mm (e.g., "2026-01-28 09:30")
               const year = q.date.getFullYear();
               const month = String(q.date.getMonth() + 1).padStart(2, '0');
@@ -317,7 +318,7 @@ export async function GET(request: Request) {
             dataDelayMinutes,
             interval: finalInterval,
             requestedInterval: interval,
-            fallbackApplied: isJapaneseStock && isIntradayInterval
+            fallbackApplied: isJapaneseStock && isIntraday
           }
         });
       } catch (innerError: unknown) {

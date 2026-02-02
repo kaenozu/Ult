@@ -3,6 +3,7 @@ import { Stock, OHLCV, Signal } from '@/app/types';
 import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
+import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 
 interface MarketDataMetadata {
   fallbackApplied?: boolean;
@@ -67,13 +68,12 @@ export function useStockData() {
 
       // Determine if fallback will be applied (Japanese stock with intraday interval)
       const isJapaneseStock = stock.market === 'japan';
-      const isIntradayInterval = ['1m', '5m', '15m', '1h', '4h'].includes(timeFrame);
-      const fallbackApplied = isJapaneseStock && isIntradayInterval;
+      const fallbackApplied = isJapaneseStock && isIntradayInterval(timeFrame);
 
       // Set metadata
       setMetadata({
         fallbackApplied,
-        dataDelayMinutes: isJapaneseStock ? 20 : undefined
+        dataDelayMinutes: isJapaneseStock ? JAPANESE_MARKET_DELAY_MINUTES : undefined
       });
 
       // 1. Kick off all requests in parallel

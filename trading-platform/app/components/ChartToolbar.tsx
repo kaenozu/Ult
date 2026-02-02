@@ -4,6 +4,7 @@ import { memo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { DataDelayBadge } from './DataDelayBadge';
+import { isIntradayInterval } from '@/app/lib/constants/intervals';
 
 interface ChartToolbarProps {
   stock: Stock | null;
@@ -31,7 +32,7 @@ export const ChartToolbar = memo(function ChartToolbar({
   dataDelayMinutes
 }: ChartToolbarProps) {
   const isJapaneseStock = stock?.market === 'japan';
-  const isIntraday = ['1m', '5m', '15m', '1H', '4H'].includes(interval);
+  const isIntraday = isIntradayInterval(interval);
   
   return (
     <div className="min-h-10 border-b border-[#233648] flex flex-wrap items-center justify-between px-4 py-1 gap-2 bg-[#192633]/30 shrink-0">
@@ -52,7 +53,7 @@ export const ChartToolbar = memo(function ChartToolbar({
         <div className="h-4 w-px bg-[#233648]" />
         <div className="flex bg-[#192633] rounded-md p-0.5 gap-0.5">
           {['1m', '5m', '15m', '1H', '4H', 'D'].map((tf) => {
-            const isTfIntraday = ['1m', '5m', '15m', '1H', '4H'].includes(tf);
+            const isTfIntraday = isIntradayInterval(tf);
             const isDisabled = isJapaneseStock && isTfIntraday && tf !== interval;
 
             return (

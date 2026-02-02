@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { Clock } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
+import { JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 
 interface DataDelayBadgeProps {
   /** Market type */
@@ -25,7 +26,7 @@ interface DataDelayBadgeProps {
 export const DataDelayBadge = memo(function DataDelayBadge({
   market,
   fallbackApplied = false,
-  delayMinutes,
+  delayMinutes = JAPANESE_MARKET_DELAY_MINUTES,
   size = 'md',
   className
 }: DataDelayBadgeProps) {
@@ -50,10 +51,10 @@ export const DataDelayBadge = memo(function DataDelayBadge({
           sizeClasses,
           className
         )}
-        title={`Japanese market data has a ${delayMinutes || 20} minute delay due to data provider limitations`}
+        title={`Japanese market data has a ${delayMinutes} minute delay due to data provider limitations`}
       >
         <Clock className="shrink-0" size={iconSize} />
-        <span>遅延{delayMinutes || 20}分</span>
+        <span>遅延{delayMinutes}分</span>
       </div>
 
       {/* Fallback Warning Badge - when intraday was requested but daily provided */}
