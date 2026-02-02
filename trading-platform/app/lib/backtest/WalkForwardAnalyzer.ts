@@ -8,7 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
-import { BacktestResult, BacktestConfig, Strategy, StrategyAction, StrategyContext } from './AdvancedBacktestEngine';
+import { BacktestResult, BacktestConfig, Strategy, StrategyAction, StrategyContext, Trade, PerformanceMetrics } from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -367,7 +367,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
     // 簡易実装：既存のバックテストエンジンを使用せず、
     // 直接シミュレーションを実行
 
-    const trades: any[] = [];
+    const trades: Trade[] = [];
     let equity = config.initialCapital;
     const equityCurve: number[] = [equity];
     let position: { side: 'LONG' | 'SHORT' | null; entryPrice: number; quantity: number } | null = null;
@@ -430,7 +430,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
   /**
    * メトリクスを計算
    */
-  private calculateMetrics(equityCurve: number[], trades: any[], config: BacktestConfig): any {
+  private calculateMetrics(equityCurve: number[], trades: Trade[], config: BacktestConfig): PerformanceMetrics {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);
     const totalReturn = ((equityCurve[equityCurve.length - 1] - config.initialCapital) / config.initialCapital) * 100;
 

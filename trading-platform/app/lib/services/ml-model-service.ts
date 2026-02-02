@@ -3,12 +3,11 @@
  * 
  * このモジュールは、TensorFlow.jsを使用した実際の機械学習モデルによる予測を実行する機能を提供します。
  * LSTM、GRU、FeedForwardニューラルネットワークを使用します。
- * 
- * Refactored with dependency injection for better testability.
  */
 
 import { PredictionFeatures } from './feature-calculation-service';
 import { ModelPrediction } from '../../types';
+import { PREDICTION } from '../constants';
 import { 
   LSTMModel, 
   GRUModel, 
@@ -17,92 +16,30 @@ import {
   ModelMetrics,
   ModelTrainingData
 } from './tensorflow-model-service';
-import {
-  ITensorFlowModel,
-  IPredictionCalculator,
-  IFeatureNormalizer,
-  ITensorFlowPredictionStrategy,
-  MLModelConfig
-} from './interfaces/ml-model-interfaces';
-import { PredictionCalculator } from './implementations/prediction-calculator';
-import { FeatureNormalizer } from './implementations/feature-normalizer';
-import { TensorFlowPredictionStrategy } from './implementations/tensorflow-prediction-strategy';
 
-/**
- * ML予測モデルサービス (Refactored with DI)
+ * ML予測モデルサービス
  */
 export class MLModelService {
-  private readonly weights = {
-    RF: 0.35,
-    XGB: 0.35,
-    LSTM: 0.30,
-  };
+  private readonly weights = PREDICTION.MODEL_WEIGHTS;
 
   // TensorFlow.js models
-  private lstmModel: ITensorFlowModel | null = null;
-  private gruModel: ITensorFlowModel | null = null;
-  private ffModel: ITensorFlowModel | null = null;
+  private lstmModel: LSTMModel | null = null;
+  private gruModel: GRUModel | null = null;
+  private ffModel: FeedForwardModel | null = null;
 
-  // Injected dependencies
-  private predictionCalculator: IPredictionCalculator;
-  private featureNormalizer: IFeatureNormalizer;
-  private tensorFlowStrategy: ITensorFlowPredictionStrategy;
+  // Flag to use TensorFlow.js models (set to true after training)
+  private useTensorFlowModels = false;
 
-  /**
-   * Constructor with dependency injection
-   * 
-   * @param calculator - Optional prediction calculator (uses default if not provided)
-   * @param normalizer - Optional feature normalizer (uses default if not provided)
-   * @param config - Optional configuration
-   */
-  constructor(
-    calculator?: IPredictionCalculator,
-    normalizer?: IFeatureNormalizer,
-    config?: MLModelConfig
-  ) {
-    // Use provided or default implementations
-    this.predictionCalculator = calculator ?? new PredictionCalculator();
-    this.featureNormalizer = normalizer ?? new FeatureNormalizer();
-    
-    // Initialize TensorFlow strategy
-    const finalConfig: MLModelConfig = {
-      weights: config?.weights ?? this.weights,
-      useTensorFlowModels: config?.useTensorFlowModels ?? false,
-      modelNames: config?.modelNames ?? {
-        ff: 'ml-ff-model',
-        gru: 'ml-gru-model',
-        lstm: 'ml-lstm-model'
-      }
-    };
-    
-    this.tensorFlowStrategy = new TensorFlowPredictionStrategy(
-      null,
-      null,
-      null,
-      this.featureNormalizer,
-      finalConfig
-    );
-  }
-
-  /**
    * すべてのモデルによる予測を実行（同期版 - ルールベース）
    */
   predict(features: PredictionFeatures): ModelPrediction {
-    // Use injected calculator for pure function predictions
-    const rf = this.predictionCalculator.calculateRandomForest(features);
-    const xgb = this.predictionCalculator.calculateXGBoost(features);
-    const lstm = this.predictionCalculator.calculateLSTM(features);
+    // Rule-based predictions (backward compatible)
+    const rf = this.randomForestPredict(features);
+    const xgb = this.xgboostPredict(features);
+    const lstm = this.lstmPredict(features);
 
-    const ensemblePrediction = this.predictionCalculator.calculateEnsemble(
-      rf,
-      xgb,
-      lstm,
-      this.weights
-    );
-    const confidence = this.predictionCalculator.calculateConfidence(
-      features,
-      ensemblePrediction
-    );
+    const ensemblePrediction = rf * this.weights.RF + xgb * this.weights.XGB + lstm * this.weights.LSTM;
+    const confidence = this.calculateConfidence(features, ensemblePrediction);
 
     return { 
       rfPrediction: rf, 
@@ -113,47 +50,93 @@ export class MLModelService {
     };
   }
 
-  /**
    * TensorFlow.jsモデルを使用した予測（非同期版）
    */
   async predictAsync(features: PredictionFeatures): Promise<ModelPrediction> {
-    if (this.tensorFlowStrategy.isTensorFlowEnabled()) {
-      try {
-        return await this.tensorFlowStrategy.predictWithTensorFlow(features);
-      } catch (error) {
-        // Fallback to rule-based on error
-        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-          console.error('TensorFlow prediction failed, falling back to rule-based:', error);
-        }
-      }
+    if (this.useTensorFlowModels && this.lstmModel && this.gruModel && this.ffModel) {
+      return this.predictWithTensorFlow(features);
     }
     
     // Fallback to rule-based predictions
     return this.predict(features);
   }
 
-  /**
    * TensorFlow.jsモデルを使用した予測
-   * @deprecated Use predictAsync instead
    */
   private async predictWithTensorFlow(features: PredictionFeatures): Promise<ModelPrediction> {
-    return this.tensorFlowStrategy.predictWithTensorFlow(features);
+    const featureArray = featuresToArray(features);
+
+    try {
+      // Get predictions from all models
+      const ffPrediction = await this.ffModel!.predict(featureArray);
+      const gruPrediction = await this.gruModel!.predict(featureArray);
+      const lstmPrediction = await this.lstmModel!.predict(featureArray);
+
+      // Calculate ensemble prediction
+      const ensemblePrediction = 
+        ffPrediction * this.weights.RF + 
+        gruPrediction * this.weights.XGB + 
+        lstmPrediction * this.weights.LSTM;
+
+      // Calculate confidence based on model metrics and agreement
+      const confidence = this.calculateTensorFlowConfidence(
+        ffPrediction,
+        gruPrediction,
+        lstmPrediction,
+        ensemblePrediction
+      );
+
+      return {
+        rfPrediction: ffPrediction,
+        xgbPrediction: gruPrediction,
+        lstmPrediction: lstmPrediction,
+        ensemblePrediction,
+        confidence
+      };
+    } catch (error) {
+      // Log error but fallback to rule-based prediction
+      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+        console.error('TensorFlow prediction error:', error);
+      }
+      return this.predict(features);
+    }
   }
 
-  /**
    * TensorFlow.jsモデルの信頼度を計算
-   * @deprecated Moved to TensorFlowPredictionStrategy
    */
   private calculateTensorFlowConfidence(
     ff: number,
     gru: number,
     lstm: number,
-    ensemble: number
+    _ensemble: number
   ): number {
-    return this.tensorFlowStrategy.calculateTensorFlowConfidence(ff, gru, lstm, ensemble);
+    // Calculate agreement between models
+    const predictions = [ff, gru, lstm];
+    const mean = predictions.reduce((a, b) => a + b, 0) / predictions.length;
+    const variance = predictions.reduce((sum, pred) => sum + Math.pow(pred - mean, 2), 0) / predictions.length;
+    const stdDev = Math.sqrt(variance);
+
+    // Low variance = high agreement = high confidence
+    const agreementScore = Math.max(0, 1 - stdDev / Math.abs(mean || 1));
+
+    // Get model metrics
+    const ffMetrics = this.ffModel!.getMetrics();
+    const gruMetrics = this.gruModel!.getMetrics();
+    const lstmMetrics = this.lstmModel!.getMetrics();
+
+    // Average accuracy
+    const avgAccuracy = (ffMetrics.accuracy + gruMetrics.accuracy + lstmMetrics.accuracy) / 3;
+
+    // Combine agreement and accuracy
+    const baseConfidence = 50;
+    const agreementBonus = agreementScore * 25;
+    const accuracyBonus = (avgAccuracy / 100) * 25;
+
+    const confidence = baseConfidence + agreementBonus + accuracyBonus;
+
+    return Math.min(Math.max(confidence, 50), 95);
   }
 
-  /**
    * モデルを訓練する
    */
   async trainModels(trainingData: ModelTrainingData, epochs = 50): Promise<{
@@ -173,9 +156,8 @@ export class MLModelService {
       this.lstmModel.train(trainingData, epochs)
     ]);
 
-    // Update TensorFlow strategy with trained models
-    this.tensorFlowStrategy.setModels(this.ffModel, this.gruModel, this.lstmModel);
-    this.tensorFlowStrategy.setTensorFlowEnabled(true);
+    // Enable TensorFlow models
+    this.useTensorFlowModels = true;
 
     return {
       ff: ffMetrics,
@@ -184,7 +166,6 @@ export class MLModelService {
     };
   }
 
-  /**
    * モデルを保存する
    */
   async saveModels(): Promise<void> {
@@ -193,7 +174,6 @@ export class MLModelService {
     if (this.lstmModel) await this.lstmModel.saveModel('ml-lstm-model');
   }
 
-  /**
    * モデルを読み込む
    */
   async loadModels(): Promise<void> {
@@ -208,25 +188,21 @@ export class MLModelService {
         this.lstmModel.loadModel('ml-lstm-model')
       ]);
 
-      // Update TensorFlow strategy with loaded models
-      this.tensorFlowStrategy.setModels(this.ffModel, this.gruModel, this.lstmModel);
-      this.tensorFlowStrategy.setTensorFlowEnabled(true);
+      this.useTensorFlowModels = true;
     } catch (error) {
       if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
         console.error('Failed to load models:', error);
       }
-      this.tensorFlowStrategy.setTensorFlowEnabled(false);
+      this.useTensorFlowModels = false;
     }
   }
 
-  /**
    * TensorFlow.jsモデルが使用可能かチェック
    */
   isTensorFlowEnabled(): boolean {
-    return this.tensorFlowStrategy.isTensorFlowEnabled();
+    return this.useTensorFlowModels;
   }
 
-  /**
    * モデルのメトリクスを取得
    */
   getModelMetrics(): { ff?: ModelMetrics; gru?: ModelMetrics; lstm?: ModelMetrics } {
@@ -237,36 +213,94 @@ export class MLModelService {
     };
   }
 
-  /**
    * Random Forestによる予測
-   * @deprecated Moved to PredictionCalculator.calculateRandomForest
    */
   private randomForestPredict(f: PredictionFeatures): number {
-    return this.predictionCalculator.calculateRandomForest(f);
+    const { THRESHOLDS, SCALING } = PREDICTION;
+
+    let score = 0;
+
+    // RSIが極端な値の場合
+    if (f.rsi < THRESHOLDS.RSI_OVERSOLD) {
+      score += THRESHOLDS.RSI_EXTREME;
+    } else if (f.rsi > THRESHOLDS.RSI_OVERBOUGHT) {
+      score -= THRESHOLDS.RSI_EXTREME;
+    }
+
+    // SMAスコア
+    if (f.sma5 > 0) score += THRESHOLDS.SMA_BULL_SCORE;
+    if (f.sma20 > 0) score += THRESHOLDS.SMA_BEAR_SCORE;
+
+    // モメンタムスコア
+    if (f.priceMomentum > THRESHOLDS.MOMENTUM_STRONG) {
+      score += THRESHOLDS.MOMENTUM_SCORE;
+    } else if (f.priceMomentum < -THRESHOLDS.MOMENTUM_STRONG) {
+      score -= THRESHOLDS.MOMENTUM_SCORE;
+    }
+
+    return score * SCALING.RF;
   }
 
-  /**
    * XGBoostによる予測
-   * @deprecated Moved to PredictionCalculator.calculateXGBoost
    */
   private xgboostPredict(f: PredictionFeatures): number {
-    return this.predictionCalculator.calculateXGBoost(f);
+    const { THRESHOLDS, SCALING, XGB_PARAMS } = PREDICTION;
+
+    let score = 0;
+
+    // RSIが極端な値の場合
+    if (f.rsi < THRESHOLDS.RSI_OVERSOLD) {
+      score += THRESHOLDS.RSI_EXTREME;
+    } else if (f.rsi > THRESHOLDS.RSI_OVERBOUGHT) {
+      score -= THRESHOLDS.RSI_EXTREME;
+    }
+
+    // モメンタムとSMAの影響
+    const momentumScore = Math.min(
+      f.priceMomentum / XGB_PARAMS.MOMENTUM_DIVISOR, 
+      XGB_PARAMS.MOMENTUM_MAX_SCORE
+    );
+    const smaScore = (
+      f.sma5 * XGB_PARAMS.SMA5_WEIGHT + 
+      f.sma20 * XGB_PARAMS.SMA20_WEIGHT
+    ) / XGB_PARAMS.SMA_DIVISOR;
+    
+    score += momentumScore + smaScore;
+
+    return score * SCALING.XGB;
   }
 
-  /**
    * LSTMによる予測（簡易版）
-   * @deprecated Moved to PredictionCalculator.calculateLSTM
    */
   private lstmPredict(f: PredictionFeatures): number {
-    return this.predictionCalculator.calculateLSTM(f);
+    // LSTMの予測は価格モメンタムに基づいて簡略化
+    return f.priceMomentum * PREDICTION.SCALING.LSTM;
   }
 
-  /**
    * 予測の信頼度を計算
-   * @deprecated Moved to PredictionCalculator.calculateConfidence
    */
   private calculateConfidence(f: PredictionFeatures, prediction: number): number {
-    return this.predictionCalculator.calculateConfidence(f, prediction);
+    const { THRESHOLDS, CONFIDENCE } = PREDICTION;
+
+    let confidence = CONFIDENCE.BASE;
+
+    // RSIが極端な場合のボーナス
+    if (f.rsi < THRESHOLDS.RSI_EXTREME_LOW || f.rsi > THRESHOLDS.RSI_EXTREME_HIGH) {
+      confidence += CONFIDENCE.RSI_EXTREME_BONUS;
+    }
+
+    // モメンタムが強い場合のボーナス
+    if (Math.abs(f.priceMomentum) > THRESHOLDS.MOMENTUM_STRONG) {
+      confidence += CONFIDENCE.MOMENTUM_BONUS;
+    }
+
+    // 予測値が大きい場合のボーナス
+    if (Math.abs(prediction) > THRESHOLDS.MOMENTUM_STRONG) {
+      confidence += CONFIDENCE.PREDICTION_BONUS;
+    }
+
+    // 信頼度を0-100の範囲に制限
+    return Math.min(Math.max(confidence, THRESHOLDS.CONFIDENCE_MIN), THRESHOLDS.CONFIDENCE_MAX);
   }
 }
 
