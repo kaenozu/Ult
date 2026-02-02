@@ -1,213 +1,446 @@
 /**
- * 純粋な計算ユーティリティ関数
+ * 計算ユーティリティ（純粋関数・メモ化対応）
  * 
- * テクニカル指標に基づくスコア計算ロジックを一元管理。
- * すべての関数は副作用なしの純粋関数として実装。
+ * このモジュールは、アプリケーション全体で共有される計算ロジックを提供します。
+ * (#524: 計算ロジック重複排除)
  */
 
-/**
- * RSI計算の定数
- */
-export const RSI_CONSTANTS = {
-  EXTREME_OVERSOLD: 20,
-  EXTREME_OVERBOUGHT: 80,
-  VERY_EXTREME_OVERSOLD: 15,
-  VERY_EXTREME_OVERBOUGHT: 85,
-  EXTREME_SCORE: 3,
-} as const;
+import { OHLCV } from '../../types';
+
+// ============================================================================
+// メモ化ユーティリティ
+// ============================================================================
 
 /**
- * モメンタム計算の定数
+ * 単純なメモ化関数
  */
-export const MOMENTUM_CONSTANTS = {
-  STRONG_THRESHOLD: 2.0,
-  SCORE: 2,
-  DIVISOR: 3,
-  MAX_SCORE: 3,
-} as const;
+export function memoize<T extends (...args: number[]) => number>(
+  fn: T,
+  keyGenerator?: (...args: number[]) => string
+): T {
+  const cache = new Map<string, number>();
 
-/**
- * SMA計算の定数
- */
-export const SMA_CONSTANTS = {
-  BULL_SCORE: 2,
-  BEAR_SCORE: 1,
-  DIVISOR: 10,
-  SMA5_WEIGHT: 0.5,
-  SMA20_WEIGHT: 0.3,
-} as const;
+  return ((...args: number[]): number => {
+    const key = keyGenerator ? keyGenerator(...args) : args.join(',');
+    
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
 
-/**
- * 信頼度計算の定数
- */
-export const CONFIDENCE_CONSTANTS = {
-  BASE: 50,
-  MIN: 50,
-  MAX: 95,
-  RSI_EXTREME_BONUS: 10,
-  MOMENTUM_BONUS: 8,
-  PREDICTION_BONUS: 5,
-} as const;
-
-/**
- * RSIの影響スコアを計算
- * 
- * @param rsi - RSI値 (0-100)
- * @returns スコア（買いの場合は正、売りの場合は負）
- */
-export function calculateRsiImpact(rsi: number): number {
-  if (rsi < RSI_CONSTANTS.EXTREME_OVERSOLD) {
-    return RSI_CONSTANTS.EXTREME_SCORE;
-  }
-  if (rsi > RSI_CONSTANTS.EXTREME_OVERBOUGHT) {
-    return -RSI_CONSTANTS.EXTREME_SCORE;
-  }
-  return 0;
+    const result = fn(...args);
+    cache.set(key, result);
+    return result;
+  }) as T;
 }
 
 /**
- * モメンタムスコアを計算（閾値ベース）
- * 
- * @param momentum - 価格モメンタム
- * @param threshold - 閾値（デフォルト: 2.0）
- * @returns スコア（買いの場合は正、売りの場合は負）
+ * 配列用メモ化関数
  */
-export function calculateMomentumScore(
-  momentum: number,
-  threshold: number = MOMENTUM_CONSTANTS.STRONG_THRESHOLD
+export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: number[]) => number>(
+  fn: T,
+  maxCacheSize: number = 100
+): T {
+  const cache = new Map<string, number>();
+
+  return ((arr: number[] | Float64Array, ...args: number[]): number => {
+    // 配列の内容をハッシュ化（最初の10要素と長さを使用）
+    const sample = arr.slice(0, 10).join(',');
+    const key = `${sample}|${arr.length}|${args.join(',')}`;
+    
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
+
+    const result = fn(arr, ...args);
+
+    // キャッシュサイズ制限
+    if (cache.size >= maxCacheSize) {
+      const firstKey = cache.keys().next().value;
+      cache.delete(firstKey);
+    }
+
+    cache.set(key, result);
+    return result;
+  }) as T;
+}
+
+// ============================================================================
+// 基本計算関数（純粋関数）
+// ============================================================================
+
+/**
+ * 配列の合計を計算
+ */
+export function sum(arr: number[] | Float64Array): number {
+  let total = 0;
+  for (let i = 0; i < arr.length; i++) {
+    total += arr[i];
+  }
+  return total;
+}
+
+/**
+ * 配列の平均を計算
+ */
+export function mean(arr: number[] | Float64Array): number {
+  if (arr.length === 0) return 0;
+  return sum(arr) / arr.length;
+}
+
+/**
+ * 配列の分散を計算
+ */
+export function variance(arr: number[] | Float64Array): number {
+  if (arr.length < 2) return 0;
+  const m = mean(arr);
+  let sum = 0;
+  for (let i = 0; i < arr.length; i++) {
+    const diff = arr[i] - m;
+    sum += diff * diff;
+  }
+  return sum / arr.length;
+}
+
+/**
+ * 標準偏差を計算
+ */
+export function stdDev(arr: number[] | Float64Array): number {
+  return Math.sqrt(variance(arr));
+}
+
+/**
+ * 配列の最大値を計算
+ */
+export function max(arr: number[] | Float64Array): number {
+  if (arr.length === 0) return -Infinity;
+  let maximum = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] > maximum) maximum = arr[i];
+  }
+  return maximum;
+}
+
+/**
+ * 配列の最小値を計算
+ */
+export function min(arr: number[] | Float64Array): number {
+  if (arr.length === 0) return Infinity;
+  let minimum = arr[0];
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] < minimum) minimum = arr[i];
+  }
+  return minimum;
+}
+
+/**
+ * 配列の最後の値を取得
+ */
+export function lastValue<T>(arr: T[], fallback: T): T {
+  return arr.length > 0 ? arr[arr.length - 1] : fallback;
+}
+
+// ============================================================================
+// 金融計算関数（純粋関数）
+// ============================================================================
+
+/**
+ * 価格リターンを計算
+ */
+export function calculateReturns(prices: number[] | Float64Array): Float64Array {
+  if (prices.length < 2) return new Float64Array(0);
+
+  const result = new Float64Array(prices.length - 1);
+  for (let i = 1; i < prices.length; i++) {
+    result[i - 1] = (prices[i] - prices[i - 1]) / prices[i - 1];
+  }
+
+  return result;
+}
+
+/**
+ * 価格モメンタムを計算（パーセント変化）
+ */
+export function calculatePriceMomentum(
+  prices: number[] | Float64Array,
+  period: number
 ): number {
-  if (momentum > threshold) {
-    return MOMENTUM_CONSTANTS.SCORE;
+  if (prices.length < period + 1) {
+    return 0;
   }
-  if (momentum < -threshold) {
-    return -MOMENTUM_CONSTANTS.SCORE;
-  }
-  return 0;
+
+  const currentPrice = prices[prices.length - 1];
+  const pastPrice = prices[prices.length - 1 - period];
+
+  if (pastPrice === 0) return 0;
+
+  return ((currentPrice - pastPrice) / pastPrice) * 100;
 }
 
 /**
- * モメンタムスコアを計算（連続値版 - XGBoost用）
- * 
- * @param momentum - 価格モメンタム
- * @returns スコア（最大値で制限）
+ * メモ化された価格モメンタム計算
  */
-export function calculateContinuousMomentumScore(momentum: number): number {
-  const score = momentum / MOMENTUM_CONSTANTS.DIVISOR;
-  // Cap at MAX_SCORE for both positive and negative
-  if (score > MOMENTUM_CONSTANTS.MAX_SCORE) return MOMENTUM_CONSTANTS.MAX_SCORE;
-  if (score < -MOMENTUM_CONSTANTS.MAX_SCORE) return -MOMENTUM_CONSTANTS.MAX_SCORE;
-  return score;
-}
+export const calculatePriceMomentumMemoized = memoizeArray(calculatePriceMomentum);
 
 /**
- * SMAスコアを計算（シンプル版 - Random Forest用）
- * 
- * @param sma5 - 5期間SMA値
- * @param sma20 - 20期間SMA値
- * @returns スコア（買いの場合は正）
+ * SMAからの乖離率を計算
  */
-export function calculateSmaScore(sma5: number, sma20: number): number {
-  let score = 0;
-  if (sma5 > 0) score += SMA_CONSTANTS.BULL_SCORE;
-  if (sma20 > 0) score += SMA_CONSTANTS.BEAR_SCORE;
-  return score;
-}
-
-/**
- * SMAスコアを計算（加重版 - XGBoost用）
- * 
- * @param sma5 - 5期間SMA値
- * @param sma20 - 20期間SMA値
- * @returns スコア（加重計算）
- */
-export function calculateWeightedSmaScore(sma5: number, sma20: number): number {
-  return (
-    (sma5 * SMA_CONSTANTS.SMA5_WEIGHT + sma20 * SMA_CONSTANTS.SMA20_WEIGHT) /
-    SMA_CONSTANTS.DIVISOR
-  );
-}
-
-/**
- * RSIの信頼度ボーナスを計算
- * 
- * @param rsi - RSI値 (0-100)
- * @returns ボーナス値
- */
-export function calculateRsiConfidenceBonus(rsi: number): number {
-  if (rsi < RSI_CONSTANTS.VERY_EXTREME_OVERSOLD || rsi > RSI_CONSTANTS.VERY_EXTREME_OVERBOUGHT) {
-    return CONFIDENCE_CONSTANTS.RSI_EXTREME_BONUS;
-  }
-  return 0;
-}
-
-/**
- * モメンタムの信頼度ボーナスを計算
- * 
- * @param momentum - 価格モメンタム
- * @param threshold - 閾値（デフォルト: 2.0）
- * @returns ボーナス値
- */
-export function calculateMomentumConfidenceBonus(
-  momentum: number,
-  threshold: number = MOMENTUM_CONSTANTS.STRONG_THRESHOLD
+export function calculateSmaDeviation(
+  currentPrice: number,
+  smaValue: number
 ): number {
-  if (Math.abs(momentum) > threshold) {
-    return CONFIDENCE_CONSTANTS.MOMENTUM_BONUS;
+  if (smaValue === 0 || currentPrice === 0) {
+    return 0;
   }
-  return 0;
+  return ((currentPrice - smaValue) / currentPrice) * 100;
 }
 
 /**
- * 予測値の信頼度ボーナスを計算
- * 
- * @param prediction - 予測値
- * @param threshold - 閾値（デフォルト: 2.0）
- * @returns ボーナス値
+ * RSIの変化量を計算
  */
-export function calculatePredictionConfidenceBonus(
-  prediction: number,
-  threshold: number = MOMENTUM_CONSTANTS.STRONG_THRESHOLD
-): number {
-  if (Math.abs(prediction) > threshold) {
-    return CONFIDENCE_CONSTANTS.PREDICTION_BONUS;
+export function calculateRsiChange(rsiValues: number[]): number {
+  if (rsiValues.length < 2) {
+    return 0;
   }
-  return 0;
+  return rsiValues[rsiValues.length - 1] - rsiValues[rsiValues.length - 2];
 }
 
 /**
- * 信頼度を計算（統合版）
- * 
- * @param rsi - RSI値
- * @param momentum - 価格モメンタム
- * @param prediction - 予測値
- * @returns 信頼度 (50-95)
+ * ボラティリティを計算（年率換算）
  */
-export function calculateConfidence(
-  rsi: number,
-  momentum: number,
-  prediction: number
+export function calculateVolatility(
+  prices: number[] | Float64Array,
+  annualize: boolean = true
 ): number {
-  let confidence = CONFIDENCE_CONSTANTS.BASE;
-  
-  confidence += calculateRsiConfidenceBonus(rsi);
-  confidence += calculateMomentumConfidenceBonus(momentum);
-  confidence += calculatePredictionConfidenceBonus(prediction);
-  
-  return Math.min(Math.max(confidence, CONFIDENCE_CONSTANTS.MIN), CONFIDENCE_CONSTANTS.MAX);
+  if (prices.length < 2) return 0;
+
+  const returns = calculateReturns(prices);
+  if (returns.length === 0) return 0;
+
+  const vol = stdDev(returns);
+
+  if (annualize) {
+    return vol * Math.sqrt(252) * 100;
+  }
+
+  return vol * 100;
 }
 
 /**
- * 信頼度を範囲内に制限
- * 
- * @param confidence - 信頼度値
- * @param min - 最小値（デフォルト: 50）
- * @param max - 最大値（デフォルト: 95）
- * @returns 範囲内に制限された信頼度
+ * メモ化されたボラティリティ計算
  */
-export function clampConfidence(
-  confidence: number,
-  min: number = CONFIDENCE_CONSTANTS.MIN,
-  max: number = CONFIDENCE_CONSTANTS.MAX
-): number {
-  return Math.min(Math.max(confidence, min), max);
+export const calculateVolatilityMemoized = memoizeArray(calculateVolatility);
+
+/**
+ * 移動平均を計算
+ */
+export function calculateMovingAverage(
+  data: number[] | Float64Array,
+  period: number
+): Float64Array {
+  if (period <= 0 || period > data.length) {
+    return new Float64Array(0);
+  }
+
+  const result = new Float64Array(data.length - period + 1);
+  let sum = 0;
+
+  // 最初のウィンドウ
+  for (let i = 0; i < period; i++) {
+    sum += data[i];
+  }
+  result[0] = sum / period;
+
+  // スライディングウィンドウ
+  for (let i = period; i < data.length; i++) {
+    sum += data[i] - data[i - period];
+    result[i - period + 1] = sum / period;
+  }
+
+  return result;
 }
+
+/**
+ * ボリンジャーバンドの現在位置（％）を計算
+ */
+export function calculateBollingerPosition(
+  currentPrice: number,
+  upper: number,
+  lower: number
+): number {
+  if (upper === lower || currentPrice === 0) {
+    return 0;
+  }
+  return ((currentPrice - lower) / (upper - lower)) * 100;
+}
+
+/**
+ * MACDとシグナルの差を計算
+ */
+export function calculateMacdSignalDifference(
+  macd: number,
+  signal: number
+): number {
+  return macd - signal;
+}
+
+/**
+ * 出来高比率を計算
+ */
+export function calculateVolumeRatio(
+  currentVolume: number,
+  averageVolume: number
+): number {
+  if (averageVolume === 0) return 0;
+  return currentVolume / averageVolume;
+}
+
+// ============================================================================
+// OHLCV固有の計算
+// ============================================================================
+
+/**
+ * OHLCVから価格配列を抽出
+ */
+export function extractPrices(data: OHLCV[]): number[] {
+  return data.map(d => d.close);
+}
+
+/**
+ * OHLCVから出来高配列を抽出
+ */
+export function extractVolumes(data: OHLCV[]): number[] {
+  return data.map(d => d.volume);
+}
+
+/**
+ * OHLCVからリターンを計算
+ */
+export function calculateReturnsFromOHLCV(data: OHLCV[]): Float64Array {
+  if (data.length < 2) return new Float64Array(0);
+
+  const result = new Float64Array(data.length - 1);
+  for (let i = 1; i < data.length; i++) {
+    result[i - 1] = (data[i].close - data[i - 1].close) / data[i - 1].close;
+  }
+
+  return result;
+}
+
+// ============================================================================
+// 統計計算
+// ============================================================================
+
+/**
+ * 相関係数を計算
+ */
+export function calculateCorrelation(
+  arr1: number[] | Float64Array,
+  arr2: number[] | Float64Array
+): number {
+  if (arr1.length !== arr2.length || arr1.length === 0) {
+    return 0;
+  }
+
+  const n = arr1.length;
+  const mean1 = mean(arr1);
+  const mean2 = mean(arr2);
+
+  let numerator = 0;
+  let denom1 = 0;
+  let denom2 = 0;
+
+  for (let i = 0; i < n; i++) {
+    const diff1 = arr1[i] - mean1;
+    const diff2 = arr2[i] - mean2;
+    numerator += diff1 * diff2;
+    denom1 += diff1 * diff1;
+    denom2 += diff2 * diff2;
+  }
+
+  const denominator = Math.sqrt(denom1 * denom2);
+  if (denominator === 0) return 0;
+
+  return numerator / denominator;
+}
+
+/**
+ * シャープレシオを計算
+ */
+export function calculateSharpeRatio(
+  returns: number[] | Float64Array,
+  riskFreeRate: number = 0
+): number {
+  if (returns.length === 0) return 0;
+
+  const avgReturn = mean(returns) - riskFreeRate;
+  const volatility = stdDev(returns);
+
+  if (volatility === 0) return 0;
+
+  return avgReturn / volatility;
+}
+
+/**
+ * 最大ドローダウンを計算
+ */
+export function calculateMaxDrawdown(prices: number[] | Float64Array): number {
+  if (prices.length === 0) return 0;
+
+  let maxDrawdown = 0;
+  let peak = prices[0];
+
+  for (let i = 1; i < prices.length; i++) {
+    if (prices[i] > peak) {
+      peak = prices[i];
+    } else {
+      const drawdown = (peak - prices[i]) / peak;
+      if (drawdown > maxDrawdown) {
+        maxDrawdown = drawdown;
+      }
+    }
+  }
+
+  return maxDrawdown * 100;
+}
+
+// ============================================================================
+// エクスポート
+// ============================================================================
+
+export const Calculations = {
+  // 基本統計
+  sum,
+  mean,
+  variance,
+  stdDev,
+  max,
+  min,
+  lastValue,
+
+  // 金融計算
+  calculateReturns,
+  calculatePriceMomentum,
+  calculatePriceMomentumMemoized,
+  calculateSmaDeviation,
+  calculateRsiChange,
+  calculateVolatility,
+  calculateVolatilityMemoized,
+  calculateMovingAverage,
+  calculateBollingerPosition,
+  calculateMacdSignalDifference,
+  calculateVolumeRatio,
+
+  // OHLCV計算
+  extractPrices,
+  extractVolumes,
+  calculateReturnsFromOHLCV,
+
+  // 統計計算
+  calculateCorrelation,
+  calculateSharpeRatio,
+  calculateMaxDrawdown,
+
+  // メモ化ユーティリティ
+  memoize,
+  memoizeArray,
+};
