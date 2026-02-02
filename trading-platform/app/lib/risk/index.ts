@@ -63,3 +63,19 @@ export type {
   SectorExposure,
   EnhancedRiskMetrics,
 } from './EnhancedPortfolioRiskMonitor';
+
+export {
+  EnhancedPsychologyMonitor,
+  createEnhancedPsychologyMonitor,
+} from './EnhancedPsychologyMonitor';
+
+export type {
+  EnhancedBehaviorMetrics,
+  TiltIndicators,
+  PsychologicalState,
+} from './EnhancedPsychologyMonitor';
+
+export {
+  CoolingOffManager,
+  createCoolingOffManager,
+} from './CoolingOffManager';
