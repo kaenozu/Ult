@@ -1,18 +1,38 @@
 import { useMemo } from 'react';
 import { OHLCV, Signal } from '@/app/types';
 import { FORECAST_CONE } from '@/app/lib/constants';
+import { reduceDataPoints, shouldReduceData, calculateOptimalDataPoints } from '@/app/lib/chart-utils';
 
 export const useChartData = (
   data: OHLCV[],
   signal: Signal | null,
-  indexData: OHLCV[] = []
+  indexData: OHLCV[] = [],
+  chartWidth?: number
 ) => {
+  // データポイント削減の適用
+  const optimizedData = useMemo(() => {
+    if (!shouldReduceData(data.length)) {
+      return data;
+    }
+
+    // チャート幅に基づいて最適なデータポイント数を計算
+    const targetPoints = chartWidth 
+      ? calculateOptimalDataPoints(chartWidth, data.length)
+      : 500; // デフォルト値
+
+    return reduceDataPoints(data, {
+      targetPoints,
+      algorithm: 'lttb', // Largest Triangle Three Bucketsアルゴリズムを使用
+      preserveExtremes: true,
+    });
+  }, [data, chartWidth]);
+
   // 1. 基本データと未来予測用のラベル拡張
   const extendedData = useMemo(() => {
-    const labels = data.map(d => d.date);
-    const prices = data.map(d => d.close);
-    if (signal && data.length > 0) {
-      const lastDate = new Date(data[data.length - 1].date);
+    const labels = optimizedData.map(d => d.date);
+    const prices = optimizedData.map(d => d.close);
+    if (signal && optimizedData.length > 0) {
+      const lastDate = new Date(optimizedData[optimizedData.length - 1].date);
       for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
         const future = new Date(lastDate);
         future.setDate(lastDate.getDate() + i);
@@ -21,7 +41,7 @@ export const useChartData = (
       }
     }
     return { labels, prices };
-  }, [data, signal]);
+  }, [optimizedData, signal]);
 
   // 1.5 市場指数のマップ作成（indexData のみ依存）
   const indexMap = useMemo(() => {
@@ -35,12 +55,12 @@ export const useChartData = (
 
   // 1.6 市場指数の正規化 (Normalizing Index to Stock scale)
   const normalizedIndexData = useMemo(() => {
-    if (!indexData || indexData.length < 10 || data.length === 0) return [];
+    if (!indexData || indexData.length < 10 || optimizedData.length === 0) return [];
 
     // 表示期間の開始価格を基準に倍率を計算
-    const stockStartPrice = data[0].close;
+    const stockStartPrice = optimizedData[0].close;
     // indexDataからdata[0].dateに最も近い日の価格を探す
-    const targetDate = data[0].date;
+    const targetDate = optimizedData[0].date;
     const indexStartPoint = indexData.find(d => d.date >= targetDate) || indexData[0];
     const indexStartPrice = indexStartPoint.close;
 
@@ -51,7 +71,7 @@ export const useChartData = (
       const idxClose = indexMap.get(label);
       return idxClose !== undefined ? idxClose * ratio : NaN;
     });
-  }, [data, indexData, extendedData, indexMap]);
+  }, [optimizedData, indexData, extendedData, indexMap]);
 
   return { extendedData, normalizedIndexData };
 };

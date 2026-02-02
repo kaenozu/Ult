@@ -257,4 +257,148 @@ describe('FeatureEngineering', () => {
       expect(features.volatility).toBeGreaterThan(30);
     });
   });
+
+  describe('Macro Indicators Integration', () => {
+    it('should integrate macro indicators when provided', () => {
+      const ohlcvData = generateMockOHLCV(60);
+      const currentPrice = ohlcvData[ohlcvData.length - 1].close;
+      const averageVolume = 1000000;
+      
+      const macroIndicators = {
+        vix: 25,
+        interestRate: 3.5,
+        dollarIndex: 105,
+        bondYield: 4.2,
+      };
+
+      const features = featureEngineering.calculateExtendedFeatures(
+        ohlcvData,
+        currentPrice,
+        averageVolume,
+        macroIndicators
+      );
+
+      expect(features.macroIndicators).toBeDefined();
+      expect(features.macroIndicators?.vix).toBeDefined();
+      expect(features.macroIndicators?.interestRate).toBe(3.5);
+    });
+
+    it('should work without macro indicators', () => {
+      const ohlcvData = generateMockOHLCV(60);
+      const currentPrice = ohlcvData[ohlcvData.length - 1].close;
+      const averageVolume = 1000000;
+
+      const features = featureEngineering.calculateExtendedFeatures(
+        ohlcvData,
+        currentPrice,
+        averageVolume
+      );
+
+      expect(features.macroIndicators).toBeUndefined();
+    });
+  });
+
+  describe('Text Data Quantification', () => {
+    it('should quantify positive news sentiment', () => {
+      const ohlcvData = generateMockOHLCV(60);
+      const currentPrice = ohlcvData[ohlcvData.length - 1].close;
+      const averageVolume = 1000000;
+      
+      const positiveNews = [
+        'Market rally continues with strong growth',
+        'Profits surge as bull market gains momentum',
+        'Positive outlook for increasing revenue',
+      ];
+
+      const features = featureEngineering.calculateExtendedFeatures(
+        ohlcvData,
+        currentPrice,
+        averageVolume,
+        undefined,
+        positiveNews
+      );
+
+      expect(features.sentiment).toBeDefined();
+      expect(features.sentiment?.overall).toBeGreaterThan(0);
+      expect(features.sentiment?.positive).toBeGreaterThan(features.sentiment?.negative);
+    });
+
+    it('should quantify negative news sentiment', () => {
+      const ohlcvData = generateMockOHLCV(60);
+      const currentPrice = ohlcvData[ohlcvData.length - 1].close;
+      const averageVolume = 1000000;
+      
+      const negativeNews = [
+        'Market decline continues amid crisis',
+        'Losses mount as bear market deepens',
+        'Risk of further decline looms',
+      ];
+
+      const features = featureEngineering.calculateExtendedFeatures(
+        ohlcvData,
+        currentPrice,
+        averageVolume,
+        undefined,
+        negativeNews
+      );
+
+      expect(features.sentiment).toBeDefined();
+      expect(features.sentiment?.overall).toBeLessThan(0);
+      expect(features.sentiment?.negative).toBeGreaterThan(features.sentiment?.positive);
+    });
+
+    it('should handle empty news array', () => {
+      const ohlcvData = generateMockOHLCV(60);
+      const currentPrice = ohlcvData[ohlcvData.length - 1].close;
+      const averageVolume = 1000000;
+
+      const features = featureEngineering.calculateExtendedFeatures(
+        ohlcvData,
+        currentPrice,
+        averageVolume,
+        undefined,
+        []
+      );
+
+      expect(features.sentiment).toBeUndefined();
+    });
+  });
+
+  describe('Time Series Features', () => {
+    it('should generate time series features', () => {
+      const ohlcvData = generateMockOHLCV(60);
+      const currentPrice = ohlcvData[ohlcvData.length - 1].close;
+      const averageVolume = 1000000;
+
+      const features = featureEngineering.calculateExtendedFeatures(
+        ohlcvData,
+        currentPrice,
+        averageVolume
+      );
+
+      expect(features.timeSeriesFeatures).toBeDefined();
+      expect(features.timeSeriesFeatures?.rollingMean5).toBeDefined();
+      expect(features.timeSeriesFeatures?.rollingMean20).toBeDefined();
+      expect(features.timeSeriesFeatures?.rollingStd5).toBeDefined();
+      expect(features.timeSeriesFeatures?.exponentialMA).toBeDefined();
+      expect(features.timeSeriesFeatures?.priceAcceleration).toBeDefined();
+      expect(features.timeSeriesFeatures?.autocorrelation).toBeDefined();
+    });
+
+    it('should calculate Fourier features for cyclical patterns', () => {
+      const ohlcvData = generateMockOHLCV(60);
+      const currentPrice = ohlcvData[ohlcvData.length - 1].close;
+      const averageVolume = 1000000;
+
+      const features = featureEngineering.calculateExtendedFeatures(
+        ohlcvData,
+        currentPrice,
+        averageVolume
+      );
+
+      expect(features.timeSeriesFeatures?.fourierDominantFreq).toBeDefined();
+      expect(features.timeSeriesFeatures?.fourierAmplitude).toBeDefined();
+      expect(features.timeSeriesFeatures?.fourierDominantFreq).toBeGreaterThanOrEqual(0);
+    });
+  });
 });

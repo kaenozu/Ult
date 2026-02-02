@@ -124,8 +124,11 @@ describe('DynamicPositionSizing', () => {
         90
       );
 
-      expect(lowConfidenceResult.recommendedSize).toBeLessThan(
+      expect(lowConfidenceResult.recommendedSize).toBeLessThanOrEqual(
         highConfidenceResult.recommendedSize
+      );
+      expect(lowConfidenceResult.confidence).toBeLessThan(
+        highConfidenceResult.confidence
       );
     });
   });

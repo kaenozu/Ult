@@ -38,6 +38,7 @@ export interface ConsensusSignal {
 
 /**
  * コンセンサスシグナルの重み付け設定
+ * Optimized weights for better signal accuracy
  */
 interface ConsensusWeights {
   rsi: number;
@@ -46,9 +47,9 @@ interface ConsensusWeights {
 }
 
 const DEFAULT_WEIGHTS: ConsensusWeights = {
-  rsi: 0.35,
-  macd: 0.35,
-  bollinger: 0.30,
+  rsi: 0.40,      // Increased from 0.35 - RSI is more reliable
+  macd: 0.35,     // Kept same
+  bollinger: 0.25, // Decreased from 0.30
 };
 
 class ConsensusSignalService {
@@ -256,13 +257,23 @@ class ConsensusSignalService {
     // 加重平均を計算
     const weightedScore = (rsiScore * weights.rsi) + (macdScore * weights.macd) + (bollingerScore * weights.bollinger);
 
-    // シグナルタイプを決定
+    // シグナルタイプを決定 (improved thresholds for better accuracy)
     let type: 'BUY' | 'SELL' | 'HOLD';
-    if (weightedScore > 0.2) {
+    const STRONG_SIGNAL_THRESHOLD = 0.25; // Increased from 0.2 for more confident signals
+    const WEAK_SIGNAL_THRESHOLD = 0.15;   // New threshold for weak signals
+    
+    if (weightedScore > STRONG_SIGNAL_THRESHOLD) {
       type = 'BUY';
-    } else if (weightedScore < -0.2) {
+    } else if (weightedScore < -STRONG_SIGNAL_THRESHOLD) {
       type = 'SELL';
+    } else if (Math.abs(weightedScore) < WEAK_SIGNAL_THRESHOLD) {
+      // Very weak signal - force HOLD
+      type = 'HOLD';
+    } else if (weightedScore > 0) {
+      // Weak buy signal - consider as HOLD for safety
+      type = 'HOLD';
     } else {
+      // Weak sell signal - consider as HOLD for safety
       type = 'HOLD';
     }
 
@@ -416,4 +427,6 @@ class ConsensusSignalService {
 
 }
 
+// Export both the class and a singleton instance
+export { ConsensusSignalService };
 export const consensusSignalService = new ConsensusSignalService();

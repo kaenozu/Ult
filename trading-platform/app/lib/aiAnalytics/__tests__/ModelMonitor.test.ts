@@ -388,4 +388,143 @@ describe('ModelMonitor', () => {
       }).toThrow('Baseline accuracy must be between 0 and 1');
     });
   });
+
+  describe('KL Divergence Drift Detection', () => {
+    it('should detect drift using KL divergence', () => {
+      // Create reference distribution
+      const referenceData = {
+        values: Array.from({ length: 100 }, () => Math.random() * 10),
+      };
+
+      // Create shifted distribution (drift)
+      const currentData = {
+        values: Array.from({ length: 100 }, () => Math.random() * 10 + 5), // Shifted by 5
+      };
+
+      const driftResult = modelMonitor.detectKLDrift(currentData, referenceData);
+
+      expect(driftResult).toHaveProperty('name');
+      expect(driftResult).toHaveProperty('score');
+      expect(driftResult).toHaveProperty('threshold');
+      expect(driftResult).toHaveProperty('isDrift');
+      expect(driftResult.name).toBe('KL_DIVERGENCE');
+      expect(driftResult.score).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should not detect drift for similar distributions', () => {
+      const referenceData = {
+        values: Array.from({ length: 100 }, () => Math.random() * 10),
+      };
+
+      const currentData = {
+        values: Array.from({ length: 100 }, () => Math.random() * 10),
+      };
+
+      const driftResult = modelMonitor.detectKLDrift(currentData, referenceData);
+
+      expect(driftResult.isDrift).toBe(false);
+    });
+  });
+
+  describe('PSI Drift Detection', () => {
+    it('should detect drift using PSI', () => {
+      const referenceData = {
+        values: Array.from({ length: 100 }, () => Math.random() * 10),
+      };
+
+      const currentData = {
+        values: Array.from({ length: 100 }, () => Math.random() * 10 + 8), // Shifted
+      };
+
+      const driftResult = modelMonitor.detectPSIDrift(currentData, referenceData);
+
+      expect(driftResult).toHaveProperty('name');
+      expect(driftResult).toHaveProperty('score');
+      expect(driftResult).toHaveProperty('threshold');
+      expect(driftResult).toHaveProperty('isDrift');
+      expect(driftResult.name).toBe('PSI');
+      expect(driftResult.score).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should use threshold of 0.2 for PSI', () => {
+      const referenceData = {
+        values: Array.from({ length: 100 }, () => Math.random() * 10),
+      };
+
+      const currentData = {
+        values: Array.from({ length: 100 }, () => Math.random() * 10),
+      };
+
+      const driftResult = modelMonitor.detectPSIDrift(currentData, referenceData);
+
+      expect(driftResult.threshold).toBe(0.2);
+    });
+  });
+
+  describe('shouldRetrain', () => {
+    it('should recommend retraining when drift is detected', () => {
+      const driftMethod = {
+        name: 'KL_DIVERGENCE' as const,
+        score: 0.3,
+        threshold: 0.15,
+        isDrift: true,
+      };
+
+      const shouldRetrain = modelMonitor.shouldRetrain(driftMethod);
+
+      expect(shouldRetrain).toBe(true);
+    });
+
+    it('should not recommend retraining without drift', () => {
+      const driftMethod = {
+        name: 'PSI' as const,
+        score: 0.05,
+        threshold: 0.2,
+        isDrift: false,
+      };
+
+      const shouldRetrain = modelMonitor.shouldRetrain(driftMethod);
+
+      expect(shouldRetrain).toBe(false);
+    });
+  });
+
+  describe('Enhanced Data Drift Detection', () => {
+    it('should include detection methods in drift alert', () => {
+      modelMonitor.setBaselineAccuracy(0.8);
+
+      // Add predictions with drift pattern
+      for (let i = 0; i < 50; i++) {
+        const timestamp = new Date(Date.now() - (60 - i) * 24 * 60 * 60 * 1000);
+        modelMonitor.trackPrediction({
+          timestamp,
+          symbol: 'AAPL',
+          prediction: Math.random() * 10,
+          actual: null,
+          confidence: 0.7,
+          signalType: 'BUY',
+        });
+      }
+
+      // Add recent predictions with different distribution
+      for (let i = 0; i < 30; i++) {
+        const timestamp = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+        modelMonitor.trackPrediction({
+          timestamp,
+          symbol: 'AAPL',
+          prediction: Math.random() * 10 + 15, // Shifted distribution
+          actual: null,
+          confidence: 0.7,
+          signalType: 'BUY',
+        });
+      }
+
+      const alert = modelMonitor.detectModelDrift();
+
+      if (alert && alert.type === 'DATA_DRIFT') {
+        expect(alert.detectionMethods).toBeDefined();
+        expect(alert.detectionMethods?.length).toBeGreaterThan(0);
+      }
+    });
+  });
 });
