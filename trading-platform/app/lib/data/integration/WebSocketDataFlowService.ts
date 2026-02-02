@@ -237,7 +237,6 @@ export class WebSocketDataFlowService {
    * Handle WebSocket connected
    */
   private handleConnected(): void {
-    console.log('[DataFlow] Connected to data feed');
     this.emit('connected', { timestamp: Date.now() });
   }
   
@@ -245,7 +244,6 @@ export class WebSocketDataFlowService {
    * Handle WebSocket disconnected
    */
   private handleDisconnected(): void {
-    console.log('[DataFlow] Disconnected from data feed');
     this.emit('disconnected', { timestamp: Date.now() });
     
     this.addAlert({

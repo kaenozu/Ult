@@ -54,25 +54,16 @@ export function formatDuration(ms: number): string {
 export function logPerformanceReport(): void {
   const report = generatePerformanceReport();
   
-  console.log('\n=== Performance Report ===');
-  console.log(`Generated: ${report.generatedAt}`);
-  console.log(`Total Measurements: ${report.summary.totalMeasurements}`);
-  console.log(`Unique Operations: ${report.summary.uniqueOperations}`);
-  console.log(`\nSlowest: ${report.summary.slowestOperation.name} (${formatDuration(report.summary.slowestOperation.avgDuration)})`);
-  console.log(`Fastest: ${report.summary.fastestOperation.name} (${formatDuration(report.summary.fastestOperation.avgDuration)})`);
   
-  console.log('\n--- Top 10 by Average Duration ---');
   report.operations
     .sort((a, b) => b.stats.average - a.stats.average)
     .slice(0, 10)
     .forEach(op => {
-      console.log(
         `${op.name}: avg=${formatDuration(op.stats.average)}, ` +
         `count=${op.stats.count}, p95=${formatDuration(op.stats.p95)}`
       );
     });
   
-  console.log('========================\n');
 }
 
 // Web Vitals integration

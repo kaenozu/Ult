@@ -161,7 +161,6 @@ export class WinRateMaximizer {
    */
   learnFromHistory(scenarios: TradeScenario[]): void {
     this.scenarios = scenarios;
-    console.log(`[WinRateMaximizer] Learned from ${scenarios.length} historical scenarios`);
   }
   
   /**

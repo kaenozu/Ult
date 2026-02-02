@@ -110,7 +110,6 @@ export class DataPersistenceLayer {
    * Upgrade database schema
    */
   private upgradeDatabase(db: IDBDatabase, oldVersion: number, newVersion: number): void {
-    console.log(`Upgrading database from version ${oldVersion} to ${newVersion}`);
 
     // Create object stores
     if (!db.objectStoreNames.contains('ohlcv')) {

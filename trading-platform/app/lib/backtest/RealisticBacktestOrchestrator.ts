@@ -169,9 +169,6 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
     symbol: string
   ): Promise<RealisticBacktestReport> {
     const startTime = Date.now();
-    console.log('[RealisticBacktestOrchestrator] Starting comprehensive backtest');
-    console.log(`  Symbol: ${symbol}`);
-    console.log(`  Data points: ${data.length}`);
 
     this.emit('start', { symbol, dataPoints: data.length });
 
@@ -181,7 +178,6 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
       const avgPrice = data.reduce((sum, d) => sum + d.close, 0) / data.length;
       const liquidityScore = estimateLiquidityScore(avgVolume, avgPrice);
 
-      console.log(`[RealisticBacktestOrchestrator] Estimated liquidity score: ${liquidityScore.toFixed(2)}`);
 
       const slippageModel = new SlippageModel(this.config.slippage);
       slippageModel.adjustForLiquidity(liquidityScore);
@@ -193,10 +189,6 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
     const backtestResult = await this.runBacktest(data, strategy, symbol);
     const backtestTime = Date.now() - backtestStartTime;
 
-    console.log(`[RealisticBacktestOrchestrator] Basic backtest complete (${backtestTime}ms)`);
-    console.log(`  Total Return: ${backtestResult.metrics.totalReturn.toFixed(2)}%`);
-    console.log(`  Sharpe Ratio: ${backtestResult.metrics.sharpeRatio.toFixed(2)}`);
-    console.log(`  Max Drawdown: ${backtestResult.metrics.maxDrawdown.toFixed(2)}%`);
 
     this.emit('backtest_complete', backtestResult);
 
@@ -205,15 +197,11 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
     let walkForwardTime: number | undefined;
 
     if (this.config.options.runWalkForward && data.length >= this.config.walkForward.minDataPoints) {
-      console.log('[RealisticBacktestOrchestrator] Running walk-forward analysis...');
 
       const wfStartTime = Date.now();
       walkForwardReport = await this.runWalkForwardAnalysis(data, strategy, symbol);
       walkForwardTime = Date.now() - wfStartTime;
 
-      console.log(`[RealisticBacktestOrchestrator] Walk-forward analysis complete (${walkForwardTime}ms)`);
-      console.log(`  Robustness Score: ${walkForwardReport.robustnessScore}`);
-      console.log(`  Parameter Stability: ${walkForwardReport.parameterStability}`);
 
       this.emit('walkforward_complete', walkForwardReport);
     } else if (this.config.options.runWalkForward) {
@@ -225,15 +213,11 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
     let monteCarloTime: number | undefined;
 
     if (this.config.options.runMonteCarlo) {
-      console.log('[RealisticBacktestOrchestrator] Running Monte Carlo simulation...');
 
       const mcStartTime = Date.now();
       monteCarloResult = await this.runMonteCarloSimulation(backtestResult);
       monteCarloTime = Date.now() - mcStartTime;
 
-      console.log(`[RealisticBacktestOrchestrator] Monte Carlo simulation complete (${monteCarloTime}ms)`);
-      console.log(`  Probability of Profit: ${monteCarloResult.probabilities.probabilityOfProfit.toFixed(1)}%`);
-      console.log(`  Risk Score: ${monteCarloResult.riskAssessment.riskScore.toFixed(0)}`);
 
       this.emit('montecarlo_complete', monteCarloResult);
     }
@@ -261,11 +245,6 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
       config: this.config,
     };
 
-    console.log('[RealisticBacktestOrchestrator] Comprehensive backtest complete');
-    console.log(`  Total execution time: ${totalTime}ms`);
-    console.log(`  Overall Score: ${overallAssessment.overallScore}/100`);
-    console.log(`  Grade: ${overallAssessment.grade}`);
-    console.log(`  Confidence: ${overallAssessment.confidence}`);
 
     this.emit('complete', report);
 

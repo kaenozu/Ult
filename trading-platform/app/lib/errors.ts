@@ -645,7 +645,6 @@ export function getUserErrorMessage(error: unknown): string {
  * 
  * const result = divide(10, 2);
  * if (result.isOk) {
- *   console.log('Result:', result.value);
  * } else {
  *   console.error('Error:', result.error);
  * }

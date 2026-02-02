@@ -161,7 +161,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
    * プラットフォームを開始
    */
   async start(): Promise<void> {
-    console.log('[UnifiedTradingPlatform] Starting...');
 
     try {
       // Start data feed
@@ -191,7 +190,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
       this.status.isRunning = true;
       this.emit('started', this.status);
-      console.log('[UnifiedTradingPlatform] Started successfully');
     } catch (error) {
       console.error('[UnifiedTradingPlatform] Failed to start:', error);
       this.emit('error', error);
@@ -203,7 +201,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
    * プラットフォームを停止
    */
   async stop(): Promise<void> {
-    console.log('[UnifiedTradingPlatform] Stopping...');
 
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -217,7 +214,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
     this.status.isRunning = false;
     this.emit('stopped', this.status);
-    console.log('[UnifiedTradingPlatform] Stopped');
   }
 
   /**
@@ -420,7 +416,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
     // Check if trading is halted
     if (this.riskManager.isHalted()) {
-      console.log('[UnifiedTradingPlatform] Trading halted due to risk limits');
       return;
     }
 

@@ -41,7 +41,6 @@ export class IndexedDBClient {
         const db = (event.target as IDBOpenDBRequest).result;
         const oldVersion = event.oldVersion;
         
-        console.log(`IndexedDB Upgrade: ${oldVersion} -> ${DB_VERSION}`);
 
         if (oldVersion < 1) {
           if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -66,7 +65,6 @@ export class IndexedDBClient {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
-        console.log('IndexedDB: All data cleared.');
         resolve();
       };
     });
