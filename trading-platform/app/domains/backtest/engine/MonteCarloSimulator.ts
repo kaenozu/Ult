@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, BacktestTrade } from './AdvancedBacktestEngine';
+import { BacktestResult, Trade as BacktestTrade } from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -505,7 +505,9 @@ export class MonteCarloSimulator extends EventEmitter {
 
     // 各メトリクスの統計を計算
     for (const metric of this.config.metrics) {
-      const values = simulations.map(s => s.metrics[metric]);
+      const values = simulations
+        .map(s => s.metrics[metric])
+        .filter((v): v is number => v !== undefined);
       stats.set(metric, calculateStats(values));
     }
 
