@@ -15,6 +15,7 @@ import {
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
 import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
+import { supplyDemandMaster } from './supplyDemandMaster';
 
 export interface AnalysisContext {
     startIndex?: number;
@@ -474,6 +475,56 @@ class AnalysisService {
         const predictionError = accuracyService.calculatePredictionError(windowData);
         const volumeProfile = volumeAnalysisService.calculateVolumeProfile(windowData);
 
+        // Integrate supply/demand analysis
+        const supplyDemandAnalysis = supplyDemandMaster.analyze(windowData);
+        const dynamicLevels = supplyDemandMaster.getDynamicLevelsForChart(supplyDemandAnalysis);
+        
+        // Convert supply/demand levels to chart format
+        const supplyDemandLevels = [
+            ...dynamicLevels.support.map(l => ({ price: l.price, strength: l.strength })),
+            ...dynamicLevels.resistance.map(l => ({ price: l.price, strength: l.strength }))
+        ];
+
+        // Create supplyDemand data for signal
+        const supplyDemandData: Signal['supplyDemand'] = {
+            currentPrice: supplyDemandAnalysis.currentPrice,
+            resistanceLevels: supplyDemandAnalysis.levels
+                .filter(l => l.type === 'RESISTANCE')
+                .map(l => ({
+                    price: l.price,
+                    volume: l.volume,
+                    strength: l.strength,
+                    type: 'resistance' as const,
+                    level: l.strength >= 0.7 ? 'strong' as const : l.strength >= 0.4 ? 'medium' as const : 'weak' as const
+                })),
+            supportLevels: supplyDemandAnalysis.levels
+                .filter(l => l.type === 'SUPPORT')
+                .map(l => ({
+                    price: l.price,
+                    volume: l.volume,
+                    strength: l.strength,
+                    type: 'support' as const,
+                    level: l.strength >= 0.7 ? 'strong' as const : l.strength >= 0.4 ? 'medium' as const : 'weak' as const
+                })),
+            volumeProfileStrength: supplyDemandAnalysis.levels.length > 0 
+                ? supplyDemandAnalysis.levels.reduce((sum, l) => sum + l.strength, 0) / supplyDemandAnalysis.levels.length 
+                : 0,
+            breakoutDetected: supplyDemandAnalysis.breakout !== null,
+            brokenLevel: supplyDemandAnalysis.breakout ? {
+                price: supplyDemandAnalysis.breakout.level.price,
+                volume: supplyDemandAnalysis.breakout.level.volume,
+                strength: supplyDemandAnalysis.breakout.level.strength,
+                type: supplyDemandAnalysis.breakout.level.type === 'SUPPORT' ? 'support' as const : 'resistance' as const,
+                level: supplyDemandAnalysis.breakout.level.strength >= 0.7 ? 'strong' as const 
+                    : supplyDemandAnalysis.breakout.level.strength >= 0.4 ? 'medium' as const : 'weak' as const
+            } : undefined,
+            breakoutConfidence: supplyDemandAnalysis.breakout 
+                ? (supplyDemandAnalysis.breakout.volumeConfirmation && supplyDemandAnalysis.breakout.followThrough ? 'high' as const
+                    : supplyDemandAnalysis.breakout.volumeConfirmation || supplyDemandAnalysis.breakout.followThrough ? 'medium' as const
+                    : 'low' as const)
+                : 'low' as const
+        };
+
         let finalConfidence = forecastCone
             ? (confidence + forecastCone.confidence) / 2
             : confidence;
@@ -501,9 +552,10 @@ class AnalysisService {
             predictionDate: new Date().toISOString().split('T')[0],
             optimizedParams: { rsiPeriod: opt.rsiPeriod, smaPeriod: opt.smaPeriod },
             predictionError,
-            volumeResistance: volumeProfile,
+            volumeResistance: supplyDemandLevels.length > 0 ? supplyDemandLevels : volumeProfile,
             forecastCone,
             marketContext,
+            supplyDemand: supplyDemandData,
             // Market regime information
             regimeInfo: {
                 regime: regimeResult.regime,
