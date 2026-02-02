@@ -42,3 +42,88 @@ export {
   PsychologyMonitor,
   createPsychologyMonitor,
 } from './PsychologyMonitor';
+
+// TRADING-023: Real-time Risk Monitoring
+export {
+  RealTimeRiskCalculator,
+  createRealTimeRiskCalculator,
+  DEFAULT_RISK_CONFIG,
+} from './RealTimeRiskCalculator';
+
+export type {
+  RealTimeRiskMetrics,
+  PositionRisk,
+  RiskCalculationConfig,
+  VaRMethod,
+} from './RealTimeRiskCalculator';
+
+// TRADING-023: Automatic Risk Control
+export {
+  AutomaticRiskController,
+  createAutomaticRiskController,
+  DEFAULT_CONTROL_CONFIG,
+} from './AutomaticRiskController';
+
+export type {
+  RiskControlAction,
+  PositionReductionProposal,
+  RiskControlConfig,
+  MarketCrashData,
+} from './AutomaticRiskController';
+
+// TRADING-023: Dynamic Risk Adjustment
+export {
+  DynamicRiskAdjuster,
+  createDynamicRiskAdjuster,
+  DEFAULT_ADJUSTER_CONFIG,
+} from './DynamicRiskAdjuster';
+
+export type {
+  DynamicRiskAdjustment,
+  DynamicRiskAdjusterConfig,
+  MarketCondition,
+  PerformanceMetrics,
+} from './DynamicRiskAdjuster';
+
+// TRADING-028: Advanced Risk Management
+export {
+  DynamicPositionSizer,
+  createDynamicPositionSizer,
+} from './DynamicPositionSizer';
+
+export type {
+  VolatilityMetrics,
+  PositionSizingRequest,
+  PositionSizingResponse,
+  PortfolioRiskLimits,
+} from './DynamicPositionSizer';
+
+export {
+  PortfolioRiskMonitor,
+  createPortfolioRiskMonitor,
+} from './PortfolioRiskMonitor';
+
+export type {
+  VaRResult,
+  SectorExposure,
+  CorrelationPair,
+  StressTestScenario,
+  StressTestResult,
+  RiskContribution,
+  PortfolioRiskReport,
+} from './PortfolioRiskMonitor';
+
+export {
+  TailRiskHedging,
+  createTailRiskHedging,
+} from './TailRiskHedging';
+
+export type {
+  HedgeStrategy,
+  OptionsHedge,
+  InverseAssetHedge,
+  FuturesHedge,
+  TailRiskMetrics,
+  HedgeRecommendation,
+  HedgePortfolio,
+} from './TailRiskHedging';
