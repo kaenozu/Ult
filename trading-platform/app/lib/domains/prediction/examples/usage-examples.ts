@@ -44,7 +44,6 @@ function example1_DefaultUsage() {
   // Make prediction
   const prediction = service.predict(features);
   
-  console.log('Prediction:', {
     rf: prediction.rfPrediction,
     xgb: prediction.xgbPrediction,
     lstm: prediction.lstmPrediction,
@@ -81,7 +80,6 @@ function example2_CustomWeights() {
 
   const prediction = service.predict(features);
   
-  console.log('Custom weights prediction:', prediction);
 }
 
 // ============================================================================
@@ -124,7 +122,6 @@ function example3_CustomModel() {
 
   const prediction = service.predict(features);
   
-  console.log('Custom model prediction:', prediction);
 }
 
 // ============================================================================
@@ -165,7 +162,6 @@ function example4_MixedModels() {
 
   const prediction = service.predict(features);
   
-  console.log('Mixed models prediction:', prediction);
 }
 
 // ============================================================================
@@ -191,7 +187,6 @@ function example5_DynamicWeights() {
   };
 
   // Make initial prediction
-  console.log('Initial prediction:', service.predict(features));
 
   // Adjust weights based on some logic (e.g., recent performance)
   strategy.setWeight('RandomForest', 0.5);
@@ -199,7 +194,6 @@ function example5_DynamicWeights() {
   strategy.setWeight('LSTM', 0.2);
 
   // Make prediction with new weights
-  console.log('After weight adjustment:', service.predict(features));
 }
 
 // ============================================================================
@@ -211,11 +205,8 @@ function example6_RegistryOperations() {
   // Register models
   registry.register(new RandomForestModel());
   registry.register(new XGBoostModel());
-  console.log('Registered models:', registry.getModels().map(m => m.name));
 
   // Check if model exists
-  console.log('Has RandomForest?', registry.hasModel('RandomForest'));
-  console.log('Has Unknown?', registry.hasModel('Unknown'));
 
   // Get specific model
   const rfModel = registry.getModel('RandomForest');
@@ -233,16 +224,13 @@ function example6_RegistryOperations() {
       bollingerPosition: 50,
       atrPercent: 2.0,
     };
-    console.log('RF prediction:', rfModel.predict(features));
   }
 
   // Unregister a model
   registry.unregister('XGBoost');
-  console.log('After unregistering XGBoost:', registry.getModels().map(m => m.name));
 
   // Clear all models
   registry.clear();
-  console.log('After clear:', registry.getModels().length);
 }
 
 // ============================================================================
@@ -287,29 +275,21 @@ function example7_TestingWithMocks() {
 
   const prediction = service.predict(features);
   
-  console.log('Mock prediction (should be 5):', prediction.ensemblePrediction);
 }
 
 // Run all examples
 export function runAllExamples(): void {
-  console.log('=== Example 1: Default Usage ===');
   example1_DefaultUsage();
 
-  console.log('\n=== Example 2: Custom Weights ===');
   example2_CustomWeights();
 
-  console.log('\n=== Example 3: Custom Model ===');
   example3_CustomModel();
 
-  console.log('\n=== Example 4: Mixed Models ===');
   example4_MixedModels();
 
-  console.log('\n=== Example 5: Dynamic Weights ===');
   example5_DynamicWeights();
 
-  console.log('\n=== Example 6: Registry Operations ===');
   example6_RegistryOperations();
 
-  console.log('\n=== Example 7: Testing with Mocks ===');
   example7_TestingWithMocks();
 }

@@ -12,8 +12,6 @@ import {
   getGlobalPerformanceMonitor,
 } from '../performance';
 
-// Mock console.log to test logging
-const originalLog = console.log;
 const originalError = console.error;
 let logOutput: string[] = [];
 let errorOutput: string[] = [];
@@ -21,12 +19,10 @@ let errorOutput: string[] = [];
 beforeEach(() => {
   logOutput = [];
   errorOutput = [];
-  console.log = jest.fn((...args) => logOutput.push(args.join(' ')));
   console.error = jest.fn((...args) => errorOutput.push(args.join(' ')));
 });
 
 afterEach(() => {
-  console.log = originalLog;
   console.error = originalError;
 });
 

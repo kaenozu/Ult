@@ -82,7 +82,6 @@ class MLPredictionService {
    * @example
    * ```typescript
    * const indicators = mlService.calculateIndicators(ohlcvData);
-   * console.log(indicators.rsi[indicators.rsi.length - 1]); // 最新のRSI値
    * ```
    */
   calculateIndicators(data: OHLCV[]): TechnicalIndicator & { atr: number[] } {
@@ -118,8 +117,6 @@ class MLPredictionService {
    * @example
    * ```typescript
    * const prediction = mlService.predict(stock, ohlcvData, indicators);
-   * console.log(`予測値: ${prediction.ensemblePrediction}`);
-   * console.log(`信頼度: ${prediction.confidence}%`);
    * ```
    */
   predict(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): ModelPrediction {
@@ -167,7 +164,6 @@ class MLPredictionService {
    * ```typescript
    * const signal = mlService.generateSignal(stock, ohlcvData, prediction, indicators, indexData);
    * if (signal.type === 'BUY' && signal.confidence >= 80) {
-   *   console.log('強気シグナル検出！');
    * }
    * ```
    */

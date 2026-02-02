@@ -32,9 +32,7 @@ export function calculateEnhancedFeatures(
     const importance = featureEngineering.analyzeFeatureImportance(features);
 
     // 最も重要な特徴量トップ5を表示
-    console.log('Top 5 most important features:');
     importance.slice(0, 5).forEach(item => {
-      console.log(`${item.rank}. ${item.name} (${item.category}): ${item.score.toFixed(3)}`);
     });
 
     return features;
@@ -55,25 +53,20 @@ export function performEnsemblePrediction(
 ) {
   // 重み付き平均による予測
   const weightedPrediction = ensembleModel.predict(features, ohlcvData, 'weighted_average');
-  console.log('Weighted Average Prediction:', weightedPrediction.direction, 
               `(Score: ${weightedPrediction.score.toFixed(2)}, Confidence: ${(weightedPrediction.confidence * 100).toFixed(1)}%)`);
 
   // スタッキングによる予測
   const stackingPrediction = ensembleModel.predict(features, ohlcvData, 'stacking');
-  console.log('Stacking Prediction:', stackingPrediction.direction,
               `(Score: ${stackingPrediction.score.toFixed(2)}, Confidence: ${(stackingPrediction.confidence * 100).toFixed(1)}%)`);
 
   // 投票による予測
   const votingPrediction = ensembleModel.predict(features, ohlcvData, 'voting');
-  console.log('Voting Prediction:', votingPrediction.direction,
               `(Score: ${votingPrediction.score.toFixed(2)}, Confidence: ${(votingPrediction.confidence * 100).toFixed(1)}%)`);
 
   // モデル間の合意度を確認
-  console.log(`Model Agreement Score: ${(weightedPrediction.agreementScore * 100).toFixed(1)}%`);
 
   // 個別モデルの予測を確認
   weightedPrediction.individualPredictions.forEach(pred => {
-    console.log(`${pred.model}: ${pred.value.toFixed(2)} (Confidence: ${(pred.confidence * 100).toFixed(1)}%)`);
   });
 
   return weightedPrediction;
@@ -91,10 +84,6 @@ export function validateModel(
   // K-分割交差検証
   const cvResult = modelValidation.crossValidate(trainingData, predictFn, 5);
   
-  console.log('Cross-Validation Results:');
-  console.log(`Mean Accuracy: ${(cvResult.meanAccuracy * 100).toFixed(1)}%`);
-  console.log(`Std Accuracy: ${(cvResult.stdAccuracy * 100).toFixed(1)}%`);
-  console.log(`Overfitting Detected: ${cvResult.isOverfitting ? 'YES' : 'NO'}`);
   
   if (cvResult.isOverfitting) {
     console.warn(`Overfitting Score: ${(cvResult.overfittingScore * 100).toFixed(1)}%`);
@@ -102,7 +91,6 @@ export function validateModel(
 
   // 各フォールドの結果
   cvResult.results.forEach(result => {
-    console.log(`Fold ${result.fold}: Accuracy ${(result.accuracy * 100).toFixed(1)}%, ` +
                 `F1 Score ${(result.f1Score * 100).toFixed(1)}%`);
   });
 
@@ -126,10 +114,6 @@ export function performTimeSeriesValidation(
     windowSize
   );
 
-  console.log('Time Series Cross-Validation Results:');
-  console.log(`Average Accuracy: ${(tsResult.averageAccuracy * 100).toFixed(1)}%`);
-  console.log(`Trend: ${tsResult.trend}`);
-  console.log(`95% Confidence Interval: [${(tsResult.confidenceInterval[0] * 100).toFixed(1)}%, ${(tsResult.confidenceInterval[1] * 100).toFixed(1)}%]`);
 
   return tsResult;
 }
@@ -154,10 +138,6 @@ export function optimizeModelParameters(
     paramRanges
   );
 
-  console.log('Optimal Parameters:');
-  console.log(optimalParams.parameters);
-  console.log(`Accuracy with optimal params: ${(optimalParams.accuracy * 100).toFixed(1)}%`);
-  console.log(`Validation Score: ${(optimalParams.validationScore * 100).toFixed(1)}%`);
 
   return optimalParams;
 }
@@ -190,11 +170,8 @@ export function monitorPredictions(
 
   // 統計情報を取得
   const stats = modelMonitor.getStats();
-  console.log(`Total Predictions: ${stats.totalPredictions}`);
-  console.log(`Predictions with Actuals: ${stats.predictionsWithActuals}`);
   
   if (stats.recentAccuracy !== null) {
-    console.log(`Recent Accuracy (30 days): ${(stats.recentAccuracy * 100).toFixed(1)}%`);
   }
 
   // ドリフトの検知
@@ -232,14 +209,6 @@ export function updatePredictionActual(
   // パフォーマンスメトリクスを取得
   const metrics = modelMonitor.getPerformanceMetrics();
   
-  console.log('Performance Metrics:');
-  console.log(`Accuracy: ${(metrics.accuracy * 100).toFixed(1)}%`);
-  console.log(`Precision: ${(metrics.precision * 100).toFixed(1)}%`);
-  console.log(`Recall: ${(metrics.recall * 100).toFixed(1)}%`);
-  console.log(`F1 Score: ${(metrics.f1Score * 100).toFixed(1)}%`);
-  console.log(`MSE: ${metrics.mse.toFixed(4)}`);
-  console.log(`MAE: ${metrics.mae.toFixed(4)}`);
-  console.log(`Trend: ${metrics.trend}`);
   
   if (metrics.belowThreshold) {
     console.warn('Performance is below threshold!');
@@ -263,19 +232,10 @@ export function recordModelPerformance(
 
   // 現在の重みを表示
   const weights = ensembleModel.getWeights();
-  console.log('Current Model Weights:');
-  console.log(`RF: ${(weights.RF * 100).toFixed(1)}%`);
-  console.log(`XGB: ${(weights.XGB * 100).toFixed(1)}%`);
-  console.log(`LSTM: ${(weights.LSTM * 100).toFixed(1)}%`);
 
   // パフォーマンスサマリーを表示
   const summary = ensembleModel.getPerformanceSummary();
-  console.log('\nModel Performance Summary:');
   summary.forEach(s => {
-    console.log(`${s.model}:`);
-    console.log(`  Overall Accuracy: ${(s.accuracy * 100).toFixed(1)}%`);
-    console.log(`  Recent Accuracy: ${(s.recentAccuracy * 100).toFixed(1)}%`);
-    console.log(`  Weight: ${(s.weight * 100).toFixed(1)}%`);
   });
 }
 
@@ -288,18 +248,15 @@ export async function completeMLWorkflow(
   symbol: string,
   ohlcvData: OHLCV[]
 ) {
-  console.log(`\n=== Starting ML Workflow for ${symbol} ===\n`);
 
   // 1. 特徴量の計算
   const currentPrice = ohlcvData[ohlcvData.length - 1].close;
   const averageVolume = ohlcvData.reduce((sum, d) => sum + d.volume, 0) / ohlcvData.length;
   
   const features = calculateEnhancedFeatures(ohlcvData, currentPrice, averageVolume);
-  console.log(`\n特徴量計算完了: ${Object.keys(features).length}個の特徴量`);
 
   // 2. アンサンブル予測
   const prediction = performEnsemblePrediction(features, ohlcvData);
-  console.log(`\n予測完了: ${prediction.direction} (信頼度: ${(prediction.confidence * 100).toFixed(1)}%)`);
 
   // 3. 予測のモニタリング
   monitorPredictions(
@@ -343,5 +300,4 @@ export function setCustomWeights(scenario: 'conservative' | 'aggressive' | 'bala
   }
 
   ensembleModel.setWeights(weights);
-  console.log(`Weights set to ${scenario} mode:`, weights);
 }

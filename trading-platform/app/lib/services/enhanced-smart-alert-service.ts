@@ -296,7 +296,6 @@ class EnhancedSmartAlertService {
             // 注文実行処理（実装が必要）
             break;
           case 'log':
-            console.log(`Alert triggered: ${trigger.message}`);
             break;
         }
       }

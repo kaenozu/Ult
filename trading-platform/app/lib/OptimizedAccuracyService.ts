@@ -93,12 +93,10 @@ export class OptimizedAccuracyService {
         // キャッシュチェック
         const cached = this.paramCache.get(cacheKey);
         if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
-            console.log('[OptimizedAccuracyService] Cache hit for', symbol);
             return cached.params;
         }
 
         // キャッシュミス: パラメータ最適化を実行
-        console.log('[OptimizedAccuracyService] Cache miss, optimizing parameters for', symbol);
         const params = this.optimizeParameters(data, market);
         
         // キャッシュに保存
@@ -359,7 +357,6 @@ export class OptimizedAccuracyService {
         const result = this.runBacktestWithFixedParams(symbol, data, market, optimizedParams);
         
         const endTime = performance.now();
-        console.log(`[OptimizedAccuracyService] Backtest completed in ${(endTime - startTime).toFixed(2)}ms`);
         
         return result;
     }

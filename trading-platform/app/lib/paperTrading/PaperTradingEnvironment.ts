@@ -166,7 +166,6 @@ export class PaperTradingEnvironment extends EventEmitter {
    */
   start(): void {
     this.isRunning = true;
-    console.log('[PaperTrading] Started with capital:', this.config.initialCapital);
     this.emit('started', this.portfolio);
   }
 
@@ -175,7 +174,6 @@ export class PaperTradingEnvironment extends EventEmitter {
    */
   stop(): void {
     this.isRunning = false;
-    console.log('[PaperTrading] Stopped');
     this.emit('stopped', this.getPerformanceReport());
   }
 
@@ -429,7 +427,6 @@ export class PaperTradingEnvironment extends EventEmitter {
     }
 
     // Implementation similar to buy but for short positions
-    console.log('[PaperTrading] Short selling not yet implemented');
     return null;
   }
 

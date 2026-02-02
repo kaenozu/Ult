@@ -195,7 +195,6 @@ export async function exampleUsage(): Promise<void> {
 
   // Get alert summary
   const summary = service.getAlertSummary();
-  console.log('Alert Summary:', summary);
 
   // Analyze portfolio
   const portfolioRisk = await service.analyzePortfolioRisk({
@@ -217,6 +216,4 @@ export async function exampleUsage(): Promise<void> {
     ],
   });
 
-  console.log('Portfolio Tail Risk:', portfolioRisk.tailRisk.riskLevel);
-  console.log('Diversification Benefit:', portfolioRisk.correlation.diversificationBenefit);
 }

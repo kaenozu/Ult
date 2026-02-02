@@ -98,7 +98,6 @@ export class MarketDataService {
       if (typeof window !== 'undefined' && window.indexedDB) {
         await dataPersistenceLayer.initialize();
         this.persistenceEnabled = true;
-        console.log('[MarketDataService] Persistence layer initialized');
       }
       
       // Set up cache prefetch strategies
@@ -135,7 +134,6 @@ export class MarketDataService {
    * ```typescript
    * const data = await marketDataService.fetchMarketData('^N225');
    * if (data.length > 0) {
-   *   console.log(`取得データ数: ${data.length}`);
    * }
    * ```
    */
@@ -147,7 +145,6 @@ export class MarketDataService {
       const cacheKey = `market-data:${symbol}`;
       const cached = marketDataCache.get(cacheKey);
       if (cached) {
-        console.log(`[MarketDataService] Cache hit for ${symbol}`);
         return cached as OHLCV[];
       }
     }
@@ -171,7 +168,6 @@ export class MarketDataService {
           
           // If persisted data is fresh enough, use it
           if (age < this.cacheTimeout) {
-            console.log(`[MarketDataService] Using persisted data for ${symbol}`);
             this.marketDataCache.set(symbol, persisted);
             if (this.useSmartCache) {
               marketDataCache.set(`market-data:${symbol}`, persisted as any);
@@ -383,7 +379,6 @@ export class MarketDataService {
    * ```typescript
    * const trend = service.calculateTrend(ohlcvData);
    * if (trend === 'UP') {
-   *   console.log('上昇トレンド');
    * }
    * ```
    */
@@ -420,7 +415,6 @@ export class MarketDataService {
    * ```typescript
    * const correlation = service.calculateCorrelation(stockData, indexData);
    * if (correlation > 0.7) {
-   *   console.log('市場と強い正の相関あり');
    * }
    * ```
    */
@@ -638,7 +632,6 @@ export class MarketDataService {
         const beforeDate = cutoffDate.toISOString().split('T')[0];
         
         const deleted = await dataPersistenceLayer.deleteOldOHLCV(symbol, beforeDate);
-        console.log(`[MarketDataService] Deleted ${deleted} old records for ${symbol}`);
         return deleted;
       } catch (error) {
         console.error('[MarketDataService] Failed to clear old data:', error);
