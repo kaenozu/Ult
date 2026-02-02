@@ -33,6 +33,31 @@ jest.mock('../NotificationCenter', () => ({
     NotificationCenter: () => <div data-testid="notification-center">NotificationCenter</div>
 }));
 
+jest.mock('@/app/i18n/provider', () => ({
+    useTranslations: () => (key: string) => key,
+    useLocale: () => 'ja',
+    useSetLocale: () => jest.fn(),
+}));
+
+jest.mock('../ConnectionQualityIndicator', () => ({
+    ConnectionQualityIndicator: ({ onReconnect }: any) => (
+        <button title="切断" onClick={onReconnect}>接続済み</button>
+    )
+}));
+
+jest.mock('../LocaleSwitcher', () => ({
+    LocaleSwitcher: () => <div data-testid="locale-switcher">LocaleSwitcher</div>
+}));
+
+const mockReconnect = jest.fn();
+jest.mock('@/app/hooks/useResilientWebSocket', () => ({
+    useResilientWebSocket: () => ({
+        status: 'CONNECTED',
+        metrics: {},
+        reconnect: mockReconnect,
+    })
+}));
+
 describe('Header', () => {
     const mockSetCash = jest.fn();
     const mockAddToWatchlist = jest.fn();
@@ -66,12 +91,12 @@ describe('Header', () => {
     it('toggles connection', () => {
         render(<Header />);
         fireEvent.click(screen.getByTitle('切断')); // isConnected=true
-        expect(mockToggleConnection).toHaveBeenCalled();
+        expect(mockReconnect).toHaveBeenCalled();
     });
 
     it('edits cash balance', () => {
         render(<Header />);
-        const editTrigger = screen.getByText('余力').parentElement;
+        const editTrigger = screen.getByText('header.cash').parentElement;
         if (editTrigger) fireEvent.click(editTrigger);
 
         const input = screen.getByDisplayValue('1000000');
@@ -83,7 +108,7 @@ describe('Header', () => {
 
     it('searches and selects stock', () => {
         render(<Header />);
-        const input = screen.getByPlaceholderText('銘柄名、コードで検索');
+        const input = screen.getByPlaceholderText('header.searchPlaceholder');
 
         fireEvent.change(input, { target: { value: 'Toyota' } });
         expect(screen.getByText('7203')).toBeInTheDocument(); // In results
@@ -95,7 +120,7 @@ describe('Header', () => {
 
     it('handles exact match on Enter', () => {
         render(<Header />);
-        const input = screen.getByPlaceholderText('銘柄名、コードで検索');
+        const input = screen.getByPlaceholderText('header.searchPlaceholder');
 
         fireEvent.change(input, { target: { value: '7203' } });
         fireEvent.keyDown(input, { key: 'Enter' });
@@ -110,10 +135,34 @@ describe('Header', () => {
         });
 
         render(<Header />);
-        const input = screen.getByPlaceholderText('銘柄名、コードで検索');
+        const input = screen.getByPlaceholderText('header.searchPlaceholder');
         fireEvent.change(input, { target: { value: 'Toyota' } });
 
         expect(screen.getByText('追加済み')).toBeInTheDocument();
         expect(screen.queryByTestId('icon-plus')).toBeNull();
+    });
+
+    it('navigates search results with keyboard', () => {
+        render(<Header />);
+        const input = screen.getByPlaceholderText('header.searchPlaceholder');
+
+        // Search for 'a' to get multiple results (Toyota, Apple)
+        fireEvent.change(input, { target: { value: 'a' } });
+
+        // Results should be visible
+        // Assuming order is as in ALL_STOCKS: Toyota, Apple
+        expect(screen.getByText('7203')).toBeInTheDocument();
+        expect(screen.getByText('AAPL')).toBeInTheDocument();
+
+        // ArrowDown to highlight first item (Toyota)
+        fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+        // ArrowDown to highlight second item (Apple)
+        fireEvent.keyDown(input, { key: 'ArrowDown' });
+
+        // Enter to select highlighted item (Apple)
+        fireEvent.keyDown(input, { key: 'Enter' });
+
+        expect(mockSetSelectedStock).toHaveBeenCalledWith(expect.objectContaining({ symbol: 'AAPL' }));
     });
 });
