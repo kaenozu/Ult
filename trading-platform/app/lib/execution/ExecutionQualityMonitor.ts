@@ -115,6 +115,7 @@ export class ExecutionQualityMonitor extends EventEmitter {
   private venuePerformance: Map<string, VenuePerformance> = new Map();
   private slippageAnalysis: Map<string, SlippageAnalysis[]> = new Map();
   private qualityAlerts: QualityAlert[] = [];
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(config: Partial<QualityConfig> = {}) {
     super();
@@ -502,9 +503,19 @@ export class ExecutionQualityMonitor extends EventEmitter {
 
   private startPeriodicCleanup(): void {
     // Clean up old metrics every day
-    setInterval(() => {
+    this.cleanupInterval = setInterval(() => {
       this.cleanupOldMetrics();
     }, 24 * 60 * 60 * 1000);
+  }
+
+  /**
+   * Shutdown and cleanup
+   */
+  shutdown(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
   }
 
   private cleanupOldMetrics(): void {
@@ -536,5 +547,8 @@ export function getGlobalExecutionQualityMonitor(): ExecutionQualityMonitor {
 }
 
 export function resetGlobalExecutionQualityMonitor(): void {
-  globalQualityMonitorInstance = null;
+  if (globalQualityMonitorInstance) {
+    globalQualityMonitorInstance.shutdown();
+    globalQualityMonitorInstance = null;
+  }
 }

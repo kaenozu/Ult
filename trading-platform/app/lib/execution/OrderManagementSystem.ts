@@ -328,7 +328,12 @@ export class OrderManagementSystem extends EventEmitter {
   // ============================================================================
 
   private generateOrderId(): string {
-    return `OMS_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Use timestamp + random for better uniqueness
+    // In production, consider using a UUID library like 'uuid'
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    const counter = Math.floor(Math.random() * 10000);
+    return `OMS_${timestamp}_${counter}_${random}`;
   }
 
   private validateOrder(request: OrderRequest): OrderValidationError[] {

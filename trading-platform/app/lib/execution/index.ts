@@ -125,9 +125,6 @@ export type {
 
 // Advanced Order Types
 export type {
-  OrderSide as AdvancedOrderSide,
-  TimeInForce as AdvancedTimeInForce,
-  OrderStatus as AdvancedOrderStatus,
   BaseOrder,
   StopLossOrder,
   TakeProfitOrder,

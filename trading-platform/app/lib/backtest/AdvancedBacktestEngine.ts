@@ -360,7 +360,9 @@ export class AdvancedBacktestEngine extends EventEmitter {
   }
 
   private openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction): void {
+    // Calculate quantity first based on current close price
     const quantity = this.calculatePositionSize(data.close, action.quantity);
+    // Then apply slippage to get actual execution price
     const price = this.applySlippage(data.close, side === 'LONG' ? 'BUY' : 'SELL', data, quantity);
 
     this.currentPosition = side;
