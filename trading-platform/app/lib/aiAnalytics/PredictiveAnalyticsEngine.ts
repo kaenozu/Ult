@@ -80,6 +80,25 @@ export interface PriceForecast {
   strength: number;
 }
 
+export interface PositionSizingInput {
+  accountEquity: number;        // 口座資金
+  riskPerTrade: number;          // 許容リスク率 (%)
+  entryPrice: number;            // エントリー価格
+  stopLossPrice: number;         // 損切り価格
+  confidence?: number;           // シグナル信頼度 (0-100)
+}
+
+export interface PositionSizingResult {
+  recommendedShares: number;     // 推奨購入株数
+  maxLossAmount: number;         // 予想最大損失額
+  riskAmount: number;            // リスク金額
+  positionValue: number;         // ポジション価値
+  riskPercent: number;           // 実際のリスク率
+  stopLossDistance: number;      // 損切り距離
+  stopLossPercent: number;       // 損切りパーセンテージ
+  reasoning: string[];           // 計算根拠
+}
+
 export interface ModelConfig {
   randomForest: {
     nEstimators: number;
@@ -940,6 +959,93 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
     const accuracy = this.modelAccuracy.get(symbol);
     if (!accuracy || accuracy.total === 0) return 0.5;
     return accuracy.correct / accuracy.total;
+  }
+
+  /**
+   * ポジションサイジング計算
+   * 
+   * 口座資金とリスク許容度に基づいて、適切なポジションサイズを計算します。
+   * 資金管理の基本原則に従い、1取引あたりのリスクを口座資金の一定割合に抑えます。
+   * 
+   * @param input - ポジションサイジング入力パラメータ
+   * @returns ポジションサイジング結果（推奨株数、最大損失額など）
+   * 
+   * @example
+   * ```typescript
+   * const sizing = engine.calculatePositionSize({
+   *   accountEquity: 1000000,     // 100万円の口座資金
+   *   riskPerTrade: 2,             // 2%のリスク許容
+   *   entryPrice: 1500,            // 1500円でエントリー
+   *   stopLossPrice: 1450,         // 1450円で損切り
+   *   confidence: 75               // 75%の信頼度
+   * });
+   * // => { recommendedShares: 400, maxLossAmount: 20000, ... }
+   * ```
+   */
+  calculatePositionSize(input: PositionSizingInput): PositionSizingResult {
+    const reasoning: string[] = [];
+    
+    // 1. 損切り距離を計算
+    const stopLossDistance = Math.abs(input.entryPrice - input.stopLossPrice);
+    const stopLossPercent = (stopLossDistance / input.entryPrice) * 100;
+    
+    reasoning.push(`エントリー価格: ¥${input.entryPrice.toFixed(2)}`);
+    reasoning.push(`損切り価格: ¥${input.stopLossPrice.toFixed(2)}`);
+    reasoning.push(`損切り距離: ¥${stopLossDistance.toFixed(2)} (${stopLossPercent.toFixed(2)}%)`);
+    
+    // 2. 許容リスク金額を計算
+    const riskAmount = input.accountEquity * (input.riskPerTrade / 100);
+    reasoning.push(`許容リスク額: ¥${riskAmount.toFixed(0)} (口座資金の${input.riskPerTrade}%)`);
+    
+    // 3. 基本ポジションサイズを計算
+    // 基本公式: ポジションサイズ = リスク金額 / 1株あたりのリスク
+    let recommendedShares = Math.floor(riskAmount / stopLossDistance);
+    reasoning.push(`基本推奨株数: ${recommendedShares}株`);
+    
+    // 4. 信頼度による調整（オプション）
+    if (input.confidence !== undefined) {
+      const confidenceFactor = input.confidence / 100;
+      // 信頼度が低い場合は控えめに、高い場合はそのまま
+      if (confidenceFactor < 0.7) {
+        const adjustedShares = Math.floor(recommendedShares * confidenceFactor);
+        reasoning.push(`信頼度調整: ${input.confidence}% → ${adjustedShares}株 (調整率: ${(confidenceFactor * 100).toFixed(0)}%)`);
+        recommendedShares = adjustedShares;
+      } else {
+        reasoning.push(`信頼度: ${input.confidence}% (調整なし)`);
+      }
+    }
+    
+    // 5. 最小単位チェック（100株未満は警告）
+    if (recommendedShares < 100) {
+      reasoning.push(`⚠️ 推奨株数が100株未満です。リスク許容度または口座資金を見直してください。`);
+    }
+    
+    // 6. 最終結果を計算
+    const positionValue = recommendedShares * input.entryPrice;
+    const maxLossAmount = recommendedShares * stopLossDistance;
+    const actualRiskPercent = (maxLossAmount / input.accountEquity) * 100;
+    
+    reasoning.push(`ポジション価値: ¥${positionValue.toFixed(0)}`);
+    reasoning.push(`予想最大損失: ¥${maxLossAmount.toFixed(0)} (口座資金の${actualRiskPercent.toFixed(2)}%)`);
+    
+    // 7. ポートフォリオ集中リスクのチェック
+    const positionPercent = (positionValue / input.accountEquity) * 100;
+    if (positionPercent > 20) {
+      reasoning.push(`⚠️ ポジションが口座資金の${positionPercent.toFixed(1)}%を占めます（推奨: 20%以下）`);
+    } else {
+      reasoning.push(`✓ ポジション比率: ${positionPercent.toFixed(1)}% (健全)`);
+    }
+    
+    return {
+      recommendedShares,
+      maxLossAmount,
+      riskAmount,
+      positionValue,
+      riskPercent: actualRiskPercent,
+      stopLossDistance,
+      stopLossPercent,
+      reasoning
+    };
   }
 
   /**

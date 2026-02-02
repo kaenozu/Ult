@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { OrderPanel } from '@/app/components/OrderPanel';
 import { AlertPanel } from '@/app/components/AlertPanel';
+import { AccountSettingsPanel } from '@/app/components/AccountSettingsPanel';
 import { cn } from '@/app/lib/utils';
 import { Stock, Signal, OHLCV } from '@/app/types';
 
@@ -24,7 +25,7 @@ export const RightSidebar = ({
   ohlcv,
   loading
 }: RightSidebarProps) => {
-  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order' | 'alert'>('signal');    
+  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order' | 'alert' | 'settings'>('signal');    
 
   return (
     <aside className={cn(
@@ -49,7 +50,7 @@ export const RightSidebar = ({
             rightPanelMode === 'signal' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
           )}
         >
-          分析 & シグナル
+          シグナル
         </button>
         <button
           onClick={() => setRightPanelMode('alert')}
@@ -67,12 +68,25 @@ export const RightSidebar = ({
             rightPanelMode === 'order' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
           )}
         >
-          注文パネル
+          注文
+        </button>
+        <button
+          onClick={() => setRightPanelMode('settings')}
+          className={cn(
+            'flex-1 py-2 text-xs font-bold transition-colors',
+            rightPanelMode === 'settings' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
+          )}
+        >
+          資金設定
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {displayStock && (
+        {rightPanelMode === 'settings' ? (
+          <div className="p-4">
+            <AccountSettingsPanel />
+          </div>
+        ) : displayStock && (
           rightPanelMode === 'signal' ? (
             <SignalPanel
               stock={displayStock}
