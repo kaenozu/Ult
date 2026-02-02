@@ -111,7 +111,7 @@ export class CoolingOffManager {
     return {
       allowed: false,
       reason: this.getCooldownReasonMessage(),
-      remainingTime: remaining,
+      remainingTime: remaining || undefined,
     };
   }
 

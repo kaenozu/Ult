@@ -1,501 +1,768 @@
 /**
- * Feature Engineering for ML Models
- * 
- * This service extracts and calculates 60+ technical and market structure
- * features for machine learning models.
+ * FeatureEngineering.ts
+ *
+ * 高度な特徴量エンジニアリングクラス
+ * テクニカル指標の拡張、マクロ経済指標の統合、センチメント分析、時系列特徴量を提供します。
  */
 
-import { OHLCV } from '@/app/types';
-import { MLFeatures } from './types';
-import {
-  calculateRSI,
-  calculateSMA,
-  calculateMACD,
-  calculateBollingerBands,
-  calculateATR,
-  calculateEMA,
-} from '../utils';
+import { OHLCV } from '../../types/shared';
+import { calculateSMA, calculateEMA, calculateRSI, calculateMACD, calculateBollingerBands, calculateATR } from '../utils';
+import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '../constants';
 
-export class FeatureEngineeringService {
+/**
+ * テクニカル指標の拡張特徴量
+ */
+export interface TechnicalFeatures {
+  // 基本指標
+  rsi: number;
+  rsiChange: number;
+  sma5: number;
+  sma10: number;
+  sma20: number;
+  sma50: number;
+  sma200: number;
+  ema12: number;
+  ema26: number;
+
+  // MACD系
+  macd: number;
+  macdSignal: number;
+  macdHistogram: number;
+
+  // ボリンジャーバンド
+  bbUpper: number;
+  bbMiddle: number;
+  bbLower: number;
+  bbPosition: number;
+  bbWidth: number;
+
+  // ATR系
+  atr: number;
+  atrPercent: number;
+  atrRatio: number;
+
+  // モメンタム系
+  momentum10: number;
+  momentum20: number;
+  rateOfChange12: number;
+  rateOfChange25: number;
+
+  // オシレーター系
+  stochasticK: number;
+  stochasticD: number;
+  williamsR: number;
+  cci: number;
+
+  // ボリューム系
+  volumeRatio: number;
+  volumeMA5: number;
+  volumeMA20: number;
+  volumeTrend: 'INCREASING' | 'DECREASING' | 'NEUTRAL';
+
+  // 価格系
+  pricePosition: number;
+  priceVelocity: number;
+  priceAcceleration: number;
+}
+
+/**
+ * マクロ経済指標
+ */
+export interface MacroEconomicFeatures {
+  // 金利
+  interestRate: number;
+  interestRateTrend: 'RISING' | 'FALLING' | 'STABLE';
+
+  // GDP成長率
+  gdpGrowth: number;
+  gdpTrend: 'EXPANDING' | 'CONTRACTING' | 'STABLE';
+
+  // CPI（消費者物価指数）
+  cpi: number;
+  cpiTrend: 'RISING' | 'FALLING' | 'STABLE';
+  inflationRate: number;
+
+  // 為替レート（日本市場用）
+  usdjpy?: number;
+  usdjpyTrend?: 'APPRECIATING' | 'DEPRECIATING' | 'STABLE';
+
+  // 総合的なマクロスコア
+  macroScore: number; // -1 (bearish) to 1 (bullish)
+}
+
+/**
+ * センチメント分析特徴量
+ */
+export interface SentimentFeatures {
+  // ニュースセンチメント
+  newsSentiment: number; // -1 (negative) to 1 (positive)
+  newsVolume: number; // 0 to 1 (normalized)
+  newsTrend: 'IMPROVING' | 'DECLINING' | 'STABLE';
+
+  // SNSセンチメント
+  socialSentiment: number; // -1 to 1
+  socialVolume: number; // 0 to 1
+  socialBuzz: number; // 0 to 1 (attention level)
+
+  // アナリスト予想
+  analystRating: number; // 1 (strong sell) to 5 (strong buy)
+  ratingChange: number; // change in rating
+
+  // 総合センチメントスコア
+  sentimentScore: number; // -1 to 1
+}
+
+/**
+ * 時系列特徴量
+ */
+export interface TimeSeriesFeatures {
+  // ラグ特徴量
+  lag1: number;
+  lag5: number;
+  lag10: number;
+  lag20: number;
+
+  // 移動平均
+  ma5: number;
+  ma10: number;
+  ma20: number;
+  ma50: number;
+
+  // 季節性（曜日効果、月効果）
+  dayOfWeek: number; // 0-6
+  dayOfWeekReturn: number;
+  monthOfYear: number; // 0-11
+  monthEffect: number;
+
+  // トレンド強度
+  trendStrength: number; // 0 to 1
+  trendDirection: 'UP' | 'DOWN' | 'NEUTRAL';
+
+  // 周期性
+  cyclicality: number; // 0 to 1
+}
+
+/**
+ * すべての特徴量を統合したインターフェース
+ */
+export interface AllFeatures {
+  technical: TechnicalFeatures;
+  macro: MacroEconomicFeatures | null;
+  sentiment: SentimentFeatures | null;
+  timeSeries: TimeSeriesFeatures;
+
+  // 特徴量のメタデータ
+  featureCount: number;
+  lastUpdate: string;
+  dataQuality: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR';
+}
+
+/**
+ * 特徴量エンジニアリングクラス
+ */
+export class FeatureEngineering {
   /**
-   * Extract all features from OHLCV data
+   * すべての特徴量を計算
    */
-  extractFeatures(data: OHLCV[], lookbackPeriod = 200): MLFeatures[] {
-    if (data.length < lookbackPeriod) {
-      throw new Error(`Insufficient data: need at least ${lookbackPeriod} data points`);
+  calculateAllFeatures(
+    data: OHLCV[],
+    macroData?: MacroEconomicFeatures,
+    sentimentData?: SentimentFeatures
+  ): AllFeatures {
+    if (data.length < 200) {
+      throw new Error('Insufficient data for feature calculation (minimum 200 data points required)');
     }
 
-    const features: MLFeatures[] = [];
-    
-    // Calculate all indicators upfront
+    const technical = this.calculateTechnicalFeatures(data);
+    const timeSeries = this.calculateTimeSeriesFeatures(data);
+
+    // マクロ経済データとセンチメントデータはオプション
+    const macro = macroData || this.getDefaultMacroFeatures();
+    const sentiment = sentimentData || this.getDefaultSentimentFeatures();
+
+    // データ品質を評価
+    const dataQuality = this.assessDataQuality(data);
+
+    // 特徴量の総数を計算
+    const featureCount = this.countFeatures(technical, macro, sentiment, timeSeries);
+
+    return {
+      technical,
+      macro,
+      sentiment,
+      timeSeries,
+      featureCount,
+      lastUpdate: new Date().toISOString(),
+      dataQuality,
+    };
+  }
+
+  /**
+   * テクニカル指標の拡張特徴量を計算
+   */
+  calculateTechnicalFeatures(data: OHLCV[]): TechnicalFeatures {
     const prices = data.map(d => d.close);
     const highs = data.map(d => d.high);
     const lows = data.map(d => d.low);
-    const opens = data.map(d => d.open);
     const volumes = data.map(d => d.volume);
-    
-    const rsi = calculateRSI(prices, 14);
+
+    // 基本指標
+    const rsi = calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD);
     const sma5 = calculateSMA(prices, 5);
-    const sma20 = calculateSMA(prices, 20);
-    const sma50 = calculateSMA(prices, 50);
-    const sma200 = calculateSMA(prices, 200);
-    const ema12 = calculateEMA(prices, 12);
-    const ema26 = calculateEMA(prices, 26);
-    const macd = calculateMACD(prices);
-    const bollingerBands = calculateBollingerBands(prices, 20, 2);
-    const atr = calculateATR(highs, lows, prices, 14);
-    
-    // Additional indicators
-    const stochastic = this.calculateStochastic(highs, lows, prices, 14);
+    const sma10 = calculateSMA(prices, 10);
+    const sma20 = calculateSMA(prices, SMA_CONFIG.SHORT_PERIOD);
+    const sma50 = calculateSMA(prices, SMA_CONFIG.MEDIUM_PERIOD);
+    const sma200 = calculateSMA(prices, SMA_CONFIG.LONG_PERIOD);
+    const ema12 = calculateEMA(prices, MACD_CONFIG.FAST_PERIOD);
+    const ema26 = calculateEMA(prices, MACD_CONFIG.SLOW_PERIOD);
+
+    // MACD
+    const macd = calculateMACD(prices, MACD_CONFIG.FAST_PERIOD, MACD_CONFIG.SLOW_PERIOD, MACD_CONFIG.SIGNAL_PERIOD);
+
+    // ボリンジャーバンド
+    const bb = calculateBollingerBands(prices, BOLLINGER_BANDS.PERIOD, BOLLINGER_BANDS.STD_DEVIATION);
+
+    // ATR
+    const atr = calculateATR(highs, lows, prices, RSI_CONFIG.DEFAULT_PERIOD);
+
+    // 現在値
+    const currentPrice = prices[prices.length - 1];
+    const currentVolume = volumes[volumes.length - 1];
+
+    // 値取得ヘルパー
+    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
+    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
+
+    // 基本指標値
+    const rsiValue = last(rsi, 50);
+    const rsiChange = rsiValue - prev(rsi, rsi.length - 2, 50);
+
+    // 移動平均乖離率
+    const sma5Dev = (currentPrice - last(sma5, currentPrice)) / currentPrice * 100;
+    const sma10Dev = (currentPrice - last(sma10, currentPrice)) / currentPrice * 100;
+    const sma20Dev = (currentPrice - last(sma20, currentPrice)) / currentPrice * 100;
+    const sma50Dev = (currentPrice - last(sma50, currentPrice)) / currentPrice * 100;
+    const sma200Dev = (currentPrice - last(sma200, currentPrice)) / currentPrice * 100;
+    const ema12Dev = (currentPrice - last(ema12, currentPrice)) / currentPrice * 100;
+    const ema26Dev = (currentPrice - last(ema26, currentPrice)) / currentPrice * 100;
+
+    // MACD
+    const macdValue = last(macd.macd, 0);
+    const macdSignalValue = last(macd.signal, 0);
+    const macdHistogramValue = last(macd.histogram, 0);
+
+    // ボリンジャーバンド
+    const bbUpper = last(bb.upper, currentPrice);
+    const bbMiddle = last(bb.middle, currentPrice);
+    const bbLower = last(bb.lower, currentPrice);
+    const bbPosition = ((currentPrice - bbLower) / (bbUpper - bbLower || 1)) * 100;
+    const bbWidth = ((bbUpper - bbLower) / bbMiddle) * 100;
+
+    // ATR
+    const atrValue = last(atr, currentPrice * 0.02);
+    const atrPercent = (atrValue / currentPrice) * 100;
+    const atrArray = atr.filter(v => !isNaN(v));
+    const atrAvg = atrArray.reduce((sum, v) => sum + v, 0) / atrArray.length;
+    const atrRatio = atrValue / (atrAvg || 1);
+
+    // モメンタム
+    const momentum10 = this.calculateMomentum(prices, 10);
+    const momentum20 = this.calculateMomentum(prices, 20);
+
+    // 変化率
+    const roc12 = this.calculateROC(prices, 12);
+    const roc25 = this.calculateROC(prices, 25);
+
+    // ストキャスティクス
+    const stoch = this.calculateStochastic(highs, lows, prices, 14);
+    const stochasticK = stoch.k;
+    const stochasticD = stoch.d;
+
+    // Williams %R
     const williamsR = this.calculateWilliamsR(highs, lows, prices, 14);
-    const adx = this.calculateADX(highs, lows, prices, 14);
+
+    // CCI
     const cci = this.calculateCCI(highs, lows, prices, 20);
-    const roc = this.calculateROC(prices, 12);
-    const obv = this.calculateOBV(prices, volumes);
-    
-    // Volume indicators
-    const volumeSMA = calculateSMA(volumes, 20);
-    
-    // Extract features for each data point
-    for (let i = lookbackPeriod; i < data.length; i++) {
-      const currentPrice = prices[i];
-      const currentVolume = volumes[i];
-      
-      features.push({
-        // Basic OHLC
-        close: currentPrice,
-        open: opens[i],
-        high: highs[i],
-        low: lows[i],
-        
-        // RSI
-        rsi: this.getValue(rsi, i, 50),
-        rsiChange: this.getValue(rsi, i, 50) - this.getValue(rsi, i - 1, 50),
-        
-        // Moving averages
-        sma5: this.getDeviation(currentPrice, sma5, i),
-        sma20: this.getDeviation(currentPrice, sma20, i),
-        sma50: this.getDeviation(currentPrice, sma50, i),
-        sma200: this.getDeviation(currentPrice, sma200, i),
-        ema12: this.getDeviation(currentPrice, ema12, i),
-        ema26: this.getDeviation(currentPrice, ema26, i),
-        
-        // MACD
-        macdSignal: this.getValue(macd.macd, i, 0) - this.getValue(macd.signal, i, 0),
-        macdHistogram: this.getValue(macd.histogram, i, 0),
-        
-        // Bollinger Bands
-        bollingerPosition: this.calculateBollingerPosition(
-          currentPrice,
-          bollingerBands.upper[i],
-          bollingerBands.lower[i]
-        ),
-        
-        // ATR
-        atrPercent: (this.getValue(atr, i, 0) / currentPrice) * 100,
-        
-        // Momentum
-        priceMomentum: this.calculateMomentum(prices, i, 10),
-        momentum5: this.calculateMomentum(prices, i, 5),
-        momentum10: this.calculateMomentum(prices, i, 10),
-        momentum20: this.calculateMomentum(prices, i, 20),
-        
-        // Volume
-        volumeRatio: currentVolume / (this.getValue(volumeSMA, i, 1) || 1),
-        volumeSMA: this.getValue(volumeSMA, i, currentVolume),
-        volumeStd: this.calculateStdDev(volumes.slice(Math.max(0, i - 20), i + 1)),
-        volumeTrend: this.calculateTrend(volumes, i, 20),
-        
-        // Volatility
-        volatility: this.calculateHistoricalVolatility(prices.slice(Math.max(0, i - 20), i + 1)),
-        historicalVolatility: this.calculateHistoricalVolatility(prices.slice(Math.max(0, i - 20), i + 1)),
-        parkinsonVolatility: this.calculateParkinsonVolatility(
-          highs.slice(Math.max(0, i - 20), i + 1),
-          lows.slice(Math.max(0, i - 20), i + 1)
-        ),
-        garmanKlassVolatility: this.calculateGarmanKlassVolatility(
-          highs.slice(Math.max(0, i - 20), i + 1),
-          lows.slice(Math.max(0, i - 20), i + 1),
-          opens.slice(Math.max(0, i - 20), i + 1),
-          prices.slice(Math.max(0, i - 20), i + 1)
-        ),
-        
-        // Oscillators
-        stochasticK: this.getValue(stochastic.k, i, 50),
-        stochasticD: this.getValue(stochastic.d, i, 50),
-        williamsR: this.getValue(williamsR, i, -50),
-        adx: this.getValue(adx, i, 25),
-        cci: this.getValue(cci, i, 0),
-        roc: this.getValue(roc, i, 0),
-        obv: this.getValue(obv, i, 0),
-        
-        // Trend
-        adxTrend: this.getValue(adx, i, 25),
-        aroonUp: this.calculateAroonUp(highs, i, 25),
-        aroonDown: this.calculateAroonDown(lows, i, 25),
-        
-        // VWAP
-        vwap: this.calculateVWAP(data.slice(Math.max(0, i - 20), i + 1)),
-        
-        // Price levels
-        volumeProfile: this.calculateVolumeProfile(data.slice(Math.max(0, i - 50), i + 1), 10),
-        priceLevel: this.normalizePriceLevel(currentPrice, highs.slice(Math.max(0, i - 50), i + 1), lows.slice(Math.max(0, i - 50), i + 1)),
-        
-        // Support/Resistance
-        candlePattern: this.detectCandlePattern(data.slice(Math.max(0, i - 5), i + 1)),
-        supportLevel: this.findSupportLevel(lows.slice(Math.max(0, i - 50), i + 1), currentPrice),
-        resistanceLevel: this.findResistanceLevel(highs.slice(Math.max(0, i - 50), i + 1), currentPrice),
-        
-        // Correlation (placeholder - needs index data)
-        marketCorrelation: 0,
-        sectorCorrelation: 0,
-        
-        // Time features
-        dayOfWeek: data[i].date ? new Date(data[i].date).getDay() : 0,
-        weekOfMonth: data[i].date ? Math.floor(new Date(data[i].date).getDate() / 7) : 0,
-        monthOfYear: data[i].date ? new Date(data[i].date).getMonth() : 0,
-        timestamp: i / data.length,
-      });
-    }
-    
-    return features;
+
+    // ボリューム
+    const volumeMA5 = this.calculateSMA(volumes, 5);
+    const volumeMA20 = this.calculateSMA(volumes, 20);
+    const volumeRatio = currentVolume / (last(volumeMA20, currentVolume) || 1);
+    const volumeTrend = this.classifyVolumeTrend(volumes.slice(-5));
+
+    // 価格系
+    const pricePosition = this.calculatePricePosition(prices.slice(-50));
+    const priceVelocity = this.calculateVelocity(prices, 5);
+    const priceAcceleration = this.calculateAcceleration(prices, 5);
+
+    return {
+      rsi: rsiValue,
+      rsiChange,
+      sma5: sma5Dev,
+      sma10: sma10Dev,
+      sma20: sma20Dev,
+      sma50: sma50Dev,
+      sma200: sma200Dev,
+      ema12: ema12Dev,
+      ema26: ema26Dev,
+      macd: macdValue,
+      macdSignal: macdSignalValue,
+      macdHistogram: macdHistogramValue,
+      bbUpper,
+      bbMiddle,
+      bbLower,
+      bbPosition,
+      bbWidth,
+      atr: atrValue,
+      atrPercent,
+      atrRatio,
+      momentum10,
+      momentum20,
+      rateOfChange12: roc12,
+      rateOfChange25: roc25,
+      stochasticK,
+      stochasticD,
+      williamsR,
+      cci,
+      volumeRatio,
+      volumeMA5: last(volumeMA5, currentVolume),
+      volumeMA20: last(volumeMA20, currentVolume),
+      volumeTrend,
+      pricePosition,
+      priceVelocity,
+      priceAcceleration,
+    };
   }
 
   /**
-   * Normalize features for model input
+   * 時系列特徴量を計算
    */
-  normalizeFeatures(features: MLFeatures[]): { normalized: number[][]; scalers: Record<string, { mean: number; std: number }> } {
-    const scalers: Record<string, { mean: number; std: number }> = {};
-    const keys = Object.keys(features[0]) as (keyof MLFeatures)[];
-    
-    // Calculate mean and std for each feature
-    for (const key of keys) {
-      if (key === 'volumeProfile') continue; // Skip array features
-      
-      const values = features.map(f => {
-        const val = f[key];
-        return typeof val === 'number' ? val : 0;
-      });
-      
-      const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-      const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
-      const std = Math.sqrt(variance) || 1;
-      
-      scalers[key] = { mean, std };
-    }
-    
-    // Normalize each feature
-    const normalized = features.map(feature => {
-      return keys
-        .filter(k => k !== 'volumeProfile')
-        .map(key => {
-          const val = feature[key];
-          const numVal = typeof val === 'number' ? val : 0;
-          const scaler = scalers[key];
-          const normalized = (numVal - scaler.mean) / scaler.std;
-          // Handle NaN and Infinity
-          if (!isFinite(normalized)) return 0;
-          return normalized;
-        });
-    });
-    
-    return { normalized, scalers };
-  }
-
-  // Helper methods
-
-  private getValue(array: number[], index: number, fallback: number): number {
-    return array[index] !== undefined ? array[index] : fallback;
-  }
-
-  private getDeviation(price: number, smaArray: number[], index: number): number {
-    const smaValue = this.getValue(smaArray, index, price);
-    return ((price - smaValue) / smaValue) * 100;
-  }
-
-  private calculateBollingerPosition(price: number, upper: number, lower: number): number {
-    if (upper === lower || upper === undefined || lower === undefined) return 50;
-    const position = ((price - lower) / (upper - lower)) * 100;
-    // Clamp to 0-100 range
-    return Math.max(0, Math.min(100, position));
-  }
-
-  private calculateMomentum(prices: number[], index: number, period: number): number {
-    const prevIndex = index - period;
-    if (prevIndex < 0) return 0;
-    return ((prices[index] - prices[prevIndex]) / prices[prevIndex]) * 100;
-  }
-
-  private calculateHistoricalVolatility(prices: number[]): number {
-    if (prices.length < 2) return 0;
-    const returns = prices.slice(1).map((price, i) => Math.log(price / prices[i]));
-    const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
-    return Math.sqrt(variance * 252) * 100; // Annualized
-  }
-
-  private calculateParkinsonVolatility(highs: number[], lows: number[]): number {
-    if (highs.length < 2) return 0;
-    const sum = highs.reduce((s, h, i) => {
-      if (lows[i] === 0) return s;
-      return s + Math.pow(Math.log(h / lows[i]), 2);
-    }, 0);
-    return Math.sqrt(sum / (4 * Math.log(2) * highs.length) * 252) * 100;
-  }
-
-  private calculateGarmanKlassVolatility(highs: number[], lows: number[], opens: number[], closes: number[]): number {
-    if (highs.length < 2) return 0;
-    const n = highs.length;
-    let sum = 0;
-    
-    for (let i = 0; i < n; i++) {
-      if (lows[i] === 0 || opens[i] === 0) continue;
-      const hl = Math.log(highs[i] / lows[i]);
-      const co = Math.log(closes[i] / opens[i]);
-      sum += 0.5 * Math.pow(hl, 2) - (2 * Math.log(2) - 1) * Math.pow(co, 2);
-    }
-    
-    return Math.sqrt((sum / n) * 252) * 100;
-  }
-
-  private calculateStochastic(highs: number[], lows: number[], closes: number[], period: number): { k: number[]; d: number[] } {
-    const k: number[] = [];
-    
-    for (let i = 0; i < closes.length; i++) {
-      if (i < period - 1) {
-        k.push(50);
-        continue;
-      }
-      
-      const periodHighs = highs.slice(i - period + 1, i + 1);
-      const periodLows = lows.slice(i - period + 1, i + 1);
-      const highestHigh = Math.max(...periodHighs);
-      const lowestLow = Math.min(...periodLows);
-      
-      if (highestHigh === lowestLow) {
-        k.push(50);
-      } else {
-        k.push(((closes[i] - lowestLow) / (highestHigh - lowestLow)) * 100);
-      }
-    }
-    
-    const d = calculateSMA(k, 3);
-    
-    return { k, d };
-  }
-
-  private calculateWilliamsR(highs: number[], lows: number[], closes: number[], period: number): number[] {
-    const wr: number[] = [];
-    
-    for (let i = 0; i < closes.length; i++) {
-      if (i < period - 1) {
-        wr.push(-50);
-        continue;
-      }
-      
-      const periodHighs = highs.slice(i - period + 1, i + 1);
-      const periodLows = lows.slice(i - period + 1, i + 1);
-      const highestHigh = Math.max(...periodHighs);
-      const lowestLow = Math.min(...periodLows);
-      
-      if (highestHigh === lowestLow) {
-        wr.push(-50);
-      } else {
-        wr.push(((highestHigh - closes[i]) / (highestHigh - lowestLow)) * -100);
-      }
-    }
-    
-    return wr;
-  }
-
-  private calculateADX(highs: number[], lows: number[], closes: number[], period: number): number[] {
-    const adx: number[] = [];
-    const trueRanges: number[] = [];
-    const plusDM: number[] = [];
-    const minusDM: number[] = [];
-    
-    // Calculate True Range and Directional Movements
-    for (let i = 1; i < closes.length; i++) {
-      const tr = Math.max(
-        highs[i] - lows[i],
-        Math.abs(highs[i] - closes[i - 1]),
-        Math.abs(lows[i] - closes[i - 1])
-      );
-      trueRanges.push(tr);
-      
-      const upMove = highs[i] - highs[i - 1];
-      const downMove = lows[i - 1] - lows[i];
-      
-      plusDM.push(upMove > downMove && upMove > 0 ? upMove : 0);
-      minusDM.push(downMove > upMove && downMove > 0 ? downMove : 0);
-    }
-    
-    // Calculate smoothed values and ADX
-    for (let i = 0; i < closes.length; i++) {
-      if (i < period) {
-        adx.push(25);
-      } else {
-        const avgTR = trueRanges.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
-        const avgPlusDM = plusDM.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
-        const avgMinusDM = minusDM.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
-        
-        const plusDI = avgTR === 0 ? 0 : (avgPlusDM / avgTR) * 100;
-        const minusDI = avgTR === 0 ? 0 : (avgMinusDM / avgTR) * 100;
-        const dx = plusDI + minusDI === 0 ? 0 : (Math.abs(plusDI - minusDI) / (plusDI + minusDI)) * 100;
-        
-        adx.push(dx);
-      }
-    }
-    
-    return adx;
-  }
-
-  private calculateCCI(highs: number[], lows: number[], closes: number[], period: number): number[] {
-    const cci: number[] = [];
-    const typicalPrices = highs.map((h, i) => (h + lows[i] + closes[i]) / 3);
-    const sma = calculateSMA(typicalPrices, period);
-    
-    for (let i = 0; i < closes.length; i++) {
-      if (i < period - 1) {
-        cci.push(0);
-      } else {
-        const tp = typicalPrices[i];
-        const smaValue = sma[i];
-        const meanDeviation = typicalPrices
-          .slice(i - period + 1, i + 1)
-          .reduce((sum, price) => sum + Math.abs(price - smaValue), 0) / period;
-        
-        cci.push(meanDeviation === 0 ? 0 : (tp - smaValue) / (0.015 * meanDeviation));
-      }
-    }
-    
-    return cci;
-  }
-
-  private calculateROC(prices: number[], period: number): number[] {
-    return prices.map((price, i) => {
-      if (i < period) return 0;
-      const prevPrice = prices[i - period];
-      return prevPrice === 0 ? 0 : ((price - prevPrice) / prevPrice) * 100;
-    });
-  }
-
-  private calculateOBV(prices: number[], volumes: number[]): number[] {
-    const obv: number[] = [volumes[0] || 0];
-    
-    for (let i = 1; i < prices.length; i++) {
-      if (prices[i] > prices[i - 1]) {
-        obv.push(obv[i - 1] + volumes[i]);
-      } else if (prices[i] < prices[i - 1]) {
-        obv.push(obv[i - 1] - volumes[i]);
-      } else {
-        obv.push(obv[i - 1]);
-      }
-    }
-    
-    return obv;
-  }
-
-  private calculateVWAP(data: OHLCV[]): number {
-    let sumPV = 0;
-    let sumV = 0;
-    
-    for (const d of data) {
-      const typical = (d.high + d.low + d.close) / 3;
-      sumPV += typical * d.volume;
-      sumV += d.volume;
-    }
-    
-    return sumV === 0 ? data[data.length - 1].close : sumPV / sumV;
-  }
-
-  private calculateVolumeProfile(data: OHLCV[], bins: number): number[] {
+  calculateTimeSeriesFeatures(data: OHLCV[]): TimeSeriesFeatures {
     const prices = data.map(d => d.close);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const binSize = (maxPrice - minPrice) / bins;
-    
-    const profile = new Array(bins).fill(0);
-    
-    for (const d of data) {
-      const binIndex = Math.min(Math.floor((d.close - minPrice) / binSize), bins - 1);
-      profile[binIndex] += d.volume;
+
+    // ラグ特徴量
+    const lag1 = this.calculateLag(prices, 1);
+    const lag5 = this.calculateLag(prices, 5);
+    const lag10 = this.calculateLag(prices, 10);
+    const lag20 = this.calculateLag(prices, 20);
+
+    // 移動平均
+    const ma5 = this.calculateSMA(prices, 5);
+    const ma10 = this.calculateSMA(prices, 10);
+    const ma20 = this.calculateSMA(prices, 20);
+    const ma50 = this.calculateSMA(prices, 50);
+
+    // 季節性
+    const lastDate = new Date(data[data.length - 1].date);
+    const dayOfWeek = lastDate.getDay();
+    const dayOfWeekReturn = this.calculateDayOfWeekReturn(data, dayOfWeek);
+    const monthOfYear = lastDate.getMonth();
+    const monthEffect = this.calculateMonthEffect(data, monthOfYear);
+
+    // トレンド強度と方向
+    const trendStrength = this.calculateTrendStrength(prices.slice(-50));
+    const trendDirection = this.classifyTrendDirection(prices.slice(-50));
+
+    // 周期性
+    const cyclicality = this.calculateCyclicality(prices.slice(-50));
+
+    return {
+      lag1,
+      lag5,
+      lag10,
+      lag20,
+      ma5: this.lastValue(ma5),
+      ma10: this.lastValue(ma10),
+      ma20: this.lastValue(ma20),
+      ma50: this.lastValue(ma50),
+      dayOfWeek,
+      dayOfWeekReturn,
+      monthOfYear,
+      monthEffect,
+      trendStrength,
+      trendDirection,
+      cyclicality,
+    };
+  }
+
+  /**
+   * モメンタムを計算
+   */
+  private calculateMomentum(prices: number[], period: number): number {
+    if (prices.length < period + 1) return 0;
+    const current = prices[prices.length - 1];
+    const past = prices[prices.length - 1 - period];
+    return ((current - past) / past) * 100;
+  }
+
+  /**
+   * 変化率（ROC）を計算
+   */
+  private calculateROC(prices: number[], period: number): number {
+    if (prices.length < period + 1) return 0;
+    const current = prices[prices.length - 1];
+    const past = prices[prices.length - 1 - period];
+    return ((current - past) / past) * 100;
+  }
+
+  /**
+   * ストキャスティクスを計算
+   */
+  private calculateStochastic(
+    highs: number[],
+    lows: number[],
+    closes: number[],
+    period: number
+  ): { k: number; d: number } {
+    const start = Math.max(0, highs.length - period);
+    const recentHighs = highs.slice(start);
+    const recentLows = lows.slice(start);
+
+    const highestHigh = Math.max(...recentHighs);
+    const lowestLow = Math.min(...recentLows);
+    const currentClose = closes[closes.length - 1];
+
+    const k = ((currentClose - lowestLow) / (highestHigh - lowestLow || 1)) * 100;
+
+    // %Dは%Kの3期間SMA
+    // 簡略化のため、ここでは現在の%Kを返す
+    return { k, d: k };
+  }
+
+  /**
+   * Williams %Rを計算
+   */
+  private calculateWilliamsR(
+    highs: number[],
+    lows: number[],
+    closes: number[],
+    period: number
+  ): number {
+    const start = Math.max(0, highs.length - period);
+    const recentHighs = highs.slice(start);
+    const recentLows = lows.slice(start);
+
+    const highestHigh = Math.max(...recentHighs);
+    const lowestLow = Math.min(...recentLows);
+    const currentClose = closes[closes.length - 1];
+
+    return ((highestHigh - currentClose) / (highestHigh - lowestLow || 1)) * -100;
+  }
+
+  /**
+   * CCIを計算
+   */
+  private calculateCCI(
+    highs: number[],
+    lows: number[],
+    closes: number[],
+    period: number
+  ): number {
+    const start = Math.max(0, highs.length - period);
+    const typicalPrices: number[] = [];
+
+    for (let i = start; i < closes.length; i++) {
+      typicalPrices.push((highs[i] + lows[i] + closes[i]) / 3);
     }
-    
-    return profile;
+
+    if (typicalPrices.length === 0) return 0;
+
+    const sma = typicalPrices.reduce((sum, tp) => sum + tp, 0) / typicalPrices.length;
+    const meanDeviation = typicalPrices.reduce((sum, tp) => sum + Math.abs(tp - sma), 0) / typicalPrices.length;
+
+    const currentTP = typicalPrices[typicalPrices.length - 1];
+    return (currentTP - sma) / (0.015 * meanDeviation || 1);
   }
 
-  private normalizePriceLevel(price: number, highs: number[], lows: number[]): number {
-    const maxHigh = Math.max(...highs);
-    const minLow = Math.min(...lows);
-    if (maxHigh === minLow) return 0.5;
-    return (price - minLow) / (maxHigh - minLow);
+  /**
+   * SMAを計算
+   */
+  private calculateSMA(values: number[], period: number): number[] {
+    const result: number[] = [];
+    for (let i = 0; i < values.length; i++) {
+      if (i < period - 1) {
+        result.push(NaN);
+      } else {
+        let sum = 0;
+        for (let j = 0; j < period; j++) {
+          sum += values[i - j];
+        }
+        result.push(sum / period);
+      }
+    }
+    return result;
   }
 
-  private detectCandlePattern(data: OHLCV[]): number {
-    // Simplified candle pattern detection
-    // Returns a score from -1 (bearish) to 1 (bullish)
-    if (data.length < 3) return 0;
-    
-    const last = data[data.length - 1];
-    const bodySize = Math.abs(last.close - last.open);
-    const rangeSize = last.high - last.low;
-    
-    if (rangeSize === 0) return 0;
-    
-    const bodyRatio = bodySize / rangeSize;
-    const isBullish = last.close > last.open;
-    
-    return isBullish ? bodyRatio : -bodyRatio;
+  /**
+   * ボリュームトレンドを分類
+   */
+  private classifyVolumeTrend(volumes: number[]): 'INCREASING' | 'DECREASING' | 'NEUTRAL' {
+    if (volumes.length < 2) return 'NEUTRAL';
+
+    const firstHalf = volumes.slice(0, Math.floor(volumes.length / 2));
+    const secondHalf = volumes.slice(Math.floor(volumes.length / 2));
+
+    const firstAvg = firstHalf.reduce((sum, v) => sum + v, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((sum, v) => sum + v, 0) / secondHalf.length;
+
+    const ratio = (secondAvg - firstAvg) / (firstAvg || 1);
+
+    if (ratio > 0.1) return 'INCREASING';
+    if (ratio < -0.1) return 'DECREASING';
+    return 'NEUTRAL';
   }
 
-  private findSupportLevel(lows: number[], currentPrice: number): number {
-    const belowCurrent = lows.filter(l => l < currentPrice);
-    if (belowCurrent.length === 0) return 0;
-    
-    // Find the highest low below current price
-    const support = Math.max(...belowCurrent);
-    return ((currentPrice - support) / currentPrice) * 100;
+  /**
+   * 価格ポジションを計算
+   */
+  private calculatePricePosition(prices: number[]): number {
+    if (prices.length === 0) return 50;
+
+    const currentPrice = prices[prices.length - 1];
+    const highestPrice = Math.max(...prices);
+    const lowestPrice = Math.min(...prices);
+
+    if (highestPrice === lowestPrice) return 50;
+    return ((currentPrice - lowestPrice) / (highestPrice - lowestPrice)) * 100;
   }
 
-  private findResistanceLevel(highs: number[], currentPrice: number): number {
-    const aboveCurrent = highs.filter(h => h > currentPrice);
-    if (aboveCurrent.length === 0) return 0;
-    
-    // Find the lowest high above current price
-    const resistance = Math.min(...aboveCurrent);
-    return ((resistance - currentPrice) / currentPrice) * 100;
+  /**
+   * 価格の速度を計算
+   */
+  private calculateVelocity(prices: number[], period: number): number {
+    if (prices.length < period + 1) return 0;
+    const recent = prices.slice(-period);
+    let velocity = 0;
+    for (let i = 1; i < recent.length; i++) {
+      velocity += (recent[i] - recent[i - 1]) / (recent[i - 1] || 1);
+    }
+    return velocity * 100;
   }
 
-  private calculateAroonUp(highs: number[], index: number, period: number): number {
-    if (index < period) return 50;
-    
-    const periodHighs = highs.slice(index - period + 1, index + 1);
-    const highestIndex = periodHighs.indexOf(Math.max(...periodHighs));
-    return ((period - (period - highestIndex - 1)) / period) * 100;
+  /**
+   * 価格の加速度を計算
+   */
+  private calculateAcceleration(prices: number[], period: number): number {
+    if (prices.length < period + 2) return 0;
+    const recent = prices.slice(-period);
+    const velocities: number[] = [];
+    for (let i = 1; i < recent.length; i++) {
+      velocities.push((recent[i] - recent[i - 1]) / (recent[i - 1] || 1));
+    }
+    if (velocities.length < 2) return 0;
+    return (velocities[velocities.length - 1] - velocities[0]) * 100;
   }
 
-  private calculateAroonDown(lows: number[], index: number, period: number): number {
-    if (index < period) return 50;
-    
-    const periodLows = lows.slice(index - period + 1, index + 1);
-    const lowestIndex = periodLows.indexOf(Math.min(...periodLows));
-    return ((period - (period - lowestIndex - 1)) / period) * 100;
+  /**
+   * ラグ特徴量を計算
+   */
+  private calculateLag(prices: number[], lag: number): number {
+    if (prices.length < lag + 1) return 0;
+    const current = prices[prices.length - 1];
+    const past = prices[prices.length - 1 - lag];
+    return ((current - past) / past) * 100;
   }
 
-  private calculateStdDev(values: number[]): number {
-    if (values.length === 0) return 0;
-    const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-    const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
-    return Math.sqrt(variance);
+  /**
+   * 曜日効果を計算
+   */
+  private calculateDayOfWeekReturn(data: OHLCV[], dayOfWeek: number): number {
+    const sameDayData = data.filter(d => new Date(d.date).getDay() === dayOfWeek);
+    if (sameDayData.length < 2) return 0;
+
+    let totalReturn = 0;
+    for (let i = 1; i < sameDayData.length; i++) {
+      totalReturn += (sameDayData[i].close - sameDayData[i - 1].close) / sameDayData[i - 1].close;
+    }
+    return (totalReturn / sameDayData.length) * 100;
   }
 
-  private calculateTrend(values: number[], index: number, period: number): number {
-    if (index < period) return 0;
-    const recent = values.slice(index - period + 1, index + 1);
-    const sma = recent.reduce((sum, v) => sum + v, 0) / recent.length;
-    return values[index] / sma - 1;
+  /**
+   * 月効果を計算
+   */
+  private calculateMonthEffect(data: OHLCV[], month: number): number {
+    const sameMonthData = data.filter(d => new Date(d.date).getMonth() === month);
+    if (sameMonthData.length < 2) return 0;
+
+    const firstPrice = sameMonthData[0].close;
+    const lastPrice = sameMonthData[sameMonthData.length - 1].close;
+    return ((lastPrice - firstPrice) / firstPrice) * 100;
+  }
+
+  /**
+   * トレンド強度を計算（0-1）
+   */
+  private calculateTrendStrength(prices: number[]): number {
+    if (prices.length < 10) return 0;
+
+    // 線形回帰でトレンド強度を計算
+    const n = prices.length;
+    const xValues = Array.from({ length: n }, (_, i) => i);
+    const yValues = prices;
+
+    const sumX = xValues.reduce((sum, x) => sum + x, 0);
+    const sumY = yValues.reduce((sum, y) => sum + y, 0);
+    const sumXY = xValues.reduce((sum, x, i) => sum + x * yValues[i], 0);
+    const sumX2 = xValues.reduce((sum, x) => sum + x * x, 0);
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX || 1);
+    const intercept = (sumY - slope * sumX) / n;
+
+    // R²を計算
+    const yMean = sumY / n;
+    let ssTotal = 0;
+    let ssResidual = 0;
+
+    for (let i = 0; i < n; i++) {
+      const yPredicted = slope * xValues[i] + intercept;
+      ssTotal += Math.pow(yValues[i] - yMean, 2);
+      ssResidual += Math.pow(yValues[i] - yPredicted, 2);
+    }
+
+    const rSquared = ssTotal > 0 ? 1 - ssResidual / ssTotal : 0;
+    return Math.max(0, Math.min(1, rSquared));
+  }
+
+  /**
+   * トレンド方向を分類
+   */
+  private classifyTrendDirection(prices: number[]): 'UP' | 'DOWN' | 'NEUTRAL' {
+    if (prices.length < 10) return 'NEUTRAL';
+
+    const firstHalf = prices.slice(0, Math.floor(prices.length / 2));
+    const secondHalf = prices.slice(Math.floor(prices.length / 2));
+
+    const firstAvg = firstHalf.reduce((sum, p) => sum + p, 0) / firstHalf.length;
+    const secondAvg = secondHalf.reduce((sum, p) => sum + p, 0) / secondHalf.length;
+
+    const change = (secondAvg - firstAvg) / firstAvg;
+
+    if (change > 0.02) return 'UP';
+    if (change < -0.02) return 'DOWN';
+    return 'NEUTRAL';
+  }
+
+  /**
+   * 周期性を計算（0-1）
+   */
+  private calculateCyclicality(prices: number[]): number {
+    if (prices.length < 20) return 0;
+
+    // 自己相関を使用して周期性を検出
+    const returns: number[] = [];
+    for (let i = 1; i < prices.length; i++) {
+      returns.push((prices[i] - prices[i - 1]) / prices[i - 1]);
+    }
+
+    // ラグ5までの自己相関の平均
+    const autocorrelations: number[] = [];
+    for (let lag = 1; lag <= Math.min(5, Math.floor(returns.length / 2)); lag++) {
+      const corr = this.calculateAutocorrelation(returns, lag);
+      autocorrelations.push(Math.abs(corr));
+    }
+
+    return autocorrelations.reduce((sum, corr) => sum + corr, 0) / autocorrelations.length;
+  }
+
+  /**
+   * 自己相関を計算
+   */
+  private calculateAutocorrelation(returns: number[], lag: number): number {
+    const n = returns.length - lag;
+    if (n < 2) return 0;
+
+    const mean = returns.slice(0, n).reduce((sum, r) => sum + r, 0) / n;
+    let numerator = 0;
+    let denominator = 0;
+
+    for (let i = 0; i < n; i++) {
+      const deviation = returns[i] - mean;
+      const laggedDeviation = returns[i + lag] - mean;
+      numerator += deviation * laggedDeviation;
+      denominator += deviation * deviation;
+    }
+
+    return denominator > 0 ? numerator / denominator : 0;
+  }
+
+  /**
+   * デフォルトのマクロ経済特徴量を生成
+   */
+  private getDefaultMacroFeatures(): MacroEconomicFeatures {
+    return {
+      interestRate: 0,
+      interestRateTrend: 'STABLE',
+      gdpGrowth: 0,
+      gdpTrend: 'STABLE',
+      cpi: 0,
+      cpiTrend: 'STABLE',
+      inflationRate: 0,
+      macroScore: 0,
+    };
+  }
+
+  /**
+   * デフォルトのセンチメント特徴量を生成
+   */
+  private getDefaultSentimentFeatures(): SentimentFeatures {
+    return {
+      newsSentiment: 0,
+      newsVolume: 0,
+      newsTrend: 'STABLE',
+      socialSentiment: 0,
+      socialVolume: 0,
+      socialBuzz: 0,
+      analystRating: 3,
+      ratingChange: 0,
+      sentimentScore: 0,
+    };
+  }
+
+  /**
+   * データ品質を評価
+   */
+  private assessDataQuality(data: OHLCV[]): 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' {
+    const dataPoints = data.length;
+    const recentData = data.slice(-20);
+
+    // 欠損データのチェック
+    let missingDataCount = 0;
+    for (const d of recentData) {
+      if (d.high === 0 || d.low === 0 || d.close === 0 || d.volume === 0) {
+        missingDataCount++;
+      }
+    }
+
+    const missingDataRatio = missingDataCount / recentData.length;
+
+    if (dataPoints >= 252 && missingDataRatio === 0) return 'EXCELLENT';
+    if (dataPoints >= 100 && missingDataRatio < 0.05) return 'GOOD';
+    if (dataPoints >= 50 && missingDataRatio < 0.2) return 'FAIR';
+    return 'POOR';
+  }
+
+  /**
+   * 特徴量の総数を計算
+   */
+  private countFeatures(
+    technical: TechnicalFeatures,
+    macro: MacroEconomicFeatures | null,
+    sentiment: SentimentFeatures | null,
+    timeSeries: TimeSeriesFeatures
+  ): number {
+    let count = Object.keys(technical).length + Object.keys(timeSeries).length;
+    if (macro) count += Object.keys(macro).length;
+    if (sentiment) count += Object.keys(sentiment).length;
+    return count;
+  }
+
+  /**
+   * 配列の最後の有効な値を取得
+   */
+  private lastValue(arr: number[]): number {
+    const validValues = arr.filter(v => !isNaN(v) && v !== 0);
+    return validValues.length > 0 ? validValues[validValues.length - 1] : 0;
   }
 }
 
-export const featureEngineeringService = new FeatureEngineeringService();
+export const featureEngineering = new FeatureEngineering();

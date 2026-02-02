@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { SignalPanel } from '@/app/components/SignalPanel';
 import { OrderPanel } from '@/app/components/OrderPanel';
 import { AlertPanel } from '@/app/components/AlertPanel';
-import { AccountSettingsPanel } from '@/app/components/AccountSettingsPanel';
+import { DataQualityPanel } from '@/app/components/DataQualityPanel';
 import { cn } from '@/app/lib/utils';
 import { Stock, Signal, OHLCV } from '@/app/types';
+import { useResilientWebSocket } from '@/app/hooks/useResilientWebSocket';
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -25,7 +26,12 @@ export const RightSidebar = ({
   ohlcv,
   loading
 }: RightSidebarProps) => {
-  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order' | 'alert' | 'settings'>('signal');    
+  const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order' | 'alert' | 'quality'>('signal');
+
+  // Get WebSocket metrics for DataQualityPanel
+  const { status: wsStatus, metrics: wsMetrics } = useResilientWebSocket({
+    enabled: true,
+  });    
 
   return (
     <aside className={cn(
@@ -50,7 +56,7 @@ export const RightSidebar = ({
             rightPanelMode === 'signal' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
           )}
         >
-          シグナル
+          分析 & シグナル
         </button>
         <button
           onClick={() => setRightPanelMode('alert')}
@@ -68,25 +74,28 @@ export const RightSidebar = ({
             rightPanelMode === 'order' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
           )}
         >
-          注文
+          注文パネル
         </button>
         <button
-          onClick={() => setRightPanelMode('settings')}
+          onClick={() => setRightPanelMode('quality')}
           className={cn(
             'flex-1 py-2 text-xs font-bold transition-colors',
-            rightPanelMode === 'settings' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
+            rightPanelMode === 'quality' ? 'text-white border-b-2 border-primary' : 'text-[#92adc9] hover:text-white'
           )}
         >
-          資金設定
+          データ品質
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {rightPanelMode === 'settings' ? (
-          <div className="p-4">
-            <AccountSettingsPanel />
-          </div>
-        ) : displayStock && (
+        {rightPanelMode === 'quality' ? (
+          <DataQualityPanel
+            connectionMetrics={wsMetrics}
+            connectionStatus={wsStatus}
+            compact={false}
+            updateInterval={1000}
+          />
+        ) : displayStock ? (
           rightPanelMode === 'signal' ? (
             <SignalPanel
               stock={displayStock}
@@ -105,6 +114,10 @@ export const RightSidebar = ({
               currentPrice={displayStock.price}
             />
           )
+        ) : (
+          <div className="p-6 text-center text-[#92adc9]">
+            <p>銘柄を選択してください</p>
+          </div>
         )}
       </div>
     </aside>
