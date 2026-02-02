@@ -86,19 +86,25 @@ export interface MonteCarloProbabilities {
 
 export interface MonteCarloConfidenceIntervals {
   // 90%信頼区間
-  confidence90: ConfidenceInterval;
+  confidence90: PerMetricConfidence;
 
   // 95%信頼区間
-  confidence95: ConfidenceInterval;
+  confidence95: PerMetricConfidence;
 
   // 99%信頼区間
-  confidence99: ConfidenceInterval;
+  confidence99: PerMetricConfidence;
 }
 
 export interface ConfidenceInterval {
   lower: number;
   upper: number;
   range: number;
+}
+
+export interface PerMetricConfidence {
+  returns: ConfidenceInterval;
+  sharpe: ConfidenceInterval;
+  drawdown: ConfidenceInterval;
 }
 
 export interface DistributionStatistics {
@@ -688,14 +694,5 @@ export function summarizeMonteCarloResult(result: MonteCarloResult): string {
 // ============================================================================
 // Singleton Export
 // ============================================================================
-
-import { createSingleton } from '../utils/singleton';
-
-const { getInstance, resetInstance } = createSingleton(
-  (config?: Partial<MonteCarloConfig>) => new MonteCarloSimulator(config)
-);
-
-export const getGlobalMonteCarloSimulator = getInstance;
-export const resetGlobalMonteCarloSimulator = resetInstance;
 
 export default MonteCarloSimulator;
