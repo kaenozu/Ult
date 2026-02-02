@@ -53,3 +53,13 @@ export type {
   HedgeRecommendation,
   HedgePerformance,
 } from './TailRiskHedging';
+
+export {
+  EnhancedPortfolioRiskMonitor,
+  createEnhancedPortfolioRiskMonitor,
+} from './EnhancedPortfolioRiskMonitor';
+
+export type {
+  SectorExposure,
+  EnhancedRiskMetrics,
+} from './EnhancedPortfolioRiskMonitor';
