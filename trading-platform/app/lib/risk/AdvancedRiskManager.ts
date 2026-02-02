@@ -61,13 +61,29 @@ export interface RiskLimits {
 }
 
 export interface RiskAlert {
-  type: 'position_limit' | 'drawdown' | 'correlation' | 'volatility' | 'concentration' | 'margin';
+  type: 'position_limit' | 'drawdown' | 'correlation' | 'volatility' | 'concentration' | 'margin' | 'daily_loss';
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   symbol?: string;
   currentValue: number;
   limitValue: number;
   timestamp: number;
+}
+
+export interface OrderValidationResult {
+  allowed: boolean;
+  reasons: string[];
+  violations: RiskAlert[];
+  action: 'allow' | 'alert' | 'reject' | 'halt';
+}
+
+export interface OrderRequest {
+  symbol: string;
+  quantity: number;
+  price: number;
+  side: 'BUY' | 'SELL';
+  stopLoss?: number;
+  type: 'MARKET' | 'LIMIT' | 'STOP';
 }
 
 export interface PortfolioOptimizationParams {
@@ -116,6 +132,9 @@ export class AdvancedRiskManager extends EventEmitter {
   private returnsHistory: Map<string, number[]> = new Map();
   private alerts: RiskAlert[] = [];
   private isTradingHalted: boolean = false;
+  private dailyStartValue: number = 0;
+  private dailyPnL: number = 0;
+  private lastResetDate: Date = new Date();
 
   constructor(limits: Partial<RiskLimits> = {}) {
     super();
@@ -129,6 +148,7 @@ export class AdvancedRiskManager extends EventEmitter {
       orders: [],
     };
     this.metrics = this.initializeMetrics();
+    this.dailyStartValue = 0;
   }
 
   private initializeMetrics(): RiskMetrics {
@@ -351,6 +371,11 @@ export class AdvancedRiskManager extends EventEmitter {
    */
   updateRiskMetrics(portfolio: Portfolio): RiskMetrics {
     this.portfolio = portfolio;
+
+    // Initialize daily start value if not set
+    if (this.dailyStartValue === 0 && portfolio.totalValue > 0) {
+      this.dailyStartValue = portfolio.totalValue;
+    }
 
     // Calculate returns
     const portfolioReturns = this.calculatePortfolioReturns();
@@ -575,6 +600,201 @@ export class AdvancedRiskManager extends EventEmitter {
   }
 
   // ============================================================================
+  // Order Validation and Enforcement
+  // ============================================================================
+
+  /**
+   * 注文を検証してリスク制限に違反していないかチェック
+   */
+  validateOrder(order: OrderRequest): OrderValidationResult {
+    const violations: RiskAlert[] = [];
+    const reasons: string[] = [];
+    
+    // Check if trading is halted
+    if (this.isTradingHalted) {
+      violations.push({
+        type: 'daily_loss',
+        severity: 'critical',
+        message: 'Trading is halted due to risk limit violation',
+        currentValue: 0,
+        limitValue: 0,
+        timestamp: Date.now(),
+      });
+      return {
+        allowed: false,
+        reasons: ['Trading is halted'],
+        violations,
+        action: 'halt',
+      };
+    }
+
+    // Reset daily P&L if needed
+    this.checkAndResetDailyPnL();
+
+    // Check daily loss limit
+    const dailyLoss = this.getDailyLoss();
+    const dailyLossPercent = (dailyLoss / this.portfolio.totalValue) * 100;
+    if (dailyLossPercent >= this.limits.maxDailyLoss && order.side === 'BUY') {
+      violations.push({
+        type: 'daily_loss',
+        severity: 'critical',
+        message: `Daily loss limit reached: ${dailyLossPercent.toFixed(2)}%`,
+        currentValue: dailyLossPercent,
+        limitValue: this.limits.maxDailyLoss,
+        timestamp: Date.now(),
+      });
+      this.haltTrading();
+      return {
+        allowed: false,
+        reasons: [`Daily loss limit reached: ${dailyLossPercent.toFixed(2)}%`],
+        violations,
+        action: 'halt',
+      };
+    }
+
+    // Check position size limit
+    const orderValue = order.quantity * order.price;
+    const positionWeight = orderValue / this.portfolio.totalValue;
+    
+    if (order.side === 'BUY') {
+      // Check if this would exceed max position size
+      const existingPosition = this.portfolio.positions.find((p) => p.symbol === order.symbol);
+      const currentPositionValue = existingPosition 
+        ? existingPosition.currentPrice * existingPosition.quantity 
+        : 0;
+      const totalPositionValue = currentPositionValue + orderValue;
+      const totalPositionWeight = totalPositionValue / this.portfolio.totalValue;
+
+      if (totalPositionWeight > this.limits.maxPositionSize / 100) {
+        violations.push({
+          type: 'position_limit',
+          severity: 'high',
+          message: `Position size limit would be exceeded for ${order.symbol}`,
+          symbol: order.symbol,
+          currentValue: totalPositionWeight,
+          limitValue: this.limits.maxPositionSize / 100,
+          timestamp: Date.now(),
+        });
+        reasons.push(`Position size limit: ${(totalPositionWeight * 100).toFixed(2)}% > ${this.limits.maxPositionSize}%`);
+      }
+    }
+
+    // Check single trade risk limit
+    if (order.stopLoss) {
+      const riskPerShare = Math.abs(order.price - order.stopLoss);
+      const tradeRisk = (riskPerShare * order.quantity) / this.portfolio.totalValue * 100;
+      
+      if (tradeRisk > this.limits.maxSingleTradeRisk) {
+        violations.push({
+          type: 'position_limit',
+          severity: 'high',
+          message: `Single trade risk limit exceeded: ${tradeRisk.toFixed(2)}%`,
+          symbol: order.symbol,
+          currentValue: tradeRisk,
+          limitValue: this.limits.maxSingleTradeRisk,
+          timestamp: Date.now(),
+        });
+        reasons.push(`Trade risk: ${tradeRisk.toFixed(2)}% > ${this.limits.maxSingleTradeRisk}%`);
+      }
+    }
+
+    // Check leverage limit
+    if (order.side === 'BUY') {
+      const totalPositionsValue = this.portfolio.positions.reduce(
+        (sum, pos) => sum + pos.currentPrice * pos.quantity,
+        0
+      );
+      const newLeverage = (totalPositionsValue + orderValue) / this.portfolio.totalValue;
+      
+      if (newLeverage > this.limits.maxLeverage) {
+        violations.push({
+          type: 'margin',
+          severity: 'high',
+          message: `Leverage limit would be exceeded: ${newLeverage.toFixed(2)}x`,
+          currentValue: newLeverage,
+          limitValue: this.limits.maxLeverage,
+          timestamp: Date.now(),
+        });
+        reasons.push(`Leverage: ${newLeverage.toFixed(2)}x > ${this.limits.maxLeverage}x`);
+      }
+    }
+
+    // Check cash reserve
+    if (order.side === 'BUY') {
+      const remainingCash = this.portfolio.cash - orderValue;
+      const cashReservePercent = (remainingCash / this.portfolio.totalValue) * 100;
+      
+      if (cashReservePercent < this.limits.minCashReserve) {
+        violations.push({
+          type: 'margin',
+          severity: 'medium',
+          message: `Minimum cash reserve would not be maintained: ${cashReservePercent.toFixed(2)}%`,
+          currentValue: cashReservePercent,
+          limitValue: this.limits.minCashReserve,
+          timestamp: Date.now(),
+        });
+        reasons.push(`Cash reserve: ${cashReservePercent.toFixed(2)}% < ${this.limits.minCashReserve}%`);
+      }
+    }
+
+    // Determine action based on violations
+    let action: 'allow' | 'alert' | 'reject' | 'halt' = 'allow';
+    
+    if (violations.length > 0) {
+      const criticalViolations = violations.filter((v) => v.severity === 'critical');
+      const highViolations = violations.filter((v) => v.severity === 'high');
+      
+      if (criticalViolations.length > 0) {
+        action = 'halt';
+      } else if (highViolations.length > 0) {
+        action = 'reject';
+      } else {
+        action = 'alert';
+      }
+    }
+
+    // Add alerts for violations
+    violations.forEach((violation) => this.addAlert(violation));
+
+    return {
+      allowed: action === 'allow' || action === 'alert',
+      reasons: reasons.length > 0 ? reasons : ['Order passed all risk checks'],
+      violations,
+      action,
+    };
+  }
+
+  /**
+   * 日次P&Lをリセット
+   */
+  private checkAndResetDailyPnL(): void {
+    const today = new Date();
+    if (today.toDateString() !== this.lastResetDate.toDateString()) {
+      this.dailyStartValue = this.portfolio.totalValue;
+      this.dailyPnL = 0;
+      this.lastResetDate = today;
+    }
+  }
+
+  /**
+   * 本日の損失を取得
+   */
+  getDailyLoss(): number {
+    this.checkAndResetDailyPnL();
+    const currentPnL = this.portfolio.totalValue - this.dailyStartValue;
+    this.dailyPnL = currentPnL;
+    return currentPnL < 0 ? Math.abs(currentPnL) : 0;
+  }
+
+  /**
+   * 本日のP&L（パーセント）を取得
+   */
+  getDailyPnLPercent(): number {
+    const pnl = this.portfolio.totalValue - this.dailyStartValue;
+    return (pnl / this.dailyStartValue) * 100;
+  }
+
+  // ============================================================================
   // Risk Limit Checking
   // ============================================================================
 
@@ -582,6 +802,21 @@ export class AdvancedRiskManager extends EventEmitter {
    * リスク制限をチェック
    */
   private checkRiskLimits(): void {
+    // Check daily loss
+    const dailyLoss = this.getDailyLoss();
+    const dailyLossPercent = (dailyLoss / this.portfolio.totalValue) * 100;
+    if (dailyLossPercent >= this.limits.maxDailyLoss) {
+      this.addAlert({
+        type: 'daily_loss',
+        severity: 'critical',
+        message: `Maximum daily loss reached: ${dailyLossPercent.toFixed(2)}%`,
+        currentValue: dailyLossPercent,
+        limitValue: this.limits.maxDailyLoss,
+        timestamp: Date.now(),
+      });
+      this.haltTrading();
+    }
+
     // Check drawdown
     if (this.metrics.currentDrawdown > this.limits.maxDrawdown / 100) {
       this.addAlert({
@@ -837,6 +1072,49 @@ export class AdvancedRiskManager extends EventEmitter {
    */
   isHalted(): boolean {
     return this.isTradingHalted;
+  }
+
+  /**
+   * 現在のリスク状態を取得
+   */
+  getRiskStatus(): {
+    limits: RiskLimits;
+    usage: {
+      dailyLossPercent: number;
+      maxDrawdownPercent: number;
+      leverageRatio: number;
+      concentrationRisk: number;
+      cashReservePercent: number;
+    };
+    isHalted: boolean;
+    recentAlerts: RiskAlert[];
+  } {
+    this.checkAndResetDailyPnL();
+    
+    const dailyLoss = this.getDailyLoss();
+    const dailyLossPercent = (dailyLoss / this.portfolio.totalValue) * 100;
+    const cashReservePercent = (this.portfolio.cash / this.portfolio.totalValue) * 100;
+
+    return {
+      limits: this.limits,
+      usage: {
+        dailyLossPercent,
+        maxDrawdownPercent: this.metrics.currentDrawdown * 100,
+        leverageRatio: this.metrics.leverage,
+        concentrationRisk: this.metrics.concentrationRisk,
+        cashReservePercent,
+      },
+      isHalted: this.isTradingHalted,
+      recentAlerts: this.alerts.slice(-10),
+    };
+  }
+
+  /**
+   * リスク制限を更新
+   */
+  updateLimits(limits: Partial<RiskLimits>): void {
+    this.limits = { ...this.limits, ...limits };
+    this.emit('limits_updated', this.limits);
   }
 }
 

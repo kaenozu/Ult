@@ -849,4 +849,278 @@ describe('AdvancedRiskManager', () => {
       expect(alerts).toEqual([]);
     });
   });
+
+  describe('Order Validation', () => {
+    beforeEach(() => {
+      // Initialize portfolio with starting values
+      const portfolio: Portfolio = {
+        cash: 50000,
+        positions: [],
+        totalValue: 100000,
+        dailyPnL: 0,
+        totalProfit: 0,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(portfolio);
+    });
+
+    it('should allow valid order', () => {
+      const order = {
+        symbol: 'AAPL',
+        quantity: 100,
+        price: 150,
+        side: 'BUY' as const,
+        stopLoss: 145,
+        type: 'MARKET' as const,
+      };
+
+      const result = riskManager.validateOrder(order);
+
+      expect(result.allowed).toBe(true);
+      expect(result.action).toBe('allow');
+      expect(result.violations.length).toBe(0);
+    });
+
+    it('should reject order exceeding position size limit', () => {
+      const order = {
+        symbol: 'AAPL',
+        quantity: 200, // $30,000 = 30% of portfolio
+        price: 150,
+        side: 'BUY' as const,
+        type: 'MARKET' as const,
+      };
+
+      const result = riskManager.validateOrder(order);
+
+      expect(result.allowed).toBe(false);
+      expect(result.action).toBe('reject');
+      expect(result.violations.length).toBeGreaterThan(0);
+      expect(result.violations[0].type).toBe('position_limit');
+    });
+
+    it('should reject order exceeding single trade risk', () => {
+      const order = {
+        symbol: 'AAPL',
+        quantity: 100,
+        price: 150,
+        side: 'BUY' as const,
+        stopLoss: 120, // 20% stop loss = too much risk
+        type: 'MARKET' as const,
+      };
+
+      const result = riskManager.validateOrder(order);
+
+      expect(result.allowed).toBe(false);
+      expect(result.violations.some((v) => v.type === 'position_limit')).toBe(true);
+    });
+
+    it('should halt trading on daily loss limit', () => {
+      // Initialize portfolio with starting values
+      const initialPortfolio: Portfolio = {
+        cash: 50000,
+        positions: [],
+        totalValue: 100000,
+        dailyPnL: 0,
+        totalProfit: 0,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(initialPortfolio);
+
+      // Simulate loss
+      const portfolio: Portfolio = {
+        cash: 50000,
+        positions: [],
+        totalValue: 94000, // 6% loss
+        dailyPnL: -6000,
+        totalProfit: -6000,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(portfolio);
+
+      const order = {
+        symbol: 'AAPL',
+        quantity: 10,
+        price: 150,
+        side: 'BUY' as const,
+        type: 'MARKET' as const,
+      };
+
+      const result = riskManager.validateOrder(order);
+
+      expect(result.allowed).toBe(false);
+      expect(result.action).toBe('halt');
+      expect(riskManager.isHalted()).toBe(true);
+    });
+
+    it('should reject order when halted', () => {
+      // Initialize and halt trading
+      const initialPortfolio: Portfolio = {
+        cash: 50000,
+        positions: [],
+        totalValue: 100000,
+        dailyPnL: 0,
+        totalProfit: 0,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(initialPortfolio);
+
+      const portfolio: Portfolio = {
+        cash: 50000,
+        positions: [],
+        totalValue: 94000,
+        dailyPnL: -6000,
+        totalProfit: -6000,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(portfolio);
+
+      const order = {
+        symbol: 'AAPL',
+        quantity: 10,
+        price: 150,
+        side: 'BUY' as const,
+        type: 'MARKET' as const,
+      };
+
+      riskManager.validateOrder(order);
+
+      const result2 = riskManager.validateOrder({
+        symbol: 'GOOGL',
+        quantity: 5,
+        price: 100,
+        side: 'BUY' as const,
+        type: 'MARKET' as const,
+      });
+
+      expect(result2.allowed).toBe(false);
+      expect(result2.reasons[0]).toContain('halted');
+    });
+
+    it('should check leverage limits', () => {
+      const order = {
+        symbol: 'AAPL',
+        quantity: 800, // $120,000 position value
+        price: 150,
+        side: 'BUY' as const,
+        type: 'MARKET' as const,
+      };
+
+      const result = riskManager.validateOrder(order);
+
+      expect(result.allowed).toBe(false);
+      expect(result.violations.some((v) => v.type === 'margin')).toBe(true);
+    });
+
+    it('should check cash reserve', () => {
+      const portfolio: Portfolio = {
+        cash: 15000, // Only 15% cash
+        positions: [],
+        totalValue: 100000,
+        dailyPnL: 0,
+        totalProfit: 0,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(portfolio);
+
+      const order = {
+        symbol: 'AAPL',
+        quantity: 40, // $6,000 would leave only 9% cash
+        price: 150,
+        side: 'BUY' as const,
+        type: 'MARKET' as const,
+      };
+
+      const result = riskManager.validateOrder(order);
+
+      expect(result.allowed).toBe(true); // Alert but allow
+      expect(result.action).toBe('alert');
+      expect(result.violations.some((v) => v.type === 'margin')).toBe(true);
+    });
+
+    it('should allow SELL orders even with violations', () => {
+      const order = {
+        symbol: 'AAPL',
+        quantity: 100,
+        price: 150,
+        side: 'SELL' as const,
+        type: 'MARKET' as const,
+      };
+
+      const result = riskManager.validateOrder(order);
+
+      expect(result.allowed).toBe(true);
+    });
+  });
+
+  describe('Risk Status', () => {
+    it('should get current risk status', () => {
+      const portfolio: Portfolio = {
+        cash: 50000,
+        positions: [
+          {
+            symbol: 'AAPL',
+            quantity: 100,
+            entryPrice: 150,
+            currentPrice: 150,
+            unrealizedPnL: 0,
+            realizedPnL: 0,
+            side: 'LONG',
+          },
+        ],
+        totalValue: 65000,
+        dailyPnL: 0,
+        totalProfit: 0,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(portfolio);
+
+      const status = riskManager.getRiskStatus();
+
+      expect(status.limits).toBeDefined();
+      expect(status.usage).toBeDefined();
+      expect(status.isHalted).toBe(false);
+      expect(status.usage.cashReservePercent).toBeCloseTo(76.92, 1);
+    });
+
+    it('should track daily P&L', () => {
+      const portfolio1: Portfolio = {
+        cash: 50000,
+        positions: [],
+        totalValue: 100000,
+        dailyPnL: 0,
+        totalProfit: 0,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(portfolio1);
+
+      // Wait a bit to ensure we're still in the same day
+      const portfolio2: Portfolio = {
+        cash: 50000,
+        positions: [],
+        totalValue: 98000,
+        dailyPnL: -2000,
+        totalProfit: -2000,
+        orders: [],
+      };
+      riskManager.updateRiskMetrics(portfolio2);
+
+      const dailyLoss = riskManager.getDailyLoss();
+      const dailyPnLPercent = riskManager.getDailyPnLPercent();
+      
+      expect(dailyLoss).toBe(2000);
+      expect(dailyPnLPercent).toBeCloseTo(-2, 1);
+    });
+
+    it('should update limits', () => {
+      const updateSpy = jest.fn();
+      riskManager.on('limits_updated', updateSpy);
+
+      riskManager.updateLimits({
+        maxPositionSize: 15,
+        maxDailyLoss: 3,
+      });
+
+      expect(updateSpy).toHaveBeenCalled();
+    });
+  });
 });
