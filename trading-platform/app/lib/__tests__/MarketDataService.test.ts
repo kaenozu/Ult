@@ -5,22 +5,22 @@
  * 市場データの取得、相関分析、トレンド検出のテスト
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { MarketDataService } from '../MarketDataService';
 import type { OHLCV } from '@/app/types';
 
 describe('MarketDataService', () => {
   let service: MarketDataService;
-  let fetchMock: ReturnType<typeof vi.fn>;
+  let fetchMock: jest.Mock;
 
   beforeEach(() => {
     service = new MarketDataService();
-    fetchMock = vi.fn();
+    fetchMock = jest.fn() as jest.Mock;
     global.fetch = fetchMock;
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('市場データの取得', () => {

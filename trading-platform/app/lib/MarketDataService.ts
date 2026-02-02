@@ -3,6 +3,7 @@ import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { logError } from '@/app/lib/errors';
 import { dataQualityChecker, dataCompletionPipeline, dataLatencyMonitor } from './data';
 import type { MarketData } from '@/app/types/data-quality';
+import { CacheManager } from './api/CacheManager';
 
 /**
  * 市場インデックスの定義
@@ -71,20 +72,16 @@ export const MARKET_INDICES: MarketIndex[] = [
  * ```
  */
 export class MarketDataService {
-  private marketDataCache = new Map<string, OHLCV[]>();
-  private cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  private marketDataCache = new CacheManager<OHLCV[]>({ ttl: 5 * 60 * 1000 }); // 5 minutes
   private qualityCheckEnabled = true;
   private dataCompletionEnabled = true;
   private latencyMonitoringEnabled = true;
-  /** Tracks in-flight API requests to prevent duplicate fetches for the same symbol */
-  private pendingRequests = new Map<string, Promise<OHLCV[]>>();
 
   /**
    * 市場データを取得する
    * 
    * キャッシュが有効な場合はキャッシュから返却し、
    * 無効な場合はAPIから新規取得する。
-   * リクエスト重複排除により、同時に同じシンボルのデータを複数回取得することを防ぐ。
    * 
    * @param symbol - 銘柄シンボル（例: '^N225', 'AAPL'）
    * @returns OHLCVデータ配列。エラー時は空配列を返す
@@ -99,43 +96,12 @@ export class MarketDataService {
    * ```
    */
   async fetchMarketData(symbol: string): Promise<OHLCV[]> {
-    const now = Date.now();
+    // Check cache first
     const cached = this.marketDataCache.get(symbol);
-
-    // Check cache validity
     if (cached && cached.length > 0) {
-      const cacheAge = now - new Date(cached[cached.length - 1].date).getTime();
-      if (cacheAge < this.cacheTimeout) {
-        return cached;
-      }
+      return cached;
     }
 
-    // Check for pending request to avoid duplicate fetches
-    const pendingRequest = this.pendingRequests.get(symbol);
-    if (pendingRequest) {
-      return pendingRequest;
-    }
-
-    // Create new request promise
-    const requestPromise = this.fetchMarketDataInternal(symbol);
-    this.pendingRequests.set(symbol, requestPromise);
-
-    try {
-      const result = await requestPromise;
-      return result;
-    } finally {
-      // Clean up pending request after completion
-      this.pendingRequests.delete(symbol);
-    }
-  }
-
-  /**
-   * Internal method to fetch market data from API
-   * 
-   * @param symbol - 銘柄シンボル
-   * @returns OHLCVデータ配列
-   */
-  private async fetchMarketDataInternal(symbol: string): Promise<OHLCV[]> {
     try {
       const fetchStartTime = Date.now();
       const response = await fetch(`/api/market?type=history&symbol=${symbol}`);
@@ -174,6 +140,7 @@ export class MarketDataService {
           }
         }
 
+        // Cache the processed data
         this.marketDataCache.set(symbol, ohlcv);
         
         // Log fetch performance
@@ -439,26 +406,6 @@ export class MarketDataService {
    */
   setLatencyMonitoringEnabled(enabled: boolean): void {
     this.latencyMonitoringEnabled = enabled;
-  }
-
-  /**
-   * Clear all cached data and pending requests
-   * 
-   * Useful for forcing a fresh fetch or during testing
-   */
-  clearCache(): void {
-    this.marketDataCache.clear();
-    this.pendingRequests.clear();
-  }
-
-  /**
-   * Clear cache for a specific symbol
-   * 
-   * @param symbol - Symbol to clear from cache
-   */
-  clearSymbolCache(symbol: string): void {
-    this.marketDataCache.delete(symbol);
-    this.pendingRequests.delete(symbol);
   }
 
   /**

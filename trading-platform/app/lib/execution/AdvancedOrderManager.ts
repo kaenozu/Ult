@@ -24,6 +24,8 @@ import {
   isTrailingStopOrder,
   isBracketOrder,
 } from '../../types/advancedOrder';
+import { getGlobalRiskManager } from '../risk/AdvancedRiskManager';
+import type { OrderRequest } from '../risk/AdvancedRiskManager';
 
 // ============================================================================
 // Types
@@ -46,6 +48,7 @@ export interface AdvancedOrderManagerConfig {
   enableLogging: boolean;
   maxActiveOrders: number;
   priceUpdateInterval: number; // milliseconds
+  enableRiskValidation: boolean; // Enable risk manager validation
 }
 
 // ============================================================================
@@ -56,6 +59,7 @@ const DEFAULT_CONFIG: AdvancedOrderManagerConfig = {
   enableLogging: true,
   maxActiveOrders: 100,
   priceUpdateInterval: 1000,
+  enableRiskValidation: true, // Enable risk validation by default
 };
 
 // ============================================================================
@@ -531,11 +535,63 @@ export class AdvancedOrderManager extends EventEmitter {
   // ============================================================================
 
   /**
+   * Validate order against risk limits
+   */
+  private validateOrderRisk(order: BaseOrder): { allowed: boolean; reason?: string } {
+    if (!this.config.enableRiskValidation) {
+      return { allowed: true };
+    }
+
+    try {
+      const riskManager = getGlobalRiskManager();
+      
+      // Get market price for the symbol
+      const marketPrice = this.marketPrices.get(order.symbol)?.price || 0;
+      
+      // Convert order to OrderRequest format
+      const orderRequest: OrderRequest = {
+        symbol: order.symbol,
+        quantity: order.quantity,
+        price: marketPrice,
+        side: order.side,
+        stopLoss: (order as StopLossOrder).stopPrice,
+        type: 'MARKET', // Simplified for now
+      };
+
+      const validation = riskManager.validateOrder(orderRequest);
+      
+      if (!validation.allowed) {
+        this.log(`Order rejected by risk manager: ${validation.reasons.join(', ')}`);
+        return {
+          allowed: false,
+          reason: validation.reasons.join('; '),
+        };
+      }
+
+      return { allowed: true };
+    } catch (error) {
+      // If risk manager fails, log and allow order (fail-open)
+      this.log(`Risk validation error: ${error}`);
+      return { allowed: true };
+    }
+  }
+
+  /**
    * Add an order to the manager
    */
   private addOrder(order: AdvancedOrder): void {
     if (this.orders.size >= this.config.maxActiveOrders) {
       throw new Error('Maximum number of active orders reached');
+    }
+
+    // Validate against risk limits for BUY orders
+    if ('side' in order && order.side === 'BUY') {
+      const validation = this.validateOrderRisk(order as BaseOrder);
+      if (!validation.allowed) {
+        const error = new Error(`Order rejected: ${validation.reason}`);
+        this.emit('order_rejected', { orderId: order.id, reason: validation.reason });
+        throw error;
+      }
     }
 
     this.orders.set(order.id, order);

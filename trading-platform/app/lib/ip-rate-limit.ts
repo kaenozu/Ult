@@ -83,6 +83,13 @@ export class IpRateLimiter {
       maxEntries: this.maxEntries,
     };
   }
+
+  /**
+   * Reset all counters - useful for testing
+   */
+  reset(): void {
+    this.counters.clear();
+  }
 }
 
 // Global instance handling to persist across hot reloads in dev
