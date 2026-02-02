@@ -14,11 +14,16 @@ describe('MLModelService', () => {
     
     baseFeatures = {
       rsi: 50,
+      rsiChange: 0,
       sma5: 0,
       sma20: 0,
+      sma50: 0,
       priceMomentum: 0,
-      volumeChange: 0,
-      volatility: 0.02
+      volumeRatio: 1.0,
+      volatility: 0.02,
+      macdSignal: 0,
+      bollingerPosition: 50,
+      atrPercent: 2.0
     };
   });
 
@@ -47,11 +52,16 @@ describe('MLModelService', () => {
     it('should return higher prediction for bullish features', () => {
       const bullishFeatures: PredictionFeatures = {
         rsi: 15, // Oversold
+        rsiChange: -5,
         sma5: 5,
         sma20: 3,
+        sma50: 2,
         priceMomentum: 5,
-        volumeChange: 0.5,
-        volatility: 0.02
+        volumeRatio: 1.5,
+        volatility: 0.02,
+        macdSignal: 2,
+        bollingerPosition: 20,
+        atrPercent: 2.0
       };
       
       const result = service.predict(bullishFeatures);
@@ -64,11 +74,16 @@ describe('MLModelService', () => {
     it('should return lower prediction for bearish features', () => {
       const bearishFeatures: PredictionFeatures = {
         rsi: 85, // Overbought
+        rsiChange: 5,
         sma5: -5,
         sma20: -3,
+        sma50: -2,
         priceMomentum: -5,
-        volumeChange: -0.5,
-        volatility: 0.02
+        volumeRatio: 0.8,
+        volatility: 0.02,
+        macdSignal: -2,
+        bollingerPosition: 80,
+        atrPercent: 2.0
       };
       
       const result = service.predict(bearishFeatures);
@@ -194,11 +209,16 @@ describe('MLModelService', () => {
     it('should never exceed 95', () => {
       const extremeFeatures: PredictionFeatures = {
         rsi: 5,
+        rsiChange: -10,
         sma5: 10,
         sma20: 10,
+        sma50: 10,
         priceMomentum: 10,
-        volumeChange: 2,
-        volatility: 0.05
+        volumeRatio: 2.0,
+        volatility: 0.05,
+        macdSignal: 5,
+        bollingerPosition: 10,
+        atrPercent: 5.0
       };
       
       const result = service.predict(extremeFeatures);
@@ -209,11 +229,16 @@ describe('MLModelService', () => {
     it('should never go below 50', () => {
       const neutralFeatures: PredictionFeatures = {
         rsi: 50,
+        rsiChange: 0,
         sma5: 0,
         sma20: 0,
+        sma50: 0,
         priceMomentum: 0,
-        volumeChange: 0,
-        volatility: 0.01
+        volumeRatio: 1.0,
+        volatility: 0.01,
+        macdSignal: 0,
+        bollingerPosition: 50,
+        atrPercent: 2.0
       };
       
       const result = service.predict(neutralFeatures);
@@ -221,9 +246,15 @@ describe('MLModelService', () => {
       expect(result.confidence).toBeGreaterThanOrEqual(50);
     });
 
-    it('should increase for very extreme RSI (< 15 or > 85)', () => {
-      const veryOversold: PredictionFeatures = { ...baseFeatures, rsi: 10 };
-      const moderateOversold: PredictionFeatures = { ...baseFeatures, rsi: 25 };
+    it('should handle edge case: very extreme RSI (< 15 or > 85)', () => {
+      const veryOversold: PredictionFeatures = { 
+        ...baseFeatures, 
+        rsi: 10 
+      };
+      const moderateOversold: PredictionFeatures = { 
+        ...baseFeatures, 
+        rsi: 25 
+      };
       
       const veryResult = service.predict(veryOversold);
       const moderateResult = service.predict(moderateOversold);
@@ -234,20 +265,30 @@ describe('MLModelService', () => {
     it('should increase for large ensemble predictions', () => {
       const strongFeatures: PredictionFeatures = {
         rsi: 15,
+        rsiChange: -5,
         sma5: 5,
         sma20: 3,
+        sma50: 2,
         priceMomentum: 5,
-        volumeChange: 1,
-        volatility: 0.02
+        volumeRatio: 1.5,
+        volatility: 0.02,
+        macdSignal: 2,
+        bollingerPosition: 20,
+        atrPercent: 2.0
       };
       
       const weakFeatures: PredictionFeatures = {
         rsi: 45,
+        rsiChange: 0,
         sma5: 0.5,
         sma20: 0.3,
+        sma50: 0.2,
         priceMomentum: 0.5,
-        volumeChange: 0.1,
-        volatility: 0.02
+        volumeRatio: 1.0,
+        volatility: 0.02,
+        macdSignal: 0.2,
+        bollingerPosition: 48,
+        atrPercent: 2.0
       };
       
       const strongResult = service.predict(strongFeatures);
@@ -261,11 +302,16 @@ describe('MLModelService', () => {
     it('should handle zero values for all features', () => {
       const zeroFeatures: PredictionFeatures = {
         rsi: 0,
+        rsiChange: 0,
         sma5: 0,
         sma20: 0,
+        sma50: 0,
         priceMomentum: 0,
-        volumeChange: 0,
-        volatility: 0
+        volumeRatio: 0,
+        volatility: 0,
+        macdSignal: 0,
+        bollingerPosition: 0,
+        atrPercent: 0
       };
       
       const result = service.predict(zeroFeatures);
@@ -293,11 +339,16 @@ describe('MLModelService', () => {
     it('should handle NaN in features', () => {
       const nanFeatures: PredictionFeatures = {
         rsi: NaN,
+        rsiChange: NaN,
         sma5: NaN,
         sma20: NaN,
+        sma50: NaN,
         priceMomentum: NaN,
-        volumeChange: NaN,
-        volatility: NaN
+        volumeRatio: NaN,
+        volatility: NaN,
+        macdSignal: NaN,
+        bollingerPosition: NaN,
+        atrPercent: NaN
       };
       
       const result = service.predict(nanFeatures);
@@ -319,11 +370,16 @@ describe('MLModelService', () => {
     it('should handle very large numbers', () => {
       const largeFeatures: PredictionFeatures = {
         rsi: 1000,
+        rsiChange: 1000,
         sma5: 1000,
         sma20: 1000,
+        sma50: 1000,
         priceMomentum: 1000,
-        volumeChange: 1000,
-        volatility: 1000
+        volumeRatio: 1000,
+        volatility: 1000,
+        macdSignal: 1000,
+        bollingerPosition: 1000,
+        atrPercent: 1000
       };
       
       const result = service.predict(largeFeatures);
@@ -345,11 +401,16 @@ describe('MLModelService', () => {
     it('should respect individual model contributions', () => {
       const features: PredictionFeatures = {
         rsi: 50,
+        rsiChange: 0,
         sma5: 1,
         sma20: 1,
+        sma50: 1,
         priceMomentum: 1,
-        volumeChange: 0.5,
-        volatility: 0.02
+        volumeRatio: 1.0,
+        volatility: 0.02,
+        macdSignal: 0.5,
+        bollingerPosition: 50,
+        atrPercent: 2.0
       };
       
       const result = service.predict(features);
