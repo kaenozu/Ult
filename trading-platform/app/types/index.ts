@@ -270,6 +270,35 @@ export interface JournalEntry {
   profitPercent?: number;
   notes: string;
   status: 'OPEN' | 'CLOSED';
+  // TRADING-025: Enhanced psychology fields
+  tradePlan?: {
+    strategy: string;
+    entryReason: string;
+    targetPrice?: number;
+    stopLoss?: number;
+    riskRewardRatio?: number;
+  };
+  emotionBefore?: {
+    fear: number; // 1-5
+    greed: number; // 1-5
+    confidence: number; // 1-5
+    stress: number; // 1-5
+  };
+  emotionAfter?: {
+    fear: number;
+    greed: number;
+    confidence: number;
+    stress: number;
+  };
+  reflection?: {
+    lessonsLearned?: string;
+    whatWorked?: string;
+    whatDidntWork?: string;
+    wouldDoAgain?: boolean;
+    improvementAreas?: string[];
+  };
+  followedPlan?: boolean;
+  biasDetected?: string[];
 }
 
 export interface Order {
