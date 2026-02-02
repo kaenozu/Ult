@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, BacktestTrade } from './AdvancedBacktestEngine';
+import { BacktestResult, Trade as BacktestTrade } from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -86,19 +86,25 @@ export interface MonteCarloProbabilities {
 
 export interface MonteCarloConfidenceIntervals {
   // 90%信頼区間
-  confidence90: ConfidenceInterval;
+  confidence90: PerMetricConfidence;
 
   // 95%信頼区間
-  confidence95: ConfidenceInterval;
+  confidence95: PerMetricConfidence;
 
   // 99%信頼区間
-  confidence99: ConfidenceInterval;
+  confidence99: PerMetricConfidence;
 }
 
 export interface ConfidenceInterval {
   lower: number;
   upper: number;
   range: number;
+}
+
+export interface PerMetricConfidence {
+  returns: ConfidenceInterval;
+  sharpe: ConfidenceInterval;
+  drawdown: ConfidenceInterval;
 }
 
 export interface DistributionStatistics {
@@ -505,7 +511,9 @@ export class MonteCarloSimulator extends EventEmitter {
 
     // 各メトリクスの統計を計算
     for (const metric of this.config.metrics) {
-      const values = simulations.map(s => s.metrics[metric]);
+      const values = simulations
+        .map(s => s.metrics[metric])
+        .filter((v): v is number => v !== undefined);
       stats.set(metric, calculateStats(values));
     }
 
@@ -686,14 +694,5 @@ export function summarizeMonteCarloResult(result: MonteCarloResult): string {
 // ============================================================================
 // Singleton Export
 // ============================================================================
-
-import { createSingleton } from '../utils/singleton';
-
-const { getInstance, resetInstance } = createSingleton(
-  (config?: Partial<MonteCarloConfig>) => new MonteCarloSimulator(config)
-);
-
-export const getGlobalMonteCarloSimulator = getInstance;
-export const resetGlobalMonteCarloSimulator = resetInstance;
 
 export default MonteCarloSimulator;

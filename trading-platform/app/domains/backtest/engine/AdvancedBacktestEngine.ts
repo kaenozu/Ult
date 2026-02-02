@@ -73,6 +73,7 @@ export interface PerformanceMetrics {
   losingTrades: number;
   calmarRatio: number;
   omegaRatio: number;
+  finalCapital?: number; // Optional: used by MonteCarloSimulator
 }
 
 export interface Strategy {

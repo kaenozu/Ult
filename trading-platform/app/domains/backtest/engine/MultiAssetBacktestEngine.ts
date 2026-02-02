@@ -8,13 +8,13 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV, BacktestResult, BacktestTrade } from '@/app/types';
-import { technicalIndicatorService } from '../TechnicalIndicatorService';
+import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
 import { 
   RSI_CONFIG, 
   SMA_CONFIG, 
   BACKTEST_CONFIG,
   RISK_MANAGEMENT 
-} from '../constants';
+} from '@/app/lib/constants';
 
 // ============================================================================
 // Types
@@ -1032,14 +1032,5 @@ export class MultiAssetBacktestEngine extends EventEmitter {
 // ============================================================================
 // Singleton Instance
 // ============================================================================
-
-import { createSingleton } from '../utils/singleton';
-
-const { getInstance, resetInstance } = createSingleton(
-  (config?: Partial<MultiAssetBacktestConfig>) => new MultiAssetBacktestEngine(config)
-);
-
-export const getGlobalMultiAssetBacktestEngine = getInstance;
-export const resetGlobalMultiAssetBacktestEngine = resetInstance;
 
 export default MultiAssetBacktestEngine;
