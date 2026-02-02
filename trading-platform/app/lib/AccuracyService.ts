@@ -12,6 +12,7 @@ import {
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { measurePerformance } from './performance-utils';
+import { Result, ok, err, DataError } from './errors';
 /**
  * Service to handle simulation, backtesting, and accuracy metrics.
  */
@@ -438,13 +439,20 @@ class AccuracyService {
     /**
      * 過去的中率をリアルタイム計算（スライディングウィンドウ型）
      * データ期間を252日（1年分）に拡大して精度向上
+     * Result型を使用した型安全なエラーハンドリング
      */
-    calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): {
+    calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): Result<{
         hitRate: number;
         directionalAccuracy: number;
         totalTrades: number;
-    } | null {
-        if (data.length < 252) return null;
+    }, DataError> {
+        if (data.length < 252) {
+            return err(new DataError(
+                'Insufficient data for accuracy calculation (minimum 252 days required)',
+                symbol,
+                'historical'
+            ));
+        }
 
         const windowSize = 20;
         let hits = 0;
@@ -476,11 +484,11 @@ class AccuracyService {
             total++;
         }
 
-        return {
+        return ok({
             hitRate: total > 0 ? Math.round((hits / total) * 100) : 0,
             directionalAccuracy: total > 0 ? Math.round((dirHits / total) * 100) : 0,
             totalTrades: total,
-        };
+        });
     }
 
     /**

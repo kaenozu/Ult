@@ -15,6 +15,7 @@ import {
   ModelMetrics,
   ModelTrainingData
 } from './tensorflow-model-service';
+import { Result, ok, err, AppError, tryCatchAsync, logError } from '../errors';
 
 /**
  * ML予測モデルサービス
@@ -57,56 +58,67 @@ export class MLModelService {
 
   /**
    * TensorFlow.jsモデルを使用した予測（非同期版）
+   * Result型を使用して型安全なエラーハンドリング
    */
-  async predictAsync(features: PredictionFeatures): Promise<ModelPrediction> {
+  async predictAsync(features: PredictionFeatures): Promise<Result<ModelPrediction, AppError>> {
     if (this.useTensorFlowModels && this.lstmModel && this.gruModel && this.ffModel) {
-      return this.predictWithTensorFlow(features);
+      const result = await this.predictWithTensorFlow(features);
+      
+      // エラーの場合はフォールバック
+      if (result.isErr) {
+        logError(result.error, 'MLModelService.predictAsync');
+        return ok(this.predict(features));
+      }
+      
+      return result;
     }
     
     // Fallback to rule-based predictions
-    return this.predict(features);
+    return ok(this.predict(features));
   }
 
   /**
    * TensorFlow.jsモデルを使用した予測
+   * Result型を使用した型安全なエラーハンドリング
    */
-  private async predictWithTensorFlow(features: PredictionFeatures): Promise<ModelPrediction> {
-    const featureArray = featuresToArray(features);
+  private async predictWithTensorFlow(features: PredictionFeatures): Promise<Result<ModelPrediction, AppError>> {
+    return tryCatchAsync(
+      async () => {
+        const featureArray = featuresToArray(features);
 
-    try {
-      // Get predictions from all models
-      const ffPrediction = await this.ffModel!.predict(featureArray);
-      const gruPrediction = await this.gruModel!.predict(featureArray);
-      const lstmPrediction = await this.lstmModel!.predict(featureArray);
+        // Get predictions from all models
+        const ffPrediction = await this.ffModel!.predict(featureArray);
+        const gruPrediction = await this.gruModel!.predict(featureArray);
+        const lstmPrediction = await this.lstmModel!.predict(featureArray);
 
-      // Calculate ensemble prediction
-      const ensemblePrediction = 
-        ffPrediction * this.weights.RF + 
-        gruPrediction * this.weights.XGB + 
-        lstmPrediction * this.weights.LSTM;
+        // Calculate ensemble prediction
+        const ensemblePrediction = 
+          ffPrediction * this.weights.RF + 
+          gruPrediction * this.weights.XGB + 
+          lstmPrediction * this.weights.LSTM;
 
-      // Calculate confidence based on model metrics and agreement
-      const confidence = this.calculateTensorFlowConfidence(
-        ffPrediction,
-        gruPrediction,
-        lstmPrediction,
-        ensemblePrediction
-      );
+        // Calculate confidence based on model metrics and agreement
+        const confidence = this.calculateTensorFlowConfidence(
+          ffPrediction,
+          gruPrediction,
+          lstmPrediction,
+          ensemblePrediction
+        );
 
-      return {
-        rfPrediction: ffPrediction,
-        xgbPrediction: gruPrediction,
-        lstmPrediction: lstmPrediction,
-        ensemblePrediction,
-        confidence
-      };
-    } catch (error) {
-      // Log error but fallback to rule-based prediction
-      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        console.error('TensorFlow prediction error:', error);
-      }
-      return this.predict(features);
-    }
+        return {
+          rfPrediction: ffPrediction,
+          xgbPrediction: gruPrediction,
+          lstmPrediction: lstmPrediction,
+          ensemblePrediction,
+          confidence
+        };
+      },
+      (error) => new AppError(
+        `TensorFlow prediction failed: ${error instanceof Error ? error.message : String(error)}`,
+        'ML_PREDICTION_ERROR',
+        'medium'
+      )
+    );
   }
 
   /**
@@ -186,26 +198,34 @@ export class MLModelService {
 
   /**
    * モデルを読み込む
+   * Result型を使用した型安全なエラーハンドリング
    */
-  async loadModels(): Promise<void> {
-    try {
-      this.ffModel = new FeedForwardModel();
-      this.gruModel = new GRUModel();
-      this.lstmModel = new LSTMModel();
+  async loadModels(): Promise<Result<void, AppError>> {
+    return tryCatchAsync(
+      async () => {
+        this.ffModel = new FeedForwardModel();
+        this.gruModel = new GRUModel();
+        this.lstmModel = new LSTMModel();
 
-      await Promise.all([
-        this.ffModel.loadModel('ml-ff-model'),
-        this.gruModel.loadModel('ml-gru-model'),
-        this.lstmModel.loadModel('ml-lstm-model')
-      ]);
+        await Promise.all([
+          this.ffModel.loadModel('ml-ff-model'),
+          this.gruModel.loadModel('ml-gru-model'),
+          this.lstmModel.loadModel('ml-lstm-model')
+        ]);
 
-      this.useTensorFlowModels = true;
-    } catch (error) {
-      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        console.error('Failed to load models:', error);
+        this.useTensorFlowModels = true;
+      },
+      (error) => {
+        this.useTensorFlowModels = false;
+        const err = new AppError(
+          `Failed to load models: ${error instanceof Error ? error.message : String(error)}`,
+          'MODEL_LOAD_ERROR',
+          'high'
+        );
+        logError(err, 'MLModelService.loadModels');
+        return err;
       }
-      this.useTensorFlowModels = false;
-    }
+    );
   }
 
   /**
