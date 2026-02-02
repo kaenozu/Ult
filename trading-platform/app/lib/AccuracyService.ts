@@ -11,7 +11,7 @@ import {
 } from './constants';
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
-import { measurePerformance } from './performance';
+import { measurePerformance } from './performance-utils';
 /**
  * Service to handle simulation, backtesting, and accuracy metrics.
  */
