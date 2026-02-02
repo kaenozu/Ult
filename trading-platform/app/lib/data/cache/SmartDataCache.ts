@@ -323,6 +323,21 @@ export class SmartDataCache<T = unknown> {
 
   /**
    * Start automatic cleanup interval
+   * 
+   * @param intervalMs - Cleanup interval in milliseconds (default: 60000 = 1 minute)
+   * @returns Function to stop the cleanup interval
+   * 
+   * @example
+   * ```typescript
+   * // Start cleanup every minute
+   * const stopCleanup = cache.startAutoCleanup();
+   * 
+   * // Start cleanup every 30 seconds
+   * const stopCleanup = cache.startAutoCleanup(30000);
+   * 
+   * // Stop cleanup when done
+   * stopCleanup();
+   * ```
    */
   startAutoCleanup(intervalMs: number = 60000): () => void {
     const intervalId = setInterval(() => {
