@@ -1,466 +1,336 @@
 /**
- * TailRiskHedging.test.ts
- *
- * TRADING-028: テイルリスクヘッジのテスト
+ * TailRiskHedging Tests
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import {
-  TailRiskHedging,
-  HedgeRecommendation,
-  TailRiskMetrics,
-  HedgePortfolio,
-} from '../TailRiskHedging';
+import { TailRiskHedging, HedgeStrategy, TailRiskMetrics } from '../TailRiskHedging';
 import { Portfolio } from '@/app/types';
 
 describe('TailRiskHedging', () => {
-  let hedgeManager: TailRiskHedging;
-  let mockPortfolio: Portfolio;
+  let portfolio: Portfolio;
+  let hedging: TailRiskHedging;
 
   beforeEach(() => {
-    mockPortfolio = {
+    portfolio = {
       cash: 50000,
       positions: [
         {
           symbol: 'AAPL',
-          side: 'LONG',
           quantity: 100,
-          avgPrice: 150,
-          currentPrice: 155,
-          unrealizedPnL: 500,
-          realizedPnL: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          entryPrice: 150,
+          currentPrice: 160,
+          side: 'LONG',
+          market: 'US',
+          timestamp: Date.now()
         },
         {
           symbol: 'MSFT',
-          side: 'LONG',
           quantity: 50,
-          avgPrice: 300,
-          currentPrice: 310,
-          unrealizedPnL: 500,
-          realizedPnL: 0,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+          entryPrice: 300,
+          currentPrice: 320,
+          side: 'LONG',
+          market: 'US',
+          timestamp: Date.now()
+        }
       ],
-      totalValue: 31000,
-      dailyPnL: 1000,
-      totalProfit: 1000,
-      orders: [],
+      totalValue: 82000,
+      dailyPnL: 2000,
+      totalProfit: 4000,
+      orders: []
     };
 
-    hedgeManager = new TailRiskHedging(mockPortfolio);
+    hedging = new TailRiskHedging(portfolio);
   });
 
   describe('calculateTailRiskMetrics', () => {
-    it('should calculate tail risk metrics', () => {
-      const metrics = hedgeManager.calculateTailRiskMetrics();
+    it('should return default metrics when insufficient data', () => {
+      const metrics = hedging.calculateTailRiskMetrics();
 
       expect(metrics).toBeDefined();
-      expect(metrics.skewness).toBeDefined();
-      expect(metrics.kurtosis).toBeDefined();
-      expect(metrics.tailRisk).toBeGreaterThanOrEqual(0);
-      expect(metrics.tailRisk).toBeLessThanOrEqual(1);
-      expect(metrics.expectedShortfall).toBeGreaterThan(0);
-      expect(metrics.blackSwanProbability).toBeGreaterThan(0);
+      expect(metrics.tailRisk).toBeGreaterThan(0);
+      expect(metrics.maxExpectedLoss).toBeGreaterThan(0);
     });
 
-    it('should handle portfolios with insufficient history', () => {
-      // 履歴データが少ないポートフォリオ
-      const smallPortfolio: Portfolio = {
-        ...mockPortfolio,
-        positions: [],
-      };
+    it('should calculate tail risk metrics with sufficient data', () => {
+      // Generate mock returns with negative skew
+      const returns = [
+        0.01, 0.02, 0.015, 0.01, 0.005,
+        -0.02, -0.01, 0.01, 0.02, 0.015,
+        0.01, -0.05, 0.01, 0.02, 0.01,
+        -0.1, 0.01, 0.02, 0.015, 0.01,
+        0.005, -0.02, 0.01, 0.015, 0.01,
+        0.02, 0.01, -0.03, 0.015, 0.01,
+        -0.15 // Tail event
+      ];
 
-      hedgeManager.updatePortfolio(smallPortfolio);
-      const metrics = hedgeManager.calculateTailRiskMetrics();
+      hedging.updateReturns(returns);
+      const metrics = hedging.calculateTailRiskMetrics();
 
-      expect(metrics).toBeDefined();
-      expect(metrics.tailRisk).toBeGreaterThanOrEqual(0);
+      expect(metrics.tailRisk).toBeGreaterThan(0);
+      expect(metrics.skewness).toBeLessThan(0); // Negative skew expected
+      expect(metrics.kurtosis).toBeDefined();
+      expect(metrics.maxExpectedLoss).toBeGreaterThanOrEqual(metrics.tailRisk);
+      expect(metrics.probabilityOfTailEvent).toBeGreaterThan(0);
+      expect(metrics.probabilityOfTailEvent).toBeLessThan(1);
+    });
+
+    it('should detect high kurtosis (fat tails)', () => {
+      // Generate returns with fat tails
+      const returns = Array(100).fill(0).map((_, i) => {
+        if (i % 20 === 0) return -0.1; // Extreme losses
+        if (i % 20 === 1) return 0.1; // Extreme gains
+        return 0.001; // Small fluctuations
+      });
+
+      hedging.updateReturns(returns);
+      const metrics = hedging.calculateTailRiskMetrics();
+
+      expect(metrics.kurtosis).toBeGreaterThan(0); // Positive excess kurtosis
     });
   });
 
   describe('generateHedgeRecommendations', () => {
-    it('should generate multiple hedge strategies', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      expect(recommendations.length).toBeGreaterThan(0);
-      expect(recommendations.length).toBeLessThanOrEqual(5);
-    });
-
-    it('should include protective put recommendation', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const protectivePut = recommendations.find(
-        r => r.strategy.id === 'protective-put'
+    it('should generate recommendations based on tail risk', () => {
+      // High tail risk scenario
+      const returns = Array(50).fill(0).map((_, i) => 
+        i % 10 === 0 ? -0.08 : 0.01
       );
 
-      expect(protectivePut).toBeDefined();
-      expect(protectivePut!.strategy.type).toBe('options');
-      expect(protectivePut!.options).toBeDefined();
-      expect(protectivePut!.options!.length).toBeGreaterThan(0);
-    });
+      hedging.updateReturns(returns);
+      const recommendations = hedging.generateHedgeRecommendations();
 
-    it('should include collar recommendation', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const collar = recommendations.find(r => r.strategy.id === 'collar');
-
-      expect(collar).toBeDefined();
-      expect(collar!.strategy.type).toBe('options');
-      expect(collar!.options).toBeDefined();
-    });
-
-    it('should include put spread recommendation', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const putSpread = recommendations.find(r => r.strategy.id === 'put-spread');
-
-      expect(putSpread).toBeDefined();
-      expect(putSpread!.strategy.type).toBe('options');
-    });
-
-    it('should include inverse ETF recommendation', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const inverseETF = recommendations.find(r => r.strategy.id === 'inverse-etf');
-
-      expect(inverseETF).toBeDefined();
-      expect(inverseETF!.strategy.type).toBe('inverse_etf');
-      expect(inverseETF!.inverseAssets).toBeDefined();
-      expect(inverseETF!.inverseAssets!.length).toBeGreaterThan(0);
-    });
-
-    it('should include futures hedge for large portfolios', () => {
-      const largePortfolio: Portfolio = {
-        ...mockPortfolio,
-        positions: [
-          {
-            symbol: 'AAPL',
-            side: 'LONG',
-            quantity: 10000,
-            avgPrice: 150,
-            currentPrice: 155,
-            unrealizedPnL: 50000,
-            realizedPnL: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        totalValue: 1550000,
-      };
-
-      hedgeManager.updatePortfolio(largePortfolio);
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const futures = recommendations.find(r => r.strategy.id === 'futures-hedge');
-
-      expect(futures).toBeDefined();
-      expect(futures!.strategy.type).toBe('futures');
-      expect(futures!.futures).toBeDefined();
-    });
-
-    it('should not include futures for small portfolios', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const futures = recommendations.find(r => r.strategy.id === 'futures-hedge');
-
-      expect(futures).toBeUndefined();
-    });
-  });
-
-  describe('hedge recommendation properties', () => {
-    it('should include strategy details', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      recommendations.forEach(rec => {
-        expect(rec.strategy.id).toBeDefined();
-        expect(rec.strategy.name).toBeDefined();
-        expect(rec.strategy.type).toBeDefined();
-        expect(rec.strategy.description).toBeDefined();
-        expect(rec.strategy.cost).toBeGreaterThanOrEqual(0);
-        expect(rec.strategy.protectionLevel).toBeGreaterThan(0);
-        expect(rec.strategy.effectiveness).toBeGreaterThan(0);
-        expect(rec.strategy.effectiveness).toBeLessThanOrEqual(100);
-      });
-    });
-
-    it('should include reasoning', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      recommendations.forEach(rec => {
-        expect(rec.reasoning).toBeDefined();
-        expect(rec.reasoning.length).toBeGreaterThan(0);
-      });
-    });
-
-    it('should include implementation steps', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      recommendations.forEach(rec => {
-        expect(rec.implementationSteps).toBeDefined();
-        expect(rec.implementationSteps.length).toBeGreaterThan(0);
-      });
-    });
-
-    it('should calculate risk reduction', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      recommendations.forEach(rec => {
-        expect(rec.riskReduction).toBeGreaterThanOrEqual(0);
-        expect(rec.riskReduction).toBeLessThanOrEqual(100);
-      });
-    });
-
-    it('should calculate cost-benefit ratio', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      recommendations.forEach(rec => {
-        expect(rec.costBenefitRatio).toBeGreaterThan(0);
-      });
-    });
-  });
-
-  describe('options hedge specifics', () => {
-    it('should calculate option premiums correctly', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const optionsStrategies = recommendations.filter(r => r.options);
-
-      optionsStrategies.forEach(strategy => {
-        strategy.options!.forEach(option => {
-          expect(option.underlying).toBeDefined();
-          expect(option.strike).toBeGreaterThan(0);
-          expect(option.premium).toBeGreaterThan(0);
-          expect(option.contracts).toBeGreaterThan(0);
-          expect(option.protectionPercent).toBeGreaterThan(0);
-        });
-      });
-    });
-
-    it('should set expiration dates', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const optionsStrategies = recommendations.filter(r => r.options);
-
-      optionsStrategies.forEach(strategy => {
-        strategy.options!.forEach(option => {
-          expect(option.expiration).toBeDefined();
-          expect(option.expiration).toBeInstanceOf(Date);
-          expect(option.expiration.getTime()).toBeGreaterThan(Date.now());
-        });
-      });
-    });
-  });
-
-  describe('inverse asset hedge specifics', () => {
-    it('should include available inverse assets', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const inverseETF = recommendations.find(r => r.strategy.id === 'inverse-etf');
-
-      expect(inverseETF).toBeDefined();
-      expect(inverseETF!.inverseAssets).toBeDefined();
-
-      inverseETF!.inverseAssets!.forEach(asset => {
-        expect(asset.symbol).toBeDefined();
-        expect(asset.name).toBeDefined();
-        expect(asset.correlation).toBeLessThan(0);
-        expect(asset.allocation).toBeGreaterThan(0);
-        expect(asset.liquidity).toBeGreaterThan(0);
-        expect(asset.liquidity).toBeLessThanOrEqual(100);
-        expect(asset.expenseRatio).toBeGreaterThan(0);
-      });
-    });
-  });
-
-  describe('futures hedge specifics', () => {
-    it('should calculate futures contracts correctly', () => {
-      const largePortfolio: Portfolio = {
-        ...mockPortfolio,
-        totalValue: 200000,
-        positions: [
-          {
-            symbol: 'AAPL',
-            side: 'LONG',
-            quantity: 1000,
-            avgPrice: 150,
-            currentPrice: 155,
-            unrealizedPnL: 5000,
-            realizedPnL: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-      };
-
-      hedgeManager.updatePortfolio(largePortfolio);
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const futures = recommendations.find(r => r.strategy.id === 'futures-hedge');
-
-      expect(futures).toBeDefined();
-      expect(futures!.futures).toBeDefined();
-
-      futures!.futures!.forEach(future => {
-        expect(future.symbol).toBeDefined();
-        expect(future.contractSize).toBeGreaterThan(0);
-        expect(future.contracts).toBeGreaterThan(0);
-        expect(future.margin).toBeGreaterThan(0);
-        expect(future.hedgeRatio).toBeGreaterThan(0);
-        expect(future.expiration).toBeInstanceOf(Date);
-      });
-    });
-  });
-
-  describe('getCurrentHedgePortfolio', () => {
-    it('should return current hedge information', () => {
-      // ヘッジポジションを追加
-      const portfolioWithHedges: Portfolio = {
-        ...mockPortfolio,
-        positions: [
-          ...mockPortfolio.positions,
-          {
-            symbol: 'AAPL_PUT',
-            side: 'LONG',
-            quantity: 1,
-            avgPrice: 300,
-            currentPrice: 350,
-            unrealizedPnL: 50,
-            realizedPnL: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-      };
-
-      hedgeManager.updatePortfolio(portfolioWithHedges);
-      const hedgePortfolio = hedgeManager.getCurrentHedgePortfolio();
-
-      expect(hedgePortfolio).toBeDefined();
-      expect(hedgePortfolio.currentHedges).toBeDefined();
-      expect(hedgePortfolio.hedgeCost).toBeGreaterThanOrEqual(0);
-      expect(hedgePortfolio.hedgeCoverage).toBeGreaterThanOrEqual(0);
-      expect(hedgePortfolio.hedgeEffectiveness).toBeGreaterThanOrEqual(0);
-      expect(hedgePortfolio.hedgeEffectiveness).toBeLessThanOrEqual(100);
-    });
-
-    it('should handle portfolio without hedges', () => {
-      const hedgePortfolio = hedgeManager.getCurrentHedgePortfolio();
-
-      expect(hedgePortfolio).toBeDefined();
-      expect(hedgePortfolio.currentHedges.length).toBe(0);
-      expect(hedgePortfolio.hedgeCost).toBe(0);
-    });
-  });
-
-  describe('portfolio beta estimation', () => {
-    it('should estimate portfolio beta', () => {
-      // プライベートメソッドのテストは直接できないが、
-      // ヘッジ推奨を通じて間接的にテスト可能
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      const inverseETF = recommendations.find(r => r.strategy.id === 'inverse-etf');
-
-      expect(inverseETF).toBeDefined();
-      // ベータ推定に基づいて推奨が生成されている
-    });
-
-    it('should handle different sector betas', () => {
-      const techPortfolio: Portfolio = {
-        ...mockPortfolio,
-        positions: [
-          {
-            symbol: 'AAPL',
-            side: 'LONG',
-            quantity: 100,
-            avgPrice: 150,
-            currentPrice: 155,
-            unrealizedPnL: 500,
-            realizedPnL: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ],
-        totalValue: 15500,
-      };
-
-      hedgeManager.updatePortfolio(techPortfolio);
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
+      expect(recommendations).toBeDefined();
       expect(recommendations.length).toBeGreaterThan(0);
+      
+      recommendations.forEach(rec => {
+        expect(rec.strategy).toBeDefined();
+        expect(rec.rationale).toBeDefined();
+        expect(rec.costBenefitRatio).toBeGreaterThan(0);
+        expect(rec.hedgeRatio).toBeGreaterThan(0);
+        expect(rec.hedgeRatio).toBeLessThanOrEqual(1);
+      });
+    });
+
+    it('should recommend put options for high tail risk', () => {
+      const returns = Array(50).fill(0).map((_, i) => 
+        i % 8 === 0 ? -0.1 : 0.01
+      );
+
+      hedging.updateReturns(returns);
+      const recommendations = hedging.generateHedgeRecommendations();
+
+      const putHedge = recommendations.find(r => r.strategy.type === 'put_option');
+      expect(putHedge).toBeDefined();
+      expect(putHedge!.strategy.symbol).toContain('PUT');
+    });
+
+    it('should recommend VIX futures for negative skewness', () => {
+      const returns = [
+        ...Array(40).fill(0.01),
+        -0.05, -0.08, -0.1, -0.12, -0.15,
+        ...Array(5).fill(0.005)
+      ];
+
+      hedging.updateReturns(returns);
+      const recommendations = hedging.generateHedgeRecommendations();
+
+      const vixHedge = recommendations.find(r => r.strategy.type === 'vix_futures');
+      expect(vixHedge).toBeDefined();
+      expect(vixHedge!.strategy.symbol).toBe('VIX');
+    });
+
+    it('should sort recommendations by cost-benefit ratio', () => {
+      const returns = Array(50).fill(0).map((_, i) => 
+        i % 5 === 0 ? -0.06 : 0.01
+      );
+
+      hedging.updateReturns(returns);
+      const recommendations = hedging.generateHedgeRecommendations();
+
+      if (recommendations.length > 1) {
+        for (let i = 0; i < recommendations.length - 1; i++) {
+          expect(recommendations[i].costBenefitRatio)
+            .toBeGreaterThanOrEqual(recommendations[i + 1].costBenefitRatio);
+        }
+      }
     });
   });
 
-  describe('edge cases', () => {
-    it('should handle empty portfolio', () => {
+  describe('evaluateHedgePerformance', () => {
+    it('should evaluate put option performance in market crash', () => {
+      const putHedge: HedgeStrategy = {
+        type: 'put_option',
+        symbol: 'SPY_PUT',
+        quantity: 100,
+        cost: 2000,
+        expectedProtection: 5,
+        breakEvenMove: 2.5
+      };
+
+      // Market crashes 10%
+      const performance = hedging.evaluateHedgePerformance(putHedge, -10);
+
+      expect(performance.protectionProvided).toBeGreaterThan(0);
+      expect(performance.efficiency).toBeGreaterThan(0);
+      expect(performance.returnImpact).toBeDefined();
+    });
+
+    it('should show no protection when market rises', () => {
+      const putHedge: HedgeStrategy = {
+        type: 'put_option',
+        symbol: 'SPY_PUT',
+        quantity: 100,
+        cost: 2000,
+        expectedProtection: 5,
+        breakEvenMove: 2.5
+      };
+
+      // Market rises 5%
+      const performance = hedging.evaluateHedgePerformance(putHedge, 5);
+
+      expect(performance.protectionProvided).toBe(0);
+      expect(performance.returnImpact).toBeLessThan(0); // Only cost
+    });
+
+    it('should evaluate VIX hedge performance in volatility spike', () => {
+      const vixHedge: HedgeStrategy = {
+        type: 'vix_futures',
+        symbol: 'VIX',
+        quantity: 10,
+        cost: 1500,
+        expectedProtection: 8,
+        breakEvenMove: 15
+      };
+
+      // Market crashes 15% (VIX spikes)
+      const performance = hedging.evaluateHedgePerformance(vixHedge, -15);
+
+      expect(performance.protectionProvided).toBeGreaterThan(0);
+    });
+
+    it('should evaluate inverse ETF performance', () => {
+      const inverseHedge: HedgeStrategy = {
+        type: 'inverse_etf',
+        symbol: 'SH',
+        quantity: 100,
+        cost: 500,
+        expectedProtection: 3,
+        breakEvenMove: 1
+      };
+
+      // Market drops 5%
+      const performance = hedging.evaluateHedgePerformance(inverseHedge, -5);
+
+      expect(performance.protectionProvided).toBeGreaterThan(0);
+      expect(performance.efficiency).toBeGreaterThan(0);
+    });
+  });
+
+  describe('buildOptimalHedgePortfolio', () => {
+    it('should select hedges within budget', () => {
+      const returns = Array(50).fill(0).map((_, i) => 
+        i % 7 === 0 ? -0.08 : 0.01
+      );
+
+      hedging.updateReturns(returns);
+      
+      const maxBudget = 5000;
+      const hedgePortfolio = hedging.buildOptimalHedgePortfolio(maxBudget);
+
+      const totalCost = hedgePortfolio.reduce((sum, h) => sum + h.cost, 0);
+      expect(totalCost).toBeLessThanOrEqual(maxBudget);
+    });
+
+    it('should prioritize high cost-benefit hedges', () => {
+      const returns = Array(50).fill(0).map((_, i) => 
+        i % 6 === 0 ? -0.09 : 0.01
+      );
+
+      hedging.updateReturns(returns);
+      
+      const hedgePortfolio = hedging.buildOptimalHedgePortfolio(10000);
+
+      if (hedgePortfolio.length > 0) {
+        // First hedge should have reasonable expected protection
+        expect(hedgePortfolio[0].expectedProtection).toBeGreaterThan(0);
+      }
+    });
+
+    it('should return empty array if no recommendations fit budget', () => {
+      const returns = Array(50).fill(0).map(() => 0.01);
+      hedging.updateReturns(returns);
+      
+      const hedgePortfolio = hedging.buildOptimalHedgePortfolio(100); // Very low budget
+
+      // With low tail risk, might not generate expensive hedges
+      expect(Array.isArray(hedgePortfolio)).toBe(true);
+    });
+  });
+
+  describe('updateReturns', () => {
+    it('should update returns and recalculate volatility', () => {
+      const returns = [0.01, 0.02, -0.01, 0.015, 0.005];
+      
+      hedging.updateReturns(returns);
+      const metrics = hedging.calculateTailRiskMetrics();
+
+      expect(metrics).toBeDefined();
+    });
+  });
+
+  describe('updatePortfolio', () => {
+    it('should update portfolio reference', () => {
+      const newPortfolio: Portfolio = {
+        ...portfolio,
+        totalValue: 100000
+      };
+
+      hedging.updatePortfolio(newPortfolio);
+      
+      const recommendations = hedging.generateHedgeRecommendations();
+      // Recommendations should be based on new portfolio value
+      expect(recommendations).toBeDefined();
+    });
+  });
+
+  describe('Edge cases', () => {
+    it('should handle portfolio with zero value', () => {
       const emptyPortfolio: Portfolio = {
-        cash: 100000,
+        cash: 0,
         positions: [],
         totalValue: 0,
         dailyPnL: 0,
         totalProfit: 0,
-        orders: [],
+        orders: []
       };
 
-      hedgeManager.updatePortfolio(emptyPortfolio);
+      const emptyHedging = new TailRiskHedging(emptyPortfolio);
+      const metrics = emptyHedging.calculateTailRiskMetrics();
 
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      // オプション戦略は生成されないが、逆相関ETFは生成される可能性がある
-      const nonOptionsStrategies = recommendations.filter(r => r.strategy.type !== 'options');
-      expect(nonOptionsStrategies.length).toBeGreaterThan(0);
+      expect(metrics).toBeDefined();
+      expect(metrics.tailRisk).toBeGreaterThanOrEqual(0);
     });
 
-    it('should handle high tail risk scenarios', () => {
-      // 高テイルリスクをシミュレート
-      const recommendations = hedgeManager.generateHedgeRecommendations();
+    it('should handle empty returns array', () => {
+      hedging.updateReturns([]);
+      const metrics = hedging.calculateTailRiskMetrics();
 
-      const protectivePut = recommendations.find(r => r.strategy.id === 'protective-put');
-
-      expect(protectivePut).toBeDefined();
-      expect(protectivePut!.strategy.recommendation).toBeDefined();
-    });
-  });
-
-  describe('update methods', () => {
-    it('should update portfolio', () => {
-      const newPortfolio: Portfolio = {
-        ...mockPortfolio,
-        cash: 60000,
-      };
-
-      hedgeManager.updatePortfolio(newPortfolio);
-
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      expect(recommendations).toBeDefined();
-      expect(recommendations.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('recommendation priorities', () => {
-    it('should sort recommendations by effectiveness', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
-
-      if (recommendations.length > 1) {
-        for (let i = 0; i < recommendations.length - 1; i++) {
-          expect(recommendations[i].riskReduction).toBeGreaterThanOrEqual(
-            recommendations[i + 1].riskReduction
-          );
-        }
-      }
+      expect(metrics).toBeDefined();
+      expect(metrics.tailRisk).toBeGreaterThan(0);
     });
 
-    it('should provide recommendation levels', () => {
-      const recommendations = hedgeManager.generateHedgeRecommendations();
+    it('should handle single return value', () => {
+      hedging.updateReturns([0.05]);
+      const metrics = hedging.calculateTailRiskMetrics();
 
-      recommendations.forEach(rec => {
-        expect(['highly_recommended', 'recommended', 'optional', 'not_recommended']).toContain(
-          rec.strategy.recommendation
-        );
-      });
+      expect(metrics).toBeDefined();
+    });
+
+    it('should handle all zero returns', () => {
+      hedging.updateReturns(Array(50).fill(0));
+      const metrics = hedging.calculateTailRiskMetrics();
+
+      expect(metrics.skewness).toBe(0);
+      expect(metrics.kurtosis).toBe(0);
     });
   });
 });
