@@ -84,3 +84,46 @@ export type {
   MarketCondition,
   PerformanceMetrics,
 } from './DynamicRiskAdjuster';
+
+// TRADING-028: Advanced Risk Management
+export {
+  DynamicPositionSizer,
+  createDynamicPositionSizer,
+} from './DynamicPositionSizer';
+
+export type {
+  VolatilityMetrics,
+  PositionSizingRequest,
+  PositionSizingResponse,
+  PortfolioRiskLimits,
+} from './DynamicPositionSizer';
+
+export {
+  PortfolioRiskMonitor,
+  createPortfolioRiskMonitor,
+} from './PortfolioRiskMonitor';
+
+export type {
+  VaRResult,
+  SectorExposure,
+  CorrelationPair,
+  StressTestScenario,
+  StressTestResult,
+  RiskContribution,
+  PortfolioRiskReport,
+} from './PortfolioRiskMonitor';
+
+export {
+  TailRiskHedging,
+  createTailRiskHedging,
+} from './TailRiskHedging';
+
+export type {
+  HedgeStrategy,
+  OptionsHedge,
+  InverseAssetHedge,
+  FuturesHedge,
+  TailRiskMetrics,
+  HedgeRecommendation,
+  HedgePortfolio,
+} from './TailRiskHedging';
