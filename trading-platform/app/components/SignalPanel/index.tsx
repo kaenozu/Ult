@@ -10,6 +10,7 @@ import { useAIPerformance } from '@/app/hooks/useAIPerformance';
 import { BacktestView } from './BacktestView';
 import { ForecastView } from './ForecastView';
 import { AIPerformanceView } from './AIPerformanceView';
+import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
 import { usePerformanceMonitor } from '@/app/lib/performance';
 
 /**
@@ -253,7 +254,17 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       </div>
 
       {activeTab === 'signal' ? (
-        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full">
+        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full flex flex-col gap-3">
+          {/* Low Accuracy Warning */}
+          {displaySignal && displaySignal.type !== 'HOLD' && (
+            <LowAccuracyWarning
+              hitRate={preciseHitRate.hitRate}
+              symbolName={stock.name}
+              signalType={displaySignal.type}
+              threshold={50}
+            />
+          )}
+          
           <SignalCard
             signal={displaySignal}
             stock={stock}

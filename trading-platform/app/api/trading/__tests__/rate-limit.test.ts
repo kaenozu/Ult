@@ -21,10 +21,14 @@ jest.mock('@/app/lib/tradingCore/UnifiedTradingPlatform', () => ({
 describe('Trading API Rate Limiting', () => {
   beforeEach(() => {
     // Reset rate limiter state before each test
-    (ipRateLimiter as any).counters.clear();
+    ipRateLimiter.reset();
   });
 
-  const createRequest = (url: string, method: string = 'GET', body?: any) => {
+  interface RequestBody {
+    [key: string]: unknown;
+  }
+
+  const createRequest = (url: string, method: string = 'GET', body?: RequestBody) => {
     const headers = new Headers({
       'x-forwarded-for': '192.168.1.100',
     });
