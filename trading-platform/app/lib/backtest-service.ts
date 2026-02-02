@@ -5,6 +5,14 @@
  */
 
 import { OHLCV, Stock, Signal, BacktestResult, BacktestTrade } from '../types';
+
+interface BacktestPosition {
+  type: 'LONG' | 'SHORT';
+  entryPrice: number;
+  quantity: number;
+  entryDate: string;
+  symbol: string;
+}
 import { mlPredictionService } from './mlPrediction';
   // import { calculateReturns } from './utils';
 
@@ -183,7 +191,7 @@ class BacktestService {
   private evaluateTrade(
     signal: Signal,
     currentCandle: OHLCV,
-    currentPosition: any,
+    currentPosition: BacktestPosition | null,
     capital: number,
     config: BacktestConfig
   ): {
@@ -228,10 +236,10 @@ class BacktestService {
     newCapital: number;
     newEquity: number;
     trade: BacktestTrade;
-    newPosition: any;
+    newPosition: BacktestPosition | null;
   } {
     let newCapital = currentCapital;
-    let newPosition: any = null;
+    let newPosition: BacktestPosition | null = null;
     let tradeRecord: BacktestTrade;
 
     if (trade.type.startsWith('ENTER')) {

@@ -168,13 +168,26 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
 // Winning Backtest Engine
 // ============================================================================
 
+interface TradePosition {
+  symbol: string;
+  side: 'BUY' | 'SELL';
+  entryPrice: number;
+  quantity: number;
+  entryDate: string;
+  entryIndex: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  strategy: string;
+  riskRewardRatio: number;
+}
+
 class WinningBacktestEngine {
   private config: BacktestConfig;
   private trades: BacktestTrade[] = [];
   private equityCurve: number[] = [];
   private currentEquity: number = 0;
   private peakEquity: number = 0;
-  private openPositions: Map<string, BacktestPosition> = new Map();
+  private openPositions: Map<string, TradePosition> = new Map();
 
   constructor(config: Partial<BacktestConfig> = {}) {
     this.config = { ...DEFAULT_BACKTEST_CONFIG, ...config };
@@ -411,9 +424,14 @@ class WinningBacktestEngine {
     const price = this.applySlippage(data.close, 'BUY');
     const quantity = this.calculatePositionSize(price, signal.stopLoss);
     
+    // signal.signalが'HOLD'の場合はポジションを開かない
+    if (signal.signal === 'HOLD') {
+      return;
+    }
+    
     this.openPositions.set(symbol, {
       symbol,
-      side: signal.signal,
+      side: signal.signal as 'BUY' | 'SELL',
       entryPrice: price,
       quantity,
       entryDate: data.date,
@@ -426,7 +444,7 @@ class WinningBacktestEngine {
   }
 
   private closePosition(
-    position: BacktestPosition,
+    position: TradePosition,
     data: OHLCV,
     reason: string,
     index: number
@@ -476,7 +494,7 @@ class WinningBacktestEngine {
   }
 
   private checkExitConditions(
-    position: BacktestPosition,
+    position: TradePosition,
     data: OHLCV,
     index: number
   ): { shouldExit: boolean; reason: string } {

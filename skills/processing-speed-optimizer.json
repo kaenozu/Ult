@@ -1,0 +1,64 @@
+{
+  "name": "processing-speed-optimizer",
+  "description": "アプリケーションの処理速度を包括的に最適化するスキル。アルゴリズム計算量、データ構造、並列処理、キャッシュ戦略、レンダリングの各層での最適化を行う。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": true,
+  "triggers": [
+    "処理速度向上",
+    "高速化",
+    "パフォーマンス最適化",
+    "速度改善",
+    "遅い",
+    "重い"
+  ],
+  "rules": [
+    "algorithm-optimization",
+    "data-structure-improvement",
+    "parallel-processing",
+    "caching-strategy",
+    "rendering-optimization"
+  ],
+  "optimization_layers": {
+    "algorithm": "O(N²)→O(N)、インクリメンタル計算、ベクトル化",
+    "data_structure": "TypedArray、リングバッファ、列指向ストレージ",
+    "parallel_processing": "Web Worker、Worker Pool、並列予測",
+    "caching": "LRUキャッシュ、Reactメモ化、多層キャッシュ",
+    "rendering": "仮想化、React.memo、useMemo/useCallback、Canvas最適化"
+  },
+  "workflow": {
+    "step1": "パフォーマンスプロファイリング（ボトルネック特定）",
+    "step2": "計算アルゴリズムの最適化",
+    "step3": "データ構造の改善",
+    "step4": "並列化戦略の実装",
+    "step5": "キャッシュ戦略の導入",
+    "step6": "レンダリング最適化",
+    "step7": "継続的モニタリング設定"
+  },
+  "measurement_tools": [
+    "Performance API",
+    "React DevTools Profiler",
+    "Chrome DevTools",
+    "Web Vitals",
+    "カスタムパフォーマンスモニター"
+  ],
+  "optimization_targets": {
+    "calculation": "アルゴリズム計算量削減、Web Worker移行",
+    "memory": "配列コピー削減、GC負荷軽減",
+    "network": "API並列化、重複排除、キャッシュ",
+    "rendering": "仮想化、メモ化、遅延ローディング"
+  },
+  "expected_improvements": {
+    "calculation_speed": "2-8倍高速化",
+    "initial_load": "70%短縮",
+    "memory_usage": "40-60%削減",
+    "fps": "60fps維持"
+  },
+  "capabilities": [
+    "自動ボトルネック検出と最適化提案",
+    "アルゴリズム計算量の改善",
+    "Web Worker並列化の実装",
+    "多層キャッシュ戦略の設計",
+    "レンダリングパフォーマンスの最適化"
+  ]
+}

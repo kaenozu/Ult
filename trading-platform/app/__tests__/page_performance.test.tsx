@@ -27,7 +27,7 @@ jest.mock('next/navigation', () => ({
 describe('Workstation Performance', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    useTradingStore.setState({ theme: 'dark', watchlist: [], portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 }, journal: [] });
+    useTradingStore.setState({ theme: 'dark', watchlist: [], portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 } });
   });
 
   it('should not re-render when unrelated store state changes', () => {

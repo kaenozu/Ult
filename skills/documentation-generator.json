@@ -1,0 +1,49 @@
+{
+  "name": "documentation-generator",
+  "description": "コードベースからドキュメントを自動生成するスキル。APIドキュメント、README、Architecture Decision Records (ADR)、チュートリアルを自動作成・更新する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "triggers": [
+    "ドキュメント作成",
+    "README更新",
+    "APIドキュメント",
+    "ドキュメント生成"
+  ],
+  "rules": [
+    "code-as-documentation",
+    "auto-sync",
+    "multi-format-output",
+    "version-tracking",
+    "accessibility"
+  ],
+  "document_types": {
+    "api_reference": "OpenAPI/Swagger形式のAPI仕様",
+    "readme": "プロジェクト概要とクイックスタート",
+    "adr": "Architecture Decision Records",
+    "tutorial": "ステップバイステップガイド",
+    "faq": "よくある質問と回答",
+    "changelog": "変更履歴"
+  },
+  "workflow": {
+    "step1": "コードベースの構造分析",
+    "step2": "コメントと型定義から情報抽出",
+    "step3": "ドキュメントテンプレート選択",
+    "step4": "コンテンツ自動生成",
+    "step5": "既存ドキュメントとの差分確認",
+    "step6": "更新または新規作成",
+    "step7": "リンクとナビゲーションの検証"
+  },
+  "output_formats": [
+    "Markdown",
+    "HTML",
+    "OpenAPI JSON/YAML",
+    "PDF"
+  ],
+  "capabilities": [
+    "コードからの自動ドキュメント生成",
+    "複数形式への同時出力",
+    "変更検出による自動更新",
+    "ドキュメント間リンクの自動管理"
+  ]
+}
