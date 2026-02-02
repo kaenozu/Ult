@@ -28,7 +28,7 @@ export const JAPANESE_MARKET_DELAY_MINUTES = 20;
  * Check if an interval is intraday
  */
 export function isIntradayInterval(interval: string): boolean {
-  return INTRADAY_INTERVALS.includes(interval as any);
+  return INTRADAY_INTERVALS.some(i => i.toLowerCase() === interval.toLowerCase());
 }
 
 /**

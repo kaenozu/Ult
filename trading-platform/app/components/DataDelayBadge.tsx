@@ -51,7 +51,7 @@ export const DataDelayBadge = memo(function DataDelayBadge({
           sizeClasses,
           className
         )}
-        title={`Japanese market data has a ${delayMinutes} minute delay due to data provider limitations`}
+        title={`Japanese market data has a ${delayMinutes}-minute delay due to data provider limitations`}
       >
         <Clock className="shrink-0" size={iconSize} />
         <span>遅延{delayMinutes}分</span>

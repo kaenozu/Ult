@@ -59,7 +59,7 @@ describe('DataDelayBadge', () => {
     
     const badge = screen.getByText('遅延20分').closest('div');
     expect(badge).toHaveAttribute('title');
-    expect(badge?.getAttribute('title')).toContain('20 minute delay');
+    expect(badge?.getAttribute('title')).toContain('20-minute delay');
   });
 
   it('should have fallback warning title when fallback applied', () => {

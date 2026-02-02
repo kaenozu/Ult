@@ -254,7 +254,7 @@ export async function GET(request: Request) {
         // Format date based on interval type
         // Daily/Weekly/Monthly: YYYY-MM-DD
         // Intraday (1m, 5m, 15m, 1h): YYYY-MM-DD HH:mm
-        const isIntradayFinal = finalInterval && isIntradayInterval(finalInterval);
+        const isFinalIntervalIntraday = finalInterval && isIntradayInterval(finalInterval);
 
         // Add warning if we fell back to daily data for Japanese stock with intraday interval
         const warning = isJapaneseStock && isIntraday
@@ -270,7 +270,7 @@ export async function GET(request: Request) {
         const ohlcv = result.quotes.map((q, index) => {
           let dateStr: string;
           if (q.date instanceof Date) {
-            if (isIntradayFinal) {
+            if (isFinalIntervalIntraday) {
               // Format: YYYY-MM-DD HH:mm (e.g., "2026-01-28 09:30")
               const year = q.date.getFullYear();
               const month = String(q.date.getMonth() + 1).padStart(2, '0');
