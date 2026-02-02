@@ -31,6 +31,7 @@ export const Header = memo(function Header() {
   const [searchQuery, setSearchInput] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [isSearchingAPI, setIsSearchingAPI] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -84,8 +85,28 @@ export const Header = memo(function Header() {
     ).slice(0, 8);
   }, [searchQuery]);
 
+  // Reset highlighted index when results change
+  useEffect(() => {
+    setHighlightedIndex(-1);
+  }, [searchQuery]);
+
   const handleSearchKeyDown = useCallback(async (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex(prev =>
+        prev < searchResults.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+    } else if (e.key === 'Enter') {
+      // If an item is highlighted, select it
+      if (highlightedIndex >= 0 && highlightedIndex < searchResults.length) {
+        e.preventDefault();
+        handleStockSelect(searchResults[highlightedIndex]);
+        return;
+      }
+
       const query = searchQuery.trim().toUpperCase();
       if (!query) return;
 
@@ -122,7 +143,7 @@ export const Header = memo(function Header() {
     } else if (e.key === 'Escape') {
       setShowResults(false);
     }
-  }, [searchQuery, searchResults, handleStockSelect, setShowResults]);
+  }, [searchQuery, searchResults, handleStockSelect, setShowResults, highlightedIndex]);
 
   return (
     <header className="h-14 flex items-center justify-between px-4 border-b border-[#233648] bg-[#101922] shrink-0 z-10">
@@ -191,19 +212,33 @@ export const Header = memo(function Header() {
             onFocus={() => setShowResults(true)}
             onKeyDown={handleSearchKeyDown}
             aria-label={t('header.searchLabel')}
+            aria-activedescendant={highlightedIndex >= 0 && searchResults[highlightedIndex] ? `stock-option-${searchResults[highlightedIndex].symbol}` : undefined}
+            aria-controls="stock-search-results"
+            aria-expanded={showResults}
+            role="combobox"
           />
 
           {showResults && searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-[#141e27] border border-[#233648] rounded-lg shadow-2xl z-50 overflow-hidden">
+            <div
+              id="stock-search-results"
+              className="absolute top-full left-0 right-0 mt-1 bg-[#141e27] border border-[#233648] rounded-lg shadow-2xl z-50 overflow-hidden"
+              role="listbox"
+            >
               <div className="px-3 py-2 border-b border-[#233648] bg-[#192633]/50">
                 <span className="text-[10px] font-bold text-[#92adc9] uppercase tracking-wider">検索結果</span>
               </div>
               <div className="max-h-64 overflow-y-auto">
-                {searchResults.map((stock) => (
+                {searchResults.map((stock, index) => (
                   <button
                     key={stock.symbol}
+                    id={`stock-option-${stock.symbol}`}
                     onClick={() => handleStockSelect(stock)}
-                    className="w-full flex items-center justify-between px-4 py-2 hover:bg-[#192633] transition-colors group"
+                    className={cn(
+                      "w-full flex items-center justify-between px-4 py-2 transition-colors group",
+                      index === highlightedIndex ? "bg-[#192633]" : "hover:bg-[#192633]"
+                    )}
+                    role="option"
+                    aria-selected={index === highlightedIndex}
                   >
                     <div className="flex flex-col items-start">
                       <span className="font-bold text-white text-sm">{stock.symbol}</span>
