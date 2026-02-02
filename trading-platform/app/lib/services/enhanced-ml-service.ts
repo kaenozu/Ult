@@ -51,6 +51,7 @@ export class EnhancedMLService {
   // Kelly criterion parameters
   private readonly MAX_KELLY_FRACTION = 0.5;
   private readonly DEFAULT_KELLY_FRACTION = 0.25;
+  private readonly DEFAULT_WIN_LOSS_RATIO = 2.0; // Default win/loss ratio when insufficient data
   
   // Drift detection thresholds
   private readonly PSI_THRESHOLD = 0.2;
@@ -218,6 +219,10 @@ export class EnhancedMLService {
     
     // Calculate prediction error trend
     const recentErrors = recentPredictions.map(p => Math.abs(p.prediction - p.actual));
+    if (recentErrors.length === 0) {
+      return 'LOW'; // No errors to analyze
+    }
+    
     const avgError = recentErrors.reduce((sum, e) => sum + e, 0) / recentErrors.length;
     
     // Compare with historical average
@@ -297,7 +302,7 @@ export class EnhancedMLService {
    * Estimate win/loss ratio from historical data
    */
   private estimateWinLossRatio(historicalData: OHLCV[]): number {
-    if (historicalData.length < 20) return 2.0; // Default ratio
+    if (historicalData.length < 20) return this.DEFAULT_WIN_LOSS_RATIO;
     
     // Calculate average up days vs down days
     let upDays = 0;
@@ -319,7 +324,7 @@ export class EnhancedMLService {
     const avgUp = upDays > 0 ? totalUpMove / upDays : 0;
     const avgDown = downDays > 0 ? totalDownMove / downDays : 1;
     
-    return avgDown > 0 ? avgUp / avgDown : 2.0;
+    return avgDown > 0 ? avgUp / avgDown : this.DEFAULT_WIN_LOSS_RATIO;
   }
 
   /**

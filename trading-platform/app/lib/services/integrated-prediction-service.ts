@@ -55,17 +55,17 @@ export class IntegratedPredictionService {
     // 2. Calculate features from indicators
     const features = this.featureService.calculateFeatures(data, indicators);
 
-    // 2. Get enhanced prediction
+    // 3. Get enhanced prediction
     const enhancedPrediction = await enhancedMLService.predictEnhanced(
       features,
       stock,
       data
     );
 
-    // 3. Check if signal meets quality threshold
+    // 4. Check if signal meets quality threshold
     const shouldTrade = enhancedMLService.shouldTakeSignal(enhancedPrediction);
 
-    // 4. Generate signal
+    // 5. Generate signal
     const signal = this.generateSignal(
       stock,
       data,
@@ -74,7 +74,7 @@ export class IntegratedPredictionService {
       indexData
     );
 
-    // 5. Get model statistics
+    // 6. Get model statistics
     const modelStats = enhancedMLService.getModelStats();
 
     return {

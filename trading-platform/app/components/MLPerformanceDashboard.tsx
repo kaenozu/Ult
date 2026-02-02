@@ -12,6 +12,7 @@
 
 import { useEffect, useState } from 'react';
 import { integratedPredictionService } from '@/app/lib/services/integrated-prediction-service';
+import ConfirmationModal from './ConfirmationModal';
 
 interface PerformanceData {
   hitRates: { rf: number; xgb: number; lstm: number };
@@ -32,6 +33,7 @@ interface PerformanceData {
 export default function MLPerformanceDashboard() {
   const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showRetrainModal, setShowRetrainModal] = useState(false);
 
   useEffect(() => {
     // Fetch initial performance data
@@ -54,15 +56,15 @@ export default function MLPerformanceDashboard() {
   };
 
   const handleRetrain = async () => {
-    if (confirm('モデルを再トレーニングしますか？これにより履歴がリセットされます。')) {
-      try {
-        await integratedPredictionService.retrainModels();
-        fetchPerformanceData();
-        alert('モデルの再トレーニングが完了しました');
-      } catch (error) {
-        console.error('Error retraining models:', error);
-        alert('再トレーニング中にエラーが発生しました');
-      }
+    try {
+      await integratedPredictionService.retrainModels();
+      fetchPerformanceData();
+      setShowRetrainModal(false);
+      // Show success message (could be replaced with toast notification)
+      alert('モデルの再トレーニングが完了しました');
+    } catch (error) {
+      console.error('Error retraining models:', error);
+      alert('再トレーニング中にエラーが発生しました');
     }
   };
 
@@ -107,7 +109,7 @@ export default function MLPerformanceDashboard() {
             ステータス: {healthStatus.text}
           </span>
           <button
-            onClick={handleRetrain}
+            onClick={() => setShowRetrainModal(true)}
             className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/50 rounded text-cyan-400 text-sm transition-colors"
           >
             再トレーニング
@@ -227,6 +229,17 @@ export default function MLPerformanceDashboard() {
           モデルドリフトが検出された場合、再トレーニングを実行してください。
         </p>
       </div>
+
+      {/* Retrain Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showRetrainModal}
+        onConfirm={handleRetrain}
+        onCancel={() => setShowRetrainModal(false)}
+        title="モデル再トレーニング"
+        message="モデルを再トレーニングしますか？これにより性能履歴がリセットされますが、最新のデータで最適化されたモデルが生成されます。"
+        confirmText="再トレーニング"
+        cancelText="キャンセル"
+      />
     </div>
   );
 }
