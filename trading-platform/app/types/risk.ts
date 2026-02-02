@@ -147,6 +147,27 @@ export interface TradingSession {
 }
 
 // ============================================================================
+// Cooling-off Management Types
+// ============================================================================
+
+export interface CoolingReason {
+  type: 'consecutive_losses' | 'daily_loss_limit' | 'weekly_loss_limit' | 'overtrading' | 'manual';
+  severity: number; // 1-10
+  triggerValue: number;
+  description: string;
+}
+
+export interface CooldownRecord {
+  id: string;
+  startTime: Date;
+  endTime: Date;
+  reason: CoolingReason;
+  duration: number; // minutes
+  wasRespected: boolean;
+  violationCount: number;
+}
+
+// ============================================================================
 // Market Data Types
 // ============================================================================
 
