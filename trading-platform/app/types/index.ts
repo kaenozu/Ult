@@ -100,6 +100,13 @@ export interface TechnicalIndicator {
   };
 }
 
+/**
+ * Technical indicators with ATR (Average True Range) for ML prediction
+ */
+export interface TechnicalIndicatorsWithATR extends TechnicalIndicator {
+  atr: number[];
+}
+
 export interface ModelPrediction {
   rfPrediction: number;
   xgbPrediction: number;

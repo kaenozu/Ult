@@ -23,42 +23,9 @@ export interface Alert {
 
 export type NotificationChannelType = 'email' | 'sms' | 'push' | 'webhook' | 'slack';
 
-// Specific configuration types for each channel
-export interface EmailChannelConfig {
-  to?: string;
-  from?: string;
-  smtpServer?: string;
+export interface NotificationChannelConfig {
+  [key: string]: string | number | boolean | undefined;
 }
-
-export interface SmsChannelConfig {
-  phoneNumber?: string;
-  provider?: string;
-}
-
-export interface PushChannelConfig {
-  deviceToken?: string;
-  platform?: 'ios' | 'android' | 'web';
-}
-
-export interface WebhookChannelConfig {
-  url?: string;
-  method?: 'POST' | 'GET';
-  headers?: Record<string, string>;
-}
-
-export interface SlackChannelConfig {
-  webhookUrl?: string;
-  channel?: string;
-}
-
-// Union type for all possible configurations
-export type NotificationChannelConfig = 
-  | EmailChannelConfig 
-  | SmsChannelConfig 
-  | PushChannelConfig 
-  | WebhookChannelConfig 
-  | SlackChannelConfig 
-  | Record<string, never>; // Empty config
 
 export interface NotificationChannel {
   type: NotificationChannelType;
@@ -141,7 +108,7 @@ export class AlertNotificationSystem extends EventEmitter {
   }
 
   // Alert Management
-  createAlert(conditionId: string, message: string, severity: 'info' | 'warning' | 'critical', data?: Record<string, unknown>): string {
+  createAlert(conditionId: string, message: string, severity: 'info' | 'warning' | 'critical', data?: any): string {
     const id = this.generateId();
     const alert: Alert = {
       id,
@@ -193,7 +160,7 @@ export class AlertNotificationSystem extends EventEmitter {
   }
 
   // Channel Management
-  configureChannel(type: NotificationChannelType, config: NotificationChannelConfig): void {
+  configureChannel(type: NotificationChannelType, config: any): void {
     const channel = this.channels.get(type);
     if (channel) {
       channel.config = config;
@@ -228,7 +195,7 @@ export class AlertNotificationSystem extends EventEmitter {
     });
   }
 
-  private sendNotification(type: NotificationChannelType, alert: Alert, config: NotificationChannelConfig): void {
+  private sendNotification(type: NotificationChannelType, alert: Alert, config: any): void {
     // Emit event for UI to handle
     this.emit('notification', { type, alert, config });
 
