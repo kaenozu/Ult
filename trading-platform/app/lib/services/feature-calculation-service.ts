@@ -1,11 +1,25 @@
 /**
- * 予測特徴量計算サービス
+ * 予測特徴量計算サービス（重複排除版）
  * 
  * このモジュールは、MLモデルの入力となる特徴量を計算する機能を提供します。
+ * (#524: 計算ロジック重複排除 - utils/calculations.tsを使用)
  */
 
 import { OHLCV } from '../../types';
-import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
+import { VOLATILITY } from '@/app/lib/constants';
+import {
+  lastValue,
+  calculateRsiChange,
+  calculateSmaDeviation,
+  calculatePriceMomentumMemoized,
+  calculateVolatilityMemoized,
+  calculateBollingerPosition,
+  calculateMacdSignalDifference,
+  calculateVolumeRatio,
+  extractPrices,
+  extractVolumes,
+  mean,
+} from '../utils/calculations';
 
 export interface PredictionFeatures {
   rsi: number;
@@ -22,7 +36,7 @@ export interface PredictionFeatures {
 }
 
 /**
- * 予測特徴量計算サービス
+ * 予測特徴量計算サービス（重複排除版）
  */
 export class FeatureCalculationService {
   /**
@@ -32,114 +46,62 @@ export class FeatureCalculationService {
     data: OHLCV[],
     indicators: any // TechnicalIndicator & { atr: number[] }
   ): PredictionFeatures {
-    const prices = data.map(d => d.close);
-    const volumes = data.map(d => d.volume);
-    const currentPrice = prices[prices.length - 1];
-    const currentVolume = volumes[volumes.length - 1];
+    // utils/calculationsから純粋関数を使用
+    const prices = extractPrices(data);
+    const volumes = extractVolumes(data);
+    const currentPrice = lastValue(prices, 0);
+    const currentVolume = lastValue(volumes, 0);
     
-    // 平均出来高を計算
-    const avgVol = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+    // 平均出来高を計算（純粋関数使用）
+    const avgVol = mean(volumes);
 
     return {
-      rsi: this.getLastValue(indicators.rsi, 0),
-      rsiChange: this.calculateRsiChange(indicators.rsi),
-      sma5: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma5, currentPrice)),
-      sma20: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma20, currentPrice)),
-      sma50: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma50, currentPrice)),
-      priceMomentum: this.calculatePriceMomentum(prices, 10),
-      volumeRatio: currentVolume / (avgVol || 1),
-      volatility: this.calculateVolatility(prices.slice(-VOLATILITY.CALCULATION_PERIOD)),
-      macdSignal: this.calculateMacdSignalDifference(
-        this.getLastValue(indicators.macd.macd, 0),
-        this.getLastValue(indicators.macd.signal, 0)
+      rsi: lastValue(indicators.rsi, 0),
+      rsiChange: calculateRsiChange(indicators.rsi),
+      sma5: calculateSmaDeviation(currentPrice, lastValue(indicators.sma5, currentPrice)),
+      sma20: calculateSmaDeviation(currentPrice, lastValue(indicators.sma20, currentPrice)),
+      sma50: calculateSmaDeviation(currentPrice, lastValue(indicators.sma50, currentPrice)),
+      // メモ化された計算を使用
+      priceMomentum: calculatePriceMomentumMemoized(prices, 10),
+      volumeRatio: calculateVolumeRatio(currentVolume, avgVol),
+      // メモ化されたボラティリティ計算
+      volatility: calculateVolatilityMemoized(
+        new Float64Array(prices.slice(-VOLATILITY.CALCULATION_PERIOD)),
+        true
       ),
-      bollingerPosition: this.calculateBollingerPosition(
+      macdSignal: calculateMacdSignalDifference(
+        lastValue(indicators.macd.macd, 0),
+        lastValue(indicators.macd.signal, 0)
+      ),
+      bollingerPosition: calculateBollingerPosition(
         currentPrice,
-        this.getLastValue(indicators.bollingerBands.upper, 0),
-        this.getLastValue(indicators.bollingerBands.lower, 0)
+        lastValue(indicators.bollingerBands.upper, 0),
+        lastValue(indicators.bollingerBands.lower, 0)
       ),
-      atrPercent: (this.getLastValue(indicators.atr, 0) / currentPrice) * 100,
+      atrPercent: (lastValue(indicators.atr, 0) / currentPrice) * 100,
     };
   }
 
   /**
-   * 配列の最後の値を取得
-   */
-  private getLastValue(arr: number[], fallback: number): number {
-    return arr.length > 0 ? arr[arr.length - 1] : fallback;
-  }
-
-  /**
-   * RSIの変化量を計算
-   */
-  private calculateRsiChange(rsiValues: number[]): number {
-    if (rsiValues.length < 2) {
-      return 0;
-    }
-    return rsiValues[rsiValues.length - 1] - rsiValues[rsiValues.length - 2];
-  }
-
-  /**
-   * SMAからの乖離率を計算
-   */
-  private calculateSmaDeviation(currentPrice: number, smaValue: number): number {
-    if (smaValue === 0) {
-      return 0;
-    }
-    return ((currentPrice - smaValue) / currentPrice) * 100;
-  }
-
-  /**
-   * 価格モメンタムを計算
+   * @deprecated utils/calculations.calculatePriceMomentumMemoizedを使用してください
    */
   calculatePriceMomentum(prices: number[], period: number = 10): number {
-    if (prices.length < period + 1) {
-      return 0;
-    }
-    const currentIndex = prices.length - 1;
-    const pastIndex = currentIndex - period;
-    if (pastIndex < 0) {
-      return 0;
-    }
-    const currentPrice = prices[currentIndex];
-    const pastPrice = prices[pastIndex];
-    return ((currentPrice - pastPrice) / pastPrice) * 100;
-  }
-
-  /**
-   * ボラティリティを計算
-   */
-  private calculateVolatility(prices: number[]): number {
-    if (prices.length < 2) return 0;
-    const returns = this.calculateReturns(prices);
-    const avg = returns.reduce((a, b) => a + b, 0) / returns.length;
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avg, 2), 0) / returns.length;
-    return Math.sqrt(variance) * Math.sqrt(252) * 100;
-  }
-
-  /**
-   * 価格リターンを計算
-   */
-  private calculateReturns(prices: number[]): number[] {
-    return prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);
-  }
-
-  /**
-   * MACDとシグナルの差を計算
-   */
-  private calculateMacdSignalDifference(macd: number, signal: number): number {
-    return macd - signal;
-  }
-
-  /**
-   * ボリンジャーバンドの現在位置（％）を計算
-   */
-  private calculateBollingerPosition(currentPrice: number, upper: number, lower: number): number {
-    if (upper === lower) {
-      return 0;
-    }
-    return ((currentPrice - lower) / (upper - lower)) * 100;
+    return calculatePriceMomentumMemoized(prices, period);
   }
 }
 
 export const featureCalculationService = new FeatureCalculationService();
+
+// utils/calculationsから再エクスポート
+export {
+  lastValue,
+  calculateRsiChange,
+  calculateSmaDeviation,
+  calculatePriceMomentumMemoized as calculatePriceMomentum,
+  calculateVolatilityMemoized as calculateVolatility,
+  calculateBollingerPosition,
+  calculateMacdSignalDifference,
+  calculateVolumeRatio,
+  extractPrices,
+  extractVolumes,
+} from '../utils/calculations';
