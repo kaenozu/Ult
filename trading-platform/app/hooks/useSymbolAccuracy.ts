@@ -96,16 +96,16 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         // Calculate accuracy metrics
         const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
         
-        if (!accuracyResult) {
-          throw new Error(ERROR_MESSAGES.INSUFFICIENT_DATA);
+        if (accuracyResult.isErr) {
+          throw new Error(accuracyResult.error.message);
         }
 
         const predError = calculatePredictionError(historicalData);
 
         const accuracyData: AccuracyData = {
-          hitRate: accuracyResult.hitRate,
-          directionalAccuracy: accuracyResult.directionalAccuracy,
-          totalTrades: accuracyResult.totalTrades,
+          hitRate: accuracyResult.value.hitRate,
+          directionalAccuracy: accuracyResult.value.directionalAccuracy,
+          totalTrades: accuracyResult.value.totalTrades,
           predictionError: predError
         };
 
@@ -135,12 +135,12 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           if (ohlcv.length >= 252) {
             try {
               const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
-              if (accuracyResult) {
+              if (accuracyResult.isOk) {
                 const predError = calculatePredictionError(ohlcv);
                 const fallbackData: AccuracyData = {
-                  hitRate: accuracyResult.hitRate,
-                  directionalAccuracy: accuracyResult.directionalAccuracy,
-                  totalTrades: accuracyResult.totalTrades,
+                  hitRate: accuracyResult.value.hitRate,
+                  directionalAccuracy: accuracyResult.value.directionalAccuracy,
+                  totalTrades: accuracyResult.value.totalTrades,
                   predictionError: predError
                 };
                 setAccuracy(fallbackData);
