@@ -185,12 +185,12 @@ export function filterByTechnicalCriteria(
     if ('error' in analysis) continue;
     
     // Check confidence
-    if (criteria.minConfidence && analysis.confidence < criteria.minConfidence) {
+    if (criteria.minConfidence && (analysis.confidence === undefined || analysis.confidence < criteria.minConfidence)) {
       continue;
     }
     
     // Check signal
-    if (criteria.allowedSignals && !criteria.allowedSignals.includes(analysis.signal)) {
+    if (criteria.allowedSignals && (!analysis.signal || !criteria.allowedSignals.includes(analysis.signal))) {
       continue;
     }
     
