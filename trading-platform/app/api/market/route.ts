@@ -262,7 +262,7 @@ export async function GET(request: Request) {
         
         // Add warning if we fell back to daily data for Japanese stock with intraday interval
         if (isJapaneseStock && isIntraday) {
-          warnings.push('イントラデイデータ（1m, 5m, 15m, 1h, 4H）は日本株では利用できません。日次データを表示しています。');
+          warnings.push('イントラデイデータ（1m, 5m, 15m, 1h, 4h）は日本株では利用できません。日次データを表示しています。');
         }
         
         // Add Yahoo Finance limitation warnings

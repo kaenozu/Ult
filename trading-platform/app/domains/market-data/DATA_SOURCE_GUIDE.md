@@ -39,7 +39,7 @@ The current default data source (Yahoo Finance) has significant limitations for 
 ### For US Markets
 
 #### 1. IEX Cloud (Recommended for Most Users)
-- **Cost**: $9/month for Starter plan
+- **Cost**: $9 USD/month for Starter plan
 - **Features**:
   - Real-time data (no delay)
   - Intraday intervals (1m, 5m, 15m, etc.)
@@ -50,7 +50,7 @@ The current default data source (Yahoo Finance) has significant limitations for 
 - **Setup**: https://iexcloud.io/
 
 #### 2. Polygon.io (Best for High-Frequency Trading)
-- **Cost**: $29/month for Starter plan
+- **Cost**: $29 USD/month for Starter plan
 - **Features**:
   - Real-time tick-by-tick data
   - WebSocket streaming
@@ -75,12 +75,12 @@ The current default data source (Yahoo Finance) has significant limitations for 
 ⚠️ **Important**: Japanese stock data requires specialized providers:
 
 1. **Bloomberg Terminal** (Professional)
-   - Cost: ~$2,000/month
+   - Cost: ~$2,000 USD/month
    - Real-time data with bid/ask
    - Most comprehensive but expensive
 
 2. **Refinitiv (formerly Reuters)**
-   - Cost: Custom pricing
+   - Cost: Custom pricing (typically $1,000+ USD/month)
    - Real-time Japanese market data
    - Professional-grade reliability
 
@@ -234,17 +234,17 @@ Look for warnings:
 
 ## 💰 Cost-Benefit Analysis
 
-### Hobby Trader ($0-50/month)
-- **Recommendation**: Alpaca (free) or IEX Cloud ($9/mo)
+### Hobby Trader ($0-50 USD/month)
+- **Recommendation**: Alpaca (free) or IEX Cloud ($9 USD/mo)
 - **Use Case**: Learning, testing, small account
 - **Limitation**: US stocks only
 
-### Active Day Trader ($50-200/month)
-- **Recommendation**: Polygon.io ($29-99/mo)
+### Active Day Trader ($50-200 USD/month)
+- **Recommendation**: Polygon.io ($29-99 USD/mo)
 - **Use Case**: Active trading, multiple strategies
 - **Benefit**: Tick data, high rate limits, WebSocket
 
-### Professional Trader ($200+/month)
+### Professional Trader ($200+ USD/month)
 - **Recommendation**: Bloomberg/Refinitiv
 - **Use Case**: Professional trading, Japanese stocks
 - **Benefit**: Highest quality, all markets, real-time
