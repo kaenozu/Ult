@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useId } from 'react';
+import { useState, useId, useRef, useEffect } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
@@ -52,6 +52,19 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Ref to store success timer ID for cleanup
+  const successTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timer on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        clearTimeout(successTimerRef.current);
+        successTimerRef.current = null;
+      }
+    };
+  }, []);
+
   // 動的リスク管理設定
   const [riskConfig, setRiskConfig] = useState<DynamicRiskConfig>({
     enableTrailingStop: true,
@@ -102,7 +115,9 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       // 注文成功
       setIsConfirming(false);
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
+      const timerId = setTimeout(() => setShowSuccess(false), 3000);
+      // Store timer ID for cleanup
+      successTimerRef.current = timerId;
     } else {
       // 注文失敗
       setErrorMessage(result.error || '注文の実行に失敗しました');
