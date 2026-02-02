@@ -2,6 +2,45 @@
  * ML予測モデルサービス
  * 
  * このモジュールは、RF、XGB、LSTMの各モデルによる予測を実行する機能を提供します。
+ * 
+ * ## 動的重み最適化
+ * 
+ * このサービスは、市場体制と予測精度に基づいて各モデルの重みを動的に調整します。
+ * 
+ * ### 使用例
+ * 
+ * ```typescript
+ * import { mlModelService } from './ml-model-service';
+ * 
+ * // 基本的な予測
+ * const prediction = mlModelService.predict(features);
+ * 
+ * // 市場体制に基づいて重みを更新
+ * mlModelService.updateWeightsForMarketRegime('BULL');
+ * 
+ * // 予測精度をフィードバック（実際の値が判明した後）
+ * mlModelService.recordPredictionAccuracy(
+ *   prediction.rfPrediction,
+ *   prediction.xgbPrediction,
+ *   prediction.lstmPrediction,
+ *   actualValue
+ * );
+ * 
+ * // 現在の重みを確認
+ * const currentWeights = mlModelService.getCurrentWeights();
+ * console.log(currentWeights); // { rf: 0.35, xgb: 0.40, lstm: 0.25, ... }
+ * 
+ * // 重みをリセット
+ * mlModelService.resetWeights();
+ * ```
+ * 
+ * ### 重み調整のアルゴリズム
+ * 
+ * 1. **市場体制検出**: BULL/BEAR/SIDEWAYS を判定
+ * 2. **体制別重み適用**: 各体制に最適な重みパターンを使用
+ * 3. **精度フィードバック**: 過去20予測の精度を追跡
+ * 4. **重みブレンド**: 体制重み(70%) + 精度重み(30%)
+ * 5. **指数移動平均**: 急激な変化を防ぐ平滑化
  */
 
 import { PredictionFeatures } from './feature-calculation-service';
