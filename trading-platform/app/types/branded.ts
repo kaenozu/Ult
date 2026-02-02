@@ -167,12 +167,8 @@ export function createDateString(value: string | Date): DateString {
   if (typeof value !== 'string') {
     throw new TypeError('Date must be a string or Date object');
   }
-  // Basic ISO 8601 format check
-  const isoDateRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?)?$/;
-  if (!isoDateRegex.test(value)) {
-    throw new TypeError('Date must be in ISO 8601 format');
-  }
   // Validate that the string represents a valid date
+  // This will catch invalid dates like '2025-02-31', '9999-99-99', etc.
   const date = new Date(value);
   if (isNaN(date.getTime())) {
     throw new TypeError('Date string does not represent a valid date');

@@ -117,10 +117,12 @@ import {
 const stopLoss = createPercentage(2); // 2%
 const ratio = createRatio(0.02);      // 0.02
 
-// Compile-time type safety
+// Type safety: branded types prevent accidental operations
 function applyStopLoss(price: Price, stopLoss: Percentage) {
   const ratio = percentageToRatio(stopLoss);
-  return price * (1 - ratio); // Error: can't multiply branded types directly
+  // This compiles but returns a regular number (not a Price)
+  // You lose type safety if you don't wrap the result
+  return price * (1 - ratio); // Returns number, not Price
 }
 
 // Correct usage - cast at the point of use only
@@ -129,7 +131,8 @@ function applyStopLoss(price: Price, stopLoss: Percentage) {
   // Cast to number only when needed for operations
   const priceValue = price as number;
   const ratioValue = ratio as number;
-  return createPrice(priceValue * (1 - ratioValue));
+  // Wrap the result to maintain type safety
+  return createPrice(priceValue * (1 - ratioValue)); // Returns Price
 }
 ```
 
