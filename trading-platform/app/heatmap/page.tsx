@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
 import { ALL_STOCKS } from '@/app/data/stocks';
@@ -89,12 +89,18 @@ function HeatmapContent() {
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'japan' | 'usa'>('all');
   const [loading, setLoading] = useState(false);
 
+  // Use ref to track mounted state for cleanup
+  const mountedRef = useRef(true);
+
   useEffect(() => {
     const fetchAllQuotes = async () => {
+      if (!mountedRef.current) return;
       setLoading(true);
       try {
         const symbols = ALL_STOCKS.map(s => s.symbol);
         const latestQuotes = await marketClient.fetchQuotes(symbols);
+
+        if (!mountedRef.current) return; // Check before state updates
 
         const updates = latestQuotes.map(q => ({
           symbol: q.symbol,
@@ -114,13 +120,21 @@ function HeatmapContent() {
         });
         setDisplayStocks(updatedStocks);
       } catch (error) {
-        console.error('Universe sync failed:', error);
+        if (mountedRef.current) {
+          console.error('Universe sync failed:', error);
+        }
       } finally {
-        setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAllQuotes();
+    
+    return () => {
+      mountedRef.current = false;
+    };
   }, [batchUpdateStockData]);
 
   const handleStockClick = (stock: Stock) => {
