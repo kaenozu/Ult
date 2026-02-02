@@ -60,6 +60,16 @@ export const FORECAST_CONE = {
 } as const;
 
 /**
+ * Prediction error calculation weights
+ */
+export const PREDICTION_ERROR_WEIGHTS = {
+  SMA_WEIGHT: 0.4,
+  EMA_WEIGHT: 0.6,
+  ERROR_MULTIPLIER: 0.9, // Strictness factor for error calculation
+  ERROR_THRESHOLD: 0.4, // Hit threshold as percentage of predicted change
+} as const;
+
+/**
  * Price calculation parameters
  */
 export const PRICE_CALCULATION = {

@@ -9,6 +9,7 @@ export const OPTIMIZATION = {
   REQUIRED_DATA_PERIOD: 100,
   MIN_DATA_PERIOD: 60,
   VOLUME_PROFILE_BINS: 20,
+  REOPTIMIZATION_INTERVAL: 30, // Re-optimize every N days
 } as const;
 
 /**
@@ -23,6 +24,8 @@ export const DATA_REQUIREMENTS = {
   CORRELATION_CALCULATION_PERIOD: 30,
   TREND_CALCULATION_PERIOD: 20,
   MIN_OHLCV_LENGTH: 20,
+  ANNUAL_TRADING_DAYS: 252, // Trading days in a year
+  LOOKBACK_PERIOD_DAYS: 252, // 1 year lookback for accuracy calculation
 } as const;
 
 /**
