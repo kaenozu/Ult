@@ -250,7 +250,18 @@ npm run test:coverage
 - 関数: 80%
 - 行: 80%
 
-現在のカバレッジ状況は、CI/CDパイプラインで自動的に確認されます。
+現在のカバレッジ状況は、CI/CDパイプラインで自動的に確認され、Codecovにアップロードされます。
+
+[![codecov](https://codecov.io/gh/kaenozu/Ult/branch/main/graph/badge.svg)](https://codecov.io/gh/kaenozu/Ult)
+
+**カバレッジ可視化**:
+
+1. **ローカルHTMLレポート**: `coverage/lcov-report/index.html` をブラウザで開く
+2. **Codecovダッシュボード**: 上記バッジをクリックして詳細なカバレッジ分析を確認
+3. **CLIツール**: `npx codecov` でカバレッジをアップロード（CI環境）
+4. **GitHub Check**: PRにカバレッジ変化が自動的に表示
+
+詳細は [COVERAGE_VISUALIZATION_GUIDE.md](./COVERAGE_VISUALIZATION_GUIDE.md) を参照してください。
 
 ### 🎭 E2Eテストカバレッジ
 
