@@ -5,6 +5,9 @@ import { OrderRequest, OrderResult } from '../types/order';
 export const useOrderExecutionStore = useTradingStore;
 
 // Re-export specific functions for type safety
-export const useExecuteOrderAtomicV2 = (): ((order: OrderRequest) => OrderResult) => {
-  return useTradingStore((state) => state.executeOrderAtomicV2);
+export const useExecuteOrder = (): ((order: OrderRequest) => OrderResult) => {
+  return useTradingStore((state) => state.executeOrder);
 };
+
+/** @deprecated Use useExecuteOrder instead */
+export const useExecuteOrderAtomicV2 = useExecuteOrder;

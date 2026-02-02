@@ -567,8 +567,8 @@ export class ResilientWebSocketClient {
     };
 
     this.ws.onerror = (event) => {
-      console.error('[WebSocket] Error occurred');
       const wsError = categorizeError(event);
+      console.error('[WebSocket] Error occurred:', wsError.category, '-', wsError.message);
       this.options.onError?.(wsError);
       this.emit('error', wsError);
     };
