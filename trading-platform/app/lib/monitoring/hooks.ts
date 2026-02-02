@@ -6,6 +6,7 @@
 
 import { useEffect, useRef } from 'react';
 import { trackRender } from '@/app/lib/monitoring';
+import { logger } from '@/app/core/logger';
 
 /**
  * Hook to track component render performance
@@ -68,13 +69,15 @@ export function useOperationTracking(operationName: string) {
 export function useComponentLifecycle(componentName: string): void {
   useEffect(() => {
     const mountTime = performance.now();
-    console.log(`[Lifecycle] ${componentName} mounted at ${mountTime.toFixed(2)}ms`);
+    logger.info(`[Lifecycle] ${componentName} mounted at ${mountTime.toFixed(2)}ms`, undefined, 'Monitoring');
 
     return () => {
       const unmountTime = performance.now();
       const lifetime = unmountTime - mountTime;
-      console.log(
-        `[Lifecycle] ${componentName} unmounted after ${lifetime.toFixed(2)}ms`
+      logger.info(
+        `[Lifecycle] ${componentName} unmounted after ${lifetime.toFixed(2)}ms`,
+        undefined,
+        'Monitoring'
       );
     };
   }, [componentName]);

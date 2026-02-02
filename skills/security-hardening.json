@@ -1,0 +1,50 @@
+{
+  "name": "security-hardening",
+  "description": "コードベースのセキュリティ脆弱性を特定・修正するスキル。コマンドインジェクション、XSS、CSRF、認証・認可の問題を検出し、安全な実装に自動変換する。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": true,
+  "triggers": [
+    "セキュリティ",
+    "脆弱性",
+    "security",
+    "XSS",
+    "インジェクション",
+    "認証"
+  ],
+  "rules": [
+    "input-validation",
+    "output-escaping",
+    "secure-execution",
+    "least-privilege",
+    "defense-in-depth"
+  ],
+  "vulnerability_patterns": {
+    "command_injection": "exec/execSyncに未検証のユーザー入力を渡す",
+    "xss": "未エスケープのユーザー入力をHTMLに挿入",
+    "path_traversal": "未検証のパスパラメータでファイルアクセス",
+    "sql_injection": "文字列連結によるSQLクエリ構築",
+    "eval_usage": "eval()やFunction()への動的コード実行"
+  },
+  "secure_replacements": {
+    "execSync": "spawn with args array",
+    "innerHTML": "textContent or DOMPurify",
+    "eval": "JSON.parse or safe-eval alternatives",
+    "shell_command": "command whitelist + parameter validation"
+  },
+  "workflow": {
+    "step1": "コードベースのセキュリティスキャン",
+    "step2": "危険パターンの検出と優先順位付け",
+    "step3": "安全な代替実装の生成",
+    "step4": "単体テストでの動作確認",
+    "step5": "変更の適用とコミット",
+    "step6": "セキュリティチェックの実行"
+  },
+  "capabilities": [
+    "自動脆弱性検出",
+    "安全なコードへの自動変換",
+    "コマンドホワイトリスト生成",
+    "入力検証パターンの適用",
+    "セキュリティテスト生成"
+  ]
+}

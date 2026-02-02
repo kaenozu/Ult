@@ -11,6 +11,7 @@
 
 import * as Sentry from '@sentry/nextjs';
 import { onCLS, onINP, onLCP, onFCP, onTTFB, Metric } from 'web-vitals';
+import { logger } from '@/app/core/logger';
 
 // ============================================================================
 // Type Definitions
@@ -126,7 +127,7 @@ class MonitoringService {
     }
 
     this.initialized = true;
-    console.log('[Monitoring] Service initialized');
+    logger.info('[Monitoring] Service initialized', undefined, 'Monitoring');
   }
 
   /**
@@ -178,9 +179,9 @@ class MonitoringService {
         },
       });
 
-      console.log('[Monitoring] Sentry initialized');
+      logger.info('[Monitoring] Sentry initialized', undefined, 'Monitoring');
     } catch (error) {
-      console.error('[Monitoring] Failed to initialize Sentry:', error);
+      logger.error('[Monitoring] Failed to initialize Sentry', error instanceof Error ? error : new Error(String(error)), 'Monitoring');
     }
   }
 
@@ -193,11 +194,7 @@ class MonitoringService {
       this.webVitalsMetrics.set(metric.name, webVitalMetric);
 
       // Log to console
-      console.log(`[Web Vitals] ${metric.name}:`, {
-        value: metric.value.toFixed(2),
-        rating: webVitalMetric.rating,
-        id: metric.id,
-      });
+      logger.info(`[Web Vitals] ${metric.name}: ${metric.value.toFixed(2)} (${webVitalMetric.rating})`, { id: metric.id }, 'Monitoring');
 
       // Send to Sentry
       Sentry.captureMessage(`Web Vital: ${metric.name}`, {
@@ -228,7 +225,7 @@ class MonitoringService {
     onFCP(reportWebVital);
     onTTFB(reportWebVital);
 
-    console.log('[Monitoring] Web Vitals tracking initialized');
+    logger.info('[Monitoring] Web Vitals tracking initialized', undefined, 'Monitoring');
   }
 
   /**
@@ -264,9 +261,10 @@ class MonitoringService {
     if (!budget) return;
 
     if (value > budget.budget) {
-      console.warn(
-        `[Performance Budget] ${metricName} exceeded budget: ` +
-        `${value.toFixed(2)}ms > ${budget.budget}ms`
+      logger.warn(
+        `[Performance Budget] ${metricName} exceeded budget: ${value.toFixed(2)}ms > ${budget.budget}ms`,
+        undefined,
+        'Monitoring'
       );
       
       // Report to Sentry
@@ -276,9 +274,10 @@ class MonitoringService {
         extra: { value, budget: budget.budget, warning: budget.warning },
       });
     } else if (value > budget.warning) {
-      console.warn(
-        `[Performance Budget] ${metricName} approaching budget: ` +
-        `${value.toFixed(2)}ms > ${budget.warning}ms (warning threshold)`
+      logger.warn(
+        `[Performance Budget] ${metricName} approaching budget: ${value.toFixed(2)}ms > ${budget.warning}ms (warning threshold)`,
+        undefined,
+        'Monitoring'
       );
     }
   }
@@ -319,9 +318,10 @@ class MonitoringService {
 
     // Log slow API calls
     if (metric.duration > 1000) {
-      console.warn(
-        `[API] Slow response: ${metric.method} ${metric.endpoint} ` +
-        `took ${metric.duration.toFixed(2)}ms`
+      logger.warn(
+        `[API] Slow response: ${metric.method} ${metric.endpoint} took ${metric.duration.toFixed(2)}ms`,
+        undefined,
+        'Monitoring'
       );
     }
 
@@ -369,9 +369,10 @@ class MonitoringService {
 
     // Log connection issues
     if (metric.event === 'error' || !metric.success) {
-      console.error(
-        `[WebSocket] ${metric.event} failed:`,
-        metric.errorMessage || 'Unknown error'
+      logger.error(
+        `[WebSocket] ${metric.event} failed: ${metric.errorMessage || 'Unknown error'}`,
+        new Error(metric.errorMessage || 'WebSocket error'),
+        'Monitoring'
       );
     }
   }
@@ -395,9 +396,10 @@ class MonitoringService {
 
     // Log slow renders
     if (metric.duration > 100) {
-      console.warn(
-        `[Render] Slow render: ${metric.componentName} ` +
-        `took ${metric.duration.toFixed(2)}ms`
+      logger.warn(
+        `[Render] Slow render: ${metric.componentName} took ${metric.duration.toFixed(2)}ms`,
+        undefined,
+        'Monitoring'
       );
     }
   }
