@@ -92,7 +92,7 @@ class ExitStrategy {
   private trackedPositions: Map<string, Position> = new Map();
 
   /**
-   * Check ATR-based trailing stop
+   * Check ATR-based trailing stop (improved for better exit timing)
    */
   checkTrailingStop(
     position: Position,
@@ -121,27 +121,47 @@ class ExitStrategy {
       };
     }
 
-    const trailingDistance = atr * config.atrMultiplier;
+    // Dynamic multiplier based on position performance
+    let dynamicMultiplier = config.atrMultiplier;
+    const trailingDistance = atr * dynamicMultiplier;
     let trailingStopPrice: number;
     let shouldExit = false;
 
     if (position.side === 'LONG') {
       // For LONG: trailing stop is below highest price
-      // Use current highest for stop calculation
       const highest = position.highestPrice || position.entryPrice;
-      trailingStopPrice = highest - trailingDistance;
+      const percentGain = ((highest - position.entryPrice) / position.entryPrice) * 100;
+      
+      // Tighten stop as profit increases
+      if (percentGain > 10) {
+        dynamicMultiplier = config.atrMultiplier * 0.7; // Tighter stop for big gains
+      } else if (percentGain > 5) {
+        dynamicMultiplier = config.atrMultiplier * 0.85; // Slightly tighter
+      }
+      
+      trailingStopPrice = highest - (atr * dynamicMultiplier);
       shouldExit = currentPrice <= trailingStopPrice;
-      // Update highest price if current price is higher (for next check)
+      
+      // Update highest price if current price is higher
       if (position.highestPrice === undefined || currentPrice > position.highestPrice!) {
         position.highestPrice = currentPrice;
       }
     } else {
       // For SHORT: trailing stop is above lowest price
-      // Use current lowest for stop calculation
       const lowest = position.lowestPrice || position.entryPrice;
-      trailingStopPrice = lowest + trailingDistance;
+      const percentGain = ((position.entryPrice - lowest) / position.entryPrice) * 100;
+      
+      // Tighten stop as profit increases
+      if (percentGain > 10) {
+        dynamicMultiplier = config.atrMultiplier * 0.7;
+      } else if (percentGain > 5) {
+        dynamicMultiplier = config.atrMultiplier * 0.85;
+      }
+      
+      trailingStopPrice = lowest + (atr * dynamicMultiplier);
       shouldExit = currentPrice >= trailingStopPrice;
-      // Update lowest price if current price is lower (for next check)
+      
+      // Update lowest price if current price is lower
       if (position.lowestPrice === undefined || currentPrice < position.lowestPrice!) {
         position.lowestPrice = currentPrice;
       }
@@ -153,8 +173,8 @@ class ExitStrategy {
       shouldExit,
       exitPrice: currentPrice,
       reason: shouldExit 
-        ? `Trailing Stop triggered (${position.side}) - Price: ${currentPrice.toFixed(2)}, Stop: ${trailingStopPrice.toFixed(2)}`
-        : `Trailing Stop active (${position.side})`,
+        ? `Dynamic Trailing Stop triggered (${position.side}) - Price: ${currentPrice.toFixed(2)}, Stop: ${trailingStopPrice.toFixed(2)}, Multiplier: ${dynamicMultiplier.toFixed(2)}`
+        : `Dynamic Trailing Stop active (${position.side}) - Multiplier: ${dynamicMultiplier.toFixed(2)}`,
       exitType: shouldExit ? 'TRAILING_STOP' : 'INSUFFICIENT_DATA',
       priority: shouldExit ? 3 : 0,
       metadata: {
