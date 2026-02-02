@@ -427,4 +427,6 @@ class ConsensusSignalService {
 
 }
 
+// Export both the class and a singleton instance
+export { ConsensusSignalService };
 export const consensusSignalService = new ConsensusSignalService();
