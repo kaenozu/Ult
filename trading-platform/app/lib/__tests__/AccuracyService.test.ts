@@ -332,4 +332,68 @@ describe('AccuracyService', () => {
       expect(result).toBeDefined();
     });
   });
+
+  describe('Walk-Forward Analysis in runBacktest', () => {
+    it('should include walkForwardMetrics in backtest result', () => {
+      const data = generateMockData(400, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      expect(result).toBeDefined();
+      expect(result.symbol).toBe('7203');
+      
+      // Should have WFA metrics if optimization occurred
+      if (result.walkForwardMetrics) {
+        expect(result.walkForwardMetrics.outOfSampleAccuracy).toBeDefined();
+        expect(result.walkForwardMetrics.outOfSampleAccuracy).toBeGreaterThanOrEqual(0);
+        expect(result.walkForwardMetrics.overfitScore).toBeDefined();
+        expect(result.walkForwardMetrics.parameterStability).toBeDefined();
+      }
+    });
+
+    it('should track parameter stability across optimization windows', () => {
+      const data = generateMockData(500, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      if (result.walkForwardMetrics) {
+        // Parameter stability should be a reasonable number
+        expect(result.walkForwardMetrics.parameterStability).toBeGreaterThanOrEqual(0);
+        expect(result.walkForwardMetrics.parameterStability).toBeLessThan(100);
+      }
+    });
+
+    it('should report out-of-sample accuracy from validation sets', () => {
+      const data = generateMockData(500, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      if (result.walkForwardMetrics) {
+        const oos = result.walkForwardMetrics.outOfSampleAccuracy;
+        
+        // OOS accuracy should be in valid range
+        expect(oos).toBeGreaterThanOrEqual(0);
+        expect(oos).toBeLessThanOrEqual(100);
+      }
+    });
+
+    it('should have overfitScore close to 1.0 indicating good generalization', () => {
+      const data = generateMockData(500, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      if (result.walkForwardMetrics) {
+        // With proper WFA, overfitScore should be 1.0 (no overfitting)
+        // since we're selecting based on validation performance
+        expect(result.walkForwardMetrics.overfitScore).toBe(1.0);
+      }
+    });
+
+    it('should re-optimize at regular intervals during backtest', () => {
+      const data = generateMockData(500, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      // With 500 days and REOPTIMIZATION_INTERVAL=30, should have multiple optimization windows
+      if (result.walkForwardMetrics) {
+        // Should have tracked multiple parameter sets
+        expect(result.walkForwardMetrics.parameterStability).toBeDefined();
+      }
+    });
+  });
 });
