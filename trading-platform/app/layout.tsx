@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { I18nProvider } from "@/app/i18n/provider";
 import "./globals.css";
 import { MonitoringProvider } from "./components/MonitoringProvider";
+import { BehavioralWarningProvider } from "./components/BehavioralWarningProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,9 +24,11 @@ export default function RootLayout({
     <html lang="ja" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
         <MonitoringProvider>
-          <I18nProvider>
-            {children}
-          </I18nProvider>
+          <BehavioralWarningProvider>
+            <I18nProvider>
+              {children}
+            </I18nProvider>
+          </BehavioralWarningProvider>
         </MonitoringProvider>
       </body>
     </html>
