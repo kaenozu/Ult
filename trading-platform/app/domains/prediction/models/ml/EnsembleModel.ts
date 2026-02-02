@@ -327,7 +327,7 @@ export class EnsembleModel {
       const avgAccuracy = recentHistory.reduce((sum, p) => sum + p.accuracy, 0) / recentHistory.length;
 
       // ベースラインと比較して重みを調整
-      const baselineAccuracy = 55; // 55%をベースラインとする
+      const baselineAccuracy = 60; // 60%をベースラインとする（厳格化: 55% → 60%）
       const adjustment = (avgAccuracy - baselineAccuracy) / 100 * this.LEARNING_RATE;
 
       // @ts-ignore - 動的なアクセス

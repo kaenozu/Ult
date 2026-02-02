@@ -3,6 +3,26 @@
  */
 
 /**
+ * ML Model availability and training status
+ */
+export const ML_MODEL_CONFIG = {
+  // Model availability flags
+  MODELS_TRAINED: false, // Set to true once models are trained
+  REQUIRE_MODELS: false, // Set to true to enforce model availability
+  
+  // Minimum accuracy requirements
+  MIN_DIRECTIONAL_ACCURACY: 0.55, // 55% minimum for direction prediction
+  MIN_PROFIT_FACTOR: 1.5, // Minimum profit factor
+  MAX_DRAWDOWN: 0.20, // Maximum 20% drawdown
+  
+  // Model file paths (relative to project root)
+  MODEL_DIR: '/models',
+  LSTM_MODEL_PATH: '/models/lstm_model.h5',
+  TRANSFORMER_MODEL_PATH: '/models/transformer_model.json',
+  GB_MODEL_PATH: '/models/gradient_boosting_model.json',
+} as const;
+
+/**
  * Ensemble model weights for combining predictions
  */
 export const ENSEMBLE_WEIGHTS = {
@@ -66,7 +86,7 @@ export const PREDICTION_ERROR_WEIGHTS = {
   SMA_WEIGHT: 0.4,
   EMA_WEIGHT: 0.6,
   ERROR_MULTIPLIER: 0.9, // Strictness factor for error calculation
-  ERROR_THRESHOLD: 0.4, // Hit threshold as percentage of predicted change
+  ERROR_THRESHOLD: 0.1, // Hit threshold as percentage of predicted change (tightened from 0.4 to 0.1 for 10% accuracy)
 } as const;
 
 /**
