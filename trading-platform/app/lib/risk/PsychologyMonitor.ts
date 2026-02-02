@@ -13,6 +13,7 @@ import {
   BiasAnalysis,
   ConsecutiveLossInfo
 } from '@/app/types/risk';
+import { logger } from '@/app/core/logger';
 
 export class PsychologyMonitor {
   private tradingHistory: Order[] = [];
@@ -719,8 +720,18 @@ export class PsychologyMonitor {
    * アラートを通知
    */
   private notifyAlerts(alerts: PsychologyAlert[]): void {
-    // TODO: 実際の通知システムと連携
-    console.warn('Psychology Alerts:', alerts);
+    // 専用ロガーを使用してアラートを記録
+    alerts.forEach(alert => {
+      logger.warn(
+        `Psychology Alert [${alert.type}]: ${alert.message}`,
+        {
+          severity: alert.severity,
+          recommendation: alert.recommendation,
+          timestamp: alert.timestamp
+        },
+        'PsychologyMonitor'
+      );
+    });
   }
 
   /**

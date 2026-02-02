@@ -1,0 +1,339 @@
+---
+title: バックテストパラメータの入力検証欠如
+title_en: Missing Input Validation on Backtest Parameters
+labels: bug, validation, quality, medium-priority
+severity: Medium
+priority: P2
+---
+
+## 説明 (Description)
+
+バックテストサービス ([`backtest-service.ts`](trading-platform/app/lib/backtest-service.ts:37-42)) において、設定パラメータ（`BacktestConfig`）の入力検証がほとんど行われていません。無効な値が渡された場合、予期せぬ動作やランタイムエラーが発生する可能性があります。
+
+### 現在の実装
+
+```typescript
+export interface BacktestConfig {
+  initialCapital: number;      // 検証なし
+  commission: number;          // 検証なし
+  slippage: number;            // 検証なし
+  maxPositionSize?: number;    // 検証なし
+  riskPerTrade?: number;       // 検証なし
+  startDate?: string;          // 検証なし
+  endDate?: string;            // 検証なし
+}
+
+async runBacktest(
+  stock: Stock,
+  historicalData: OHLCV[],
+  config: BacktestConfig,    // ← バリデーションなしで直接使用
+  onProgress?: BacktestProgressCallback
+): Promise<BacktestResult> {
+  // 検証なしで処理開始
+  let capital = config.initialCapital;
+  // ...
+}
+```
+
+## 潜在的なリスク
+
+### 1. 初期資本 (initialCapital)
+- **負の値**: 負の資本で取引が開始される
+- **ゼロ**: 0除算や無限ループの可能性
+- **極端に大きな値**: メモリオーバーフロー
+
+### 2. 手数料 (commission)
+- **負の値**: 取引で「受け取り」が発生する計算
+- **100%以上**: 取引コストが取引額を超える
+- **NaN/Infinity**: 計算結果が破損
+
+### 3. スリッページ (slippage)
+- **負の値**: 常に有利な価格で執行される計算
+- **極端に大きな値**: 実質的に取引が不可能
+- **NaN**: 価格計算が NaN に
+
+### 4. ポジションサイズ (maxPositionSize)
+- **100%以上**: レバレッジなしに100%以上のポジション
+- **負の値**: 逆方向の計算
+- **undefined時の挙動**: デフォルト値 10% が適用されるが明示されていない
+
+### 5. 日付範囲
+- **endDate < startDate**: 空のデータセット
+- **無効な日付形式**: `new Date()` での予期せぬ動作
+- **未来の日付**: 存在しないデータへのアクセス
+
+## 影響 (Impact)
+
+- **重大度: Medium**
+- **セキュリティリスク**: 悪意のある入力によるDoS攻撃の可能性
+- **バグの発見困難**: 無効な入力が後続の計算で奇妙な結果を生む
+- **ユーザーエクスペリエンス**: エラーメッセージが判読しにくい
+- **データ整合性**: 無効な結果がデータベースに保存される可能性
+
+## 推奨される解決策 (Recommended Solution)
+
+### 1. Zod スキーマによるバリデーション
+
+```typescript
+import { z } from 'zod';
+
+const BacktestConfigSchema = z.object({
+  initialCapital: z.number()
+    .positive('Initial capital must be positive')
+    .finite('Initial capital must be finite')
+    .max(1e12, 'Initial capital cannot exceed 1 trillion'),
+  
+  commission: z.number()
+    .min(0, 'Commission cannot be negative')
+    .max(100, 'Commission cannot exceed 100%')
+    .finite('Commission must be finite'),
+  
+  slippage: z.number()
+    .min(0, 'Slippage cannot be negative')
+    .max(50, 'Slippage cannot exceed 50%')
+    .finite('Slippage must be finite'),
+  
+  maxPositionSize: z.number()
+    .positive('Max position size must be positive')
+    .max(1, 'Max position size cannot exceed 100%')
+    .default(0.1),
+  
+  riskPerTrade: z.number()
+    .positive('Risk per trade must be positive')
+    .max(1, 'Risk per trade cannot exceed 100%')
+    .default(0.02),
+  
+  startDate: z.string()
+    .datetime('Start date must be a valid ISO datetime')
+    .optional(),
+  
+  endDate: z.string()
+    .datetime('End date must be a valid ISO datetime')
+    .optional()
+}).refine(
+  (data) => {
+    if (data.startDate && data.endDate) {
+      return new Date(data.startDate) < new Date(data.endDate);
+    }
+    return true;
+  },
+  {
+    message: 'End date must be after start date',
+    path: ['endDate']
+  }
+).refine(
+  (data) => {
+    // リスク制約の検証
+    if (data.riskPerTrade && data.maxPositionSize) {
+      // 1取引のリスクがポジションサイズを超えない
+      return data.riskPerTrade <= data.maxPositionSize;
+    }
+    return true;
+  },
+  {
+    message: 'Risk per trade cannot exceed max position size',
+    path: ['riskPerTrade']
+  }
+);
+
+type BacktestConfig = z.infer<typeof BacktestConfigSchema>;
+
+class BacktestService {
+  async runBacktest(
+    stock: Stock,
+    historicalData: OHLCV[],
+    rawConfig: unknown,
+    onProgress?: BacktestProgressCallback
+  ): Promise<BacktestResult> {
+    // バリデーション
+    const validationResult = BacktestConfigSchema.safeParse(rawConfig);
+    
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map(e => 
+        `${e.path.join('.')}: ${e.message}`
+      ).join('\n');
+      
+      throw new BacktestValidationError(`Invalid configuration:\n${errors}`);
+    }
+    
+    const config = validationResult.data;
+    
+    // データとの整合性検証
+    this.validateDataCompatibility(config, historicalData);
+    
+    // ... rest of implementation
+  }
+  
+  private validateDataCompatibility(
+    config: BacktestConfig, 
+    data: OHLCV[]
+  ): void {
+    const dataStart = new Date(data[0].date);
+    const dataEnd = new Date(data[data.length - 1].date);
+    
+    if (config.startDate) {
+      const start = new Date(config.startDate);
+      if (start < dataStart) {
+        throw new BacktestValidationError(
+          `Start date ${config.startDate} is before available data ${data[0].date}`
+        );
+      }
+    }
+    
+    if (config.endDate) {
+      const end = new Date(config.endDate);
+      if (end > dataEnd) {
+        throw new BacktestValidationError(
+          `End date ${config.endDate} is after available data ${data[data.length - 1].date}`
+        );
+      }
+    }
+  }
+}
+
+class BacktestValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BacktestValidationError';
+  }
+}
+```
+
+### 2. 段階的バリデーション
+
+```typescript
+interface ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  normalizedConfig?: BacktestConfig;
+}
+
+interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+}
+
+interface ValidationWarning {
+  field: string;
+  message: string;
+  suggestion: string;
+}
+
+class BacktestConfigValidator {
+  validate(config: unknown): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
+    
+    // ステップ1: 型チェック
+    const typeCheck = this.validateTypes(config);
+    if (!typeCheck.valid) {
+      return { valid: false, errors: typeCheck.errors, warnings };
+    }
+    
+    // ステップ2: 値の範囲チェック
+    const rangeCheck = this.validateRanges(config as BacktestConfig);
+    errors.push(...rangeCheck.errors);
+    warnings.push(...rangeCheck.warnings);
+    
+    // ステップ3: 相互依存関係チェック
+    const relationshipCheck = this.validateRelationships(config as BacktestConfig);
+    errors.push(...relationshipCheck.errors);
+    warnings.push(...relationshipCheck.warnings);
+    
+    // ステップ4: 正規化
+    const normalized = this.normalizeConfig(config as BacktestConfig);
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      normalizedConfig: normalized
+    };
+  }
+  
+  private validateTypes(config: unknown): { valid: boolean; errors: ValidationError[] } {
+    // 実装...
+  }
+  
+  private validateRanges(config: BacktestConfig): { errors: ValidationError[]; warnings: ValidationWarning[] } {
+    const errors: ValidationError[] = [];
+    const warnings: ValidationWarning[] = [];
+    
+    if (config.initialCapital < 1000) {
+      warnings.push({
+        field: 'initialCapital',
+        message: 'Initial capital is very low',
+        suggestion: 'Consider using at least 10,000 for realistic results'
+      });
+    }
+    
+    if (config.riskPerTrade && config.riskPerTrade > 0.05) {
+      warnings.push({
+        field: 'riskPerTrade',
+        message: 'Risk per trade is high (>5%)',
+        suggestion: 'Consider reducing to 1-2% for better risk management'
+      });
+    }
+    
+    return { errors, warnings };
+  }
+  
+  private validateRelationships(config: BacktestConfig): { errors: ValidationError[]; warnings: ValidationWarning[] } {
+    // 実装...
+  }
+  
+  private normalizeConfig(config: BacktestConfig): BacktestConfig {
+    return {
+      ...config,
+      maxPositionSize: config.maxPositionSize ?? 0.1,
+      riskPerTrade: config.riskPerTrade ?? 0.02
+    };
+  }
+}
+```
+
+### 3. UI との統合
+
+```typescript
+// React Hook example
+function useBacktestValidation() {
+  const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [warnings, setWarnings] = useState<ValidationWarning[]>([]);
+  
+  const validate = useCallback((config: unknown): boolean => {
+    const validator = new BacktestConfigValidator();
+    const result = validator.validate(config);
+    
+    setErrors(result.errors);
+    setWarnings(result.warnings);
+    
+    return result.valid;
+  }, []);
+  
+  return { validate, errors, warnings };
+}
+```
+
+## 関連ファイル
+
+- [`trading-platform/app/lib/backtest-service.ts`](trading-platform/app/lib/backtest-service.ts:19-27)
+- [`trading-platform/app/types/backtest.ts`](trading-platform/app/types/backtest.ts)
+- [`trading-platform/app/lib/strategy/types.ts`](trading-platform/app/lib/strategy/types.ts:106-109)
+- [`trading-platform/app/lib/ml/types.ts`](trading-platform/app/lib/ml/types.ts:290-293)
+
+## 受け入れ基準 (Acceptance Criteria)
+
+- [ ] すべての設定パラメータにバリデーションが実装される
+- [ ] 無効な入力に対して明確なエラーメッセージが表示される
+- [ ] 型不一致、範囲外の値、無効な日付が検出される
+- [ ] 警告システムで推奨値が提示される
+- [ ] バリデーションエラーが発生した場合、バックテストが開始されない
+- [ ] 単体テストでバリデーションシナリオがカバーされる
+
+---
+
+**報告日**: 2026-02-02  
+**報告者**: Code Review Team  
+**担当**: Quality Assurance Team

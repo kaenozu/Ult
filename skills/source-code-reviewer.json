@@ -1,0 +1,55 @@
+{
+  "name": "source-code-reviewer",
+  "description": "コードベース全体を包括的にレビューし、品質・パフォーマンス・セキュリティの課題を特定するスキル。予測精度、処理速度、アーキテクチャの観点から体系的な分析を行う。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": true,
+  "triggers": [
+    "全ソースレビュー",
+    "ソースレビュー",
+    "コードレビューして",
+    "全体的に見て",
+    "体系的にレビュー"
+  ],
+  "rules": [
+    "comprehensive-analysis",
+    "multi-perspective-review",
+    "pattern-detection",
+    "issue-classification",
+    "priority-assignment"
+  ],
+  "review_perspectives": {
+    "prediction_accuracy": "MLモデル、アルゴリズム、データ品質",
+    "processing_speed": "パフォーマンス、計算効率、最適化",
+    "code_quality": "可読性、保守性、設計パターン",
+    "security": "脆弱性、安全なコーディング",
+    "architecture": "構造、モジュール分割、依存関係"
+  },
+  "workflow": {
+    "step1": "コードベース構造の把握（ディレクトリ・ファイル構成）",
+    "step2": "重要ファイルの特定（コアロジック、サービス層）",
+    "step3": "多角的レビュー実行（精度・速度・品質・セキュリティ）",
+    "step4": "課題の抽出と分類",
+    "step5": "優先度に基づく整理",
+    "step6": "改善提案の作成",
+    "step7": "GitHub Issuesへの変換"
+  },
+  "analysis_techniques": [
+    "コード構造分析",
+    "アルゴリズム複雑度評価",
+    "データフロー追跡",
+    "ボトルネック特定",
+    "パターン検出（アンチパターン、ベストプラクティス）"
+  ],
+  "output_format": {
+    "issues": "GitHub Issuesとして作成",
+    "categorization": "ラベル付け（PRED-XXX, PERF-XXX, SEC-XXX等）",
+    "roadmap": "統合ロードマップの作成"
+  },
+  "capabilities": [
+    "大規模コードベースの体系的分析",
+    "予測精度と処理速度の両面レビュー",
+    "自動的な課題分類と優先度付け",
+    "GitHub Issuesへの直接変換"
+  ]
+}

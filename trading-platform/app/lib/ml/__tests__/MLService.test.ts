@@ -383,7 +383,7 @@ describe('MLService', () => {
 
       // 6. ヘルスチェック
       const health = await mlService.healthCheck();
-      expect health.healthy).toBeDefined();
+      expect(health.healthy).toBeDefined();
 
       // 7. 統計をエクスポート
       const stats = mlService.exportStatistics();

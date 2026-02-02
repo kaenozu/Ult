@@ -1,0 +1,59 @@
+{
+  "name": "prediction-accuracy-improver",
+  "description": "機械学習モデルの予測精度を向上させるための包括的スキル。モデルアーキテクチャ、特徴量エンジニアリング、アンサンブル戦略、継続的学習の観点から最適化を行う。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": true,
+  "triggers": [
+    "予測精度向上",
+    "予測を改善",
+    "精度向上",
+    "MLモデル改善",
+    "予測精度"
+  ],
+  "rules": [
+    "model-evaluation",
+    "feature-engineering",
+    "ensemble-optimization",
+    "online-learning",
+    "backtesting-validation"
+  ],
+  "improvement_areas": {
+    "model_architecture": "TensorFlow.js導入、LSTM/GRU構築",
+    "feature_engineering": "時系列特徴量、マルチスケール分析、ファンダメンタル要因",
+    "ensemble_strategy": "動的重み付け、市場体制別最適化、精度ベース調整",
+    "training_pipeline": "オンライン学習、ドリフト検出、自動再学習"
+  },
+  "workflow": {
+    "step1": "現状モデルの評価（精度、過学習確認）",
+    "step2": "特徴量分析（次元数、重要性、相関）",
+    "step3": "モデルアーキテクチャの設計",
+    "step4": "アンサンブル戦略の最適化",
+    "step5": "学習パイプライン構築",
+    "step6": "バックテスト検証",
+    "step7": "継続的改善ループ実装"
+  },
+  "evaluation_metrics": [
+    "Accuracy（正解率）",
+    "Precision（適合率）",
+    "Recall（再現率）",
+    "F1 Score",
+    "Sharpe Ratio（リスク調整後リターン）",
+    "Win Rate（勝率）"
+  ],
+  "technologies": [
+    "TensorFlow.js",
+    "LSTM/GRU/RNN",
+    "Random Forest",
+    "XGBoost",
+    "Attention Mechanism",
+    "AutoML"
+  ],
+  "capabilities": [
+    "MLモデルの自動評価と改善提案",
+    "特徴量エンジニアリングの自動化",
+    "アンサンブル戦略の動的最適化",
+    "オンライン学習パイプライン構築",
+    "過学習防止と正則化"
+  ]
+}
