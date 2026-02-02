@@ -6,7 +6,7 @@ import { AI_TRADING } from '../lib/constants';
 import { getRiskManagementService } from '../lib/services/RiskManagementService';
 
 // Helper function to check if order side is a buy/long position
-function isBuyOrLong(side: Order['side']): boolean {
+function isBuyOrLong(side: Order['side'] | 'LONG' | 'SHORT'): boolean {
   return side === 'BUY' || side === 'LONG';
 }
 

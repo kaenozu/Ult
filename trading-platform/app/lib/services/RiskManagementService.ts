@@ -418,7 +418,7 @@ export class RiskManagementService {
    * ポートフォリオのリスクメトリクスを更新し、自動制御を実行
    */
   updateRiskMetrics(portfolio: Portfolio): RealTimeRiskMetrics {
-    const riskMetrics = this.riskCalculator.calculateRealTimeRisk(portfolio);
+    const riskMetrics = this.riskCalculator.calculatePortfolioRisk(portfolio);
     
     // Run automatic risk controller
     const actions = this.riskController.evaluateAndAct(riskMetrics, portfolio);
