@@ -1,64 +1,39 @@
 /**
  * Centralized Configuration Constants
+ * 
+ * This file re-exports type-safe, validated configurations from the config module.
+ * All configurations are validated using Zod schemas and use branded types for units.
+ * 
+ * @see app/config/index.ts for the validated configuration
+ * @see app/config/schema.ts for Zod schemas
+ * @see app/types/branded.ts for branded type definitions
  */
 
-export const FORECAST_CONE = {
-    STEPS: 5,
-    LOOKBACK_DAYS: 60,
-    ATR_MULTIPLIER: 2.0,
-};
+import {
+  FORECAST_CONE,
+  RSI_CONFIG,
+  SMA_CONFIG,
+  MACD_CONFIG,
+  OPTIMIZATION,
+  SIGNAL_THRESHOLDS,
+  RISK_MANAGEMENT,
+  CACHE_CONFIG,
+  RATE_LIMIT,
+  ENSEMBLE_WEIGHTS,
+  DATA_QUALITY,
+  BACKTEST_CONFIG,
+  TECHNICAL_INDICATORS,
+  ORDER,
+} from '../config';
 
-export const RSI_CONFIG = {
-    DEFAULT_PERIOD: 14,
-    OVERSOLD: 35, // Adjusted from 30 for better entry signals
-    OVERBOUGHT: 65, // Adjusted from 70 for better exit signals
-    EXTREME_OVERSOLD: 25, // Adjusted from 20 for more reliable signals
-    EXTREME_OVERBOUGHT: 75, // Adjusted from 80 for more reliable signals
-    PERIOD_OPTIONS: [10, 14, 20],
-};
-
-export const SMA_CONFIG = {
-    SHORT_PERIOD: 10,
-    MEDIUM_PERIOD: 50,
-    LONG_PERIOD: 200,
-    PERIOD_OPTIONS: [10, 20, 50, 100],
-    COLOR: '#fbbf24',
-    LINE_WIDTH: 2,
-};
-
-export const MACD_CONFIG = {
-    FAST_PERIOD: 12,
-    SLOW_PERIOD: 26,
-    SIGNAL_PERIOD: 9,
-};
-
-export const OPTIMIZATION = {
-    REQUIRED_DATA_PERIOD: 100,
-    MIN_DATA_PERIOD: 60,
-    VOLUME_PROFILE_BINS: 20,
-};
-
-export const SIGNAL_THRESHOLDS = {
-    MIN_CONFIDENCE: 60, // Increased from 50 to improve signal quality
-    HIGH_CONFIDENCE: 85, // Increased from 80 for stronger signals
-    STRONG_CORRELATION: 0.75, // Increased from 0.7 for better market sync
-    STRONG_MOMENTUM: 2.0,
-    MEDIUM_CONFIDENCE: 70, // New threshold for medium confidence signals
-};
-
-export const RISK_MANAGEMENT = {
-    BULL_TARGET_MULTIPLIER: 1.5,
-    BEAR_TARGET_MULTIPLIER: 1.5,
-    DEFAULT_STOP_LOSS_PERCENT: 2,
-    DEFAULT_TAKE_PROFIT_PERCENT: 4,
-    DEFAULT_KELLY_FRACTION: 0.25,
-    DEFAULT_ATR_MULTIPLIER: 2,
-    MAX_POSITION_PERCENT: 20,
-    DEFAULT_DAILY_LOSS_LIMIT: 5,
-    DEFAULT_MAX_POSITIONS: 10,
-    STOP_LOSS_RATIO: 0.5, // Stop loss is 50% of target distance
-    MIN_POSITION_PERCENT: 1.0, // Minimum position size as % of account
-    LOW_CONFIDENCE_REDUCTION: 0.5, // Additional reduction for low confidence (<60%)
+export {
+  FORECAST_CONE,
+  RSI_CONFIG,
+  SMA_CONFIG,
+  MACD_CONFIG,
+  OPTIMIZATION,
+  SIGNAL_THRESHOLDS,
+  RISK_MANAGEMENT,
 };
 
 export const PRICE_CALCULATION = {
@@ -72,6 +47,9 @@ export const VOLATILITY = {
     DEFAULT_ATR_PERIOD: 14,
     CALCULATION_PERIOD: 30,
 };
+
+// Re-export validated configs
+export { CACHE_CONFIG, RATE_LIMIT, DATA_QUALITY, ENSEMBLE_WEIGHTS, ORDER };
 
 // --- From chart.ts ---
 
@@ -185,6 +163,9 @@ export const API_ENDPOINTS = {
     ALPHA_VANTAGE: 'https://www.alphavantage.co/query',
 };
 
+// Re-export BACKTEST_CONFIG for backward compatibility
+export { BACKTEST_CONFIG };
+
 // --- From ui.ts ---
 
 export const SIGNAL_COLORS = {
@@ -264,6 +245,9 @@ export const BACKTEST_METRICS = {
     EXCELLENT_HIT_RATE: 70,
     MIN_TRADES: 2,
 };
+
+// Re-export TECHNICAL_INDICATORS for backward compatibility
+export { TECHNICAL_INDICATORS };
 
 // --- Additional Constants for Magic Numbers ---
 
