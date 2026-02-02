@@ -1,275 +1,129 @@
 /**
- * Validated Configuration with Branded Types
+ * Config Index
  * 
- * This file provides type-safe, validated configuration values
- * using Zod schemas and branded types for units.
+ * 検証済み設定オブジェクトのエクスポート
+ * process.envへのアクセスを一元管理
  */
 
 import { 
-  milliseconds,
-  count,
-  type Milliseconds,
-  type Percentage,
-  type Ratio,
-  type Currency,
-  type Count,
-  type Days,
-} from '../types/branded';
-
-import {
-  ForecastConeSchema,
-  RSIConfigSchema,
-  SMAConfigSchema,
-  MACDConfigSchema,
-  OptimizationSchema,
-  SignalThresholdsSchema,
-  RiskManagementSchema,
-  CacheConfigSchema,
-  RateLimitSchema,
-  EnsembleWeightsSchema,
-  DataQualitySchema,
-  BacktestConfigSchema,
-  TechnicalIndicatorsSchema,
-  validateConfig,
-  type ForecastConeConfig,
-  type RSIConfig,
-  type SMAConfig,
-  type MACDConfig,
-  type OptimizationConfig,
-  type SignalThresholds,
-  type RiskManagementConfig,
-  type CacheConfig,
-  type RateLimitConfig,
-  type EnsembleWeights,
-  type DataQualityConfig,
-  type BacktestConfig,
-  type TechnicalIndicatorsConfig,
+  envSchema, 
+  featureFlagsSchema, 
+  tradingConfigSchema, 
+  marketDataConfigSchema,
+  apiConfigSchema,
+  type EnvConfig,
+  type FeatureFlags,
+  type TradingConfig,
+  type MarketDataConfig,
+  type ApiConfig,
 } from './schema';
 
-/**
- * Forecast Configuration with Validation
- */
-export const FORECAST_CONE: ForecastConeConfig = validateConfig(ForecastConeSchema, {
-  STEPS: 5,
-  LOOKBACK_DAYS: 60,
-  ATR_MULTIPLIER: 2.0,
-});
+// Validate and parse environment variables
+function parseEnv(): EnvConfig {
+  const env = {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    API_KEY: process.env.API_KEY,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    DATABASE_URL: process.env.DATABASE_URL,
+    WS_PORT: process.env.WS_PORT,
+    WS_URL: process.env.WS_URL,
+    SENTRY_DSN: process.env.SENTRY_DSN,
+    SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
+    MARKET_DATA_PROVIDER: process.env.MARKET_DATA_PROVIDER,
+    MARKET_DATA_CACHE_DURATION: process.env.MARKET_DATA_CACHE_DURATION,
+    DEFAULT_RISK_PERCENT: process.env.DEFAULT_RISK_PERCENT,
+    MAX_POSITIONS: process.env.MAX_POSITIONS,
+    DEFAULT_STOP_LOSS: process.env.DEFAULT_STOP_LOSS,
+    DEFAULT_TAKE_PROFIT: process.env.DEFAULT_TAKE_PROFIT,
+    ML_MODEL_PATH: process.env.ML_MODEL_PATH,
+    ML_PREDICTION_THRESHOLD: process.env.ML_PREDICTION_THRESHOLD,
+    ENABLE_REALTIME_DATA: process.env.ENABLE_REALTIME_DATA,
+    ENABLE_ML_PREDICTIONS: process.env.ENABLE_ML_PREDICTIONS,
+    ENABLE_BACKTEST_CACHE: process.env.ENABLE_BACKTEST_CACHE,
+  };
 
-/**
- * RSI Configuration with Validation
- */
-export const RSI_CONFIG: RSIConfig = validateConfig(RSIConfigSchema, {
-  DEFAULT_PERIOD: 14,
-  OVERSOLD: 35,
-  OVERBOUGHT: 65,
-  EXTREME_OVERSOLD: 25,
-  EXTREME_OVERBOUGHT: 75,
-  PERIOD_OPTIONS: [10, 14, 20],
-});
+  return envSchema.parse(env);
+}
 
-/**
- * SMA Configuration with Validation
- */
-export const SMA_CONFIG: SMAConfig = validateConfig(SMAConfigSchema, {
-  SHORT_PERIOD: 10,
-  MEDIUM_PERIOD: 50,
-  LONG_PERIOD: 200,
-  PERIOD_OPTIONS: [10, 20, 50, 100],
-  COLOR: '#fbbf24',
-  LINE_WIDTH: 2,
-});
+// Parse feature flags from environment
+function parseFeatureFlags(env: EnvConfig): FeatureFlags {
+  return featureFlagsSchema.parse({
+    enableRealtimeData: env.ENABLE_REALTIME_DATA,
+    enableMLPredictions: env.ENABLE_ML_PREDICTIONS,
+    enableBacktestCache: env.ENABLE_BACKTEST_CACHE,
+  });
+}
 
-/**
- * MACD Configuration with Validation
- */
-export const MACD_CONFIG: MACDConfig = validateConfig(MACDConfigSchema, {
-  FAST_PERIOD: 12,
-  SLOW_PERIOD: 26,
-  SIGNAL_PERIOD: 9,
-});
+// Parse trading config from environment
+function parseTradingConfig(env: EnvConfig): TradingConfig {
+  return tradingConfigSchema.parse({
+    defaultRiskPercent: env.DEFAULT_RISK_PERCENT,
+    maxPositions: env.MAX_POSITIONS,
+    defaultStopLoss: env.DEFAULT_STOP_LOSS,
+    defaultTakeProfit: env.DEFAULT_TAKE_PROFIT,
+  });
+}
 
-/**
- * Optimization Configuration with Validation
- */
-export const OPTIMIZATION: OptimizationConfig = validateConfig(OptimizationSchema, {
-  REQUIRED_DATA_PERIOD: 100,
-  MIN_DATA_PERIOD: 60,
-  VOLUME_PROFILE_BINS: 20,
-});
+// Parse market data config from environment
+function parseMarketDataConfig(env: EnvConfig): MarketDataConfig {
+  return marketDataConfigSchema.parse({
+    provider: env.MARKET_DATA_PROVIDER,
+    cacheDuration: env.MARKET_DATA_CACHE_DURATION,
+  });
+}
 
-/**
- * Signal Thresholds with Validation
- */
-export const SIGNAL_THRESHOLDS: SignalThresholds = validateConfig(SignalThresholdsSchema, {
-  MIN_CONFIDENCE: 60,
-  HIGH_CONFIDENCE: 85,
-  STRONG_CORRELATION: 0.75,
-  STRONG_MOMENTUM: 2.0,
-  MEDIUM_CONFIDENCE: 70,
-});
+// Parse API config from environment
+function parseApiConfig(env: EnvConfig): ApiConfig {
+  return apiConfigSchema.parse({
+    baseURL: env.NEXT_PUBLIC_API_URL,
+  });
+}
 
-/**
- * Risk Management Configuration with Validation and Branded Types
- */
-export const RISK_MANAGEMENT: RiskManagementConfig = validateConfig(RiskManagementSchema, {
-  BULL_TARGET_MULTIPLIER: 1.5,
-  BEAR_TARGET_MULTIPLIER: 1.5,
-  DEFAULT_STOP_LOSS_PERCENT: 2,
-  DEFAULT_TAKE_PROFIT_PERCENT: 4,
-  DEFAULT_KELLY_FRACTION: 0.25,
-  DEFAULT_ATR_MULTIPLIER: 2,
-  MAX_POSITION_PERCENT: 20,
-  DEFAULT_DAILY_LOSS_LIMIT: 5,
-  DEFAULT_MAX_POSITIONS: 10,
-  STOP_LOSS_RATIO: 0.5,
-  MIN_POSITION_PERCENT: 1.0,
-  LOW_CONFIDENCE_REDUCTION: 0.5,
-});
+// Lazy-loaded config to avoid issues with SSR
+let _env: EnvConfig | null = null;
+let _features: FeatureFlags | null = null;
+let _trading: TradingConfig | null = null;
+let _marketData: MarketDataConfig | null = null;
+let _api: ApiConfig | null = null;
 
-/**
- * Cache Configuration with Branded Types (Milliseconds)
- */
-export const CACHE_CONFIG = {
-  DEFAULT_DURATION_MS: milliseconds(5 * 60 * 1000), // 5 minutes
-  STOCK_UPDATE_INTERVAL_MS: milliseconds(24 * 60 * 60 * 1000), // 24 hours
-  CHUNK_SIZE: count.create(50),
-} as const;
-
-// Validate cache config (without branded types for validation)
-validateConfig(CacheConfigSchema, {
-  DEFAULT_DURATION_MS: 5 * 60 * 1000,
-  STOCK_UPDATE_INTERVAL_MS: 24 * 60 * 60 * 1000,
-  CHUNK_SIZE: 50,
-});
-
-/**
- * Rate Limit Configuration with Branded Types (Milliseconds)
- */
-export const RATE_LIMIT = {
-  REQUEST_INTERVAL_MS: milliseconds(12000), // 12 seconds
-  MAX_RETRIES: count.create(3),
-  RETRY_DELAY_MS: milliseconds(1000), // 1 second
-} as const;
-
-// Validate rate limit config
-validateConfig(RateLimitSchema, {
-  REQUEST_INTERVAL_MS: 12000,
-  MAX_RETRIES: 3,
-  RETRY_DELAY_MS: 1000,
-});
-
-/**
- * Ensemble Weights with Validation
- */
-export const ENSEMBLE_WEIGHTS: EnsembleWeights = validateConfig(EnsembleWeightsSchema, {
-  RF: 0.35,
-  XGB: 0.35,
-  LSTM: 0.30,
-});
-
-/**
- * Data Quality Configuration with Validation
- */
-export const DATA_QUALITY: DataQualityConfig = validateConfig(DataQualitySchema, {
-  MIN_DATA_LENGTH: 20,
-  MIN_PRICE_THRESHOLD: 0.0001,
-  MAX_GAP_DAYS: 7,
-});
-
-/**
- * Backtest Configuration with Validation
- */
-export const BACKTEST_CONFIG: BacktestConfig = validateConfig(BacktestConfigSchema, {
-  MIN_DATA_PERIOD: 50,
-  MIN_SIGNAL_CONFIDENCE: 60,
-  TAKE_PROFIT_THRESHOLD: 0.05,
-  STOP_LOSS_THRESHOLD: 0.03,
-  BULL_STOP_LOSS: 0.03,
-  BULL_TAKE_PROFIT: 0.05,
-  BEAR_STOP_LOSS: 0.05,
-  BEAR_TAKE_PROFIT: 0.03,
-});
-
-/**
- * Technical Indicators Configuration with Validation
- */
-export const TECHNICAL_INDICATORS: TechnicalIndicatorsConfig = validateConfig(TechnicalIndicatorsSchema, {
-  // RSI
-  RSI_PERIOD: 14,
-  RSI_OVERSOLD: 30,
-  RSI_OVERBOUGHT: 70,
-  RSI_EXTREME_OVERSOLD: 20,
-  RSI_EXTREME_OVERBOUGHT: 80,
-
-  // SMA
-  SMA_PERIOD_SHORT: 10,
-  SMA_PERIOD_MEDIUM: 20,
-  SMA_PERIOD_LONG: 50,
-  SMA_PERIOD_VERY_LONG: 200,
-
-  // EMA
-  EMA_PERIOD: 12,
-
-  // Bollinger Bands
-  BB_PERIOD: 20,
-  BB_STD_DEV: 2,
-
-  // ATR
-  ATR_PERIOD: 14,
-  ATR_MULTIPLIER_DEFAULT: 2,
-
-  // MACD
-  MACD_FAST: 12,
-  MACD_SLOW: 26,
-  MACD_SIGNAL: 9,
-
-  // ADX
-  ADX_PERIOD: 14,
-  ADX_TRENDING_THRESHOLD: 25,
-  ADX_RANGING_THRESHOLD: 20,
-
-  // Stochastic
-  STOCHASTIC_PERIOD: 14,
-
-  // Williams %R
-  WILLIAMS_R_PERIOD: 14,
-
-  // Volume Profile
-  VOLUME_PROFILE_BINS: 20,
-  VOLUME_PROFILE_MIN_DAYS: 60,
-});
-
-/**
- * Order Configuration with Branded Types
- */
-export const ORDER = {
-  EXPIRY_MS: milliseconds(24 * 60 * 60 * 1000), // 24 hours
-} as const;
-
-/**
- * Export types for external use
- */
-export type {
-  ForecastConeConfig,
-  RSIConfig,
-  SMAConfig,
-  MACDConfig,
-  OptimizationConfig,
-  SignalThresholds,
-  RiskManagementConfig,
-  CacheConfig,
-  RateLimitConfig,
-  EnsembleWeights,
-  DataQualityConfig,
-  BacktestConfig,
-  TechnicalIndicatorsConfig,
+// Getters that lazily initialize
+export const config = {
+  get env(): EnvConfig {
+    if (!_env) _env = parseEnv();
+    return _env;
+  },
+  
+  get features(): FeatureFlags {
+    if (!_features) _features = parseFeatureFlags(this.env);
+    return _features;
+  },
+  
+  get trading(): TradingConfig {
+    if (!_trading) _trading = parseTradingConfig(this.env);
+    return _trading;
+  },
+  
+  get marketData(): MarketDataConfig {
+    if (!_marketData) _marketData = parseMarketDataConfig(this.env);
+    return _marketData;
+  },
+  
+  get api(): ApiConfig {
+    if (!_api) _api = parseApiConfig(this.env);
+    return _api;
+  },
+  
+  // Reset all cached configs (useful for testing)
+  reset(): void {
+    _env = null;
+    _features = null;
+    _trading = null;
+    _marketData = null;
+    _api = null;
+  },
 };
 
-export type {
-  Milliseconds,
-  Percentage,
-  Ratio,
-  Currency,
-  Count,
-  Days,
-};
+// Re-export types and schemas
+export * from './schema';
+export { config as default };

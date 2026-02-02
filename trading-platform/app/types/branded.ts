@@ -1,124 +1,228 @@
 /**
- * Branded Types for Type-Safe Units
+ * Branded Types
  * 
- * These types prevent mixing different units (e.g., milliseconds vs seconds)
- * at compile time while maintaining runtime compatibility with numbers.
+ * Branded types (also known as nominal types) provide stronger type safety
+ * by making primitive types incompatible with each other even if they
+ * have the same underlying type.
+ * 
+ * This prevents common bugs like mixing up symbol names with other strings,
+ * or using regular numbers where percentages are expected.
  */
 
-// Time units
-export type Milliseconds = number & { readonly __brand: 'Milliseconds' };
-export type Seconds = number & { readonly __brand: 'Seconds' };
-export type Minutes = number & { readonly __brand: 'Minutes' };
-export type Hours = number & { readonly __brand: 'Hours' };
-export type Days = number & { readonly __brand: 'Days' };
+// ============================================================================
+// Brand Symbol (internal use only)
+// ============================================================================
 
-// Percentage and ratio units
-export type Percentage = number & { readonly __brand: 'Percentage' };
-export type Ratio = number & { readonly __brand: 'Ratio' };
-export type DecimalPercentage = number & { readonly __brand: 'DecimalPercentage' };
+declare const __brand: unique symbol;
 
-// Financial units
-export type Currency = number & { readonly __brand: 'Currency' };
-export type Points = number & { readonly __brand: 'Points' };
+type Brand<T, TBrand extends string> = T & { readonly [__brand]: TBrand };
 
-// Count/Index units
-export type Count = number & { readonly __brand: 'Count' };
-export type Index = number & { readonly __brand: 'Index' };
+// ============================================================================
+// Branded Types for Financial Data
+// ============================================================================
 
 /**
- * Time Conversion Functions
+ * Stock symbol (e.g., "^N225", "AAPL")
+ * Branded to prevent mixing with regular strings
  */
-
-export const milliseconds = (value: number): Milliseconds => value as Milliseconds;
-
-export const seconds = {
-  fromMs: (ms: Milliseconds): Seconds => (ms / 1000) as Seconds,
-  toMs: (s: Seconds): Milliseconds => (s * 1000) as Milliseconds,
-  create: (value: number): Seconds => value as Seconds,
-};
-
-export const minutes = {
-  fromMs: (ms: Milliseconds): Minutes => (ms / 60000) as Minutes,
-  toMs: (m: Minutes): Milliseconds => (m * 60000) as Milliseconds,
-  fromSeconds: (s: Seconds): Minutes => (s / 60) as Minutes,
-  toSeconds: (m: Minutes): Seconds => (m * 60) as Seconds,
-  create: (value: number): Minutes => value as Minutes,
-};
-
-export const hours = {
-  fromMs: (ms: Milliseconds): Hours => (ms / 3600000) as Hours,
-  toMs: (h: Hours): Milliseconds => (h * 3600000) as Milliseconds,
-  fromMinutes: (m: Minutes): Hours => (m / 60) as Hours,
-  toMinutes: (h: Hours): Minutes => (h * 60) as Minutes,
-  create: (value: number): Hours => value as Hours,
-};
-
-export const days = {
-  fromMs: (ms: Milliseconds): Days => (ms / 86400000) as Days,
-  toMs: (d: Days): Milliseconds => (d * 86400000) as Milliseconds,
-  fromHours: (h: Hours): Days => (h / 24) as Days,
-  toHours: (d: Days): Hours => (d * 24) as Hours,
-  create: (value: number): Days => value as Days,
-};
+export type SymbolId = Brand<string, 'SymbolId'>;
 
 /**
- * Percentage Conversion Functions
+ * Creates a SymbolId from a string
  */
-
-export const percentage = {
-  /** Create percentage from 0-100 scale */
-  create: (value: number): Percentage => value as Percentage,
-  /** Convert percentage (0-100) to decimal (0-1) */
-  toDecimal: (p: Percentage): DecimalPercentage => (p / 100) as DecimalPercentage,
-  /** Convert percentage (0-100) to ratio (0-1) */
-  toRatio: (p: Percentage): Ratio => (p / 100) as Ratio,
-};
-
-export const decimalPercentage = {
-  /** Create decimal percentage from 0-1 scale */
-  create: (value: number): DecimalPercentage => value as DecimalPercentage,
-  /** Convert decimal (0-1) to percentage (0-100) */
-  toPercentage: (d: DecimalPercentage): Percentage => (d * 100) as Percentage,
-};
-
-export const ratio = {
-  /** Create ratio from 0-1 scale */
-  create: (value: number): Ratio => value as Ratio,
-  /** Convert ratio (0-1) to percentage (0-100) */
-  toPercentage: (r: Ratio): Percentage => (r * 100) as Percentage,
-};
+export function createSymbolId(symbol: string): SymbolId {
+  if (!symbol || typeof symbol !== 'string') {
+    throw new TypeError('Symbol must be a non-empty string');
+  }
+  return symbol as SymbolId;
+}
 
 /**
- * Financial Conversion Functions
+ * Type guard for SymbolId
  */
-
-export const currency = {
-  create: (value: number): Currency => value as Currency,
-};
-
-export const points = {
-  create: (value: number): Points => value as Points,
-};
+export function isSymbolId(value: unknown): value is SymbolId {
+  return typeof value === 'string' && value.length > 0;
+}
 
 /**
- * Count/Index Functions
+ * Percentage value (0-100)
+ * Branded to prevent confusion with decimal ratios
  */
-
-export const count = {
-  create: (value: number): Count => value as Count,
-};
-
-export const index = {
-  create: (value: number): Index => value as Index,
-};
+export type Percentage = Brand<number, 'Percentage'>;
 
 /**
- * Type guards for runtime checking (optional, for debugging)
+ * Creates a Percentage from a number
+ * @param value - Number between 0 and 100
  */
+export function createPercentage(value: number): Percentage {
+  if (typeof value !== 'number' || isNaN(value)) {
+    throw new TypeError('Percentage must be a number');
+  }
+  if (value < 0 || value > 100) {
+    throw new RangeError('Percentage must be between 0 and 100');
+  }
+  return value as Percentage;
+}
 
-export const isBrandedType = <T extends { readonly __brand: string }>(
-  value: unknown,
-  _brand: string
-): value is T => {
-  return typeof value === 'number';
-};
+/**
+ * Decimal ratio (0-1)
+ * Branded to prevent confusion with percentages
+ */
+export type Ratio = Brand<number, 'Ratio'>;
+
+/**
+ * Creates a Ratio from a number
+ * @param value - Number between 0 and 1
+ */
+export function createRatio(value: number): Ratio {
+  if (typeof value !== 'number' || isNaN(value)) {
+    throw new TypeError('Ratio must be a number');
+  }
+  if (value < 0 || value > 1) {
+    throw new RangeError('Ratio must be between 0 and 1');
+  }
+  return value as Ratio;
+}
+
+/**
+ * Price value (always positive)
+ * Branded to ensure type safety for monetary values
+ */
+export type Price = Brand<number, 'Price'>;
+
+/**
+ * Creates a Price from a number
+ * @param value - Positive number
+ */
+export function createPrice(value: number): Price {
+  if (typeof value !== 'number' || isNaN(value)) {
+    throw new TypeError('Price must be a number');
+  }
+  if (value < 0) {
+    throw new RangeError('Price must be non-negative');
+  }
+  return value as Price;
+}
+
+/**
+ * Volume (always non-negative integer)
+ * Branded to ensure type safety for volume data
+ */
+export type Volume = Brand<number, 'Volume'>;
+
+/**
+ * Creates a Volume from a number
+ * @param value - Non-negative integer
+ */
+export function createVolume(value: number): Volume {
+  if (typeof value !== 'number' || isNaN(value)) {
+    throw new TypeError('Volume must be a number');
+  }
+  if (value < 0) {
+    throw new RangeError('Volume must be non-negative');
+  }
+  if (!Number.isInteger(value)) {
+    throw new RangeError('Volume must be an integer');
+  }
+  return value as Volume;
+}
+
+/**
+ * Timestamp in milliseconds
+ * Branded to prevent confusion with other numeric values
+ */
+export type TimestampMs = Brand<number, 'TimestampMs'>;
+
+/**
+ * Creates a TimestampMs from a number
+ * @param value - Unix timestamp in milliseconds
+ */
+export function createTimestampMs(value: number): TimestampMs {
+  if (typeof value !== 'number' || isNaN(value)) {
+    throw new TypeError('Timestamp must be a number');
+  }
+  if (value < 0) {
+    throw new RangeError('Timestamp must be non-negative');
+  }
+  return value as TimestampMs;
+}
+
+/**
+ * ISO 8601 date string
+ * Branded to ensure date string format
+ */
+export type DateString = Brand<string, 'DateString'>;
+
+/**
+ * Creates a DateString from a string or Date
+ * @param value - ISO 8601 date string or Date object
+ */
+export function createDateString(value: string | Date): DateString {
+  if (value instanceof Date) {
+    if (isNaN(value.getTime())) {
+      throw new TypeError('Invalid Date object');
+    }
+    return value.toISOString() as DateString;
+  }
+  if (typeof value !== 'string') {
+    throw new TypeError('Date must be a string or Date object');
+  }
+  // Validate that the string represents a valid date
+  // This will catch invalid dates like '2025-02-31', '9999-99-99', etc.
+  const date = new Date(value);
+  if (isNaN(date.getTime())) {
+    throw new TypeError('Date string does not represent a valid date');
+  }
+  return value as DateString;
+}
+
+/**
+ * Trade ID (unique identifier for trades)
+ * Branded to prevent mixing with other string IDs
+ */
+export type TradeId = Brand<string, 'TradeId'>;
+
+/**
+ * Creates a TradeId from a string
+ */
+export function createTradeId(id: string): TradeId {
+  if (!id || typeof id !== 'string') {
+    throw new TypeError('Trade ID must be a non-empty string');
+  }
+  return id as TradeId;
+}
+
+/**
+ * Order ID (unique identifier for orders)
+ * Branded to prevent mixing with other string IDs
+ */
+export type OrderId = Brand<string, 'OrderId'>;
+
+/**
+ * Creates an OrderId from a string
+ */
+export function createOrderId(id: string): OrderId {
+  if (!id || typeof id !== 'string') {
+    throw new TypeError('Order ID must be a non-empty string');
+  }
+  return id as OrderId;
+}
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Convert percentage to ratio
+ */
+export function percentageToRatio(percentage: Percentage): Ratio {
+  return createRatio((percentage as number) / 100);
+}
+
+/**
+ * Convert ratio to percentage
+ */
+export function ratioToPercentage(ratio: Ratio): Percentage {
+  return createPercentage((ratio as number) * 100);
+}
+

@@ -505,4 +505,74 @@ describe('FeatureCalculationService', () => {
       expect(enhancedCount).toBeGreaterThanOrEqual(50); // 11 + 40+ new features
     });
   });
+
+  describe('calculateFeaturesOptimized', () => {
+    it('should produce same results as original implementation', () => {
+      const { OHLCVConverter } = require('../../../types/optimized-data');
+      const typedData = OHLCVConverter.toTypedArray(mockData);
+      
+      const originalFeatures = service.calculateFeatures(mockData, mockIndicators);
+      const optimizedFeatures = service.calculateFeaturesOptimized(typedData, mockIndicators);
+
+      // All features should match closely
+      expect(optimizedFeatures.rsi).toBe(originalFeatures.rsi);
+      expect(optimizedFeatures.rsiChange).toBe(originalFeatures.rsiChange);
+      expect(optimizedFeatures.sma5).toBe(originalFeatures.sma5);
+      expect(optimizedFeatures.sma20).toBe(originalFeatures.sma20);
+      expect(optimizedFeatures.sma50).toBe(originalFeatures.sma50);
+      expect(optimizedFeatures.priceMomentum).toBeCloseTo(originalFeatures.priceMomentum, 5);
+      expect(optimizedFeatures.volumeRatio).toBeCloseTo(originalFeatures.volumeRatio, 5);
+      expect(optimizedFeatures.volatility).toBeCloseTo(originalFeatures.volatility, 1);
+      expect(optimizedFeatures.macdSignal).toBe(originalFeatures.macdSignal);
+      expect(optimizedFeatures.bollingerPosition).toBe(originalFeatures.bollingerPosition);
+      expect(optimizedFeatures.atrPercent).toBe(originalFeatures.atrPercent);
+    });
+
+    it('should handle TypedArray data efficiently', () => {
+      const { OHLCVConverter } = require('../../../types/optimized-data');
+      const typedData = OHLCVConverter.toTypedArray(mockData);
+      
+      const features = service.calculateFeaturesOptimized(typedData, mockIndicators);
+      
+      expect(features).toHaveProperty('rsi');
+      expect(features).toHaveProperty('rsiChange');
+      expect(features).toHaveProperty('priceMomentum');
+      expect(features).toHaveProperty('volumeRatio');
+      expect(features).toHaveProperty('volatility');
+      
+      // All values should be valid numbers
+      Object.values(features).forEach(value => {
+        expect(typeof value).toBe('number');
+        expect(isNaN(value)).toBe(false);
+      });
+    });
+
+    it('should calculate momentum with zero-copy slicing', () => {
+      const { OHLCVConverter } = require('../../../types/optimized-data');
+      const typedData = OHLCVConverter.toTypedArray(mockData);
+      
+      const features = service.calculateFeaturesOptimized(typedData, mockIndicators);
+      
+      expect(features.priceMomentum).toBeDefined();
+      expect(isFinite(features.priceMomentum)).toBe(true);
+    });
+
+    it('should calculate volatility using iterators', () => {
+      const { OHLCVConverter } = require('../../../types/optimized-data');
+      const typedData = OHLCVConverter.toTypedArray(mockData);
+      
+      const features = service.calculateFeaturesOptimized(typedData, mockIndicators);
+      
+      expect(features.volatility).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should calculate volume ratio efficiently', () => {
+      const { OHLCVConverter } = require('../../../types/optimized-data');
+      const typedData = OHLCVConverter.toTypedArray(mockData);
+      
+      const features = service.calculateFeaturesOptimized(typedData, mockIndicators);
+      
+      expect(features.volumeRatio).toBeGreaterThan(0);
+    });
+  });
 });

@@ -307,6 +307,58 @@ GitHub Actionsを使用したCI/CDパイプラインが実装されています�
 
 ### 📁 プロジェクト構造
 
+#### 🆕 ドメイン駆動アーキテクチャ (推奨)
+
+プロジェクトは**ドメイン駆動アーキテクチャ**に移行しています。新しいコードは以下の構造を使用してください：
+
+```
+trading-platform/app/
+├── domains/                    # ドメイン層（ビジネスロジック）
+│   ├── prediction/             # 予測ドメイン
+│   │   ├── models/            # MLモデル
+│   │   ├── services/          # 予測サービス
+│   │   ├── hooks/             # 予測関連フック
+│   │   └── index.ts           # 公開API
+│   ├── backtest/              # バックテストドメイン
+│   │   ├── engine/            # バックテストエンジン
+│   │   ├── metrics/           # パフォーマンス指標
+│   │   └── index.ts
+│   ├── market-data/           # 市場データドメイン
+│   │   ├── api/               # データAPI
+│   │   ├── cache/             # キャッシュ管理
+│   │   ├── quality/           # 品質監視
+│   │   └── index.ts
+│   └── portfolio/             # ポートフォリオドメイン
+│       ├── PortfolioOptimizer.ts
+│       └── index.ts
+├── infrastructure/            # インフラ層
+│   ├── api/                   # API基盤
+│   ├── websocket/             # WebSocket管理
+│   └── cache/                 # キャッシュ基盤
+├── ui/                        # UI層
+│   ├── components/            # UIコンポーネント
+│   └── hooks/                 # UIフック
+└── shared/                    # 共有リソース
+    ├── types/                 # 共通型定義
+    ├── constants/             # 定数
+    └── utils/                 # ユーティリティ
+
+# 使用例
+import { MLModelService } from '@/domains/prediction';
+import { AdvancedBacktestEngine } from '@/domains/backtest';
+import { DataQualityChecker } from '@/domains/market-data';
+```
+
+**詳細ドキュメント**: [DOMAIN_ARCHITECTURE_GUIDE.md](./DOMAIN_ARCHITECTURE_GUIDE.md)
+
+**主な利点**:
+- ✅ ドメイン単位でコードを発見しやすい
+- ✅ 明確な責任境界
+- ✅ 関連ファイルの集約
+- ✅ スケーラブルな構造
+
+#### 従来の構造 (レガシー)
+
 ```
 Ult/
 ├── trading-platform/            # フロントエンド (Next.js)
@@ -340,6 +392,8 @@ Ult/
 ├── skills/                      # 自動化スクリプト
 └── scripts/                     # ユーティリティスクリプト
 ```
+
+> **注**: 新しいコードは`domains/`構造を使用することを推奨します。既存の`lib/`構造は互換性のため維持されています。
 
 ## 🎯 使い方
 

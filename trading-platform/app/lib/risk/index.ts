@@ -8,6 +8,7 @@
 export {
   AdvancedRiskManager as default,
   AdvancedRiskManager,
+  getGlobalRiskManager,
   DEFAULT_RISK_LIMITS,
 } from './AdvancedRiskManager';
 
@@ -68,6 +69,47 @@ export {
   EnhancedPsychologyMonitor,
   createEnhancedPsychologyMonitor,
 } from './EnhancedPsychologyMonitor';
+
+export type {
+  DynamicRiskAdjustment,
+  DynamicRiskAdjusterConfig,
+  MarketCondition,
+  PerformanceMetrics,
+} from './DynamicRiskAdjuster';
+
+// TRADING-028: Advanced Risk Management
+export {
+  DynamicPositionSizer,
+  createDynamicPositionSizer,
+} from './DynamicPositionSizer';
+
+export type {
+  VolatilityMetrics,
+  PositionSizingRequest,
+  PositionSizingResponse,
+  PortfolioRiskLimits,
+} from './DynamicPositionSizer';
+
+export {
+  PortfolioRiskMonitor,
+  createPortfolioRiskMonitor,
+} from './PortfolioRiskMonitor';
+
+export type {
+  VaRResult,
+  CorrelationPair,
+  StressTestScenario,
+  StressTestResult,
+  RiskContribution,
+  PortfolioRiskReport,
+} from './PortfolioRiskMonitor';
+
+export type {
+  OptionsHedge,
+  InverseAssetHedge,
+  FuturesHedge,
+  HedgePortfolio,
+} from './TailRiskHedging';
 
 export type {
   EnhancedBehaviorMetrics,
