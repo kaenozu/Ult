@@ -8,4 +8,3 @@ export * from './technical';
 export * from './trading';
 export * from './backtest';
 export * from './api';
-export * from './ui';

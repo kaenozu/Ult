@@ -41,8 +41,6 @@ export const FORECAST_CONE = {
 
 // ゴースト予測（過去の予測を表示）の設定
 export const GHOST_FORECAST = {
-  /** ATRのデフォルト倍率（価格変動） */
-  DEFAULT_ATR_RATIO: 0.02,
   /** 予測線の透明度（上） */
   TARGET_ALPHA: 0.3,
   /** 予測線の透明度（下） */

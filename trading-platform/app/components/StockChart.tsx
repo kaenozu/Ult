@@ -18,6 +18,7 @@ import {
   CHART_GRID,
   CHART_CONFIG,
   OPTIMIZATION,
+  PRICE_CALCULATION,
 } from '@/app/constants';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
@@ -145,7 +146,7 @@ export const StockChart = memo(function StockChart({
     const currentPrice = data[hoveredIdx].close;
     targetArr[hoveredIdx] = stopArr[hoveredIdx] = currentPrice;
 
-    const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
+    const stockATR = pastSignal.atr || (currentPrice * PRICE_CALCULATION.DEFAULT_ATR_RATIO);
     const confidenceFactor = (110 - pastSignal.confidence) / 100;
     const momentum = pastSignal.predictedChange / 100;
 
@@ -192,7 +193,7 @@ export const StockChart = memo(function StockChart({
     const targetArr = new Array(extendedData.labels.length).fill(NaN);
     const stopArr = new Array(extendedData.labels.length).fill(NaN);
 
-    const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
+    const stockATR = signal.atr || (currentPrice * PRICE_CALCULATION.DEFAULT_ATR_RATIO);
     // 予測誤差の影響を抑え、より現実的な範囲にする
     // predictionErrorは1.0〜2.5程度だが、その影響を0.5〜1.5に制限
     const errorFactor = Math.min(Math.max(signal.predictionError || 1.0, 0.5), 1.5);
