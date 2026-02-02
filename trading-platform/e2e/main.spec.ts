@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 /**
  * E2Eテスト: メイン機能
@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
  */
 
 // ウォッチリストに銘柄を追加するヘルパー関数
-async function addStockToWatchlist(page: any, symbol: string, name: string) {
+async function addStockToWatchlist(page: Page, symbol: string, name: string): Promise<void> {
   // ページが完全に読み込まれるのを待つ
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(500);

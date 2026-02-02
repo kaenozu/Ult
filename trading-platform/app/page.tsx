@@ -9,6 +9,7 @@ import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
+import { useSymbolAccuracy } from '@/app/hooks/useSymbolAccuracy';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';
 import { useTranslations } from '@/app/i18n/provider';
@@ -25,10 +26,10 @@ const UserExperienceEnhancements = lazy(() => import('@/app/components/UserExper
 const ChartLoader = () => (
   <div className="w-full h-full flex items-center justify-center bg-[#131b23]">
     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-  </div>
-);
+  );
+}
 
-export default function Workstation() {
+function Workstation() {
   const t = useTranslations();
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
@@ -49,6 +50,12 @@ export default function Workstation() {
   const [showBollinger, setShowBollinger] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+
+  // Fetch accuracy data for the selected stock
+  const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(
+    selectedStock || { symbol: '', name: '', market: 'usa', sector: '', price: 0, change: 0, changePercent: 0, volume: 0 },
+    chartData
+  );
 
   const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
     closePosition(symbol, currentPrice);
@@ -185,6 +192,12 @@ export default function Workstation() {
                       error={error}
                       market={selectedStock?.market}
                       signal={chartSignal}
+                      accuracyData={accuracy ? {
+                        hitRate: accuracy.hitRate,
+                        totalTrades: accuracy.totalTrades,
+                        predictionError: accuracy.predictionError,
+                        loading: accuracyLoading
+                      } : null}
                     />
                   </Suspense>
                 </div>
@@ -240,7 +253,7 @@ export default function Workstation() {
 export default function HomePage() {
   return (
     <ErrorBoundary name="HomePage">
-      <HomePageContent />
+      <Workstation />
     </ErrorBoundary>
   );
 }

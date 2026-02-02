@@ -376,6 +376,20 @@ export class StressTestEngine {
   private getDefaultScenarios(): StressScenario[] {
     return [
       {
+        name: '2008 Lehman Crisis',
+        description: '2008年リーマンブラザーズ破綻による金融危機 (-50%超の下落)',
+        marketShock: -50,
+        volatilityMultiplier: 8.0,
+        correlationChange: 0.9 // 全資産が同時に下落
+      },
+      {
+        name: '2020 COVID-19 Shock',
+        description: '2020年コロナ・ショック (-35%の急落と急回復)',
+        marketShock: -35,
+        volatilityMultiplier: 6.0,
+        correlationChange: 0.7
+      },
+      {
         name: 'Market Crash',
         description: '2008年金融危機レベルの市場暴落',
         marketShock: -20,
@@ -384,10 +398,24 @@ export class StressTestEngine {
       },
       {
         name: 'Flash Crash',
-        description: '瞬間的な急落（フラッシュクラッシュ）',
+        description: '瞬間的な急落（フラッシュクラッシュ） - 2010年5月6日型',
         marketShock: -10,
         volatilityMultiplier: 5.0,
         correlationChange: 0.5
+      },
+      {
+        name: 'Tech Sector Crash',
+        description: 'テクノロジーセクター特有の大幅下落',
+        marketShock: -30,
+        volatilityMultiplier: 4.0,
+        correlationChange: 0.4
+      },
+      {
+        name: 'Financial Sector Crisis',
+        description: '金融セクターの信用危機',
+        marketShock: -40,
+        volatilityMultiplier: 5.0,
+        correlationChange: 0.6
       },
       {
         name: 'Moderate Correction',
@@ -411,6 +439,44 @@ export class StressTestEngine {
         correlationChange: 0.8
       }
     ];
+  }
+
+  /**
+   * 回復期間を予測
+   */
+  estimateRecoveryPeriod(scenario: StressScenario): {
+    daysToBreakEven: number;
+    daysTo90Percent: number;
+    confidence: number;
+  } {
+    // Historical recovery data based on past crises
+    const recoveryMap: Record<string, { days: number; partial: number }> = {
+      '2008 Lehman Crisis': { days: 1825, partial: 365 }, // 5 years to full, 1 year to 90%
+      '2020 COVID-19 Shock': { days: 180, partial: 60 }, // 6 months to full, 2 months to 90%
+      'Market Crash': { days: 730, partial: 180 }, // 2 years to full, 6 months to 90%
+      'Flash Crash': { days: 1, partial: 0.1 }, // Same day recovery
+      'Tech Sector Crash': { days: 1095, partial: 365 }, // 3 years to full, 1 year to 90%
+      'Financial Sector Crisis': { days: 1460, partial: 365 }, // 4 years to full, 1 year to 90%
+      'Moderate Correction': { days: 90, partial: 30 }, // 3 months to full, 1 month to 90%
+      'Volatility Spike': { days: 30, partial: 7 }, // 1 month to full, 1 week to 90%
+      'Black Swan': { days: 2190, partial: 730 }, // 6 years to full, 2 years to 90%
+    };
+
+    const recovery = recoveryMap[scenario.name] || { days: 365, partial: 90 };
+    
+    // Adjust based on market shock severity
+    const severityFactor = Math.abs(scenario.marketShock) / 20;
+    const adjustedDays = Math.floor(recovery.days * severityFactor);
+    const adjustedPartial = Math.floor(recovery.partial * severityFactor);
+    
+    // Confidence decreases with severity
+    const confidence = Math.max(0.3, 1 - (Math.abs(scenario.marketShock) / 100));
+
+    return {
+      daysToBreakEven: adjustedDays,
+      daysTo90Percent: adjustedPartial,
+      confidence,
+    };
   }
 }
 

@@ -4,11 +4,13 @@
  * センチメントデータAPI - 全シンボルのセンチメント情報を取得
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
+import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
+import { validateField } from '@/app/lib/api/ApiValidator';
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
+export const GET = createGetHandler(
+  async () => {
     // Get sentiment integration service
     const sentimentService = getGlobalSentimentIntegration();
 
@@ -24,61 +26,71 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Get service status
     const status = sentimentService.getStatus();
 
-    return NextResponse.json({
+    return {
       success: true,
       status,
       data,
       count: allIntelligence.size,
-    });
-  } catch (error) {
-    console.error('[Sentiment API] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch sentiment data' },
-      { status: 500 }
-    );
+    };
+  },
+  {
+    rateLimit: true,
+    cache: {
+      enabled: process.env.NODE_ENV !== 'test', // Disable cache in test environment
+      ttl: 60000, // 1 minute cache
+      keyGenerator: () => 'sentiment:all',
+    },
   }
+);
+
+interface SentimentAction {
+  action: 'start' | 'stop' | 'clear';
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse> {
-  try {
-    const body = await request.json();
-    const { action } = body;
+export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
+  async (_request: NextRequest, body: SentimentAction) => {
+    // Validate action
+    const validationError = validateField({
+      value: body.action,
+      fieldName: 'action',
+      required: true,
+      enum: ['start', 'stop', 'clear'] as const,
+    });
+
+    if (validationError) {
+      throw new Error(`Unknown action: ${body.action}`);
+    }
 
     const sentimentService = getGlobalSentimentIntegration();
 
-    switch (action) {
+    switch (body.action) {
       case 'start':
         sentimentService.start();
-        return NextResponse.json({
+        return {
           success: true,
           message: 'Sentiment analysis started',
-        });
+        };
 
       case 'stop':
         sentimentService.stop();
-        return NextResponse.json({
+        return {
           success: true,
           message: 'Sentiment analysis stopped',
-        });
+        };
 
       case 'clear':
         sentimentService.clearAllData();
-        return NextResponse.json({
+        return {
           success: true,
           message: 'All data cleared',
-        });
+        };
 
       default:
-        return NextResponse.json(
-          { error: `Unknown action: ${action}` },
-          { status: 400 }
-        );
+        // TypeScript should prevent this, but adding for safety
+        throw new Error(`Unknown action: ${body.action}`);
     }
-  } catch (error) {
-    console.error('[Sentiment API] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process request' },
-      { status: 500 }
-    );
+  },
+  {
+    rateLimit: true,
   }
-}
+);
