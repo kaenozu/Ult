@@ -153,11 +153,11 @@ describe('Environment Configuration', () => {
       // These would be tested in actual env.ts with mocked process.env
       // Here we just verify the logic would work
       
-      const envs = ['development', 'production', 'test'] as const;
+      type Env = 'development' | 'production' | 'test';
       
-      const isProduction = (env: typeof envs[number]) => env === 'production';
-      const isDevelopment = (env: typeof envs[number]) => env === 'development';
-      const isTest = (env: typeof envs[number]) => env === 'test';
+      const isProduction = (env: Env) => env === 'production';
+      const isDevelopment = (env: Env) => env === 'development';
+      const isTest = (env: Env) => env === 'test';
 
       expect(isProduction('production')).toBe(true);
       expect(isProduction('development')).toBe(false);

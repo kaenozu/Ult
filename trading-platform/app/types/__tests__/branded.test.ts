@@ -15,14 +15,6 @@ import {
   points,
   count,
   index,
-  type Milliseconds,
-  type Seconds,
-  type Minutes,
-  type Hours,
-  type Days,
-  type Percentage,
-  type DecimalPercentage,
-  type Ratio,
 } from '../branded';
 
 describe('Branded Types - Time Conversions', () => {

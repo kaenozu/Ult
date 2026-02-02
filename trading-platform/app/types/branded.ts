@@ -118,7 +118,7 @@ export const index = {
 
 export const isBrandedType = <T extends { readonly __brand: string }>(
   value: unknown,
-  brand: string
+  _brand: string
 ): value is T => {
   return typeof value === 'number';
 };
