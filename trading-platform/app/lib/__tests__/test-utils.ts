@@ -234,7 +234,6 @@ export class TestHelpers {
   static spyOnConsole() {
     const originalError = console.error;
     const originalWarn = console.warn;
-    const originalLog = console.log;
 
     const errors: any[] = [];
     const warnings: any[] = [];
@@ -248,7 +247,6 @@ export class TestHelpers {
       warnings.push(args);
     };
 
-    console.log = (...args: any[]) => {
       logs.push(args);
     };
 
@@ -259,7 +257,6 @@ export class TestHelpers {
       restore: () => {
         console.error = originalError;
         console.warn = originalWarn;
-        console.log = originalLog;
       },
     };
   }

@@ -165,7 +165,6 @@ export class EnhancedSentimentService extends EventEmitter {
    * サービスを開始
    */
   start(): void {
-    console.log('[EnhancedSentimentService] Starting...');
     
     // データコレクターとセンチメントエンジンを開始
     this.dataCollector.start();
@@ -183,7 +182,6 @@ export class EnhancedSentimentService extends EventEmitter {
    * サービスを停止
    */
   stop(): void {
-    console.log('[EnhancedSentimentService] Stopping...');
     
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
@@ -697,7 +695,6 @@ export class EnhancedSentimentService extends EventEmitter {
     this.historicalSentiments.clear();
     this.dataCollector.clearCache();
     this.sentimentEngine.clearData();
-    console.log('[EnhancedSentimentService] Data cleared');
   }
 }
 

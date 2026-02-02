@@ -205,9 +205,6 @@ class WinningBacktestEngine {
   ): BacktestResult {
     this.reset();
     
-    console.log(`[WinningBacktestEngine] Starting backtest for ${symbol}`);
-    console.log(`  Initial Capital: ${this.config.initialCapital.toLocaleString()}`);
-    console.log(`  Data Points: ${data.length}`);
     
     // 戦略結果と価格データを同期
     const alignedData = this.alignDataWithSignals(data, strategyResults);
@@ -241,7 +238,6 @@ class WinningBacktestEngine {
       
       // 最大ドローダウンチェック
       if (this.calculateCurrentDrawdown() > this.config.maxDrawdown) {
-        console.log('[WinningBacktestEngine] Max drawdown reached, stopping backtest');
         break;
       }
     }
@@ -888,16 +884,6 @@ class WinningBacktestEngine {
   }
 
   private logResults(result: BacktestResult): void {
-    console.log('\n[WinningBacktestEngine] Backtest Results');
-    console.log('========================================');
-    console.log(`Final Capital: ${result.finalCapital.toLocaleString()}`);
-    console.log(`Total Return: ${result.metrics.totalReturn.toFixed(2)}%`);
-    console.log(`Sharpe Ratio: ${result.metrics.sharpeRatio.toFixed(2)}`);
-    console.log(`Max Drawdown: ${result.metrics.maxDrawdown.toFixed(2)}%`);
-    console.log(`Win Rate: ${result.metrics.winRate.toFixed(1)}%`);
-    console.log(`Total Trades: ${result.metrics.totalTrades}`);
-    console.log(`Profit Factor: ${result.metrics.profitFactor.toFixed(2)}`);
-    console.log('========================================\n');
   }
 }
 

@@ -72,7 +72,6 @@ export async function basicTrainingExample(marketData: OHLCV[]): Promise<void> {
     if (episode > 0) {
       try {
         const metrics = await agent.learn();
-        console.log(`Episode ${episode + 1}:`, {
           reward: episodeReward.toFixed(4),
           steps: stepCount,
           epsilon: agent.getEpsilon().toFixed(3),
@@ -80,7 +79,6 @@ export async function basicTrainingExample(marketData: OHLCV[]): Promise<void> {
           valueLoss: metrics.valueLoss.toFixed(4),
         });
       } catch (error) {
-        console.log(`Episode ${episode + 1}: Collecting data...`);
       }
     }
 
@@ -89,7 +87,6 @@ export async function basicTrainingExample(marketData: OHLCV[]): Promise<void> {
 
   // Save trained model
   const model = agent.saveModel();
-  console.log('Training complete. Model saved.');
   
   return Promise.resolve();
 }
@@ -189,7 +186,6 @@ export async function multiAgentExample(marketData: OHLCV[]): Promise<void> {
 
   // Get final leaderboard
   const leaderboard = environment.getLeaderboard();
-  console.log('Final Leaderboard:', leaderboard);
 }
 
 /**
@@ -320,8 +316,6 @@ export async function hyperparameterTuningExample(
     }
   }
 
-  console.log('Best Configuration:', bestConfig);
-  console.log('Best Performance:', bestPerformance);
 
   return { bestConfig, bestPerformance };
 }
@@ -399,10 +393,8 @@ export async function quickStartExample(): Promise<void> {
     });
   }
 
-  console.log('Starting basic training...');
   await basicTrainingExample(marketData);
   
-  console.log('\nTraining complete!');
 }
 
 // Uncomment to run:

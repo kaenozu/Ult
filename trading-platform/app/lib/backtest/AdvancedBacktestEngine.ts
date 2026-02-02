@@ -155,7 +155,6 @@ export class AdvancedBacktestEngine extends EventEmitter {
       throw new Error(`No data loaded for symbol: ${symbol}`);
     }
 
-    console.log(`[BacktestEngine] Running backtest for ${symbol} with strategy: ${strategy.name}`);
 
     // Initialize
     this.resetState();
@@ -199,7 +198,6 @@ export class AdvancedBacktestEngine extends EventEmitter {
       // Check max drawdown
       const currentDrawdown = this.calculateCurrentDrawdown();
       if (currentDrawdown > this.config.maxDrawdown) {
-        console.log('[BacktestEngine] Max drawdown reached, stopping backtest');
         break;
       }
     }

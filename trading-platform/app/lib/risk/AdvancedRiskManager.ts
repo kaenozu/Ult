@@ -400,7 +400,6 @@ export class AdvancedRiskManager extends EventEmitter {
    * 損失を記録
    */
   recordLoss(amount: number): void {
-    console.log(`[RiskManager] Loss recorded: ${amount}`);
   }
 
   // ============================================================================

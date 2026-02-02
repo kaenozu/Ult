@@ -54,7 +54,6 @@ export class WalkForwardAnalysis {
       const trainData = data.slice(startIdx, trainEndIdx);
       const testData = data.slice(trainEndIdx, testEndIdx);
 
-      console.log(
         `Walk-Forward Window ${windowId + 1}: Train ${trainData.length} samples, Test ${testData.length} samples`
       );
 
@@ -74,7 +73,6 @@ export class WalkForwardAnalysis {
 
       // Train models on this window (only if needed)
       if (windowId % config.retrainFrequency === 0) {
-        console.log(`Retraining models for window ${windowId + 1}...`);
         try {
           await this.ensembleStrategy.trainAllModels(trainingData);
         } catch (error) {

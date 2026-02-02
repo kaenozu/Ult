@@ -312,18 +312,15 @@ export function trackWebVitals() {
             'web-vitals.LCP',
             entry.startTime
           );
-          console.log('[Web Vitals] LCP:', entry.startTime.toFixed(2), 'ms');
         }
         if (entry.entryType === 'first-input') {
           const fid = (entry as any).processingStart - entry.startTime;
           performanceMonitor.recordMetric('web-vitals.FID', fid);
-          console.log('[Web Vitals] FID:', fid.toFixed(2), 'ms');
         }
         if (entry.entryType === 'layout-shift') {
           const cls = (entry as any).value;
           if (!cls.hadRecentInput) {
             performanceMonitor.recordMetric('web-vitals.CLS', cls);
-            console.log('[Web Vitals] CLS:', cls.toFixed(4));
           }
         }
       }
