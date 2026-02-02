@@ -206,5 +206,130 @@ export interface RateLimitResult {
 // Re-export OHLCV as the primary type name
 export type { SharedOHLCV as OHLCV };
 
-// Re-export optimized data structures
-export type { OHLCVData, OHLCVConverter, OHLCVIterators, RingBuffer, OHLCVRingBuffer, DataPipeline } from './optimized-data';
+// ============================================================================
+// Type Guard Functions
+// ============================================================================
+
+/**
+ * Type guard for OHLCV data
+ * Validates that an unknown value is a valid OHLCV object
+ */
+export function isOHLCV(value: unknown): value is SharedOHLCV {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  
+  const obj = value as Record<string, unknown>;
+  
+  return (
+    typeof obj.date === 'string' &&
+    typeof obj.open === 'number' &&
+    typeof obj.high === 'number' &&
+    typeof obj.low === 'number' &&
+    typeof obj.close === 'number' &&
+    typeof obj.volume === 'number' &&
+    (obj.symbol === undefined || typeof obj.symbol === 'string')
+  );
+}
+
+/**
+ * Type guard for array of OHLCV data
+ */
+export function isOHLCVArray(value: unknown): value is SharedOHLCV[] {
+  return Array.isArray(value) && value.every(isOHLCV);
+}
+
+/**
+ * Type guard for OrderSide
+ */
+export function isOrderSide(value: unknown): value is OrderSide {
+  return value === 'BUY' || value === 'SELL';
+}
+
+/**
+ * Type guard for OrderType
+ */
+export function isOrderType(value: unknown): value is OrderType {
+  return value === 'MARKET' || value === 'LIMIT';
+}
+
+/**
+ * Type guard for OrderStatus
+ */
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return value === 'PENDING' || value === 'FILLED' || value === 'CANCELLED';
+}
+
+/**
+ * Type guard for SignalType
+ */
+export function isSignalType(value: unknown): value is SignalType {
+  return (
+    value === 'STRONG_BUY' ||
+    value === 'BUY' ||
+    value === 'HOLD' ||
+    value === 'SELL' ||
+    value === 'STRONG_SELL'
+  );
+}
+
+/**
+ * Type guard for MarketType
+ */
+export function isMarketType(value: unknown): value is MarketType {
+  return value === 'japan' || value === 'usa';
+}
+
+/**
+ * Type guard for TimeHorizon
+ */
+export function isTimeHorizon(value: unknown): value is TimeHorizon {
+  return value === 'short' || value === 'medium' || value === 'long';
+}
+
+/**
+ * Type guard for PositionSizingMethod
+ */
+export function isPositionSizingMethod(value: unknown): value is PositionSizingMethod {
+  return (
+    value === 'fixed_ratio' ||
+    value === 'fixed_amount' ||
+    value === 'kelly_criterion' ||
+    value === 'volatility_based' ||
+    value === 'volatility_adjusted' ||
+    value === 'risk_parity'
+  );
+}
+
+/**
+ * Type guard for StopLossType
+ */
+export function isStopLossType(value: unknown): value is StopLossType {
+  return (
+    value === 'percentage' ||
+    value === 'atr' ||
+    value === 'fixed' ||
+    value === 'price' ||
+    value === 'trailing'
+  );
+}
+
+/**
+ * Assertion function for OHLCV data
+ * Throws an error if the value is not a valid OHLCV object
+ */
+export function assertOHLCV(value: unknown, message = 'Invalid OHLCV data'): asserts value is SharedOHLCV {
+  if (!isOHLCV(value)) {
+    throw new TypeError(message);
+  }
+}
+
+/**
+ * Assertion function for array of OHLCV data
+ */
+export function assertOHLCVArray(value: unknown, message = 'Invalid OHLCV array'): asserts value is SharedOHLCV[] {
+  if (!isOHLCVArray(value)) {
+    throw new TypeError(message);
+  }
+}
+

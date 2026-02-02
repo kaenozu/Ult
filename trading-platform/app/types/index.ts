@@ -101,10 +101,9 @@ export interface TechnicalIndicator {
 }
 
 /**
- * Extended technical indicators including ATR
- * Used for feature calculation
+ * Technical indicators with ATR (Average True Range) for ML prediction
  */
-export interface ExtendedTechnicalIndicator extends TechnicalIndicator {
+export interface TechnicalIndicatorsWithATR extends TechnicalIndicator {
   atr: number[];
 }
 
@@ -872,3 +871,50 @@ export type {
   DisciplineCheckRequest,
   DisciplineCheckResponse,
 } from './psychology';
+
+// ============================================================================
+// Type Guards and Branded Types
+// ============================================================================
+
+export {
+  isOHLCV,
+  isOHLCVArray,
+  isOrderSide,
+  isOrderType,
+  isOrderStatus,
+  isSignalType,
+  isMarketType,
+  isTimeHorizon,
+  isPositionSizingMethod,
+  isStopLossType,
+  assertOHLCV,
+  assertOHLCVArray,
+} from './shared';
+
+export type {
+  SymbolId,
+  Percentage,
+  Ratio,
+  Price,
+  Volume,
+  TimestampMs,
+  DateString,
+  TradeId,
+  OrderId,
+} from './branded';
+
+export {
+  createSymbolId,
+  isSymbolId,
+  createPercentage,
+  createRatio,
+  createPrice,
+  createVolume,
+  createTimestampMs,
+  createDateString,
+  createTradeId,
+  createOrderId,
+  percentageToRatio,
+  ratioToPercentage,
+} from './branded';
+
