@@ -8,3 +8,5 @@ export * from './BaseBrokerConnector';
 export * from './PaperTradingConnector';
 export * from './AlpacaConnector';
 export * from './OrderExecutor';
+export * from './config';
+export * from './storeIntegration';

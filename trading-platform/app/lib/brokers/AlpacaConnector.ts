@@ -8,6 +8,7 @@
 
 import { BaseBrokerConnector } from './BaseBrokerConnector';
 import {
+  BrokerConfig,
   BrokerOrderRequest,
   BrokerOrderResponse,
   BrokerPosition,
@@ -17,7 +18,7 @@ import {
 export class AlpacaConnector extends BaseBrokerConnector {
   private baseUrl: string;
 
-  constructor(config: Parameters<typeof BaseBrokerConnector.prototype.constructor>[0]) {
+  constructor(config: BrokerConfig) {
     super(config);
     this.baseUrl = config.paperTrading 
       ? 'https://paper-api.alpaca.markets'
@@ -131,7 +132,7 @@ export class AlpacaConnector extends BaseBrokerConnector {
       }
 
       const results = await response.json();
-      return results.map((order: unknown) => this.transformOrder(order));
+      return results.map((order: Record<string, unknown>) => this.transformOrder(order));
     } catch (error) {
       this.handleError(error);
     }
