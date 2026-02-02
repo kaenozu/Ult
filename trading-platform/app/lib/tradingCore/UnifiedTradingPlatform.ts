@@ -400,21 +400,20 @@ export class UnifiedTradingPlatform extends EventEmitter {
     const riskMetrics = this.riskManager.updateRiskMetrics({
       cash: portfolio.cash,
       positions: portfolio.positions.map((p) => ({
-        id: p.id,
         symbol: p.symbol,
+        name: p.symbol,
+        market: 'usa', // Default market
         side: p.side,
         quantity: p.quantity,
-        entryPrice: p.entryPrice,
+        avgPrice: p.entryPrice,
         currentPrice: p.currentPrice,
-        openTime: p.entryTime,
-        unrealizedPnL: p.unrealizedPnL,
-        unrealizedPnLPercent: p.unrealizedPnLPercent,
+        change: 0,
+        entryDate: new Date(p.entryTime).toISOString(),
       })),
       totalValue: portfolio.totalValue,
-      marginUsed: portfolio.marginUsed,
-      marginAvailable: portfolio.buyingPower,
+      totalProfit: portfolio.totalPnL,
       dailyPnL: portfolio.dailyPnL,
-      totalPnL: portfolio.totalPnL,
+      orders: [], // Required by Portfolio interface
     });
 
     // Check if trading is halted

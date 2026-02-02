@@ -9,7 +9,9 @@ import { Order, Position } from '@/app/types';
 import {
   TradingBehaviorMetrics,
   PsychologyAlert,
-  TradingSession
+  TradingSession,
+  BiasAnalysis,
+  ConsecutiveLossInfo
 } from '@/app/types/risk';
 
 export class PsychologyMonitor {
@@ -74,7 +76,7 @@ export class PsychologyMonitor {
   /**
    * 心理状態アラートを生成
    */
-  generatePsychologyAlerts(): PsychologyAlert[] {
+  generatePsychologyAlerts(positions?: Position[]): PsychologyAlert[] {
     const metrics = this.analyzeTradingBehavior();
     const newAlerts: PsychologyAlert[] = [];
 
@@ -120,6 +122,53 @@ export class PsychologyMonitor {
         recommendation: '休憩を取り、明日再開してください。',
         timestamp: new Date()
       });
+    }
+
+    // TRADING-025: 追加のバイアス検出
+    // FOMOの検出
+    const recentTrades = this.getRecentTrades(1);
+    if (recentTrades.length >= 3) {
+      newAlerts.push({
+        type: 'fomo',
+        severity: 'high',
+        message: '短時間に複数の取引が検出されました。FOMO（取り残される恐怖）の可能性があります。',
+        recommendation: '一度立ち止まり、取引計画を確認してください。感情ではなく戦略に基づいて取引してください。',
+        timestamp: new Date()
+      });
+    }
+
+    // 確認バイアスの検出
+    if (positions && positions.length > 0) {
+      const longLosingPositions = positions.filter(p => 
+        p.currentPrice < p.avgPrice && 
+        this.getPositionHoldTime(p) > 7
+      );
+      
+      if (longLosingPositions.length > 0) {
+        newAlerts.push({
+          type: 'confirmation_bias',
+          severity: 'high',
+          message: `${longLosingPositions.length}つの損失ポジションを長期保有しています。確認バイアスの可能性があります。`,
+          recommendation: '客観的にポジションを評価し、損切りルールに従ってください。希望的観測ではなくデータに基づいて判断してください。',
+          timestamp: new Date()
+        });
+      }
+    }
+
+    // 損失嫌悪の検出
+    if (metrics.consecutiveLosses >= 2) {
+      const recentBuys = this.getRecentTrades(24).filter(t => t.side === 'BUY');
+      const symbols = new Set(recentBuys.map(t => t.symbol));
+      
+      if (symbols.size < recentBuys.length / 2) {
+        newAlerts.push({
+          type: 'loss_aversion',
+          severity: 'high',
+          message: '連続損失後に同じシンボルを買い増ししています。損失嫌悪バイアスの可能性があります。',
+          recommendation: '損失を取り戻そうとする心理に注意してください。平均化戦略は慎重に行い、リスク管理を優先してください。',
+          timestamp: new Date()
+        });
+      }
     }
 
     this.alerts.push(...newAlerts);
@@ -258,6 +307,231 @@ export class PsychologyMonitor {
    */
   clearAlerts(): void {
     this.alerts = [];
+  }
+
+  // ============================================================================
+  // TRADING-025: Enhanced Bias Detection
+  // ============================================================================
+
+  /**
+   * バイアス分析を実行
+   */
+  detectBiases(trade: Order, positions?: Position[]): BiasAnalysis {
+    const detectedBiases: string[] = [];
+    let maxSeverity: 'low' | 'medium' | 'high' = 'low';
+
+    // FOMO検出
+    const fomo = this.detectFOMO(trade);
+    if (fomo) {
+      detectedBiases.push('FOMO (恐れによる取引)');
+      maxSeverity = this.escalateSeverity(maxSeverity, 'medium');
+    }
+
+    // 恐怖バイアス検出
+    const fear = this.detectFearBias(trade);
+    if (fear) {
+      detectedBiases.push('恐怖バイアス (早すぎた利益確定)');
+      maxSeverity = this.escalateSeverity(maxSeverity, 'medium');
+    }
+
+    // 確認バイアス検出
+    const confirmationBias = this.detectConfirmationBias(trade, positions);
+    if (confirmationBias) {
+      detectedBiases.push('確認バイアス (損失ポジションの長期保有)');
+      maxSeverity = this.escalateSeverity(maxSeverity, 'high');
+    }
+
+    // 損失嫌悪検出
+    const lossAversion = this.detectLossAversion(trade);
+    if (lossAversion) {
+      detectedBiases.push('損失嫌悪 (損失ポジションへの追加投資)');
+      maxSeverity = this.escalateSeverity(maxSeverity, 'high');
+    }
+
+    const recommendation = this.generateBiasRecommendation(detectedBiases);
+
+    return {
+      hasFOMO: fomo,
+      hasFear: fear,
+      hasConfirmationBias: confirmationBias,
+      hasLossAversion: lossAversion,
+      detectedBiases,
+      severity: maxSeverity,
+      recommendation
+    };
+  }
+
+  /**
+   * 連続損失情報を取得
+   */
+  detectConsecutiveLosses(history: Order[]): ConsecutiveLossInfo {
+    let currentStreak = 0;
+    let maxStreak = 0;
+    let totalLosses = 0;
+
+    // 損失を判定するヘルパー
+    const isLoss = (order: Order) => {
+      // 簡易的な損失判定
+      return order.side === 'BUY' && order.status === 'FILLED';
+    };
+
+    // 最新から遡って連続損失をカウント
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (isLoss(history[i])) {
+        if (i === history.length - 1 || isLoss(history[i + 1])) {
+          currentStreak++;
+        }
+        totalLosses++;
+      } else if (currentStreak > 0) {
+        break;
+      }
+    }
+
+    // 全履歴から最大連続損失を計算
+    let tempStreak = 0;
+    for (const order of history) {
+      if (isLoss(order)) {
+        tempStreak++;
+        maxStreak = Math.max(maxStreak, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
+
+    const shouldCoolOff = currentStreak >= 3;
+    const coolOffReason = shouldCoolOff
+      ? `連続損失${currentStreak}回により、クーリングオフを推奨します。`
+      : undefined;
+
+    return {
+      currentStreak,
+      maxStreak: Math.max(maxStreak, currentStreak),
+      totalLosses,
+      shouldCoolOff,
+      coolOffReason
+    };
+  }
+
+  /**
+   * FOMO (Fear of Missing Out) を検出
+   */
+  private detectFOMO(trade: Order): boolean {
+    const recentTrades = this.getRecentTrades(1); // 過去1時間
+    
+    // 短時間に複数取引
+    if (recentTrades.length >= 3) {
+      return true;
+    }
+
+    // 連続勝利後の大きな取引
+    const metrics = this.analyzeTradingBehavior();
+    if (metrics.consecutiveWins >= 3 && trade.quantity > this.getAverageTradeSize() * 1.5) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * 恐怖バイアスを検出
+   */
+  private detectFearBias(trade: Order): boolean {
+    // 売却取引で、平均保有時間より大幅に短い場合
+    if (trade.side === 'SELL') {
+      const avgHoldTime = this.calculateAverageHoldTime();
+      // TODO: 実際の保有時間と比較
+      // 仮実装: 連続損失後の売りを恐怖と判定
+      const metrics = this.analyzeTradingBehavior();
+      return metrics.consecutiveLosses >= 2;
+    }
+    return false;
+  }
+
+  /**
+   * 確認バイアスを検出
+   */
+  private detectConfirmationBias(trade: Order, positions?: Position[]): boolean {
+    if (!positions || positions.length === 0) return false;
+
+    // 損失ポジションを長期保有している場合
+    const losingPositions = positions.filter(p => 
+      p.currentPrice < p.avgPrice && 
+      this.getPositionHoldTime(p) > 7 // 7日以上保有
+    );
+
+    return losingPositions.length > 0;
+  }
+
+  /**
+   * 損失嫌悪を検出
+   */
+  private detectLossAversion(trade: Order): boolean {
+    const metrics = this.analyzeTradingBehavior();
+    
+    // 連続損失後に同じシンボルを買い増し
+    if (metrics.consecutiveLosses >= 2 && trade.side === 'BUY') {
+      const recentLosses = this.getRecentTrades(24).filter(t => 
+        t.side === 'BUY' && t.symbol === trade.symbol
+      );
+      return recentLosses.length >= 2;
+    }
+
+    return false;
+  }
+
+  /**
+   * バイアス推奨メッセージを生成
+   */
+  private generateBiasRecommendation(biases: string[]): string {
+    if (biases.length === 0) {
+      return '心理的バイアスは検出されませんでした。良好な取引判断を継続してください。';
+    }
+
+    const recommendations = [
+      `以下のバイアスが検出されました: ${biases.join(', ')}`,
+      '',
+      '推奨アクション:',
+      '- 取引計画を見直し、客観的な判断を行ってください',
+      '- 必要に応じてクーリングオフ期間を設けてください',
+      '- 感情日記をつけて、バイアスのパターンを認識してください'
+    ];
+
+    return recommendations.join('\n');
+  }
+
+  /**
+   * 深刻度をエスカレート
+   */
+  private escalateSeverity(
+    current: 'low' | 'medium' | 'high',
+    newSeverity: 'low' | 'medium' | 'high'
+  ): 'low' | 'medium' | 'high' {
+    const levels = { low: 1, medium: 2, high: 3 };
+    return levels[newSeverity] > levels[current] ? newSeverity : current;
+  }
+
+  /**
+   * 平均取引サイズを取得
+   */
+  private getAverageTradeSize(): number {
+    if (this.tradingHistory.length === 0) return 100;
+    
+    const totalQuantity = this.tradingHistory.reduce(
+      (sum, trade) => sum + trade.quantity,
+      0
+    );
+    return totalQuantity / this.tradingHistory.length;
+  }
+
+  /**
+   * ポジション保有時間を取得（日数）
+   */
+  private getPositionHoldTime(position: Position): number {
+    const entryDate = new Date(position.entryDate || Date.now());
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - entryDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   }
 
   // ============================================================================

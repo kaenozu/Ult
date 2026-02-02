@@ -20,12 +20,9 @@ const eventPredictor = new EventPredictor();
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     // Rate limiting
-    const rateLimitCheck = await checkRateLimit(request);
-    if (!rateLimitCheck.success) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded' },
-        { status: 429 }
-      );
+    const rateLimitResponse = checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
     const body = await request.json();

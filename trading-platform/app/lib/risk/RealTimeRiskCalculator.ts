@@ -277,8 +277,9 @@ export class RealTimeRiskCalculator {
     const riskContribution = positionPercent * volatility / 100;
     
     // ストップロスまでの距離
-    const stopLossDistance = position.stopLoss
-      ? Math.abs((position.currentPrice - position.stopLoss) / position.currentPrice) * 100
+    const pos = position as Position & { stopLoss?: number };
+    const stopLossDistance = pos.stopLoss
+      ? Math.abs((position.currentPrice - pos.stopLoss) / position.currentPrice) * 100
       : 0;
     
     return {

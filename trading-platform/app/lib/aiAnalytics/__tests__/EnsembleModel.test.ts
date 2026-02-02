@@ -376,4 +376,147 @@ describe('EnsembleModel', () => {
       expect(result.individualPredictions.some(p => p.value !== 0)).toBe(true);
     });
   });
+
+  describe('SHAP Values and Interpretability', () => {
+    it('should calculate SHAP values for predictions', () => {
+      const features = createMockFeatures();
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(features, data);
+
+      expect(result.shapValues).toBeDefined();
+      expect(result.shapValues?.features).toBeDefined();
+      expect(result.shapValues?.baseValue).toBeDefined();
+      expect(result.shapValues?.totalContribution).toBeDefined();
+      expect(result.shapValues?.topFeatures).toBeDefined();
+      expect(result.shapValues?.topFeatures.length).toBeGreaterThan(0);
+    });
+
+    it('should have top features sorted by contribution', () => {
+      const features = createMockFeatures();
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(features, data);
+      const topFeatures = result.shapValues?.topFeatures || [];
+
+      expect(topFeatures.length).toBeGreaterThan(0);
+      
+      // Verify sorted by absolute contribution
+      for (let i = 1; i < topFeatures.length; i++) {
+        expect(Math.abs(topFeatures[i - 1].contribution))
+          .toBeGreaterThanOrEqual(Math.abs(topFeatures[i].contribution));
+      }
+    });
+
+    it('should include model agreement in SHAP values', () => {
+      const features = createMockFeatures();
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(features, data);
+
+      expect(result.shapValues?.features).toHaveProperty('model_agreement');
+    });
+  });
+
+  describe('Uncertainty Quantification', () => {
+    it('should calculate prediction uncertainty', () => {
+      const features = createMockFeatures();
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(features, data);
+
+      expect(result.uncertainty).toBeDefined();
+      expect(result.uncertainty).toBeGreaterThanOrEqual(0);
+      expect(result.uncertainty).toBeLessThanOrEqual(1);
+    });
+
+    it('should have higher uncertainty when models disagree', () => {
+      const features = createMockFeatures();
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(features, data);
+
+      // When agreement score is low, uncertainty should be higher
+      if (result.agreementScore < 0.5) {
+        expect(result.uncertainty).toBeGreaterThan(0.3);
+      }
+    });
+
+    it('should have lower uncertainty with high confidence', () => {
+      const strongFeatures: ExtendedTechnicalFeatures = {
+        ...createMockFeatures(),
+        rsi: 25, // Oversold
+        momentum: 8,
+        momentumTrend: 'STRONG_UP',
+        volumeRatio: 2.0,
+      };
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(strongFeatures, data);
+
+      if (result.confidence > 0.8) {
+        expect(result.uncertainty).toBeLessThan(0.4);
+      }
+    });
+  });
+
+  describe('Macro and Sentiment Features', () => {
+    it('should incorporate macro indicators in SHAP values', () => {
+      const featuresWithMacro: ExtendedTechnicalFeatures = {
+        ...createMockFeatures(),
+        macroIndicators: {
+          vix: 30,
+          interestRate: 4.5,
+        },
+      };
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(featuresWithMacro, data);
+
+      expect(result.shapValues?.features).toHaveProperty('vix_impact');
+    });
+
+    it('should incorporate sentiment in SHAP values', () => {
+      const featuresWithSentiment: ExtendedTechnicalFeatures = {
+        ...createMockFeatures(),
+        sentiment: {
+          positive: 0.7,
+          negative: 0.2,
+          neutral: 0.1,
+          overall: 0.5,
+          confidence: 0.8,
+        },
+      };
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(featuresWithSentiment, data);
+
+      expect(result.shapValues?.features).toHaveProperty('news_sentiment');
+    });
+
+    it('should incorporate time series features in SHAP values', () => {
+      const featuresWithTS: ExtendedTechnicalFeatures = {
+        ...createMockFeatures(),
+        timeSeriesFeatures: {
+          rollingMean5: 100,
+          rollingMean20: 98,
+          rollingStd5: 2,
+          rollingStd20: 3,
+          exponentialMA: 99,
+          momentumChange: 0.5,
+          priceAcceleration: 0.2,
+          volumeAcceleration: 100,
+          autocorrelation: 0.8,
+          fourierDominantFreq: 0.1,
+          fourierAmplitude: 2,
+        },
+      };
+      const data = generateMockOHLCV(50);
+
+      const result = ensembleModel.predict(featuresWithTS, data);
+
+      expect(result.shapValues?.features).toHaveProperty('momentum_change');
+      expect(result.shapValues?.features).toHaveProperty('price_acceleration');
+    });
+  });
 });
