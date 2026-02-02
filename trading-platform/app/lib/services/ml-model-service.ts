@@ -7,6 +7,7 @@
 
 import { PredictionFeatures } from './feature-calculation-service';
 import { ModelPrediction } from '../../types';
+import { PREDICTION } from '../constants';
 import { 
   LSTMModel, 
   GRUModel, 
@@ -15,13 +16,11 @@ import {
   ModelMetrics,
   ModelTrainingData
 } from './tensorflow-model-service';
-import { ENSEMBLE_WEIGHTS, ML_SCORING } from '../constants/prediction';
 
-/**
  * ML予測モデルサービス
  */
 export class MLModelService {
-  private readonly weights = ENSEMBLE_WEIGHTS;
+  private readonly weights = PREDICTION.MODEL_WEIGHTS;
 
   // TensorFlow.js models
   private lstmModel: LSTMModel | null = null;
@@ -31,7 +30,6 @@ export class MLModelService {
   // Flag to use TensorFlow.js models (set to true after training)
   private useTensorFlowModels = false;
 
-  /**
    * すべてのモデルによる予測を実行（同期版 - ルールベース）
    */
   predict(features: PredictionFeatures): ModelPrediction {
@@ -52,7 +50,6 @@ export class MLModelService {
     };
   }
 
-  /**
    * TensorFlow.jsモデルを使用した予測（非同期版）
    */
   async predictAsync(features: PredictionFeatures): Promise<ModelPrediction> {
@@ -64,7 +61,6 @@ export class MLModelService {
     return this.predict(features);
   }
 
-  /**
    * TensorFlow.jsモデルを使用した予測
    */
   private async predictWithTensorFlow(features: PredictionFeatures): Promise<ModelPrediction> {
@@ -106,7 +102,6 @@ export class MLModelService {
     }
   }
 
-  /**
    * TensorFlow.jsモデルの信頼度を計算
    */
   private calculateTensorFlowConfidence(
@@ -133,15 +128,15 @@ export class MLModelService {
     const avgAccuracy = (ffMetrics.accuracy + gruMetrics.accuracy + lstmMetrics.accuracy) / 3;
 
     // Combine agreement and accuracy
-    const agreementBonus = agreementScore * ML_SCORING.TF_AGREEMENT_WEIGHT;
-    const accuracyBonus = (avgAccuracy / 100) * ML_SCORING.TF_ACCURACY_WEIGHT;
+    const baseConfidence = 50;
+    const agreementBonus = agreementScore * 25;
+    const accuracyBonus = (avgAccuracy / 100) * 25;
 
-    const confidence = ML_SCORING.TF_BASE_CONFIDENCE + agreementBonus + accuracyBonus;
+    const confidence = baseConfidence + agreementBonus + accuracyBonus;
 
-    return Math.min(Math.max(confidence, ML_SCORING.CONFIDENCE_MIN), ML_SCORING.CONFIDENCE_MAX);
+    return Math.min(Math.max(confidence, 50), 95);
   }
 
-  /**
    * モデルを訓練する
    */
   async trainModels(trainingData: ModelTrainingData, epochs = 50): Promise<{
@@ -171,7 +166,6 @@ export class MLModelService {
     };
   }
 
-  /**
    * モデルを保存する
    */
   async saveModels(): Promise<void> {
@@ -180,7 +174,6 @@ export class MLModelService {
     if (this.lstmModel) await this.lstmModel.saveModel('ml-lstm-model');
   }
 
-  /**
    * モデルを読み込む
    */
   async loadModels(): Promise<void> {
@@ -204,14 +197,12 @@ export class MLModelService {
     }
   }
 
-  /**
    * TensorFlow.jsモデルが使用可能かチェック
    */
   isTensorFlowEnabled(): boolean {
     return this.useTensorFlowModels;
   }
 
-  /**
    * モデルのメトリクスを取得
    */
   getModelMetrics(): { ff?: ModelMetrics; gru?: ModelMetrics; lstm?: ModelMetrics } {
@@ -222,86 +213,94 @@ export class MLModelService {
     };
   }
 
-  /**
    * Random Forestによる予測
    */
   private randomForestPredict(f: PredictionFeatures): number {
+    const { THRESHOLDS, SCALING } = PREDICTION;
+
     let score = 0;
 
     // RSIが極端な値の場合
-    if (f.rsi < 20) {
-      score += ML_SCORING.RF_RSI_EXTREME_SCORE;
-    } else if (f.rsi > 80) {
-      score -= ML_SCORING.RF_RSI_EXTREME_SCORE;
+    if (f.rsi < THRESHOLDS.RSI_OVERSOLD) {
+      score += THRESHOLDS.RSI_EXTREME;
+    } else if (f.rsi > THRESHOLDS.RSI_OVERBOUGHT) {
+      score -= THRESHOLDS.RSI_EXTREME;
     }
 
     // SMAスコア
-    if (f.sma5 > 0) score += ML_SCORING.RF_SMA_BULL_SCORE;
-    if (f.sma20 > 0) score += ML_SCORING.RF_SMA_BEAR_SCORE;
+    if (f.sma5 > 0) score += THRESHOLDS.SMA_BULL_SCORE;
+    if (f.sma20 > 0) score += THRESHOLDS.SMA_BEAR_SCORE;
 
     // モメンタムスコア
-    if (f.priceMomentum > ML_SCORING.RF_MOMENTUM_STRONG_THRESHOLD) {
-      score += ML_SCORING.RF_MOMENTUM_SCORE;
-    } else if (f.priceMomentum < -ML_SCORING.RF_MOMENTUM_STRONG_THRESHOLD) {
-      score -= ML_SCORING.RF_MOMENTUM_SCORE;
+    if (f.priceMomentum > THRESHOLDS.MOMENTUM_STRONG) {
+      score += THRESHOLDS.MOMENTUM_SCORE;
+    } else if (f.priceMomentum < -THRESHOLDS.MOMENTUM_STRONG) {
+      score -= THRESHOLDS.MOMENTUM_SCORE;
     }
 
-    return score * ML_SCORING.RF_SCALING;
+    return score * SCALING.RF;
   }
 
-  /**
    * XGBoostによる予測
    */
   private xgboostPredict(f: PredictionFeatures): number {
+    const { THRESHOLDS, SCALING, XGB_PARAMS } = PREDICTION;
+
     let score = 0;
 
     // RSIが極端な値の場合
-    if (f.rsi < 20) {
-      score += ML_SCORING.XGB_RSI_EXTREME_SCORE;
-    } else if (f.rsi > 80) {
-      score -= ML_SCORING.XGB_RSI_EXTREME_SCORE;
+    if (f.rsi < THRESHOLDS.RSI_OVERSOLD) {
+      score += THRESHOLDS.RSI_EXTREME;
+    } else if (f.rsi > THRESHOLDS.RSI_OVERBOUGHT) {
+      score -= THRESHOLDS.RSI_EXTREME;
     }
 
     // モメンタムとSMAの影響
-    const momentumScore = Math.min(f.priceMomentum / ML_SCORING.XGB_MOMENTUM_DIVISOR, ML_SCORING.XGB_MOMENTUM_MAX_SCORE);
-    const smaScore = (f.sma5 * ML_SCORING.XGB_SMA5_WEIGHT + f.sma20 * ML_SCORING.XGB_SMA20_WEIGHT) / ML_SCORING.XGB_SMA_DIVISOR;
+    const momentumScore = Math.min(
+      f.priceMomentum / XGB_PARAMS.MOMENTUM_DIVISOR, 
+      XGB_PARAMS.MOMENTUM_MAX_SCORE
+    );
+    const smaScore = (
+      f.sma5 * XGB_PARAMS.SMA5_WEIGHT + 
+      f.sma20 * XGB_PARAMS.SMA20_WEIGHT
+    ) / XGB_PARAMS.SMA_DIVISOR;
     
     score += momentumScore + smaScore;
 
-    return score * ML_SCORING.XGB_SCALING;
+    return score * SCALING.XGB;
   }
 
-  /**
    * LSTMによる予測（簡易版）
    */
   private lstmPredict(f: PredictionFeatures): number {
     // LSTMの予測は価格モメンタムに基づいて簡略化
-    return f.priceMomentum * ML_SCORING.LSTM_SCALING;
+    return f.priceMomentum * PREDICTION.SCALING.LSTM;
   }
 
-  /**
    * 予測の信頼度を計算
    */
   private calculateConfidence(f: PredictionFeatures, prediction: number): number {
-    let confidence = ML_SCORING.CONFIDENCE_BASE;
+    const { THRESHOLDS, CONFIDENCE } = PREDICTION;
+
+    let confidence = CONFIDENCE.BASE;
 
     // RSIが極端な場合のボーナス
-    if (f.rsi < 15 || f.rsi > 85) {
-      confidence += ML_SCORING.CONFIDENCE_RSI_EXTREME_BONUS;
+    if (f.rsi < THRESHOLDS.RSI_EXTREME_LOW || f.rsi > THRESHOLDS.RSI_EXTREME_HIGH) {
+      confidence += CONFIDENCE.RSI_EXTREME_BONUS;
     }
 
     // モメンタムが強い場合のボーナス
-    if (Math.abs(f.priceMomentum) > ML_SCORING.CONFIDENCE_MOMENTUM_THRESHOLD) {
-      confidence += ML_SCORING.CONFIDENCE_MOMENTUM_BONUS;
+    if (Math.abs(f.priceMomentum) > THRESHOLDS.MOMENTUM_STRONG) {
+      confidence += CONFIDENCE.MOMENTUM_BONUS;
     }
 
     // 予測値が大きい場合のボーナス
-    if (Math.abs(prediction) > ML_SCORING.CONFIDENCE_MOMENTUM_THRESHOLD) {
-      confidence += ML_SCORING.CONFIDENCE_PREDICTION_BONUS;
+    if (Math.abs(prediction) > THRESHOLDS.MOMENTUM_STRONG) {
+      confidence += CONFIDENCE.PREDICTION_BONUS;
     }
 
     // 信頼度を0-100の範囲に制限
-    return Math.min(Math.max(confidence, ML_SCORING.CONFIDENCE_MIN), ML_SCORING.CONFIDENCE_MAX);
+    return Math.min(Math.max(confidence, THRESHOLDS.CONFIDENCE_MIN), THRESHOLDS.CONFIDENCE_MAX);
   }
 }
 

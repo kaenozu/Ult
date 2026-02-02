@@ -4,8 +4,8 @@
  * このモジュールは、MLモデルの入力となる特徴量を計算する機能を提供します。
  */
 
-import { OHLCV } from '../../types';
-import { RSI_CONFIG, SMA_CONFIG, VOLATILITY, DATA_REQUIREMENTS } from '@/app/lib/constants';
+import { OHLCV, TechnicalIndicatorsWithATR } from '../../types';
+import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
 import { EnhancedPredictionFeatures } from '../types/prediction-types';
 import { enhancedFeatureService } from './enhanced-feature-service';
 
@@ -32,7 +32,7 @@ export class FeatureCalculationService {
    */
   calculateFeatures(
     data: OHLCV[],
-    indicators: any // TechnicalIndicator & { atr: number[] }
+    indicators: TechnicalIndicatorsWithATR
   ): PredictionFeatures {
     const prices = data.map(d => d.close);
     const volumes = data.map(d => d.volume);
@@ -116,7 +116,7 @@ export class FeatureCalculationService {
     const returns = this.calculateReturns(prices);
     const avg = returns.reduce((a, b) => a + b, 0) / returns.length;
     const variance = returns.reduce((sum, r) => sum + Math.pow(r - avg, 2), 0) / returns.length;
-    return Math.sqrt(variance) * Math.sqrt(DATA_REQUIREMENTS.ANNUAL_TRADING_DAYS) * 100;
+    return Math.sqrt(variance) * Math.sqrt(252) * 100;
   }
 
   /**

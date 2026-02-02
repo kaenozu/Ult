@@ -1,27 +1,59 @@
 /**
- * Centralized Constants Export
+ * Centralized Configuration Constants
  * 
- * This file provides a single entry point for all application constants.
- * Constants are organized by category in separate files for better maintainability.
- * 
- * Usage:
- * ```typescript
- * // Import from specific category (recommended)
- * import { RSI_CONFIG } from '@/app/lib/constants/technical-indicators';
- * 
- * // Import from main index (backward compatible)
- * import { RSI_CONFIG } from '@/app/lib/constants';
- * ```
+ * 全ての定数を一元管理するインデックスファイル
+ * Issue #522 - 定数一元化
  */
 
-// Re-export all constants for backward compatibility
-export * from './prediction';
-export * from './technical-indicators';
-export * from './risk-management';
-export * from './chart';
-export * from './api';
-export * from './ui';
-export * from './backtest';
-export * from './trading';
-export * from './common';
-export * from './intervals';
+// 既存の定数を再エクスポート
+export * from './constants';
+
+/**
+ * ML予測モデル関連の定数
+ */
+export const PREDICTION = {
+  MODEL_WEIGHTS: { 
+    RF: 0.35, 
+    XGB: 0.35, 
+    LSTM: 0.30 
+  },
+  THRESHOLDS: { 
+    RSI_EXTREME: 3, 
+    MOMENTUM_STRONG: 2.0,
+    MOMENTUM_SCORE: 2,
+    SMA_BULL_SCORE: 2,
+    SMA_BEAR_SCORE: 1,
+    CONFIDENCE_MIN: 50,
+    CONFIDENCE_MAX: 95,
+    RSI_EXTREME_LOW: 15,
+    RSI_EXTREME_HIGH: 85,
+    RSI_OVERSOLD: 20,
+    RSI_OVERBOUGHT: 80,
+  },
+  SCALING: {
+    RF: 0.8,
+    XGB: 0.9,
+    LSTM: 0.6,
+  },
+  XGB_PARAMS: {
+    MOMENTUM_DIVISOR: 3,
+    MOMENTUM_MAX_SCORE: 3,
+    SMA_DIVISOR: 10,
+    SMA5_WEIGHT: 0.5,
+    SMA20_WEIGHT: 0.3,
+  },
+  CONFIDENCE: {
+    RSI_EXTREME_BONUS: 10,
+    MOMENTUM_BONUS: 8,
+    PREDICTION_BONUS: 5,
+    BASE: 50,
+  },
+} as const;
+
+/**
+ * ボラティリティ関連の定数
+ */
+export const VOLATILITY = {
+  DEFAULT_ATR_PERIOD: 14,
+  CALCULATION_PERIOD: 20,
+} as const;
