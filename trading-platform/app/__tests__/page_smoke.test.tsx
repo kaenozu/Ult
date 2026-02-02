@@ -22,6 +22,13 @@ jest.mock('@/app/store/journalStore', () => ({
 jest.mock('@/app/store/watchlistStore', () => ({
     useWatchlistStore: jest.fn()
 }));
+jest.mock('@/app/i18n/provider', () => ({
+    useTranslations: () => (key: string) => {
+        if (key === 'page.dataFetchError') return 'データの取得に失敗しました';
+        if (key === 'page.noStockSelected') return '銘柄が未選択です';
+        return key;
+    },
+}));
 
 jest.mock('@/app/hooks/useStockData', () => ({
     useStockData: jest.fn()
@@ -82,7 +89,7 @@ describe('Page (Workstation)', () => {
         expect(screen.getByText('API Error')).toBeInTheDocument();
     });
 
-    it('renders main workspace when stock selected', () => {
+    it('renders main workspace when stock selected', async () => {
         (useStockData as unknown as jest.Mock).mockReturnValue({
             ...mockStockData,
             selectedStock: { symbol: '7203', name: 'Toyota' },
@@ -91,7 +98,8 @@ describe('Page (Workstation)', () => {
 
         render(<Page />);
         expect(screen.getByTestId('Header')).toBeInTheDocument();
-        expect(screen.getByTestId('StockChart')).toBeInTheDocument();
+        // Use findByTestId to wait for Suspense/lazy load
+        expect(await screen.findByTestId('StockChart')).toBeInTheDocument();
         expect(screen.getByTestId('RightSidebar')).toBeInTheDocument();
         expect(screen.getByTestId('BottomPanel')).toBeInTheDocument();
     });
@@ -106,7 +114,7 @@ describe('Page (Workstation)', () => {
 
         fireEvent.click(leftToggle);
         // State change happens, but sidebar prop 'isOpen' updates.
-        // Since we mocked LeftSidebar, we checks props if possible, 
+        // Since we mocked LeftSidebar, we checks props if possible,
         // or checks for the backdrop presence which is conditional in real DOM
 
         // Check for backdrop click to close

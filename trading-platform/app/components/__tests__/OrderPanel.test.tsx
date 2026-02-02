@@ -2,7 +2,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useOrderExecutionStore } from '@/app/store/orderExecutionStore';
+import { useOrderExecutionStore, useExecuteOrderAtomicV2 } from '@/app/store/orderExecutionStore';
 
 // Mock stores
 jest.mock('@/app/store/portfolioStore');
@@ -28,6 +28,8 @@ describe('OrderPanel', () => {
         (useOrderExecutionStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockOrderExecutionState) : mockOrderExecutionState;
         });
+        // Mock the specific hook used in OrderPanel
+        (useExecuteOrderAtomicV2 as unknown as jest.Mock).mockReturnValue(mockExecuteOrderAtomic);
     });
 
     it('renders correctly', () => {

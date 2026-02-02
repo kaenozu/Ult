@@ -2,7 +2,8 @@ import { useTradingStore } from './tradingStore';
 
 export const usePortfolioStore = () => {
     const portfolio = useTradingStore((state) => state.portfolio);
-    const journal = useTradingStore((state) => state.journal);
+    // Removed unnecessary journal subscription to prevent re-renders in components that don't need it
+    // const journal = useTradingStore((state) => state.journal);
     const updatePortfolio = useTradingStore((state) => state.updatePortfolio);
     const addPosition = useTradingStore((state) => state.addPosition);
     const executeOrder = useTradingStore((state) => state.executeOrder);
@@ -13,7 +14,7 @@ export const usePortfolioStore = () => {
 
     return {
         portfolio,
-        journal,
+        // journal,
         updatePortfolio,
         addPosition,
         executeOrder,
