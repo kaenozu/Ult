@@ -9,7 +9,7 @@ import {
   dataPersistenceLayer,
   marketDataCache
 } from './data';
-import type { MarketData } from '@/app/types/data-quality';
+import type { MarketData as QualityMarketData } from '@/app/types/data-quality';
 
 /**
  * 市場インデックスの定義
@@ -266,7 +266,7 @@ export class MarketDataService {
     
     for (let i = 0; i < ohlcv.length; i++) {
       const item = ohlcv[i];
-      const marketData: MarketData = {
+      const marketData: QualityMarketData = {
         symbol,
         timestamp: new Date(item.date).getTime(),
         ohlcv: item,
@@ -310,7 +310,7 @@ export class MarketDataService {
       const item = data[i];
       const prevItem = i > 0 ? data[i - 1] : undefined;
 
-      const marketData: MarketData = {
+      const marketData: QualityMarketData = {
         symbol,
         timestamp: new Date(item.date).getTime(),
         ohlcv: item,

@@ -140,7 +140,7 @@ export class PsychologyMonitor {
     // 確認バイアスの検出
     if (positions && positions.length > 0) {
       const longLosingPositions = positions.filter(p => 
-        p.currentPrice < p.entryPrice && 
+        p.currentPrice < p.avgPrice && 
         this.getPositionHoldTime(p) > 7
       );
       
@@ -455,7 +455,7 @@ export class PsychologyMonitor {
 
     // 損失ポジションを長期保有している場合
     const losingPositions = positions.filter(p => 
-      p.currentPrice < p.entryPrice && 
+      p.currentPrice < p.avgPrice && 
       this.getPositionHoldTime(p) > 7 // 7日以上保有
     );
 

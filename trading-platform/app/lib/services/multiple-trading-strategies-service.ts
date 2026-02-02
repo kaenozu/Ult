@@ -4,7 +4,7 @@
  * このモジュールは、複数の取引戦略（ムーメメント、均値回帰、ブレイクアウトなど）を実装する機能を提供します。
  */
 
-import { OHLCV, Stock, Signal } from '../types';
+import { OHLCV, Stock, Signal } from '@/app/types';
 import { calculateRSI, calculateSMA, calculateBollingerBands, calculateATR } from '@/app/lib/utils';
 
 export interface StrategyInput {

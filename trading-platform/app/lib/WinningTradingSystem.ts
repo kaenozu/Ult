@@ -13,7 +13,7 @@
 
 import { OHLCV, Stock } from '@/app/types';
 import { winningStrategyEngine, StrategyResult, StrategyType } from './strategies';
-import { advancedRiskManager, PositionSizingResult } from './risk';
+import { getGlobalRiskManager, PositionSizingResult } from './risk';
 import { winningBacktestEngine, BacktestResult } from './backtest';
 import type { PerformanceMetrics } from './backtest/WinningBacktestEngine';
 import { winningAlertEngine, Alert, AlertConfig } from './alerts';
@@ -308,7 +308,7 @@ class WinningTradingSystem {
     }
 
     // リスク管理チェック
-    const positionSize = advancedRiskManager.calculateOptimalPositionSize({
+    const positionSize = getGlobalRiskManager().calculateOptimalPositionSize({
       accountBalance: session.currentCapital,
       entryPrice: strategyResult.entryPrice,
       stopLossPrice: strategyResult.stopLoss,
@@ -330,7 +330,7 @@ class WinningTradingSystem {
     }
 
     // リスクリワード比チェック
-    const riskRewardCheck = advancedRiskManager.validateRiskRewardRatio(
+    const riskRewardCheck = getGlobalRiskManager().validateRiskRewardRatio(
       strategyResult.entryPrice,
       strategyResult.stopLoss,
       strategyResult.takeProfit
@@ -491,7 +491,7 @@ class WinningTradingSystem {
 
     // 損失を記録（リスク管理用）
     if (pnl < 0) {
-      advancedRiskManager.recordLoss(Math.abs(pnl));
+      getGlobalRiskManager().recordLoss(Math.abs(pnl));
     }
 
     this.emitEvent({

@@ -185,9 +185,9 @@ export class OrderManagementSystem extends EventEmitter {
       this.updateOrderState(managedOrder, 'ROUTED');
 
       // Submit to broker
-      const broker = this.brokers.get(routingDecision.venue);
+      const broker = this.brokers.get(routingDecision.primaryVenue);
       if (!broker || !broker.isConnected()) {
-        return this.rejectOrder(managedOrder, `Broker ${routingDecision.venue} not available`);
+        return this.rejectOrder(managedOrder, `Broker ${routingDecision.primaryVenue} not available`);
       }
 
       const brokerOrder = await broker.submitOrder(request);
@@ -214,7 +214,7 @@ export class OrderManagementSystem extends EventEmitter {
       return false;
     }
 
-    const broker = this.brokers.get(order.routingDecision.venue);
+    const broker = this.brokers.get(order.routingDecision.primaryVenue);
     if (!broker) {
       return false;
     }
@@ -243,9 +243,9 @@ export class OrderManagementSystem extends EventEmitter {
       throw new Error(`Order ${orderId} not yet submitted`);
     }
 
-    const broker = this.brokers.get(order.routingDecision.venue);
+    const broker = this.brokers.get(order.routingDecision.primaryVenue);
     if (!broker) {
-      throw new Error(`Broker ${order.routingDecision.venue} not available`);
+      throw new Error(`Broker ${order.routingDecision.primaryVenue} not available`);
     }
 
     try {
@@ -285,7 +285,7 @@ export class OrderManagementSystem extends EventEmitter {
     }
 
     if (filter?.broker) {
-      orders = orders.filter(o => o.routingDecision?.venue === filter.broker);
+      orders = orders.filter(o => o.routingDecision?.primaryVenue === filter.broker);
     }
 
     return orders;
@@ -361,12 +361,12 @@ export class OrderManagementSystem extends EventEmitter {
   private async routeOrder(order: ManagedOrder): Promise<RoutingDecision> {
     if (this.config.enableSmartRouting && this.router) {
       // Use smart router
-      const decision = await this.router.routeOrder({
-        symbol: order.request.symbol,
-        side: order.request.side,
-        quantity: order.request.quantity,
-        urgency: order.request.type === 'MARKET' ? 'high' : 'medium',
-      });
+      const decision = await this.router.routeOrder(
+        order.request.symbol,
+        order.request.side,
+        order.request.quantity,
+        order.request.type === 'MARKET' ? 'HIGH' : 'MEDIUM'
+      );
       return decision;
     } else {
       // Use first available broker
@@ -375,12 +375,12 @@ export class OrderManagementSystem extends EventEmitter {
         throw new Error('No brokers available');
       }
       return {
-        venue: firstBroker,
-        strategy: 'SINGLE',
-        splits: [],
-        estimatedSlippage: 0,
-        estimatedCommission: 0,
+        primaryVenue: firstBroker,
+        fallbackVenues: [],
         reason: 'Default routing',
+        estimatedCost: 0,
+        estimatedLatency: 0,
+        confidence: 0,
       };
     }
   }

@@ -8,6 +8,7 @@
 export {
   AdvancedRiskManager as default,
   AdvancedRiskManager,
+  getGlobalRiskManager,
   DEFAULT_RISK_LIMITS,
 } from './AdvancedRiskManager';
 
