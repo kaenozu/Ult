@@ -130,7 +130,7 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
   constructor(config: Partial<RealisticBacktestConfig> = {}) {
     const mergedConfig = { ...DEFAULT_REALISTIC_CONFIG, ...config } as BacktestConfig;
     super(mergedConfig);
-    this.realisticConfig = { ...DEFAULT_REALISTIC_CONFIG, ...config };
+    this.realisticConfig = { ...(DEFAULT_REALISTIC_CONFIG as RealisticBacktestConfig), ...config } as RealisticBacktestConfig;
     this.slippageService = new SlippagePredictionService();
   }
 
