@@ -993,16 +993,31 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
     reasoning.push(`損切り価格: ¥${input.stopLossPrice.toFixed(2)}`);
     reasoning.push(`損切り距離: ¥${stopLossDistance.toFixed(2)} (${stopLossPercent.toFixed(2)}%)`);
     
-    // 2. 許容リスク金額を計算
+    // 2. 損切り距離がゼロの場合のエラーハンドリング
+    if (stopLossDistance === 0) {
+      reasoning.push(`⚠️ 損切り距離がゼロです。適切な損切り価格を設定してください。`);
+      return {
+        recommendedShares: 0,
+        maxLossAmount: 0,
+        riskAmount: 0,
+        positionValue: 0,
+        riskPercent: 0,
+        stopLossDistance: 0,
+        stopLossPercent: 0,
+        reasoning
+      };
+    }
+    
+    // 3. 許容リスク金額を計算
     const riskAmount = input.accountEquity * (input.riskPerTrade / 100);
     reasoning.push(`許容リスク額: ¥${riskAmount.toFixed(0)} (口座資金の${input.riskPerTrade}%)`);
     
-    // 3. 基本ポジションサイズを計算
+    // 4. 基本ポジションサイズを計算
     // 基本公式: ポジションサイズ = リスク金額 / 1株あたりのリスク
     let recommendedShares = Math.floor(riskAmount / stopLossDistance);
     reasoning.push(`基本推奨株数: ${recommendedShares}株`);
     
-    // 4. 信頼度による調整（オプション）
+    // 5. 信頼度による調整（オプション）
     if (input.confidence !== undefined) {
       const confidenceFactor = input.confidence / 100;
       // 信頼度が低い場合は控えめに、高い場合はそのまま
