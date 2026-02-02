@@ -8,6 +8,7 @@ import { AnomalyDetector, EventPredictor } from '@/app/lib/aiAnalytics/AnomalyDe
 import { MarketData } from '@/app/lib/aiAnalytics/AnomalyDetection/types';
 import { handleApiError } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
 
 // Initialize detectors (in production, these would be singletons or cached)
 const anomalyDetector = new AnomalyDetector();
@@ -19,6 +20,10 @@ const eventPredictor = new EventPredictor();
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    // CSRF protection
+    const csrfError = requireCSRF(request);
+    if (csrfError) return csrfError;
+
     // Rate limiting
     const rateLimitResponse = checkRateLimit(request);
     if (rateLimitResponse) {
