@@ -424,4 +424,37 @@ describe('MLModelService', () => {
       expect(result.ensemblePrediction).toBeLessThanOrEqual(maxPred + 0.1);
     });
   });
+
+  describe('TensorFlow.js integration', () => {
+    it('should have TensorFlow disabled by default', () => {
+      expect(service.isTensorFlowEnabled()).toBe(false);
+    });
+
+    it('should use rule-based predictions when TensorFlow is disabled', () => {
+      const result = service.predict(baseFeatures);
+      
+      expect(result).toBeDefined();
+      expect(result.rfPrediction).toBeDefined();
+      expect(result.xgbPrediction).toBeDefined();
+      expect(result.lstmPrediction).toBeDefined();
+    });
+
+    it('should support async prediction method', async () => {
+      const result = await service.predictAsync(baseFeatures);
+      
+      expect(result).toBeDefined();
+      expect(result.rfPrediction).toBeDefined();
+      expect(result.xgbPrediction).toBeDefined();
+      expect(result.lstmPrediction).toBeDefined();
+    });
+
+    it('should return model metrics when available', () => {
+      const metrics = service.getModelMetrics();
+      
+      expect(metrics).toBeDefined();
+      expect(metrics.ff).toBeUndefined(); // Not trained yet
+      expect(metrics.gru).toBeUndefined();
+      expect(metrics.lstm).toBeUndefined();
+    });
+  });
 });

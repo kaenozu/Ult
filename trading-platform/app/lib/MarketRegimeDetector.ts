@@ -12,6 +12,7 @@ export type MarketRegime = 'TRENDING' | 'RANGING' | 'UNKNOWN';
 export type VolatilityRegime = 'HIGH' | 'MEDIUM' | 'LOW';
 export type TrendDirection = 'UP' | 'DOWN' | 'NEUTRAL';
 export type RegimeConfidence = 'INITIAL' | 'CONFIRMED';
+export type SignalRestriction = 'BUY_ONLY' | 'SELL_ONLY' | 'NONE';
 
 export interface RegimeDetectionResult {
   regime: MarketRegime;
@@ -23,6 +24,7 @@ export interface RegimeDetectionResult {
   confidence: RegimeConfidence;
   daysInRegime: number;
   timestamp: string;
+  signalRestriction?: SignalRestriction;
 }
 
 export interface StrategyRecommendation {
@@ -80,6 +82,13 @@ class MarketRegimeDetector {
     // Handle regime persistence
     const confidence = this.updateRegimePersistence(regime, trendDirection);
 
+    // Determine signal restriction
+    let signalRestriction: SignalRestriction = 'NONE';
+    if (regime === 'TRENDING') {
+      if (trendDirection === 'UP') signalRestriction = 'BUY_ONLY';
+      else if (trendDirection === 'DOWN') signalRestriction = 'SELL_ONLY';
+    }
+
     const result: RegimeDetectionResult = {
       regime,
       trendDirection,
@@ -90,6 +99,7 @@ class MarketRegimeDetector {
       confidence,
       daysInRegime: this.daysInRegime,
       timestamp: new Date().toISOString(),
+      signalRestriction,
     };
 
     return result;
@@ -345,6 +355,27 @@ class MarketRegimeDetector {
       weight: 0,
       positionSizeAdjustment: 0,
     };
+  }
+
+  /**
+   * Get signal strength multiplier based on regime alignment
+   */
+  getSignalStrengthMultiplier(regime: RegimeDetectionResult, signal: 'BUY' | 'SELL' | 'HOLD'): number {
+    if (signal === 'HOLD') return 0;
+    
+    if (regime.regime === 'TRENDING') {
+      if (regime.trendDirection === 'UP' && signal === 'BUY') return 1.2;
+      if (regime.trendDirection === 'DOWN' && signal === 'SELL') return 1.2;
+      if (regime.trendDirection === 'UP' && signal === 'SELL') return 0.5; // Counter-trend
+      if (regime.trendDirection === 'DOWN' && signal === 'BUY') return 0.5; // Counter-trend
+    }
+    
+    if (regime.regime === 'RANGING') {
+      // Mean reversion signals are favored in ranging markets
+      return 1.0;
+    }
+    
+    return 0.8; // Default reduction for uncertainty
   }
 
   /**

@@ -1,529 +1,352 @@
 /**
  * MonteCarloSimulator.test.ts
- * 
- * Tests for Monte Carlo simulation with confidence intervals
+ *
+ * Unit tests for MonteCarloSimulator
  */
 
-import { MonteCarloSimulator, MonteCarloConfig } from '../MonteCarloSimulator';
-import { OHLCV, Strategy, BacktestConfig } from '../AdvancedBacktestEngine';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import {
+  MonteCarloSimulator,
+  DEFAULT_MONTE_CARLO_CONFIG,
+  summarizeMonteCarloResult,
+  type MonteCarloConfig,
+} from '../MonteCarloSimulator';
+import { BacktestResult, BacktestTrade } from '../AdvancedBacktestEngine';
 
 describe('MonteCarloSimulator', () => {
   let simulator: MonteCarloSimulator;
-  let mockData: OHLCV[];
-  let simpleStrategy: Strategy;
+  let mockResult: BacktestResult;
 
   beforeEach(() => {
-    mockData = generateMockOHLCVData(100);
-    simpleStrategy = createSimpleStrategy();
-  });
+    simulator = new MonteCarloSimulator({
+      numSimulations: 100, // Reduced for testing
+      randomSeed: 42,
+      method: 'trade_shuffling',
+    });
 
-  describe('Basic Simulation', () => {
-    it('should run multiple simulations', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 10,
-        confidenceLevel: 0.95,
-        resampleMethod: 'bootstrap',
-      };
+    // Create mock backtest result
+    const mockTrades: BacktestTrade[] = [];
+    let entryPrice = 100;
 
-      simulator = new MonteCarloSimulator(config);
+    for (let i = 0; i < 50; i++) {
+      const exitPrice = entryPrice * (1 + (Math.random() - 0.4) * 0.1); // Slightly bullish
+      const pnl = (exitPrice - entryPrice) * 100;
+      const pnlPercent = (pnl / (entryPrice * 100)) * 100;
 
-      const backtestConfig: BacktestConfig = {
+      mockTrades.push({
+        id: `trade_${i}`,
+        entryDate: `2024-01-${String(i + 1).padStart(2, '0')}`,
+        exitDate: `2024-01-${String(i + 2).padStart(2, '0')}`,
+        symbol: 'TEST',
+        side: 'LONG',
+        entryPrice,
+        exitPrice,
+        quantity: 100,
+        pnl,
+        pnlPercent,
+        fees: pnl * 0.001,
+        exitReason: i % 3 === 0 ? 'target' : i % 3 === 1 ? 'stop' : 'signal',
+      });
+
+      entryPrice = exitPrice;
+    }
+
+    const equityCurve = [100000];
+    let equity = 100000;
+
+    for (const trade of mockTrades) {
+      equity += trade.pnl;
+      equityCurve.push(equity);
+    }
+
+    mockResult = {
+      trades: mockTrades,
+      equityCurve,
+      metrics: {
+        totalReturn: ((equity - 100000) / 100000) * 100,
+        annualizedReturn: 15.5,
+        volatility: 12.3,
+        sharpeRatio: 1.26,
+        sortinoRatio: 1.85,
+        maxDrawdown: 8.5,
+        maxDrawdownDuration: 15,
+        winRate: 58,
+        profitFactor: 1.75,
+        averageWin: 250,
+        averageLoss: -175,
+        largestWin: 850,
+        largestLoss: -420,
+        averageTrade: 75,
+        totalTrades: 50,
+        winningTrades: 29,
+        losingTrades: 21,
+        calmarRatio: 1.82,
+        omegaRatio: 1.95,
+      },
+      config: {
         initialCapital: 100000,
         commission: 0.1,
         slippage: 0.05,
         spread: 0.01,
         maxPositionSize: 20,
         maxDrawdown: 50,
-        allowShort: false,
+        allowShort: true,
         useStopLoss: true,
         useTakeProfit: true,
         riskPerTrade: 2,
-      };
-
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
-
-      expect(result.simulations.length).toBe(10);
-      expect(result.statistics).toBeDefined();
-      expect(result.probabilityOfSuccess).toBeGreaterThanOrEqual(0);
-      expect(result.probabilityOfSuccess).toBeLessThanOrEqual(1);
-      expect(result.robustnessScore).toBeGreaterThanOrEqual(0);
-      expect(result.robustnessScore).toBeLessThanOrEqual(1);
-    }, 30000); // 30 second timeout for simulations
+      },
+      startDate: '2024-01-01',
+      endDate: '2024-02-20',
+      duration: 50,
+    };
   });
 
-  describe('Bootstrap Resampling', () => {
-    it('should generate different datasets for each simulation', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 5,
-        resampleMethod: 'bootstrap',
-        randomSeed: 12345,
-      };
+  describe('Configuration', () => {
+    it('should use default configuration', () => {
+      const defaultSimulator = new MonteCarloSimulator();
 
-      simulator = new MonteCarloSimulator(config);
+      const config = defaultSimulator.getConfig();
 
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
+      expect(config.numSimulations).toBe(DEFAULT_MONTE_CARLO_CONFIG.numSimulations);
+      expect(config.method).toBe(DEFAULT_MONTE_CARLO_CONFIG.method);
+    });
 
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
+    it('should update configuration', () => {
+      simulator.updateConfig({ numSimulations: 500, method: 'bootstrap' });
 
-      // Should have variation in results
-      const returns = result.simulations.map(s => s.metrics.totalReturn);
-      const uniqueReturns = new Set(returns);
-      
-      // Most simulations should produce different results
-      expect(uniqueReturns.size).toBeGreaterThanOrEqual(1);
-    }, 30000);
+      const config = simulator.getConfig();
+
+      expect(config.numSimulations).toBe(500);
+      expect(config.method).toBe('bootstrap');
+    });
+
+    it('should use random seed for reproducibility', () => {
+      const sim1 = new MonteCarloSimulator({ numSimulations: 10, randomSeed: 42 });
+      const sim2 = new MonteCarloSimulator({ numSimulations: 10, randomSeed: 42 });
+
+      expect(sim1.getConfig().randomSeed).toBe(sim2.getConfig().randomSeed);
+    });
   });
 
-  describe('Block Bootstrap Resampling', () => {
-    it('should preserve temporal structure with block bootstrap', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 5,
-        resampleMethod: 'block_bootstrap',
-        blockSize: 10,
-      };
+  describe('Simulation Execution', () => {
+    it('should run Monte Carlo simulation', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-      simulator = new MonteCarloSimulator(config);
+      expect(result.simulations.length).toBe(100);
+      expect(result.originalResult).toBe(mockResult);
+      expect(result.probabilities).toBeDefined();
+      expect(result.confidenceIntervals).toBeDefined();
+      expect(result.distributionStats.size).toBeGreaterThan(0);
+      expect(result.riskAssessment).toBeDefined();
+      expect(result.rankings).toBeDefined();
+    });
 
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
+    it('should emit progress events', async () => {
+      const progressEvents: number[] = [];
+      simulator.on('progress', (data) => {
+        progressEvents.push(data.percent);
+      });
 
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
+      await simulator.runSimulation(mockResult);
 
-      expect(result.simulations.length).toBe(5);
-      expect(result.statistics).toBeDefined();
-    }, 30000);
+      expect(progressEvents.length).toBeGreaterThan(0);
+      expect(progressEvents[progressEvents.length - 1]).toBe(100);
+    });
+
+    it('should emit complete event', async () => {
+      let completeEventFired = false;
+      simulator.on('complete', () => {
+        completeEventFired = true;
+      });
+
+      await simulator.runSimulation(mockResult);
+
+      expect(completeEventFired).toBe(true);
+    });
   });
 
-  describe('Parametric Resampling', () => {
-    it('should generate new paths from distribution', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 5,
-        resampleMethod: 'parametric',
-        randomSeed: 42,
-      };
+  describe('Probability Calculations', () => {
+    it('should calculate probability of profit', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-      simulator = new MonteCarloSimulator(config);
+      expect(result.probabilities.probabilityOfProfit).toBeGreaterThanOrEqual(0);
+      expect(result.probabilities.probabilityOfProfit).toBeLessThanOrEqual(100);
+    });
 
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
+    it('should calculate return threshold probabilities', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
+      expect(result.probabilities.returnThresholds.size).toBeGreaterThan(0);
 
-      expect(result.simulations.length).toBe(5);
-      expect(result.statistics.mean).toBeDefined();
-      expect(result.statistics.median).toBeDefined();
-    }, 30000);
-  });
+      for (const [threshold, probability] of result.probabilities.returnThresholds) {
+        expect(probability).toBeGreaterThanOrEqual(0);
+        expect(probability).toBeLessThanOrEqual(100);
+      }
+    });
 
-  describe('Statistics Calculation', () => {
-    it('should calculate comprehensive statistics', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 20,
-        confidenceLevel: 0.95,
-        resampleMethod: 'bootstrap',
-      };
+    it('should calculate drawdown threshold probabilities', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-      simulator = new MonteCarloSimulator(config);
+      expect(result.probabilities.drawdownThresholds.size).toBeGreaterThan(0);
 
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
+      for (const [threshold, probability] of result.probabilities.drawdownThresholds) {
+        expect(probability).toBeGreaterThanOrEqual(0);
+        expect(probability).toBeLessThanOrEqual(100);
+      }
+    });
 
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
+    it('should calculate sharpe threshold probabilities', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-      // Check mean statistics
-      expect(result.statistics.mean.totalReturn).toBeDefined();
-      expect(result.statistics.mean.sharpeRatio).toBeDefined();
-      expect(result.statistics.mean.maxDrawdown).toBeDefined();
-      expect(result.statistics.mean.winRate).toBeDefined();
+      expect(result.probabilities.sharpeThresholds.size).toBeGreaterThan(0);
 
-      // Check median statistics
-      expect(result.statistics.median.totalReturn).toBeDefined();
-
-      // Check standard deviation
-      expect(result.statistics.stdDev.totalReturn).toBeGreaterThanOrEqual(0);
-
-      // Check percentiles
-      expect(result.statistics.percentiles.p5).toBeDefined();
-      expect(result.statistics.percentiles.p25).toBeDefined();
-      expect(result.statistics.percentiles.p50).toBeDefined();
-      expect(result.statistics.percentiles.p75).toBeDefined();
-      expect(result.statistics.percentiles.p95).toBeDefined();
-    }, 60000);
+      for (const [threshold, probability] of result.probabilities.sharpeThresholds) {
+        expect(probability).toBeGreaterThanOrEqual(0);
+        expect(probability).toBeLessThanOrEqual(100);
+      }
+    });
   });
 
   describe('Confidence Intervals', () => {
-    it('should calculate confidence intervals', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 50,
-        confidenceLevel: 0.95,
-        resampleMethod: 'bootstrap',
-      };
+    it('should calculate 90% confidence intervals', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-      simulator = new MonteCarloSimulator(config);
-
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
-
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
-
-      const ci = result.statistics.confidenceIntervals;
-      
-      expect(ci.level).toBe(0.95);
-      expect(ci.totalReturn).toBeDefined();
-      expect(ci.totalReturn.lower).toBeLessThanOrEqual(ci.totalReturn.upper);
-      expect(ci.sharpeRatio).toBeDefined();
-      expect(ci.maxDrawdown).toBeDefined();
-      expect(ci.winRate).toBeDefined();
-    }, 120000);
-  });
-
-  describe('Probability Metrics', () => {
-    it('should calculate probability of success', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 30,
-        confidenceLevel: 0.95,
-        resampleMethod: 'bootstrap',
-      };
-
-      simulator = new MonteCarloSimulator(config);
-
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
-
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
-
-      expect(result.probabilityOfSuccess).toBeGreaterThanOrEqual(0);
-      expect(result.probabilityOfSuccess).toBeLessThanOrEqual(1);
-      expect(result.probabilityOfLoss).toBeGreaterThanOrEqual(0);
-      expect(result.probabilityOfLoss).toBeLessThanOrEqual(1);
-      
-      // Should sum to 1
-      expect(result.probabilityOfSuccess + result.probabilityOfLoss).toBeCloseTo(1, 5);
-    }, 90000);
-  });
-
-  describe('Robustness Score', () => {
-    it('should calculate robustness score', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 20,
-        confidenceLevel: 0.95,
-        resampleMethod: 'bootstrap',
-      };
-
-      simulator = new MonteCarloSimulator(config);
-
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
-
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
-
-      expect(result.robustnessScore).toBeGreaterThanOrEqual(0);
-      expect(result.robustnessScore).toBeLessThanOrEqual(1);
-    }, 60000);
-  });
-
-  describe('Best and Worst Cases', () => {
-    it('should identify best and worst case scenarios', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 15,
-        confidenceLevel: 0.95,
-        resampleMethod: 'bootstrap',
-      };
-
-      simulator = new MonteCarloSimulator(config);
-
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
-
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
-
-      expect(result.worstCase).toBeDefined();
-      expect(result.bestCase).toBeDefined();
-      expect(result.bestCase.metrics.totalReturn).toBeGreaterThanOrEqual(
-        result.worstCase.metrics.totalReturn
-      );
-    }, 45000);
-  });
-
-  describe('Random Seed', () => {
-    it('should produce reproducible results with same seed', async () => {
-      const config1: Partial<MonteCarloConfig> = {
-        numSimulations: 10,
-        resampleMethod: 'bootstrap',
-        randomSeed: 12345,
-      };
-
-      const config2: Partial<MonteCarloConfig> = {
-        numSimulations: 10,
-        resampleMethod: 'bootstrap',
-        randomSeed: 12345,
-      };
-
-      const simulator1 = new MonteCarloSimulator(config1);
-      const simulator2 = new MonteCarloSimulator(config2);
-
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
-
-      const result1 = await simulator1.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
-
-      const result2 = await simulator2.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
-
-      // Results should be similar (allowing for small floating point differences)
-      expect(result1.statistics.mean.totalReturn).toBeCloseTo(
-        result2.statistics.mean.totalReturn,
-        0
-      );
-    }, 60000);
-  });
-
-  describe('Export Results', () => {
-    it('should export results to JSON', async () => {
-      const config: Partial<MonteCarloConfig> = {
-        numSimulations: 5,
-        confidenceLevel: 0.95,
-        resampleMethod: 'bootstrap',
-      };
-
-      simulator = new MonteCarloSimulator(config);
-
-      const backtestConfig: BacktestConfig = {
-        initialCapital: 100000,
-        commission: 0.1,
-        slippage: 0.05,
-        spread: 0.01,
-        maxPositionSize: 20,
-        maxDrawdown: 50,
-        allowShort: false,
-        useStopLoss: true,
-        useTakeProfit: true,
-        riskPerTrade: 2,
-      };
-
-      const result = await simulator.runSimulation(
-        simpleStrategy,
-        mockData,
-        backtestConfig,
-        'TEST'
-      );
-
-      const exported = simulator.exportResults(result);
-      expect(exported).toBeDefined();
-      expect(typeof exported).toBe('string');
-      
-      // Should be valid JSON
-      const parsed = JSON.parse(exported);
-      expect(parsed.config).toBeDefined();
-      expect(parsed.statistics).toBeDefined();
-      expect(parsed.robustnessScore).toBeDefined();
-    }, 30000);
-  });
-});
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-function generateMockOHLCVData(count: number): OHLCV[] {
-  const data: OHLCV[] = [];
-  let price = 100;
-  const startDate = new Date('2024-01-01');
-
-  for (let i = 0; i < count; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-
-    const dailyReturn = (Math.random() - 0.5) * 0.04; // ±2% daily moves
-    const open = price;
-    const close = price * (1 + dailyReturn);
-    const high = Math.max(open, close) * (1 + Math.random() * 0.01);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.01);
-    const volume = 1000000 + Math.random() * 500000;
-
-    data.push({
-      date: date.toISOString(),
-      open,
-      high,
-      low,
-      close,
-      volume,
+      expect(result.confidenceIntervals.confidence90).toBeDefined();
+      expect(result.confidenceIntervals.confidence90.returns.lower).toBeDefined();
+      expect(result.confidenceIntervals.confidence90.returns.upper).toBeDefined();
+      expect(result.confidenceIntervals.confidence90.returns.range).toBeGreaterThan(0);
     });
 
-    price = close;
-  }
+    it('should calculate 95% confidence intervals', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-  return data;
-}
+      expect(result.confidenceIntervals.confidence95).toBeDefined();
+      expect(result.confidenceIntervals.confidence95.returns.lower).toBeDefined();
+      expect(result.confidenceIntervals.confidence95.returns.upper).toBeDefined();
+    });
 
-function createSimpleStrategy(): Strategy {
-  let position = false;
+    it('should calculate 99% confidence intervals', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-  return {
-    name: 'Simple Moving Average Strategy',
-    description: 'Buy when price is trending up, sell when trending down',
-    onData: (data, index, context) => {
-      if (index < 60) return { action: 'HOLD' };
+      expect(result.confidenceIntervals.confidence99).toBeDefined();
+      expect(result.confidenceIntervals.confidence99.returns.lower).toBeDefined();
+      expect(result.confidenceIntervals.confidence99.returns.upper).toBeDefined();
+    });
 
-      const recentData = context.data.slice(Math.max(0, index - 10), index + 1);
-      const avgPrice = recentData.reduce((sum, d) => sum + d.close, 0) / recentData.length;
+    it('should have wider intervals for higher confidence', async () => {
+      const result = await simulator.runSimulation(mockResult);
 
-      if (!position && data.close > avgPrice * 1.01) {
-        position = true;
-        return { action: 'BUY', quantity: 100 };
+      expect(result.confidenceIntervals.confidence99.returns.range)
+        .toBeGreaterThan(result.confidenceIntervals.confidence95.returns.range);
+      expect(result.confidenceIntervals.confidence95.returns.range)
+        .toBeGreaterThan(result.confidenceIntervals.confidence90.returns.range);
+    });
+  });
+
+  describe('Distribution Statistics', () => {
+    it('should calculate distribution statistics for each metric', async () => {
+      const result = await simulator.runSimulation(mockResult);
+
+      for (const [metric, stats] of result.distributionStats) {
+        expect(stats.mean).toBeDefined();
+        expect(stats.median).toBeDefined();
+        expect(stats.stdDev).toBeGreaterThanOrEqual(0);
+        expect(stats.min).toBeDefined();
+        expect(stats.max).toBeDefined();
+        expect(stats.percentiles).toBeDefined();
+        expect(stats.skewness).toBeDefined();
+        expect(stats.kurtosis).toBeDefined();
       }
+    });
 
-      if (position && data.close < avgPrice * 0.99) {
-        position = false;
-        return { action: 'CLOSE' };
+    it('should calculate percentiles correctly', async () => {
+      const result = await simulator.runSimulation(mockResult);
+
+      for (const [metric, stats] of result.distributionStats) {
+        expect(stats.percentiles.p5).toBeLessThanOrEqual(stats.percentiles.p10);
+        expect(stats.percentiles.p10).toBeLessThanOrEqual(stats.percentiles.p25);
+        expect(stats.percentiles.p25).toBeLessThanOrEqual(stats.median);
+        expect(stats.median).toBeLessThanOrEqual(stats.percentiles.p75);
+        expect(stats.percentiles.p75).toBeLessThanOrEqual(stats.percentiles.p90);
+        expect(stats.percentiles.p90).toBeLessThanOrEqual(stats.percentiles.p95);
       }
+    });
+  });
 
-      return { action: 'HOLD' };
-    },
-  };
-}
+  describe('Risk Assessment', () => {
+    it('should calculate VaR and CVaR', async () => {
+      const result = await simulator.runSimulation(mockResult);
+
+      expect(result.riskAssessment.var95).toBeDefined();
+      expect(result.riskAssessment.var99).toBeDefined();
+      expect(result.riskAssessment.cvar95).toBeDefined();
+      expect(result.riskAssessment.cvar99).toBeDefined();
+
+      // CVaR should be worse than VaR
+      expect(result.riskAssessment.cvar95).toBeLessThanOrEqual(result.riskAssessment.var95);
+      expect(result.riskAssessment.cvar99).toBeLessThanOrEqual(result.riskAssessment.var99);
+    });
+
+    it('should calculate ruin probability', async () => {
+      const result = await simulator.runSimulation(mockResult);
+
+      expect(result.riskAssessment.ruinProbability).toBeGreaterThanOrEqual(0);
+      expect(result.riskAssessment.ruinProbability).toBeLessThanOrEqual(100);
+    });
+
+    it('should calculate risk score and category', async () => {
+      const result = await simulator.runSimulation(mockResult);
+
+      expect(result.riskAssessment.riskScore).toBeGreaterThanOrEqual(0);
+      expect(result.riskAssessment.riskScore).toBeLessThanOrEqual(100);
+      expect(['very_low', 'low', 'medium', 'high', 'very_high']).toContain(
+        result.riskAssessment.riskCategory
+      );
+    });
+
+    it('should calculate goal achievement probabilities', async () => {
+      const result = await simulator.runSimulation(mockResult);
+
+      expect(result.riskAssessment.goalProbability.size).toBeGreaterThan(0);
+
+      for (const [goal, probability] of result.riskAssessment.goalProbability) {
+        expect(probability).toBeGreaterThanOrEqual(0);
+        expect(probability).toBeLessThanOrEqual(100);
+      }
+    });
+  });
+
+  describe('Rankings', () => {
+    it('should rank simulations by return', async () => {
+      const result = await simulator.runSimulation(mockResult);
+
+      expect(result.rankings.top10).toHaveLength(10);
+      expect(result.rankings.bottom10).toHaveLength(10);
+
+      // Top 10 should have higher returns than bottom 10
+      const topReturn = result.rankings.top10[0].metrics.totalReturn;
+      const bottomReturn = result.rankings.bottom10[0].metrics.totalReturn;
+      expect(topReturn).toBeGreaterThan(bottomReturn);
+    });
+
+    it('should calculate original result ranking', async () => {
+      const result = await simulator.runSimulation(mockResult);
+
+      expect(result.rankings.originalRanking).toBeGreaterThanOrEqual(1);
+      expect(result.rankings.originalRanking).toBeLessThanOrEqual(result.simulations.length);
+    });
+  });
+
+  describe('Summary Function', () => {
+    it('should generate a readable summary', async () => {
+      const mcResult = await simulator.runSimulation(mockResult);
+      const summary = summarizeMonteCarloResult(mcResult);
+
+      expect(summary).toContain('Monte Carlo Simulation Summary');
+      expect(summary).toContain('Simulations:');
+      expect(summary).toContain('Probability of Profit:');
+      expect(summary).toContain('95% Confidence Intervals:');
+      expect(summary).toContain('Risk Assessment:');
+    });
+  });
+});

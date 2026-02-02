@@ -255,10 +255,11 @@ export class AlertManager {
 
     // Check count threshold within time window
     if (condition.count && condition.timeWindow) {
+      const timeWindow = condition.timeWindow;
       const recentAlerts = this.alertHistory.filter(
         a =>
           a.type === alert.type &&
-          Date.now() - a.timestamp.getTime() < condition.timeWindow
+          Date.now() - a.timestamp.getTime() < timeWindow
       );
       return recentAlerts.length >= condition.count;
     }
