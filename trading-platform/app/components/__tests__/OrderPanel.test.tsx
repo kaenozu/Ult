@@ -2,22 +2,21 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useOrderExecutionStore } from '@/app/store/orderExecutionStore';
+import { useOrderExecutionStore, useExecuteOrderAtomicV2 } from '@/app/store/orderExecutionStore';
 
 // Mock stores
 jest.mock('@/app/store/portfolioStore');
-jest.mock('@/app/store/orderExecutionStore');
+jest.mock('@/app/store/orderExecutionStore', () => ({
+    useOrderExecutionStore: jest.fn(),
+    useExecuteOrderAtomicV2: jest.fn()
+}));
 
 describe('OrderPanel', () => {
     const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const, sector: 'Automotive', volume: 1000000 };
-    const mockExecuteOrderAtomic = jest.fn().mockReturnValue({ success: true });
+    const mockExecuteOrderAtomicV2 = jest.fn().mockReturnValue({ success: true });
 
     const mockPortfolioState = {
         portfolio: { cash: 1000000, positions: [] },
-    };
-
-    const mockOrderExecutionState = {
-        executeOrderAtomic: mockExecuteOrderAtomic,
     };
 
     beforeEach(() => {
@@ -25,9 +24,7 @@ describe('OrderPanel', () => {
         (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
-        (useOrderExecutionStore as unknown as jest.Mock).mockImplementation((selector) => {
-            return selector ? selector(mockOrderExecutionState) : mockOrderExecutionState;
-        });
+        (useExecuteOrderAtomicV2 as jest.Mock).mockReturnValue(mockExecuteOrderAtomicV2);
     });
 
     it('renders correctly', () => {
@@ -59,7 +56,7 @@ describe('OrderPanel', () => {
         // Confirm
         fireEvent.click(screen.getByText('注文を確定'));
 
-        expect(mockExecuteOrderAtomic).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockExecuteOrderAtomicV2).toHaveBeenCalledWith(expect.objectContaining({
             symbol: '7203',
             quantity: 100,
             side: 'LONG'
