@@ -192,7 +192,10 @@ export class FeatureEngineeringService {
           const val = feature[key];
           const numVal = typeof val === 'number' ? val : 0;
           const scaler = scalers[key];
-          return (numVal - scaler.mean) / scaler.std;
+          const normalized = (numVal - scaler.mean) / scaler.std;
+          // Handle NaN and Infinity
+          if (!isFinite(normalized)) return 0;
+          return normalized;
         });
     });
     
@@ -211,8 +214,10 @@ export class FeatureEngineeringService {
   }
 
   private calculateBollingerPosition(price: number, upper: number, lower: number): number {
-    if (upper === lower) return 50;
-    return ((price - lower) / (upper - lower)) * 100;
+    if (upper === lower || upper === undefined || lower === undefined) return 50;
+    const position = ((price - lower) / (upper - lower)) * 100;
+    // Clamp to 0-100 range
+    return Math.max(0, Math.min(100, position));
   }
 
   private calculateMomentum(prices: number[], index: number, period: number): number {
