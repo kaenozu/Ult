@@ -17,6 +17,7 @@ export interface PositionSizingConfig {
   maxRisk: number; // 最大リスク（ドル）
   volatilityAdjustment: boolean; // ボラティリティ調整の有無
   correlationAdjustment: boolean; // 相関調整の有無
+  initialCapital?: number; // 初期資本（ケリー基準の動的調整用）
 }
 
 export interface SizingResult {

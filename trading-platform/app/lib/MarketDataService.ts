@@ -3,6 +3,7 @@ import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { logError } from '@/app/lib/errors';
 import { dataQualityChecker, dataCompletionPipeline, dataLatencyMonitor } from './data';
 import type { MarketData } from '@/app/types/data-quality';
+import { CacheManager } from './api/CacheManager';
 
 /**
  * 市場インデックスの定義
@@ -71,8 +72,7 @@ export const MARKET_INDICES: MarketIndex[] = [
  * ```
  */
 export class MarketDataService {
-  private marketDataCache = new Map<string, OHLCV[]>();
-  private cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  private marketDataCache = new CacheManager<OHLCV[]>({ ttl: 5 * 60 * 1000 }); // 5 minutes
   private qualityCheckEnabled = true;
   private dataCompletionEnabled = true;
   private latencyMonitoringEnabled = true;
@@ -96,10 +96,9 @@ export class MarketDataService {
    * ```
    */
   async fetchMarketData(symbol: string): Promise<OHLCV[]> {
-    const now = Date.now();
+    // Check cache first
     const cached = this.marketDataCache.get(symbol);
-
-    if (cached && cached.length > 0 && (now - new Date(cached[cached.length - 1].date).getTime()) < this.cacheTimeout) {
+    if (cached && cached.length > 0) {
       return cached;
     }
 
@@ -141,6 +140,7 @@ export class MarketDataService {
           }
         }
 
+        // Cache the processed data
         this.marketDataCache.set(symbol, ohlcv);
         
         // Log fetch performance

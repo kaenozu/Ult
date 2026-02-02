@@ -1,7 +1,35 @@
 /**
- * strategy/index.ts
+ * index.ts
  * 
- * 戦略カタログモジュールのエクスポート
+ * Exports for strategy module
  */
 
-export * from './StrategyCatalog';
+export {
+  MomentumStrategy,
+  MeanReversionStrategy,
+  BreakoutStrategy,
+  StatArbStrategy,
+  MarketMakingStrategy,
+  MLAlphaStrategy,
+  StrategyCatalog
+} from './StrategyCatalog';
+
+export { StrategyComposer } from './StrategyComposer';
+
+export type {
+  StrategyType,
+  StrategyConfig,
+  StrategySignal,
+  StrategyPerformance,
+  Strategy,
+  BacktestConfig,
+  StrategyPortfolio,
+  CorrelationMatrix,
+  PortfolioPerformance,
+  MomentumStrategyParams,
+  MeanReversionStrategyParams,
+  BreakoutStrategyParams,
+  StatArbStrategyParams,
+  MarketMakingStrategyParams,
+  MLAlphaStrategyParams
+} from './types';

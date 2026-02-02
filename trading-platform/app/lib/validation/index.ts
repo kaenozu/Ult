@@ -1,7 +1,17 @@
 /**
- * validation/index.ts
+ * index.ts
  * 
- * 検証モジュールのエクスポート
+ * Exports for validation module
  */
 
-export * from './OverfittingDetector';
+export { OverfittingDetector } from './OverfittingDetector';
+export type {
+  ValidationConfig,
+  DataSplit,
+  OverfittingAnalysis,
+  PerformanceDegradationTest,
+  ParameterSensitivityTest,
+  WhiteNoiseTest,
+  StatisticalSignificanceTest,
+  ParameterStability
+} from './types';

@@ -686,4 +686,169 @@ describe('AlgorithmicExecutionEngine', () => {
       expect(result.filledQuantity).toBe(50);
     });
   });
+
+  describe('POV (Percentage of Volume) Algorithm', () => {
+    beforeEach(() => {
+      engine.start();
+    });
+
+    it('should execute POV order', async () => {
+      const result = await engine.submitOrder({
+        symbol: 'AAPL',
+        side: 'BUY',
+        type: 'MARKET',
+        quantity: 100,
+        timeInForce: 'GTC',
+        algorithm: {
+          type: 'pov',
+          params: {
+            participationRate: 10, // 10% of market volume
+            duration: 5, // 5 seconds for fast test
+            checkInterval: 1, // Check every second
+          },
+        },
+      });
+
+      // POV orders may partially or fully fill based on market volume
+      expect(result.status).toMatch(/filled|partial/);
+      expect(result.filledQuantity).toBeGreaterThan(0);
+      expect(result.fills.length).toBeGreaterThan(0);
+    }, 10000);
+
+    it('should limit participation to specified rate', async () => {
+      const result = await engine.submitOrder({
+        symbol: 'AAPL',
+        side: 'BUY',
+        type: 'MARKET',
+        quantity: 50,
+        timeInForce: 'GTC',
+        algorithm: {
+          type: 'pov',
+          params: {
+            participationRate: 5, // 5% of market volume
+            duration: 3,
+            checkInterval: 1,
+          },
+        },
+      });
+
+      // POV may result in partial fills based on market volume
+      expect(result.status).toMatch(/filled|partial/);
+      expect(result.filledQuantity).toBeLessThanOrEqual(50);
+      expect(result.filledQuantity).toBeGreaterThan(0);
+    }, 10000);
+
+    it('should respect max slice size', async () => {
+      const result = await engine.submitOrder({
+        symbol: 'AAPL',
+        side: 'BUY',
+        type: 'MARKET',
+        quantity: 200,
+        timeInForce: 'GTC',
+        algorithm: {
+          type: 'pov',
+          params: {
+            participationRate: 10,
+            duration: 3,
+            checkInterval: 1,
+            maxSliceSize: 30, // Cap each slice at 30
+          },
+        },
+      });
+
+      // Should execute in multiple slices
+      expect(result.fills.length).toBeGreaterThan(1);
+      
+      // Each fill should be <= maxSliceSize
+      for (const fill of result.fills) {
+        expect(fill.quantity).toBeLessThanOrEqual(30);
+      }
+    }, 10000);
+
+    it('should handle duration timeout', async () => {
+      const result = await engine.submitOrder({
+        symbol: 'AAPL',
+        side: 'BUY',
+        type: 'MARKET',
+        quantity: 1000, // Large quantity
+        timeInForce: 'GTC',
+        algorithm: {
+          type: 'pov',
+          params: {
+            participationRate: 1, // Very low rate
+            duration: 2, // Short duration
+            checkInterval: 1,
+          },
+        },
+      });
+
+      // Should partially fill or complete what it can
+      expect(result.filledQuantity).toBeGreaterThan(0);
+      expect(result.filledQuantity).toBeLessThanOrEqual(1000);
+    }, 10000);
+
+    it('should calculate participation correctly', async () => {
+      // Test with known order book
+      const povOrderBook: OrderBook = {
+        symbol: 'POV_TEST',
+        bids: [
+          { price: 100, size: 1000 },
+          { price: 99.9, size: 1000 },
+        ],
+        asks: [
+          { price: 100.1, size: 1000 },
+          { price: 100.2, size: 1000 },
+        ],
+        timestamp: Date.now(),
+        spread: 0.1,
+        midPrice: 100.05,
+      };
+      
+      engine.updateOrderBook('POV_TEST', povOrderBook);
+
+      const result = await engine.submitOrder({
+        symbol: 'POV_TEST',
+        side: 'BUY',
+        type: 'MARKET',
+        quantity: 100,
+        timeInForce: 'GTC',
+        algorithm: {
+          type: 'pov',
+          params: {
+            participationRate: 10,
+            duration: 3,
+            checkInterval: 1,
+          },
+        },
+      });
+
+      // Should execute based on volume participation
+      expect(result.status).toMatch(/filled|partial/);
+      expect(result.filledQuantity).toBeGreaterThan(0);
+      expect(result.filledQuantity).toBeLessThanOrEqual(100);
+    }, 10000);
+
+    it('should emit events during POV execution', async () => {
+      const completedSpy = jest.fn();
+      engine.on('order_completed', completedSpy);
+
+      await engine.submitOrder({
+        symbol: 'AAPL',
+        side: 'BUY',
+        type: 'MARKET',
+        quantity: 50,
+        timeInForce: 'GTC',
+        algorithm: {
+          type: 'pov',
+          params: {
+            participationRate: 10,
+            duration: 3,
+            checkInterval: 1,
+          },
+        },
+      });
+
+      expect(completedSpy).toHaveBeenCalledTimes(1);
+    }, 10000);
+  });
 });

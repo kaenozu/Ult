@@ -1,7 +1,22 @@
 /**
- * optimization/index.ts
+ * index.ts
  * 
- * パラメータ最適化モジュールのエクスポート
+ * Exports for optimization module
  */
 
-export * from './ParameterOptimizer';
+export { ParameterOptimizer } from './ParameterOptimizer';
+export type {
+  OptimizationMethod,
+  OptimizationParameter,
+  OptimizationConfig,
+  OptimizationResult,
+  WalkForwardResult,
+  CrossValidationResult,
+  ObjectiveFunction,
+  OptimizationConstraint,
+  BayesianOptimizationConfig,
+  GeneticAlgorithmConfig,
+  ParticleSwarmConfig,
+  GridSearchConfig,
+  OptimizationProgress
+} from './types';
