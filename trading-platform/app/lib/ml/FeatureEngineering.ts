@@ -151,9 +151,9 @@ export class FeatureEngineeringService {
         sectorCorrelation: 0,
         
         // Time features
-        dayOfWeek: data[i].timestamp ? new Date(data[i].timestamp).getDay() : 0,
-        weekOfMonth: data[i].timestamp ? Math.floor(new Date(data[i].timestamp).getDate() / 7) : 0,
-        monthOfYear: data[i].timestamp ? new Date(data[i].timestamp).getMonth() : 0,
+        dayOfWeek: data[i].date ? new Date(data[i].date).getDay() : 0,
+        weekOfMonth: data[i].date ? Math.floor(new Date(data[i].date).getDate() / 7) : 0,
+        monthOfYear: data[i].date ? new Date(data[i].date).getMonth() : 0,
         timestamp: i / data.length,
       });
     }

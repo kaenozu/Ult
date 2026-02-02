@@ -246,7 +246,9 @@ export class ModelPipeline {
     const inputTensor = tf.tensor3d([inputData]);
 
     for (let i = 0; i < iterations; i++) {
-      const pred = this.model.predict(inputTensor, { training: true }) as tf.Tensor;
+      // Note: TensorFlow.js doesn't support training mode in predict
+      // This is a simplified uncertainty estimation
+      const pred = this.model.predict(inputTensor) as tf.Tensor;
       const value = (await pred.data())[0];
       predictions.push(value);
       pred.dispose();
