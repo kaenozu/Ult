@@ -2,10 +2,12 @@
  * ML予測モデルサービス
  * 
  * このモジュールは、RF、XGB、LSTMの各モデルによる予測を実行する機能を提供します。
+ * Issue #528 - エラーハンドリング統一: Result型を使用したエラーハンドリング
  */
 
 import { PredictionFeatures } from './feature-calculation-service';
 import { ModelPrediction } from '../../types';
+import { Result, success, fail, ErrorCodes, ValidationError } from '../../types/result';
 
 /**
  * ML予測モデルサービス
@@ -19,22 +21,39 @@ export class MLModelService {
 
   /**
    * すべてのモデルによる予測を実行
+   * Result型を使用してエラーハンドリングを統一
    */
-  predict(features: PredictionFeatures): ModelPrediction {
-    const rf = this.randomForestPredict(features);
-    const xgb = this.xgboostPredict(features);
-    const lstm = this.lstmPredict(features);
+  predict(features: PredictionFeatures): Result<ModelPrediction, ValidationError> {
+    // 入力バリデーション
+    if (features.rsi < 0 || features.rsi > 100) {
+      return fail(
+        new ValidationError('RSI must be between 0 and 100', 'rsi'),
+        ErrorCodes.VALIDATION_ERROR
+      );
+    }
 
-    const ensemblePrediction = rf * this.weights.RF + xgb * this.weights.XGB + lstm * this.weights.LSTM;
-    const confidence = this.calculateConfidence(features, ensemblePrediction);
+    try {
+      const rf = this.randomForestPredict(features);
+      const xgb = this.xgboostPredict(features);
+      const lstm = this.lstmPredict(features);
 
-    return { 
-      rfPrediction: rf, 
-      xgbPrediction: xgb, 
-      lstmPrediction: lstm, 
-      ensemblePrediction, 
-      confidence 
-    };
+      const ensemblePrediction = rf * this.weights.RF + xgb * this.weights.XGB + lstm * this.weights.LSTM;
+      const confidence = this.calculateConfidence(features, ensemblePrediction);
+
+      return success({ 
+        rfPrediction: rf, 
+        xgbPrediction: xgb, 
+        lstmPrediction: lstm, 
+        ensemblePrediction, 
+        confidence 
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error in prediction';
+      return fail(
+        new ValidationError(`Prediction calculation failed: ${errorMessage}`),
+        ErrorCodes.CALCULATION_ERROR
+      );
+    }
   }
 
   /**
