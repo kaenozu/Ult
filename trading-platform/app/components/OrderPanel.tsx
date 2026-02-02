@@ -4,7 +4,7 @@ import { useState, useId } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useExecuteOrderAtomicV2 } from '@/app/store/orderExecutionStore';
+import { useExecuteOrder } from '@/app/store/orderExecutionStore';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 import { DynamicRiskMetrics } from './DynamicRiskMetrics';
 import { OrderRequest } from '@/app/types/order';
@@ -42,7 +42,7 @@ interface OrderPanelProps {
  */
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
   const { portfolio } = usePortfolioStore();
-  const executeOrderAtomicV2 = useExecuteOrderAtomicV2();
+  const executeOrder = useExecuteOrder();
   const cash = portfolio.cash;
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
@@ -96,7 +96,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
     };
 
     // アトミックな注文実行
-    const result = executeOrderAtomicV2(orderRequest);
+    const result = executeOrder(orderRequest);
 
     if (result.success) {
       // 注文成功

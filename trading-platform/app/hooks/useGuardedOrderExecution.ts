@@ -17,7 +17,7 @@ import { JournalEntry } from '@/app/types';
  * Hook for executing orders with behavioral bias checks
  */
 export function useGuardedOrderExecution() {
-  const executeOrderAtomicV2 = useTradingStore(state => state.executeOrderAtomicV2);
+  const executeOrder = useTradingStore(state => state.executeOrder);
   const portfolio = useTradingStore(state => state.portfolio);
   const journal = useExtendedJournalStore(state => state.journal);
   const recordTradeForPsychology = useExtendedJournalStore(state => state.recordTradeForPsychology);
@@ -67,7 +67,7 @@ export function useGuardedOrderExecution() {
             order,
             () => {
               // User confirmed - execute order
-              const result = executeOrderAtomicV2(order);
+              const result = executeOrder(order);
               
               // Record trade for psychology monitoring if successful
               if (result.success && result.newPosition) {
@@ -95,7 +95,7 @@ export function useGuardedOrderExecution() {
         }
 
         // No warnings or confirmations needed - execute directly
-        const result = executeOrderAtomicV2(order);
+        const result = executeOrder(order);
         
         // Record trade for psychology monitoring if successful
         if (result.success && result.newPosition) {
@@ -116,7 +116,7 @@ export function useGuardedOrderExecution() {
       });
     },
     [
-      executeOrderAtomicV2,
+      executeOrder,
       portfolio.positions,
       portfolio.cash,
       journal,
