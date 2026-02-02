@@ -13,7 +13,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const TRADING_PLATFORM = path.join(ROOT_DIR, 'trading-platform');
 
 console.log('🔍 ML Integration Status Check\n');
-console.log('=' .repeat(50));
+console.log('='.repeat(50));
 
 // Check 1: Configuration file exists and has correct values
 console.log('\n✅ Checking configuration...');

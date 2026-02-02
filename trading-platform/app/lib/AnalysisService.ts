@@ -413,10 +413,11 @@ class AnalysisService {
             };
         }
 
-        // Try ML prediction first if available (non-blocking)
-        // Note: This is currently a placeholder for future ML integration
-        // When ML models are trained, they will be used here with graceful fallback
-        // For now, we continue with rule-based predictions
+        // ML prediction integration point - infrastructure ready for trained models
+        // The check below demonstrates the integration pattern that will be activated
+        // when models are trained and ML_MODEL_CONFIG.MODELS_TRAINED is set to true.
+        // Currently, mlAvailable will always be false, so this code path is not executed.
+        // Keeping this structure in place makes it clear where ML predictions will be integrated.
         const mlAvailable = mlIntegrationService.isAvailable();
         if (mlAvailable) {
             // TODO: When models are trained, uncomment this:
@@ -427,6 +428,7 @@ class AnalysisService {
             // );
             // if (mlPrediction) return mlPrediction;
         }
+        // If ML not available or prediction fails, continue with rule-based approach below
 
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
         if (context?.forcedParams) {
