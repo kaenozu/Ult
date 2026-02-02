@@ -24,7 +24,8 @@ export {
 } from './WinningBacktestEngine';
 
 // Enhanced realistic backtesting components
-export * from './RealisticBacktestEngine';
+// Duplicate exports removed - already exported via RealisticBacktestOrchestrator
+// export * from './RealisticBacktestEngine';
 // MonteCarloSimulator already exported above (line 8)
-export * from './OverfittingDetector';
-export * from './WalkForwardAnalysis';
+// export * from './OverfittingDetector';
+// export * from './WalkForwardAnalysis';
