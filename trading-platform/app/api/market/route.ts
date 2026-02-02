@@ -6,6 +6,7 @@ import {
 } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
+import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
 
 // Define explicit types for Yahoo Finance responses
 interface YahooChartResult {
@@ -256,13 +257,27 @@ export async function GET(request: Request) {
         // Intraday (1m, 5m, 15m, 1h): YYYY-MM-DD HH:mm
         const isFinalIntervalIntraday = finalInterval && isIntradayInterval(finalInterval);
 
+        // Build comprehensive warnings array
+        const warnings: string[] = [];
+        
         // Add warning if we fell back to daily data for Japanese stock with intraday interval
-        const warning = isJapaneseStock && isIntraday
-          ? `Note: Intraday data (1m, 5m, 15m, 1h, 4H) is not available for Japanese stocks. Daily data is shown instead.`
-          : undefined;
+        if (isJapaneseStock && isIntraday) {
+          warnings.push('イントラデイデータ（1m, 5m, 15m, 1h, 4H）は日本株では利用できません。日次データを表示しています。');
+        }
+        
+        // Add Yahoo Finance limitation warnings
+        warnings.push('⚠️ Yahoo Finance使用中: 15分遅延データです。リアルタイム取引には不適切です。');
+        
+        if (!isJapaneseStock) {
+          warnings.push('💡 推奨: IEX Cloud、Polygon.io、またはAlpacaなどのリアルタイムデータソースの使用を検討してください。');
+        } else {
+          warnings.push('💡 日本株のリアルタイムデータには専用の有料データプロバイダーが必要です。');
+        }
+        
+        warnings.push('ℹ️ 現在のデータ品質: 「FAIR」- スキャルピング/デイトレードには不十分');
 
         // Data delay metadata for Japanese stocks
-        const dataDelayMinutes = isJapaneseStock ? JAPANESE_MARKET_DELAY_MINUTES : undefined;
+        const dataDelayMinutes = isJapaneseStock ? JAPANESE_MARKET_DELAY_MINUTES : 15;
 
         // データ欠損処理: 前日の終値を追跡
         let lastValidClose: number | null = null;
@@ -312,13 +327,25 @@ export async function GET(request: Request) {
 
         return NextResponse.json({ 
           data: ohlcv, 
-          warning,
+          warnings,
           metadata: {
+            source: DataSourceProvider.YAHOO_FINANCE,
             isJapaneseStock,
             dataDelayMinutes,
             interval: finalInterval,
             requestedInterval: interval,
-            fallbackApplied: isJapaneseStock && isIntraday
+            fallbackApplied: isJapaneseStock && isIntraday,
+            isRealtime: false,
+            quality: 'fair',
+            limitations: {
+              noTickData: true,
+              noBidAsk: true,
+              rateLimit: {
+                requestsPerMinute: 5,
+                requestsPerDay: 2000
+              },
+              intradayUnavailableForJapaneseStocks: isJapaneseStock
+            }
           }
         });
       } catch (innerError: unknown) {
