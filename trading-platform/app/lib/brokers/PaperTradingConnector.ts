@@ -138,7 +138,8 @@ export class PaperTradingConnector extends BaseBrokerConnector {
 
     const positions: BrokerPosition[] = [];
 
-    for (const [symbol, posData] of this.positions.entries()) {
+    const entries = Array.from(this.positions.entries());
+    for (const [symbol, posData] of entries) {
       if (posData.quantity === 0) continue;
 
       // Simulate current price with small random movement
