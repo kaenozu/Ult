@@ -7,12 +7,13 @@ import {
     BACKTEST_CONFIG,
     RSI_CONFIG,
     SMA_CONFIG,
-    FORECAST_CONE
+    FORECAST_CONE,
+    DATA_REQUIREMENTS,
+    PREDICTION_ERROR_WEIGHTS
 } from './constants';
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { measurePerformance } from './performance-utils';
-import { Result, ok, err, DataError } from './errors';
 /**
  * Service to handle simulation, backtesting, and accuracy metrics.
  */
@@ -204,7 +205,7 @@ class AccuracyService {
             }
 
             // SMAとEMAのアンサンブル（加重平均）
-            const ensemblePrediction = (sma * 0.4) + (ema * 0.6);
+            const ensemblePrediction = (sma * PREDICTION_ERROR_WEIGHTS.SMA_WEIGHT) + (ema * PREDICTION_ERROR_WEIGHTS.EMA_WEIGHT);
 
             totalError += Math.abs(actualFuture - ensemblePrediction) / (ensemblePrediction || 1);
             count++;
@@ -212,7 +213,7 @@ class AccuracyService {
 
         const avgError = count > 0 ? totalError / count : 1.0;
         // 予測誤差を少し厳しくして精度向上
-        return Math.min(Math.max(avgError / (PRICE_CALCULATION.DEFAULT_ERROR_MULTIPLIER * 0.9), 0.75), 2.0);
+        return Math.min(Math.max(avgError / (PRICE_CALCULATION.DEFAULT_ERROR_MULTIPLIER * PREDICTION_ERROR_WEIGHTS.ERROR_MULTIPLIER), 0.75), 2.0);
     }
 
     /**
@@ -336,7 +337,7 @@ class AccuracyService {
         // Walk-Forward Optimization Cache
         let cachedParams: { rsiPeriod: number; smaPeriod: number; accuracy: number } | undefined;
         let lastOptimizationIndex = -999;
-        const OPTIMIZATION_INTERVAL = 30; // Re-optimize every 30 days
+        const OPTIMIZATION_INTERVAL = OPTIMIZATION.REOPTIMIZATION_INTERVAL;
 
         for (let i = minPeriod; i < data.length - 1; i++) {
             const nextDay = data[i + 1];
@@ -439,20 +440,13 @@ class AccuracyService {
     /**
      * 過去的中率をリアルタイム計算（スライディングウィンドウ型）
      * データ期間を252日（1年分）に拡大して精度向上
-     * Result型を使用した型安全なエラーハンドリング
      */
-    calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): Result<{
+    calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): {
         hitRate: number;
         directionalAccuracy: number;
         totalTrades: number;
-    }, DataError> {
-        if (data.length < 252) {
-            return err(new DataError(
-                'Insufficient data for accuracy calculation (minimum 252 days required)',
-                symbol,
-                'historical'
-            ));
-        }
+    } | null {
+        if (data.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) return null;
 
         const windowSize = 20;
         let hits = 0;
@@ -462,7 +456,7 @@ class AccuracyService {
         // Optimized: Pre-calculate indicators
         const preCalculatedIndicators = this.preCalculateIndicators(data);
 
-        for (let i = 252; i < data.length - windowSize; i += 5) {
+        for (let i = DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS; i < data.length - windowSize; i += 5) {
             // Optimized: Use full data + endIndex
             const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i,
@@ -476,7 +470,7 @@ class AccuracyService {
             const predictedChange = (signal.targetPrice - data[i].close) / (data[i].close || 1);
 
             // 判定基準を厳しく（50%→40%）して精度向上
-            const hit = Math.abs(priceChange - predictedChange) < Math.abs(predictedChange * 0.4);
+            const hit = Math.abs(priceChange - predictedChange) < Math.abs(predictedChange * PREDICTION_ERROR_WEIGHTS.ERROR_THRESHOLD);
             const dirHit = (priceChange > 0) === (signal.type === 'BUY');
 
             if (hit) hits++;
@@ -484,11 +478,11 @@ class AccuracyService {
             total++;
         }
 
-        return ok({
+        return {
             hitRate: total > 0 ? Math.round((hits / total) * 100) : 0,
             directionalAccuracy: total > 0 ? Math.round((dirHits / total) * 100) : 0,
             totalTrades: total,
-        });
+        };
     }
 
     /**
@@ -496,7 +490,7 @@ class AccuracyService {
      * データ期間を252日（1年分）に拡大して精度向上
      */
     calculateAIHitRate(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan') {
-        if (data.length < 252) {
+        if (data.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
             return {
                 hitRate: 0,
                 directionalAccuracy: 0,
