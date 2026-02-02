@@ -5,6 +5,7 @@
  * Issue #522 - 定数一元化
  */
 
+// 既存の定数を再エクスポート
 export * from './api';
 export * from './backtest';
 export * from './chart';
