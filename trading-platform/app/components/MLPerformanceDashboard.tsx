@@ -11,7 +11,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { integratedPredictionService } from '@/app/lib/services/integrated-prediction-service';
+import { integratedPredictionService } from '@/app/domains/prediction/services/integrated-prediction-service';
 import ConfirmationModal from './ConfirmationModal';
 
 interface PerformanceData {

@@ -286,7 +286,6 @@ function CumulativeReturnChart({
         borderColor: '#94a3b8',
         backgroundColor: '#94a3b820',
         borderWidth: 2,
-        borderDash: [5, 5],
         pointRadius: 0,
         tension: 0.1,
       });

@@ -21,5 +21,11 @@
       "mcp__chrome-devtools__press_key",
       "mcp__zai-mcp-server__analyze_image"
     ]
+  },
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
+    "ANTHROPIC_AUTH_TOKEN": "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",
+    "ANTHROPIC_API_KEY": "",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "stepfun/step-3.5-flash:free"
   }
 }

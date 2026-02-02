@@ -1,3 +1,8 @@
+---
+title: バックテストクリティカル問題 アクションプラン / Backtest Critical Issues Action Plan
+labels: documentation, backtest, code-review
+---
+
 # バックテストクリティカル問題 アクションプラン
 # Backtest Critical Issues Action Plan
 
