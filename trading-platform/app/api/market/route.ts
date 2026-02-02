@@ -260,6 +260,9 @@ export async function GET(request: Request) {
           ? `Note: Intraday data (1m, 5m, 15m, 1h, 4H) is not available for Japanese stocks. Daily data is shown instead.`
           : undefined;
 
+        // Data delay metadata for Japanese stocks
+        const dataDelayMinutes = isJapaneseStock ? 20 : undefined;
+
         // データ欠損処理: 前日の終値を追跡
         let lastValidClose: number | null = null;
 
@@ -306,7 +309,17 @@ export async function GET(request: Request) {
           };
         });
 
-        return NextResponse.json({ data: ohlcv, warning });
+        return NextResponse.json({ 
+          data: ohlcv, 
+          warning,
+          metadata: {
+            isJapaneseStock,
+            dataDelayMinutes,
+            interval: finalInterval,
+            requestedInterval: interval,
+            fallbackApplied: isJapaneseStock && isIntradayInterval
+          }
+        });
       } catch (innerError: unknown) {
         return handleApiError(new Error('Failed to fetch historical data'), 'market/history', 502);
       }

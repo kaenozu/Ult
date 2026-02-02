@@ -42,7 +42,9 @@ export default function Workstation() {
     error,
     handleStockSelect,
     interval,
-    setInterval
+    setInterval,
+    fallbackApplied,
+    dataDelayMinutes
   } = useStockData();
 
   const [showSMA, setShowSMA] = useState(true);
@@ -172,6 +174,8 @@ export default function Workstation() {
                 setShowBollinger={setShowBollinger}
                 interval={interval}
                 setInterval={setInterval}
+                fallbackApplied={fallbackApplied}
+                dataDelayMinutes={dataDelayMinutes}
               />
 
               {/* Main Chart Visualization */}
