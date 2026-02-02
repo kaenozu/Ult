@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 import heapq
+import threading
 from typing import Any, Callable, TypeVar, Optional
 from functools import wraps
 
@@ -25,6 +26,7 @@ class CacheManager:
     - Decorator support for memoization
     - Cache statistics tracking
     - Key generation caching for improved performance
+    - Thread-safe operations with RLock
     """
     
     def __init__(self, ttl: int = 300, max_size: int = 1000):
@@ -43,6 +45,7 @@ class CacheManager:
         self._key_cache: dict[tuple[str, tuple, frozenset], str] = {}  # Key generation cache
         self._hits = 0
         self._misses = 0
+        self._lock = threading.RLock()  # Thread-safe lock for concurrent access
     
     def get(self, key: str) -> Optional[Any]:
         """
@@ -54,25 +57,26 @@ class CacheManager:
         Returns:
             Cached value if exists and not expired, None otherwise
         """
-        if key not in self._cache:
-            self._misses += 1
-            return None
-        
-        value, timestamp = self._cache[key]
-        
-        # Check if expired
-        if time.time() - timestamp > self.ttl:
-            del self._cache[key]
-            del self._access_times[key]
-            self._misses += 1
-            return None
-        
-        # Update access time for LRU - O(log N)
-        self._access_times[key] = time.time()
-        heapq.heappush(self._lru_heap, (time.time(), key))
-        self._hits += 1
-        
-        return value
+        with self._lock:
+            if key not in self._cache:
+                self._misses += 1
+                return None
+            
+            value, timestamp = self._cache[key]
+            
+            # Check if expired
+            if time.time() - timestamp > self.ttl:
+                del self._cache[key]
+                del self._access_times[key]
+                self._misses += 1
+                return None
+            
+            # Update access time for LRU - O(log N)
+            self._access_times[key] = time.time()
+            heapq.heappush(self._lru_heap, (time.time(), key))
+            self._hits += 1
+            
+            return value
     
     def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
         """
@@ -83,31 +87,34 @@ class CacheManager:
             value: Value to cache
             ttl: Optional custom TTL for this entry (overrides default)
         """
-        # Evict oldest entry if cache is full
-        if len(self._cache) >= self.max_size:
-            self._evict_oldest()
-        
-        self._cache[key] = (value, time.time())
-        self._access_times[key] = time.time()
-        heapq.heappush(self._lru_heap, (time.time(), key))
-        
-        # If custom TTL is provided, set up auto-expiry
-        if ttl and ttl != self.ttl:
-            # Schedule deletion
-            def expire():
-                if key in self._cache:
-                    del self._cache[key]
-                    del self._access_times[key]
+        with self._lock:
+            # Evict oldest entry if cache is full
+            if len(self._cache) >= self.max_size:
+                self._evict_oldest()
             
-            # Use threading.Timer for async expiry
-            import threading
-            timer = threading.Timer(ttl, expire)
-            timer.daemon = True
-            timer.start()
+            self._cache[key] = (value, time.time())
+            self._access_times[key] = time.time()
+            heapq.heappush(self._lru_heap, (time.time(), key))
+            
+            # If custom TTL is provided, set up auto-expiry
+            if ttl and ttl != self.ttl:
+                # Schedule deletion with lock protection
+                def expire():
+                    with self._lock:
+                        if key in self._cache:
+                            del self._cache[key]
+                            if key in self._access_times:
+                                del self._access_times[key]
+                
+                # Use threading.Timer for async expiry
+                timer = threading.Timer(ttl, expire)
+                timer.daemon = True
+                timer.start()
     
     def _evict_oldest(self) -> None:
         """
         Evict the least recently used entry from cache - O(K log N)
+        Note: This method should be called within a lock context
         """
         if not self._lru_heap:
             return
@@ -136,12 +143,13 @@ class CacheManager:
         """
         Clear all cached values.
         """
-        self._cache.clear()
-        self._access_times.clear()
-        self._lru_heap.clear()
-        self._key_cache.clear()
-        self._hits = 0
-        self._misses = 0
+        with self._lock:
+            self._cache.clear()
+            self._access_times.clear()
+            self._lru_heap.clear()
+            self._key_cache.clear()
+            self._hits = 0
+            self._misses = 0
     
     def memoize(self, func: Callable[..., T]) -> Callable[..., T]:
         """
@@ -183,29 +191,30 @@ class CacheManager:
             kwargs: Keyword arguments
             
         Returns:
-            MD5 hash as cache key
+            SHA-256 hash as cache key
         """
-        # Convert kwargs to frozenset for hashing
-        kwargs_frozen = frozenset(kwargs.items())
-        cache_key = (func_name, args, kwargs_frozen)
-        
-        # Check key cache
-        if cache_key in self._key_cache:
-            return self._key_cache[cache_key]
-        
-        # Generate key using MD5 hash
-        key_data = {
-            'func': func_name,
-            'args': args,
-            'kwargs': kwargs
-        }
-        key_str = json.dumps(key_data, sort_keys=True, default=str)
-        key_hash = hashlib.md5(key_str.encode()).hexdigest()
-        
-        # Cache the key
-        self._key_cache[cache_key] = key_hash
-        
-        return key_hash
+        with self._lock:
+            # Convert kwargs to frozenset for hashing
+            kwargs_frozen = frozenset(kwargs.items())
+            cache_key = (func_name, args, kwargs_frozen)
+            
+            # Check key cache
+            if cache_key in self._key_cache:
+                return self._key_cache[cache_key]
+            
+            # Generate key using SHA-256 hash (more secure than MD5)
+            key_data = {
+                'func': func_name,
+                'args': args,
+                'kwargs': kwargs
+            }
+            key_str = json.dumps(key_data, sort_keys=True, default=str)
+            key_hash = hashlib.sha256(key_str.encode()).hexdigest()
+            
+            # Cache the key
+            self._key_cache[cache_key] = key_hash
+            
+            return key_hash
     
     def get_stats(self) -> dict[str, Any]:
         """
@@ -214,18 +223,19 @@ class CacheManager:
         Returns:
             Dictionary with cache statistics
         """
-        total_requests = self._hits + self._misses
-        hit_rate = (self._hits / total_requests * 100) if total_requests > 0 else 0
-        
-        return {
-            'size': len(self._cache),
-            'max_size': self.max_size,
-            'hits': self._hits,
-            'misses': self._misses,
-            'total_requests': total_requests,
-            'hit_rate': hit_rate,
-            'ttl': self.ttl,
-        }
+        with self._lock:
+            total_requests = self._hits + self._misses
+            hit_rate = (self._hits / total_requests * 100) if total_requests > 0 else 0
+            
+            return {
+                'size': len(self._cache),
+                'max_size': self.max_size,
+                'hits': self._hits,
+                'misses': self._misses,
+                'total_requests': total_requests,
+                'hit_rate': hit_rate,
+                'ttl': self.ttl,
+            }
     
     def invalidate(self, pattern: Optional[str] = None) -> int:
         """
@@ -237,33 +247,34 @@ class CacheManager:
         Returns:
             Number of entries invalidated
         """
-        if pattern is None:
-            count = len(self._cache)
-            self.clear()
+        with self._lock:
+            if pattern is None:
+                count = len(self._cache)
+                self.clear()
+                return count
+            
+            count = 0
+            keys_to_delete = []
+            
+            for key in list(self._cache.keys()):
+                if pattern in key:
+                    keys_to_delete.append(key)
+                    count += 1
+            
+            for key in keys_to_delete:
+                del self._cache[key]
+                if key in self._access_times:
+                    del self._access_times[key]
+            
+            # Clean up key cache
+            keys_to_remove_from_key_cache = [
+                k for k in self._key_cache.keys() 
+                if pattern in self._key_cache[k]
+            ]
+            for k in keys_to_remove_from_key_cache:
+                del self._key_cache[k]
+            
             return count
-        
-        count = 0
-        keys_to_delete = []
-        
-        for key in list(self._cache.keys()):
-            if pattern in key:
-                keys_to_delete.append(key)
-                count += 1
-        
-        for key in keys_to_delete:
-            del self._cache[key]
-            if key in self._access_times:
-                del self._access_times[key]
-        
-        # Clean up key cache
-        keys_to_remove_from_key_cache = [
-            k for k in self._key_cache.keys() 
-            if pattern in self._key_cache[k]
-        ]
-        for k in keys_to_remove_from_key_cache:
-            del self._key_cache[k]
-        
-        return count
     
     def get_keys(self) -> list[str]:
         """
@@ -272,7 +283,8 @@ class CacheManager:
         Returns:
             List of all cache keys
         """
-        return list(self._cache.keys())
+        with self._lock:
+            return list(self._cache.keys())
 
 
 # Global cache instances with different TTLs
