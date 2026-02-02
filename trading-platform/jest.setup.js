@@ -26,6 +26,16 @@ if (typeof Response === 'undefined') {
     json() {
       return Promise.resolve(typeof this.body === 'string' ? JSON.parse(this.body) : this.body);
     }
+    
+    static json(data, init) {
+      return new Response(JSON.stringify(data), {
+        ...init,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(init?.headers || {}),
+        },
+      });
+    }
   };
 }
 
@@ -109,4 +119,19 @@ if (typeof HTMLCanvasElement !== 'undefined') {
 }
 
 // Mock WebSocket hook removed per test refactoring (handled locally in tests)
+
+// Mock NextResponse for API route testing
+if (typeof global.NextResponse === 'undefined') {
+  global.NextResponse = {
+    json: (data, init) => {
+      return new Response(JSON.stringify(data), {
+        ...init,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(init?.headers || {}),
+        },
+      });
+    },
+  };
+}
 
