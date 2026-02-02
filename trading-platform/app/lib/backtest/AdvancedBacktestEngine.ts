@@ -41,6 +41,12 @@ export interface BacktestConfig {
   useStopLoss: boolean;
   useTakeProfit: boolean;
   riskPerTrade: number; // percentage
+  // Enhanced slippage model
+  useRealisticSlippage?: boolean;
+  averageDailyVolume?: number;
+  useTimeOfDaySlippage?: boolean;
+  useVolatilitySlippage?: boolean;
+  useTieredCommissions?: boolean;
 }
 
 export interface BacktestResult {
@@ -354,8 +360,10 @@ export class AdvancedBacktestEngine extends EventEmitter {
   }
 
   private openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction): void {
-    const price = this.applySlippage(data.close, side === 'LONG' ? 'BUY' : 'SELL');
-    const quantity = this.calculatePositionSize(price, action.quantity);
+    // Calculate quantity first based on current close price
+    const quantity = this.calculatePositionSize(data.close, action.quantity);
+    // Then apply slippage to get actual execution price
+    const price = this.applySlippage(data.close, side === 'LONG' ? 'BUY' : 'SELL', data, quantity);
 
     this.currentPosition = side;
     this.entryPrice = price;
@@ -369,8 +377,8 @@ export class AdvancedBacktestEngine extends EventEmitter {
   private closePosition(data: OHLCV, reason: Trade['exitReason']): void {
     if (!this.currentPosition) return;
 
-    const exitPrice = this.applySlippage(data.close, this.currentPosition === 'LONG' ? 'SELL' : 'BUY');
     const quantity = this.calculatePositionSize(this.entryPrice);
+    const exitPrice = this.applySlippage(data.close, this.currentPosition === 'LONG' ? 'SELL' : 'BUY', data, quantity);
 
     // Calculate P&L
     let pnl = 0;
@@ -380,10 +388,18 @@ export class AdvancedBacktestEngine extends EventEmitter {
       pnl = (this.entryPrice - exitPrice) * quantity;
     }
 
-    // Apply fees
+    // Apply fees (with tiered commissions if enabled)
     const entryValue = this.entryPrice * quantity;
     const exitValue = exitPrice * quantity;
-    const fees = (entryValue + exitValue) * (this.config.commission / 100);
+    const totalVolume = this.trades.reduce((sum, t) => sum + (t.entryPrice * t.quantity), 0);
+    
+    let fees: number;
+    if (this.config.useTieredCommissions) {
+      fees = this.calculateTieredCommission(entryValue, totalVolume) + 
+             this.calculateTieredCommission(exitValue, totalVolume);
+    } else {
+      fees = (entryValue + exitValue) * (this.config.commission / 100);
+    }
     pnl -= fees;
 
     const pnlPercent = (pnl / (this.entryPrice * quantity)) * 100;
@@ -416,9 +432,129 @@ export class AdvancedBacktestEngine extends EventEmitter {
     this.takeProfit = 0;
   }
 
-  private applySlippage(price: number, side: 'BUY' | 'SELL'): number {
+  private applySlippage(price: number, side: 'BUY' | 'SELL', data?: OHLCV, quantity?: number): number {
+    if (this.config.useRealisticSlippage) {
+      return this.applyRealisticSlippage(price, side, data, quantity);
+    }
+    
     const slippageFactor = 1 + (Math.random() * this.config.slippage / 100);
     return side === 'BUY' ? price * slippageFactor : price / slippageFactor;
+  }
+
+  /**
+   * Apply realistic slippage model considering:
+   * - Order size vs average volume
+   * - Bid-Ask spread
+   * - Time of day
+   * - Volatility
+   */
+  private applyRealisticSlippage(
+    price: number,
+    side: 'BUY' | 'SELL',
+    data?: OHLCV,
+    quantity?: number
+  ): number {
+    let slippageRate = this.config.slippage / 100; // Base slippage
+
+    // 1. Order size impact (if quantity and average volume are known)
+    if (quantity && this.config.averageDailyVolume) {
+      const volumeRatio = quantity / this.config.averageDailyVolume;
+      const volumeImpact = Math.sqrt(volumeRatio) * 0.5; // Square root model
+      slippageRate += volumeImpact;
+    }
+
+    // 2. Bid-Ask spread impact
+    const spreadImpact = (this.config.spread / 100) / 2; // Half of spread
+    slippageRate += spreadImpact;
+
+    // 3. Time of day impact (opening/closing hours have worse slippage)
+    if (this.config.useTimeOfDaySlippage && data) {
+      const timeSlippage = this.getTimeOfDaySlippage(data.date);
+      slippageRate += timeSlippage;
+    }
+
+    // 4. Volatility-linked slippage
+    if (this.config.useVolatilitySlippage && data) {
+      const volatilitySlippage = this.getVolatilitySlippage(data);
+      slippageRate += volatilitySlippage;
+    }
+
+    // Apply slippage
+    const slippageFactor = 1 + slippageRate;
+    return side === 'BUY' ? price * slippageFactor : price / slippageFactor;
+  }
+
+  /**
+   * Calculate time-of-day slippage
+   * Opening and closing hours have higher slippage
+   */
+  private getTimeOfDaySlippage(dateStr: string): number {
+    const date = new Date(dateStr);
+    const hour = date.getHours();
+    const minute = date.getMinutes();
+
+    // Market open (9:00-10:00): 50% higher slippage
+    if (hour === 9 || (hour === 10 && minute === 0)) {
+      return 0.025; // +2.5 bps
+    }
+
+    // Market close (15:00-16:00): 50% higher slippage
+    if (hour === 15 || hour === 16) {
+      return 0.025; // +2.5 bps
+    }
+
+    // Lunch time (11:30-12:30): 20% higher slippage
+    if ((hour === 11 && minute >= 30) || (hour === 12 && minute <= 30)) {
+      return 0.01; // +1 bps
+    }
+
+    return 0; // Normal hours
+  }
+
+  /**
+   * Calculate volatility-linked slippage
+   * Higher volatility = higher slippage
+   */
+  private getVolatilitySlippage(data: OHLCV): number {
+    // Calculate intraday volatility as (high - low) / close
+    const intradayVolatility = (data.high - data.low) / data.close;
+
+    // Normal volatility is around 1-2%
+    // High volatility (>3%) increases slippage
+    if (intradayVolatility > 0.03) {
+      return 0.02; // +2 bps for high volatility
+    } else if (intradayVolatility > 0.02) {
+      return 0.01; // +1 bps for medium volatility
+    }
+
+    return 0; // Normal volatility
+  }
+
+  /**
+   * Calculate tiered commission based on volume
+   * Higher volume = lower commission rate
+   */
+  private calculateTieredCommission(tradeValue: number, totalVolume: number): number {
+    if (!this.config.useTieredCommissions) {
+      return tradeValue * (this.config.commission / 100);
+    }
+
+    let commissionRate = this.config.commission / 100;
+
+    // Volume tiers (example for US market)
+    if (totalVolume > 10000000) {
+      // $10M+ monthly: 0.05%
+      commissionRate = 0.0005;
+    } else if (totalVolume > 5000000) {
+      // $5M-$10M monthly: 0.07%
+      commissionRate = 0.0007;
+    } else if (totalVolume > 1000000) {
+      // $1M-$5M monthly: 0.08%
+      commissionRate = 0.0008;
+    }
+    // else: default rate
+
+    return tradeValue * commissionRate;
   }
 
   private calculatePositionSize(price: number, fixedQuantity?: number): number {

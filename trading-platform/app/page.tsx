@@ -9,6 +9,7 @@ import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
+import { useSupplyDemandAlerts } from '@/app/hooks/useSupplyDemandAlerts';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';
 import { useTranslations } from '@/app/i18n/provider';
@@ -28,7 +29,7 @@ const ChartLoader = () => (
   </div>
 );
 
-function Workstation() {
+function WorkstationContent() {
   const t = useTranslations();
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
@@ -42,9 +43,7 @@ function Workstation() {
     error,
     handleStockSelect,
     interval,
-    setInterval,
-    fallbackApplied,
-    dataDelayMinutes
+    setInterval
   } = useStockData();
 
   const [showSMA, setShowSMA] = useState(true);
@@ -55,6 +54,13 @@ function Workstation() {
   const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
     closePosition(symbol, currentPrice);
   }, [closePosition]);
+
+  // Monitor supply/demand levels and trigger alerts
+  useSupplyDemandAlerts({
+    data: chartData,
+    signal: chartSignal,
+    symbol: selectedStock?.symbol || ''
+  });
 
   const displayStock = selectedStock;
 
@@ -174,8 +180,6 @@ function Workstation() {
                 setShowBollinger={setShowBollinger}
                 interval={interval}
                 setInterval={setInterval}
-                fallbackApplied={fallbackApplied}
-                dataDelayMinutes={dataDelayMinutes}
               />
 
               {/* Main Chart Visualization */}
@@ -241,10 +245,10 @@ function Workstation() {
   );
 }
 
-export default function HomePage() {
+export default function Workstation() {
   return (
     <ErrorBoundary name="HomePage">
-      <Workstation />
+      <WorkstationContent />
     </ErrorBoundary>
   );
 }
