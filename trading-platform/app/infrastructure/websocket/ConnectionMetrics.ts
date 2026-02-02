@@ -142,6 +142,9 @@ export class ConnectionMetricsTracker {
     this.lastThroughputCheck = this.connectionStartTime;
     this.messageCountSinceLastCheck = 0;
     this.byteCountSinceLastCheck = 0;
+    // Initialize quality to 'good' when connection is established
+    // It will be updated to actual quality once we have measurements
+    this.metrics.quality = 'good';
   }
   
   /**
@@ -151,6 +154,7 @@ export class ConnectionMetricsTracker {
     this.metrics.lastDisconnectTime = Date.now();
     this.metrics.uptime = 0;
     this.metrics.quality = 'offline';
+    this.connectionStartTime = 0; // Reset connection start time
     this.pendingPings.clear();
   }
   
