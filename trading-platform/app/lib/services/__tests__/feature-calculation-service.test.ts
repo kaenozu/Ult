@@ -397,4 +397,112 @@ describe('FeatureCalculationService', () => {
       expect(features.volumeRatio).toBeGreaterThan(5);
     });
   });
+
+  describe('calculateEnhancedFeatures', () => {
+    it('should calculate both basic and enhanced features', () => {
+      const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+      
+      // Check basic features exist
+      expect(features).toHaveProperty('rsi');
+      expect(features).toHaveProperty('rsiChange');
+      expect(features).toHaveProperty('priceMomentum');
+      
+      // Check enhanced features exist
+      expect(features).toHaveProperty('candlestickPatterns');
+      expect(features).toHaveProperty('priceTrajectory');
+      expect(features).toHaveProperty('volumeProfile');
+      expect(features).toHaveProperty('volatilityRegime');
+    });
+
+    it('should return valid candlestick pattern features', () => {
+      const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+      
+      expect(features.candlestickPatterns).toHaveProperty('isDoji');
+      expect(features.candlestickPatterns).toHaveProperty('isHammer');
+      expect(features.candlestickPatterns).toHaveProperty('bodyRatio');
+      expect(features.candlestickPatterns).toHaveProperty('candleStrength');
+      
+      expect(typeof features.candlestickPatterns.isDoji).toBe('number');
+      expect(isFinite(features.candlestickPatterns.bodyRatio)).toBe(true);
+    });
+
+    it('should return valid price trajectory features', () => {
+      const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+      
+      expect(features.priceTrajectory).toHaveProperty('zigzagTrend');
+      expect(features.priceTrajectory).toHaveProperty('trendConsistency');
+      expect(features.priceTrajectory).toHaveProperty('isConsolidation');
+      
+      expect(typeof features.priceTrajectory.zigzagTrend).toBe('number');
+      expect(isFinite(features.priceTrajectory.trendConsistency)).toBe(true);
+    });
+
+    it('should return valid volume profile features', () => {
+      const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+      
+      expect(features.volumeProfile).toHaveProperty('volumeTrend');
+      expect(features.volumeProfile).toHaveProperty('volumeSurge');
+      expect(features.volumeProfile).toHaveProperty('priceVolumeCorrelation');
+      
+      expect(typeof features.volumeProfile.volumeTrend).toBe('number');
+      expect(isFinite(features.volumeProfile.volumeSurge)).toBe(true);
+    });
+
+    it('should return valid volatility regime features', () => {
+      const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+      
+      expect(features.volatilityRegime).toHaveProperty('volatilityRegime');
+      expect(features.volatilityRegime).toHaveProperty('historicalVolatility');
+      expect(features.volatilityRegime).toHaveProperty('garchVolatility');
+      
+      expect(['LOW', 'NORMAL', 'HIGH', 'EXTREME']).toContain(features.volatilityRegime.volatilityRegime);
+      expect(typeof features.volatilityRegime.historicalVolatility).toBe('number');
+    });
+
+    it('should maintain backward compatibility with basic features', () => {
+      const basicFeatures = service.calculateFeatures(mockData, mockIndicators);
+      const enhancedFeatures = service.calculateEnhancedFeatures(mockData, mockIndicators);
+      
+      // Basic features should have same values
+      expect(enhancedFeatures.rsi).toBe(basicFeatures.rsi);
+      expect(enhancedFeatures.rsiChange).toBe(basicFeatures.rsiChange);
+      expect(enhancedFeatures.priceMomentum).toBe(basicFeatures.priceMomentum);
+      expect(enhancedFeatures.volumeRatio).toBe(basicFeatures.volumeRatio);
+    });
+
+    it('should handle empty data gracefully', () => {
+      const emptyData: typeof mockData = [];
+      const emptyIndicators = {
+        rsi: [],
+        sma5: [],
+        sma20: [],
+        sma50: [],
+        macd: { macd: [], signal: [], histogram: [] },
+        bollingerBands: { upper: [], middle: [], lower: [] },
+        atr: []
+      };
+      
+      expect(() => {
+        service.calculateEnhancedFeatures(emptyData, emptyIndicators);
+      }).not.toThrow();
+    });
+
+    it('should increase feature dimensionality significantly', () => {
+      const basicFeatures = service.calculateFeatures(mockData, mockIndicators);
+      const enhancedFeatures = service.calculateEnhancedFeatures(mockData, mockIndicators);
+      
+      // Count basic features (11)
+      const basicCount = Object.keys(basicFeatures).length;
+      
+      // Count all enhanced features
+      let enhancedCount = 11; // Basic features
+      enhancedCount += Object.keys(enhancedFeatures.candlestickPatterns).length;
+      enhancedCount += Object.keys(enhancedFeatures.priceTrajectory).length;
+      enhancedCount += Object.keys(enhancedFeatures.volumeProfile).length;
+      enhancedCount += Object.keys(enhancedFeatures.volatilityRegime).length;
+      
+      expect(basicCount).toBe(11);
+      expect(enhancedCount).toBeGreaterThanOrEqual(50); // 11 + 40+ new features
+    });
+  });
 });
