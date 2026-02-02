@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Grid3X3, FileText, Filter, Moon, Sun, Brain, Database } from 'lucide-react';
+import { BarChart3, Grid3X3, FileText, Filter, Moon, Sun, Brain, Database, TrendingUp } from 'lucide-react';
 import { useThemeStore } from '@/app/store/themeStore';
 import { cn } from '@/app/lib/utils';
 
@@ -15,6 +15,7 @@ export function Navigation() {
     { path: '/heatmap', label: 'ヒートマップ', icon: Grid3X3 },
     { path: '/journal', label: 'ジャーナル', icon: FileText },
     { path: '/screener', label: 'スクリーナー', icon: Filter },
+    { path: '/performance', label: 'パフォーマンス', icon: TrendingUp },
     { path: '/ai-advisor', label: 'AIアドバイザー', icon: Brain },
     { path: '/universe', label: 'ユニバース', icon: Database },
   ];

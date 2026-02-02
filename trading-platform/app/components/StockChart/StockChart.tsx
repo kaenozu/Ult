@@ -10,14 +10,14 @@ import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS } from '@/app/lib/constants';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 export { volumeProfilePlugin };
-import { supplyDemandWallsPlugin } from './plugins/supplyDemandWalls';
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
 import { useForecastLayers } from './hooks/useForecastLayers';
 import { useChartOptions } from './hooks/useChartOptions';
+import { AccuracyBadge } from '@/app/components/AccuracyBadge';
 
-// Register ChartJS components and custom plugins
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin, supplyDemandWallsPlugin);
+// Register ChartJS components and custom plugin
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
 
 export interface StockChartProps {
   data: OHLCV[];
@@ -30,10 +30,16 @@ export interface StockChartProps {
   error?: string | null;
   market?: 'japan' | 'usa';
   signal?: Signal | null;
+  accuracyData?: {
+    hitRate: number;
+    totalTrades: number;
+    predictionError?: number;
+    loading?: boolean;
+  } | null;
 }
 
 export const StockChart = memo(function StockChart({
-  data, indexData = [], height: propHeight, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null,
+  data, indexData = [], height: propHeight, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null, accuracyData = null,
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
   const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
@@ -49,7 +55,10 @@ export const StockChart = memo(function StockChart({
     extendedData,
     signal,
     market,
-    hoveredIdx
+    hoveredIdx,
+    accuracyData: accuracyData ? {
+      predictionError: accuracyData.predictionError || 1.0
+    } : null
   });
 
   // 2. Chart Options Hook
@@ -158,6 +167,18 @@ export const StockChart = memo(function StockChart({
 
   return (
     <div className="relative w-full group" style={{ height: dynamicHeight }}>
+      {/* Accuracy Badge Overlay */}
+      {accuracyData && (
+        <div className="absolute top-2 right-2 z-20 pointer-events-none">
+          <AccuracyBadge
+            hitRate={accuracyData.hitRate}
+            totalTrades={accuracyData.totalTrades}
+            predictionError={accuracyData.predictionError}
+            loading={accuracyData.loading}
+          />
+        </div>
+      )}
+      
       {hoveredIdx !== null && hoveredIdx < data.length && (
         <div className="absolute top-2 left-2 z-20 bg-[#1a2632]/90 border border-[#233648] p-3 rounded shadow-xl pointer-events-none backdrop-blur-sm">
           <div className="text-xs font-black text-primary uppercase border-b border-[#233648] pb-1 mb-1">{extendedData.labels[hoveredIdx]}</div>

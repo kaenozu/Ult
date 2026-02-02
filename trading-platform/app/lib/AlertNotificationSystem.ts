@@ -18,15 +18,19 @@ export interface Alert {
   severity: 'info' | 'warning' | 'critical';
   timestamp: number;
   acknowledged: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export type NotificationChannelType = 'email' | 'sms' | 'push' | 'webhook' | 'slack';
 
+export interface NotificationChannelConfig {
+  [key: string]: string | number | boolean | undefined;
+}
+
 export interface NotificationChannel {
   type: NotificationChannelType;
   enabled: boolean;
-  config: any;
+  config: NotificationChannelConfig;
 }
 
 export class AlertNotificationSystem extends EventEmitter {

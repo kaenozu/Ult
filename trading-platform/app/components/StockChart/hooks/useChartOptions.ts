@@ -3,7 +3,7 @@ import { ChartOptions, ChartTypeRegistry, TooltipItem } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { CHART_GRID, CHART_CONFIG } from '@/app/lib/constants';
-import { VolumeProfilePluginOptions, SupplyDemandWallsOptions } from '../types';
+import { VolumeProfilePluginOptions } from '../types';
 
 interface UseChartOptionsProps {
   data: OHLCV[];
@@ -70,16 +70,7 @@ export const useChartOptions = ({
         enabled: true,
         data: signal?.volumeResistance,
         currentPrice: data.length > 0 ? data[data.length - 1].close : 0
-      } as VolumeProfilePluginOptions,
-      supplyDemandWalls: {
-        enabled: true,
-        data: signal?.volumeResistance,
-        currentPrice: data.length > 0 ? data[data.length - 1].close : 0,
-        supplyDemand: signal?.supplyDemand ? {
-          supportLevels: signal.supplyDemand.supportLevels,
-          resistanceLevels: signal.supplyDemand.resistanceLevels
-        } : undefined
-      } as SupplyDemandWallsOptions
+      } as VolumeProfilePluginOptions
     },
     scales: {
       x: {

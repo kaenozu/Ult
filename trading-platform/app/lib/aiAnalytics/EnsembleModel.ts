@@ -28,6 +28,18 @@ export interface EnsemblePrediction {
   individualPredictions: BaseModelPrediction[];
   strategy: 'weighted_average' | 'stacking' | 'voting';
   agreementScore: number;
+  shapValues?: ShapValues;
+  uncertainty?: number;
+}
+
+/**
+ * SHAP値（特徴量の寄与度）
+ */
+export interface ShapValues {
+  features: { [key: string]: number };
+  baseValue: number;
+  totalContribution: number;
+  topFeatures: Array<{ name: string; contribution: number }>;
 }
 
 /**
@@ -128,6 +140,12 @@ export class EnsembleModel {
     // モデル間の合意度を計算
     const agreementScore = this.calculateAgreementScore(individualPredictions);
 
+    // SHAP値の計算（モデル解釈可能性）
+    const shapValues = this.calculateShapValues(features, individualPredictions, score);
+
+    // 予測の不確実性を計算
+    const uncertainty = this.calculateUncertainty(individualPredictions, confidence);
+
     // シグナル方向を決定
     let direction: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
     if (score > 1.0 && confidence >= this.CONFIDENCE_THRESHOLD) {
@@ -143,6 +161,8 @@ export class EnsembleModel {
       individualPredictions,
       strategy,
       agreementScore,
+      shapValues,
+      uncertainty,
     };
   }
 
@@ -411,6 +431,121 @@ export class EnsembleModel {
     const agreementScore = Math.max(0, 1 - std / 5);
 
     return agreementScore;
+  }
+
+  /**
+   * SHAP値を計算（簡易版）
+   * 
+   * 各特徴量が予測にどれだけ寄与しているかを計算
+   * 
+   * @param features - 入力特徴量
+   * @param predictions - 個別モデルの予測
+   * @param finalScore - 最終スコア
+   * @returns SHAP値
+   */
+  calculateShapValues(
+    features: ExtendedTechnicalFeatures,
+    predictions: BaseModelPrediction[],
+    finalScore: number
+  ): ShapValues {
+    // ベース値（平均的な予測値）
+    const baseValue = 0;
+
+    // 各特徴量の寄与度を計算
+    const featureContributions: { [key: string]: number } = {};
+
+    // RSIの寄与
+    if (features.rsi < 30) {
+      featureContributions['rsi_oversold'] = 2.0;
+    } else if (features.rsi > 70) {
+      featureContributions['rsi_overbought'] = -2.0;
+    } else {
+      featureContributions['rsi_neutral'] = 0;
+    }
+
+    // モメンタムの寄与
+    featureContributions['momentum'] = features.momentum / 10;
+
+    // SMAトレンドの寄与
+    const smaTrend = (features.sma5 + features.sma20 + features.sma50) / 3;
+    featureContributions['sma_trend'] = smaTrend / 10;
+
+    // ボラティリティの寄与（負の影響）
+    if (features.volatilityRegime === 'HIGH') {
+      featureContributions['high_volatility'] = -0.5;
+    } else if (features.volatilityRegime === 'LOW') {
+      featureContributions['low_volatility'] = 0.3;
+    }
+
+    // 出来高の寄与
+    if (features.volumeRatio > 1.5) {
+      featureContributions['high_volume'] = 0.5;
+    }
+
+    // MACDの寄与
+    featureContributions['macd_signal'] = features.macdSignal / 5;
+
+    // モデル合意度の寄与
+    const agreementScore = this.calculateAgreementScore(predictions);
+    featureContributions['model_agreement'] = agreementScore * 1.5;
+
+    // マクロ指標の寄与（利用可能な場合）
+    if (features.macroIndicators?.vix) {
+      featureContributions['vix_impact'] = -(features.macroIndicators.vix / 40) * 0.8;
+    }
+
+    // ニュース感情の寄与（利用可能な場合）
+    if (features.sentiment) {
+      featureContributions['news_sentiment'] = features.sentiment.overall * 0.7;
+    }
+
+    // 時系列特徴の寄与（利用可能な場合）
+    if (features.timeSeriesFeatures) {
+      featureContributions['momentum_change'] = features.timeSeriesFeatures.momentumChange / 5;
+      featureContributions['price_acceleration'] = features.timeSeriesFeatures.priceAcceleration / 10;
+    }
+
+    // 総寄与度を計算
+    const totalContribution = Object.values(featureContributions).reduce((sum, v) => sum + v, 0);
+
+    // トップ特徴量を抽出
+    const topFeatures = Object.entries(featureContributions)
+      .map(([name, contribution]) => ({ name, contribution }))
+      .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
+      .slice(0, 5);
+
+    return {
+      features: featureContributions,
+      baseValue,
+      totalContribution,
+      topFeatures,
+    };
+  }
+
+  /**
+   * 予測の不確実性を計算
+   * 
+   * @param predictions - 個別モデルの予測
+   * @param confidence - 信頼度
+   * @returns 不確実性スコア（0-1、高いほど不確実）
+   */
+  calculateUncertainty(predictions: BaseModelPrediction[], confidence: number): number {
+    // モデル間の予測値のばらつき
+    const values = predictions.map(p => p.value);
+    const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+    const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
+    const std = Math.sqrt(variance);
+
+    // 標準偏差を不確実性の指標として使用
+    const varianceUncertainty = Math.min(std / 5, 1);
+
+    // 信頼度の逆数も不確実性に寄与
+    const confidenceUncertainty = 1 - confidence;
+
+    // 加重平均で総合的な不確実性を計算
+    const uncertainty = varianceUncertainty * 0.6 + confidenceUncertainty * 0.4;
+
+    return Math.min(Math.max(uncertainty, 0), 1);
   }
 
   /**

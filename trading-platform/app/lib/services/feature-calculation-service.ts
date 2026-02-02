@@ -4,8 +4,10 @@
  * このモジュールは、MLモデルの入力となる特徴量を計算する機能を提供します。
  */
 
-import { OHLCV } from '../../types';
+import { OHLCV, TechnicalIndicatorsWithATR } from '../../types';
 import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
+import { EnhancedPredictionFeatures } from '../types/prediction-types';
+import { enhancedFeatureService } from './enhanced-feature-service';
 
 export interface PredictionFeatures {
   rsi: number;
@@ -30,7 +32,7 @@ export class FeatureCalculationService {
    */
   calculateFeatures(
     data: OHLCV[],
-    indicators: any // TechnicalIndicator & { atr: number[] }
+    indicators: TechnicalIndicatorsWithATR
   ): PredictionFeatures {
     const prices = data.map(d => d.close);
     const volumes = data.map(d => d.volume);
@@ -139,6 +141,35 @@ export class FeatureCalculationService {
       return 0;
     }
     return ((currentPrice - lower) / (upper - lower)) * 100;
+  }
+
+  /**
+   * 拡張特徴量を計算（Phase 1: 時系列特徴量）
+   * 基本特徴量（11次元）+ 新規特徴量（40次元）= 51次元
+   */
+  calculateEnhancedFeatures(
+    data: OHLCV[],
+    indicators: any // TechnicalIndicator & { atr: number[] }
+  ): EnhancedPredictionFeatures {
+    // 基本特徴量を計算
+    const basicFeatures = this.calculateFeatures(data, indicators);
+
+    // 拡張特徴量を計算
+    const candlestickPatterns = enhancedFeatureService.calculateCandlestickPatterns(data);
+    const priceTrajectory = enhancedFeatureService.calculatePriceTrajectory(data);
+    const volumeProfile = enhancedFeatureService.calculateVolumeProfile(data);
+    const volatilityRegime = enhancedFeatureService.calculateVolatilityRegime(data);
+
+    return {
+      // 基本特徴量（11次元）
+      ...basicFeatures,
+      
+      // 拡張特徴量（40次元）
+      candlestickPatterns,
+      priceTrajectory,
+      volumeProfile,
+      volatilityRegime
+    };
   }
 }
 

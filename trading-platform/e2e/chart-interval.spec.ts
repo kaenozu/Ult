@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page, Request } from '@playwright/test';
 
 /**
  * E2Eテスト: チャートインターバル切り替え機能
@@ -24,7 +24,7 @@ const intervalTests: IntervalTest[] = [
 ];
 
 // ASML銘柄を検索して選択するヘルパー関数（米国株のテスト用）
-async function selectASMLStock(page: any) {
+async function selectASMLStock(page: Page): Promise<boolean> {
   // ページが完全に読み込まれるのを待つ
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1000);
@@ -65,7 +65,7 @@ async function selectASMLStock(page: any) {
 }
 
 // 任天堂銘柄を検索して選択するヘルパー関数（既存のE2Eテストと同じアプローチ）
-async function selectNintendoStock(page: any) {
+async function selectNintendoStock(page: Page): Promise<boolean> {
   // ページが完全に読み込まれるのを待つ
   await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(1000);
@@ -107,7 +107,7 @@ async function selectNintendoStock(page: any) {
 
 // インターバルボタンを取得（ChartToolbar内のボタンを探す）
 // ChartToolbarは.min-h-10.border-bクラスを持つdivに含まれる
-async function getIntervalButton(page: any, intervalText: string) {
+async function getIntervalButton(page: Page, intervalText: string) {
   // ChartToolbar内のボタンを探す
   return page.locator('.min-h-10.border-b').locator(`button:has-text("${intervalText}")`).first();
 }
@@ -223,7 +223,7 @@ test.describe('チャート - インターバル切り替え（米国株）', ()
       const apiRequests: string[] = [];
 
       page.removeAllListeners('request');
-      page.on('request', (request: any) => {
+      page.on('request', (request: Request) => {
         const url = request.url();
         if (url.includes('/api/market') && url.includes('type=history')) {
           apiRequests.push(url);

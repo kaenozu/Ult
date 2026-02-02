@@ -3,6 +3,7 @@
  * 
  * TRADING-025: トレーディング心理学と感情取引防止機能のストア
  * 心理状態、クーリングオフ、規律スコア、感情ログなどを管理
+ * Enhanced with comprehensive emotion detection and mental health tracking
  */
 
 import { create } from 'zustand';
@@ -19,6 +20,14 @@ import {
   PsychologyGoals,
   TradingCalendarDay
 } from '@/app/types/risk';
+import type {
+  MentalHealthMetrics,
+  EmotionScore,
+  CoachingRecommendation,
+  DisciplineRules,
+  TradingSession as PsychologySession,
+  PsychologyAnalysisResult,
+} from '@/app/types/psychology';
 
 interface PsychologyState {
   // Alerts
@@ -52,6 +61,16 @@ interface PsychologyState {
   // Trading calendar
   calendar: Record<string, TradingCalendarDay>; // key: YYYY-MM-DD
   
+  // Enhanced Psychology Features
+  current_mental_health?: MentalHealthMetrics;
+  current_emotions: EmotionScore[];
+  active_recommendations: CoachingRecommendation[];
+  discipline_rules: DisciplineRules;
+  alerts_enabled: boolean;
+  coaching_enabled: boolean;
+  sessions: PsychologySession[];
+  analysis_history: PsychologyAnalysisResult[];
+  
   // Actions
   addAlert: (alert: PsychologyAlert) => void;
   clearAlerts: () => void;
@@ -79,6 +98,16 @@ interface PsychologyState {
   
   updateCalendarDay: (date: string, day: Partial<TradingCalendarDay>) => void;
   getCalendarDay: (date: string) => TradingCalendarDay | undefined;
+  
+  // Enhanced Psychology Actions
+  updateMentalHealth: (metrics: MentalHealthMetrics) => void;
+  addEmotion: (emotion: EmotionScore) => void;
+  addRecommendation: (recommendation: CoachingRecommendation) => void;
+  dismissRecommendation: (index: number) => void;
+  updateDisciplineRules: (rules: Partial<DisciplineRules>) => void;
+  addSession: (session: PsychologySession) => void;
+  addAnalysis: (analysis: PsychologyAnalysisResult) => void;
+  resetPsychology: () => void;
   
   // Statistics
   getAlertStats: () => {
@@ -124,6 +153,25 @@ export const usePsychologyStore = create<PsychologyState>()(
       disciplineScore: null,
       goals: defaultGoals,
       calendar: {},
+
+      // Enhanced Psychology state
+      current_mental_health: undefined,
+      current_emotions: [],
+      active_recommendations: [],
+      discipline_rules: {
+        max_position_size: 10000,
+        max_daily_loss: 1000,
+        max_risk_per_trade: 200,
+        max_trades_per_day: 10,
+        min_risk_reward_ratio: 1.5,
+        required_stop_loss: true,
+        max_consecutive_losses: 3,
+        max_trading_hours: 8,
+      },
+      alerts_enabled: true,
+      coaching_enabled: true,
+      sessions: [],
+      analysis_history: [],
 
       // Alert actions
       addAlert: (alert) => set((state) => ({
@@ -233,6 +281,66 @@ export const usePsychologyStore = create<PsychologyState>()(
         return get().calendar[date];
       },
 
+      // Enhanced Psychology Actions
+      updateMentalHealth: (metrics: MentalHealthMetrics) => {
+        set({ current_mental_health: metrics });
+      },
+
+      addEmotion: (emotion: EmotionScore) => {
+        set((state) => ({
+          current_emotions: [...state.current_emotions, emotion].slice(-5), // Keep last 5
+        }));
+      },
+
+      addRecommendation: (recommendation: CoachingRecommendation) => {
+        set((state) => ({
+          active_recommendations: [recommendation, ...state.active_recommendations].slice(0, 10),
+        }));
+      },
+
+      dismissRecommendation: (index: number) => {
+        set((state) => ({
+          active_recommendations: state.active_recommendations.filter((_, i) => i !== index),
+        }));
+      },
+
+      updateDisciplineRules: (rules: Partial<DisciplineRules>) => {
+        set((state) => ({
+          discipline_rules: {
+            ...state.discipline_rules,
+            ...rules,
+          },
+        }));
+      },
+
+      addSession: (session: PsychologySession) => {
+        set((state) => ({
+          sessions: [session, ...state.sessions].slice(0, 50), // Keep last 50 sessions
+        }));
+      },
+
+      addAnalysis: (analysis: PsychologyAnalysisResult) => {
+        set((state) => ({
+          analysis_history: [analysis, ...state.analysis_history].slice(0, 30),
+          current_mental_health: analysis.mental_health,
+          current_emotions: analysis.dominant_emotions,
+          active_recommendations: [
+            ...analysis.coaching_recommendations.filter(r => !r.dismissed),
+            ...state.active_recommendations,
+          ].slice(0, 10),
+        }));
+      },
+
+      resetPsychology: () => {
+        set({
+          current_mental_health: undefined,
+          current_emotions: [],
+          active_recommendations: [],
+          sessions: [],
+          analysis_history: [],
+        });
+      },
+
       // Statistics
       getAlertStats: () => {
         const alerts = get().alerts;
@@ -268,18 +376,25 @@ export const usePsychologyStore = create<PsychologyState>()(
         currentCooldown: null,
         disciplineScore: null,
         goals: defaultGoals,
-        calendar: {}
+        calendar: {},
+        current_mental_health: undefined,
+        current_emotions: [],
+        active_recommendations: [],
+        sessions: [],
+        analysis_history: [],
       })
     }),
     {
       name: 'psychology-storage',
-      // Custom serialization for Date objects
+      // Custom serialization for Date objects and selective persistence
       partialize: (state) => ({
         ...state,
         alerts: state.alerts.map(a => ({
           ...a,
           timestamp: a.timestamp.toISOString()
-        }))
+        })),
+        sessions: state.sessions.slice(0, 10),
+        analysis_history: state.analysis_history.slice(0, 5),
       })
     }
   )
