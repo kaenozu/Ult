@@ -29,6 +29,25 @@ export interface AccuracyRecord {
 }
 
 /**
+ * ドリフト検出アルゴリズム
+ */
+export interface DriftDetectionMethod {
+  name: 'KL_DIVERGENCE' | 'PSI' | 'KOLMOGOROV_SMIRNOV';
+  score: number;
+  threshold: number;
+  isDrift: boolean;
+}
+
+/**
+ * データ分布
+ */
+export interface Distribution {
+  values: number[];
+  bins?: number;
+  histogram?: { bin: number; count: number }[];
+}
+
+/**
  * ドリフトアラート
  */
 export interface DriftAlert {
@@ -40,6 +59,7 @@ export interface DriftAlert {
   recommendedAction: 'MONITOR' | 'REVIEW_MODEL' | 'RETRAIN_MODEL' | 'URGENT_RETRAIN';
   detectedAt: Date;
   details: string;
+  detectionMethods?: DriftDetectionMethod[];
 }
 
 /**
@@ -202,19 +222,143 @@ export class ModelMonitor {
     const meanDrift = Math.abs(recentMean - historicalMean) / (Math.abs(historicalMean) + 0.001);
     const stdDrift = Math.abs(recentStd - historicalStd) / (historicalStd + 0.001);
 
-    if (meanDrift > 0.3 || stdDrift > 0.5) {
+    // 高度なドリフト検出手法を適用
+    const recentDist: Distribution = {
+      values: recentPredictions.map(p => p.prediction),
+    };
+    const historicalDist: Distribution = {
+      values: historicalPredictions.map(p => p.prediction),
+    };
+
+    const klDrift = this.detectKLDrift(recentDist, historicalDist);
+    const psiDrift = this.detectPSIDrift(recentDist, historicalDist);
+
+    const detectionMethods: DriftDetectionMethod[] = [
+      klDrift,
+      psiDrift,
+    ];
+
+    // いずれかの手法でドリフトが検出された場合
+    const isDriftDetected = detectionMethods.some(m => m.isDrift);
+
+    if (meanDrift > 0.3 || stdDrift > 0.5 || isDriftDetected) {
+      const maxDrift = Math.max(meanDrift, stdDrift, klDrift.score, psiDrift.score);
+      
       return {
         type: 'DATA_DRIFT',
-        severity: 'MEDIUM',
+        severity: this.calculateDriftSeverity(maxDrift),
         currentAccuracy: this.getRecentAccuracy(30) || 0,
-        drift: Math.max(meanDrift, stdDrift),
-        recommendedAction: 'REVIEW_MODEL',
+        drift: maxDrift,
+        recommendedAction: this.determineRecommendedAction(this.calculateDriftSeverity(maxDrift)),
         detectedAt: new Date(),
         details: `データ分布が変化しています。平均ドリフト: ${(meanDrift * 100).toFixed(1)}%, 標準偏差ドリフト: ${(stdDrift * 100).toFixed(1)}%`,
+        detectionMethods,
       };
     }
 
     return null;
+  }
+
+  /**
+   * KLダイバージェンスによるドリフト検出
+   * 
+   * @param currentData - 現在のデータ分布
+   * @param referenceData - 参照データ分布
+   * @returns ドリフトスコア
+   */
+  detectKLDrift(currentData: Distribution, referenceData: Distribution): DriftDetectionMethod {
+    const bins = 10;
+    const currentHist = this.createHistogram(currentData.values, bins);
+    const referenceHist = this.createHistogram(referenceData.values, bins);
+
+    // KLダイバージェンスを計算
+    let klDiv = 0;
+    for (let i = 0; i < bins; i++) {
+      const p = referenceHist[i] + 1e-10; // ゼロ除算を避ける
+      const q = currentHist[i] + 1e-10;
+      klDiv += p * Math.log(p / q);
+    }
+
+    const threshold = 0.15;
+    const isDrift = klDiv > threshold;
+
+    return {
+      name: 'KL_DIVERGENCE',
+      score: klDiv,
+      threshold,
+      isDrift,
+    };
+  }
+
+  /**
+   * PSI（Population Stability Index）によるドリフト検出
+   * 
+   * @param current - 現在のデータ分布
+   * @param reference - 参照データ分布
+   * @returns ドリフトスコア
+   */
+  detectPSIDrift(current: Distribution, reference: Distribution): DriftDetectionMethod {
+    const bins = 10;
+    const currentHist = this.createHistogram(current.values, bins);
+    const referenceHist = this.createHistogram(reference.values, bins);
+
+    // PSIを計算
+    let psi = 0;
+    for (let i = 0; i < bins; i++) {
+      const actual = currentHist[i] + 1e-10;
+      const expected = referenceHist[i] + 1e-10;
+      psi += (actual - expected) * Math.log(actual / expected);
+    }
+
+    // PSIの閾値
+    // < 0.1: 変化なし
+    // 0.1 - 0.2: 軽度の変化
+    // > 0.2: 重大な変化
+    const threshold = 0.2;
+    const isDrift = psi > threshold;
+
+    return {
+      name: 'PSI',
+      score: psi,
+      threshold,
+      isDrift,
+    };
+  }
+
+  /**
+   * ヒストグラムを作成（確率分布に正規化）
+   */
+  private createHistogram(values: number[], bins: number): number[] {
+    if (values.length === 0) {
+      return new Array(bins).fill(0);
+    }
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const binWidth = (max - min) / bins;
+
+    const histogram = new Array(bins).fill(0);
+
+    for (const value of values) {
+      let binIndex = Math.floor((value - min) / binWidth);
+      if (binIndex >= bins) binIndex = bins - 1;
+      if (binIndex < 0) binIndex = 0;
+      histogram[binIndex]++;
+    }
+
+    // 確率分布に正規化
+    const total = values.length;
+    return histogram.map(count => count / total);
+  }
+
+  /**
+   * モデル再トレーニングが必要かを判定
+   * 
+   * @param driftScore - ドリフトスコア
+   * @returns 再トレーニングが必要な場合はtrue
+   */
+  shouldRetrain(driftScore: DriftDetectionMethod): boolean {
+    return driftScore.isDrift;
   }
 
   /**

@@ -15,6 +15,47 @@ import {
 } from '../utils';
 
 /**
+ * マクロ経済指標
+ */
+export interface MacroIndicators {
+  vix?: number;              // VIX指数（恐怖指数）
+  interestRate?: number;      // 金利
+  dollarIndex?: number;       // ドル指数
+  bondYield?: number;         // 国債利回り
+  sectorPerformance?: {       // セクターパフォーマンス
+    [sector: string]: number;
+  };
+}
+
+/**
+ * ニュース感情スコア
+ */
+export interface NewsSentiment {
+  positive: number;   // ポジティブスコア (0-1)
+  negative: number;   // ネガティブスコア (0-1)
+  neutral: number;    // ニュートラルスコア (0-1)
+  overall: number;    // 総合スコア (-1 to 1)
+  confidence: number; // 信頼度 (0-1)
+}
+
+/**
+ * 時系列特徴量
+ */
+export interface TimeSeriesFeatures {
+  rollingMean5: number;
+  rollingMean20: number;
+  rollingStd5: number;
+  rollingStd20: number;
+  exponentialMA: number;
+  momentumChange: number;
+  priceAcceleration: number;
+  volumeAcceleration: number;
+  autocorrelation: number;
+  fourierDominantFreq?: number;
+  fourierAmplitude?: number;
+}
+
+/**
  * 拡張テクニカル特徴量
  */
 export interface ExtendedTechnicalFeatures {
@@ -46,6 +87,15 @@ export interface ExtendedTechnicalFeatures {
   
   // ボラティリティ系
   volatilityRegime: 'LOW' | 'NORMAL' | 'HIGH';
+  
+  // マクロ指標 (オプショナル)
+  macroIndicators?: MacroIndicators;
+  
+  // ニュース感情 (オプショナル)
+  sentiment?: NewsSentiment;
+  
+  // 時系列特徴量 (オプショナル)
+  timeSeriesFeatures?: TimeSeriesFeatures;
 }
 
 /**
@@ -68,12 +118,16 @@ export class FeatureEngineering {
    * @param data - OHLCVデータ配列
    * @param currentPrice - 現在価格
    * @param averageVolume - 平均出来高
+   * @param macroIndicators - マクロ経済指標 (オプション)
+   * @param newsTexts - ニュースデータ (オプション)
    * @returns 拡張されたテクニカル特徴量
    */
   calculateExtendedFeatures(
     data: OHLCV[],
     currentPrice: number,
-    averageVolume: number
+    averageVolume: number,
+    macroIndicators?: MacroIndicators,
+    newsTexts?: string[]
   ): ExtendedTechnicalFeatures {
     if (data.length < 50) {
       throw new Error('Insufficient data for feature calculation (minimum 50 data points required)');
@@ -131,7 +185,26 @@ export class FeatureEngineering {
     // ボラティリティレジームの判定
     const volatilityRegime = this.classifyVolatilityRegime(volatility);
     
-    return {
+    // 時系列特徴量の生成
+    const timeSeriesFeatures = this.generateTimeSeriesFeatures(data);
+    
+    // マクロ指標の統合 (提供されている場合)
+    // 一時的な特徴量オブジェクトを使用
+    const tempFeatures: Partial<ExtendedTechnicalFeatures> = {
+      volatility,
+      momentum,
+      rateOfChange,
+    };
+    const integratedMacro = macroIndicators 
+      ? this.integrateMacroIndicators(macroIndicators, tempFeatures)
+      : undefined;
+    
+    // ニュース感情の定量化 (提供されている場合)
+    const sentiment = newsTexts && newsTexts.length > 0
+      ? this.quantifyTextData(newsTexts)
+      : undefined;
+    
+    const features: ExtendedTechnicalFeatures = {
       rsi: currentRSI,
       rsiChange,
       sma5: sma5Dev,
@@ -153,7 +226,12 @@ export class FeatureEngineering {
       pricePosition,
       momentumTrend,
       volatilityRegime,
+      macroIndicators: integratedMacro,
+      sentiment,
+      timeSeriesFeatures,
     };
+    
+    return features;
   }
 
   /**
@@ -242,10 +320,10 @@ export class FeatureEngineering {
    * ATR比率を計算
    * 
    * @param atr - ATR配列
-   * @param currentPrice - 現在価格
+   * @param _currentPrice - 現在価格（将来の拡張用に保持）
    * @returns ATR比率
    */
-  private calculateATRRatio(atr: number[], currentPrice: number): number {
+  private calculateATRRatio(atr: number[], _currentPrice: number): number {
     const validATR = atr.filter(v => !isNaN(v));
     if (validATR.length < 2) return 1;
     
@@ -322,8 +400,12 @@ export class FeatureEngineering {
 
   /**
    * ボラティリティを計算（年率換算）
+   * 
+   * @param prices - 価格配列
+   * @param _period - 期間（将来の拡張用に保持）
+   * @returns 年率換算ボラティリティ
    */
-  private calculateVolatility(prices: number[], period: number): number {
+  private calculateVolatility(prices: number[], _period: number): number {
     if (prices.length < 2) return 0;
 
     const returns: number[] = [];
@@ -335,6 +417,253 @@ export class FeatureEngineering {
     const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
 
     return Math.sqrt(variance) * Math.sqrt(252) * 100; // Annualized volatility
+  }
+
+  /**
+   * マクロ指標を統合
+   * 
+   * @param macro - マクロ経済指標
+   * @param microFeatures - ミクロな特徴量
+   * @returns 統合されたマクロ指標
+   */
+  integrateMacroIndicators(
+    macro: MacroIndicators,
+    microFeatures: Partial<ExtendedTechnicalFeatures>
+  ): MacroIndicators {
+    // マクロ指標をそのまま返すが、必要に応じて正規化や調整を行う
+    const integrated: MacroIndicators = { ...macro };
+    
+    // VIXが高い場合、ボラティリティ情報と組み合わせる
+    if (macro.vix && microFeatures.volatility) {
+      // VIXとミクロボラティリティの相関を考慮
+      const vixNormalized = Math.min(macro.vix / 40, 2); // 40を基準に正規化
+      integrated.vix = vixNormalized;
+    }
+    
+    return integrated;
+  }
+
+  /**
+   * テキストデータを特徴量化（ニュース感情分析）
+   * 
+   * @param newsTexts - ニューステキストの配列
+   * @returns 数値化された感情特徴量
+   */
+  quantifyTextData(newsTexts: string[]): NewsSentiment {
+    if (newsTexts.length === 0) {
+      return {
+        positive: 0.5,
+        negative: 0.5,
+        neutral: 1,
+        overall: 0,
+        confidence: 0,
+      };
+    }
+
+    // 簡易的なキーワードベースの感情分析
+    const positiveKeywords = ['上昇', '好調', '成長', '利益', '増加', 'bull', 'rally', 'gain', 'profit', 'growth'];
+    const negativeKeywords = ['下落', '不調', '減少', '損失', '危機', 'bear', 'decline', 'loss', 'risk', 'crisis'];
+
+    let positiveScore = 0;
+    let negativeScore = 0;
+
+    for (const text of newsTexts) {
+      const lowerText = text.toLowerCase();
+      
+      // ポジティブキーワードのカウント
+      for (const keyword of positiveKeywords) {
+        const matches = (lowerText.match(new RegExp(keyword, 'g')) || []).length;
+        positiveScore += matches;
+      }
+      
+      // ネガティブキーワードのカウント
+      for (const keyword of negativeKeywords) {
+        const matches = (lowerText.match(new RegExp(keyword, 'g')) || []).length;
+        negativeScore += matches;
+      }
+    }
+
+    // スコアの正規化
+    const totalKeywords = positiveScore + negativeScore;
+    const positive = totalKeywords > 0 ? positiveScore / totalKeywords : 0.5;
+    const negative = totalKeywords > 0 ? negativeScore / totalKeywords : 0.5;
+    const neutral = 1 - (positive + negative);
+    
+    // 総合スコア: -1（完全ネガティブ）から +1（完全ポジティブ）
+    const overall = positive - negative;
+    
+    // 信頼度: キーワードの数に基づく
+    const confidence = Math.min(totalKeywords / (newsTexts.length * 3), 1);
+
+    return {
+      positive,
+      negative,
+      neutral: Math.max(neutral, 0),
+      overall,
+      confidence,
+    };
+  }
+
+  /**
+   * 時系列特徴量を生成
+   * 
+   * @param data - OHLCVデータ
+   * @returns 時系列特徴量
+   */
+  generateTimeSeriesFeatures(data: OHLCV[]): TimeSeriesFeatures {
+    const prices = data.map(d => d.close);
+    const volumes = data.map(d => d.volume);
+
+    // ローリング統計
+    const rollingMean5 = this.calculateRollingMean(prices, 5);
+    const rollingMean20 = this.calculateRollingMean(prices, 20);
+    const rollingStd5 = this.calculateRollingStd(prices, 5);
+    const rollingStd20 = this.calculateRollingStd(prices, 20);
+
+    // 指数移動平均
+    const exponentialMA = this.calculateEMA(prices, 12);
+
+    // モメンタムの変化率
+    const momentum10 = this.calculateMomentum(prices, 10);
+    const momentum5 = this.calculateMomentum(prices, 5);
+    const momentumChange = momentum10 - momentum5;
+
+    // 価格の加速度（2階微分）
+    const priceAcceleration = this.calculateAcceleration(prices);
+    
+    // 出来高の加速度
+    const volumeAcceleration = this.calculateAcceleration(volumes);
+
+    // 自己相関
+    const autocorrelation = this.calculateAutocorrelation(prices, 1);
+
+    // フーリエ変換（周期性検出）
+    const fourierFeatures = this.applyFourierTransform(prices.slice(-50));
+
+    return {
+      rollingMean5,
+      rollingMean20,
+      rollingStd5,
+      rollingStd20,
+      exponentialMA,
+      momentumChange,
+      priceAcceleration,
+      volumeAcceleration,
+      autocorrelation,
+      fourierDominantFreq: fourierFeatures.dominantFreq,
+      fourierAmplitude: fourierFeatures.amplitude,
+    };
+  }
+
+  /**
+   * ローリング平均を計算
+   */
+  private calculateRollingMean(values: number[], window: number): number {
+    if (values.length < window) return values[values.length - 1] || 0;
+    
+    const slice = values.slice(-window);
+    return slice.reduce((sum, v) => sum + v, 0) / slice.length;
+  }
+
+  /**
+   * ローリング標準偏差を計算
+   */
+  private calculateRollingStd(values: number[], window: number): number {
+    if (values.length < window) return 0;
+    
+    const slice = values.slice(-window);
+    const mean = slice.reduce((sum, v) => sum + v, 0) / slice.length;
+    const variance = slice.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / slice.length;
+    
+    return Math.sqrt(variance);
+  }
+
+  /**
+   * 指数移動平均（EMA）を計算
+   */
+  private calculateEMA(values: number[], period: number): number {
+    if (values.length === 0) return 0;
+    if (values.length < period) return values[values.length - 1];
+
+    const multiplier = 2 / (period + 1);
+    let ema = values[0];
+
+    for (let i = 1; i < values.length; i++) {
+      ema = (values[i] - ema) * multiplier + ema;
+    }
+
+    return ema;
+  }
+
+  /**
+   * 加速度を計算（2階微分の近似）
+   */
+  private calculateAcceleration(values: number[]): number {
+    if (values.length < 3) return 0;
+
+    const len = values.length;
+    const velocity1 = values[len - 1] - values[len - 2];
+    const velocity2 = values[len - 2] - values[len - 3];
+    
+    return velocity1 - velocity2;
+  }
+
+  /**
+   * 自己相関を計算
+   */
+  private calculateAutocorrelation(values: number[], lag: number): number {
+    if (values.length < lag + 10) return 0;
+
+    const n = values.length - lag;
+    const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+
+    let numerator = 0;
+    let denominator = 0;
+
+    for (let i = 0; i < n; i++) {
+      numerator += (values[i] - mean) * (values[i + lag] - mean);
+    }
+
+    for (let i = 0; i < values.length; i++) {
+      denominator += Math.pow(values[i] - mean, 2);
+    }
+
+    return denominator !== 0 ? numerator / denominator : 0;
+  }
+
+  /**
+   * フーリエ変換を適用して周期性を検出
+   */
+  private applyFourierTransform(values: number[]): { dominantFreq: number; amplitude: number } {
+    if (values.length < 8) {
+      return { dominantFreq: 0, amplitude: 0 };
+    }
+
+    // 簡易的なDFT（離散フーリエ変換）の実装
+    const N = Math.min(values.length, 50);
+    const frequencies: { freq: number; amplitude: number }[] = [];
+
+    for (let k = 1; k < N / 2; k++) {
+      let real = 0;
+      let imag = 0;
+
+      for (let n = 0; n < N; n++) {
+        const angle = (2 * Math.PI * k * n) / N;
+        real += values[n] * Math.cos(angle);
+        imag += values[n] * Math.sin(angle);
+      }
+
+      const amplitude = Math.sqrt(real * real + imag * imag) / N;
+      frequencies.push({ freq: k / N, amplitude });
+    }
+
+    // 最も強い周波数成分を見つける
+    frequencies.sort((a, b) => b.amplitude - a.amplitude);
+    
+    return {
+      dominantFreq: frequencies[0]?.freq || 0,
+      amplitude: frequencies[0]?.amplitude || 0,
+    };
   }
 
   /**
