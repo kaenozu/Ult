@@ -13,3 +13,9 @@ export type {
 export { 
   DEFAULT_BACKTEST_CONFIG as DEFAULT_WINNING_CONFIG 
 } from './WinningBacktestEngine';
+
+// Enhanced realistic backtesting components
+export * from './RealisticBacktestEngine';
+export * from './MonteCarloSimulator';
+export * from './OverfittingDetector';
+export * from './WalkForwardAnalysis';
