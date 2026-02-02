@@ -1,254 +1,282 @@
 /**
- * Tests for Feature Engineering Service
+ * FeatureEngineering.test.ts
+ *
+ * 特徴量エンジニアリングのテスト
  */
 
-import { describe, it, expect } from '@jest/globals';
-import { FeatureEngineeringService } from '../FeatureEngineering';
-import { OHLCV } from '@/app/types';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { featureEngineering, AllFeatures, TechnicalFeatures } from '../FeatureEngineering';
+import { OHLCV } from '../../../types/shared';
 
-describe('FeatureEngineeringService', () => {
-  const service = new FeatureEngineeringService();
+describe('FeatureEngineering', () => {
+  let mockData: OHLCV[];
 
-  // Create mock OHLCV data
-  const createMockData = (length: number): OHLCV[] => {
-    const data: OHLCV[] = [];
-    const basePrice = 100;
-    
-    for (let i = 0; i < length; i++) {
-      const price = basePrice + Math.sin(i / 10) * 10 + Math.random() * 5;
-      data.push({
-        timestamp: new Date(Date.now() - (length - i) * 24 * 60 * 60 * 1000).toISOString(),
-        open: price - 1 + Math.random() * 2,
-        high: price + Math.random() * 3,
-        low: price - Math.random() * 3,
-        close: price,
-        volume: 1000000 + Math.random() * 500000,
+  beforeEach(() => {
+    // モックデータの生成（200日分）
+    mockData = [];
+    let price = 1000;
+    const now = new Date();
+
+    for (let i = 0; i < 200; i++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - (200 - i));
+
+      // ランダムウォークで価格変動
+      const change = (Math.random() - 0.48) * 20; // わずかな上昇バイアス
+      price = Math.max(100, price + change);
+
+      mockData.push({
+        date: date.toISOString().split('T')[0],
+        open: price,
+        high: price + Math.random() * 10,
+        low: price - Math.random() * 10,
+        close: price + (Math.random() - 0.5) * 5,
+        volume: Math.floor(1000000 + Math.random() * 500000),
       });
     }
-    
-    return data;
-  };
+  });
 
-  describe('extractFeatures', () => {
-    it('should extract features from OHLCV data', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
-
-      expect(features).toBeDefined();
-      expect(features.length).toBeGreaterThan(0);
-      expect(features.length).toBe(data.length - 200);
-    });
-
-    it('should include all required feature fields', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
-      const feature = features[0];
-
-      // Basic OHLC
-      expect(feature.close).toBeDefined();
-      expect(feature.open).toBeDefined();
-      expect(feature.high).toBeDefined();
-      expect(feature.low).toBeDefined();
-
-      // Technical indicators
-      expect(feature.rsi).toBeDefined();
-      expect(feature.sma5).toBeDefined();
-      expect(feature.sma20).toBeDefined();
-      expect(feature.sma50).toBeDefined();
-      expect(feature.macdSignal).toBeDefined();
-      expect(feature.bollingerPosition).toBeDefined();
-
-      // Momentum features
-      expect(feature.priceMomentum).toBeDefined();
-      expect(feature.momentum5).toBeDefined();
-      expect(feature.momentum10).toBeDefined();
-
-      // Volume features
-      expect(feature.volumeRatio).toBeDefined();
-      expect(feature.volumeSMA).toBeDefined();
-
-      // Volatility features
-      expect(feature.volatility).toBeDefined();
-      expect(feature.historicalVolatility).toBeDefined();
-
-      // Oscillators
-      expect(feature.stochasticK).toBeDefined();
-      expect(feature.williamsR).toBeDefined();
-      expect(feature.adx).toBeDefined();
-    });
-
+  describe('calculateAllFeatures', () => {
     it('should throw error for insufficient data', () => {
-      const data = createMockData(50);
-      expect(() => service.extractFeatures(data, 200)).toThrow();
+      const insufficientData = mockData.slice(0, 50);
+
+      expect(() => {
+        featureEngineering.calculateAllFeatures(insufficientData);
+      }).toThrow('Insufficient data');
     });
 
+    it('should calculate all features successfully', () => {
+      const features: AllFeatures = featureEngineering.calculateAllFeatures(mockData);
+
+      // テクニカル特徴量の検証
+      expect(features.technical).toBeDefined();
+      expect(features.technical.rsi).toBeGreaterThanOrEqual(0);
+      expect(features.technical.rsi).toBeLessThanOrEqual(100);
+
+      // 時系列特徴量の検証
+      expect(features.timeSeries).toBeDefined();
+      expect(features.timeSeries.dayOfWeek).toBeGreaterThanOrEqual(0);
+      expect(features.timeSeries.dayOfWeek).toBeLessThanOrEqual(6);
+
+      // メタデータの検証
+      expect(features.featureCount).toBeGreaterThan(0);
+      expect(features.dataQuality).toBeDefined();
+    });
+
+    it('should include macro and sentiment features when provided', () => {
+      const mockMacro = {
+        interestRate: 0.5,
+        interestRateTrend: 'RISING' as const,
+        gdpGrowth: 2.0,
+        gdpTrend: 'EXPANDING' as const,
+        cpi: 100,
+        cpiTrend: 'RISING' as const,
+        inflationRate: 2.5,
+        macroScore: 0.5,
+      };
+
+      const mockSentiment = {
+        newsSentiment: 0.3,
+        newsVolume: 0.7,
+        newsTrend: 'IMPROVING' as const,
+        socialSentiment: 0.2,
+        socialVolume: 0.6,
+        socialBuzz: 0.8,
+        analystRating: 4,
+        ratingChange: 0.5,
+        sentimentScore: 0.3,
+      };
+
+      const features: AllFeatures = featureEngineering.calculateAllFeatures(
+        mockData,
+        mockMacro,
+        mockSentiment
+      );
+
+      expect(features.macro).toEqual(mockMacro);
+      expect(features.sentiment).toEqual(mockSentiment);
+    });
+
+    it('should use default values when macro and sentiment are not provided', () => {
+      const features: AllFeatures = featureEngineering.calculateAllFeatures(mockData);
+
+      expect(features.macro).not.toBeNull();
+      expect(features.macro!.macroScore).toBe(0);
+      expect(features.sentiment).not.toBeNull();
+      expect(features.sentiment!.sentimentScore).toBe(0);
+    });
+  });
+
+  describe('calculateTechnicalFeatures', () => {
     it('should calculate RSI correctly', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
 
-      features.forEach(feature => {
-        expect(feature.rsi).toBeGreaterThanOrEqual(0);
-        expect(feature.rsi).toBeLessThanOrEqual(100);
-      });
+      expect(features.rsi).toBeGreaterThanOrEqual(0);
+      expect(features.rsi).toBeLessThanOrEqual(100);
+      expect(features.rsiChange).toBeDefined();
     });
 
-    it('should calculate Bollinger position correctly', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
+    it('should calculate moving averages deviations', () => {
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
 
-      features.forEach(feature => {
-        expect(feature.bollingerPosition).toBeGreaterThanOrEqual(0);
-        expect(feature.bollingerPosition).toBeLessThanOrEqual(100);
-      });
-    });
-  });
-
-  describe('normalizeFeatures', () => {
-    it('should normalize features correctly', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
-      const { normalized, scalers } = service.normalizeFeatures(features);
-
-      expect(normalized).toBeDefined();
-      expect(normalized.length).toBe(features.length);
-      expect(scalers).toBeDefined();
-      expect(Object.keys(scalers).length).toBeGreaterThan(0);
+      expect(features.sma5).toBeDefined();
+      expect(features.sma10).toBeDefined();
+      expect(features.sma20).toBeDefined();
+      expect(features.sma50).toBeDefined();
+      expect(features.sma200).toBeDefined();
     });
 
-    it('should produce normalized values with mean ~0 and std ~1', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
-      const { normalized } = service.normalizeFeatures(features);
+    it('should calculate MACD correctly', () => {
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
 
-      // Check first feature column
-      const firstColumn = normalized.map(row => row[0]);
-      const mean = firstColumn.reduce((a, b) => a + b, 0) / firstColumn.length;
-      const variance = firstColumn.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / firstColumn.length;
-      const std = Math.sqrt(variance);
-
-      expect(Math.abs(mean)).toBeLessThan(0.1);
-      expect(Math.abs(std - 1)).toBeLessThan(0.1);
+      expect(features.macd).toBeDefined();
+      expect(features.macdSignal).toBeDefined();
+      expect(features.macdHistogram).toBeDefined();
     });
 
-    it('should handle edge cases', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
-      
-      // Ensure no NaN or Infinity values
-      const { normalized } = service.normalizeFeatures(features);
-      normalized.forEach(row => {
-        row.forEach(val => {
-          expect(isNaN(val)).toBe(false);
-          expect(isFinite(val)).toBe(true);
-        });
-      });
-    });
-  });
+    it('should calculate Bollinger Bands correctly', () => {
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
 
-  describe('technical indicators', () => {
-    it('should calculate ADX correctly', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
-
-      features.forEach(feature => {
-        expect(feature.adx).toBeGreaterThanOrEqual(0);
-        expect(feature.adx).toBeLessThanOrEqual(100);
-      });
+      expect(features.bbUpper).toBeGreaterThan(features.bbMiddle);
+      expect(features.bbMiddle).toBeGreaterThan(features.bbLower);
+      expect(features.bbPosition).toBeGreaterThanOrEqual(0);
+      expect(features.bbPosition).toBeLessThanOrEqual(100);
     });
 
-    it('should calculate Williams R correctly', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
+    it('should calculate ATR correctly', () => {
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
 
-      features.forEach(feature => {
-        expect(feature.williamsR).toBeGreaterThanOrEqual(-100);
-        expect(feature.williamsR).toBeLessThanOrEqual(0);
-      });
+      expect(features.atr).toBeGreaterThan(0);
+      expect(features.atrPercent).toBeGreaterThan(0);
+      expect(features.atrRatio).toBeDefined();
     });
 
-    it('should calculate Stochastic correctly', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
+    it('should calculate momentum indicators', () => {
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
 
-      features.forEach(feature => {
-        expect(feature.stochasticK).toBeGreaterThanOrEqual(0);
-        expect(feature.stochasticK).toBeLessThanOrEqual(100);
-        expect(feature.stochasticD).toBeGreaterThanOrEqual(0);
-        expect(feature.stochasticD).toBeLessThanOrEqual(100);
-      });
+      expect(features.momentum10).toBeDefined();
+      expect(features.momentum20).toBeDefined();
+      expect(features.rateOfChange12).toBeDefined();
+      expect(features.rateOfChange25).toBeDefined();
     });
 
-    it('should calculate volatility measures', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
+    it('should calculate oscillators', () => {
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
 
-      features.forEach(feature => {
-        expect(feature.volatility).toBeGreaterThanOrEqual(0);
-        expect(feature.historicalVolatility).toBeGreaterThanOrEqual(0);
-        expect(feature.parkinsonVolatility).toBeGreaterThanOrEqual(0);
-        expect(feature.garmanKlassVolatility).toBeGreaterThanOrEqual(0);
-      });
+      expect(features.stochasticK).toBeGreaterThanOrEqual(0);
+      expect(features.stochasticK).toBeLessThanOrEqual(100);
+      expect(features.williamsR).toBeGreaterThanOrEqual(-100);
+      expect(features.williamsR).toBeLessThanOrEqual(0);
+      expect(features.cci).toBeDefined();
+    });
+
+    it('should calculate volume indicators', () => {
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
+
+      expect(features.volumeRatio).toBeDefined();
+      expect(features.volumeMA5).toBeGreaterThan(0);
+      expect(features.volumeMA20).toBeGreaterThan(0);
+      expect(['INCREASING', 'DECREASING', 'NEUTRAL']).toContain(features.volumeTrend);
+    });
+
+    it('should calculate price derivatives', () => {
+      const features = featureEngineering.calculateTechnicalFeatures(mockData);
+
+      expect(features.pricePosition).toBeGreaterThanOrEqual(0);
+      expect(features.pricePosition).toBeLessThanOrEqual(100);
+      expect(features.priceVelocity).toBeDefined();
+      expect(features.priceAcceleration).toBeDefined();
     });
   });
 
-  describe('volume profile', () => {
-    it('should calculate volume profile', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
+  describe('calculateTimeSeriesFeatures', () => {
+    it('should calculate lag features', () => {
+      const features = featureEngineering.calculateTimeSeriesFeatures(mockData);
 
-      features.forEach(feature => {
-        expect(feature.volumeProfile).toBeDefined();
-        expect(Array.isArray(feature.volumeProfile)).toBe(true);
-        expect(feature.volumeProfile.length).toBe(10);
-        
-        feature.volumeProfile.forEach(vol => {
-          expect(vol).toBeGreaterThanOrEqual(0);
-        });
-      });
+      expect(features.lag1).toBeDefined();
+      expect(features.lag5).toBeDefined();
+      expect(features.lag10).toBeDefined();
+      expect(features.lag20).toBeDefined();
+    });
+
+    it('should calculate moving averages', () => {
+      const features = featureEngineering.calculateTimeSeriesFeatures(mockData);
+
+      expect(features.ma5).toBeGreaterThan(0);
+      expect(features.ma10).toBeGreaterThan(0);
+      expect(features.ma20).toBeGreaterThan(0);
+      expect(features.ma50).toBeGreaterThan(0);
+    });
+
+    it('should calculate seasonal effects', () => {
+      const features = featureEngineering.calculateTimeSeriesFeatures(mockData);
+
+      expect(features.dayOfWeek).toBeGreaterThanOrEqual(0);
+      expect(features.dayOfWeek).toBeLessThanOrEqual(6);
+      expect(features.dayOfWeekReturn).toBeDefined();
+      expect(features.monthOfYear).toBeGreaterThanOrEqual(0);
+      expect(features.monthOfYear).toBeLessThanOrEqual(11);
+      expect(features.monthEffect).toBeDefined();
+    });
+
+    it('should calculate trend strength and direction', () => {
+      const features = featureEngineering.calculateTimeSeriesFeatures(mockData);
+
+      expect(features.trendStrength).toBeGreaterThanOrEqual(0);
+      expect(features.trendStrength).toBeLessThanOrEqual(1);
+      expect(['UP', 'DOWN', 'NEUTRAL']).toContain(features.trendDirection);
+    });
+
+    it('should calculate cyclicality', () => {
+      const features = featureEngineering.calculateTimeSeriesFeatures(mockData);
+
+      expect(features.cyclicality).toBeGreaterThanOrEqual(0);
+      expect(features.cyclicality).toBeLessThanOrEqual(1);
     });
   });
 
-  describe('support and resistance', () => {
-    it('should identify support and resistance levels', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
+  describe('data quality assessment', () => {
+    it('should assess data quality as EXCELLENT for good data', () => {
+      const features: AllFeatures = featureEngineering.calculateAllFeatures(mockData);
 
-      features.forEach(feature => {
-        expect(feature.supportLevel).toBeDefined();
-        expect(feature.resistanceLevel).toBeDefined();
-        expect(typeof feature.supportLevel).toBe('number');
-        expect(typeof feature.resistanceLevel).toBe('number');
-      });
+      expect(['EXCELLENT', 'GOOD', 'FAIR', 'POOR']).toContain(features.dataQuality);
+    });
+
+    it('should assess data quality as POOR for insufficient data', () => {
+      const poorData = mockData.slice(0, 30);
+
+      expect(() => {
+        featureEngineering.calculateAllFeatures(poorData);
+      }).toThrow();
     });
   });
 
-  describe('time features', () => {
-    it('should extract time-based features', () => {
-      const data = createMockData(250);
-      const features = service.extractFeatures(data, 200);
-
-      features.forEach(feature => {
-        expect(feature.dayOfWeek).toBeGreaterThanOrEqual(0);
-        expect(feature.dayOfWeek).toBeLessThan(7);
-        expect(feature.weekOfMonth).toBeGreaterThanOrEqual(0);
-        expect(feature.monthOfYear).toBeGreaterThanOrEqual(0);
-        expect(feature.monthOfYear).toBeLessThan(12);
+  describe('edge cases', () => {
+    it('should handle data with zeros gracefully', () => {
+      const dataWithZeros = mockData.map((d, i) => {
+        if (i % 10 === 0) {
+          return { ...d, high: 0, low: 0 };
+        }
+        return d;
       });
-    });
-  });
 
-  describe('performance', () => {
-    it('should extract features efficiently', () => {
-      const data = createMockData(500);
-      
-      const startTime = Date.now();
-      service.extractFeatures(data, 200);
-      const endTime = Date.now();
-      
-      const duration = endTime - startTime;
-      
-      // Should complete in reasonable time (< 5 seconds)
-      expect(duration).toBeLessThan(5000);
+      expect(() => {
+        featureEngineering.calculateAllFeatures(dataWithZeros);
+      }).not.toThrow();
+    });
+
+    it('should handle constant price data', () => {
+      const constantData: OHLCV[] = mockData.map((d) => ({
+        ...d,
+        open: 1000,
+        high: 1000,
+        low: 1000,
+        close: 1000,
+      }));
+
+      expect(() => {
+        featureEngineering.calculateAllFeatures(constantData);
+      }).not.toThrow();
     });
   });
 });

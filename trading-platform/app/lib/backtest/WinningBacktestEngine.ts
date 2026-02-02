@@ -876,7 +876,7 @@ export const winningBacktestEngine = new WinningBacktestEngine();
 export default WinningBacktestEngine;
 
 // Additional exports for compatibility with BacktestResultsDashboard
-export interface AdvancedPerformanceMetrics extends PerformanceMetrics {
+export interface WinningAdvancedPerformanceMetrics extends PerformanceMetrics {
   alpha: number;
   beta: number;
   trackingError: number;
@@ -884,14 +884,14 @@ export interface AdvancedPerformanceMetrics extends PerformanceMetrics {
   treynorRatio: number;
 }
 
-export interface AdvancedMetrics {
+export interface WinningAdvancedMetrics {
   regimePerformance: Map<string, PerformanceMetrics>;
   monthlyReturns: number[];
   rollingSharpe: number[];
   rollingDrawdown: number[];
 }
 
-export interface DrawdownAnalysis {
+export interface WinningDrawdownAnalysis {
   maxDrawdown: number;
   maxDrawdownDuration: number;
   averageDrawdown: number;
@@ -899,7 +899,7 @@ export interface DrawdownAnalysis {
   underwaterCurve: number[];
 }
 
-export interface TradeAnalysis {
+export interface WinningTradeAnalysis {
   bestTrade: BacktestTrade | null;
   worstTrade: BacktestTrade | null;
   averageHoldingPeriod: number;
@@ -907,7 +907,7 @@ export interface TradeAnalysis {
   lossDistribution: number[];
 }
 
-export interface ReturnDistribution {
+export interface WinningReturnDistribution {
   returns: number[];
   bins: number[];
   frequencies: number[];

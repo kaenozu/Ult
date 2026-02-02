@@ -1,5 +1,6 @@
 export * from './AdvancedPerformanceMetrics';
 export * from './MultiAssetBacktestEngine';
+export * from './WinningBacktestEngine';
 // Explicit re-exports to avoid naming conflicts
 export type { 
   BacktestConfig as AdvancedBacktestConfig

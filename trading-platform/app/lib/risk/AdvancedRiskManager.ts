@@ -362,6 +362,47 @@ export class AdvancedRiskManager extends EventEmitter {
     };
   }
 
+  /**
+   * 最適なポジションサイズを計算 (WinningTradingSystem互換)
+   */
+  calculateOptimalPositionSize(params: {
+    accountBalance: number;
+    entryPrice: number;
+    stopLossPrice: number;
+    takeProfitPrice: number;
+    volatility: number;
+    marketRegime: string;
+  }): PositionSizingResult {
+    return this.calculatePositionSize({
+      capital: params.accountBalance,
+      entryPrice: params.entryPrice,
+      stopLossPrice: params.stopLossPrice,
+      riskPercent: this.limits.maxSingleTradeRisk,
+      method: params.marketRegime === 'BULL' ? 'kelly' : 'fixed',
+      volatility: params.volatility * 100
+    });
+  }
+
+  /**
+   * リスクリワード比を検証
+   */
+  validateRiskRewardRatio(entry: number, stop: number, target: number): { valid: boolean; ratio: number } {
+    const risk = Math.abs(entry - stop);
+    const reward = Math.abs(target - entry);
+    const ratio = risk > 0 ? reward / risk : 0;
+    return {
+      valid: ratio >= 1.5,
+      ratio
+    };
+  }
+
+  /**
+   * 損失を記録
+   */
+  recordLoss(amount: number): void {
+    console.log(`[RiskManager] Loss recorded: ${amount}`);
+  }
+
   // ============================================================================
   // Risk Metrics Calculation
   // ============================================================================

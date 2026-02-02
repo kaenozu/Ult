@@ -4,7 +4,7 @@
  * このモジュールは、市場状況、ボラティリティ、リスク許容度に基づいて動的にポジションサイズを決定する機能を提供します。
  */
 
-import { RiskManagementSettings, RiskCalculationResult } from '../types';
+import { RiskManagementSettings, RiskCalculationResult } from '@/app/types';
 import { calculateATR } from '@/app/lib/utils';
 import { RISK_MANAGEMENT } from '@/app/lib/constants';
 
