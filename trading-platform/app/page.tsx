@@ -9,7 +9,6 @@ import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useStockData } from '@/app/hooks/useStockData';
-import { useSupplyDemandAlerts } from '@/app/hooks/useSupplyDemandAlerts';
 import { Button } from '@/app/components/ui/Button';
 import { Search } from 'lucide-react';
 import { useTranslations } from '@/app/i18n/provider';
@@ -29,7 +28,7 @@ const ChartLoader = () => (
   </div>
 );
 
-function WorkstationContent() {
+export default function Workstation() {
   const t = useTranslations();
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
@@ -54,13 +53,6 @@ function WorkstationContent() {
   const handleClosePosition = useCallback((symbol: string, currentPrice: number) => {
     closePosition(symbol, currentPrice);
   }, [closePosition]);
-
-  // Monitor supply/demand levels and trigger alerts
-  useSupplyDemandAlerts({
-    data: chartData,
-    signal: chartSignal,
-    symbol: selectedStock?.symbol || ''
-  });
 
   const displayStock = selectedStock;
 
@@ -245,10 +237,10 @@ function WorkstationContent() {
   );
 }
 
-export default function Workstation() {
+export default function HomePage() {
   return (
     <ErrorBoundary name="HomePage">
-      <WorkstationContent />
+      <HomePageContent />
     </ErrorBoundary>
   );
 }

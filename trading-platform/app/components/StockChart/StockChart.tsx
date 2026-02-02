@@ -10,14 +10,13 @@ import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS } from '@/app/lib/constants';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 export { volumeProfilePlugin };
-import { supplyDemandWallsPlugin } from './plugins/supplyDemandWalls';
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
 import { useForecastLayers } from './hooks/useForecastLayers';
 import { useChartOptions } from './hooks/useChartOptions';
 
-// Register ChartJS components and custom plugins
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin, supplyDemandWallsPlugin);
+// Register ChartJS components and custom plugin
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
 
 export interface StockChartProps {
   data: OHLCV[];

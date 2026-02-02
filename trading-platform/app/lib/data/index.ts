@@ -5,12 +5,9 @@
  */
 
 export { DataQualityChecker, dataQualityChecker } from './quality/DataQualityChecker';
-export { DataQualityValidator, dataQualityValidator } from './quality/DataQualityValidator';
 export { DataCompletionPipeline, dataCompletionPipeline } from './completion/DataCompletionPipeline';
 export { MicrostructureAnalyzer, microstructureAnalyzer } from './microstructure/MicrostructureAnalyzer';
 export { DataLatencyMonitor, dataLatencyMonitor } from './latency/DataLatencyMonitor';
-export { DataPersistenceLayer, dataPersistenceLayer } from './persistence/DataPersistenceLayer';
-export { SmartDataCache, marketDataCache, indicatorCache, apiCache } from './cache/SmartDataCache';
 
 // Re-export types
 export type {
@@ -48,27 +45,3 @@ export type {
   LatencyMonitorConfig,
   LatencyReport
 } from '@/app/types/data-latency';
-
-// Persistence types
-export type {
-  TradeHistory,
-  ModelConfiguration,
-  BackupMetadata,
-  PersistenceOptions,
-  QueryOptions
-} from './persistence/DataPersistenceLayer';
-
-// Cache types
-export type {
-  CacheEntry,
-  CacheStats,
-  CacheConfig,
-  PrefetchStrategy
-} from './cache/SmartDataCache';
-
-// Validator types
-export type {
-  CrossSourceValidation,
-  AnomalyDetection,
-  DataFreshnessReport
-} from './quality/DataQualityValidator';
