@@ -574,11 +574,478 @@ export class MeanReversionStrategy extends BaseStrategy {
   }
 }
 
+// ============================================================================
+// Breakout Strategy
+// ============================================================================
+
+export class BreakoutStrategy extends BaseStrategy {
+  constructor(params: Partial<BreakoutStrategyParams> = {}) {
+    super({
+      name: 'Breakout Strategy',
+      type: 'breakout',
+      description: 'Breakout strategy using price action and volume',
+      parameters: {
+        breakoutPeriod: 20,
+        volumeConfirmation: true,
+        volumeThreshold: 1.5,
+        atrMultiplier: 2.0,
+        ...params
+      },
+      enabled: true
+    });
+  }
+
+  async initialize(data: OHLCV[]): Promise<void> {
+    this.indicators = await this.calculateIndicators(data);
+  }
+
+  async calculateIndicators(data: OHLCV[]): Promise<Record<string, number[]>> {
+    const closes = data.map(d => d.close);
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const volumes = data.map(d => d.volume);
+    const period = this.config.parameters.breakoutPeriod as number;
+    
+    const atr = this.calculateATR(data, 14);
+    const avgVolume = this.calculateSMA(volumes, period);
+    
+    // Calculate resistance and support levels
+    const resistance: number[] = [];
+    const support: number[] = [];
+    
+    for (let i = 0; i < data.length; i++) {
+      if (i < period) {
+        resistance.push(NaN);
+        support.push(NaN);
+      } else {
+        const recentHighs = highs.slice(i - period, i);
+        const recentLows = lows.slice(i - period, i);
+        resistance.push(Math.max(...recentHighs));
+        support.push(Math.min(...recentLows));
+      }
+    }
+    
+    return { closes, highs, lows, volumes, atr, avgVolume, resistance, support };
+  }
+
+  async generateSignal(currentData: OHLCV, historicalData: OHLCV[]): Promise<StrategySignal> {
+    const indicators = await this.calculateIndicators(historicalData);
+    const lastIndex = indicators.closes.length - 1;
+    
+    const currentPrice = currentData.close;
+    const currentVolume = currentData.volume;
+    const resistance = indicators.resistance[lastIndex];
+    const support = indicators.support[lastIndex];
+    const atr = indicators.atr[lastIndex];
+    const avgVolume = indicators.avgVolume[lastIndex];
+    
+    const volumeConfirmation = this.config.parameters.volumeConfirmation as boolean;
+    const volumeThreshold = this.config.parameters.volumeThreshold as number;
+    
+    let signal: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+    let strength = 0;
+    let confidence = 0;
+    let reason = '';
+    
+    if (!isNaN(resistance) && !isNaN(support) && !isNaN(atr)) {
+      const volumeConfirmed = !volumeConfirmation || 
+        (currentVolume > avgVolume * volumeThreshold);
+      
+      // Upward breakout
+      if (currentPrice > resistance && volumeConfirmed) {
+        const breakoutStrength = (currentPrice - resistance) / atr;
+        signal = 'BUY';
+        strength = Math.min(1, breakoutStrength);
+        confidence = volumeConfirmed ? 0.8 : 0.6;
+        reason = `Upward breakout above resistance ${resistance.toFixed(2)}${volumeConfirmed ? ' with volume confirmation' : ''}`;
+      }
+      // Downward breakout (or breakdown)
+      else if (currentPrice < support && volumeConfirmed) {
+        const breakoutStrength = (support - currentPrice) / atr;
+        signal = 'SELL';
+        strength = Math.min(1, breakoutStrength);
+        confidence = volumeConfirmed ? 0.8 : 0.6;
+        reason = `Downward breakout below support ${support.toFixed(2)}${volumeConfirmed ? ' with volume confirmation' : ''}`;
+      }
+    }
+    
+    return {
+      timestamp: currentData.timestamp,
+      signal,
+      strength,
+      confidence,
+      reason
+    };
+  }
+
+  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+    return {
+      breakoutPeriod: Math.floor(10 + Math.random() * 30), // 10-40
+      volumeConfirmation: Math.random() > 0.3, // 70% true
+      volumeThreshold: 1.2 + Math.random() * 0.8, // 1.2-2.0
+      atrMultiplier: 1.5 + Math.random() * 1.0 // 1.5-2.5
+    };
+  }
+}
+
+// ============================================================================
+// Statistical Arbitrage Strategy (Simplified Pairs Trading)
+// ============================================================================
+
+export class StatArbStrategy extends BaseStrategy {
+  constructor(params: Partial<StatArbStrategyParams> = {}) {
+    super({
+      name: 'Statistical Arbitrage Strategy',
+      type: 'stat_arb',
+      description: 'Statistical arbitrage based on mean reversion of spread',
+      parameters: {
+        pairSymbol: 'SPY', // Example pair
+        lookbackPeriod: 30,
+        entryZScore: 2.0,
+        exitZScore: 0.5,
+        hedgeRatio: 1.0,
+        ...params
+      },
+      enabled: true
+    });
+  }
+
+  async initialize(data: OHLCV[]): Promise<void> {
+    this.indicators = await this.calculateIndicators(data);
+  }
+
+  async calculateIndicators(data: OHLCV[]): Promise<Record<string, number[]>> {
+    const closes = data.map(d => d.close);
+    const period = this.config.parameters.lookbackPeriod as number;
+    const hedgeRatio = this.config.parameters.hedgeRatio as number;
+    
+    // Simplified: assume we have pair prices (in real implementation, fetch pair data)
+    // For now, create synthetic pair prices
+    const pairPrices = closes.map(c => c * (0.95 + Math.random() * 0.1));
+    
+    // Calculate spread
+    const spread: number[] = [];
+    for (let i = 0; i < closes.length; i++) {
+      spread.push(closes[i] - hedgeRatio * pairPrices[i]);
+    }
+    
+    // Calculate z-score of spread
+    const zScore: number[] = [];
+    for (let i = 0; i < spread.length; i++) {
+      if (i < period) {
+        zScore.push(NaN);
+      } else {
+        const recentSpread = spread.slice(i - period, i + 1);
+        const mean = recentSpread.reduce((sum, s) => sum + s, 0) / recentSpread.length;
+        const variance = recentSpread.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / recentSpread.length;
+        const std = Math.sqrt(variance);
+        
+        if (std === 0) {
+          zScore.push(0);
+        } else {
+          zScore.push((spread[i] - mean) / std);
+        }
+      }
+    }
+    
+    return { closes, pairPrices, spread, zScore };
+  }
+
+  async generateSignal(currentData: OHLCV, historicalData: OHLCV[]): Promise<StrategySignal> {
+    const indicators = await this.calculateIndicators(historicalData);
+    const lastIndex = indicators.closes.length - 1;
+    
+    const zScore = indicators.zScore[lastIndex];
+    const entryZScore = this.config.parameters.entryZScore as number;
+    const exitZScore = this.config.parameters.exitZScore as number;
+    
+    let signal: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+    let strength = 0;
+    let confidence = 0;
+    let reason = '';
+    
+    if (!isNaN(zScore)) {
+      // Spread too wide (negative z-score): buy the spread
+      if (zScore < -entryZScore) {
+        signal = 'BUY';
+        strength = Math.min(1, Math.abs(zScore) / (entryZScore * 2));
+        confidence = 0.75;
+        reason = `Spread z-score ${zScore.toFixed(2)} below -${entryZScore}, mean reversion expected`;
+      }
+      // Spread too narrow (positive z-score): sell the spread
+      else if (zScore > entryZScore) {
+        signal = 'SELL';
+        strength = Math.min(1, zScore / (entryZScore * 2));
+        confidence = 0.75;
+        reason = `Spread z-score ${zScore.toFixed(2)} above ${entryZScore}, mean reversion expected`;
+      }
+      // Exit when spread normalizes
+      else if (Math.abs(zScore) < exitZScore) {
+        signal = 'SELL'; // Close position
+        strength = 0.5;
+        confidence = 0.7;
+        reason = `Spread normalized (z-score ${zScore.toFixed(2)}), taking profit`;
+      }
+    }
+    
+    return {
+      timestamp: currentData.timestamp,
+      signal,
+      strength,
+      confidence,
+      reason
+    };
+  }
+
+  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+    return {
+      pairSymbol: originalParams.pairSymbol,
+      lookbackPeriod: Math.floor(20 + Math.random() * 40), // 20-60
+      entryZScore: 1.5 + Math.random() * 1.0, // 1.5-2.5
+      exitZScore: 0.3 + Math.random() * 0.5, // 0.3-0.8
+      hedgeRatio: 0.8 + Math.random() * 0.4 // 0.8-1.2
+    };
+  }
+}
+
+// ============================================================================
+// Market Making Strategy (Simplified)
+// ============================================================================
+
+export class MarketMakingStrategy extends BaseStrategy {
+  constructor(params: Partial<MarketMakingStrategyParams> = {}) {
+    super({
+      name: 'Market Making Strategy',
+      type: 'market_making',
+      description: 'Provides liquidity by quoting bid-ask spreads',
+      parameters: {
+        spreadBps: 10, // 10 basis points
+        inventoryLimit: 1000,
+        skewFactor: 0.1,
+        minOrderSize: 100,
+        ...params
+      },
+      enabled: true
+    });
+  }
+
+  async initialize(data: OHLCV[]): Promise<void> {
+    this.indicators = await this.calculateIndicators(data);
+  }
+
+  async calculateIndicators(data: OHLCV[]): Promise<Record<string, number[]>> {
+    const closes = data.map(d => d.close);
+    const volumes = data.map(d => d.volume);
+    
+    const volatility = this.calculateRollingVolatility(closes, 20);
+    const avgVolume = this.calculateSMA(volumes, 20);
+    
+    return { closes, volumes, volatility, avgVolume };
+  }
+
+  private calculateRollingVolatility(prices: number[], period: number): number[] {
+    const volatility: number[] = [];
+    
+    for (let i = 0; i < prices.length; i++) {
+      if (i < period) {
+        volatility.push(NaN);
+      } else {
+        const returns = [];
+        for (let j = i - period + 1; j <= i; j++) {
+          returns.push((prices[j] - prices[j - 1]) / prices[j - 1]);
+        }
+        const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+        volatility.push(Math.sqrt(variance));
+      }
+    }
+    
+    return volatility;
+  }
+
+  async generateSignal(currentData: OHLCV, historicalData: OHLCV[]): Promise<StrategySignal> {
+    const indicators = await this.calculateIndicators(historicalData);
+    const lastIndex = indicators.closes.length - 1;
+    
+    const currentPrice = currentData.close;
+    const volatility = indicators.volatility[lastIndex];
+    const spreadBps = this.config.parameters.spreadBps as number;
+    const skewFactor = this.config.parameters.skewFactor as number;
+    
+    let signal: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+    let strength = 0.5; // Market making is neutral
+    let confidence = 0.6;
+    let reason = '';
+    
+    if (!isNaN(volatility)) {
+      // Adjust spread based on volatility
+      const adjustedSpread = spreadBps * (1 + volatility * 10);
+      const bidPrice = currentPrice * (1 - adjustedSpread / 10000);
+      const askPrice = currentPrice * (1 + adjustedSpread / 10000);
+      
+      // Simplified: alternate between buying and selling to provide liquidity
+      // In real implementation, would manage inventory and adjust quotes
+      const shouldBuy = Math.random() > 0.5;
+      
+      if (shouldBuy) {
+        signal = 'BUY';
+        reason = `Market making: bid at ${bidPrice.toFixed(2)} (spread: ${adjustedSpread.toFixed(1)}bps)`;
+      } else {
+        signal = 'SELL';
+        reason = `Market making: ask at ${askPrice.toFixed(2)} (spread: ${adjustedSpread.toFixed(1)}bps)`;
+      }
+    }
+    
+    return {
+      timestamp: currentData.timestamp,
+      signal,
+      strength,
+      confidence,
+      reason
+    };
+  }
+
+  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+    return {
+      spreadBps: 5 + Math.random() * 15, // 5-20 bps
+      inventoryLimit: 500 + Math.random() * 1000, // 500-1500
+      skewFactor: 0.05 + Math.random() * 0.15, // 0.05-0.2
+      minOrderSize: 50 + Math.random() * 100 // 50-150
+    };
+  }
+}
+
+// ============================================================================
+// ML-Based Alpha Strategy (Simplified)
+// ============================================================================
+
+export class MLAlphaStrategy extends BaseStrategy {
+  constructor(params: Partial<MLAlphaStrategyParams> = {}) {
+    super({
+      name: 'ML-Based Alpha Strategy',
+      type: 'ml_alpha',
+      description: 'Machine learning-based alpha generation',
+      parameters: {
+        model: 'gradient_boosting',
+        features: ['price_momentum', 'volume_trend', 'volatility', 'rsi', 'macd'],
+        lookbackPeriod: 30,
+        retrainFrequency: 30,
+        predictionThreshold: 0.6,
+        ...params
+      },
+      enabled: true
+    });
+  }
+
+  async initialize(data: OHLCV[]): Promise<void> {
+    this.indicators = await this.calculateIndicators(data);
+  }
+
+  async calculateIndicators(data: OHLCV[]): Promise<Record<string, number[]>> {
+    const closes = data.map(d => d.close);
+    const volumes = data.map(d => d.volume);
+    const lookback = this.config.parameters.lookbackPeriod as number;
+    
+    // Calculate features
+    const priceMomentum: number[] = [];
+    const volumeTrend: number[] = [];
+    const volatility: number[] = [];
+    
+    for (let i = 0; i < closes.length; i++) {
+      if (i < lookback) {
+        priceMomentum.push(NaN);
+        volumeTrend.push(NaN);
+        volatility.push(NaN);
+      } else {
+        // Price momentum
+        const priceChange = (closes[i] - closes[i - lookback]) / closes[i - lookback];
+        priceMomentum.push(priceChange);
+        
+        // Volume trend
+        const recentVolume = volumes.slice(i - lookback, i + 1);
+        const volumeChange = (volumes[i] - recentVolume.reduce((sum, v) => sum + v, 0) / recentVolume.length) / volumes[i];
+        volumeTrend.push(volumeChange);
+        
+        // Volatility
+        const returns = [];
+        for (let j = i - lookback + 1; j <= i; j++) {
+          returns.push((closes[j] - closes[j - 1]) / closes[j - 1]);
+        }
+        const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+        const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+        volatility.push(Math.sqrt(variance));
+      }
+    }
+    
+    const rsi = this.calculateRSI(closes, 14);
+    
+    return { closes, priceMomentum, volumeTrend, volatility, rsi };
+  }
+
+  async generateSignal(currentData: OHLCV, historicalData: OHLCV[]): Promise<StrategySignal> {
+    const indicators = await this.calculateIndicators(historicalData);
+    const lastIndex = indicators.closes.length - 1;
+    
+    const priceMomentum = indicators.priceMomentum[lastIndex];
+    const volumeTrend = indicators.volumeTrend[lastIndex];
+    const volatility = indicators.volatility[lastIndex];
+    const rsi = indicators.rsi[lastIndex];
+    const predictionThreshold = this.config.parameters.predictionThreshold as number;
+    
+    let signal: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+    let strength = 0;
+    let confidence = 0;
+    let reason = '';
+    
+    if (!isNaN(priceMomentum) && !isNaN(volumeTrend) && !isNaN(volatility) && !isNaN(rsi)) {
+      // Simplified ML prediction: weighted combination of features
+      const prediction = 
+        0.4 * Math.tanh(priceMomentum * 10) +
+        0.2 * Math.tanh(volumeTrend * 10) +
+        0.2 * (50 - rsi) / 50 +
+        0.2 * (1 - Math.min(volatility * 100, 1));
+      
+      if (prediction > predictionThreshold) {
+        signal = 'BUY';
+        strength = Math.min(1, (prediction - predictionThreshold) / (1 - predictionThreshold));
+        confidence = 0.65 + strength * 0.15;
+        reason = `ML prediction: ${(prediction * 100).toFixed(1)}% bullish (momentum: ${(priceMomentum * 100).toFixed(1)}%)`;
+      } else if (prediction < -predictionThreshold) {
+        signal = 'SELL';
+        strength = Math.min(1, (Math.abs(prediction) - predictionThreshold) / (1 - predictionThreshold));
+        confidence = 0.65 + strength * 0.15;
+        reason = `ML prediction: ${(prediction * 100).toFixed(1)}% bearish (momentum: ${(priceMomentum * 100).toFixed(1)}%)`;
+      }
+    }
+    
+    return {
+      timestamp: currentData.timestamp,
+      signal,
+      strength,
+      confidence,
+      reason
+    };
+  }
+
+  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+    return {
+      model: originalParams.model,
+      features: originalParams.features,
+      lookbackPeriod: Math.floor(20 + Math.random() * 30), // 20-50
+      retrainFrequency: Math.floor(20 + Math.random() * 40), // 20-60
+      predictionThreshold: 0.5 + Math.random() * 0.3 // 0.5-0.8
+    };
+  }
+}
+
 // Export catalog
 export const StrategyCatalog = {
   momentum: MomentumStrategy,
   meanReversion: MeanReversionStrategy,
-  // More strategies will be added (Breakout, StatArb, MarketMaking, MLAlpha)
+  breakout: BreakoutStrategy,
+  statArb: StatArbStrategy,
+  marketMaking: MarketMakingStrategy,
+  mlAlpha: MLAlphaStrategy,
 };
 
 export default StrategyCatalog;
