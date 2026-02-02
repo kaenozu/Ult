@@ -86,8 +86,6 @@ class TechnicalIndicatorService {
      * ```typescript
      * const rsi = technicalIndicatorService.calculateRSI(prices, 14);
      * const currentRSI = rsi[rsi.length - 1];
-     * if (currentRSI > 70) console.log('買われすぎ');
-     * if (currentRSI < 30) console.log('売られすぎ');
      * ```
      */
     calculateRSI(prices: number[], period: number = TECHNICAL_INDICATORS.RSI_PERIOD): number[] {
@@ -111,7 +109,6 @@ class TechnicalIndicatorService {
      * const macd = technicalIndicatorService.calculateMACD(prices);
      * const currentMACD = macd.macd[macd.macd.length - 1];
      * const currentSignal = macd.signal[macd.signal.length - 1];
-     * if (currentMACD > currentSignal) console.log('強気シグナル');
      * ```
      */
     calculateMACD(
@@ -139,7 +136,6 @@ class TechnicalIndicatorService {
      * const bb = technicalIndicatorService.calculateBollingerBands(prices, 20, 2);
      * const currentPrice = prices[prices.length - 1];
      * if (currentPrice > bb.upper[bb.upper.length - 1]) {
-     *   console.log('上限バンド突破（買われすぎの可能性）');
      * }
      * ```
      */

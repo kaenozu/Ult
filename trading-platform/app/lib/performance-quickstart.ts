@@ -38,20 +38,15 @@ async function runExample(): Promise<void> {
   const service = new ExampleService();
 
   // Run operations
-  console.log('Running sync operation...');
   service.syncOperation();
 
-  console.log('Running async operation...');
   await service.asyncOperation();
 
-  console.log('Running operation with custom threshold...');
   service.operationWithCustomThreshold();
 
   // Get metrics
-  console.log('\n=== Performance Metrics ===');
   
   const syncStats = PerformanceMonitor.getStats('example-sync-operation');
-  console.log('Sync Operation:', {
     avg: `${syncStats.avg.toFixed(2)}ms`,
     count: syncStats.count,
     warnings: syncStats.warningCount,
@@ -59,7 +54,6 @@ async function runExample(): Promise<void> {
   });
 
   const asyncStats = PerformanceMonitor.getStats('example-async-operation');
-  console.log('Async Operation:', {
     avg: `${asyncStats.avg.toFixed(2)}ms`,
     count: asyncStats.count,
     warnings: asyncStats.warningCount,
@@ -67,27 +61,19 @@ async function runExample(): Promise<void> {
   });
 
   // Get summary
-  console.log('\n=== Performance Summary ===');
   const summary = PerformanceMonitor.getSummary();
-  console.log('Health Score:', `${summary.healthScore}/100`);
-  console.log('Total Metrics:', summary.totalMetrics);
-  console.log('Total Measurements:', summary.totalMeasurements);
   
   if (summary.slowOperations.length > 0) {
-    console.log('Slow Operations:', summary.slowOperations.join(', '));
   }
   
   if (summary.criticalOperations.length > 0) {
-    console.log('Critical Operations:', summary.criticalOperations.join(', '));
   }
 
   // Check for issues
   if (PerformanceMonitor.hasWarnings()) {
-    console.log('\n⚠️  Warnings detected:', PerformanceMonitor.getWarnings());
   }
   
   if (PerformanceMonitor.hasErrors()) {
-    console.log('\n❌ Errors detected:', PerformanceMonitor.getErrors());
   }
 }
 

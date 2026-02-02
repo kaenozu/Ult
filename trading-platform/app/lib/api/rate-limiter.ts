@@ -130,10 +130,8 @@ export class RateLimiter {
     if (waitTime > 0) {
       if (waitTime >= 60000) {
         const minutes = Math.ceil(waitTime / 60000);
-        console.log(`Rate limit: Waiting ${minutes} minutes...`);
       } else {
         const seconds = Math.ceil(waitTime / 1000);
-        console.log(`Rate limit: Waiting ${seconds} seconds...`);
       }
 
       await new Promise(resolve => setTimeout(resolve, waitTime));

@@ -186,11 +186,6 @@ export class WalkForwardAnalyzer extends EventEmitter {
     strategyFactory: (params: Record<string, number>) => Strategy,
     baseConfig: BacktestConfig
   ): Promise<WalkForwardReport> {
-    console.log('[WalkForwardAnalyzer] Starting walk-forward analysis');
-    console.log(`  Data points: ${data.length}`);
-    console.log(`  Training size: ${this.config.trainingSize}`);
-    console.log(`  Test size: ${this.config.testSize}`);
-    console.log(`  Window type: ${this.config.windowType}`);
 
     // 最小データポイントチェック
     if (data.length < this.config.minDataPoints) {
@@ -234,7 +229,6 @@ export class WalkForwardAnalyzer extends EventEmitter {
       }
     }
 
-    console.log(`[WalkForwardAnalyzer] Completed ${windows.length} windows`);
 
     // レポートを生成
     const report = this.generateReport(windows, data);

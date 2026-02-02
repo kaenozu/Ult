@@ -26,7 +26,6 @@ import type {
 // ============================================================================
 
 function example1_calculateMetrics(): void {
-  console.log('\n=== Example 1: Calculate Performance Metrics ===\n');
 
   // Sample trades data
   const trades: Trade[] = [
@@ -64,34 +63,10 @@ function example1_calculateMetrics(): void {
   const metrics: PerformanceMetrics = performanceMetricsCalculator.calculateMetrics(trades, portfolio);
 
   // Display results
-  console.log('Basic Metrics:');
-  console.log(`  Total Return: ${(metrics.totalReturn * 100).toFixed(2)}%`);
-  console.log(`  Annualized Return: ${(metrics.annualizedReturn * 100).toFixed(2)}%`);
-  console.log(`  Total Trades: ${metrics.totalTrades}`);
-  console.log(`  Win Rate: ${(metrics.winRate * 100).toFixed(1)}%`);
-  console.log(`  Winning Trades: ${metrics.winningTrades}`);
-  console.log(`  Losing Trades: ${metrics.losingTrades}`);
   
-  console.log('\nRisk-Adjusted Metrics:');
-  console.log(`  Sharpe Ratio: ${metrics.sharpeRatio.toFixed(2)}`);
-  console.log(`  Sortino Ratio: ${metrics.sortinoRatio.toFixed(2)}`);
-  console.log(`  Calmar Ratio: ${metrics.calmarRatio.toFixed(2)}`);
   
-  console.log('\nRisk Metrics:');
-  console.log(`  Max Drawdown: ${(metrics.maxDrawdown * 100).toFixed(2)}%`);
-  console.log(`  Volatility: ${(metrics.volatility * 100).toFixed(2)}%`);
-  console.log(`  Value at Risk (95%): ${(metrics.valueAtRisk * 100).toFixed(2)}%`);
   
-  console.log('\nTrade Quality:');
-  console.log(`  Profit Factor: ${metrics.profitFactor.toFixed(2)}`);
-  console.log(`  Average Win: $${metrics.averageWin.toFixed(2)}`);
-  console.log(`  Average Loss: $${metrics.averageLoss.toFixed(2)}`);
-  console.log(`  Win/Loss Ratio: ${metrics.averageWinLossRatio.toFixed(2)}`);
   
-  console.log('\nEfficiency:');
-  console.log(`  Expectancy: $${metrics.expectancy.toFixed(2)}`);
-  console.log(`  Kelly Criterion: ${(metrics.kellyCriterion * 100).toFixed(2)}%`);
-  console.log(`  System Quality Number: ${metrics.SQN.toFixed(2)}`);
 }
 
 // ============================================================================
@@ -99,7 +74,6 @@ function example1_calculateMetrics(): void {
 // ============================================================================
 
 function example2_realTimeMonitoring(): void {
-  console.log('\n=== Example 2: Real-Time Monitoring ===\n');
 
   const portfolio: Portfolio = {
     id: 'monitored-portfolio',
@@ -146,9 +120,6 @@ function example2_realTimeMonitoring(): void {
   // Set up alert handling
   monitor.on('alert', (alert: MonitoringAlert) => {
     const emoji = alert.level === 'critical' ? '🚨' : alert.level === 'warning' ? '⚠️' : 'ℹ️';
-    console.log(`${emoji} [${alert.level.toUpperCase()}] ${alert.type}`);
-    console.log(`   ${alert.message}`);
-    console.log(`   Timestamp: ${new Date(alert.timestamp).toISOString()}`);
   });
 
   // Update prices
@@ -160,22 +131,9 @@ function example2_realTimeMonitoring(): void {
 
   // Get current metrics
   const metrics = monitor.getCurrentMetrics();
-  console.log('\nCurrent Metrics:');
-  console.log(`  Portfolio Value: $${metrics.portfolioValue.toLocaleString()}`);
-  console.log(`  Daily P&L: $${metrics.dailyPnL.toFixed(2)}`);
-  console.log(`  Daily Return: ${(metrics.dailyReturn * 100).toFixed(2)}%`);
-  console.log(`  Open Positions: ${metrics.openPositions}`);
-  console.log(`  Active Orders: ${metrics.activeOrders}`);
-  console.log(`  Unrealized P&L: $${metrics.unrealizedPnL.toFixed(2)}`);
-  console.log(`  Risk Exposure: ${(metrics.riskExposure * 100).toFixed(2)}%`);
 
   // Get alert statistics
   const stats = monitor.getAlertStatistics();
-  console.log('\nAlert Statistics:');
-  console.log(`  Total Alerts: ${stats.total}`);
-  console.log(`  Critical: ${stats.byLevel.critical}`);
-  console.log(`  Warning: ${stats.byLevel.warning}`);
-  console.log(`  Info: ${stats.byLevel.info}`);
 }
 
 // ============================================================================
@@ -183,7 +141,6 @@ function example2_realTimeMonitoring(): void {
 // ============================================================================
 
 function example3_performanceAnalysis(): void {
-  console.log('\n=== Example 3: Performance Analysis ===\n');
 
   const now = Date.now();
   const oneDay = 24 * 60 * 60 * 1000;
@@ -227,35 +184,15 @@ function example3_performanceAnalysis(): void {
   const analysis: AnalysisResult = performanceAnalyzer.analyze(trades, portfolio);
 
   // Display summary
-  console.log('Summary:');
-  console.log(`  Total Trades: ${analysis.summary.totalTrades}`);
-  console.log(`  Win Rate: ${(analysis.summary.winRate * 100).toFixed(1)}%`);
-  console.log(`  Profit Factor: ${analysis.summary.profitFactor.toFixed(2)}`);
-  console.log(`  Expectancy: $${analysis.summary.expectancy.toFixed(2)}`);
 
   // Display patterns
-  console.log('\nPatterns:');
-  console.log(`  Max Consecutive Wins: ${analysis.patterns.consecutiveWins}`);
-  console.log(`  Max Consecutive Losses: ${analysis.patterns.consecutiveLosses}`);
-  console.log(`  Best Trading Hour: ${analysis.patterns.bestTradingHour}:00`);
-  console.log(`  Worst Trading Hour: ${analysis.patterns.worstTradingHour}:00`);
-  console.log(`  Best Trading Day: ${analysis.patterns.bestTradingDay}`);
-  console.log(`  Worst Trading Day: ${analysis.patterns.worstTradingDay}`);
 
   // Display symbol analysis
-  console.log('\nSymbol Performance:');
   analysis.symbolAnalysis.forEach((symbol, index) => {
-    console.log(`  ${index + 1}. ${symbol.symbol}:`);
-    console.log(`     Trades: ${symbol.totalTrades}`);
-    console.log(`     Win Rate: ${(symbol.winRate * 100).toFixed(1)}%`);
-    console.log(`     Profit Factor: ${symbol.profitFactor.toFixed(2)}`);
-    console.log(`     Total Profit: $${symbol.totalProfit.toFixed(2)}`);
   });
 
   // Display recommendations
-  console.log('\nRecommendations:');
   analysis.recommendations.forEach((rec, index) => {
-    console.log(`  ${index + 1}. ${rec}`);
   });
 }
 
@@ -264,7 +201,6 @@ function example3_performanceAnalysis(): void {
 // ============================================================================
 
 function example4_generateReport(): void {
-  console.log('\n=== Example 4: Generate Performance Report ===\n');
 
   const now = Date.now();
   const oneDay = 24 * 60 * 60 * 1000;
@@ -311,19 +247,11 @@ function example4_generateReport(): void {
     reportConfig
   );
 
-  console.log(`Report ID: ${report.id}`);
-  console.log(`Generated: ${new Date(report.generatedAt).toLocaleString()}`);
-  console.log(`Period: ${new Date(report.period.start).toLocaleDateString()} - ${new Date(report.period.end).toLocaleDateString()}`);
 
   // Display summary
   const summary = performanceReporter.generateSummary(report);
-  console.log('\n' + summary);
 
   // Export options
-  console.log('\n=== Export Options ===');
-  console.log('JSON export available');
-  console.log('HTML export available');
-  console.log('Text summary available');
 }
 
 // ============================================================================
@@ -331,16 +259,12 @@ function example4_generateReport(): void {
 // ============================================================================
 
 export function runAllExamples(): void {
-  console.log('╔═══════════════════════════════════════════════════════════════╗');
-  console.log('║   Performance Monitoring and Metrics - Examples               ║');
-  console.log('╚═══════════════════════════════════════════════════════════════╝');
 
   example1_calculateMetrics();
   example2_realTimeMonitoring();
   example3_performanceAnalysis();
   example4_generateReport();
 
-  console.log('\n✓ All examples completed successfully!');
 }
 
 // Run if executed directly

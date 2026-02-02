@@ -125,10 +125,8 @@ function generatePerformanceReport(): void {
   // Get all metrics
   const allMetrics = PerformanceMonitor.getAllMetrics();
   
-  console.log('=== Performance Report ===');
   
   for (const [name, stats] of allMetrics) {
-    console.log(`
 Metric: ${name}
   Count: ${stats.count}
   Average: ${stats.avg.toFixed(2)}ms
@@ -142,7 +140,6 @@ Metric: ${name}
   
   // Get summary
   const summary = PerformanceMonitor.getSummary();
-  console.log(`
 Summary:
   Total Metrics: ${summary.totalMetrics}
   Total Measurements: ${summary.totalMeasurements}
@@ -184,7 +181,6 @@ function setupRealtimeMonitoring(): void {
     
     // Clear old metrics periodically to prevent memory issues
     if (summary.totalMeasurements > 10000) {
-      console.log('Clearing old performance metrics...');
       PerformanceMonitor.clear();
     }
   }, 10000);
@@ -227,7 +223,6 @@ function testWithPerformanceAssertions(): void {
     throw new Error(`Critical performance issues detected: ${stats.errorCount} errors`);
   }
   
-  console.log('Performance test passed');
 }
 
 // Export examples for reference
