@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -10,7 +14,7 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "isolatedModules": false,
+    "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
     "experimentalDecorators": true,
@@ -21,11 +25,21 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@/domains/*": ["./app/domains/*"],
-      "@/infrastructure/*": ["./app/infrastructure/*"],
-      "@/ui/*": ["./app/ui/*"],
-      "@/shared/*": ["./app/shared/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@/domains/*": [
+        "./app/domains/*"
+      ],
+      "@/infrastructure/*": [
+        "./app/infrastructure/*"
+      ],
+      "@/ui/*": [
+        "./app/ui/*"
+      ],
+      "@/shared/*": [
+        "./app/shared/*"
+      ]
     }
   },
   "include": [
@@ -36,5 +50,7 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
