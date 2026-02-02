@@ -14,6 +14,27 @@ import { featuresToArray, ModelTrainingData } from '@/app/lib/services/tensorflo
 import { OHLCV } from '@/app/lib/types';
 
 /**
+ * Type for calculated technical indicators
+ */
+interface CalculatedIndicators {
+  sma5: number[];
+  sma20: number[];
+  sma50: number[];
+  rsi: number[];
+  macd: {
+    macd: number[];
+    signal: number[];
+    histogram: number[];
+  };
+  bollingerBands: {
+    upper: number[];
+    middle: number[];
+    lower: number[];
+  };
+  atr: number[];
+}
+
+/**
  * Mock historical data generator (replace with real data fetching)
  */
 function generateMockHistoricalData(days: number): OHLCV[] {
@@ -24,9 +45,9 @@ function generateMockHistoricalData(days: number): OHLCV[] {
     // Simulate price movement with trend and noise
     const trend = Math.sin(i / 10) * 500;
     const noise = (Math.random() - 0.5) * 1000;
-    const dailyChange = trend + noise;
+    const priceAdjustment = trend + noise;
 
-    basePrice += dailyChange;
+    basePrice += priceAdjustment;
     const open = basePrice;
     const high = basePrice + Math.random() * 500;
     const low = basePrice - Math.random() * 500;
@@ -49,8 +70,8 @@ function generateMockHistoricalData(days: number): OHLCV[] {
 /**
  * Calculate technical indicators for historical data
  */
-function calculateIndicators(data: OHLCV[]): any[] {
-  const indicators: any[] = [];
+function calculateIndicators(data: OHLCV[]): CalculatedIndicators[] {
+  const indicators: CalculatedIndicators[] = [];
 
   for (let i = 0; i < data.length; i++) {
     const subset = data.slice(0, i + 1);
@@ -109,7 +130,7 @@ function calculateIndicators(data: OHLCV[]): any[] {
  */
 function prepareTrainingData(
   historicalData: OHLCV[],
-  indicators: any[]
+  indicators: CalculatedIndicators[]
 ): ModelTrainingData {
   const features: number[][] = [];
   const labels: number[] = [];

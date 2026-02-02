@@ -26,8 +26,29 @@ export interface ModelMetrics {
 
 /**
  * Base class for TensorFlow.js models
+ * 
+ * This abstract class provides common functionality for all TensorFlow.js models including:
+ * - Model training with historical data
+ * - Prediction capabilities
+ * - Performance metrics (MAE, RMSE, accuracy)
+ * - Model persistence (save/load)
+ * - Memory management (disposal)
+ * 
+ * To create a new model, extend this class and implement the `buildModel` method
+ * to define your specific neural network architecture.
+ * 
+ * @example
+ * class MyModel extends BaseTensorFlowModel {
+ *   buildModel(inputShape: number): tf.LayersModel {
+ *     const model = tf.sequential();
+ *     model.add(tf.layers.dense({ units: 64, activation: 'relu', inputShape: [inputShape] }));
+ *     model.add(tf.layers.dense({ units: 1, activation: 'linear' }));
+ *     model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+ *     return model;
+ *   }
+ * }
  */
-abstract class BaseTFModel {
+abstract class BaseTensorFlowModel {
   protected model: tf.LayersModel | null = null;
   protected isTraining = false;
   protected metrics: ModelMetrics = { mae: 0, rmse: 0, accuracy: 0 };
@@ -36,8 +57,17 @@ abstract class BaseTFModel {
 
   /**
    * Train the model with historical data
+   * 
+   * @param data - Training data with features and labels
+   * @param epochs - Number of training epochs (default: 50)
+   * @param onProgress - Optional callback for training progress
+   * @returns Model metrics after training
    */
-  async train(data: ModelTrainingData, epochs = 50): Promise<ModelMetrics> {
+  async train(
+    data: ModelTrainingData, 
+    epochs = 50,
+    onProgress?: (epoch: number, logs?: tf.Logs) => void
+  ): Promise<ModelMetrics> {
     if (this.isTraining) {
       throw new Error('Model is already training');
     }
@@ -60,13 +90,9 @@ abstract class BaseTFModel {
         batchSize: 32,
         validationSplit: 0.2,
         shuffle: true,
-        callbacks: {
-          onEpochEnd: (epoch, logs) => {
-            if (logs) {
-              console.log(`Epoch ${epoch + 1}/${epochs} - loss: ${logs.loss.toFixed(4)}`);
-            }
-          }
-        }
+        callbacks: onProgress ? {
+          onEpochEnd: onProgress
+        } : undefined
       });
 
       // Calculate metrics
@@ -178,7 +204,7 @@ abstract class BaseTFModel {
 /**
  * LSTM Model for time series prediction
  */
-export class LSTMModel extends BaseTFModel {
+export class LSTMModel extends BaseTensorFlowModel {
   buildModel(inputShape: number): tf.LayersModel {
     const model = tf.sequential();
 
@@ -305,7 +331,7 @@ export class LSTMModel extends BaseTFModel {
 /**
  * GRU Model for time series prediction (lighter than LSTM)
  */
-export class GRUModel extends BaseTFModel {
+export class GRUModel extends BaseTensorFlowModel {
   buildModel(inputShape: number): tf.LayersModel {
     const model = tf.sequential();
 
@@ -427,7 +453,7 @@ export class GRUModel extends BaseTFModel {
 /**
  * Simple feedforward neural network for Random Forest replacement
  */
-export class FeedForwardModel extends BaseTFModel {
+export class FeedForwardModel extends BaseTensorFlowModel {
   buildModel(inputShape: number): tf.LayersModel {
     const model = tf.sequential();
 

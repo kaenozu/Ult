@@ -26,7 +26,7 @@ describe('TensorFlow.js Model Service', () => {
 
     it('should create model successfully', () => {
       expect(model).toBeDefined();
-      expect(model.isTensorFlowEnabled).toBeDefined;
+      expect(model.getMetrics).toBeDefined();
     });
 
     it('should throw error when predicting without training', async () => {

@@ -101,8 +101,10 @@ export class MLModelService {
         confidence
       };
     } catch (error) {
-      console.error('TensorFlow prediction error:', error);
-      // Fallback to rule-based
+      // Log error but fallback to rule-based prediction
+      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+        console.error('TensorFlow prediction error:', error);
+      }
       return this.predict(features);
     }
   }
@@ -199,7 +201,9 @@ export class MLModelService {
 
       this.useTensorFlowModels = true;
     } catch (error) {
-      console.error('Failed to load models:', error);
+      if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+        console.error('Failed to load models:', error);
+      }
       this.useTensorFlowModels = false;
     }
   }
