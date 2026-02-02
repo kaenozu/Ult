@@ -1,6 +1,7 @@
 export * from './AdvancedPerformanceMetrics';
 export * from './MultiAssetBacktestEngine';
-export * from './WinningBacktestEngine';
+// Export specific symbols from WinningBacktestEngine to avoid MonteCarloResult conflict
+export { default as WinningBacktestEngine } from './WinningBacktestEngine';
 
 // Realistic Backtesting Modules (TRADING-030)
 export * from './SlippageModel';
@@ -24,6 +25,6 @@ export {
 
 // Enhanced realistic backtesting components
 export * from './RealisticBacktestEngine';
-export * from './MonteCarloSimulator';
+// MonteCarloSimulator already exported above (line 8)
 export * from './OverfittingDetector';
 export * from './WalkForwardAnalysis';
