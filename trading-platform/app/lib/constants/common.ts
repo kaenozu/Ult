@@ -9,7 +9,7 @@ export const OPTIMIZATION = {
   REQUIRED_DATA_PERIOD: 100,
   MIN_DATA_PERIOD: 60,
   VOLUME_PROFILE_BINS: 20,
-  REOPTIMIZATION_INTERVAL: 30, // Re-optimize every N days
+  REOPTIMIZATION_INTERVAL: 30, // Re-optimize every 30 days in walk-forward optimization
 } as const;
 
 /**
@@ -42,6 +42,7 @@ export const CONFIDENCE_THRESHOLDS = {
 
 /**
  * Common percentage values
+ * @deprecated These constants don't add semantic meaning. Use literal values or more specific constant names based on context.
  */
 export const PERCENTAGE_VALUES = {
   PERCENT_50: 50,
@@ -65,6 +66,7 @@ export const MULTIPLIERS = {
 
 /**
  * Common index values
+ * @deprecated These constants are simple number aliases that don't provide meaningful context. Use literal values directly.
  */
 export const INDEX_VALUES = {
   INDEX_0: 0,
