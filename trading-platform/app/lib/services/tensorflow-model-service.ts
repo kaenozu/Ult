@@ -55,7 +55,7 @@ abstract class BaseTFModel {
       const ys = tf.tensor2d(data.labels, [data.labels.length, 1]);
 
       // Train the model
-      const history = await this.model.fit(xs, ys, {
+      await this.model.fit(xs, ys, {
         epochs,
         batchSize: 32,
         validationSplit: 0.2,
@@ -220,7 +220,7 @@ export class LSTMModel extends BaseTFModel {
 
     return tf.tidy(() => {
       // LSTM expects [batch, timesteps, features]
-      const input = tf.tensor3d([features], [1, 1, features.length]);
+      const input = tf.tensor3d([[features]], [1, 1, features.length]);
       const prediction = this.model!.predict(input) as tf.Tensor;
       const value = prediction.dataSync()[0];
       return value;
@@ -346,7 +346,7 @@ export class GRUModel extends BaseTFModel {
     }
 
     return tf.tidy(() => {
-      const input = tf.tensor3d([features], [1, 1, features.length]);
+      const input = tf.tensor3d([[features]], [1, 1, features.length]);
       const prediction = this.model!.predict(input) as tf.Tensor;
       const value = prediction.dataSync()[0];
       return value;

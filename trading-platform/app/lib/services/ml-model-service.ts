@@ -114,7 +114,7 @@ export class MLModelService {
     ff: number,
     gru: number,
     lstm: number,
-    ensemble: number
+    _ensemble: number
   ): number {
     // Calculate agreement between models
     const predictions = [ff, gru, lstm];
