@@ -832,3 +832,35 @@ declare global {
     }>;
   }
 }
+
+// ============================================================================
+// Trading Psychology Types
+// ============================================================================
+
+export type {
+  EmotionType,
+  EmotionScore,
+  MentalState,
+  MentalHealthMetrics,
+  DisciplineViolation,
+  ViolationSeverity,
+  DisciplineRules,
+  TradingSession,
+  CoachingRecommendation,
+  CoachingPriority,
+  CoachingType,
+  WarningLevel,
+  PsychologyAnalysisResult,
+  EnhancedJournalEntry,
+  PsychologyState,
+  MentalHealthGaugeProps,
+  EmotionIndicatorProps,
+  DisciplineScoreProps,
+  CoachPanelProps,
+  PsychologyAlertConfig,
+  PsychologyAlert,
+  PsychologyAnalysisRequest,
+  PsychologyAnalysisResponse,
+  DisciplineCheckRequest,
+  DisciplineCheckResponse,
+} from './psychology';
