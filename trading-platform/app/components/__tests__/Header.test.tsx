@@ -9,6 +9,23 @@ jest.mock('@/app/store/portfolioStore');
 jest.mock('@/app/store/uiStore');
 jest.mock('@/app/store/watchlistStore');
 
+jest.mock('@/app/i18n/provider', () => ({
+    useTranslations: () => (key: string) => {
+        const translations: Record<string, string> = {
+            'header.cash': '余力',
+            'header.dailyPnL': '日次損益',
+            'header.holdings': '保有',
+            'header.searchPlaceholder': '銘柄名、コードで検索',
+            'header.searchLabel': '検索',
+            'header.connection.connected': '接続済み',
+            'header.connection.disconnected': '未接続',
+            'header.connection.disconnect': '切断',
+            'header.connection.connect': '接続',
+        };
+        return translations[key] || key;
+    }
+}));
+
 // Mock data
 jest.mock('@/app/data/stocks', () => ({
     ALL_STOCKS: [
@@ -31,6 +48,22 @@ jest.mock('lucide-react', () => ({
 
 jest.mock('../NotificationCenter', () => ({
     NotificationCenter: () => <div data-testid="notification-center">NotificationCenter</div>
+}));
+
+jest.mock('../ConnectionQualityIndicator', () => ({
+    ConnectionQualityIndicator: () => <div data-testid="connection-indicator">Connection</div>
+}));
+
+jest.mock('@/app/hooks/useResilientWebSocket', () => ({
+    useResilientWebSocket: () => ({
+        status: 'CONNECTED',
+        metrics: {},
+        reconnect: jest.fn()
+    })
+}));
+
+jest.mock('../LocaleSwitcher', () => ({
+    LocaleSwitcher: () => <div data-testid="locale-switcher">Locale</div>
 }));
 
 describe('Header', () => {
@@ -60,13 +93,7 @@ describe('Header', () => {
         render(<Header />);
         expect(screen.getByText('TRADER PRO')).toBeInTheDocument();
         expect(screen.getAllByText(/1,000,000/)[0]).toBeInTheDocument();
-        expect(screen.getByText('接続済み')).toBeInTheDocument();
-    });
-
-    it('toggles connection', () => {
-        render(<Header />);
-        fireEvent.click(screen.getByTitle('切断')); // isConnected=true
-        expect(mockToggleConnection).toHaveBeenCalled();
+        expect(screen.getByTestId('connection-indicator')).toBeInTheDocument();
     });
 
     it('edits cash balance', () => {

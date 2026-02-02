@@ -18,6 +18,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { performanceScreenerService, StockDataSource } from '@/app/lib/PerformanceScreenerService';
 import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
 import { OHLCV } from '@/app/types';
+import { handleApiError } from '@/app/lib/error-handler';
 
 // キャッシュ管理
 interface CacheEntry {
@@ -117,15 +118,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[PerformanceScreenerAPI] Error:', error);
-    
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'PerformanceScreenerAPI');
   }
 }
 
@@ -156,14 +149,6 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error) {
-    console.error('[PerformanceScreenerAPI] Error:', error);
-    
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'PerformanceScreenerAPI');
   }
 }
