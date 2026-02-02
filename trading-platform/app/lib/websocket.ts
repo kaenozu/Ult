@@ -46,6 +46,11 @@ export interface WebSocketConfig {
   fallbackPollingInterval?: number;
 }
 
+// Default configuration constants
+const DEFAULT_MAX_RECONNECT_ATTEMPTS = 10;
+const DEFAULT_RECONNECT_INTERVAL = 2000;
+const DEFAULT_MAX_BACKOFF_DELAY = 60000;
+
 /**
  * WebSocket client options
  */
@@ -279,7 +284,7 @@ export class WebSocketClient {
       return;
     }
 
-    const maxAttempts = this.config.maxReconnectAttempts || 10;
+    const maxAttempts = this.config.maxReconnectAttempts || DEFAULT_MAX_RECONNECT_ATTEMPTS;
     
     // Check if max reconnect attempts exceeded
     if (this.reconnectAttempts >= maxAttempts) {
@@ -293,10 +298,10 @@ export class WebSocketClient {
 
     // 指数バックオフを使用して再接続間隔を増やす
     // 初回: 2秒, 2回目: 4秒, 3回目: 8秒, 4回目: 16秒, 5回目: 32秒
-    const baseInterval = this.config.reconnectInterval || 2000;
+    const baseInterval = this.config.reconnectInterval || DEFAULT_RECONNECT_INTERVAL;
     const delay = Math.min(
       baseInterval * Math.pow(2, this.reconnectAttempts - 1),
-      60000 // 最大60秒
+      DEFAULT_MAX_BACKOFF_DELAY // 最大60秒
     );
 
     console.log(`[WebSocket] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${maxAttempts})`);

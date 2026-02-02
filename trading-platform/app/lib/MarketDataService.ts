@@ -76,6 +76,7 @@ export class MarketDataService {
   private qualityCheckEnabled = true;
   private dataCompletionEnabled = true;
   private latencyMonitoringEnabled = true;
+  /** Tracks in-flight API requests to prevent duplicate fetches for the same symbol */
   private pendingRequests = new Map<string, Promise<OHLCV[]>>();
 
   /**
