@@ -7,10 +7,17 @@
 
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
 import { FeatureCalculationService } from './feature-calculation-service';
+<<<<<<< HEAD
 import { enhancedMLService, EnhancedPrediction } from './enhanced-ml-service';
 import { analyzeStock } from '@/app/lib/analysis';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '@/app/lib/constants';
+=======
+import { enhancedMLService } from './enhanced-ml-service';
+import { analyzeStock } from '../../lib/analysis';
+import { mlPredictionService } from '../../lib/mlPrediction';
+import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '../../lib/constants';
+>>>>>>> refactoring/major-codebase-cleanup
 
 export interface IntegratedPredictionResult {
   signal: Signal;
@@ -49,8 +56,16 @@ export class IntegratedPredictionService {
     data: OHLCV[],
     indexData?: OHLCV[]
   ): Promise<IntegratedPredictionResult> {
+<<<<<<< HEAD
     // 1. Calculate features directly (indicators calculation built into feature service)
     const features = this.featureService.calculateFeatures(data);
+=======
+    // 1. Calculate technical indicators first
+    const indicators = mlPredictionService.calculateIndicators(data);
+    
+     // 2. Calculate features from data (indicators computed internally)
+     const features = this.featureService.calculateFeatures(data);
+>>>>>>> refactoring/major-codebase-cleanup
 
     // 3. Get enhanced prediction
     const enhancedPrediction = await enhancedMLService.predictEnhanced(

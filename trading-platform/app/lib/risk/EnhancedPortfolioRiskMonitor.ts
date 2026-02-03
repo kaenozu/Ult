@@ -249,7 +249,7 @@ export class EnhancedPortfolioRiskMonitor {
       
       // 簡易的な流動性スコア（実際にはボリュームデータが必要）
       // 大型株は高流動性、小型株は低流動性と仮定
-      let liquidityScore = 80; // デフォルト
+      const liquidityScore = 80; // デフォルト
       
       totalScore += liquidityScore * weight;
       totalWeight += weight;

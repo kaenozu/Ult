@@ -23,7 +23,7 @@ The main service for managing real-time data flow with integrated quality valida
 **Usage:**
 
 ```typescript
-import { createWebSocketDataFlowService } from '@/app/lib/data/integration';
+import { createWebSocketDataFlowService } from '@/app/domains/market-data/integration/WebSocketDataFlowService';
 
 const dataFlow = createWebSocketDataFlowService({
   websocket: {
@@ -75,7 +75,7 @@ Service for aggregating data from multiple sources with automatic validation and
 **Usage:**
 
 ```typescript
-import { createMultiSourceDataAggregator } from '@/app/lib/data/integration';
+import { createMultiSourceDataAggregator } from '@/app/domains/market-data/integration/MultiSourceDataAggregator';
 
 const aggregator = createMultiSourceDataAggregator({
   minSourceCount: 2,

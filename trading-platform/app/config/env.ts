@@ -19,7 +19,7 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
 
   // WebSocket
-  NEXT_PUBLIC_WS_URL: z.string().url().default('ws://localhost:3001'),
+  NEXT_PUBLIC_WS_URL: z.string().url().default('ws://localhost:3001/ws'),
   WS_AUTH_TOKEN: z.string().optional(),
   ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
   WS_PORT: z.coerce.number().int().positive().default(3001),

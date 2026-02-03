@@ -609,7 +609,7 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
     const ensemblePrediction = compositeAnalysis.finalScore; // -1 to 1
 
     // 方向を変換 ('BUY' -> 'UP', 'SELL' -> 'DOWN')
-    let direction: 'UP' | 'DOWN' | 'NEUTRAL' = 
+    const direction: 'UP' | 'DOWN' | 'NEUTRAL' = 
       compositeAnalysis.direction === 'BUY' ? 'UP' :
       compositeAnalysis.direction === 'SELL' ? 'DOWN' :
       'NEUTRAL';

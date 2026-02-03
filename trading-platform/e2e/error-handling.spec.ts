@@ -369,7 +369,7 @@ test.describe('Error Handling - Network and API Issues', () => {
       await page.waitForTimeout(1000);
       
       // Error message should be user-friendly, not technical
-      const errorText = await page.locator('text=/エラー|Error|問題/').first().textContent().catch(() => '');
+      const errorText = await page.locator('text=/エラー|Error|問題/').first().textContent() ?? '';
       
       // Should not expose technical details
       expect(errorText.toLowerCase()).not.toContain('database');

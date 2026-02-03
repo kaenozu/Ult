@@ -68,8 +68,8 @@ export function RiskMonitoringDashboard({ portfolio, updateInterval = 5000 }: Ri
     return () => clearInterval(interval);
   }, [portfolio, isMonitoringEnabled, updateInterval, updateRisk, updatePositionRisk]);
 
-  const activeAlerts = useMemo(() => getActiveAlerts(), [alerts]);
-  const criticalAlerts = useMemo(() => getCriticalAlerts(), [alerts]);
+  const activeAlerts = useMemo(() => getActiveAlerts(), [getActiveAlerts]);
+  const criticalAlerts = useMemo(() => getCriticalAlerts(), [getCriticalAlerts]);
 
   if (!isMonitoringEnabled) {
     return (

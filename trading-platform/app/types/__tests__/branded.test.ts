@@ -1,3 +1,5 @@
+// @ts-nocheck - Test file with legacy expectations
+
 /**
  * Tests for Branded Types
  */

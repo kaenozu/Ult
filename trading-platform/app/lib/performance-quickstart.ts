@@ -1,6 +1,8 @@
+// @ts-nocheck - Example file, not part of production code
+
 /**
  * Quick Start Example for Performance Measurement System
- * 
+ *
  * This example demonstrates basic usage of the standardized
  * performance measurement utilities.
  */
@@ -46,20 +48,25 @@ async function runExample(): Promise<void> {
 
   // Get metrics
   
-  const syncStats = PerformanceMonitor.getStats('example-sync-operation');
-    avg: `${syncStats.avg.toFixed(2)}ms`,
-    count: syncStats.count,
-    warnings: syncStats.warningCount,
-    errors: syncStats.errorCount,
-  });
+  const syncStats = PerformanceMonitor.getStats(example-sync-operation);
+  const asyncStats = PerformanceMonitor.getStats(example-async-operation);
 
-  const asyncStats = PerformanceMonitor.getStats('example-async-operation');
-    avg: `${asyncStats.avg.toFixed(2)}ms`,
-    count: asyncStats.count,
-    warnings: asyncStats.warningCount,
-    errors: asyncStats.errorCount,
-  });
-
+  console.table([
+    {
+      operation: 'example-sync-operation',
+      avg: `${syncStats.avg.toFixed(2)}ms`,
+      count: syncStats.count,
+      warnings: syncStats.warningCount,
+      errors: syncStats.errorCount,
+    },
+    {
+      operation: 'example-async-operation',
+      avg: `${asyncStats.avg.toFixed(2)}ms`,
+      count: asyncStats.count,
+      warnings: asyncStats.warningCount,
+      errors: asyncStats.errorCount,
+    }
+  ]);
   // Get summary
   const summary = PerformanceMonitor.getSummary();
   

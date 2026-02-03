@@ -97,7 +97,7 @@ export function createSingleton<T, TConfig = undefined>(
  * ```
  */
 export abstract class Singleton<T> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private static instances = new Map<new () => any, any>();
 
   protected constructor() {}
