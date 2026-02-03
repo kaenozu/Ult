@@ -69,7 +69,6 @@ describe('バックテスト計算のパフォーマンステスト', () => {
         const endTime = performance.now();
         const executionTime = endTime - startTime;
 
-        console.log(`[${label}] OptimizedAccuracyService: ${executionTime.toFixed(2)}ms`);
 
         // 結果の検証
         expect(result).toBeDefined();
@@ -93,7 +92,6 @@ describe('バックテスト計算のパフォーマンステスト', () => {
         const endTime = performance.now();
         const executionTime = endTime - startTime;
 
-        console.log(`[${label}] AccuracyService（旧）: ${executionTime.toFixed(2)}ms`);
 
         // 結果の検証
         expect(result).toBeDefined();
@@ -150,7 +148,6 @@ describe('バックテスト計算のパフォーマンステスト', () => {
       );
       const executionTime2 = performance.now() - startTime2;
 
-      console.log(`[キャッシュテスト] 1回目: ${executionTime1.toFixed(2)}ms, 2回目: ${executionTime2.toFixed(2)}ms`);
 
       // 結果が同じ
       expect(result1).toEqual(result2);
@@ -206,7 +203,6 @@ describe('計算量の理論的分析', () => {
     const ratio1 = times[1] / times[0];
     const ratio2 = times[2] / times[1];
 
-    console.log(`計算量テスト: 100→200日: ${ratio1.toFixed(2)}倍, 200→400日: ${ratio2.toFixed(2)}倍`);
 
     // 線形時間の許容範囲（1.5 ~ 3.0倍）
     expect(ratio1).toBeGreaterThan(1.5);

@@ -14,68 +14,35 @@ export async function analyzeMarketAndGenerateSignal(marketData: OHLCV[]) {
   // Perform comprehensive analysis
   const analysis = integratedTechnicalAnalyzer.performComprehensiveAnalysis(marketData);
   
-  console.log('=== Technical Analysis Results ===');
-  console.log(`Symbol: ${analysis.symbol}`);
-  console.log(`Analysis Date: ${analysis.analysisDate}`);
-  console.log('');
   
   // Display integrated signal
-  console.log('=== Trading Signal ===');
-  console.log(`Signal: ${analysis.integrated.overallSignal}`);
-  console.log(`Confidence: ${(analysis.integrated.confidence * 100).toFixed(1)}%`);
-  console.log(`Risk Level: ${analysis.integrated.riskLevel}`);
-  console.log(`Time Horizon: ${analysis.integrated.timeHorizon}`);
-  console.log('');
   
   // Display key factors
-  console.log('=== Key Factors ===');
   analysis.integrated.keyFactors.forEach((factor, i) => {
-    console.log(`${i + 1}. ${factor}`);
   });
-  console.log('');
   
   // Display pattern analysis
-  console.log('=== Pattern Analysis ===');
-  console.log(`Candlestick Patterns: ${analysis.patterns.candlestick.length} detected`);
   
   // Show recent patterns
   const recentPatterns = analysis.patterns.candlestick.slice(-3);
   recentPatterns.forEach(pattern => {
-    console.log(`  - ${pattern.name} (${pattern.type}) - Confidence: ${(pattern.confidence * 100).toFixed(1)}%`);
   });
-  console.log('');
   
   // Display cycle analysis
-  console.log('=== Cycle Analysis ===');
-  console.log(`Dominant Cycle Period: ${analysis.cycles.detection.dominantCycle.period.toFixed(1)} periods`);
-  console.log(`Cycle Strength: ${(analysis.cycles.detection.cycleStrength * 100).toFixed(1)}%`);
-  console.log('');
   
   // Display fractal analysis
-  console.log('=== Fractal Analysis ===');
-  console.log(`Fractal Dimension: ${analysis.fractals.dimension.fractalDimension.toFixed(3)}`);
-  console.log(`  ${analysis.fractals.dimension.interpretation}`);
-  console.log(`Hurst Exponent: ${analysis.fractals.hurst.hurstExponent.toFixed(3)}`);
-  console.log(`  ${analysis.fractals.hurst.interpretation}`);
-  console.log('');
   
   // Display recommendations
-  console.log('=== Recommendations ===');
   analysis.recommendations.forEach((rec, i) => {
-    console.log(`${i + 1}. ${rec}`);
   });
-  console.log('');
   
   // Generate prediction
-  console.log('=== Price Predictions (Next 5 Periods) ===');
   const prediction = await integratedTechnicalAnalyzer.integratePredictions(marketData, 5);
   
   prediction.predictions.forEach(forecast => {
     const changePercent = (forecast.ensemblePrediction * 100).toFixed(2);
     const confidencePercent = (forecast.confidence * 100).toFixed(1);
-    console.log(`Step ${forecast.step}: ${changePercent > '0' ? '+' : ''}${changePercent}% (Confidence: ${confidencePercent}%)`);
   });
-  console.log('');
   
   return {
     signal: analysis.integrated.overallSignal,

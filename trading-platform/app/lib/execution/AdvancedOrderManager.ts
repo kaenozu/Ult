@@ -626,7 +626,6 @@ export class AdvancedOrderManager extends EventEmitter {
    */
   private log(message: string): void {
     if (this.config.enableLogging) {
-      console.log(`[AdvancedOrderManager] ${message}`);
     }
   }
 

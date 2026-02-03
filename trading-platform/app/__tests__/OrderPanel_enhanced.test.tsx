@@ -16,7 +16,16 @@ jest.mock('../store/portfolioStore', () => ({
 }));
 
 describe.skip('OrderPanel Interaction Tests', () => {
-  const mockStock = { symbol: '7974', name: '任天堂', price: 10000, market: 'japan' as const };
+  const mockStock = { 
+    symbol: '7974', 
+    name: '任天堂', 
+    price: 10000, 
+    market: 'japan' as const,
+    sector: 'Technology',
+    change: 0,
+    changePercent: 0,
+    volume: 1000000
+  };
 
   it('should allow changing quantity and show total cost', async () => {
     render(<OrderPanel stock={mockStock} currentPrice={10000} />);

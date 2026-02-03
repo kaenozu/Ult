@@ -4,6 +4,9 @@ export * from './WinningBacktestEngine';
 
 // Realistic Backtesting Modules (TRADING-030)
 export * from './SlippageModel';
+export * from './CommissionCalculator';
+export * from './PartialFillSimulator';
+export * from './LatencySimulator';
 export * from './WalkForwardAnalyzer';
 export * from './MonteCarloSimulator';
 export * from './RealisticBacktestOrchestrator';

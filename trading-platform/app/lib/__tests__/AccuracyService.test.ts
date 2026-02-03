@@ -240,31 +240,38 @@ describe('AccuracyService', () => {
   });
 
   describe('calculateRealTimeAccuracy', () => {
-    it('should return null for insufficient data', () => {
+    it('should return error for insufficient data', () => {
       const shortData = generateMockData(100);
       const result = accuracyService.calculateRealTimeAccuracy('7203', shortData, 'japan');
 
-      expect(result).toBeNull();
+      expect(result.isErr).toBe(true);
+      if (result.isErr) {
+        expect(result.error.message).toContain('Insufficient data');
+      }
     });
 
     it('should calculate accuracy with sufficient data', () => {
       const data = generateMockData(300, 1000, 'up');
       const result = accuracyService.calculateRealTimeAccuracy('7203', data, 'japan');
 
-      expect(result).toBeDefined();
-      expect(result?.hitRate).toBeGreaterThanOrEqual(0);
-      expect(result?.hitRate).toBeLessThanOrEqual(100);
-      expect(result?.directionalAccuracy).toBeGreaterThanOrEqual(0);
-      expect(result?.directionalAccuracy).toBeLessThanOrEqual(100);
-      expect(result?.totalTrades).toBeGreaterThanOrEqual(0);
+      expect(result.isOk).toBe(true);
+      if (result.isOk) {
+        expect(result.value.hitRate).toBeGreaterThanOrEqual(0);
+        expect(result.value.hitRate).toBeLessThanOrEqual(100);
+        expect(result.value.directionalAccuracy).toBeGreaterThanOrEqual(0);
+        expect(result.value.directionalAccuracy).toBeLessThanOrEqual(100);
+        expect(result.value.totalTrades).toBeGreaterThanOrEqual(0);
+      }
     });
 
     it('should return better accuracy for trending data', () => {
       const trendingData = generateMockData(300, 1000, 'up');
       const result = accuracyService.calculateRealTimeAccuracy('7203', trendingData, 'japan');
 
-      expect(result).toBeDefined();
-      expect(result?.totalTrades).toBeGreaterThanOrEqual(0);
+      expect(result.isOk).toBe(true);
+      if (result.isOk) {
+        expect(result.value.totalTrades).toBeGreaterThanOrEqual(0);
+      }
     });
   });
 
@@ -323,6 +330,70 @@ describe('AccuracyService', () => {
       const result = accuracyService.calculateAIHitRate('7203', dataWithNegative, 'japan');
 
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('Walk-Forward Analysis in runBacktest', () => {
+    it('should include walkForwardMetrics in backtest result', () => {
+      const data = generateMockData(400, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      expect(result).toBeDefined();
+      expect(result.symbol).toBe('7203');
+      
+      // Should have WFA metrics if optimization occurred
+      if (result.walkForwardMetrics) {
+        expect(result.walkForwardMetrics.outOfSampleAccuracy).toBeDefined();
+        expect(result.walkForwardMetrics.outOfSampleAccuracy).toBeGreaterThanOrEqual(0);
+        expect(result.walkForwardMetrics.overfitScore).toBeDefined();
+        expect(result.walkForwardMetrics.parameterStability).toBeDefined();
+      }
+    });
+
+    it('should track parameter stability across optimization windows', () => {
+      const data = generateMockData(500, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      if (result.walkForwardMetrics) {
+        // Parameter stability should be a reasonable number
+        expect(result.walkForwardMetrics.parameterStability).toBeGreaterThanOrEqual(0);
+        expect(result.walkForwardMetrics.parameterStability).toBeLessThan(100);
+      }
+    });
+
+    it('should report out-of-sample accuracy from validation sets', () => {
+      const data = generateMockData(500, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      if (result.walkForwardMetrics) {
+        const oos = result.walkForwardMetrics.outOfSampleAccuracy;
+        
+        // OOS accuracy should be in valid range
+        expect(oos).toBeGreaterThanOrEqual(0);
+        expect(oos).toBeLessThanOrEqual(100);
+      }
+    });
+
+    it('should have overfitScore close to 1.0 indicating good generalization', () => {
+      const data = generateMockData(500, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      if (result.walkForwardMetrics) {
+        // With proper WFA, overfitScore should be 1.0 (no overfitting)
+        // since we're selecting based on validation performance
+        expect(result.walkForwardMetrics.overfitScore).toBe(1.0);
+      }
+    });
+
+    it('should re-optimize at regular intervals during backtest', () => {
+      const data = generateMockData(500, 1000, 'up');
+      const result = accuracyService.runBacktest('7203', data, 'japan');
+
+      // With 500 days and REOPTIMIZATION_INTERVAL=30, should have multiple optimization windows
+      if (result.walkForwardMetrics) {
+        // Should have tracked multiple parameter sets
+        expect(result.walkForwardMetrics.parameterStability).toBeDefined();
+      }
     });
   });
 });

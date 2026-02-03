@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireAuth } from '@/app/lib/auth';
+import { handleApiError } from '@/app/lib/error-handler';
+import { csrfTokenMiddleware, requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
 
 /**
  * @swagger
@@ -54,7 +56,7 @@ import { requireAuth } from '@/app/lib/auth';
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-// GET - Platform status
+// GET - Platform status (set CSRF cookie)
 export async function GET(req: NextRequest) {
   // Require authentication
   const authError = requireAuth(req);
@@ -72,18 +74,27 @@ export async function GET(req: NextRequest) {
     const riskMetrics = platform.getRiskMetrics();
     const alerts = platform.getAlertHistory(10);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       status,
       portfolio,
       signals,
       riskMetrics,
       alerts,
     });
+
+    // Set CSRF token cookie for client-side use
+    const csrfToken = generateCSRFToken();
+    response.cookies.set('csrf-token', csrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24, // 24 hours
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal Server Error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'trading/api');
   }
 }
 
@@ -343,9 +354,6 @@ export async function POST(req: NextRequest) {
         );
     }
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal Server Error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'trading/api');
   }
 }

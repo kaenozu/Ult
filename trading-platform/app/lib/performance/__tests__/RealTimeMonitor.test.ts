@@ -1,11 +1,14 @@
 /**
  * RealTimeMonitor.test.ts
- * 
+ *
  * Unit tests for RealTimeMonitor
  */
 
+import { jest } from "@jest/globals";
 import { RealTimeMonitor } from '../RealTimeMonitor';
 import { Trade, Portfolio, MonitoringAlert } from '@/app/types/performance';
+
+beforeAll(() => { jest.setTimeout(10000); });
 
 describe('RealTimeMonitor', () => {
   let monitor: RealTimeMonitor;

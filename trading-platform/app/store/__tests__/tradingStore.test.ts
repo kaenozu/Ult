@@ -55,7 +55,7 @@ describe('TradingStore', () => {
         side: 'LONG',
         quantity: quantity,
         price: price,
-        type: 'MARKET'
+        orderType: 'MARKET'
       });
     });
 
@@ -82,7 +82,7 @@ describe('TradingStore', () => {
         side: 'LONG',
         quantity: 100,
         price: 1000,
-        type: 'MARKET'
+        orderType: 'MARKET'
       });
     });
 
@@ -95,7 +95,7 @@ describe('TradingStore', () => {
         side: 'LONG',
         quantity: 100,
         price: 2000,
-        type: 'MARKET'
+        orderType: 'MARKET'
       });
     });
 
@@ -128,7 +128,7 @@ describe('TradingStore', () => {
         side: 'LONG',
         quantity: 100,
         price: 1000, // Cost 100,000 > 500
-        type: 'MARKET'
+        orderType: 'MARKET'
       });
     });
 

@@ -117,7 +117,6 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
    */
   start(): void {
     this.isRunning = true;
-    console.log('[AlgorithmicExecutionEngine] Started');
     this.emit('started');
   }
 
@@ -130,7 +129,6 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     this.activeOrders.forEach((order) => {
       this.cancelOrder(order.id);
     });
-    console.log('[AlgorithmicExecutionEngine] Stopped');
     this.emit('stopped');
   }
 

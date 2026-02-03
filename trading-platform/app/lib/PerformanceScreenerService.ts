@@ -119,7 +119,6 @@ export class PerformanceScreenerService {
       market === 'all' || ds.market === market
     );
 
-    console.log(`[PerformanceScreener] Scanning ${filteredSources.length} stocks...`);
 
     // 並列でバックテスト実行（チャンクサイズで制御）
     const CHUNK_SIZE = 10;
@@ -165,8 +164,6 @@ export class PerformanceScreenerService {
     const endTime = performance.now();
     const scanDuration = endTime - startTime;
 
-    console.log(`[PerformanceScreener] Scan completed in ${scanDuration.toFixed(0)}ms`);
-    console.log(`[PerformanceScreener] Found ${filtered.length} stocks matching criteria`);
 
     return {
       results: topResults,
@@ -192,7 +189,6 @@ export class PerformanceScreenerService {
     const cacheKey = `${symbol}:${lookbackDays}`;
     const cached = this.cache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
-      console.log(`[PerformanceScreener] Cache hit for ${symbol}`);
       return cached.result;
     }
 

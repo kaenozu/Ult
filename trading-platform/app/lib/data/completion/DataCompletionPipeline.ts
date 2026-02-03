@@ -25,7 +25,6 @@ import type {
  * ```typescript
  * const pipeline = new DataCompletionPipeline();
  * const result = await pipeline.complete(dataWithGaps, 'AAPL');
- * console.log(`Completed ${result.completedCount} data points`);
  * ```
  */
 export class DataCompletionPipeline {

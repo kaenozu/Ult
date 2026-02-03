@@ -10,7 +10,7 @@ jest.mock('../lib/TechnicalIndicatorService', () => ({
 }));
 
 describe('screener-utils', () => {
-    const mockStock: Stock = { symbol: 'TEST', name: 'Test', market: 'japan', price: 100, change: 0, changePercent: 0, volume: 1000 };
+    const mockStock: Stock = { symbol: 'TEST', name: 'Test', market: 'japan', sector: 'Technology', price: 100, change: 0, changePercent: 0, volume: 1000 };
     const mockOHLCV: OHLCV[] = Array(60).fill({ close: 100, high: 105, low: 95, open: 100, volume: 1000, date: '2026-01-01' });
 
     beforeEach(() => {

@@ -100,6 +100,13 @@ export interface TechnicalIndicator {
   };
 }
 
+/**
+ * Technical indicators with ATR (Average True Range) for ML prediction
+ */
+export interface TechnicalIndicatorsWithATR extends TechnicalIndicator {
+  atr: number[];
+}
+
 export interface ModelPrediction {
   rfPrediction: number;
   xgbPrediction: number;
@@ -346,6 +353,13 @@ export interface BacktestResult {
   trades: BacktestTrade[];
   startDate: string;
   endDate: string;
+  // Walk-Forward Analysis metrics
+  walkForwardMetrics?: {
+    inSampleAccuracy: number;  // Average accuracy during training
+    outOfSampleAccuracy: number;  // Average accuracy during validation
+    overfitScore: number;  // Ratio of OOS/IS accuracy (closer to 1.0 = less overfitting)
+    parameterStability: number;  // Standard deviation of parameters across windows
+  };
 }
 
 // ============================================================================
@@ -864,3 +878,50 @@ export type {
   DisciplineCheckRequest,
   DisciplineCheckResponse,
 } from './psychology';
+
+// ============================================================================
+// Type Guards and Branded Types
+// ============================================================================
+
+export {
+  isOHLCV,
+  isOHLCVArray,
+  isOrderSide,
+  isOrderType,
+  isOrderStatus,
+  isSignalType,
+  isMarketType,
+  isTimeHorizon,
+  isPositionSizingMethod,
+  isStopLossType,
+  assertOHLCV,
+  assertOHLCVArray,
+} from './shared';
+
+export type {
+  SymbolId,
+  Percentage,
+  Ratio,
+  Price,
+  Volume,
+  TimestampMs,
+  DateString,
+  TradeId,
+  OrderId,
+} from './branded';
+
+export {
+  createSymbolId,
+  isSymbolId,
+  createPercentage,
+  createRatio,
+  createPrice,
+  createVolume,
+  createTimestampMs,
+  createDateString,
+  createTradeId,
+  createOrderId,
+  percentageToRatio,
+  ratioToPercentage,
+} from './branded';
+

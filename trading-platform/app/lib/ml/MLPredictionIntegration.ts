@@ -19,7 +19,6 @@ export class MLPredictionIntegration {
     try {
       await ensembleStrategy.loadModels();
       this.isModelLoaded = true;
-      console.log('ML models loaded successfully');
     } catch (error) {
       console.error('Failed to load ML models:', error);
       this.isModelLoaded = false;

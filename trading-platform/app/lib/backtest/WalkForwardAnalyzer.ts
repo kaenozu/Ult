@@ -8,7 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
-import { BacktestResult, BacktestConfig, Strategy, StrategyAction, StrategyContext } from './AdvancedBacktestEngine';
+import { BacktestResult, BacktestConfig, Strategy, StrategyAction, StrategyContext, Trade, PerformanceMetrics } from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -186,11 +186,6 @@ export class WalkForwardAnalyzer extends EventEmitter {
     strategyFactory: (params: Record<string, number>) => Strategy,
     baseConfig: BacktestConfig
   ): Promise<WalkForwardReport> {
-    console.log('[WalkForwardAnalyzer] Starting walk-forward analysis');
-    console.log(`  Data points: ${data.length}`);
-    console.log(`  Training size: ${this.config.trainingSize}`);
-    console.log(`  Test size: ${this.config.testSize}`);
-    console.log(`  Window type: ${this.config.windowType}`);
 
     // 最小データポイントチェック
     if (data.length < this.config.minDataPoints) {
@@ -234,7 +229,6 @@ export class WalkForwardAnalyzer extends EventEmitter {
       }
     }
 
-    console.log(`[WalkForwardAnalyzer] Completed ${windows.length} windows`);
 
     // レポートを生成
     const report = this.generateReport(windows, data);
@@ -367,7 +361,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
     // 簡易実装：既存のバックテストエンジンを使用せず、
     // 直接シミュレーションを実行
 
-    const trades: any[] = [];
+    const trades: Trade[] = [];
     let equity = config.initialCapital;
     const equityCurve: number[] = [equity];
     let position: { side: 'LONG' | 'SHORT' | null; entryPrice: number; quantity: number } | null = null;
@@ -430,7 +424,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
   /**
    * メトリクスを計算
    */
-  private calculateMetrics(equityCurve: number[], trades: any[], config: BacktestConfig): any {
+  private calculateMetrics(equityCurve: number[], trades: Trade[], config: BacktestConfig): PerformanceMetrics {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);
     const totalReturn = ((equityCurve[equityCurve.length - 1] - config.initialCapital) / config.initialCapital) * 100;
 
