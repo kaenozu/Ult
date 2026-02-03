@@ -159,7 +159,7 @@ export const ConnectionQualityIndicator = memo(function ConnectionQualityIndicat
   }, [metrics, status]);
   
   const colors = useMemo(() => getQualityColors(quality), [quality]);
-  const SignalIcon = useMemo(() => getSignalIcon(quality), [quality]);
+  const SignalIcon = getSignalIcon(quality);
   const statusLabel = useMemo(() => getStatusLabel(status), [status]);
 
   // Compact view - just status badge

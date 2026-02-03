@@ -1,3 +1,5 @@
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
+import { requireAuth } from '@/app/lib/auth';
 /**
  * GET /api/sentiment/route.ts
  * 
@@ -8,8 +10,6 @@ import { NextRequest } from 'next/server';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
-import { requireAuth } from '@/app/lib/auth';
-import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
 
 export const GET = createGetHandler(
   async () => {
