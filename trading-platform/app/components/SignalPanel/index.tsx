@@ -279,7 +279,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       </div>
 
       {activeTab === 'signal' ? (
-        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full flex flex-col gap-3 overflow-y-auto">
+        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="flex-1 flex flex-col gap-3 overflow-y-auto">
           {/* Low Accuracy Warning */}
           {displaySignal && displaySignal.type !== 'HOLD' && (
             <LowAccuracyWarning

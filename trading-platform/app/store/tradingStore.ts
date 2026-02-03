@@ -377,8 +377,10 @@ export const useTradingStore = create<TradingStore>()(
           const sells = orders.filter(o => o.side === 'SELL');
           
           // 簡略版: 各BUYに対して次のSELLでP&Lを計算
+          // 実際にクローズされた数量を使用
           for (let i = 0; i < Math.min(buys.length, sells.length); i++) {
-            const profit = (sells[i].price - buys[i].price) * buys[i].quantity;
+            const closedQuantity = Math.min(buys[i].quantity, sells[i].quantity);
+            const profit = (sells[i].price - buys[i].price) * closedQuantity;
             trades.push({ profit });
           }
         });
@@ -396,13 +398,17 @@ export const useTradingStore = create<TradingStore>()(
         const winningTrades = trades.filter(t => t.profit > 0);
         const losingTrades = trades.filter(t => t.profit < 0);
 
+        // デフォルト値（最小限のトレード履歴がある場合）
+        const DEFAULT_AVG_WIN = 100; // デフォルト平均利益（単位: 通貨）
+        const DEFAULT_AVG_LOSS = 50; // デフォルト平均損失（単位: 通貨）
+
         const winRate = winningTrades.length / trades.length;
         const avgWin = winningTrades.length > 0
           ? winningTrades.reduce((sum, t) => sum + t.profit, 0) / winningTrades.length
-          : 100; // デフォルト値
+          : DEFAULT_AVG_WIN;
         const avgLoss = losingTrades.length > 0
           ? Math.abs(losingTrades.reduce((sum, t) => sum + t.profit, 0) / losingTrades.length)
-          : 50; // デフォルト値
+          : DEFAULT_AVG_LOSS;
 
         return {
           winRate,
