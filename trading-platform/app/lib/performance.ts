@@ -200,12 +200,6 @@ export function usePerformanceMonitor(
           `[Render] ${componentName} #${renderCountRef.current} ` +
           `(${timeSinceLastRender.toFixed(2)}ms since last render)`
         );
-      if (lastRenderTimeRef.current) {
-        const timeSinceLastRender = now - lastRenderTimeRef.current;
-        console.log(
-          `[Render] ${componentName} #${renderCountRef.current} ` +
-          `(${timeSinceLastRender.toFixed(2)}ms since last render)`
-        );
       } else {
         console.log(`[Render] ${componentName} #${renderCountRef.current} (first render)`);
       }

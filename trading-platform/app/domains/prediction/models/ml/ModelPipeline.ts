@@ -372,16 +372,17 @@ export class ModelPipeline {
       throw new Error('Model not loaded');
     }
 
-    const { xTest, yTest } = this.prepareSequences(testData, this.config.sequenceLength);
+    // Use validation data from prepareSequences (testData is used for preparation)
+    const { xVal, yVal } = this.prepareSequences(testData, this.config.sequenceLength);
 
-    const result = this.model.evaluate(xTest, yTest) as tf.Scalar[];
-    
+    const result = this.model.evaluate(xVal, yVal) as tf.Scalar[];
+
     const loss = await result[0].data();
     const mae = await result[1].data();
     const mse = await result[2].data();
 
-    xTest.dispose();
-    yTest.dispose();
+    xVal.dispose();
+    yVal.dispose();
     result.forEach(r => r.dispose());
 
     return {

@@ -4,7 +4,7 @@
  * 特徴量計算サービス
  */
 
-import { OHLCV } from '../../../lib/types';
+import { OHLCV } from '@/app/types';
 import { PredictionFeatures } from '../types';
 
 export class FeatureCalculationService {

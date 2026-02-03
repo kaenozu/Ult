@@ -56,7 +56,8 @@ export function usePsychology() {
       const cooldown = coolingOffManagerRef.current.enforceCoolingOff({
         type: 'consecutive_losses',
         severity: Math.min(10, metrics.consecutiveLosses),
-        triggerValue: metrics.consecutiveLosses
+        triggerValue: metrics.consecutiveLosses,
+        description: `${metrics.consecutiveLosses} consecutive losses detected`
       });
       psychologyState.startCooldown(cooldown);
     }
@@ -115,7 +116,8 @@ export function usePsychology() {
     const cooldown = coolingOffManagerRef.current.enforceCoolingOff({
       type: 'manual',
       severity: Math.ceil(minutes / 60), // 1-10 scale based on hours
-      triggerValue: minutes
+      triggerValue: minutes,
+      description: `Manual cooldown for ${minutes} minutes`
     });
     psychologyState.startCooldown(cooldown);
   };

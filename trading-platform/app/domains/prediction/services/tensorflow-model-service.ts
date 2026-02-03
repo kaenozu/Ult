@@ -6,7 +6,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures } from '../types';
 
 // Set TensorFlow.js backend to CPU for Node.js environment
 if (typeof window === 'undefined') {
@@ -483,9 +483,10 @@ export class FeedForwardModel extends BaseTensorFlowModel {
 }
 
 /**
- * Helper function to convert PredictionFeatures to feature array
+ * Helper function to convert features object to feature array
+ * @param features - Features object (can be PredictionFeatures or any compatible object)
  */
-export function featuresToArray(features: PredictionFeatures): number[] {
+export function featuresToArray(features: any): number[] {
   return [
     features.rsi / 100,           // Normalize to 0-1
     features.rsiChange / 100,

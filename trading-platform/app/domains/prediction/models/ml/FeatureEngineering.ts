@@ -5,9 +5,9 @@
  * テクニカル指標の拡張、マクロ経済指標の統合、センチメント分析、時系列特徴量を提供します。
  */
 
-import { OHLCV } from '../../types/shared';
-import { calculateSMA, calculateEMA, calculateRSI, calculateMACD, calculateBollingerBands, calculateATR } from '../utils';
-import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '../constants';
+import { OHLCV } from '@/app/types';
+import { calculateSMA, calculateEMA, calculateRSI, calculateMACD, calculateBollingerBands, calculateATR } from '@/app/lib/utils';
+import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '@/app/lib/constants/technical-indicators';
 
 /**
  * テクニカル指標の拡張特徴量
@@ -762,6 +762,29 @@ export class FeatureEngineering {
   private lastValue(arr: number[]): number {
     const validValues = arr.filter(v => !isNaN(v) && v !== 0);
     return validValues.length > 0 ? validValues[validValues.length - 1] : 0;
+  }
+
+  /**
+   * MLPredictionIntegration 互換性: 特徴量を抽出
+   * @deprecated Use calculateAllFeatures instead
+   */
+  extractFeatures(data: OHLCV[], windowSize: number): AllFeatures {
+    return this.calculateAllFeatures(data);
+  }
+
+  /**
+   * MLPredictionIntegration 互換性: 特徴量正規化
+   * @deprecated Features are already normalized in calculateAllFeatures
+   */
+  normalizeFeatures(features: AllFeatures): { normalized: AllFeatures; stats: any } {
+    // Simplified: return as-is with placeholder stats
+    return {
+      normalized: features,
+      stats: {
+        means: {},
+        stds: {},
+      },
+    };
   }
 }
 

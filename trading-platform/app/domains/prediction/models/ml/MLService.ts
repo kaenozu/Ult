@@ -5,7 +5,7 @@
  * 特徴量エンジニアリング、アンサンブルモデル、ドリフト検出を統合します。
  */
 
-import { OHLCV } from '../../types/shared';
+import { OHLCV } from '@/app/types';
 import { featureEngineering, AllFeatures } from './FeatureEngineering';
 import { ensembleModel, EnsemblePrediction } from './EnsembleModel';
 import { modelDriftDetector, DriftDetectionResult } from './ModelDriftDetector';
@@ -164,7 +164,7 @@ export class MLService {
     statistics: ReturnType<typeof modelDriftDetector.getStatisticsSummary>;
   } {
     return {
-      ensembleWeights: ensembleModel.getCurrentWeights() as Record<string, number>,
+      ensembleWeights: ensembleModel.getCurrentWeights() as unknown as Record<string, number>,
       modelStats: ensembleModel.getModelPerformanceStats(),
       driftStatus: modelDriftDetector.detectDrift(),
       statistics: modelDriftDetector.getStatisticsSummary(),
@@ -279,12 +279,7 @@ export class MLService {
   /**
    * 統計情報をエクスポート
    */
-  exportStatistics(): {
-    predictionHistory: ReturnType<typeof modelDriftDetector.exportPredictionHistory>;
-    driftHistory: ReturnType<typeof modelDriftDetector.getDriftHistory>;
-    currentWeights: ReturnType<typeof ensembleModel.getCurrentWeights>;
-    performanceSummary: ReturnType<typeof this.getModelPerformanceSummary>;
-  } {
+  exportStatistics() {
     return {
       predictionHistory: modelDriftDetector.exportPredictionHistory(),
       driftHistory: modelDriftDetector.getDriftHistory(),

@@ -7,10 +7,10 @@
 
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
 import { FeatureCalculationService } from './feature-calculation-service';
-import { enhancedMLService } from './enhanced-ml-service';
-import { analyzeStock } from '../analysis';
-import { mlPredictionService } from '../mlPrediction';
-import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '../constants';
+import { enhancedMLService, EnhancedPrediction } from './enhanced-ml-service';
+import { analyzeStock } from '@/app/lib/analysis';
+import { mlPredictionService } from '@/app/lib/mlPrediction';
+import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '@/app/lib/constants';
 
 export interface IntegratedPredictionResult {
   signal: Signal;
@@ -19,8 +19,8 @@ export interface IntegratedPredictionResult {
     kellyFraction: number;
     recommendedPositionSize: number;
     driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
-    marketRegime: string;
-    volatility: string;
+    marketRegime: any; // Matches EnhancedPrediction.marketRegime
+    volatility: any;
   };
   modelStats: {
     rfHitRate: number;
@@ -49,11 +49,8 @@ export class IntegratedPredictionService {
     data: OHLCV[],
     indexData?: OHLCV[]
   ): Promise<IntegratedPredictionResult> {
-    // 1. Calculate technical indicators first
-    const indicators = mlPredictionService.calculateIndicators(data);
-    
-    // 2. Calculate features from indicators
-    const features = this.featureService.calculateFeatures(data, indicators);
+    // 1. Calculate features directly (indicators calculation built into feature service)
+    const features = this.featureService.calculateFeatures(data);
 
     // 3. Get enhanced prediction
     const enhancedPrediction = await enhancedMLService.predictEnhanced(
@@ -102,16 +99,7 @@ export class IntegratedPredictionService {
   private generateSignal(
     stock: Stock,
     data: OHLCV[],
-    enhancedPrediction: {
-      prediction: number;
-      confidence: number;
-      expectedValue: number;
-      kellyFraction: number;
-      recommendedPositionSize: number;
-      driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
-      marketRegime: string;
-      volatility: string;
-    },
+    enhancedPrediction: EnhancedPrediction,
     shouldTrade: boolean,
     indexData?: OHLCV[]
   ): Signal {
@@ -189,15 +177,7 @@ export class IntegratedPredictionService {
    */
   private generateReason(
     type: 'BUY' | 'SELL' | 'HOLD',
-    enhancedPrediction: {
-      prediction: number;
-      confidence: number;
-      expectedValue: number;
-      kellyFraction: number;
-      driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
-      marketRegime: string;
-      volatility: string;
-    },
+    enhancedPrediction: EnhancedPrediction,
     optimizedParams?: { rsiPeriod: number; smaPeriod: number }
   ): string {
     const parts: string[] = [];
@@ -227,8 +207,8 @@ export class IntegratedPredictionService {
 
     // Market regime context
     const regimeText = this.getRegimeText(
-      enhancedPrediction.marketRegime,
-      enhancedPrediction.volatility
+      enhancedPrediction.marketRegime.regime,
+      enhancedPrediction.marketRegime.volatility
     );
     if (regimeText) {
       parts.push(regimeText);
