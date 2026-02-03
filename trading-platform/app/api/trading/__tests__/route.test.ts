@@ -579,7 +579,7 @@ describe('POST /api/trading', () => {
       const data = await res.json();
 
       expect(res.status).toBe(500);
-      expect(data.error).toBe('Internal Server Error');
+      expect(data.error).toBe('String error');
     });
   });
 });

@@ -250,7 +250,18 @@ npm run test:coverage
 - 関数: 80%
 - 行: 80%
 
-現在のカバレッジ状況は、CI/CDパイプラインで自動的に確認されます。
+現在のカバレッジ状況は、CI/CDパイプラインで自動的に確認され、Codecovにアップロードされます。
+
+[![codecov](https://codecov.io/gh/kaenozu/Ult/branch/main/graph/badge.svg)](https://codecov.io/gh/kaenozu/Ult)
+
+**カバレッジ可視化**:
+
+1. **ローカルHTMLレポート**: `coverage/lcov-report/index.html` をブラウザで開く
+2. **Codecovダッシュボード**: 上記バッジをクリックして詳細なカバレッジ分析を確認
+3. **CLIツール**: `npx codecov` でカバレッジをアップロード（CI環境）
+4. **GitHub Check**: PRにカバレッジ変化が自動的に表示
+
+詳細は [COVERAGE_VISUALIZATION_GUIDE.md](./COVERAGE_VISUALIZATION_GUIDE.md) を参照してください。
 
 ### 🎭 E2Eテストカバレッジ
 
@@ -307,6 +318,58 @@ GitHub Actionsを使用したCI/CDパイプラインが実装されています�
 
 ### 📁 プロジェクト構造
 
+#### 🆕 ドメイン駆動アーキテクチャ (推奨)
+
+プロジェクトは**ドメイン駆動アーキテクチャ**に移行しています。新しいコードは以下の構造を使用してください：
+
+```
+trading-platform/app/
+├── domains/                    # ドメイン層（ビジネスロジック）
+│   ├── prediction/             # 予測ドメイン
+│   │   ├── models/            # MLモデル
+│   │   ├── services/          # 予測サービス
+│   │   ├── hooks/             # 予測関連フック
+│   │   └── index.ts           # 公開API
+│   ├── backtest/              # バックテストドメイン
+│   │   ├── engine/            # バックテストエンジン
+│   │   ├── metrics/           # パフォーマンス指標
+│   │   └── index.ts
+│   ├── market-data/           # 市場データドメイン
+│   │   ├── api/               # データAPI
+│   │   ├── cache/             # キャッシュ管理
+│   │   ├── quality/           # 品質監視
+│   │   └── index.ts
+│   └── portfolio/             # ポートフォリオドメイン
+│       ├── PortfolioOptimizer.ts
+│       └── index.ts
+├── infrastructure/            # インフラ層
+│   ├── api/                   # API基盤
+│   ├── websocket/             # WebSocket管理
+│   └── cache/                 # キャッシュ基盤
+├── ui/                        # UI層
+│   ├── components/            # UIコンポーネント
+│   └── hooks/                 # UIフック
+└── shared/                    # 共有リソース
+    ├── types/                 # 共通型定義
+    ├── constants/             # 定数
+    └── utils/                 # ユーティリティ
+
+# 使用例
+import { MLModelService } from '@/domains/prediction';
+import { AdvancedBacktestEngine } from '@/domains/backtest';
+import { DataQualityChecker } from '@/domains/market-data';
+```
+
+**詳細ドキュメント**: [DOMAIN_ARCHITECTURE_GUIDE.md](./DOMAIN_ARCHITECTURE_GUIDE.md)
+
+**主な利点**:
+- ✅ ドメイン単位でコードを発見しやすい
+- ✅ 明確な責任境界
+- ✅ 関連ファイルの集約
+- ✅ スケーラブルな構造
+
+#### 従来の構造 (レガシー)
+
 ```
 Ult/
 ├── trading-platform/            # フロントエンド (Next.js)
@@ -340,6 +403,8 @@ Ult/
 ├── skills/                      # 自動化スクリプト
 └── scripts/                     # ユーティリティスクリプト
 ```
+
+> **注**: 新しいコードは`domains/`構造を使用することを推奨します。既存の`lib/`構造は互換性のため維持されています。
 
 ## 🎯 使い方
 
@@ -661,3 +726,22 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
   <strong>⚡ AIで次のトレードを予測しよう ⚡</strong><br>
   <sub>※投資判断は自己責任で行ってください</sub>
 </div>
+### CSRF Protection
+
+The platform implements CSRF protection using double-submit cookie pattern. All state-changing operations (POST/PUT/DELETE) require a valid CSRF token.
+
+## CSRF Protection
+
+This platform implements CSRF (Cross-Site Request Forgery) protection using the double-submit cookie pattern:
+
+1. **GET requests** set a secure, httpOnly cookie with a random token
+2. **State-changing requests** (POST/PUT/PATCH) must include the same token in the `x-csrf-token` header
+3. Server validates that cookie token matches header token using timing-safe comparison
+
+All state-changing API endpoints automatically require valid CSRF tokens.
+
+Configuration:
+- `ENABLE_CSRF_PROTECTION` (default: true)
+- `CSRF_TOKEN_LENGTH` (default: 32 bytes)
+
+See `app/lib/csrf/csrf-protection.ts` for implementation details.

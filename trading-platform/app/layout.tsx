@@ -4,6 +4,7 @@ import { I18nProvider } from "@/app/i18n/provider";
 import "./globals.css";
 import { MonitoringProvider } from "./components/MonitoringProvider";
 import { BehavioralWarningProvider } from "./components/BehavioralWarningProvider";
+import { MLProvider } from "./components/MLProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,13 +24,15 @@ export default function RootLayout({
   return (
     <html lang="ja" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <MonitoringProvider>
-          <BehavioralWarningProvider>
-            <I18nProvider>
-              {children}
-            </I18nProvider>
-          </BehavioralWarningProvider>
-        </MonitoringProvider>
+        <MLProvider>
+          <MonitoringProvider>
+            <BehavioralWarningProvider>
+              <I18nProvider>
+                {children}
+              </I18nProvider>
+            </BehavioralWarningProvider>
+          </MonitoringProvider>
+        </MLProvider>
       </body>
     </html>
   );

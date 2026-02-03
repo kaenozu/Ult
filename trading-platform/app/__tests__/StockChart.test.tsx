@@ -86,13 +86,15 @@ describe('StockChart', () => {
 
   it('renders volume profile plugin when enabled', () => {
     // Mock signal with volume resistance
-    const mockSignalLocal = {
+    const mockSignalLocal: Signal = {
       symbol: 'TEST',
-      type: 'BUY' as const,
+      type: 'BUY',
       confidence: 80,
       predictedChange: 5,
       targetPrice: 1000,
       stopLoss: 900,
+      reason: 'Strong volume resistance detected',
+      predictionDate: '2026-01-25',
       volumeResistance: [
         { price: 100, strength: 0.8 },
         { price: 110, strength: 0.4 }
@@ -106,13 +108,15 @@ describe('StockChart', () => {
   });
 
   it('calculates ghost forecast on hover', () => {
-    const mockSignalLocal = {
+    const mockSignalLocal: Signal = {
       symbol: 'TEST',
-      type: 'BUY' as const,
+      type: 'BUY',
       confidence: 80,
       predictedChange: 5,
       targetPrice: 1000,
-      stopLoss: 900
+      stopLoss: 900,
+      reason: 'Test signal for hover',
+      predictionDate: '2026-01-25'
     };
 
     // Need minimal data for ghost forecast

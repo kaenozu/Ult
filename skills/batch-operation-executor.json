@@ -1,0 +1,47 @@
+{
+  "name": "batch-operation-executor",
+  "description": "複数のファイル、PR、ブランチに対する一括操作を実行するスキル。一括置換、一括移動、一括リネーム、ステータス一括変更などの反復作業を自動化する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "triggers": [
+    "一括",
+    "全部",
+    "まとめて",
+    "バッチ処理",
+    "すべてのPR"
+  ],
+  "rules": [
+    "parallel-processing",
+    "error-isolation",
+    "progress-tracking",
+    "rollback-capability",
+    "batch-size-optimization"
+  ],
+  "operation_types": {
+    "file_operations": "複数ファイルの編集・移動・削除",
+    "pr_operations": "複数PRのマージ・クローズ・更新",
+    "branch_operations": "複数ブランチの作成・削除・リベース",
+    "search_replace": "複数ファイルでの検索・置換"
+  },
+  "workflow": {
+    "step1": "操作対象のリスト作成",
+    "step2": "依存関係と順序の分析",
+    "step3": "バッチサイズの決定（5-10件単位）",
+    "step4": "並列処理の実行",
+    "step5": "エラー発生時の個別対応",
+    "step6": "進捗状況のリアルタイム報告",
+    "step7": "最終結果サマリー"
+  },
+  "error_handling": {
+    "continue_on_error": "個別エラーで全体を停止しない",
+    "retry_logic": "失敗時の自動リトライ（最大3回）",
+    "fallback_strategy": "代替アプローチの自動選択"
+  },
+  "capabilities": [
+    "大量データの効率的な並列処理",
+    "エラー隔離と継続処理",
+    "進捗状況の可視化",
+    "失敗時の自動リトライ"
+  ]
+}

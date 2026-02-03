@@ -82,7 +82,6 @@ export class MultiSourceDataAggregator {
       healthScore: source.healthScore || 100,
     });
     
-    console.log(`[Aggregator] Registered source: ${source.name} (priority: ${source.priority})`);
   }
   
   /**
@@ -90,7 +89,6 @@ export class MultiSourceDataAggregator {
    */
   unregisterSource(sourceId: string): void {
     this.sources.delete(sourceId);
-    console.log(`[Aggregator] Unregistered source: ${sourceId}`);
   }
   
   /**
@@ -314,7 +312,6 @@ export class MultiSourceDataAggregator {
       // Re-enable sources that have recovered
       if (!source.enabled && source.healthScore > 50) {
         source.enabled = true;
-        console.log(`[Aggregator] Re-enabled source: ${source.name}`);
       }
       
       // Decay health score for inactive sources

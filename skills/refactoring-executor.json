@@ -1,0 +1,53 @@
+{
+  "name": "refactoring-executor",
+  "description": "大規模なリファクタリングを体系的に実行するスキル。フェーズ分け、並列実装、コンフリクト解決、段階的マージを自動化する。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": true,
+  "triggers": [
+    "リファクタリング",
+    "コード整理",
+    "リファクタ",
+    "構造改善",
+    "リファクタリング実装"
+  ],
+  "rules": [
+    "phase-based-execution",
+    "parallel-implementation",
+    "conflict-resolution",
+    "incremental-merge",
+    "rollback-strategy"
+  ],
+  "phases": {
+    "phase1": "基盤構築（定数・型・エラー処理）",
+    "phase2": "アーキテクチャ改善（責務分離・データパイプライン）",
+    "phase3": "品質向上（テスト・ファイル構造・設定）",
+    "phase4": "監視・最適化（パフォーマンス計測）"
+  },
+  "workflow": {
+    "step1": "リファクタリング対象の分析と分類",
+    "step2": "フェーズ分けと依存関係の特定",
+    "step3": "git worktreeによる並列作業環境構築",
+    "step4": "各フェーズの並列実装",
+    "step5": "コンフリクトの検出と解決",
+    "step6": "リモートmainとの同期",
+    "step7": "PR作成とレビュー対応",
+    "step8": "段階的マージ"
+  },
+  "techniques": [
+    "git-worktree-parallel-development",
+    "dependency-injection-setup",
+    "interface-extraction",
+    "barrel-exports",
+    "type-safe-configuration",
+    "result-type-error-handling",
+    "performance-measurement-decorators"
+  ],
+  "capabilities": [
+    "大規模リファクタリングの体系的実行",
+    "複数ブランチの並列管理",
+    "自動コンフリクト解決",
+    "フェーズ型ロールバック",
+    "包括的なドキュメント生成"
+  ]
+}

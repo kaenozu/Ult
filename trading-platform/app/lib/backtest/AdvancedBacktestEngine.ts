@@ -7,6 +7,10 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
+import { SlippageModel } from './SlippageModel';
+import { CommissionCalculator } from './CommissionCalculator';
+import { PartialFillSimulator } from './PartialFillSimulator';
+import { LatencySimulator } from './LatencySimulator';
 
 // ============================================================================
 // Types
@@ -28,6 +32,19 @@ export interface Trade {
   pnlPercent: number;
   fees: number;
   exitReason: 'target' | 'stop' | 'signal' | 'end_of_data';
+  
+  // Realistic mode details
+  slippageAmount?: number;
+  commissionBreakdown?: {
+    entryCommission: number;
+    exitCommission: number;
+  };
+  partialFills?: Array<{
+    quantity: number;
+    price: number;
+    bar: number;
+  }>;
+  latencyMs?: number;
 }
 
 export interface BacktestConfig {
@@ -41,6 +58,16 @@ export interface BacktestConfig {
   useStopLoss: boolean;
   useTakeProfit: boolean;
   riskPerTrade: number; // percentage
+  
+  // Realistic mode settings
+  realisticMode?: boolean; // Enable realistic trading simulation
+  market?: 'japan' | 'usa'; // Market for commission calculation
+  averageDailyVolume?: number; // For partial fill simulation
+  slippageEnabled?: boolean; // Use advanced slippage model
+  commissionEnabled?: boolean; // Use market-specific commissions
+  partialFillEnabled?: boolean; // Simulate partial fills
+  latencyEnabled?: boolean; // Simulate execution latency
+  latencyMs?: number; // Latency in milliseconds
 }
 
 export interface BacktestResult {
@@ -113,6 +140,16 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
   useStopLoss: true,
   useTakeProfit: true,
   riskPerTrade: 2, // 2%
+  
+  // Realistic mode defaults
+  realisticMode: false,
+  market: 'japan',
+  averageDailyVolume: 1000000,
+  slippageEnabled: false,
+  commissionEnabled: false,
+  partialFillEnabled: false,
+  latencyEnabled: false,
+  latencyMs: 500,
 };
 
 // ============================================================================
@@ -131,11 +168,40 @@ export class AdvancedBacktestEngine extends EventEmitter {
   private stopLoss: number = 0;
   private takeProfit: number = 0;
   private indicators: Map<string, number[]> = new Map();
+  
+  // Realistic mode components
+  private slippageModel?: SlippageModel;
+  private commissionCalculator?: CommissionCalculator;
+  private partialFillSimulator?: PartialFillSimulator;
+  private latencySimulator?: LatencySimulator;
 
   constructor(config: Partial<BacktestConfig> = {}) {
     super();
     this.config = { ...DEFAULT_BACKTEST_CONFIG, ...config };
     this.currentEquity = this.config.initialCapital;
+    
+    // Initialize realistic components if enabled
+    if (this.config.realisticMode || this.config.slippageEnabled) {
+      this.slippageModel = new SlippageModel({
+        baseSlippage: this.config.slippage,
+        spread: this.config.spread,
+        averageDailyVolume: this.config.averageDailyVolume,
+      });
+    }
+    
+    if (this.config.realisticMode || this.config.commissionEnabled) {
+      this.commissionCalculator = new CommissionCalculator(
+        this.config.market || 'japan'
+      );
+    }
+    
+    if (this.config.realisticMode || this.config.partialFillEnabled) {
+      this.partialFillSimulator = new PartialFillSimulator();
+    }
+    
+    if (this.config.realisticMode || this.config.latencyEnabled) {
+      this.latencySimulator = new LatencySimulator();
+    }
   }
 
   /**
@@ -155,7 +221,6 @@ export class AdvancedBacktestEngine extends EventEmitter {
       throw new Error(`No data loaded for symbol: ${symbol}`);
     }
 
-    console.log(`[BacktestEngine] Running backtest for ${symbol} with strategy: ${strategy.name}`);
 
     // Initialize
     this.resetState();
@@ -182,7 +247,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
       if (this.currentPosition) {
         const exitAction = this.checkExitConditions(currentData);
         if (exitAction) {
-          this.closePosition(currentData, exitAction.exitReason);
+          this.closePosition(currentData, exitAction.exitReason, i);
           continue;
         }
       }
@@ -191,7 +256,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
       const action = strategy.onData(currentData, i, context);
 
       // Execute action
-      await this.executeAction(action, currentData);
+      await this.executeAction(action, currentData, i);
 
       // Record equity
       this.equityCurve.push(this.currentEquity);
@@ -199,7 +264,6 @@ export class AdvancedBacktestEngine extends EventEmitter {
       // Check max drawdown
       const currentDrawdown = this.calculateCurrentDrawdown();
       if (currentDrawdown > this.config.maxDrawdown) {
-        console.log('[BacktestEngine] Max drawdown reached, stopping backtest');
         break;
       }
     }
@@ -207,7 +271,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     // Close any open position at the end
     if (this.currentPosition) {
       const lastData = data[data.length - 1];
-      this.closePosition(lastData, 'end_of_data');
+      this.closePosition(lastData, 'end_of_data', data.length - 1);
     }
 
     // Calculate metrics
@@ -321,29 +385,29 @@ export class AdvancedBacktestEngine extends EventEmitter {
     return null;
   }
 
-  private async executeAction(action: StrategyAction, data: OHLCV): Promise<void> {
+  private async executeAction(action: StrategyAction, data: OHLCV, index: number = 0): Promise<void> {
     switch (action.action) {
       case 'BUY':
         if (!this.currentPosition && this.config.allowShort !== false) {
-          this.openPosition('LONG', data, action);
+          this.openPosition('LONG', data, action, index);
         } else if (this.currentPosition === 'SHORT') {
-          this.closePosition(data, 'signal');
-          this.openPosition('LONG', data, action);
+          this.closePosition(data, 'signal', index);
+          this.openPosition('LONG', data, action, index);
         }
         break;
       case 'SELL':
         if (!this.currentPosition && this.config.allowShort) {
-          this.openPosition('SHORT', data, action);
+          this.openPosition('SHORT', data, action, index);
         } else if (this.currentPosition === 'LONG') {
-          this.closePosition(data, 'signal');
+          this.closePosition(data, 'signal', index);
           if (this.config.allowShort) {
-            this.openPosition('SHORT', data, action);
+            this.openPosition('SHORT', data, action, index);
           }
         }
         break;
       case 'CLOSE':
         if (this.currentPosition) {
-          this.closePosition(data, 'signal');
+          this.closePosition(data, 'signal', index);
         }
         break;
       case 'HOLD':
@@ -353,9 +417,29 @@ export class AdvancedBacktestEngine extends EventEmitter {
     }
   }
 
-  private openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction): void {
-    const price = this.applySlippage(data.close, side === 'LONG' ? 'BUY' : 'SELL');
-    const quantity = this.calculatePositionSize(price, action.quantity);
+  private openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction, index: number = 0): void {
+    const quantity = this.calculatePositionSize(data.close, action.quantity);
+    let price = this.applySlippage(data.close, side === 'LONG' ? 'BUY' : 'SELL', data, quantity);
+    
+    // Apply partial fill if enabled
+    let actualQuantity = quantity;
+    let partialFills: Trade['partialFills'] = undefined;
+    
+    if (this.partialFillSimulator && data.volume) {
+      const fillResult = this.partialFillSimulator.simulateFill(
+        price,
+        quantity,
+        side === 'LONG' ? 'BUY' : 'SELL',
+        data,
+        index
+      );
+      actualQuantity = fillResult.filledQuantity;
+      price = fillResult.fillPrice;
+      
+      if (fillResult.fills.length > 0) {
+        partialFills = fillResult.fills;
+      }
+    }
 
     this.currentPosition = side;
     this.entryPrice = price;
@@ -363,14 +447,19 @@ export class AdvancedBacktestEngine extends EventEmitter {
     this.stopLoss = action.stopLoss || 0;
     this.takeProfit = action.takeProfit || 0;
 
-    this.emit('position_opened', { side, price, quantity, date: data.date });
+    this.emit('position_opened', { side, price, quantity: actualQuantity, date: data.date });
   }
 
-  private closePosition(data: OHLCV, reason: Trade['exitReason']): void {
+  private closePosition(data: OHLCV, reason: Trade['exitReason'], index: number = 0): void {
     if (!this.currentPosition) return;
 
-    const exitPrice = this.applySlippage(data.close, this.currentPosition === 'LONG' ? 'SELL' : 'BUY');
     const quantity = this.calculatePositionSize(this.entryPrice);
+    let exitPrice = this.applySlippage(
+      data.close, 
+      this.currentPosition === 'LONG' ? 'SELL' : 'BUY',
+      data,
+      quantity
+    );
 
     // Calculate P&L
     let pnl = 0;
@@ -380,10 +469,28 @@ export class AdvancedBacktestEngine extends EventEmitter {
       pnl = (this.entryPrice - exitPrice) * quantity;
     }
 
-    // Apply fees
-    const entryValue = this.entryPrice * quantity;
-    const exitValue = exitPrice * quantity;
-    const fees = (entryValue + exitValue) * (this.config.commission / 100);
+    // Apply fees using commission calculator if available
+    let fees = 0;
+    let commissionBreakdown: Trade['commissionBreakdown'] | undefined;
+    
+    if (this.commissionCalculator) {
+      const roundTrip = this.commissionCalculator.calculateRoundTripCommission(
+        this.entryPrice,
+        exitPrice,
+        quantity
+      );
+      fees = roundTrip.totalCommission;
+      commissionBreakdown = {
+        entryCommission: roundTrip.entryCommission.commission,
+        exitCommission: roundTrip.exitCommission.commission,
+      };
+    } else {
+      // Fallback to simple percentage
+      const entryValue = this.entryPrice * quantity;
+      const exitValue = exitPrice * quantity;
+      fees = (entryValue + exitValue) * (this.config.commission / 100);
+    }
+    
     pnl -= fees;
 
     const pnlPercent = (pnl / (this.entryPrice * quantity)) * 100;
@@ -404,6 +511,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
       pnlPercent,
       fees,
       exitReason: reason,
+      commissionBreakdown,
     };
 
     this.trades.push(trade);
@@ -416,7 +524,19 @@ export class AdvancedBacktestEngine extends EventEmitter {
     this.takeProfit = 0;
   }
 
-  private applySlippage(price: number, side: 'BUY' | 'SELL'): number {
+  private applySlippage(price: number, side: 'BUY' | 'SELL', data?: OHLCV, quantity?: number): number {
+    // Use advanced slippage model if enabled
+    if (this.slippageModel && data && quantity) {
+      const result = this.slippageModel.calculateSlippage(
+        price,
+        side,
+        quantity,
+        data
+      );
+      return result.adjustedPrice;
+    }
+    
+    // Fallback to simple slippage
     const slippageFactor = 1 + (Math.random() * this.config.slippage / 100);
     return side === 'BUY' ? price * slippageFactor : price / slippageFactor;
   }

@@ -35,6 +35,9 @@ export interface HedgeRecommendation {
   strategy: HedgeStrategy;
   rationale: string;
   costBenefitRatio: number;
+  riskReduction: number; // Estimated risk reduction in percentage (%)
+  effectiveness: number; // Effectiveness score (0-100)
+  implementationSteps: string[]; // Step-by-step implementation guide
   implementationPriority: 'high' | 'medium' | 'low';
   hedgeRatio: number; // Portion of portfolio to hedge (0-1)
 }
@@ -151,11 +154,24 @@ export class TailRiskHedging {
     };
 
     const costBenefitRatio = expectedProtection / optionCost;
+    const riskReduction = expectedProtection; // Expected protection as % of portfolio value
+    const effectiveness = Math.min(100, costBenefitRatio * 100); // Convert to percentage, cap at 100
+    const implementationSteps = [
+      `Determine hedge ratio: ${(hedgeRatio * 100).toFixed(1)}% of portfolio ($${(this.portfolio.totalValue * hedgeRatio).toLocaleString()})`,
+      `Select SPY put options with strike price 5-10% below current market level`,
+      `Calculate option premium: $${optionCost.toFixed(2)} (${(optionCost / this.portfolio.totalValue * 100).toFixed(2)}% of portfolio)`,
+      `Purchase put options through your broker with ${this.portfolio.totalValue * hedgeRatio >= 10000 ? 'limit orders' : 'market orders'}`,
+      'Monitor position daily and roll over before expiration (typically 30-45 DTE)',
+      'Review hedge effectiveness weekly and adjust ratio based on changing market conditions',
+    ];
 
     return {
       strategy,
       rationale: `テールリスク ${(metrics.tailRisk * 100).toFixed(2)}% と尖度 ${metrics.kurtosis.toFixed(2)} により、プットオプションヘッジを推奨。市場が ${breakEvenMove.toFixed(1)}% 以上下落した場合に有効。`,
       costBenefitRatio,
+      riskReduction,
+      effectiveness,
+      implementationSteps,
       implementationPriority: metrics.tailRisk > 0.08 ? 'high' : 'medium',
       hedgeRatio
     };
@@ -186,11 +202,25 @@ export class TailRiskHedging {
     };
 
     const costBenefitRatio = expectedProtection / vixCost;
+    const riskReduction = expectedProtection;
+    const effectiveness = Math.min(100, costBenefitRatio * 100);
+    const implementationSteps = [
+      `Check VIX term structure: ${this.getYieldCurveDescription()}`,
+      `Hedge ratio: ${(hedgeRatio * 100).toFixed(1)}% of portfolio (${Math.floor(this.portfolio.totalValue * hedgeRatio / 1000)} VIX futures contracts)`,
+      `Expected cost: $${vixCost.toFixed(2)} (includes roll costs in contango)`,
+      'Enter long VIX futures position via VIX futures ETF (VIXY) or direct futures',
+      'Set stop-loss at 20% loss and profit target at 50% gain',
+      'Monitor term structure weekly; exit if backwardation emerges',
+      ' hedge duration: 1-2 months maximum before rolling',
+    ];
 
     return {
       strategy,
       rationale: `負の歪度 ${metrics.skewness.toFixed(2)} により、VIXヘッジを推奨。ボラティリティ急騰時に効果的。コンタンゴによるロールコストに注意。`,
       costBenefitRatio,
+      riskReduction,
+      effectiveness,
+      implementationSteps,
       implementationPriority: Math.abs(metrics.skewness) > 1.0 ? 'high' : 'medium',
       hedgeRatio
     };
@@ -221,11 +251,25 @@ export class TailRiskHedging {
     };
 
     const costBenefitRatio = expectedProtection / inverseCost;
+    const riskReduction = expectedProtection;
+    const effectiveness = Math.min(100, costBenefitRatio * 100);
+    const implementationSteps = [
+      `Allocation size: ${(hedgeRatio * 100).toFixed(1)}% of portfolio (${Math.floor((this.portfolio.totalValue * hedgeRatio) / 50)} shares of SH)`,
+      `Estimated cost: $${inverseCost.toFixed(2)} per year (management fees and tracking error)`,
+      'Purchase inverse ETF through regular brokerage account',
+      'IMPORTANT: This is a SHORT-TERM hedge only. Daily rebalancing creates decay.',
+      'Set exit criteria: Market decline >5% OR hedge duration >5 trading days',
+      'Monitor portfolio beta; reduce hedge size if beta becomes negative',
+      'Consider rotating to put options for longer protection periods (>1 week)',
+    ];
 
     return {
       strategy,
       rationale: `テールリスク ${(metrics.tailRisk * 100).toFixed(2)}% に対し、インバースETFによる短期ヘッジを推奨。長期保有には不向き（減価リスク）。`,
       costBenefitRatio,
+      riskReduction,
+      effectiveness,
+      implementationSteps,
       implementationPriority: metrics.tailRisk > 0.1 ? 'high' : 'low',
       hedgeRatio
     };

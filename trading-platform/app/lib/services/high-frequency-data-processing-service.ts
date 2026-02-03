@@ -91,11 +91,9 @@ class HighFrequencyDataProcessingService {
     // リアルタイムデータサービスに接続
     realTimeDataService.connect({
       onConnect: () => {
-        console.log('Connected to real-time data stream');
         realTimeDataService.subscribeMultiple(symbols);
       },
       onDisconnect: () => {
-        console.log('Disconnected from real-time data stream');
         this.isRunning = false;
       },
       onError: (error) => {

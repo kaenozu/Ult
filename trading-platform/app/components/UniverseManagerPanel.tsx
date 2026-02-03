@@ -105,6 +105,8 @@ export function UniverseManagerPanel() {
         <div className="flex-1 max-w-md">
           <div className="relative">
             <input
+              id="universe-stock-search"
+              name="universeStockSearch"
               type="text"
               placeholder="銘柄を検索..."
               value={searchQuery}

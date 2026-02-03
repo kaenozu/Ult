@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Portfolio } from '@/app/types';
+import { formatCurrency } from '@/app/lib/utils';
 import {
   Shield,
   AlertTriangle,
@@ -39,6 +40,7 @@ import {
 import {
   createTailRiskHedging,
   HedgeRecommendation,
+  HedgeStrategy,
 } from '@/app/lib/risk/TailRiskHedging';
 
 interface RiskDashboardProps {
@@ -645,15 +647,25 @@ function HedgingPanel({
               <div key={idx} className="p-4 bg-[#0f172a] rounded-lg space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="text-white font-medium">{rec.strategy.name}</h4>
-                    <p className="text-sm text-gray-400 mt-1">{rec.strategy.description}</p>
+                    <h4 className="text-white font-medium">
+                      {rec.strategy.type === 'put_option' ? 'Put Option Hedge' :
+                       rec.strategy.type === 'vix_futures' ? 'VIX Futures Hedge' :
+                       rec.strategy.type === 'inverse_etf' ? 'Inverse ETF Hedge' :
+                       rec.strategy.type}
+                    </h4>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {rec.strategy.type === 'put_option' ? `Purchase put options on SPY to protect against market declines. Cost: ${formatCurrency(rec.strategy.cost)}.` :
+                       rec.strategy.type === 'vix_futures' ? `Hold VIX futures to gain from volatility spikes. Cost: ${formatCurrency(rec.strategy.cost)}.` :
+                       rec.strategy.type === 'inverse_etf' ? `Hold inverse ETF (SH) for daily inverse correlation. Cost: ${formatCurrency(rec.strategy.cost)}.` :
+                       `Hedge strategy with expected protection of ${rec.strategy.expectedProtection.toFixed(1)}%`}
+                    </p>
                   </div>
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    rec.strategy.recommendation === 'highly_recommended' ? 'bg-green-500/20 text-green-400' :
-                    rec.strategy.recommendation === 'recommended' ? 'bg-blue-500/20 text-blue-400' :
+                    rec.implementationPriority === 'high' ? 'bg-green-500/20 text-green-400' :
+                    rec.implementationPriority === 'medium' ? 'bg-blue-500/20 text-blue-400' :
                     'bg-gray-500/20 text-gray-400'
                   }`}>
-                    {rec.strategy.recommendation.replace('_', ' ').toUpperCase()}
+                    {rec.implementationPriority.toUpperCase()}
                   </span>
                 </div>
 
@@ -668,7 +680,7 @@ function HedgingPanel({
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Effectiveness</p>
-                    <p className="text-lg font-semibold text-white">{rec.strategy.effectiveness}%</p>
+                    <p className="text-lg font-semibold text-white">{rec.effectiveness.toFixed(1)}%</p>
                   </div>
                 </div>
 
@@ -784,13 +796,5 @@ function getRiskLevelBgColor(level: string): string {
   return colors[level as keyof typeof colors] || 'bg-gray-500/20';
 }
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
 
 export default RiskDashboard;

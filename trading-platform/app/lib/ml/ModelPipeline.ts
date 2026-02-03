@@ -44,7 +44,6 @@ export class ModelPipeline {
       validationData: [xVal, yVal],
       callbacks: {
         onEpochEnd: (epoch, logs) => {
-          console.log(
             `Epoch ${epoch + 1}: loss = ${logs?.loss.toFixed(4)}, val_loss = ${logs?.valLoss.toFixed(4)}`
           );
         },
@@ -139,7 +138,6 @@ export class ModelPipeline {
       validationData: [xVal, yVal],
       callbacks: {
         onEpochEnd: (epoch, logs) => {
-          console.log(
             `Epoch ${epoch + 1}: loss = ${logs?.loss.toFixed(4)}, val_loss = ${logs?.valLoss.toFixed(4)}`
           );
         },
@@ -332,7 +330,6 @@ export class ModelPipeline {
     }
 
     await this.model.save(`indexeddb://${modelId}`);
-    console.log(`Model saved with ID: ${modelId}`);
   }
 
   /**
@@ -341,7 +338,6 @@ export class ModelPipeline {
   async loadModel(modelId: string): Promise<void> {
     try {
       this.model = await tf.loadLayersModel(`indexeddb://${modelId}`);
-      console.log(`Model loaded: ${modelId}`);
     } catch (error) {
       console.error('Error loading model:', error);
       throw new Error(`Failed to load model: ${modelId}`);
@@ -353,7 +349,6 @@ export class ModelPipeline {
    */
   async deleteModel(modelId: string): Promise<void> {
     await tf.io.removeModel(`indexeddb://${modelId}`);
-    console.log(`Model deleted: ${modelId}`);
   }
 
   /**
@@ -405,7 +400,6 @@ export class ModelPipeline {
     const combinations = this.generateCombinations(paramGrid);
 
     for (const params of combinations) {
-      console.log('Testing params:', params);
 
       const config: ModelConfig = {
         modelType: 'LSTM',

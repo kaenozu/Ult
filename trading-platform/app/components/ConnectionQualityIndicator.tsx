@@ -142,7 +142,22 @@ export const ConnectionQualityIndicator = memo(function ConnectionQualityIndicat
   onReconnect,
   compact = false,
 }: ConnectionQualityIndicatorProps) {
-  const quality = metrics?.quality || 'offline';
+  // Determine quality based on connection status and metrics
+  const quality = useMemo(() => {
+    // If not connected, always show offline regardless of stale metrics
+    if (status !== 'OPEN') {
+      return 'offline';
+    }
+    
+    // If connected, use metrics quality if available and not offline
+    if (metrics?.quality && metrics.quality !== 'offline') {
+      return metrics.quality;
+    }
+    
+    // If connected but no quality data yet (no measurements), assume 'good'
+    return 'good';
+  }, [metrics, status]);
+  
   const colors = useMemo(() => getQualityColors(quality), [quality]);
   const SignalIcon = useMemo(() => getSignalIcon(quality), [quality]);
   const statusLabel = useMemo(() => getStatusLabel(status), [status]);

@@ -243,7 +243,6 @@ class WinningTradingSystem {
     );
 
     if (!riskRewardCheck.valid) {
-      console.log(`[WinningTradingSystem] Risk/Reward ratio too low: ${riskRewardCheck.ratio}`);
       return;
     }
 
@@ -276,7 +275,6 @@ class WinningTradingSystem {
       data: { symbol, position, strategy: strategyResult.strategy },
     });
 
-    console.log(`[WinningTradingSystem] Position opened: ${symbol} ${position.side} @ ${position.entryPrice}`);
   }
 
   /**
@@ -390,7 +388,6 @@ class WinningTradingSystem {
       data: { symbol, trade },
     });
 
-    console.log(`[WinningTradingSystem] Position closed: ${symbol} P&L: ${pnl.toFixed(0)} (${pnlPercent.toFixed(2)}%)`);
   }
 
   /**

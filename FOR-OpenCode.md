@@ -22,3 +22,38 @@ Notes for contributors
 - Python only; prefer type hints and small, side-effect-free helpers.
 - Keep tests deterministic; current suites rely on in-memory data (no network).
 - Maintain the plain-language docs in `docs/` and the automation skill definitions under `skills/`.
+
+Phase 1 Refactoring Implementation Summary (Feb 2, 2026)
+--------------------------------------------------------
+
+### Worktree 1: refactor-522 (Issue #522 - 定数一元化)
+**Branch:** `refactor/unify-constants`
+**Commit:** `0879010f`
+
+Created `trading-platform/app/lib/constants/index.ts` to centralize ML prediction constants:
+- `PREDICTION.MODEL_WEIGHTS`: RF: 0.35, XGB: 0.35, LSTM: 0.30
+- `PREDICTION.THRESHOLDS`: RSI_EXTREME: 3, MOMENTUM_STRONG: 2.0, etc.
+- `PREDICTION.SCALING`, `PREDICTION.CONFIDENCE`, `PREDICTION.XGB_PARAMS`
+- `VOLATILITY.DEFAULT_ATR_PERIOD`: 14, `VOLATILITY.CALCULATION_PERIOD`: 20
+
+Updated `ml-model-service.ts` to use centralized constants instead of inline magic numbers.
+
+### Worktree 2: refactor-523 (Issue #523 - 型安全性)
+**Branch:** `refactor/improve-type-safety`
+**Commit:** `dbdadacb`
+
+- Enabled strict mode (already active in tsconfig.json)
+- Created `TechnicalIndicatorsWithATR` interface extending TechnicalIndicator with atr property
+- Fixed `any` types in `feature-calculation-service.ts`
+- Fixed `any` types in `AlertNotificationSystem.ts`
+
+### Worktree 3: refactor-528 (Issue #528 - エラーハンドリング統一)
+**Branch:** `refactor/unify-error-handling`
+**Commit:** `e2f3fa19`
+
+Created unified error handling infrastructure:
+- `app/types/result.ts`: Result<T,E> type with success/failure variants, error classes (AppError, ValidationError, ApiError, NetworkError, RateLimitError, DataNotFoundError)
+- `app/utils/errorHandling.ts`: ConsoleErrorLogger, tryCatch/tryCatchAsync wrappers, validation helpers, ErrorHandlerRegistry
+- Updated `ml-model-service.ts` to use Result type with input validation
+
+All branches pushed to remote: https://github.com/kaenozu/Ult.git
