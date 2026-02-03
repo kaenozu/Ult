@@ -49,8 +49,9 @@ async function main() {
         id: task.id,
       });
       console.log(`  ✅ ${task.title} → ${agentName}`);
-    } catch (error: any) {
-      console.error(`  ❌ Failed to assign ${task.title}: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`  ❌ Failed to assign ${task.title}: ${errorMessage}`);
     }
   }
   console.log('');

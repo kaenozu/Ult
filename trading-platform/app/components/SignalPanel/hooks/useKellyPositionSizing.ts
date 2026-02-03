@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { Signal } from '@/app/types';
+import { Signal, Stock } from '@/app/types';
 import { useTradingStore } from '@/app/store/tradingStore';
 
-export function useKellyPositionSizing(stock: any, displaySignal: Signal | null) {
+export function useKellyPositionSizing(stock: Stock, displaySignal: Signal | null) {
   const calculatePositionSize = useTradingStore((state) => state.calculatePositionSize);
   const getPortfolioStats = useTradingStore((state) => state.getPortfolioStats);
 

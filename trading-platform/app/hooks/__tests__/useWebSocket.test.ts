@@ -5,13 +5,23 @@ import { useWebSocket } from '../useWebSocket';
 const mockSend = jest.fn();
 const mockClose = jest.fn();
 
-let mockWebSocketInstance: any = null;
+interface MockWebSocketEvent {
+  data: string;
+  type?: string;
+}
+
+interface MockWebSocketError {
+  error: string;
+  type?: string;
+}
+
+let mockWebSocketInstance: MockWebSocket | null = null;
 
 class MockWebSocket {
   url: string;
   onopen: (() => void) | null = null;
-  onmessage: ((event: any) => void) | null = null;
-  onerror: ((error: any) => void) | null = null;
+  onmessage: ((event: MockWebSocketEvent) => void) | null = null;
+  onerror: ((error: MockWebSocketError) => void) | null = null;
   onclose: (() => void) | null = null;
   readyState: number = 0; // CONNECTING
   send = mockSend;

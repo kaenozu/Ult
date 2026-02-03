@@ -18,12 +18,12 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   // Initialize locale from localStorage on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedLocale = localStorage.getItem('locale') as Locale;
-      if (savedLocale && (savedLocale === 'ja' || savedLocale === 'en')) {
-        setLocaleState(savedLocale);
-        document.documentElement.lang = savedLocale;
-      }
+    if (typeof window === 'undefined') return;
+    
+    const savedLocale = localStorage.getItem('locale') as Locale;
+    if (savedLocale && (savedLocale === 'ja' || savedLocale === 'en')) {
+      setLocaleState(savedLocale);
+      document.documentElement.lang = savedLocale;
     }
   }, []);
 

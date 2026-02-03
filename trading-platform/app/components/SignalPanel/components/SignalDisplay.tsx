@@ -1,4 +1,4 @@
-import { Signal } from '@/app/types';
+import { Signal, Stock, RiskCalculationResult } from '@/app/types';
 import { cn, getConfidenceColor } from '@/app/lib/utils';
 import { SignalCard } from '../../SignalCard';
 import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
@@ -6,12 +6,12 @@ import { KellyPositionSizingDisplay } from '@/app/components/KellyPositionSizing
 
 interface SignalDisplayProps {
   signal: Signal;
-  stock: any;
+  stock: Stock;
   isLive: boolean;
   preciseHitRate: { hitRate: number; trades: number } | null;
   calculatingHitRate: boolean;
   error: string | null;
-  kellyRecommendation: any;
+  kellyRecommendation: RiskCalculationResult | null;
 }
 
 export function SignalDisplay({

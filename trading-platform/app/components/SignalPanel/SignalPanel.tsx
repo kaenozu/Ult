@@ -1,28 +1,32 @@
+import React, { useState } from 'react';
+import { Stock, Signal, OHLCV } from '@/app/types';
+import { useWebSocketManager } from './hooks/useWebSocketManager';
+import { useSignalData } from './hooks/useSignalData';
+import { useBacktestControls } from './hooks/useBacktestControls';
+import { useKellyPositionSizing } from './hooks/useKellyPositionSizing';
+import { SignalFilters } from './components/SignalFilters';
+import { SignalDetails } from './components/SignalDetails';
+import { WebSocketManager } from './components/WebSocketManager';
 
+/**
+ * SignalPanelコンポーネントのプロパティ
+ * @property stock - 分析対象の銘柄情報
+ * @property signal - AIが生成した売買シグナル
+ * @property ohlcv - 価格履歴データ（バックテストと分析に使用）
+ * @property loading - データ読み込み中フラグ
+ */
+interface SignalPanelProps {
+  stock: Stock;
+  signal: Signal | null;
+  ohlcv?: OHLCV[];
+  loading?: boolean;
+}
 
 /**
  * シグナルパネルコンポーネント
  * 
  * AIが生成した売買シグナル、バックテスト結果、AI性能、価格予測を
  * タブ形式で表示する統合分析パネル。
- * 
- * 主な機能:
- * - リアルタイムシグナル表示（WebSocket対応）
- * - バックテスト実行と結果可視化
- * - AI予測精度の追跡
- * - 価格予測チャート
- * - 自動アラート通知
- * 
- * @component
- * @example
- * ```tsx
- * <SignalPanel 
- *   stock={{ symbol: 'AAPL', name: 'Apple Inc.', market: 'usa' }}
- *   signal={aiGeneratedSignal}
- *   ohlcv={historicalPriceData}
- *   loading={false}
- * />
- * ```
  * 
  * @param {SignalPanelProps} props - コンポーネントのプロパティ
  * @returns {JSX.Element} シグナルパネルUI

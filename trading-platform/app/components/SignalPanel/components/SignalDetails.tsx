@@ -2,21 +2,21 @@ import { BacktestView } from '../BacktestView';
 import { ForecastView } from '../ForecastView';
 import { AIPerformanceView } from '../AIPerformanceView';
 import { SignalDisplay } from './SignalDisplay';
-import { Signal } from '@/app/types';
+import { Signal, Stock, BacktestResult, PaperTrade, AIStatus, RiskCalculationResult } from '@/app/types';
 
 interface SignalDetailsProps {
   activeTab: 'signal' | 'backtest' | 'ai' | 'forecast';
   displaySignal: Signal;
-  stock: any;
+  stock: Stock;
   liveSignal: Signal | null;
-  backtestResult: any;
+  backtestResult: BacktestResult | null;
   isBacktesting: boolean;
   preciseHitRate: { hitRate: number; trades: number } | null;
   calculatingHitRate: boolean;
   error: string | null;
-  aiTrades: any[];
-  aiStatusData: any;
-  kellyRecommendation: any;
+  aiTrades: PaperTrade[];
+  aiStatusData: AIStatus;
+  kellyRecommendation: RiskCalculationResult | null;
 }
 
 export function SignalDetails({

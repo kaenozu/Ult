@@ -297,8 +297,9 @@ export async function launchAgent(
     if (stderr) console.error(stderr);
 
     console.log(`\n✅ Agent ${agentName} completed task ${taskId}`);
-  } catch (error: any) {
-    console.error(`\n❌ Agent ${agentName} failed: ${error.message}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`\n❌ Agent ${agentName} failed: ${errorMessage}`);
     throw error;
   }
 }
@@ -350,8 +351,9 @@ try {
 
   console.log('📄 Report generated: AGENT_EXECUTION_REPORT.md');
 
-} catch (error: any) {
-  console.error('\n❌ Agent failed:', error.message);
+} catch (error: unknown) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error('\n❌ Agent failed:', errorMessage);
 
   const failReport = `# Agent Execution Report (FAILED)\n\n` +
     `- Task: ${task.title}\n` +

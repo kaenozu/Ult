@@ -181,12 +181,12 @@ export class TestHelpers {
   /**
    * Create a mock function with call tracking
    */
-  static createMockFn<T extends (...args: any[]) => any>() {
+  static createMockFn<T extends (...args: unknown[]) => unknown>() {
     const calls: Parameters<T>[] = [];
     const fn = ((...args: Parameters<T>) => {
       calls.push(args);
     }) as jest.Mock<ReturnType<T>, Parameters<T>>;
-    (fn as any).calls = calls;
+    (fn as jest.Mock<ReturnType<T>, Parameters<T>> & { calls: Parameters<T>[] }).calls = calls;
     return fn;
   }
 
@@ -235,19 +235,19 @@ export class TestHelpers {
     const originalError = console.error;
     const originalWarn = console.warn;
 
-    const errors: any[] = [];
-    const warnings: any[] = [];
-    const logs: any[] = [];
+    const errors: unknown[][] = [];
+    const warnings: unknown[][] = [];
+    const logs: unknown[][] = [];
 
-    console.error = (...args: any[]) => {
+    console.error = (...args: unknown[]) => {
       errors.push(args);
     };
 
-    console.warn = (...args: any[]) => {
+    console.warn = (...args: unknown[]) => {
       warnings.push(args);
     };
 
-    console.log = (...args: any[]) => {
+    console.log = (...args: unknown[]) => {
       logs.push(args);
     };
 
@@ -398,7 +398,7 @@ export class TestDataValidators {
   /**
    * Validate market data structure
    */
-  static validateMarketData(data: any): void {
+  static validateMarketData(data: { symbol: string; data: unknown[] }): void {
     expect(data).toHaveProperty('symbol');
     expect(data).toHaveProperty('data');
 
@@ -406,10 +406,11 @@ export class TestDataValidators {
     expect(Array.isArray(data.data)).toBe(true);
   }
 
-  /**
-   * Validate technical indicators
-   */
-  static validateTechnicalIndicators(indicators: any): void {
+  static validateTechnicalIndicators(indicators: {
+    rsi?: { value: number };
+    stochastic?: { k: number; d: number };
+    bollingerBands?: { upper: number; middle: number; lower: number };
+  }): void {
     if (indicators.rsi) {
       expect(indicators.rsi.value).toBeGreaterThanOrEqual(0);
       expect(indicators.rsi.value).toBeLessThanOrEqual(100);

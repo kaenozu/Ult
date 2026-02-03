@@ -1,37 +1,49 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { Stock, Signal, PaperTrade } from '@/app/types';
 import { useAIStore } from '@/app/store/aiStore';
 import { useAIPerformance } from '@/app/hooks/useAIPerformance';
 import { useSignalAlerts } from '@/app/hooks/useSignalAlerts';
 
 export function useSignalData(stock: Stock, signal: Signal | null, liveSignal: Signal | null) {
-  const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
+  const { processAITrades, trades } = useAIStore();
   const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock);
 
   const displaySignal = liveSignal || signal;
+
+  // Memoized hit rate object to prevent unnecessary re-renders
+  const hitRateData = useMemo(() => ({
+    hitRate: preciseHitRate?.hitRate || 0,
+    trades: preciseHitRate?.trades || 0
+  }), [preciseHitRate]);
 
   // Alert Logic Hook
   useSignalAlerts({
     stock,
     displaySignal,
-    preciseHitRate: { hitRate: preciseHitRate?.hitRate || 0, trades: preciseHitRate?.trades || 0 },
+    preciseHitRate: hitRateData,
     calculatingHitRate
   });
 
-  // 自動売買プロセスをトリガー
-  useEffect(() => {
+  // Memoized process trades function
+  const processTradesCallback = useCallback(() => {
     if (displaySignal && stock.price && processAITrades) {
       processAITrades(stock.symbol, stock.price, displaySignal);
     }
-  }, [stock.symbol, stock.price, displaySignal, processAITrades]);
+  }, [displaySignal, stock.price, stock.symbol, processAITrades]);
 
+  // 自動売買プロセスをトリガー - Use callback
+  useEffect(() => {
+    processTradesCallback();
+  }, [processTradesCallback]);
+
+  // Memoized trades transformation
   const aiTrades: PaperTrade[] = useMemo(() => {
     return trades
       .filter(t => t.symbol === stock.symbol)
       .map(o => ({
         id: o.id,
         symbol: o.symbol,
-        type: (o.side === 'BUY' || o.side === 'LONG' as any) ? 'BUY' : 'SELL',
+        type: (o.side === 'BUY' || o.side === 'LONG') ? 'BUY' : 'SELL',
         entryPrice: o.price || 0,
         quantity: o.quantity,
         status: o.status === 'FILLED' ? 'CLOSED' : 'OPEN',
@@ -40,6 +52,7 @@ export function useSignalData(stock: Stock, signal: Signal | null, liveSignal: S
       }));
   }, [trades, stock.symbol]);
 
+  // Memoized status data
   const aiStatusData = useMemo(() => ({
     virtualBalance: 10000000,
     totalProfit: 0,

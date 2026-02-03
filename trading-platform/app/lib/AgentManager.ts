@@ -239,10 +239,11 @@ try {
   fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
 ` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: SUCCESS\nTimestamp: ${new Date().toISOString()}\n`);
   process.exit(0);
-} catch (error: any) {
-  console.error('❌ Error:', error.message);
+} catch (error: unknown) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error('❌ Error:', errorMessage);
   fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${error.message}\nTimestamp: ${new Date().toISOString()}\n`);
+` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${errorMessage}\nTimestamp: ${new Date().toISOString()}\n`);
   process.exit(1);
 }
 `;
@@ -279,8 +280,9 @@ try {
   fs.writeFileSync('AGENT_REPORT.md', `# Linter Fix Report
 ` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: SUCCESS\nTimestamp: ${new Date().toISOString()}\n`);
   process.exit(0);
-} catch (error: any) {
-  console.error('❌ Error:', error.message);
+} catch (error: unknown) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  console.error('❌ Error:', errorMessage);
   fs.writeFileSync('AGENT_REPORT.md', `# Linter Fix Report
 ` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${error.message}\n`);
   process.exit(1);
@@ -424,8 +426,8 @@ process.exit(0);
       });
 
       console.log(`[AgentManager] Created worktree at ${worktreePath}`);
-    } catch (error: any) {
-      if (error.message.includes('already exists')) {
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message.includes('already exists')) {
         console.log(`[AgentManager] Worktree already exists, using existing`);
       } else {
         throw error;
@@ -461,8 +463,9 @@ process.exit(0);
       } else {
         console.log(`[AgentManager] No changes to merge for ${agent.name}`);
       }
-    } catch (error: any) {
-      console.error(`[AgentManager] Merge failed for ${agent.name}:`, error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[AgentManager] Merge failed for ${agent.name}:`, errorMessage);
     }
   }
 

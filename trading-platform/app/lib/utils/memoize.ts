@@ -26,13 +26,13 @@ interface CacheEntry<T> {
  * キャッシュキー生成戦略
  */
  
-export type KeyGenerator<TArgs extends any[]> = (...args: TArgs) => string;
+export type KeyGenerator<TArgs extends readonly unknown[]> = (...args: TArgs) => string;
 
 /**
  * デフォルトのキー生成関数（JSON.stringify）
  */
  
-const defaultKeyGenerator: KeyGenerator<any[]> = (...args: any[]): string => {
+const defaultKeyGenerator: KeyGenerator<readonly unknown[]> = (...args: readonly unknown[]): string => {
   return JSON.stringify(args);
 };
 

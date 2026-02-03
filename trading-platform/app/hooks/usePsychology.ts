@@ -188,9 +188,9 @@ export function usePsychology() {
     updateCalendarDay: psychologyState.updateCalendarDay,
     setCurrentEmotion: psychologyState.setCurrentEmotion,
 
-    // Services (refs for advanced usage)
-    psychologyMonitor: psychologyMonitorRef.current,
-    coolingOffManager: coolingOffManagerRef.current,
-    disciplineCalculator: disciplineCalculatorRef.current
+    // Services (using callbacks for safe access)
+    getPsychologyMonitor: () => psychologyMonitorRef.current,
+    getCoolingOffManager: () => coolingOffManagerRef.current,
+    getDisciplineCalculator: () => disciplineCalculatorRef.current
   };
 }
