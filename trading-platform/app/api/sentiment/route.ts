@@ -1,4 +1,5 @@
 import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
+import { requireAuth } from '@/app/lib/auth';
 /**
  * GET /api/sentiment/route.ts
  * 
@@ -50,6 +51,17 @@ interface SentimentAction {
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
   async (request: NextRequest) => {
+    // Authentication check - required for admin actions (start/stop/clear)
+    const authError = requireAuth(request);
+    if (authError) {
+      const errorBody = await authError.json() as { error?: string; message?: string };
+      return {
+        success: false,
+        message: errorBody.message || errorBody.error || 'Authentication required',
+      };
+    }
+
+    // CSRF protection check
     const csrfError = requireCSRF(request);
     if (csrfError) {
       const errorBody = await csrfError.json() as { error?: string };
@@ -59,6 +71,7 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
       };
     }
 
+    // Read body after CSRF validation (fixes double body read issue)
     const body = await request.json() as SentimentAction;
 
     // Validate action

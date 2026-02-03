@@ -11,21 +11,34 @@ export class FeatureCalculationService {
   calculateFeatures(data: OHLCV[]): PredictionFeatures {
     const closes = data.map(d => d.close);
     const volumes = data.map(d => d.volume);
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
 
     const rsi = this.calculateRSI(closes, 14);
+    const rsiValues = rsi.length > 1 ? rsi : [rsi[0], rsi[0]];
+    const rsiChange = rsiValues[rsiValues.length - 1] - rsiValues[rsiValues.length - 2];
     const sma5 = this.calculateSMA(closes, 5);
     const sma20 = this.calculateSMA(closes, 20);
+    const sma50 = this.calculateSMA(closes, 50);
     const priceMomentum = this.calculateMomentum(closes, 5);
+    const volumeRatio = this.calculateVolumeRatio(volumes, 5);
     const volatility = this.calculateVolatility(closes, 20);
-    const volumeChange = this.calculateVolumeChange(volumes, 5);
+    const macdSignal = this.calculateMACD(closes);
+    const bollingerPosition = this.calculateBollingerPosition(closes, 20);
+    const atrPercent = this.calculateATR(highs, lows, closes, 14) / closes[closes.length - 1] * 100;
 
     return {
       rsi: rsi[rsi.length - 1] || 50,
+      rsiChange,
       sma5: sma5[sma5.length - 1] || 0,
       sma20: sma20[sma20.length - 1] || 0,
+      sma50: sma50[sma50.length - 1] || 0,
       priceMomentum,
+      volumeRatio,
       volatility,
-      volumeChange,
+      macdSignal,
+      bollingerPosition,
+      atrPercent,
     };
   }
 
@@ -84,11 +97,59 @@ export class FeatureCalculationService {
     return Math.sqrt(variance);
   }
 
-  private calculateVolumeChange(volumes: number[], period: number): number {
-    if (volumes.length < period * 2) return 0;
+  private calculateVolumeRatio(volumes: number[], period: number): number {
+    if (volumes.length < period) return 1;
     const recent = volumes.slice(-period).reduce((a, b) => a + b, 0) / period;
-    const previous = volumes.slice(-period * 2, -period).reduce((a, b) => a + b, 0) / period;
-    return previous === 0 ? 0 : (recent - previous) / previous * 100;
+    const avg = volumes.slice(-period * 2, -period).reduce((a, b) => a + b, 0) / period;
+    return avg === 0 ? 1 : recent / avg;
+  }
+
+  private calculateMACD(closes: number[]): number {
+    if (closes.length < 26) return 0;
+    const ema12 = this.calculateEMA(closes, 12);
+    const ema26 = this.calculateEMA(closes, 26);
+    const macdLine = ema12[ema12.length - 1] - ema26[ema26.length - 1];
+    const macdHistory = closes.map((_, i) => {
+      if (i < 26) return 0;
+      const e12 = this.calculateEMA(closes.slice(0, i + 1), 12);
+      const e26 = this.calculateEMA(closes.slice(0, i + 1), 26);
+      return e12[e12.length - 1] - e26[e26.length - 1];
+    });
+    const signalLine = this.calculateEMA(macdHistory, 9);
+    return signalLine[signalLine.length - 1];
+  }
+
+  private calculateBollingerPosition(closes: number[], period: number): number {
+    if (closes.length < period) return 0.5;
+    const sma = this.calculateSMA(closes, period);
+    const std = this.calculateVolatility(closes, period);
+    const current = closes[closes.length - 1];
+    const upper = sma[sma.length - 1] + 2 * std;
+    const lower = sma[sma.length - 1] - 2 * std;
+    if (upper === lower) return 0.5;
+    return (current - lower) / (upper - lower);
+  }
+
+  private calculateATR(highs: number[], lows: number[], closes: number[], period: number): number {
+    if (highs.length < period + 1) return 0;
+    const tr: number[] = [];
+    for (let i = 1; i < highs.length; i++) {
+      const hl = highs[i] - lows[i];
+      const hc = Math.abs(highs[i] - closes[i - 1]);
+      const lc = Math.abs(lows[i] - closes[i - 1]);
+      tr.push(Math.max(hl, hc, lc));
+    }
+    return this.calculateSMA(tr, period)[this.calculateSMA(tr, period).length - 1];
+  }
+
+  private calculateEMA(values: number[], period: number): number[] {
+    const ema: number[] = [];
+    const k = 2 / (period + 1);
+    ema[0] = values[0];
+    for (let i = 1; i < values.length; i++) {
+      ema[i] = values[i] * k + ema[i - 1] * (1 - k);
+    }
+    return ema;
   }
 }
 
