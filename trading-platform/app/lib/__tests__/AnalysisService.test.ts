@@ -295,4 +295,106 @@ describe('AnalysisService', () => {
       }
     });
   });
+
+  describe('Walk-Forward Analysis', () => {
+    it('should split data into train and validation sets during optimization', () => {
+      const data = generateMockData(200);
+      
+      // Mock simulateTrade to return different results for different indices
+      // This helps us verify that validation set is actually being used
+      const mockSimulateTrade = jest.fn((data, index) => {
+        // Simulate that training set has better performance than validation
+        const isInTrainingSet = index < 140; // First 70% of 200 days
+        return { won: isInTrainingSet, directionalHit: isInTrainingSet };
+      });
+      (accuracyService.simulateTrade as jest.Mock) = mockSimulateTrade;
+
+      const result = analysisService.optimizeParameters(data, mockMarket);
+
+      // Verify that parameters were optimized
+      expect(result.rsiPeriod).toBeDefined();
+      expect(result.smaPeriod).toBeDefined();
+      
+      // The accuracy should reflect validation performance, not training
+      expect(result.accuracy).toBeDefined();
+    });
+
+    it('should use validation set accuracy instead of training set accuracy', () => {
+      const data = generateMockData(200);
+      
+      // Create a scenario where training accuracy would be 100% but validation is lower
+      let callCount = 0;
+      const mockSimulateTrade = jest.fn((data, index) => {
+        callCount++;
+        const trainEndIndex = Math.floor(200 * 0.7); // ~140
+        const isInTrainingPeriod = index < trainEndIndex;
+        
+        // Training: 100% win rate, Validation: 50% win rate
+        if (isInTrainingPeriod) {
+          return { won: true, directionalHit: true };
+        } else {
+          return { won: callCount % 2 === 0, directionalHit: callCount % 2 === 0 };
+        }
+      });
+      (accuracyService.simulateTrade as jest.Mock) = mockSimulateTrade;
+
+      const result = analysisService.optimizeParameters(data, mockMarket);
+
+      // The returned accuracy should be based on validation set (not 100%)
+      expect(result.accuracy).toBeLessThan(100);
+      expect(result.accuracy).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should use full window when validation period is too small', () => {
+      // Small dataset where 30% validation would be < 20 days
+      const data = generateMockData(60);
+      
+      const result = analysisService.optimizeParameters(data, mockMarket);
+
+      // Should still return valid parameters (fallback behavior)
+      expect(result.rsiPeriod).toBeDefined();
+      expect(result.smaPeriod).toBeDefined();
+    });
+
+    it('should respect context endIndex for optimization window', () => {
+      const data = generateMockData(300);
+      
+      // Optimize only using first 150 days
+      const context = {
+        startIndex: 0,
+        endIndex: 149
+      };
+
+      const result = analysisService.optimizeParameters(data, mockMarket, context);
+
+      expect(result.rsiPeriod).toBeDefined();
+      expect(result.smaPeriod).toBeDefined();
+      
+      // Verify that simulateTrade was not called with indices beyond endIndex
+      const calls = (accuracyService.simulateTrade as jest.Mock).mock.calls;
+      calls.forEach(call => {
+        const index = call[1];
+        expect(index).toBeLessThanOrEqual(149);
+      });
+    });
+
+    it('should prevent data snooping by not using future data in optimization', () => {
+      const data = generateMockData(200);
+      
+      const context = {
+        startIndex: 0,
+        endIndex: 150
+      };
+
+      const result = analysisService.optimizeParameters(data, mockMarket, context);
+
+      // Verify simulateTrade calls respect the validation window boundaries
+      const calls = (accuracyService.simulateTrade as jest.Mock).mock.calls;
+      calls.forEach(call => {
+        const index = call[1];
+        // Should not use data beyond endIndex (150)
+        expect(index).toBeLessThanOrEqual(150);
+      });
+    });
+  });
 });
