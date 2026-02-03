@@ -185,7 +185,9 @@ export function useResilientWebSocket(
     if (status === 'OPEN') {
       durationIntervalRef.current = setInterval(() => {
         if (clientRef.current) {
-          setConnectionDuration(clientRef.current.getConnectionDuration());
+          const duration = clientRef.current.getConnectionDuration();
+          // Only update if duration actually changed
+          setConnectionDuration(prev => prev !== duration ? duration : prev);
         }
       }, 1000);
     } else {
@@ -193,6 +195,7 @@ export function useResilientWebSocket(
         clearInterval(durationIntervalRef.current);
         durationIntervalRef.current = null;
       }
+      // Reset duration when connection is not open (but not when closed)
       if (status !== 'CLOSED') {
         setConnectionDuration(0);
       }
@@ -201,6 +204,7 @@ export function useResilientWebSocket(
     return () => {
       if (durationIntervalRef.current) {
         clearInterval(durationIntervalRef.current);
+        durationIntervalRef.current = null;
       }
     };
   }, [status]);

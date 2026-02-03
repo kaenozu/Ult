@@ -7,7 +7,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, BacktestTrade, BacktestConfig, PerformanceMetrics } from './AdvancedBacktestEngine';
+import { BacktestResult, BacktestConfig, PerformanceMetrics } from './AdvancedBacktestEngine';
+import { BacktestTrade } from '@/app/types';
 
 // ============================================================================
 // Types
@@ -36,13 +37,7 @@ export interface MonteCarloConfig {
   verbose: boolean;
 }
 
-export type MonteCarloMetrics =
-  | 'totalReturn'
-  | 'sharpeRatio'
-  | 'maxDrawdown'
-  | 'winRate'
-  | 'profitFactor'
-  | 'finalCapital';
+export type MonteCarloMetrics = keyof PerformanceMetrics;
 
 export interface MonteCarloResult {
   // 元のバックテスト結果
@@ -84,21 +79,22 @@ export interface MonteCarloProbabilities {
   sharpeThresholds: Map<number, number>; // threshold -> probability
 }
 
-export interface MonteCarloConfidenceIntervals {
-  // 90%信頼区間
-  confidence90: ConfidenceInterval;
-
-  // 95%信頼区間
-  confidence95: ConfidenceInterval;
-
-  // 99%信頼区間
-  confidence99: ConfidenceInterval;
-}
-
 export interface ConfidenceInterval {
   lower: number;
   upper: number;
   range: number;
+}
+
+export interface MetricConfidenceIntervals {
+  returns: ConfidenceInterval;
+  sharpe: ConfidenceInterval;
+  drawdown: ConfidenceInterval;
+}
+
+export interface MonteCarloConfidenceIntervals {
+  confidence90: MetricConfidenceIntervals;
+  confidence95: MetricConfidenceIntervals;
+  confidence99: MetricConfidenceIntervals;
 }
 
 export interface DistributionStatistics {
@@ -447,17 +443,17 @@ export class MonteCarloSimulator extends EventEmitter {
         returns: getInterval(returns, 0.90),
         sharpe: getInterval(sharpe, 0.90),
         drawdown: getInterval(drawdown, 0.90),
-      } as any,
+      },
       confidence95: {
         returns: getInterval(returns, 0.95),
         sharpe: getInterval(sharpe, 0.95),
         drawdown: getInterval(drawdown, 0.95),
-      } as any,
+      },
       confidence99: {
         returns: getInterval(returns, 0.99),
         sharpe: getInterval(sharpe, 0.99),
         drawdown: getInterval(drawdown, 0.99),
-      } as any,
+      },
     };
   }
 

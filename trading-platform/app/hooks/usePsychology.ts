@@ -159,14 +159,14 @@ export function usePsychology() {
   const getTodayStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return psychologyState.getCalendarDay(today);
-  }, [psychologyState.calendar]);
+  }, [psychologyState]); // psychologyState全体を依存に含める
 
   /**
    * 直近24時間のアラートを取得
    */
   const recentAlerts = useMemo(() => {
     return psychologyState.getRecentAlerts(24);
-  }, [psychologyState.alerts]);
+  }, [psychologyState]); // psychologyState全体を依存に含める
 
   return {
     // State
@@ -208,9 +208,9 @@ export function usePsychology() {
     updateCalendarDay: psychologyState.updateCalendarDay,
     setCurrentEmotion: psychologyState.setCurrentEmotion,
 
-    // Services (refs for advanced usage)
-    psychologyMonitor: psychologyMonitorRef.current,
-    coolingOffManager: coolingOffManagerRef.current,
-    disciplineCalculator: disciplineCalculatorRef.current
+    // Services (using callbacks for safe access)
+    getPsychologyMonitor: () => psychologyMonitorRef.current,
+    getCoolingOffManager: () => coolingOffManagerRef.current,
+    getDisciplineCalculator: () => disciplineCalculatorRef.current
   };
 }

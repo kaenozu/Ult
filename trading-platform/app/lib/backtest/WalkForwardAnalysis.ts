@@ -5,6 +5,7 @@
  * and provide realistic performance estimates.
  */
 
+import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
 import { TrainingData, WalkForwardResult, MLBacktestConfig } from '../ml/types';
 import { EnsembleStrategy } from '../ml/EnsembleStrategy';
@@ -18,11 +19,12 @@ export interface WalkForwardConfig {
   retrainFrequency: number; // retrain every N test windows
 }
 
-export class WalkForwardAnalysis {
+export class WalkForwardAnalysis extends EventEmitter {
   private featureService: FeatureEngineeringService;
   private ensembleStrategy: EnsembleStrategy;
 
   constructor() {
+    super();
     this.featureService = new FeatureEngineeringService();
     this.ensembleStrategy = new EnsembleStrategy();
   }
@@ -54,8 +56,7 @@ export class WalkForwardAnalysis {
       const trainData = data.slice(startIdx, trainEndIdx);
       const testData = data.slice(trainEndIdx, testEndIdx);
 
-        `Walk-Forward Window ${windowId + 1}: Train ${trainData.length} samples, Test ${testData.length} samples`
-      );
+      console.log(`Walk-Forward Window ${windowId + 1}: Train ${trainData.length} samples, Test ${testData.length} samples`);
 
       // Extract features
       const trainFeatures = this.featureService.extractFeatures(trainData, 200);

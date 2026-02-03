@@ -334,18 +334,32 @@ export const LoadingWrapper = memo(function LoadingWrapper({
   delay?: number;
 }) {
   const [showSkeleton, setShowSkeleton] = useState(false);
+  const prevIsLoadingRef = useRef(isLoading);
 
   useEffect(() => {
-    if (isLoading && delay > 0) {
-      const timer = setTimeout(() => setShowSkeleton(true), delay);
-      return () => clearTimeout(timer);
-    } else {
-      setShowSkeleton(isLoading);
+    // Reset skeleton state when isLoading changes from false to true
+    if (isLoading && !prevIsLoadingRef.current) {
+      if (delay > 0) {
+        const timer = setTimeout(() => setShowSkeleton(true), delay);
+        prevIsLoadingRef.current = isLoading;
+        return () => clearTimeout(timer);
+      } else {
+        // Use requestAnimationFrame to avoid synchronous setState
+        requestAnimationFrame(() => {
+          setShowSkeleton(true);
+        });
+      }
+    } else if (!isLoading && prevIsLoadingRef.current) {
+      // Use requestAnimationFrame to avoid synchronous setState
+      requestAnimationFrame(() => {
+        setShowSkeleton(false);
+      });
     }
+    prevIsLoadingRef.current = isLoading;
   }, [isLoading, delay]);
 
   if (showSkeleton) {
-    return skeleton || <ChartSkeleton />;
+    return <>{skeleton || <ChartSkeleton />}</>;
   }
 
   return <>{children}</>;

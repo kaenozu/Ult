@@ -60,14 +60,18 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE') {
       const data = lastMessage.data as { symbol: string } | undefined;
       if (data && data.symbol === stock.symbol) {
-        setLiveSignal(lastMessage.data as Signal);
+        setTimeout(() => {
+          setLiveSignal(lastMessage.data as Signal);
+        }, 0);
       }
     }
   }, [lastMessage, stock.symbol]);
 
   // Reset live signal when stock changes
   useEffect(() => {
-    setLiveSignal(null);
+    setTimeout(() => {
+      setLiveSignal(null);
+    }, 0);
   }, [stock.symbol]);
 
   const displaySignal = liveSignal || signal;
@@ -92,7 +96,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
 
   // Reset backtest when stock changes
   useEffect(() => {
-    setBacktestResult(null);
+    setTimeout(() => {
+      setBacktestResult(null);
+    }, 0);
     // Cancel any running backtest
     cancelBacktest();
   }, [stock.symbol, cancelBacktest]);
@@ -105,34 +111,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     if (isBacktesting) return; // Already running
 
     if (!ohlcv || ohlcv.length === 0) {
-      // Empty result for no data
-      setBacktestResult({
-        symbol: stock.symbol,
-        totalTrades: 0,
-        winningTrades: 0,
-        losingTrades: 0,
-        winRate: 0,
-        totalReturn: 0,
-        avgProfit: 0,
-        avgLoss: 0,
-        profitFactor: 0,
-        maxDrawdown: 0,
-        sharpeRatio: 0,
-        trades: [],
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString()
-      });
-      return;
-    }
-
-    // Run backtest asynchronously using Web Worker
-    const executeBacktest = async () => {
-      try {
-        const result = await runBacktestAsync(stock.symbol, ohlcv, stock.market);
-        setBacktestResult(result);
-      } catch (e) {
-        console.error("Backtest failed:", e);
-        // Set empty result on error
+      // Empty result for no data - wrapped in setTimeout to avoid synchronous setState
+      setTimeout(() => {
         setBacktestResult({
           symbol: stock.symbol,
           totalTrades: 0,
@@ -149,6 +129,38 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           startDate: new Date().toISOString(),
           endDate: new Date().toISOString()
         });
+      }, 0);
+      return;
+    }
+
+      // Run backtest asynchronously using Web Worker
+    const executeBacktest = async () => {
+      try {
+        const result = await runBacktestAsync(stock.symbol, ohlcv, stock.market);
+        setTimeout(() => {
+          setBacktestResult(result);
+        }, 0);
+      } catch (e) {
+        console.error("Backtest failed:", e);
+        // Set empty result on error
+        setTimeout(() => {
+          setBacktestResult({
+            symbol: stock.symbol,
+            totalTrades: 0,
+            winningTrades: 0,
+            losingTrades: 0,
+            winRate: 0,
+            totalReturn: 0,
+            avgProfit: 0,
+            avgLoss: 0,
+            profitFactor: 0,
+            maxDrawdown: 0,
+            sharpeRatio: 0,
+            trades: [],
+            startDate: new Date().toISOString(),
+            endDate: new Date().toISOString()
+          });
+        }, 0);
       }
     };
 

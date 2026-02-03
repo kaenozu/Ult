@@ -271,7 +271,7 @@ export class DynamicPositionSizer {
     const dailyVol = volatility;
 
     const positionValue = targetRiskPerPosition / dailyVol;
-    let recommendedShares = Math.floor(positionValue / entryPrice);
+    const recommendedShares = Math.floor(positionValue / entryPrice);
 
     reasoning.push(
       `リスクパリティアプローチ`,

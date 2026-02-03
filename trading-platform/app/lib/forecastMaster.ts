@@ -173,7 +173,7 @@ class ForecastMaster {
     compositeSignal: CompositeSignal | null,
     supplyDemand: SupplyDemandAnalysis
   ): Signal {
-    let adjustedSignal = { ...signal };
+    const adjustedSignal = { ...signal };
     let confidenceAdjustment = 0;
 
     // Adjust based on composite signal

@@ -102,7 +102,7 @@ export const Result = {
     if (result.success) {
       return success(fn(result.data));
     }
-    return result;
+    return result as Result<U, E>;
   },
   
   /**
@@ -116,7 +116,7 @@ export const Result = {
     if (result.success) {
       return fn(result.data);
     }
-    return result;
+    return result as Result<U, E>;
   },
   
   /**

@@ -330,12 +330,12 @@ export class EnsembleModel {
       const baselineAccuracy = 55; // 55%をベースラインとする
       const adjustment = (avgAccuracy - baselineAccuracy) / 100 * this.LEARNING_RATE;
 
-      // @ts-ignore - 動的なアクセス
+      // @ts-expect-error - 動的なアクセス
       this.currentWeights[modelType] = Math.max(
         this.MIN_WEIGHT,
         Math.min(
           this.MAX_WEIGHT,
-          // @ts-ignore
+          // @ts-expect-error
           this.currentWeights[modelType] * (1 + adjustment)
         )
       );

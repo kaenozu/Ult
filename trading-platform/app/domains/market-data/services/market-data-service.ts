@@ -4,8 +4,12 @@
  * 市場データの取得と管理を行うサービス
  */
 
+<<<<<<< HEAD
 import { MarketData, HistoricalDataRequest, RealtimeQuote } from '../types';
 import { OHLCV } from '@/app/types';
+=======
+import { MarketData, HistoricalDataRequest, RealtimeQuote, OHLCV } from '@/app/types';
+>>>>>>> refactoring/major-codebase-cleanup
 
 export class MarketDataService {
   private cache = new Map<string, { data: OHLCV[]; timestamp: number }>();

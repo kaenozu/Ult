@@ -149,7 +149,7 @@ export class FeatureCalculationService {
    */
   calculateEnhancedFeatures(
     data: OHLCV[],
-    indicators: any // TechnicalIndicator & { atr: number[] }
+    indicators: TechnicalIndicatorsWithATR
   ): EnhancedPredictionFeatures {
     // 基本特徴量を計算
     const basicFeatures = this.calculateFeatures(data, indicators);

@@ -1,0 +1,624 @@
+
+> trading-platform@0.1.0 lint
+> eslint --ext .ts,.tsx --rule "@typescript-eslint/ban-ts-comment: off" --ignore-pattern "**/__tests__/**" --ignore-pattern "**/*.test.ts" --ignore-pattern "**/*.test.tsx" --ignore-pattern "**/*.spec.ts" --ignore-pattern "**/*.spec.tsx" --ignore-pattern "**/example*.ts" --ignore-pattern "**/example*.tsx" --ignore-pattern "**/examples/**" --ignore-pattern "**/Demo*.ts" --ignore-pattern "**/Demo*.tsx" --ignore-pattern "**/demo/**" --ignore-pattern "**/template/**" --ignore-pattern "**/fixtures.ts" --ignore-pattern "**/mock-*.ts" --ignore-pattern "**/testing/**" --ignore-pattern "**/test-*.ts" --ignore-pattern "app/strategy-optimization-example.ts" --ignore-pattern "app/performance-examples.ts" --ignore-pattern "app/performance-quickstart.ts" --ignore-pattern "app/WinningTradingSystem.ts" --ignore-pattern "app/types/__tests__/**" --ignore-pattern "coverage/**" --ignore-pattern "eslint.config.*"
+
+(node:27156) ESLintIgnoreWarning: The ".eslintignore" file is no longer supported. Switch to using the "ignores" property in "eslint.config.js": https://eslint.org/docs/latest/use/configure/migration-guide#ignoring-files
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+C:\gemini-desktop\Ult\trading-platform\app\components\ConnectionQualityIndicator.tsx
+  195:10  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\gemini-desktop\Ult\trading-platform\app\components\ConnectionQualityIndicator.tsx:195:10
+  193 |         )}
+  194 |       >
+> 195 |         <SignalIcon className="w-4 h-4" />
+      |          ^^^^^^^^^^ This component is created during render
+  196 |         <div className="flex flex-col items-start leading-tight">
+  197 |           <span className="text-[10px] font-bold uppercase tracking-wider">{statusLabel}</span>
+  198 |           {metrics && status === 'OPEN' && (
+
+C:\gemini-desktop\Ult\trading-platform\app\components\ConnectionQualityIndicator.tsx:162:36
+  160 |   
+  161 |   const colors = useMemo(() => getQualityColors(quality), [quality]);
+> 162 |   const SignalIcon = useMemo(() => getSignalIcon(quality), [quality]);
+      |                                    ^^^^^^^^^^^^^^^^^^^^^^ The component is created during render here
+  163 |   const statusLabel = useMemo(() => getStatusLabel(status), [status]);
+  164 |
+  165 |   // Compact view - just status badge  react-hooks/static-components
+
+C:\gemini-desktop\Ult\trading-platform\app\components\DataQualityPanel.tsx
+  222:8  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\gemini-desktop\Ult\trading-platform\app\components\DataQualityPanel.tsx:222:8
+  220 |   return (
+  221 |     <div className="flex items-center gap-3 py-2 px-3 bg-[#1a1a2e] rounded-lg border border-[#233648]">
+> 222 |       <StatusIcon className={cn('w-4 h-4 shrink-0', getStatusColor())} />
+      |        ^^^^^^^^^^ This component is created during render
+  223 |       <div className="flex-1 min-w-0">
+  224 |         <div className="flex items-center justify-between">
+  225 |           <span className="text-sm font-medium text-white truncate">{name}</span>
+
+C:\gemini-desktop\Ult\trading-platform\app\components\DataQualityPanel.tsx:218:22
+  216 |   };
+  217 |
+> 218 |   const StatusIcon = getStatusIcon();
+      |                      ^^^^^^^^^^^^^^^ The component is created during render here
+  219 |
+  220 |   return (
+  221 |     <div className="flex items-center gap-3 py-2 px-3 bg-[#1a1a2e] rounded-lg border border-[#233648]">  react-hooks/static-components
+
+C:\gemini-desktop\Ult\trading-platform\app\components\Header.tsx
+  299:24  error  'Plus' is not defined  react/jsx-no-undef
+
+C:\gemini-desktop\Ult\trading-platform\app\components\KeyboardShortcutHelp.tsx
+  15:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\KeyboardShortcutHelp.tsx:15:7
+  13 |     // Refresh shortcuts when modal is opened
+  14 |     if (isOpen) {
+> 15 |       setShortcuts(keyboardShortcutManager.getAllShortcuts());
+     |       ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  16 |     }
+  17 |   }, [isOpen]);
+  18 |  react-hooks/set-state-in-effect
+
+C:\gemini-desktop\Ult\trading-platform\app\components\MLPerformanceDashboard.tsx
+  40:5  error  Error: Cannot access variable before it is declared
+
+`fetchPerformanceData` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+C:\gemini-desktop\Ult\trading-platform\app\components\MLPerformanceDashboard.tsx:40:5
+  38 |   useEffect(() => {
+  39 |     // Fetch initial performance data
+> 40 |     fetchPerformanceData();
+     |     ^^^^^^^^^^^^^^^^^^^^ `fetchPerformanceData` accessed before it is declared
+  41 |
+  42 |     // Update every 30 seconds
+  43 |     const interval = setInterval(fetchPerformanceData, 30000);
+
+C:\gemini-desktop\Ult\trading-platform\app\components\MLPerformanceDashboard.tsx:47:3
+  45 |   }, []);
+  46 |
+> 47 |   const fetchPerformanceData = () => {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 48 |     try {
+     | ^^^^^^^^^
+> 49 |       const metrics = integratedPredictionService.getPerformanceMetrics();
+     | ^^^^^^^^^
+> 50 |       setPerformanceData(metrics);
+     | ^^^^^^^^^
+> 51 |       setLoading(false);
+     | ^^^^^^^^^
+> 52 |     } catch (error) {
+     | ^^^^^^^^^
+> 53 |       console.error('Error fetching performance data:', error);
+     | ^^^^^^^^^
+> 54 |       setLoading(false);
+     | ^^^^^^^^^
+> 55 |     }
+     | ^^^^^^^^^
+> 56 |   };
+     | ^^^^^ `fetchPerformanceData` is declared here
+  57 |
+  58 |   const handleRetrain = async () => {
+  59 |     try {  react-hooks/immutability
+
+C:\gemini-desktop\Ult\trading-platform\app\components\MarketDataPanel.tsx
+  22:12  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\MarketDataPanel.tsx:22:12
+  20 |   const marketData = symbols.map(symbol => ({
+  21 |     symbol,
+> 22 |     price: Math.random() * 50000 + 10000,
+     |            ^^^^^^^^^^^^^ Cannot call impure function
+  23 |     change24h: (Math.random() - 0.5) * 10,
+  24 |     volume24h: Math.random() * 1000000000,
+  25 |     high24h: 55000,  react-hooks/purity
+  23:17  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\MarketDataPanel.tsx:23:17
+  21 |     symbol,
+  22 |     price: Math.random() * 50000 + 10000,
+> 23 |     change24h: (Math.random() - 0.5) * 10,
+     |                 ^^^^^^^^^^^^^ Cannot call impure function
+  24 |     volume24h: Math.random() * 1000000000,
+  25 |     high24h: 55000,
+  26 |     low24h: 45000,                        react-hooks/purity
+  24:16  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\MarketDataPanel.tsx:24:16
+  22 |     price: Math.random() * 50000 + 10000,
+  23 |     change24h: (Math.random() - 0.5) * 10,
+> 24 |     volume24h: Math.random() * 1000000000,
+     |                ^^^^^^^^^^^^^ Cannot call impure function
+  25 |     high24h: 55000,
+  26 |     low24h: 45000,
+  27 |   }));                              react-hooks/purity
+
+C:\gemini-desktop\Ult\trading-platform\app\components\RiskDashboard.tsx
+  632:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\RiskDashboard.tsx:632:5
+  630 |   useEffect(() => {
+  631 |     const recs = hedgeManager.generateHedgeRecommendations();
+> 632 |     setRecommendations(recs);
+      |     ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  633 |   }, [hedgeManager]);
+  634 |
+  635 |   return (  react-hooks/set-state-in-effect
+
+C:\gemini-desktop\Ult\trading-platform\app\components\RiskMonitoringDashboard.tsx
+  71:32  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `getActiveAlerts`, but the source dependencies were [alerts]. Inferred different dependency than source.
+
+C:\gemini-desktop\Ult\trading-platform\app\components\RiskMonitoringDashboard.tsx:71:32
+  69 |   }, [portfolio, isMonitoringEnabled, updateInterval, updateRisk, updatePositionRisk]);
+  70 |
+> 71 |   const activeAlerts = useMemo(() => getActiveAlerts(), [alerts]);
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^ Could not preserve existing manual memoization
+  72 |   const criticalAlerts = useMemo(() => getCriticalAlerts(), [alerts]);
+  73 |
+  74 |   if (!isMonitoringEnabled) {  react-hooks/preserve-manual-memoization
+  71:57  warning  React Hook useMemo has a missing dependency: 'getActiveAlerts'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+  72:61  warning  React Hook useMemo has a missing dependency: 'getCriticalAlerts'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+
+C:\gemini-desktop\Ult\trading-platform\app\components\SignalPanel\index-optimized.tsx
+   63:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\SignalPanel\index-optimized.tsx:63:9
+  61 |       const data = lastMessage.data as { symbol: string } | undefined;
+  62 |       if (data && data.symbol === stock.symbol) {
+> 63 |         setLiveSignal(lastMessage.data as Signal);
+     |         ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  64 |       }
+  65 |     }
+  66 |   }, [lastMessage, stock.symbol]);  react-hooks/set-state-in-effect
+   70:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\SignalPanel\index-optimized.tsx:70:5
+  68 |   // Reset live signal when stock changes
+  69 |   useEffect(() => {
+> 70 |     setLiveSignal(null);
+     |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  71 |   }, [stock.symbol]);
+  72 |
+  73 |   const displaySignal = liveSignal || signal;                                                                        react-hooks/set-state-in-effect
+   95:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\SignalPanel\index-optimized.tsx:95:5
+  93 |   // Reset backtest when stock changes
+  94 |   useEffect(() => {
+> 95 |     setBacktestResult(null);
+     |     ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  96 |     // Cancel any running backtest
+  97 |     cancelBacktest();
+  98 |   }, [stock.symbol, cancelBacktest]);                                        react-hooks/set-state-in-effect
+  109:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\SignalPanel\index-optimized.tsx:109:7
+  107 |     if (!ohlcv || ohlcv.length === 0) {
+  108 |       // Empty result for no data
+> 109 |       setBacktestResult({
+      |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  110 |         symbol: stock.symbol,
+  111 |         totalTrades: 0,
+  112 |         winningTrades: 0,                                 react-hooks/set-state-in-effect
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockChart\ChartLoading.tsx
+  69:37  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockChart\ChartLoading.tsx:69:37
+  67 |                 key={i} 
+  68 |                 className="flex-1 bg-[#3b82f6] rounded-t-sm transition-all"
+> 69 |                 style={{ height: `${Math.random() * 100}%` }}
+     |                                     ^^^^^^^^^^^^^ Cannot call impure function
+  70 |               />
+  71 |             ))}
+  72 |           </div>  react-hooks/purity
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockChart\OptimizedStockChart.tsx
+  169:6   warning  React Hook useMemo has a missing dependency: 'visibleRange'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+  169:13  warning  React Hook useMemo has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react-hooks/exhaustive-deps
+  169:30  warning  React Hook useMemo has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               react-hooks/exhaustive-deps
+  234:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockChart\OptimizedStockChart.tsx:234:7
+  232 |   useEffect(() => {
+  233 |     if (!propVisibleRange && data.length > 0) {
+> 234 |       setLocalVisibleRange([Math.max(0, data.length - 100), data.length]);
+      |       ^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  235 |     }
+  236 |   }, [data.length, propVisibleRange]);
+  237 |  react-hooks/set-state-in-effect
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockChart\StockChart.tsx
+  372:0  error  Parsing error: Declaration or statement expected
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockChart\hooks\useChartOptions.ts
+  201:7  warning  React Hook useMemo has unnecessary dependencies: 'CHART_GRID', 'data.length', and 'extendedData.labels'. Either exclude them or remove the dependency array. Outer scope values like 'CHART_GRID' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockChart\hooks\useForecastLayers.ts
+  94:6  warning  React Hook useMemo has an unnecessary dependency: 'extendedData.labels.length'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockTable.tsx
+  182:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockTable.tsx:182:7
+  180 |     
+  181 |     if (newInterval !== pollingInterval) {
+> 182 |       setPollingInterval(newInterval);
+      |       ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  183 |     }
+  184 |   }, [stocks, pollingInterval]);
+  185 |                                                                                                                                                                                                                                                   react-hooks/set-state-in-effect
+  273:18  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockTable.tsx:273:18
+  271 |               <div className="flex items-center">
+  272 |                 銘柄
+> 273 |                 <SortIcon field="symbol" />
+      |                  ^^^^^^^^ This component is created during render
+  274 |               </div>
+  275 |             </th>
+  276 |             <th 
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockTable.tsx:235:20
+  233 |   }, [removeFromWatchlist]);
+  234 |
+> 235 |   const SortIcon = ({ field }: { field: SortField }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 236 |     const isActive = sortField === field;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 237 |     const direction = sortDirection === 'asc' ? 'up' : 'down';
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 259 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 260 |   };
+      | ^^^^ The component is created during render here
+  261 |
+  262 |   return (
+  263 |     <div className="overflow-y-auto flex-1">                                react-hooks/static-components
+  282:18  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockTable.tsx:282:18
+  280 |               <div className="flex items-center justify-end">
+  281 |                 現在値
+> 282 |                 <SortIcon field="price" />
+      |                  ^^^^^^^^ This component is created during render
+  283 |               </div>
+  284 |             </th>
+  285 |             {showChange && (
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockTable.tsx:235:20
+  233 |   }, [removeFromWatchlist]);
+  234 |
+> 235 |   const SortIcon = ({ field }: { field: SortField }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 236 |     const isActive = sortField === field;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 237 |     const direction = sortDirection === 'asc' ? 'up' : 'down';
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 259 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 260 |   };
+      | ^^^^ The component is created during render here
+  261 |
+  262 |   return (
+  263 |     <div className="overflow-y-auto flex-1">        react-hooks/static-components
+  292:20  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockTable.tsx:292:20
+  290 |                 <div className="flex items-center justify-end">
+  291 |                   前日比
+> 292 |                   <SortIcon field="changePercent" />
+      |                    ^^^^^^^^ This component is created during render
+  293 |                 </div>
+  294 |               </th>
+  295 |             )}
+
+C:\gemini-desktop\Ult\trading-platform\app\components\StockTable.tsx:235:20
+  233 |   }, [removeFromWatchlist]);
+  234 |
+> 235 |   const SortIcon = ({ field }: { field: SortField }) => {
+      |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 236 |     const isActive = sortField === field;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 237 |     const direction = sortDirection === 'asc' ? 'up' : 'down';
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 259 |     );
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 260 |   };
+      | ^^^^ The component is created during render here
+  261 |
+  262 |   return (
+  263 |     <div className="overflow-y-auto flex-1">  react-hooks/static-components
+
+C:\gemini-desktop\Ult\trading-platform\app\components\backtest\BacktestResultsDashboard.tsx
+  61:19  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render   react-hooks/rules-of-hooks
+  66:28  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render   react-hooks/rules-of-hooks
+  71:25  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render   react-hooks/rules-of-hooks
+  75:30  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render   react-hooks/rules-of-hooks
+  84:37  error  React Hook "useState" is called conditionally. React Hooks must be called in the exact same order in every component render  react-hooks/rules-of-hooks
+
+C:\gemini-desktop\Ult\trading-platform\app\components\ui\LoadingStates.tsx
+  343:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\components\ui\LoadingStates.tsx:343:7
+  341 |       return () => clearTimeout(timer);
+  342 |     } else {
+> 343 |       setShowSkeleton(isLoading);
+      |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  344 |     }
+  345 |   }, [isLoading, delay]);
+  346 |  react-hooks/set-state-in-effect
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\useAIPerformance.ts
+  78:6  warning  React Hook useEffect has a missing dependency: 'ohlcv'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\usePsychology.ts
+  142:6   warning  React Hook useMemo has a missing dependency: 'psychologyState'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+  149:6   warning  React Hook useMemo has a missing dependency: 'psychologyState'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/exhaustive-deps
+  151:10  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\usePsychology.ts:151:10
+  149 |   }, [psychologyState.alerts]);
+  150 |
+> 151 |   return {
+      |          ^
+> 152 |     // State
+      | ^^^^^^^^^^^^
+> 153 |     alerts: psychologyState.alerts,
+      …
+> 193 |     coolingOffManager: coolingOffManagerRef.current,
+      | ^^^^^^^^^^^^
+> 194 |     disciplineCalculator: disciplineCalculatorRef.current
+      | ^^^^^^^^^^^^
+> 195 |   };
+      | ^^^^ Cannot access ref value during render
+  196 | }
+  197 |  react-hooks/refs
+  192:24  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\usePsychology.ts:192:24
+  190 |
+  191 |     // Services (refs for advanced usage)
+> 192 |     psychologyMonitor: psychologyMonitorRef.current,
+      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  193 |     coolingOffManager: coolingOffManagerRef.current,
+  194 |     disciplineCalculator: disciplineCalculatorRef.current
+  195 |   };                                                                            react-hooks/refs
+  193:24  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\usePsychology.ts:193:24
+  191 |     // Services (refs for advanced usage)
+  192 |     psychologyMonitor: psychologyMonitorRef.current,
+> 193 |     coolingOffManager: coolingOffManagerRef.current,
+      |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  194 |     disciplineCalculator: disciplineCalculatorRef.current
+  195 |   };
+  196 | }                                                                          react-hooks/refs
+  194:27  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\usePsychology.ts:194:27
+  192 |     psychologyMonitor: psychologyMonitorRef.current,
+  193 |     coolingOffManager: coolingOffManagerRef.current,
+> 194 |     disciplineCalculator: disciplineCalculatorRef.current
+      |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  195 |   };
+  196 | }
+  197 |                                                                                                              react-hooks/refs
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\useResilientWebSocket.ts
+  197:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\useResilientWebSocket.ts:197:9
+  195 |       }
+  196 |       if (status !== 'CLOSED') {
+> 197 |         setConnectionDuration(0);
+      |         ^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  198 |       }
+  199 |     }
+  200 |  react-hooks/set-state-in-effect
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\useSignalAlerts.ts
+   65:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\useSignalAlerts.ts:65:7
+  63 |   useEffect(() => {
+  64 |     if (displaySignal) {
+> 65 |       setPreviousSignal(displaySignal);
+     |       ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  66 |     }
+  67 |   }, [displaySignal]);
+  68 |                                                                              react-hooks/set-state-in-effect
+   90:6  warning  React Hook useEffect has a missing dependency: 'displaySignal.forecastCone'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+   95:7  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\useSignalAlerts.ts:95:7
+  93 |   useEffect(() => {
+  94 |     if (displaySignal?.forecastCone) {
+> 95 |       setPreviousForecastConfidence(displaySignal.forecastCone.confidence);
+     |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  96 |     }
+  97 |   }, [displaySignal?.forecastCone]);
+  98 |  react-hooks/set-state-in-effect
+  126:6  warning  React Hook useEffect has a missing dependency: 'displaySignal'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\useStockData.ts
+  134:6  warning  React Hook useCallback has an unnecessary dependency: 'watchlist'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\gemini-desktop\Ult\trading-platform\app\hooks\useWebSocket.ts
+  113:18  warning  The ref value 'batcherRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'batcherRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+  118:6   warning  React Hook useEffect has a missing dependency: 'authToken'. Either include it or remove the dependency array. Outer scope values like 'wsUrl' aren't valid dependencies because mutating them doesn't re-render the component                                        react-hooks/exhaustive-deps
+
+C:\gemini-desktop\Ult\trading-platform\app\i18n\provider.tsx
+  24:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\gemini-desktop\Ult\trading-platform\app\i18n\provider.tsx:24:9
+  22 |       const savedLocale = localStorage.getItem('locale') as Locale;
+  23 |       if (savedLocale && (savedLocale === 'ja' || savedLocale === 'en')) {
+> 24 |         setLocaleState(savedLocale);
+     |         ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  25 |         document.documentElement.lang = savedLocale;
+  26 |       }
+  27 |     }  react-hooks/set-state-in-effect
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\aiAnalytics\IntegrationExample.ts
+  56:129  error  Parsing error: ';' expected
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\backtest\RealisticBacktestEngine.ts
+  302:5  error  Parsing error: Unexpected keyword or identifier
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\backtest\RealisticBacktestExample.ts
+  284:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\performance-examples.ts
+  132:8  error  Parsing error: Unexpected keyword or identifier
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\performance-quickstart.ts
+  53:9  error  Parsing error: ';' expected
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\performance.ts
+  185:30  warning  The ref value 'renderCountRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'renderCountRef.current' to a variable inside the effect, and use that variable in the cleanup function                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+  226:18  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\performance.ts:226:18
+  224 |     measure,
+  225 |     measureAsync,
+> 226 |     renderCount: renderCountRef.current,
+      |                  ^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  227 |   };
+  228 | }
+  229 |  react-hooks/refs
+  226:18  error    Error: Cannot access refs during render
+
+React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\performance.ts:226:18
+  224 |     measure,
+  225 |     measureAsync,
+> 226 |     renderCount: renderCountRef.current,
+      |                  ^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
+  227 |   };
+  228 | }
+  229 |  react-hooks/refs
+  249:6   warning  React Hook useCallback has an unnecessary dependency: 'name'. Either exclude it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\performance\utils.ts
+  65:6  error  Parsing error: Declaration or statement expected
+
+C:\gemini-desktop\Ult\trading-platform\app\lib\strategy-optimization-example.ts
+  112:4  error  Parsing error: Declaration or statement expected
+
+✖ 61 problems (43 errors, 18 warnings)
+

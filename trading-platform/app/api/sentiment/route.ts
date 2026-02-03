@@ -1,12 +1,16 @@
+<<<<<<< HEAD
 import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
 import { requireAuth } from '@/app/lib/auth';
+=======
+>>>>>>> refactoring/major-codebase-cleanup
 /**
  * GET /api/sentiment/route.ts
- * 
+ *
  * センチメントデータAPI - 全シンボルのセンチメント情報を取得
  */
 
 import { NextRequest } from 'next/server';
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
@@ -50,6 +54,7 @@ interface SentimentAction {
 }
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
+<<<<<<< HEAD
   async (request: NextRequest) => {
     // Authentication check - required for admin actions (start/stop/clear)
     const authError = requireAuth(request);
@@ -73,6 +78,12 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
 
     // Read body after CSRF validation (fixes double body read issue)
     const body = await request.json() as SentimentAction;
+=======
+  async (request: NextRequest, body: SentimentAction) => {
+    // CSRF protection
+    const csrfError = requireCSRF(request);
+    if (csrfError) return csrfError;
+>>>>>>> refactoring/major-codebase-cleanup
 
     // Validate action
     const validationError = validateField({

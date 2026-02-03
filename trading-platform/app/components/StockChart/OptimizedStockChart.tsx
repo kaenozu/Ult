@@ -163,10 +163,14 @@ export const OptimizedStockChart = memo(function OptimizedStockChart({
   // Memoized Calculations
   // ==========================================================================
   
+  // Extract visible range values for stable dependencies
+  const visibleStart = visibleRange[0];
+  const visibleEnd = visibleRange[1];
+
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return [];
-    return processDataForRendering(data, visibleRange);
-  }, [data, visibleRange[0], visibleRange[1]]);
+    return processDataForRendering(data, [visibleStart, visibleEnd]);
+  }, [data, visibleStart, visibleEnd]);
 
   const visibleData = useMemo(() => {
     return data.slice(virtualization.visibleStart, virtualization.visibleEnd);
@@ -231,7 +235,9 @@ export const OptimizedStockChart = memo(function OptimizedStockChart({
   
   useEffect(() => {
     if (!propVisibleRange && data.length > 0) {
-      setLocalVisibleRange([Math.max(0, data.length - 100), data.length]);
+      setTimeout(() => {
+        setLocalVisibleRange([Math.max(0, data.length - 100), data.length]);
+      }, 0);
     }
   }, [data.length, propVisibleRange]);
 
