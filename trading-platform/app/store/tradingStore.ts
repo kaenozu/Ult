@@ -3,9 +3,10 @@ import { persist } from 'zustand/middleware';
 import { Stock, Portfolio, Position, Order, AIStatus, Theme as AppTheme, Signal as AIAnalysis, OHLCV as MarketData } from '../types';
 import { OrderRequest, OrderResult } from '../types/order';
 import { AI_TRADING } from '../lib/constants';
+import { getRiskManagementService } from '../lib/services/RiskManagementService';
 
 // Helper function to check if order side is a buy/long position
-function isBuyOrLong(side: Order['side']): boolean {
+function isBuyOrLong(side: Order['side'] | 'LONG' | 'SHORT'): boolean {
   return side === 'BUY' || side === 'LONG';
 }
 
@@ -197,6 +198,66 @@ export const useTradingStore = create<TradingStore>()(
       // Order Execution
       executeOrder: (order: OrderRequest): OrderResult => {
         let result: OrderResult = { success: false };
+        
+        // Get current portfolio state
+        const portfolio = get().portfolio;
+        
+        // ============================================================================
+        // CRITICAL: Automated Risk Management System
+        // ============================================================================
+        
+        // Initialize risk management service
+        const riskService = getRiskManagementService();
+        
+        // Validate order against all risk management rules
+        const riskValidation = riskService.validateOrder(order, portfolio);
+        
+        // If order is not allowed, return error with detailed reasons
+        if (!riskValidation.allowed) {
+          const criticalViolations = riskValidation.violations
+            .filter(v => v.severity === 'critical')
+            .map(v => v.message)
+            .join('; ');
+          
+          return {
+            success: false,
+            error: `Risk Management: ${criticalViolations || riskValidation.reasons.join('; ')}`,
+          };
+        }
+        
+        // Apply risk management adjustments to order
+        if (riskValidation.adjustedQuantity && riskValidation.adjustedQuantity !== order.quantity) {
+          console.log(`[Risk Management] Position size adjusted: ${order.quantity} → ${riskValidation.adjustedQuantity}`);
+          order.quantity = riskValidation.adjustedQuantity;
+        }
+        
+        if (riskValidation.stopLossPrice && !order.stopLoss) {
+          console.log(`[Risk Management] Auto stop loss: ${riskValidation.stopLossPrice}`);
+          order.stopLoss = riskValidation.stopLossPrice;
+        }
+        
+        if (riskValidation.takeProfitPrice && !order.takeProfit) {
+          console.log(`[Risk Management] Auto take profit: ${riskValidation.takeProfitPrice}`);
+          order.takeProfit = riskValidation.takeProfitPrice;
+        }
+        
+        // Log risk management actions
+        if (riskValidation.reasons.length > 0) {
+          console.log('[Risk Management] Applied adjustments:', riskValidation.reasons);
+        }
+        
+        if (riskValidation.violations.length > 0) {
+          const warnings = riskValidation.violations
+            .filter(v => v.severity !== 'critical')
+            .map(v => v.message);
+          if (warnings.length > 0) {
+            console.warn('[Risk Management] Warnings:', warnings);
+          }
+        }
+        
+        // ============================================================================
+        // Order Execution (after risk validation)
+        // ============================================================================
         
         set((state) => {
           const { portfolio } = state;
