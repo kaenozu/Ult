@@ -159,10 +159,7 @@ export const ConnectionQualityIndicator = memo(function ConnectionQualityIndicat
   }, [metrics, status]);
   
   const colors = useMemo(() => getQualityColors(quality), [quality]);
-<<<<<<< HEAD
   const SignalIcon = getSignalIcon(quality);
-=======
->>>>>>> refactoring/major-codebase-cleanup
   const statusLabel = useMemo(() => getStatusLabel(status), [status]);
 
   // Render signal icon directly based on quality to avoid creating components during render

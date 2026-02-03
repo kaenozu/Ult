@@ -165,12 +165,6 @@ export const StockChart = memo(function StockChart({
     </div>
   );
   if (loading || data.length === 0) return (
-<<<<<<< HEAD
-    <div className={`relative w-full ${CHART_THEME.LOADING.BACKGROUND} border ${CHART_THEME.LOADING.BORDER} rounded animate-pulse`} style={{ height: dynamicHeight }}>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className={`h-8 w-8 border-2 ${CHART_THEME.LOADING.SPINNER_BORDER} border-t-transparent rounded-full animate-spin mb-2`}></div>
-        <p className={`text-xs ${CHART_THEME.LOADING.TEXT}`}>データを取得中...</p>
-=======
     <div className="relative w-full bg-[#131b23] border border-[#233648] rounded overflow-hidden" style={{ height: dynamicHeight }}>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="relative w-12 h-12 mb-4">
@@ -178,7 +172,6 @@ export const StockChart = memo(function StockChart({
           <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
         </div>
         <p className="text-sm text-[#92adc9] animate-pulse">チャートデータを読み込み中...</p>
->>>>>>> refactoring/major-codebase-cleanup
       </div>
     </div>
   );
@@ -197,14 +190,6 @@ export const StockChart = memo(function StockChart({
         </div>
       )}
       
-<<<<<<< HEAD
-      {hoveredIdx !== null && hoveredIdx < data.length && (
-        <div className={`absolute top-2 left-2 z-20 ${CHART_THEME.TOOLTIP.BACKGROUND} border ${CHART_THEME.TOOLTIP.BORDER} p-3 rounded shadow-xl pointer-events-none backdrop-blur-sm`}>
-          <div className={`text-xs font-black ${CHART_THEME.TOOLTIP.TEXT_TITLE} uppercase border-b ${CHART_THEME.TOOLTIP.BORDER} pb-1 mb-1`}>{extendedData.labels[hoveredIdx]}</div>
-          <div className={`text-sm font-bold ${CHART_THEME.TOOLTIP.TEXT_VALUE}`}>{formatCurrency(data[hoveredIdx].close, market === 'japan' ? 'JPY' : 'USD')}</div>
-        </div>
-      )}
-=======
       {/* Custom Tooltip */}
       <ChartTooltip
         hoveredIdx={hoveredIdx}
@@ -216,7 +201,6 @@ export const StockChart = memo(function StockChart({
         smaValue={currentSmaValue}
       />
       
->>>>>>> refactoring/major-codebase-cleanup
       <Line ref={chartRef} data={chartData} options={options} />
       {showVolume && (
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">

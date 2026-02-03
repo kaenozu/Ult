@@ -192,19 +192,13 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           historicalData = ohlcv;
         }
 
-<<<<<<< HEAD
-        // Calculate accuracy metrics (returns null if insufficient data)
-        const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData);
-        if (!accuracyResult) {
-          // Not enough data for accuracy calculation
-          return;
-=======
         // Calculate accuracy metrics
         const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
 
         if (!accuracyResult) {
-          throw new Error('Insufficient data for accuracy calculation');
->>>>>>> refactoring/major-codebase-cleanup
+          // Not enough data for accuracy calculation
+          setLoading(false);
+          return;
         }
 
         const predError = calculatePredictionError(historicalData);
@@ -244,11 +238,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           // Try to calculate with existing OHLCV data as fallback
           if (ohlcv.length >= 252) {
             try {
-<<<<<<< HEAD
-              const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv);
-=======
               const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
->>>>>>> refactoring/major-codebase-cleanup
               if (accuracyResult) {
                 const predError = calculatePredictionError(ohlcv);
                 const fallbackData: AccuracyData = {
