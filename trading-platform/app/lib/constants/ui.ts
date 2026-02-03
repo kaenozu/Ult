@@ -84,3 +84,27 @@ export const ANIMATION = {
   SPINNER_BORDER_WIDTH: 'border-t-2 border-b-2',
   SPINNER_SIZE: 'h-12 w-12',
 } as const;
+
+/**
+ * Chart UI Theme Colors
+ */
+export const CHART_THEME = {
+  LOADING: {
+    BACKGROUND: 'bg-[#131b23]',
+    BORDER: 'border-[#233648]',
+    TEXT: 'text-[#92adc9]',
+    SPINNER_BORDER: 'border-[#3b82f6]',
+  },
+  ERROR: {
+    BACKGROUND: 'bg-red-500/10',
+    BORDER: 'border-red-500/50',
+    TEXT_TITLE: 'text-red-400',
+    TEXT_DESC: 'text-red-300',
+  },
+  TOOLTIP: {
+    BACKGROUND: 'bg-[#1a2632]/90',
+    BORDER: 'border-[#233648]',
+    TEXT_TITLE: 'text-primary',
+    TEXT_VALUE: 'text-white',
+  }
+} as const;
