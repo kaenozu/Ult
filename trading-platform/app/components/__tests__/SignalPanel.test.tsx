@@ -3,6 +3,7 @@ import '@testing-library/jest-dom';
 import { SignalPanel } from '../SignalPanel';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
+import { useJournalStore } from '@/app/store/journalStore';
 
 // Mocks
 jest.mock('@/app/store/tradingStore', () => ({
@@ -11,6 +12,10 @@ jest.mock('@/app/store/tradingStore', () => ({
 
 jest.mock('@/app/hooks/useWebSocket', () => ({
   useWebSocket: jest.fn(),
+}));
+
+jest.mock('@/app/store/journalStore', () => ({
+  useJournalStore: jest.fn(),
 }));
 
 jest.mock('@/app/lib/backtest', () => ({
@@ -77,6 +82,10 @@ describe('SignalPanel Accessibility', () => {
     };
     (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
       return selector ? selector(mockStore) : mockStore;
+    });
+    (useJournalStore as unknown as jest.Mock).mockImplementation((selector) => {
+      const mockJournal = [];
+      return selector ? selector({ journal: mockJournal }) : { journal: mockJournal };
     });
     (useWebSocket as unknown as jest.Mock).mockReturnValue({
       status: 'OPEN',
