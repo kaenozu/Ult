@@ -29,11 +29,16 @@ export interface MarketContext {
 
 export interface PredictionFeatures {
   rsi: number;
+  rsiChange: number;
   sma5: number;
   sma20: number;
+  sma50: number;
   priceMomentum: number;
+  volumeRatio: number;
   volatility: number;
-  volumeChange: number;
+  macdSignal: number;
+  bollingerPosition: number;
+  atrPercent: number;
 }
 
 export interface ModelPrediction {
