@@ -12,8 +12,8 @@
  */
 
 import { OHLCV } from '@/app/types';
-import { StrategyResult } from '../strategies/WinningStrategyEngine';
-import { PositionSizingResult } from '../risk/AdvancedRiskManager';
+import { StrategyResult } from '@/app/lib/strategies/WinningStrategyEngine';
+import { PositionSizingResult } from '@/app/lib/risk/AdvancedRiskManager';
 
 // ============================================================================
 // Types

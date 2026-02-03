@@ -72,6 +72,7 @@ export async function basicTrainingExample(marketData: OHLCV[]): Promise<void> {
     if (episode > 0) {
       try {
         const metrics = await agent.learn();
+        console.log({
           reward: episodeReward.toFixed(4),
           steps: stepCount,
           epsilon: agent.getEpsilon().toFixed(3),
@@ -79,6 +80,7 @@ export async function basicTrainingExample(marketData: OHLCV[]): Promise<void> {
           valueLoss: metrics.valueLoss.toFixed(4),
         });
       } catch (error) {
+        console.error('Learning failed:', error);
       }
     }
 

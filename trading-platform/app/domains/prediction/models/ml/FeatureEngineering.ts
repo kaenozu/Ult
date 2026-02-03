@@ -5,9 +5,9 @@
  * テクニカル指標の拡張、マクロ経済指標の統合、センチメント分析、時系列特徴量を提供します。
  */
 
-import { OHLCV } from '../../types/shared';
-import { calculateSMA, calculateEMA, calculateRSI, calculateMACD, calculateBollingerBands, calculateATR } from '../utils';
-import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '../constants';
+import { OHLCV } from '@/app/types';
+import { calculateSMA, calculateEMA, calculateRSI, calculateMACD, calculateBollingerBands, calculateATR } from '@/app/lib/utils';
+import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '@/app/lib/constants/technical-indicators';
 
 /**
  * テクニカル指標の拡張特徴量
@@ -162,6 +162,150 @@ export interface AllFeatures {
  */
 export class FeatureEngineering {
   /**
+   * Security: Validate OHLCV data to prevent invalid inputs
+   */
+  private validateOHLCVData(data: OHLCV[]): void {
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid data: must be an array');
+    }
+
+    const MAX_DATA_POINTS = 100000; // Security: Prevent memory exhaustion
+    const MIN_DATA_POINTS = 200;
+
+    if (data.length < MIN_DATA_POINTS) {
+      throw new Error(`Insufficient data: minimum ${MIN_DATA_POINTS} data points required, got ${data.length}`);
+    }
+
+    if (data.length > MAX_DATA_POINTS) {
+      throw new Error(`Data too large: maximum ${MAX_DATA_POINTS} data points allowed, got ${data.length}`);
+    }
+
+    // Validate each OHLCV entry
+    for (let i = 0; i < data.length; i++) {
+      const point = data[i];
+
+      if (!point || typeof point !== 'object') {
+        throw new Error(`Invalid data point at index ${i}: must be an object`);
+      }
+
+      // Validate required fields
+      const requiredFields = ['open', 'high', 'low', 'close', 'volume', 'date'];
+      for (const field of requiredFields) {
+        if (!(field in point)) {
+          throw new Error(`Missing required field '${field}' at index ${i}`);
+        }
+      }
+
+      // Validate numeric fields are positive and finite
+      const numericFields: Array<keyof OHLCV> = ['open', 'high', 'low', 'close', 'volume'];
+      for (const field of numericFields) {
+        const value = point[field];
+        if (typeof value !== 'number' || !isFinite(value) || value < 0) {
+          throw new Error(
+            `Invalid ${field} at index ${i}: must be a positive finite number, got ${value}`
+          );
+        }
+      }
+
+      // Validate price relationships
+      if (point.high < point.low) {
+        throw new Error(`Invalid price data at index ${i}: high (${point.high}) cannot be less than low (${point.low})`);
+      }
+
+      if (point.close < point.low || point.close > point.high) {
+        throw new Error(`Invalid price data at index ${i}: close (${point.close}) must be between low (${point.low}) and high (${point.high})`);
+      }
+
+      if (point.open < point.low || point.open > point.high) {
+        throw new Error(`Invalid price data at index ${i}: open (${point.open}) must be between low (${point.low}) and high (${point.high})`);
+      }
+
+      // Validate date
+      if (typeof point.date !== 'string' || point.date.length === 0) {
+        throw new Error(`Invalid date at index ${i}: must be a non-empty string`);
+      }
+
+      // Check for reasonable price values (not too extreme)
+      const MAX_PRICE = 1e10; // Prevent overflow issues
+      const MIN_PRICE = 1e-10; // Prevent division by zero
+      if (point.close > MAX_PRICE || point.close < MIN_PRICE) {
+        throw new Error(
+          `Unreasonable price value at index ${i}: ${point.close} is outside acceptable range`
+        );
+      }
+    }
+  }
+
+  /**
+   * Security: Validate sentiment features to prevent injection
+   */
+  private validateSentimentFeatures(sentiment: SentimentFeatures): void {
+    // Validate sentiment scores are in valid range [-1, 1]
+    const sentimentFields: Array<keyof SentimentFeatures> = [
+      'newsSentiment',
+      'socialSentiment',
+      'sentimentScore'
+    ];
+
+    for (const field of sentimentFields) {
+      const value = sentiment[field];
+      if (typeof value !== 'number' || !isFinite(value) || value < -1 || value > 1) {
+        throw new Error(`Invalid ${field}: must be a number between -1 and 1, got ${value}`);
+      }
+    }
+
+    // Validate volume scores [0, 1]
+    const volumeFields: Array<keyof SentimentFeatures> = [
+      'newsVolume',
+      'socialVolume',
+      'socialBuzz'
+    ];
+
+    for (const field of volumeFields) {
+      const value = sentiment[field];
+      if (typeof value !== 'number' || !isFinite(value) || value < 0 || value > 1) {
+        throw new Error(`Invalid ${field}: must be a number between 0 and 1, got ${value}`);
+      }
+    }
+
+    // Validate analyst rating [1, 5]
+    if (typeof sentiment.analystRating !== 'number' ||
+        !isFinite(sentiment.analystRating) ||
+        sentiment.analystRating < 1 ||
+        sentiment.analystRating > 5) {
+      throw new Error(`Invalid analystRating: must be a number between 1 and 5, got ${sentiment.analystRating}`);
+    }
+  }
+
+  /**
+   * Security: Validate macro features
+   */
+  private validateMacroFeatures(macro: MacroEconomicFeatures): void {
+    // Validate macroScore is in valid range [-1, 1]
+    if (typeof macro.macroScore !== 'number' ||
+        !isFinite(macro.macroScore) ||
+        macro.macroScore < -1 ||
+        macro.macroScore > 1) {
+      throw new Error(`Invalid macroScore: must be a number between -1 and 1, got ${macro.macroScore}`);
+    }
+
+    // Validate numeric fields are finite
+    const numericFields: Array<keyof MacroEconomicFeatures> = [
+      'interestRate',
+      'gdpGrowth',
+      'cpi',
+      'inflationRate'
+    ];
+
+    for (const field of numericFields) {
+      const value = macro[field];
+      if (typeof value !== 'number' || !isFinite(value)) {
+        throw new Error(`Invalid ${field}: must be a finite number, got ${value}`);
+      }
+    }
+  }
+
+  /**
    * すべての特徴量を計算
    */
   calculateAllFeatures(
@@ -169,8 +313,15 @@ export class FeatureEngineering {
     macroData?: MacroEconomicFeatures,
     sentimentData?: SentimentFeatures
   ): AllFeatures {
-    if (data.length < 200) {
-      throw new Error('Insufficient data for feature calculation (minimum 200 data points required)');
+    // Security: Validate input data
+    this.validateOHLCVData(data);
+
+    if (macroData) {
+      this.validateMacroFeatures(macroData);
+    }
+
+    if (sentimentData) {
+      this.validateSentimentFeatures(sentimentData);
     }
 
     const technical = this.calculateTechnicalFeatures(data);
