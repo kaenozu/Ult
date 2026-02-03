@@ -2,13 +2,14 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useOrderExecutionStore, useExecuteOrderAtomicV2 } from '@/app/store/orderExecutionStore';
+import { useExecuteOrderAtomicV2, useExecuteOrder } from '@/app/store/orderExecutionStore';
 
 // Mock stores
 jest.mock('@/app/store/portfolioStore');
 jest.mock('@/app/store/orderExecutionStore', () => ({
     useOrderExecutionStore: jest.fn(),
-    useExecuteOrderAtomicV2: jest.fn()
+    useExecuteOrderAtomicV2: jest.fn(),
+    useExecuteOrder: jest.fn()
 }));
 
 describe('OrderPanel', () => {
@@ -25,6 +26,7 @@ describe('OrderPanel', () => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
         (useExecuteOrderAtomicV2 as jest.Mock).mockReturnValue(mockExecuteOrderAtomicV2);
+        (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrderAtomicV2);
     });
 
     it('renders correctly', () => {
@@ -72,5 +74,29 @@ describe('OrderPanel', () => {
         expect(screen.queryByText('注文を送信しました')).not.toBeInTheDocument();
 
         jest.useRealTimers();
+    });
+
+    it('renders with correct accessibility attributes', () => {
+        render(<OrderPanel stock={mockStock} currentPrice={2000} />);
+
+        // Open risk settings
+        const riskButton = screen.getByText('リスク管理設定');
+        fireEvent.click(riskButton);
+
+        // Check for toggle switches and their labels
+        // Verify that switches have accessible names (via aria-labelledby)
+        expect(screen.getByLabelText('トレイリングストップ')).toBeInTheDocument();
+        expect(screen.getByLabelText('ボラティリティ調整')).toBeInTheDocument();
+        expect(screen.getByLabelText('ケリー基準ポジションサイジング')).toBeInTheDocument();
+
+        // Check volatility selector buttons
+        const lowVolButton = screen.getByText('低');
+
+        // Initially not pressed (default is 1.5, low is 1.3)
+        expect(lowVolButton).toHaveAttribute('aria-pressed', 'false');
+
+        // Click and verify pressed state
+        fireEvent.click(lowVolButton);
+        expect(lowVolButton).toHaveAttribute('aria-pressed', 'true');
     });
 });

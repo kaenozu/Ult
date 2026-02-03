@@ -70,6 +70,11 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   const limitPriceId = useId();
   const modalTitleId = useId();
 
+  // Accessibility IDs for toggle switches
+  const trailingStopLabelId = useId();
+  const volatilityAdjLabelId = useId();
+  const positionSizingLabelId = useId();
+
   const parsedPrice = parseFloat(limitPrice);
   const price = orderType === 'MARKET' 
     ? currentPrice 
@@ -223,7 +228,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
         <div className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3">
           {/* Trailing Stop Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
+            <span id={trailingStopLabelId} className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
             <button
               onClick={() => setRiskConfig(prev => ({ ...prev, enableTrailingStop: !prev.enableTrailingStop }))}
               className={cn(
@@ -232,6 +237,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
               )}
               role="switch"
               aria-checked={riskConfig.enableTrailingStop}
+              aria-labelledby={trailingStopLabelId}
             >
               <span
                 className={cn(
@@ -244,7 +250,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
           {/* Volatility Adjustment Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#92adc9]">ボラティリティ調整</span>
+            <span id={volatilityAdjLabelId} className="text-[10px] text-[#92adc9]">ボラティリティ調整</span>
             <button
               onClick={() => setRiskConfig(prev => ({ ...prev, enableVolatilityAdjustment: !prev.enableVolatilityAdjustment }))}
               className={cn(
@@ -253,6 +259,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
               )}
               role="switch"
               aria-checked={riskConfig.enableVolatilityAdjustment}
+              aria-labelledby={volatilityAdjLabelId}
             >
               <span
                 className={cn(
@@ -265,7 +272,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
           {/* Kelly-based Position Sizing Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#92adc9]">ケリー基準ポジションサイジング</span>
+            <span id={positionSizingLabelId} className="text-[10px] text-[#92adc9]">ケリー基準ポジションサイジング</span>
             <button
               onClick={() => setRiskConfig(prev => ({ ...prev, enableDynamicPositionSizing: !prev.enableDynamicPositionSizing }))}
               className={cn(
@@ -274,6 +281,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
               )}
               role="switch"
               aria-checked={riskConfig.enableDynamicPositionSizing}
+              aria-labelledby={positionSizingLabelId}
             >
               <span
                 className={cn(
@@ -297,6 +305,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
                 <button
                   key={value}
                   onClick={() => setRiskConfig(prev => ({ ...prev, volatilityMultiplier: value }))}
+                  aria-pressed={riskConfig.volatilityMultiplier === value}
                   className={cn(
                     "px-2 py-1 text-[10px] font-bold rounded transition-all",
                     riskConfig.volatilityMultiplier === value
