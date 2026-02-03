@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import { Stock, Portfolio, Position, Order, AIStatus, Theme as AppTheme, Signal as AIAnalysis, OHLCV as MarketData } from '../types';
 import { OrderRequest, OrderResult } from '../types/order';
 import { AI_TRADING } from '../lib/constants';
+import { kellyCalculator } from '../lib/risk/KellyCalculator';
+import { PositionSizeRecommendation } from '../types/risk';
 
 // Helper function to check if order side is a buy/long position
 function isBuyOrLong(side: Order['side']): boolean {
@@ -49,6 +51,10 @@ interface TradingStore {
   executeOrder: (order: OrderRequest) => OrderResult;
   /** @deprecated Use executeOrder instead */
   executeOrderAtomicV2: (order: OrderRequest) => OrderResult;
+
+  // Kelly Criterion Position Sizing
+  calculatePositionSize: (symbol: string, signal?: AIAnalysis) => PositionSizeRecommendation | null;
+  getPortfolioStats: () => { winRate: number; avgWin: number; avgLoss: number; totalTrades: number };
 
   // Deprecated but potentially used fields
   selectedStock: Stock | null;
@@ -288,6 +294,122 @@ export const useTradingStore = create<TradingStore>()(
        */
       executeOrderAtomicV2: (order: OrderRequest): OrderResult => {
         return get().executeOrder(order);
+      },
+
+      /**
+       * Calculate optimal position size using Kelly Criterion
+       * Based on portfolio statistics and current signal
+       */
+      calculatePositionSize: (symbol: string, signal?: AIAnalysis): PositionSizeRecommendation | null => {
+        const state = get();
+        const stats = get().getPortfolioStats();
+        
+        // 最低限のトレード履歴が必要
+        if (stats.totalTrades < 10) {
+          return null;
+        }
+
+        const portfolioValue = state.portfolio.cash + state.portfolio.totalValue;
+        
+        // Kelly計算用のパラメータを構築
+        const kellyParams = {
+          winRate: stats.winRate,
+          avgWin: stats.avgWin,
+          avgLoss: stats.avgLoss,
+          portfolioValue,
+        };
+
+        // 現在のポジション情報を収集
+        const currentPositions = state.portfolio.positions.map(p => ({
+          symbol: p.symbol,
+          value: p.currentPrice * p.quantity,
+        }));
+
+        // ATR情報を取得（シグナルから）
+        const atr = signal?.atr;
+
+        // Kelly推奨を計算
+        const recommendation = kellyCalculator.getRecommendation(
+          kellyParams,
+          symbol,
+          atr,
+          currentPositions
+        );
+
+        return recommendation;
+      },
+
+      /**
+       * Get portfolio trading statistics for Kelly calculation
+       */
+      getPortfolioStats: () => {
+        const state = get();
+        const orders = state.portfolio.orders;
+        
+        // FILLEDオーダーのみを集計
+        const filledOrders = orders.filter(o => o.status === 'FILLED');
+        
+        if (filledOrders.length === 0) {
+          return {
+            winRate: 0.5, // デフォルト50%
+            avgWin: 0,
+            avgLoss: 0,
+            totalTrades: 0,
+          };
+        }
+
+        // 損益を計算（簡略版 - 実装では実際のP&Lを使用）
+        // 同じシンボルのBUY/SELL ペアを探してP&Lを計算
+        const trades: { profit: number }[] = [];
+        const symbolOrders: Record<string, Order[]> = {};
+        
+        // シンボル別にオーダーをグループ化
+        filledOrders.forEach(order => {
+          if (!symbolOrders[order.symbol]) {
+            symbolOrders[order.symbol] = [];
+          }
+          symbolOrders[order.symbol].push(order);
+        });
+
+        // 各シンボルでトレードペアを作成
+        Object.values(symbolOrders).forEach(orders => {
+          const buys = orders.filter(o => o.side === 'BUY');
+          const sells = orders.filter(o => o.side === 'SELL');
+          
+          // 簡略版: 各BUYに対して次のSELLでP&Lを計算
+          for (let i = 0; i < Math.min(buys.length, sells.length); i++) {
+            const profit = (sells[i].price - buys[i].price) * buys[i].quantity;
+            trades.push({ profit });
+          }
+        });
+
+        if (trades.length === 0) {
+          return {
+            winRate: 0.5,
+            avgWin: 0,
+            avgLoss: 0,
+            totalTrades: 0,
+          };
+        }
+
+        // 勝ちトレードと負けトレードを分離
+        const winningTrades = trades.filter(t => t.profit > 0);
+        const losingTrades = trades.filter(t => t.profit < 0);
+
+        const winRate = winningTrades.length / trades.length;
+        const avgWin = winningTrades.length > 0
+          ? winningTrades.reduce((sum, t) => sum + t.profit, 0) / winningTrades.length
+          : 100; // デフォルト値
+        const avgLoss = losingTrades.length > 0
+          ? Math.abs(losingTrades.reduce((sum, t) => sum + t.profit, 0) / losingTrades.length)
+          : 50; // デフォルト値
+
+        return {
+          winRate,
+          avgWin,
+          avgLoss,
+          totalTrades: trades.length,
+        };
       },
 
       selectedStock: null,
