@@ -257,15 +257,15 @@ export function getWebSocketUrl(path: string = '/ws/signals'): string {
  */
 export function calculateSMA(prices: number[], period: number): number[] {
   const result: number[] = [];
-  // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
-  const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
 
   let sum = 0;
   let validCount = 0;
 
-  for (let i = 0; i < validPrices.length; i++) {
-    // Add new value
-    const val = validPrices[i];
+  for (let i = 0; i < prices.length; i++) {
+    // Add new value (check validity inline)
+    const p = prices[i];
+    const val = (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN;
+
     if (!isNaN(val)) {
       sum += val;
       validCount++;
@@ -273,7 +273,8 @@ export function calculateSMA(prices: number[], period: number): number[] {
 
     // Remove old value
     if (i >= period) {
-      const oldVal = validPrices[i - period];
+      const oldP = prices[i - period];
+      const oldVal = (oldP != null && typeof oldP === 'number' && !isNaN(oldP) && oldP > 0) ? oldP : NaN;
       if (!isNaN(oldVal)) {
         sum -= oldVal;
         validCount--;
@@ -298,15 +299,19 @@ export function calculateSMA(prices: number[], period: number): number[] {
  * Calculate Relative Strength Index (RSI)
  */
 export function calculateRSI(prices: number[], period: number = 14): number[] {
-  // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
-  const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
   const result: number[] = [];
   const changes: number[] = [];
 
-  for (let i = 1; i < validPrices.length; i++) {
+  for (let i = 1; i < prices.length; i++) {
     // 有効な価格データのみで変化量を計算
-    if (!isNaN(validPrices[i]) && !isNaN(validPrices[i - 1])) {
-      changes.push(validPrices[i] - validPrices[i - 1]);
+    const pCurrent = prices[i];
+    const valCurrent = (pCurrent != null && typeof pCurrent === 'number' && !isNaN(pCurrent) && pCurrent > 0) ? pCurrent : NaN;
+
+    const pPrev = prices[i - 1];
+    const valPrev = (pPrev != null && typeof pPrev === 'number' && !isNaN(pPrev) && pPrev > 0) ? pPrev : NaN;
+
+    if (!isNaN(valCurrent) && !isNaN(valPrev)) {
+      changes.push(valCurrent - valPrev);
     } else {
       changes.push(NaN); // 無効なデータの場合はNaNを挿入
     }
@@ -334,7 +339,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
     avgLoss /= validChangesCount;
   }
 
-  for (let i = 0; i < validPrices.length; i++) {
+  for (let i = 0; i < prices.length; i++) {
     if (i < period) {
       result.push(NaN);
     } else if (i === period) {
@@ -378,8 +383,6 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
  * Calculate Exponential Moving Average (EMA)
  */
 export function calculateEMA(prices: number[], period: number): number[] {
-  // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
-  const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
   const result: number[] = [];
   const multiplier = 2 / (period + 1);
 
@@ -387,8 +390,9 @@ export function calculateEMA(prices: number[], period: number): number[] {
   let validCount = 0;
   let initialized = false;
 
-  for (let i = 0; i < validPrices.length; i++) {
-    const val = validPrices[i];
+  for (let i = 0; i < prices.length; i++) {
+    const p = prices[i];
+    const val = (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN;
 
     if (!initialized) {
       // Not initialized yet, try to build SMA
@@ -478,10 +482,7 @@ export function calculateBollingerBands(
   const upper: number[] = [];
   const lower: number[] = [];
 
-  // 有効な数値のみを含む配列を作成
-  const validPrices = prices.map(p => (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN);
-
-  for (let i = 0; i < validPrices.length; i++) {
+  for (let i = 0; i < prices.length; i++) {
     if (i < period - 1 || isNaN(middle[i])) {
       upper.push(NaN);
       lower.push(NaN);
@@ -492,7 +493,8 @@ export function calculateBollingerBands(
 
       // Calculate variance directly without array allocation
       for (let j = 0; j < period; j++) {
-        const val = validPrices[i - j];
+        const p = prices[i - j];
+        const val = (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN;
         if (!isNaN(val)) {
           const diff = val - mean;
           sumSq += diff * diff;
