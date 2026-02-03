@@ -1,4 +1,4 @@
-import { requireCSRF } from '/app/lib/csrf/csrf-protection';
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
 /**
  * GET /api/sentiment/route.ts
  * 
@@ -49,10 +49,18 @@ interface SentimentAction {
 }
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
-  const csrfError = requireCSRF(request);
-  if (csrfError) return csrfError;
+  async (request: NextRequest) => {
+    const csrfError = requireCSRF(request);
+    if (csrfError) {
+      const errorBody = await csrfError.json() as { error?: string };
+      return {
+        success: false,
+        message: errorBody.error || 'CSRF validation failed',
+      };
+    }
 
-  async (_request: NextRequest, body: SentimentAction) => {
+    const body = await request.json() as SentimentAction;
+
     // Validate action
     const validationError = validateField({
       value: body.action,
@@ -62,7 +70,10 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
     });
 
     if (validationError) {
-      throw new Error(`Unknown action: ${body.action}`);
+      return {
+        success: false,
+        message: `Invalid action: ${body.action}`,
+      };
     }
 
     const sentimentService = getGlobalSentimentIntegration();
@@ -90,8 +101,10 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
         };
 
       default:
-        // TypeScript should prevent this, but adding for safety
-        throw new Error(`Unknown action: ${body.action}`);
+        return {
+          success: false,
+          message: `Unknown action: ${body.action}`,
+        };
     }
   },
   {

@@ -193,7 +193,13 @@ export function usePerformanceMonitor(
     if (trackRender) {
       renderCountRef.current++;
       const now = performance.now();
-      
+
+      if (lastRenderTimeRef.current) {
+        const timeSinceLastRender = now - lastRenderTimeRef.current;
+        console.log(
+          `[Render] ${componentName} #${renderCountRef.current} ` +
+          `(${timeSinceLastRender.toFixed(2)}ms since last render)`
+        );
       if (lastRenderTimeRef.current) {
         const timeSinceLastRender = now - lastRenderTimeRef.current;
         console.log(
@@ -203,10 +209,10 @@ export function usePerformanceMonitor(
       } else {
         console.log(`[Render] ${componentName} #${renderCountRef.current} (first render)`);
       }
-      
+
       lastRenderTimeRef.current = now;
     }
-  });
+  }, [trackRender]);
 
   // 計測用のヘルパー関数
   const measure = useCallback(<T,>(operationName: string, fn: () => T): T => {
