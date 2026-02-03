@@ -12,6 +12,8 @@ import { ForecastView } from './ForecastView';
 import { AIPerformanceView } from './AIPerformanceView';
 import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
 import { usePerformanceMonitor } from '@/app/lib/performance';
+import { KellyPositionSizingDisplay } from '@/app/components/KellyPositionSizingDisplay';
+import { useTradingStore } from '@/app/store/tradingStore';
 
 /**
  * SignalPanelコンポーネントのプロパティ
@@ -61,6 +63,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
   const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
 
+  // Kelly position sizing
+  const calculatePositionSize = useTradingStore((state) => state.calculatePositionSize);
+  const getPortfolioStats = useTradingStore((state) => state.getPortfolioStats);
 
   // Custom Hooks
   const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock, ohlcv);
@@ -177,6 +182,26 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
     trades: aiTrades
   }), [aiTrades]);
 
+  // Kelly position sizing recommendation
+  const kellyRecommendation = useMemo(() => {
+    if (!displaySignal || displaySignal.type === 'HOLD') {
+      return null;
+    }
+    
+    try {
+      const stats = getPortfolioStats();
+      // 最低10トレード以上必要
+      if (stats.totalTrades < 10) {
+        return null;
+      }
+      
+      return calculatePositionSize(stock.symbol, displaySignal);
+    } catch (error) {
+      console.error('Kelly calculation error:', error);
+      return null;
+    }
+  }, [displaySignal, stock.symbol, calculatePositionSize, getPortfolioStats]);
+
   if (loading || !displaySignal) {
     return (
       <div className="bg-[#141e27] p-4 flex flex-col gap-3 h-full">
@@ -254,7 +279,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       </div>
 
       {activeTab === 'signal' ? (
-        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="h-full flex flex-col gap-3">
+        <div role="tabpanel" id="panel-signal" aria-labelledby="tab-signal" className="flex-1 flex flex-col gap-3 overflow-y-auto">
           {/* Low Accuracy Warning */}
           {displaySignal && displaySignal.type !== 'HOLD' && (
             <LowAccuracyWarning
@@ -274,6 +299,14 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
             calculatingHitRate={calculatingHitRate}
             error={error}
           />
+
+          {/* Kelly Position Sizing Display */}
+          {displaySignal.type !== 'HOLD' && (
+            <KellyPositionSizingDisplay
+              recommendation={kellyRecommendation}
+              loading={false}
+            />
+          )}
         </div>
       ) : activeTab === 'backtest' ? (
         <BacktestView backtestResult={backtestResult} loading={isBacktesting} />
