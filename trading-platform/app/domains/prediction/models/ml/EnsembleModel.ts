@@ -6,7 +6,7 @@
  */
 
 import { AllFeatures, SentimentFeatures, MacroEconomicFeatures } from './FeatureEngineering';
-import { OHLCV } from '../../types/shared';
+import { OHLCV } from '@/app/types';
 
 /**
  * モデルタイプ
@@ -73,6 +73,7 @@ interface EnsembleWeights {
   XGB: number;
   LSTM: number;
   TECHNICAL: number;
+  ENSEMBLE: number; // Ensembled model weight (typically 0 or derived)
 }
 
 /**
@@ -80,8 +81,8 @@ interface EnsembleWeights {
  */
 export class EnsembleModel {
   private performanceHistory: Map<ModelType, ModelPerformance[]> = new Map();
-  private currentWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15 };
-  private baseWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15 };
+  private currentWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15, ENSEMBLE: 0 };
+  private baseWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15, ENSEMBLE: 0 };
   private lastRegimeUpdate: string = new Date().toISOString();
   private currentRegime: MarketRegime | null = null;
 
@@ -355,6 +356,7 @@ export class EnsembleModel {
       XGB: weights.XGB / total,
       LSTM: weights.LSTM / total,
       TECHNICAL: weights.TECHNICAL / total,
+      ENSEMBLE: 0, // Not used for base models
     };
   }
 

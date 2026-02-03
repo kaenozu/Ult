@@ -93,19 +93,19 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           historicalData = ohlcv;
         }
 
-        // Calculate accuracy metrics
-        const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
-        
-        if (accuracyResult.isErr) {
-          throw new Error(accuracyResult.error.message);
+        // Calculate accuracy metrics (returns null if insufficient data)
+        const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData);
+        if (!accuracyResult) {
+          // Not enough data for accuracy calculation
+          return;
         }
 
         const predError = calculatePredictionError(historicalData);
 
         const accuracyData: AccuracyData = {
-          hitRate: accuracyResult.value.hitRate,
-          directionalAccuracy: accuracyResult.value.directionalAccuracy,
-          totalTrades: accuracyResult.value.totalTrades,
+          hitRate: accuracyResult.hitRate,
+          directionalAccuracy: accuracyResult.directionalAccuracy,
+          totalTrades: accuracyResult.totalTrades,
           predictionError: predError
         };
 
@@ -134,13 +134,13 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           // Try to calculate with existing OHLCV data as fallback
           if (ohlcv.length >= 252) {
             try {
-              const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
-              if (accuracyResult.isOk) {
+              const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv);
+              if (accuracyResult) {
                 const predError = calculatePredictionError(ohlcv);
                 const fallbackData: AccuracyData = {
-                  hitRate: accuracyResult.value.hitRate,
-                  directionalAccuracy: accuracyResult.value.directionalAccuracy,
-                  totalTrades: accuracyResult.value.totalTrades,
+                  hitRate: accuracyResult.hitRate,
+                  directionalAccuracy: accuracyResult.directionalAccuracy,
+                  totalTrades: accuracyResult.totalTrades,
                   predictionError: predError
                 };
                 setAccuracy(fallbackData);

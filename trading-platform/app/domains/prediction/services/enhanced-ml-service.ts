@@ -10,9 +10,20 @@
  */
 
 import { OHLCV, Stock, Signal } from '@/app/types';
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures } from '../types';
 import { MLModelService } from './ml-model-service';
-import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../MarketRegimeDetector';
+
+// Stub for MarketRegimeDetector (to be implemented in future tasks)
+interface MarketRegime {
+  regime: 'TRENDING' | 'RANGING' | 'VOLATILE' | 'QUIET';
+  trendDirection: 'UP' | 'DOWN' | 'NEUTRAL';
+  volatility: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidence: 'INITIAL' | 'CONFIRMED';
+}
+type VolatilityRegime = 'HIGH' | 'MEDIUM' | 'LOW';
+const marketRegimeDetector = {
+  detect: (data: OHLCV[]): MarketRegime => ({ regime: 'RANGING', trendDirection: 'NEUTRAL', volatility: 'MEDIUM', confidence: 'INITIAL' }),
+};
 
 export interface ModelPerformance {
   hitRate: number;
@@ -105,7 +116,7 @@ export class EnhancedMLService {
     const driftRisk = this.detectModelDrift(features);
     
     // 3. Get market regime
-    const regimeResult = marketRegimeDetector.detect(historicalData);
+    const regimeResult = marketRegimeDetector.detect(historicalData) as MarketRegime;
     
     // 4. Get base prediction with dynamic weights
     const basePrediction = this.mlModelService.predict(features);
@@ -155,7 +166,7 @@ export class EnhancedMLService {
       kellyFraction,
       recommendedPositionSize,
       driftRisk,
-      marketRegime: regimeResult.regime,
+      marketRegime: regimeResult,
       volatility: regimeResult.volatility,
     };
   }
