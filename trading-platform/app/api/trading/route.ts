@@ -344,7 +344,86 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       
       case 'update_config':
-        platform.updateConfig(body.config);
+        const config = body.config;
+        if (!config || typeof config !== 'object' || Array.isArray(config)) {
+          return NextResponse.json(
+            { error: 'Invalid config: must be an object' },
+            { status: 400 }
+          );
+        }
+
+        // Validate mode
+        if (config.mode && !['live', 'paper', 'backtest'].includes(config.mode)) {
+          return NextResponse.json(
+            { error: 'Invalid mode: must be live, paper, or backtest' },
+            { status: 400 }
+          );
+        }
+
+        // Validate initialCapital
+        if (config.initialCapital !== undefined) {
+          if (typeof config.initialCapital !== 'number' || config.initialCapital <= 0 || !Number.isFinite(config.initialCapital)) {
+            return NextResponse.json(
+              { error: 'Invalid initialCapital: must be a positive number' },
+              { status: 400 }
+            );
+          }
+        }
+
+        // Validate riskLimits
+        let cleanRiskLimits: Record<string, number> | undefined = undefined;
+        if (config.riskLimits !== undefined) {
+          if (typeof config.riskLimits !== 'object' || Array.isArray(config.riskLimits)) {
+            return NextResponse.json(
+              { error: 'Invalid riskLimits: must be an object' },
+              { status: 400 }
+            );
+          }
+
+          cleanRiskLimits = {};
+          const rl = config.riskLimits;
+
+          if (rl.maxPositionSize !== undefined) {
+            if (typeof rl.maxPositionSize !== 'number' || rl.maxPositionSize <= 0) {
+              return NextResponse.json({ error: 'Invalid maxPositionSize' }, { status: 400 });
+            }
+            cleanRiskLimits.maxPositionSize = rl.maxPositionSize;
+          }
+          if (rl.maxDailyLoss !== undefined) {
+            if (typeof rl.maxDailyLoss !== 'number' || rl.maxDailyLoss <= 0) {
+              return NextResponse.json({ error: 'Invalid maxDailyLoss' }, { status: 400 });
+            }
+            cleanRiskLimits.maxDailyLoss = rl.maxDailyLoss;
+          }
+          if (rl.maxDrawdown !== undefined) {
+            if (typeof rl.maxDrawdown !== 'number' || rl.maxDrawdown <= 0) {
+              return NextResponse.json({ error: 'Invalid maxDrawdown' }, { status: 400 });
+            }
+            cleanRiskLimits.maxDrawdown = rl.maxDrawdown;
+          }
+        }
+
+        // Whitelist allowed keys and construct clean config to prevent prototype pollution
+        // and allow only trusted fields
+        const cleanConfig: Record<string, any> = {};
+
+        if (config.mode) cleanConfig.mode = config.mode;
+        if (config.initialCapital) cleanConfig.initialCapital = config.initialCapital;
+        if (cleanRiskLimits) cleanConfig.riskLimits = cleanRiskLimits;
+
+        if (typeof config.aiEnabled === 'boolean') cleanConfig.aiEnabled = config.aiEnabled;
+        if (typeof config.sentimentEnabled === 'boolean') cleanConfig.sentimentEnabled = config.sentimentEnabled;
+        if (typeof config.autoTrading === 'boolean') cleanConfig.autoTrading = config.autoTrading;
+
+        if (Array.isArray(config.exchanges)) {
+          cleanConfig.exchanges = config.exchanges.filter((e: any) => typeof e === 'string');
+        }
+
+        if (Array.isArray(config.symbols)) {
+          cleanConfig.symbols = config.symbols.filter((s: any) => typeof s === 'string');
+        }
+
+        platform.updateConfig(cleanConfig);
         return NextResponse.json({ success: true });
       
       default:
