@@ -70,7 +70,7 @@ export class DataAggregator {
   private pendingRequests: Map<string, Promise<unknown>> = new Map();
 
   // Batch processing
-  private batchQueue: BatchRequest<unknown>[] = [];
+  private batchQueue: any[] = [];
   private batchTimer: NodeJS.Timeout | null = null;
   private batchOptions: BatchOptions;
 

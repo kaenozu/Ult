@@ -286,7 +286,7 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
 
     const engine = new AdvancedBacktestEngine({
       ...this.config.backtest,
-      useRealisticSlippage: this.config.options.useRealisticSlippage,
+      useAdvancedSlippage: this.config.options.useRealisticSlippage,
       averageDailyVolume: data.reduce((sum, d) => sum + d.volume, 0) / data.length,
     });
 
@@ -610,7 +610,7 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
 // Singleton Export
 // ============================================================================
 
-import { createSingleton } from '../utils/singleton';
+import { createSingleton } from '@/app/lib/utils/singleton';
 
 const { getInstance, resetInstance } = createSingleton(
   (config?: Partial<RealisticBacktestConfig>) => new RealisticBacktestOrchestrator(config)

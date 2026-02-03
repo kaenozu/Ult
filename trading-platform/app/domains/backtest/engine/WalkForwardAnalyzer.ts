@@ -698,7 +698,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
 // Singleton Export
 // ============================================================================
 
-import { createSingleton } from '../utils/singleton';
+import { createSingleton } from '@/app/lib/utils/singleton';
 
 const { getInstance, resetInstance } = createSingleton(
   (config?: Partial<WalkForwardConfig>) => new WalkForwardAnalyzer(config)

@@ -1,18 +1,60 @@
 /**
  * Enhanced ML Prediction Service
- * 
+ *
  * Implements advanced features:
  * - Dynamic ensemble weight adjustment
  * - Model drift detection
  * - Performance tracking
  * - Expected value calculation
  * - Kelly criterion position sizing
+ *
+ * SECURITY WARNING: Contains STUB implementation for marketRegimeDetector
+ * This is a placeholder that returns fixed values for development/testing.
+ * Replace with actual market regime detection before production deployment.
  */
 
 import { OHLCV, Stock, Signal } from '@/app/types';
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures } from '../types';
 import { MLModelService } from './ml-model-service';
-import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../MarketRegimeDetector';
+
+// SECURITY: Production deployment safeguard for stub code
+const REGIME_DETECTOR_PRODUCTION_READY = false; // SET TO TRUE ONLY AFTER IMPLEMENTING REAL DETECTOR
+
+/**
+ * Validate production deployment of market regime detector
+ * @throws Error if production deployment detected with stub implementation
+ */
+function validateRegimeDetectorDeployment(): void {
+  if (typeof window !== 'undefined' &&
+      (window.location.hostname === 'production-domain.com' ||
+       process.env.NODE_ENV === 'production' ||
+       process.env.NEXT_PUBLIC_ENV === 'production')) {
+    if (!REGIME_DETECTOR_PRODUCTION_READY) {
+      console.warn(
+        'WARNING: Using STUB market regime detector in production. ' +
+        'This returns fixed values and should be replaced with real implementation. ' +
+        'Set REGIME_DETECTOR_PRODUCTION_READY=true after implementing.'
+      );
+    }
+  }
+}
+
+// STUB for MarketRegimeDetector (to be implemented in future tasks)
+// TODO: Replace with actual market regime detection algorithm
+interface MarketRegime {
+  regime: 'TRENDING' | 'RANGING' | 'VOLATILE' | 'QUIET';
+  trendDirection: 'UP' | 'DOWN' | 'NEUTRAL';
+  volatility: 'HIGH' | 'MEDIUM' | 'LOW';
+  confidence: 'INITIAL' | 'CONFIRMED';
+}
+type VolatilityRegime = 'HIGH' | 'MEDIUM' | 'LOW';
+const marketRegimeDetector = {
+  detect: (data: OHLCV[]): MarketRegime => {
+    validateRegimeDetectorDeployment();
+    // STUB IMPLEMENTATION - Returns fixed neutral values
+    return { regime: 'RANGING', trendDirection: 'NEUTRAL', volatility: 'MEDIUM', confidence: 'INITIAL' };
+  },
+};
 
 export interface ModelPerformance {
   hitRate: number;
@@ -105,7 +147,7 @@ export class EnhancedMLService {
     const driftRisk = this.detectModelDrift(features);
     
     // 3. Get market regime
-    const regimeResult = marketRegimeDetector.detect(historicalData);
+    const regimeResult = marketRegimeDetector.detect(historicalData) as MarketRegime;
     
     // 4. Get base prediction with dynamic weights
     const basePrediction = this.mlModelService.predict(features);
@@ -155,7 +197,7 @@ export class EnhancedMLService {
       kellyFraction,
       recommendedPositionSize,
       driftRisk,
-      marketRegime: regimeResult.regime,
+      marketRegime: regimeResult,
       volatility: regimeResult.volatility,
     };
   }
