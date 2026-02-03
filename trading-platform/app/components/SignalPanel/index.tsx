@@ -14,6 +14,8 @@ import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
 import { usePerformanceMonitor } from '@/app/lib/performance';
 import { KellyPositionSizingDisplay } from '@/app/components/KellyPositionSizingDisplay';
 import { useTradingStore } from '@/app/store/tradingStore';
+import { useJournalStore } from '@/app/store/journalStore';
+import { calculateAIStatusMetrics } from './aiStatus';
 
 /**
  * SignalPanelコンポーネントのプロパティ
@@ -61,7 +63,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const { measure, measureAsync } = usePerformanceMonitor('SignalPanel');
   
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
-  const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
+  const { processAITrades } = useAIStore();
+  const journal = useJournalStore((state) => state.journal);
 
   // Kelly position sizing
   const calculatePositionSize = useTradingStore((state) => state.calculatePositionSize);
@@ -162,25 +165,39 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measure]);
 
   const aiTrades: PaperTrade[] = useMemo(() => {
-    return trades
-      .filter(t => t.symbol === stock.symbol)
-      .map(o => ({
-        id: o.id,
-        symbol: o.symbol,
-        type: (o.side === 'BUY' || o.side === 'LONG' as any) ? 'BUY' : 'SELL',
-        entryPrice: o.price || 0,
-        quantity: o.quantity,
-        status: o.status === 'FILLED' ? 'CLOSED' : 'OPEN',
-        entryDate: o.date,
-        profitPercent: 0,
-      }));
-  }, [trades, stock.symbol]);
+    return journal
+      .filter((entry) => entry.symbol === stock.symbol)
+      .map((entry) => {
+        const direction = entry.signalType === 'SELL' ? -1 : 1;
+        const profitPercent = entry.exitPrice
+          ? ((entry.exitPrice - entry.entryPrice) * direction / entry.entryPrice) * 100
+          : undefined;
 
-  const aiStatusData: import('@/app/types').AIStatus = useMemo(() => ({
-    virtualBalance: 10000000,
-    totalProfit: 0,
-    trades: aiTrades
-  }), [aiTrades]);
+        return {
+          id: entry.id,
+          symbol: entry.symbol,
+          type: entry.signalType === 'SELL' ? 'SELL' : 'BUY',
+          entryPrice: entry.entryPrice,
+          exitPrice: entry.exitPrice,
+          quantity: entry.quantity,
+          status: entry.status,
+          entryDate: entry.date,
+          exitDate: entry.exitPrice ? entry.date : undefined,
+          profitPercent,
+          reflection: entry.notes,
+        };
+      });
+  }, [journal, stock.symbol]);
+
+  const aiStatusData: import('@/app/types').AIStatus = useMemo(() => {
+    const { totalProfit, virtualBalance } = calculateAIStatusMetrics(journal);
+
+    return {
+      virtualBalance,
+      totalProfit,
+      trades: aiTrades,
+    };
+  }, [aiTrades, journal]);
 
   // Kelly position sizing recommendation
   const kellyRecommendation = useMemo(() => {
