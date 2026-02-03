@@ -11,6 +11,8 @@ import { SlippageModel } from './SlippageModel';
 import { CommissionCalculator } from './CommissionCalculator';
 import { PartialFillSimulator } from './PartialFillSimulator';
 import { LatencySimulator } from './LatencySimulator';
+import { transactionCostModel } from '@/app/lib/TransactionCostModel';
+import type { BrokerType, MarketCondition, SettlementType } from '@/app/lib/TransactionCostModel';
 
 // ============================================================================
 // Types
@@ -68,6 +70,13 @@ export interface BacktestConfig {
   partialFillEnabled?: boolean; // Simulate partial fills
   latencyEnabled?: boolean; // Simulate execution latency
   latencyMs?: number; // Latency in milliseconds
+
+  // Transaction cost model settings
+  transactionCostsEnabled?: boolean;
+  transactionCostBroker?: BrokerType;
+  transactionCostMarketCondition?: MarketCondition;
+  transactionCostSettlementType?: SettlementType;
+  transactionCostDailyVolume?: number;
 }
 
 export interface BacktestResult {
@@ -150,6 +159,12 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
   partialFillEnabled: false,
   latencyEnabled: false,
   latencyMs: 500,
+
+  transactionCostsEnabled: false,
+  transactionCostBroker: 'SBI',
+  transactionCostMarketCondition: 'normal',
+  transactionCostSettlementType: 'same-day',
+  transactionCostDailyVolume: 1000000,
 };
 
 // ============================================================================
@@ -469,11 +484,26 @@ export class AdvancedBacktestEngine extends EventEmitter {
       pnl = (this.entryPrice - exitPrice) * quantity;
     }
 
-    // Apply fees using commission calculator if available
+    // Apply fees using transaction cost model or commission calculator
     let fees = 0;
     let commissionBreakdown: Trade['commissionBreakdown'] | undefined;
-    
-    if (this.commissionCalculator) {
+    let slippageAmount: Trade['slippageAmount'] | undefined;
+
+    if (this.config.transactionCostsEnabled) {
+      const entryValue = this.entryPrice * quantity;
+      const exitValue = exitPrice * quantity;
+      const roundTrip = transactionCostModel.calculateRoundTripCost({
+        entryAmount: entryValue,
+        exitAmount: exitValue,
+        shares: quantity,
+        broker: this.config.transactionCostBroker || 'SBI',
+        marketCondition: this.config.transactionCostMarketCondition || 'normal',
+        dailyVolume: this.config.transactionCostDailyVolume || data.volume || this.config.averageDailyVolume || 1000000,
+        settlementType: this.config.transactionCostSettlementType || 'same-day',
+      });
+      fees = roundTrip.totalRoundTripCost;
+      slippageAmount = roundTrip.slippage;
+    } else if (this.commissionCalculator) {
       const roundTrip = this.commissionCalculator.calculateRoundTripCommission(
         this.entryPrice,
         exitPrice,
@@ -490,7 +520,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
       const exitValue = exitPrice * quantity;
       fees = (entryValue + exitValue) * (this.config.commission / 100);
     }
-    
+
     pnl -= fees;
 
     const pnlPercent = (pnl / (this.entryPrice * quantity)) * 100;
@@ -512,6 +542,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
       fees,
       exitReason: reason,
       commissionBreakdown,
+      slippageAmount,
     };
 
     this.trades.push(trade);

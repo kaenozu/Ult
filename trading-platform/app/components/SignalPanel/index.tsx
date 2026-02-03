@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
-import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
-import { runBacktest, BacktestResult } from '@/app/lib/backtest';
+import { Stock, Signal, OHLCV, PaperTrade, BacktestResult } from '@/app/types';
+import { cn, getConfidenceColor, getWebSocketUrl, calculateSMA } from '@/app/lib/utils';
+import { AdvancedBacktestEngine, BacktestConfig, Strategy } from '@/app/lib/backtest/AdvancedBacktestEngine';
+import { RealisticBacktestEngine } from '@/app/lib/backtest/RealisticBacktestEngine';
 import { useAIStore } from '@/app/store/aiStore';
 import { useWebSocket } from '@/app/hooks/useWebSocket';
 import { SignalCard } from '../SignalCard';
@@ -27,6 +28,102 @@ interface SignalPanelProps {
   signal: Signal | null;
   ohlcv?: OHLCV[];
   loading?: boolean;
+}
+
+const FAST_SMA_PERIOD = 10;
+const SLOW_SMA_PERIOD = 30;
+
+function createSignalPanelStrategy(data: OHLCV[]): Strategy {
+  const closes = data.map((entry) => entry.close);
+  const fastSma = calculateSMA(closes, FAST_SMA_PERIOD);
+  const slowSma = calculateSMA(closes, SLOW_SMA_PERIOD);
+
+  return {
+    name: 'SignalPanel SMA Strategy',
+    description: 'Simple SMA crossover strategy for panel backtests',
+    onData: (_data, index, context) => {
+      const fastValue = fastSma[index];
+      const slowValue = slowSma[index];
+
+      if (Number.isNaN(fastValue) || Number.isNaN(slowValue)) {
+        return { action: 'HOLD' };
+      }
+
+      if (!context.currentPosition && fastValue > slowValue) {
+        return { action: 'BUY' };
+      }
+
+      if (context.currentPosition && fastValue < slowValue) {
+        return { action: 'CLOSE' };
+      }
+
+      return { action: 'HOLD' };
+    },
+  };
+}
+
+function buildBacktestConfig(data: OHLCV[], market: Stock['market']): Partial<BacktestConfig> {
+  const avgVolume = data.length > 0
+    ? data.reduce((sum, entry) => sum + (entry.volume || 0), 0) / data.length
+    : 1000000;
+
+  return {
+    initialCapital: 1000000,
+    commission: 0,
+    slippage: 0,
+    spread: 0.01,
+    maxPositionSize: 20,
+    maxDrawdown: 50,
+    allowShort: false,
+    useStopLoss: true,
+    useTakeProfit: true,
+    riskPerTrade: 2,
+    realisticMode: true,
+    market,
+    averageDailyVolume: avgVolume,
+    slippageEnabled: true,
+    commissionEnabled: true,
+    partialFillEnabled: false,
+    latencyEnabled: false,
+    transactionCostsEnabled: true,
+    transactionCostBroker: market === 'japan' ? 'SBI' : 'Rakuten',
+    transactionCostMarketCondition: 'normal',
+    transactionCostSettlementType: 'same-day',
+    transactionCostDailyVolume: avgVolume,
+  };
+}
+
+function mapEngineResultToBacktestResult(symbol: string, result: Awaited<ReturnType<AdvancedBacktestEngine['runBacktest']>>): BacktestResult {
+  const trades = result.trades.map((trade) => ({
+    symbol,
+    type: trade.side === 'LONG' ? 'BUY' : 'SELL',
+    entryPrice: trade.entryPrice,
+    exitPrice: trade.exitPrice,
+    entryDate: trade.entryDate,
+    exitDate: trade.exitDate,
+    profitPercent: trade.pnlPercent,
+    status: trade.exitDate ? 'CLOSED' : 'OPEN',
+    exitReason: trade.exitReason,
+  }));
+
+  return {
+    symbol,
+    totalTrades: result.metrics.totalTrades,
+    winningTrades: result.metrics.winningTrades,
+    losingTrades: result.metrics.losingTrades,
+    winRate: result.metrics.winRate,
+    totalReturn: result.metrics.totalReturn,
+    avgProfit: result.metrics.averageWin,
+    avgLoss: result.metrics.averageLoss,
+    profitFactor: result.metrics.profitFactor,
+    maxDrawdown: result.metrics.maxDrawdown,
+    sharpeRatio: result.metrics.sharpeRatio,
+    sortinoRatio: result.metrics.sortinoRatio,
+    calmarRatio: result.metrics.calmarRatio,
+    trades,
+    startDate: result.startDate,
+    endDate: result.endDate,
+  };
 }
 
 /**
@@ -58,7 +155,7 @@ interface SignalPanelProps {
  */
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
   // Performance monitoring
-  const { measure, measureAsync } = usePerformanceMonitor('SignalPanel');
+  const { measureAsync } = usePerformanceMonitor('SignalPanel');
   
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
   const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
@@ -147,19 +244,28 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
       setIsBacktesting(true);
       // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
       setTimeout(() => {
-        try {
-          const result = measure('runBacktest', () => 
-            runBacktest(stock.symbol, ohlcv, stock.market)
-          );
-          setBacktestResult(result);
-        } catch (e) {
-          console.error("Backtest failed", e);
-        } finally {
-          setIsBacktesting(false);
-        }
+        void (async () => {
+          try {
+            const result = await measureAsync('runBacktest', async () => {
+              const config = buildBacktestConfig(ohlcv, stock.market);
+              const strategy = createSignalPanelStrategy(ohlcv);
+              const engine = config.realisticMode
+                ? new RealisticBacktestEngine(config)
+                : new AdvancedBacktestEngine(config);
+              engine.loadData(stock.symbol, ohlcv);
+              const engineResult = await engine.runBacktest(strategy, stock.symbol);
+              return mapEngineResultToBacktestResult(stock.symbol, engineResult);
+            });
+            setBacktestResult(result);
+          } catch (e) {
+            console.error("Backtest failed", e);
+          } finally {
+            setIsBacktesting(false);
+          }
+        })();
       }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measure]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measureAsync]);
 
   const aiTrades: PaperTrade[] = useMemo(() => {
     return trades

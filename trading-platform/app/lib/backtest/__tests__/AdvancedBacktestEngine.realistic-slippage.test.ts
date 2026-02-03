@@ -257,6 +257,40 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         expect(basicResult.metrics).toBeDefined();
       }
     });
+
+    it('should show performance differences when transaction cost model is enabled', async () => {
+      const costConfig: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        commission: 0,
+        slippage: 0,
+        spread: 0,
+        transactionCostsEnabled: true,
+        transactionCostBroker: 'SBI',
+        transactionCostMarketCondition: 'normal',
+        transactionCostDailyVolume: 1000000,
+      };
+
+      const noCostConfig: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        commission: 0,
+        slippage: 0,
+        spread: 0,
+        transactionCostsEnabled: false,
+      };
+
+      const costEngine = new AdvancedBacktestEngine(costConfig);
+      const noCostEngine = new AdvancedBacktestEngine(noCostConfig);
+
+      costEngine.loadData('TEST', mockData);
+      noCostEngine.loadData('TEST', mockData);
+
+      const costResult = await costEngine.runBacktest(createSimpleBuyHoldStrategy(), 'TEST');
+      const noCostResult = await noCostEngine.runBacktest(createSimpleBuyHoldStrategy(), 'TEST');
+
+      expect(costResult.trades.length).toBeGreaterThan(0);
+      expect(noCostResult.trades.length).toBeGreaterThan(0);
+      expect(costResult.metrics.totalReturn).toBeLessThan(noCostResult.metrics.totalReturn);
+    });
   });
 });
 

@@ -1,4 +1,4 @@
-import { BacktestResult } from '@/app/lib/backtest';
+import { BacktestResult } from '@/app/types';
 import { cn } from '@/app/lib/utils';
 
 interface BacktestViewProps {
