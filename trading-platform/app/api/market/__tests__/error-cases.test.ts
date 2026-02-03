@@ -247,14 +247,11 @@ describe('Market API Error Cases', () => {
     });
 
     it('should handle Japanese stock symbols with .T suffix (known issue)', () => {
-      // NOTE: This is documenting a known bug in formatSymbol function
-      // When market=japan, it adds .T even if the symbol already has it
-      // TODO: Fix formatSymbol to check for existing .T suffix before adding
+      // When market=japan, it should not double-append .T if already present
       const req = createRequest('/api/market?symbol=7203.T&type=quote&market=japan');
       GET(req);
 
-      // Currently results in '7203.T.T' - should be fixed to '7203.T'
-      // This test documents the current (incorrect) behavior
+      expect(mockQuote).toHaveBeenCalledWith('7203.T');
     });
 
     it('should return warning for Japanese stock with intraday interval', async () => {
@@ -268,8 +265,12 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(200);
-      expect(data.warning).toContain('Intraday data');
-      expect(data.warning).toContain('not available for Japanese stocks');
+      expect(data.warnings).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('イントラデイデータ'),
+          expect.stringContaining('日本株では利用できません'),
+        ])
+      );
     });
 
     it('should not add suffix for index symbols', async () => {

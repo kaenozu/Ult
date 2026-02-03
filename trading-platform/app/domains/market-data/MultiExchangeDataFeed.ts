@@ -745,7 +745,7 @@ export class MultiExchangeDataFeed extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-import { createSingleton } from '../utils/singleton';
+import { createSingleton } from '@/app/lib/utils/singleton';
 
 const { getInstance, resetInstance } = createSingleton(
   (config?: Partial<DataFeedConfig>) => new MultiExchangeDataFeed(config)

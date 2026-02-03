@@ -4,13 +4,13 @@
  * 高度な機械学習モデルを使用した予測サービス
  */
 
-import { OHLCV, Stock } from '../../../lib/types';
+import { OHLCV, Stock } from '@/app/types';
 import { 
   AdvancedPrediction, 
   AttentionWeights, 
   MarketContext 
 } from '../types';
-import { ExtendedTechnicalIndicator } from '../../../lib/types/prediction-types';
+import { ExtendedTechnicalIndicator } from '@/app/lib/types/prediction-types';
 
 export class AdvancedPredictionService {
   private sequenceLength: number = 20;
@@ -146,8 +146,8 @@ export class AdvancedPredictionService {
 
     const recentDeviations: number[] = [];
     for (let i = Math.max(0, sma20.length - 5); i < sma20.length; i++) {
-      if (sma20[i] !== undefined && sma20[i] !== 0) {
-        const deviation = (closes[i] - sma20[i]) / sma20[i];
+      if (sma20[i] !== undefined && sma20[i] !== 0 && closes[i] !== undefined) {
+        const deviation = (closes[i]! - sma20[i]!) / sma20[i]!;
         recentDeviations.push(Math.abs(deviation));
       }
     }
@@ -155,7 +155,7 @@ export class AdvancedPredictionService {
     if (recentDeviations.length === 0) return 0;
 
     const avgDeviation = recentDeviations.reduce((sum, dev) => sum + dev, 0) / recentDeviations.length;
-    const lastDeviation = (closes[closes.length - 1] - sma20[sma20.length - 1]) / sma20[sma20.length - 1];
+    const lastDeviation = (closes[closes.length - 1]! - sma20[sma20.length - 1]!) / sma20[sma20.length - 1]!;
     return lastDeviation >= 0 ? avgDeviation : -avgDeviation;
   }
 

@@ -7,11 +7,12 @@
 import { OHLCV, Stock, Signal, BacktestResult, BacktestTrade } from '../types';
 
 interface BacktestPosition {
-  type: 'LONG' | 'SHORT';
-  entryPrice: number;
-  quantity: number;
-  entryDate: string;
   symbol: string;
+  type: 'LONG' | 'SHORT';
+  quantity: number;
+  entryPrice: number;
+  entryDate: string;
+  value: number; // ポジションの初期価値（quantity × entryPrice）
 }
 import { mlPredictionService } from './mlPrediction';
   // import { calculateReturns } from './utils';
@@ -318,34 +319,36 @@ class BacktestService {
           newPosition: null
         };
       }
-      
+
+      // newPosition はここで non-null であることが保証される
+      const position: BacktestPosition = newPosition; // 型アノテーションを明示
       const direction = trade.type === 'EXIT_LONG' ? 'SELL' : 'BUY';
       const price = this.applySlippage(currentCandle.close, direction, config.slippage);
-      
+
       // 利益計算
       let profitPercent: number;
-      if (newPosition.type === 'LONG') {
-        profitPercent = ((price - newPosition.entryPrice) / newPosition.entryPrice) * 100;
+      if (position.type === 'LONG') {
+        profitPercent = ((price - position.entryPrice) / position.entryPrice) * 100;
       } else {
-        profitPercent = ((newPosition.entryPrice - price) / newPosition.entryPrice) * 100;
+        profitPercent = ((position.entryPrice - price) / position.entryPrice) * 100;
       }
-      
+
       // 手数料を考慮
-      const proceeds = newPosition.quantity * price - config.commission;
+      const proceeds = position.quantity * price - config.commission;
       newCapital = currentCapital + proceeds;
-      
+
       // 取引を記録
       tradeRecord = {
-        symbol: newPosition.symbol,
+        symbol: position.symbol,
         type: direction,
-        entryPrice: newPosition.entryPrice,
+        entryPrice: position.entryPrice,
         exitPrice: price,
-        entryDate: newPosition.entryDate,
+        entryDate: position.entryDate,
         exitDate: currentCandle.date,
         profitPercent,
         reason: 'Position exited based on signal'
       };
-      
+
       newPosition = null;
     }
 

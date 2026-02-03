@@ -41,6 +41,15 @@ export interface BacktestConfig {
   useStopLoss: boolean;
   useTakeProfit: boolean;
   riskPerTrade: number; // percentage
+
+  // Realistic mode settings
+  realisticMode?: boolean;
+  market?: 'JP' | 'US' | 'FX';
+  useAdvancedSlippage?: boolean;
+  enablePartialFill?: boolean;
+  partialFillThreshold?: number;
+  latencyMs?: number;
+  averageDailyVolume?: number;
 }
 
 export interface BacktestResult {
@@ -114,6 +123,15 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
   useStopLoss: true,
   useTakeProfit: true,
   riskPerTrade: 2, // 2%
+
+  // Realistic mode defaults
+  realisticMode: false,
+  market: 'JP',
+  useAdvancedSlippage: false,
+  enablePartialFill: false,
+  partialFillThreshold: 0.1, // 10%
+  latencyMs: 0,
+  averageDailyVolume: undefined,
 };
 
 // ============================================================================
