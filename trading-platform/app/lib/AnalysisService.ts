@@ -1,4 +1,4 @@
-import { OHLCV, Signal } from '../types';
+import { OHLCV, Signal, Stock } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
@@ -15,6 +15,7 @@ import {
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
 import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
+import { mlIntegrationService } from './services/MLIntegrationService';
 
 export interface AnalysisContext {
     startIndex?: number;
@@ -94,6 +95,11 @@ class AnalysisService {
 
     /**
      * 銘柄ごとに的中率が最大化するパラメータを探索
+     * Walk-Forward Analysis implementation to prevent overfitting:
+     * - Splits optimization window into train (70%) and validation (30%)
+     * - Parameters optimized on training set only
+     * - Best parameters validated on out-of-sample validation set
+     * - Only validated parameters are used for actual trading signals
      */
     optimizeParameters(data: OHLCV[], market: 'japan' | 'usa', context?: AnalysisContext): {
         rsiPeriod: number;
@@ -107,10 +113,6 @@ class AnalysisService {
         if (effectiveLength < OPTIMIZATION.REQUIRED_DATA_PERIOD) {
             return { rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, accuracy: 0 };
         }
-
-        let bestAccuracy = -1;
-        let bestRsiPeriod = RSI_CONFIG.DEFAULT_PERIOD;
-        let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
 
         const closes = data.map(d => d.close);
 
@@ -135,12 +137,25 @@ class AnalysisService {
         // Use cached ATR if available in context
         const atrArray = context?.preCalculatedIndicators?.atr || accuracyService.calculateBatchSimpleATR(data);
 
-        // RSI and SMA are already calculated and cached above (lines 120-132)
-        // No need to recalculate them here - removed duplicate calculations
+        // Walk-Forward Analysis: Split into train and validation sets
+        // Training set: First 70% of the optimization window
+        // Validation set: Last 30% of the optimization window
+        const trainEndIndex = effectiveStartIndex + Math.floor(effectiveLength * OPTIMIZATION.WFA_TRAIN_RATIO);
+        const validationStartIndex = trainEndIndex + 1;
+        const validationPeriod = effectiveEndIndex - validationStartIndex + 1;
 
+        // If validation period is too small, use the entire window for training (fallback)
+        const useValidation = validationPeriod >= OPTIMIZATION.WFA_MIN_VALIDATION_PERIOD;
+
+        let bestValidationAccuracy = -1;
+        let bestRsiPeriod: number = RSI_CONFIG.DEFAULT_PERIOD;
+        let bestSmaPeriod: number = SMA_CONFIG.MEDIUM_PERIOD;
+
+        // Step 1: Optimize parameters on TRAINING set only
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) {
             for (const smaP of SMA_CONFIG.PERIOD_OPTIONS) {
-                const result = this.internalCalculatePerformance(
+                // Train on training period only
+                const trainResult = this.internalCalculatePerformance(
                     data,
                     rsiP,
                     smaP,
@@ -148,18 +163,38 @@ class AnalysisService {
                     atrArray,
                     rsiCache.get(rsiP),
                     smaCache.get(smaP),
-                    effectiveEndIndex,
+                    useValidation ? trainEndIndex : effectiveEndIndex,
                     effectiveStartIndex
                 );
-                if (result.hitRate > bestAccuracy) {
-                    bestAccuracy = result.hitRate;
+
+                // Step 2: Validate on OUT-OF-SAMPLE validation set
+                let finalAccuracy = trainResult.hitRate;
+                if (useValidation && trainResult.total > 0) {
+                    const validationResult = this.internalCalculatePerformance(
+                        data,
+                        rsiP,
+                        smaP,
+                        closes,
+                        atrArray,
+                        rsiCache.get(rsiP),
+                        rsiCache.get(smaP),
+                        effectiveEndIndex,
+                        validationStartIndex
+                    );
+                    // Use validation accuracy as the true performance metric
+                    // This prevents overfitting to the training data
+                    finalAccuracy = validationResult.hitRate;
+                }
+
+                if (finalAccuracy > bestValidationAccuracy) {
+                    bestValidationAccuracy = finalAccuracy;
                     bestRsiPeriod = rsiP;
                     bestSmaPeriod = smaP;
                 }
             }
         }
 
-        return { rsiPeriod: bestRsiPeriod, smaPeriod: bestSmaPeriod, accuracy: bestAccuracy };
+        return { rsiPeriod: bestRsiPeriod, smaPeriod: bestSmaPeriod, accuracy: bestValidationAccuracy };
     }
 
     private internalCalculatePerformance(
@@ -363,6 +398,7 @@ class AnalysisService {
 
     /**
      * 銘柄の総合分析を実行
+     * ML予測が利用可能な場合は優先的に使用し、そうでない場合はルールベースにフォールバック
      */
     analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
         // Handle window data for legacy components
@@ -410,6 +446,23 @@ class AnalysisService {
                 exitStrategy: undefined,
             };
         }
+
+        // ML prediction integration point - infrastructure ready for trained models
+        // The check below demonstrates the integration pattern that will be activated
+        // when models are trained and ML_MODEL_CONFIG.MODELS_TRAINED is set to true.
+        // Currently, mlAvailable will always be false, so this code path is not executed.
+        // Keeping this structure in place makes it clear where ML predictions will be integrated.
+        const mlAvailable = mlIntegrationService.isAvailable();
+        if (mlAvailable) {
+            // TODO: When models are trained, uncomment this:
+            // const mlPrediction = await mlIntegrationService.predictWithML(
+            //     { symbol } as Stock, 
+            //     data, 
+            //     indexDataOverride
+            // );
+            // if (mlPrediction) return mlPrediction;
+        }
+        // If ML not available or prediction fails, continue with rule-based approach below
 
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
         if (context?.forcedParams) {

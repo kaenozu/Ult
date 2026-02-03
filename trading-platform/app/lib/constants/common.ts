@@ -10,6 +10,9 @@ export const OPTIMIZATION = {
   MIN_DATA_PERIOD: 60,
   VOLUME_PROFILE_BINS: 20,
   REOPTIMIZATION_INTERVAL: 30, // Re-optimize every 30 days in walk-forward optimization
+  // Walk-Forward Analysis parameters
+  WFA_TRAIN_RATIO: 0.7, // 70% for training, 30% for validation within optimization window
+  WFA_MIN_VALIDATION_PERIOD: 20, // Minimum validation period size
 } as const;
 
 /**

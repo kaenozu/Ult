@@ -3,9 +3,12 @@ import { persist } from 'zustand/middleware';
 import { Stock, Portfolio, Position, Order, AIStatus, Theme as AppTheme, Signal as AIAnalysis, OHLCV as MarketData } from '../types';
 import { OrderRequest, OrderResult } from '../types/order';
 import { AI_TRADING } from '../lib/constants';
+import { kellyCalculator } from '../lib/risk/KellyCalculator';
+import { PositionSizeRecommendation } from '../types/risk';
+import { getRiskManagementService } from '../lib/services/RiskManagementService';
 
 // Helper function to check if order side is a buy/long position
-function isBuyOrLong(side: Order['side']): boolean {
+function isBuyOrLong(side: Order['side'] | 'LONG' | 'SHORT'): boolean {
   return side === 'BUY' || side === 'LONG';
 }
 
@@ -49,6 +52,10 @@ interface TradingStore {
   executeOrder: (order: OrderRequest) => OrderResult;
   /** @deprecated Use executeOrder instead */
   executeOrderAtomicV2: (order: OrderRequest) => OrderResult;
+
+  // Kelly Criterion Position Sizing
+  calculatePositionSize: (symbol: string, signal?: AIAnalysis) => PositionSizeRecommendation | null;
+  getPortfolioStats: () => { winRate: number; avgWin: number; avgLoss: number; totalTrades: number };
 
   // Deprecated but potentially used fields
   selectedStock: Stock | null;
@@ -198,6 +205,66 @@ export const useTradingStore = create<TradingStore>()(
       executeOrder: (order: OrderRequest): OrderResult => {
         let result: OrderResult = { success: false };
         
+        // Get current portfolio state
+        const portfolio = get().portfolio;
+        
+        // ============================================================================
+        // CRITICAL: Automated Risk Management System
+        // ============================================================================
+        
+        // Initialize risk management service
+        const riskService = getRiskManagementService();
+        
+        // Validate order against all risk management rules
+        const riskValidation = riskService.validateOrder(order, portfolio);
+        
+        // If order is not allowed, return error with detailed reasons
+        if (!riskValidation.allowed) {
+          const criticalViolations = riskValidation.violations
+            .filter(v => v.severity === 'critical')
+            .map(v => v.message)
+            .join('; ');
+          
+          return {
+            success: false,
+            error: `Risk Management: ${criticalViolations || riskValidation.reasons.join('; ')}`,
+          };
+        }
+        
+        // Apply risk management adjustments to order
+        if (riskValidation.adjustedQuantity && riskValidation.adjustedQuantity !== order.quantity) {
+          console.log(`[Risk Management] Position size adjusted: ${order.quantity} → ${riskValidation.adjustedQuantity}`);
+          order.quantity = riskValidation.adjustedQuantity;
+        }
+        
+        if (riskValidation.stopLossPrice && !order.stopLoss) {
+          console.log(`[Risk Management] Auto stop loss: ${riskValidation.stopLossPrice}`);
+          order.stopLoss = riskValidation.stopLossPrice;
+        }
+        
+        if (riskValidation.takeProfitPrice && !order.takeProfit) {
+          console.log(`[Risk Management] Auto take profit: ${riskValidation.takeProfitPrice}`);
+          order.takeProfit = riskValidation.takeProfitPrice;
+        }
+        
+        // Log risk management actions
+        if (riskValidation.reasons.length > 0) {
+          console.log('[Risk Management] Applied adjustments:', riskValidation.reasons);
+        }
+        
+        if (riskValidation.violations.length > 0) {
+          const warnings = riskValidation.violations
+            .filter(v => v.severity !== 'critical')
+            .map(v => v.message);
+          if (warnings.length > 0) {
+            console.warn('[Risk Management] Warnings:', warnings);
+          }
+        }
+        
+        // ============================================================================
+        // Order Execution (after risk validation)
+        // ============================================================================
+        
         set((state) => {
           const { portfolio } = state;
           const totalCost = order.quantity * order.price;
@@ -288,6 +355,128 @@ export const useTradingStore = create<TradingStore>()(
        */
       executeOrderAtomicV2: (order: OrderRequest): OrderResult => {
         return get().executeOrder(order);
+      },
+
+      /**
+       * Calculate optimal position size using Kelly Criterion
+       * Based on portfolio statistics and current signal
+       */
+      calculatePositionSize: (symbol: string, signal?: AIAnalysis): PositionSizeRecommendation | null => {
+        const state = get();
+        const stats = get().getPortfolioStats();
+        
+        // 最低限のトレード履歴が必要
+        if (stats.totalTrades < 10) {
+          return null;
+        }
+
+        const portfolioValue = state.portfolio.cash + state.portfolio.totalValue;
+        
+        // Kelly計算用のパラメータを構築
+        const kellyParams = {
+          winRate: stats.winRate,
+          avgWin: stats.avgWin,
+          avgLoss: stats.avgLoss,
+          portfolioValue,
+        };
+
+        // 現在のポジション情報を収集
+        const currentPositions = state.portfolio.positions.map(p => ({
+          symbol: p.symbol,
+          value: p.currentPrice * p.quantity,
+        }));
+
+        // ATR情報を取得（シグナルから）
+        const atr = signal?.atr;
+
+        // Kelly推奨を計算
+        const recommendation = kellyCalculator.getRecommendation(
+          kellyParams,
+          symbol,
+          atr,
+          currentPositions
+        );
+
+        return recommendation;
+      },
+
+      /**
+       * Get portfolio trading statistics for Kelly calculation
+       */
+      getPortfolioStats: () => {
+        const state = get();
+        const orders = state.portfolio.orders;
+        
+        // FILLEDオーダーのみを集計
+        const filledOrders = orders.filter(o => o.status === 'FILLED');
+        
+        if (filledOrders.length === 0) {
+          return {
+            winRate: 0.5, // デフォルト50%
+            avgWin: 0,
+            avgLoss: 0,
+            totalTrades: 0,
+          };
+        }
+
+        // 損益を計算（簡略版 - 実装では実際のP&Lを使用）
+        // 同じシンボルのBUY/SELL ペアを探してP&Lを計算
+        const trades: { profit: number }[] = [];
+        const symbolOrders: Record<string, Order[]> = {};
+        
+        // シンボル別にオーダーをグループ化
+        filledOrders.forEach(order => {
+          if (!symbolOrders[order.symbol]) {
+            symbolOrders[order.symbol] = [];
+          }
+          symbolOrders[order.symbol].push(order);
+        });
+
+        // 各シンボルでトレードペアを作成
+        Object.values(symbolOrders).forEach(orders => {
+          const buys = orders.filter(o => o.side === 'BUY');
+          const sells = orders.filter(o => o.side === 'SELL');
+          
+          // 簡略版: 各BUYに対して次のSELLでP&Lを計算
+          // 実際にクローズされた数量を使用
+          for (let i = 0; i < Math.min(buys.length, sells.length); i++) {
+            const closedQuantity = Math.min(buys[i].quantity, sells[i].quantity);
+            const profit = (sells[i].price - buys[i].price) * closedQuantity;
+            trades.push({ profit });
+          }
+        });
+
+        if (trades.length === 0) {
+          return {
+            winRate: 0.5,
+            avgWin: 0,
+            avgLoss: 0,
+            totalTrades: 0,
+          };
+        }
+
+        // 勝ちトレードと負けトレードを分離
+        const winningTrades = trades.filter(t => t.profit > 0);
+        const losingTrades = trades.filter(t => t.profit < 0);
+
+        // デフォルト値（最小限のトレード履歴がある場合）
+        const DEFAULT_AVG_WIN = 100; // デフォルト平均利益（単位: 通貨）
+        const DEFAULT_AVG_LOSS = 50; // デフォルト平均損失（単位: 通貨）
+
+        const winRate = winningTrades.length / trades.length;
+        const avgWin = winningTrades.length > 0
+          ? winningTrades.reduce((sum, t) => sum + t.profit, 0) / winningTrades.length
+          : DEFAULT_AVG_WIN;
+        const avgLoss = losingTrades.length > 0
+          ? Math.abs(losingTrades.reduce((sum, t) => sum + t.profit, 0) / losingTrades.length)
+          : DEFAULT_AVG_LOSS;
+
+        return {
+          winRate,
+          avgWin,
+          avgLoss,
+          totalTrades: trades.length,
+        };
       },
 
       selectedStock: null,
