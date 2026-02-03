@@ -1,0 +1,26 @@
+app/hooks/useSymbolAccuracy.ts(97,89): error TS2554: Expected 2 arguments, but got 3.
+app/hooks/useSymbolAccuracy.ts(99,13): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(99,28): error TS2339: Property 'isErr' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/hooks/useSymbolAccuracy.ts(100,27): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(100,42): error TS2339: Property 'error' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/hooks/useSymbolAccuracy.ts(106,20): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(106,35): error TS2339: Property 'value' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/hooks/useSymbolAccuracy.ts(107,32): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(107,47): error TS2339: Property 'value' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/hooks/useSymbolAccuracy.ts(108,24): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(108,39): error TS2339: Property 'value' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/hooks/useSymbolAccuracy.ts(137,86): error TS2554: Expected 2 arguments, but got 3.
+app/hooks/useSymbolAccuracy.ts(138,19): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(138,34): error TS2339: Property 'isOk' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/hooks/useSymbolAccuracy.ts(141,28): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(141,43): error TS2339: Property 'value' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/hooks/useSymbolAccuracy.ts(142,40): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(142,55): error TS2339: Property 'value' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/hooks/useSymbolAccuracy.ts(143,32): error TS18047: 'accuracyResult' is possibly 'null'.
+app/hooks/useSymbolAccuracy.ts(143,47): error TS2339: Property 'value' does not exist on type '{ hitRate: number; directionalAccuracy: number; totalTrades: number; }'.
+app/lib/data/integration/WebSocketDataFlowService.ts(377,24): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/lib/errors.ts(798,7): error TS2322: Type 'Err<T, E>' is not assignable to type 'Result<T[], E>'.
+  Type 'Err<T, E>' is not assignable to type 'Err<T[], E>'.
+    Type 'T' is not assignable to type 'T[]'.
+app/lib/risk/DynamicPositionSizing.ts(9,10): error TS2305: Module '"@/app/types"' has no exported member 'MarketData'.

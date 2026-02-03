@@ -12,7 +12,9 @@ export function KeyboardShortcutHelp() {
   useEffect(() => {
     // Refresh shortcuts when modal is opened
     if (isOpen) {
-      setShortcuts(keyboardShortcutManager.getAllShortcuts());
+      setTimeout(() => {
+        setShortcuts(keyboardShortcutManager.getAllShortcuts());
+      }, 0);
     }
   }, [isOpen]);
 

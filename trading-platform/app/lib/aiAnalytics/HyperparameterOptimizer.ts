@@ -301,7 +301,7 @@ export class HyperparameterOptimizer {
       const [key, values] = entries[index];
       for (const value of values) {
         const newConfig = { ...currentConfig };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (newConfig as any)[key] = value;
         generateRecursive(index + 1, newConfig);
       }
@@ -323,7 +323,7 @@ export class HyperparameterOptimizer {
     for (const [key, values] of Object.entries(paramRanges)) {
       if (values && values.length > 0) {
         const randomValue = values[Math.floor(Math.random() * values.length)];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (config as any)[key] = randomValue;
       }
     }
@@ -346,7 +346,7 @@ export class HyperparameterOptimizer {
       if (values && values.length > 0) {
         // 最良設定から近い値を選ぶ
         const randomValue = values[Math.floor(Math.random() * Math.min(values.length, 3))];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (config as any)[key] = randomValue;
       }
     }

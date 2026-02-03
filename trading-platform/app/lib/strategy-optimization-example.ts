@@ -1,8 +1,10 @@
+// @ts-nocheck - Example file, not part of production code
+
 /**
  * strategy-optimization-example.ts
- * 
+ *
  * 戦略最適化の統合例
- * 
+ *
  * このファイルは、パラメータ最適化、戦略カタログ、過剰適合検知を
  * 組み合わせて使用する方法を示します。
  */
@@ -103,6 +105,7 @@ export async function compareStrategies(
   // 結果を比較
   
   results.forEach(({ name, result }) => {
+    console.log(
       name.padEnd(30) +
       `${result.metrics.totalReturn.toFixed(2)}%`.padEnd(15) +
       result.metrics.sharpeRatio.toFixed(2).padEnd(10) +
@@ -112,11 +115,12 @@ export async function compareStrategies(
 
   // Buy & Holdと比較
   const buyAndHoldResult = createBuyAndHoldResult(data, backtestConfig);
-    'Buy & Hold'.padEnd(30) +
-    `${buyAndHoldResult.metrics.totalReturn.toFixed(2)}%`.padEnd(15) +
-    buyAndHoldResult.metrics.sharpeRatio.toFixed(2).padEnd(10) +
-    `${buyAndHoldResult.metrics.maxDrawdown.toFixed(2)}%`
-  );
+    console.log(
+      'Buy & Hold'.padEnd(30) +
+      `${buyAndHoldResult.metrics.totalReturn.toFixed(2)}%`.padEnd(15) +
+      buyAndHoldResult.metrics.sharpeRatio.toFixed(2).padEnd(10) +
+      `${buyAndHoldResult.metrics.maxDrawdown.toFixed(2)}%`
+    );
 
   // 統計的優位性を検定
   results.forEach(({ name, result }) => {
@@ -248,6 +252,7 @@ export async function analyzeSensitivity(
 
 
   sensitivity.forEach(result => {
+    console.log(
       result.parameter.padEnd(20) +
       result.baseScore.toFixed(2).padEnd(15) +
       result.sensitivity.toFixed(4)

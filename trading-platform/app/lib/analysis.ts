@@ -19,6 +19,6 @@ export function calculateVolumeProfile(data: OHLCV[]) {
 }
 
 // 内部計算用だった関数をラップ
-export function calculateRealTimeAccuracy(symbol: string, data: OHLCV[]) {
-  return accuracyService.calculateRealTimeAccuracy(symbol, data);
+export function calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan') {
+  return accuracyService.calculateRealTimeAccuracy(symbol, data, market);
 }

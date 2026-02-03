@@ -14,6 +14,7 @@
  */
 
 import { OHLCV, Stock, Signal } from '@/app/types';
+<<<<<<< HEAD
 import { PredictionFeatures } from '../types';
 import { MLModelService } from './ml-model-service';
 
@@ -55,6 +56,12 @@ const marketRegimeDetector = {
     return { regime: 'RANGING', trendDirection: 'NEUTRAL', volatility: 'MEDIUM', confidence: 'INITIAL' };
   },
 };
+=======
+import { PredictionFeatures, EnhancedPrediction } from '../types';
+import { FeatureCalculationService } from './feature-calculation-service';
+import { MLModelService } from './ml-model-service';
+import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../../lib/MarketRegimeDetector';
+>>>>>>> refactoring/major-codebase-cleanup
 
 export interface ModelPerformance {
   hitRate: number;

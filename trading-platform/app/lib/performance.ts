@@ -115,7 +115,7 @@ export async function measurePerformanceAsync<T>(
 /**
  * パフォーマンス計測のためのデコレーター（関数ラッパー）
  */
-export function withPerformanceTracking<T extends (...args: any[]) => any>(
+export function withPerformanceTracking<T extends (...args: unknown[]) => unknown>(
   fn: T,
   name?: string
 ): T {
@@ -130,7 +130,7 @@ export function withPerformanceTracking<T extends (...args: any[]) => any>(
 /**
  * 非同期関数用のパフォーマンス計測デコレーター
  */
-export function withAsyncPerformanceTracking<T extends (...args: any[]) => Promise<any>>(
+export function withAsyncPerformanceTracking<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   name?: string
 ): T {
@@ -220,10 +220,13 @@ export function usePerformanceMonitor(
     [componentName]
   );
 
+  // Use a getter to avoid accessing ref during render
+  const getRenderCount = () => renderCountRef.current;
+
   return {
     measure,
     measureAsync,
-    renderCount: renderCountRef.current,
+    getRenderCount,
   };
 }
 
