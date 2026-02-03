@@ -11,85 +11,43 @@ describe('Domain Architecture Validation', () => {
   describe('Prediction Domain', () => {
     it('should export services from barrel export', async () => {
       // This validates that the barrel export structure is correct
-<<<<<<< HEAD
-      const mod = await import('@/domains/prediction');
-      
-      // These exports should be available if the structure is correct
-      expect(mod).toBeDefined();
-      expect(typeof mod).toBe('object');
-=======
       const predictionModule = await import('@/domains/prediction');
 
       // These exports should be available if the structure is correct
       expect(predictionModule).toBeDefined();
       expect(typeof predictionModule).toBe('object');
->>>>>>> refactoring/major-codebase-cleanup
     });
   });
 
   describe('Backtest Domain', () => {
     it('should export backtest engine from barrel export', async () => {
-<<<<<<< HEAD
-      const mod = await import('@/domains/backtest');
-      
-      expect(mod).toBeDefined();
-      expect(typeof mod).toBe('object');
-=======
       const backtestModule = await import('@/domains/backtest');
 
       expect(backtestModule).toBeDefined();
       expect(typeof backtestModule).toBe('object');
->>>>>>> refactoring/major-codebase-cleanup
     });
   });
 
   describe('Market Data Domain', () => {
     it('should export market data services from barrel export', async () => {
-<<<<<<< HEAD
-      const mod = await import('@/domains/market-data');
-      
-      expect(mod).toBeDefined();
-      expect(typeof mod).toBe('object');
-=======
       const marketDataModule = await import('@/domains/market-data');
 
       expect(marketDataModule).toBeDefined();
       expect(typeof marketDataModule).toBe('object');
->>>>>>> refactoring/major-codebase-cleanup
     });
   });
 
   describe('Portfolio Domain', () => {
     it('should export portfolio services from barrel export', async () => {
-<<<<<<< HEAD
-      const mod = await import('@/domains/portfolio');
-      
-      expect(mod).toBeDefined();
-      expect(typeof mod).toBe('object');
-=======
       const portfolioModule = await import('@/domains/portfolio');
 
       expect(portfolioModule).toBeDefined();
       expect(typeof portfolioModule).toBe('object');
->>>>>>> refactoring/major-codebase-cleanup
     });
   });
 
   describe('Infrastructure Layer', () => {
     it('should export API infrastructure from barrel export', async () => {
-<<<<<<< HEAD
-      const mod = await import('@/infrastructure/api');
-      
-      expect(mod).toBeDefined();
-      expect(typeof mod).toBe('object');
-    });
-
-    it('should export WebSocket infrastructure from barrel export', async () => {
-      const mod = await import('@/infrastructure/websocket');
-      
-      expect(mod).toBeDefined();
-      expect(typeof mod).toBe('object');
-=======
       const apiModule = await import('@/infrastructure/api');
 
       expect(apiModule).toBeDefined();
@@ -101,23 +59,15 @@ describe('Domain Architecture Validation', () => {
 
       expect(websocketModule).toBeDefined();
       expect(typeof websocketModule).toBe('object');
->>>>>>> refactoring/major-codebase-cleanup
     });
   });
 
   describe('Shared Layer', () => {
     it('should export shared utilities and types from barrel export', async () => {
-<<<<<<< HEAD
-      const mod = await import('@/shared');
-      
-      expect(mod).toBeDefined();
-      expect(typeof mod).toBe('object');
-=======
       const sharedModule = await import('@/shared');
 
       expect(sharedModule).toBeDefined();
       expect(typeof sharedModule).toBe('object');
->>>>>>> refactoring/major-codebase-cleanup
     });
   });
 

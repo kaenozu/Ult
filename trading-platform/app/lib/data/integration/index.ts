@@ -12,7 +12,7 @@ export {
   type DataFlowAlert,
   type DataFlowEventType,
   type DataFlowEventListener,
-} from './WebSocketDataFlowService';
+} from '../../../domains/market-data/integration/WebSocketDataFlowService';
 
 export {
   MultiSourceDataAggregator,
@@ -20,4 +20,4 @@ export {
   type DataSource,
   type AggregationConfig,
   type AggregationResult,
-} from './MultiSourceDataAggregator';
+} from '../../../domains/market-data/integration/MultiSourceDataAggregator';
