@@ -190,3 +190,65 @@ export interface RiskMetrics {
   beta: number;
   alpha: number;
 }
+
+// ============================================================================
+// Kelly Criterion Types
+// ============================================================================
+
+/**
+ * Kelly Criterion calculation parameters
+ */
+export interface KellyParams {
+  winRate: number;        // 勝率 (0-1)
+  avgWin: number;         // 平均利益額
+  avgLoss: number;        // 平均損失額
+  portfolioValue: number; // ポートフォリオ総額
+  kellyFraction?: number; // Kelly fraction (デフォルト: 0.5)
+}
+
+/**
+ * Kelly calculation result
+ */
+export interface KellyResult {
+  kellyPercentage: number;    // Kelly percentage (0-1)
+  recommendedSize: number;    // 推奨ポジションサイズ（ドル）
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  confidence: number;         // 計算の信頼度 (0-1)
+  warnings: string[];         // 警告メッセージ
+}
+
+/**
+ * Volatility adjustment parameters
+ */
+export interface VolatilityAdjustment {
+  actualVolatility: number;   // 実際のボラティリティ (ATR)
+  targetVolatility: number;   // 目標ボラティリティ
+  adjustmentFactor: number;   // 調整係数
+}
+
+/**
+ * Position size recommendation with all constraints
+ */
+export interface PositionSizeRecommendation {
+  symbol: string;
+  baseSize: number;              // 基本サイズ (Kelly)
+  adjustedSize: number;          // 調整後サイズ（ボラティリティ考慮）
+  finalSize: number;             // 最終サイズ（集中度制限後）
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  constraints: {
+    singlePositionLimit: number;  // 単一銘柄制限 (%)
+    sectorLimit: number;          // セクター制限 (%)
+    appliedLimits: string[];      // 適用された制限
+  };
+  volatilityAdjustment?: VolatilityAdjustment;
+}
+
+/**
+ * Concentration limits configuration
+ */
+export interface ConcentrationLimits {
+  maxSinglePosition: number;  // 単一銘柄最大 (%) - デフォルト: 20%
+  maxSectorExposure: number;  // セクター最大 (%) - デフォルト: 40%
+  minPositions: number;       // 最小ポジション数 - デフォルト: 5
+  maxPositions: number;       // 最大ポジション数 - デフォルト: 10
+}

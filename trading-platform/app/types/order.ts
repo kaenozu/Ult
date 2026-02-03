@@ -16,6 +16,10 @@ export interface OrderRequest {
   price: number;
   /** 注文種別 */
   orderType: 'MARKET' | 'LIMIT';
+  /** ストップロス価格（オプション） */
+  stopLoss?: number;
+  /** 利確価格（オプション） */
+  takeProfit?: number;
 }
 
 /**
