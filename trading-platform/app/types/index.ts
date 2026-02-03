@@ -749,6 +749,7 @@ export interface BacktestPosition {
   currentPrice?: number;
   unrealizedPnL?: number;
   reason?: string;
+  value: number; // ポジションの初期価値（quantity × entryPrice）
 }
 
 /**
