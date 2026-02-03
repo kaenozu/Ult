@@ -5,7 +5,7 @@
  * Accumulates updates and processes them in batches to minimize component re-renders.
  */
 
-import { performanceMonitor } from '@/app/lib/performance/monitor';
+import { performanceMonitor } from '../lib/performance/monitor';
 
 export interface BatchingConfig {
   /** Time window for batching in milliseconds (default: 150ms) */
