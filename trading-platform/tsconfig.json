@@ -83,7 +83,6 @@
     "e2e/**",
     "app/domains/**",
     "app/infrastructure/**",
-    "app/hooks/**",
-    "app/lib/**"
+    "app/hooks/**"
   ]
 }

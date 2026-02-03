@@ -1,0 +1,57 @@
+import { Signal } from '@/app/types';
+import { cn, getConfidenceColor } from '@/app/lib/utils';
+import { SignalCard } from '../../SignalCard';
+import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
+import { KellyPositionSizingDisplay } from '@/app/components/KellyPositionSizingDisplay';
+
+interface SignalDisplayProps {
+  signal: Signal;
+  stock: any;
+  isLive: boolean;
+  preciseHitRate: { hitRate: number; trades: number } | null;
+  calculatingHitRate: boolean;
+  error: string | null;
+  kellyRecommendation: any;
+}
+
+export function SignalDisplay({
+  signal,
+  stock,
+  isLive,
+  preciseHitRate,
+  calculatingHitRate,
+  error,
+  kellyRecommendation
+}: SignalDisplayProps) {
+  return (
+    <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+      {/* Low Accuracy Warning */}
+      {signal && signal.type !== 'HOLD' && (
+        <LowAccuracyWarning
+          hitRate={preciseHitRate?.hitRate || 0}
+          symbolName={stock.name}
+          signalType={signal.type}
+          threshold={50}
+        />
+      )}
+      
+      <SignalCard
+        signal={signal}
+        stock={stock}
+        isLive={isLive}
+        aiHitRate={preciseHitRate?.hitRate || 0}
+        aiTradesCount={preciseHitRate?.trades || 0}
+        calculatingHitRate={calculatingHitRate}
+        error={error}
+      />
+
+      {/* Kelly Position Sizing Display */}
+      {signal.type !== 'HOLD' && (
+        <KellyPositionSizingDisplay
+          recommendation={kellyRecommendation}
+          loading={false}
+        />
+      )}
+    </div>
+  );
+}

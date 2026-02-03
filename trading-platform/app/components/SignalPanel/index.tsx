@@ -1,19 +1,12 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Stock, Signal, OHLCV, PaperTrade } from '@/app/types';
-import { cn, getConfidenceColor, getWebSocketUrl } from '@/app/lib/utils';
-import { runBacktest, BacktestResult } from '@/app/lib/backtest';
-import { useAIStore } from '@/app/store/aiStore';
-import { useWebSocket } from '@/app/hooks/useWebSocket';
-import { SignalCard } from '../SignalCard';
-import { useSignalAlerts } from '@/app/hooks/useSignalAlerts';
-import { useAIPerformance } from '@/app/hooks/useAIPerformance';
-import { BacktestView } from './BacktestView';
-import { ForecastView } from './ForecastView';
-import { AIPerformanceView } from './AIPerformanceView';
-import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
-import { usePerformanceMonitor } from '@/app/lib/performance';
-import { KellyPositionSizingDisplay } from '@/app/components/KellyPositionSizingDisplay';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { useState } from 'react';
+import { Stock, Signal, OHLCV } from '@/app/types';
+import { useWebSocketManager } from './hooks/useWebSocketManager';
+import { useSignalData } from './hooks/useSignalData';
+import { useBacktestControls } from './hooks/useBacktestControls';
+import { useKellyPositionSizing } from './hooks/useKellyPositionSizing';
+import { SignalFilters } from './components/SignalFilters';
+import { SignalDetails } from './components/SignalDetails';
+import { WebSocketManager } from './components/WebSocketManager';
 
 /**
  * SignalPanelコンポーネントのプロパティ
@@ -57,150 +50,13 @@ interface SignalPanelProps {
  * @returns {JSX.Element} シグナルパネルUI
  */
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
-  // Performance monitoring
-  const { measure, measureAsync } = usePerformanceMonitor('SignalPanel');
-  
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
-  const { aiStatus: aiStateString, processAITrades, trades } = useAIStore();
 
-  // Kelly position sizing
-  const calculatePositionSize = useTradingStore((state) => state.calculatePositionSize);
-  const getPortfolioStats = useTradingStore((state) => state.getPortfolioStats);
-
-  // Custom Hooks
-  const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock, ohlcv);
-
-  // Use dynamic WebSocket URL for better security and flexibility
-  const { status: wsStatus, lastMessage, connect, disconnect, reconnect } = useWebSocket(getWebSocketUrl('/ws/signals'));
-  const [liveSignal, setLiveSignal] = useState<Signal | null>(null);
-
-  // Memoized WebSocket message handler
-  const handleWebSocketMessage = useCallback(() => {
-    if (lastMessage && lastMessage.type === 'SIGNAL_UPDATE') {
-      const data = lastMessage.data as { symbol: string } | undefined;
-      if (data && data.symbol === stock.symbol) {
-        setLiveSignal(lastMessage.data as Signal);
-      }
-    }
-  }, [lastMessage, stock.symbol]);
-
-  useEffect(() => {
-    handleWebSocketMessage();
-  }, [handleWebSocketMessage]);
-
-  // Reset live signal when stock changes
-  useEffect(() => {
-    setLiveSignal(null);
-  }, [stock.symbol]);
-
-  const displaySignal = liveSignal || signal;
-
-  // Alert Logic Hook
-  useSignalAlerts({
-    stock,
-    displaySignal,
-    preciseHitRate: { hitRate: preciseHitRate?.hitRate || 0, trades: preciseHitRate?.trades || 0 },
-    calculatingHitRate
-  });
-
-  // 自動売買プロセスをトリガー
-  useEffect(() => {
-    if (displaySignal && stock.price && processAITrades) {
-      processAITrades(stock.symbol, stock.price, displaySignal);
-    }
-  }, [stock.symbol, stock.price, displaySignal, processAITrades]);
-
-  // Backtest state
-  const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null);
-  const [isBacktesting, setIsBacktesting] = useState(false);
-
-  // Reset backtest when stock changes
-  useEffect(() => {
-    setBacktestResult(null);
-  }, [stock.symbol]);
-
-  // Lazy load backtest result
-  useEffect(() => {
-    if (loading) return;
-
-    if (activeTab === 'backtest' && !backtestResult && !isBacktesting) {
-      if (!ohlcv || ohlcv.length === 0) {
-        setBacktestResult({
-          symbol: stock.symbol,
-          totalTrades: 0,
-          winningTrades: 0,
-          losingTrades: 0,
-          winRate: 0,
-          totalReturn: 0,
-          avgProfit: 0,
-          avgLoss: 0,
-          profitFactor: 0,
-          maxDrawdown: 0,
-          sharpeRatio: 0,
-          trades: [],
-          startDate: new Date().toISOString(),
-          endDate: new Date().toISOString()
-        });
-        return;
-      }
-
-      setIsBacktesting(true);
-      // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
-      setTimeout(() => {
-        try {
-          const result = measure('runBacktest', () => 
-            runBacktest(stock.symbol, ohlcv, stock.market)
-          );
-          setBacktestResult(result);
-        } catch (e) {
-          console.error("Backtest failed", e);
-        } finally {
-          setIsBacktesting(false);
-        }
-      }, 50);
-    }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measure]);
-
-  const aiTrades: PaperTrade[] = useMemo(() => {
-    return trades
-      .filter(t => t.symbol === stock.symbol)
-      .map(o => ({
-        id: o.id,
-        symbol: o.symbol,
-        type: (o.side === 'BUY' || o.side === 'LONG' as any) ? 'BUY' : 'SELL',
-        entryPrice: o.price || 0,
-        quantity: o.quantity,
-        status: o.status === 'FILLED' ? 'CLOSED' : 'OPEN',
-        entryDate: o.date,
-        profitPercent: 0,
-      }));
-  }, [trades, stock.symbol]);
-
-  const aiStatusData: import('@/app/types').AIStatus = useMemo(() => ({
-    virtualBalance: 10000000,
-    totalProfit: 0,
-    trades: aiTrades
-  }), [aiTrades]);
-
-  // Kelly position sizing recommendation
-  const kellyRecommendation = useMemo(() => {
-    if (!displaySignal || displaySignal.type === 'HOLD') {
-      return null;
-    }
-    
-    try {
-      const stats = getPortfolioStats();
-      // 最低10トレード以上必要
-      if (stats.totalTrades < 10) {
-        return null;
-      }
-      
-      return calculatePositionSize(stock.symbol, displaySignal);
-    } catch (error) {
-      console.error('Kelly calculation error:', error);
-      return null;
-    }
-  }, [displaySignal, stock.symbol, calculatePositionSize, getPortfolioStats]);
+  // Custom hooks for separated concerns
+  const { wsStatus, liveSignal, reconnect } = useWebSocketManager(stock);
+  const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal, liveSignal);
+  const { backtestResult, isBacktesting } = useBacktestControls(stock, ohlcv, activeTab, loading);
+  const kellyRecommendation = useKellyPositionSizing(stock, displaySignal);
 
   if (loading || !displaySignal) {
     return (
