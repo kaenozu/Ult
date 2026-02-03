@@ -22,7 +22,9 @@ export function useWebSocketManager(stock: Stock) {
 
   // Reset live signal when stock changes
   useEffect(() => {
-    setLiveSignal(null);
+    setTimeout(() => {
+      setLiveSignal(null);
+    }, 0);
   }, [stock.symbol]);
 
   return {

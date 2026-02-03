@@ -3,12 +3,12 @@
  */
 
 import { FeatureCalculationService } from '../feature-calculation-service';
-import { OHLCV } from '../../../types';
+import { OHLCV, TechnicalIndicatorsWithATR } from '../../../types';
 
 describe('FeatureCalculationService', () => {
   let service: FeatureCalculationService;
   let mockData: OHLCV[];
-  let mockIndicators: any;
+  let mockIndicators: TechnicalIndicatorsWithATR;
 
   beforeEach(() => {
     service = new FeatureCalculationService();

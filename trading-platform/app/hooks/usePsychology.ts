@@ -139,14 +139,14 @@ export function usePsychology() {
   const getTodayStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return psychologyState.getCalendarDay(today);
-  }, [psychologyState.getCalendarDay]);
+  }, [psychologyState]); // psychologyState全体を依存に含める
 
   /**
    * 直近24時間のアラートを取得
    */
   const recentAlerts = useMemo(() => {
     return psychologyState.getRecentAlerts(24);
-  }, [psychologyState.getRecentAlerts]);
+  }, [psychologyState]); // psychologyState全体を依存に含める
 
   return {
     // State

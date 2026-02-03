@@ -66,6 +66,7 @@
     "app/screener/**/*.{ts,tsx}",
     "app/security/**/*.{ts,tsx}",
     "app/universe/**/*.{ts,tsx}",
+    "app/domains/**/*.{ts,tsx}",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [

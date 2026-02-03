@@ -75,7 +75,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       isMounted = false;
     };
-  }, [stock.symbol, stock.market]); // ohlcvへの依存を外し、銘柄変更時のみ実行
+  }, [stock.symbol, stock.market, ohlcv]); // ohlcvを依存配列に含める
 
   return { preciseHitRate, calculatingHitRate, error };
 }

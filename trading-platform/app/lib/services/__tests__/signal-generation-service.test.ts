@@ -3,7 +3,7 @@
  */
 
 import { SignalGenerationService } from '../signal-generation-service';
-import { Stock, OHLCV, ModelPrediction } from '../../../types';
+import { Stock, OHLCV, ModelPrediction, TechnicalIndicatorsWithATR } from '../../../types';
 
 // Mock analyzeStock function
 jest.mock('@/app/lib/analysis', () => ({
@@ -33,7 +33,7 @@ describe('SignalGenerationService', () => {
       symbol: '7203.T',
       name: 'Toyota',
       price: 1000,
-      market: 'japan' as any
+      market: 'japan' as const
     };
 
     mockData = Array.from({ length: 100 }, (_, i) => ({
