@@ -149,7 +149,11 @@ function formatSymbol(symbol: string, market?: string): string {
     return symbol;
   }
 
-  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
+  if (market === 'japan') {
+    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
+  }
+
+  if (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T')) {
     return `${symbol}.T`;
   }
   return symbol;
