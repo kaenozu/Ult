@@ -1,11 +1,11 @@
-import { requireCSRF } from '/app/lib/csrf/csrf-protection';
 /**
  * GET /api/sentiment/route.ts
- * 
+ *
  * センチメントデータAPI - 全シンボルのセンチメント情報を取得
  */
 
 import { NextRequest } from 'next/server';
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
@@ -49,10 +49,11 @@ interface SentimentAction {
 }
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
-  const csrfError = requireCSRF(request);
-  if (csrfError) return csrfError;
+  async (request: NextRequest, body: SentimentAction) => {
+    // CSRF protection
+    const csrfError = requireCSRF(request);
+    if (csrfError) return csrfError;
 
-  async (_request: NextRequest, body: SentimentAction) => {
     // Validate action
     const validationError = validateField({
       value: body.action,

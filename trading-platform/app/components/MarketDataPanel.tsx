@@ -6,8 +6,17 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
+
+interface MarketData {
+  symbol: string;
+  price: number;
+  change24h: number;
+  volume24h: number;
+  high24h: number;
+  low24h: number;
+}
 
 interface MarketDataPanelProps {
   symbols: string[];
@@ -15,16 +24,40 @@ interface MarketDataPanelProps {
   onSelectSymbol: (symbol: string) => void;
 }
 
+// Generate deterministic pseudo-random values based on symbol name
+// This avoids Math.random() during render while still giving varied values
+const generatePseudoRandom = (symbol: string, seed: number): number => {
+  const hash = symbol.split('').reduce((acc, char) => {
+    return ((acc << 5) - acc) + char.charCodeAt(0) | 0;
+  }, seed);
+  return (Math.abs(hash) % 10000) / 10000;
+};
+
+const generateMarketData = (symbols: string[]): MarketData[] => {
+  return symbols.map((symbol, index) => {
+    const priceSeed = generatePseudoRandom(symbol, 1);
+    const changeSeed = generatePseudoRandom(symbol, 2);
+    const volumeSeed = generatePseudoRandom(symbol, 3);
+    
+    return {
+      symbol,
+      price: priceSeed * 50000 + 10000,
+      change24h: (changeSeed - 0.5) * 10,
+      volume24h: volumeSeed * 1000000000,
+      high24h: 55000,
+      low24h: 45000,
+    };
+  });
+};
+
 export function MarketDataPanel({ symbols, selectedSymbol, onSelectSymbol }: MarketDataPanelProps) {
-  // Simulated market data for display
-  const marketData = symbols.map(symbol => ({
-    symbol,
-    price: Math.random() * 50000 + 10000,
-    change24h: (Math.random() - 0.5) * 10,
-    volume24h: Math.random() * 1000000000,
-    high24h: 55000,
-    low24h: 45000,
-  }));
+  // Use state to hold market data, initialized outside of render
+  const [marketData, setMarketData] = useState<MarketData[]>(() => generateMarketData(symbols));
+  
+  // Update market data when symbols change
+  useEffect(() => {
+    setMarketData(generateMarketData(symbols));
+  }, [symbols]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {

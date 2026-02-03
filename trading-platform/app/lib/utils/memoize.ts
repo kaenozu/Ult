@@ -25,13 +25,13 @@ interface CacheEntry<T> {
 /**
  * キャッシュキー生成戦略
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type KeyGenerator<TArgs extends any[]> = (...args: TArgs) => string;
 
 /**
  * デフォルトのキー生成関数（JSON.stringify）
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const defaultKeyGenerator: KeyGenerator<any[]> = (...args: any[]): string => {
   return JSON.stringify(args);
 };
@@ -52,7 +52,7 @@ const defaultKeyGenerator: KeyGenerator<any[]> = (...args: any[]): string => {
  * );
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function memoize<TArgs extends any[], TResult>(
   fn: (...args: TArgs) => TResult,
   options: MemoizeOptions = {},
@@ -158,7 +158,7 @@ export interface CacheStats {
  * @param keyGenerator - カスタムキー生成関数
  * @returns メモ化された関数とstats取得関数
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function memoizeWithStats<TArgs extends any[], TResult>(
   fn: (...args: TArgs) => TResult,
   options: MemoizeOptions = {},

@@ -16,6 +16,7 @@ export interface EnvironmentConfig {
   };
   websocket: {
     url: string;
+    authToken?: string;
   };
   
   // Optional with defaults
@@ -129,8 +130,9 @@ export function validateEnvironment(): EnvironmentConfig {
     // WebSocket Configuration
     const websocketUrl = getOptionalEnv(
       'NEXT_PUBLIC_WS_URL',
-      isDevelopment ? 'ws://localhost:3001' : ''
+      isDevelopment ? 'ws://localhost:3001/ws' : ''
     );
+    const websocketAuthToken = getOptionalEnv('NEXT_PUBLIC_WS_AUTH_TOKEN', '');
 
     // Logging Configuration
     const logLevelRaw = getOptionalEnv('LOG_LEVEL', isDevelopment ? 'debug' : 'info');
@@ -159,6 +161,7 @@ export function validateEnvironment(): EnvironmentConfig {
       },
       websocket: {
         url: websocketUrl,
+        authToken: websocketAuthToken || undefined,
       },
       logging: {
         level: logLevel,

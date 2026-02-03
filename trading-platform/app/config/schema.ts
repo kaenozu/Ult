@@ -33,7 +33,7 @@ export const envSchema = z.object({
   
   // WebSocket
   WS_PORT: z.coerce.number().int().positive().default(3001),
-  WS_URL: z.string().url().default('ws://localhost:3001'),
+  WS_URL: z.string().url().default('ws://localhost:3001/ws'),
   
   // Sentry
   SENTRY_DSN: z.string().url().optional(),

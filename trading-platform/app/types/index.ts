@@ -653,6 +653,9 @@ export type APIResponse<T> = APIResult<T> | APIErrorResult;
 // Enhanced Risk Management Types
 // ============================================================================
 
+// Temporarily commented out to avoid duplicate identifier errors
+// These types should be imported from shared/types/risk instead
+/*
 export type {
   PositionSizingConfig,
   SizingResult,
@@ -670,6 +673,7 @@ export type {
   MarketData,
   RiskMetrics,
 } from './risk';
+*/
 
 // ============================================================================
 // Multi-Timeframe Trading Types

@@ -198,28 +198,33 @@ interface DataSourceRowProps {
 }
 
 const DataSourceRow: React.FC<DataSourceRowProps> = ({ name, health }) => {
-  const getStatusIcon = () => {
+  // Render status icon directly to avoid creating components during render
+  const renderStatusIcon = () => {
+    const iconClass = cn('w-4 h-4 shrink-0', 
+      health.status === 'healthy' ? 'text-green-400' :
+      health.status === 'degraded' ? 'text-yellow-400' :
+      'text-red-400'
+    );
+    
     switch (health.status) {
-      case 'healthy': return CheckCircle2;
-      case 'degraded': return AlertTriangle;
-      case 'offline': return WifiOff;
-      default: return WifiOff;
+      case 'healthy':
+        return <CheckCircle2 className={iconClass} />;
+      case 'degraded':
+        return <AlertTriangle className={iconClass} />;
+      case 'offline':
+      default:
+        return <WifiOff className={iconClass} />;
     }
   };
 
-  const getStatusColor = () => {
-    switch (health.status) {
-      case 'healthy': return 'text-green-400';
-      case 'degraded': return 'text-yellow-400';
-      case 'offline': return 'text-red-400';
-    }
-  };
-
-  const StatusIcon = getStatusIcon();
+  const statusColorClass = 
+    health.status === 'healthy' ? 'text-green-400' :
+    health.status === 'degraded' ? 'text-yellow-400' :
+    'text-red-400';
 
   return (
     <div className="flex items-center gap-3 py-2 px-3 bg-[#1a1a2e] rounded-lg border border-[#233648]">
-      <StatusIcon className={cn('w-4 h-4 shrink-0', getStatusColor())} />
+      {renderStatusIcon()}
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-white truncate">{name}</span>
@@ -228,7 +233,7 @@ const DataSourceRow: React.FC<DataSourceRowProps> = ({ name, health }) => {
           </span>
         </div>
         <div className="flex items-center gap-3 mt-1">
-          <span className={cn('text-[10px]', getStatusColor())}>
+          <span className={cn('text-[10px]', statusColorClass)}>
             {health.status === 'healthy' ? '正常' : health.status === 'degraded' ? '劣化' : 'オフライン'}
           </span>
           <span className="text-[10px] text-[#92adc9]">·</span>

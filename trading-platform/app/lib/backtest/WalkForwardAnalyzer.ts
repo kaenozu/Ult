@@ -364,7 +364,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
     const trades: Trade[] = [];
     let equity = config.initialCapital;
     const equityCurve: number[] = [equity];
-    let position: { side: 'LONG' | 'SHORT' | null; entryPrice: number; quantity: number } | null = null;
+    let position: { side: 'LONG' | 'SHORT' | null; entryPrice: number; quantity: number; entryDate: string } | null = null;
 
     for (let i = 50; i < data.length; i++) {
       const context: StrategyContext = {
@@ -379,29 +379,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
 
       if (action.action === 'BUY' && !position) {
         const quantity = Math.floor((equity * 0.2) / data[i].close);
-        position = { side: 'LONG', entryPrice: data[i].close, quantity };
-      } else if (action.action === 'SELL' && position?.side === 'LONG') {
-        const pnl = (data[i].close - position.entryPrice) * position.quantity;
-        equity += pnl;
-        trades.push({
-          entryPrice: position.entryPrice,
-          exitPrice: data[i].close,
-          pnl,
-          pnlPercent: (pnl / (position.entryPrice * position.quantity)) * 100,
-        });
-        position = null;
-      } else if (action.action === 'CLOSE' && position) {
-        const pnl = position.side === 'LONG'
-          ? (data[i].close - position.entryPrice) * position.quantity
-          : (position.entryPrice - data[i].close) * position.quantity;
-        equity += pnl;
-        trades.push({
-          entryPrice: position.entryPrice,
-          exitPrice: data[i].close,
-          pnl,
-          pnlPercent: (pnl / (position.entryPrice * position.quantity)) * 100,
-        });
-        position = null;
+        position = { side: 'LONG', entryPrice: data[i].close, quantity, entryDate: data[i].date };
       }
 
       equityCurve.push(equity);

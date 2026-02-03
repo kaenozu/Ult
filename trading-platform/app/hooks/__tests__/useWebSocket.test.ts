@@ -24,11 +24,10 @@ class MockWebSocket {
   constructor(url: string) {
     this.url = url;
     mockWebSocketInstance = this;
-    const self = this;
     setTimeout(() => {
-      if (self.onopen) {
-        self.readyState = MockWebSocket.OPEN;
-        self.onopen();
+      if (this.onopen) {
+        this.readyState = MockWebSocket.OPEN;
+        this.onopen();
       }
     }, 10);
   }

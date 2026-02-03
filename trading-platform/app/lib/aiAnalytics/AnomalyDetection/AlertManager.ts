@@ -190,6 +190,7 @@ export class AlertManager {
   ): Promise<void> {
     // In production, this would actually send notifications
     // For now, we'll just log
+    console.log({
       type: alert.type,
       severity: alert.severity,
       message: alert.message,

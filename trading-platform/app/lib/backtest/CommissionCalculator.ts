@@ -82,9 +82,9 @@ export class CommissionCalculator {
   constructor(market: Market, config?: Partial<CommissionConfig>) {
     this.config = {
       market,
-      japan: market === 'japan' ? { ...DEFAULT_JAPAN_COMMISSION, ...config?.japan } : undefined,
-      usa: market === 'usa' ? { ...DEFAULT_USA_COMMISSION, ...config?.usa } : undefined,
-      fx: { ...DEFAULT_FX_COMMISSION, ...config?.fx },
+      japan: market === 'japan' ? { ...DEFAULT_JAPAN_COMMISSION, ...(config?.japan ?? {}) } : undefined,
+      usa: market === 'usa' ? { ...DEFAULT_USA_COMMISSION, ...(config?.usa ?? {}) } : undefined,
+      fx: { ...DEFAULT_FX_COMMISSION, ...(config?.fx ?? {}) },
     };
   }
   

@@ -374,7 +374,9 @@ export class WebSocketDataFlowService {
     const sourceMap = this.multiSourceBuffer.get(data.symbol)!;
     if (sourceMap.size > 3) {
       const firstKey = sourceMap.keys().next().value;
-      sourceMap.delete(firstKey);
+      if (firstKey !== undefined) {
+        sourceMap.delete(firstKey);
+      }
     }
   }
   

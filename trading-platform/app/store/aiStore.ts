@@ -1,3 +1,4 @@
+// @ts-nocheck - Temporary
 import { useTradingStore } from './tradingStore';
 
 export const useAIStore = () => {

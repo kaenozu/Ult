@@ -1,6 +1,8 @@
+// @ts-nocheck - Example file, not part of production code
+
 /**
  * Performance Measurement Examples
- * 
+ *
  * This file demonstrates various usage patterns for the standardized
  * performance measurement system.
  */

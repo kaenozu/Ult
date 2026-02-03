@@ -108,7 +108,7 @@ describe('SentimentAnalyzer', () => {
       ];
 
       // Test with low fear/greed (should be greed side)
-      let result = analyzer.calculateFearGreedIndex(testEntries);
+      const result = analyzer.calculateFearGreedIndex(testEntries);
       expect(result?.label).toMatch(/Greed|Neutral/);
     });
 

@@ -247,6 +247,7 @@ export class TestHelpers {
       warnings.push(args);
     };
 
+    console.log = (...args: any[]) => {
       logs.push(args);
     };
 

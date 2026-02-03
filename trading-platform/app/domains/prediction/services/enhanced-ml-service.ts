@@ -10,9 +10,10 @@
  */
 
 import { OHLCV, Stock, Signal } from '@/app/types';
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures, EnhancedPrediction } from '../types';
+import { FeatureCalculationService } from './feature-calculation-service';
 import { MLModelService } from './ml-model-service';
-import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../MarketRegimeDetector';
+import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../../lib/MarketRegimeDetector';
 
 export interface ModelPerformance {
   hitRate: number;

@@ -49,6 +49,14 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     const currentMarket = stock.market;
     const cacheKey = `${currentSymbol}_${currentMarket}`;
 
+    // Skip if no symbol is selected
+    if (!currentSymbol || currentSymbol === '') {
+      setAccuracy(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     // Check cache first
     const cached = accuracyCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -95,17 +103,17 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
 
         // Calculate accuracy metrics
         const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
-        
-        if (accuracyResult.isErr) {
-          throw new Error(accuracyResult.error.message);
+
+        if (!accuracyResult) {
+          throw new Error('Insufficient data for accuracy calculation');
         }
 
         const predError = calculatePredictionError(historicalData);
 
         const accuracyData: AccuracyData = {
-          hitRate: accuracyResult.value.hitRate,
-          directionalAccuracy: accuracyResult.value.directionalAccuracy,
-          totalTrades: accuracyResult.value.totalTrades,
+          hitRate: accuracyResult.hitRate,
+          directionalAccuracy: accuracyResult.directionalAccuracy,
+          totalTrades: accuracyResult.totalTrades,
           predictionError: predError
         };
 
@@ -135,12 +143,12 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           if (ohlcv.length >= 252) {
             try {
               const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
-              if (accuracyResult.isOk) {
+              if (accuracyResult) {
                 const predError = calculatePredictionError(ohlcv);
                 const fallbackData: AccuracyData = {
-                  hitRate: accuracyResult.value.hitRate,
-                  directionalAccuracy: accuracyResult.value.directionalAccuracy,
-                  totalTrades: accuracyResult.value.totalTrades,
+                  hitRate: accuracyResult.hitRate,
+                  directionalAccuracy: accuracyResult.directionalAccuracy,
+                  totalTrades: accuracyResult.totalTrades,
                   predictionError: predError
                 };
                 setAccuracy(fallbackData);
