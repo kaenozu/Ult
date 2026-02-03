@@ -353,6 +353,13 @@ export interface BacktestResult {
   trades: BacktestTrade[];
   startDate: string;
   endDate: string;
+  // Walk-Forward Analysis metrics
+  walkForwardMetrics?: {
+    inSampleAccuracy: number;  // Average accuracy during training
+    outOfSampleAccuracy: number;  // Average accuracy during validation
+    overfitScore: number;  // Ratio of OOS/IS accuracy (closer to 1.0 = less overfitting)
+    parameterStability: number;  // Standard deviation of parameters across windows
+  };
 }
 
 // ============================================================================
