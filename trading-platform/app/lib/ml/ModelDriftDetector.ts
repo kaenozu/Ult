@@ -269,8 +269,9 @@ export class ModelDriftDetector {
     historyArray.push(history);
 
     // 履歴を一定数に制限
+    // PERFORMANCE FIX: Replace shift() with slice() to avoid O(n) array reindexing
     if (historyArray.length > this.BASELINE_WINDOW) {
-      historyArray.shift();
+      this.performanceHistory.set(modelType, historyArray.slice(-this.BASELINE_WINDOW));
     }
   }
 
