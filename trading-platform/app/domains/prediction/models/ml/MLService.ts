@@ -3,6 +3,9 @@
  *
  * ML予測精度改善の統合サービス
  * 特徴量エンジニアリング、アンサンブルモデル、ドリフト検出を統合します。
+ *
+ * SECURITY NOTE: This service coordinates ML components including stub models.
+ * See EnsembleModel.ts for production deployment safeguards.
  */
 
 import { OHLCV } from '@/app/types';

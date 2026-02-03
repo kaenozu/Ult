@@ -44,6 +44,12 @@ export function usePsychology() {
   const recordTrade = (order: Order) => {
     if (!psychologyMonitorRef.current) return;
 
+    // Security: Validate order object to prevent injection
+    if (!order || typeof order !== 'object') {
+      console.error('Invalid order: must be a valid Order object');
+      return;
+    }
+
     psychologyMonitorRef.current.recordTrade(order);
 
     // Generate alerts
@@ -68,6 +74,12 @@ export function usePsychology() {
    */
   const analyzeBias = (order: Order) => {
     if (!psychologyMonitorRef.current) return null;
+
+    // Security: Validate order object
+    if (!order || typeof order !== 'object') {
+      console.error('Invalid order: must be a valid Order object');
+      return null;
+    }
 
     const analysis = psychologyMonitorRef.current.detectBiases(order);
     psychologyState.setBiasAnalysis(analysis);
@@ -112,6 +124,12 @@ export function usePsychology() {
    */
   const startManualCooldown = (minutes: number = 60) => {
     if (!coolingOffManagerRef.current) return;
+
+    // Security: Validate minutes parameter to prevent abuse
+    if (!Number.isFinite(minutes) || minutes < 1 || minutes > 1440) { // Max 24 hours
+      console.error('Invalid cooldown duration: must be between 1 and 1440 minutes');
+      return;
+    }
 
     const cooldown = coolingOffManagerRef.current.enforceCoolingOff({
       type: 'manual',

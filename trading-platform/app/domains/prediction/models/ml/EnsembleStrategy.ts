@@ -153,11 +153,8 @@ export class EnsembleStrategy {
     }
     
     // Tree 2: Momentum-based
-    if (momentum > 0) {
-      prediction += momentum * 0.5;
-    } else {
-      prediction += momentum * 0.5;
-    }
+    // Fixed: momentum should contribute proportionally (positive or negative)
+    prediction += momentum * 0.5;
     
     // Tree 3: Volatility adjustment
     const volAdjustment = Math.max(0.5, 1 - volatility / 50);

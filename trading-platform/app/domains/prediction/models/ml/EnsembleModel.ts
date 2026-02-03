@@ -3,10 +3,36 @@
  *
  * 動的アンサンブル重み付けクラス
  * 複数モデルのパフォーマンスに基づく重み調整、市場状態に応じたモデル選択を提供します。
+ *
+ * SECURITY NOTE: This module contains STUB implementations for ML models (RF, XGB, LSTM).
+ * These are placeholder rule-based models for development and testing only.
+ * DO NOT deploy to production without replacing with actual trained ML models.
  */
 
 import { AllFeatures, SentimentFeatures, MacroEconomicFeatures } from './FeatureEngineering';
 import { OHLCV } from '@/app/types';
+
+// SECURITY: Production deployment safeguard
+const PRODUCTION_ML_READY = false; // SET TO TRUE ONLY AFTER DEPLOYING REAL ML MODELS
+
+/**
+ * Check if running in production and ML models are properly deployed
+ * @throws Error if production deployment is detected without real ML models
+ */
+function validateProductionDeployment(): void {
+  if (typeof window !== 'undefined' &&
+      (window.location.hostname === 'production-domain.com' ||
+       process.env.NODE_ENV === 'production' ||
+       process.env.NEXT_PUBLIC_ENV === 'production')) {
+    if (!PRODUCTION_ML_READY) {
+      throw new Error(
+        'SECURITY ERROR: Attempted to use STUB ML models in production. ' +
+        'Replace stub implementations with trained models before deploying. ' +
+        'Set PRODUCTION_ML_READY=true only after real ML models are deployed.'
+      );
+    }
+  }
+}
 
 /**
  * モデルタイプ
@@ -102,6 +128,9 @@ export class EnsembleModel {
     macroData?: MacroEconomicFeatures,
     sentimentData?: SentimentFeatures
   ): EnsemblePrediction {
+    // SECURITY: Validate production deployment
+    validateProductionDeployment();
+
     // 市場レジームを判定
     const marketRegime = this.detectMarketRegime(data);
 
@@ -362,11 +391,13 @@ export class EnsembleModel {
 
   /**
    * Random Forestモデルで予測
+   * STUB IMPLEMENTATION - Replace with actual trained Random Forest model
    */
   private predictRandomForest(features: AllFeatures): ModelPrediction {
     const t = features.technical;
 
-    // RFは木ベースのモデルなので、しきい値ベースのルールを使用
+    // STUB: RFは木ベースのモデルなので、しきい値ベースのルールを使用
+    // TODO: Replace with actual sklearn/TensorFlow Random Forest model
     let score = 0;
 
     // RSI
@@ -398,11 +429,13 @@ export class EnsembleModel {
 
   /**
    * XGBoostモデルで予測
+   * STUB IMPLEMENTATION - Replace with actual trained XGBoost model
    */
   private predictXGBoost(features: AllFeatures): ModelPrediction {
     const t = features.technical;
 
-    // XGBoostは勾配ブースティングなので、より細かい重み付け
+    // STUB: XGBoostは勾配ブースティングなので、より細かい重み付け
+    // TODO: Replace with actual XGBoost model from xgboost.js or Python backend
     let score = 0;
 
     // RSI（重要度: 高）
@@ -433,9 +466,11 @@ export class EnsembleModel {
 
   /**
    * LSTMモデルで予測
+   * STUB IMPLEMENTATION - Replace with actual trained LSTM model
    */
   private predictLSTM(data: OHLCV[], features: AllFeatures): ModelPrediction {
-    // LSTMは時系列パターンを学習する
+    // STUB: LSTMは時系列パターンを学習する
+    // TODO: Replace with actual TensorFlow.js LSTM model (see ModelPipeline.ts)
     const prices = data.map(d => d.close);
     const recentPrices = prices.slice(-30);
 
