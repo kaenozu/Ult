@@ -1,4 +1,4 @@
-import { OHLCV, Signal } from '../types';
+import { OHLCV, Signal, Stock } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
@@ -15,6 +15,7 @@ import {
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
 import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
+import { mlIntegrationService } from './services/MLIntegrationService';
 
 export interface AnalysisContext {
     startIndex?: number;
@@ -363,6 +364,7 @@ class AnalysisService {
 
     /**
      * 銘柄の総合分析を実行
+     * ML予測が利用可能な場合は優先的に使用し、そうでない場合はルールベースにフォールバック
      */
     analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
         // Handle window data for legacy components
@@ -410,6 +412,23 @@ class AnalysisService {
                 exitStrategy: undefined,
             };
         }
+
+        // ML prediction integration point - infrastructure ready for trained models
+        // The check below demonstrates the integration pattern that will be activated
+        // when models are trained and ML_MODEL_CONFIG.MODELS_TRAINED is set to true.
+        // Currently, mlAvailable will always be false, so this code path is not executed.
+        // Keeping this structure in place makes it clear where ML predictions will be integrated.
+        const mlAvailable = mlIntegrationService.isAvailable();
+        if (mlAvailable) {
+            // TODO: When models are trained, uncomment this:
+            // const mlPrediction = await mlIntegrationService.predictWithML(
+            //     { symbol } as Stock, 
+            //     data, 
+            //     indexDataOverride
+            // );
+            // if (mlPrediction) return mlPrediction;
+        }
+        // If ML not available or prediction fails, continue with rule-based approach below
 
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
         if (context?.forcedParams) {
