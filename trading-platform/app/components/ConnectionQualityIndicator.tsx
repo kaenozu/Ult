@@ -25,20 +25,21 @@ interface ConnectionQualityIndicatorProps {
 
 /**
  * Get signal strength icon based on connection quality
+ * Returns the icon as a JSX element to avoid component creation during render
  */
-function getSignalIcon(quality: ConnectionMetrics['quality']) {
+function renderSignalIcon(quality: ConnectionMetrics['quality'], className: string = ''): JSX.Element {
   switch (quality) {
     case 'excellent':
-      return SignalHigh;
+      return <SignalHigh className={className} />;
     case 'good':
-      return SignalMedium;
+      return <SignalMedium className={className} />;
     case 'fair':
-      return SignalLow;
+      return <SignalLow className={className} />;
     case 'poor':
-      return SignalZero;
+      return <SignalZero className={className} />;
     case 'offline':
     default:
-      return WifiOff;
+      return <WifiOff className={className} />;
   }
 }
 
@@ -159,7 +160,6 @@ export const ConnectionQualityIndicator = memo(function ConnectionQualityIndicat
   }, [metrics, status]);
   
   const colors = useMemo(() => getQualityColors(quality), [quality]);
-  const SignalIcon = getSignalIcon(quality);
   const statusLabel = useMemo(() => getStatusLabel(status), [status]);
 
   // Compact view - just status badge
@@ -192,7 +192,7 @@ export const ConnectionQualityIndicator = memo(function ConnectionQualityIndicat
           'hover:shadow-lg'
         )}
       >
-        <SignalIcon className="w-4 h-4" />
+        {renderSignalIcon(quality, 'w-4 h-4')}
         <div className="flex flex-col items-start leading-tight">
           <span className="text-[10px] font-bold uppercase tracking-wider">{statusLabel}</span>
           {metrics && status === 'OPEN' && (
