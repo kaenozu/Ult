@@ -5,6 +5,7 @@ import { getConfig } from './config/env-validator';
 export interface JWTPayload {
   userId: string;
   username?: string;
+  role?: 'admin' | 'user';
   iat?: number;
   exp?: number;
 }
@@ -89,4 +90,35 @@ export function requireAuth(req: NextRequest): NextResponse | null {
  */
 export function getAuthUser(req: NextRequest): JWTPayload | null {
   return verifyAuthToken(req);
+}
+
+/**
+ * Middleware to require admin privileges on API routes
+ * Returns 403 Forbidden if user is not an admin
+ */
+export function requireAdmin(req: NextRequest): NextResponse | null {
+  const payload = verifyAuthToken(req);
+  
+  if (!payload) {
+    return NextResponse.json(
+      { 
+        error: 'Unauthorized', 
+        message: 'Valid authentication token required. Please provide a JWT token in the Authorization header.' 
+      },
+      { status: 401 }
+    );
+  }
+  
+  // Check if user has admin role
+  if (payload.role !== 'admin') {
+    return NextResponse.json(
+      { 
+        error: 'Forbidden', 
+        message: 'Admin privileges required for this operation.' 
+      },
+      { status: 403 }
+    );
+  }
+  
+  return null; // Authorization successful
 }

@@ -7,6 +7,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import { PredictionFeatures } from './feature-calculation-service';
+import { TechnicalFeatures } from '../models/ml/FeatureEngineering';
 
 // Set TensorFlow.js backend to CPU for Node.js environment
 if (typeof window === 'undefined') {
@@ -483,20 +484,34 @@ export class FeedForwardModel extends BaseTensorFlowModel {
 }
 
 /**
- * Helper function to convert PredictionFeatures to feature array
+ * Helper function to convert TechnicalFeatures to feature array
+ * Validates input and provides safe defaults for missing values
  */
-export function featuresToArray(features: PredictionFeatures): number[] {
+export function featuresToArray(features: TechnicalFeatures | null | undefined): number[] {
+  // Handle null or undefined input
+  if (!features) {
+    throw new Error('Cannot convert null or undefined features to array');
+  }
+
+  // Validate and normalize features with safe defaults
+  const safeValue = (value: number | undefined | null, defaultValue: number = 0): number => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return defaultValue;
+    }
+    return value;
+  };
+
   return [
-    features.rsi / 100,           // Normalize to 0-1
-    features.rsiChange / 100,
-    features.sma5 / 100,
-    features.sma20 / 100,
-    features.sma50 / 100,
-    features.priceMomentum / 10,  // Normalize momentum
-    features.volumeRatio,
-    features.volatility,
-    features.macdSignal / 10,
-    features.bollingerPosition / 100,
-    features.atrPercent / 10
+    safeValue(features.rsi, 50) / 100,           // Normalize to 0-1
+    safeValue(features.rsiChange) / 100,
+    safeValue(features.sma5) / 100,
+    safeValue(features.sma20) / 100,
+    safeValue(features.sma50) / 100,
+    safeValue(features.momentum10) / 10,  // Normalize momentum (using momentum10 instead of priceMomentum)
+    safeValue(features.volumeRatio, 1),
+    safeValue(features.atr) / 100,  // Use atr instead of volatility
+    safeValue(features.macdSignal) / 10,
+    safeValue(features.bbPosition) / 100,  // Use bbPosition instead of bollingerPosition
+    safeValue(features.atrPercent) / 10
   ];
 }

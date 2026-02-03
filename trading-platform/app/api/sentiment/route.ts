@@ -1,4 +1,3 @@
-import { requireCSRF } from '/app/lib/csrf/csrf-protection';
 /**
  * GET /api/sentiment/route.ts
  * 
@@ -9,6 +8,8 @@ import { NextRequest } from 'next/server';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
+import { requireAdmin } from '@/app/lib/auth';
 
 export const GET = createGetHandler(
   async () => {
@@ -49,10 +50,19 @@ interface SentimentAction {
 }
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
-  const csrfError = requireCSRF(request);
-  if (csrfError) return csrfError;
+  async (request: NextRequest, body: SentimentAction) => {
+    // Check CSRF protection
+    const csrfError = requireCSRF(request);
+    if (csrfError) {
+      throw new Error('CSRF validation failed');
+    }
 
-  async (_request: NextRequest, body: SentimentAction) => {
+    // Check admin privileges for administrative actions
+    const adminError = requireAdmin(request);
+    if (adminError) {
+      throw new Error('Admin privileges required');
+    }
+
     // Validate action
     const validationError = validateField({
       value: body.action,
