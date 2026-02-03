@@ -914,6 +914,29 @@ export class FeatureEngineering {
     const validValues = arr.filter(v => !isNaN(v) && v !== 0);
     return validValues.length > 0 ? validValues[validValues.length - 1] : 0;
   }
+
+  /**
+   * MLPredictionIntegration 互換性: 特徴量を抽出
+   * @deprecated Use calculateAllFeatures instead
+   */
+  extractFeatures(data: OHLCV[], windowSize: number): AllFeatures {
+    return this.calculateAllFeatures(data);
+  }
+
+  /**
+   * MLPredictionIntegration 互換性: 特徴量正規化
+   * @deprecated Features are already normalized in calculateAllFeatures
+   */
+  normalizeFeatures(features: AllFeatures): { normalized: AllFeatures; stats: any } {
+    // Simplified: return as-is with placeholder stats
+    return {
+      normalized: features,
+      stats: {
+        means: {},
+        stds: {},
+      },
+    };
+  }
 }
 
 export const featureEngineering = new FeatureEngineering();
