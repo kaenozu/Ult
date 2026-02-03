@@ -14,6 +14,7 @@ class MockWorker {
   terminate = mockTerminate;
 
   constructor(scriptURL: string | URL) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     mockWorkerInstance = this;
   }
 }

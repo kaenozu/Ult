@@ -62,7 +62,6 @@ export async function optimizeMomentumStrategy(
 
   // 最適化を実行
   const result = await optimizer.optimize(data, strategyExecutor, backtestConfig);
-
 }
 
 // ============================================================================

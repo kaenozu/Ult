@@ -47,7 +47,36 @@ export function BacktestResultsDashboard({
   benchmarkReturns,
   className
 }: BacktestResultsDashboardProps) {
-  if (!result) {
+  // Calculate all metrics
+  const metrics = useMemo(() => {
+    if (!result) return null;
+    return AdvancedPerformanceMetrics.calculateAllMetrics(result, benchmarkReturns);
+  }, [result, benchmarkReturns]);
+
+  // Calculate additional analyses
+  const drawdownAnalysis = useMemo(() => {
+    if (!result) return null;
+    const equity = calculateEquityCurve(result);
+    return AdvancedPerformanceMetrics.analyzeDrawdowns(equity, result.trades);
+  }, [result]);
+
+  const tradeAnalysis = useMemo(() => {
+    if (!result) return null;
+    return AdvancedPerformanceMetrics.analyzeTrades(result);
+  }, [result]);
+
+  const returnDistribution = useMemo(() => {
+    if (!result) return null;
+    // Filter undefined values and ensure type safety
+    const returns = result.trades
+      .map(t => t.profitPercent)
+      .filter((p): p is number => typeof p === 'number');
+    return AdvancedPerformanceMetrics.calculateReturnDistribution(returns);
+  }, [result]);
+
+  const [activeTab, setActiveTab] = useState("overview");
+
+  if (!result || !metrics || !drawdownAnalysis || !tradeAnalysis || !returnDistribution) {
     return (
       <Card className={className}>
         <CardContent className="p-6 text-center text-gray-500">
@@ -57,31 +86,7 @@ export function BacktestResultsDashboard({
     );
   }
 
-  // Calculate all metrics
-  const metrics = useMemo(() => {
-    return AdvancedPerformanceMetrics.calculateAllMetrics(result, benchmarkReturns);
-  }, [result, benchmarkReturns]);
-
-  // Calculate additional analyses
-  const drawdownAnalysis = useMemo(() => {
-    const equity = calculateEquityCurve(result);
-    return AdvancedPerformanceMetrics.analyzeDrawdowns(equity, result.trades);
-  }, [result]);
-
-  const tradeAnalysis = useMemo(() => {
-    return AdvancedPerformanceMetrics.analyzeTrades(result);
-  }, [result]);
-
-  const returnDistribution = useMemo(() => {
-    // Filter undefined values and ensure type safety
-    const returns = result.trades
-      .map(t => t.profitPercent)
-      .filter((p): p is number => typeof p === 'number');
-    return AdvancedPerformanceMetrics.calculateReturnDistribution(returns);
-  }, [result]);
-
   const rowCount = result.trades.length;
-  const [activeTab, setActiveTab] = useState("overview");
 
   return (
     <div className={cn("space-y-6", className)}>

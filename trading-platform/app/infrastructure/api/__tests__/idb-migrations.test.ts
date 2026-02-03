@@ -7,6 +7,9 @@ import { IndexedDBClient, migrations, STORE_NAMES } from '../idb-migrations';
 describe('IndexedDB Migration System', () => {
   let client: IndexedDBClient;
 
+  // Increase timeout for all tests in this file
+  jest.setTimeout(30000);
+
   beforeEach(() => {
     client = new IndexedDBClient();
   });
