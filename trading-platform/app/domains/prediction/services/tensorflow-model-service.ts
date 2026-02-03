@@ -6,7 +6,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures } from '../types';
 
 // Set TensorFlow.js backend to CPU for Node.js environment
 if (typeof window === 'undefined') {
@@ -483,9 +483,25 @@ export class FeedForwardModel extends BaseTensorFlowModel {
 }
 
 /**
- * Helper function to convert PredictionFeatures to feature array
+ * Helper function to convert features object to feature array
+ * @param features - Features object (can be PredictionFeatures or any compatible object)
  */
-export function featuresToArray(features: PredictionFeatures): number[] {
+export function featuresToArray(features: PredictionFeatures | null | undefined): number[] {
+  if (!features) {
+    throw new TypeError('Features object is null or undefined');
+  }
+
+  // 必須プロパティの検証
+  const requiredProps = ['rsi', 'rsiChange', 'sma5', 'sma20', 'sma50',
+                       'priceMomentum', 'volumeRatio', 'volatility',
+                       'macdSignal', 'bollingerPosition', 'atrPercent'];
+
+  for (const prop of requiredProps) {
+    if (typeof features[prop as keyof PredictionFeatures] !== 'number') {
+      throw new TypeError(`Missing or invalid required property: ${prop}`);
+    }
+  }
+
   return [
     features.rsi / 100,           // Normalize to 0-1
     features.rsiChange / 100,

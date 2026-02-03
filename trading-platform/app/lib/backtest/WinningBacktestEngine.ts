@@ -137,7 +137,7 @@ export interface WalkForwardResult {
   parameterStability: number; // 0-100
 }
 
-export interface MonteCarloResult {
+export interface WinningMonteCarloResult {
   originalResult: BacktestResult;
   simulations: BacktestResult[];
   probabilityOfProfit: number; // %

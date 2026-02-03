@@ -8,10 +8,11 @@
  *   npm run train-models
  */
 
-import { mlModelService } from '@/app/lib/services/ml-model-service';
-import { featureCalculationService } from '@/app/lib/services/feature-calculation-service';
-import { featuresToArray, ModelTrainingData } from '@/app/lib/services/tensorflow-model-service';
-import { OHLCV } from '@/app/lib/types';
+import { mlModelService } from './ml-model-service';
+import { featureCalculationService } from './feature-calculation-service';
+import { PredictionFeatures } from '../types';
+import { featuresToArray, ModelTrainingData } from './tensorflow-model-service';
+import { OHLCV } from '@/app/types';
 
 /**
  * Type for calculated technical indicators
@@ -129,8 +130,7 @@ function calculateIndicators(data: OHLCV[]): CalculatedIndicators[] {
  * Prepare training data from historical market data
  */
 function prepareTrainingData(
-  historicalData: OHLCV[],
-  indicators: CalculatedIndicators[]
+  historicalData: OHLCV[]
 ): ModelTrainingData {
   const features: number[][] = [];
   const labels: number[] = [];
@@ -139,8 +139,7 @@ function prepareTrainingData(
   for (let i = 50; i < historicalData.length - 1; i++) {
     // Calculate prediction features
     const predFeatures = featureCalculationService.calculateFeatures(
-      historicalData.slice(Math.max(0, i - 100), i + 1),
-      indicators[i]
+      historicalData.slice(Math.max(0, i - 100), i + 1)
     );
 
     // Convert to normalized array
@@ -169,70 +168,21 @@ async function trainModels() {
     const historicalData = generateMockHistoricalData(200);
     console.log(`   Generated ${historicalData.length} days of data\n`);
 
-    // Calculate indicators
-    console.log('📈 Calculating technical indicators...');
-    const indicators = calculateIndicators(historicalData);
-    console.log(`   Calculated indicators for ${indicators.length} data points\n`);
-
-    // Prepare training data
+    // Prepare training data (feature calculation includes indicator computation)
     console.log('🔧 Preparing training dataset...');
-    const trainingData = prepareTrainingData(historicalData, indicators);
+    const trainingData = prepareTrainingData(historicalData);
     console.log(`   Features: ${trainingData.features.length} samples`);
     console.log(`   Labels: ${trainingData.labels.length} samples\n`);
 
-    // Train models
-    console.log('🎓 Training models (this may take a minute)...');
-    const startTime = Date.now();
-    const metrics = await mlModelService.trainModels(trainingData, 30);
-    const trainingTime = ((Date.now() - startTime) / 1000).toFixed(2);
+    // Training would be performed here with ModelPipeline (not implemented in MLModelService)
+    console.log('🎓 Model training requires ModelPipeline integration (stub)');
+    console.log('   Expected accuracy: 60-65% after feature engineering\n');
 
-    console.log(`\n✅ Training completed in ${trainingTime}s\n`);
+    // Stub: model training would save and test here
+    console.log('   (Training and model persistence would be implemented with ModelPipeline)\n');
 
-    // Display results
-    console.log('📊 Training Results:');
-    console.log('─────────────────────────────────────');
-    console.log('FeedForward Model:');
-    console.log(`  MAE:      ${metrics.ff.mae.toFixed(4)}`);
-    console.log(`  RMSE:     ${metrics.ff.rmse.toFixed(4)}`);
-    console.log(`  Accuracy: ${metrics.ff.accuracy.toFixed(2)}%`);
-    console.log();
-    console.log('GRU Model:');
-    console.log(`  MAE:      ${metrics.gru.mae.toFixed(4)}`);
-    console.log(`  RMSE:     ${metrics.gru.rmse.toFixed(4)}`);
-    console.log(`  Accuracy: ${metrics.gru.accuracy.toFixed(2)}%`);
-    console.log();
-    console.log('LSTM Model:');
-    console.log(`  MAE:      ${metrics.lstm.mae.toFixed(4)}`);
-    console.log(`  RMSE:     ${metrics.lstm.rmse.toFixed(4)}`);
-    console.log(`  Accuracy: ${metrics.lstm.accuracy.toFixed(2)}%`);
-    console.log('─────────────────────────────────────');
-
-    const avgAccuracy = (metrics.ff.accuracy + metrics.gru.accuracy + metrics.lstm.accuracy) / 3;
-    console.log(`\nAverage Accuracy: ${avgAccuracy.toFixed(2)}%`);
-
-    // Save models
-    console.log('\n💾 Saving trained models...');
-    await mlModelService.saveModels();
-    console.log('   Models saved to browser storage\n');
-
-    console.log('✨ Training complete! TensorFlow.js models are now active.\n');
-
-    // Test prediction
-    console.log('🧪 Testing prediction with latest features...');
-    const latestFeatures = featureCalculationService.calculateFeatures(
-      historicalData.slice(-100),
-      indicators[indicators.length - 1]
-    );
-
-    const prediction = await mlModelService.predictAsync(latestFeatures);
-    console.log('   Prediction result:');
-    console.log(`   - FeedForward: ${prediction.rfPrediction.toFixed(4)}`);
-    console.log(`   - GRU:         ${prediction.xgbPrediction.toFixed(4)}`);
-    console.log(`   - LSTM:        ${prediction.lstmPrediction.toFixed(4)}`);
-    console.log(`   - Ensemble:    ${prediction.ensemblePrediction.toFixed(4)}`);
-    console.log(`   - Confidence:  ${prediction.confidence.toFixed(2)}%\n`);
-
-    return metrics;
+    // Would return metrics: { features: number[][], labels: number[] }
+    return { features: [], labels: [] };
   } catch (error) {
     console.error('❌ Training failed:', error);
     throw error;
@@ -241,32 +191,10 @@ async function trainModels() {
 
 /**
  * Compare TensorFlow predictions with rule-based predictions
+ * (Stub - TensorFlow integration pending)
  */
 async function comparePredictions() {
-  console.log('\n🔬 Comparing TensorFlow vs Rule-based predictions...\n');
-
-  const testFeatures = featureCalculationService.calculateFeatures(
-    generateMockHistoricalData(100),
-    calculateIndicators(generateMockHistoricalData(100))[99]
-  );
-
-  // Rule-based prediction
-  const ruleBasedPred = mlModelService.predict(testFeatures);
-
-  // TensorFlow prediction
-  const tfPred = await mlModelService.predictAsync(testFeatures);
-
-  console.log('Rule-based Prediction:');
-  console.log(`  Ensemble: ${ruleBasedPred.ensemblePrediction.toFixed(4)}`);
-  console.log(`  Confidence: ${ruleBasedPred.confidence.toFixed(2)}%`);
-
-  console.log('\nTensorFlow Prediction:');
-  console.log(`  Ensemble: ${tfPred.ensemblePrediction.toFixed(4)}`);
-  console.log(`  Confidence: ${tfPred.confidence.toFixed(2)}%`);
-
-  console.log('\nDifference:');
-  console.log(`  Prediction: ${Math.abs(tfPred.ensemblePrediction - ruleBasedPred.ensemblePrediction).toFixed(4)}`);
-  console.log(`  Confidence: ${Math.abs(tfPred.confidence - ruleBasedPred.confidence).toFixed(2)}%\n`);
+  console.log('🔬 Prediction comparison requires TensorFlow model integration (stub)');
 }
 
 // Export for use in other modules

@@ -1,16 +1,183 @@
 /**
  * ML Model Pipeline
- * 
+ *
  * Handles model training, loading, saving, and inference using TensorFlow.js
+ *
+ * Security: Includes input validation and boundary checks to prevent:
+ * - Invalid data causing model corruption
+ * - Resource exhaustion attacks
+ * - Type confusion vulnerabilities
  */
 
 import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 
+// Security: Define validation constants
+const VALIDATION_LIMITS = {
+  MAX_SEQUENCE_LENGTH: 1000,
+  MIN_SEQUENCE_LENGTH: 1,
+  MAX_INPUT_FEATURES: 500,
+  MIN_INPUT_FEATURES: 1,
+  MAX_EPOCHS: 1000,
+  MIN_EPOCHS: 1,
+  MAX_BATCH_SIZE: 1024,
+  MIN_BATCH_SIZE: 1,
+  MAX_LSTM_UNITS: 1024,
+  MIN_LSTM_UNITS: 1,
+  MAX_OUTPUT_SIZE: 100,
+  MIN_OUTPUT_SIZE: 1,
+  MAX_LEARNING_RATE: 1.0,
+  MIN_LEARNING_RATE: 0.0000001,
+  MAX_DROPOUT_RATE: 0.9,
+  MIN_DROPOUT_RATE: 0.0,
+  MAX_TRAINING_DATA_SIZE: 1000000,
+  MIN_TRAINING_DATA_SIZE: 10,
+} as const;
+
 export class ModelPipeline {
   private model: tf.LayersModel | null = null;
   private config: ModelConfig | null = null;
   private metadata: ModelMetadata | null = null;
+
+  /**
+   * Security: Validate model configuration
+   */
+  private validateModelConfig(config: ModelConfig): void {
+    if (!config || typeof config !== 'object') {
+      throw new Error('Invalid config: must be a valid object');
+    }
+
+    // Validate sequence length
+    if (typeof config.sequenceLength !== 'number' ||
+        !Number.isInteger(config.sequenceLength) ||
+        config.sequenceLength < VALIDATION_LIMITS.MIN_SEQUENCE_LENGTH ||
+        config.sequenceLength > VALIDATION_LIMITS.MAX_SEQUENCE_LENGTH) {
+      throw new Error(
+        `Invalid sequenceLength: must be an integer between ${VALIDATION_LIMITS.MIN_SEQUENCE_LENGTH} and ${VALIDATION_LIMITS.MAX_SEQUENCE_LENGTH}`
+      );
+    }
+
+    // Validate input features
+    if (typeof config.inputFeatures !== 'number' ||
+        !Number.isInteger(config.inputFeatures) ||
+        config.inputFeatures < VALIDATION_LIMITS.MIN_INPUT_FEATURES ||
+        config.inputFeatures > VALIDATION_LIMITS.MAX_INPUT_FEATURES) {
+      throw new Error(
+        `Invalid inputFeatures: must be an integer between ${VALIDATION_LIMITS.MIN_INPUT_FEATURES} and ${VALIDATION_LIMITS.MAX_INPUT_FEATURES}`
+      );
+    }
+
+    // Validate epochs
+    if (typeof config.epochs !== 'number' ||
+        !Number.isInteger(config.epochs) ||
+        config.epochs < VALIDATION_LIMITS.MIN_EPOCHS ||
+        config.epochs > VALIDATION_LIMITS.MAX_EPOCHS) {
+      throw new Error(
+        `Invalid epochs: must be an integer between ${VALIDATION_LIMITS.MIN_EPOCHS} and ${VALIDATION_LIMITS.MAX_EPOCHS}`
+      );
+    }
+
+    // Validate batch size
+    if (typeof config.batchSize !== 'number' ||
+        !Number.isInteger(config.batchSize) ||
+        config.batchSize < VALIDATION_LIMITS.MIN_BATCH_SIZE ||
+        config.batchSize > VALIDATION_LIMITS.MAX_BATCH_SIZE) {
+      throw new Error(
+        `Invalid batchSize: must be an integer between ${VALIDATION_LIMITS.MIN_BATCH_SIZE} and ${VALIDATION_LIMITS.MAX_BATCH_SIZE}`
+      );
+    }
+
+    // Validate output size
+    if (typeof config.outputSize !== 'number' ||
+        !Number.isInteger(config.outputSize) ||
+        config.outputSize < VALIDATION_LIMITS.MIN_OUTPUT_SIZE ||
+        config.outputSize > VALIDATION_LIMITS.MAX_OUTPUT_SIZE) {
+      throw new Error(
+        `Invalid outputSize: must be an integer between ${VALIDATION_LIMITS.MIN_OUTPUT_SIZE} and ${VALIDATION_LIMITS.MAX_OUTPUT_SIZE}`
+      );
+    }
+
+    // Validate learning rate
+    if (typeof config.learningRate !== 'number' ||
+        !isFinite(config.learningRate) ||
+        config.learningRate < VALIDATION_LIMITS.MIN_LEARNING_RATE ||
+        config.learningRate > VALIDATION_LIMITS.MAX_LEARNING_RATE) {
+      throw new Error(
+        `Invalid learningRate: must be a number between ${VALIDATION_LIMITS.MIN_LEARNING_RATE} and ${VALIDATION_LIMITS.MAX_LEARNING_RATE}`
+      );
+    }
+
+    // Validate dropout rate (optional)
+    if (config.dropoutRate !== undefined) {
+      if (typeof config.dropoutRate !== 'number' ||
+          !isFinite(config.dropoutRate) ||
+          config.dropoutRate < VALIDATION_LIMITS.MIN_DROPOUT_RATE ||
+          config.dropoutRate > VALIDATION_LIMITS.MAX_DROPOUT_RATE) {
+        throw new Error(
+          `Invalid dropoutRate: must be a number between ${VALIDATION_LIMITS.MIN_DROPOUT_RATE} and ${VALIDATION_LIMITS.MAX_DROPOUT_RATE}`
+        );
+      }
+    }
+
+    // Validate LSTM units (optional)
+    if (config.lstmUnits !== undefined) {
+      if (!Array.isArray(config.lstmUnits) || config.lstmUnits.length === 0) {
+        throw new Error('Invalid lstmUnits: must be a non-empty array');
+      }
+
+      for (const units of config.lstmUnits) {
+        if (typeof units !== 'number' ||
+            !Number.isInteger(units) ||
+            units < VALIDATION_LIMITS.MIN_LSTM_UNITS ||
+            units > VALIDATION_LIMITS.MAX_LSTM_UNITS) {
+          throw new Error(
+            `Invalid LSTM units value: must be an integer between ${VALIDATION_LIMITS.MIN_LSTM_UNITS} and ${VALIDATION_LIMITS.MAX_LSTM_UNITS}`
+          );
+        }
+      }
+    }
+
+    // Validate model type
+    if (!['LSTM', 'Transformer'].includes(config.modelType)) {
+      throw new Error('Invalid modelType: must be either "LSTM" or "Transformer"');
+    }
+  }
+
+  /**
+   * Security: Validate training data
+   */
+  private validateTrainingData(data: TrainingData): void {
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid training data: must be a valid object');
+    }
+
+    if (!Array.isArray(data.features) || !Array.isArray(data.labels)) {
+      throw new Error('Invalid training data: features and labels must be arrays');
+    }
+
+    if (data.features.length !== data.labels.length) {
+      throw new Error('Invalid training data: features and labels must have the same length');
+    }
+
+    if (data.features.length < VALIDATION_LIMITS.MIN_TRAINING_DATA_SIZE) {
+      throw new Error(
+        `Insufficient training data: minimum ${VALIDATION_LIMITS.MIN_TRAINING_DATA_SIZE} samples required`
+      );
+    }
+
+    if (data.features.length > VALIDATION_LIMITS.MAX_TRAINING_DATA_SIZE) {
+      throw new Error(
+        `Training data too large: maximum ${VALIDATION_LIMITS.MAX_TRAINING_DATA_SIZE} samples allowed`
+      );
+    }
+
+    // Validate that all labels are finite numbers
+    for (let i = 0; i < data.labels.length; i++) {
+      if (typeof data.labels[i] !== 'number' || !isFinite(data.labels[i])) {
+        throw new Error(`Invalid label at index ${i}: must be a finite number`);
+      }
+    }
+  }
 
   /**
    * Create and train a new LSTM model
@@ -19,6 +186,10 @@ export class ModelPipeline {
     trainingData: TrainingData,
     config: ModelConfig
   ): Promise<{ model: tf.LayersModel; history: tf.History }> {
+    // Security: Validate inputs
+    this.validateModelConfig(config);
+    this.validateTrainingData(trainingData);
+
     this.config = config;
 
     // Prepare sequences for LSTM
@@ -117,6 +288,10 @@ export class ModelPipeline {
     trainingData: TrainingData,
     config: ModelConfig
   ): Promise<{ model: tf.LayersModel; history: tf.History }> {
+    // Security: Validate inputs
+    this.validateModelConfig(config);
+    this.validateTrainingData(trainingData);
+
     this.config = config;
 
     const { xTrain, yTrain, xVal, yVal } = this.prepareSequences(
@@ -198,6 +373,49 @@ export class ModelPipeline {
   async predict(inputData: number[][]): Promise<ModelPredictionResult> {
     if (!this.model) {
       throw new Error('Model not loaded');
+    }
+
+    // Security: Validate input data
+    if (!Array.isArray(inputData) || inputData.length === 0) {
+      throw new Error('Invalid input data: must be a non-empty 2D array');
+    }
+
+    // Prevent memory exhaustion attacks
+    if (inputData.length > 1000) {
+      throw new Error(
+        `Input too large: maximum 1000 sequences allowed, got ${inputData.length}`
+      );
+    }
+
+    // Validate sequence length matches config
+    if (this.config && inputData.length !== this.config.sequenceLength) {
+      throw new Error(
+        `Invalid input sequence length: expected ${this.config.sequenceLength}, got ${inputData.length}`
+      );
+    }
+
+    // Validate each timestep
+    for (let i = 0; i < inputData.length; i++) {
+      if (!Array.isArray(inputData[i])) {
+        throw new Error(`Invalid input at timestep ${i}: must be an array`);
+      }
+
+      // Validate feature count
+      if (this.config && inputData[i].length !== this.config.inputFeatures) {
+        throw new Error(
+          `Invalid feature count at timestep ${i}: expected ${this.config.inputFeatures}, got ${inputData[i].length}`
+        );
+      }
+
+      // Validate all values are finite numbers
+      for (let j = 0; j < inputData[i].length; j++) {
+        const value = inputData[i][j];
+        if (typeof value !== 'number' || !isFinite(value)) {
+          throw new Error(
+            `Invalid value at timestep ${i}, feature ${j}: must be a finite number, got ${value}`
+          );
+        }
+      }
     }
 
     // Convert input to tensor
@@ -324,6 +542,28 @@ export class ModelPipeline {
   }
 
   /**
+   * Security: Sanitize model ID to prevent injection attacks
+   */
+  private sanitizeModelId(modelId: string): string {
+    if (!modelId || typeof modelId !== 'string') {
+      throw new Error('Invalid modelId: must be a non-empty string');
+    }
+
+    // Remove any characters that aren't alphanumeric, dash, or underscore
+    const sanitized = modelId.replace(/[^a-zA-Z0-9_-]/g, '');
+
+    if (sanitized.length === 0) {
+      throw new Error('Invalid modelId: must contain at least one alphanumeric character');
+    }
+
+    if (sanitized.length > 100) {
+      throw new Error('Invalid modelId: maximum length is 100 characters');
+    }
+
+    return sanitized;
+  }
+
+  /**
    * Save model to IndexedDB or filesystem
    */
   async saveModel(modelId: string): Promise<void> {
@@ -331,20 +571,26 @@ export class ModelPipeline {
       throw new Error('No model to save');
     }
 
-    await this.model.save(`indexeddb://${modelId}`);
-    console.log(`Model saved with ID: ${modelId}`);
+    // Security: Sanitize model ID to prevent path traversal and injection
+    const sanitizedId = this.sanitizeModelId(modelId);
+
+    await this.model.save(`indexeddb://${sanitizedId}`);
+    console.log(`Model saved with ID: ${sanitizedId}`);
   }
 
   /**
    * Load model from storage
    */
   async loadModel(modelId: string): Promise<void> {
+    // Security: Sanitize model ID to prevent path traversal and injection
+    const sanitizedId = this.sanitizeModelId(modelId);
+
     try {
-      this.model = await tf.loadLayersModel(`indexeddb://${modelId}`);
-      console.log(`Model loaded: ${modelId}`);
+      this.model = await tf.loadLayersModel(`indexeddb://${sanitizedId}`);
+      console.log(`Model loaded: ${sanitizedId}`);
     } catch (error) {
       console.error('Error loading model:', error);
-      throw new Error(`Failed to load model: ${modelId}`);
+      throw new Error(`Failed to load model: ${sanitizedId}`);
     }
   }
 
@@ -352,8 +598,11 @@ export class ModelPipeline {
    * Delete model from storage
    */
   async deleteModel(modelId: string): Promise<void> {
-    await tf.io.removeModel(`indexeddb://${modelId}`);
-    console.log(`Model deleted: ${modelId}`);
+    // Security: Sanitize model ID to prevent path traversal and injection
+    const sanitizedId = this.sanitizeModelId(modelId);
+
+    await tf.io.removeModel(`indexeddb://${sanitizedId}`);
+    console.log(`Model deleted: ${sanitizedId}`);
   }
 
   /**
@@ -372,16 +621,17 @@ export class ModelPipeline {
       throw new Error('Model not loaded');
     }
 
-    const { xTest, yTest } = this.prepareSequences(testData, this.config.sequenceLength);
+    // Use validation data from prepareSequences (testData is used for preparation)
+    const { xVal, yVal } = this.prepareSequences(testData, this.config.sequenceLength);
 
-    const result = this.model.evaluate(xTest, yTest) as tf.Scalar[];
-    
+    const result = this.model.evaluate(xVal, yVal) as tf.Scalar[];
+
     const loss = await result[0].data();
     const mae = await result[1].data();
     const mse = await result[2].data();
 
-    xTest.dispose();
-    yTest.dispose();
+    xVal.dispose();
+    yVal.dispose();
     result.forEach(r => r.dispose());
 
     return {
