@@ -16,7 +16,16 @@ export interface StrategyInput {
     bollinger: { upper: number[]; middle: number[]; lower: number[] };
     atr: number[];
   };
-  marketContext?: any; // 市場コンテキスト（経済指標、センチメントなど）
+  marketContext?: {
+    economicIndicators?: Record<string, number>;
+    sentiment?: {
+      fearGreedIndex?: number;
+      vix?: number;
+      putCallRatio?: number;
+    };
+    marketRegime?: 'bull' | 'bear' | 'neutral';
+    correlationData?: Record<string, number>;
+  }; // 市場コンテキスト（経済指標、センチメントなど）
 }
 
 export interface StrategyOutput {

@@ -315,8 +315,8 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-console.log('🤖 Agent Starting: ${task.title}');
-console.log('Description: ${task.description}');
+console.log(`🤖 Agent Starting: ${task.title}`);
+console.log(`Description: ${task.description}`);
 console.log('Acceptance Criteria:');
 task.acceptanceCriteria.forEach(c => console.log(`  - ${c}`));
 console.log('\n');

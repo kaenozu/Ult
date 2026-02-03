@@ -237,7 +237,11 @@ try {
 
   // Write report
   fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: SUCCESS\nTimestamp: ${new Date().toISOString()}\n`);
+
+Task: ${process.env.TASK_ID || 'unknown'}
+Status: SUCCESS
+Timestamp: ${new Date().toISOString()}
+`);
   process.exit(0);
 } catch (error: unknown) {
   const errorMessage = error instanceof Error ? error.message : String(error);

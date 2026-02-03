@@ -129,10 +129,10 @@ function generatePerformanceReport(): void {
   
   
   for (const [name, stats] of allMetrics) {
-Metric: ${name}
-  Count: ${stats.count}
-  Average: ${stats.avg.toFixed(2)}ms
-  Min: ${stats.min.toFixed(2)}ms
+    console.log(`Metric: ${name}`);
+    console.log(`Count: ${stats.count}`);
+    console.log(`Average: ${stats.avg.toFixed(2)}ms`);
+    console.log(`Min: ${stats.min.toFixed(2)}ms`);
   Max: ${stats.max.toFixed(2)}ms
   OK: ${stats.okCount}
   Warnings: ${stats.warningCount}

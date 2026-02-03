@@ -252,6 +252,7 @@ export async function analyzeSensitivity(
 
 
   sensitivity.forEach(result => {
+    console.log(
       result.parameter.padEnd(20) +
       result.baseScore.toFixed(2).padEnd(15) +
       result.sensitivity.toFixed(4)

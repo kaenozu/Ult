@@ -24,7 +24,7 @@ describe('SignalGenerationService', () => {
   let mockStock: Stock;
   let mockData: OHLCV[];
   let mockPrediction: ModelPrediction;
-  let mockIndicators: any;
+  let mockIndicators: TechnicalIndicatorsWithATR;
 
   beforeEach(() => {
     service = new SignalGenerationService();

@@ -13,7 +13,10 @@ export function useWebSocketManager(stock: Stock) {
     
     const data = lastMessage.data as { symbol: string } | undefined;
     if (data?.symbol === stock.symbol) {
-      setLiveSignal(lastMessage.data as Signal);
+      // Use setTimeout to defer state update and avoid synchronous setState in effect
+      setTimeout(() => {
+        setLiveSignal(lastMessage.data as Signal);
+      }, 0);
     }
   }, [lastMessage, stock.symbol]);
 
