@@ -197,7 +197,10 @@ export function useResilientWebSocket(
       }
       // Reset duration when connection is not open (but not when closed)
       if (status !== 'CLOSED') {
-        setConnectionDuration(0);
+        const timeoutId = setTimeout(() => {
+          setConnectionDuration(0);
+        }, 0);
+        return () => clearTimeout(timeoutId);
       }
     }
 
