@@ -2,7 +2,7 @@
  * Tests for Monitoring Service
  */
 
-import { monitoring, initializeMonitoring, trackApiCall, trackWebSocket, trackRender } from '../index';
+import { monitoring, initializeMonitoring, trackApiCall, trackRender } from '../index';
 
 // Mock Sentry
 jest.mock('@sentry/nextjs', () => ({
@@ -59,14 +59,13 @@ describe('Monitoring Service', () => {
     (monitoring as any).initialized = false;
     (monitoring as any).metrics.clear();
     (monitoring as any).apiMetrics = [];
-    (monitoring as any).webSocketMetrics = [];
     (monitoring as any).renderMetrics = [];
     (monitoring as any).webVitalsMetrics.clear();
   });
 
   describe('initialization', () => {
     it('should initialize monitoring service', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'info').mockImplementation();
       
       initializeMonitoring({
         sentryDsn: 'https://test@sentry.io/123',
@@ -74,12 +73,12 @@ describe('Monitoring Service', () => {
         enableWebVitals: false,
       });
 
-      expect(consoleSpy).toHaveBeenCalledWith('[Monitoring] Service initialized');
+      expect(consoleSpy.mock.calls.some(call => typeof call[0] === 'string' && call[0].includes('[Monitoring] Service initialized'))).toBe(true);
       consoleSpy.mockRestore();
     });
 
     it('should not initialize twice', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'info').mockImplementation();
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
       
@@ -88,9 +87,9 @@ describe('Monitoring Service', () => {
 
       // Should only log initialization once
       const initCalls = consoleSpy.mock.calls.filter(
-        call => call[0] === '[Monitoring] Service initialized'
+        (call) => typeof call[0] === 'string' && call[0].includes('[Monitoring] Service initialized')
       );
-      expect(initCalls).toHaveLength(1);
+      expect(initCalls.length).toBe(1);
       
       consoleSpy.mockRestore();
       consoleErrorSpy.mockRestore();
@@ -139,51 +138,8 @@ describe('Monitoring Service', () => {
       
       trackApiCall('/api/slow', 'GET', 1500, 200, true);
 
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[API] Slow response')
-      );
+      expect(warnSpy.mock.calls.some(call => typeof call[0] === 'string' && call[0].includes('[API] Slow response'))).toBe(true);
       warnSpy.mockRestore();
-    });
-  });
-
-  describe('WebSocket tracking', () => {
-    beforeEach(() => {
-      initializeMonitoring({ enableWebVitals: false });
-    });
-
-    it('should track successful WebSocket connections', () => {
-      trackWebSocket('connect', true, 50);
-
-      const summary = monitoring.getPerformanceSummary();
-      expect(summary.webSocketSuccessRate).toBe(100);
-    });
-
-    it('should track failed WebSocket connections', () => {
-      trackWebSocket('connect', false, undefined, 'Connection refused');
-
-      const summary = monitoring.getPerformanceSummary();
-      expect(summary.webSocketSuccessRate).toBe(0);
-    });
-
-    it('should calculate WebSocket success rate correctly', () => {
-      trackWebSocket('connect', true, 50);
-      trackWebSocket('connect', true, 60);
-      trackWebSocket('connect', false, undefined, 'Timeout');
-
-      const rate = monitoring.getWebSocketSuccessRate();
-      expect(rate).toBeCloseTo(66.67, 2);
-    });
-
-    it('should log WebSocket errors', () => {
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
-      
-      trackWebSocket('error', false, undefined, 'Test error');
-
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[WebSocket]'),
-        'Test error'
-      );
-      errorSpy.mockRestore();
     });
   });
 
@@ -208,9 +164,7 @@ describe('Monitoring Service', () => {
       
       trackRender('SlowComponent', 150);
 
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('[Render] Slow render')
-      );
+      expect(warnSpy.mock.calls.some(call => typeof call[0] === 'string' && call[0].includes('[Render] Slow render'))).toBe(true);
       warnSpy.mockRestore();
     });
 
@@ -232,13 +186,11 @@ describe('Monitoring Service', () => {
 
     it('should generate complete performance summary', () => {
       trackApiCall('/api/test', 'GET', 100, 200, true);
-      trackWebSocket('connect', true, 50);
       trackRender('TestComponent', 25);
 
       const summary = monitoring.getPerformanceSummary();
 
       expect(summary.apiSuccessRate).toBe(100);
-      expect(summary.webSocketSuccessRate).toBe(100);
       expect(summary.slowestApiCalls).toHaveLength(1);
       expect(summary.slowestRenders).toHaveLength(1);
     });
@@ -247,7 +199,6 @@ describe('Monitoring Service', () => {
       const summary = monitoring.getPerformanceSummary();
 
       expect(summary.apiSuccessRate).toBe(100);
-      expect(summary.webSocketSuccessRate).toBe(100);
       expect(summary.slowestApiCalls).toHaveLength(0);
       expect(summary.slowestRenders).toHaveLength(0);
       expect(summary.averageApiResponseTime).toBeNull();

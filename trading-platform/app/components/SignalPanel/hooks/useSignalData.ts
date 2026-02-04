@@ -6,12 +6,12 @@ import { useAIPerformance } from '@/app/hooks/useAIPerformance';
 import { useSignalAlerts } from '@/app/hooks/useSignalAlerts';
 import { calculateAIStatusMetrics } from '../aiStatus';
 
-export function useSignalData(stock: Stock, signal: Signal | null, liveSignal: Signal | null) {
+export function useSignalData(stock: Stock, signal: Signal | null) {
   const { processAITrades, trades } = useAIStore();
   const journal = useJournalStore((state) => state.journal);
   const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock);
 
-  const displaySignal = liveSignal || signal;
+  const displaySignal = signal;
 
   // Memoized hit rate object to prevent unnecessary re-renders
   const hitRateData = useMemo(() => ({

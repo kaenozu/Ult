@@ -1,5 +1,7 @@
 # 取引プラットフォーム改善提案書
 
+> **注記**：2026年2月に WebSocket ベースのパイプラインを撤去し、以降は HTTP ポーリング / REST API を前提とした設計になりました。この提案書のアーキテクチャ図に WebSocket 記載が残る部分は、過去の参考情報としてご覧ください。
+
 ## 目次
 1. [技術的負債とアーキテクチャ上の課題](#1-技術的負債とアーキテクチャ上の課題)
 2. [市場環境・エッジケース対応強化](#2-市場環境エッジケース対応強化)
@@ -46,9 +48,7 @@ graph TB
     subgraph API Layer
         API[APIClient]
         IDB[IndexedDB]
-        WS[WebSocket]
     end
-    
     UI --> Hooks
     Hooks --> Store
     Store --> UTP
@@ -64,7 +64,6 @@ graph TB
     ARM --> RM
     AS --> AM
     API --> IDB
-    API --> WS
 ```
 
 ### 1.2 技術的負債の詳細
