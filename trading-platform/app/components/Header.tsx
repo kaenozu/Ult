@@ -11,20 +11,12 @@ import { Stock } from '@/app/types';
 import { NotificationCenter } from './NotificationCenter';
 import { LocaleSwitcher } from './LocaleSwitcher';
 import { useTranslations } from '@/app/i18n/provider';
-import { ConnectionQualityIndicator } from './ConnectionQualityIndicator';
-import { useResilientWebSocket } from '@/app/hooks/useResilientWebSocket';
 
 export const Header = memo(function Header() {
   const t = useTranslations();
   const { portfolio, setCash } = usePortfolioStore();
   const { setSelectedStock } = useUIStore();
   const { watchlist, addToWatchlist } = useWatchlistStore();
-
-  // Use resilient WebSocket with metrics
-  const { status: wsStatus, metrics, reconnect } = useResilientWebSocket({
-    enabled: true,
-    reconnectOnMount: true,
-  });
 
   const [isEditingCash, setIsEditingCash] = useState(false);
   const [cashInput, setCashInput] = useState('');
@@ -311,13 +303,6 @@ export const Header = memo(function Header() {
             {dailyPnL >= 0 ? '+' : ''}{formatCurrency(dailyPnL, 'JPY')}
           </div>
         </div>
-
-        {/* Connection Indicator */}
-        <ConnectionQualityIndicator 
-          status={wsStatus}
-          metrics={metrics}
-          onReconnect={reconnect}
-        />
 
         {/* Notifications */}
         <NotificationCenter />

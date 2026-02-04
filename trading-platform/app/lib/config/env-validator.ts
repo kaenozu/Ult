@@ -14,10 +14,6 @@ export interface EnvironmentConfig {
   database: {
     url: string;
   };
-  websocket: {
-    url: string;
-    authToken?: string;
-  };
   
   // Optional with defaults
   logging: {
@@ -104,11 +100,14 @@ export function validateEnvironment(): EnvironmentConfig {
   try {
     // JWT Configuration
     let jwtSecret: string;
-    // Check if running in Next.js build phase
-    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
+    // Check if we are in a build environment (CI/CD or local build)
+    // Next.js build process runs this code, so we need to be permissive during build
+    // even if NODE_ENV is production
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || process.env.CI === 'true';
 
     if (isProduction && !isBuildPhase) {
-      // In production (runtime), JWT_SECRET is required
+      // In production runtime, JWT_SECRET is required
       jwtSecret = getEnv('JWT_SECRET');
       if (jwtSecret === 'default-secret-change-in-production') {
         throw new EnvironmentValidationError(
@@ -116,7 +115,7 @@ export function validateEnvironment(): EnvironmentConfig {
         );
       }
     } else {
-      // In development/test OR during build phase, allow fallback
+      // In development/test or build phase, allow fallback
       jwtSecret = getOptionalEnv('JWT_SECRET', 'dev-secret-key-do-not-use-in-production');
     }
 
@@ -129,13 +128,6 @@ export function validateEnvironment(): EnvironmentConfig {
     } else {
       databaseUrl = getOptionalEnv('DATABASE_URL', '');
     }
-
-    // WebSocket Configuration
-    const websocketUrl = getOptionalEnv(
-      'NEXT_PUBLIC_WS_URL',
-      isDevelopment ? 'ws://localhost:3001/ws' : ''
-    );
-    const websocketAuthToken = getOptionalEnv('NEXT_PUBLIC_WS_AUTH_TOKEN', '');
 
     // Logging Configuration
     const logLevelRaw = getOptionalEnv('LOG_LEVEL', isDevelopment ? 'debug' : 'info');
@@ -161,10 +153,6 @@ export function validateEnvironment(): EnvironmentConfig {
       },
       database: {
         url: databaseUrl,
-      },
-      websocket: {
-        url: websocketUrl,
-        authToken: websocketAuthToken || undefined,
       },
       logging: {
         level: logLevel,

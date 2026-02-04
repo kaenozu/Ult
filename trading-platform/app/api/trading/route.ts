@@ -416,11 +416,11 @@ export async function POST(req: NextRequest) {
         if (typeof config.autoTrading === 'boolean') cleanConfig.autoTrading = config.autoTrading;
 
         if (Array.isArray(config.exchanges)) {
-          cleanConfig.exchanges = config.exchanges.filter((e: any) => typeof e === 'string');
+          cleanConfig.exchanges = config.exchanges.filter((e: unknown) => typeof e === 'string');
         }
 
         if (Array.isArray(config.symbols)) {
-          cleanConfig.symbols = config.symbols.filter((s: any) => typeof s === 'string');
+          cleanConfig.symbols = config.symbols.filter((s: unknown) => typeof s === 'string');
         }
 
         platform.updateConfig(cleanConfig);

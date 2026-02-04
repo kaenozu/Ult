@@ -15,10 +15,6 @@ describe('Environment Configuration', () => {
       JWT_SECRET: z.string().min(32).optional(),
       JWT_EXPIRATION: z.string().default('24h'),
 
-      // WebSocket
-      NEXT_PUBLIC_WS_URL: z.string().url().default('ws://localhost:3001'),
-      WS_PORT: z.coerce.number().int().positive().default(3001),
-
       // Cache
       CACHE_TTL: z.coerce.number().int().positive().default(300000),
       CACHE_MAX_SIZE: z.coerce.number().int().positive().default(1000),
@@ -38,8 +34,6 @@ describe('Environment Configuration', () => {
       const env = {
         JWT_SECRET: 'a'.repeat(32),
         JWT_EXPIRATION: '24h',
-        NEXT_PUBLIC_WS_URL: 'ws://localhost:3001',
-        WS_PORT: '3001',
         CACHE_TTL: '300000',
         CACHE_MAX_SIZE: '1000',
         DEFAULT_RISK_PERCENTAGE: '0.02',
@@ -56,8 +50,6 @@ describe('Environment Configuration', () => {
       const result = TestEnvSchema.parse(env);
 
       expect(result.JWT_EXPIRATION).toBe('24h');
-      expect(result.NEXT_PUBLIC_WS_URL).toBe('ws://localhost:3001');
-      expect(result.WS_PORT).toBe(3001);
       expect(result.CACHE_TTL).toBe(300000);
       expect(result.LOG_LEVEL).toBe('info');
       expect(result.NODE_ENV).toBe('development');
@@ -65,14 +57,11 @@ describe('Environment Configuration', () => {
 
     it('should coerce string numbers to numbers', () => {
       const env = {
-        WS_PORT: '8080',
         CACHE_TTL: '600000',
         CACHE_MAX_SIZE: '2000',
       };
       const result = TestEnvSchema.parse(env);
 
-      expect(typeof result.WS_PORT).toBe('number');
-      expect(result.WS_PORT).toBe(8080);
       expect(typeof result.CACHE_TTL).toBe('number');
       expect(result.CACHE_TTL).toBe(600000);
     });
@@ -98,21 +87,6 @@ describe('Environment Configuration', () => {
       expect(() => TestEnvSchema.parse(env)).toThrow();
     });
 
-    it('should reject invalid URL for NEXT_PUBLIC_WS_URL', () => {
-      const env = {
-        NEXT_PUBLIC_WS_URL: 'not-a-url',
-      };
-
-      expect(() => TestEnvSchema.parse(env)).toThrow();
-    });
-
-    it('should reject negative numbers for WS_PORT', () => {
-      const env = {
-        WS_PORT: '-1',
-      };
-
-      expect(() => TestEnvSchema.parse(env)).toThrow();
-    });
 
     it('should reject DEFAULT_RISK_PERCENTAGE outside 0-1 range', () => {
       const env = {
@@ -140,7 +114,6 @@ describe('Environment Configuration', () => {
 
     it('should handle mixed valid and invalid values', () => {
       const env = {
-        WS_PORT: '3001', // Valid
         CACHE_TTL: '-100', // Invalid (negative)
       };
 
@@ -224,25 +197,6 @@ describe('Environment Configuration', () => {
       };
 
       expect(() => ProductionEnvSchema.parse(invalidProdEnv)).toThrow();
-    });
-  });
-
-  describe('URL Validation', () => {
-    it('should validate WebSocket URLs', () => {
-      const UrlSchema = z.object({
-        WS_URL: z.string().url(),
-      });
-
-      // Valid URLs
-      expect(() => UrlSchema.parse({ WS_URL: 'ws://localhost:3001' })).not.toThrow();
-      expect(() => UrlSchema.parse({ WS_URL: 'wss://example.com/ws' })).not.toThrow();
-      expect(() => UrlSchema.parse({ WS_URL: 'http://localhost:3000' })).not.toThrow();
-      expect(() => UrlSchema.parse({ WS_URL: 'https://example.com' })).not.toThrow();
-
-      // Invalid URLs - clearly not URL format
-      expect(() => UrlSchema.parse({ WS_URL: 'not a url' })).toThrow();
-      expect(() => UrlSchema.parse({ WS_URL: '' })).toThrow();
-      expect(() => UrlSchema.parse({ WS_URL: 'just-text' })).toThrow();
     });
   });
 

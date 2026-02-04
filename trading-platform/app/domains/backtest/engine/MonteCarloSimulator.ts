@@ -335,8 +335,8 @@ export class MonteCarloSimulator extends EventEmitter {
   private calculateMetricsFromEquity(
     equityCurve: number[],
     trades: BacktestTrade[],
-    config: any
-  ): any {
+    config: BacktestConfig
+  ): MonteCarloResult {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);
 
     const totalReturn = ((equityCurve[equityCurve.length - 1] - config.initialCapital) / config.initialCapital) * 100;
