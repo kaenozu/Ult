@@ -31,10 +31,6 @@ export const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().optional(),
   
-  // WebSocket
-  WS_PORT: z.coerce.number().int().positive().default(3001),
-  WS_URL: z.string().url().default('ws://localhost:3001/ws'),
-  
   // Sentry
   SENTRY_DSN: z.string().url().optional(),
   SENTRY_ENVIRONMENT: z.string().default('development'),

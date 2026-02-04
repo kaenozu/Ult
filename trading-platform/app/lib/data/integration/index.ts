@@ -5,16 +5,6 @@
  */
 
 export {
-  WebSocketDataFlowService,
-  createWebSocketDataFlowService,
-  type DataFlowConfig,
-  type DataFlowMetrics,
-  type DataFlowAlert,
-  type DataFlowEventType,
-  type DataFlowEventListener,
-} from '../../../domains/market-data/integration/WebSocketDataFlowService';
-
-export {
   MultiSourceDataAggregator,
   createMultiSourceDataAggregator,
   type DataSource,

@@ -4,6 +4,21 @@
  * Provides reusable test data and factory functions for tests
  */
 
+describe('TestDataFactory', () => {
+  test('should create base features', () => {
+    const features = createBaseFeatures();
+    expect(features).toHaveProperty('rsi');
+    expect(features).toHaveProperty('sma20');
+    expect(features.rsi).toBe(50);
+  });
+
+  test('should create bullish features', () => {
+    const features = createBullishFeatures();
+    expect(features.rsi).toBe(15);
+    expect(features.volumeRatio).toBe(1.5);
+  });
+});
+
 import { PredictionFeatures } from '../../feature-calculation-service';
 import { ModelTrainingData } from '../../tensorflow-model-service';
 

@@ -411,7 +411,7 @@ class WinningBacktestEngine {
   }
 
   private closePosition(
-    position: any,
+    position: BacktestPosition,
     data: OHLCV,
     reason: string,
     index: number

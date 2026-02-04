@@ -5,6 +5,30 @@
  * Provides mock data generators, helper functions, and common test patterns
  */
 
+describe('TestUtils', () => {
+  test('MockMarketDataGenerator should generate valid OHLCV', () => {
+    const data = MockMarketDataGenerator.generateOHLCV({ count: 10 });
+    expect(data).toHaveLength(10);
+    expect(data[0]).toHaveProperty('date');
+    expect(data[0]).toHaveProperty('open');
+    expect(data[0]).toHaveProperty('high');
+    expect(data[0]).toHaveProperty('low');
+    expect(data[0]).toHaveProperty('close');
+    expect(data[0]).toHaveProperty('volume');
+  });
+
+  test('MockAPIResponseGenerator should create success response', () => {
+    const response = MockAPIResponseGenerator.success({ test: 'data' });
+    expect(response.success).toBe(true);
+    expect(response.data).toEqual({ test: 'data' });
+  });
+
+  test('TestHelpers should validate range correctly', () => {
+    expect(() => TestHelpers.assertInRange(5, 0, 10)).not.toThrow();
+    expect(() => TestHelpers.assertInRange(15, 0, 10)).toThrow();
+  });
+});
+
 import type { OHLCV } from '@/app/types';
 
 /**
