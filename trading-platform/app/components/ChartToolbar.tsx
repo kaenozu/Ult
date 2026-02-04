@@ -107,29 +107,32 @@ export const ChartToolbar = memo(function ChartToolbar({
                 showSMA 
                   ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' 
                   : 'text-[#92adc9] hover:text-yellow-500 hover:bg-[#233648]'
-              )}
+            )}
+          </div>
+
+          <div className="h-6 w-px bg-[#233648] hidden sm:block" />
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-2 text-xs text-[#92adc9]">
+            <button 
+              type="button" 
+              className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#233648]"
+              title="インジケーターを追加"
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
               </svg>
-              SMA
+              <span className="hidden lg:inline">インジケーター</span>
             </button>
-            <button
-              type="button"
-              aria-pressed={showBollinger}
-              onClick={() => setShowBollinger(!showBollinger)}
-              className={cn(
-                'px-3 py-1 text-xs font-bold rounded transition-all duration-200 flex items-center gap-1.5',
-                'focus:outline-none focus:ring-2 focus:ring-blue-500/50',
-                showBollinger 
-                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                  : 'text-[#92adc9] hover:text-blue-400 hover:bg-[#233648]'
-              )}
+            <button 
+              type="button" 
+              className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#233648]"
+              title="描画ツール"
             >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-              ボリンジャー
+              <span className="hidden lg:inline">ツール</span>
             </button>
           </div>
 
@@ -160,45 +163,7 @@ export const ChartToolbar = memo(function ChartToolbar({
           </div>
         </div>
 
-        <div className="h-6 w-px bg-[#233648] hidden sm:block" />
 
-        {/* Indicator Toggles */}
-        <div className="flex bg-[#0d131a] rounded-lg p-0.5 gap-0.5 border border-[#233648]">
-          <button
-            type="button"
-            aria-pressed={showSMA}
-            onClick={() => setShowSMA(!showSMA)}
-            className={cn(
-              'px-3 py-1 text-xs font-bold rounded transition-all duration-200 flex items-center gap-1.5',
-              'focus:outline-none focus:ring-2 focus:ring-yellow-500/50',
-              showSMA 
-                ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' 
-                : 'text-[#92adc9] hover:text-yellow-500 hover:bg-[#233648]'
-            )}
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-            </svg>
-            SMA
-          </button>
-          <button
-            type="button"
-            aria-pressed={showBollinger}
-            onClick={() => setShowBollinger(!showBollinger)}
-            className={cn(
-              'px-3 py-1 text-xs font-bold rounded transition-all duration-200 flex items-center gap-1.5',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500/50',
-              showBollinger 
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
-                : 'text-[#92adc9] hover:text-blue-400 hover:bg-[#233648]'
-            )}
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-            </svg>
-            ボリンジャー
-          </button>
-        </div>
 
         <div className="h-6 w-px bg-[#233648] hidden sm:block" />
 
