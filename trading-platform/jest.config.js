@@ -27,7 +27,11 @@ const customJestConfig = {
       statements: 80,
     },
   },
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/'],
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/e2e/',
+    '<rootDir>/app/lib/services/__tests__/mocks/'
+  ],
   coverageReporters: ['text', 'lcov', 'html'],
 }
 

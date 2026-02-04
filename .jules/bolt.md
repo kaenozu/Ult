@@ -35,3 +35,7 @@
 ## 2026-02-17 - [Broken Tests in Master]
 **Learning:** The test suite `app/__tests__/utils-technical-indicators.test.ts` was already failing before any changes, specifically regarding NaN handling in technical indicators. This complicates verification of optimizations.
 **Action:** When verifying optimizations, establish a baseline failure state before changes to distinguish regressions from pre-existing issues.
+
+## 2026-02-18 - [Mocking Hooks in Tests]
+**Learning:** When a component imports a hook (e.g., `useExecuteOrder`), the test must mock that specific import. Mocking a different export from the same module (e.g., `useExecuteOrderAtomicV2`) is insufficient if the component doesn't use it, even if they share implementation.
+**Action:** Verify the exact import used in the component and ensure the test mock matches it.

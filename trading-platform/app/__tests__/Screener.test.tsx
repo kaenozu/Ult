@@ -204,26 +204,22 @@ describe('Screener Page', () => {
         fireEvent.click(screen.getByText('AIシグナル分析を開始'));
         await waitFor(() => screen.getByText('再分析を実行'));
 
-        // Set confidence to 80 explicitly for this test scenario (since default changed to 60)
+        // Set confidence to 80 explicitly for this test scenario
         const slider = document.getElementById('minConfidence') as HTMLInputElement;
         fireEvent.change(slider, { target: { value: '80' } });
 
-        // BUY & 80: Only 7203
+        // ANY & 80: Only 7203 (AAPL is 70, default signal is now 'ANY')
         expect(screen.getByText('7203')).toBeInTheDocument();
         expect(screen.queryByText('AAPL')).not.toBeInTheDocument();
         expect(screen.queryByText('MSFT')).not.toBeInTheDocument();
 
-        // ANY & 80: Still only 7203 (AAPL is 70)
-        fireEvent.click(screen.getAllByText('全て')[0]);
+        // BUY & 80: Only 7203
+        fireEvent.click(screen.getAllByText('買い')[0]);
         expect(screen.getByText('7203')).toBeInTheDocument();
         expect(screen.queryByText('AAPL')).not.toBeInTheDocument();
 
-        // ANY & 60: 7203 and AAPL (MSFT is filtered because no analysis result in analyzedStocks list?)
-        // Wait, if signal is null, it might not be in analyzedStocks result?
-        // Line 133: const analysisResult = analyzedStocks.find(as => as.symbol === stock.symbol);
-        // Line 117: setAnalyzedStocks(results); (results only pushed if signalResult.success and data)
-        // Correct.
-
+        // ANY & 60: 7203 and AAPL
+        fireEvent.click(screen.getAllByText('全て')[0]);
         fireEvent.change(slider, { target: { value: '60' } });
         expect(screen.getByText('7203')).toBeInTheDocument();
         expect(screen.getByText('AAPL')).toBeInTheDocument();
@@ -387,15 +383,21 @@ describe('Screener Page', () => {
         }
     });
 
-    it('applies presets (oversold and uptrend)', () => {
+    it('applies presets (oversold, uptrend, overbought, downtrend)', () => {
         render(<Screener />);
 
-        const oversoldButton = screen.getByText('🔥 売られすぎ');
+        const oversoldButton = screen.getByText('🔥 売られすぎ（買い）');
         fireEvent.click(oversoldButton);
         expect(screen.queryByText('再分析を実行')).not.toBeInTheDocument();
 
-        const uptrendButton = screen.getByText('🚀 上昇トレンド');
+        const uptrendButton = screen.getByText('🚀 上昇トレンド（買い）');
         fireEvent.click(uptrendButton);
+
+        const overboughtButton = screen.getByText('⚠️ 買われすぎ（売り）');
+        fireEvent.click(overboughtButton);
+
+        const downtrendButton = screen.getByText('📉 下降トレンド（売り）');
+        fireEvent.click(downtrendButton);
     });
 
     it('navigates on stock click', async () => {

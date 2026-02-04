@@ -7,7 +7,6 @@ import { AlertPanel } from '@/app/components/AlertPanel';
 import { DataQualityPanel } from '@/app/components/DataQualityPanel';
 import { cn } from '@/app/lib/utils';
 import { Stock, Signal, OHLCV } from '@/app/types';
-import { useResilientWebSocket } from '@/app/hooks/useResilientWebSocket';
 
 interface RightSidebarProps {
   isOpen: boolean;
@@ -27,11 +26,6 @@ export const RightSidebar = ({
   loading
 }: RightSidebarProps) => {
   const [rightPanelMode, setRightPanelMode] = useState<'signal' | 'order' | 'alert' | 'quality'>('signal');
-
-  // Get WebSocket metrics for DataQualityPanel
-  const { status: wsStatus, metrics: wsMetrics } = useResilientWebSocket({
-    enabled: true,
-  });    
 
   const panelContent = {
     signal: displayStock ? (
@@ -56,8 +50,6 @@ export const RightSidebar = ({
     ) : null,
     quality: (
       <DataQualityPanel
-        connectionMetrics={wsMetrics}
-        connectionStatus={wsStatus}
         compact={false}
         updateInterval={1000}
       />

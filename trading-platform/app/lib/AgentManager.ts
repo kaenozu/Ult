@@ -22,7 +22,6 @@ export type AgentSkill =
   | 'typescript-fixer'
   | 'linter-fixer'
   | 'test-writer'
-  | 'websocket-expert'
   | 'ui-ux-designer'
   | 'quant-developer'
   | 'general';
@@ -198,7 +197,6 @@ export class AgentManager {
       'typescript-fixer': this.generateTypeScriptFixerScript(task),
       'linter-fixer': this.generateLinterFixerScript(task),
       'test-writer': this.generateTestWriterScript(task),
-      'websocket-expert': this.generateWebSocketExpertScript(task),
       'ui-ux-designer': this.generateUIUXDesignerScript(task),
       'quant-developer': this.generateQuantDeveloperScript(task),
       'general': this.generateGeneralScript(task),
@@ -313,30 +311,6 @@ Files: Added comprehensive test for BacktestService
 
 fs.writeFileSync('AGENT_REPORT.md', report);
 console.log('✅ Test improvement complete!');
-process.exit(0);
-`;
-  }
-
-  private generateWebSocketExpertScript(task: Task): string {
-    return `
-import * as fs from 'fs';
-
-console.log('🔌 WebSocketExpert: Testing connection...');
-
-// Check server, test client, verify security
-
-const report = `# WebSocket Repair Report
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}
-Timestamp: ${new Date().toISOString()}
-Server Status: RUNNING (port 3001)
-Auth: ENABLED
-Security: ORIGIN_VALIDATION, RATE_LIMITING, HEARTBEAT
-Client Support: AUTH_TOKEN
-Test Client: websocket-test-client.html
-`;
-
-fs.writeFileSync('AGENT_REPORT.md', report);
-console.log('✅ WebSocket repair complete!');
 process.exit(0);
 `;
   }

@@ -15,6 +15,7 @@ import { Navigation } from '@/app/components/Navigation';
 import { cn, formatPercent } from '@/app/lib/utils';
 import { useUIStore } from '@/app/store/uiStore';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
+import { ScreenLabel } from '@/app/components/ScreenLabel';
 
 interface PerformanceScore {
   symbol: string;
@@ -168,6 +169,7 @@ function PerformanceDashboardContent() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+      <ScreenLabel label="パフォーマンススクリーナー / Performance Screener" />
       <header className="flex items-center justify-between border-b border-solid border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
         <div className="flex items-center gap-3 text-white">
           <div className="size-8 bg-primary/20 rounded-lg flex items-center justify-center text-primary">

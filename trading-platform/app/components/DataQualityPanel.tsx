@@ -4,32 +4,23 @@
  * DataQualityPanel.tsx
  *
  * データ品質ダッシュボードコンポーネント
- * TRADING-027: リアルタイムデータ品質向上とWebSocket統合
+ * TRADING-027: データ品質の可視化
  *
  * 既存のデータ品質システム（DataQualityValidator, DataLatencyMonitor, SmartDataCache）
- * とWebSocketシステム（ResilientWebSocketClient）を統合した可視化を提供します。
+ * を統合した可視化を提供します。
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-  Activity,
   AlertTriangle,
-  BarChart3,
   CheckCircle2,
   Clock,
   Database,
   RefreshCw,
   SignalHigh,
-  SignalMedium,
-  SignalLow,
-  SignalZero,
-  TrendingUp,
-  Wifi,
   WifiOff,
-  Zap,
 } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
-import type { ConnectionMetrics } from '@/app/hooks/useResilientWebSocket';
 import type { CacheStats } from '@/app/lib/data/cache/SmartDataCache';
 
 // ============================================================================
@@ -37,10 +28,6 @@ import type { CacheStats } from '@/app/lib/data/cache/SmartDataCache';
 // ============================================================================
 
 export interface DataQualityPanelProps {
-  /** WebSocket接続メトリクス（オプション） */
-  connectionMetrics?: ConnectionMetrics | null;
-  /** WebSocketステータス */
-  connectionStatus?: 'CONNECTING' | 'OPEN' | 'CLOSING' | 'CLOSED' | 'RECONNECTING' | 'FALLBACK' | 'ERROR';
   /** コンパクトモード */
   compact?: boolean;
   /** 更新間隔（ミリ秒） */
@@ -58,7 +45,6 @@ interface DataSourceHealth {
 interface QualityMetrics {
   overallScore: number;
   dataFreshness: 'excellent' | 'good' | 'fair' | 'poor';
-  latencyStatus: 'excellent' | 'good' | 'fair' | 'poor';
   cachePerformance: 'excellent' | 'good' | 'fair' | 'poor';
   anomalyCount: number;
   validationPassRate: number;
@@ -88,14 +74,6 @@ const formatLatency = (ms: number): string => {
   return `${(ms / 1000).toFixed(1)}s`;
 };
 
-const formatDuration = (ms: number): string => {
-  const seconds = Math.floor(ms / 1000);
-  if (seconds < 60) return `${seconds}秒`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}分${seconds % 60}秒`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}時間${minutes % 60}分`;
-};
 
 // ============================================================================
 // Sub-Components
@@ -249,8 +227,6 @@ const DataSourceRow: React.FC<DataSourceRowProps> = ({ name, health }) => {
 // ============================================================================
 
 export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
-  connectionMetrics,
-  connectionStatus = 'CLOSED',
   compact = false,
   updateInterval = 1000,
 }) => {
@@ -258,7 +234,6 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics>({
     overallScore: 0,
     dataFreshness: 'poor',
-    latencyStatus: 'poor',
     cachePerformance: 'poor',
     anomalyCount: 0,
     validationPassRate: 0,
@@ -266,15 +241,7 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
 
   const [dataSources, setDataSources] = useState<DataSourceHealth[]>([
     { source: 'Yahoo Finance', status: 'offline', latency: 0, lastUpdate: 0, qualityScore: 0 },
-    { source: 'WebSocket', status: 'offline', latency: 0, lastUpdate: 0, qualityScore: 0 },
   ]);
-
-  const [latencyStats, setLatencyStats] = useState({
-    avg: 0,
-    p50: 0,
-    p95: 0,
-    p99: 0,
-  });
 
   const [cacheStats, setCacheStats] = useState<CacheStats>({
     hits: 0,
@@ -290,34 +257,16 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
   // メトリクス更新
   useEffect(() => {
     const updateMetrics = () => {
-      // WebSocket接続状態からスコアを計算
-      let wsScore = 0;
-      if (connectionStatus === 'OPEN' && connectionMetrics) {
-        // レイテンシスコア（100ms以下で100点、1秒を超えると0点）
-        const latencyScore = Math.max(0, 100 - (connectionMetrics.avgLatency / 10));
-        // パケットロススコア（0%で100点、10%以上で0点）
-        const packetLossScore = Math.max(0, 100 - connectionMetrics.packetLossRate * 10);
-        // 品質スコア
-        wsScore = (latencyScore + packetLossScore) / 2;
-      }
-
       // キャッシュヒット率からスコアを計算
       const cacheScore = cacheStats.hitRate * 100;
 
-      // 全体スコアを計算（WebSocket 50%、キャッシュ 50%）
-      const overallScore = (wsScore * 0.5) + (cacheScore * 0.5);
+      // 全体スコアを計算（HTTPベースのためキャッシュスコア中心）
+      const overallScore = cacheScore;
 
       // ステータス判定
       const dataFreshness: QualityMetrics['dataFreshness'] = overallScore >= 90 ? 'excellent' :
         overallScore >= 75 ? 'good' :
         overallScore >= 60 ? 'fair' : 'poor';
-
-      const latencyStatus: QualityMetrics['latencyStatus'] = connectionMetrics?.avgLatency
-        ? connectionMetrics.avgLatency < 100 ? 'excellent'
-          : connectionMetrics.avgLatency < 500 ? 'good'
-          : connectionMetrics.avgLatency < 1000 ? 'fair'
-          : 'poor'
-        : 'poor';
 
       const cachePerformance: QualityMetrics['cachePerformance'] = cacheStats.hitRate >= 0.9 ? 'excellent'
         : cacheStats.hitRate >= 0.7 ? 'good'
@@ -327,7 +276,6 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
       setQualityMetrics({
         overallScore,
         dataFreshness,
-        latencyStatus,
         cachePerformance,
         anomalyCount: anomalies.length,
         validationPassRate: overallScore,
@@ -337,37 +285,20 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
       const now = Date.now();
       setDataSources([
         {
-          source: 'WebSocket',
-          status: connectionStatus === 'OPEN' ? 'healthy' : 'offline',
-          latency: connectionMetrics?.latency || 0,
-          lastUpdate: now,
-          qualityScore: wsScore,
-        },
-        {
           source: 'Yahoo Finance',
           status: 'healthy', // REST APIは常に利用可能と仮定
-          latency: 200 + Math.random() * 100,
+          latency: 0,
           lastUpdate: now,
-          qualityScore: 85,
+          qualityScore: cacheScore,
         },
       ]);
-
-      // レイテンシ統計を更新
-      if (connectionMetrics) {
-        setLatencyStats({
-          avg: connectionMetrics.avgLatency,
-          p50: connectionMetrics.avgLatency * 0.8,
-          p95: connectionMetrics.avgLatency * 1.2,
-          p99: connectionMetrics.maxLatency,
-        });
-      }
     };
 
     updateMetrics();
 
     const interval = setInterval(updateMetrics, updateInterval);
     return () => clearInterval(interval);
-  }, [connectionMetrics, connectionStatus, cacheStats, updateInterval, anomalies]);
+  }, [cacheStats, updateInterval, anomalies]);
 
   // リフレッシュハンドラー
   const handleRefresh = useCallback(() => {
@@ -381,7 +312,7 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
     <div className="p-4 bg-[#141e27] rounded-lg border border-[#233648]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {connectionStatus === 'OPEN' ? (
+          {qualityMetrics.overallScore >= 60 ? (
             <CheckCircle2 className="w-4 h-4 text-green-400" />
           ) : (
             <AlertTriangle className="w-4 h-4 text-red-400" />
@@ -411,7 +342,7 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
           <div>
             <h2 className="text-lg font-bold text-white">データ品質ダッシュボード</h2>
             <p className="text-[10px] text-[#92adc9]">
-              リアルタイムデータ品質監視
+              HTTPベースのデータ品質監視
             </p>
           </div>
         </div>
@@ -440,7 +371,7 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
       </div>
 
       {/* メトリクスグリッド */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
         <MetricCard
           title="データ鮮度"
           value={qualityMetrics.dataFreshness === 'excellent' ? '優秀'
@@ -449,12 +380,6 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
             : '不良'}
           status={qualityMetrics.dataFreshness}
           icon={Clock}
-        />
-        <MetricCard
-          title="レイテンシ"
-          value={formatLatency(latencyStats.avg)}
-          status={qualityMetrics.latencyStatus}
-          icon={Zap}
         />
         <MetricCard
           title="キャッシュ効率"
@@ -484,34 +409,6 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
           ))}
         </div>
       </div>
-
-      {/* レイテンシ統計 */}
-      {connectionStatus === 'OPEN' && (
-        <div className="mb-6 p-4 bg-[#1a1a2e] rounded-lg border border-[#233648]">
-          <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-[#92adc9]" />
-            レイテンシ分布
-          </h3>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-[10px] text-[#92adc9] mb-1">平均</div>
-              <div className="text-sm font-bold text-white">{formatLatency(latencyStats.avg)}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-[10px] text-[#92adc9] mb-1">p50</div>
-              <div className="text-sm font-bold text-white">{formatLatency(latencyStats.p50)}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-[10px] text-[#92adc9] mb-1">p95</div>
-              <div className="text-sm font-bold text-white">{formatLatency(latencyStats.p95)}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-[10px] text-[#92adc9] mb-1">p99</div>
-              <div className="text-sm font-bold text-white">{formatLatency(latencyStats.p99)}</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* キャッシュ統計 */}
       <div className="mb-6 p-4 bg-[#1a1a2e] rounded-lg border border-[#233648]">
@@ -545,51 +442,6 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
           score={cacheStats.hitRate * 100}
           label="キャッシュヒット率"
         />
-      </div>
-
-      {/* 接続品質インジケーター */}
-      <div className="p-4 bg-[#1a1a2e] rounded-lg border border-[#233648]">
-        <h3 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-          <Wifi className="w-4 h-4 text-[#92adc9]" />
-          WebSocket接続品質
-        </h3>
-        {connectionStatus === 'OPEN' && connectionMetrics ? (
-          <>
-            <div className="flex items-center gap-2 mb-3">
-              <div className={cn(
-                'px-2 py-1 rounded text-[10px] font-bold',
-                connectionMetrics.quality === 'excellent' ? 'bg-green-500/20 text-green-400' :
-                connectionMetrics.quality === 'good' ? 'bg-blue-500/20 text-blue-400' :
-                connectionMetrics.quality === 'fair' ? 'bg-yellow-500/20 text-yellow-400' :
-                'bg-red-500/20 text-red-400'
-              )}>
-                {connectionMetrics.quality.toUpperCase()}
-              </div>
-              <span className="text-[10px] text-[#92adc9]">
-                接続時間: {formatDuration(connectionMetrics.uptime)}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-xs">
-                <div className="text-[#92adc9]">メッセージ/秒</div>
-                <div className="text-sm font-bold text-white">
-                  {connectionMetrics.messagesPerSecond.toFixed(1)}
-                </div>
-              </div>
-              <div className="text-xs">
-                <div className="text-[#92adc9]">データレート</div>
-                <div className="text-sm font-bold text-white">
-                  {(connectionMetrics.bytesPerSecond / 1024).toFixed(1)} KB/s
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center gap-2 text-red-400">
-            <WifiOff className="w-4 h-4" />
-            <span className="text-sm">WebSocket未接続</span>
-          </div>
-        )}
       </div>
 
       {/* 異常アラート */}
