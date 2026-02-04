@@ -77,16 +77,16 @@ export const ChartToolbar = memo(function ChartToolbar({
                 aria-pressed={tf.value === interval}
                 disabled={isDisabled}
                 onClick={() => !isDisabled && setInterval(tf.value)}
-                title={isDisabled ? '日本株では日足データのみ利用可能です' : `${tf.label}チャート`}
-                className={cn(
-                  'px-3 py-1 text-xs font-medium rounded transition-all duration-200',
-                  'focus:outline-none focus:ring-2 focus:ring-primary/50',
-                  tf.value === interval
-                    ? 'bg-primary text-white shadow-sm'
-                    : isDisabled
-                    ? 'text-[#92adc9]/30 cursor-not-allowed'
-                    : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
-                )}
+                 title={isDisabled ? `日本株では日足データのみ利用可能です（${tf.label}は選択不可）` : `${tf.label}チャート`}
+                 className={cn(
+                   'px-3 py-1 text-xs font-medium rounded transition-all duration-200',
+                   'focus:outline-none focus:ring-2 focus:ring-primary/50',
+                   tf.value === interval
+                     ? 'bg-primary text-white shadow-sm'
+                     : isDisabled
+                     ? 'text-[#92adc9]/30 cursor-not-allowed line-through opacity-50'
+                     : 'text-[#92adc9] hover:text-white hover:bg-[#233648]'
+                 )}
               >
                 {tf.label}
               </button>

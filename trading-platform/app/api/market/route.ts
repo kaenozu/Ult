@@ -219,7 +219,7 @@ export async function GET(request: Request) {
         period1 = startDateParam;
       } else {
         const startDate = new Date();
-        startDate.setFullYear(startDate.getFullYear() - 5);
+        startDate.setMonth(startDate.getMonth() - 6); // 6ヶ月前までのデータを取得
         period1 = startDate.toISOString().split('T')[0];
       }
 

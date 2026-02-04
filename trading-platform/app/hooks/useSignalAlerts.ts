@@ -138,13 +138,13 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
   useEffect(() => {
     if (!displaySignal?.supplyDemand?.breakoutDetected) return;
     
-    const breakoutKey = `${stock.symbol}-${displaySignal.supplyDemand.currentPrice}-${displaySignal.supplyDemand.brokenLevel?.level}`;
+    const breakoutKey = `${stock.symbol}-${displaySignal.supplyDemand?.currentPrice || 0}-${displaySignal.supplyDemand?.brokenLevel?.level || 'unknown'}`;
     
     if (breakoutProcessedRef.current !== breakoutKey) {
       createBreakoutAlert();
       breakoutProcessedRef.current = breakoutKey;
     }
-  }, [displaySignal?.supplyDemand?.breakoutDetected, stock.symbol, displaySignal.supplyDemand?.currentPrice, displaySignal.supplyDemand?.brokenLevel?.level, createBreakoutAlert]);
+  }, [displaySignal?.supplyDemand?.breakoutDetected && displaySignal?.supplyDemand?.currentPrice && displaySignal?.supplyDemand?.brokenLevel?.level, stock.symbol, displaySignal?.supplyDemand?.currentPrice, displaySignal?.supplyDemand?.brokenLevel?.level, createBreakoutAlert]);
 
   // 複合アラート（市場相関+シグナル）
   useEffect(() => {
