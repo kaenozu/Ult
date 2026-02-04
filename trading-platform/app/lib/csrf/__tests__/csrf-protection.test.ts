@@ -1,7 +1,42 @@
 import { generateCSRFToken, validateCSRFToken, csrfTokenMiddleware, requireCSRF } from '../csrf-protection';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Mock NextResponse
+const mockedNextResponseNext = jest.fn();
+
+jest.mock('next/server', () => {
+  return {
+    NextResponse: {
+      next: (...args: any[]) => mockedNextResponseNext(...args),
+      json: jest.fn((body, init) => ({
+        body,
+        init,
+        status: init?.status || 200,
+      })),
+    },
+    NextRequest: jest.fn(),
+  };
+});
+
 describe('CSRF Protection', () => {
+  let mockRequest: NextRequest;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // Setup basic mock request
+    mockRequest = {
+      headers: new Headers(),
+      cookies: {
+        get: jest.fn(),
+        getAll: jest.fn().mockReturnValue([]),
+      },
+      nextUrl: new URL('http://localhost:3000'),
+      method: 'GET',
+      url: 'http://localhost:3000',
+    } as unknown as NextRequest;
+  });
+
   describe('generateCSRFToken', () => {
     it('should generate a token of correct length', () => {
       const token = generateCSRFToken();
@@ -18,38 +53,57 @@ describe('CSRF Protection', () => {
   describe('validateCSRFToken', () => {
     it('should return true when tokens match', () => {
       const token = generateCSRFToken();
-      const request = new NextRequest('http://localhost:3000', {
-        headers: {
+      mockRequest = {
+        ...mockRequest,
+        headers: new Headers({
           'x-csrf-token': token,
-        },
+        }),
         cookies: {
-          'csrf-token': token,
-        },
-      });
+          get: jest.fn((name) => name === 'csrf-token' ? { value: token } : undefined),
+          getAll: jest.fn().mockReturnValue([]),
+        } as any,
+      } as unknown as NextRequest;
 
-      expect(validateCSRFToken(request)).toBe(true);
+      expect(validateCSRFToken(mockRequest)).toBe(true);
     });
 
     it('should return false when tokens do not match', () => {
-      const request = new NextRequest('http://localhost:3000', {
-        headers: {
+      const mockGet = jest.fn((name) => name === 'csrf-token' ? { value: 'correct-token' } : undefined);
+      const mockGetAll = jest.fn().mockReturnValue([]);
+
+      const request = {
+        headers: new Headers({
           'x-csrf-token': 'wrong-token',
-        },
+        }),
         cookies: {
-          'csrf-token': 'correct-token',
+          get: mockGet,
+          getAll: mockGetAll,
         },
-      });
+        nextUrl: new URL('http://localhost:3000'),
+        method: 'GET',
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
 
       expect(validateCSRFToken(request)).toBe(false);
     });
 
     it('should return false when cookie is missing', () => {
       const token = generateCSRFToken();
-      const request = new NextRequest('http://localhost:3000', {
-        headers: {
+      const mockGet = jest.fn((name) => undefined);
+      const mockGetAll = jest.fn().mockReturnValue([]);
+
+      const request = {
+        headers: new Headers({
           'x-csrf-token': token,
+        }),
+        cookies: {
+          get: mockGet,
+          getAll: mockGetAll,
         },
-      });
+        nextUrl: new URL('http://localhost:3000'),
+        method: 'GET',
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
 
       expect(validateCSRFToken(request)).toBe(false);
     });
@@ -57,43 +111,66 @@ describe('CSRF Protection', () => {
 
   describe('csrfTokenMiddleware', () => {
     it('should set CSRF cookie on GET request', () => {
-      const request = new NextRequest('http://localhost:3000', {
-        method: 'GET',
-      });
+      // Mock NextResponse.next() behavior for this specific test
+      const mockResponse = {
+        cookies: {
+          set: jest.fn(),
+        },
+      };
+      mockedNextResponseNext.mockReturnValue(mockResponse);
 
-      const response = csrfTokenMiddleware(request);
-      expect(response).not.toBeNull();
+      csrfTokenMiddleware(mockRequest);
       
-      const cookies = response?.cookies;
-      expect(cookies).toBeDefined();
-      const csrfCookie = cookies?.get('csrf-token');
-      expect(csrfCookie).toBeDefined();
-      expect(csrfCookie?.value).toHaveLength(64);
+      expect(mockResponse.cookies.set).toHaveBeenCalledWith(
+        'csrf-token',
+        expect.any(String),
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'strict',
+          secure: false, // Default is false in test env
+        })
+      );
     });
 
     it('should not set cookie on POST request', () => {
-      const request = new NextRequest('http://localhost:3000', {
-        method: 'POST',
-      });
+        // Override the method for this test
+        mockRequest = {
+            ...mockRequest,
+            method: 'POST'
+        } as unknown as NextRequest;
 
-      const response = csrfTokenMiddleware(request);
+      const response = csrfTokenMiddleware(mockRequest);
       expect(response).toBeNull();
     });
   });
 
   describe('requireCSRF', () => {
     it('should return null for GET requests', () => {
-      const request = new NextRequest('http://localhost:3000', {
+      const request = {
         method: 'GET',
-      });
+        headers: new Headers(),
+        cookies: {
+          get: jest.fn(),
+          getAll: jest.fn().mockReturnValue([]),
+        },
+        nextUrl: new URL('http://localhost:3000'),
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
 
       expect(requireCSRF(request)).toBeNull();
     });
 
     it('should reject POST without CSRF token', () => {
-      const request = new NextRequest('http://localhost:3000', {
+      const request = {
         method: 'POST',
-      });
+        headers: new Headers(),
+        cookies: {
+          get: jest.fn(),
+          getAll: jest.fn().mockReturnValue([]),
+        },
+        nextUrl: new URL('http://localhost:3000'),
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
 
       const response = requireCSRF(request);
       expect(response).not.toBeNull();
@@ -102,15 +179,20 @@ describe('CSRF Protection', () => {
 
     it('should allow POST with valid CSRF token', () => {
       const token = generateCSRFToken();
-      const request = new NextRequest('http://localhost:3000', {
+      const mockGet = jest.fn((name) => name === 'csrf-token' ? { value: token } : undefined);
+
+      const request = {
         method: 'POST',
-        headers: {
+        headers: new Headers({
           'x-csrf-token': token,
-        },
+        }),
         cookies: {
-          'csrf-token': token,
+          get: mockGet,
+          getAll: jest.fn().mockReturnValue([]),
         },
-      });
+        nextUrl: new URL('http://localhost:3000'),
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
 
       expect(requireCSRF(request)).toBeNull();
     });

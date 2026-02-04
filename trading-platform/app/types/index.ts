@@ -79,7 +79,7 @@ export interface Stock {
 }
 
 // Re-export shared types for backward compatibility
-export type { SharedOHLCV as OHLCV } from './shared';
+export type { SharedOHLCV as OHLCV } from '@/shared/types/shared';
 
 export interface TechnicalIndicator {
   symbol: string;

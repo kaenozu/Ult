@@ -19,8 +19,8 @@ export interface IntegratedPredictionResult {
     kellyFraction: number;
     recommendedPositionSize: number;
     driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
-    marketRegime: any; // Matches EnhancedPrediction.marketRegime
-    volatility: any;
+    marketRegime: unknown; // Matches EnhancedPrediction.marketRegime
+    volatility: unknown;
   };
   modelStats: {
     rfHitRate: number;
