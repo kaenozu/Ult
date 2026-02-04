@@ -15,6 +15,7 @@ import { Search } from 'lucide-react';
 import { useTranslations } from '@/app/i18n/provider';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ChartLoading } from '@/app/components/StockChart/ChartLoading';
+import { ScreenLabel } from '@/app/components/ScreenLabel';
 
 // Lazy load heavy components with chart.js dependencies
 const StockChart = lazy(() => import('@/app/components/StockChart').then(m => ({ default: m.StockChart })));
@@ -84,6 +85,7 @@ function Workstation() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+      <ScreenLabel label="メイン取引画面 / Trading Workstation" />
       <div className="flex items-center border-b border-[#233648] bg-[#101922] pr-4">
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}

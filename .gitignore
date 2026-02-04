@@ -5,6 +5,14 @@ logs/
 *.html
 *.tmp
 *.temp
+*.bak
+*.bak2
+*.backup
+tsc-*.txt
+*-output.txt
+*-errors.txt
+lint-*.txt
+build-*.txt
 
 # Dependencies
 node_modules/
@@ -17,6 +25,22 @@ out/
 dist/
 build/
 *.tsbuildinfo
+
+# Build and lint output files (temporary)
+*-output.txt
+eslint-output.txt
+eslint-report.txt
+eslint-any-check.txt
+lint-output.txt
+lint-fix-output.txt
+build-output.txt
+build-after-fix.txt
+tsc-output*.txt
+tsc-errors.txt
+tsc-current*.txt
+tsc-new.txt
+test-results.txt
+error-files.txt
 
 # Tool directories
 .agent/
@@ -106,3 +130,13 @@ lerna-debug.log*
 .parcel-cache/
 .eslintcache
 .stylelintcache
+
+# Verification and screenshots
+verification/
+screenshots/
+*.png
+*.jpg
+*.jpeg
+!trading-platform/public/**/*.png
+!trading-platform/public/**/*.jpg
+!trading-platform/public/**/*.jpeg
