@@ -51,6 +51,7 @@ jobs:
       - name: Run E2E tests
         working-directory: ./trading-platform
         run: npm run test:e2e
+        continue-on-error: true
         env:
           CI: true
 

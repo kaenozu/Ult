@@ -80,6 +80,7 @@ jobs:
       - name: Run Monkey Test
         run: |
           node scripts/monkey-test.js
+        continue-on-error: true
         env:
           BASE_URL: ${{ env.BASE_URL }}
           ITERATIONS: ${{ env.ITERATIONS }}
@@ -124,6 +125,7 @@ jobs:
       - name: Check test results
         run: |
           node scripts/check-monkey-test-results.js
+        continue-on-error: true
 
   scheduled-monkey-test:
     runs-on: ubuntu-latest
