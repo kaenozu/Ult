@@ -281,32 +281,41 @@ export const StockTable = memo(({
         <thead className="text-[10px] uppercase text-[#92adc9] font-bold sticky top-0 bg-[#141e27] z-10 border-b-2 border-[#233648]">
           <tr>
             <th 
-              className="px-3 py-2.5 cursor-pointer hover:bg-[#192633]/50 transition-colors"
-              onClick={() => handleSort('symbol')}
+              className="p-0"
+              aria-sort={sortField === 'symbol' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              <div className="flex items-center">
+              <button
+                className="w-full h-full px-3 py-2.5 flex items-center hover:bg-[#192633]/50 transition-colors focus:outline-none focus:bg-[#192633]"
+                onClick={() => handleSort('symbol')}
+              >
                 銘柄
                 <SortIcon field="symbol" sortField={sortField} sortDirection={sortDirection} />
-              </div>
+              </button>
             </th>
             <th 
-              className="px-2 py-2.5 text-right cursor-pointer hover:bg-[#192633]/50 transition-colors"
-              onClick={() => handleSort('price')}
+              className="p-0"
+              aria-sort={sortField === 'price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
-              <div className="flex items-center justify-end">
+              <button
+                className="w-full h-full px-2 py-2.5 flex items-center justify-end hover:bg-[#192633]/50 transition-colors focus:outline-none focus:bg-[#192633]"
+                onClick={() => handleSort('price')}
+              >
                 現在値
                 <SortIcon field="price" sortField={sortField} sortDirection={sortDirection} />
-              </div>
+              </button>
             </th>
             {showChange && (
               <th 
-                className="px-2 py-2.5 text-right cursor-pointer hover:bg-[#192633]/50 transition-colors"
-                onClick={() => handleSort('changePercent')}
+                className="p-0"
+                aria-sort={sortField === 'changePercent' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
               >
-                <div className="flex items-center justify-end">
+                <button
+                  className="w-full h-full px-2 py-2.5 flex items-center justify-end hover:bg-[#192633]/50 transition-colors focus:outline-none focus:bg-[#192633]"
+                  onClick={() => handleSort('changePercent')}
+                >
                   前日比
                   <SortIcon field="changePercent" sortField={sortField} sortDirection={sortDirection} />
-                </div>
+                </button>
               </th>
             )}
             <th className="w-10 px-1"></th>
@@ -323,6 +332,12 @@ export const StockTable = memo(({
                   <div>
                     <span className="text-sm font-medium block">ウォッチリストは空です</span>
                     <span className="text-xs opacity-60 mt-1 block">銘柄を検索して追加してください</span>
+                    <button
+                      onClick={() => document.getElementById('stockSearch')?.focus()}
+                      className="mt-3 text-xs bg-[#233648] hover:bg-[#233648]/80 text-[#92adc9] hover:text-white px-4 py-2 rounded transition-all font-bold border border-[#233648] hover:border-[#92adc9]/30"
+                    >
+                      銘柄を検索
+                    </button>
                   </div>
                 </div>
               </td>

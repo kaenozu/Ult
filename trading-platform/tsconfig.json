@@ -82,8 +82,6 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "e2e/**",
-    "app/domains/**",
-    "app/infrastructure/**"
+    "e2e/**"
   ]
 }

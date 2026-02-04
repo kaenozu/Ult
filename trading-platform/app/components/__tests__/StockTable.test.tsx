@@ -94,6 +94,46 @@ describe('StockTable', () => {
         // Header row + Empty state row
         expect(screen.getAllByRole('row')).toHaveLength(2);
         expect(screen.getByText('ウォッチリストは空です')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '銘柄を検索' })).toBeInTheDocument();
         expect(marketClient.fetchQuotes).not.toHaveBeenCalled();
+    });
+
+    it('focuses search input when "Search Stocks" button is clicked in empty state', () => {
+        const mockFocus = jest.fn();
+        const mockGetElementById = jest.spyOn(document, 'getElementById').mockReturnValue({
+            focus: mockFocus
+        } as any);
+
+        render(<StockTable stocks={[]} />);
+
+        const searchButton = screen.getByRole('button', { name: '銘柄を検索' });
+        fireEvent.click(searchButton);
+
+        expect(mockGetElementById).toHaveBeenCalledWith('stockSearch');
+        expect(mockFocus).toHaveBeenCalled();
+
+        mockGetElementById.mockRestore();
+    });
+
+    it('handles accessible sorting via column headers', () => {
+        render(<StockTable stocks={mockStocks as any[]} />);
+
+        const symbolHeaderButton = screen.getByRole('button', { name: /銘柄/ });
+        const th = symbolHeaderButton.closest('th');
+
+        // Initial state: symbol ascending
+        expect(th).toHaveAttribute('aria-sort', 'ascending');
+
+        // Toggle sort direction
+        fireEvent.click(symbolHeaderButton);
+        expect(th).toHaveAttribute('aria-sort', 'descending');
+
+        // Switch sort field to Price
+        const priceHeaderButton = screen.getByRole('button', { name: /現在値/ });
+        const priceTh = priceHeaderButton.closest('th');
+
+        fireEvent.click(priceHeaderButton);
+        expect(priceTh).toHaveAttribute('aria-sort', 'ascending');
+        expect(th).toHaveAttribute('aria-sort', 'none');
     });
 });
