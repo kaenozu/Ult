@@ -92,7 +92,7 @@ class EnhancedSmartAlertService {
   /**
    * アラートを評価
    */
-  evaluateAlerts(symbol: string, data: OHLCV | ProcessedData, indicators?: any): AlertTrigger[] {
+  evaluateAlerts(symbol: string, data: OHLCV | ProcessedData, indicators?: TechnicalIndicators): AlertTrigger[] {
     const triggeredAlerts: AlertTrigger[] = [];
     const currentTime = new Date();
 
@@ -134,7 +134,7 @@ class EnhancedSmartAlertService {
   /**
    * ルールの条件を評価
    */
-  private evaluateRuleConditions(rule: AlertRule, symbol: string, data: OHLCV | ProcessedData, indicators?: any): boolean {
+  private evaluateRuleConditions(rule: AlertRule, symbol: string, data: OHLCV | ProcessedData, indicators?: TechnicalIndicators): boolean {
     for (const condition of rule.conditions) {
       let currentValue: number;
 

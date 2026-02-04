@@ -95,8 +95,8 @@ export class IpRateLimiter {
 // Global instance handling to persist across hot reloads in dev
 const globalForRateLimit = globalThis as unknown as { ipRateLimiter: IpRateLimiter };
 
-// Default: 60 requests per minute
-export const ipRateLimiter = globalForRateLimit.ipRateLimiter || new IpRateLimiter(60, 60 * 1000);
+// Default: 120 requests per minute (more lenient for development)
+export const ipRateLimiter = globalForRateLimit.ipRateLimiter || new IpRateLimiter(120, 60 * 1000);
 
 if (process.env.NODE_ENV !== 'production') {
   globalForRateLimit.ipRateLimiter = ipRateLimiter;

@@ -1,82 +1,200 @@
+import { generateCSRFToken, validateCSRFToken, csrfTokenMiddleware, requireCSRF } from '../csrf-protection';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { NextRequest } from 'next/server';
-import { csrfProtection } from '../csrf-protection';
+// Mock NextResponse
+const mockedNextResponseNext = jest.fn();
+
+jest.mock('next/server', () => {
+  return {
+    NextResponse: {
+      next: (...args: any[]) => mockedNextResponseNext(...args),
+      json: jest.fn((body, init) => ({
+        body,
+        init,
+        status: init?.status || 200,
+      })),
+    },
+    NextRequest: jest.fn(),
+  };
+});
 
 describe('CSRF Protection', () => {
-  const originalEnv = process.env;
+  let mockRequest: NextRequest;
 
   beforeEach(() => {
-    process.env = { ...originalEnv };
-    process.env.CSRF_SECRET = 'test-secret-key-must-be-at-least-32-chars-long';
+    jest.clearAllMocks();
+
+    // Setup basic mock request
+    mockRequest = {
+      headers: new Headers(),
+      cookies: {
+        get: jest.fn(),
+        getAll: jest.fn().mockReturnValue([]),
+      },
+      nextUrl: new URL('http://localhost:3000'),
+      method: 'GET',
+      url: 'http://localhost:3000',
+    } as unknown as NextRequest;
   });
 
-  afterEach(() => {
-    process.env = originalEnv;
-  });
-
-  it('should generate a valid CSRF token', async () => {
-    const token = await csrfProtection.generateToken();
-    expect(token).toBeDefined();
-    expect(typeof token).toBe('string');
-    expect(token.length).toBeGreaterThan(0);
-  });
-
-  it('should verify a valid CSRF token', async () => {
-    const token = await csrfProtection.generateToken();
-    const isValid = await csrfProtection.verifyToken(token);
-    expect(isValid).toBe(true);
-  });
-
-  it('should reject an invalid CSRF token', async () => {
-    const isValid = await csrfProtection.verifyToken('invalid-token');
-    expect(isValid).toBe(false);
-  });
-
-  it('should validate request with valid CSRF header', async () => {
-    const token = await csrfProtection.generateToken();
-    const req = new NextRequest('http://localhost/api/test', {
-      method: 'POST',
-      headers: {
-        'x-csrf-token': token,
-        'origin': 'http://localhost'
-      }
+  describe('generateCSRFToken', () => {
+    it('should generate a token of correct length', () => {
+      const token = generateCSRFToken();
+      expect(token).toHaveLength(64); // 32 bytes = 64 hex chars
     });
 
-    const isValid = await csrfProtection.validateRequest(req);
-    expect(isValid).toBe(true);
+    it('should generate unique tokens', () => {
+      const token1 = generateCSRFToken();
+      const token2 = generateCSRFToken();
+      expect(token1).not.toBe(token2);
+    });
   });
 
-  it('should reject request with missing CSRF header', async () => {
-    const req = new NextRequest('http://localhost/api/test', {
-      method: 'POST',
-      headers: {
-        'origin': 'http://localhost'
-      }
+  describe('validateCSRFToken', () => {
+    it('should return true when tokens match', () => {
+      const token = generateCSRFToken();
+      mockRequest = {
+        ...mockRequest,
+        headers: new Headers({
+          'x-csrf-token': token,
+        }),
+        cookies: {
+          get: jest.fn((name) => name === 'csrf-token' ? { value: token } : undefined),
+          getAll: jest.fn().mockReturnValue([]),
+        } as any,
+      } as unknown as NextRequest;
+
+      expect(validateCSRFToken(mockRequest)).toBe(true);
     });
 
-    const isValid = await csrfProtection.validateRequest(req);
-    expect(isValid).toBe(false);
+    it('should return false when tokens do not match', () => {
+      const mockGet = jest.fn((name) => name === 'csrf-token' ? { value: 'correct-token' } : undefined);
+      const mockGetAll = jest.fn().mockReturnValue([]);
+
+      const request = {
+        headers: new Headers({
+          'x-csrf-token': 'wrong-token',
+        }),
+        cookies: {
+          get: mockGet,
+          getAll: mockGetAll,
+        },
+        nextUrl: new URL('http://localhost:3000'),
+        method: 'GET',
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
+
+      expect(validateCSRFToken(request)).toBe(false);
+    });
+
+    it('should return false when cookie is missing', () => {
+      const token = generateCSRFToken();
+      const mockGet = jest.fn((name) => undefined);
+      const mockGetAll = jest.fn().mockReturnValue([]);
+
+      const request = {
+        headers: new Headers({
+          'x-csrf-token': token,
+        }),
+        cookies: {
+          get: mockGet,
+          getAll: mockGetAll,
+        },
+        nextUrl: new URL('http://localhost:3000'),
+        method: 'GET',
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
+
+      expect(validateCSRFToken(request)).toBe(false);
+    });
   });
 
-  it('should reject request with invalid CSRF header', async () => {
-    const req = new NextRequest('http://localhost/api/test', {
-      method: 'POST',
-      headers: {
-        'x-csrf-token': 'invalid-token',
-        'origin': 'http://localhost'
-      }
+  describe('csrfTokenMiddleware', () => {
+    it('should set CSRF cookie on GET request', () => {
+      // Mock NextResponse.next() behavior for this specific test
+      const mockResponse = {
+        cookies: {
+          set: jest.fn(),
+        },
+      };
+      mockedNextResponseNext.mockReturnValue(mockResponse);
+
+      csrfTokenMiddleware(mockRequest);
+      
+      expect(mockResponse.cookies.set).toHaveBeenCalledWith(
+        'csrf-token',
+        expect.any(String),
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'strict',
+          secure: false, // Default is false in test env
+        })
+      );
     });
 
-    const isValid = await csrfProtection.validateRequest(req);
-    expect(isValid).toBe(false);
+    it('should not set cookie on POST request', () => {
+        // Override the method for this test
+        mockRequest = {
+            ...mockRequest,
+            method: 'POST'
+        } as unknown as NextRequest;
+
+      const response = csrfTokenMiddleware(mockRequest);
+      expect(response).toBeNull();
+    });
   });
 
-  it('should skip validation for safe methods (GET)', async () => {
-    const req = new NextRequest('http://localhost/api/test', {
-      method: 'GET'
+  describe('requireCSRF', () => {
+    it('should return null for GET requests', () => {
+      const request = {
+        method: 'GET',
+        headers: new Headers(),
+        cookies: {
+          get: jest.fn(),
+          getAll: jest.fn().mockReturnValue([]),
+        },
+        nextUrl: new URL('http://localhost:3000'),
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
+
+      expect(requireCSRF(request)).toBeNull();
     });
 
-    const isValid = await csrfProtection.validateRequest(req);
-    expect(isValid).toBe(true);
+    it('should reject POST without CSRF token', () => {
+      const request = {
+        method: 'POST',
+        headers: new Headers(),
+        cookies: {
+          get: jest.fn(),
+          getAll: jest.fn().mockReturnValue([]),
+        },
+        nextUrl: new URL('http://localhost:3000'),
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
+
+      const response = requireCSRF(request);
+      expect(response).not.toBeNull();
+      expect(response?.status).toBe(403);
+    });
+
+    it('should allow POST with valid CSRF token', () => {
+      const token = generateCSRFToken();
+      const mockGet = jest.fn((name) => name === 'csrf-token' ? { value: token } : undefined);
+
+      const request = {
+        method: 'POST',
+        headers: new Headers({
+          'x-csrf-token': token,
+        }),
+        cookies: {
+          get: mockGet,
+          getAll: jest.fn().mockReturnValue([]),
+        },
+        nextUrl: new URL('http://localhost:3000'),
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
+
+      expect(requireCSRF(request)).toBeNull();
+    });
   });
 });

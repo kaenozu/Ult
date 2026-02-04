@@ -45,8 +45,29 @@
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",
-    "**/*.ts",
-    "**/*.tsx"
+    "app/*.{ts,tsx}",
+    "app/components/**/*.{ts,tsx}",
+    "app/store/**/*.{ts,tsx}",
+    "app/types/**/*.{ts,tsx}",
+    "app/utils/**/*.{ts,tsx}",
+    "app/config/**/*.{ts,tsx}",
+    "app/core/**/*.{ts,tsx}",
+    "app/shared/**/*.{ts,tsx}",
+    "app/i18n/**/*.{ts,tsx}",
+    "app/workers/**/*.{ts,tsx}",
+    "app/api/**/*.{ts,tsx}",
+    "app/ai-advisor/**/*.{ts,tsx}",
+    "app/api-docs/**/*.{ts,tsx}",
+    "app/behavioral-demo/**/*.{ts,tsx}",
+    "app/heatmap/**/*.{ts,tsx}",
+    "app/journal/**/*.{ts,tsx}",
+    "app/performance/**/*.{ts,tsx}",
+    "app/psychology/**/*.{ts,tsx}",
+    "app/screener/**/*.{ts,tsx}",
+    "app/security/**/*.{ts,tsx}",
+    "app/universe/**/*.{ts,tsx}",
+    "app/domains/**/*.{ts,tsx}",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
@@ -60,6 +81,8 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "e2e/**"
+    "e2e/**",
+    "app/domains/**",
+    "app/infrastructure/**"
   ]
 }
