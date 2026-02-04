@@ -133,7 +133,7 @@ function generatePerformanceReport(): void {
     console.log(`Count: ${stats.count}`);
     console.log(`Average: ${stats.avg.toFixed(2)}ms`);
     console.log(`Min: ${stats.min.toFixed(2)}ms`);
-  Max: ${stats.max.toFixed(2)}ms
+    console.log(`Max: ${stats.max.toFixed(2)}ms
   OK: ${stats.okCount}
   Warnings: ${stats.warningCount}
   Errors: ${stats.errorCount}
@@ -142,7 +142,7 @@ function generatePerformanceReport(): void {
   
   // Get summary
   const summary = PerformanceMonitor.getSummary();
-Summary:
+  console.log(`Summary:
   Total Metrics: ${summary.totalMetrics}
   Total Measurements: ${summary.totalMeasurements}
   Health Score: ${summary.healthScore}/100

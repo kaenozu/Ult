@@ -43,7 +43,8 @@ function example1_DefaultUsage() {
 
   // Make prediction
   const prediction = service.predict(features);
-  
+
+  console.log({
     rf: prediction.rfPrediction,
     xgb: prediction.xgbPrediction,
     lstm: prediction.lstmPrediction,

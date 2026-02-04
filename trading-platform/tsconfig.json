@@ -64,6 +64,8 @@
     "e2e/**",
     "app/domains/**",
     "app/infrastructure/**",
-    "app/hooks/**"
+    "app/hooks/**",
+    "app/lib/AgentManager.ts",
+    "app/lib/AgentSystem/**"
   ]
 }
