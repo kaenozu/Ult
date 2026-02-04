@@ -5,13 +5,13 @@
  * 並列開発を可能にするためのインフラ
  */
 
-import { spawn, ChildProcess } from 'child_process';
-import { exec, execSync } from 'child_process';
+import { spawn, ChildProcess, exec, execFile, execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 const fsPromises = fs.promises;
 
 // ============================================================================
@@ -271,7 +271,7 @@ try {
   // Verify
   const verifyResult = execSync('npm run lint', { encoding: 'utf-8', stdio: 'pipe' });
 
-  const hasErrors = verifyResult.includes('error') || verifyResult.includes('✖');
+  const hasErrors = /\berror\b/i.test(verifyResult) || verifyResult.includes('✖');
 
   if (hasErrors) {
     console.warn('⚠️ Some lint errors remain (may need manual fix)');
@@ -398,10 +398,14 @@ process.exit(0);
       await fsPromises.mkdir(worktreePath, { recursive: true });
 
       // Add worktree
-      await execAsync('git worktree add', {
-        cwd: this.repoRoot,
-        env: { ...process.env, GIT_DIR: path.join(this.repoRoot, '.git') },
-      });
+      await execFileAsync(
+        'git',
+        ['worktree', 'add', '-b', branchName, worktreePath],
+        {
+          cwd: this.repoRoot,
+          env: { ...process.env, GIT_DIR: path.join(this.repoRoot, '.git') },
+        }
+      );
 
       console.log(`[AgentManager] Created worktree at ${worktreePath}`);
     } catch (error: unknown) {
@@ -421,20 +425,22 @@ process.exit(0);
       console.log(`[AgentManager] Merging changes from ${agent.name}...`);
 
       // Check for changes
-      const { stdout } = await execAsync('git status --porcelain', {
-        cwd: agent.worktreePath,
-      });
+      const { stdout } = await execFileAsync(
+        'git',
+        ['status', '--porcelain'],
+        { cwd: agent.worktreePath }
+      );
 
       if (stdout.trim()) {
         // Stage all changes
-        await execAsync('git add -A', { cwd: agent.worktreePath });
+        await execFileAsync('git', ['add', '-A'], { cwd: agent.worktreePath });
 
         // Commit
         const commitMessage = `Agent ${agent.name}: ${task.title}`;
-        await execAsync(`git commit -m "${commitMessage}"`, { cwd: agent.worktreePath });
+        await execFileAsync('git', ['commit', '-m', commitMessage], { cwd: agent.worktreePath });
 
         // Push to worktree branch
-        await execAsync(`git push origin ${agent.branchName}`, { cwd: agent.worktreePath });
+        await execFileAsync('git', ['push', 'origin', agent.branchName], { cwd: agent.worktreePath });
 
         // Create PR or merge to main (simplified: just merge)
         console.log(`[AgentManager] Changes committed by ${agent.name}`);

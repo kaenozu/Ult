@@ -9,6 +9,7 @@
  *   node scripts/db-migrate.js validate  - Validate migrations
  */
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -93,6 +94,7 @@ function createMigration() {
     const fileName = `${versionStr}_${name}.sql`;
     const filePath = path.join(MIGRATIONS_DIR, fileName);
 
+    const checksumPlaceholder = '__CHECKSUM__';
     const template = `-- Migration: ${fileName}
 -- Description: [Add description here]
 -- Author: ULT Team
@@ -111,10 +113,16 @@ function createMigration() {
 -- ============================================================================
 
 INSERT INTO schema_migrations (version, name, checksum) 
-VALUES (${nextVersion}, '${fileName}', 'TODO_GENERATE_CHECKSUM');
+VALUES (${nextVersion}, '${fileName}', '${checksumPlaceholder}');
 `;
 
     fs.writeFileSync(filePath, template);
+    const rawContent = fs.readFileSync(filePath, 'utf-8');
+    const checksum = crypto
+      .createHash('sha256')
+      .update(rawContent.replace(checksumPlaceholder, ''), 'utf-8')
+      .digest('hex');
+    fs.writeFileSync(filePath, rawContent.replace(checksumPlaceholder, checksum));
     console.log(`\n✅ Created: ${fileName}`);
     console.log(`📝 Edit: ${filePath}`);
     console.log('');
