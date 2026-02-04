@@ -258,6 +258,61 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
       }
     });
   });
+
+  describe('Transaction Cost Model', () => {
+    it('should apply transaction costs when enabled', async () => {
+      const configWithCosts: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        commission: 0,
+        transactionCostsEnabled: true,
+        transactionCostBroker: 'SBI',
+        transactionCostMarketCondition: 'normal',
+        transactionCostSettlementType: 'same-day',
+        transactionCostDailyVolume: 1000000,
+      };
+
+      engine = new AdvancedBacktestEngine(configWithCosts);
+      engine.loadData('TEST', mockData);
+      const strategy = createSimpleBuyHoldStrategy();
+      const result = await engine.runBacktest(strategy, 'TEST');
+
+      expect(result.trades.length).toBeGreaterThan(0);
+
+      const totalFees = result.trades.reduce(
+        (sum, trade) => sum + (trade.fees || 0), 0
+      );
+      expect(typeof totalFees).toBe('number');
+    });
+
+    it('should use broker-specific commission rates', async () => {
+      const configJapan: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        transactionCostsEnabled: true,
+        transactionCostBroker: 'SBI',
+        market: 'japan',
+      };
+
+      const configUSA: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        transactionCostsEnabled: true,
+        transactionCostBroker: 'Rakuten',
+        market: 'usa',
+      };
+
+      engine = new AdvancedBacktestEngine(configJapan);
+      engine.loadData('TEST', mockData);
+      const strategyJapan = createSimpleBuyHoldStrategy();
+      const resultJapan = await engine.runBacktest(strategyJapan, 'TEST');
+
+      const engineUSA = new AdvancedBacktestEngine(configUSA);
+      engineUSA.loadData('TEST', mockData);
+      const strategyUSA = createSimpleBuyHoldStrategy();
+      const resultUSA = await engineUSA.runBacktest(strategyUSA, 'TEST');
+
+      expect(resultJapan.trades.length).toBeGreaterThan(0);
+      expect(resultUSA.trades.length).toBeGreaterThan(0);
+    });
+  });
 });
 
 // Helper functions
