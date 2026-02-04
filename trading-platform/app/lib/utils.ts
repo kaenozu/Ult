@@ -1,7 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { TECHNICAL_INDICATORS } from './constants';
-import { getConfig } from './config/env-validator';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -210,40 +209,6 @@ export function calculateReturns(prices: number[]): number[] {
     }
   }
   return returns;
-}
-
-/**
- * Get the WebSocket URL based on the current environment.
- * Uses validated environment configuration first, then falls back to window location or localhost.
- * Ensures the protocol matches the current page's security (wss: for https:).
- *
- * @param path - The path to append to the base URL (e.g. '/ws/signals')
- * @returns The complete WebSocket URL
- */
-export function getWebSocketUrl(path: string = '/ws/signals'): string {
-  // Use validated environment configuration
-  const config = getConfig();
-  const envUrl = config.websocket.url;
-  
-  if (envUrl) {
-    // Remove trailing slash if present to avoid double slashes
-    const baseUrl = envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl;
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
-    return `${baseUrl}${cleanPath}`;
-  }
-
-  // Fallback for development or when env var is not set
-  if (typeof window !== 'undefined') {
-    // If on client, use secure protocol if page is https
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-
-    // Default to localhost:8000 for development as backend is often separate
-    // In a proxied environment (like production often is), one might use window.location.host
-    // But without explicit config, localhost:8000 is the assumed dev default from legacy code.
-    return `${protocol}//localhost:8000${path}`;
-  }
-
-  return `ws://localhost:8000${path}`;
 }
 
 // ============================================

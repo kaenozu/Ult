@@ -4,7 +4,7 @@
  * Features:
  * - Core Web Vitals monitoring (LCP, FID, CLS)
  * - Error tracking with Sentry
- * - Custom metrics (API, WebSocket, Rendering)
+ * - Custom metrics (API, Rendering)
  * - Real User Monitoring (RUM)
  * - Performance budgets
  */
@@ -40,14 +40,6 @@ export interface ApiMetric {
   status: number;
   success: boolean;
   timestamp: number;
-}
-
-export interface WebSocketMetric {
-  event: 'connect' | 'disconnect' | 'error' | 'message';
-  duration?: number;
-  success: boolean;
-  timestamp: number;
-  errorMessage?: string;
 }
 
 export interface RenderMetric {
@@ -93,7 +85,6 @@ const WEB_VITALS_THRESHOLDS = {
 class MonitoringService {
   private metrics: Map<string, number[]> = new Map();
   private apiMetrics: ApiMetric[] = [];
-  private webSocketMetrics: WebSocketMetric[] = [];
   private renderMetrics: RenderMetric[] = [];
   private webVitalsMetrics: Map<string, WebVitalsMetric> = new Map();
   private initialized = false;
@@ -340,44 +331,6 @@ class MonitoringService {
   }
 
   /**
-   * Track WebSocket metrics
-   */
-  trackWebSocket(metric: WebSocketMetric): void {
-    this.webSocketMetrics.push(metric);
-
-    // Keep only recent metrics
-    if (this.webSocketMetrics.length > this.MAX_STORED_METRICS) {
-      this.webSocketMetrics.shift();
-    }
-
-    // Record metric
-    if (metric.duration !== undefined) {
-      this.recordMetric(`websocket.${metric.event}`, metric.duration);
-    }
-
-    // Track errors in Sentry
-    if (!metric.success) {
-      Sentry.captureMessage(`WebSocket ${metric.event} failed`, {
-        level: 'error',
-        tags: { event: metric.event },
-        extra: {
-          errorMessage: metric.errorMessage,
-          duration: metric.duration,
-        },
-      });
-    }
-
-    // Log connection issues
-    if (metric.event === 'error' || !metric.success) {
-      logger.error(
-        `[WebSocket] ${metric.event} failed: ${metric.errorMessage || 'Unknown error'}`,
-        new Error(metric.errorMessage || 'WebSocket error'),
-        'Monitoring'
-      );
-    }
-  }
-
-  /**
    * Track component render metrics
    */
   trackRender(metric: RenderMetric): void {
@@ -402,22 +355,6 @@ class MonitoringService {
         'Monitoring'
       );
     }
-  }
-
-  /**
-   * Get WebSocket connection success rate
-   */
-  getWebSocketSuccessRate(): number {
-    if (this.webSocketMetrics.length === 0) return 100;
-
-    const connectAttempts = this.webSocketMetrics.filter(
-      m => m.event === 'connect'
-    );
-    const successfulConnects = connectAttempts.filter(m => m.success);
-
-    return connectAttempts.length > 0
-      ? (successfulConnects.length / connectAttempts.length) * 100
-      : 100;
   }
 
   /**
@@ -454,7 +391,6 @@ class MonitoringService {
   getPerformanceSummary(): {
     webVitals: Record<string, WebVitalsMetric>;
     apiSuccessRate: number;
-    webSocketSuccessRate: number;
     averageApiResponseTime: number | null;
     slowestApiCalls: ApiMetric[];
     slowestRenders: RenderMetric[];
@@ -477,7 +413,6 @@ class MonitoringService {
     return {
       webVitals: webVitalsObj,
       apiSuccessRate: this.getApiSuccessRate(),
-      webSocketSuccessRate: this.getWebSocketSuccessRate(),
       averageApiResponseTime: this.getAverageMetric('api.response'),
       slowestApiCalls,
       slowestRenders,
@@ -557,24 +492,6 @@ export function trackApiCall(
     duration,
     status,
     success,
-    timestamp: Date.now(),
-  });
-}
-
-/**
- * Track WebSocket event
- */
-export function trackWebSocket(
-  event: 'connect' | 'disconnect' | 'error' | 'message',
-  success: boolean,
-  duration?: number,
-  errorMessage?: string
-): void {
-  monitoring.trackWebSocket({
-    event,
-    success,
-    duration,
-    errorMessage,
     timestamp: Date.now(),
   });
 }
