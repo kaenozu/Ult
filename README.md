@@ -558,6 +558,8 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
 - [依存関係ドキュメント](./DEPENDENCIES.md)
 - [API仕様](./docs/api.md)（将来実装予定）
 - [技術的負債ロードマップ](./REMAINING_TECH_DEBT_ROADMAP.md)
+- [リポジトリクリーンアップガイド](./REPOSITORY_CLEANUP_GUIDE.md) - リポジトリサイズ管理
+- [リポジトリサイズ管理](./scripts/README_REPO_SIZE.md) - サイズ監視とベストプラクティス
 
 ### お問い合わせ
 
