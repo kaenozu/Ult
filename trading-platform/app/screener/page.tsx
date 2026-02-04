@@ -192,12 +192,28 @@ function ScreenerContent() {
 
     // Debounce the actual filter application
     debounceTimeoutRef.current = setTimeout(() => {
+      // Determine signal type based on preset
+      let signalType: string;
+      switch (type) {
+        case 'oversold':
+        case 'uptrend':
+          signalType = 'BUY';
+          break;
+        case 'overbought':
+        case 'downtrend':
+          signalType = 'SELL';
+          break;
+        default:
+          signalType = 'ANY';
+      }
+
       setFilters({
         priceMin: '', priceMax: '', changeMin: '', changeMax: '',
         volumeMin: '', sector: '', market: '',
-        signal: type === 'oversold' ? 'BUY' : type === 'uptrend' ? 'BUY' : type === 'overbought' ? 'SELL' : type === 'downtrend' ? 'SELL' : 'ANY', 
+        signal: signalType, 
         minConfidence: '60',
       });
+
       if (type === 'oversold') {
         setTechFilters({ rsiMax: '30', rsiMin: '', trend: 'all' });
       } else if (type === 'uptrend') {
