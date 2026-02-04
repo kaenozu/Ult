@@ -1,6 +1,6 @@
 ﻿{
   "extends": "./tsconfig.json",
   "files": [
-    "next-env.d.ts"
+    "ci-types.d.ts"
   ]
 }
