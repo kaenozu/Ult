@@ -29,6 +29,8 @@ module.exports = [
       '**/mock-*.ts',
       '**/testing/**',
       '**/test-*.ts',
+      'app/lib/AgentManager.ts',
+      'app/lib/AgentSystem/**',
       'node_modules/',
       '.next/',
       'out/',

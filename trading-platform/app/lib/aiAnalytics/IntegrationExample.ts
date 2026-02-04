@@ -54,7 +54,6 @@ export function performEnsemblePrediction(
 ) {
   // 重み付き平均による予測
   const weightedPrediction = ensembleModel.predict(features, ohlcvData, 'weighted_average');
-<<<<<<< HEAD
   console.log(`(Score: ${weightedPrediction.score.toFixed(2)}, Confidence: ${(weightedPrediction.confidence * 100).toFixed(1)}%)`);
 
   // スタッキングによる予測
@@ -65,15 +64,6 @@ export function performEnsemblePrediction(
   const votingPrediction = ensembleModel.predict(features, ohlcvData, 'voting');
   console.log(`(Score: ${votingPrediction.score.toFixed(2)}, Confidence: ${(votingPrediction.confidence * 100).toFixed(1)}%)`);
 
-=======
-              console.log(`(Score: ${weightedPrediction.score.toFixed(2)}, Confidence: ${(weightedPrediction.confidence * 100).toFixed(1)}%)`);
-  // スタッキングによる予測
-  const stackingPrediction = ensembleModel.predict(features, ohlcvData, 'stacking');
-              console.log(`(Score: ${stackingPrediction.score.toFixed(2)}, Confidence: ${(stackingPrediction.confidence * 100).toFixed(1)}%)`);
-  // 投票による予測
-  const votingPrediction = ensembleModel.predict(features, ohlcvData, 'voting');
-              console.log(`(Score: ${votingPrediction.score.toFixed(2)}, Confidence: ${(votingPrediction.confidence * 100).toFixed(1)}%)`);
->>>>>>> refactoring/major-codebase-cleanup
   // モデル間の合意度を確認
 
   // 個別モデルの予測を確認
@@ -103,11 +93,7 @@ export function validateModel(
 
   // 各フォールドの結果
   cvResult.results.forEach(result => {
-<<<<<<< HEAD
     console.log(`F1 Score ${(result.f1Score * 100).toFixed(1)}%`);
-=======
-                console.log(`F1 Score ${(result.f1Score * 100).toFixed(1)}%`);
->>>>>>> refactoring/major-codebase-cleanup
   });
 
   return cvResult;

@@ -21,6 +21,7 @@ export interface SharedOHLCV {
   low: number;
   close: number;
   volume: number;
+  change?: number;
 }
 
 /**

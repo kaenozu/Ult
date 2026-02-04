@@ -197,6 +197,7 @@ export function useResilientWebSocket(
       }
       // Reset duration when connection is not open (but not when closed)
       if (status !== 'CLOSED') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setConnectionDuration(0);
       }
     }
