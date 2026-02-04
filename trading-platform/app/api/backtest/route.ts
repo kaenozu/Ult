@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { handleApiError, validationError } from '@/app/lib/error-handler';
+import { requireAuth } from '@/app/lib/auth';
 import {
   AdvancedBacktestEngine,
   DEFAULT_BACKTEST_CONFIG,
@@ -109,7 +110,10 @@ function average(values: number[]): number {
   return values.reduce((sum, v) => sum + v, 0) / values.length;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   const rateLimitResponse = checkRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
