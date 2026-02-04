@@ -14,54 +14,10 @@
  */
 
 import { OHLCV, Stock, Signal } from '@/app/types';
-<<<<<<< HEAD
-import { PredictionFeatures } from '../types';
-import { MLModelService } from './ml-model-service';
-
-// SECURITY: Production deployment safeguard for stub code
-const REGIME_DETECTOR_PRODUCTION_READY = false; // SET TO TRUE ONLY AFTER IMPLEMENTING REAL DETECTOR
-
-/**
- * Validate production deployment of market regime detector
- * @throws Error if production deployment detected with stub implementation
- */
-function validateRegimeDetectorDeployment(): void {
-  if (typeof window !== 'undefined' &&
-      (window.location.hostname === 'production-domain.com' ||
-       process.env.NODE_ENV === 'production' ||
-       process.env.NEXT_PUBLIC_ENV === 'production')) {
-    if (!REGIME_DETECTOR_PRODUCTION_READY) {
-      console.warn(
-        'WARNING: Using STUB market regime detector in production. ' +
-        'This returns fixed values and should be replaced with real implementation. ' +
-        'Set REGIME_DETECTOR_PRODUCTION_READY=true after implementing.'
-      );
-    }
-  }
-}
-
-// STUB for MarketRegimeDetector (to be implemented in future tasks)
-// TODO: Replace with actual market regime detection algorithm
-interface MarketRegime {
-  regime: 'TRENDING' | 'RANGING' | 'VOLATILE' | 'QUIET';
-  trendDirection: 'UP' | 'DOWN' | 'NEUTRAL';
-  volatility: 'HIGH' | 'MEDIUM' | 'LOW';
-  confidence: 'INITIAL' | 'CONFIRMED';
-}
-type VolatilityRegime = 'HIGH' | 'MEDIUM' | 'LOW';
-const marketRegimeDetector = {
-  detect: (data: OHLCV[]): MarketRegime => {
-    validateRegimeDetectorDeployment();
-    // STUB IMPLEMENTATION - Returns fixed neutral values
-    return { regime: 'RANGING', trendDirection: 'NEUTRAL', volatility: 'MEDIUM', confidence: 'INITIAL' };
-  },
-};
-=======
 import { PredictionFeatures, EnhancedPrediction } from '../types';
 import { FeatureCalculationService } from './feature-calculation-service';
 import { MLModelService } from './ml-model-service';
 import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../../lib/MarketRegimeDetector';
->>>>>>> refactoring/major-codebase-cleanup
 
 export interface ModelPerformance {
   hitRate: number;
@@ -77,17 +33,6 @@ export interface DriftMetrics {
   driftDetected: boolean;
   lastRetrainDate: Date;
   daysSinceRetrain: number;
-}
-
-export interface EnhancedPrediction {
-  prediction: number;
-  confidence: number;
-  expectedValue: number;
-  kellyFraction: number;
-  recommendedPositionSize: number;
-  driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
-  marketRegime: MarketRegime;
-  volatility: VolatilityRegime;
 }
 
 export class EnhancedMLService {

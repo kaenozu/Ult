@@ -82,19 +82,9 @@ export class CommissionCalculator {
   constructor(market: Market, config?: Partial<CommissionConfig>) {
     this.config = {
       market,
-<<<<<<< HEAD
-      japan: market === 'japan'
-        ? { ...DEFAULT_JAPAN_COMMISSION, ...(config?.japan ?? {}) } as { baseCommissionRate: number; minCommission: number; consumptionTax: number }
-        : undefined,
-      usa: market === 'usa'
-        ? { ...DEFAULT_USA_COMMISSION, ...(config?.usa ?? {}) } as { perShareFee: number; minCommission: number; maxCommission: number; secFee: number; tafFee: number }
-        : undefined,
-      fx: { ...DEFAULT_FX_COMMISSION, ...(config?.fx ?? {}) } as { conversionRate: number; minFee: number },
-=======
       japan: market === 'japan' ? { ...DEFAULT_JAPAN_COMMISSION, ...(config?.japan ?? {}) } : undefined,
       usa: market === 'usa' ? { ...DEFAULT_USA_COMMISSION, ...(config?.usa ?? {}) } : undefined,
       fx: { ...DEFAULT_FX_COMMISSION, ...(config?.fx ?? {}) },
->>>>>>> refactoring/major-codebase-cleanup
     };
   }
   

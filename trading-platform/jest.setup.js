@@ -135,3 +135,22 @@ if (typeof global.NextResponse === 'undefined') {
   };
 }
 
+// Configure TensorFlow.js for Node.js environment
+process.env.TFJS_BACKEND = 'cpu';
+
+// Mock WebGL context for TensorFlow.js to avoid warnings
+if (typeof global.HTMLCanvasElement !== 'undefined') {
+  const originalGetContext = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function(contextType) {
+    if (contextType === 'webgl' || contextType === 'webgl2') {
+      return {
+        getExtension: jest.fn().mockReturnValue(null),
+        getParameter: jest.fn().mockReturnValue(null),
+        getShaderPrecisionFormat: jest.fn().mockReturnValue({ precision: 0 }),
+        isContextLost: jest.fn().mockReturnValue(false),
+      };
+    }
+    return originalGetContext.call(this, contextType);
+  };
+}
+
