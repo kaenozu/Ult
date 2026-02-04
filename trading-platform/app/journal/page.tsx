@@ -5,6 +5,7 @@ import { Navigation } from '@/app/components/Navigation';
 import { useJournalStore } from '@/app/store/journalStore';
 import { cn, formatCurrency, formatPercent } from '@/app/lib/utils';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
+import { ScreenLabel } from '@/app/components/ScreenLabel';
 
 function JournalContent() {
   const { journal } = useJournalStore();
@@ -29,6 +30,7 @@ function JournalContent() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+      <ScreenLabel label="トレードジャーナル / Trade Journal" />
       {/* Mock Data Banner */}
       <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 flex items-center justify-center gap-2 text-yellow-400 text-xs">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
