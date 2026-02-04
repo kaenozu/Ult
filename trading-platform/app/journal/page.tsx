@@ -5,6 +5,7 @@ import { Navigation } from '@/app/components/Navigation';
 import { useJournalStore } from '@/app/store/journalStore';
 import { cn, formatCurrency, formatPercent } from '@/app/lib/utils';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
+import { ScreenLabel } from '@/app/components/ScreenLabel';
 
 function JournalContent() {
   const { journal } = useJournalStore();
@@ -29,6 +30,7 @@ function JournalContent() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+      <ScreenLabel label="トレードジャーナル / Trade Journal" />
       {/* Mock Data Banner */}
       <div className="bg-yellow-500/10 border-b border-yellow-500/30 px-4 py-2 flex items-center justify-center gap-2 text-yellow-400 text-xs">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,6 +175,66 @@ function JournalContent() {
           </div>
 
           <div className="flex-1 overflow-auto p-6">
+            {/* Journal Explanation Section */}
+            <div className="mb-6 bg-gradient-to-r from-primary/10 to-blue-500/5 border border-primary/30 rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center">
+                    <svg className="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-white text-lg font-semibold mb-2">📊 トレードジャーナルとは？</h3>
+                  <div className="text-sm text-[#b4c9df] space-y-2">
+                    <p>
+                      <strong className="text-white">トレードジャーナル</strong>は、あなたの全ての取引を記録・分析するための総合的なツールです。
+                      トレーディングパフォーマンスを向上させるために、過去の取引から学び、戦略を改善できます。
+                    </p>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="bg-[#141e27]/50 rounded-lg p-3 border border-[#233648]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                          <span className="font-medium text-white text-xs">取引履歴の記録</span>
+                        </div>
+                        <p className="text-xs text-[#92adc9]">エントリー/エグジット価格、損益、数量などの詳細を自動記録</p>
+                      </div>
+                      <div className="bg-[#141e27]/50 rounded-lg p-3 border border-[#233648]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                          <span className="font-medium text-white text-xs">パフォーマンス分析</span>
+                        </div>
+                        <p className="text-xs text-[#92adc9]">勝率、プロフィットファクター、平均損益などを自動計算</p>
+                      </div>
+                      <div className="bg-[#141e27]/50 rounded-lg p-3 border border-[#233648]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                          </svg>
+                          <span className="font-medium text-white text-xs">ビジュアル分析</span>
+                        </div>
+                        <p className="text-xs text-[#92adc9]">チャートとグラフで時系列パフォーマンスを可視化</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-[#233648]">
+                      <p className="text-xs text-[#92adc9]">
+                        <strong className="text-white">使い方：</strong>
+                        取引が完了すると自動的にジャーナルに記録されます。
+                        「Trades」タブで取引履歴を確認し、「Analysis」タブで詳細なパフォーマンス分析を行えます。
+                        右上の「Add Entry」ボタンから手動でエントリーを追加することも可能です。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {activeTab === 'trades' ? (
               <div className="space-y-4">
                 {closedTrades.length === 0 ? (
