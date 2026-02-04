@@ -229,11 +229,11 @@ try {
   const checkResult = execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });
 
   if (checkResult.includes('error')) {
-    console.error('❌ Some TypeScript errors remain');
+    console.error('[TypeScript Fixer] Some TypeScript errors remain');
     process.exit(1);
   }
 
-  console.log('✅ All TypeScript errors fixed!');
+  console.log('[TypeScript Fixer] All TypeScript errors fixed!');
 
   // Write report
   fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
@@ -245,7 +245,7 @@ Timestamp: ${new Date().toISOString()}
   process.exit(0);
 } catch (error: unknown) {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error('❌ Error:', errorMessage);
+  console.error('[TypeScript Fixer] Error:', errorMessage);
   fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
 ` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${errorMessage}\nTimestamp: ${new Date().toISOString()}\n`);
   process.exit(1);
@@ -258,7 +258,7 @@ Timestamp: ${new Date().toISOString()}
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 
-console.log('🎨 LinterFixer: Starting...');
+console.log('[LinterFixer] Starting...');
 
 try {
   // Check current lint status
@@ -286,7 +286,7 @@ try {
   process.exit(0);
 } catch (error: unknown) {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error('❌ Error:', errorMessage);
+  console.error('[LinterFixer] Error:', errorMessage);
   fs.writeFileSync('AGENT_REPORT.md', `# Linter Fix Report
 ` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${error.message}\n`);
   process.exit(1);

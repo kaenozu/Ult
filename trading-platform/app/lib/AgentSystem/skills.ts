@@ -315,7 +315,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-console.log(`🤖 Agent Starting: ${task.title}`);
+console.log(`[Agent] Starting: ${task.title}`);
 console.log(`Description: ${task.description}`);
 console.log('Acceptance Criteria:');
 task.acceptanceCriteria.forEach(c => console.log(`  - ${c}`));
@@ -327,17 +327,19 @@ try {
   console.log(`Executing: ${commands}\n`);
 
   // Run all commands
-  `${skill.commands.map((cmd, i) => `console.log(\`[Step ${i+1}] Running: ${cmd}\`);
-try {
-  execSync('${cmd}', { encoding: 'utf-8', stdio: 'pipe' });
-  console.log(\`✅ ${cmd} - SUCCESS\`);
-} catch (err) {
-  console.error(\`❌ ${cmd} - FAILED\`);
-  throw err;
-}
-`).join('\n\n')}`
+  const commandsOutput = skill.commands.map((cmd, i) => {
+    return `[Step ${i+1}] Running: ${cmd}\n` +
+      `try {\n` +
+      `  execSync('${cmd}', { encoding: 'utf-8', stdio: 'pipe' });\n` +
+      `  console.log('[SUCCESS] ${cmd}');\n` +
+      `} catch (err) {\n` +
+      `  console.error('[FAILED] ${cmd}');\n` +
+      `  throw err;\n` +
+      `}`;
+  }).join('\n\n');
+  console.log(commandsOutput);
 
-  console.log('\n🎉 All commands completed successfully!');
+  console.log('\n[Agent] All commands completed successfully!');
 
   // Generate report
   const report = `# Agent Execution Report\n\n` +
@@ -349,7 +351,7 @@ try {
 
   fs.writeFileSync('AGENT_EXECUTION_REPORT.md', report);
 
-  console.log('📄 Report generated: AGENT_EXECUTION_REPORT.md');
+  console.log('[Report] Generated: AGENT_EXECUTION_REPORT.md');
 
 } catch (error: unknown) {
   const errorMessage = error instanceof Error ? error.message : String(error);

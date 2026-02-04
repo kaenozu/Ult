@@ -133,15 +133,16 @@ function generatePerformanceReport(): void {
     console.log(`Count: ${stats.count}`);
     console.log(`Average: ${stats.avg.toFixed(2)}ms`);
     console.log(`Min: ${stats.min.toFixed(2)}ms`);
-  Max: ${stats.max.toFixed(2)}ms
-  OK: ${stats.okCount}
-  Warnings: ${stats.warningCount}
-  Errors: ${stats.errorCount}
-    `);
+    console.log(`Max: ${stats.max.toFixed(2)}ms`);
+    console.log(`OK: ${stats.okCount}`);
+    console.log(`Warnings: ${stats.warningCount}`);
+    console.log(`Errors: ${stats.errorCount}`);
+  }
   }
   
   // Get summary
   const summary = PerformanceMonitor.getSummary();
+  console.log(`
 Summary:
   Total Metrics: ${summary.totalMetrics}
   Total Measurements: ${summary.totalMeasurements}
@@ -149,6 +150,7 @@ Summary:
   Slow Operations: ${summary.slowOperations.join(', ')}
   Critical Operations: ${summary.criticalOperations.join(', ')}
   `);
+}
 }
 
 // Example 7: Checking for performance issues
