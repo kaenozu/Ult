@@ -3,31 +3,28 @@
  * 
  * スキャンして最適な銘柄を返すAPIエンドポイント
  * GET /api/performance-screener
- * 
- * Query Parameters:
- * - market: 'japan' | 'usa' | 'all' (default: 'all')
- * - minWinRate: number (default: 0)
- * - minProfitFactor: number (default: 0)
- * - minTrades: number (default: 5)
- * - maxDrawdown: number (default: 100)
- * - topN: number (default: 20)
- * - lookbackDays: number (default: 90)
+ * POST /api/performance-screener/clear-cache
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { performanceScreenerService, StockDataSource } from '@/app/lib/PerformanceScreenerService';
 import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
 import { OHLCV } from '@/app/types';
-import { handleApiError } from '@/app/lib/error-handler';
+import {
+  createApiHandler,
+  successResponse,
+  getQueryParams,
+  generateCacheKey,
+  ApiResponse,
+  parseJsonBody
+} from '@/app/lib/api/UnifiedApiClient';
+import { CacheManager } from '@/app/lib/api/CacheManager';
 
-// キャッシュ管理
-interface CacheEntry {
-  data: unknown;
-  timestamp: number;
-}
-
-const cache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5分
+// Use CacheManager for response caching
+const responseCache = new CacheManager<ApiResponse<unknown>>({
+  ttl: 5 * 60 * 1000, // 5 minutes
+  maxSize: 100
+});
 
 /**
  * データソースの作成
@@ -57,38 +54,44 @@ function createDataSources(): StockDataSource[] {
 
 /**
  * GET /api/performance-screener
+ *
+ * Public endpoint to retrieve performance screening results.
+ * Rate limited but currently public.
  */
-export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
+export const GET = createApiHandler(
+  async (request: NextRequest) => {
+    // Check cache first
+    const cacheKey = generateCacheKey(request, 'performance-screener');
+    const cachedResponse = responseCache.get(cacheKey);
     
-    // パラメータ取得
-    const market = (searchParams.get('market') || 'all') as 'japan' | 'usa' | 'all';
-    const minWinRate = parseFloat(searchParams.get('minWinRate') || '0');
-    const minProfitFactor = parseFloat(searchParams.get('minProfitFactor') || '0');
-    const minTrades = parseInt(searchParams.get('minTrades') || '5', 10);
-    const maxDrawdown = parseFloat(searchParams.get('maxDrawdown') || '100');
-    const topN = parseInt(searchParams.get('topN') || '20', 10);
-    const lookbackDays = parseInt(searchParams.get('lookbackDays') || '90', 10);
-
-    // キャッシュキー生成
-    const cacheKey = `${market}:${minWinRate}:${minProfitFactor}:${minTrades}:${maxDrawdown}:${topN}:${lookbackDays}`;
-    
-    // キャッシュチェック
-    const cached = cache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+    if (cachedResponse) {
       console.log('[PerformanceScreenerAPI] Cache hit');
-      return NextResponse.json(cached.data, {
-        headers: {
-          'Cache-Control': 'public, max-age=300', // 5分キャッシュ
-        },
-      });
+      return NextResponse.json(cachedResponse);
     }
 
-    // データソース作成
+    const params = getQueryParams(request, [
+      'market',
+      'minWinRate',
+      'minProfitFactor',
+      'minTrades',
+      'maxDrawdown',
+      'topN',
+      'lookbackDays'
+    ]);
+
+    // Parse parameters
+    const market = (params.market || 'all') as 'japan' | 'usa' | 'all';
+    const minWinRate = parseFloat(params.minWinRate || '0');
+    const minProfitFactor = parseFloat(params.minProfitFactor || '0');
+    const minTrades = parseInt(params.minTrades || '5', 10);
+    const maxDrawdown = parseFloat(params.maxDrawdown || '100');
+    const topN = parseInt(params.topN || '20', 10);
+    const lookbackDays = parseInt(params.lookbackDays || '90', 10);
+
+    // Create data sources
     const dataSources = createDataSources();
 
-    // スクリーニング実行
+    // Run screening
     const result = await performanceScreenerService.scanMultipleStocks(dataSources, {
       market,
       minWinRate,
@@ -99,43 +102,49 @@ export async function GET(request: NextRequest) {
       lookbackDays,
     });
 
-    // レスポンス
+    // Create response
     const response = {
       success: true,
       data: result,
     };
 
-    // キャッシュに保存
-    cache.set(cacheKey, {
-      data: response,
-      timestamp: Date.now(),
-    });
+    // Cache the response
+    responseCache.set(cacheKey, response);
 
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': 'public, max-age=300',
       },
     });
-
-  } catch (error) {
-    return handleApiError(error, 'PerformanceScreenerAPI');
+  },
+  {
+    rateLimit: true,
+    requireAuth: false, // Public access for dashboard
+    // We use manual caching to support clearing via POST
+    cache: {
+      enabled: false
+    }
   }
-}
+);
 
 /**
  * POST /api/performance-screener/clear-cache
- * キャッシュをクリア
+ *
+ * Secure endpoint to clear caches.
+ * Requires Authentication and Rate Limiting.
  */
-export async function POST(request: NextRequest) {
-  try {
-    const { action } = await request.json();
+export const POST = createApiHandler(
+  async (request: NextRequest) => {
+    const body = await parseJsonBody<{ action: string }>(request);
 
-    if (action === 'clear-cache') {
-      cache.clear();
+    if (body.action === 'clear-cache') {
+      // Clear local response cache
+      responseCache.clear();
+
+      // Clear service cache
       performanceScreenerService.clearCache();
 
-      return NextResponse.json({
-        success: true,
+      return successResponse({
         message: 'Cache cleared successfully',
       });
     }
@@ -147,8 +156,12 @@ export async function POST(request: NextRequest) {
       },
       { status: 400 }
     );
-
-  } catch (error) {
-    return handleApiError(error, 'PerformanceScreenerAPI');
+  },
+  {
+    rateLimit: true,
+    requireAuth: true, // PROTECTED: Only authenticated users can clear cache
+    cache: {
+      enabled: false
+    }
   }
-}
+);
