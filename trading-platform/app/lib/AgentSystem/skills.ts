@@ -66,22 +66,6 @@ export const SKILLS: Record<string, SkillDefinition> = {
     estimatedTime: '4-6 hours',
   },
 
-  'websocket-expert': {
-    name: 'WebSocket Expert',
-    description: 'Repairs and stabilizes WebSocket connections',
-    commands: [
-      'npm run ws:server:dev',
-      'npm test -- useWebSocket',
-    ],
-    requiredTools: ['node', 'npm', 'ws'],
-    outputFiles: [
-      'scripts/websocket-server.ts',
-      'app/lib/websocket/**/*.ts',
-      'app/hooks/useWebSocket.ts',
-    ],
-    estimatedTime: '2-3 hours',
-  },
-
   'ui-ux-designer': {
     name: 'UI/UX Designer',
     description: 'Improves user interface and user experience',
@@ -190,32 +174,6 @@ export const ULT_TASKS: TaskTemplate[] = [
           'Includes edge cases',
         ],
       },
-      {
-        id: 'test-websocket',
-        title: 'Write WebSocket Tests',
-        description: 'Add tests for WebSocket client and server',
-        skill: 'test-writer',
-        priority: 'medium',
-        acceptanceCriteria: [
-          'Tests connection lifecycle',
-          'Tests reconnection logic',
-          'Tests message handling',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'websocket-repair',
-    title: 'Repair WebSocket Connection',
-    description: 'Fix WebSocket server and client connection issues',
-    skill: 'websocket-expert',
-    priority: 'high',
-    acceptanceCriteria: [
-      'WebSocket server starts on port 3001',
-      'Client can connect from browser',
-      'Auth token validation works',
-      'Auto-reconnect functions',
-      'Documentation updated',
     ],
   },
   {

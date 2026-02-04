@@ -5,7 +5,7 @@
  * テスト時にモックに差し替え可能
  */
 
-export type Constructor<T> = new (...args: any[]) => T;
+export type Constructor<T> = new (...args: unknown[]) => T;
 export type Factory<T> = () => T;
 
 export interface ServiceDefinition<T> {
