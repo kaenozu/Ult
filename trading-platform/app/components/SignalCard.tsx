@@ -25,6 +25,16 @@ export function SignalCard({
     calculatingHitRate = false,
     error = null
 }: SignalCardProps) {
+    // Early return if signal is null to prevent access errors
+    if (!signal) {
+        return (
+            <div className="relative p-4 rounded-lg flex flex-col gap-3 overflow-hidden bg-transparent">
+                <div className="flex justify-center items-center h-32">
+                    <span className="text-gray-400">No signal data available</span>
+                </div>
+            </div>
+        );
+    }
     const isBuy = signal.type === 'BUY';
     const isSell = signal.type === 'SELL';
     
@@ -221,7 +231,7 @@ export function SignalCard({
                 )}
 
                 {/* Supply/Demand Analysis */}
-                {signal.supplyDemand && (
+                {signal && signal.supplyDemand && (
                     <div className="mt-4 bg-[#1a2632] p-3 rounded-lg border border-[#233648]">
                         <div className="text-[10px] font-bold text-[#92adc9] uppercase tracking-wider mb-2">
                             需給の壁分析
