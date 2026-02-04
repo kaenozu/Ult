@@ -8,9 +8,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: isCi,
     tsconfigPath: isCi ? 'tsconfig.ci.json' : 'tsconfig.json',
   },
-  eslint: {
-    ignoreDuringBuilds: isCi,
-  },
   async headers() {
     return [
       {
