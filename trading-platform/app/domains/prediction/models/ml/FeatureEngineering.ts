@@ -927,7 +927,7 @@ export class FeatureEngineering {
    * MLPredictionIntegration 互換性: 特徴量正規化
    * @deprecated Features are already normalized in calculateAllFeatures
    */
-  normalizeFeatures(features: AllFeatures): { normalized: AllFeatures; stats: Record<string, number> } {
+  normalizeFeatures(features: AllFeatures): { normalized: AllFeatures; stats: any } {
     // Simplified: return as-is with placeholder stats
     return {
       normalized: features,

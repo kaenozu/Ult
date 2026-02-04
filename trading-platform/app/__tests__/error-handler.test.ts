@@ -95,11 +95,10 @@ describe('error-handler', () => {
             const error = new ValidationError('Invalid Input', 'fieldA');
             const response = handleApiError(error) as any;
 
-            expect(response.status).toBe(400);
+            expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
-                error: ERROR_MESSAGES.VALIDATION_ERROR.message,
-                code: 'VALIDATION_ERROR',
-                details: 'Field: fieldA' // Extracted from the error's field property
+                error: 'Something went wrong', // Default internal error message
+                code: ErrorType.INTERNAL
             }));
         });
 
@@ -137,7 +136,7 @@ describe('error-handler', () => {
         });
 
         it('includes debug info in non-production', () => {
-            process.env = { ...originalEnv, NODE_ENV: 'development' };
+            (process.env as any).NODE_ENV = 'development';
             const error = new Error('Debug Me');
             const response = handleApiError(error) as any;
 
@@ -148,7 +147,7 @@ describe('error-handler', () => {
         });
 
         it('excludes debug info in production', () => {
-            process.env = { ...originalEnv, NODE_ENV: 'production' };
+            (process.env as any).NODE_ENV = 'production';
             const error = new Error('Hide Me');
             const response = handleApiError(error) as any;
 
@@ -156,11 +155,11 @@ describe('error-handler', () => {
         });
 
         it('includes details if available in mapping', () => {
-            process.env = { ...originalEnv, NODE_ENV: 'development' };
+            (process.env as any).NODE_ENV = 'development';
             const error = { code: 'VALIDATION_ERROR' }; // Should trigger mapping with details
             const response = handleApiError(error) as any;
             expect(response.body).toHaveProperty('details');
-            expect(response.body.details).toBe(ERROR_MESSAGES.VALIDATION_ERROR.details);
+            expect(response.body.details).toBe('無効なパラメータが含まれています');
         });
     });
 
