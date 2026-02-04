@@ -21,6 +21,8 @@ export interface SharedOHLCV {
   low: number;
   close: number;
   volume: number;
+  change?: number; // Price change from previous close
+  changePercent?: number; // Percentage change from previous close
 }
 
 /**

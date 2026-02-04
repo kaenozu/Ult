@@ -118,6 +118,7 @@ export interface ModelPrediction {
 export interface Signal {
   symbol: string;
   type: 'BUY' | 'SELL' | 'HOLD';
+  direction?: 'BUY' | 'SELL' | 'HOLD'; // Alias for type (backward compatibility)
   confidence: number;
   accuracy?: number; // 過去の的中率 (%)
   atr?: number;      // 銘柄固有の変動幅
