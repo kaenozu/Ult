@@ -131,7 +131,7 @@ export function useStockData() {
         setLoading(false);
       }
     }
-  }, [timeFrame, watchlist]); // Add timeFrame dependency so it refetches when interval changes
+  }, [timeFrame]); // Add timeFrame dependency so it refetches when interval changes
 
   const handleTimeFrameChange = useCallback((newTimeFrame: string) => {
     setTimeFrame(newTimeFrame);
