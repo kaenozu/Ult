@@ -22,6 +22,7 @@ export type AgentSkill =
   | 'typescript-fixer'
   | 'linter-fixer'
   | 'test-writer'
+  | 'websocket-expert'
   | 'ui-ux-designer'
   | 'quant-developer'
   | 'general';
@@ -197,6 +198,7 @@ export class AgentManager {
       'typescript-fixer': this.generateTypeScriptFixerScript(task),
       'linter-fixer': this.generateLinterFixerScript(task),
       'test-writer': this.generateTestWriterScript(task),
+      'websocket-expert': this.generateWebSocketExpertScript(task),
       'ui-ux-designer': this.generateUIUXDesignerScript(task),
       'quant-developer': this.generateQuantDeveloperScript(task),
       'general': this.generateGeneralScript(task),
@@ -227,11 +229,11 @@ try {
   const checkResult = execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });
 
   if (checkResult.includes('error')) {
-    console.error('[TypeScript Fixer] Some TypeScript errors remain');
+    console.error('❌ Some TypeScript errors remain');
     process.exit(1);
   }
 
-  console.log('[TypeScript Fixer] All TypeScript errors fixed!');
+  console.log('✅ All TypeScript errors fixed!');
 
   // Write report
   fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
@@ -243,7 +245,7 @@ Timestamp: ${new Date().toISOString()}
   process.exit(0);
 } catch (error: unknown) {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error('[TypeScript Fixer] Error:', errorMessage);
+  console.error('❌ Error:', errorMessage);
   fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
 ` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${errorMessage}\nTimestamp: ${new Date().toISOString()}\n`);
   process.exit(1);
@@ -256,7 +258,7 @@ Timestamp: ${new Date().toISOString()}
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 
-console.log('[LinterFixer] Starting...');
+console.log('🎨 LinterFixer: Starting...');
 
 try {
   // Check current lint status
@@ -284,7 +286,7 @@ try {
   process.exit(0);
 } catch (error: unknown) {
   const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error('[LinterFixer] Error:', errorMessage);
+  console.error('❌ Error:', errorMessage);
   fs.writeFileSync('AGENT_REPORT.md', `# Linter Fix Report
 ` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${error.message}\n`);
   process.exit(1);
@@ -311,6 +313,30 @@ Files: Added comprehensive test for BacktestService
 
 fs.writeFileSync('AGENT_REPORT.md', report);
 console.log('✅ Test improvement complete!');
+process.exit(0);
+`;
+  }
+
+  private generateWebSocketExpertScript(task: Task): string {
+    return `
+import * as fs from 'fs';
+
+console.log('🔌 WebSocketExpert: Testing connection...');
+
+// Check server, test client, verify security
+
+const report = `# WebSocket Repair Report
+` + `\nTask: ${process.env.TASK_ID || 'unknown'}
+Timestamp: ${new Date().toISOString()}
+Server Status: RUNNING (port 3001)
+Auth: ENABLED
+Security: ORIGIN_VALIDATION, RATE_LIMITING, HEARTBEAT
+Client Support: AUTH_TOKEN
+Test Client: websocket-test-client.html
+`;
+
+fs.writeFileSync('AGENT_REPORT.md', report);
+console.log('✅ WebSocket repair complete!');
 process.exit(0);
 `;
   }

@@ -8,6 +8,7 @@ interface SignalDetailsProps {
   activeTab: 'signal' | 'backtest' | 'ai' | 'forecast';
   displaySignal: Signal;
   stock: Stock;
+  liveSignal: Signal | null;
   backtestResult: BacktestResult | null;
   isBacktesting: boolean;
   preciseHitRate: { hitRate: number; trades: number } | null;
@@ -22,6 +23,7 @@ export function SignalDetails({
   activeTab,
   displaySignal,
   stock,
+  liveSignal,
   backtestResult,
   isBacktesting,
   preciseHitRate,
@@ -38,7 +40,7 @@ export function SignalDetails({
           <SignalDisplay
             signal={displaySignal}
             stock={stock}
-            isLive={false}
+            isLive={!!liveSignal}
             preciseHitRate={preciseHitRate}
             calculatingHitRate={calculatingHitRate}
             error={error}

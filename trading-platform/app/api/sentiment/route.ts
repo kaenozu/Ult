@@ -6,7 +6,6 @@
 
 import { NextRequest } from 'next/server';
 import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
-import { requireAuth } from '@/app/lib/auth';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
@@ -50,29 +49,10 @@ interface SentimentAction {
 }
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
-  async (request: NextRequest) => {
-    // Authentication check - required for admin actions (start/stop/clear)
-    const authError = requireAuth(request);
-    if (authError) {
-      const errorBody = await authError.json() as { error?: string; message?: string };
-      return {
-        success: false,
-        message: errorBody.message || errorBody.error || 'Authentication required',
-      };
-    }
-
-    // CSRF protection check
+  async (request: NextRequest, body: SentimentAction) => {
+    // CSRF protection
     const csrfError = requireCSRF(request);
-    if (csrfError) {
-      const errorBody = await csrfError.json() as { error?: string };
-      return {
-        success: false,
-        message: errorBody.error || 'CSRF validation failed',
-      };
-    }
-
-    // Read body after CSRF validation (fixes double body read issue)
-    const body = await request.json() as SentimentAction;
+    if (csrfError) return csrfError;
 
     // Validate action
     const validationError = validateField({

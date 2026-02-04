@@ -10,7 +10,198 @@
 - **SmartDataCache**: 更新頻度の低い資産についてはポーリングを最小限に抑えます。
 - **Realtime ではなくバッチ更新**: 最新データは数秒間隔で取得されるため、従来の WebSocket ほど低レイテンシではありません。
 
-必要であれば、この資料を現行構成に合わせて再構成しますのでご指示ください。
+### Components
+
+#### 1. WebSocketDataFlowService
+
+The main service for managing real-time data flow with integrated quality validation.
+
+**Features:**
+- WebSocket connection management with auto-reconnection
+- Real-time data quality validation
+- Latency monitoring (target: < 100ms)
+- Intelligent caching (target hit rate: > 90%)
+- Anomaly detection (target detection rate: > 95%)
+- Multi-source data buffering
+
+**Usage:**
+
+```typescript
+import { createWebSocketDataFlowService } from '@/app/domains/market-data/integration/WebSocketDataFlowService';
+
+const dataFlow = createWebSocketDataFlowService({
+  websocket: {
+    url: 'wss://data-feed.example.com',
+    reconnectInterval: 2000,
+    maxReconnectAttempts: 5,
+  },
+  enableQualityCheck: true,
+  enableLatencyMonitoring: true,
+  enableCaching: true,
+  maxLatencyMs: 100,
+});
+
+// Connect to data feed
+dataFlow.connect();
+
+// Subscribe to symbols
+dataFlow.subscribe(['AAPL', 'GOOGL', 'MSFT']);
+
+// Listen for data
+dataFlow.on('data', (data) => {
+  console.log('Received market data:', data);
+});
+
+// Listen for alerts
+dataFlow.on('alert', (alert) => {
+  console.warn('Data quality alert:', alert);
+});
+
+// Get metrics
+const metrics = dataFlow.getMetrics();
+console.log('Cache hit rate:', metrics.cacheHitRate);
+console.log('Average latency:', metrics.avgLatency);
+console.log('Data quality score:', metrics.dataQualityScore);
+```
+
+#### 2. MultiSourceDataAggregator
+
+Service for aggregating data from multiple sources with automatic validation and fallback.
+
+**Features:**
+- Source prioritization
+- Automatic fallback to backup sources
+- Cross-source consistency validation
+- Source health monitoring
+- Concurrent data fetching
+- Timeout handling
+
+**Usage:**
+
+```typescript
+import { createMultiSourceDataAggregator } from '@/app/domains/market-data/integration/MultiSourceDataAggregator';
+
+const aggregator = createMultiSourceDataAggregator({
+  minSourceCount: 2,
+  maxSourceAge: 5000,
+  consistencyThreshold: 5, // 5% max price discrepancy
+  enableHealthCheck: true,
+});
+
+// Register data sources
+aggregator.registerSource({
+  id: 'primary',
+  name: 'Primary Data Provider',
+  priority: 1,
+  enabled: true,
+  healthScore: 100,
+  fetcher: async (symbol) => {
+    // Fetch from primary source
+    return await fetchFromPrimarySource(symbol);
+  },
+});
+
+aggregator.registerSource({
+  id: 'backup',
+  name: 'Backup Data Provider',
+  priority: 2,
+  enabled: true,
+  healthScore: 100,
+  fetcher: async (symbol) => {
+    // Fetch from backup source
+    return await fetchFromBackupSource(symbol);
+  },
+});
+
+// Aggregate data
+const result = await aggregator.aggregate('AAPL');
+
+if (result.success) {
+  console.log('Data:', result.data);
+  console.log('Primary source:', result.primarySource);
+  console.log('Sources used:', result.sources);
+  
+  if (result.validation) {
+    console.log('Price discrepancy:', result.validation.priceDiscrepancy);
+    console.log('Consistent:', result.validation.isConsistent);
+  }
+} else {
+  console.error('Aggregation failed:', result.errors);
+}
+```
+
+#### 3. DataQualityValidator
+
+Enhanced validator for comprehensive data quality checks.
+
+**Features:**
+- OHLC consistency validation
+- Price outlier detection
+- Volume validation
+- Timestamp freshness checks
+- Statistical anomaly detection
+- Cross-source validation
+
+**Usage:**
+
+```typescript
+import { DataQualityValidator } from '@/app/lib/data/quality/DataQualityValidator';
+
+const validator = new DataQualityValidator({
+  maxPriceChangePercent: 20,
+  maxTimestampDelayMs: 60000,
+});
+
+// Validate market data
+const report = validator.validate(marketData);
+
+if (!report.isValid) {
+  console.error('Data quality issues:', report.errors);
+}
+
+if (report.warnings.length > 0) {
+  console.warn('Data quality warnings:', report.warnings);
+}
+
+// Detect anomalies
+const anomaly = validator.detectAnomalies(marketData);
+if (anomaly.hasAnomaly) {
+  console.warn('Anomaly detected:', anomaly.description);
+  console.log('Confidence:', anomaly.confidence);
+}
+
+// Check freshness
+const freshness = validator.checkFreshness(marketData);
+console.log('Data staleness:', freshness.staleness);
+console.log('Is fresh:', freshness.isFresh);
+```
+
+#### 4. DataLatencyMonitor
+
+Service for monitoring and alerting on data latency.
+
+**Features:**
+- Real-time latency tracking
+- Statistical analysis (min, max, avg, p50, p95, p99)
+- Configurable alerting
+- Data freshness monitoring
+
+**Usage:**
+
+```typescript
+import { DataLatencyMonitor } from '@/app/lib/data/latency/DataLatencyMonitor';
+
+const monitor = new DataLatencyMonitor({
+  warningThresholdMs: 100,
+  criticalThresholdMs: 200,
+  freshnessThresholdMs: 60000,
+  alertCallback: (alert) => {
+    console.warn('Latency alert:', alert);
+  },
+});
+
+// Record latency
+monitor.recordLatency('AAPL', dataTimestamp, Date.now());
 
 // Get statistics
 const stats = monitor.getStats('AAPL');

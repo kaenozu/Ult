@@ -41,7 +41,6 @@ export default [
       'build/',
       'coverage/',
       'eslint.config.*',
-      'playwright-report/**',
     ],
   },
 ];

@@ -54,6 +54,12 @@ describe('Domain Architecture Validation', () => {
       expect(typeof apiModule).toBe('object');
     });
 
+    it('should export WebSocket infrastructure from barrel export', async () => {
+      const websocketModule = await import('@/infrastructure/websocket');
+
+      expect(websocketModule).toBeDefined();
+      expect(typeof websocketModule).toBe('object');
+    });
   });
 
   describe('Shared Layer', () => {

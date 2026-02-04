@@ -125,7 +125,7 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
     if (changePercent >= 0.15) {
       createForecastChangeAlert(currentConfidence, previousForecastConfidence);
     }
-  }, [displaySignal?.forecastCone, displaySignal?.forecastCone?.confidence, previousForecastConfidence, createForecastChangeAlert]);
+  }, [displaySignal?.forecastCone?.confidence, previousForecastConfidence, createForecastChangeAlert]);
 
   // Update forecast confidence separately
   useEffect(() => {
@@ -138,13 +138,13 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
   useEffect(() => {
     if (!displaySignal?.supplyDemand?.breakoutDetected) return;
     
-    const breakoutKey = `${stock.symbol}-${displaySignal.supplyDemand?.currentPrice || 0}-${displaySignal.supplyDemand?.brokenLevel?.level || 'unknown'}`;
+    const breakoutKey = `${stock.symbol}-${displaySignal.supplyDemand.currentPrice}-${displaySignal.supplyDemand.brokenLevel?.level}`;
     
     if (breakoutProcessedRef.current !== breakoutKey) {
       createBreakoutAlert();
       breakoutProcessedRef.current = breakoutKey;
     }
-  }, [displaySignal?.supplyDemand?.breakoutDetected && displaySignal?.supplyDemand?.currentPrice && displaySignal?.supplyDemand?.brokenLevel?.level, stock.symbol, displaySignal?.supplyDemand?.currentPrice, displaySignal?.supplyDemand?.brokenLevel?.level, createBreakoutAlert]);
+  }, [displaySignal?.supplyDemand?.breakoutDetected, stock.symbol, createBreakoutAlert]);
 
   // 複合アラート（市場相関+シグナル）
   useEffect(() => {

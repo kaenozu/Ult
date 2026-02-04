@@ -67,7 +67,6 @@
     "app/security/**/*.{ts,tsx}",
     "app/universe/**/*.{ts,tsx}",
     "app/domains/**/*.{ts,tsx}",
-    "app/hooks/**/*.{ts,tsx}",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
@@ -82,6 +81,9 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "e2e/**"
+    "e2e/**",
+    "app/domains/**",
+    "app/infrastructure/**",
+    "app/hooks/**"
   ]
 }

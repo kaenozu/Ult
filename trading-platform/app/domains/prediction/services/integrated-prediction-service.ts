@@ -7,7 +7,7 @@
 
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
 import { FeatureCalculationService } from './feature-calculation-service';
-import { enhancedMLService, EnhancedPrediction } from './enhanced-ml-service';
+import { enhancedMLService } from './enhanced-ml-service';
 import { analyzeStock } from '../../lib/analysis';
 import { mlPredictionService } from '../../lib/mlPrediction';
 import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '../../lib/constants';
@@ -51,9 +51,9 @@ export class IntegratedPredictionService {
 ): Promise<IntegratedPredictionResult> {
     // 1. Calculate technical indicators first
     const indicators = mlPredictionService.calculateIndicators(data);
-     
-    // 2. Calculate features from data (indicators computed internally)
-    const features = this.featureService.calculateFeatures(data);
+    
+     // 2. Calculate features from data (indicators computed internally)
+     const features = this.featureService.calculateFeatures(data);
 
     // 3. Get enhanced prediction
     const enhancedPrediction = await enhancedMLService.predictEnhanced(

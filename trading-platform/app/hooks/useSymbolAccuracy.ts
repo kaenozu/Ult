@@ -140,6 +140,14 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
       return;
     }
 
+    // Skip if no symbol is selected
+    if (!currentSymbol || currentSymbol === '') {
+      setAccuracy(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     // Check cache first
     const cached = accuracyCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -200,9 +208,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
 
         if (!accuracyResult) {
-          // Not enough data for accuracy calculation
-          setLoading(false);
-          return;
+          throw new Error('Insufficient data for accuracy calculation');
         }
 
         const predError = calculatePredictionError(historicalData);

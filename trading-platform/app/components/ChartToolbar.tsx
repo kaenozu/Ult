@@ -34,23 +34,14 @@ export const ChartToolbar = memo(function ChartToolbar({
   const isJapaneseStock = stock?.market === 'japan';
   const isIntraday = isIntradayInterval(interval);
   
-  // 日本株用：日足のみ
-  const japaneseIntervals = [
-    { value: 'D', label: '日足', disabled: false },
-  ];
-  
-  // 米国株用：全時間足
-  const usaIntervals = [
-    { value: '1m', label: '1分', disabled: false },
-    { value: '5m', label: '5分', disabled: false },
-    { value: '15m', label: '15分', disabled: false },
-    { value: '1H', label: '1時間', disabled: false },
+  const intervals = [
+    { value: '1m', label: '1分', disabled: isJapaneseStock },
+    { value: '5m', label: '5分', disabled: isJapaneseStock },
+    { value: '15m', label: '15分', disabled: isJapaneseStock },
+    { value: '1H', label: '1時間', disabled: isJapaneseStock },
     { value: '4H', label: '4時間', disabled: false },
     { value: 'D', label: '日足', disabled: false },
   ];
-  
-  // 実際に表示するインターバルを選択
-  const displayIntervals = isJapaneseStock ? japaneseIntervals : usaIntervals;
 
   return (
     <div className="min-h-10 border-b border-[#233648] flex flex-wrap items-center justify-between px-4 py-2 gap-3 bg-[#192633]/30 shrink-0">
@@ -75,17 +66,18 @@ export const ChartToolbar = memo(function ChartToolbar({
         <div className="h-6 w-px bg-[#233648] hidden sm:block" />
         
         {/* Timeframe Selector */}
-         {/* Timeframe Selector - 日本株は日足のみ対応 */}
-          <div className="flex bg-[#0d131a] rounded-lg p-0.5 gap-0.5 border border-[#233648]">
-            {/* 日本株：日足のみ、米国株：全時間足 */}
-            {displayIntervals.map((tf) => (
+        <div className="flex bg-[#0d131a] rounded-lg p-0.5 gap-0.5 border border-[#233648]">
+          {intervals.map((tf) => {
+            const isDisabled = tf.disabled;
+            
+            return (
               <button
                 key={tf.value}
                 type="button"
                 aria-pressed={tf.value === interval}
-                disabled={tf.disabled}
-                onClick={() => !tf.disabled && setInterval(tf.value)}
-                title={`${tf.label}チャート`}
+                disabled={isDisabled}
+                onClick={() => !isDisabled && setInterval(tf.value)}
+                title={isDisabled ? '日本株では日足データのみ利用可能です' : `${tf.label}チャート`}
                 className={cn(
                   'px-3 py-1 text-xs font-medium rounded transition-all duration-200',
                   'focus:outline-none focus:ring-2 focus:ring-primary/50',
@@ -167,6 +159,73 @@ export const ChartToolbar = memo(function ChartToolbar({
             </button>
           </div>
         </div>
+
+        <div className="h-6 w-px bg-[#233648] hidden sm:block" />
+
+        {/* Indicator Toggles */}
+        <div className="flex bg-[#0d131a] rounded-lg p-0.5 gap-0.5 border border-[#233648]">
+          <button
+            type="button"
+            aria-pressed={showSMA}
+            onClick={() => setShowSMA(!showSMA)}
+            className={cn(
+              'px-3 py-1 text-xs font-bold rounded transition-all duration-200 flex items-center gap-1.5',
+              'focus:outline-none focus:ring-2 focus:ring-yellow-500/50',
+              showSMA 
+                ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' 
+                : 'text-[#92adc9] hover:text-yellow-500 hover:bg-[#233648]'
+            )}
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+            SMA
+          </button>
+          <button
+            type="button"
+            aria-pressed={showBollinger}
+            onClick={() => setShowBollinger(!showBollinger)}
+            className={cn(
+              'px-3 py-1 text-xs font-bold rounded transition-all duration-200 flex items-center gap-1.5',
+              'focus:outline-none focus:ring-2 focus:ring-blue-500/50',
+              showBollinger 
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                : 'text-[#92adc9] hover:text-blue-400 hover:bg-[#233648]'
+            )}
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+            </svg>
+            ボリンジャー
+          </button>
+        </div>
+
+        <div className="h-6 w-px bg-[#233648] hidden sm:block" />
+
+        {/* Quick Actions */}
+        <div className="flex items-center gap-2 text-xs text-[#92adc9]">
+          <button 
+            type="button" 
+            className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#233648]"
+            title="インジケーターを追加"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+            </svg>
+            <span className="hidden lg:inline">インジケーター</span>
+          </button>
+          <button 
+            type="button" 
+            className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#233648]"
+            title="描画ツール"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            <span className="hidden lg:inline">ツール</span>
+          </button>
+        </div>
+      </div>
 
       {/* Right Section - Price Info */}
       {latestData && (

@@ -18,6 +18,16 @@ const EnvSchema = z.object({
   // Database
   DATABASE_URL: z.string().url().optional(),
 
+  // WebSocket
+  NEXT_PUBLIC_WS_URL: z.string().url().default('ws://localhost:3001/ws'),
+  WS_AUTH_TOKEN: z.string().optional(),
+  ALLOWED_ORIGINS: z.string().default('http://localhost:3000'),
+  WS_PORT: z.coerce.number().int().positive().default(3001),
+  WS_HOST: z.string().default('0.0.0.0'),
+  WS_MAX_CONNECTIONS_PER_IP: z.coerce.number().int().positive().default(5),
+  WS_MAX_MESSAGE_SIZE: z.coerce.number().int().positive().default(1048576),
+  WS_RATE_LIMIT_MAX_MESSAGES: z.coerce.number().int().positive().default(100),
+
   // External APIs
   ALPHA_VANTAGE_API_KEY: z.string().optional(),
   BACKEND_API_URL: z.string().url().default('http://localhost:8000'),

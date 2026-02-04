@@ -22,11 +22,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     
     const savedLocale = localStorage.getItem('locale') as Locale;
     if (savedLocale && (savedLocale === 'ja' || savedLocale === 'en')) {
-      const timeoutId = setTimeout(() => {
-        setLocaleState(savedLocale);
-      }, 0);
+      setLocaleState(savedLocale);
       document.documentElement.lang = savedLocale;
-      return () => clearTimeout(timeoutId);
     }
   }, []);
 

@@ -304,6 +304,13 @@ export const Header = memo(function Header() {
           </div>
         </div>
 
+        {/* Connection Indicator */}
+        <ConnectionQualityIndicator 
+          status={wsStatus}
+          metrics={metrics}
+          onReconnect={reconnect}
+        />
+
         {/* Notifications */}
         <NotificationCenter />
 
