@@ -41,15 +41,6 @@ export interface BacktestConfig {
   useStopLoss: boolean;
   useTakeProfit: boolean;
   riskPerTrade: number; // percentage
-
-  // Realistic mode settings
-  realisticMode?: boolean;
-  market?: 'JP' | 'US' | 'FX';
-  useAdvancedSlippage?: boolean;
-  enablePartialFill?: boolean;
-  partialFillThreshold?: number;
-  latencyMs?: number;
-  averageDailyVolume?: number;
 }
 
 export interface BacktestResult {
@@ -82,7 +73,6 @@ export interface PerformanceMetrics {
   losingTrades: number;
   calmarRatio: number;
   omegaRatio: number;
-  finalCapital?: number; // Optional: used by MonteCarloSimulator
 }
 
 export interface Strategy {
@@ -123,15 +113,6 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
   useStopLoss: true,
   useTakeProfit: true,
   riskPerTrade: 2, // 2%
-
-  // Realistic mode defaults
-  realisticMode: false,
-  market: 'JP',
-  useAdvancedSlippage: false,
-  enablePartialFill: false,
-  partialFillThreshold: 0.1, // 10%
-  latencyMs: 0,
-  averageDailyVolume: undefined,
 };
 
 // ============================================================================
@@ -571,7 +552,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-import { createSingleton } from '@/app/lib/utils/singleton';
+import { createSingleton } from '../utils/singleton';
 
 const { getInstance, resetInstance } = createSingleton(
   (config?: Partial<BacktestConfig>) => new AdvancedBacktestEngine(config)

@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, Trade as BacktestTrade } from './AdvancedBacktestEngine';
+import { BacktestResult, BacktestTrade } from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -86,25 +86,19 @@ export interface MonteCarloProbabilities {
 
 export interface MonteCarloConfidenceIntervals {
   // 90%信頼区間
-  confidence90: PerMetricConfidence;
+  confidence90: ConfidenceInterval;
 
   // 95%信頼区間
-  confidence95: PerMetricConfidence;
+  confidence95: ConfidenceInterval;
 
   // 99%信頼区間
-  confidence99: PerMetricConfidence;
+  confidence99: ConfidenceInterval;
 }
 
 export interface ConfidenceInterval {
   lower: number;
   upper: number;
   range: number;
-}
-
-export interface PerMetricConfidence {
-  returns: ConfidenceInterval;
-  sharpe: ConfidenceInterval;
-  drawdown: ConfidenceInterval;
 }
 
 export interface DistributionStatistics {
@@ -335,8 +329,8 @@ export class MonteCarloSimulator extends EventEmitter {
   private calculateMetricsFromEquity(
     equityCurve: number[],
     trades: BacktestTrade[],
-    config: BacktestConfig
-  ): MonteCarloResult {
+    config: any
+  ): any {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);
 
     const totalReturn = ((equityCurve[equityCurve.length - 1] - config.initialCapital) / config.initialCapital) * 100;
@@ -511,9 +505,7 @@ export class MonteCarloSimulator extends EventEmitter {
 
     // 各メトリクスの統計を計算
     for (const metric of this.config.metrics) {
-      const values = simulations
-        .map(s => s.metrics[metric])
-        .filter((v): v is number => v !== undefined);
+      const values = simulations.map(s => s.metrics[metric]);
       stats.set(metric, calculateStats(values));
     }
 
@@ -694,5 +686,14 @@ export function summarizeMonteCarloResult(result: MonteCarloResult): string {
 // ============================================================================
 // Singleton Export
 // ============================================================================
+
+import { createSingleton } from '../utils/singleton';
+
+const { getInstance, resetInstance } = createSingleton(
+  (config?: Partial<MonteCarloConfig>) => new MonteCarloSimulator(config)
+);
+
+export const getGlobalMonteCarloSimulator = getInstance;
+export const resetGlobalMonteCarloSimulator = resetInstance;
 
 export default MonteCarloSimulator;

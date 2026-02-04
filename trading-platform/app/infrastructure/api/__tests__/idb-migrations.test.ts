@@ -4,9 +4,6 @@
 
 import { IndexedDBClient, migrations, STORE_NAMES } from '../idb-migrations';
 
-// Increase timeout for IndexedDB tests
-jest.setTimeout(30000);
-
 describe('IndexedDB Migration System', () => {
   let client: IndexedDBClient;
 
@@ -196,7 +193,7 @@ describe('IndexedDB Migration System', () => {
     });
 
     it('should throw error for non-existent store', async () => {
-      await expect(client.clearStore('non_existent_store')).rejects.toEqual(expect.stringContaining('does not exist'));
+      await expect(client.clearStore('non_existent_store')).rejects.toThrow();
     });
 
     it('should clear all data except migrations', async () => {

@@ -14,7 +14,7 @@
  */
 
 import { BacktestResult } from './AdvancedBacktestEngine';
-import { WalkForwardResult } from '@/app/lib/optimization/types';
+import { WalkForwardResult } from '../optimization/types';
 
 // ============================================================================
 // Types

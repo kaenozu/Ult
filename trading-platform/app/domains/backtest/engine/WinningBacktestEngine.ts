@@ -12,8 +12,8 @@
  */
 
 import { OHLCV } from '@/app/types';
-import { StrategyResult } from '@/app/lib/strategies/WinningStrategyEngine';
-import { PositionSizingResult } from '@/app/lib/risk/AdvancedRiskManager';
+import { StrategyResult } from '../strategies/WinningStrategyEngine';
+import { PositionSizingResult } from '../risk/AdvancedRiskManager';
 
 // ============================================================================
 // Types
@@ -411,7 +411,7 @@ class WinningBacktestEngine {
   }
 
   private closePosition(
-    position: BacktestPosition,
+    position: any,
     data: OHLCV,
     reason: string,
     index: number

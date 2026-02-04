@@ -309,7 +309,18 @@ export class PredictionQualityMonitor {
   /**
    * Generate performance report
    */
-  generateReport(modelVersion: string) {
+  generateReport(modelVersion: string): {
+    accuracy: number;
+    mae: number;
+    mse: number;
+    rmse: number;
+    mape: number;
+    r2Score: number;
+    drift: ReturnType<typeof this.detectDrift>;
+    calibration: ReturnType<typeof this.getCalibration>;
+    totalPredictions: number;
+    recentPredictions: number;
+  } {
     const allPredictions = Array.from(this.predictions.values()).filter(
       p => p.modelVersion === modelVersion
     );

@@ -367,7 +367,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
     // 簡易実装：既存のバックテストエンジンを使用せず、
     // 直接シミュレーションを実行
 
-    const trades: BacktestTrade[] = [];
+    const trades: any[] = [];
     let equity = config.initialCapital;
     const equityCurve: number[] = [equity];
     let position: { side: 'LONG' | 'SHORT' | null; entryPrice: number; quantity: number } | null = null;
@@ -698,7 +698,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
 // Singleton Export
 // ============================================================================
 
-import { createSingleton } from '@/app/lib/utils/singleton';
+import { createSingleton } from '../utils/singleton';
 
 const { getInstance, resetInstance } = createSingleton(
   (config?: Partial<WalkForwardConfig>) => new WalkForwardAnalyzer(config)

@@ -6,9 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { handleApiError } from '@/app/lib/error-handler';
-import { checkRateLimit } from '@/app/lib/api-middleware';
-import { requireAuth } from '@/app/lib/auth';
+import { handleApiError } from '../error-handler';
+import { checkRateLimit } from '../api-middleware';
+import { requireAuth } from '../auth';
 import { CacheManager } from './CacheManager';
 
 export interface ApiHandlerOptions {

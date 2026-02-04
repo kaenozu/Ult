@@ -123,7 +123,7 @@ export class ModelDriftDetector {
       ? [modelType]
       : (['RF', 'XGB', 'LSTM', 'TECHNICAL', 'ENSEMBLE'] as (ModelType | 'ENSEMBLE')[]);
 
-    const overallDriftSeverity: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'NONE';
+    let overallDriftSeverity: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'NONE';
     let worstDriftResult: DriftDetectionResult | null = null;
 
     for (const type of modelTypes) {

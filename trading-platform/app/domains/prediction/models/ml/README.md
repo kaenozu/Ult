@@ -2,20 +2,6 @@
 
 This directory contains the machine learning model pipeline for the ULT Trading Platform. It implements real ML models using TensorFlow.js to replace the rule-based heuristics.
 
-## ⚠️ Current Implementation Status (Updated: 2025-01-28)
-
-The ML model pipeline is currently in **stub mode** (PR #606) while the full implementation is being completed in tasks #5-8. The current version provides:
-
-- ✅ **Simplified initialization** - No complex dependencies, fast startup
-- ✅ **Stub predictions** - Random predictions for testing integration
-- ✅ **Compatible API** - Service layer integration preserved
-- ✅ **Backward compatibility** - Feature engineering compatibility methods
-- ⏳ **Full ML models** - Coming in tasks #5-8
-- ⏳ **Performance monitoring** - Coming in tasks #5-8
-- ⏳ **Drift detection** - Coming in tasks #5-8
-
-See [`docs/ML_TRAINING_GUIDE.md`](../../../../../docs/ML_TRAINING_GUIDE.md) for training procedures when models are ready.
-
 ## Architecture
 
 ### Core Components
@@ -117,43 +103,43 @@ The feature engineering extracts:
 
 ## Usage
 
-### Basic Prediction (Current Stub Implementation)
+### Basic Prediction
 
 ```typescript
-import { mlPredictionIntegration } from '@/app/domains/prediction/models/ml';
+import { mlPredictionIntegration } from '@/app/lib/ml';
 
-// Initialize (simplified in stub mode)
+// Initialize models
 await mlPredictionIntegration.initialize();
 
-// Get prediction (stub implementation - returns random predictions)
-const signal = await mlPredictionIntegration.predict(
+// Get prediction
+const signal = await mlPredictionIntegration.predictWithML(
   stock,
-  ohlcvData
+  ohlcvData,
+  indexData
 );
 
 console.log('Signal:', signal.type);
 console.log('Confidence:', signal.confidence);
 console.log('Target:', signal.targetPrice);
-console.log('Note: Currently using stub predictions');
 ```
 
-**API Changes from Previous Version:**
-- Method renamed: `predictWithML()` → `predict()`
-- Parameter removed: `indexData` (unused in stub)
-- Performance methods return stub data
-
-### Training Models (Future Implementation)
-
-**Note:** Model training is deferred to tasks #5-8. See [`docs/ML_TRAINING_GUIDE.md`](../../../../../docs/ML_TRAINING_GUIDE.md) for complete training procedures.
+### Training Models
 
 ```typescript
-import { ensembleModel, featureEngineering } from '@/app/domains/prediction/models/ml';
+import { ensembleStrategy, featureEngineeringService } from '@/app/lib/ml';
 
-// Prepare data using new API
-const features = featureEngineering.calculateAllFeatures(ohlcvData);
+// Prepare data
+const features = featureEngineeringService.extractFeatures(ohlcvData, 200);
+const labels = calculateReturns(ohlcvData);
 
-// Training will be implemented in future tasks
-// await ensembleModel.trainAllModels(trainingData);
+const trainingData = {
+  features,
+  labels,
+  dates: ohlcvData.map(d => new Date(d.timestamp)),
+};
+
+// Train all models
+await ensembleStrategy.trainAllModels(trainingData);
 ```
 
 ### Walk-Forward Validation
@@ -178,14 +164,12 @@ console.log('Average Return:', overallMetrics.averageReturn);
 console.log('Win Rate:', overallMetrics.winRate);
 ```
 
-### Monitor Performance (Future Implementation)
-
-**Note:** Performance monitoring is available but will return stub data until models are trained.
+### Monitor Performance
 
 ```typescript
-import { predictionQualityMonitor } from '@/app/domains/prediction/models/ml';
+import { predictionQualityMonitor } from '@/app/lib/ml';
 
-// Get performance report (currently returns default/stub values)
+// Get performance report
 const report = predictionQualityMonitor.generateReport('ensemble-v1');
 
 console.log('Accuracy:', report.accuracy);
@@ -264,22 +248,8 @@ const windowSize = 100;      // Rolling window for metrics
 ✅ Walk-forward validation
 ✅ 60+ technical features
 
-## Roadmap
+## Future Enhancements
 
-### Phase 1: Foundation (Complete ✅)
-- [x] Feature engineering framework
-- [x] Ensemble model architecture
-- [x] Quality monitoring structure
-- [x] Drift detection framework
-- [x] Stub implementation for testing
-
-### Phase 2: ML Implementation (Tasks #5-8, In Progress)
-- [ ] **Task #5**: Full feature extraction pipeline
-- [ ] **Task #6**: Ensemble model integration with trained models
-- [ ] **Task #7**: Quality monitoring and drift detection
-- [ ] **Task #8**: Production deployment and A/B testing
-
-### Phase 3: Future Enhancements
 - [ ] Add more model types (GRU, CNN)
 - [ ] Implement true multi-head attention for Transformer
 - [ ] Add SHAP for feature importance
