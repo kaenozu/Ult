@@ -1,4 +1,5 @@
 import { Alert, AlertSeverity, AlertType, AlertActionable } from './alertTypes';
+import { ALERT_SEVERITY_THRESHOLDS, MARKET_CORRELATION, BUFFER_LIMITS } from './constants';
 
 export class AlertService {
   private static instance: AlertService;
@@ -73,8 +74,8 @@ export class AlertService {
   ): AlertSeverity {
     const weightedScore = (marketImpact * 0.4) + (stockSignalStrength * 0.6);
 
-    if (weightedScore >= 70) return 'HIGH';
-    if (weightedScore >= 40) return 'MEDIUM';
+    if (weightedScore >= ALERT_SEVERITY_THRESHOLDS.HIGH) return 'HIGH';
+    if (weightedScore >= ALERT_SEVERITY_THRESHOLDS.MEDIUM) return 'MEDIUM';
     return 'LOW';
   }
 
@@ -83,9 +84,9 @@ export class AlertService {
     stockSignal: 'BUY' | 'SELL' | 'HOLD',
     correlation: number
   ): boolean {
-    if (Math.abs(correlation) < 0.5) return false;
+    if (Math.abs(correlation) < MARKET_CORRELATION.STRONG_THRESHOLD) return false;
 
-    if (correlation > 0.5) {
+    if (correlation > MARKET_CORRELATION.STRONG_THRESHOLD) {
       return (
         (marketTrend === 'UP' && stockSignal === 'BUY') ||
         (marketTrend === 'DOWN' && stockSignal === 'SELL')
@@ -280,8 +281,8 @@ export class AlertService {
 
     this.alerts.unshift(alert);
 
-    if (this.alerts.length > 50) {
-      this.alerts = this.alerts.slice(0, 50);
+    if (this.alerts.length > BUFFER_LIMITS.MAX_ALERTS) {
+      this.alerts = this.alerts.slice(0, BUFFER_LIMITS.MAX_ALERTS);
     }
   }
 

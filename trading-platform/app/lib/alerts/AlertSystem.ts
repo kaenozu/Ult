@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { BUFFER_LIMITS } from '../constants';
 
 // ============================================================================
 // Types
@@ -350,7 +351,7 @@ export class AlertSystem extends EventEmitter {
         }
         const values = history.get(indicator)!;
         values.push(value);
-        if (values.length > 100) values.shift();
+        if (values.length > BUFFER_LIMITS.VALUE_HISTORY) values.shift();
       });
     }
 
@@ -653,11 +654,17 @@ export class AlertSystem extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
-import { createSingleton } from '../utils/singleton';
+let globalAlertSystem: AlertSystem | null = null;
 
-const { getInstance, resetInstance } = createSingleton(() => new AlertSystem());
+export function getGlobalAlertSystem(): AlertSystem {
+  if (!globalAlertSystem) {
+    globalAlertSystem = new AlertSystem();
+  }
+  return globalAlertSystem;
+}
 
-export const getGlobalAlertSystem = getInstance;
-export const resetGlobalAlertSystem = resetInstance;
+export function resetGlobalAlertSystem(): void {
+  globalAlertSystem = null;
+}
 
 export default AlertSystem;

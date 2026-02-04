@@ -10,7 +10,9 @@ import {
     SIGNAL_THRESHOLDS,
     RISK_MANAGEMENT,
     PRICE_CALCULATION,
-    VOLATILITY
+    VOLATILITY,
+    RSI_THRESHOLDS,
+    PRICE_THRESHOLDS
 } from './constants';
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
@@ -222,7 +224,7 @@ class AnalysisService {
             if (isNaN(rsi[i]) || isNaN(sma[i])) continue;
 
             let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-            if (closes[i] > sma[i] && rsi[i] < (RSI_CONFIG.OVERSOLD + 10)) type = 'BUY';
+            if (closes[i] > sma[i] && rsi[i] < (RSI_CONFIG.OVERSOLD + RSI_THRESHOLDS.OVERSOLD_BUFFER)) type = 'BUY';
             else if (closes[i] < sma[i] && rsi[i] > RSI_CONFIG.OVERBOUGHT) type = 'SELL';
 
             if (type === 'HOLD') continue;
@@ -230,7 +232,7 @@ class AnalysisService {
             total++;
             // Use pre-calculated ATR (O(1) lookup)
             const atr = atrArray[i];
-            const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, closes[i] * 0.012);
+            const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, closes[i] * PRICE_THRESHOLDS.TARGET_MOVE_FACTOR);
 
             const result = accuracyService.simulateTrade(data, i, type, targetMove);
             if (result.won) hits++;
@@ -249,7 +251,7 @@ class AnalysisService {
         type: 'BUY' | 'SELL' | 'HOLD';
         reason: string;
     } {
-        if (price > sma && rsi < (RSI_CONFIG.OVERSOLD + 10)) {
+        if (price > sma && rsi < (RSI_CONFIG.OVERSOLD + RSI_THRESHOLDS.OVERSOLD_BUFFER)) {
             return { type: 'BUY', reason: `上昇トレンド中の押し目。RSI(${params.rsiPeriod})とSMA(${params.smaPeriod})による最適化予測。` };
         }
         if (price < sma && rsi > RSI_CONFIG.OVERBOUGHT) {

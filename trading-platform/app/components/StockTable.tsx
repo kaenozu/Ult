@@ -5,6 +5,7 @@ import { formatCurrency, formatPercent, getChangeColor, cn } from '@/app/lib/uti
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
+import { POLLING_INTERVALS, VOLATILITY_THRESHOLDS } from '@/app/lib/constants';
 import { useEffect, memo, useCallback, useMemo, useState, useRef } from 'react';
 import { usePerformanceMonitor } from '@/app/lib/performance';
 
@@ -153,7 +154,7 @@ export const StockTable = memo(({
   const { measureAsync } = usePerformanceMonitor('StockTable');
   const { setSelectedStock } = useUIStore();
   const { batchUpdateStockData, removeFromWatchlist } = useWatchlistStore();
-  const [pollingInterval, setPollingInterval] = useState(60000);
+  const [pollingInterval, setPollingInterval] = useState(POLLING_INTERVALS.DEFAULT);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Sorting state
@@ -209,20 +210,17 @@ export const StockTable = memo(({
       sum + Math.abs(s.changePercent || 0), 0) / stocks.length;
     
     // 高ボラティリティ時は短い間隔、低ボラティリティ時は長い間隔
-    return avgVolatility > 2 ? 30000 : 
-           avgVolatility > 1 ? 45000 : 60000;
-  }, [stocks]);
-
-  // Update polling interval when calculated value changes
-  const prevIntervalRef = useRef(pollingInterval);
-  useEffect(() => {
-    if (calculatedInterval !== prevIntervalRef.current) {
-      // Use setTimeout to defer state update
-      const timeoutId = setTimeout(() => {
-        setPollingInterval(calculatedInterval);
-        prevIntervalRef.current = calculatedInterval;
-      }, 0);
-      return () => clearTimeout(timeoutId);
+    let newInterval: number;
+    if (avgVolatility > VOLATILITY_THRESHOLDS.HIGH) {
+      newInterval = POLLING_INTERVALS.HIGH_VOLATILITY;
+    } else if (avgVolatility > VOLATILITY_THRESHOLDS.MEDIUM_HIGH) {
+      newInterval = POLLING_INTERVALS.MEDIUM_VOLATILITY;
+    } else {
+      newInterval = POLLING_INTERVALS.LOW_VOLATILITY;
+    }
+    
+    if (newInterval !== pollingInterval) {
+      setPollingInterval(newInterval);
     }
   }, [calculatedInterval]);
 

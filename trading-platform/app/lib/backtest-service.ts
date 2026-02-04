@@ -15,6 +15,7 @@ interface BacktestPosition {
   value: number; // ポジションの初期価値（quantity × entryPrice）
 }
 import { mlPredictionService } from './mlPrediction';
+import { CONFIDENCE_THRESHOLDS } from './constants';
   // import { calculateReturns } from './utils';
 
 export interface BacktestConfig {
@@ -201,9 +202,9 @@ class BacktestService {
   } | null {
     // 現在のポジションがない場合、BUYまたはSELLシグナルでエントリー
     if (!currentPosition) {
-      if (signal.type === 'BUY' && signal.confidence >= 60) {
+      if (signal.type === 'BUY' && signal.confidence >= CONFIDENCE_THRESHOLDS.MEDIUM_CONFIDENCE) {
         return { type: 'ENTER_LONG', signal };
-      } else if (signal.type === 'SELL' && signal.confidence >= 60) {
+      } else if (signal.type === 'SELL' && signal.confidence >= CONFIDENCE_THRESHOLDS.MEDIUM_CONFIDENCE) {
         return { type: 'ENTER_SHORT', signal };
       }
     } 

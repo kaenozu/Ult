@@ -7,10 +7,7 @@
 
 import { EventEmitter } from 'events';
 import { AlertSystem, AlertCondition, AlertTrigger, AlertType, MarketData, ALERT_TEMPLATES } from './AlertSystem';
-import type { OHLCV } from '../../types';
-
-// Re-export OHLCV for backward compatibility
-export type { OHLCV };
+import { BUFFER_LIMITS } from '../constants';
 
 // ============================================================================
 // Enhanced Types
@@ -108,6 +105,19 @@ export interface EnhancedMarketData extends MarketData {
   };
   indicators?: Map<string, number>;
   patternData?: OHLCV[];
+}
+
+/**
+ * OHLCV 再定義（エクスポート用）
+ */
+export interface OHLCV {
+  symbol?: string;
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
 }
 
 /**
@@ -408,18 +418,18 @@ export class EnhancedAlertSystem extends AlertSystem {
         }
         const values = history.get(indicator)!;
         values.push(value);
-        if (values.length > 100) values.shift();
+        if (values.length > BUFFER_LIMITS.VALUE_HISTORY) values.shift();
       });
     }
 
     // price と volume も記録
     if (!history.has('price')) history.set('price', []);
     history.get('price')!.push(data.price);
-    if (history.get('price')!.length > 100) history.get('price')!.shift();
+    if (history.get('price')!.length > BUFFER_LIMITS.VALUE_HISTORY) history.get('price')!.shift();
 
     if (!history.has('volume')) history.set('volume', []);
     history.get('volume')!.push(data.volume);
-    if (history.get('volume')!.length > 100) history.get('volume')!.shift();
+    if (history.get('volume')!.length > BUFFER_LIMITS.VALUE_HISTORY) history.get('volume')!.shift();
   }
 
   /**

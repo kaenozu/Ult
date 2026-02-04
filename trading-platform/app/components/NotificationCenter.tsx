@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAlertStore } from '@/app/store/alertStore';
 import { Alert, AlertSeverity, AlertSettings } from '@/app/lib/alertTypes';
 import { cn } from '@/app/lib/utils';
+import { TIME_DURATION_MS } from '@/app/lib/constants';
 import { Bell, X, Settings, Trash2, Check, Filter, BellOff } from 'lucide-react';
 
 interface NotificationCenterProps {
@@ -98,10 +99,10 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
 
-    if (diff < 60000) return 'たった今';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}分前`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}時間前`;
-    return `${Math.floor(diff / 86400000)}日前`;
+    if (diff < TIME_DURATION_MS.MINUTE) return 'たった今';
+    if (diff < TIME_DURATION_MS.HOUR) return `${Math.floor(diff / TIME_DURATION_MS.MINUTE)}分前`;
+    if (diff < TIME_DURATION_MS.DAY) return `${Math.floor(diff / TIME_DURATION_MS.HOUR)}時間前`;
+    return `${Math.floor(diff / TIME_DURATION_MS.DAY)}日前`;
   };
 
   return (
