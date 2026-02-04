@@ -1,13 +1,14 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
-import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useOrderExecutionStore, useExecuteOrderAtomicV2 } from '@/app/store/orderExecutionStore';
+import { useTradingStore } from '@/app/store/tradingStore';
+import { useOrderExecutionStore, useExecuteOrderAtomicV2, useExecuteOrder } from '@/app/store/orderExecutionStore';
 
 // Mock stores
-jest.mock('@/app/store/portfolioStore');
+jest.mock('@/app/store/tradingStore');
 jest.mock('@/app/store/orderExecutionStore', () => ({
     useOrderExecutionStore: jest.fn(),
+    useExecuteOrder: jest.fn(),
     useExecuteOrderAtomicV2: jest.fn()
 }));
 
@@ -21,10 +22,11 @@ describe('OrderPanel', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
+        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
         (useExecuteOrderAtomicV2 as jest.Mock).mockReturnValue(mockExecuteOrderAtomicV2);
+        (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrderAtomicV2);
     });
 
     it('renders correctly', () => {
