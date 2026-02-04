@@ -586,7 +586,7 @@ class WinningTradingSystem {
 export interface SystemEvent {
   type: 'SESSION_STARTED' | 'SESSION_STOPPED' | 'POSITION_OPENED' | 'POSITION_CLOSED' | 'ALERT';
   sessionId?: string;
-  data: any;
+  data: unknown;
 }
 
 // ============================================================================

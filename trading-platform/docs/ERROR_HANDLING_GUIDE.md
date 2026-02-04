@@ -2,6 +2,8 @@
 
 ## 概要
 
+> **補足**: 2026年2月に WebSocket ベースの接続は撤去され、本ドキュメントに含まれる WebSocket に関する言及は過去の設計参考となっています。以降は HTTP/REST API を前提にしたエラー処理を中心にしています。
+
 このドキュメントでは、ULT Trading Platformにおける統一されたエラーハンドリング戦略について説明します。
 
 ## Result型パターン
@@ -363,7 +365,6 @@ describe('divide', () => {
 
 1. **MarketDataService**: API呼び出しのエラーハンドリング
 2. **TechnicalIndicatorService**: 計算エラーのハンドリング
-3. **WebSocketサービス**: 接続エラーのハンドリング
 
 ### Phase 4: React統合
 

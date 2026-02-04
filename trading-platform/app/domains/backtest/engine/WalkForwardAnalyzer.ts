@@ -367,7 +367,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
     // 簡易実装：既存のバックテストエンジンを使用せず、
     // 直接シミュレーションを実行
 
-    const trades: any[] = [];
+    const trades: BacktestTrade[] = [];
     let equity = config.initialCapital;
     const equityCurve: number[] = [equity];
     let position: { side: 'LONG' | 'SHORT' | null; entryPrice: number; quantity: number } | null = null;

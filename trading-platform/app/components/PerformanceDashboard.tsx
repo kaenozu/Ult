@@ -15,7 +15,6 @@ interface MetricCardProps {
 interface PerformanceMetrics {
   renderTimes: number[];
   apiCallDurations: number[];
-  websocketMessageRates: number[];
   cacheHitRates: number[];
 }
 
@@ -119,7 +118,6 @@ export const PerformanceDashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     renderTimes: [],
     apiCallDurations: [],
-    websocketMessageRates: [],
     cacheHitRates: [],
   });
   const [alerts, setAlerts] = useState<string[]>([]);
@@ -136,10 +134,6 @@ export const PerformanceDashboard: React.FC = () => {
         .filter(s => s.name.startsWith('api.'))
         .map(s => s.duration);
 
-      const websocketMessageRates = snapshots
-        .filter(s => s.name.startsWith('websocket.rate'))
-        .map(s => s.duration);
-
       const cacheHitRates = snapshots
         .filter(s => s.name.startsWith('cache.hit_rate'))
         .map(s => s.duration);
@@ -147,7 +141,6 @@ export const PerformanceDashboard: React.FC = () => {
       setMetrics({
         renderTimes: renderTimes.slice(-20),
         apiCallDurations: apiCallDurations.slice(-20),
-        websocketMessageRates: websocketMessageRates.slice(-20),
         cacheHitRates: cacheHitRates.slice(-20),
       });
 
@@ -249,7 +242,7 @@ export const PerformanceDashboard: React.FC = () => {
         )}
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <MetricCard
             title="Average Render Time"
             value={calculateAverage(metrics.renderTimes).toFixed(2)}
@@ -265,12 +258,6 @@ export const PerformanceDashboard: React.FC = () => {
             trend={calculateTrend(metrics.apiCallDurations)}
             threshold={500}
             currentValue={calculateAverage(metrics.apiCallDurations)}
-          />
-          <MetricCard
-            title="WebSocket Message Rate"
-            value={calculateAverage(metrics.websocketMessageRates).toFixed(2)}
-            unit="msg/s"
-            trend={calculateTrend(metrics.websocketMessageRates)}
           />
           <MetricCard
             title="Cache Hit Rate"
@@ -300,14 +287,6 @@ export const PerformanceDashboard: React.FC = () => {
               label="API Duration (ms)"
               color="#8b5cf6"
               threshold={500}
-            />
-          </div>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">WebSocket Message Rates</h2>
-            <PerformanceChart
-              data={metrics.websocketMessageRates}
-              label="Messages/sec"
-              color="#10b981"
             />
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4">

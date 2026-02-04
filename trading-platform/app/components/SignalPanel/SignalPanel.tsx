@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
-import { useWebSocketManager } from './hooks/useWebSocketManager';
 import { useSignalData } from './hooks/useSignalData';
 import { useBacktestControls } from './hooks/useBacktestControls';
 import { useKellyPositionSizing } from './hooks/useKellyPositionSizing';
 import { SignalFilters } from './components/SignalFilters';
 import { SignalDetails } from './components/SignalDetails';
-import { WebSocketManager } from './components/WebSocketManager';
 
 /**
  * SignalPanelコンポーネントのプロパティ
@@ -35,8 +33,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
 
   // Custom hooks for separated concerns
-  const { wsStatus, liveSignal, reconnect } = useWebSocketManager(stock);
-  const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal, liveSignal);
+  const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal);
   const { backtestResult, isBacktesting } = useBacktestControls(stock, ohlcv, activeTab, loading);
   const kellyRecommendation = useKellyPositionSizing(stock, displaySignal);
 
@@ -62,14 +59,12 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
           setActiveTab={setActiveTab}
           displaySignal={displaySignal}
         />
-        <WebSocketManager wsStatus={wsStatus} reconnect={reconnect} />
       </div>
 
       <SignalDetails
         activeTab={activeTab}
         displaySignal={displaySignal}
         stock={stock}
-        liveSignal={liveSignal}
         backtestResult={backtestResult}
         isBacktesting={isBacktesting}
         preciseHitRate={preciseHitRate}
