@@ -39,7 +39,7 @@ export interface WalkForwardResult {
     avgPerformanceDegradation: number;
     overallRobustnessScore: number;
   };
-  strategyParameters: any[]; // 各期間の最適パラメータ
+  strategyParameters: Record<string, unknown>[]; // 各期間の最適パラメータ
   recommendations: string[];
 }
 
@@ -54,7 +54,7 @@ class WalkForwardAnalysisService {
     wfConfig: WalkForwardAnalysisConfig
   ): Promise<WalkForwardResult> {
     const results: WalkForwardResult['periodResults'] = [];
-    const strategyParams: any[] = [];
+    const strategyParams: Record<string, unknown>[] = [];
     
     // データを期間に分割
     const periods = this.divideIntoPeriods(historicalData, wfConfig);

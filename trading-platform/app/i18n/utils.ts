@@ -20,7 +20,7 @@ export function translate(
   params?: Record<string, string | number>
 ): string {
   const keys = key.split('.');
-  let value: any = messages;
+  let value: unknown = messages;
 
   for (const k of keys) {
     if (value && typeof value === 'object' && k in value) {

@@ -31,11 +31,6 @@
     "noData": "No data available",
     "syncFailed": "Sync failed"
   },
-  "websocket": {
-    "disconnected": "WebSocket disconnected",
-    "reconnecting": "Reconnecting...",
-    "maxReconnectReached": "Maximum reconnection attempts reached"
-  },
   "generic": {
     "unknownError": "An unknown error occurred",
     "retry": "Please try again",
