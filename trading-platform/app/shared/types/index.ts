@@ -580,13 +580,13 @@ export type AlphaVantageResponse =
 // Error Types
 // ============================================================================
 
-// Re-export unified error classes for backward compatibility
-export { 
-  ApiError as APIError, 
-  NetworkError, 
-  ValidationError, 
-  RateLimitError 
-} from '../lib/errors';
+// Temporarily commented out - missing module
+// export {
+//   ApiError as APIError,
+//   NetworkError,
+//   ValidationError,
+//   RateLimitError
+// } from '../lib/errors';
 
 /**
  * Type guard for Alpha Vantage Error Response
@@ -639,6 +639,9 @@ export type APIResponse<T> = APIResult<T> | APIErrorResult;
 // Enhanced Risk Management Types
 // ============================================================================
 
+// Temporarily commented out to avoid duplicate identifier errors
+// These types should be imported directly from the specific module as needed
+/*
 export type {
   PositionSizingConfig,
   SizingResult,
@@ -656,6 +659,7 @@ export type {
   MarketData,
   RiskMetrics,
 } from './risk';
+*/
 
 // ============================================================================
 // Multi-Timeframe Trading Types

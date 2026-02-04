@@ -40,8 +40,11 @@ export function useWebSocket(url?: string) {
   }));
   const isInitializedRef = useRef(false);
 
-  // Build WebSocket URL
-  const wsUrl = url || DEFAULT_WS_CONFIG.url;
+  // Build WebSocket URL with auth token if available
+  const baseUrl = url || DEFAULT_WS_CONFIG.url;
+  const authToken = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_WS_AUTH_TOKEN
+    ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}token=${process.env.NEXT_PUBLIC_WS_AUTH_TOKEN}`
+    : baseUrl;
 
   // Memoized batch handler to update lastMessage with batched messages
   const handleBatch = useCallback((batch: MessageBatch) => {
@@ -75,11 +78,11 @@ export function useWebSocket(url?: string) {
     const client = createWebSocketClient(
       {
         ...DEFAULT_WS_CONFIG,
-        url: wsUrl,
+        url: authToken,
       },
       {
         onConnect: () => {
-          console.log('WebSocket connected to:', wsUrl);
+          console.log('WebSocket connected to:', authToken);
         },
         onMessage: (message) => {
           // Add message to batcher instead of direct setState
@@ -112,7 +115,7 @@ export function useWebSocket(url?: string) {
       clientRef.current = null;
       isInitializedRef.current = false;
     };
-  }, [wsUrl]);
+  }, [authToken]);
 
   const connect = useCallback(() => {
     if (clientRef.current) {

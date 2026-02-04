@@ -140,7 +140,7 @@ export const DATA_SOURCE_CAPABILITIES: Record<DataSourceProvider, DataSourceCapa
     realtime: true,
     intraday: true,
     delayMinutes: 0,
-    japaneseStocks: false,
+    japaneseStocks: true,
     usStocks: true,
     tickData: true,
     bidAsk: true,

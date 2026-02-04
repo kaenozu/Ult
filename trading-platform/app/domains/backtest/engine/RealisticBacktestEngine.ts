@@ -20,7 +20,7 @@ import {
   Trade,
   StrategyContext
 } from './AdvancedBacktestEngine';
-import { SlippagePredictionService, OrderBook, OrderBookLevel } from '../execution/SlippagePredictionService';
+import { SlippagePredictionService, OrderBook, OrderBookLevel } from '@/app/lib/execution/SlippagePredictionService';
 
 // ============================================================================
 // Extended Types for Realistic Simulation
@@ -452,7 +452,7 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
 // Singleton Instance
 // ============================================================================
 
-import { createSingleton } from '../utils/singleton';
+import { createSingleton } from '@/app/lib/utils/singleton';
 
 const { getInstance, resetInstance } = createSingleton(
   (config?: Partial<RealisticBacktestConfig>) => new RealisticBacktestEngine(config)

@@ -795,7 +795,7 @@ export function combineResults<T, E = TradingError>(
   
   for (const result of results) {
     if (result.isErr) {
-      return result;
+      return err<T[], E>(result.error);
     }
     values.push(result.value);
   }

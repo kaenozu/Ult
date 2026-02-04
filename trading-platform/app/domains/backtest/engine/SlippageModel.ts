@@ -223,11 +223,11 @@ export class SlippageModel {
         // 平方根モデル（市場マイクロ構造理論で一般的）
         return Math.sqrt(volumeRatio) * 0.0005;
 
-      case 'algren_chriss':
-        // Almgren-Chriss モデル（一時的＋永続的インパクト）
-        const temporaryImpact = 0.0001 * Math.sqrt(volumeRatio);
-        const permanentImpact = 0.00005 * volumeRatio;
-        return temporaryImpact + permanentImpact;
+       case 'almgren_chriss':
+         // Almgren-Chriss モデル（一時的＋永続的インパクト）
+         const temporaryImpact = 0.0001 * Math.sqrt(volumeRatio);
+         const permanentImpact = 0.00005 * volumeRatio;
+         return temporaryImpact + permanentImpact;
 
       default:
         return 0;
@@ -352,7 +352,7 @@ export function estimatePortfolioSlippageCost(
 // Singleton Export
 // ============================================================================
 
-import { createSingleton } from '../utils/singleton';
+import { createSingleton } from '@/app/lib/utils/singleton';
 
 const { getInstance, resetInstance } = createSingleton(
   (config?: Partial<SlippageConfig>) => new SlippageModel(config)

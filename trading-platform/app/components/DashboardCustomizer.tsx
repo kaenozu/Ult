@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useDashboardStore, WidgetType } from '@/app/store/dashboardStore';
 import { Layout, Plus, Settings, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
@@ -37,28 +37,28 @@ export function DashboardCustomizer() {
 
   const currentLayout = getCurrentLayout();
 
-  const handleCreateLayout = () => {
+  const handleCreateLayout = useCallback(() => {
     if (newLayoutName.trim()) {
       createLayout(newLayoutName);
       setNewLayoutName('');
       setShowCreateLayout(false);
     }
-  };
+  }, [newLayoutName, createLayout]);
 
-  const handleAddWidget = (type: WidgetType) => {
-    if (currentLayoutId) {
-      addWidget(currentLayoutId, {
-        type,
-        title: WIDGET_TYPES.find(w => w.type === type)?.label || type,
-        x: 0,
-        y: 0,
-        width: 6,
-        height: 4,
-        visible: true,
-      });
-      setShowAddWidget(false);
-    }
-  };
+  const handleAddWidget = useCallback((type: WidgetType) => {
+    if (!currentLayoutId) return;
+    
+    addWidget(currentLayoutId, {
+      type,
+      title: WIDGET_TYPES.find(w => w.type === type)?.label || type,
+      x: 0,
+      y: 0,
+      width: 6,
+      height: 4,
+      visible: true,
+    });
+    setShowAddWidget(false);
+  }, [currentLayoutId, addWidget]);
 
   if (!isOpen) {
     return (

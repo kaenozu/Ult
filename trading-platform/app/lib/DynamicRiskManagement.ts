@@ -19,11 +19,13 @@ export interface RiskAnalysisResult {
     volatilityScore: number;
 }
 
+import { OHLCV } from './types';
+
 export function calculateRiskMetrics(
     currentPrice: number,
     side: 'BUY' | 'SELL',
     cash: number,
-    ohlcv: any[],
+    ohlcv: OHLCV[],
     config: DynamicRiskConfig
 ): RiskAnalysisResult {
     // Mock implementation for build fix

@@ -4,7 +4,7 @@
  * このモジュールは、ML予測結果から取引シグナルを生成する機能を提供します。
  */
 
-import { Stock, OHLCV, Signal, ModelPrediction } from '../../types';
+import { Stock, OHLCV, Signal, ModelPrediction, TechnicalIndicatorsWithATR } from '../../types';
 import { EntryTimingRecommendation } from '../../types/shared';
 import { analyzeStock } from '@/app/lib/analysis';
 import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION, RISK_MANAGEMENT } from '@/app/lib/constants';
@@ -30,7 +30,7 @@ export class SignalGenerationService {
     stock: Stock, 
     data: OHLCV[], 
     prediction: ModelPrediction, 
-    indicators: any, // TechnicalIndicator & { atr: number[] }
+    indicators: TechnicalIndicatorsWithATR, // TechnicalIndicator & { atr: number[] }
     indexData?: OHLCV[]
   ): Signal {
     const currentPrice = data[data.length - 1].close;
@@ -252,7 +252,7 @@ export class SignalGenerationService {
     stock: Stock, 
     data: OHLCV[], 
     prediction: ModelPrediction, 
-    indicators: any,
+    indicators: TechnicalIndicatorsWithATR,
     dataByTimeFrame?: Map<string, OHLCV[]>, // TimeFrame -> OHLCV[]
     indexData?: OHLCV[]
   ): Promise<Signal> {
@@ -326,7 +326,7 @@ export class SignalGenerationService {
    */
   evaluateEntryTiming(
     currentPrice: number,
-    indicators: any,
+    indicators: TechnicalIndicatorsWithATR,
     signal: Signal
   ): {
     score: number; // 0-100のスコア（高いほど良いタイミング）

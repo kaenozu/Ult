@@ -331,7 +331,7 @@ export class PerformanceReporter {
    */
   private filterTradesByPeriod(trades: Trade[], config: ReportConfig): Trade[] {
     let startDate: number;
-    let endDate: number = config.endDate || Date.now();
+    const endDate: number = config.endDate || Date.now();
 
     if (config.period === 'custom') {
       startDate = config.startDate || 0;

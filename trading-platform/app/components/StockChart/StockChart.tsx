@@ -7,14 +7,16 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
-import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS } from '@/app/lib/constants';
+import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
-export { volumeProfilePlugin };
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
 import { useForecastLayers } from './hooks/useForecastLayers';
 import { useChartOptions } from './hooks/useChartOptions';
+import { ChartTooltip } from './ChartTooltip';
 import { AccuracyBadge } from '@/app/components/AccuracyBadge';
+
+export { volumeProfilePlugin };
 
 // Register ChartJS components and custom plugin
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
@@ -60,6 +62,12 @@ export const StockChart = memo(function StockChart({
       predictionError: accuracyData.predictionError || 1.0
     } : null
   });
+
+  // Get current SMA value for tooltip
+  const currentSmaValue = useMemo(() => {
+    if (!showSMA || !sma20 || sma20.length === 0 || hoveredIdx === null) return undefined;
+    return sma20[hoveredIdx];
+  }, [sma20, hoveredIdx, showSMA]);
 
   // 2. Chart Options Hook
   const options = useChartOptions({
@@ -149,18 +157,21 @@ export const StockChart = memo(function StockChart({
 
   // 4. Loading / Error States
   if (error) return (
-    <div className="relative w-full flex items-center justify-center bg-red-500/10 border border-red-500/50 rounded" style={{ height: dynamicHeight }}>
+    <div className={`relative w-full flex items-center justify-center ${CHART_THEME.ERROR.BACKGROUND} border ${CHART_THEME.ERROR.BORDER} rounded`} style={{ height: dynamicHeight }}>
       <div className="text-center p-4">
-        <p className="text-red-400 font-bold">データの取得に失敗しました</p>
-        <p className="text-red-300 text-sm mt-1">{error}</p>
+        <p className={`${CHART_THEME.ERROR.TEXT_TITLE} font-bold`}>データの取得に失敗しました</p>
+        <p className={`${CHART_THEME.ERROR.TEXT_DESC} text-sm mt-1`}>{error}</p>
       </div>
     </div>
   );
   if (loading || data.length === 0) return (
-    <div className="relative w-full bg-[#131b23] border border-[#233648] rounded animate-pulse" style={{ height: dynamicHeight }}>
+    <div className="relative w-full bg-[#131b23] border border-[#233648] rounded overflow-hidden" style={{ height: dynamicHeight }}>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="h-8 w-8 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin mb-2"></div>
-        <p className="text-xs text-[#92adc9]">データを取得中...</p>
+        <div className="relative w-12 h-12 mb-4">
+          <div className="absolute inset-0 border-2 border-primary/30 rounded-full"></div>
+          <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p className="text-sm text-[#92adc9] animate-pulse">チャートデータを読み込み中...</p>
       </div>
     </div>
   );
@@ -169,7 +180,7 @@ export const StockChart = memo(function StockChart({
     <div className="relative w-full group" style={{ height: dynamicHeight }}>
       {/* Accuracy Badge Overlay */}
       {accuracyData && (
-        <div className="absolute top-2 right-2 z-20 pointer-events-none">
+        <div className="absolute top-2 right-2 z-20 pointer-events-none animate-fade-in">
           <AccuracyBadge
             hitRate={accuracyData.hitRate}
             totalTrades={accuracyData.totalTrades}
@@ -179,24 +190,21 @@ export const StockChart = memo(function StockChart({
         </div>
       )}
       
-      {hoveredIdx !== null && hoveredIdx < data.length && (
-        <div className="absolute top-2 left-2 z-20 bg-[#1a2632]/90 border border-[#233648] p-3 rounded shadow-xl pointer-events-none backdrop-blur-sm">
-          <div className="text-xs font-black text-primary uppercase border-b border-[#233648] pb-1 mb-1">{extendedData.labels[hoveredIdx]}</div>
-          <div className="text-sm font-bold text-white">{formatCurrency(data[hoveredIdx].close, market === 'japan' ? 'JPY' : 'USD')}</div>
-        </div>
-      )}
+      {/* Custom Tooltip */}
+      <ChartTooltip
+        hoveredIdx={hoveredIdx}
+        data={data}
+        labels={extendedData.labels}
+        market={market}
+        signal={signal}
+        showSMA={showSMA}
+        smaValue={currentSmaValue}
+      />
+      
       <Line ref={chartRef} data={chartData} options={options} />
       {showVolume && (
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
-          <Bar data={{
-            labels: extendedData.labels,
-            datasets: [{
-              data: data.map(d => d.volume),
-              backgroundColor: data.map((d, i) =>
-                i === 0 || d.close >= data[i - 1].close ? CANDLESTICK.BULL_COLOR : CANDLESTICK.BEAR_COLOR
-              )
-            }]
-          }} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />
+           <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />
         </div>
       )}
     </div>

@@ -82,9 +82,9 @@ export class CommissionCalculator {
   constructor(market: Market, config?: Partial<CommissionConfig>) {
     this.config = {
       market,
-      japan: market === 'japan' ? { ...DEFAULT_JAPAN_COMMISSION, ...config?.japan } : undefined,
-      usa: market === 'usa' ? { ...DEFAULT_USA_COMMISSION, ...config?.usa } : undefined,
-      fx: { ...DEFAULT_FX_COMMISSION, ...config?.fx },
+      japan: market === 'japan' ? { ...DEFAULT_JAPAN_COMMISSION, ...(config?.japan ?? {}) } : undefined,
+      usa: market === 'usa' ? { ...DEFAULT_USA_COMMISSION, ...(config?.usa ?? {}) } : undefined,
+      fx: { ...DEFAULT_FX_COMMISSION, ...(config?.fx ?? {}) },
     };
   }
   
@@ -347,10 +347,14 @@ export function calculateBreakEvenPrice(
 
 import { createSingleton } from '../utils/singleton';
 
-const createCalculator = (market: Market, config?: Partial<CommissionConfig>) =>
-  new CommissionCalculator(market, config);
+// market をキャプチャして、createSingletonの期待する型に合わせる
+const makeCreateCalculator = (market: Market) => {
+  return (config?: Partial<CommissionConfig>) => new CommissionCalculator(market, config);
+};
 
-const { getInstance, resetInstance } = createSingleton(createCalculator);
+// market は 'japan' または 'usa' のいずれかとして、シングルトンを作成
+// 注意: market は実行時に決定される想定。ここでは 'japan' をデフォルトとする
+const { getInstance, resetInstance } = createSingleton(makeCreateCalculator('japan' as Market));
 
 export const getGlobalCommissionCalculator = getInstance;
 export const resetGlobalCommissionCalculator = resetInstance;

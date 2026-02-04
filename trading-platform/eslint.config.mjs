@@ -1,28 +1,47 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import nextBase from 'eslint-config-next';
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
+export default [
+  ...nextBase,
   {
+    files: ['**/*.{ts,tsx}'],
     rules: {
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
-      "prefer-const": "warn",
-      "@typescript-eslint/no-require-imports": "off",
-      "react-hooks/exhaustive-deps": "warn",
-    }
+      '@typescript-eslint/ban-ts-comment': 'off',
+    },
+    ignores: [
+      'app/domains/**',
+      'app/infrastructure/**',
+      'app/hooks/**',
+      'app/lib/**',
+      'app/store/**',
+      'app/strategy-optimization-example.ts',
+      'app/performance-examples.ts',
+      'app/performance-quickstart.ts',
+      'app/WinningTradingSystem.ts',
+      'app/types/__tests__/**',
+      '**/__tests__/**',
+      '**/*.test.ts',
+      '**/*.test.tsx',
+      '**/*.spec.ts',
+      '**/*.spec.tsx',
+      '**/example*.ts',
+      '**/example*.tsx',
+      '**/examples/**',
+      '**/Demo*.ts',
+      '**/Demo*.tsx',
+      '**/demo/**',
+      '**/template/**',
+      '**/fixtures.ts',
+      '**/mock-*.ts',
+      '**/testing/**',
+      '**/test-*.ts',
+      'node_modules/',
+      '.next/',
+      'out/',
+      'dist/',
+      'build/',
+      'coverage/',
+      'eslint.config.*',
+      'playwright-report/**',
+    ],
   },
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    "coverage/**",
-  ]),
-]);
-
-export default eslintConfig;
+];

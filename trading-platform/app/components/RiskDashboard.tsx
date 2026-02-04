@@ -628,8 +628,10 @@ function HedgingPanel({
   const [recommendations, setRecommendations] = useState<HedgeRecommendation[]>([]);
 
   useEffect(() => {
-    const recs = hedgeManager.generateHedgeRecommendations();
-    setRecommendations(recs);
+    setTimeout(() => {
+      const recs = hedgeManager.generateHedgeRecommendations();
+      setRecommendations(recs);
+    }, 0);
   }, [hedgeManager]);
 
   return (

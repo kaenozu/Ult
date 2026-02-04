@@ -1,11 +1,12 @@
-import { requireCSRF } from '/app/lib/csrf/csrf-protection';
 /**
  * GET /api/sentiment/route.ts
- * 
+ *
  * センチメントデータAPI - 全シンボルのセンチメント情報を取得
  */
 
 import { NextRequest } from 'next/server';
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
+import { requireAuth } from '@/app/lib/auth';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
@@ -49,10 +50,30 @@ interface SentimentAction {
 }
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
-  const csrfError = requireCSRF(request);
-  if (csrfError) return csrfError;
+  async (request: NextRequest) => {
+    // Authentication check - required for admin actions (start/stop/clear)
+    const authError = requireAuth(request);
+    if (authError) {
+      const errorBody = await authError.json() as { error?: string; message?: string };
+      return {
+        success: false,
+        message: errorBody.message || errorBody.error || 'Authentication required',
+      };
+    }
 
-  async (_request: NextRequest, body: SentimentAction) => {
+    // CSRF protection check
+    const csrfError = requireCSRF(request);
+    if (csrfError) {
+      const errorBody = await csrfError.json() as { error?: string };
+      return {
+        success: false,
+        message: errorBody.error || 'CSRF validation failed',
+      };
+    }
+
+    // Read body after CSRF validation (fixes double body read issue)
+    const body = await request.json() as SentimentAction;
+
     // Validate action
     const validationError = validateField({
       value: body.action,
@@ -62,7 +83,10 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
     });
 
     if (validationError) {
-      throw new Error(`Unknown action: ${body.action}`);
+      return {
+        success: false,
+        message: `Invalid action: ${body.action}`,
+      };
     }
 
     const sentimentService = getGlobalSentimentIntegration();
@@ -90,8 +114,10 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
         };
 
       default:
-        // TypeScript should prevent this, but adding for safety
-        throw new Error(`Unknown action: ${body.action}`);
+        return {
+          success: false,
+          message: `Unknown action: ${body.action}`,
+        };
     }
   },
   {

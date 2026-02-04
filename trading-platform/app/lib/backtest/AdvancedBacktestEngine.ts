@@ -454,7 +454,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     if (!this.currentPosition) return;
 
     const quantity = this.calculatePositionSize(this.entryPrice);
-    let exitPrice = this.applySlippage(
+    const exitPrice = this.applySlippage(
       data.close, 
       this.currentPosition === 'LONG' ? 'SELL' : 'BUY',
       data,

@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Play, BarChart3 } from 'lucide-react';
@@ -17,24 +17,30 @@ export function BacktestPanel() {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<any>(null);
 
-  const runBacktest = async () => {
+  const runBacktest = useCallback(async () => {
+    if (isRunning) return; // Prevent duplicate calls
+    
     setIsRunning(true);
     try {
       // Simulate backtest
       await measureAsync('simulateBacktest', async () => {
         await new Promise(resolve => setTimeout(resolve, 2000));
-        setResults({
+        const mockResults = {
           totalReturn: 25.5,
           sharpeRatio: 1.8,
           maxDrawdown: 12.3,
           winRate: 58.2,
           totalTrades: 156,
-        });
+        };
+        setResults(mockResults);
+        return mockResults;
       });
+    } catch (error) {
+      console.error('Backtest failed:', error);
     } finally {
       setIsRunning(false);
     }
-  };
+  }, [isRunning, measureAsync]);
 
   return (
     <Card className="bg-[#1e293b] border-[#334155]">

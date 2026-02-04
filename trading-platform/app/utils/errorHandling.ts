@@ -335,7 +335,7 @@ export function combineResults<T, E>(results: Result<T, E>[]): Result<T[], E> {
   
   for (const result of results) {
     if (!result.success) {
-      return result;
+      return fail(result.error as E);
     }
     data.push(result.data);
   }
@@ -354,7 +354,7 @@ export async function combineResultsAsync<T, E>(
   for (const resultPromise of results) {
     const result = await resultPromise;
     if (!result.success) {
-      return result;
+      return fail(result.error as E);
     }
     data.push(result.data);
   }

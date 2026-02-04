@@ -51,7 +51,7 @@ export const BOLLINGER_BANDS = {
  */
 export const VOLATILITY = {
   DEFAULT_ATR_PERIOD: 14,
-  CALCULATION_PERIOD: 30,
+  CALCULATION_PERIOD: 20,
 } as const;
 
 /**
