@@ -3,7 +3,7 @@
  * 
  * スキャンして最適な銘柄を返すAPIエンドポイント
  * GET /api/performance-screener
- * 
+ *
  * Query Parameters:
  * - market: 'japan' | 'usa' | 'all' (default: 'all')
  * - minWinRate: number (default: 0)
@@ -61,7 +61,7 @@ function createDataSources(): StockDataSource[] {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    
+
     // パラメータ取得
     const market = (searchParams.get('market') || 'all') as 'japan' | 'usa' | 'all';
     const minWinRate = parseFloat(searchParams.get('minWinRate') || '0');

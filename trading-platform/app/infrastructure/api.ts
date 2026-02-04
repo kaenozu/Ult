@@ -51,14 +51,14 @@ export class ApiClient {
     return this.fetch<T>(endpoint, { method: 'GET' });
   }
 
-  async post<T>(endpoint: string, body: any): Promise<T> {
+  async post<T>(endpoint: string, body: unknown): Promise<T> {
     return this.fetch<T>(endpoint, {
       method: 'POST',
       body: JSON.stringify(body),
     });
   }
 
-  async put<T>(endpoint: string, body: any): Promise<T> {
+  async put<T>(endpoint: string, body: unknown): Promise<T> {
     return this.fetch<T>(endpoint, {
       method: 'PUT',
       body: JSON.stringify(body),

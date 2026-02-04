@@ -1,20 +1,19 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
-import { useTradingStore } from '@/app/store/tradingStore';
-import { useOrderExecutionStore, useExecuteOrderAtomicV2, useExecuteOrder } from '@/app/store/orderExecutionStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useOrderExecutionStore, useExecuteOrder } from '@/app/store/orderExecutionStore';
 
 // Mock stores
-jest.mock('@/app/store/tradingStore');
+jest.mock('@/app/store/portfolioStore');
 jest.mock('@/app/store/orderExecutionStore', () => ({
     useOrderExecutionStore: jest.fn(),
-    useExecuteOrder: jest.fn(),
-    useExecuteOrderAtomicV2: jest.fn()
+    useExecuteOrder: jest.fn()
 }));
 
 describe('OrderPanel', () => {
     const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const, sector: 'Automotive', volume: 1000000 };
-    const mockExecuteOrderAtomicV2 = jest.fn().mockReturnValue({ success: true });
+    const mockExecuteOrder = jest.fn().mockReturnValue({ success: true });
 
     const mockPortfolioState = {
         portfolio: { cash: 1000000, positions: [] },
@@ -22,11 +21,10 @@ describe('OrderPanel', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
+        (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
-        (useExecuteOrderAtomicV2 as jest.Mock).mockReturnValue(mockExecuteOrderAtomicV2);
-        (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrderAtomicV2);
+        (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrder);
     });
 
     it('renders correctly', () => {
@@ -58,7 +56,7 @@ describe('OrderPanel', () => {
         // Confirm
         fireEvent.click(screen.getByText('注文を確定'));
 
-        expect(mockExecuteOrderAtomicV2).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockExecuteOrder).toHaveBeenCalledWith(expect.objectContaining({
             symbol: '7203',
             quantity: 100,
             side: 'LONG'

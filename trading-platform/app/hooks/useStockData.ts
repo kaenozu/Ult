@@ -24,7 +24,7 @@ export function useStockData() {
   const [selectedStock, setLocalSelectedStock] = useState<Stock | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [timeFrame, setTimeFrame] = useState<string>('5m'); // Renamed from interval to avoid shadowing
+  const [timeFrame, setTimeFrame] = useState<string>('D'); // Default to daily chart
   const [metadata, setMetadata] = useState<MarketDataMetadata>({});
 
   // AbortController for canceling pending requests on unmount
