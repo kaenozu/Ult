@@ -1,12 +1,26 @@
 #!/bin/bash
+#
+# Git Repository History Cleanup Script
+# =====================================
+# This script removes large temporary files from Git history to reduce repository size.
+#
+# WARNING: This script rewrites Git history! Use with caution.
+# - Backup your repository before running
+# - Coordinate with team members
+# - Force push will be required after running
+#
+
 set -e
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_DIR"
 
 echo "============================================"
 echo "Git Repository History Cleanup Script"
 echo "============================================"
 echo ""
-echo "⚠️  WARNING: This script will rewrite git history!"
-echo "⚠️  Make sure all team members are aware and have committed their work."
+echo "WARNING: This script will rewrite git history."
+echo "Make sure all team members have committed their work."
 echo ""
 echo "This script will remove temporary/build files from git history."
 echo ""
@@ -21,9 +35,11 @@ echo ""
 echo "Step 1: Checking prerequisites..."
 
 # Check if git-filter-repo is installed
-if ! command -v git-filter-repo &> /dev/null; then
-    echo "git-filter-repo is not installed. Installing..."
-    pip install git-filter-repo
+if ! git filter-repo --help >/dev/null 2>&1; then
+    echo "ERROR: git-filter-repo is not installed."
+    echo "Install it with: pip3 install git-filter-repo"
+    echo "Or follow instructions at: https://github.com/newren/git-filter-repo"
+    exit 1
 fi
 
 echo ""
@@ -40,16 +56,22 @@ echo "Current .git size: ${BEFORE_SIZE}MB"
 echo ""
 echo "Step 4: Creating list of files to remove..."
 cat > /tmp/git-cleanup-paths.txt << 'EOF'
+trading-platform/eslint-output.txt
 trading-platform/build-after-fix.txt
 trading-platform/lint-output.txt
 trading-platform/lint-fix-output.txt
+trading-platform/build-output.txt
+trading-platform/eslint-report.txt
+trading-platform/eslint-any-check.txt
+trading-platform/test-results.txt
+trading-platform/error-files.txt
 trading-platform/tsc-current-full.txt
-trading-platform/tsc-output-final.txt
+trading-platform/tsc-current.txt
 trading-platform/tsc-errors.txt
 trading-platform/tsc-new.txt
-trading-platform/tsc-output.txt
-trading-platform/tsc-current.txt
 trading-platform/tsc-output-current.txt
+trading-platform/tsc-output-final.txt
+trading-platform/tsc-output.txt
 trading-platform/app/hooks/useSymbolAccuracy.ts.bak
 trading-platform/app/lib/performance-quickstart.ts.bak
 trading-platform/app/lib/backtest/RealisticBacktestEngine.ts.bak2
@@ -67,6 +89,7 @@ echo ""
 
 echo "Step 5: Running git-filter-repo..."
 echo "This may take a few minutes..."
+
 git filter-repo --invert-paths --paths-from-file /tmp/git-cleanup-paths.txt --force
 
 echo ""
@@ -87,7 +110,7 @@ git fsck --full
 
 echo ""
 echo "============================================"
-echo "✅ Cleanup completed successfully!"
+echo "Cleanup completed successfully."
 echo "============================================"
 echo ""
 echo "Next steps:"

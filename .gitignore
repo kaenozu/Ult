@@ -26,6 +26,22 @@ dist/
 build/
 *.tsbuildinfo
 
+# Build and lint output files (temporary)
+*-output.txt
+eslint-output.txt
+eslint-report.txt
+eslint-any-check.txt
+lint-output.txt
+lint-fix-output.txt
+build-output.txt
+build-after-fix.txt
+tsc-output*.txt
+tsc-errors.txt
+tsc-current*.txt
+tsc-new.txt
+test-results.txt
+error-files.txt
+
 # Tool directories
 .agent/
 .jules/
