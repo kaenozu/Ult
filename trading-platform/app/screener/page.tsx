@@ -14,7 +14,7 @@ import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 
 type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
 type SortDirection = 'asc' | 'desc';
-type PresetType = 'oversold' | 'uptrend';
+type PresetType = 'oversold' | 'uptrend' | 'overbought' | 'downtrend';
 
 function ScreenerContent() {
   const router = useRouter();
@@ -28,7 +28,7 @@ function ScreenerContent() {
     volumeMin: '',
     sector: '',
     market: '',
-    signal: 'BUY',
+    signal: 'ANY',  // 'BUY'から'ANY'に変更して売買両方を表示
     minConfidence: '60',  // 80%から60%に変更して現実的な基準に
   });
 
@@ -195,12 +195,17 @@ function ScreenerContent() {
       setFilters({
         priceMin: '', priceMax: '', changeMin: '', changeMax: '',
         volumeMin: '', sector: '', market: '',
-        signal: 'BUY', minConfidence: '60',  // 80%から60%に変更
+        signal: type === 'oversold' ? 'BUY' : type === 'uptrend' ? 'BUY' : type === 'overbought' ? 'SELL' : type === 'downtrend' ? 'SELL' : 'ANY', 
+        minConfidence: '60',
       });
       if (type === 'oversold') {
         setTechFilters({ rsiMax: '30', rsiMin: '', trend: 'all' });
       } else if (type === 'uptrend') {
         setTechFilters({ rsiMax: '', rsiMin: '', trend: 'uptrend' });
+      } else if (type === 'overbought') {
+        setTechFilters({ rsiMax: '', rsiMin: '70', trend: 'all' });
+      } else if (type === 'downtrend') {
+        setTechFilters({ rsiMax: '', rsiMin: '', trend: 'downtrend' });
       }
       setIsTechAnalysisDone(false);
       setActivePreset(null);
@@ -234,7 +239,7 @@ function ScreenerContent() {
             <div className="flex justify-between items-center">
               <h3 className="text-white text-base font-bold">フィルター</h3>
               <button onClick={() => {
-                setFilters({ priceMin: '', priceMax: '', changeMin: '', changeMax: '', volumeMin: '', sector: '', market: '', signal: 'BUY', minConfidence: '60' });
+                setFilters({ priceMin: '', priceMax: '', changeMin: '', changeMax: '', volumeMin: '', sector: '', market: '', signal: 'ANY', minConfidence: '60' });
                 setTechFilters({ rsiMax: '', rsiMin: '', trend: 'all' });
                 setIsTechAnalysisDone(false);
               }} className="text-primary text-xs font-medium hover:text-primary/80">リセット</button>
@@ -322,7 +327,7 @@ function ScreenerContent() {
                 >
                   <span className="flex items-center gap-2">
                     {activePreset === 'oversold' && <span className="animate-spin">⏳</span>}
-                    🔥 売られすぎ
+                    🔥 売られすぎ（買い）
                   </span>
                 </button>
                 <button
@@ -337,7 +342,37 @@ function ScreenerContent() {
                 >
                   <span className="flex items-center gap-2">
                     {activePreset === 'uptrend' && <span className="animate-spin">⏳</span>}
-                    🚀 上昇トレンド
+                    🚀 上昇トレンド（買い）
+                  </span>
+                </button>
+                <button
+                  onClick={() => applyPreset('overbought')}
+                  disabled={activePreset !== null}
+                  className={cn(
+                    "relative text-xs py-2 px-3 rounded-lg text-left transition-all duration-200",
+                    "bg-[#192633] hover:bg-[#233648] border border-red-500/30 text-red-400",
+                    activePreset === 'overbought' && "opacity-60 cursor-not-allowed",
+                    activePreset !== null && activePreset !== 'overbought' && "opacity-50"
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    {activePreset === 'overbought' && <span className="animate-spin">⏳</span>}
+                    ⚠️ 買われすぎ（売り）
+                  </span>
+                </button>
+                <button
+                  onClick={() => applyPreset('downtrend')}
+                  disabled={activePreset !== null}
+                  className={cn(
+                    "relative text-xs py-2 px-3 rounded-lg text-left transition-all duration-200",
+                    "bg-[#192633] hover:bg-[#233648] border border-orange-500/30 text-orange-400",
+                    activePreset === 'downtrend' && "opacity-60 cursor-not-allowed",
+                    activePreset !== null && activePreset !== 'downtrend' && "opacity-50"
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    {activePreset === 'downtrend' && <span className="animate-spin">⏳</span>}
+                    📉 下降トレンド（売り）
                   </span>
                 </button>
               </div>
