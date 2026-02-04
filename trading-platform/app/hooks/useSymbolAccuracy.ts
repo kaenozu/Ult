@@ -181,6 +181,9 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         );
 
         if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Too Many Requests - Please try again later');
+          }
           throw new Error('Failed to fetch historical data');
         }
 
@@ -189,6 +192,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
 
         // Fallback to provided OHLCV if API data is insufficient
         if (historicalData.length < 252) {
+          console.warn(`Insufficient data for ${currentSymbol}: got ${historicalData.length} records, using provided OHLCV (${ohlcv.length} records)`);
           historicalData = ohlcv;
         }
 

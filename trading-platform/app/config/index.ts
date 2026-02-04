@@ -26,8 +26,6 @@ function parseEnv(): EnvConfig {
     API_KEY: process.env.API_KEY,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     DATABASE_URL: process.env.DATABASE_URL,
-    WS_PORT: process.env.WS_PORT,
-    WS_URL: process.env.WS_URL,
     SENTRY_DSN: process.env.SENTRY_DSN,
     SENTRY_ENVIRONMENT: process.env.SENTRY_ENVIRONMENT,
     MARKET_DATA_PROVIDER: process.env.MARKET_DATA_PROVIDER,

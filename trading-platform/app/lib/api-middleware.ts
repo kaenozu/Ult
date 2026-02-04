@@ -25,6 +25,11 @@ import { rateLimitError, handleApiError } from './error-handler';
  * ```
  */
 export function checkRateLimit(request: Request | NextRequest): NextResponse | null {
+  // Disable rate limiting in development for better debugging
+  if (process.env.NODE_ENV === 'development') {
+    return null;
+  }
+  
   const clientIp = getClientIp(request);
   if (!ipRateLimiter.check(clientIp)) {
     return rateLimitError();
