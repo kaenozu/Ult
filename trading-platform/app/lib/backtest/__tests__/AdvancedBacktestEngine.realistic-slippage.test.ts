@@ -258,6 +258,70 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
       }
     });
   });
+
+  describe('Transaction Cost Model', () => {
+    it('should apply transaction costs when enabled', async () => {
+      const configWithoutCosts: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        commission: 0,
+        transactionCostsEnabled: false,
+      };
+
+      const configWithCosts: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        commission: 0,
+        transactionCostsEnabled: true,
+        transactionCostBroker: 'SBI',
+        transactionCostMarketCondition: 'normal',
+        transactionCostSettlementType: 'same-day',
+        transactionCostDailyVolume: 1000000,
+      };
+
+      engine = new AdvancedBacktestEngine(configWithoutCosts);
+      engine.loadData('TEST', mockData);
+      const strategy = createSimpleBuyHoldStrategy();
+      const resultWithoutCosts = await engine.runBacktest(strategy, 'TEST');
+
+      const engineWithCosts = new AdvancedBacktestEngine(configWithCosts);
+      engineWithCosts.loadData('TEST', mockData);
+      const resultWithCosts = await engineWithCosts.runBacktest(strategy, 'TEST');
+
+      expect(resultWithCosts.trades.length).toBeGreaterThan(0);
+
+      const totalFeesWithCosts = resultWithCosts.trades.reduce(
+        (sum, trade) => sum + (trade.fees || 0), 0
+      );
+      expect(totalFeesWithCosts).toBeGreaterThan(0);
+    });
+
+    it('should use broker-specific commission rates', async () => {
+      const configJapan: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        transactionCostsEnabled: true,
+        transactionCostBroker: 'SBI',
+        market: 'japan',
+      };
+
+      const configUSA: Partial<BacktestConfig> = {
+        initialCapital: 100000,
+        transactionCostsEnabled: true,
+        transactionCostBroker: 'Rakuten',
+        market: 'usa',
+      };
+
+      engine = new AdvancedBacktestEngine(configJapan);
+      engine.loadData('TEST', mockData);
+      const strategy = createSimpleBuyHoldStrategy();
+      const resultJapan = await engine.runBacktest(strategy, 'TEST');
+
+      const engineUSA = new AdvancedBacktestEngine(configUSA);
+      engineUSA.loadData('TEST', mockData);
+      const resultUSA = await engineUSA.runBacktest(strategy, 'TEST');
+
+      expect(resultJapan.trades.length).toBeGreaterThan(0);
+      expect(resultUSA.trades.length).toBeGreaterThan(0);
+    });
+  });
 });
 
 // Helper functions
