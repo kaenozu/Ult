@@ -1,118 +1,82 @@
-import { generateCSRFToken, validateCSRFToken, csrfTokenMiddleware, requireCSRF } from '../csrf-protection';
-import { NextRequest, NextResponse } from 'next/server';
+
+import { NextRequest } from 'next/server';
+import { csrfProtection } from '../csrf-protection';
 
 describe('CSRF Protection', () => {
-  describe('generateCSRFToken', () => {
-    it('should generate a token of correct length', () => {
-      const token = generateCSRFToken();
-      expect(token).toHaveLength(64); // 32 bytes = 64 hex chars
-    });
+  const originalEnv = process.env;
 
-    it('should generate unique tokens', () => {
-      const token1 = generateCSRFToken();
-      const token2 = generateCSRFToken();
-      expect(token1).not.toBe(token2);
-    });
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    process.env.CSRF_SECRET = 'test-secret-key-must-be-at-least-32-chars-long';
   });
 
-  describe('validateCSRFToken', () => {
-    it('should return true when tokens match', () => {
-      const token = generateCSRFToken();
-      const request = new NextRequest('http://localhost:3000', {
-        headers: {
-          'x-csrf-token': token,
-        },
-        cookies: {
-          'csrf-token': token,
-        },
-      });
-
-      expect(validateCSRFToken(request)).toBe(true);
-    });
-
-    it('should return false when tokens do not match', () => {
-      const request = new NextRequest('http://localhost:3000', {
-        headers: {
-          'x-csrf-token': 'wrong-token',
-        },
-        cookies: {
-          'csrf-token': 'correct-token',
-        },
-      });
-
-      expect(validateCSRFToken(request)).toBe(false);
-    });
-
-    it('should return false when cookie is missing', () => {
-      const token = generateCSRFToken();
-      const request = new NextRequest('http://localhost:3000', {
-        headers: {
-          'x-csrf-token': token,
-        },
-      });
-
-      expect(validateCSRFToken(request)).toBe(false);
-    });
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
-  describe('csrfTokenMiddleware', () => {
-    it('should set CSRF cookie on GET request', () => {
-      const request = new NextRequest('http://localhost:3000', {
-        method: 'GET',
-      });
-
-      const response = csrfTokenMiddleware(request);
-      expect(response).not.toBeNull();
-      
-      const cookies = response?.cookies;
-      expect(cookies).toBeDefined();
-      const csrfCookie = cookies?.get('csrf-token');
-      expect(csrfCookie).toBeDefined();
-      expect(csrfCookie?.value).toHaveLength(64);
-    });
-
-    it('should not set cookie on POST request', () => {
-      const request = new NextRequest('http://localhost:3000', {
-        method: 'POST',
-      });
-
-      const response = csrfTokenMiddleware(request);
-      expect(response).toBeNull();
-    });
+  it('should generate a valid CSRF token', async () => {
+    const token = await csrfProtection.generateToken();
+    expect(token).toBeDefined();
+    expect(typeof token).toBe('string');
+    expect(token.length).toBeGreaterThan(0);
   });
 
-  describe('requireCSRF', () => {
-    it('should return null for GET requests', () => {
-      const request = new NextRequest('http://localhost:3000', {
-        method: 'GET',
-      });
+  it('should verify a valid CSRF token', async () => {
+    const token = await csrfProtection.generateToken();
+    const isValid = await csrfProtection.verifyToken(token);
+    expect(isValid).toBe(true);
+  });
 
-      expect(requireCSRF(request)).toBeNull();
+  it('should reject an invalid CSRF token', async () => {
+    const isValid = await csrfProtection.verifyToken('invalid-token');
+    expect(isValid).toBe(false);
+  });
+
+  it('should validate request with valid CSRF header', async () => {
+    const token = await csrfProtection.generateToken();
+    const req = new NextRequest('http://localhost/api/test', {
+      method: 'POST',
+      headers: {
+        'x-csrf-token': token,
+        'origin': 'http://localhost'
+      }
     });
 
-    it('should reject POST without CSRF token', () => {
-      const request = new NextRequest('http://localhost:3000', {
-        method: 'POST',
-      });
+    const isValid = await csrfProtection.validateRequest(req);
+    expect(isValid).toBe(true);
+  });
 
-      const response = requireCSRF(request);
-      expect(response).not.toBeNull();
-      expect(response?.status).toBe(403);
+  it('should reject request with missing CSRF header', async () => {
+    const req = new NextRequest('http://localhost/api/test', {
+      method: 'POST',
+      headers: {
+        'origin': 'http://localhost'
+      }
     });
 
-    it('should allow POST with valid CSRF token', () => {
-      const token = generateCSRFToken();
-      const request = new NextRequest('http://localhost:3000', {
-        method: 'POST',
-        headers: {
-          'x-csrf-token': token,
-        },
-        cookies: {
-          'csrf-token': token,
-        },
-      });
+    const isValid = await csrfProtection.validateRequest(req);
+    expect(isValid).toBe(false);
+  });
 
-      expect(requireCSRF(request)).toBeNull();
+  it('should reject request with invalid CSRF header', async () => {
+    const req = new NextRequest('http://localhost/api/test', {
+      method: 'POST',
+      headers: {
+        'x-csrf-token': 'invalid-token',
+        'origin': 'http://localhost'
+      }
     });
+
+    const isValid = await csrfProtection.validateRequest(req);
+    expect(isValid).toBe(false);
+  });
+
+  it('should skip validation for safe methods (GET)', async () => {
+    const req = new NextRequest('http://localhost/api/test', {
+      method: 'GET'
+    });
+
+    const isValid = await csrfProtection.validateRequest(req);
+    expect(isValid).toBe(true);
   });
 });
