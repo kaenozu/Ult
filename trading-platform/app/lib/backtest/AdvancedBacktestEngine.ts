@@ -58,7 +58,7 @@ export interface BacktestConfig {
   useStopLoss: boolean;
   useTakeProfit: boolean;
   riskPerTrade: number; // percentage
-  
+
   // Realistic mode settings
   realisticMode?: boolean; // Enable realistic trading simulation
   market?: 'japan' | 'usa'; // Market for commission calculation
@@ -68,6 +68,13 @@ export interface BacktestConfig {
   partialFillEnabled?: boolean; // Simulate partial fills
   latencyEnabled?: boolean; // Simulate execution latency
   latencyMs?: number; // Latency in milliseconds
+
+  // Transaction cost model settings
+  transactionCostsEnabled?: boolean; // Enable transaction cost model
+  transactionCostBroker?: string; // Broker name for cost calculation
+  transactionCostMarketCondition?: 'normal' | 'volatile' | 'liquid'; // Market conditions
+  transactionCostSettlementType?: 'same-day' | 't1' | 't2'; // Settlement type
+  transactionCostDailyVolume?: number; // Daily volume for cost calculation
 }
 
 export interface BacktestResult {
