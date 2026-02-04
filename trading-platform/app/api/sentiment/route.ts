@@ -1,3 +1,5 @@
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
+import { requireAuth } from '@/app/lib/auth';
 /**
  * GET /api/sentiment/route.ts
  *
