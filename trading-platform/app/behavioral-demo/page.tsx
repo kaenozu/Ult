@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { Navigation } from '@/app/components/Navigation';
+import { ScreenLabel } from '@/app/components/ScreenLabel';
 import { useGuardedOrderExecution } from '@/app/hooks/useGuardedOrderExecution';
 import { useExtendedJournalStore } from '@/app/store/journalStoreExtended';
 import { useTradingStore } from '@/app/store/tradingStore';
@@ -70,6 +71,7 @@ export default function BehavioralWarningDemoPage() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+      <ScreenLabel label="行動バイアス警告システム / Behavioral Bias Warning" />
       {/* Header */}
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#233648] bg-[#101922] px-6 py-3 shrink-0">
         <div className="flex items-center gap-3 text-white">

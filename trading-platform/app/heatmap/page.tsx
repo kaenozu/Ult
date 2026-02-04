@@ -10,6 +10,7 @@ import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
+import { ScreenLabel } from '@/app/components/ScreenLabel';
 
 const SECTORS = [
   '全て',
@@ -149,6 +150,7 @@ function HeatmapContent() {
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0f14] text-white overflow-hidden font-sans">
+      <ScreenLabel label="マーケットヒートマップ / Market Heatmap" />
       <header className="flex items-center justify-between border-b border-[#233648] bg-[#101922] px-6 py-2.5 shrink-0 z-20">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2.5">
