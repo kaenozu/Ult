@@ -14,10 +14,6 @@ export interface EnvironmentConfig {
   database: {
     url: string;
   };
-  websocket: {
-    url: string;
-    authToken?: string;
-  };
   
   // Optional with defaults
   logging: {
@@ -127,13 +123,6 @@ export function validateEnvironment(): EnvironmentConfig {
       databaseUrl = getOptionalEnv('DATABASE_URL', '');
     }
 
-    // WebSocket Configuration
-    const websocketUrl = getOptionalEnv(
-      'NEXT_PUBLIC_WS_URL',
-      isDevelopment ? 'ws://localhost:3001/ws' : ''
-    );
-    const websocketAuthToken = getOptionalEnv('NEXT_PUBLIC_WS_AUTH_TOKEN', '');
-
     // Logging Configuration
     const logLevelRaw = getOptionalEnv('LOG_LEVEL', isDevelopment ? 'debug' : 'info');
     const validLogLevels = ['debug', 'info', 'warn', 'error'];
@@ -158,10 +147,6 @@ export function validateEnvironment(): EnvironmentConfig {
       },
       database: {
         url: databaseUrl,
-      },
-      websocket: {
-        url: websocketUrl,
-        authToken: websocketAuthToken || undefined,
       },
       logging: {
         level: logLevel,

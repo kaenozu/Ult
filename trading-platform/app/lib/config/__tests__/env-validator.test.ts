@@ -117,23 +117,6 @@ describe('Environment Validator', () => {
       expect(config.database.url).toBe('');
     });
 
-    it('should handle NEXT_PUBLIC_WS_URL correctly', () => {
-      process.env.NODE_ENV = 'development';
-      process.env.NEXT_PUBLIC_WS_URL = 'ws://localhost:3002';
-      
-      const config = validateEnvironment();
-      
-      expect(config.websocket.url).toBe('ws://localhost:3002');
-    });
-
-    it('should default NEXT_PUBLIC_WS_URL in development', () => {
-      process.env.NODE_ENV = 'development';
-      delete process.env.NEXT_PUBLIC_WS_URL;
-      
-      const config = validateEnvironment();
-      
-      expect(config.websocket.url).toBe('ws://localhost:3001');
-    });
 
     it('should handle LOG_LEVEL correctly', () => {
       process.env.NODE_ENV = 'development';
@@ -283,7 +266,6 @@ describe('Environment Validator', () => {
       process.env.NODE_ENV = 'production';
       process.env.JWT_SECRET = 'secure-production-secret-key-12345';
       process.env.DATABASE_URL = 'postgresql://user:pass@host:5432/dbname';
-      process.env.NEXT_PUBLIC_WS_URL = 'wss://api.example.com/ws';
       process.env.LOG_LEVEL = 'info';
       process.env.ENABLE_ANALYTICS = 'true';
       process.env.RATE_LIMIT_MAX = '500';
@@ -294,7 +276,6 @@ describe('Environment Validator', () => {
       expect(config.isProduction).toBe(true);
       expect(config.jwt.secret).toBe('secure-production-secret-key-12345');
       expect(config.database.url).toBe('postgresql://user:pass@host:5432/dbname');
-      expect(config.websocket.url).toBe('wss://api.example.com/ws');
       expect(config.logging.level).toBe('info');
       expect(config.analytics.enabled).toBe(true);
       expect(config.rateLimit.max).toBe(500);

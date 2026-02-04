@@ -22,8 +22,8 @@ export interface PerformanceReport {
 }
 
 export function generatePerformanceReport(): PerformanceReport {
-  const stats = performanceMonitor.getStats();
-  const operations = Array.from(stats.entries()).map(([name, stat]) => ({
+  const metrics = performanceMonitor.getMetrics();
+  const operations = Object.entries(metrics).map(([name, stat]) => ({
     name,
     stats: stat,
   }));
@@ -73,7 +73,7 @@ export function observeWebVitals(): void {
   new PerformanceObserver((list) => {
     const entries = list.getEntries();
     const lastEntry = entries[entries.length - 1];
-    performanceMonitor.record('web-vitals-lcp', lastEntry.startTime);
+    performanceMonitor.recordMetric('web-vitals-lcp', lastEntry.startTime);
   }).observe({ entryTypes: ['largest-contentful-paint'] });
 
   // First Input Delay
@@ -81,7 +81,7 @@ export function observeWebVitals(): void {
     const entries = list.getEntries();
     entries.forEach(entry => {
       const fid = (entry as any).processingStart - entry.startTime;
-      performanceMonitor.record('web-vitals-fid', fid);
+      performanceMonitor.recordMetric('web-vitals-fid', fid);
     });
   }).observe({ entryTypes: ['first-input'] });
 
@@ -94,7 +94,7 @@ export function observeWebVitals(): void {
         clsValue += (entry as any).value;
       }
     });
-    performanceMonitor.record('web-vitals-cls', clsValue);
+    performanceMonitor.recordMetric('web-vitals-cls', clsValue);
   }).observe({ entryTypes: ['layout-shift'] });
 }
 

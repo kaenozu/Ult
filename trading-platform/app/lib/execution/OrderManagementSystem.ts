@@ -446,7 +446,7 @@ export class OrderManagementSystem extends EventEmitter {
     }
   }
 
-  private handleExecutionReport(report: any): void {
+  private handleExecutionReport(report: unknown): void {
     this.emit('execution_report', report);
   }
 
