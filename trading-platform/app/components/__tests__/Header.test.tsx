@@ -43,7 +43,10 @@ jest.mock('lucide-react', () => ({
     WifiOff: () => <span data-testid="icon-wifioff" />,
     Edit2: () => <span data-testid="icon-edit" />,
     Plus: () => <span data-testid="icon-plus" />,
-    Loader2: () => <span data-testid="icon-loader" />
+    Loader2: () => <span data-testid="icon-loader" />,
+    Star: () => <span data-testid="icon-star" />,
+    X: () => <span data-testid="icon-x" />,
+    TrendingUp: () => <span data-testid="icon-trending-up" />
 }));
 
 jest.mock('../NotificationCenter', () => ({
@@ -98,7 +101,8 @@ describe('Header', () => {
 
     it('edits cash balance', () => {
         render(<Header />);
-        const editTrigger = screen.getByText('header.cash').parentElement;
+        // Find the "資金" (funds) text and click its parent to enter edit mode
+        const editTrigger = screen.getByText('資金').parentElement;
         if (editTrigger) fireEvent.click(editTrigger);
 
         const input = screen.getByDisplayValue('1000000');
@@ -110,7 +114,7 @@ describe('Header', () => {
 
     it('searches and selects stock', () => {
         render(<Header />);
-        const input = screen.getByPlaceholderText('header.searchPlaceholder');
+        const input = screen.getByPlaceholderText('銘柄名、コードで検索...');
 
         fireEvent.change(input, { target: { value: 'Toyota' } });
         expect(screen.getByText('7203')).toBeInTheDocument(); // In results
@@ -122,7 +126,7 @@ describe('Header', () => {
 
     it('handles exact match on Enter', () => {
         render(<Header />);
-        const input = screen.getByPlaceholderText('header.searchPlaceholder');
+        const input = screen.getByPlaceholderText('銘柄名、コードで検索...');
 
         fireEvent.change(input, { target: { value: '7203' } });
         fireEvent.keyDown(input, { key: 'Enter' });
@@ -137,7 +141,7 @@ describe('Header', () => {
         });
 
         render(<Header />);
-        const input = screen.getByPlaceholderText('header.searchPlaceholder');
+        const input = screen.getByPlaceholderText('銘柄名、コードで検索...');
         fireEvent.change(input, { target: { value: 'Toyota' } });
 
         expect(screen.getByText('追加済み')).toBeInTheDocument();
@@ -146,7 +150,7 @@ describe('Header', () => {
 
     it('navigates search results with keyboard', () => {
         render(<Header />);
-        const input = screen.getByPlaceholderText('header.searchPlaceholder');
+        const input = screen.getByPlaceholderText('銘柄名、コードで検索...');
 
         // Search for 'a' to get multiple results (Toyota, Apple)
         fireEvent.change(input, { target: { value: 'a' } });
