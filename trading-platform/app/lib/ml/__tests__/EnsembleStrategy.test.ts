@@ -13,6 +13,8 @@ describe('EnsembleStrategy', () => {
   let mockTrainingData: TrainingData;
 
   beforeEach(() => {
+    // Clear any timers before each test
+    jest.clearAllTimers();
     strategy = new EnsembleStrategy();
 
     // Generate mock training data
@@ -51,7 +53,11 @@ describe('EnsembleStrategy', () => {
   });
 
   afterEach(() => {
-    strategy.dispose();
+    if (strategy) {
+      strategy.dispose();
+    }
+    // Clear any hanging timers or async operations
+    jest.clearAllTimers();
   });
 
   describe('constructor', () => {

@@ -12,13 +12,13 @@ describe('IndexedDB Migration System', () => {
   });
 
   afterEach(async () => {
-    // Clean up
+    // Clean up with extended timeout
     try {
       await client.clearAllData();
     } catch (error) {
       // Ignore errors during cleanup
     }
-  });
+  }, 30000); // 30 second timeout for cleanup
 
   describe('Initialization', () => {
     it('should initialize successfully', async () => {

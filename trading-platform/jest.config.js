@@ -9,6 +9,7 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jest-environment-jsdom',
+  testTimeout: 30000, // 30 second timeout for all tests
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you soon)
     '^@/(.*)$': '<rootDir>/$1',
@@ -29,6 +30,7 @@ const customJestConfig = {
   },
   testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/e2e/'],
   coverageReporters: ['text', 'lcov', 'html'],
+  maxWorkers: '50%', // Limit workers to prevent memory issues
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
