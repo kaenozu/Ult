@@ -104,6 +104,10 @@ jobs:
       - name: Build and analyze bundle size
         id: bundle
         working-directory: ./trading-platform
+        env:
+          NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY || 'demo' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret-change-me-please' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
         run: |
           echo "Building application..."
           npm run build
