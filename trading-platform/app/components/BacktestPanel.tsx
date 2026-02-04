@@ -1,112 +1,320 @@
 /**
  * BacktestPanel.tsx
- * 
- * バックテストパネルコンポーネント
+ *
+ * Backtest runner + results dashboard.
  */
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
-import { Play, BarChart3 } from 'lucide-react';
-import { usePerformanceMonitor } from '@/app/lib/performance';
+import { AlertTriangle, BarChart3, Play } from 'lucide-react';
+import BacktestResultsDashboard from '@/app/components/backtest/BacktestResultsDashboard';
+import type { BacktestResult } from '@/app/types';
+
+type Market = 'usa' | 'japan';
+type StrategyId = 'sma' | 'rsi' | 'buy_hold';
+type TimeframeId = '1y' | '3y' | '5y';
+
+interface DataQualitySummary {
+  totalPoints: number;
+  validPoints: number;
+  completeness: number;
+  freshness: {
+    lastUpdate: number;
+    ageMs: number;
+    staleness: 'fresh' | 'acceptable' | 'stale' | 'expired';
+  };
+  avgLatencyMs: number;
+  warnings: string[];
+  errors: string[];
+}
+
+interface OverfittingAnalysis {
+  overfit: boolean;
+  overfittingScore: number;
+  confidence: number;
+  indicators: Record<string, number>;
+  recommendations: string[];
+  warnings: string[];
+}
+
+interface BacktestDiagnostics {
+  overfitting?: OverfittingAnalysis;
+  inSample?: number;
+  outOfSample?: number;
+}
+
+const TIMEFRAME_OPTIONS: Array<{ id: TimeframeId; label: string; years: number }> = [
+  { id: '1y', label: '1Y', years: 1 },
+  { id: '3y', label: '3Y', years: 3 },
+  { id: '5y', label: '5Y', years: 5 },
+];
 
 export function BacktestPanel() {
-  const { measureAsync } = usePerformanceMonitor('BacktestPanel');
+  const [symbol, setSymbol] = useState('AAPL');
+  const [market, setMarket] = useState<Market>('usa');
+  const [strategy, setStrategy] = useState<StrategyId>('sma');
+  const [timeframe, setTimeframe] = useState<TimeframeId>('5y');
+  const [result, setResult] = useState<BacktestResult | null>(null);
+  const [dataQuality, setDataQuality] = useState<DataQualitySummary | null>(null);
+  const [diagnostics, setDiagnostics] = useState<BacktestDiagnostics | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-  const [results, setResults] = useState<any>(null);
 
-  const runBacktest = useCallback(async () => {
-    if (isRunning) return; // Prevent duplicate calls
-    
+  const startDate = useMemo(() => {
+    const selected = TIMEFRAME_OPTIONS.find((option) => option.id === timeframe);
+    const years = selected?.years ?? 5;
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - years);
+    return date.toISOString().split('T')[0];
+  }, [timeframe]);
+
+  const runBacktest = async () => {
+    if (isRunning) return;
     setIsRunning(true);
+    setError(null);
+    setWarnings([]);
+
     try {
-      // Simulate backtest
-      await measureAsync('simulateBacktest', async () => {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        const mockResults = {
-          totalReturn: 25.5,
-          sharpeRatio: 1.8,
-          maxDrawdown: 12.3,
-          winRate: 58.2,
-          totalTrades: 156,
-        };
-        setResults(mockResults);
-        return mockResults;
+      if (!symbol.trim()) {
+        throw new Error('Symbol is required.');
+      }
+      const params = new URLSearchParams({
+        symbol: symbol.trim().toUpperCase(),
+        market,
+        strategy,
+        startDate,
       });
-    } catch (error) {
-      console.error('Backtest failed:', error);
+
+      const response = await fetch(`/api/backtest?${params.toString()}`);
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Backtest failed.');
+      }
+
+      setResult(payload?.result ?? null);
+      setDataQuality(payload?.dataQuality ?? null);
+      setDiagnostics(payload?.diagnostics ?? null);
+      setWarnings(Array.isArray(payload?.warnings) ? payload.warnings : []);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unexpected error.';
+      setError(message);
     } finally {
       setIsRunning(false);
     }
-  }, [isRunning, measureAsync]);
+  };
 
   return (
-    <Card className="bg-[#1e293b] border-[#334155]">
-      <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-purple-400" />
-          Backtest Engine
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-3 bg-[#0f172a] rounded-lg">
-              <p className="text-xs text-gray-400">Strategy</p>
-              <p className="text-sm font-medium text-white">RSI Mean Reversion</p>
+    <div className="space-y-6">
+      <Card className="bg-[#1e293b] border-[#334155]">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-blue-400" />
+            Backtest Runner
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Symbol</label>
+              <input
+                value={symbol}
+                onChange={(event) => setSymbol(event.target.value)}
+                className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
+                placeholder="AAPL"
+              />
             </div>
-            <div className="p-3 bg-[#0f172a] rounded-lg">
-              <p className="text-xs text-gray-400">Period</p>
-              <p className="text-sm font-medium text-white">2023-01-01 to 2023-12-31</p>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Market</label>
+              <select
+                value={market}
+                onChange={(event) => setMarket(event.target.value as Market)}
+                className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
+              >
+                <option value="usa">USA</option>
+                <option value="japan">Japan</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Strategy</label>
+              <select
+                value={strategy}
+                onChange={(event) => setStrategy(event.target.value as StrategyId)}
+                className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
+              >
+                <option value="sma">SMA Crossover</option>
+                <option value="rsi">RSI Reversion</option>
+                <option value="buy_hold">Buy & Hold</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Timeframe</label>
+              <select
+                value={timeframe}
+                onChange={(event) => setTimeframe(event.target.value as TimeframeId)}
+                className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
+              >
+                {TIMEFRAME_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <Button
-            onClick={runBacktest}
-            disabled={isRunning}
-            className="w-full bg-purple-600 hover:bg-purple-700"
-          >
-            <Play className="w-4 h-4 mr-2" />
-            {isRunning ? 'Running Backtest...' : 'Run Backtest'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={runBacktest}
+              disabled={isRunning}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Play className="w-4 h-4 mr-2" />
+              {isRunning ? 'Running...' : 'Run Backtest'}
+            </Button>
+            <div className="text-xs text-gray-400">
+              Start date: {startDate}
+            </div>
+          </div>
 
-          {results && (
-            <div className="mt-4 space-y-3">
-              <h4 className="text-sm font-medium text-gray-300">Results</h4>
-              <div className="grid grid-cols-2 gap-3">
-                <ResultMetric label="Total Return" value={`${results.totalReturn}%`} positive={results.totalReturn > 0} />
-                <ResultMetric label="Sharpe Ratio" value={results.sharpeRatio.toFixed(2)} positive={results.sharpeRatio > 1} />
-                <ResultMetric label="Max Drawdown" value={`${results.maxDrawdown}%`} positive={false} />
-                <ResultMetric label="Win Rate" value={`${results.winRate}%`} positive={results.winRate > 50} />
-              </div>
-              <p className="text-xs text-gray-400 text-center">
-                Total Trades: {results.totalTrades}
-              </p>
+          {error && (
+            <div className="flex items-center gap-2 text-sm text-red-400">
+              <AlertTriangle className="w-4 h-4" />
+              <span>{error}</span>
             </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+        </CardContent>
+      </Card>
 
-function ResultMetric({
-  label,
-  value,
-  positive,
-}: {
-  label: string;
-  value: string;
-  positive: boolean;
-}) {
-  return (
-    <div className="p-3 bg-[#0f172a] rounded-lg text-center">
-      <p className="text-xs text-gray-400">{label}</p>
-      <p className={`text-lg font-bold ${positive ? 'text-green-400' : 'text-red-400'}`}>
-        {value}
-      </p>
+      {warnings.length > 0 && (
+        <Card className="bg-[#1e293b] border-[#334155]">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-400" />
+              Warnings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm text-yellow-200">
+              {warnings.map((warning, index) => (
+                <li key={`${warning}-${index}`} className="bg-[#0f172a] px-3 py-2 rounded">
+                  {warning}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {dataQuality && (
+        <Card className="bg-[#1e293b] border-[#334155]">
+          <CardHeader>
+            <CardTitle className="text-white">Data Quality</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 text-sm">
+              <div className="p-3 bg-[#0f172a] rounded">
+                <div className="text-xs text-gray-400">Points</div>
+                <div className="text-lg font-semibold text-white">{dataQuality.totalPoints}</div>
+              </div>
+              <div className="p-3 bg-[#0f172a] rounded">
+                <div className="text-xs text-gray-400">Valid Points</div>
+                <div className="text-lg font-semibold text-white">{dataQuality.validPoints}</div>
+              </div>
+              <div className="p-3 bg-[#0f172a] rounded">
+                <div className="text-xs text-gray-400">Completeness</div>
+                <div className="text-lg font-semibold text-white">{dataQuality.completeness.toFixed(1)}%</div>
+              </div>
+              <div className="p-3 bg-[#0f172a] rounded">
+                <div className="text-xs text-gray-400">Freshness</div>
+                <div className="text-lg font-semibold text-white">{dataQuality.freshness.staleness}</div>
+              </div>
+              <div className="p-3 bg-[#0f172a] rounded">
+                <div className="text-xs text-gray-400">Last Update</div>
+                <div className="text-sm font-semibold text-white">
+                  {dataQuality.freshness.lastUpdate > 0
+                    ? new Date(dataQuality.freshness.lastUpdate).toLocaleDateString()
+                    : '-'}
+                </div>
+              </div>
+              <div className="p-3 bg-[#0f172a] rounded">
+                <div className="text-xs text-gray-400">Age (days)</div>
+                <div className="text-lg font-semibold text-white">
+                  {dataQuality.freshness.ageMs === Number.POSITIVE_INFINITY
+                    ? '-'
+                    : (dataQuality.freshness.ageMs / 86400000).toFixed(1)}
+                </div>
+              </div>
+            </div>
+
+            {dataQuality.errors.length > 0 && (
+              <div>
+                <div className="text-xs text-gray-400 mb-2">Errors</div>
+                <ul className="space-y-2 text-xs text-red-200">
+                  {dataQuality.errors.map((errorItem, index) => (
+                    <li key={`dq-error-${index}`} className="bg-[#0f172a] px-3 py-2 rounded">
+                      {errorItem}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {diagnostics?.overfitting && (
+        <Card className="bg-[#1e293b] border-[#334155]">
+          <CardHeader>
+            <CardTitle className="text-white">Overfitting Check</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-gray-200">
+            <div className="flex items-center justify-between">
+              <span>Status</span>
+              <span className={diagnostics.overfitting.overfit ? 'text-red-400' : 'text-green-400'}>
+                {diagnostics.overfitting.overfit ? 'High Risk' : 'OK'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Overfit Score</span>
+              <span>{diagnostics.overfitting.overfittingScore.toFixed(2)}</span>
+            </div>
+            {typeof diagnostics.inSample === 'number' && typeof diagnostics.outOfSample === 'number' && (
+              <div className="flex items-center justify-between">
+                <span>Win Rate (IS / OOS)</span>
+                <span>{diagnostics.inSample.toFixed(1)}% / {diagnostics.outOfSample.toFixed(1)}%</span>
+              </div>
+            )}
+            {diagnostics.overfitting.warnings.length > 0 && (
+              <ul className="space-y-2">
+                {diagnostics.overfitting.warnings.map((warning, index) => (
+                  <li key={`overfit-${index}`} className="bg-[#0f172a] px-3 py-2 rounded text-yellow-200">
+                    {warning}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {diagnostics.overfitting.recommendations.length > 0 && (
+              <div>
+                <div className="text-xs text-gray-400 mb-2">Recommendations</div>
+                <ul className="space-y-2 text-xs text-blue-200">
+                  {diagnostics.overfitting.recommendations.map((rec, index) => (
+                    <li key={`overfit-rec-${index}`} className="bg-[#0f172a] px-3 py-2 rounded">
+                      {rec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <BacktestResultsDashboard result={result} />
     </div>
   );
 }

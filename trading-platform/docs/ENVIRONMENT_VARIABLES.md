@@ -2,6 +2,8 @@
 
 ## Overview
 
+> **補足**: WebSocket 環境変数は 2026年2月に撤去され、現行の設定検証では扱われていません。このドキュメントは HTTP/REST ベースの設定を中心に記載しています。
+
 This document explains how environment variables are managed and validated in the ULT Trading Platform.
 
 ## Environment Validation System
@@ -27,7 +29,6 @@ In production (`NODE_ENV=production`), the following variables are **required**:
 
 These variables have sensible defaults but can be overridden:
 
-- `NEXT_PUBLIC_WS_URL` - WebSocket server URL (default: `ws://localhost:3001` in dev)
 - `JWT_EXPIRATION` - JWT token expiration (default: `24h`)
 - `LOG_LEVEL` - Logging level (default: `debug` in dev, `info` in production)
 - `ENABLE_LOGGING` - Enable/disable logging (default: `true`)
@@ -47,7 +48,6 @@ const config = getConfig();
 // Access configuration values with type safety
 console.log(config.jwt.secret);        // string
 console.log(config.database.url);      // string
-console.log(config.websocket.url);     // string
 console.log(config.logging.level);     // 'debug' | 'info' | 'warn' | 'error'
 console.log(config.analytics.enabled); // boolean
 console.log(config.rateLimit.max);     // number

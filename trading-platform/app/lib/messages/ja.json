@@ -31,11 +31,6 @@
     "noData": "データがありません",
     "syncFailed": "同期に失敗しました"
   },
-  "websocket": {
-    "disconnected": "WebSocket接続が切断されました",
-    "reconnecting": "再接続中...",
-    "maxReconnectReached": "再接続試行回数の上限に達しました"
-  },
   "generic": {
     "unknownError": "不明なエラーが発生しました",
     "retry": "再試行してください",

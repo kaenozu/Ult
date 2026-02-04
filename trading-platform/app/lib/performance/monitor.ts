@@ -12,6 +12,9 @@ export interface PerformanceMetric {
   count: number;
 }
 
+// Alias for backward compatibility
+export type PerformanceStats = PerformanceMetric;
+
 export interface PerformanceSnapshot {
   name: string;
   duration: number;

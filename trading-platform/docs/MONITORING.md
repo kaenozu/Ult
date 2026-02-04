@@ -4,10 +4,12 @@ This document describes the comprehensive monitoring and error tracking implemen
 
 ## Overview
 
+> **補足**: 2026年2月に WebSocket 群を撤去し、以降は API/レンダリング/Web Vitals を中心に監視しています。この資料に残っている WebSocket 固有の記述は過去の履歴です。
+
 The monitoring system provides:
 - **Core Web Vitals tracking** (LCP, FID, CLS, FCP, TTFB)
 - **Error tracking** with Sentry
-- **Custom metrics** for API, WebSocket, and rendering performance
+- **Custom metrics** for API and rendering performance
 - **Real User Monitoring (RUM)**
 - **Performance budgets** and alerts
 
@@ -70,23 +72,6 @@ const data = await monitoredFetch('/api/market-data', {
 import { trackApiCall } from '@/app/lib/monitoring';
 
 trackApiCall('/api/endpoint', 'POST', duration, status, success);
-```
-
-### 3. WebSocket Monitoring
-
-Track WebSocket connection health:
-
-```typescript
-import { createMonitoredWebSocket } from '@/app/lib/monitoring/websocket';
-
-// Creates a WebSocket with automatic monitoring
-const ws = createMonitoredWebSocket('ws://localhost:3001');
-
-// Or manually track events
-import { trackWebSocket } from '@/app/lib/monitoring';
-
-trackWebSocket('connect', true, duration);
-trackWebSocket('error', false, undefined, 'Connection failed');
 ```
 
 ### 4. Component Render Tracking
@@ -172,7 +157,6 @@ console.log(summary);
 // {
 //   webVitals: { LCP: { value: 2000, rating: 'good', ... }, ... },
 //   apiSuccessRate: 95.5,
-//   webSocketSuccessRate: 98.2,
 //   averageApiResponseTime: 450,
 //   slowestApiCalls: [...],
 //   slowestRenders: [...],

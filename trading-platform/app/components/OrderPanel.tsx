@@ -3,7 +3,7 @@
 import { useState, useId } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
-import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useTradingStore } from '@/app/store/tradingStore';
 import { useExecuteOrder } from '@/app/store/orderExecutionStore';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 import { DynamicRiskMetrics } from './DynamicRiskMetrics';
@@ -41,9 +41,9 @@ interface OrderPanelProps {
  * @returns {JSX.Element} 注文パネルUI
  */
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
-  const { portfolio } = usePortfolioStore();
+  // Optimized: select only cash to prevent re-renders on every portfolio update
+  const cash = useTradingStore((state) => state.portfolio.cash);
   const executeOrder = useExecuteOrder();
-  const cash = portfolio.cash;
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
