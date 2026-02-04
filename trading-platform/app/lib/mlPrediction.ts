@@ -284,21 +284,17 @@ class MLPredictionService {
     return data.slice(1).map((d, i) => (d.close - data[i].close) / data[i].close);
   }
 
-  private calculateCorrelation(xValues: number[], yValues: number[]): number {
-    const minLength = Math.min(xValues.length, yValues.length);
-    if (minLength < 2) return 0;
-    const meanX = xValues.reduce((sum: number, value: number) => sum + value, 0) / minLength;
-    const meanY = yValues.reduce((sum: number, value: number) => sum + value, 0) / minLength;
-    let numerator = 0, denominatorX = 0, denominatorY = 0;
-    for (let i = 0; i < minLength; i++) {
-      const deviationX = xValues[i] - meanX;
-      const deviationY = yValues[i] - meanY;
-      numerator += deviationX * deviationY;
-      denominatorX += deviationX * deviationX;
-      denominatorY += deviationY * deviationY;
+  private calculateCorrelation(x: number[], y: number[]): number {
+    const n = Math.min(x.length, y.length);
+    if (n < 2) return 0;
+    const muX = x.reduce((a: number, b: number) => a + b, 0) / n, muY = y.reduce((a: number, b: number) => a + b, 0) / n;
+    let num = 0, denX = 0, denY = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = x[i] - muX, dy = y[i] - muY;
+      num += dx * dy; denX += dx * dx; denY += dy * dy;
     }
-    const denominator = Math.sqrt(denominatorX) * Math.sqrt(denominatorY);
-    return denominator === 0 ? 0 : numerator / denominator;
+    const denominator = Math.sqrt(denX) * Math.sqrt(denY);
+    return denominator === 0 ? 0 : num / denominator;
   }
 
   private calculateVolatility(prices: number[]): number {
