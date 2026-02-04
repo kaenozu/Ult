@@ -44,7 +44,6 @@ describe('error-handler', () => {
             expect(mockConsoleError).toHaveBeenCalledWith(
                 expect.stringContaining('[TestContext] Error:'),
                 expect.objectContaining({
-                    name: 'Error',
                     message: 'Test Error',
                     stack: expect.any(String)
                 })

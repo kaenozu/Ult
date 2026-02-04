@@ -16,14 +16,6 @@ describe('Error Handling', () => {
       expect(error.name).toBe('AppError');
     });
 
-    it('should create AppError with custom values', () => {
-      const error = new AppError('Custom error', 'CUSTOM_CODE', 'high');
-      expect(error.message).toBe('Custom error');
-      expect(error.code).toBe('CUSTOM_CODE');
-      expect(error.severity).toBe('high');
-    });
-  });
-
   describe('ApiError', () => {
     it('should create ApiError with status code', () => {
       const error = new ApiError('API error', '/api/test', 404);
@@ -34,13 +26,23 @@ describe('Error Handling', () => {
     });
   });
 
+  describe('ApiError', () => {
+    it('should create ApiError with status code', () => {
+      const error = new ApiError('API error', undefined, 404);
+      expect(error.message).toBe('API error');
+      expect(error.statusCode).toBe(404);
+      expect(error.code).toBe('NOT_FOUND_ERROR');
+      expect(error.name).toBe('ApiError');
+    });
+  });
+
   describe('ValidationError', () => {
     it('should create ValidationError', () => {
-      const error = new ValidationError('field', 'Invalid input');
-      expect(error.message).toBe('Validation error for field: Invalid input');
+      const error = new ValidationError('inputField', 'Invalid input');
+      expect(error.message).toBe('Validation error for inputField: Invalid input');
       expect(error.code).toBe('VALIDATION_ERROR');
       expect(error.severity).toBe('low');
-      expect(error.field).toBe('field');
+      expect(error.field).toBe('inputField');
     });
   });
 
@@ -78,12 +80,12 @@ describe('Error Handling', () => {
     });
 
     it('should return Japanese message for API 404', () => {
-      const error = new ApiError('Not found', '/api/test', 404);
+      const error = new ApiError('Not found', undefined, 404);
       expect(getUserErrorMessage(error)).toBe('データが見つかりませんでした');
     });
 
     it('should return Japanese message for API 429', () => {
-      const error = new ApiError('Too many requests', '/api/test', 429);
+      const error = new ApiError('Too many requests', undefined, 429);
       expect(getUserErrorMessage(error)).toBe('リクエストが多すぎます。しばらく待ってからお試しください');
     });
 

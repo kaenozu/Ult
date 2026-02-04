@@ -1,23 +1,21 @@
 /**
- * 共通エラーハンドラー
+ * 共通エラーハンドラー (Next.js API Routes)
  *
- * このモジュールは、アプリケーション全体で統一されたエラーハンドリングを提供します。
- * - APIルート用のHTTPレスポンス生成
+ * このモジュールは、Next.js APIルート専用のHTTPレスポンス生成を提供します。
+ * コアエラー処理は @/app/lib/errors で統一されており、このファイルは
+ * そのラッパーとして機能します。
+ * 
+ * - APIルート用のHTTPレスポンス生成 (NextResponse)
  * - ユーザー向けエラーメッセージの標準化
- * - エラーログの統一
+ * - エラーログの統一 (コアロガーに委譲)
+ * 
+ * @see {@link @/app/lib/errors} - コアエラークラスとユーティリティ
+ * @see {@link @/app/lib/errorHandler} - エラーリカバリーサービス
  */
 
 import { NextResponse } from 'next/server';
-import {
-  TradingError,
-  ApiError,
-  NetworkError,
-  RateLimitError,
-  ValidationError,
-  NotFoundError,
-  AuthenticationError,
-  logError as logErrorFromErrors,
-} from './errors';
+import { logError as coreLogError } from '@/app/lib/errors';
+// import type { APIError, NetworkError, RateLimitError } from '@/app/types';
 
 /**
  * エラーレスポンスの構造
@@ -45,7 +43,7 @@ export enum ErrorType {
  * ユーザー向けのエラーメッセージマッピング
  * エラーコードからわかりやすいメッセージへ変換
  */
-export const ERROR_MESSAGES: Record<string, { message: string; details?: string }> = {
+const ERROR_MESSAGES: Record<string, { message: string; details?: string }> = {
   VALIDATION_ERROR: {
     message: '入力内容を確認してください',
     details: '無効なパラメータが含まれています',
@@ -79,107 +77,21 @@ export const ERROR_MESSAGES: Record<string, { message: string; details?: string 
  * エラーオブジェクトから情報を抽出
  */
 function extractErrorInfo(error: unknown): { type: ErrorType; message: string; code?: string; details?: string } {
-  // エラーにcodeプロパティがある場合の処理（types/index.tsのエラークラスを含む）
-  if (error instanceof Error && 'code' in error) {
-    const errorWithCode = error as { code: string; message: string; statusCode?: number; field?: string };
-    const errorInfo = ERROR_MESSAGES[errorWithCode.code];
-    
-    // エラータイプの決定（codeに基づく）
-    let type: ErrorType;
-    switch (errorWithCode.code) {
-      case 'VALIDATION_ERROR':
-        type = ErrorType.VALIDATION;
-        break;
-      case 'NETWORK_ERROR':
-        type = ErrorType.NETWORK;
-        break;
-      case 'RATE_LIMIT_ERROR':
-        type = ErrorType.RATE_LIMIT;
-        break;
-      case 'NOT_FOUND_ERROR':
-      case 'NOT_FOUND':
-        type = ErrorType.NOT_FOUND;
-        break;
-      case 'API_ERROR':
-        type = ErrorType.API;
-        break;
-      default:
-        type = ErrorType.INTERNAL;
-    }
-    
-    // HTTPステータスコードからもタイプを判定
-    if (errorWithCode.statusCode) {
-      if (errorWithCode.statusCode === 404) type = ErrorType.NOT_FOUND;
-      else if (errorWithCode.statusCode === 429) type = ErrorType.RATE_LIMIT;
-      else if (errorWithCode.statusCode === 400) type = ErrorType.VALIDATION;
-      else if (errorWithCode.statusCode >= 500) type = ErrorType.API;
-    }
-    
-    // detailsの構築
-    let details = errorInfo?.details;
-    if (errorWithCode.field) {
-      details = `Field: ${errorWithCode.field}`;
-    }
-    
-    return {
-      type,
-      message: errorInfo?.message || errorWithCode.message,
-      code: errorWithCode.code,
-      details,
-    };
-  }
-
-  // TradingError系のカスタムエラーの処理（errors.ts）
-  if (error instanceof TradingError) {
-    const errorInfo = ERROR_MESSAGES[error.code];
-    
-    // エラータイプの決定
-    let type: ErrorType;
-    if (error instanceof ValidationError) {
-      type = ErrorType.VALIDATION;
-    } else if (error instanceof NetworkError) {
-      type = ErrorType.NETWORK;
-    } else if (error instanceof RateLimitError) {
-      type = ErrorType.RATE_LIMIT;
-    } else if (error instanceof NotFoundError) {
-      type = ErrorType.NOT_FOUND;
-    } else if (error instanceof ApiError) {
-      type = ErrorType.API;
-    } else {
-      type = ErrorType.INTERNAL;
-    }
-    
-    return {
-      type,
-      message: errorInfo?.message || error.message,
-      code: error.code,
-      details: errorInfo?.details,
-    };
-  }
-
-  // 標準Errorの処理
+  // カスタムエラークラスの処理
   if (error instanceof Error) {
-    // ネットワーク関連エラーの検出
-    const message = error.message.toLowerCase();
-    if (message.includes('fetch') || message.includes('network') || message.includes('connection')) {
+    // APIError系のエラー
+    if ('code' in error) {
+      const apiError = error as { code: string; message: string };
+      const errorInfo = ERROR_MESSAGES[apiError.code];
       return {
-        type: ErrorType.NETWORK,
-        message: ERROR_MESSAGES[ErrorType.NETWORK].message,
-        code: ErrorType.NETWORK,
-        details: ERROR_MESSAGES[ErrorType.NETWORK].details,
-      };
-    }
-    
-    // タイムアウト関連
-    if (message.includes('timeout')) {
-      return {
-        type: ErrorType.NETWORK,
-        message: ERROR_MESSAGES[ErrorType.NETWORK].message,
-        code: 'TIMEOUT_ERROR',
-        details: '処理がタイムアウトしました',
+        type: apiError.code as ErrorType,
+        message: errorInfo?.message || apiError.message,
+        code: apiError.code,
+        details: errorInfo?.details,
       };
     }
 
+    // 標準エラー
     return {
       type: ErrorType.INTERNAL,
       message: error.message || ERROR_MESSAGES[ErrorType.INTERNAL].message,
@@ -244,8 +156,8 @@ export function handleApiError(
 ): NextResponse<ErrorResponse> {
   const errorInfo = extractErrorInfo(error);
 
-  // エラーログの出力（errors.tsからインポート）
-  logErrorFromErrors(error, context);
+  // エラーログの出力
+  logError(error, context);
 
   // ステータスコードの決定
   let status = statusCode;
@@ -290,6 +202,25 @@ export function handleApiError(
   }
 
   return NextResponse.json(responseBody, { status });
+}
+
+/**
+ * エラーログの出力
+ * 
+ * @deprecated Use logError from @/app/lib/errors directly for consistency
+ * This wrapper is kept for backward compatibility with existing API routes.
+ * Migration guide: Replace `logError(error, context)` with:
+ * ```typescript
+ * import { logError } from '@/app/lib/errors';
+ * logError(error, context);
+ * ```
+ * Will be removed in version 2.0.0
+ *
+ * @param error - エラーオブジェクト
+ * @param context - エラーが発生したコンテキスト
+ */
+export function logError(error: unknown, context: string): void {
+  coreLogError(error, context);
 }
 
 /**
@@ -344,6 +275,3 @@ export function internalError(message?: string): NextResponse<ErrorResponse> {
     { status: 500 }
   );
 }
-
-// Re-export logError from errors.ts for backward compatibility
-export { logErrorFromErrors as logError };
