@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { OHLCV } from '@/app/types';
 import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
 
@@ -9,25 +9,32 @@ interface SimpleRSIChartProps {
   height?: number;
 }
 
-export function SimpleRSIChart({ data, height = 96 }: SimpleRSIChartProps) {
+export const SimpleRSIChart = memo(function SimpleRSIChart({ data, height = 96 }: SimpleRSIChartProps) {
   const rsiValues = useMemo(() => {
     if (!data || data.length === 0) return [];
     const closes = data.map(d => d.close);
     return technicalIndicatorService.calculateRSI(closes, 14);
   }, [data]);
 
+  const points = useMemo(() => {
+    if (!data || data.length === 0) return '';
+
+    // Render only valid points
+    // Map index 0 to x=0, index length-1 to x=width
+    const width = 1000;
+
+    return rsiValues.map((val, i) => {
+      if (isNaN(val)) return null;
+      const x = (i / (data.length - 1)) * width;
+      const y = height - ((Math.max(0, Math.min(100, val))) / 100) * height;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).filter(Boolean).join(' ');
+  }, [rsiValues, data, height]);
+
   if (!data || data.length === 0) return null;
 
-  // Render only valid points
   // Map index 0 to x=0, index length-1 to x=width
   const width = 1000;
-
-  const points = rsiValues.map((val, i) => {
-    if (isNaN(val)) return null;
-    const x = (i / (data.length - 1)) * width;
-    const y = height - ((Math.max(0, Math.min(100, val))) / 100) * height;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).filter(Boolean).join(' ');
 
   return (
     <div className="w-full h-full relative">
@@ -50,4 +57,4 @@ export function SimpleRSIChart({ data, height = 96 }: SimpleRSIChartProps) {
         </svg>
     </div>
   );
-}
+});
