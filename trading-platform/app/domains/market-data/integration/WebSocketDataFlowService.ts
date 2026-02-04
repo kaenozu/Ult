@@ -372,12 +372,14 @@ export class WebSocketDataFlowService {
     
     this.multiSourceBuffer.get(data.symbol)!.set(source, data);
     
-    // Limit buffer size - keep only last 3 sources per symbol
-    const sourceMap = this.multiSourceBuffer.get(data.symbol)!;
-    if (sourceMap.size > 3) {
-      const firstKey = sourceMap.keys().next().value;
-      sourceMap.delete(firstKey);
-    }
+     // Limit buffer size - keep only last 3 sources per symbol
+     const sourceMap = this.multiSourceBuffer.get(data.symbol)!;
+     if (sourceMap.size > 3) {
+       const firstKey = sourceMap.keys().next().value;
+       if (firstKey) {
+         sourceMap.delete(firstKey);
+       }
+     }
   }
   
   /**

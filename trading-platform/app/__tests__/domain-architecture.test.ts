@@ -11,63 +11,63 @@ describe('Domain Architecture Validation', () => {
   describe('Prediction Domain', () => {
     it('should export services from barrel export', async () => {
       // This validates that the barrel export structure is correct
-      const module = await import('@/domains/prediction');
-      
+      const predictionModule = await import('@/domains/prediction');
+
       // These exports should be available if the structure is correct
-      expect(module).toBeDefined();
-      expect(typeof module).toBe('object');
+      expect(predictionModule).toBeDefined();
+      expect(typeof predictionModule).toBe('object');
     });
   });
 
   describe('Backtest Domain', () => {
     it('should export backtest engine from barrel export', async () => {
-      const module = await import('@/domains/backtest');
-      
-      expect(module).toBeDefined();
-      expect(typeof module).toBe('object');
+      const backtestModule = await import('@/domains/backtest');
+
+      expect(backtestModule).toBeDefined();
+      expect(typeof backtestModule).toBe('object');
     });
   });
 
   describe('Market Data Domain', () => {
     it('should export market data services from barrel export', async () => {
-      const module = await import('@/domains/market-data');
-      
-      expect(module).toBeDefined();
-      expect(typeof module).toBe('object');
+      const marketDataModule = await import('@/domains/market-data');
+
+      expect(marketDataModule).toBeDefined();
+      expect(typeof marketDataModule).toBe('object');
     });
   });
 
   describe('Portfolio Domain', () => {
     it('should export portfolio services from barrel export', async () => {
-      const module = await import('@/domains/portfolio');
-      
-      expect(module).toBeDefined();
-      expect(typeof module).toBe('object');
+      const portfolioModule = await import('@/domains/portfolio');
+
+      expect(portfolioModule).toBeDefined();
+      expect(typeof portfolioModule).toBe('object');
     });
   });
 
   describe('Infrastructure Layer', () => {
     it('should export API infrastructure from barrel export', async () => {
-      const module = await import('@/infrastructure/api');
-      
-      expect(module).toBeDefined();
-      expect(typeof module).toBe('object');
+      const apiModule = await import('@/infrastructure/api');
+
+      expect(apiModule).toBeDefined();
+      expect(typeof apiModule).toBe('object');
     });
 
     it('should export WebSocket infrastructure from barrel export', async () => {
-      const module = await import('@/infrastructure/websocket');
-      
-      expect(module).toBeDefined();
-      expect(typeof module).toBe('object');
+      const websocketModule = await import('@/infrastructure/websocket');
+
+      expect(websocketModule).toBeDefined();
+      expect(typeof websocketModule).toBe('object');
     });
   });
 
   describe('Shared Layer', () => {
     it('should export shared utilities and types from barrel export', async () => {
-      const module = await import('@/shared');
-      
-      expect(module).toBeDefined();
-      expect(typeof module).toBe('object');
+      const sharedModule = await import('@/shared');
+
+      expect(sharedModule).toBeDefined();
+      expect(typeof sharedModule).toBe('object');
     });
   });
 

@@ -1,18 +1,23 @@
 /**
  * Enhanced ML Prediction Service
- * 
+ *
  * Implements advanced features:
  * - Dynamic ensemble weight adjustment
  * - Model drift detection
  * - Performance tracking
  * - Expected value calculation
  * - Kelly criterion position sizing
+ *
+ * SECURITY WARNING: Contains STUB implementation for marketRegimeDetector
+ * This is a placeholder that returns fixed values for development/testing.
+ * Replace with actual market regime detection before production deployment.
  */
 
 import { OHLCV, Stock, Signal } from '@/app/types';
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures, EnhancedPrediction } from '../types';
+import { FeatureCalculationService } from './feature-calculation-service';
 import { MLModelService } from './ml-model-service';
-import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../MarketRegimeDetector';
+import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../../lib/MarketRegimeDetector';
 
 export interface ModelPerformance {
   hitRate: number;
@@ -28,17 +33,6 @@ export interface DriftMetrics {
   driftDetected: boolean;
   lastRetrainDate: Date;
   daysSinceRetrain: number;
-}
-
-export interface EnhancedPrediction {
-  prediction: number;
-  confidence: number;
-  expectedValue: number;
-  kellyFraction: number;
-  recommendedPositionSize: number;
-  driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
-  marketRegime: MarketRegime;
-  volatility: VolatilityRegime;
 }
 
 export class EnhancedMLService {
@@ -105,7 +99,7 @@ export class EnhancedMLService {
     const driftRisk = this.detectModelDrift(features);
     
     // 3. Get market regime
-    const regimeResult = marketRegimeDetector.detect(historicalData);
+    const regimeResult = marketRegimeDetector.detect(historicalData) as MarketRegime;
     
     // 4. Get base prediction with dynamic weights
     const basePrediction = this.mlModelService.predict(features);
@@ -155,7 +149,7 @@ export class EnhancedMLService {
       kellyFraction,
       recommendedPositionSize,
       driftRisk,
-      marketRegime: regimeResult.regime,
+      marketRegime: regimeResult,
       volatility: regimeResult.volatility,
     };
   }

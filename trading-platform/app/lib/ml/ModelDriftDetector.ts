@@ -123,7 +123,7 @@ export class ModelDriftDetector {
       ? [modelType]
       : (['RF', 'XGB', 'LSTM', 'TECHNICAL', 'ENSEMBLE'] as (ModelType | 'ENSEMBLE')[]);
 
-    let overallDriftSeverity: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'NONE';
+    const overallDriftSeverity: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'NONE';
     let worstDriftResult: DriftDetectionResult | null = null;
 
     for (const type of modelTypes) {
@@ -269,8 +269,9 @@ export class ModelDriftDetector {
     historyArray.push(history);
 
     // 履歴を一定数に制限
+    // PERFORMANCE FIX: Replace shift() with slice() to avoid O(n) array reindexing
     if (historyArray.length > this.BASELINE_WINDOW) {
-      historyArray.shift();
+      this.performanceHistory.set(modelType, historyArray.slice(-this.BASELINE_WINDOW));
     }
   }
 

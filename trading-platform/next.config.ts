@@ -70,7 +70,7 @@ const config = process.env.NEXT_PUBLIC_SENTRY_DSN
       tunnelRoute: "/monitoring",
 
       // Hides source maps from generated client bundles
-      hideSourceMaps: true,
+      sourcemaps: { disable: true },
 
       // Automatically tree-shake Sentry logger statements to reduce bundle size
       disableLogger: true,

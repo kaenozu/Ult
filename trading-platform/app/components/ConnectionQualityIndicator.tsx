@@ -159,8 +159,26 @@ export const ConnectionQualityIndicator = memo(function ConnectionQualityIndicat
   }, [metrics, status]);
   
   const colors = useMemo(() => getQualityColors(quality), [quality]);
-  const SignalIcon = useMemo(() => getSignalIcon(quality), [quality]);
+  const SignalIcon = getSignalIcon(quality);
   const statusLabel = useMemo(() => getStatusLabel(status), [status]);
+
+  // Render signal icon directly based on quality to avoid creating components during render
+  const renderSignalIcon = () => {
+    const iconClass = 'w-4 h-4';
+    switch (quality) {
+      case 'excellent':
+        return <SignalHigh className={iconClass} />;
+      case 'good':
+        return <SignalMedium className={iconClass} />;
+      case 'fair':
+        return <SignalLow className={iconClass} />;
+      case 'poor':
+        return <SignalZero className={iconClass} />;
+      case 'offline':
+      default:
+        return <WifiOff className={iconClass} />;
+    }
+  };
 
   // Compact view - just status badge
   if (compact) {
@@ -192,7 +210,7 @@ export const ConnectionQualityIndicator = memo(function ConnectionQualityIndicat
           'hover:shadow-lg'
         )}
       >
-        <SignalIcon className="w-4 h-4" />
+        {renderSignalIcon()}
         <div className="flex flex-col items-start leading-tight">
           <span className="text-[10px] font-bold uppercase tracking-wider">{statusLabel}</span>
           {metrics && status === 'OPEN' && (

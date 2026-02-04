@@ -6,7 +6,8 @@
  * 動的なポジションサイズ決定システム
  */
 
-import { MarketData, Position, Portfolio } from '@/app/types';
+import { MarketData } from '@/app/types/risk';
+import { Position, Portfolio } from '@/app/types';
 import { PositionSizingConfig, SizingResult, RiskMetrics } from '@/app/types/risk';
 
 export class DynamicPositionSizing {

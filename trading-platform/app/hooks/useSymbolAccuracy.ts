@@ -17,6 +17,7 @@ interface CacheEntry {
 
 const accuracyCache = new Map<string, CacheEntry>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 1000; // Security: Limit cache size to prevent memory exhaustion
 
 // Constants for error messages (can be moved to i18n later)
 const ERROR_MESSAGES = {
@@ -24,6 +25,77 @@ const ERROR_MESSAGES = {
   INSUFFICIENT_DATA: 'Insufficient data for accuracy calculation',
   API_FAILED: 'Failed to fetch historical data'
 };
+
+/**
+ * Security: Sanitize cache key to prevent cache poisoning attacks
+ *
+ * Prevents:
+ * - Prototype pollution
+ * - Cache key collision
+ * - Injection attacks
+ * - Memory exhaustion via unbounded keys
+ */
+function sanitizeCacheKey(symbol: string, market: string): string {
+  // Validate inputs
+  if (!symbol || typeof symbol !== 'string') {
+    throw new Error('Invalid symbol: must be a non-empty string');
+  }
+
+  if (!market || typeof market !== 'string') {
+    throw new Error('Invalid market: must be a non-empty string');
+  }
+
+  // Remove potentially dangerous characters
+  // Allow only alphanumeric, dash, underscore, and period
+  const sanitizedSymbol = symbol.replace(/[^a-zA-Z0-9._-]/g, '').toUpperCase();
+  const sanitizedMarket = market.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase();
+
+  // Validate sanitized values
+  if (sanitizedSymbol.length === 0) {
+    throw new Error('Invalid symbol: contains no valid characters');
+  }
+
+  if (sanitizedMarket.length === 0) {
+    throw new Error('Invalid market: contains no valid characters');
+  }
+
+  // Limit key length to prevent memory issues
+  const maxSymbolLength = 20;
+  const maxMarketLength = 20;
+
+  if (sanitizedSymbol.length > maxSymbolLength) {
+    throw new Error(`Symbol too long: maximum ${maxSymbolLength} characters`);
+  }
+
+  if (sanitizedMarket.length > maxMarketLength) {
+    throw new Error(`Market identifier too long: maximum ${maxMarketLength} characters`);
+  }
+
+  // Prevent prototype pollution by using a prefix
+  return `acc_${sanitizedSymbol}_${sanitizedMarket}`;
+}
+
+/**
+ * Security: Manage cache size to prevent memory exhaustion
+ */
+function manageCacheSize(): void {
+  if (accuracyCache.size >= MAX_CACHE_SIZE) {
+    // Remove oldest entries (LRU-style eviction)
+    let oldestKey: string | null = null;
+    let oldestTimestamp = Infinity;
+
+    for (const [key, entry] of accuracyCache.entries()) {
+      if (entry.timestamp < oldestTimestamp) {
+        oldestTimestamp = entry.timestamp;
+        oldestKey = key;
+      }
+    }
+
+    if (oldestKey) {
+      accuracyCache.delete(oldestKey);
+    }
+  }
+}
 
 /**
  * useSymbolAccuracy - Hook to fetch and cache prediction accuracy for a symbol
@@ -47,7 +119,26 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
   useEffect(() => {
     const currentSymbol = stock.symbol;
     const currentMarket = stock.market;
-    const cacheKey = `${currentSymbol}_${currentMarket}`;
+
+    // Security: Sanitize cache key to prevent cache poisoning
+    let cacheKey: string;
+    try {
+      cacheKey = sanitizeCacheKey(currentSymbol, currentMarket);
+    } catch (error) {
+      // Invalid symbol/market, set error and return
+      const errorMessage = error instanceof Error ? error.message : 'Invalid symbol or market';
+      setError(errorMessage);
+      setLoading(false);
+      return;
+    }
+
+    // Skip if no symbol is selected
+    if (!currentSymbol || currentSymbol === '') {
+      setAccuracy(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
 
     // Check cache first
     const cached = accuracyCache.get(cacheKey);
@@ -76,8 +167,16 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const startDate = oneYearAgo.toISOString().split('T')[0];
 
+        // Security: Use URLSearchParams to safely encode query parameters
+        const params = new URLSearchParams({
+          type: 'history',
+          symbol: currentSymbol, // Already validated by sanitizeCacheKey
+          market: currentMarket, // Already validated by sanitizeCacheKey
+          startDate: startDate
+        });
+
         const response = await fetch(
-          `/api/market?type=history&symbol=${currentSymbol}&market=${currentMarket}&startDate=${startDate}`,
+          `/api/market?${params.toString()}`,
           { signal: controller.signal }
         );
 
@@ -95,19 +194,24 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
 
         // Calculate accuracy metrics
         const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
-        
-        if (accuracyResult.isErr) {
-          throw new Error(accuracyResult.error.message);
+
+        if (!accuracyResult) {
+          // Not enough data for accuracy calculation
+          setLoading(false);
+          return;
         }
 
         const predError = calculatePredictionError(historicalData);
 
         const accuracyData: AccuracyData = {
-          hitRate: accuracyResult.value.hitRate,
-          directionalAccuracy: accuracyResult.value.directionalAccuracy,
-          totalTrades: accuracyResult.value.totalTrades,
+          hitRate: accuracyResult.hitRate,
+          directionalAccuracy: accuracyResult.directionalAccuracy,
+          totalTrades: accuracyResult.totalTrades,
           predictionError: predError
         };
+
+        // Security: Manage cache size before adding new entry
+        manageCacheSize();
 
         // Update cache
         accuracyCache.set(cacheKey, {
@@ -135,12 +239,12 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           if (ohlcv.length >= 252) {
             try {
               const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
-              if (accuracyResult.isOk) {
+              if (accuracyResult) {
                 const predError = calculatePredictionError(ohlcv);
                 const fallbackData: AccuracyData = {
-                  hitRate: accuracyResult.value.hitRate,
-                  directionalAccuracy: accuracyResult.value.directionalAccuracy,
-                  totalTrades: accuracyResult.value.totalTrades,
+                  hitRate: accuracyResult.hitRate,
+                  directionalAccuracy: accuracyResult.directionalAccuracy,
+                  totalTrades: accuracyResult.totalTrades,
                   predictionError: predError
                 };
                 setAccuracy(fallbackData);

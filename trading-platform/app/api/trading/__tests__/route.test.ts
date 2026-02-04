@@ -542,8 +542,12 @@ describe('POST /api/trading', () => {
   });
 
   describe('update_config action', () => {
-    it('should update config successfully', async () => {
-      const config = { riskLevel: 'medium', maxPositions: 5 };
+    it('should update config successfully with valid fields', async () => {
+      const config = {
+        mode: 'paper',
+        initialCapital: 50000,
+        aiEnabled: true
+      };
       const req = createAuthenticatedRequest({
         action: 'update_config',
         config,
@@ -554,6 +558,74 @@ describe('POST /api/trading', () => {
       expect(res.status).toBe(200);
       expect(data.success).toBe(true);
       expect(mockTradingPlatform.updateConfig).toHaveBeenCalledWith(config);
+    });
+
+    it('should reject non-object config', async () => {
+      const req = createAuthenticatedRequest({
+        action: 'update_config',
+        config: 'invalid',
+      });
+      const res = await POST(req);
+      const data = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(data.error).toContain('Invalid config');
+    });
+
+    it('should reject invalid mode', async () => {
+      const req = createAuthenticatedRequest({
+        action: 'update_config',
+        config: { mode: 'invalid_mode' },
+      });
+      const res = await POST(req);
+      const data = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(data.error).toContain('Invalid mode');
+    });
+
+    it('should reject negative initialCapital', async () => {
+      const req = createAuthenticatedRequest({
+        action: 'update_config',
+        config: { initialCapital: -100 },
+      });
+      const res = await POST(req);
+      const data = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(data.error).toContain('Invalid initialCapital');
+    });
+
+    it('should reject invalid riskLimits', async () => {
+      const req = createAuthenticatedRequest({
+        action: 'update_config',
+        config: { riskLimits: 'not_an_object' },
+      });
+      const res = await POST(req);
+      const data = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(data.error).toContain('Invalid riskLimits');
+    });
+
+    it('should sanitize unknown keys', async () => {
+      const req = createAuthenticatedRequest({
+        action: 'update_config',
+        config: {
+          mode: 'paper',
+          unknown_key: 'malicious_value',
+          __proto__: { isAdmin: true }
+        },
+      });
+      const res = await POST(req);
+      const data = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(data.success).toBe(true);
+      // Should verify that unknown_key and __proto__ were stripped
+      expect(mockTradingPlatform.updateConfig).toHaveBeenCalledWith({
+        mode: 'paper'
+      });
     });
   });
 

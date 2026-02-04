@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { integratedPredictionService } from '@/app/domains/prediction/services/integrated-prediction-service';
 import ConfirmationModal from './ConfirmationModal';
 
@@ -35,25 +35,37 @@ export default function MLPerformanceDashboard() {
   const [loading, setLoading] = useState(true);
   const [showRetrainModal, setShowRetrainModal] = useState(false);
 
-  useEffect(() => {
-    // Fetch initial performance data
-    fetchPerformanceData();
-
-    // Update every 30 seconds
-    const interval = setInterval(fetchPerformanceData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchPerformanceData = () => {
+  // Fetch metrics from service - returns data without setting state
+  const getMetrics = useCallback(() => {
     try {
-      const metrics = integratedPredictionService.getPerformanceMetrics();
-      setPerformanceData(metrics);
-      setLoading(false);
+      return integratedPredictionService.getPerformanceMetrics();
     } catch (error) {
       console.error('Error fetching performance data:', error);
-      setLoading(false);
+      return null;
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Update every 30 seconds - use interval callback to avoid sync setState
+    const interval = setInterval(() => {
+      const metrics = getMetrics();
+      if (metrics) {
+        setPerformanceData(metrics);
+      }
+      setLoading(false);
+    }, 30000);
+
+    // Initial fetch - wrapped in setTimeout to avoid sync setState
+    setTimeout(() => {
+      const metrics = getMetrics();
+      if (metrics) {
+        setPerformanceData(metrics);
+      }
+      setLoading(false);
+    }, 0);
+
+    return () => clearInterval(interval);
+  }, [getMetrics]);
 
   const handleRetrain = async () => {
     try {

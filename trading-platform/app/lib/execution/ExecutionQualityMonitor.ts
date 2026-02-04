@@ -316,7 +316,7 @@ export class ExecutionQualityMonitor extends EventEmitter {
 
   private updateSlippageAnalysis(metrics: ExecutionMetrics): void {
     const key = `${metrics.symbol}_${this.getTimeOfDayCategory(metrics.timestamp)}`;
-    let analyses = this.slippageAnalysis.get(key) || [];
+    const analyses = this.slippageAnalysis.get(key) || [];
 
     const analysis: SlippageAnalysis = {
       symbol: metrics.symbol,

@@ -4,8 +4,7 @@
  * 市場データの取得と管理を行うサービス
  */
 
-import { MarketData, HistoricalDataRequest, RealtimeQuote } from '../types';
-import { OHLCV } from '../../../lib/types';
+import { MarketData, HistoricalDataRequest, RealtimeQuote, OHLCV } from '@/app/types';
 
 export class MarketDataService {
   private cache = new Map<string, { data: OHLCV[]; timestamp: number }>();
@@ -61,12 +60,12 @@ export class MarketDataService {
     let price = 100;
 
     for (let i = 0; i < days; i++) {
-      const timestamp = request.startDate.getTime() + i * 24 * 60 * 60 * 1000;
+      const date = new Date(request.startDate.getTime() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // YYYY-MM-DD format
       const change = (Math.random() - 0.5) * 5;
       price += change;
 
       data.push({
-        timestamp,
+        date,
         open: price - Math.random() * 2,
         high: price + Math.random() * 3,
         low: price - Math.random() * 3,

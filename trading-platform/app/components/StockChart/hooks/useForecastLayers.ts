@@ -91,7 +91,7 @@ export const useForecastLayers = ({
         order: -2
       }
     ];
-  }, [hoveredIdx, data, market, extendedData.labels.length, extendedData.labels]);
+  }, [hoveredIdx, data, market, extendedData.labels]);
 
   // 4. 未来予測の予報円 (Forecast Cone) - 常に表示される最新の予測
   // 注: 最新の全データを使用したsignalを元に計算（ゴースト予測とは異なります）
