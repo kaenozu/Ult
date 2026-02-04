@@ -5,6 +5,14 @@ logs/
 *.html
 *.tmp
 *.temp
+*.bak
+*.bak2
+*.backup
+tsc-*.txt
+*-output.txt
+*-errors.txt
+lint-*.txt
+build-*.txt
 
 # Dependencies
 node_modules/
@@ -106,3 +114,13 @@ lerna-debug.log*
 .parcel-cache/
 .eslintcache
 .stylelintcache
+
+# Verification and screenshots
+verification/
+screenshots/
+*.png
+*.jpg
+*.jpeg
+!trading-platform/public/**/*.png
+!trading-platform/public/**/*.jpg
+!trading-platform/public/**/*.jpeg
