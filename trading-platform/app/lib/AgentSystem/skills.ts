@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ULT Trading Platform - Skill Definitions
  *

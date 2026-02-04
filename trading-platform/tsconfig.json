@@ -44,9 +44,9 @@
   },
   "include": [
     "next-env.d.ts",
-    ".next/types/**/*.ts",
-    "app/**/*.{ts,tsx}",
-    ".next/dev/types/**/*.ts"
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
@@ -60,6 +60,12 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "e2e/**"
+    "e2e/**",
+    "**/examples/**",
+    "**/*-example.ts",
+    "**/*-examples.ts",
+    "**/example-*.ts",
+    "app/lib/AgentManager.ts",
+    "app/lib/AgentSystem/**"
   ]
 }

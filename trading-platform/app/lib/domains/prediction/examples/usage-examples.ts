@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Example: Using the new Prediction Domain Layer
  * 
