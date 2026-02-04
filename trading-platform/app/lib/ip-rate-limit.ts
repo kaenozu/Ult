@@ -103,6 +103,8 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export function getClientIp(request: Request): string {
+    const trustProxy = process.env.TRUST_PROXY === 'true';
+
     // Priority 1: Cloudflare (CF-Connecting-IP)
     // This header is immutable on Cloudflare, so it's safe if we are behind Cloudflare.
     const cfConnectingIp = request.headers.get('cf-connecting-ip');
@@ -110,20 +112,22 @@ export function getClientIp(request: Request): string {
         return cfConnectingIp.trim();
     }
 
-    // Priority 2: X-Real-IP
-    // Often set by the immediate reverse proxy (Nginx, etc.) to the connected peer's IP.
-    // Harder to spoof than X-Forwarded-For if the proxy is correctly configured.
-    const xRealIp = request.headers.get('x-real-ip');
-    if (xRealIp) {
-        return xRealIp.trim();
-    }
+    if (trustProxy) {
+        // Priority 2: X-Real-IP
+        // Often set by the immediate reverse proxy (Nginx, etc.) to the connected peer's IP.
+        // Harder to spoof than X-Forwarded-For if the proxy is correctly configured.
+        const xRealIp = request.headers.get('x-real-ip');
+        if (xRealIp) {
+            return xRealIp.trim();
+        }
 
-    // Priority 3: X-Forwarded-For
-    // Standard header, but susceptible to spoofing if the chain isn't trusted.
-    // We take the first IP (the client), assuming the upstream proxy overwrites it or we trust the chain.
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    if (forwardedFor) {
-        return forwardedFor.split(',')[0].trim();
+        // Priority 3: X-Forwarded-For
+        // Standard header, but susceptible to spoofing if the chain isn't trusted.
+        // We take the first IP (the client), assuming the upstream proxy overwrites it or we trust the chain.
+        const forwardedFor = request.headers.get('x-forwarded-for');
+        if (forwardedFor) {
+            return forwardedFor.split(',')[0].trim();
+        }
     }
     return 'unknown';
 }
