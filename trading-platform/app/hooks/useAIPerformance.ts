@@ -6,6 +6,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
   const [calculatingHitRate, setCalculatingHitRate] = useState(false);
   const [preciseHitRate, setPreciseHitRate] = useState<{ hitRate: number, trades: number }>({ hitRate: 0, trades: 0 });
   const [error, setError] = useState<string | null>(null);
+  const stockPrice = stock.price;
 
   useEffect(() => {
     let isMounted = true;
@@ -28,7 +29,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
 
       try {
         // Add rate limiting delay to prevent rapid requests
-        const delay = Math.random() * 200 + 100; // 100-300ms のランダムな遅延
+        const delay = Math.random() * 200 + 100; // 100-300ms のランダムな遁E��
         await new Promise(resolve => setTimeout(resolve, delay));
         
         // Adjust data period to include current date (fix for "today's date missing" issue)
@@ -53,44 +54,44 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
             const result = calculateAIHitRate(currentSymbol, resultData.data, currentMarket);
             setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           } else {
-            // データが不十分な場合は表示用データで代用試行
-            console.warn(`Insufficient data for ${currentSymbol}: got ${resultData.data?.length || 0} records, using provided OHLCV (${ohlcv.length} records)`);
-            
-            // OHLCVデータが少ない場合、モックデータを生成して補完
+            console.warn(
+              `Insufficient data for ${currentSymbol}: got ${resultData.data?.length || 0} records, using provided OHLCV (${ohlcv.length} records)`
+            );
+
+            // If OHLCV data is sparse, synthesize up to 30 points.
             let enhancedOHLCV = ohlcv;
             if (ohlcv.length < 30) {
               const today = new Date();
-              const basePrice = ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].close : stock.price || 100;
-              
+              const basePrice = ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].close : stockPrice || 100;
+
               enhancedOHLCV = [...ohlcv];
-              
-              // 30日前から今日までのデータを生成
+
               for (let i = 1; i <= 30; i++) {
                 const date = new Date(today);
                 date.setDate(today.getDate() - (30 - i));
-                
-                // シミュレートされた価格変動（±5%以内）
+
                 const randomVariation = (Math.random() - 0.5) * 0.1; // -50% to +50%
                 const price = basePrice * (1 + randomVariation);
-                
+
                 enhancedOHLCV.push({
                   date: date.toISOString().split('T')[0],
-                  open: price * (0.98 + Math.random() * 0.04), // 始値
-                  high: price * (1 + Math.random() * 0.03), // 高値
-                  low: price * (0.97 + Math.random() * 0.03), // 安値
-                  close: price, // 終値
-                  volume: Math.floor(Math.random() * 1000000) + 500000 // 出来高
+                  open: price * (0.98 + Math.random() * 0.04),
+                  high: price * (1 + Math.random() * 0.03),
+                  low: price * (0.97 + Math.random() * 0.03),
+                  close: price,
+                  volume: Math.floor(Math.random() * 1000000) + 500000,
                 });
               }
-              
-              console.log(`Enhanced OHLCV data from ${ohlcv.length} to ${enhancedOHLCV.length} records for ${currentSymbol}`);
+
+              console.log(
+                `Enhanced OHLCV data from ${ohlcv.length} to ${enhancedOHLCV.length} records for ${currentSymbol}`
+              );
             }
-            
+
             const result = calculateAIHitRate(currentSymbol, enhancedOHLCV, currentMarket);
             setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           }
-        }
-      } catch (e) {
+        }      } catch (e) {
         console.error('Precise hit rate fetch failed:', e);
         // Verify the symbol hasn't changed before setting error state
         if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
@@ -99,7 +100,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
              const result = calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
              setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           } catch {
-             setError('的中率の計算に失敗しました');
+             setError('皁E��玁E�E計算に失敗しました');
           }
         }
       } finally {
@@ -115,7 +116,11 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       isMounted = false;
     };
-  }, [stock.symbol, stock.market, ohlcv]); // ohlcvを依存配列に含める
+  }, [stock.symbol, stock.market, stockPrice, ohlcv]); // ohlcvを依存�E列に含める
 
   return { preciseHitRate, calculatingHitRate, error };
 }
+
+
+
+

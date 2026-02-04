@@ -17,6 +17,10 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
   // Use refs to track previous values without causing re-renders
   const lastHitRateRef = useRef<number | null>(null);
   const breakoutProcessedRef = useRef<string | null>(null);
+  const breakoutDetected = Boolean(displaySignal?.supplyDemand?.breakoutDetected);
+  const breakoutCurrentPrice = displaySignal?.supplyDemand?.currentPrice ?? 0;
+  const breakoutLevel = displaySignal?.supplyDemand?.brokenLevel?.level ?? 'unknown';
+  const breakoutKey = `${stock.symbol}-${breakoutCurrentPrice}-${breakoutLevel}`;
 
   // Memoized alert creation functions
   const createAccuracyDropAlert = useCallback((currentHitRate: number, previousHitRate: number) => {
@@ -136,15 +140,13 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
 
   // ブレイクアウトを監視 - Prevent duplicate alerts
   useEffect(() => {
-    if (!displaySignal?.supplyDemand?.breakoutDetected) return;
-    
-    const breakoutKey = `${stock.symbol}-${displaySignal.supplyDemand?.currentPrice || 0}-${displaySignal.supplyDemand?.brokenLevel?.level || 'unknown'}`;
+    if (!breakoutDetected) return;
     
     if (breakoutProcessedRef.current !== breakoutKey) {
       createBreakoutAlert();
       breakoutProcessedRef.current = breakoutKey;
     }
-  }, [displaySignal?.supplyDemand?.breakoutDetected && displaySignal?.supplyDemand?.currentPrice && displaySignal?.supplyDemand?.brokenLevel?.level, stock.symbol, displaySignal?.supplyDemand?.currentPrice, displaySignal?.supplyDemand?.brokenLevel?.level, createBreakoutAlert]);
+  }, [breakoutDetected, breakoutKey, createBreakoutAlert]);
 
   // 複合アラート（市場相関+シグナル）
   useEffect(() => {
