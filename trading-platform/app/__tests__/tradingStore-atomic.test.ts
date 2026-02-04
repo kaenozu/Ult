@@ -4,23 +4,43 @@
  * tradingStoreのアトミック注文実行機能のテスト
  * 競合状態（Race Condition）の防止を検証
  *
- * 注意: このテストはexecuteOrderAtomicV2を使用してアトミック注文実行を検証
+ * 注意: このテストはexecuteOrderを使用してアトミック注文実行を検証
  */
 
 import { useTradingStore } from '../store/tradingStore';
 import { act, renderHook } from '@testing-library/react';
 import { OrderRequest, OrderResult } from '../types/order';
 
+// リスク管理サービスをモック化して、テストの純粋性を保つ
+jest.mock('../lib/services/RiskManagementService', () => ({
+  getRiskManagementService: jest.fn(() => ({
+    validateOrder: jest.fn((order) => ({
+      allowed: true,
+      reasons: [],
+      violations: [],
+      // adjustedQuantityを含めないことで、自動リサイズを防ぐ
+    })),
+  })),
+}));
+
 describe('TradingStore Atomic Order Execution', () => {
   beforeEach(() => {
-    // ストアの状態をリセット
-    const { result } = renderHook(() => useTradingStore());
+    // ストアの状態を完全リセット
     act(() => {
-      result.current.setCash(1000000); // 初期資金設定
+      useTradingStore.setState({
+        portfolio: {
+          positions: [],
+          orders: [],
+          totalValue: 0,
+          totalProfit: 0,
+          dailyPnL: 0,
+          cash: 1000000,
+        }
+      });
     });
   });
 
-  describe('executeOrderAtomicV2', () => {
+  describe('executeOrder', () => {
     it('should execute buy order atomically', () => {
       const { result } = renderHook(() => useTradingStore());
       
@@ -37,7 +57,7 @@ describe('TradingStore Atomic Order Execution', () => {
       let executionResult: OrderResult | undefined = undefined;
 
       act(() => {
-        executionResult = result.current.executeOrderAtomicV2(order);
+        executionResult = result.current.executeOrder(order);
       });
 
       // 注文が成功したことを確認
@@ -69,7 +89,7 @@ describe('TradingStore Atomic Order Execution', () => {
       let executionResult: OrderResult | undefined = undefined;
 
       act(() => {
-        executionResult = result.current.executeOrderAtomicV2(order);
+        executionResult = result.current.executeOrder(order);
       });
 
       // 注文が拒否されたことを確認
@@ -122,7 +142,7 @@ describe('TradingStore Atomic Order Execution', () => {
 
       act(() => {
         orders.forEach(order => {
-          results.push(result.current.executeOrderAtomicV2(order));
+          results.push(result.current.executeOrder(order));
         });
       });
 
@@ -169,7 +189,7 @@ describe('TradingStore Atomic Order Execution', () => {
 
       act(() => {
         orders.forEach(order => {
-          results.push(result.current.executeOrderAtomicV2(order));
+          results.push(result.current.executeOrder(order));
         });
       });
 
@@ -196,7 +216,7 @@ describe('TradingStore Atomic Order Execution', () => {
       };
 
       act(() => {
-        result.current.executeOrderAtomicV2(order1);
+        result.current.executeOrder(order1);
       });
 
       // 同じ銘柄への追加注文
@@ -211,7 +231,7 @@ describe('TradingStore Atomic Order Execution', () => {
       };
 
       act(() => {
-        result.current.executeOrderAtomicV2(order2);
+        result.current.executeOrder(order2);
       });
 
       // ポジションが1つだけであることを確認
@@ -240,7 +260,7 @@ describe('TradingStore Atomic Order Execution', () => {
       };
 
       act(() => {
-        result.current.executeOrderAtomicV2(order1);
+        result.current.executeOrder(order1);
       });
 
       const position = result.current.portfolio.positions[0];
@@ -252,9 +272,9 @@ describe('TradingStore Atomic Order Execution', () => {
       });
 
       // 決済後の現金を確認
-      // 初期現金 - ポジション価値 + 利益
-      // 1,000,000 - 10,000 + (150 - 100) * 100 = 1,000,000 - 10,000 + 5,000 = 995,000
-      const expectedCash = 1000000 - positionValue + (150 - 100) * 100;
+      // 初期現金 - ポジション価値 + 売却額（元本 + 利益）
+      // 1,000,000 - 10,000 + 15,000 = 1,005,000
+      const expectedCash = 1000000 - positionValue + (150 * 100);
       expect(result.current.portfolio.cash).toBe(expectedCash);
       
       // ポジションが削除されたことを確認
