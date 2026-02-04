@@ -307,6 +307,39 @@ npm run test:e2e
 
 詳細は [CI/CD ガイド](../docs/CI_CD_GUIDE.md) を参照してください。
 
+### リポジトリサイズ管理
+
+**重要**: リポジトリの `.git` ディレクトリは 500MB 以下に保つ必要があります。
+
+#### コミット前のチェック
+
+以下のファイルは **絶対にコミットしない**:
+
+- ❌ ビルド出力 (`*.log`, `*-output.txt`, `tsc-*.txt`)
+- ❌ バックアップファイル (`*.bak`, `*.bak2`)
+- ❌ 一時ファイル (`*.tmp`, `*.temp`)
+- ❌ 大きなバイナリファイル (> 500KB)
+- ❌ テスト用スクリーンショット (`verification/`, `screenshots/`)
+
+#### Pre-commit フックの設定（推奨）
+
+```bash
+# 大きなファイルのコミットを防ぐ
+ln -s ../../scripts/pre-commit-size-check.sh .git/hooks/pre-commit
+```
+
+#### 大きなファイルが必要な場合
+
+```bash
+# Git LFS を使用
+git lfs install
+git lfs track "*.psd"
+git lfs track "data/*.csv"
+git add .gitattributes
+```
+
+詳細は [リポジトリサイズ管理ガイド](./scripts/README_REPO_SIZE.md) を参照してください。
+
 ---
 
 ## プルリクエストのガイドライン
