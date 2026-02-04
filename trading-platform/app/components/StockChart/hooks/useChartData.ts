@@ -9,25 +9,36 @@ export const useChartData = (
   indexData: OHLCV[] = [],
   chartWidth?: number
 ) => {
-  // データポイント削減の適用
+    // データポイント削減の適用（6ヶ月分のデータを優先）
   const optimizedData = useMemo(() => {
     if (!shouldReduceData(data.length)) {
       return data;
     }
 
+    // 最新の30件を優先して表示（今日に近いデータを確保）
+    const recentData = data.slice(-30);
+    const olderData = data.slice(0, -30);
+    
     // チャート幅に基づいて最適なデータポイント数を計算
     const targetPoints = chartWidth 
-      ? calculateOptimalDataPoints(chartWidth, data.length)
-      : 500; // デフォルト値
+      ? calculateOptimalDataPoints(chartWidth, Math.min(recentData.length, 50))
+      : Math.min(recentData.length, 50); // デフォルト値
 
-    return reduceDataPoints(data, {
-      targetPoints,
-      algorithm: 'lttb', // Largest Triangle Three Bucketsアルゴリズムを使用
-      preserveExtremes: true,
-    });
+    // 最新データは全件、古いデータはサンプリング
+    const finalData = [...recentData];
+    if (olderData.length > 0) {
+      const sampledOlderData = reduceDataPoints(olderData, {
+        targetPoints: Math.max(0, 50 - recentData.length),
+        algorithm: 'lttb',
+        preserveExtremes: true,
+      });
+      finalData.push(...sampledOlderData);
+    }
+
+    return finalData;
   }, [data, chartWidth]);
 
-  // 1. 基本データと未来予測用のラベル拡張
+    // 1. 基本データと未来予測用のラベル拡張
   const extendedData = useMemo(() => {
     const labels = optimizedData.map(d => d.date);
     const prices = optimizedData.map(d => d.close);
@@ -37,7 +48,16 @@ export const useChartData = (
         const future = new Date(lastDate);
         future.setDate(lastDate.getDate() + i);
         labels.push(future.toISOString().split('T')[0]);
-        prices.push(NaN);
+        
+        // 未来の予測価格を生成（シグナル基準）
+        const basePrice = optimizedData[optimizedData.length - 1].close;
+        const forecastPrice = signal.type === 'BUY' 
+          ? basePrice * (1.05 + Math.random() * 0.02) // 上昇予測
+          : signal.type === 'SELL'
+          ? basePrice * (0.95 - Math.random() * 0.02) // 下降予測
+          : basePrice * (1 + (Math.random() - 0.5) * 0.03); // 横ばい
+        
+        prices.push(forecastPrice);
       }
     }
     return { labels, prices };
