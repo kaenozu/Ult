@@ -5,6 +5,7 @@ import { sanitizeString } from '@/app/lib/sanitize';
 import { useRiskManagementStore } from '@/app/store/riskManagementStore';
 import { PositionSizingDisplay } from '@/app/components/PositionSizingDisplay';
 import { getGlobalAnalyticsEngine } from '@/app/lib/aiAnalytics/PredictiveAnalyticsEngine';
+import { useMemo } from 'react';
 
 interface SignalCardProps {
     signal: Signal;
@@ -25,25 +26,12 @@ export function SignalCard({
     calculatingHitRate = false,
     error = null
 }: SignalCardProps) {
-    // Early return if signal is null to prevent access errors
-    if (!signal) {
-        return (
-            <div className="relative p-4 rounded-lg flex flex-col gap-3 overflow-hidden bg-transparent">
-                <div className="flex justify-center items-center h-32">
-                    <span className="text-gray-400">No signal data available</span>
-                </div>
-            </div>
-        );
-    }
-    const isBuy = signal.type === 'BUY';
-    const isSell = signal.type === 'SELL';
-    
     // Get risk management settings
     const { settings: riskSettings } = useRiskManagementStore();
     
     // Calculate position sizing
     const positionSizing = useMemo(() => {
-        if (!riskSettings.enabled || !signal.stopLoss || !stock.price) {
+        if (!riskSettings.enabled || !signal?.stopLoss || !stock.price) {
             return null;
         }
         
@@ -60,7 +48,20 @@ export function SignalCard({
             console.error('Position sizing calculation error:', error);
             return null;
         }
-    }, [riskSettings, signal.stopLoss, signal.confidence, stock.price]);
+    }, [riskSettings, signal?.stopLoss, signal?.confidence, stock.price]);
+    
+    // Early return if signal is null to prevent access errors
+    if (!signal) {
+        return (
+            <div className="relative p-4 rounded-lg flex flex-col gap-3 overflow-hidden bg-transparent">
+                <div className="flex justify-center items-center h-32">
+                    <span className="text-gray-400">No signal data available</span>
+                </div>
+            </div>
+        );
+    }
+    const isBuy = signal.type === 'BUY';
+    const isSell = signal.type === 'SELL';
 
     return (
         <div className={cn(

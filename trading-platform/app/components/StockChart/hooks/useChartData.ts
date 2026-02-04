@@ -51,11 +51,12 @@ export const useChartData = (
         
         // 未来の予測価格を生成（シグナル基準）
         const basePrice = optimizedData[optimizedData.length - 1].close;
-        const forecastPrice = signal.type === 'BUY' 
-          ? basePrice * (1.05 + Math.random() * 0.02) // 上昇予測
+        const confidence = signal.confidence || 0.5;
+        const forecastPrice = signal.type === 'BUY'
+          ? basePrice * (1.05 + confidence * 0.02)
           : signal.type === 'SELL'
-          ? basePrice * (0.95 - Math.random() * 0.02) // 下降予測
-          : basePrice * (1 + (Math.random() - 0.5) * 0.03); // 横ばい
+          ? basePrice * (0.95 - confidence * 0.02)
+          : basePrice * (1 + (confidence - 0.5) * 0.03);
         
         prices.push(forecastPrice);
       }
