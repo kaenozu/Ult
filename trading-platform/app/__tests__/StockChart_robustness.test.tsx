@@ -18,7 +18,7 @@ describe('StockChart Edge Case Tests', () => {
 
   it('should show loading state when data is empty and loading is true', () => {
     render(<StockChart data={emptyData} loading={true} />);
-    expect(screen.getByText('データを取得中...')).toBeInTheDocument();
+    expect(screen.getByText('チャートデータを読み込み中...')).toBeInTheDocument();
   });
 
   it('should show error message when error prop is provided', () => {
