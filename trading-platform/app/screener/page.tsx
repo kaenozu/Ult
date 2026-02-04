@@ -11,6 +11,7 @@ import { filterByTechnicals, TechFilters } from '@/app/lib/screener-utils';
 import { useUIStore } from '@/app/store/uiStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
+import { ScreenLabel } from '@/app/components/ScreenLabel';
 
 type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
 type SortDirection = 'asc' | 'desc';
@@ -230,6 +231,7 @@ function ScreenerContent() {
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+      <ScreenLabel label="株式スクリーナー / Stock Screener" />
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
         <div className="flex items-center gap-4">
           <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="lg:hidden p-2 text-[#92adc9] hover:text-white transition-colors">
