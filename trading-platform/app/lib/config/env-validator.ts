@@ -104,8 +104,11 @@ export function validateEnvironment(): EnvironmentConfig {
   try {
     // JWT Configuration
     let jwtSecret: string;
-    if (isProduction) {
-      // In production, JWT_SECRET is required
+    // Check if running in Next.js build phase
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
+    if (isProduction && !isBuildPhase) {
+      // In production (runtime), JWT_SECRET is required
       jwtSecret = getEnv('JWT_SECRET');
       if (jwtSecret === 'default-secret-change-in-production') {
         throw new EnvironmentValidationError(
@@ -113,7 +116,7 @@ export function validateEnvironment(): EnvironmentConfig {
         );
       }
     } else {
-      // In development/test, allow fallback
+      // In development/test OR during build phase, allow fallback
       jwtSecret = getOptionalEnv('JWT_SECRET', 'dev-secret-key-do-not-use-in-production');
     }
 
@@ -121,7 +124,7 @@ export function validateEnvironment(): EnvironmentConfig {
 
     // Database Configuration
     let databaseUrl: string;
-    if (isProduction) {
+    if (isProduction && !isBuildPhase) {
       databaseUrl = getEnv('DATABASE_URL');
     } else {
       databaseUrl = getOptionalEnv('DATABASE_URL', '');

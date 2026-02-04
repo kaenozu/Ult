@@ -19,6 +19,10 @@ jobs:
   track-metrics:
     name: Track Refactoring Metrics
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
     
     steps:
       - name: Checkout code

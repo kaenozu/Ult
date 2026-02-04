@@ -132,7 +132,7 @@ describe('Environment Validator', () => {
       
       const config = validateEnvironment();
       
-      expect(config.websocket.url).toBe('ws://localhost:3001');
+      expect(config.websocket.url).toBe('ws://localhost:3001/ws');
     });
 
     it('should handle LOG_LEVEL correctly', () => {

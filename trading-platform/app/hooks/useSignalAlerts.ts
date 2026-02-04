@@ -125,7 +125,7 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
     if (changePercent >= 0.15) {
       createForecastChangeAlert(currentConfidence, previousForecastConfidence);
     }
-  }, [displaySignal?.forecastCone?.confidence, previousForecastConfidence, createForecastChangeAlert]);
+  }, [displaySignal?.forecastCone?.confidence, previousForecastConfidence, createForecastChangeAlert, displaySignal?.forecastCone]);
 
   // Update forecast confidence separately
   useEffect(() => {
@@ -144,7 +144,7 @@ export function useSignalAlerts({ stock, displaySignal, preciseHitRate, calculat
       createBreakoutAlert();
       breakoutProcessedRef.current = breakoutKey;
     }
-  }, [displaySignal?.supplyDemand?.breakoutDetected, stock.symbol, createBreakoutAlert]);
+  }, [displaySignal?.supplyDemand?.breakoutDetected, stock.symbol, createBreakoutAlert, displaySignal?.supplyDemand?.brokenLevel?.level, displaySignal?.supplyDemand?.currentPrice]);
 
   // 複合アラート（市場相関+シグナル）
   useEffect(() => {
