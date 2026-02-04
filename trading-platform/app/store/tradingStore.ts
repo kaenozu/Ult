@@ -1,4 +1,3 @@
-// @ts-nocheck - Temporary: needs type fixes
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Stock, Portfolio, Position, Order, AIStatus, Theme as AppTheme, Signal as AIAnalysis, OHLCV as MarketData } from '../types';
@@ -51,8 +50,6 @@ interface TradingStore {
 
   // Order Execution
   executeOrder: (order: OrderRequest) => OrderResult;
-  /** @deprecated Use executeOrder instead */
-  executeOrderAtomicV2: (order: OrderRequest) => OrderResult;
 
   // Kelly Criterion Position Sizing
   calculatePositionSize: (symbol: string, signal?: AIAnalysis) => PositionSizeRecommendation | null;
@@ -348,14 +345,6 @@ export const useTradingStore = create<TradingStore>()(
         });
 
         return result;
-      },
-
-      /**
-       * Legacy alias for executeOrder
-       * @deprecated
-       */
-      executeOrderAtomicV2: (order: OrderRequest): OrderResult => {
-        return get().executeOrder(order);
       },
 
       /**
