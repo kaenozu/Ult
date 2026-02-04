@@ -1,8 +1,14 @@
 import '@testing-library/jest-dom'
 import { TextEncoder, TextDecoder } from 'util';
+import 'fake-indexeddb/auto';
 
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
+
+// Polyfill structuredClone for fake-indexeddb
+if (typeof global.structuredClone === 'undefined') {
+  global.structuredClone = (val) => JSON.parse(JSON.stringify(val));
+}
 
 // Mock Request and Response for Next.js API routes testing
 if (typeof Request === 'undefined') {
@@ -52,26 +58,6 @@ if (!global.fetch) {
       status: 200,
     })
   );
-}
-
-// Mock IndexedDB
-const mockIDB = {
-  open: jest.fn().mockReturnValue({
-    result: {
-      createObjectStore: jest.fn(),
-      transaction: jest.fn(),
-    },
-    onupgradeneeded: null,
-    onsuccess: null,
-    onerror: null,
-  }),
-  deleteDatabase: jest.fn(),
-};
-
-if (typeof window !== 'undefined') {
-  Object.defineProperty(window, 'indexedDB', {
-    value: mockIDB,
-  });
 }
 
 // Mock ResizeObserver
@@ -154,3 +140,16 @@ if (typeof global.HTMLCanvasElement !== 'undefined') {
   };
 }
 
+// Mock Performance API
+if (!global.performance) {
+  global.performance = {
+    now: jest.fn(() => Date.now()),
+    getEntriesByType: jest.fn(() => []),
+    mark: jest.fn(),
+    measure: jest.fn(),
+  };
+} else {
+  if (!global.performance.getEntriesByType) {
+    global.performance.getEntriesByType = jest.fn(() => []);
+  }
+}
