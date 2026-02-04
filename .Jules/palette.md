@@ -9,3 +9,7 @@
 ## 2026-02-01 - Div-based Toggle Buttons
 **Learning:** Found toggle switches implemented as `div` elements with `onClick` handlers. This pattern is inaccessible to screen readers as it lacks `role="switch"` and keyboard focus support.
 **Action:** Refactor to use native `<button>` elements with `role="switch"` and `aria-checked`. Ensure visual toggle state matches ARIA state.
+
+## 2026-02-06 - Accessible Table Sorting
+**Learning:** Sortable table headers implemented with `onClick` on the `<th>` element are not keyboard accessible. Screen readers also miss the sortable capability and state without `role="button"` and `aria-sort`.
+**Action:** Wrap header content in a `<button>` element that fills the cell, and apply `aria-sort="ascending|descending|none"` to the `<th>`.
