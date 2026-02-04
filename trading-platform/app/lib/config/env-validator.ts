@@ -101,14 +101,11 @@ export function validateEnvironment(): EnvironmentConfig {
   const isDevelopment = nodeEnv === 'development';
   const isTest = nodeEnv === 'test';
 
-  // Check if we are in the Next.js build phase
-  const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
-
   try {
     // JWT Configuration
     let jwtSecret: string;
-    if (isProduction && !isBuildPhase) {
-      // In production (runtime), JWT_SECRET is required
+    if (isProduction) {
+      // In production, JWT_SECRET is required
       jwtSecret = getEnv('JWT_SECRET');
       if (jwtSecret === 'default-secret-change-in-production') {
         throw new EnvironmentValidationError(
@@ -116,7 +113,7 @@ export function validateEnvironment(): EnvironmentConfig {
         );
       }
     } else {
-      // In development/test OR build phase, allow fallback
+      // In development/test, allow fallback
       jwtSecret = getOptionalEnv('JWT_SECRET', 'dev-secret-key-do-not-use-in-production');
     }
 
@@ -124,7 +121,7 @@ export function validateEnvironment(): EnvironmentConfig {
 
     // Database Configuration
     let databaseUrl: string;
-    if (isProduction && !isBuildPhase) {
+    if (isProduction) {
       databaseUrl = getEnv('DATABASE_URL');
     } else {
       databaseUrl = getOptionalEnv('DATABASE_URL', '');
@@ -183,25 +180,6 @@ export function validateEnvironment(): EnvironmentConfig {
     };
   } catch (error) {
     if (error instanceof EnvironmentValidationError) {
-      // During build phase, warn but don't fail for missing runtime secrets
-      if (isBuildPhase) {
-        console.warn('⚠️  Build phase detected: bypassing strict environment validation.');
-        console.warn(`   Missing: ${error.message}`);
-        // Return a dummy config for build to succeed
-        return {
-            jwt: { secret: 'build-placeholder', expiration: '24h' },
-            database: { url: 'postgres://build:placeholder@localhost:5432/build' },
-            websocket: { url: 'ws://localhost:3001' },
-            logging: { level: 'info', enabled: false },
-            analytics: { enabled: false },
-            rateLimit: { max: 100 },
-            nodeEnv: 'production',
-            isProduction: true,
-            isDevelopment: false,
-            isTest: false,
-        };
-      }
-
       console.error('❌ Environment Validation Failed:');
       console.error(`   ${error.message}`);
       console.error('\nPlease check your .env.local file and ensure all required variables are set.');
