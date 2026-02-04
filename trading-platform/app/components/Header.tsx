@@ -10,6 +10,7 @@ import { ALL_STOCKS, fetchStockMetadata } from '@/app/data/stocks';
 import { Stock } from '@/app/types';
 import { NotificationCenter } from './NotificationCenter';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { ConnectionQualityIndicator } from './ConnectionQualityIndicator';
 import { useTranslations } from '@/app/i18n/provider';
 
 export const Header = memo(function Header() {
