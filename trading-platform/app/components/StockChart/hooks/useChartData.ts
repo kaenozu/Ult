@@ -10,25 +10,25 @@ export const useChartData = (
   chartWidth?: number
 ) => {
 const optimizedData = useMemo(() => {
-    // 最新100日分を常に表示（過去データを優先）
-    const recentData = data.slice(-100);
+    // 全データを常に使用（1年分の過去データを表示）
+    const allData = data;
     
     if (!shouldReduceData(data.length)) {
-      return recentData;
+      return allData;
     }
 
     const targetPoints = chartWidth
-      ? calculateOptimalDataPoints(chartWidth, recentData.length)
-      : recentData.length;
+      ? calculateOptimalDataPoints(chartWidth, allData.length)
+      : allData.length;
 
     // まだデータが多い場合は削減、なければそのまま使用
-    return targetPoints < recentData.length
-      ? reduceDataPoints(recentData, {
+    return targetPoints < allData.length
+      ? reduceDataPoints(allData, {
           targetPoints,
           algorithm: 'lttb',
           preserveExtremes: true,
         })
-      : recentData;
+      : allData;
   }, [data, chartWidth]);
 
 // 実際の価格データのみ（予測を含まない）
