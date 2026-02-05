@@ -2,7 +2,8 @@ import { BacktestView } from '../BacktestView';
 import { ForecastView } from '../ForecastView';
 import { AIPerformanceView } from '../AIPerformanceView';
 import { SignalDisplay } from './SignalDisplay';
-import { Signal, Stock, BacktestResult, PaperTrade, AIStatus, RiskCalculationResult } from '@/app/types';
+import { Signal, Stock, BacktestResult, PaperTrade, AIStatus } from '@/app/types';
+import type { PositionSizeRecommendation } from '@/app/types/risk';
 
 interface SignalDetailsProps {
   activeTab: 'signal' | 'backtest' | 'ai' | 'forecast';
@@ -15,7 +16,7 @@ interface SignalDetailsProps {
   error: string | null;
   aiTrades: PaperTrade[];
   aiStatusData: AIStatus;
-  kellyRecommendation: RiskCalculationResult | null;
+  kellyRecommendation: (PositionSizeRecommendation & { kellyResult?: { confidence: number; warnings: string[] } }) | null;
 }
 
 export function SignalDetails({

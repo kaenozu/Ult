@@ -153,7 +153,7 @@ export function BacktestResultsDashboard({
             <MetricCard
               title="最大ドローダウン"
               value={`-${result.maxDrawdown}%`}
-              subtitle={`期間: ${drawdownAnalysis.maxDrawdownDuration}日`}
+              subtitle={`期間: ${drawdownAnalysis?.maxDrawdownDuration ?? '-'}日`}
               icon={AlertTriangle}
               positive={false}
             />
@@ -366,7 +366,7 @@ export function BacktestResultsDashboard({
             <MetricCard
               title="平均ドローダウン"
               value={`-${metrics.averageDrawdown.toFixed(2)}%`}
-              subtitle={`頻度: ${drawdownAnalysis.drawdownFrequency}回`}
+              subtitle={`頻度: ${drawdownAnalysis?.drawdownFrequency ?? '-'}回`}
               icon={TrendingDown}
               positive={false}
             />
@@ -386,12 +386,12 @@ export function BacktestResultsDashboard({
             />
           </div>
 
-          <DrawdownAnalysisPanel analysis={drawdownAnalysis} />
+          {drawdownAnalysis && <DrawdownAnalysisPanel analysis={drawdownAnalysis} />}
         </TabsContent>
 
         {/* Distribution Tab */}
         <TabsContent value="distribution" className="space-y-4">
-          <ReturnDistributionPanel distribution={returnDistribution} />
+          {returnDistribution && <ReturnDistributionPanel distribution={returnDistribution} />}
         </TabsContent>
       </Tabs>
     </div>

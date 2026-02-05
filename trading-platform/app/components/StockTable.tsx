@@ -118,7 +118,7 @@ interface SortIconProps {
 
 const SortIcon = ({ field, sortField, sortDirection }: SortIconProps) => {
   const isActive = sortField === field;
-  const direction = sortDirection === 'asc' ? 'up' : 'down';
+  const direction: 'up' | 'down' = sortDirection === 'asc' ? 'up' : 'down';
   
   if (!isActive) {
     return (
@@ -132,7 +132,7 @@ const SortIcon = ({ field, sortField, sortDirection }: SortIconProps) => {
     <svg 
       className={cn(
         "w-3 h-3 ml-1 transition-transform",
-        direction === 'asc' ? "text-green-400" : "text-red-400 rotate-180"
+        direction === 'up' ? "text-green-400" : "text-red-400 rotate-180"
       )} 
       fill="none" 
       stroke="currentColor" 

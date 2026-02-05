@@ -70,7 +70,10 @@ export default function MLPerformanceDashboard() {
   const handleRetrain = async () => {
     try {
       await integratedPredictionService.retrainModels();
-      fetchPerformanceData();
+      const metrics = getMetrics();
+      if (metrics) {
+        setPerformanceData(metrics);
+      }
       setShowRetrainModal(false);
       // Show success message (could be replaced with toast notification)
       alert('モデルの再トレーニングが完了しました');

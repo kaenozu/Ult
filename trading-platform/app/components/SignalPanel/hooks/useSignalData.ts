@@ -46,7 +46,7 @@ export function useSignalData(stock: Stock, signal: Signal | null) {
       .map(o => ({
         id: o.id,
         symbol: o.symbol,
-        type: (o.side === 'BUY' || o.side === 'LONG') ? 'BUY' : 'SELL',
+        type: o.side === 'BUY' ? 'BUY' : 'SELL',
         entryPrice: o.price || 0,
         quantity: o.quantity,
         status: o.status === 'FILLED' ? 'CLOSED' : 'OPEN',
