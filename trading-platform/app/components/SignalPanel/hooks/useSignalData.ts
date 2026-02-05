@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from 'react';
+﻿import { useEffect, useMemo, useCallback } from 'react';
 import { Stock, Signal, PaperTrade } from '@/app/types';
 import { useAIStore } from '@/app/store/aiStore';
 import { useJournalStore } from '@/app/store/journalStore';
@@ -34,7 +34,7 @@ export function useSignalData(stock: Stock, signal: Signal | null) {
     }
   }, [displaySignal, stock.price, stock.symbol, processAITrades]);
 
-  // 自動売買プロセスをトリガー - Use callback
+  // 閾ｪ蜍募｣ｲ雋ｷ繝励Ο繧ｻ繧ｹ繧偵ヨ繝ｪ繧ｬ繝ｼ - Use callback
   useEffect(() => {
     processTradesCallback();
   }, [processTradesCallback]);
@@ -46,7 +46,7 @@ export function useSignalData(stock: Stock, signal: Signal | null) {
       .map(o => ({
         id: o.id,
         symbol: o.symbol,
-        type: (o.side === 'BUY' || o.side === 'LONG') ? 'BUY' : 'SELL',
+        type: (o.side === 'BUY') ? 'BUY' : 'SELL',
         entryPrice: o.price || 0,
         quantity: o.quantity,
         status: o.status === 'FILLED' ? 'CLOSED' : 'OPEN',
@@ -77,3 +77,5 @@ export function useSignalData(stock: Stock, signal: Signal | null) {
     aiStatusData
   };
 }
+
+

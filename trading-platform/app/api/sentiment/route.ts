@@ -1,6 +1,4 @@
-import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
-import { requireAuth } from '@/app/lib/auth';
-/**
+﻿/**
  * GET /api/sentiment/route.ts
  *
  * センチメントデータAPI - 全シンボルのセンチメント情報を取得
@@ -126,3 +124,4 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
     rateLimit: true,
   }
 );
+

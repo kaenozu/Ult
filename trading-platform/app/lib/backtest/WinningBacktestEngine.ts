@@ -317,7 +317,7 @@ class WinningBacktestEngine {
   runMonteCarloSimulation(
     originalResult: BacktestResult,
     numSimulations: number = 1000
-  ): MonteCarloResult {
+  ): WinningMonteCarloResult {
     const simulations: BacktestResult[] = [];
     
     for (let i = 0; i < numSimulations; i++) {
@@ -936,4 +936,3 @@ export interface WinningReturnDistribution {
   skewness: number;
   kurtosis: number;
 }
-

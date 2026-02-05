@@ -17,9 +17,88 @@ import {
   Strategy,
   Trade,
   StrategyContext,
-  PerformanceMetrics
+  PerformanceMetrics,
+  StrategyAction
 } from './AdvancedBacktestEngine';
 import { SlippagePredictionService, OrderBook, OrderBookLevel } from '../execution/SlippagePredictionService';
+
+export interface CommissionTier {
+  volumeThreshold: number;
+  rate: number;
+}
+
+export interface RealisticBacktestConfig extends BacktestConfig {
+  useRealisticSlippage?: boolean;
+  averageDailyVolume?: number;
+  marketImpactCoefficient?: number;
+  useTimeOfDaySlippage?: boolean;
+  marketOpenSlippageMultiplier?: number;
+  marketCloseSlippageMultiplier?: number;
+  useVolatilitySlippage?: boolean;
+  volatilityWindow?: number;
+  volatilitySlippageMultiplier?: number;
+  useTieredCommissions?: boolean;
+  commissionTiers?: CommissionTier[];
+  orderBookDepth?: number;
+}
+
+export interface RealisticTradeMetrics extends Trade {
+  marketImpact: number;
+  effectiveSlippage: number;
+  commissionTier?: number;
+  timeOfDayFactor?: number;
+  volatilityFactor?: number;
+}
+
+export interface RealisticBacktestResult {
+  trades: RealisticTradeMetrics[];
+  equityCurve: number[];
+  metrics: PerformanceMetrics;
+  config: RealisticBacktestConfig;
+  startDate: string;
+  endDate: string;
+  duration: number;
+  transactionCosts: {
+    totalCommissions: number;
+    totalSlippage: number;
+    totalMarketImpact: number;
+    totalSpread: number;
+    avgCommissionPerTrade: number;
+    avgSlippagePerTrade: number;
+    avgMarketImpactPerTrade: number;
+  };
+  executionQuality: {
+    avgExecutionTime: number;
+    worstSlippage: number;
+    bestSlippage: number;
+    slippageStdDev: number;
+  };
+}
+
+export const DEFAULT_REALISTIC_CONFIG: RealisticBacktestConfig = {
+  initialCapital: 100000,
+  commission: 0.1,
+  slippage: 0.05,
+  spread: 0.01,
+  maxPositionSize: 20,
+  maxDrawdown: 50,
+  allowShort: true,
+  useStopLoss: true,
+  useTakeProfit: true,
+  riskPerTrade: 2,
+  useRealisticSlippage: false,
+  averageDailyVolume: undefined,
+  marketImpactCoefficient: 0.1,
+  useTimeOfDaySlippage: false,
+  marketOpenSlippageMultiplier: 1.5,
+  marketCloseSlippageMultiplier: 1.3,
+  useVolatilitySlippage: false,
+  volatilityWindow: 20,
+  volatilitySlippageMultiplier: 2.0,
+  useTieredCommissions: false,
+  commissionTiers: undefined,
+  orderBookDepth: 10,
+};
 
 export class RealisticBacktestEngine extends EventEmitter {
   private config: RealisticBacktestConfig;
@@ -41,8 +120,8 @@ export class RealisticBacktestEngine extends EventEmitter {
   private tradeTimestamps: number[] = [];
 
   constructor(config: Partial<RealisticBacktestConfig> = {}) {
-    const mergedConfig = { ...DEFAULT_REALISTIC_CONFIG, ...config } as BacktestConfig;
-    this.config = { ...(DEFAULT_REALISTIC_CONFIG as RealisticBacktestConfig), ...config } as RealisticBacktestConfig;
+    super();
+    this.config = { ...DEFAULT_REALISTIC_CONFIG, ...config };
     this.realisticConfig = this.config;
     this.slippageService = new SlippagePredictionService();
     this.currentEquity = this.config.initialCapital;
