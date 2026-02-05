@@ -7,8 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, BacktestConfig, PerformanceMetrics } from './AdvancedBacktestEngine';
-import { BacktestTrade } from '@/app/types';
+import { BacktestResult, BacktestConfig, PerformanceMetrics, Trade } from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -278,7 +277,7 @@ export class MonteCarloSimulator extends EventEmitter {
   /**
    * トレードをシャッフル（トレードシャッフル法）
    */
-  private shuffleTrades(trades: BacktestTrade[], rng: () => number): BacktestTrade[] {
+  private shuffleTrades(trades: Trade[], rng: () => number): Trade[] {
     // Fisher-Yates shuffle
     for (let i = trades.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
@@ -301,7 +300,7 @@ export class MonteCarloSimulator extends EventEmitter {
   /**
    * エクイティカーブを再構築
    */
-  private reconstructEquityCurve(trades: BacktestTrade[], initialCapital: number): number[] {
+  private reconstructEquityCurve(trades: Trade[], initialCapital: number): number[] {
     const equityCurve: number[] = [initialCapital];
     let equity = initialCapital;
 
@@ -318,7 +317,7 @@ export class MonteCarloSimulator extends EventEmitter {
    */
   private calculateMetricsFromEquity(
     equityCurve: number[],
-    trades: BacktestTrade[],
+    trades: Trade[],
     config: BacktestConfig
   ): PerformanceMetrics {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);

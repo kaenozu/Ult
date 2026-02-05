@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ML Performance Monitoring Dashboard
  * 
  * Displays real-time ML model performance metrics including:
@@ -45,27 +45,27 @@ export default function MLPerformanceDashboard() {
     }
   }, []);
 
+  const fetchPerformanceData = useCallback(() => {
+    const metrics = getMetrics();
+    if (metrics) {
+      setPerformanceData(metrics);
+    }
+    setLoading(false);
+  }, [getMetrics]);
+
   useEffect(() => {
     // Update every 30 seconds - use interval callback to avoid sync setState
     const interval = setInterval(() => {
-      const metrics = getMetrics();
-      if (metrics) {
-        setPerformanceData(metrics);
-      }
-      setLoading(false);
+      fetchPerformanceData();
     }, 30000);
 
     // Initial fetch - wrapped in setTimeout to avoid sync setState
     setTimeout(() => {
-      const metrics = getMetrics();
-      if (metrics) {
-        setPerformanceData(metrics);
-      }
-      setLoading(false);
+      fetchPerformanceData();
     }, 0);
 
     return () => clearInterval(interval);
-  }, [getMetrics]);
+  }, [fetchPerformanceData]);
 
   const handleRetrain = async () => {
     try {
@@ -331,3 +331,4 @@ function MetricProgress({
     </div>
   );
 }
+

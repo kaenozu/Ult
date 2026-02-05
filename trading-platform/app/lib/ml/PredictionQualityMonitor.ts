@@ -316,8 +316,8 @@ export class PredictionQualityMonitor {
     rmse: number;
     mape: number;
     r2Score: number;
-    drift: ReturnType<typeof this.detectDrift>;
-    calibration: ReturnType<typeof this.getCalibration>;
+    drift: ReturnType<PredictionQualityMonitor['detectDrift']>;
+    calibration: ReturnType<PredictionQualityMonitor['getCalibration']>;
     totalPredictions: number;
     recentPredictions: number;
   } {

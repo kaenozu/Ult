@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+﻿import { useMemo } from 'react';
 import { ChartOptions, TooltipItem } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
@@ -16,6 +16,7 @@ interface UseChartOptionsProps {
 
 interface ChartContext {
   index: number;
+  tick?: { value?: number };
 }
 
 export const useChartOptions = ({
@@ -67,7 +68,7 @@ padding: {
           font: {
             size: 12,
             family: 'Inter, sans-serif',
-            weight: '500'
+            weight: 500
           },
           usePointStyle: true,
           boxWidth: 8,
@@ -147,10 +148,10 @@ padding: {
         grid: {
           color: (ctx: ChartContext) => {
             // Highlight horizontal grid at hovered Y position
-            if (ctx.tick.value && hoveredIdx !== null && data[hoveredIdx]) {
+            if (ctx.tick?.value && hoveredIdx !== null && data[hoveredIdx]) {
               const price = data[hoveredIdx].close;
               // Check if this tick is approximately the current price
-              const tickValue = ctx.tick.value as number;
+              const tickValue = ctx.tick?.value as number;
               const priceDiff = Math.abs(tickValue - price);
               const priceRange = yAxisRange.max - yAxisRange.min;
               if (priceDiff / priceRange < 0.02) {
@@ -160,9 +161,9 @@ padding: {
             return CHART_GRID.MAIN_COLOR;
           },
           lineWidth: (ctx: ChartContext) => {
-            if (ctx.tick.value && hoveredIdx !== null && data[hoveredIdx]) {
+            if (ctx.tick?.value && hoveredIdx !== null && data[hoveredIdx]) {
               const price = data[hoveredIdx].close;
-              const tickValue = ctx.tick.value as number;
+              const tickValue = ctx.tick?.value as number;
               const priceRange = yAxisRange.max - yAxisRange.min;
               if (Math.abs(tickValue - price) / priceRange < 0.02) {
                 return CHART_GRID.HOVER_LINE_WIDTH;
@@ -210,3 +211,5 @@ padding: {
 
   return options;
 };
+
+

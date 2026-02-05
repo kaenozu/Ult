@@ -1,4 +1,4 @@
-/**
+﻿/**
  * LoadingStates - Unified Loading State Components
  * 
  * Key features:
@@ -8,7 +8,7 @@
  * - Progress tracking for long operations
  */
 
-import { memo, useMemo, useState, useEffect } from 'react';
+import { memo, useMemo, useState, useEffect, useRef } from 'react';
 
 // ============================================================================
 // Types

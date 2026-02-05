@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { memo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
@@ -33,8 +33,15 @@ export const ChartToolbar = memo(function ChartToolbar({
 }: ChartToolbarProps) {
   const isJapaneseStock = stock?.market === 'japan';
   const isIntraday = isIntradayInterval(interval);
-  
-  // 日本株用：日足のみ
+  const latestChange =
+    latestData && typeof latestData.close === 'number' && typeof latestData.open === 'number'
+      ? latestData.close - latestData.open
+      : null;
+  const latestChangeBase = latestData && typeof latestData.open === 'number' ? latestData.open : null;
+  const latestChangePercent =
+    latestChange !== null && latestChangeBase && latestChangeBase !== 0
+      ? (latestChange / latestChangeBase) * 100
+      : null;// 日本株用：日足のみ
   const japaneseIntervals = [
     { value: 'D', label: '日足', disabled: false },
   ];
@@ -187,13 +194,13 @@ export const ChartToolbar = memo(function ChartToolbar({
             <span className="text-xs">終:</span>
             <span className="font-bold text-white">{formatCurrency(latestData.close || 0, stock?.market === 'japan' ? 'JPY' : 'USD')}</span>
           </div>
-          {latestData.change !== undefined && (
+          {latestChange !== null && (
             <div className={cn(
               "flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold",
-              latestData.change >= 0 ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
+              latestChange >= 0 ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
             )}>
-              {latestData.change >= 0 ? '+' : ''}{formatCurrency(latestData.change)}
-              <span className="opacity-80">({latestData.change >= 0 ? '+' : ''}{((latestData.change / (latestData.close - latestData.change)) * 100).toFixed(1)}%)</span>
+              {latestChange >= 0 ? '+' : ''}{formatCurrency(latestChange)}
+              <span className="opacity-80">({latestChange >= 0 ? '+' : ''}{(latestChangePercent ?? 0).toFixed(1)}%)</span>
             </div>
           )}
         </div>

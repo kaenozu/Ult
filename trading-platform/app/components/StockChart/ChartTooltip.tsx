@@ -45,11 +45,11 @@ export const ChartTooltip = function ChartTooltip({
         {signal && hoveredIdx === data.length - 1 && (
           <span className={cn(
             "text-[10px] font-bold px-1.5 py-0.5 rounded",
-            signal.direction === 'BUY' ? "bg-green-500/20 text-green-400" :
-            signal.direction === 'SELL' ? "bg-red-500/20 text-red-400" :
+            signal.type === 'BUY' ? "bg-green-500/20 text-green-400" :
+            signal.type === 'SELL' ? "bg-red-500/20 text-red-400" :
             "bg-gray-500/20 text-gray-400"
           )}>
-            {signal.direction}
+            {signal.type}
           </span>
         )}
       </div>

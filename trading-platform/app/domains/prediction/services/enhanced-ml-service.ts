@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Enhanced ML Prediction Service
  *
  * Implements advanced features:
@@ -17,7 +17,7 @@ import { OHLCV, Stock, Signal } from '@/app/types';
 import { PredictionFeatures, EnhancedPrediction } from '../types';
 import { FeatureCalculationService } from './feature-calculation-service';
 import { MLModelService } from './ml-model-service';
-import { marketRegimeDetector, MarketRegime, VolatilityRegime } from '../../lib/MarketRegimeDetector';
+import { marketRegimeDetector, RegimeDetectionResult, VolatilityRegime } from '@/app/lib/MarketRegimeDetector';
 
 export interface ModelPerformance {
   hitRate: number;
@@ -99,7 +99,7 @@ export class EnhancedMLService {
     const driftRisk = this.detectModelDrift(features);
     
     // 3. Get market regime
-    const regimeResult = marketRegimeDetector.detect(historicalData) as MarketRegime;
+    const regimeResult: RegimeDetectionResult = marketRegimeDetector.detect(historicalData);
     
     // 4. Get base prediction with dynamic weights
     const basePrediction = this.mlModelService.predict(features);
@@ -475,3 +475,4 @@ export class EnhancedMLService {
 }
 
 export const enhancedMLService = new EnhancedMLService();
+

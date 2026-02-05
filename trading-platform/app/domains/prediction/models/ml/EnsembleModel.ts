@@ -1,4 +1,4 @@
-/**
+﻿/**
  * EnsembleModel.ts
  *
  * 動的アンサンブル重み付けクラス
@@ -358,15 +358,10 @@ export class EnsembleModel {
 
       // ベースラインと比較して重みを調整
       const baselineAccuracy = 60; // 60%をベースラインとする（厳格化: 55% → 60%）
-      const adjustment = (avgAccuracy - baselineAccuracy) / 100 * this.LEARNING_RATE;
-
-      // @ts-expect-error - 動的なアクセス
-      this.currentWeights[modelType] = Math.max(
+      const adjustment = (avgAccuracy - baselineAccuracy) / 100 * this.LEARNING_RATE;      this.currentWeights[modelType] = Math.max(
         this.MIN_WEIGHT,
         Math.min(
-          this.MAX_WEIGHT,
-          // @ts-expect-error
-          this.currentWeights[modelType] * (1 + adjustment)
+          this.MAX_WEIGHT,          this.currentWeights[modelType] * (1 + adjustment)
         )
       );
     }

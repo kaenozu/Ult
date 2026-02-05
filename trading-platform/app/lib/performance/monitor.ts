@@ -21,7 +21,7 @@ export interface PerformanceSnapshot {
   timestamp: number;
 }
 
-class PerformanceMonitor {
+export class PerformanceMonitor {
   private metrics: Map<string, number[]> = new Map();
   private snapshots: PerformanceSnapshot[] = [];
   private readonly MAX_MEASUREMENTS = 100;
@@ -69,13 +69,33 @@ class PerformanceMonitor {
   /**
    * Measure any operation
    */
-  measure(name: string, callback: () => void): void {
+  measure<T>(name: string, callback: () => T, _context?: Record<string, unknown>): T {
     const start = performance.now();
-    callback();
+    const result = callback();
     const duration = performance.now() - start;
     
     this.recordMetric(name, duration);
     this.checkForSlowOperation(name, duration);
+    return result;
+  }
+
+  async measureAsync<T>(
+    name: string,
+    callback: () => Promise<T>,
+    _context?: Record<string, unknown>
+  ): Promise<T> {
+    const start = performance.now();
+    try {
+      const result = await callback();
+      const duration = performance.now() - start;
+      this.recordMetric(name, duration);
+      this.checkForSlowOperation(name, duration);
+      return result;
+    } catch (error) {
+      const duration = performance.now() - start;
+      this.recordMetric(`${name}.error`, duration);
+      throw error;
+    }
   }
 
   /**
