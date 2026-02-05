@@ -181,7 +181,7 @@ export const StockChart = memo(function StockChart({
   }
 
 return (
-    <div className="relative w-full h-full overflow-hidden" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px', maxHeight: '600px' }}>
+    <div className="relative w-full" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px' }}>
       {/* Accuracy Badge Overlay */}
       {accuracyData && (
         <div className="absolute top-2 right-2 z-20 pointer-events-none animate-fade-in">

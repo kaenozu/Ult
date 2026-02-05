@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ChartOptions, TooltipItem } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
@@ -42,7 +42,7 @@ export const useChartOptions = ({
 
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     layout: {
 padding: {
         top: 15,
