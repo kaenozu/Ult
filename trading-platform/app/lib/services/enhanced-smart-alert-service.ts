@@ -5,7 +5,10 @@
  * 技術指標のクロス、価格レベルの到達、出来高異常、市場マイクロストラクチャーの変化などを検知します。
  */
 
-import { OHLCV, Stock, Signal } from '@/app/types';
+import { OHLCV, Stock, Signal, TechnicalIndicator } from '@/app/types';
+
+// Type alias for backward compatibility
+type TechnicalIndicators = TechnicalIndicator;
 import { ProcessedData } from './high-frequency-data-processing-service';
 
 export interface AlertCondition {

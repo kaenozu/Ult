@@ -34,8 +34,8 @@ export class MarketDataService {
   async fetchLatestPrice(symbol: string): Promise<number> {
     const data = await this.fetchHistoricalData({
       symbol,
-      startDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
-      endDate: new Date(),
+      startDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
       interval: '1d',
     });
 
@@ -56,11 +56,13 @@ export class MarketDataService {
 
   private generateMockData(request: HistoricalDataRequest): OHLCV[] {
     const data: OHLCV[] = [];
-    const days = Math.ceil((request.endDate.getTime() - request.startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const endTime = request.endDate ? new Date(request.endDate).getTime() : Date.now();
+    const startTime = request.startDate ? new Date(request.startDate).getTime() : endTime - 30 * 24 * 60 * 60 * 1000;
+    const days = Math.ceil((endTime - startTime) / (1000 * 60 * 60 * 24));
     let price = 100;
 
     for (let i = 0; i < days; i++) {
-      const date = new Date(request.startDate.getTime() + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // YYYY-MM-DD format
+      const date = new Date(startTime + i * 24 * 60 * 60 * 1000).toISOString().split('T')[0]; // YYYY-MM-DD format
       const change = (Math.random() - 0.5) * 5;
       price += change;
 

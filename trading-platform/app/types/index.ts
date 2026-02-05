@@ -994,3 +994,19 @@ export interface RealtimeQuote {
   change?: number;
   changePercent?: number;
 }
+
+// Alert types
+export interface AlertCondition {
+  type: string;
+  operator: 'gt' | 'lt' | 'eq' | 'gte' | 'lte' | 'ne';
+  value: number | string;
+  field?: string;
+}
+
+export interface AlertRule {
+  conditions: AlertCondition[];
+  operator: 'AND' | 'OR';
+}
+
+// TechnicalIndicators alias for backward compatibility
+export type TechnicalIndicators = TechnicalIndicator;
