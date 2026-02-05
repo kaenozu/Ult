@@ -52,15 +52,22 @@ export const StockChart = memo(function StockChart({
   // 1. Data Preparation Hooks
   const { extendedData, normalizedIndexData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
+
+  // Memoize accuracy data to prevent unnecessary re-renders of forecast layers
+  const predictionError = accuracyData?.predictionError;
+  const hasAccuracyData = !!accuracyData;
+  const forecastAccuracyData = useMemo(() =>
+    hasAccuracyData ? { predictionError: predictionError || 1.0 } : null,
+    [hasAccuracyData, predictionError]
+  );
+
   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
     data,
     extendedData,
     signal,
     market,
     hoveredIdx,
-    accuracyData: accuracyData ? {
-      predictionError: accuracyData.predictionError || 1.0
-    } : null
+    accuracyData: forecastAccuracyData
   });
 
   // Get current SMA value for tooltip
