@@ -4,6 +4,17 @@ import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireAuth } from '@/app/lib/auth';
 import { handleApiError } from '@/app/lib/error-handler';
 import { csrfTokenMiddleware, requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
+import { AlertType } from '@/app/lib/alerts/AlertSystem';
+import {
+  validateSymbol,
+  validateOrderSide,
+  validateOrderType,
+  validateTradingAction,
+  validateNumber,
+  validateRequiredString,
+  validateOperator,
+  buildCleanConfig
+} from '@/app/lib/validation';
 
 /**
  * @swagger
@@ -264,166 +275,31 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       
       case 'place_order':
-        // Input validation
-        if (!body.symbol || typeof body.symbol !== 'string' || body.symbol.trim().length === 0) {
-          return NextResponse.json(
-            { error: 'Invalid symbol: must be a non-empty string' },
-            { status: 400 }
-          );
-        }
-        if (!body.side || !['BUY', 'SELL'].includes(body.side)) {
-          return NextResponse.json(
-            { error: 'Invalid side: must be BUY or SELL' },
-            { status: 400 }
-          );
-        }
-        if (!body.quantity || typeof body.quantity !== 'number' || body.quantity <= 0 || !Number.isFinite(body.quantity)) {
-          return NextResponse.json(
-            { error: 'Invalid quantity: must be a positive finite number' },
-            { status: 400 }
-          );
-        }
+        const symbol = validateSymbol(body.symbol);
+        const side = validateOrderSide(body.side);
+        const quantity = validateNumber(body.quantity, 'quantity', { positive: true });
         
-        await platform.placeOrder(
-          body.symbol,
-          body.side,
-          body.quantity,
-          body.options
-        );
+        await platform.placeOrder(symbol, side, quantity, body.options);
         return NextResponse.json({ success: true });
       
       case 'close_position':
-        if (!body.symbol || typeof body.symbol !== 'string' || body.symbol.trim().length === 0) {
-          return NextResponse.json(
-            { error: 'Invalid symbol: must be a non-empty string' },
-            { status: 400 }
-          );
-        }
-        await platform.closePosition(body.symbol);
+        const closeSymbol = validateSymbol(body.symbol);
+        await platform.closePosition(closeSymbol);
         return NextResponse.json({ success: true });
       
       case 'create_alert':
-        if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
-          return NextResponse.json(
-            { error: 'Invalid name: must be a non-empty string' },
-            { status: 400 }
-          );
-        }
-        if (!body.symbol || typeof body.symbol !== 'string' || body.symbol.trim().length === 0) {
-          return NextResponse.json(
-            { error: 'Invalid symbol: must be a non-empty string' },
-            { status: 400 }
-          );
-        }
-        if (!body.type || typeof body.type !== 'string') {
-          return NextResponse.json(
-            { error: 'Invalid type: must be a string' },
-            { status: 400 }
-          );
-        }
-        if (!body.operator || typeof body.operator !== 'string') {
-          return NextResponse.json(
-            { error: 'Invalid operator: must be a string' },
-            { status: 400 }
-          );
-        }
-        if (body.value === undefined || body.value === null || typeof body.value !== 'number' || !Number.isFinite(body.value)) {
-          return NextResponse.json(
-            { error: 'Invalid value: must be a finite number' },
-            { status: 400 }
-          );
-        }
+        const name = validateRequiredString(body.name, 'name');
+        const alertSymbol = validateSymbol(body.symbol);
+        const type = validateRequiredString(body.type, 'type');
+        const operator = validateOperator(body.operator);
+        const value = validateNumber(body.value, 'value', { finite: true });
         
-        platform.createAlert(
-          body.name,
-          body.symbol,
-          body.type,
-          body.operator,
-          body.value
-        );
+        platform.createAlert(name, alertSymbol, type as AlertType, operator, value);
         return NextResponse.json({ success: true });
       
       case 'update_config':
-        const config = body.config;
-        if (!config || typeof config !== 'object' || Array.isArray(config)) {
-          return NextResponse.json(
-            { error: 'Invalid config: must be an object' },
-            { status: 400 }
-          );
-        }
-
-        // Validate mode
-        if (config.mode && !['live', 'paper', 'backtest'].includes(config.mode)) {
-          return NextResponse.json(
-            { error: 'Invalid mode: must be live, paper, or backtest' },
-            { status: 400 }
-          );
-        }
-
-        // Validate initialCapital
-        if (config.initialCapital !== undefined) {
-          if (typeof config.initialCapital !== 'number' || config.initialCapital <= 0 || !Number.isFinite(config.initialCapital)) {
-            return NextResponse.json(
-              { error: 'Invalid initialCapital: must be a positive number' },
-              { status: 400 }
-            );
-          }
-        }
-
-        // Validate riskLimits
-        let cleanRiskLimits: Record<string, number> | undefined = undefined;
-        if (config.riskLimits !== undefined) {
-          if (typeof config.riskLimits !== 'object' || Array.isArray(config.riskLimits)) {
-            return NextResponse.json(
-              { error: 'Invalid riskLimits: must be an object' },
-              { status: 400 }
-            );
-          }
-
-          cleanRiskLimits = {};
-          const rl = config.riskLimits;
-
-          if (rl.maxPositionSize !== undefined) {
-            if (typeof rl.maxPositionSize !== 'number' || rl.maxPositionSize <= 0) {
-              return NextResponse.json({ error: 'Invalid maxPositionSize' }, { status: 400 });
-            }
-            cleanRiskLimits.maxPositionSize = rl.maxPositionSize;
-          }
-          if (rl.maxDailyLoss !== undefined) {
-            if (typeof rl.maxDailyLoss !== 'number' || rl.maxDailyLoss <= 0) {
-              return NextResponse.json({ error: 'Invalid maxDailyLoss' }, { status: 400 });
-            }
-            cleanRiskLimits.maxDailyLoss = rl.maxDailyLoss;
-          }
-          if (rl.maxDrawdown !== undefined) {
-            if (typeof rl.maxDrawdown !== 'number' || rl.maxDrawdown <= 0) {
-              return NextResponse.json({ error: 'Invalid maxDrawdown' }, { status: 400 });
-            }
-            cleanRiskLimits.maxDrawdown = rl.maxDrawdown;
-          }
-        }
-
-        // Whitelist allowed keys and construct clean config to prevent prototype pollution
-        // and allow only trusted fields
-        const cleanConfig: Record<string, any> = {};
-
-        if (config.mode) cleanConfig.mode = config.mode;
-        if (config.initialCapital) cleanConfig.initialCapital = config.initialCapital;
-        if (cleanRiskLimits) cleanConfig.riskLimits = cleanRiskLimits;
-
-        if (typeof config.aiEnabled === 'boolean') cleanConfig.aiEnabled = config.aiEnabled;
-        if (typeof config.sentimentEnabled === 'boolean') cleanConfig.sentimentEnabled = config.sentimentEnabled;
-        if (typeof config.autoTrading === 'boolean') cleanConfig.autoTrading = config.autoTrading;
-
-        if (Array.isArray(config.exchanges)) {
-          cleanConfig.exchanges = config.exchanges.filter((e: unknown) => typeof e === 'string');
-        }
-
-        if (Array.isArray(config.symbols)) {
-          cleanConfig.symbols = config.symbols.filter((s: unknown) => typeof s === 'string');
-        }
-
-        platform.updateConfig(cleanConfig);
+        const config = buildCleanConfig(body.config);
+        platform.updateConfig(config);
         return NextResponse.json({ success: true });
       
       default:
