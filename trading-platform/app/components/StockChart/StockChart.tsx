@@ -53,8 +53,8 @@ export const StockChart = memo(function StockChart({
   const { actualData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
-    data,
-    extendedData,
+    data: data, // 元のOHLCVデータを渡す
+    extendedData: { labels: actualData.labels, prices: actualData.prices }, // 実際のデータを渡す
     signal,
     market,
     hoveredIdx,

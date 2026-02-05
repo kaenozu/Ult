@@ -59,24 +59,24 @@ class AnalysisService {
         const atr = (Math.max(...closes) - Math.min(...closes)) / (closes.length || 1);
         const volatility = stdDeviation * Math.sqrt(FORECAST_CONE.STEPS);
 
-        const bearishLower: number[] = [currentPrice];
-        const bearishUpper: number[] = [currentPrice];
-        const bullishLower: number[] = [currentPrice];
-        const bullishUpper: number[] = [currentPrice];
-        const base: number[] = [currentPrice];
-
+        const bearishLower: number[] = [];
+        const bearishUpper: number[] = [];
+        const bullishLower: number[] = [];
+        const bullishUpper: number[] = [];
+        const base: number[] = [];
+        
         for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
-            const basePrice = base[base.length - 1];
+            const basePrice = data[data.length - 1].close;
             const confidenceFactor = Math.sqrt(i / FORECAST_CONE.STEPS);
             const priceVariation = basePrice * volatility * confidenceFactor;
-
+            
             const bearishFactor = 1 - (atr * 0.5 * confidenceFactor);
             const bullishFactor = 1 + (atr * 0.5 * confidenceFactor);
-
+            
             bearishLower.push(Math.max(0, (basePrice - priceVariation * 1.5) * bearishFactor));
-            bearishUpper.push((basePrice - priceVariation * 0.5) * bearishFactor);
-            bullishLower.push((basePrice + priceVariation * 0.5) * bullishFactor);
-            bullishUpper.push((basePrice + priceVariation * 1.5) * bullishFactor);
+            bearishUpper.push((basePrice - priceVariation * 0.5) * bearishFactor));
+            bullishLower.push((basePrice + priceVariation * 0.5) * bullishFactor));
+            bullishUpper.push((basePrice + priceVariation * 0.5) * bullishFactor));
             base.push(basePrice * (1 + meanPriceReturn));
         }
 
