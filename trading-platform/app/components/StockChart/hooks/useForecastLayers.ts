@@ -46,11 +46,9 @@ export const useForecastLayers = ({
     const pastSignal = analyzeStock(data[0].symbol || '', data.slice(0, hoveredIdx + 1), market);
     if (!pastSignal) return [];
 
-    const targetArr = new Array(extendedData.labels.length).fill(NaN);
-    const stopArr = new Array(extendedData.labels.length).fill(NaN);
-    const currentPrice = data[hoveredIdx].close;
-    targetArr[hoveredIdx] = stopArr[hoveredIdx] = currentPrice;
-
+const targetArr = new Array(data.length).fill(NaN);
+    const stopArr = new Array(data.length).fill(NaN);
+ 
     const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
     const confidenceFactor = (110 - pastSignal.confidence) / 100;
     const momentum = pastSignal.predictedChange ? pastSignal.predictedChange / 100 : 0;
@@ -99,9 +97,9 @@ export const useForecastLayers = ({
     if (!signal || data.length === 0) return [];
     const lastIdx = data.length - 1;
     const currentPrice = data[lastIdx].close;
-    const targetArr = new Array(extendedData.labels.length).fill(NaN);
-    const stopArr = new Array(extendedData.labels.length).fill(NaN);
-
+const targetArr = new Array(data.length).fill(NaN);
+    const stopArr = new Array(data.length).fill(NaN);
+ 
     const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
     
     // Use real-time prediction error from accuracy data if available

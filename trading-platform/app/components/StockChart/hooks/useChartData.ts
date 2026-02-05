@@ -100,8 +100,8 @@ const normalizedIndexData = useMemo(() => {
     forecastExtension,    // 予測用の拡張データ
     normalizedIndexData,
     extendedData: {
-      labels: [...actualData.labels, ...forecastExtension.extendedLabels.slice(actualData.labels.length)],
-      prices: [...actualData.prices, ...forecastExtension.forecastPrices]
+      labels: actualData.labels,  // 実データのラベルのみ
+      prices: actualData.prices  // 実データの価格のみ
     }
   };
 };

@@ -96,10 +96,7 @@ export const StockChart = memo(function StockChart({
       },
 {
         label: '現在価格',
-        data: [
-          ...actualData.prices,           // 実際の価格データのみ
-          ...new Array(forecastExtension.forecastPrices.length).fill(null) // 予測期間はnull
-        ],
+        data: actualData.prices,  // 実際の価格データのみを正確に表示
         borderColor: CANDLESTICK.MAIN_LINE_COLOR,
         fill: false,
         tension: CHART_CONFIG.TENSION,
