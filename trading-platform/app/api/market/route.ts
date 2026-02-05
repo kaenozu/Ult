@@ -217,9 +217,9 @@ export async function GET(request: Request) {
           return validationError('Invalid startDate format. Use YYYY-MM-DD.', 'startDate');
         }
         period1 = startDateParam;
-      } else {
+} else {
         const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 6); // 6ヶ月前までのデータを取得
+        startDate.setFullYear(startDate.getFullYear() - 1); // 1年前までのデータを取得
         period1 = startDate.toISOString().split('T')[0];
       }
 

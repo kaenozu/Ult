@@ -10,29 +10,25 @@ export const useChartData = (
   chartWidth?: number
 ) => {
 const optimizedData = useMemo(() => {
+    // 最新100日分を常に表示（過去データを優先）
+    const recentData = data.slice(-100);
+    
     if (!shouldReduceData(data.length)) {
-      return data;
+      return recentData;
     }
-
-    // より多くのデータを表示するために期間を拡大
-    const recentData = data.slice(-100); // 最新100日分を取得
-    const olderData = data.slice(0, -100);
 
     const targetPoints = chartWidth
-      ? calculateOptimalDataPoints(chartWidth, Math.min(recentData.length, 100))
-      : Math.min(recentData.length, 100);
+      ? calculateOptimalDataPoints(chartWidth, recentData.length)
+      : recentData.length;
 
-    const finalData = [...recentData];
-    if (olderData.length > 0) {
-      const sampledOlderData = reduceDataPoints(olderData, {
-        targetPoints: Math.max(0, 100 - recentData.length),
-        algorithm: 'lttb',
-        preserveExtremes: true,
-      });
-      finalData.push(...sampledOlderData);
-    }
-
-    return finalData;
+    // まだデータが多い場合は削減、なければそのまま使用
+    return targetPoints < recentData.length
+      ? reduceDataPoints(recentData, {
+          targetPoints,
+          algorithm: 'lttb',
+          preserveExtremes: true,
+        })
+      : recentData;
   }, [data, chartWidth]);
 
 // 実際の価格データのみ（予測を含まない）
@@ -104,8 +100,8 @@ const normalizedIndexData = useMemo(() => {
     forecastExtension,    // 予測用の拡張データ
     normalizedIndexData,
     extendedData: {
-      labels: forecastExtension.extendedLabels,
-      prices: actualData.prices
+      labels: [...actualData.labels, ...forecastExtension.extendedLabels.slice(actualData.labels.length)],
+      prices: [...actualData.prices, ...forecastExtension.forecastPrices]
     }
   };
 };
