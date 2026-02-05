@@ -368,10 +368,11 @@ export function usePropsMemo<T extends Record<string, unknown>>(
   const prevProps = useRef<T>(props);
   
   const hasChanged = useMemo(() => {
-    return keys.some((key) => {
+    const currentKeys = Object.keys(props) as (keyof T)[];
+    return currentKeys.some((key) => {
       return prevProps.current[key] !== props[key];
     });
-  }, [keys]);
+  }, Object.values(props));
   
   useEffect(() => {
     if (hasChanged) {
