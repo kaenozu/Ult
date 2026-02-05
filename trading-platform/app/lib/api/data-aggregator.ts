@@ -117,38 +117,27 @@ class MarketDataClient {
             throw new Error('No intraday data available');
           }
         } else {
-          // For daily/weekly/monthly data, use IndexedDB for persistence
-          const localData = await idbClient.getData(symbol);
-          finalData = localData;
-          source = 'idb';
-
+          // For daily/weekly/monthly data, fetch from API to ensure sufficient data
+          // Get 1 year of historical data for better analysis
           const now = new Date();
-          // Use local noon to avoid timezone/market-close issues for "needs update" check
-          const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
+          const startDate = new Date(now);
+          startDate.setFullYear(startDate.getFullYear() - 1);
 
-          // Update if no data, or if latest data is older than 24 hours
-          const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
+          let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&startDate=${startDate.toISOString().split('T')[0]}`;
+          // Add interval parameter if specified (defaults to daily on API side)
+          if (interval) {
+            fetchUrl += `&interval=${interval}`;
+          }
 
-          if (needsUpdate) {
-            let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
-            // Add interval parameter if specified (defaults to daily on API side)
-            if (interval) {
-              fetchUrl += `&interval=${interval}`;
-            }
-            if (lastDataDate) {
-              const startDate = new Date(lastDataDate);
-              startDate.setDate(startDate.getDate() + 1);
-              fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
-            }
+          const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
 
-            const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
-
-            if (newData && newData.length > 0) {
-              finalData = await idbClient.mergeAndSave(symbol, newData);
-              source = 'api';
-            } else if (!lastDataDate) {
-              throw new Error('No historical data available');
-            }
+          if (newData && newData.length > 0) {
+            finalData = newData;
+            source = 'api';
+            // Also save to IndexedDB for persistence
+            await idbClient.mergeAndSave(symbol, newData);
+          } else {
+            throw new Error('No historical data available');
           }
         }
 
@@ -261,11 +250,18 @@ class MarketDataClient {
   async fetchSignal(stock: Stock, signal?: AbortSignal, interval?: string): Promise<FetchResult<Signal>> {
     let result: FetchResult<OHLCV[]> | null = null;
     try {
+      console.log('[data-aggregator] fetchSignal start', { symbol: stock.symbol, market: stock.market, interval });
       result = await this.fetchOHLCV(stock.symbol, stock.market, undefined, signal, interval);
+      console.log('[data-aggregator] fetchOHLCV done', { symbol: stock.symbol, dataLength: result.data?.length, success: result.success, source: result.source });
 
       if (!result.success || !result.data || result.data.length < 20) {
-        if (signal?.aborted) throw new Error('Aborted');
-        throw new Error('Insufficient data for ML analysis');
+        console.warn('[data-aggregator] Insufficient data or failed', { symbol: stock.symbol, length: result.data?.length, success: result.success });
+        return {
+          success: false,
+          data: null,
+          source: result?.source || 'error',
+          error: 'Insufficient data for ML analysis'
+        };
       }
 
       // マクロデータの取得（相関分析用）- 失敗しても全体を止めないフェイルセーフ設計
@@ -315,7 +311,7 @@ class MarketDataClient {
 
     const sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const filledWithGaps = this.fillGaps(sorted);
-    
+
     return this.interpolateValues(filledWithGaps);
   }
 
@@ -338,7 +334,7 @@ class MarketDataClient {
       for (let d = 1; d < diffDays; d++) {
         const gapDate = new Date(current);
         gapDate.setDate(current.getDate() + d);
-        
+
         if (!WEEKEND_DAYS.includes(gapDate.getDay())) {
           filled.push(this.createGapOHLCV(gapDate));
         }
@@ -366,7 +362,7 @@ class MarketDataClient {
     for (const field of priceFields) {
       this.interpolateField(result, field);
     }
-    
+
     this.interpolateVolume(result);
     return result;
   }
@@ -409,10 +405,10 @@ class MarketDataClient {
       const diff = nextVal - prevVal;
       return Number((prevVal + (diff * (currentIdx - prevIdx)) / gap).toFixed(2));
     }
-    
+
     if (prevIdx >= 0) return result[prevIdx][field] as number;
     if (nextIdx < result.length) return result[nextIdx][field] as number;
-    
+
     return 0;
   }
 

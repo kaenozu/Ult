@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency, formatPercent, cn } from '@/app/lib/utils';

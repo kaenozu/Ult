@@ -49,26 +49,19 @@ export const StockChart = memo(function StockChart({
   // 固定高さを使用
   const dynamicHeight = propHeight ?? CHART_DIMENSIONS.DEFAULT_HEIGHT;
 
-  // 1. Data Preparation Hooks
-  const { extendedData, normalizedIndexData } = useChartData(data, signal, indexData);
+// 1. Data Preparation Hooks
+  const { actualData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
-
-  // Memoize accuracy data to prevent unnecessary re-renders of forecast layers
-  const predictionError = accuracyData?.predictionError;
-  const hasAccuracyData = !!accuracyData;
-  const forecastAccuracyData = useMemo(() =>
-    hasAccuracyData ? { predictionError: predictionError || 1.0 } : null,
-    [hasAccuracyData, predictionError]
-  );
-
-  const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
-    data,
-    extendedData,
-    signal,
-    market,
-    hoveredIdx,
-    accuracyData: forecastAccuracyData
-  });
+   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
+     data: data, // 元のOHLCVデータを渡す
+     extendedData: extendedData,
+     signal,
+     market,
+     hoveredIdx,
+     accuracyData: accuracyData ? {
+       predictionError: accuracyData.predictionError || 1.0
+     } : null
+   });
 
   // Get current SMA value for tooltip
   const currentSmaValue = useMemo(() => {
@@ -101,9 +94,9 @@ export const StockChart = memo(function StockChart({
         tension: CHART_CONFIG.TENSION,
         order: 10
       },
-      {
+{
         label: '現在価格',
-        data: extendedData.prices,
+        data: actualData.prices,  // 実際の価格データのみを正確に表示
         borderColor: CANDLESTICK.MAIN_LINE_COLOR,
         fill: false,
         tension: CHART_CONFIG.TENSION,
@@ -162,29 +155,33 @@ export const StockChart = memo(function StockChart({
     market
   ]);
 
-  // 4. Loading / Error States
-  if (error) return (
-    <div className={`relative w-full flex items-center justify-center ${CHART_THEME.ERROR.BACKGROUND} border ${CHART_THEME.ERROR.BORDER} rounded`} style={{ height: dynamicHeight }}>
-      <div className="text-center p-4">
-        <p className={`${CHART_THEME.ERROR.TEXT_TITLE} font-bold`}>データの取得に失敗しました</p>
-        <p className={`${CHART_THEME.ERROR.TEXT_DESC} text-sm mt-1`}>{error}</p>
-      </div>
-    </div>
-  );
-  if (loading || data.length === 0) return (
-    <div className="relative w-full bg-[#131b23] border border-[#233648] rounded overflow-hidden" style={{ height: dynamicHeight }}>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="relative w-12 h-12 mb-4">
-          <div className="absolute inset-0 border-2 border-primary/30 rounded-full"></div>
-          <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+// 4. Loading / Error States
+  if (error) {
+    return (
+      <div className={`relative w-full flex items-center justify-center ${CHART_THEME.ERROR.BACKGROUND} border ${CHART_THEME.ERROR.BORDER} rounded`} style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT }}>
+        <div className="text-center p-4">
+          <p className={`${CHART_THEME.ERROR.TEXT_TITLE} font-bold`}>データの取得に失敗しました</p>
+          <p className={`${CHART_THEME.ERROR.TEXT_DESC} text-sm mt-1`}>{error}</p>
         </div>
-        <p className="text-sm text-[#92adc9] animate-pulse">チャートデータを読み込み中...</p>
       </div>
-    </div>
-  );
+    );
+  }
+  if (loading || data.length === 0) {
+    return (
+      <div className="relative w-full bg-[#131b23] border border-[#233648] rounded overflow-hidden" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT }}>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="relative w-12 h-12 mb-4">
+            <div className="absolute inset-0 border-2 border-primary/30 rounded-full"></div>
+            <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <p className="text-sm text-[#92adc9] animate-pulse">チャートデータを読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
 
-  return (
-    <div className="relative w-full group" style={{ height: dynamicHeight }}>
+return (
+    <div className="relative w-full" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px' }}>
       {/* Accuracy Badge Overlay */}
       {accuracyData && (
         <div className="absolute top-2 right-2 z-20 pointer-events-none animate-fade-in">

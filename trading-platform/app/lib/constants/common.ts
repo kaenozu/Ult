@@ -31,7 +31,7 @@ export const DATA_REQUIREMENTS = {
   TREND_CALCULATION_PERIOD: 20,
   MIN_OHLCV_LENGTH: 20,
   ANNUAL_TRADING_DAYS: 252, // Trading days in a year
-  LOOKBACK_PERIOD_DAYS: 252, // 1 year lookback for accuracy calculation
+  LOOKBACK_PERIOD_DAYS: 60, // 3 month lookback for accuracy calculation (realistic requirement)
 } as const;
 
 /**

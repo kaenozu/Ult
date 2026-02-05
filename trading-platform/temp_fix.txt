@@ -1,0 +1,14 @@
+        // 修正：十分なデータがあるかチェック（252日 + 20日将来予測 = 272日最低要件）
+        const MIN_DATA_FOR_ACCURACY = DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS + windowSize;
+        if (data.length < MIN_DATA_FOR_ACCURACY) {
+            console.log(`[DEBUG] Insufficient data: need ${MIN_DATA_FOR_ACCURACY}, have ${data.length}`);
+            return null;
+        }
+
+        // 修正：実際のデータ範囲で計算
+        const maxStartIndex = data.length - windowSize - 1;
+        const startIndex = Math.min(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, maxStartIndex);
+        
+        console.log(`[DEBUG] Accuracy calculation: startIndex=${startIndex}, endIndex=${maxStartIndex}, dataLength=${data.length}`);
+
+        for (let i = startIndex; i <= maxStartIndex; i += 5) {

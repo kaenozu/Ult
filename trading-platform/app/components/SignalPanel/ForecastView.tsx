@@ -3,7 +3,7 @@ import { formatCurrency, cn, getConfidenceColor } from '@/app/lib/utils';
 
 // Const can be passed as prop or kept here if it's constant across app
 const FORECAST_CONE = {
-  STEPS: 5,
+  STEPS: 7,
 };
 
 interface ForecastViewProps {
