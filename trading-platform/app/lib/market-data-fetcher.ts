@@ -1,4 +1,5 @@
 import type { OHLCV } from '@/app/types';
+import { MarketHistoryResponseSchema } from '@/app/lib/schemas/market';
 
 export interface MarketHistoryMetadata {
   source?: string;
@@ -54,29 +55,25 @@ export async function fetchMarketHistory(
     throw new Error(message);
   }
 
-  const payload = await response.json();
-  const rawData = Array.isArray(payload?.data)
-    ? (payload.data as Array<{ date?: string; open?: number; high?: number; low?: number; close?: number; volume?: number }>)
-    : [];
+  const rawPayload = await response.json();
 
-  const data: OHLCV[] = rawData
-    .map((item): OHLCV => ({
-      symbol,
-      date: String(item.date ?? ''),
-      open: Number(item.open ?? 0),
-      high: Number(item.high ?? 0),
-      low: Number(item.low ?? 0),
-      close: Number(item.close ?? 0),
-      volume: Number(item.volume ?? 0),
-    }))
-    .filter((item): item is OHLCV =>
-      Number.isFinite(item.open) && Number.isFinite(item.close) && item.date.length > 0
-    );
-  data.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+  // Strict Schema Validation
+  const parseResult = MarketHistoryResponseSchema.safeParse(rawPayload);
+
+  if (!parseResult.success) {
+    console.error('[MarketDataFetcher] Invalid API Response Schema:', JSON.stringify(parseResult.error.format(), null, 2));
+    throw new Error('Received invalid market data format from API');
+  }
+
+  const payload = parseResult.data;
+
+  // Since Zod already validated the structure, we can directly use payload.data
+  // However, we might want to ensure date sorting just in case
+  const data = payload.data.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
 
   return {
     data,
-    warnings: Array.isArray(payload?.warnings) ? payload.warnings : [],
-    metadata: payload?.metadata,
+    warnings: payload.warnings || [],
+    metadata: payload.metadata as MarketHistoryMetadata | undefined, // Cast is safe because Zod validated structure matches
   };
 }

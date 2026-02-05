@@ -7,37 +7,10 @@ import {
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
-
-// Define explicit types for Yahoo Finance responses
-interface YahooChartResult {
-  meta: {
-    currency: string;
-    symbol: string;
-    regularMarketPrice: number;
-    [key: string]: unknown;
-  };
-  quotes: {
-    date: Date | string;
-    open: number | null;
-    high: number | null;
-    low: number | null;
-    close: number | null;
-    volume: number | null;
-    [key: string]: unknown;
-  }[];
-}
-
-interface YahooQuoteResult {
-  symbol: string;
-  regularMarketPrice?: number;
-  regularMarketChange?: number;
-  regularMarketChangePercent?: number;
-  regularMarketVolume?: number;
-  marketState?: string;
-  longName?: string;
-  shortName?: string;
-  [key: string]: unknown; // Safer than 'any' or union of primitives
-}
+import {
+  YahooChartResultSchema,
+  YahooSingleQuoteSchema
+} from '@/app/lib/schemas/market';
 
 export const yf = new YahooFinance();
 
@@ -248,9 +221,20 @@ export async function GET(request: Request) {
         }
 
         // Build chart options - pass interval if specified
-        const result = finalInterval
-          ? await yf.chart(yahooSymbol, { period1, interval: finalInterval }) as YahooChartResult
-          : await yf.chart(yahooSymbol, { period1 }) as YahooChartResult;
+        const rawResult = finalInterval
+          ? await yf.chart(yahooSymbol, { period1, interval: finalInterval })
+          : await yf.chart(yahooSymbol, { period1 });
+
+        const parseResult = YahooChartResultSchema.safeParse(rawResult);
+
+        if (!parseResult.success) {
+          console.error('[MarketAPI] Yahoo Finance Chart Schema Validation Failed:', JSON.stringify(parseResult.error.format(), null, 2));
+          // Don't fail completely, try to use best effort or fail gracefully
+          // In this case, we'll return a 502 because the upstream data is not what we expect
+          return handleApiError(new Error('Upstream API data schema mismatch'), 'market/history', 502);
+        }
+
+        const result = parseResult.data;
 
         if (!result || !result.quotes || result.quotes.length === 0) {
           return NextResponse.json({ data: [], warning: 'No historical data found' });
@@ -319,11 +303,11 @@ export async function GET(request: Request) {
           
           return {
             date: dateStr,
-            open: q.open ?? interpolatedClose,
-            high: q.high ?? interpolatedClose,
-            low: q.low ?? interpolatedClose,
-            close: interpolatedClose,
-            volume: q.volume ?? 0,
+            open: Number(q.open ?? interpolatedClose),
+            high: Number(q.high ?? interpolatedClose),
+            low: Number(q.low ?? interpolatedClose),
+            close: Number(interpolatedClose),
+            volume: Number(q.volume ?? 0),
             // 補間データフラグ（UI表示用）
             isInterpolated: !hasValidClose,
           };
@@ -353,6 +337,7 @@ export async function GET(request: Request) {
           }
         });
       } catch (innerError: unknown) {
+        console.error('Market History Error:', innerError);
         return handleApiError(new Error('Failed to fetch historical data'), 'market/history', 502);
       }
     }
@@ -362,8 +347,15 @@ export async function GET(request: Request) {
 
       if (symbols.length === 1) {
         try {
-          const result = await yf.quote(symbols[0]) as YahooQuoteResult;
-          if (!result) throw new Error('Symbol not found');
+          const rawResult = await yf.quote(symbols[0]);
+          const parseResult = YahooSingleQuoteSchema.safeParse(rawResult);
+
+          if (!parseResult.success) {
+            console.error('[MarketAPI] Yahoo Finance Quote Schema Validation Failed:', JSON.stringify(parseResult.error.format(), null, 2));
+            throw new Error('Symbol not found or invalid format');
+          }
+
+          const result = parseResult.data;
 
           return NextResponse.json({
             symbol: symbol,
@@ -378,9 +370,19 @@ export async function GET(request: Request) {
         }
       } else {
         try {
-          const results = await yf.quote(symbols) as YahooQuoteResult[];
+          const results = await yf.quote(symbols);
+          // results is Array<unknown> here
+
+          if (!Array.isArray(results)) {
+            throw new Error('Expected array response for batch quotes');
+          }
+
           const data = results
-            .filter((r): r is YahooQuoteResult => !!r)
+            .map(r => {
+                const parsed = YahooSingleQuoteSchema.safeParse(r);
+                return parsed.success ? parsed.data : null;
+            })
+            .filter((r): r is NonNullable<typeof r> => !!r)
             .map(r => ({
               symbol: r.symbol ? r.symbol.replace('.T', '') : 'UNKNOWN',
               price: r.regularMarketPrice || 0,
