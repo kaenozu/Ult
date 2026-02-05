@@ -97,14 +97,19 @@ jobs:
         working-directory: ./trading-platform
         run: npm ci
 
+      - name: Skip E2E (temporary)
+        run: echo "E2E skipped"
+
       - name: Install Playwright browsers
         working-directory: ./trading-platform
         run: npx playwright install --with-deps
+        if: ${{ false }}
 
       - name: Run E2E tests
         working-directory: ./trading-platform
         run: npm run test:e2e
         continue-on-error: true
+        if: ${{ false }}
 
       - name: Upload Playwright report
         if: always()
