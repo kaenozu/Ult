@@ -18,12 +18,11 @@ export {
 // Market Data
 export {
   MultiExchangeDataFeed,
-  getGlobalDataFeed,
-  resetGlobalDataFeed,
+  createMultiExchangeDataFeed,
   type MarketData,
   type ExchangeConfig,
   type DataFeedConfig,
-  DEFAULT_EXCHANGE_CONFIGS,
+  type ConnectionStatus,
 } from '../marketDataFeed/MultiExchangeDataFeed';
 
 // AI Analytics

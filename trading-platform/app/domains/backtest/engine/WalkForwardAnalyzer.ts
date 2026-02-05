@@ -1,4 +1,4 @@
-/**
+﻿/**
  * WalkForwardAnalyzer.ts
  *
  * ウォークフォワード分析
@@ -8,7 +8,15 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
-import { BacktestResult, BacktestConfig, Strategy, StrategyAction, StrategyContext } from './AdvancedBacktestEngine';
+import {
+  BacktestResult,
+  BacktestConfig,
+  Strategy,
+  StrategyAction,
+  StrategyContext,
+  Trade,
+  PerformanceMetrics,
+} from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -367,10 +375,15 @@ export class WalkForwardAnalyzer extends EventEmitter {
     // 簡易実装：既存のバックテストエンジンを使用せず、
     // 直接シミュレーションを実行
 
-    const trades: BacktestTrade[] = [];
+    const trades: Trade[] = [];
     let equity = config.initialCapital;
     const equityCurve: number[] = [equity];
-    let position: { side: 'LONG' | 'SHORT' | null; entryPrice: number; quantity: number } | null = null;
+    let position: {
+      side: 'LONG' | 'SHORT';
+      entryPrice: number;
+      quantity: number;
+      entryDate: string;
+    } | null = null;
 
     for (let i = 50; i < data.length; i++) {
       const context: StrategyContext = {
@@ -385,15 +398,23 @@ export class WalkForwardAnalyzer extends EventEmitter {
 
       if (action.action === 'BUY' && !position) {
         const quantity = Math.floor((equity * 0.2) / data[i].close);
-        position = { side: 'LONG', entryPrice: data[i].close, quantity };
+        position = { side: 'LONG', entryPrice: data[i].close, quantity, entryDate: data[i].date };
       } else if (action.action === 'SELL' && position?.side === 'LONG') {
         const pnl = (data[i].close - position.entryPrice) * position.quantity;
         equity += pnl;
         trades.push({
+          id: `trade_${trades.length}`,
+          entryDate: position.entryDate,
+          exitDate: data[i].date,
+          symbol: data[i].symbol ?? '',
+          side: position.side,
           entryPrice: position.entryPrice,
           exitPrice: data[i].close,
+          quantity: position.quantity,
           pnl,
           pnlPercent: (pnl / (position.entryPrice * position.quantity)) * 100,
+          fees: 0,
+          exitReason: 'signal',
         });
         position = null;
       } else if (action.action === 'CLOSE' && position) {
@@ -402,10 +423,18 @@ export class WalkForwardAnalyzer extends EventEmitter {
           : (position.entryPrice - data[i].close) * position.quantity;
         equity += pnl;
         trades.push({
+          id: `trade_${trades.length}`,
+          entryDate: position.entryDate,
+          exitDate: data[i].date,
+          symbol: data[i].symbol ?? '',
+          side: position.side,
           entryPrice: position.entryPrice,
           exitPrice: data[i].close,
+          quantity: position.quantity,
           pnl,
           pnlPercent: (pnl / (position.entryPrice * position.quantity)) * 100,
+          fees: 0,
+          exitReason: 'signal',
         });
         position = null;
       }
@@ -430,14 +459,24 @@ export class WalkForwardAnalyzer extends EventEmitter {
   /**
    * メトリクスを計算
    */
-  private calculateMetrics(equityCurve: number[], trades: any[], config: BacktestConfig): any {
+  private calculateMetrics(
+    equityCurve: number[],
+    trades: Trade[],
+    config: BacktestConfig
+  ): PerformanceMetrics {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);
     const totalReturn = ((equityCurve[equityCurve.length - 1] - config.initialCapital) / config.initialCapital) * 100;
 
-    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+    const avgReturn = returns.length > 0 ? returns.reduce((a, b) => a + b, 0) / returns.length : 0;
+    const variance = returns.length > 0
+      ? returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length
+      : 0;
     const volatility = Math.sqrt(variance) * Math.sqrt(252) * 100;
     const sharpeRatio = volatility === 0 ? 0 : (avgReturn * 252) / volatility;
+    const days = equityCurve.length;
+    const annualizedReturn = days > 0
+      ? (Math.pow(1 + totalReturn / 100, 365 / days) - 1) * 100
+      : 0;
 
     const winningTrades = trades.filter(t => t.pnl > 0);
     const losingTrades = trades.filter(t => t.pnl <= 0);
@@ -447,7 +486,62 @@ export class WalkForwardAnalyzer extends EventEmitter {
     const grossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
     const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
 
-    return { totalReturn, sharpeRatio, maxDrawdown: 0, winRate, profitFactor };
+    const averageWin = winningTrades.length > 0 ? grossProfit / winningTrades.length : 0;
+    const averageLoss = losingTrades.length > 0 ? grossLoss / losingTrades.length : 0;
+    const largestWin = winningTrades.length > 0 ? Math.max(...winningTrades.map(t => t.pnl)) : 0;
+    const largestLoss = losingTrades.length > 0 ? Math.min(...losingTrades.map(t => t.pnl)) : 0;
+    const averageTrade = trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0;
+
+    // Max drawdown and duration
+    let maxDrawdown = 0;
+    let maxDrawdownDuration = 0;
+    let peak = equityCurve[0] ?? 0;
+    let peakIndex = 0;
+
+    for (let i = 1; i < equityCurve.length; i++) {
+      if (equityCurve[i] > peak) {
+        peak = equityCurve[i];
+        peakIndex = i;
+      }
+      const drawdown = peak > 0 ? (peak - equityCurve[i]) / peak : 0;
+      if (drawdown > maxDrawdown) {
+        maxDrawdown = drawdown;
+        maxDrawdownDuration = i - peakIndex;
+      }
+    }
+
+    const downsideReturns = returns.filter(r => r < 0);
+    const downsideDeviation = downsideReturns.length > 0
+      ? Math.sqrt(downsideReturns.reduce((sum, r) => sum + r * r, 0) / downsideReturns.length) * Math.sqrt(252)
+      : 0;
+    const sortinoRatio = downsideDeviation === 0 ? 0 : (avgReturn * 252) / downsideDeviation;
+
+    const calmarRatio = maxDrawdown === 0 ? 0 : annualizedReturn / (maxDrawdown * 100);
+    const gains = returns.filter(r => r > 0).reduce((sum, r) => sum + r, 0);
+    const losses = returns.filter(r => r < 0).reduce((sum, r) => sum + Math.abs(r), 0);
+    const omegaRatio = losses === 0 ? gains : gains / losses;
+
+    return {
+      totalReturn,
+      annualizedReturn,
+      volatility,
+      sharpeRatio,
+      sortinoRatio,
+      maxDrawdown: maxDrawdown * 100,
+      maxDrawdownDuration,
+      winRate,
+      profitFactor,
+      averageWin,
+      averageLoss,
+      largestWin,
+      largestLoss,
+      averageTrade,
+      totalTrades: trades.length,
+      winningTrades: winningTrades.length,
+      losingTrades: losingTrades.length,
+      calmarRatio,
+      omegaRatio,
+    };
   }
 
   /**

@@ -1,14 +1,14 @@
-/**
+﻿/**
  * WinningBacktestEngine.ts
  * 
- * 株取引で勝つための包括的バックテストエンジン
+ * 譬ｪ蜿門ｼ輔〒蜍昴▽縺溘ａ縺ｮ蛹・峡逧・ヰ繝・け繝・せ繝医お繝ｳ繧ｸ繝ｳ
  * 
- * 【機能】
- * - 複数戦略のバックテスト
- * - ウォークフォワード分析
- * - モンテカルロシミュレーション
- * - 詳細なパフォーマンス指標
- * - 取引コスト・スリッページ考慮
+ * 縲先ｩ溯・縲・
+ * - 隍・焚謌ｦ逡･縺ｮ繝舌ャ繧ｯ繝・せ繝・
+ * - 繧ｦ繧ｩ繝ｼ繧ｯ繝輔か繝ｯ繝ｼ繝牙・譫・
+ * - 繝｢繝ｳ繝・き繝ｫ繝ｭ繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ
+ * - 隧ｳ邏ｰ縺ｪ繝代ヵ繧ｩ繝ｼ繝槭Φ繧ｹ謖・ｨ・
+ * - 蜿門ｼ輔さ繧ｹ繝医・繧ｹ繝ｪ繝・・繝ｼ繧ｸ閠・・
  */
 
 import { OHLCV } from '@/app/types';
@@ -35,7 +35,20 @@ export interface BacktestTrade {
   exitReason: 'target' | 'stop' | 'signal' | 'trailing_stop' | 'time' | 'end_of_data';
   strategy: string;
   riskRewardRatio: number;
-  holdingPeriods: number; // 保有期間（足数）
+  holdingPeriods: number; // 菫晄怏譛滄俣・郁ｶｳ謨ｰ・・
+}
+
+interface OpenPosition {
+  symbol: string;
+  side: 'BUY' | 'SELL';
+  entryPrice: number;
+  quantity: number;
+  entryDate: string;
+  entryIndex: number;
+  stopLoss: number;
+  takeProfit: number;
+  strategy: string;
+  riskRewardRatio: number;
 }
 
 export interface BacktestConfig {
@@ -54,26 +67,26 @@ export interface BacktestConfig {
 }
 
 export interface PerformanceMetrics {
-  // リターンメトリクス
+  // 繝ｪ繧ｿ繝ｼ繝ｳ繝｡繝医Μ繧ｯ繧ｹ
   totalReturn: number; // %
   annualizedReturn: number; // %
   cagr: number; // Compound Annual Growth Rate
   
-  // リスクメトリクス
+  // 繝ｪ繧ｹ繧ｯ繝｡繝医Μ繧ｯ繧ｹ
   volatility: number; // % annualized
   maxDrawdown: number; // %
   maxDrawdownDuration: number; // days
   var95: number; // Value at Risk 95%
   var99: number; // Value at Risk 99%
   
-  // リスク調整リターンメトリクス
+  // 繝ｪ繧ｹ繧ｯ隱ｿ謨ｴ繝ｪ繧ｿ繝ｼ繝ｳ繝｡繝医Μ繧ｯ繧ｹ
   sharpeRatio: number;
   sortinoRatio: number;
   calmarRatio: number;
   omegaRatio: number;
   informationRatio: number;
   
-  // 取引メトリクス
+  // 蜿門ｼ輔Γ繝医Μ繧ｯ繧ｹ
   totalTrades: number;
   winningTrades: number;
   losingTrades: number;
@@ -86,17 +99,17 @@ export interface PerformanceMetrics {
   averageTrade: number;
   expectancy: number; // Expected value per trade
   
-  // 連続メトリクス
+  // 騾｣邯壹Γ繝医Μ繧ｯ繧ｹ
   maxConsecutiveWins: number;
   maxConsecutiveLosses: number;
   avgHoldingPeriod: number; // periods
   
-  // 効率メトリクス
+  // 蜉ｹ邇・Γ繝医Μ繧ｯ繧ｹ
   profitToDrawdownRatio: number;
   returnToRiskRatio: number;
   ulcerIndex: number;
   
-  // 分布メトリクス
+  // 蛻・ｸ・Γ繝医Μ繧ｯ繧ｹ
   skewness: number;
   kurtosis: number;
 }
@@ -135,13 +148,13 @@ export interface MonteCarloResult {
 }
 
 export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
-  initialCapital: 1000000, // 100万円
+  initialCapital: 1000000, // 100荳・・
   commission: 0.1, // 0.1%
   slippage: 0.05, // 0.05%
   spread: 0.01,
   maxPositionSize: 20, // 20%
   maxDrawdown: 20, // 20%
-  allowShort: false, // 現物取引のみ
+  allowShort: false, // 迴ｾ迚ｩ蜿門ｼ輔・縺ｿ
   useStopLoss: true,
   useTakeProfit: true,
   riskPerTrade: 2, // 2%
@@ -159,7 +172,7 @@ class WinningBacktestEngine {
   private equityCurve: number[] = [];
   private currentEquity: number = 0;
   private peakEquity: number = 0;
-  private openPositions: Map<string, any> = new Map();
+  private openPositions: Map<string, OpenPosition> = new Map();
 
   constructor(config: Partial<BacktestConfig> = {}) {
     this.config = { ...DEFAULT_BACKTEST_CONFIG, ...config };
@@ -168,7 +181,7 @@ class WinningBacktestEngine {
   }
 
   /**
-   * 単一戦略のバックテストを実行
+   * 蜊倅ｸ謌ｦ逡･縺ｮ繝舌ャ繧ｯ繝・せ繝医ｒ螳溯｡・
    */
   runBacktest(
     strategyResults: StrategyResult[],
@@ -181,17 +194,17 @@ class WinningBacktestEngine {
     console.log(`  Initial Capital: ${this.config.initialCapital.toLocaleString()}`);
     console.log(`  Data Points: ${data.length}`);
     
-    // 戦略結果と価格データを同期
+    // 謌ｦ逡･邨先棡縺ｨ萓｡譬ｼ繝・・繧ｿ繧貞酔譛・
     const alignedData = this.alignDataWithSignals(data, strategyResults);
     
     for (let i = 50; i < alignedData.length; i++) {
       const current = alignedData[i];
       const signal = current.signal;
       
-      // 現在のポジションをチェック
+      // 迴ｾ蝨ｨ縺ｮ繝昴ず繧ｷ繝ｧ繝ｳ繧偵メ繧ｧ繝・け
       const currentPosition = this.openPositions.get(symbol);
       
-      // イグジット条件をチェック
+      // 繧､繧ｰ繧ｸ繝・ヨ譚｡莉ｶ繧偵メ繧ｧ繝・け
       if (currentPosition) {
         const exitCheck = this.checkExitConditions(currentPosition, current, i);
         if (exitCheck.shouldExit) {
@@ -200,7 +213,7 @@ class WinningBacktestEngine {
         }
       }
       
-      // エントリーシグナルをチェック
+      // 繧ｨ繝ｳ繝医Μ繝ｼ繧ｷ繧ｰ繝翫Ν繧偵メ繧ｧ繝・け
       if (!this.openPositions.has(symbol) && signal && signal.signal !== 'HOLD') {
         const canEnter = this.canOpenPosition(symbol);
         if (canEnter) {
@@ -208,20 +221,20 @@ class WinningBacktestEngine {
         }
       }
       
-      // エクイティカーブを更新
+      // 繧ｨ繧ｯ繧､繝・ぅ繧ｫ繝ｼ繝悶ｒ譖ｴ譁ｰ
       this.updateEquity();
       
-      // 最大ドローダウンチェック
+      // 譛螟ｧ繝峨Ο繝ｼ繝繧ｦ繝ｳ繝√ぉ繝・け
       if (this.calculateCurrentDrawdown() > this.config.maxDrawdown) {
         console.log('[WinningBacktestEngine] Max drawdown reached, stopping backtest');
         break;
       }
     }
     
-    // 未決済ポジションを決済
+    // 譛ｪ豎ｺ貂医・繧ｸ繧ｷ繝ｧ繝ｳ繧呈ｱｺ貂・
     this.closeAllPositions(alignedData);
     
-    // メトリクスを計算
+    // 繝｡繝医Μ繧ｯ繧ｹ繧定ｨ育ｮ・
     const metrics = this.calculateMetrics();
     const monthlyReturns = this.calculateMonthlyReturns();
     const yearlyReturns = this.calculateYearlyReturns();
@@ -247,30 +260,30 @@ class WinningBacktestEngine {
   }
 
   /**
-   * ウォークフォワード分析を実行
+   * 繧ｦ繧ｩ繝ｼ繧ｯ繝輔か繝ｯ繝ｼ繝牙・譫舌ｒ螳溯｡・
    */
   runWalkForwardAnalysis(
     strategyResults: StrategyResult[],
     data: OHLCV[],
     symbol: string,
-    trainSize: number = 252, // 1年
-    testSize: number = 63 // 3ヶ月
+    trainSize: number = 252, // 1蟷ｴ
+    testSize: number = 63 // 3繝ｶ譛・
   ): WalkForwardResult[] {
     const results: WalkForwardResult[] = [];
     let startIndex = 0;
     
     while (startIndex + trainSize + testSize <= data.length) {
-      // In-Sample期間（パラメータ最適化）
+      // In-Sample譛滄俣・医ヱ繝ｩ繝｡繝ｼ繧ｿ譛驕ｩ蛹厄ｼ・
       const trainData = data.slice(startIndex, startIndex + trainSize);
       const trainSignals = strategyResults.slice(startIndex, startIndex + trainSize);
       const inSampleResult = this.runBacktest(trainSignals, trainData, `${symbol}_train`);
       
-      // Out-of-Sample期間（検証）
+      // Out-of-Sample譛滄俣・域､懆ｨｼ・・
       const testData = data.slice(startIndex + trainSize, startIndex + trainSize + testSize);
       const testSignals = strategyResults.slice(startIndex + trainSize, startIndex + trainSize + testSize);
       const outOfSampleResult = this.runBacktest(testSignals, testData, `${symbol}_test`);
       
-      // ロバストネススコアを計算
+      // 繝ｭ繝舌せ繝医ロ繧ｹ繧ｹ繧ｳ繧｢繧定ｨ育ｮ・
       const robustnessScore = this.calculateRobustnessScore(inSampleResult, outOfSampleResult);
       const parameterStability = this.calculateParameterStability(inSampleResult, outOfSampleResult);
       
@@ -288,7 +301,7 @@ class WinningBacktestEngine {
   }
 
   /**
-   * モンテカルロシミュレーションを実行
+   * 繝｢繝ｳ繝・き繝ｫ繝ｭ繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ繧貞ｮ溯｡・
    */
   runMonteCarloSimulation(
     originalResult: BacktestResult,
@@ -297,13 +310,13 @@ class WinningBacktestEngine {
     const simulations: BacktestResult[] = [];
     
     for (let i = 0; i < numSimulations; i++) {
-      // トレードをランダムにシャッフル
+      // 繝医Ξ繝ｼ繝峨ｒ繝ｩ繝ｳ繝繝縺ｫ繧ｷ繝｣繝・ヵ繝ｫ
       const shuffledTrades = this.shuffleTrades([...originalResult.trades]);
       
-      // 新しいエクイティカーブを構築
+      // 譁ｰ縺励＞繧ｨ繧ｯ繧､繝・ぅ繧ｫ繝ｼ繝悶ｒ讒狗ｯ・
       const simulatedEquity = this.reconstructEquityCurve(shuffledTrades);
       
-      // シミュレーション結果を作成
+      // 繧ｷ繝溘Η繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ邨先棡繧剃ｽ懈・
       const simulatedResult: BacktestResult = {
         ...originalResult,
         trades: shuffledTrades,
@@ -314,13 +327,13 @@ class WinningBacktestEngine {
       simulations.push(simulatedResult);
     }
     
-    // 確率を計算
+    // 遒ｺ邇・ｒ險育ｮ・
     const profitableSimulations = simulations.filter(s => s.metrics.totalReturn > 0).length;
     const drawdownSimulations = simulations.filter(
       s => s.metrics.maxDrawdown > this.config.maxDrawdown
     ).length;
     
-    // 信頼区間を計算
+    // 菫｡鬆ｼ蛹ｺ髢薙ｒ險育ｮ・
     const returns = simulations.map(s => s.metrics.totalReturn).sort((a, b) => a - b);
     const drawdowns = simulations.map(s => s.metrics.maxDrawdown).sort((a, b) => a - b);
     const sharpes = simulations.map(s => s.metrics.sharpeRatio).sort((a, b) => a - b);
@@ -348,7 +361,7 @@ class WinningBacktestEngine {
   }
 
   /**
-   * 複数戦略を比較
+   * 隍・焚謌ｦ逡･繧呈ｯ碑ｼ・
    */
   compareStrategies(results: Map<string, BacktestResult>): {
     strategy: string;
@@ -380,7 +393,7 @@ class WinningBacktestEngine {
     data: OHLCV[],
     signals: StrategyResult[]
   ): (OHLCV & { signal?: StrategyResult })[] {
-    // データとシグナルをインデックスで整列
+    // 繝・・繧ｿ縺ｨ繧ｷ繧ｰ繝翫Ν繧偵う繝ｳ繝・ャ繧ｯ繧ｹ縺ｧ謨ｴ蛻・
     return data.map((candle, index) => ({
       ...candle,
       signal: signals[index],
@@ -393,12 +406,14 @@ class WinningBacktestEngine {
     symbol: string,
     index: number
   ): void {
+    if (signal.signal === 'HOLD') return;
     const price = this.applySlippage(data.close, 'BUY');
     const quantity = this.calculatePositionSize(price, signal.stopLoss);
+    const side: OpenPosition['side'] = signal.signal === 'SELL' ? 'SELL' : 'BUY';
     
     this.openPositions.set(symbol, {
       symbol,
-      side: signal.signal,
+      side,
       entryPrice: price,
       quantity,
       entryDate: data.date,
@@ -411,7 +426,7 @@ class WinningBacktestEngine {
   }
 
   private closePosition(
-    position: BacktestPosition,
+    position: OpenPosition,
     data: OHLCV,
     reason: string,
     index: number
@@ -420,7 +435,7 @@ class WinningBacktestEngine {
     const entryValue = position.entryPrice * position.quantity;
     const exitValue = exitPrice * position.quantity;
     
-    // P&L計算
+    // P&L險育ｮ・
     let pnl = 0;
     if (position.side === 'BUY') {
       pnl = (exitPrice - position.entryPrice) * position.quantity;
@@ -428,14 +443,14 @@ class WinningBacktestEngine {
       pnl = (position.entryPrice - exitPrice) * position.quantity;
     }
     
-    // 手数料とスリッページ
+    // 謇区焚譁吶→繧ｹ繝ｪ繝・・繝ｼ繧ｸ
     const fees = (entryValue + exitValue) * (this.config.commission / 100);
     const slippage = (entryValue + exitValue) * (this.config.slippage / 100);
     pnl -= (fees + slippage);
     
     const pnlPercent = (pnl / entryValue) * 100;
     
-    // エクイティを更新
+    // 繧ｨ繧ｯ繧､繝・ぅ繧呈峩譁ｰ
     this.currentEquity += pnl;
     
     const trade: BacktestTrade = {
@@ -461,11 +476,11 @@ class WinningBacktestEngine {
   }
 
   private checkExitConditions(
-    position: any,
+    position: OpenPosition,
     data: OHLCV,
     index: number
   ): { shouldExit: boolean; reason: string } {
-    // ストップロスチェック
+    // 繧ｹ繝医ャ繝励Ο繧ｹ繝√ぉ繝・け
     if (this.config.useStopLoss && position.stopLoss) {
       if (position.side === 'BUY' && data.low <= position.stopLoss) {
         return { shouldExit: true, reason: 'stop' };
@@ -475,7 +490,7 @@ class WinningBacktestEngine {
       }
     }
     
-    // テイクプロフィットチェック
+    // 繝・う繧ｯ繝励Ο繝輔ぅ繝・ヨ繝√ぉ繝・け
     if (this.config.useTakeProfit && position.takeProfit) {
       if (position.side === 'BUY' && data.high >= position.takeProfit) {
         return { shouldExit: true, reason: 'target' };
@@ -579,7 +594,7 @@ class WinningBacktestEngine {
       sortinoRatio,
       calmarRatio: maxDrawdown > 0 ? annualizedReturn / maxDrawdown : 0,
       omegaRatio: this.calculateOmegaRatio(returns),
-      informationRatio: 0, // ベンチマークが必要
+      informationRatio: 0, // 繝吶Φ繝√・繝ｼ繧ｯ縺悟ｿ・ｦ・
       totalTrades: this.trades.length,
       winningTrades: winningTrades.length,
       losingTrades: losingTrades.length,
@@ -738,13 +753,13 @@ class WinningBacktestEngine {
 
   private calculateMonthlyReturns(): Map<string, number> {
     const monthly = new Map<string, number>();
-    // 簡易実装：実際には日付に基づいて計算
+    // 邁｡譏灘ｮ溯｣・ｼ壼ｮ滄圀縺ｫ縺ｯ譌･莉倥↓蝓ｺ縺･縺・※險育ｮ・
     return monthly;
   }
 
   private calculateYearlyReturns(): Map<string, number> {
     const yearly = new Map<string, number>();
-    // 簡易実装：実際には日付に基づいて計算
+    // 邁｡譏灘ｮ溯｣・ｼ壼ｮ滄圀縺ｫ縺ｯ譌･莉倥↓蝓ｺ縺･縺・※險育ｮ・
     return yearly;
   }
 
@@ -764,7 +779,7 @@ class WinningBacktestEngine {
   }
 
   private calculateParameterStability(inSample: BacktestResult, outOfSample: BacktestResult): number {
-    // パラメータの安定性スコア（簡易版）
+    // 繝代Λ繝｡繝ｼ繧ｿ縺ｮ螳牙ｮ壽ｧ繧ｹ繧ｳ繧｢・育ｰ｡譏鍋沿・・
     const drawdownDiff = Math.abs(inSample.metrics.maxDrawdown - outOfSample.metrics.maxDrawdown);
     return Math.max(0, 100 - drawdownDiff * 2);
   }
@@ -790,7 +805,7 @@ class WinningBacktestEngine {
   }
 
   private calculateMetricsFromEquity(equity: number[], trades: BacktestTrade[]): PerformanceMetrics {
-    // 簡易版：実際のメトリクス計算
+    // 邁｡譏鍋沿・壼ｮ滄圀縺ｮ繝｡繝医Μ繧ｯ繧ｹ險育ｮ・
     const returns = equity.slice(1).map((eq, i) => (eq - equity[i]) / equity[i]);
     const totalReturn = ((equity[equity.length - 1] - equity[0]) / equity[0]) * 100;
     
@@ -844,7 +859,7 @@ class WinningBacktestEngine {
   }
 
   private calculateStrategyScore(metrics: PerformanceMetrics): number {
-    // 複合スコアリング
+    // 隍・粋繧ｹ繧ｳ繧｢繝ｪ繝ｳ繧ｰ
     const sharpeScore = Math.max(0, metrics.sharpeRatio) * 10;
     const returnScore = Math.max(0, metrics.totalReturn);
     const drawdownScore = Math.max(0, 100 - metrics.maxDrawdown);
@@ -917,4 +932,5 @@ export interface WinningReturnDistribution {
   skewness: number;
   kurtosis: number;
 }
+
 

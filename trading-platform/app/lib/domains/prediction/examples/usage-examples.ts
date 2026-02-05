@@ -1,31 +1,29 @@
-
-import { PredictionDomain } from '../index';
+﻿import { PredictionServiceFactory } from '../index';
+import type { PredictionFeatures } from '../../../services/feature-calculation-service';
 
 async function runExamples() {
-  const predictionDomain = new PredictionDomain();
+  const predictionService = PredictionServiceFactory.createDefault();
 
-  console.log('--- Price Prediction Example ---');
-  try {
-    const pricePrediction = await predictionDomain.predictPrice('AAPL', '1d');
-    console.log('Price Prediction:', pricePrediction);
-  } catch (error) {
-    console.error('Price prediction failed:', error);
-  }
+  const features: PredictionFeatures = {
+    rsi: 50,
+    rsiChange: 0,
+    sma5: 0,
+    sma20: 0,
+    sma50: 0,
+    priceMomentum: 0,
+    volumeRatio: 1,
+    volatility: 0.02,
+    macdSignal: 0,
+    bollingerPosition: 0.5,
+    atrPercent: 0.01,
+  };
 
-  console.log('\n--- Trend Analysis Example ---');
+  console.log('--- Prediction Example ---');
   try {
-    const trendAnalysis = await predictionDomain.analyzeTrend('GOOGL', ['RSI', 'MACD']);
-    console.log('Trend Analysis:', trendAnalysis);
+    const prediction = predictionService.predict(features);
+    console.log('Prediction:', prediction);
   } catch (error) {
-    console.error('Trend analysis failed:', error);
-  }
-
-  console.log('\n--- Market Sentiment Example ---');
-  try {
-    const sentiment = await predictionDomain.getMarketSentiment('tech');
-    console.log('Market Sentiment:', sentiment);
-  } catch (error) {
-    console.error('Sentiment analysis failed:', error);
+    console.error('Prediction failed:', error);
   }
 }
 

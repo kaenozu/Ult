@@ -35,6 +35,7 @@ export function calculateStockFeatures() {
 
   // Sample technical indicators (in real usage, calculate from TechnicalAnalysisService)
   const indicators = {
+    symbol: 'SAMPLE',
     rsi: [50, 55, 60],
     sma5: [995, 1000, 1005],
     sma20: [990, 995, 1000],

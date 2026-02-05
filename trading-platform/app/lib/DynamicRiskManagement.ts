@@ -19,7 +19,7 @@ export interface RiskAnalysisResult {
     volatilityScore: number;
 }
 
-import { OHLCV } from './types';
+import { OHLCV } from '@/app/types';
 
 export function calculateRiskMetrics(
     currentPrice: number,

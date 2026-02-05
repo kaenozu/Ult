@@ -277,6 +277,33 @@ export interface JournalEntry {
   profitPercent?: number;
   notes: string;
   status: 'OPEN' | 'CLOSED';
+  tradePlan?: {
+    strategy?: string;
+    entryReason?: string;
+    targetPrice?: number;
+    stopLoss?: number;
+    riskRewardRatio?: number;
+  };
+  followedPlan?: boolean;
+  emotionBefore?: {
+    fear: number;
+    greed: number;
+    confidence: number;
+    stress: number;
+  };
+  emotionAfter?: {
+    fear: number;
+    greed: number;
+    confidence: number;
+    stress: number;
+  };
+  reflection?: {
+    lessonsLearned?: string;
+    whatWorked?: string;
+    whatDidntWork?: string;
+    wouldDoAgain?: boolean;
+    [key: string]: unknown;
+  };
 }
 
 export interface Order {
@@ -929,4 +956,3 @@ export {
   percentageToRatio,
   ratioToPercentage,
 } from './branded';
-

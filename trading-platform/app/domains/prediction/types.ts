@@ -1,8 +1,10 @@
-/**
+﻿/**
  * Prediction Types
  * 
- * 予測ドメインの型定義
+ * 莠域ｸｬ繝峨Γ繧､繝ｳ縺ｮ蝙句ｮ夂ｾｩ
  */
+
+import type { RegimeDetectionResult, VolatilityRegime } from '@/app/lib/MarketRegimeDetector';
 
 export interface AttentionWeights {
   temporal: number[];
@@ -19,6 +21,18 @@ export interface AdvancedPrediction {
   trendStrength: number;
   marketRegime: 'BULL' | 'BEAR' | 'SIDEWAYS';
 }
+
+export interface EnhancedPrediction {
+  prediction: number;
+  confidence: number;
+  expectedValue: number;
+  kellyFraction: number;
+  recommendedPositionSize: number;
+  driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+  marketRegime: RegimeDetectionResult;
+  volatility: VolatilityRegime;
+}
+
 
 export interface MarketContext {
   economicIndicators: number[];

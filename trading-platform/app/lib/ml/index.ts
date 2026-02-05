@@ -5,9 +5,8 @@
  */
 
 // Feature Engineering
-export {
-  featureEngineering,
-  FeatureEngineering,
+export { featureEngineering, FeatureEngineering } from './FeatureEngineering';
+export type {
   TechnicalFeatures,
   MacroEconomicFeatures,
   SentimentFeatures,
@@ -16,9 +15,8 @@ export {
 } from './FeatureEngineering';
 
 // Ensemble Model
-export {
-  ensembleModel,
-  EnsembleModel,
+export { ensembleModel, EnsembleModel } from './EnsembleModel';
+export type {
   ModelType,
   ModelPerformance,
   ModelPrediction as EnsembleModelPrediction,
@@ -27,9 +25,8 @@ export {
 } from './EnsembleModel';
 
 // Model Drift Detector
-export {
-  modelDriftDetector,
-  ModelDriftDetector,
+export { modelDriftDetector, ModelDriftDetector } from './ModelDriftDetector';
+export type {
   PredictionRecord,
   DriftDetectionResult,
   ModelMetrics,
@@ -37,9 +34,5 @@ export {
 } from './ModelDriftDetector';
 
 // ML Service (Integration)
-export {
-  mlService,
-  MLService,
-  MLPredictionResult,
-  RetrainingRecommendation,
-} from './MLService';
+export { mlService, MLService } from './MLService';
+export type { MLPredictionResult, RetrainingRecommendation } from './MLService';
