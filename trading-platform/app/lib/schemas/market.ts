@@ -89,7 +89,7 @@ export const MarketHistoryMetadataSchema = z.object({
   fallbackApplied: z.boolean().optional(),
   isRealtime: z.boolean().optional(),
   quality: z.string().optional(),
-  limitations: z.record(z.unknown()).optional(),
+  limitations: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const MarketHistoryResponseSchema = z.object({

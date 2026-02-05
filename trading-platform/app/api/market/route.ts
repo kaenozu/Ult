@@ -295,7 +295,7 @@ export async function GET(request: Request) {
           
           // 有効な終値を記録
           if (hasValidClose) {
-            lastValidClose = q.close;
+            lastValidClose = q.close ?? null;
           }
           
           // 補間値の計算
