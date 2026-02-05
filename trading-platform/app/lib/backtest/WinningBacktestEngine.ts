@@ -11,9 +11,10 @@
  * - 取引コスト・スリッページ考慮
  */
 
+
 import { OHLCV } from '@/app/types';
-import { StrategyResult } from '../strategies/WinningStrategyEngine';
-import { PositionSizingResult } from '../risk/AdvancedRiskManager';
+import type { StrategyResult } from '../strategies/WinningStrategyEngine';
+import type { PositionSizingResult } from '../risk/AdvancedRiskManager';
 
 // ============================================================================
 // Types
@@ -73,21 +74,21 @@ export interface PerformanceMetrics {
   totalReturn: number; // %
   annualizedReturn: number; // %
   cagr: number; // Compound Annual Growth Rate
-  
+
   // リスクメトリクス
   volatility: number; // % annualized
   maxDrawdown: number; // %
   maxDrawdownDuration: number; // days
   var95: number; // Value at Risk 95%
   var99: number; // Value at Risk 99%
-  
+
   // リスク調整リターンメトリクス
   sharpeRatio: number;
   sortinoRatio: number;
   calmarRatio: number;
   omegaRatio: number;
   informationRatio: number;
-  
+
   // 取引メトリクス
   totalTrades: number;
   winningTrades: number;
@@ -100,17 +101,17 @@ export interface PerformanceMetrics {
   largestLoss: number;
   averageTrade: number;
   expectancy: number; // Expected value per trade
-  
+
   // 連続メトリクス
   maxConsecutiveWins: number;
   maxConsecutiveLosses: number;
   avgHoldingPeriod: number; // periods
-  
+
   // 効率メトリクス
   profitToDrawdownRatio: number;
   returnToRiskRatio: number;
   ulcerIndex: number;
-  
+
   // 分布メトリクス
   skewness: number;
   kurtosis: number;
@@ -204,18 +205,18 @@ class WinningBacktestEngine {
     symbol: string
   ): BacktestResult {
     this.reset();
-    
-    
+
+
     // 戦略結果と価格データを同期
     const alignedData = this.alignDataWithSignals(data, strategyResults);
-    
+
     for (let i = 50; i < alignedData.length; i++) {
       const current = alignedData[i];
       const signal = current.signal;
-      
+
       // 現在のポジションをチェック
       const currentPosition = this.openPositions.get(symbol);
-      
+
       // イグジット条件をチェック
       if (currentPosition) {
         const exitCheck = this.checkExitConditions(currentPosition, current, i);
@@ -224,7 +225,7 @@ class WinningBacktestEngine {
           this.openPositions.delete(symbol);
         }
       }
-      
+
       // エントリーシグナルをチェック
       if (!this.openPositions.has(symbol) && signal && signal.signal !== 'HOLD') {
         const canEnter = this.canOpenPosition(symbol);
@@ -232,25 +233,25 @@ class WinningBacktestEngine {
           this.openPosition(signal, current, symbol, i);
         }
       }
-      
+
       // エクイティカーブを更新
       this.updateEquity();
-      
+
       // 最大ドローダウンチェック
       if (this.calculateCurrentDrawdown() > this.config.maxDrawdown) {
         break;
       }
     }
-    
+
     // 未決済ポジションを決済
     this.closeAllPositions(alignedData);
-    
+
     // メトリクスを計算
     const metrics = this.calculateMetrics();
     const monthlyReturns = this.calculateMonthlyReturns();
     const yearlyReturns = this.calculateYearlyReturns();
     const drawdownCurve = this.calculateDrawdownCurve();
-    
+
     const result: BacktestResult = {
       trades: this.trades,
       equityCurve: this.equityCurve,
@@ -264,9 +265,9 @@ class WinningBacktestEngine {
       duration: this.calculateDuration(data[0].date, data[data.length - 1].date),
       finalCapital: this.currentEquity,
     };
-    
+
     this.logResults(result);
-    
+
     return result;
   }
 
@@ -282,32 +283,32 @@ class WinningBacktestEngine {
   ): WalkForwardResult[] {
     const results: WalkForwardResult[] = [];
     let startIndex = 0;
-    
+
     while (startIndex + trainSize + testSize <= data.length) {
       // In-Sample期間（パラメータ最適化）
       const trainData = data.slice(startIndex, startIndex + trainSize);
       const trainSignals = strategyResults.slice(startIndex, startIndex + trainSize);
       const inSampleResult = this.runBacktest(trainSignals, trainData, `${symbol}_train`);
-      
+
       // Out-of-Sample期間（検証）
       const testData = data.slice(startIndex + trainSize, startIndex + trainSize + testSize);
       const testSignals = strategyResults.slice(startIndex + trainSize, startIndex + trainSize + testSize);
       const outOfSampleResult = this.runBacktest(testSignals, testData, `${symbol}_test`);
-      
+
       // ロバストネススコアを計算
       const robustnessScore = this.calculateRobustnessScore(inSampleResult, outOfSampleResult);
       const parameterStability = this.calculateParameterStability(inSampleResult, outOfSampleResult);
-      
+
       results.push({
         inSample: inSampleResult,
         outOfSample: outOfSampleResult,
         robustnessScore,
         parameterStability,
       });
-      
+
       startIndex += testSize;
     }
-    
+
     return results;
   }
 
@@ -319,14 +320,14 @@ class WinningBacktestEngine {
     numSimulations: number = 1000
   ): WinningMonteCarloResult {
     const simulations: BacktestResult[] = [];
-    
+
     for (let i = 0; i < numSimulations; i++) {
       // トレードをランダムにシャッフル
       const shuffledTrades = this.shuffleTrades([...originalResult.trades]);
-      
+
       // 新しいエクイティカーブを構築
       const simulatedEquity = this.reconstructEquityCurve(shuffledTrades);
-      
+
       // シミュレーション結果を作成
       const simulatedResult: BacktestResult = {
         ...originalResult,
@@ -334,21 +335,21 @@ class WinningBacktestEngine {
         equityCurve: simulatedEquity,
         metrics: this.calculateMetricsFromEquity(simulatedEquity, shuffledTrades),
       };
-      
+
       simulations.push(simulatedResult);
     }
-    
+
     // 確率を計算
     const profitableSimulations = simulations.filter(s => s.metrics.totalReturn > 0).length;
     const drawdownSimulations = simulations.filter(
       s => s.metrics.maxDrawdown > this.config.maxDrawdown
     ).length;
-    
+
     // 信頼区間を計算
     const returns = simulations.map(s => s.metrics.totalReturn).sort((a, b) => a - b);
     const drawdowns = simulations.map(s => s.metrics.maxDrawdown).sort((a, b) => a - b);
     const sharpes = simulations.map(s => s.metrics.sharpeRatio).sort((a, b) => a - b);
-    
+
     return {
       originalResult,
       simulations,
@@ -419,12 +420,12 @@ class WinningBacktestEngine {
   ): void {
     const price = this.applySlippage(data.close, 'BUY');
     const quantity = this.calculatePositionSize(price, signal.stopLoss);
-    
+
     // signal.signalが'HOLD'の場合はポジションを開かない
     if (signal.signal === 'HOLD') {
       return;
     }
-    
+
     this.openPositions.set(symbol, {
       symbol,
       side: signal.signal as 'BUY' | 'SELL',
@@ -448,7 +449,7 @@ class WinningBacktestEngine {
     const exitPrice = this.applySlippage(data.close, 'SELL');
     const entryValue = position.entryPrice * position.quantity;
     const exitValue = exitPrice * position.quantity;
-    
+
     // P&L計算
     let pnl = 0;
     if (position.side === 'BUY') {
@@ -456,17 +457,17 @@ class WinningBacktestEngine {
     } else {
       pnl = (position.entryPrice - exitPrice) * position.quantity;
     }
-    
+
     // 手数料とスリッページ
     const fees = (entryValue + exitValue) * (this.config.commission / 100);
     const slippage = (entryValue + exitValue) * (this.config.slippage / 100);
     pnl -= (fees + slippage);
-    
+
     const pnlPercent = (pnl / entryValue) * 100;
-    
+
     // エクイティを更新
     this.currentEquity += pnl;
-    
+
     const trade: BacktestTrade = {
       id: `trade_${this.trades.length}`,
       entryDate: position.entryDate,
@@ -485,7 +486,7 @@ class WinningBacktestEngine {
       riskRewardRatio: position.riskRewardRatio,
       holdingPeriods: index - position.entryIndex,
     };
-    
+
     this.trades.push(trade);
   }
 
@@ -503,7 +504,7 @@ class WinningBacktestEngine {
         return { shouldExit: true, reason: 'stop' };
       }
     }
-    
+
     // テイクプロフィットチェック
     if (this.config.useTakeProfit && position.takeProfit) {
       if (position.side === 'BUY' && data.high >= position.takeProfit) {
@@ -513,7 +514,7 @@ class WinningBacktestEngine {
         return { shouldExit: true, reason: 'target' };
       }
     }
-    
+
     return { shouldExit: false, reason: '' };
   }
 
@@ -532,13 +533,13 @@ class WinningBacktestEngine {
   private calculatePositionSize(entryPrice: number, stopLoss: number): number {
     const riskAmount = this.currentEquity * (this.config.riskPerTrade / 100);
     const priceRisk = Math.abs(entryPrice - stopLoss);
-    
+
     if (priceRisk === 0) return 0;
-    
+
     const shares = Math.floor(riskAmount / priceRisk);
     const maxPositionValue = this.currentEquity * (this.config.maxPositionSize / 100);
     const maxShares = Math.floor(maxPositionValue / entryPrice);
-    
+
     return Math.min(shares, maxShares);
   }
 
@@ -562,39 +563,39 @@ class WinningBacktestEngine {
     const returns = this.equityCurve.slice(1).map((eq, i) =>
       (eq - this.equityCurve[i]) / this.equityCurve[i]
     );
-    
+
     const winningTrades = this.trades.filter(t => t.pnl > 0);
     const losingTrades = this.trades.filter(t => t.pnl <= 0);
-    
+
     const totalReturn = ((this.currentEquity - this.config.initialCapital) / this.config.initialCapital) * 100;
     const days = this.equityCurve.length;
-    const annualizedReturn = days > 0 
-      ? (Math.pow(1 + totalReturn / 100, 365 / days) - 1) * 100 
+    const annualizedReturn = days > 0
+      ? (Math.pow(1 + totalReturn / 100, 365 / days) - 1) * 100
       : 0;
-    
+
     const volatility = this.calculateVolatility(returns);
     const sharpeRatio = this.calculateSharpeRatio(returns, volatility);
     const sortinoRatio = this.calculateSortinoRatio(returns);
     const maxDrawdown = this.calculateMaxDrawdown();
-    
+
     const winRate = this.trades.length > 0 ? (winningTrades.length / this.trades.length) * 100 : 0;
-    
+
     const grossProfit = winningTrades.reduce((sum, t) => sum + t.pnl, 0);
     const grossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
     const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
-    
+
     const averageWin = winningTrades.length > 0 ? grossProfit / winningTrades.length : 0;
     const averageLoss = losingTrades.length > 0 ? grossLoss / losingTrades.length : 0;
-    
+
     const largestWin = winningTrades.length > 0 ? Math.max(...winningTrades.map(t => t.pnl)) : 0;
     const largestLoss = losingTrades.length > 0 ? Math.min(...losingTrades.map(t => t.pnl)) : 0;
-    
-    const averageTrade = this.trades.length > 0 
-      ? this.trades.reduce((sum, t) => sum + t.pnl, 0) / this.trades.length 
+
+    const averageTrade = this.trades.length > 0
+      ? this.trades.reduce((sum, t) => sum + t.pnl, 0) / this.trades.length
       : 0;
-    
+
     const expectancy = (winRate / 100) * averageWin - (1 - winRate / 100) * Math.abs(averageLoss);
-    
+
     return {
       totalReturn,
       annualizedReturn,
@@ -657,7 +658,7 @@ class WinningBacktestEngine {
   private calculateMaxDrawdown(): number {
     let maxDrawdown = 0;
     let peak = this.equityCurve[0];
-    
+
     for (const equity of this.equityCurve) {
       if (equity > peak) {
         peak = equity;
@@ -667,7 +668,7 @@ class WinningBacktestEngine {
         maxDrawdown = drawdown;
       }
     }
-    
+
     return maxDrawdown * 100;
   }
 
@@ -676,7 +677,7 @@ class WinningBacktestEngine {
     let currentDuration = 0;
     let peak = this.equityCurve[0];
     let peakIndex = 0;
-    
+
     for (let i = 1; i < this.equityCurve.length; i++) {
       if (this.equityCurve[i] > peak) {
         peak = this.equityCurve[i];
@@ -689,7 +690,7 @@ class WinningBacktestEngine {
         }
       }
     }
-    
+
     return maxDuration;
   }
 
@@ -720,7 +721,7 @@ class WinningBacktestEngine {
   private calculateMaxConsecutive(wins: boolean): number {
     let maxConsecutive = 0;
     let currentConsecutive = 0;
-    
+
     for (const trade of this.trades) {
       const isWin = trade.pnl > 0;
       if (isWin === wins) {
@@ -730,7 +731,7 @@ class WinningBacktestEngine {
         currentConsecutive = 0;
       }
     }
-    
+
     return maxConsecutive;
   }
 
@@ -787,7 +788,7 @@ class WinningBacktestEngine {
     const returnRatio = outOfSample.metrics.totalReturn / Math.max(inSample.metrics.totalReturn, 0.01);
     const sharpeRatio = outOfSample.metrics.sharpeRatio / Math.max(inSample.metrics.sharpeRatio, 0.01);
     const winRateRatio = outOfSample.metrics.winRate / Math.max(inSample.metrics.winRate, 1);
-    
+
     const score = (Math.min(returnRatio, 1) + Math.min(sharpeRatio, 1) + Math.min(winRateRatio, 1)) / 3;
     return Math.round(score * 100);
   }
@@ -809,12 +810,12 @@ class WinningBacktestEngine {
   private reconstructEquityCurve(trades: BacktestTrade[]): number[] {
     const equity: number[] = [this.config.initialCapital];
     let currentEquity = this.config.initialCapital;
-    
+
     for (const trade of trades) {
       currentEquity += trade.pnl;
       equity.push(currentEquity);
     }
-    
+
     return equity;
   }
 
@@ -822,7 +823,7 @@ class WinningBacktestEngine {
     // 簡易版：実際のメトリクス計算
     const returns = equity.slice(1).map((eq, i) => (eq - equity[i]) / equity[i]);
     const totalReturn = ((equity[equity.length - 1] - equity[0]) / equity[0]) * 100;
-    
+
     return {
       totalReturn,
       annualizedReturn: totalReturn,
@@ -862,13 +863,13 @@ class WinningBacktestEngine {
   private calculateMaxDrawdownFromEquity(equity: number[]): number {
     let maxDrawdown = 0;
     let peak = equity[0];
-    
+
     for (const eq of equity) {
       if (eq > peak) peak = eq;
       const drawdown = (peak - eq) / peak;
       if (drawdown > maxDrawdown) maxDrawdown = drawdown;
     }
-    
+
     return maxDrawdown * 100;
   }
 
@@ -879,7 +880,7 @@ class WinningBacktestEngine {
     const drawdownScore = Math.max(0, 100 - metrics.maxDrawdown);
     const winRateScore = metrics.winRate;
     const profitFactorScore = Math.min(metrics.profitFactor, 5) * 10;
-    
+
     return (sharpeScore + returnScore + drawdownScore + winRateScore + profitFactorScore) / 5;
   }
 

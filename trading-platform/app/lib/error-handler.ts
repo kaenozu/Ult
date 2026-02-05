@@ -271,7 +271,7 @@ export function handleApiError(
 
   // レスポンスボディの構築
   const responseBody: ErrorResponse = {
-    error: errorInfo.message,
+    error: status === 500 ? 'Internal server error' : errorInfo.message,
     code: errorInfo.code,
   };
 

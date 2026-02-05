@@ -1,9 +1,18 @@
 import '@testing-library/jest-dom'
 import { TextEncoder, TextDecoder } from 'util';
 import 'fake-indexeddb/auto';
+import { setupTestEnvironment, cleanupTestEnvironment } from './app/__tests__/utils/test-utils';
 
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
+
+// Setup test environment
+setupTestEnvironment();
+
+// Cleanup after each test
+afterEach(() => {
+  cleanupTestEnvironment();
+});
 
 // Polyfill structuredClone for fake-indexeddb
 if (typeof global.structuredClone === 'undefined') {

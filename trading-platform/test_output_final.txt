@@ -1,0 +1,42 @@
+FAIL app/lib/__tests__/WinningTradingSystem.test.ts (5.392 s)
+  WinningTradingSystem
+    Session Management
+      √ should start a new trading session (7 ms)
+      √ should stop a trading session (2 ms)
+      √ should track current session (1 ms)
+    Trading Logic
+      × should process market data and generate signals (17 ms)
+      √ should respect max positions limit (20 ms)
+    Backtesting
+      √ should run backtest successfully (985 ms)
+      √ should compare multiple strategies (1648 ms)
+    Performance Report
+      √ should generate performance report (7 ms)
+    Risk Management
+      √ should validate risk/reward ratio (1060 ms)
+    Configuration
+      √ should update configuration (1 ms)
+      √ should maintain default values for unspecified config (2 ms)
+
+  ● WinningTradingSystem › Trading Logic › should process market data and generate signals
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+    [0m [90m 85 |[39m       
+     [90m 86 |[39m       [90m// イベントが発行されたことを確認[39m
+    [31m[1m>[22m[39m[90m 87 |[39m       expect(events[33m.[39mlength)[33m.[39mtoBeGreaterThan([35m0[39m)[33m;[39m
+     [90m    |[39m                             [31m[1m^[22m[39m
+     [90m 88 |[39m     })[33m;[39m
+     [90m 89 |[39m
+     [90m 90 |[39m     it([32m'should respect max positions limit'[39m[33m,[39m () [33m=>[39m {[0m
+
+      at Object.toBeGreaterThan (app/lib/__tests__/WinningTradingSystem.test.ts:87:29)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 10 passed, 11 total
+Snapshots:   0 total
+Time:        7.102 s
+Ran all test suites matching /app\\lib\\__tests__\\WinningTradingSystem.test.ts/i.

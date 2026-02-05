@@ -1,5 +1,8 @@
 /**
  * Data Requirements and Optimization Constants
+ * 
+ * 共通のデータ要件と最適化パラメータ
+ * Issue #522 - 定数一元化
  */
 
 /**
@@ -33,6 +36,9 @@ export const DATA_REQUIREMENTS = {
 
 /**
  * Confidence thresholds
+ * 
+ * @deprecated Use SIGNAL_THRESHOLDS from trading.ts instead.
+ * This constant is kept for backward compatibility only.
  */
 export const CONFIDENCE_THRESHOLDS = {
   MIN_CONFIDENCE: 50,
@@ -44,20 +50,6 @@ export const CONFIDENCE_THRESHOLDS = {
 } as const;
 
 /**
- * Common percentage values
- * @deprecated These constants don't add semantic meaning. Use literal values or more specific constant names based on context.
- */
-export const PERCENTAGE_VALUES = {
-  PERCENT_50: 50,
-  PERCENT_60: 60,
-  PERCENT_70: 70,
-  PERCENT_80: 80,
-  PERCENT_90: 90,
-  PERCENT_95: 95,
-  PERCENT_100: 100,
-} as const;
-
-/**
  * Common multipliers
  */
 export const MULTIPLIERS = {
@@ -65,23 +57,4 @@ export const MULTIPLIERS = {
   VOLUME_MULTIPLIER_DEFAULT: 1.2,
   SLIPPAGE_FACTOR_HIGH: 0.5,
   SLIPPAGE_FACTOR_MEDIUM: 0.8,
-} as const;
-
-/**
- * Common index values
- * @deprecated These constants are simple number aliases that don't provide meaningful context. Use literal values directly.
- */
-export const INDEX_VALUES = {
-  INDEX_0: 0,
-  INDEX_1: 1,
-  INDEX_2: 2,
-  INDEX_3: 3,
-  INDEX_4: 4,
-  INDEX_5: 5,
-  INDEX_10: 10,
-  INDEX_14: 14,
-  INDEX_20: 20,
-  INDEX_30: 30,
-  INDEX_50: 50,
-  INDEX_100: 100,
 } as const;

@@ -8,6 +8,44 @@ import { checkRateLimit } from '@/app/lib/api-middleware';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
 import {
+  validateSymbol,
+  validateMarketType,
+  validateDataType,
+  validateInterval,
+  validateDate
+} from '@/app/lib/validation';
+
+// Define explicit types for Yahoo Finance responses
+interface YahooChartResult {
+  meta: {
+    currency: string;
+    symbol: string;
+    regularMarketPrice: number;
+    [key: string]: unknown;
+  };
+  quotes: {
+    date: Date | string;
+    open: number | null;
+    high: number | null;
+    low: number | null;
+    close: number | null;
+    volume: number | null;
+    [key: string]: unknown;
+  }[];
+}
+
+interface YahooQuoteResult {
+  symbol: string;
+  regularMarketPrice?: number;
+  regularMarketChange?: number;
+  regularMarketChangePercent?: number;
+  regularMarketVolume?: number;
+  marketState?: string;
+  longName?: string;
+  shortName?: string;
+  [key: string]: unknown; // Safer than 'any' or union of primitives
+}
+import {
   YahooChartResultSchema,
   YahooSingleQuoteSchema
 } from '@/app/lib/schemas/market';
@@ -212,12 +250,12 @@ export async function GET(request: Request) {
         } else {
           finalInterval =
             interval === 'D' ? '1d' :
-              interval === '1H' ? '1h' :
-                interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
-                  interval?.toLowerCase() === '15m' ? '15m' :
-                    interval?.toLowerCase() === '1m' ? '1m' :
-                      interval?.toLowerCase() === '5m' ? '5m' :
-                        undefined;
+            interval === '1H' ? '1h' :
+            interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
+            interval?.toLowerCase() === '15m' ? '15m' :
+            interval?.toLowerCase() === '1m' ? '1m' :
+            interval?.toLowerCase() === '5m' ? '5m' :
+            undefined;
         }
 
         // Build chart options - pass interval if specified

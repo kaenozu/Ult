@@ -26,7 +26,7 @@ import {
   checkDailyLossLimit,
   canAddPosition
 } from '../riskManagement';
-import { RISK_PARAMS } from '../constants/risk-management';
+import { RISK_MANAGEMENT } from '../constants/risk-management';
 
 // ============================================================================
 // Types
@@ -217,7 +217,7 @@ export class RiskManagementService {
       const stopLossConfig = {
         enabled: true,
         type: 'percentage' as const,
-        value: RISK_PARAMS.DEFAULT_STOP_LOSS_PCT,
+        value: RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PCT,
         trailing: false,
       };
       const stopLossPrice = calculateStopLossPrice(
