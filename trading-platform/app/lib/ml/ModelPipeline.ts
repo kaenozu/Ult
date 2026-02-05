@@ -44,10 +44,11 @@ export class ModelPipeline {
       validationData: [xVal, yVal],
       callbacks: {
         onEpochEnd: (epoch, logs) => {
-          const loss = logs?.loss;
-          const valLoss = logs?.valLoss;
+          if (!logs) return;
+          const loss = logs.loss;
+          const valLoss = logs.valLoss;
           console.log(
-            `Epoch ${epoch + 1}: loss = ${loss?.toFixed(4) ?? 'N/A'}, val_loss = ${valLoss?.toFixed(4) ?? 'N/A'}`
+            `Epoch ${epoch + 1}: loss = ${typeof loss === 'number' ? loss.toFixed(4) : 'N/A'}, val_loss = ${typeof valLoss === 'number' ? valLoss.toFixed(4) : 'N/A'}`
           );
         },
       },
@@ -101,7 +102,7 @@ export class ModelPipeline {
 
     // Dense layers
     model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
-    
+
     if (config.dropoutRate) {
       model.add(tf.layers.dropout({ rate: config.dropoutRate }));
     }
@@ -141,10 +142,11 @@ export class ModelPipeline {
       validationData: [xVal, yVal],
       callbacks: {
         onEpochEnd: (epoch, logs) => {
-          const loss = logs?.loss;
-          const valLoss = logs?.valLoss;
+          if (!logs) return;
+          const loss = logs.loss;
+          const valLoss = logs.valLoss;
           console.log(
-            `Epoch ${epoch + 1}: loss = ${loss?.toFixed(4) ?? 'N/A'}, val_loss = ${valLoss?.toFixed(4) ?? 'N/A'}`
+            `Epoch ${epoch + 1}: loss = ${typeof loss === 'number' ? loss.toFixed(4) : 'N/A'}, val_loss = ${typeof valLoss === 'number' ? valLoss.toFixed(4) : 'N/A'}`
           );
         },
       },
@@ -179,13 +181,13 @@ export class ModelPipeline {
     // (True multi-head attention would require custom layers)
     model.add(tf.layers.flatten());
     model.add(tf.layers.dense({ units: 256, activation: 'relu' }));
-    
+
     if (config.dropoutRate) {
       model.add(tf.layers.dropout({ rate: config.dropoutRate }));
     }
 
     model.add(tf.layers.dense({ units: 128, activation: 'relu' }));
-    
+
     if (config.dropoutRate) {
       model.add(tf.layers.dropout({ rate: config.dropoutRate }));
     }
@@ -292,7 +294,7 @@ export class ModelPipeline {
 
     // Split into train and validation
     const splitIndex = Math.floor(xData.length * (1 - (this.config?.validationSplit || 0.2)));
-    
+
     const xTrainData = xData.slice(0, splitIndex);
     const yTrainData = yData.slice(0, splitIndex);
     const xValData = xData.slice(splitIndex);
@@ -314,7 +316,7 @@ export class ModelPipeline {
     // This should match the feature extraction order
     const featureObj = features as Record<string, unknown>;
     const result: number[] = [];
-    
+
     for (const key in featureObj) {
       const value = featureObj[key];
       if (typeof value === 'number') {
@@ -323,7 +325,7 @@ export class ModelPipeline {
         result.push(...value);
       }
     }
-    
+
     return result;
   }
 
@@ -376,7 +378,7 @@ export class ModelPipeline {
     const { xVal: xTest, yVal: yTest } = this.prepareSequences(testData, this.config.sequenceLength);
 
     const result = this.model.evaluate(xTest, yTest) as tf.Scalar[];
-    
+
     const loss = await result[0].data();
     const mae = await result[1].data();
     const mse = await result[2].data();
