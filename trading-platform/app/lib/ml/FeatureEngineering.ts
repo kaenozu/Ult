@@ -6,6 +6,7 @@
  */
 
 import { OHLCV } from '../../types/shared';
+import type { MLFeatures } from './types';
 import { calculateSMA, calculateEMA, calculateRSI, calculateMACD, calculateBollingerBands, calculateATR } from '../utils';
 import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '../constants';
 
@@ -200,6 +201,144 @@ export class FeatureEngineering {
   /**
    * テクニカル指標の拡張特徴量を計算
    */
+
+  extractFeatures(data: OHLCV[], lookback: number): MLFeatures[] {
+    if (data.length <= lookback) {
+      return [];
+    }
+
+    const features: MLFeatures[] = [];
+    const startIndex = Math.max(lookback, 1);
+
+    const calcStd = (values: number[]): number => {
+      if (values.length === 0) return 0;
+      const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+      const variance = values.reduce((sum, v) => sum + (v - mean) ** 2, 0) / values.length;
+      return Math.sqrt(variance);
+    };
+
+    for (let i = startIndex; i <= data.length; i++) {
+      const window = data.slice(i - lookback, i);
+      const current = window[window.length - 1];
+      const technical = this.calculateTechnicalFeatures(window);
+      const timeSeries = this.calculateTimeSeriesFeatures(window);
+      const prices = window.map(d => d.close);
+      const highs = window.map(d => d.high);
+      const lows = window.map(d => d.low);
+      const volumes = window.map(d => d.volume);
+
+      const volumeAvg = volumes.length > 0 ? volumes.reduce((sum, v) => sum + v, 0) / volumes.length : 0;
+      const volumeStd = calcStd(volumes);
+
+      const returns = prices.slice(1).map((price, idx) => (price - prices[idx]) / (prices[idx] || 1));
+      const historicalVolatility = calcStd(returns) * Math.sqrt(252) * 100;
+
+      const parkinsonVolatility = (() => {
+        if (window.length === 0) return 0;
+        const logRatios = window.map(d => Math.log((d.high || 1) / (d.low || 1)));
+        const meanSquare = logRatios.reduce((sum, v) => sum + v * v, 0) / logRatios.length;
+        return Math.sqrt(meanSquare) * Math.sqrt(252) * 100;
+      })();
+
+      const garmanKlassVolatility = (() => {
+        if (window.length === 0) return 0;
+        const values = window.map(d => {
+          const logHL = Math.log((d.high || 1) / (d.low || 1));
+          const logCO = Math.log((d.close || 1) / (d.open || 1));
+          return 0.5 * logHL * logHL - (2 * Math.log(2) - 1) * logCO * logCO;
+        });
+        const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+        return Math.sqrt(Math.max(mean, 0)) * Math.sqrt(252) * 100;
+      })();
+
+      const obv = window.reduce((sum, d, idx) => {
+        if (idx === 0) return sum;
+        const prev = window[idx - 1].close;
+        if (d.close > prev) return sum + d.volume;
+        if (d.close < prev) return sum - d.volume;
+        return sum;
+      }, 0);
+
+      const vwap = (() => {
+        const totalVolume = volumes.reduce((sum, v) => sum + v, 0);
+        if (totalVolume === 0) return current.close;
+        const totalValue = window.reduce((sum, d) => sum + d.close * d.volume, 0);
+        return totalValue / totalVolume;
+      })();
+
+      const supportLevel = Math.min(...prices);
+      const resistanceLevel = Math.max(...prices);
+
+      const momentum5 = this.calculateMomentum(prices, 5);
+      const momentum10 = this.calculateMomentum(prices, 10);
+      const momentum20 = this.calculateMomentum(prices, 20);
+
+      const volumeTrend = technical.volumeTrend === 'INCREASING' ? 1 : technical.volumeTrend === 'DECREASING' ? -1 : 0;
+      const weekOfMonth = Math.floor(new Date(current.date).getDate() / 7);
+
+      features.push({
+        close: current.close,
+        open: current.open,
+        high: current.high,
+        low: current.low,
+        rsi: technical.rsi,
+        rsiChange: technical.rsiChange,
+        sma5: technical.sma5,
+        sma20: technical.sma20,
+        sma50: technical.sma50,
+        sma200: technical.sma200,
+        ema12: technical.ema12,
+        ema26: technical.ema26,
+        priceMomentum: technical.momentum10,
+        volumeRatio: technical.volumeRatio,
+        volatility: technical.atrPercent,
+        macdSignal: technical.macdSignal,
+        macdHistogram: technical.macdHistogram,
+        bollingerPosition: technical.bbPosition,
+        atrPercent: technical.atrPercent,
+        stochasticK: technical.stochasticK,
+        stochasticD: technical.stochasticD,
+        williamsR: technical.williamsR,
+        adx: 0,
+        cci: technical.cci,
+        roc: technical.rateOfChange12,
+        obv,
+        vwap,
+        bidAskSpread: 0,
+        orderImbalance: 0,
+        volumeProfile: [current.volume],
+        priceLevel: current.close,
+        momentum5,
+        momentum10,
+        momentum20,
+        historicalVolatility,
+        parkinsonVolatility,
+        garmanKlassVolatility,
+        adxTrend: 0,
+        aroonUp: 0,
+        aroonDown: 0,
+        volumeSMA: volumeAvg,
+        volumeStd,
+        volumeTrend,
+        candlePattern: 0,
+        supportLevel,
+        resistanceLevel,
+        marketCorrelation: 0,
+        sectorCorrelation: 0,
+        dayOfWeek: timeSeries.dayOfWeek,
+        weekOfMonth,
+        monthOfYear: timeSeries.monthOfYear,
+        timestamp: data.length > 1 ? (i - 1) / (data.length - 1) : 0,
+      });
+    }
+
+    return features;
+  }
+
+  normalizeFeatures(features: MLFeatures[]): { normalized: MLFeatures[]; scalers: Record<string, { min: number; max: number }> } {
+    return { normalized: features, scalers: {} };
+  }
+
   calculateTechnicalFeatures(data: OHLCV[]): TechnicalFeatures {
     const prices = data.map(d => d.close);
     const highs = data.map(d => d.high);

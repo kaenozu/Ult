@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Trading Psychology Dashboard
  *
  * TRADING-029: トレード心理学分析
@@ -22,6 +22,14 @@ interface TradingPsychologyDashboardProps {
 export function TradingPsychologyDashboard({ className }: TradingPsychologyDashboardProps) {
   const { journal } = useJournalStore();
   const { disciplineScore } = usePsychologyStore();
+  const disciplineMetrics = useMemo(() => ({
+    overall: disciplineScore?.overall ?? disciplineScore?.score ?? 0,
+    planAdherence: disciplineScore?.planAdherence ?? 0,
+    emotionalControl: disciplineScore?.emotionalControl ?? 0,
+    lossManagement: disciplineScore?.lossManagement ?? 0,
+    journalConsistency: disciplineScore?.journalConsistency ?? 0,
+    coolingOffCompliance: disciplineScore?.coolingOffCompliance ?? 0,
+  }), [disciplineScore]);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'patterns' | 'sentiment' | 'discipline'>('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -191,29 +199,29 @@ export function TradingPsychologyDashboard({ className }: TradingPsychologyDashb
             {disciplineScore && (
               <div className={cn(
                 'p-4 rounded-lg border',
-                getScoreBgColor(disciplineScore.overall)
+                getScoreBgColor(disciplineMetrics.overall)
               )}>
                 <div className="text-sm text-gray-400 mb-1">規律スコア</div>
-                <div className={cn('text-3xl font-bold', getScoreColor(disciplineScore.overall))}>
-                  {disciplineScore.overall}
+                <div className={cn('text-3xl font-bold', getScoreColor(disciplineMetrics.overall))}>
+                  {disciplineMetrics.overall}
                 </div>
                 <div className="mt-2 space-y-1 text-xs">
                   <div className="flex justify-between">
                     <span className="text-gray-400">計画遵守</span>
-                    <span className={getScoreColor(disciplineScore.planAdherence)}>
-                      {disciplineScore.planAdherence.toFixed(1)}
+                    <span className={getScoreColor(disciplineMetrics.planAdherence)}>
+                      {disciplineMetrics.planAdherence.toFixed(1)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">感情コントロール</span>
-                    <span className={getScoreColor(disciplineScore.emotionalControl)}>
-                      {disciplineScore.emotionalControl.toFixed(1)}
+                    <span className={getScoreColor(disciplineMetrics.emotionalControl)}>
+                      {disciplineMetrics.emotionalControl.toFixed(1)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">損失管理</span>
-                    <span className={getScoreColor(disciplineScore.lossManagement)}>
-                      {disciplineScore.lossManagement.toFixed(1)}
+                    <span className={getScoreColor(disciplineMetrics.lossManagement)}>
+                      {disciplineMetrics.lossManagement.toFixed(1)}
                     </span>
                   </div>
                 </div>
@@ -578,14 +586,14 @@ export function TradingPsychologyDashboard({ className }: TradingPsychologyDashb
                       <div
                         className={cn(
                           'h-full transition-all',
-                          disciplineScore.planAdherence >= 80 ? 'bg-green-500' :
-                          disciplineScore.planAdherence >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                          disciplineMetrics.planAdherence >= 80 ? 'bg-green-500' :
+                          disciplineMetrics.planAdherence >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                         )}
-                        style={{ width: `${disciplineScore.planAdherence}%` }}
+                        style={{ width: `${disciplineMetrics.planAdherence}%` }}
                       />
                     </div>
                     <span className="text-sm text-white font-medium">
-                      {disciplineScore.planAdherence.toFixed(1)}
+                      {disciplineMetrics.planAdherence.toFixed(1)}
                     </span>
                   </div>
                 </div>
@@ -596,14 +604,14 @@ export function TradingPsychologyDashboard({ className }: TradingPsychologyDashb
                       <div
                         className={cn(
                           'h-full transition-all',
-                          disciplineScore.emotionalControl >= 80 ? 'bg-green-500' :
-                          disciplineScore.emotionalControl >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                          disciplineMetrics.emotionalControl >= 80 ? 'bg-green-500' :
+                          disciplineMetrics.emotionalControl >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                         )}
-                        style={{ width: `${disciplineScore.emotionalControl}%` }}
+                        style={{ width: `${disciplineMetrics.emotionalControl}%` }}
                       />
                     </div>
                     <span className="text-sm text-white font-medium">
-                      {disciplineScore.emotionalControl.toFixed(1)}
+                      {disciplineMetrics.emotionalControl.toFixed(1)}
                     </span>
                   </div>
                 </div>
@@ -614,14 +622,14 @@ export function TradingPsychologyDashboard({ className }: TradingPsychologyDashb
                       <div
                         className={cn(
                           'h-full transition-all',
-                          disciplineScore.lossManagement >= 80 ? 'bg-green-500' :
-                          disciplineScore.lossManagement >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                          disciplineMetrics.lossManagement >= 80 ? 'bg-green-500' :
+                          disciplineMetrics.lossManagement >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                         )}
-                        style={{ width: `${disciplineScore.lossManagement}%` }}
+                        style={{ width: `${disciplineMetrics.lossManagement}%` }}
                       />
                     </div>
                     <span className="text-sm text-white font-medium">
-                      {disciplineScore.lossManagement.toFixed(1)}
+                      {disciplineMetrics.lossManagement.toFixed(1)}
                     </span>
                   </div>
                 </div>
@@ -632,14 +640,14 @@ export function TradingPsychologyDashboard({ className }: TradingPsychologyDashb
                       <div
                         className={cn(
                           'h-full transition-all',
-                          disciplineScore.journalConsistency >= 80 ? 'bg-green-500' :
-                          disciplineScore.journalConsistency >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                          disciplineMetrics.journalConsistency >= 80 ? 'bg-green-500' :
+                          disciplineMetrics.journalConsistency >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                         )}
-                        style={{ width: `${disciplineScore.journalConsistency}%` }}
+                        style={{ width: `${disciplineMetrics.journalConsistency}%` }}
                       />
                     </div>
                     <span className="text-sm text-white font-medium">
-                      {disciplineScore.journalConsistency.toFixed(1)}
+                      {disciplineMetrics.journalConsistency.toFixed(1)}
                     </span>
                   </div>
                 </div>
@@ -650,14 +658,14 @@ export function TradingPsychologyDashboard({ className }: TradingPsychologyDashb
                       <div
                         className={cn(
                           'h-full transition-all',
-                          disciplineScore.coolingOffCompliance >= 80 ? 'bg-green-500' :
-                          disciplineScore.coolingOffCompliance >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                          disciplineMetrics.coolingOffCompliance >= 80 ? 'bg-green-500' :
+                          disciplineMetrics.coolingOffCompliance >= 60 ? 'bg-yellow-500' : 'bg-red-500'
                         )}
-                        style={{ width: `${disciplineScore.coolingOffCompliance}%` }}
+                        style={{ width: `${disciplineMetrics.coolingOffCompliance}%` }}
                       />
                     </div>
                     <span className="text-sm text-white font-medium">
-                      {disciplineScore.coolingOffCompliance.toFixed(1)}
+                      {disciplineMetrics.coolingOffCompliance.toFixed(1)}
                     </span>
                   </div>
                 </div>

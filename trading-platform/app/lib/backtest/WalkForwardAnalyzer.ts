@@ -406,10 +406,16 @@ export class WalkForwardAnalyzer extends EventEmitter {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);
     const totalReturn = ((equityCurve[equityCurve.length - 1] - config.initialCapital) / config.initialCapital) * 100;
 
-    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+    const avgReturn = returns.length > 0 ? returns.reduce((a, b) => a + b, 0) / returns.length : 0;
+    const variance = returns.length > 0
+      ? returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length
+      : 0;
     const volatility = Math.sqrt(variance) * Math.sqrt(252) * 100;
     const sharpeRatio = volatility === 0 ? 0 : (avgReturn * 252) / volatility;
+    const days = equityCurve.length;
+    const annualizedReturn = days > 0
+      ? (Math.pow(1 + totalReturn / 100, 365 / days) - 1) * 100
+      : 0;
 
     const winningTrades = trades.filter(t => t.pnl > 0);
     const losingTrades = trades.filter(t => t.pnl <= 0);
@@ -419,7 +425,60 @@ export class WalkForwardAnalyzer extends EventEmitter {
     const grossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
     const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
 
-    return { totalReturn, sharpeRatio, maxDrawdown: 0, winRate, profitFactor };
+    const averageWin = winningTrades.length > 0 ? grossProfit / winningTrades.length : 0;
+    const averageLoss = losingTrades.length > 0 ? grossLoss / losingTrades.length : 0;
+    const largestWin = winningTrades.length > 0 ? Math.max(...winningTrades.map(t => t.pnl)) : 0;
+    const largestLoss = losingTrades.length > 0 ? Math.min(...losingTrades.map(t => t.pnl)) : 0;
+    const averageTrade = trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0;
+
+    let maxDrawdown = 0;
+    let maxDrawdownDuration = 0;
+    let peak = equityCurve[0] ?? 0;
+    let peakIndex = 0;
+    for (let i = 1; i < equityCurve.length; i++) {
+      if (equityCurve[i] > peak) {
+        peak = equityCurve[i];
+        peakIndex = i;
+      }
+      const drawdown = peak > 0 ? (peak - equityCurve[i]) / peak : 0;
+      if (drawdown > maxDrawdown) {
+        maxDrawdown = drawdown;
+        maxDrawdownDuration = i - peakIndex;
+      }
+    }
+
+    const downsideReturns = returns.filter(r => r < 0);
+    const downsideDeviation = downsideReturns.length > 0
+      ? Math.sqrt(downsideReturns.reduce((sum, r) => sum + r * r, 0) / downsideReturns.length) * Math.sqrt(252)
+      : 0;
+    const sortinoRatio = downsideDeviation === 0 ? 0 : (avgReturn * 252) / downsideDeviation;
+
+    const calmarRatio = maxDrawdown === 0 ? 0 : annualizedReturn / (maxDrawdown * 100);
+    const gains = returns.filter(r => r > 0).reduce((sum, r) => sum + r, 0);
+    const losses = returns.filter(r => r < 0).reduce((sum, r) => sum + Math.abs(r), 0);
+    const omegaRatio = losses === 0 ? gains : gains / losses;
+
+    return {
+      totalReturn,
+      annualizedReturn,
+      volatility,
+      sharpeRatio,
+      sortinoRatio,
+      maxDrawdown: maxDrawdown * 100,
+      maxDrawdownDuration,
+      winRate,
+      profitFactor,
+      averageWin,
+      averageLoss,
+      largestWin,
+      largestLoss,
+      averageTrade,
+      totalTrades: trades.length,
+      winningTrades: winningTrades.length,
+      losingTrades: losingTrades.length,
+      calmarRatio,
+      omegaRatio,
+    };
   }
 
   /**

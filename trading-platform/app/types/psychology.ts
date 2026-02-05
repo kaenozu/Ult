@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Trading Psychology Types
  * 
  * Types for trading psychology analysis, emotion detection,
@@ -262,6 +262,12 @@ export interface EmotionIndicatorProps {
  */
 export interface DisciplineScoreProps {
   score: number;
+  overall?: number;
+  planAdherence?: number;
+  emotionalControl?: number;
+  lossManagement?: number;
+  journalConsistency?: number;
+  coolingOffCompliance?: number;
   violations: DisciplineViolation[];
   showDetails?: boolean;
 }
@@ -347,3 +353,4 @@ export interface DisciplineCheckResponse {
   can_trade: boolean;
   warning?: string;
 }
+

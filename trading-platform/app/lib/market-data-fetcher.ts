@@ -55,10 +55,12 @@ export async function fetchMarketHistory(
   }
 
   const payload = await response.json();
-  const rawData = Array.isArray(payload?.data) ? payload.data : [];
+  const rawData = Array.isArray(payload?.data)
+    ? (payload.data as Array<{ date?: string; open?: number; high?: number; low?: number; close?: number; volume?: number }>)
+    : [];
 
   const data: OHLCV[] = rawData
-    .map((item: { date?: string; open?: number; high?: number; low?: number; close?: number; volume?: number }) => ({
+    .map((item): OHLCV => ({
       symbol,
       date: String(item.date ?? ''),
       open: Number(item.open ?? 0),
@@ -67,7 +69,9 @@ export async function fetchMarketHistory(
       close: Number(item.close ?? 0),
       volume: Number(item.volume ?? 0),
     }))
-    .filter((item) => Number.isFinite(item.open) && Number.isFinite(item.close) && item.date);
+    .filter((item): item is OHLCV =>
+      Number.isFinite(item.open) && Number.isFinite(item.close) && item.date.length > 0
+    );
   data.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
 
   return {

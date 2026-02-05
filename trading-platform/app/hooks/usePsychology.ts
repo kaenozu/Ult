@@ -12,6 +12,8 @@ import { PsychologyMonitor } from '@/app/lib/risk/PsychologyMonitor';
 import { CoolingOffManager } from '@/app/lib/risk/CoolingOffManager';
 import { DisciplineScoreCalculator } from '@/app/lib/psychology/DisciplineScoreCalculator';
 import { Order } from '@/app/types';
+import type { DisciplineScoreProps } from '@/app/types/psychology';
+import type { DisciplineScore } from '@/app/types/risk';
 
 /**
  * 心理管理フック
@@ -104,7 +106,7 @@ export function usePsychology() {
       journal,
       psychologyState.cooldownRecords
     );
-    psychologyState.setDisciplineScore(score);
+    psychologyState.setDisciplineScore(score as unknown as DisciplineScoreProps);
     return score;
   };
 
@@ -115,7 +117,7 @@ export function usePsychology() {
     if (!disciplineCalculatorRef.current || !psychologyState.disciplineScore) return [];
 
     return disciplineCalculatorRef.current.identifyImprovementAreas(
-      psychologyState.disciplineScore
+      psychologyState.disciplineScore as unknown as DisciplineScore
     );
   };
 

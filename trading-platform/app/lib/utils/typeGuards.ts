@@ -6,7 +6,8 @@
  * 型情報を提供することで、型安全性を向上させます。
  */
 
-import { OHLCV, Signal, TechnicalIndicators, AlertCondition } from '@/app/types';
+import { OHLCV, Signal, TechnicalIndicators } from '@/app/types';
+import type { AlertCondition } from '../alerts/AlertSystem';
 
 /**
  * 配列チェック

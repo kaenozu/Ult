@@ -1,7 +1,14 @@
 /**
  * ULT Trading Platform - Skill Definitions
  *
- * 吁E��ージェントスキルの詳細定義と実裁E */
+ * 蜷・お繝ｼ繧ｸ繧ｧ繝ｳ繝医せ繧ｭ繝ｫ縺ｮ隧ｳ邏ｰ螳夂ｾｩ縺ｨ螳溯｣・ */
+
+import * as path from 'path';
+import * as fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 export interface SkillDefinition {
   name: string;
@@ -155,7 +162,7 @@ export const ULT_TASKS: TaskTemplate[] = [
     skill: 'test-writer',
     priority: 'high',
     acceptanceCriteria: [
-      'npm run test:coverage shows ≥80% for lines, branches, functions, statements',
+      'npm run test:coverage shows 竕･80% for lines, branches, functions, statements',
       'Core services (MarketData, TechnicalIndicator, ConsensusSignal) have tests',
       'BacktestService has comprehensive tests',
       'No skipped tests',
@@ -209,14 +216,14 @@ export const ULT_TASKS: TaskTemplate[] = [
 // ============================================================================
 
 /**
- * エージェントをローンチするラチE��ー
+ * 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝医ｒ繝ｭ繝ｼ繝ｳ繝√☆繧九Λ繝・ヱ繝ｼ
  */
 export async function launchAgent(
   agentName: string,
   taskId: string,
   worktreePath: string
 ): Promise<void> {
-  console.log(`🚀 Launching agent ${agentName} for task ${taskId}`);
+  console.log(`噫 Launching agent ${agentName} for task ${taskId}`);
 
   const task = ULT_TASKS.find((t) => t.id === taskId);
   if (!task) {
@@ -230,10 +237,10 @@ export async function launchAgent(
 
   const skill = SKILLS[task.skill];
 
-  console.log(`📋 Task: ${task.title}`);
-  console.log(`🎯 Skill: ${skill.name}`);
-  console.log(`⏱�E�EEstimated: ${skill.estimatedTime}`);
-  console.log(`📁 Worktree: ${worktreePath}`);
+  console.log(`搭 Task: ${task.title}`);
+  console.log(`識 Skill: ${skill.name}`);
+  console.log(`竢ｱ・・Estimated: ${skill.estimatedTime}`);
+  console.log(`刀 Worktree: ${worktreePath}`);
 
   // Create agent execution script
   const script = generateAgentExecutionScript(task, skill);
@@ -253,10 +260,10 @@ export async function launchAgent(
     if (stdout) console.log(stdout);
     if (stderr) console.error(stderr);
 
-    console.log(`\n✁EAgent ${agentName} completed task ${taskId}`);
+    console.log(`\n笨・Agent ${agentName} completed task ${taskId}`);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`\n❁EAgent ${agentName} failed: ${errorMessage}`);
+    console.error(`\n笶・Agent ${agentName} failed: ${errorMessage}`);
     throw error;
   }
 }
@@ -287,7 +294,7 @@ function generateAgentExecutionScript(task: TaskTemplate, skill: SkillDefinition
     '  const commandsOutput = commands.map((cmd, i) => {',
     "    return '[Step ' + (i + 1) + '] Running: ' + cmd + '\\n' +" +
       "      'try {\\n' +" +
-      "      \"  execSync('" + cmd + "', { encoding: 'utf-8', stdio: 'pipe' });\\n\" +" +
+      "      \"  execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });\\n\" +" +
       "      \"  console.log('[SUCCESS] ' + cmd);\\n\" +" +
       "      '} catch (err) {\\n' +" +
       "      \"  console.error('[FAILED] ' + cmd);\\n\" +" +
@@ -330,9 +337,9 @@ function generateAgentExecutionScript(task: TaskTemplate, skill: SkillDefinition
 // ============================================================================
 
 /**
- * すべてのエージェントを並列起勁E */
+ * 縺吶∋縺ｦ縺ｮ繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝医ｒ荳ｦ蛻苓ｵｷ蜍・ */
 export async function launchAllAgents(worktreeBasePath: string): Promise<void> {
-  console.log('🚀 Launching all agents in parallel...\\n');
+  console.log('噫 Launching all agents in parallel...\\n');
 
   const promises = ULT_TASKS.map(async (task, index) => {
     const agentName = `agent-${index+1}-${task.id}`;
@@ -340,15 +347,15 @@ export async function launchAllAgents(worktreeBasePath: string): Promise<void> {
 
     try {
       await launchAgent(agentName, task.id, worktreePath);
-      console.log(`✁E${agentName} completed\n`);
+      console.log(`笨・${agentName} completed\n`);
     } catch (error) {
-      console.error(`❁E${agentName} failed: ${error}\n`);
+      console.error(`笶・${agentName} failed: ${error}\n`);
     }
   });
 
   await Promise.all(promises);
 
-  console.log('🎉 All agents finished!');
+  console.log('脂 All agents finished!');
 }
 
 // Default export
