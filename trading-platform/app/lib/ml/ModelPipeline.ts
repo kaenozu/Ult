@@ -373,7 +373,7 @@ export class ModelPipeline {
       throw new Error('Model not loaded');
     }
 
-    const { xTest, yTest } = this.prepareSequences(testData, this.config.sequenceLength);
+    const { xVal: xTest, yVal: yTest } = this.prepareSequences(testData, this.config.sequenceLength);
 
     const result = this.model.evaluate(xTest, yTest) as tf.Scalar[];
     

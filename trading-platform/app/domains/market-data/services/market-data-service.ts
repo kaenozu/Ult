@@ -1,16 +1,16 @@
-/**
+﻿/**
  * Market Data Service
  * 
- * 市場データの取得と管理を行うサービス
+ * 蟶ょｴ繝・・繧ｿ縺ｮ蜿門ｾ励→邂｡逅・ｒ陦後≧繧ｵ繝ｼ繝薙せ
  */
 
-import { MarketData, HistoricalDataRequest, RealtimeQuote, OHLCV } from '@/app/types';
+import { OHLCV } from '@/app/types';
+import { MarketData, HistoricalDataRequest, RealtimeQuote } from '../types';
 
 export class MarketDataService {
   private cache = new Map<string, { data: OHLCV[]; timestamp: number }>();
   private subscribers = new Map<string, Set<(data: MarketData) => void>>();
-  private cacheDuration = 5 * 60 * 1000; // 5分
-
+  private cacheDuration = 5 * 60 * 1000; // 5蛻・
   async fetchHistoricalData(request: HistoricalDataRequest): Promise<OHLCV[]> {
     const cacheKey = `${request.symbol}-${request.interval}`;
     const cached = this.cache.get(cacheKey);
@@ -19,8 +19,8 @@ export class MarketDataService {
       return cached.data;
     }
 
-    // 実際のAPI呼び出しはここで行う
-    // 現時点ではモックデータを返す
+    // 螳滄圀縺ｮAPI蜻ｼ縺ｳ蜃ｺ縺励・縺薙％縺ｧ陦後≧
+    // 迴ｾ譎らせ縺ｧ縺ｯ繝｢繝・け繝・・繧ｿ繧定ｿ斐☆
     const data = this.generateMockData(request);
     
     this.cache.set(cacheKey, {
@@ -87,3 +87,4 @@ export class MarketDataService {
 }
 
 export const marketDataService = new MarketDataService();
+

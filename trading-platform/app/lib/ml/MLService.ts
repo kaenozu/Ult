@@ -163,8 +163,15 @@ export class MLService {
     driftStatus: DriftDetectionResult;
     statistics: ReturnType<typeof modelDriftDetector.getStatisticsSummary>;
   } {
+    const weights = ensembleModel.getCurrentWeights();
     return {
-      ensembleWeights: ensembleModel.getCurrentWeights() as Record<string, number>,
+      ensembleWeights: {
+        RF: weights.RF,
+        XGB: weights.XGB,
+        LSTM: weights.LSTM,
+        TECHNICAL: weights.TECHNICAL,
+        ENSEMBLE: weights.ENSEMBLE,
+      },
       modelStats: ensembleModel.getModelPerformanceStats(),
       driftStatus: modelDriftDetector.detectDrift(),
       statistics: modelDriftDetector.getStatisticsSummary(),
@@ -283,7 +290,7 @@ export class MLService {
     predictionHistory: ReturnType<typeof modelDriftDetector.exportPredictionHistory>;
     driftHistory: ReturnType<typeof modelDriftDetector.getDriftHistory>;
     currentWeights: ReturnType<typeof ensembleModel.getCurrentWeights>;
-    performanceSummary: ReturnType<typeof this.getModelPerformanceSummary>;
+    performanceSummary: ReturnType<MLService['getModelPerformanceSummary']>;
   } {
     return {
       predictionHistory: modelDriftDetector.exportPredictionHistory(),

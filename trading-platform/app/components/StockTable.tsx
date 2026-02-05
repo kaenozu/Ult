@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Stock } from '@/app/types';
 import { formatCurrency, formatPercent, getChangeColor, cn } from '@/app/lib/utils';
@@ -132,7 +132,7 @@ const SortIcon = ({ field, sortField, sortDirection }: SortIconProps) => {
     <svg 
       className={cn(
         "w-3 h-3 ml-1 transition-transform",
-        direction === 'asc' ? "text-green-400" : "text-red-400 rotate-180"
+        sortDirection === 'asc' ? "text-green-400" : "text-red-400 rotate-180"
       )} 
       fill="none" 
       stroke="currentColor" 
@@ -362,3 +362,4 @@ export const StockTable = memo(({
 });
 
 StockTable.displayName = 'StockTable';
+
