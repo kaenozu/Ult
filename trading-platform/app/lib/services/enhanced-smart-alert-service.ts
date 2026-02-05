@@ -6,6 +6,7 @@
  */
 
 import { OHLCV, Stock, Signal } from '@/app/types';
+import type { TechnicalIndicators } from '@/app/types';
 import { ProcessedData } from './high-frequency-data-processing-service';
 
 export interface AlertCondition {

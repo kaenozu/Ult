@@ -26,7 +26,18 @@ export {
 } from './WinningBacktestEngine';
 
 // Enhanced realistic backtesting components
-export * from './RealisticBacktestEngine';
+export {
+  RealisticBacktestEngine,
+  getRealisticBacktestEngine,
+  resetRealisticBacktestEngine,
+  DEFAULT_REALISTIC_CONFIG as DEFAULT_ENGINE_REALISTIC_CONFIG,
+} from './RealisticBacktestEngine';
+export type {
+  RealisticBacktestConfig as EngineRealisticBacktestConfig,
+  RealisticBacktestResult,
+  RealisticTradeMetrics,
+} from './RealisticBacktestEngine';
 // MonteCarloSimulator already exported above, skip duplicate
 export * from './OverfittingDetector';
-export * from './WalkForwardAnalysis';
+export { WalkForwardAnalysis, walkForwardAnalysis } from './WalkForwardAnalysis';
+export type { WalkForwardConfig as MLWalkForwardConfig } from './WalkForwardAnalysis';

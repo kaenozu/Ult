@@ -1,4 +1,4 @@
-/**
+﻿/**
  * BacktestResultsDashboard.tsx
  *
  * バックテスト結果表示ダッシュボード
@@ -88,6 +88,9 @@ export function BacktestResultsDashboard({
     );
   }
 
+  const drawdownAnalysisValue = drawdownAnalysis ?? AdvancedPerformanceMetrics.analyzeDrawdowns([], []);
+  const returnDistributionValue = returnDistribution ?? AdvancedPerformanceMetrics.calculateReturnDistribution([]);
+
   const rowCount = result.trades.length;
 
   return (
@@ -97,7 +100,7 @@ export function BacktestResultsDashboard({
         <div>
           <h2 className="text-2xl font-bold text-white">バックテスト結果</h2>
           <p className="text-sm text-gray-400">
-            {result.symbol} | {result.startDate} 〜 {result.endDate}
+            {result.symbol} | {result.startDate} ? {result.endDate}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -153,7 +156,7 @@ export function BacktestResultsDashboard({
             <MetricCard
               title="最大ドローダウン"
               value={`-${result.maxDrawdown}%`}
-              subtitle={`期間: ${drawdownAnalysis.maxDrawdownDuration}日`}
+              subtitle={`期間: ${drawdownAnalysisValue.maxDrawdownDuration}日`}
               icon={AlertTriangle}
               positive={false}
             />
@@ -366,7 +369,7 @@ export function BacktestResultsDashboard({
             <MetricCard
               title="平均ドローダウン"
               value={`-${metrics.averageDrawdown.toFixed(2)}%`}
-              subtitle={`頻度: ${drawdownAnalysis.drawdownFrequency}回`}
+              subtitle={`頻度: ${drawdownAnalysisValue.drawdownFrequency}回`}
               icon={TrendingDown}
               positive={false}
             />
@@ -386,12 +389,12 @@ export function BacktestResultsDashboard({
             />
           </div>
 
-          <DrawdownAnalysisPanel analysis={drawdownAnalysis} />
+          <DrawdownAnalysisPanel analysis={drawdownAnalysisValue} />
         </TabsContent>
 
         {/* Distribution Tab */}
         <TabsContent value="distribution" className="space-y-4">
-          <ReturnDistributionPanel distribution={returnDistribution} />
+          <ReturnDistributionPanel distribution={returnDistributionValue} />
         </TabsContent>
       </Tabs>
     </div>
@@ -537,7 +540,7 @@ function TradeHistoryTable({ trades }: { trades: BacktestTrade[] }) {
                       {trade.type === 'BUY' ? '買い' : '売り'}
                     </span>
                   </td>
-                  <td className="py-2 text-right text-gray-300">¥{trade.entryPrice.toLocaleString()}</td>
+                  <td className="py-2 text-right text-gray-300">\{trade.entryPrice.toLocaleString()}</td>
                   <td className="py-2 text-right text-gray-300">{trade.exitPrice?.toLocaleString()}</td>
                   <td className={cn(
                     "py-2 text-right font-medium",
@@ -598,7 +601,7 @@ function DrawdownAnalysisPanel({ analysis }: { analysis: DrawdownAnalysis }) {
                 {analysis.drawdowns.slice(0, 10).map((dd, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-[#0f172a] rounded">
                     <div className="text-xs text-gray-400">
-                      {dd.startDate} 〜 {dd.endDate}
+                      {dd.startDate} ? {dd.endDate}
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-xs text-gray-500">{dd.duration}日</div>
@@ -633,7 +636,7 @@ function ReturnDistributionPanel({ distribution }: { distribution: ReturnDistrib
             {distribution.histogram.map((bin, index) => (
               <div key={index} className="flex items-center gap-2">
                 <div className="w-24 text-xs text-gray-400 text-right">
-                  {bin.binStart.toFixed(1)}% 〜 {bin.binEnd.toFixed(1)}%
+                  {bin.binStart.toFixed(1)}% ? {bin.binEnd.toFixed(1)}%
                 </div>
                 <div className="flex-1 h-6 bg-[#0f172a] rounded overflow-hidden">
                   <div
@@ -709,3 +712,4 @@ function ReturnDistributionPanel({ distribution }: { distribution: ReturnDistrib
 }
 
 export default BacktestResultsDashboard;
+

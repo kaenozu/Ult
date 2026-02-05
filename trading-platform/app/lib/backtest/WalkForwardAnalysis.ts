@@ -9,7 +9,7 @@ import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
 import { TrainingData, WalkForwardResult, MLBacktestConfig } from '../ml/types';
 import { EnsembleStrategy } from '../ml/EnsembleStrategy';
-import { FeatureEngineeringService } from '../ml/FeatureEngineering';
+import { FeatureEngineering } from '../ml/FeatureEngineering';
 
 export interface WalkForwardConfig {
   trainWindowSize: number; // days
@@ -20,12 +20,12 @@ export interface WalkForwardConfig {
 }
 
 export class WalkForwardAnalysis extends EventEmitter {
-  private featureService: FeatureEngineeringService;
+  private featureService: FeatureEngineering;
   private ensembleStrategy: EnsembleStrategy;
 
   constructor() {
     super();
-    this.featureService = new FeatureEngineeringService();
+    this.featureService = new FeatureEngineering();
     this.ensembleStrategy = new EnsembleStrategy();
   }
 

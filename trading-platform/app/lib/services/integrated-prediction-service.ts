@@ -7,6 +7,8 @@
 import { OHLCV, Stock } from '@/app/types';
 import { EnhancedMLService } from './enhanced-ml-service';
 import { MLModelService } from './ml-model-service';
+import { featureCalculationService } from './feature-calculation-service';
+import { mlPredictionService } from '../mlPrediction';
 
 export interface IntegratedPrediction {
   signal: 'BUY' | 'SELL' | 'HOLD';
@@ -30,10 +32,12 @@ export class IntegratedPredictionService {
   async predict(stock: Stock, ohlcv: OHLCV[]): Promise<IntegratedPrediction> {
     // Get predictions from different services
     const enhancedPrediction = await this.enhancedService.predict(stock, ohlcv);
-    const mlPrediction = await this.mlService.predict(ohlcv);
+    const indicators = mlPredictionService.calculateIndicators(ohlcv);
+    const features = featureCalculationService.calculateFeatures(ohlcv, indicators);
+    const mlPrediction = this.mlService.predict(features);
 
     // Combine predictions into consensus
-    const consensus = (enhancedPrediction.prediction + mlPrediction.prediction) / 2;
+    const consensus = (enhancedPrediction.prediction + mlPrediction.ensemblePrediction) / 2;
 
     // Generate final signal
     let signal: 'BUY' | 'SELL' | 'HOLD';

@@ -1,5 +1,5 @@
 
-import { PerformanceMonitor } from './performance';
+import { PerformanceMonitor } from './performance/monitor';
 
 const monitor = new PerformanceMonitor();
 
@@ -7,22 +7,18 @@ async function simulateOperations() {
   console.log('Starting performance simulation...');
 
   // Simulate a fast operation
-  const fastOpId = monitor.start('fast_operation');
-  await new Promise(resolve => setTimeout(resolve, 50));
-  monitor.end(fastOpId);
+  await monitor.measureAsync('fast_operation', () => new Promise(resolve => setTimeout(resolve, 50)));
 
   // Simulate a slow operation
-  const slowOpId = monitor.start('slow_operation');
-  await new Promise(resolve => setTimeout(resolve, 500));
-  monitor.end(slowOpId);
+  await monitor.measureAsync('slow_operation', () => new Promise(resolve => setTimeout(resolve, 500)));
 
   // Simulate an error
-  const errorOpId = monitor.start('error_operation');
   try {
-    await new Promise((_, reject) => setTimeout(() => reject(new Error('Simulated failure')), 100));
+    await monitor.measureAsync(
+      'error_operation',
+      () => new Promise((_, reject) => setTimeout(() => reject(new Error('Simulated failure')), 100))
+    );
   } catch (e) {
-    // Monitor captures end automatically if integrated, but here we manually end
-    monitor.end(errorOpId);
   }
 
   // Log report
