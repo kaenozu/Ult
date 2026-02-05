@@ -74,8 +74,8 @@ class AnalysisService {
             const bullishFactor = 1 + (atr * 0.5 * confidenceFactor);
             
             bearishLower.push(Math.max(0, (basePrice - priceVariation * 1.5) * bearishFactor));
-            bearishUpper.push((basePrice - priceVariation * 0.5) * bearishFactor));
-            bullishLower.push((basePrice + priceVariation * 0.5) * bullishFactor));
+            bearishUpper.push((basePrice - priceVariation * 0.5) * bearishFactor);
+            bullishLower.push((basePrice + priceVariation * 0.5) * bullishFactor);
             bullishUpper.push((basePrice + priceVariation * 0.5) * bullishFactor));
             base.push(basePrice * (1 + meanPriceReturn));
         }
