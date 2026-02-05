@@ -21,9 +21,9 @@ class ValidationError extends Error {
 /**
  * 必須文字列の検証
  */
-export function validateRequiredString(value: unknown, fieldName: string): string {
+export function validateRequiredString(value: unknown, fieldName: string): string | Response {
   if (!value || typeof value !== 'string' || value.trim().length === 0) {
-    throw validationError(`Invalid ${fieldName}: must be a non-empty string`, fieldName);
+    return validationError(`Invalid ${fieldName}: must be a non-empty string`, fieldName);
   }
   return value.trim();
 }
@@ -36,10 +36,29 @@ export function validateNumber(value: unknown, fieldName: string, options: {
   finite?: boolean;
   min?: number;
   max?: number;
-} = {}): number {
+} = {}): number | Response {
   if (typeof value !== 'number') {
-    throw validationError(`Invalid ${fieldName}: must be a number`, fieldName);
+    return validationError(`Invalid ${fieldName}: must be a number`, fieldName);
   }
+  
+  if (options.finite && !isFinite(value)) {
+    return validationError(`Invalid ${fieldName}: must be a finite number`, fieldName);
+  }
+  
+  if (options.positive && value <= 0) {
+    return validationError(`Invalid ${fieldName}: must be positive`, fieldName);
+  }
+  
+  if (options.min !== undefined && value < options.min) {
+    return validationError(`Invalid ${fieldName}: must be at least ${options.min}`, fieldName);
+  }
+  
+  if (options.max !== undefined && value > options.max) {
+    return validationError(`Invalid ${fieldName}: must be at most ${options.max}`, fieldName);
+  }
+  
+  return value;
+}
 
   const { positive = false, finite = true, min, max } = options;
 
@@ -65,9 +84,9 @@ export function validateNumber(value: unknown, fieldName: string, options: {
 /**
  * 真偽値の検証
  */
-export function validateBoolean(value: unknown, fieldName: string): boolean {
+export function validateBoolean(value: unknown, fieldName: string): boolean | Response {
   if (typeof value !== 'boolean') {
-    throw validationError(`Invalid ${fieldName}: must be a boolean`, fieldName);
+    return validationError(`Invalid ${fieldName}: must be a boolean`, fieldName);
   }
   return value;
 }
@@ -75,9 +94,9 @@ export function validateBoolean(value: unknown, fieldName: string): boolean {
 /**
  * 配列の検証
  */
-export function validateArray<T>(value: unknown, fieldName: string, itemValidator?: (item: unknown) => T): T[] {
+export function validateArray<T>(value: unknown, fieldName: string, itemValidator?: (item: unknown) => T): T[] | Response {
   if (!Array.isArray(value)) {
-    throw validationError(`Invalid ${fieldName}: must be an array`, fieldName);
+    return validationError(`Invalid ${fieldName}: must be an array`, fieldName);
   }
 
   if (itemValidator) {
@@ -86,9 +105,9 @@ export function validateArray<T>(value: unknown, fieldName: string, itemValidato
         return itemValidator(item);
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        throw validationError(`Invalid ${fieldName}[${index}]: ${message}`, fieldName);
+        return validationError(`Invalid ${fieldName}[${index}]: ${message}`, fieldName);
       }
-    });
+    }) as T[];
   }
 
   return value as T[];
@@ -97,9 +116,9 @@ export function validateArray<T>(value: unknown, fieldName: string, itemValidato
 /**
  * オブジェクトの検証
  */
-export function validateObject(value: unknown, fieldName: string): Record<string, unknown> {
+export function validateObject(value: unknown, fieldName: string): Record<string, unknown> | Response {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw validationError(`Invalid ${fieldName}: must be an object`, fieldName);
+    return validationError(`Invalid ${fieldName}: must be an object`, fieldName);
   }
   return value as Record<string, unknown>;
 }
@@ -236,16 +255,16 @@ export function validateDate(date: unknown, fieldName: string = 'date'): string 
 /**
  * 比較演算子の検証
  */
-export function validateOperator(operator: unknown): string {
+export function validateOperator(operator: unknown): '>' | '<' | '>=' | '<=' | '==' | 'above' | 'below' | 'crosses_above' | 'crosses_below' | 'equals' | 'between' {
   const validatedOperator = validateRequiredString(operator, 'operator');
   
-  const validOperators = ['>', '<', '>=', '<=', '=='];
+  const validOperators = ['>', '<', '>=', '<=', '==', 'above', 'below', 'crosses_above', 'crosses_below', 'equals', 'between'] as const;
   
-  if (!validOperators.includes(validatedOperator)) {
-    throw validationError('Invalid operator: must be >, <, >=, <=, or ==', 'operator');
+  if (!validOperators.includes(validatedOperator as any)) {
+    throw validationError('Invalid operator: must be >, <, >=, <=, ==, above, below, crosses_above, crosses_below, equals, or between', 'operator');
   }
   
-  return validatedOperator;
+  return validatedOperator as any;
 }
 
 // ============================================================================

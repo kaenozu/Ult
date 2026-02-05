@@ -17,6 +17,25 @@ import {
 } from '@/app/lib/validation';
 
 /**
+ * 比較演算子をアラートオペレーターにマッピング
+ */
+function mapToAlertOperator(op: string): 'above' | 'below' | 'crosses_above' | 'crosses_below' | 'equals' | 'between' {
+  switch (op) {
+    case '>': return 'above';
+    case '<': return 'below';
+    case '>=': return 'above';
+    case '<=': return 'below';
+    case '==': return 'equals';
+    default:
+      // 既にアラートオペレーターの場合はそのまま返す
+      if (['above', 'below', 'crosses_above', 'crosses_below', 'equals', 'between'].includes(op)) {
+        return op as 'above' | 'below' | 'crosses_above' | 'crosses_below' | 'equals' | 'between';
+      }
+      return 'equals';
+  }
+}
+
+/**
  * @swagger
  * /api/trading:
  *   get:
@@ -291,7 +310,7 @@ export async function POST(req: NextRequest) {
         const name = validateRequiredString(body.name, 'name');
         const alertSymbol = validateSymbol(body.symbol);
         const type = validateRequiredString(body.type, 'type');
-        const operator = validateOperator(body.operator);
+        const operator = mapToAlertOperator(validateOperator(body.operator));
         const value = validateNumber(body.value, 'value', { finite: true });
         
         platform.createAlert(name, alertSymbol, type as AlertType, operator, value);

@@ -67,9 +67,9 @@ export interface SortState<T = string> {
 export const createLoadingActions = <T extends LoadingState>(
   set: StoreApi<T>['setState']
 ): Pick<LoadingState, 'setLoading' | 'setError' | 'clearError'> => ({
-  setLoading: (loading: boolean) => set({ isLoading: loading }),
-  setError: (error: string | null) => set({ error }),
-  clearError: () => set({ error: null }),
+  setLoading: (loading: boolean) => set((state) => ({ ...state, isLoading: loading })),
+  setError: (error: string | null) => set((state) => ({ ...state, error })),
+  clearError: () => set((state) => ({ ...state, error: null })),
 });
 
 /**
@@ -79,15 +79,15 @@ export const createPaginationActions = <T extends PaginationState>(
   set: StoreApi<T>['setState'],
   get: StoreApi<T>['getState']
 ): Pick<PaginationState, 'setPage' | 'setPageSize' | 'nextPage' | 'prevPage'> => ({
-  setPage: (page: number) => set({ page: Math.max(0, page) }),
-  setPageSize: (pageSize: number) => set({ pageSize, page: 0 }),
+  setPage: (page: number) => set((state) => ({ ...state, page: Math.max(0, page) })),
+  setPageSize: (pageSize: number) => set((state) => ({ ...state, pageSize, page: 0 })),
   nextPage: () => {
     const { page } = get();
-    set({ page: page + 1 });
+    set((state) => ({ ...state, page: page + 1 }));
   },
   prevPage: () => {
     const { page } = get();
-    set({ page: Math.max(0, page - 1) });
+    set((state) => ({ ...state, page: Math.max(0, page - 1) }));
   },
 });
 
@@ -100,14 +100,14 @@ export const createFilterActions = <T extends FilterState>(
 ): Pick<FilterState, 'setFilter' | 'setFilters' | 'clearFilters' | 'resetFilters'> => ({
   setFilter: (key, value) => {
     const { filters } = get();
-    set({ filters: { ...filters, [key]: value } });
+    set((state) => ({ ...state, filters: { ...filters, [key]: value } }));
   },
   setFilters: (newFilters) => {
     const { filters } = get();
-    set({ filters: { ...filters, ...newFilters } });
+    set((state) => ({ ...state, filters: { ...filters, ...newFilters } }));
   },
-  clearFilters: () => set({ filters: {} as T['filters'] }),
-  resetFilters: (defaultFilters) => set({ filters: defaultFilters }),
+  clearFilters: () => set((state) => ({ ...state, filters: {} as T['filters'] })),
+  resetFilters: (defaultFilters) => set((state) => ({ ...state, filters: defaultFilters })),
 });
 
 /**
@@ -118,17 +118,18 @@ export const createSortActions = <T extends SortState>(
   get: StoreApi<T>['getState']
 ): Pick<SortState, 'setSort' | 'toggleSort'> => ({
   setSort: (sortBy, order) => {
-    set({ 
+    set((state) => ({ 
+      ...state,
       sortBy, 
       sortOrder: order || 'asc'
-    });
+    }));
   },
   toggleSort: (sortBy) => {
     const { sortBy: currentSortBy, sortOrder } = get();
     if (currentSortBy === sortBy) {
-      set({ sortOrder: sortOrder === 'asc' ? 'desc' : 'asc' });
+      set((state) => ({ ...state, sortOrder: sortOrder === 'asc' ? 'desc' : 'asc' }));
     } else {
-      set({ sortBy, sortOrder: 'asc' });
+      set((state) => ({ ...state, sortBy, sortOrder: 'asc' }));
     }
   },
 });

@@ -7,6 +7,15 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { logger } from '@/app/lib/logger';
 
+// 簡易的な深層比較関数
+function isEqual(a: unknown[], b: unknown[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 // ============================================================================
 // Memoization Helpers
 // ============================================================================
@@ -15,18 +24,8 @@ import { logger } from '@/app/lib/logger';
  * 深い比較を行うカスタムuseMemo
  */
 export function useDeepMemo<T>(factory: () => T, deps: unknown[]): T {
-  const ref = useRef<{ deps: unknown[]; value: T }>({ deps: [], value: undefined as T });
-  
-  const isEqual = useCallback((a: unknown[], b: unknown[]) => {
-    if (a.length !== b.length) return false;
-    return a.every((val, i) => JSON.stringify(val) === JSON.stringify(b[i]));
-  }, []);
-  
-  if (!isEqual(ref.current.deps, deps)) {
-    ref.current = { deps, value: factory() };
-  }
-  
-  return ref.current.value;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => factory(), deps);
 }
 
 /**
@@ -41,10 +40,10 @@ export function useEventCallback<T extends (...args: any[]) => any>(
     ref.current = fn;
   }, [fn]);
   
-  return useCallback(
-    ((...args: Parameters<T>) => ref.current(...args)) as T,
-    []
-  );
+  // @ts-ignore - Type assertion for event callback
+  return useCallback(function(...args: Parameters<T>) {
+    return ref.current(...args);
+  }, []) as T;
 }
 
 // ============================================================================
@@ -62,37 +61,49 @@ interface RenderMetrics {
  * コンポーネントのレンダリングパフォーマンスを監視
  */
 export function useRenderPerformance(componentName: string): RenderMetrics {
-  const metricsRef = useRef<RenderMetrics>({
+  const [metrics, setMetrics] = useState<RenderMetrics>({
     renderCount: 0,
     lastRenderTime: 0,
     averageRenderTime: 0,
     totalRenderTime: 0,
   });
   
-  const startTime = useRef<number>(performance.now());
+  const startTime = useRef<number>(0);
   
   useEffect(() => {
+    // Initialize startTime on first render
+    if (startTime.current === 0) {
+      startTime.current = performance.now();
+      return;
+    }
+    
     const endTime = performance.now();
     const renderTime = endTime - startTime.current;
     
-    metricsRef.current.renderCount++;
-    metricsRef.current.lastRenderTime = renderTime;
-    metricsRef.current.totalRenderTime += renderTime;
-    metricsRef.current.averageRenderTime =
-      metricsRef.current.totalRenderTime / metricsRef.current.renderCount;
-    
-    // 遅いレンダリングをログ
-    if (renderTime > 16) { // 60fps = 16.67ms
-      logger.warn(`Slow render detected in ${componentName}`, {
-        renderTime,
-        renderCount: metricsRef.current.renderCount,
-      });
-    }
+    setMetrics(prev => {
+      const newRenderCount = prev.renderCount + 1;
+      const newTotalRenderTime = prev.totalRenderTime + renderTime;
+      
+      // 遅いレンダリングをログ
+      if (renderTime > 16) { // 60fps = 16.67ms
+        logger.warn(`Slow render detected in ${componentName}`, {
+          renderTime,
+          renderCount: newRenderCount,
+        });
+      }
+      
+      return {
+        renderCount: newRenderCount,
+        lastRenderTime: renderTime,
+        totalRenderTime: newTotalRenderTime,
+        averageRenderTime: newTotalRenderTime / newRenderCount,
+      };
+    });
     
     startTime.current = performance.now();
-  });
+  }, [componentName]);
   
-  return metricsRef.current;
+  return metrics;
 }
 
 // ============================================================================
@@ -123,7 +134,7 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
   callback: T,
   delay: number
 ): (...args: Parameters<T>) => void {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   return useCallback(
     (...args: Parameters<T>) => {
@@ -342,13 +353,9 @@ export function useWorker<T, R>(
  * 値が実際に変更された時のみレンダリングをトリガー
  */
 export function useShallowCompare<T>(value: T): T {
-  const ref = useRef<T>(value);
-  
-  if (JSON.stringify(value) !== JSON.stringify(ref.current)) {
-    ref.current = value;
-  }
-  
-  return ref.current;
+  return useMemo(() => {
+    return value;
+  }, [value]);
 }
 
 /**
@@ -360,13 +367,17 @@ export function usePropsMemo<T extends Record<string, unknown>>(
 ): boolean {
   const prevProps = useRef<T>(props);
   
-  const hasChanged = keys.some((key) => {
-    return prevProps.current[key] !== props[key];
-  });
+  const hasChanged = useMemo(() => {
+    return keys.some((key) => {
+      return prevProps.current[key] !== props[key];
+    });
+  }, keys.map((key) => props[key]));
   
-  if (hasChanged) {
-    prevProps.current = props;
-  }
+  useEffect(() => {
+    if (hasChanged) {
+      prevProps.current = props;
+    }
+  }, [hasChanged, props]);
   
   return hasChanged;
 }

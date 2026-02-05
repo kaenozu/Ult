@@ -136,6 +136,7 @@ export const test = baseTest.extend<TestFixtures>({
       await page.click('[data-testid="login-button"]');
       await page.waitForURL('/dashboard');
     };
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(login);
   },
   
@@ -146,6 +147,7 @@ export const test = baseTest.extend<TestFixtures>({
       await page.click('[data-testid="logout-button"]');
       await page.waitForURL('/login');
     };
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(logout);
   },
 });
