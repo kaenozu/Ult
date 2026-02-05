@@ -60,27 +60,6 @@ export function validateNumber(value: unknown, fieldName: string, options: {
   return value;
 }
 
-  const { positive = false, finite = true, min, max } = options;
-
-  if (finite && !Number.isFinite(value)) {
-    throw validationError(`Invalid ${fieldName}: must be a finite number`, fieldName);
-  }
-
-  if (positive && value <= 0) {
-    throw validationError(`Invalid ${fieldName}: must be a positive number`, fieldName);
-  }
-
-  if (min !== undefined && value < min) {
-    throw validationError(`Invalid ${fieldName}: must be at least ${min}`, fieldName);
-  }
-
-  if (max !== undefined && value > max) {
-    throw validationError(`Invalid ${fieldName}: must be at most ${max}`, fieldName);
-  }
-
-  return value;
-}
-
 /**
  * 真偽値の検証
  */
@@ -132,6 +111,10 @@ export function validateObject(value: unknown, fieldName: string): Record<string
  */
 export function validateSymbol(symbol: unknown): string {
   const validatedSymbol = validateRequiredString(symbol, 'symbol');
+  
+  if (typeof validatedSymbol !== 'string') {
+    throw validationError('Invalid symbol: must be a string', 'symbol');
+  }
   
   // シンボル形式の検証（英数字、ドット、カンマ、キャレット）
   if (!/^[A-Z0-9.,^]+$/.test(validatedSymbol.toUpperCase())) {
