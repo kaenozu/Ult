@@ -6,6 +6,15 @@
 
 ---
 
+## 🌏 Language Preferences
+
+**優先言語**: 日本語を優先して使用してください
+- エラーメッセージや説明は日本語で
+- コードコメントは英語、説明は日本語のハイブリッド形式
+- 変数名や関数名は英語（コーディング規約に準拠）
+
+---
+
 ## 📋 Essential Commands
 
 ### Development (from `trading-platform/`)
