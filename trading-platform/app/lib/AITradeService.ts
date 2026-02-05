@@ -1,5 +1,6 @@
 import { Signal, AIStatus, PaperTrade } from '../types';
-import { POSITION_SIZING, MARKET_CORRELATION } from './constants';
+import { RISK_MANAGEMENT } from './constants/risk-management';
+import { MARKET_CORRELATION } from './constants/trading';
 
 /**
  * Service to handle AI trading logic.
@@ -21,7 +22,7 @@ class AITradeService {
         trade?: PaperTrade
     } | null {
 
-        const slippage = POSITION_SIZING.SLIPPAGE_PERCENTAGE;
+        const slippage = RISK_MANAGEMENT.SLIPPAGE_PERCENTAGE;
         const openTrade = currentStatus.trades.find(t => t.symbol === symbol && t.status === 'OPEN');
 
         if (openTrade) {
@@ -102,7 +103,7 @@ class AITradeService {
         const HIGH_CONFIDENCE_THRESHOLD = 80;
         if (!openTrade && signal && signal.confidence >= HIGH_CONFIDENCE_THRESHOLD && signal.type !== 'HOLD') {
             const entryPrice = signal.type === 'BUY' ? currentPrice * (1 + slippage) : currentPrice * (1 - slippage);
-            const quantity = Math.floor((currentStatus.virtualBalance * POSITION_SIZING.DEFAULT_RATIO) / entryPrice);
+            const quantity = Math.floor((currentStatus.virtualBalance * RISK_MANAGEMENT.DEFAULT_RATIO) / entryPrice);
 
             if (quantity > 0) {
                 const newTrade: PaperTrade = {

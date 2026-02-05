@@ -1,16 +1,24 @@
 /**
  * Trading Configuration Constants
+ * 
+ * トレード関連の設定定数
+ * Issue #522 - 定数一元化
  */
 
 /**
  * Signal generation thresholds
+ * 
+ * 信頼度しきい値は common.ts の CONFIDENCE_THRESHOLDS と統合
  */
 export const SIGNAL_THRESHOLDS = {
-  MIN_CONFIDENCE: 60, // Increased from 50 to improve signal quality
-  HIGH_CONFIDENCE: 85, // Increased from 80 for stronger signals
-  STRONG_CORRELATION: 0.75, // Increased from 0.7 for better market sync
+  MIN_CONFIDENCE: 60,
+  HIGH_CONFIDENCE: 85,
+  MEDIUM_CONFIDENCE: 70,
+  LOW_CONFIDENCE: 40,
+  MIN_SIGNAL_CONFIDENCE: 60,
+  MAX_CONFIDENCE: 100,
+  STRONG_CORRELATION: 0.75,
   STRONG_MOMENTUM: 2.0,
-  MEDIUM_CONFIDENCE: 70, // New threshold for medium confidence signals
 } as const;
 
 /**

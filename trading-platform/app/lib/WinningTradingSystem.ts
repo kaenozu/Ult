@@ -15,7 +15,7 @@
 import { OHLCV, Stock } from '@/app/types';
 import { winningStrategyEngine, StrategyResult, StrategyType } from './strategies';
 import { getGlobalRiskManager, PositionSizingResult } from './risk';
-import { winningBacktestEngine, BacktestResult } from './backtest';
+import WinningBacktestEngine, { BacktestResult } from './backtest/WinningBacktestEngine';
 import type { PerformanceMetrics } from './backtest/WinningBacktestEngine';
 import { winningAlertEngine, Alert, AlertConfig } from './alerts';
 import { winningAnalytics, PerformanceReport } from './analytics';
@@ -100,10 +100,10 @@ class WinningTradingSystem {
 
   constructor(config: Partial<SystemConfig> = {}) {
     this.config = { ...DEFAULT_SYSTEM_CONFIG, ...config };
-    
+
     // アラートエンジンの設定
     winningAlertEngine.updateConfig(this.config.alertConfig);
-    
+
     // アラートサブスクリプション
     winningAlertEngine.subscribe((alert) => {
       this.handleAlert(alert);
@@ -196,6 +196,17 @@ class WinningTradingSystem {
 
     // エントリーシグナル
     if (strategyResult.signal !== 'HOLD' && !existingPosition) {
+      this.emitEvent({
+        type: 'SIGNAL_GENERATED',
+        sessionId: session.id,
+        data: {
+          symbol,
+          signal: strategyResult.signal,
+          price: data[data.length - 1].close,
+          timestamp: data[data.length - 1].date
+        }
+      });
+
       this.evaluateEntry(session, symbol, strategyResult, data[data.length - 1]);
     }
 
@@ -319,7 +330,7 @@ class WinningTradingSystem {
     // シグナル反転チェック
     if (!shouldExit && strategyResult.signal !== 'HOLD') {
       if ((position.side === 'LONG' && strategyResult.signal === 'SELL') ||
-          (position.side === 'SHORT' && strategyResult.signal === 'BUY')) {
+        (position.side === 'SHORT' && strategyResult.signal === 'BUY')) {
         shouldExit = true;
         exitReason = 'SIGNAL_REVERSAL';
       }
@@ -352,7 +363,7 @@ class WinningTradingSystem {
     const priceDiff = position.side === 'LONG'
       ? exitPrice - position.entryPrice
       : position.entryPrice - exitPrice;
-    
+
     const pnl = priceDiff * position.quantity;
     const pnlPercent = (priceDiff / position.entryPrice) * 100;
 
@@ -423,8 +434,24 @@ class WinningTradingSystem {
       strategyResults.push(result);
     }
 
+    // strategyResultsをdataの長さに合わせる（最初の50要素はHOLDで埋める）
+    const alignedResults: StrategyResult[] = [];
+    for (let i = 0; i < data.length; i++) {
+      if (i < 50) {
+        alignedResults.push({
+          signal: 'HOLD',
+          confidence: 0,
+          price: data[i].close,
+          timestamp: data[i].timestamp
+        });
+      } else {
+        alignedResults.push(strategyResults[i - 50]);
+      }
+    }
+
     // バックテストを実行
-    return winningBacktestEngine.runBacktest(strategyResults, data, symbol);
+    const backtestEngine = new WinningBacktestEngine();
+    return backtestEngine.runBacktest(alignedResults, data, symbol);
   }
 
   /**
@@ -453,10 +480,10 @@ class WinningTradingSystem {
    * パフォーマンスレポートを生成
    */
   generatePerformanceReport(sessionId?: string): PerformanceReport | null {
-    const session = sessionId 
-      ? this.sessions.get(sessionId) 
+    const session = sessionId
+      ? this.sessions.get(sessionId)
       : this.currentSession;
-    
+
     if (!session) return null;
 
     // トレードデータを変換
@@ -526,7 +553,7 @@ class WinningTradingSystem {
         currentData.low,
         currentData.close
       );
-      
+
       if (positionAlert) {
         winningAlertEngine.emitAlert(positionAlert);
       }
@@ -568,7 +595,7 @@ class WinningTradingSystem {
 
   updateConfig(newConfig: Partial<SystemConfig>): void {
     this.config = { ...this.config, ...newConfig };
-    
+
     if (newConfig.alertConfig) {
       winningAlertEngine.updateConfig(newConfig.alertConfig);
     }
@@ -584,7 +611,7 @@ class WinningTradingSystem {
 // ============================================================================
 
 export interface SystemEvent {
-  type: 'SESSION_STARTED' | 'SESSION_STOPPED' | 'POSITION_OPENED' | 'POSITION_CLOSED' | 'ALERT';
+  type: 'SESSION_STARTED' | 'SESSION_STOPPED' | 'POSITION_OPENED' | 'POSITION_CLOSED' | 'ALERT' | 'SIGNAL_GENERATED';
   sessionId?: string;
   data: unknown;
 }

@@ -1,24 +1,30 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import { TECHNICAL_INDICATORS } from './constants';
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { TECHNICAL_INDICATORS } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export type CurrencyCode = 'JPY' | 'USD' | 'EUR' | 'GBP';
+export type CurrencyCode = "JPY" | "USD" | "EUR" | "GBP";
 
-export function formatCurrency(value: number, currency: CurrencyCode = 'JPY'): string {
-  const currencyConfig: Record<CurrencyCode, { locale: string; fractionDigits: number }> = {
-    JPY: { locale: 'ja-JP', fractionDigits: 0 },
-    USD: { locale: 'en-US', fractionDigits: 2 },
-    EUR: { locale: 'de-DE', fractionDigits: 2 },
-    GBP: { locale: 'en-GB', fractionDigits: 2 },
+export function formatCurrency(
+  value: number,
+  currency: CurrencyCode = "JPY",
+): string {
+  const currencyConfig: Record<
+    CurrencyCode,
+    { locale: string; fractionDigits: number }
+  > = {
+    JPY: { locale: "ja-JP", fractionDigits: 0 },
+    USD: { locale: "en-US", fractionDigits: 2 },
+    EUR: { locale: "de-DE", fractionDigits: 2 },
+    GBP: { locale: "en-GB", fractionDigits: 2 },
   };
 
   const config = currencyConfig[currency];
   return new Intl.NumberFormat(config.locale, {
-    style: 'currency',
+    style: "currency",
     currency: currency,
     minimumFractionDigits: config.fractionDigits,
     maximumFractionDigits: config.fractionDigits,
@@ -26,14 +32,14 @@ export function formatCurrency(value: number, currency: CurrencyCode = 'JPY'): s
 }
 
 export function formatNumber(value: number, decimals: number = 2): string {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(value);
 }
 
 export function formatPercent(value: number): string {
-  const sign = value >= 0 ? '+' : '';
+  const sign = value >= 0 ? "+" : "";
   return `${sign}${value.toFixed(2)}%`;
 }
 
@@ -48,37 +54,37 @@ export function formatVolume(value: number): string {
 }
 
 export function getChangeColor(change: number): string {
-  if (change > 0) return 'text-green-500';
-  if (change < 0) return 'text-red-500';
-  return 'text-gray-400';
+  if (change > 0) return "text-green-500";
+  if (change < 0) return "text-red-500";
+  return "text-gray-400";
 }
 
-export function getSignalColor(signal: 'BUY' | 'SELL' | 'HOLD'): string {
+export function getSignalColor(signal: "BUY" | "SELL" | "HOLD"): string {
   switch (signal) {
-    case 'BUY':
-      return 'text-green-500 bg-green-500/10';
-    case 'SELL':
-      return 'text-red-500 bg-red-500/10';
-    case 'HOLD':
-      return 'text-gray-400 bg-gray-400/10';
+    case "BUY":
+      return "text-green-500 bg-green-500/10";
+    case "SELL":
+      return "text-red-500 bg-red-500/10";
+    case "HOLD":
+      return "text-gray-400 bg-gray-400/10";
   }
 }
 
-export function getSignalBgColor(signal: 'BUY' | 'SELL' | 'HOLD'): string {
+export function getSignalBgColor(signal: "BUY" | "SELL" | "HOLD"): string {
   switch (signal) {
-    case 'BUY':
-      return 'bg-green-500/20 border-green-500';
-    case 'SELL':
-      return 'bg-red-500/20 border-red-500';
-    case 'HOLD':
-      return 'bg-gray-500/20 border-gray-500';
+    case "BUY":
+      return "bg-green-500/20 border-green-500";
+    case "SELL":
+      return "bg-red-500/20 border-red-500";
+    case "HOLD":
+      return "bg-gray-500/20 border-gray-500";
   }
 }
 
 export function getConfidenceColor(confidence: number): string {
-  if (confidence >= 80) return 'text-green-500';
-  if (confidence >= 60) return 'text-yellow-500';
-  return 'text-red-500';
+  if (confidence >= 80) return "text-green-500";
+  if (confidence >= 60) return "text-yellow-500";
+  return "text-red-500";
 }
 
 export function truncate(str: string, length: number): string {
@@ -92,12 +98,12 @@ export function generateDateRange(days: number): string[] {
   for (let i = days; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    dates.push(date.toISOString().split('T')[0]);
+    dates.push(date.toISOString().split("T")[0]);
   }
   return dates;
 }
 
-export type MarketType = 'japan' | 'usa';
+export type MarketType = "japan" | "usa";
 
 /**
  * Get the tick size for a given price
@@ -139,7 +145,7 @@ const DEFAULT_LARGE_TICK_SIZE = 500000;
 function getThresholdValue<T>(
   value: number,
   thresholds: readonly { max: number; value: T }[],
-  defaultValue: T
+  defaultValue: T,
 ): T {
   for (const { max, value: threshold } of thresholds) {
     if (value <= max) return threshold;
@@ -147,16 +153,26 @@ function getThresholdValue<T>(
   return defaultValue;
 }
 
-export function getTickSize(price: number, market: MarketType = 'japan'): number {
-  if (market === 'usa') {
+export function getTickSize(
+  price: number,
+  market: MarketType = "japan",
+): number {
+  if (market === "usa") {
     return 0.01;
   }
-  return getThresholdValue(price, TICK_SIZE_THRESHOLDS, DEFAULT_LARGE_TICK_SIZE);
+  return getThresholdValue(
+    price,
+    TICK_SIZE_THRESHOLDS,
+    DEFAULT_LARGE_TICK_SIZE,
+  );
 }
 
-export function roundToTickSize(price: number, market: MarketType = 'japan'): number {
+export function roundToTickSize(
+  price: number,
+  market: MarketType = "japan",
+): number {
   const tickSize = getTickSize(price, market);
-  if (market === 'usa') {
+  if (market === "usa") {
     return Math.round(price / tickSize) * tickSize;
   }
   return Math.round(price / tickSize) * tickSize;
@@ -192,7 +208,11 @@ const PRICE_LIMIT_THRESHOLDS = [
 const DEFAULT_PRICE_LIMIT = 300000;
 
 export function getPriceLimit(referencePrice: number): number {
-  return getThresholdValue(referencePrice, PRICE_LIMIT_THRESHOLDS, DEFAULT_PRICE_LIMIT);
+  return getThresholdValue(
+    referencePrice,
+    PRICE_LIMIT_THRESHOLDS,
+    DEFAULT_PRICE_LIMIT,
+  );
 }
 
 /**
@@ -215,8 +235,6 @@ export function calculateReturns(prices: number[]): number[] {
 // Technical Indicator Functions
 // ============================================
 
-
-
 /**
  * Calculate Simple Moving Average (SMA)
  */
@@ -229,7 +247,8 @@ export function calculateSMA(prices: number[], period: number): number[] {
   for (let i = 0; i < prices.length; i++) {
     // Add new value (check validity inline)
     const p = prices[i];
-    const val = (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN;
+    const val =
+      p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
 
     if (!isNaN(val)) {
       sum += val;
@@ -239,7 +258,10 @@ export function calculateSMA(prices: number[], period: number): number[] {
     // Remove old value
     if (i >= period) {
       const oldP = prices[i - period];
-      const oldVal = (oldP != null && typeof oldP === 'number' && !isNaN(oldP) && oldP > 0) ? oldP : NaN;
+      const oldVal =
+        oldP != null && typeof oldP === "number" && !isNaN(oldP) && oldP > 0
+          ? oldP
+          : NaN;
       if (!isNaN(oldVal)) {
         sum -= oldVal;
         validCount--;
@@ -270,10 +292,19 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   for (let i = 1; i < prices.length; i++) {
     // 有効な価格データのみで変化量を計算
     const pCurrent = prices[i];
-    const valCurrent = (pCurrent != null && typeof pCurrent === 'number' && !isNaN(pCurrent) && pCurrent > 0) ? pCurrent : NaN;
+    const valCurrent =
+      pCurrent != null &&
+      typeof pCurrent === "number" &&
+      !isNaN(pCurrent) &&
+      pCurrent > 0
+        ? pCurrent
+        : NaN;
 
     const pPrev = prices[i - 1];
-    const valPrev = (pPrev != null && typeof pPrev === 'number' && !isNaN(pPrev) && pPrev > 0) ? pPrev : NaN;
+    const valPrev =
+      pPrev != null && typeof pPrev === "number" && !isNaN(pPrev) && pPrev > 0
+        ? pPrev
+        : NaN;
 
     if (!isNaN(valCurrent) && !isNaN(valPrev)) {
       changes.push(valCurrent - valPrev);
@@ -312,7 +343,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
       if (avgLoss === 0) {
         rsi = avgGain === 0 ? 50 : 100;
       } else {
-        rsi = 100 - (100 / (1 + avgGain / avgLoss));
+        rsi = 100 - 100 / (1 + avgGain / avgLoss);
       }
       result.push(isFinite(rsi) ? rsi : NaN);
     } else {
@@ -332,7 +363,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
         if (avgLoss === 0) {
           rsi = avgGain === 0 ? 50 : 100;
         } else {
-          rsi = 100 - (100 / (1 + avgGain / avgLoss));
+          rsi = 100 - 100 / (1 + avgGain / avgLoss);
         }
         result.push(isFinite(rsi) ? rsi : NaN);
       }
@@ -341,8 +372,6 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
 
   return result;
 }
-
-
 
 /**
  * Calculate Exponential Moving Average (EMA)
@@ -357,7 +386,8 @@ export function calculateEMA(prices: number[], period: number): number[] {
 
   for (let i = 0; i < prices.length; i++) {
     const p = prices[i];
-    const val = (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN;
+    const val =
+      p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
 
     if (!initialized) {
       // Not initialized yet, try to build SMA
@@ -407,7 +437,7 @@ export function calculateMACD(
   prices: number[],
   fastPeriod: number = 12,
   slowPeriod: number = 26,
-  signalPeriod: number = 9
+  signalPeriod: number = 9,
 ): { macd: number[]; signal: number[]; histogram: number[] } {
   const fastEMA = calculateEMA(prices, fastPeriod);
   const slowEMA = calculateEMA(prices, slowPeriod);
@@ -441,7 +471,7 @@ export function calculateMACD(
 export function calculateBollingerBands(
   prices: number[],
   period: number = 20,
-  standardDeviations: number = 2
+  standardDeviations: number = 2,
 ): { upper: number[]; middle: number[]; lower: number[] } {
   const middle = calculateSMA(prices, period);
   const upper: number[] = [];
@@ -459,7 +489,8 @@ export function calculateBollingerBands(
       // Calculate variance directly without array allocation
       for (let j = 0; j < period; j++) {
         const p = prices[i - j];
-        const val = (p != null && typeof p === 'number' && !isNaN(p) && p > 0) ? p : NaN;
+        const val =
+          p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
         if (!isNaN(val)) {
           const diff = val - mean;
           sumSq += diff * diff;
@@ -483,75 +514,81 @@ export function calculateBollingerBands(
 
 /**
  * Calculate Average True Range (ATR)
+ * Optimized to reduce memory allocation by performing inline validation and calculation.
  */
 export function calculateATR(
   highs: number[],
   lows: number[],
   closes: number[],
-  period: number = 14
+  period: number = 14,
 ): number[] {
-  // 有効な数値のみを含む配列を作成（NaN、null、undefined、負の値を除外）
-  const validHighs = highs.map(h => (h != null && typeof h === 'number' && !isNaN(h) && h > 0) ? h : NaN);
-  const validLows = lows.map(l => (l != null && typeof l === 'number' && !isNaN(l) && l > 0) ? l : NaN);
-  const validCloses = closes.map(c => (c != null && typeof c === 'number' && !isNaN(c) && c > 0) ? c : NaN);
-
-  const trueRanges: number[] = [];
-
-  for (let i = 0; i < validHighs.length; i++) {
-    if (i === 0) {
-      // 初期値：high - low（ただし、有効な値のみ使用）
-      if (!isNaN(validHighs[i]) && !isNaN(validLows[i])) {
-        trueRanges.push(validHighs[i] - validLows[i]);
-      } else {
-        trueRanges.push(NaN);
-      }
-    } else {
-      // 有効な値がない場合はNaN
-      if (!isNaN(validHighs[i]) && !isNaN(validLows[i]) && !isNaN(validCloses[i - 1])) {
-        const tr = Math.max(
-          validHighs[i] - validLows[i],
-          Math.abs(validHighs[i] - validCloses[i - 1]),
-          Math.abs(validLows[i] - validCloses[i - 1])
-        );
-        trueRanges.push(tr);
-      } else {
-        trueRanges.push(NaN);
-      }
-    }
-  }
-
   const result: number[] = [];
+  const length = highs.length;
+
   let sum = 0;
   let validCount = 0;
 
-  for (let i = 0; i < trueRanges.length; i++) {
+  for (let i = 0; i < length; i++) {
+    // 1. Validate inputs inline
+    const h = highs[i];
+    const valHigh =
+      h != null && typeof h === "number" && !isNaN(h) && h > 0 ? h : NaN;
+
+    const l = lows[i];
+    const valLow =
+      l != null && typeof l === "number" && !isNaN(l) && l > 0 ? l : NaN;
+
+    // Previous close is needed for i > 0
+    let valPrevClose = NaN;
+    if (i > 0) {
+      const cPrev = closes[i - 1];
+      valPrevClose =
+        cPrev != null && typeof cPrev === "number" && !isNaN(cPrev) && cPrev > 0
+          ? cPrev
+          : NaN;
+    }
+
+    // 2. Calculate True Range
+    let tr = NaN;
+    if (i === 0) {
+      if (!isNaN(valHigh) && !isNaN(valLow)) {
+        tr = valHigh - valLow;
+      }
+    } else {
+      if (!isNaN(valHigh) && !isNaN(valLow) && !isNaN(valPrevClose)) {
+        tr = Math.max(
+          valHigh - valLow,
+          Math.abs(valHigh - valPrevClose),
+          Math.abs(valLow - valPrevClose),
+        );
+      }
+    }
+
+    // 3. Calculate ATR
     if (i < period) {
-      // 有効なTrue Rangeのみを合計
-      if (!isNaN(trueRanges[i])) {
-        sum += trueRanges[i];
+      // Accumulate for initial SMA
+      if (!isNaN(tr)) {
+        sum += tr;
         validCount++;
       }
       result.push(NaN);
 
-      // 有効なデータが十分に蓄積されたら初期ATRを計算
+      // Check if we can initialize at period-1
       if (i === period - 1) {
         if (validCount >= period) {
           result[i] = sum / validCount;
         } else {
-          // 有効なデータが不足している場合はNaN
           result[i] = NaN;
         }
       }
     } else {
-      // 有効なTrue Rangeがある場合のみ計算を継続
-      if (isNaN(trueRanges[i])) {
+      // Smoothing: (Prior ATR * (period-1) + Current TR) / period
+      if (isNaN(tr)) {
         result.push(NaN);
       } else if (!isNaN(result[i - 1])) {
-        // ATR = [(Prior ATR × (period-1)) + Current TR] / period
-        const atr = (result[i - 1] * (period - 1) + trueRanges[i]) / period;
+        const atr = (result[i - 1] * (period - 1) + tr) / period;
         result.push(atr);
       } else {
-        // 以前のATRが無効な場合は現在のTRもNaNにする
         result.push(NaN);
       }
     }

@@ -7,7 +7,14 @@ import { GET } from '../route';
 jest.mock('yahoo-finance2', () => {
   return jest.fn().mockImplementation(() => {
     return {
-      chart: jest.fn().mockResolvedValue({ quotes: [] }),
+      chart: jest.fn().mockResolvedValue({
+        meta: {
+          symbol: 'AAPL',
+          currency: 'USD',
+          regularMarketPrice: 100
+        },
+        quotes: []
+      }),
       quote: jest.fn().mockImplementation((query) => {
         if (Array.isArray(query)) {
           return Promise.resolve(query.map((s: string) => ({ symbol: s, regularMarketPrice: 100 })));

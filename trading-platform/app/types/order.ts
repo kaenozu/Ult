@@ -1,13 +1,15 @@
 /**
  * 注文リクエストの型定義
  */
+import { OrderSide, OrderType, MarketType } from './shared';
+
 export interface OrderRequest {
   /** 銘柄シンボル */
   symbol: string;
   /** 銘柄名 */
   name: string;
   /** 市場区分 */
-  market: 'japan' | 'usa';
+  market: MarketType;
   /** 注文サイド */
   side: 'LONG' | 'SHORT';
   /** 数量 */
@@ -15,7 +17,7 @@ export interface OrderRequest {
   /** 価格 */
   price: number;
   /** 注文種別 */
-  orderType: 'MARKET' | 'LIMIT';
+  orderType: OrderType;
   /** ストップロス価格（オプション） */
   stopLoss?: number;
   /** 利確価格（オプション） */
