@@ -1,5 +1,8 @@
 /**
  * Chart Configuration Constants
+ * 
+ * チャート表示に関する定数
+ * Issue #522 - 定数一元化
  */
 
 /**
@@ -55,8 +58,11 @@ export const CHART_GRID = {
 
 /**
  * Chart configuration
+ * 
+ * @deprecated MIN_DATA_POINTS is defined in DATA_REQUIREMENTS (common.ts).
+ * Use DATA_REQUIREMENTS.MIN_DATA_POINTS instead.
  */
 export const CHART_CONFIG = {
   TENSION: 0.1,
-  MIN_DATA_POINTS: 20,
+  MIN_DATA_POINTS: 20, // Use DATA_REQUIREMENTS.MIN_DATA_POINTS
 } as const;

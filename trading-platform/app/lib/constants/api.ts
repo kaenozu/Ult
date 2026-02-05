@@ -1,5 +1,8 @@
 /**
  * API Configuration Constants
+ * 
+ * API設定とキャッシュ、レート制限に関する定数
+ * Issue #522 - 定数一元化
  */
 
 /**
@@ -21,10 +24,13 @@ export const RATE_LIMIT = {
 } as const;
 
 /**
- * Data quality requirements
+ * Data quality requirements for API responses
+ * 
+ * @deprecated MIN_DATA_LENGTH is defined in DATA_REQUIREMENTS (common.ts).
+ * Use DATA_REQUIREMENTS.MIN_DATA_POINTS instead.
  */
 export const DATA_QUALITY = {
-  MIN_DATA_LENGTH: 20,
+  MIN_DATA_LENGTH: 20, // Use DATA_REQUIREMENTS.MIN_DATA_POINTS
   MIN_PRICE_THRESHOLD: 0.0001,
   MAX_GAP_DAYS: 7,
 } as const;
