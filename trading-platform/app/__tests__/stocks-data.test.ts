@@ -123,9 +123,24 @@ describe('stocks data', () => {
         });
 
         it('fetchSignal delegates to marketClient', async () => {
-            (marketClient.fetchSignal as jest.Mock).mockResolvedValue({ data: 'signal' });
-            const result = await fetchSignal({ symbol: '7203' } as any);
-            expect(result).toBe('signal');
+          const mockSignal = {
+            symbol: '7203',
+            type: 'BUY',
+            confidence: 80,
+            targetPrice: 100,
+            stopLoss: 90,
+            reason: 'test',
+            predictedChange: 10,
+            predictionDate: '2023-01-01'
+          } as const;
+          const mockResponse = {
+            success: true,
+            data: mockSignal,
+            source: 'api' as const
+          };
+          (marketClient.fetchSignal as jest.Mock).mockResolvedValue(mockResponse);
+          const result = await fetchSignal({ symbol: '7203' } as any);
+          expect(result).toEqual(mockResponse);
         });
     });
 });

@@ -284,7 +284,6 @@ class AuditLogger {
       return [];
     }
   }
-  }
   
   /**
    * ログを検索
@@ -328,9 +327,6 @@ class AuditLogger {
       ]);
       return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     }
-    
-    return JSON.stringify(logs, null, 2);
-  }
     
     return JSON.stringify(logs, null, 2);
   }

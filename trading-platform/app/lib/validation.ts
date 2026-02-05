@@ -3,16 +3,7 @@
  * APIルートで使用する入力検証を共通化
  */
 
-import { NextResponse } from 'next/server';
-import { validationError } from './error-handler';
-
-// Simple ValidationError class for internal use
-class ValidationError extends Error {
-  constructor(message: string, public field?: string) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
+import { ValidationError } from './errors';
 
 // ============================================================================
 // 基本バリデーション関数
@@ -21,9 +12,9 @@ class ValidationError extends Error {
 /**
  * 必須文字列の検証
  */
-export function validateRequiredString(value: unknown, fieldName: string): string | Response {
+export function validateRequiredString(value: unknown, fieldName: string): string {
   if (!value || typeof value !== 'string' || value.trim().length === 0) {
-    return validationError(`Invalid ${fieldName}: must be a non-empty string`, fieldName);
+    throw new ValidationError(fieldName, `must be a non-empty string`);
   }
   return value.trim();
 }
@@ -36,25 +27,25 @@ export function validateNumber(value: unknown, fieldName: string, options: {
   finite?: boolean;
   min?: number;
   max?: number;
-} = {}): number | Response {
+} = {}): number {
   if (typeof value !== 'number') {
-    return validationError(`Invalid ${fieldName}: must be a number`, fieldName);
+    throw new ValidationError(fieldName, `must be a number`);
   }
   
   if (options.finite && !isFinite(value)) {
-    return validationError(`Invalid ${fieldName}: must be a finite number`, fieldName);
+    throw new ValidationError(fieldName, `must be a finite number`);
   }
   
   if (options.positive && value <= 0) {
-    return validationError(`Invalid ${fieldName}: must be positive`, fieldName);
+    throw new ValidationError(fieldName, `must be positive`);
   }
   
   if (options.min !== undefined && value < options.min) {
-    return validationError(`Invalid ${fieldName}: must be at least ${options.min}`, fieldName);
+    throw new ValidationError(fieldName, `must be at least ${options.min}`);
   }
   
   if (options.max !== undefined && value > options.max) {
-    return validationError(`Invalid ${fieldName}: must be at most ${options.max}`, fieldName);
+    throw new ValidationError(fieldName, `must be at most ${options.max}`);
   }
   
   return value;
@@ -63,9 +54,9 @@ export function validateNumber(value: unknown, fieldName: string, options: {
 /**
  * 真偽値の検証
  */
-export function validateBoolean(value: unknown, fieldName: string): boolean | Response {
+export function validateBoolean(value: unknown, fieldName: string): boolean {
   if (typeof value !== 'boolean') {
-    return validationError(`Invalid ${fieldName}: must be a boolean`, fieldName);
+    throw new ValidationError(fieldName, `must be a boolean`);
   }
   return value;
 }
@@ -73,9 +64,9 @@ export function validateBoolean(value: unknown, fieldName: string): boolean | Re
 /**
  * 配列の検証
  */
-export function validateArray<T>(value: unknown, fieldName: string, itemValidator?: (item: unknown) => T): T[] | Response {
+export function validateArray<T>(value: unknown, fieldName: string, itemValidator?: (item: unknown) => T): T[] {
   if (!Array.isArray(value)) {
-    return validationError(`Invalid ${fieldName}: must be an array`, fieldName);
+    throw new ValidationError(fieldName, `must be an array`);
   }
 
   if (itemValidator) {
@@ -84,7 +75,7 @@ export function validateArray<T>(value: unknown, fieldName: string, itemValidato
         return itemValidator(item);
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        return validationError(`Invalid ${fieldName}[${index}]: ${message}`, fieldName);
+        throw new ValidationError(fieldName, `Invalid ${fieldName}[${index}]: ${message}`);
       }
     }) as T[];
   }
@@ -95,9 +86,9 @@ export function validateArray<T>(value: unknown, fieldName: string, itemValidato
 /**
  * オブジェクトの検証
  */
-export function validateObject(value: unknown, fieldName: string): Record<string, unknown> | Response {
+export function validateObject(value: unknown, fieldName: string): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return validationError(`Invalid ${fieldName}: must be an object`, fieldName);
+    throw new ValidationError(fieldName, `must be an object`);
   }
   return value as Record<string, unknown>;
 }
@@ -113,12 +104,12 @@ export function validateSymbol(symbol: unknown): string {
   const validatedSymbol = validateRequiredString(symbol, 'symbol');
   
   if (typeof validatedSymbol !== 'string') {
-    throw validationError('Invalid symbol: must be a string', 'symbol');
+    throw new ValidationError('symbol', 'Invalid symbol: must be a string');
   }
   
   // シンボル形式の検証（英数字、ドット、カンマ、キャレット）
   if (!/^[A-Z0-9.,^]+$/.test(validatedSymbol.toUpperCase())) {
-    throw validationError('Invalid symbol format', 'symbol');
+    throw new ValidationError('symbol', 'Invalid symbol format');
   }
   
   // シンボル長の検証（DoS対策）
@@ -126,7 +117,7 @@ export function validateSymbol(symbol: unknown): string {
   const maxLength = isBatch ? 1000 : 20;
   
   if (validatedSymbol.length > maxLength) {
-    throw validationError('Symbol too long', 'symbol');
+    throw new ValidationError('symbol', 'Symbol too long');
   }
   
   return validatedSymbol.toUpperCase();
@@ -139,11 +130,11 @@ export function validateOrderSide(side: unknown): 'BUY' | 'SELL' {
   const validatedSide = validateRequiredString(side, 'side');
   
   if (typeof validatedSide !== 'string') {
-    throw validationError('Invalid side: must be a string', 'side');
+    throw new ValidationError('side', 'Invalid side: must be a string');
   }
   
   if (!['BUY', 'SELL'].includes(validatedSide)) {
-    throw validationError('Invalid side: must be BUY or SELL', 'side');
+    throw new ValidationError('side', 'Invalid side: must be BUY or SELL');
   }
   
   return validatedSide as 'BUY' | 'SELL';
@@ -156,11 +147,11 @@ export function validateOrderType(orderType: unknown): 'MARKET' | 'LIMIT' {
   const validatedType = validateRequiredString(orderType, 'orderType');
   
   if (typeof validatedType !== 'string') {
-    throw validationError('Invalid orderType: must be a string', 'orderType');
+    throw new ValidationError('orderType', 'Invalid orderType: must be a string');
   }
   
   if (!['MARKET', 'LIMIT'].includes(validatedType)) {
-    throw validationError('Invalid orderType: must be MARKET or LIMIT', 'orderType');
+    throw new ValidationError('orderType', 'Invalid orderType: must be MARKET or LIMIT');
   }
   
   return validatedType as 'MARKET' | 'LIMIT';
@@ -175,7 +166,7 @@ export function validateMarketType(market: unknown): 'japan' | 'usa' {
   const validatedMarket = validateRequiredString(market, 'market');
   
   if (!['japan', 'usa'].includes(validatedMarket)) {
-    throw validationError('Invalid market: must be japan or usa', 'market');
+    throw new ValidationError('market', 'Invalid market: must be japan or usa');
   }
   
   return validatedMarket as 'japan' | 'usa';
@@ -193,7 +184,7 @@ export function validateTradingAction(action: unknown): string {
   ];
   
   if (!validActions.includes(validatedAction)) {
-    throw validationError('Unknown action', 'action');
+    throw new ValidationError('action', 'Unknown action');
   }
   
   return validatedAction;
@@ -206,7 +197,7 @@ export function validateDataType(type: unknown): 'history' | 'quote' {
   const validatedType = validateRequiredString(type, 'type');
   
   if (!['history', 'quote'].includes(validatedType)) {
-    throw validationError('Invalid type parameter. Use "history" or "quote".', 'type');
+    throw new ValidationError('type', 'Invalid type parameter. Use "history" or "quote".');
   }
   
   return validatedType as 'history' | 'quote';
@@ -223,7 +214,7 @@ export function validateInterval(interval: unknown): string {
   const validIntervals = ['1m', '5m', '15m', '1h', '4h', '1d', '1wk', '1mo'];
   
   if (!validIntervals.includes(validatedInterval)) {
-    throw validationError('Invalid interval. Use 1m, 5m, 15m, 1h, 4h, 1d, 1wk, or 1mo', 'interval');
+    throw new ValidationError('interval', 'Invalid interval. Use 1m, 5m, 15m, 1h, 4h, 1d, 1wk, or 1mo');
   }
   
   return validatedInterval;
@@ -237,7 +228,7 @@ export function validateDate(date: unknown, fieldName: string = 'date'): string 
   
   // YYYY-MM-DD形式の検証
   if (!/^\d{4}-\d{2}-\d{2}$/.test(validatedDate) || isNaN(Date.parse(validatedDate))) {
-    throw validationError(`Invalid ${fieldName} format. Use YYYY-MM-DD.`, fieldName);
+    throw new ValidationError(fieldName, `Invalid ${fieldName} format. Use YYYY-MM-DD.`);
   }
   
   return validatedDate;
@@ -252,7 +243,7 @@ export function validateOperator(operator: unknown): '>' | '<' | '>=' | '<=' | '
   const validOperators = ['>', '<', '>=', '<=', '==', 'above', 'below', 'crosses_above', 'crosses_below', 'equals', 'between'] as const;
   
   if (!validOperators.includes(validatedOperator as any)) {
-    throw validationError('Invalid operator: must be >, <, >=, <=, ==, above, below, crosses_above, crosses_below, equals, or between', 'operator');
+    throw new ValidationError('operator', 'Invalid operator: must be >, <, >=, <=, ==, above, below, crosses_above, crosses_below, equals, or between');
   }
   
   return validatedOperator as any;
@@ -271,7 +262,7 @@ export function validateMode(mode: unknown): 'live' | 'paper' | 'backtest' {
   const validatedMode = validateRequiredString(mode, 'mode');
   
   if (!['live', 'paper', 'backtest'].includes(validatedMode)) {
-    throw validationError('Invalid mode: must be live, paper, or backtest', 'mode');
+    throw new ValidationError('mode', 'Invalid mode: must be live, paper, or backtest');
   }
   
   return validatedMode as 'live' | 'paper' | 'backtest';
