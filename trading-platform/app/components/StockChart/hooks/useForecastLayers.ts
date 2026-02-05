@@ -49,6 +49,7 @@ export const useForecastLayers = ({
 const targetArr = new Array(data.length).fill(NaN);
     const stopArr = new Array(data.length).fill(NaN);
  
+const currentPrice = data[hoveredIdx].close;
     const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
     const confidenceFactor = (110 - pastSignal.confidence) / 100;
     const momentum = pastSignal.predictedChange ? pastSignal.predictedChange / 100 : 0;
