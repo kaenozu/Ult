@@ -116,39 +116,28 @@ class MarketDataClient {
           } else {
             throw new Error('No intraday data available');
           }
-        } else {
-          // For daily/weekly/monthly data, use IndexedDB for persistence
-          const localData = await idbClient.getData(symbol);
-          finalData = localData;
-          source = 'idb';
-
+} else {
+          // For daily/weekly/monthly data, fetch from API to ensure sufficient data
+          // Get 1 year of historical data for better analysis
           const now = new Date();
-          // Use local noon to avoid timezone/market-close issues for "needs update" check
-          const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
+          const startDate = new Date(now);
+          startDate.setFullYear(startDate.getFullYear() - 1);
 
-          // Update if no data, or if latest data is older than 24 hours
-          const needsUpdate = !lastDataDate || (now.getTime() - lastDataDate.getTime()) > (24 * 60 * 60 * 1000);
+          let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&startDate=${startDate.toISOString().split('T')[0]}`;
+          // Add interval parameter if specified (defaults to daily on API side)
+          if (interval) {
+            fetchUrl += `&interval=${interval}`;
+          }
 
-          if (needsUpdate) {
-            let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
-            // Add interval parameter if specified (defaults to daily on API side)
-            if (interval) {
-              fetchUrl += `&interval=${interval}`;
-            }
-            if (lastDataDate) {
-              const startDate = new Date(lastDataDate);
-              startDate.setDate(startDate.getDate() + 1);
-              fetchUrl += `&startDate=${startDate.toISOString().split('T')[0]}`;
-            }
+          const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
 
-            const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
-
-            if (newData && newData.length > 0) {
-              finalData = await idbClient.mergeAndSave(symbol, newData);
-              source = 'api';
-            } else if (!lastDataDate) {
-              throw new Error('No historical data available');
-            }
+          if (newData && newData.length > 0) {
+            finalData = newData;
+            source = 'api';
+            // Also save to IndexedDB for persistence
+            await idbClient.mergeAndSave(symbol, newData);
+          } else {
+            throw new Error('No historical data available');
           }
         }
 

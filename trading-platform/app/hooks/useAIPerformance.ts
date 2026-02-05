@@ -29,7 +29,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
 
       try {
         // Add rate limiting delay to prevent rapid requests
-        const delay = Math.random() * 200 + 100; // 100-300ms のランダムな遁E��
+        const delay = Math.random() * 200 + 100; // 100-300ms のランダムな遅延
         await new Promise(resolve => setTimeout(resolve, delay));
         
         // Adjust data period to include current date (fix for "today's date missing" issue)
@@ -91,7 +91,8 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
             const result = calculateAIHitRate(currentSymbol, enhancedOHLCV, currentMarket);
             setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           }
-        }      } catch (e) {
+        }
+      } catch (e) {
         console.error('Precise hit rate fetch failed:', e);
         // Verify the symbol hasn't changed before setting error state
         if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
@@ -100,7 +101,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
              const result = calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
              setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           } catch {
-             setError('皁E��玁E�E計算に失敗しました');
+             setError('精度計算に失敗しました');
           }
         }
       } finally {
@@ -116,11 +117,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       isMounted = false;
     };
-  }, [stock.symbol, stock.market, stockPrice, ohlcv]); // ohlcvを依存�E列に含める
+  }, [stock.symbol, stock.market, stockPrice, ohlcv]); // ohlcvを依存配列に含める
 
   return { preciseHitRate, calculatingHitRate, error };
 }
-
-
-
-

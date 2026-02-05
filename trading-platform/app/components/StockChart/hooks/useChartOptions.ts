@@ -43,11 +43,11 @@ export const useChartOptions = ({
     responsive: true,
     maintainAspectRatio: false,
     layout: {
-      padding: {
+padding: {
         top: 15,
         bottom: 5,
-        left: 5,
-        right: 5
+        left: 20,
+        right: 20
       }
     },
     interaction: {
@@ -179,7 +179,7 @@ export const useChartOptions = ({
             size: CHART_GRID.LABEL_FONT_SIZE,
             family: 'Inter, sans-serif'
           },
-          padding: 8,
+          padding: 12,
           count: 8
         }
       }

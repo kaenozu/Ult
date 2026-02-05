@@ -484,7 +484,9 @@ class AccuracyService {
         // Optimized: Pre-calculate indicators
         const preCalculatedIndicators = this.preCalculateIndicators(data);
 
-        for (let i = DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS; i < data.length - windowSize; i += 5) {
+        // ループ開始インデックスを修正
+        const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, windowSize);
+        for (let i = startIndex; i < data.length - windowSize; i += 3) {
             // Optimized: Use full data + endIndex
             const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i,
@@ -535,7 +537,9 @@ class AccuracyService {
         // Optimized: Pre-calculate indicators
         const preCalculatedIndicators = this.preCalculateIndicators(data);
 
-        for (let i = 100; i < data.length - 10; i += step) {
+        // ループ開始インデックスを修正
+        const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, 10);
+        for (let i = startIndex; i < data.length - 10; i += step) {
             // Optimized: Use full data + endIndex
             const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i,
