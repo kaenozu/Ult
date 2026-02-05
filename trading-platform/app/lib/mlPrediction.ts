@@ -214,14 +214,18 @@ class MLPredictionService {
       stopLoss = type === 'BUY' ? currentPrice - drift : currentPrice + drift;
     }
 
-    const optParamsStr = baseAnalysis.optimizedParams ? `最適化設定(RSI:${baseAnalysis.optimizedParams.rsiPeriod}, SMA:${baseAnalysis.optimizedParams.smaPeriod}) ` : "";
-    const reason = `${isStrong ? '【強気】' : '【注視】'}${optParamsStr}${this.generateBaseReason(type)} ${marketComment}${correctionComment}`;
-
     // 予測騰落率の符号をシグナルタイプと強制的に一致させるガード
     let finalPredictedChange = prediction.ensemblePrediction;
     if (type === 'BUY' && finalPredictedChange < 0) finalPredictedChange = Math.abs(finalPredictedChange);
     if (type === 'SELL' && finalPredictedChange > 0) finalPredictedChange = -Math.abs(finalPredictedChange);
     if (type === 'HOLD') finalPredictedChange = 0;
+
+    // シグナル理由の生成
+    const reason = this.generateBaseReason(type);
+
+    // Final safety check for NaN in target/stop
+    if (isNaN(targetPrice)) targetPrice = currentPrice;
+    if (isNaN(stopLoss)) stopLoss = currentPrice;
 
     return {
       symbol: stock.symbol, type,
@@ -234,7 +238,8 @@ class MLPredictionService {
       marketContext: marketInfo,
       optimizedParams: baseAnalysis.optimizedParams,
       predictionError: errorFactor,
-      volumeResistance: baseAnalysis.volumeResistance
+      volumeResistance: baseAnalysis.volumeResistance,
+      forecastCone: baseAnalysis.forecastCone
     };
   }
 

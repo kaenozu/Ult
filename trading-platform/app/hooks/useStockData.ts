@@ -4,6 +4,7 @@ import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
+import { consensusSignalService } from '@/app/lib/ConsensusSignalService';
 
 interface MarketDataMetadata {
   fallbackApplied?: boolean;
@@ -102,15 +103,56 @@ export function useStockData() {
       setIndexData(idxData);
       setLoading(false); // Stop spinner here!
 
-      // 4. Handle Signal (Non-blocking)
+      console.log('[useStockData] Starting signal fetch...');
       try {
-        const signalData = await signalPromise;
+        const signalResult = await signalPromise;
+        console.log('[useStockData] Signal promise resolved:', signalResult);
         if (!controller.signal.aborted && isMountedRef.current) {
-          setChartSignal(signalData);
+          if (signalResult.success && signalResult.data) {
+            console.log('[useStockData] Got signal from API:', {
+              type: signalResult.data.type,
+              confidence: signalResult.data.confidence,
+              accuracy: signalResult.data.accuracy,
+              targetPrice: signalResult.data.targetPrice,
+              forecastCone: !!signalResult.data.forecastCone
+            });
+            setChartSignal(signalResult.data);
+          } else {
+            console.warn('[useStockData] Signal fetch returned unsuccessful:', signalResult.error);
+            // Fallback: generate consensus signal locally using technical analysis
+            try {
+              const fallbackSignal = consensusSignalService.generateConsensus(data);
+              console.log('[useStockData] Fallback signal generated:', {
+                type: fallbackSignal.type,
+                confidence: fallbackSignal.confidence,
+                accuracy: fallbackSignal.accuracy,
+                targetPrice: fallbackSignal.targetPrice,
+                forecastCone: !!fallbackSignal.forecastCone
+              });
+              setChartSignal(fallbackSignal);
+            } catch (fallbackErr) {
+              console.error('[useStockData] Fallback signal generation failed:', fallbackErr);
+            }
+          }
         }
       } catch (signalErr) {
-        console.warn('Signal fetch failed (non-critical):', signalErr);
-        // Do not set global error, just log. The user still has the chart.
+        console.warn('[useStockData] Signal fetch threw error, using fallback consensus:', signalErr);
+        try {
+          const fallbackSignal = consensusSignalService.generateConsensus(data);
+          console.log('[useStockData] Fallback signal generated after error:', {
+            type: fallbackSignal.type,
+            confidence: fallbackSignal.confidence,
+            accuracy: fallbackSignal.accuracy,
+            targetPrice: fallbackSignal.targetPrice,
+            forecastCone: !!fallbackSignal.forecastCone
+          });
+          if (!controller.signal.aborted && isMountedRef.current) {
+            setChartSignal(fallbackSignal);
+          }
+        } catch (fallbackErr) {
+          console.error('[useStockData] Fallback also failed:', fallbackErr);
+          // Keep chartSignal as null if fallback fails
+        }
       }
 
       // 5. Background sync for long-term data (keep independent)

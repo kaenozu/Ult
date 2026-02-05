@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Stock, OHLCV } from '@/app/types';
-import { calculateAIHitRate } from '@/app/lib/analysis';
+import { useState, useEffect } from 'react';
+import { Stock, OHLCV } from '@/app/types';
+import { calculateAIHitRate } from '@/app/lib/analysis';
+import { DATA_REQUIREMENTS } from '@/app/lib/constants';
 
 export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
   const [calculatingHitRate, setCalculatingHitRate] = useState(false);
@@ -33,9 +34,9 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
         await new Promise(resolve => setTimeout(resolve, delay));
         
         // Adjust data period to include current date (fix for "today's date missing" issue)
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-        const startDate = sixMonthsAgo.toISOString().split('T')[0];
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const startDate = oneYearAgo.toISOString().split('T')[0];
 
         const response = await fetch(`/api/market?type=history&symbol=${currentSymbol}&market=${currentMarket}&startDate=${startDate}`);
 
@@ -50,7 +51,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
 
         // Verify the symbol hasn't changed (race condition check)
         if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
-          if (resultData.data && resultData.data.length > 100) {
+          if (resultData.data && resultData.data.length >= DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
             const result = calculateAIHitRate(currentSymbol, resultData.data, currentMarket);
             setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           } else {

@@ -160,11 +160,13 @@ function formatSymbol(symbol: string, market?: string): string {
 }
 
 export async function GET(request: Request) {
-  // Rate limiting
-  const rateLimitResponse = checkRateLimit(request);
-  if (rateLimitResponse) return rateLimitResponse;
+  try {
+    console.log('[API/market] GET request received');
+    // Rate limiting
+    const rateLimitResponse = checkRateLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
 
-  const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
   const symbol = searchParams.get('symbol')?.trim().toUpperCase();
   const market = searchParams.get('market');
@@ -204,9 +206,8 @@ export async function GET(request: Request) {
     return validationError('Invalid interval. Use 1m, 5m, 15m, 1h, 4h, 1d, 1wk, or 1mo', 'interval');
   }
 
-  const yahooSymbol = formatSymbol(symbol, market || undefined);
+const yahooSymbol = formatSymbol(symbol, market || undefined);
 
-  try {
     if (type === 'history') {
       const startDateParam = searchParams.get('startDate');
       let period1: string;
@@ -217,9 +218,10 @@ export async function GET(request: Request) {
           return validationError('Invalid startDate format. Use YYYY-MM-DD.', 'startDate');
         }
         period1 = startDateParam;
-} else {
+      } else {
+        // Get 2 years of data to ensure sufficient backtest samples (252 trading days min)
         const startDate = new Date();
-        startDate.setFullYear(startDate.getFullYear() - 1); // 1年前までのデータを取得
+        startDate.setFullYear(startDate.getFullYear() - 2);
         period1 = startDate.toISOString().split('T')[0];
       }
 
@@ -349,8 +351,8 @@ export async function GET(request: Request) {
                 requestsPerDay: 2000
               },
               intradayUnavailableForJapaneseStocks: isJapaneseStock
-            }
-          }
+  }
+}
         });
       } catch (innerError: unknown) {
         return handleApiError(new Error('Failed to fetch historical data'), 'market/history', 502);
@@ -396,7 +398,7 @@ export async function GET(request: Request) {
       }
     }
 
-    return validationError('Invalid type parameter. Use "history" or "quote".', 'type');
+return validationError('Invalid type parameter. Use "history" or "quote".', 'type');
 
   } catch (error: unknown) {
     return handleApiError(error, 'market/api', 500);

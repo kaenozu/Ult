@@ -27,9 +27,9 @@ export class SignalGenerationService {
    * 最終的なシグナルを生成（市場相関と自己矯正を含む）
    */
   generateSignal(
-    stock: Stock, 
-    data: OHLCV[], 
-    prediction: ModelPrediction, 
+    stock: Stock,
+    data: OHLCV[],
+    prediction: ModelPrediction,
     indicators: TechnicalIndicatorsWithATR, // TechnicalIndicator & { atr: number[] }
     indexData?: OHLCV[]
   ): Signal {
@@ -38,15 +38,15 @@ export class SignalGenerationService {
 
     // 1. 市場相関分析 (Market Sync)
     const { marketInfo, confidenceAdj, marketComment } = this.analyzeMarketCorrelation(
-      stock, 
-      data, 
-      indexData, 
+      stock,
+      data,
+      indexData,
       prediction.ensemblePrediction
     );
 
     // Apply signal quality thresholds for better accuracy
     const finalConfidence = Math.min(
-      Math.max(prediction.confidence + confidenceAdj, SIGNAL_THRESHOLDS.MIN_CONFIDENCE), 
+      Math.max(prediction.confidence + confidenceAdj, SIGNAL_THRESHOLDS.MIN_CONFIDENCE),
       PRICE_CALCULATION.MAX_CONFIDENCE
     );
     const isStrong = finalConfidence >= SIGNAL_THRESHOLDS.HIGH_CONFIDENCE;
@@ -56,7 +56,7 @@ export class SignalGenerationService {
     // Use dynamic thresholds based on confidence level
     const predictionThreshold = finalConfidence >= SIGNAL_THRESHOLDS.HIGH_CONFIDENCE ? 0.8 : 1.2;
     const minConfidenceForSignal = Math.max(BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE, SIGNAL_THRESHOLDS.MIN_CONFIDENCE);
-    
+
     if (prediction.ensemblePrediction > predictionThreshold && finalConfidence >= minConfidenceForSignal) {
       type = 'BUY';
     } else if (prediction.ensemblePrediction < -predictionThreshold && finalConfidence >= minConfidenceForSignal) {
@@ -78,7 +78,7 @@ export class SignalGenerationService {
       // 予測騰落率かATRの大きい方を採用し、信頼度により調整
       const confidenceMultiplier = 0.7 + (finalConfidence / 100) * 0.6; // 0.7 to 1.3
       const move = Math.max(
-        currentPrice * (Math.abs(prediction.ensemblePrediction) / 100), 
+        currentPrice * (Math.abs(prediction.ensemblePrediction) / 100),
         atr * TARGET_MULTIPLIER
       ) * confidenceMultiplier;
       targetPrice = currentPrice + move;
@@ -86,7 +86,7 @@ export class SignalGenerationService {
     } else if (type === 'SELL') {
       const confidenceMultiplier = 0.7 + (finalConfidence / 100) * 0.6;
       const move = Math.max(
-        currentPrice * (Math.abs(prediction.ensemblePrediction) / 100), 
+        currentPrice * (Math.abs(prediction.ensemblePrediction) / 100),
         atr * TARGET_MULTIPLIER
       ) * confidenceMultiplier;
       targetPrice = currentPrice - move;
@@ -104,8 +104,8 @@ export class SignalGenerationService {
       stopLoss = type === 'BUY' ? currentPrice - drift : currentPrice + drift;
     }
 
-    const optParamsStr = baseAnalysis.optimizedParams 
-      ? `最適化設定(RSI:${baseAnalysis.optimizedParams.rsiPeriod}, SMA:${baseAnalysis.optimizedParams.smaPeriod}) ` 
+    const optParamsStr = baseAnalysis.optimizedParams
+      ? `最適化設定(RSI:${baseAnalysis.optimizedParams.rsiPeriod}, SMA:${baseAnalysis.optimizedParams.smaPeriod}) `
       : "";
     const reason = `${isStrong ? '【強気】' : '【注視】'}${optParamsStr}${this.generateBaseReason(type)} ${marketComment}${correctionComment}`;
 
@@ -115,21 +115,26 @@ export class SignalGenerationService {
     if (type === 'SELL' && finalPredictedChange > 0) finalPredictedChange = -Math.abs(finalPredictedChange);
     if (type === 'HOLD') finalPredictedChange = 0;
 
+    // Final safety check for NaN in target/stop
+    if (isNaN(targetPrice)) targetPrice = currentPrice;
+    if (isNaN(stopLoss)) stopLoss = currentPrice;
+
     return {
-      symbol: stock.symbol, 
+      symbol: stock.symbol,
       type,
       confidence: Math.round(finalConfidence),
       accuracy: baseAnalysis.accuracy,
       atr: baseAnalysis.atr,
-      targetPrice, 
-      stopLoss, 
+      targetPrice,
+      stopLoss,
       reason,
       predictedChange: parseFloat(finalPredictedChange.toFixed(2)),
       predictionDate: new Date().toISOString().split('T')[0],
       marketContext: marketInfo,
       optimizedParams: baseAnalysis.optimizedParams,
       predictionError: errorFactor,
-      volumeResistance: baseAnalysis.volumeResistance
+      volumeResistance: baseAnalysis.volumeResistance,
+      forecastCone: baseAnalysis.forecastCone
     };
   }
 
@@ -137,9 +142,9 @@ export class SignalGenerationService {
    * 市場相関分析
    */
   private analyzeMarketCorrelation(
-    stock: Stock, 
-    data: OHLCV[], 
-    indexData: OHLCV[] | undefined, 
+    stock: Stock,
+    data: OHLCV[],
+    indexData: OHLCV[] | undefined,
     prediction: number
   ): MarketCorrelationResult {
     if (!indexData || indexData.length < 20) {
@@ -154,7 +159,7 @@ export class SignalGenerationService {
       this.calculateReturns(data.slice(-30)),
       this.calculateReturns(indexData.slice(-30))
     );
-    
+
     const indexPrice = indexData[indexData.length - 1].close;
     const indexSMA20 = this.calculateSMA(indexData.map(d => d.close), 20)[indexData.length - 1] || indexPrice;
     const trendDeviation = 1 + MARKET_CORRELATION.TREND_DEVIATION;
@@ -167,13 +172,13 @@ export class SignalGenerationService {
       correlation,
       indexTrend
     };
-    
+
     const isAligned = (indexTrend === 'UP' && prediction > 0) || (indexTrend === 'DOWN' && prediction < 0);
     const isOpposed = (indexTrend === 'DOWN' && prediction > 0) || (indexTrend === 'UP' && prediction < 0);
 
     let confidenceAdj = 0;
     let marketComment = `市場全体（${marketInfo.indexSymbol}）との相関は ${correlation.toFixed(2)} です。`;
-    
+
     if (Math.abs(correlation) > SIGNAL_THRESHOLDS.STRONG_CORRELATION) {
       if (isAligned) {
         confidenceAdj = 10;
@@ -183,7 +188,7 @@ export class SignalGenerationService {
         marketComment = `市場全体は${indexTrend === 'UP' ? '好調' : '不調'}ですが、本銘柄は逆行(r=${correlation.toFixed(2)})しており警戒が必要です。`;
       }
     }
-    
+
     return { marketInfo, confidenceAdj, marketComment };
   }
 
@@ -201,10 +206,10 @@ export class SignalGenerationService {
   private calculateCorrelation(x: number[], y: number[]): number {
     const n = Math.min(x.length, y.length);
     if (n < 2) return 0;
-    
+
     const muX = x.reduce((a, b) => a + b, 0) / n;
     const muY = y.reduce((a, b) => a + b, 0) / n;
-    
+
     let num = 0, denX = 0, denY = 0;
     for (let i = 0; i < n; i++) {
       const dx = x[i] - muX;
@@ -213,7 +218,7 @@ export class SignalGenerationService {
       denX += dx * dx;
       denY += dy * dy;
     }
-    
+
     const den = Math.sqrt(denX) * Math.sqrt(denY);
     return den === 0 ? 0 : num / den;
   }
@@ -249,9 +254,9 @@ export class SignalGenerationService {
    * 複数の時間枠から整合性を確認し、より信頼性の高いシグナルを生成します。
    */
   async generateEnhancedSignalWithMultiTimeFrame(
-    stock: Stock, 
-    data: OHLCV[], 
-    prediction: ModelPrediction, 
+    stock: Stock,
+    data: OHLCV[],
+    prediction: ModelPrediction,
     indicators: TechnicalIndicatorsWithATR,
     dataByTimeFrame?: Map<string, OHLCV[]>, // TimeFrame -> OHLCV[]
     indexData?: OHLCV[]
@@ -286,7 +291,7 @@ export class SignalGenerationService {
       if (mtfAnalysis.divergenceDetected) {
         finalConfidence = Math.floor(enhancedConfidence * 0.75); // More conservative from 0.8
         additionalReason += ' ⚠ 複数時間枠間で乖離が検出されています。';
-        
+
         // 乖離が大きい場合はHOLDに変更（より保守的に）
         if (mtfAnalysis.alignment < 0.6) { // Increased from 0.5
           finalType = 'HOLD';
@@ -358,7 +363,7 @@ export class SignalGenerationService {
     if (indicators.macd && indicators.macd.histogram && indicators.macd.histogram.length > 1) {
       const currentHist = indicators.macd.histogram[indicators.macd.histogram.length - 1];
       const previousHist = indicators.macd.histogram[indicators.macd.histogram.length - 2];
-      
+
       if (signal.type === 'BUY' && currentHist > previousHist && currentHist > 0) {
         score += 10;
         reasons.push('MACDモメンタム加速中');
@@ -394,10 +399,10 @@ export class SignalGenerationService {
 
     // 市場相関による評価
     if (signal.marketContext && Math.abs(signal.marketContext.correlation) > SIGNAL_THRESHOLDS.STRONG_CORRELATION) {
-      const isAligned = 
+      const isAligned =
         (signal.type === 'BUY' && signal.marketContext.indexTrend === 'UP') ||
         (signal.type === 'SELL' && signal.marketContext.indexTrend === 'DOWN');
-      
+
       if (isAligned) {
         score += 15;
         reasons.push('市場トレンドと整合');

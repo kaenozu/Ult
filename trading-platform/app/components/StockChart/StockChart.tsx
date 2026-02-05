@@ -52,16 +52,16 @@ export const StockChart = memo(function StockChart({
 // 1. Data Preparation Hooks
   const { actualData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
-  const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
-    data: data, // 元のOHLCVデータを渡す
-    extendedData: { labels: actualData.labels, prices: actualData.prices }, // 実際のデータを渡す
-    signal,
-    market,
-    hoveredIdx,
-    accuracyData: accuracyData ? {
-      predictionError: accuracyData.predictionError || 1.0
-    } : null
-  });
+   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
+     data: data, // 元のOHLCVデータを渡す
+     extendedData: extendedData,
+     signal,
+     market,
+     hoveredIdx,
+     accuracyData: accuracyData ? {
+       predictionError: accuracyData.predictionError || 1.0
+     } : null
+   });
 
   // Get current SMA value for tooltip
   const currentSmaValue = useMemo(() => {

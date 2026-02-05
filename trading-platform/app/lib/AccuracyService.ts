@@ -474,7 +474,12 @@ class AccuracyService {
         directionalAccuracy: number;
         totalTrades: number;
     } | null {
-        if (data.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) return null;
+        if (data.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
+            console.warn('[calculateRealTimeAccuracy] Data insufficient:', { symbol, market, dataLength: data.length, minRequired: DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS });
+            return null;
+        }
+
+        console.log('[calculateRealTimeAccuracy]', { symbol, market, dataLength: data.length, startIndex: Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, 20) });
 
         const windowSize = 20;
         let hits = 0;
@@ -486,7 +491,7 @@ class AccuracyService {
 
         // ループ開始インデックスを修正
         const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, windowSize);
-        for (let i = startIndex; i < data.length - windowSize; i += 3) {
+        for (let i = startIndex; i < data.length - windowSize; i++) {
             // Optimized: Use full data + endIndex
             const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i,
@@ -508,11 +513,13 @@ class AccuracyService {
             total++;
         }
 
-        return {
+        const result = {
             hitRate: total > 0 ? Math.round((hits / total) * 100) : 0,
             directionalAccuracy: total > 0 ? Math.round((dirHits / total) * 100) : 0,
             totalTrades: total,
         };
+        console.log('[calculateRealTimeAccuracy] Result:', { symbol, market, ...result, hits, dirHits, total });
+        return result;
     }
 
     /**

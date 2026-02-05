@@ -112,7 +112,6 @@ padding: {
     },
     scales: {
       x: {
-        min: extendedData.labels.length > 105 ? extendedData.labels[extendedData.labels.length - 105] : undefined,
         grid: {
           color: (ctx: ChartContext) => {
             // Highlight vertical grid line at hovered position
