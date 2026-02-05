@@ -130,6 +130,16 @@ export function preloadComponent<T>(importFn: () => Promise<T>): void {
  * 次のページをプリロード
  */
 export function preloadNextPage(pagePath: string): void {
+  // Security: Block external URLs to prevent RCE via arbitrary module loading
+  if (pagePath.startsWith('http://') || pagePath.startsWith('https://') || pagePath.startsWith('//')) {
+    console.warn('[Security] Blocked external module preload:', pagePath);
+    return;
+  }
+  // Ensure it's a relative path within the app
+  if (!pagePath.startsWith('/')) {
+    console.warn('[Security] Blocked non-relative path:', pagePath);
+    return;
+  }
   preloadComponent(() => import(/* @vite-ignore */ pagePath));
 }
 

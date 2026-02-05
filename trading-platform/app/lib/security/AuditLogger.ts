@@ -74,12 +74,15 @@ class AuditLogger {
   private config: AuditLogConfig;
   private eventBuffer: AuditEvent[] = [];
   private flushInterval: ReturnType<typeof setInterval> | null = null;
+  private flushing = false;
   private lastHash: string = '0';
+  private encryptionKey: CryptoKey | null = null;
   
   constructor(config: Partial<AuditLogConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.startAutoFlush();
-    this.loadLastHash();
+    // Load last hash asynchronously without blocking construction
+    this.loadLastHash().catch(e => console.error('Failed to load audit log history:', e));
   }
   
   // ========================================================================
@@ -104,15 +107,15 @@ class AuditLogger {
     // バッファに追加
     this.eventBuffer.push(auditEvent);
     
-    // クリティカルイベントは即座に保存
-    if (event.riskLevel === 'CRITICAL') {
-      this.flush();
-    }
+     // クリティカルイベントは即座に保存
+     if (event.riskLevel === 'CRITICAL') {
+       this.flush().catch(e => console.error('Flush error:', e));
+     }
     
-    // バッファサイズチェック
-    if (this.eventBuffer.length >= 100) {
-      this.flush();
-    }
+     // バッファサイズチェック
+     if (this.eventBuffer.length >= 100) {
+       this.flush().catch(e => console.error('Flush error:', e));
+     }
     
     // アラートチェック
     this.checkAlert(auditEvent);
@@ -236,67 +239,64 @@ class AuditLogger {
   /**
    * バッファをストレージに保存
    */
-  flush(): void {
-    if (this.eventBuffer.length === 0) return;
-    
+  private async flush(): Promise<void> {
+    if (this.flushing || this.eventBuffer.length === 0) return;
+    this.flushing = true;
     try {
-      const existingLogs = this.loadLogs();
+      const existingLogs = await this.loadLogs();
       const allLogs = [...existingLogs, ...this.eventBuffer];
       
-      // 古いエントリを削除
       const cutoffTime = Date.now() - (this.config.retentionDays * 24 * 60 * 60 * 1000);
       const filteredLogs = allLogs.filter(log => log.timestamp > cutoffTime);
       
-      // 最大エントリ数を制限
       const trimmedLogs = filteredLogs.slice(-this.config.maxEntries);
       
-      // 保存
       const serialized = JSON.stringify(trimmedLogs);
+      let saveData: string;
       if (this.config.enableEncryption) {
-        SafeStorage.setItem('audit_logs', this.encrypt(serialized));
+        saveData = await this.encrypt(serialized);
       } else {
-        SafeStorage.setItem('audit_logs', serialized);
+        saveData = serialized;
       }
+      SafeStorage.setItem('audit_logs', saveData);
       
-      // バッファをクリア
       this.eventBuffer = [];
     } catch (error) {
       console.error('Failed to flush audit logs:', error);
+    } finally {
+      this.flushing = false;
     }
   }
   
   /**
    * ログをストレージから読み込み
    */
-  loadLogs(): AuditEvent[] {
+  private async loadLogs(): Promise<AuditEvent[]> {
     try {
       const stored = SafeStorage.getItem('audit_logs');
       if (!stored) return [];
-      
       const decrypted = this.config.enableEncryption
-        ? this.decrypt(stored)
+        ? await this.decrypt(stored)
         : stored;
-      
       const logs: AuditEvent[] = JSON.parse(decrypted);
-      
-      // 改ざん検証
       return this.verifyIntegrity(logs);
     } catch {
       return [];
     }
   }
+  }
   
   /**
    * ログを検索
    */
-  searchLogs(filters: {
+  async searchLogs(filters: {
     type?: AuditEventType;
     userId?: string;
     startTime?: number;
     endTime?: number;
     riskLevel?: AuditEvent['riskLevel'];
-  }): AuditEvent[] {
-    const logs = this.loadLogs();
+  }): Promise<AuditEvent[]> {
+    const logs = await this.loadLogs();
     
     return logs.filter(log => {
       if (filters.type && log.type !== filters.type) return false;
@@ -311,8 +311,8 @@ class AuditLogger {
   /**
    * ログをエクスポート
    */
-  exportLogs(format: 'JSON' | 'CSV' = this.config.exportFormat): string {
-    const logs = this.loadLogs();
+  async exportLogs(format: 'JSON' | 'CSV' = this.config.exportFormat): Promise<string> {
+    const logs = await this.loadLogs();
     
     if (format === 'CSV') {
       const headers = ['id', 'timestamp', 'type', 'outcome', 'userId', 'action', 'resource', 'riskLevel'];
@@ -328,6 +328,9 @@ class AuditLogger {
       ]);
       return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     }
+    
+    return JSON.stringify(logs, null, 2);
+  }
     
     return JSON.stringify(logs, null, 2);
   }
@@ -444,34 +447,85 @@ class AuditLogger {
   
   private startAutoFlush(): void {
     this.flushInterval = setInterval(() => {
-      this.flush();
+      this.flush().catch(e => console.error('Auto-flush error:', e));
     }, 30000); // 30秒ごと
   }
   
-  private loadLastHash(): void {
-    const logs = this.loadLogs();
-    if (logs.length > 0) {
-      this.lastHash = logs[logs.length - 1].hash || '0';
+  private async loadLastHash(): Promise<void> {
+    try {
+      const logs = await this.loadLogs();
+      if (logs.length > 0) {
+        this.lastHash = logs[logs.length - 1].hash || '0';
+      }
+    } catch (error) {
+      console.error('Failed to load last hash:', error);
     }
   }
   
-  private encrypt(data: string): string {
-    // 簡易暗号化（本番環境では適切な暗号化を使用）
-    return btoa(data);
+  private async encrypt(data: string): Promise<string> {
+    if (!this.encryptionKey) {
+      await this.deriveKey();
+    }
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(data);
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv },
+      this.encryptionKey!,
+      encoded
+    );
+    const encryptedBuffer = new Uint8Array(encrypted);
+    const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength);
+    combined.set(iv);
+    combined.set(encryptedBuffer, iv.length);
+    let binary = '';
+    for (let i = 0; i < combined.length; i++) {
+      binary += String.fromCharCode(combined[i]);
+    }
+    return btoa(binary);
   }
-  
-  private decrypt(data: string): string {
-    return atob(data);
+
+  private async decrypt(data: string): Promise<string> {
+    if (!this.encryptionKey) {
+      await this.deriveKey();
+    }
+    const binary = atob(data);
+    const combined = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      combined[i] = binary.charCodeAt(i);
+    }
+    const iv = combined.slice(0, 12);
+    const encrypted = combined.slice(12);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      this.encryptionKey!,
+      encrypted
+    );
+    const decryptedBuffer = new Uint8Array(decrypted);
+    return new TextDecoder().decode(decryptedBuffer);
+  }
+
+  private async deriveKey(): Promise<void> {
+    const secret = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_AUDIT_ENCRYPTION_KEY)
+      ? process.env.NEXT_PUBLIC_AUDIT_ENCRYPTION_KEY
+      : 'change-me-in-production';
+    const keyData = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret));
+    this.encryptionKey = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
   }
   
   /**
    * クリーンアップ
    */
-  destroy(): void {
+  async destroy(): Promise<void> {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
     }
-    this.flush();
+    await this.flush().catch(e => console.error('Destroy flush error:', e));
   }
 }
 
