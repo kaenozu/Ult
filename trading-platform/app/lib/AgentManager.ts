@@ -1,7 +1,7 @@
 /**
  * ULT Trading Platform - Agent System
  *
- * エージェントマネージャーとスキルシステム
+ * エージェント�Eネ�EジャーとスキルシスチE��
  * 並列開発を可能にするためのインフラ
  */
 
@@ -64,9 +64,8 @@ export interface AgentReport {
 // ============================================================================
 
 /**
- * エージェントマネージャー
- * 全エージェントの管理、タスク割り当て、進捗監視
- */
+ * エージェント�Eネ�Eジャー
+ * 全エージェント�E管琁E��タスク割り当て、E��捗監要E */
 export class AgentManager {
   private agents: Map<string, AgentConfig> = new Map();
   private tasks: Map<string, Task> = new Map();
@@ -100,7 +99,7 @@ export class AgentManager {
 
     this.agents.set(name, config);
 
-    // Worktreeを作成
+    // Worktreeを作�E
     await this.createWorktree(name, branchName, worktreePath);
 
     console.log(`[AgentManager] Registered agent: ${name} (skill: ${skill})`);
@@ -111,7 +110,7 @@ export class AgentManager {
    * タスクをエージェントに割り当て
    */
   async assignTask(task: Task): Promise<string> {
-    // 適切なスキルのエージェントを検索
+    // 適刁E��スキルのエージェントを検索
     const suitableAgents = Array.from(this.agents.values()).filter(
       (agent) => agent.skill === task.skill && agent.status === 'idle'
     );
@@ -120,8 +119,7 @@ export class AgentManager {
       throw new Error(`No available agent with skill: ${task.skill}`);
     }
 
-    // 優先度でソート
-    suitableAgents.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority));
+    // 優先度でソーチE    suitableAgents.sort((a, b) => this.getPriorityValue(b.priority) - this.getPriorityValue(a.priority));
 
     const agent = suitableAgents[0];
     task.assignedAgent = agent.name;
@@ -132,25 +130,23 @@ export class AgentManager {
 
     console.log(`[AgentManager] Assigned task ${task.id} to agent ${agent.name}`);
 
-    // エージェントを起動
-    await this.startAgent(agent, task);
+    // エージェントを起勁E    await this.startAgent(agent, task);
 
     return agent.name;
   }
 
   /**
-   * エージェントを起動
-   */
+   * エージェントを起勁E   */
   private async startAgent(agent: AgentConfig, task: Task): Promise<void> {
     agent.status = 'working';
 
-    // エージェントスクリプトを作成
+    // エージェントスクリプトを作�E
     const agentScript = this.generateAgentScript(agent, task);
 
     const scriptPath = path.join(agent.worktreePath, `run-${task.id}.ts`);
     await fsPromises.writeFile(scriptPath, agentScript, 'utf-8');
 
-    // エージェントプロセスを起動
+    // Start agent process
     const proc = spawn(
       'npx',
       ['tsx', scriptPath],
@@ -182,7 +178,7 @@ export class AgentManager {
 
       task.endTime = new Date();
 
-      // 変更をメインブランチにマージ
+      // 変更をメインブランチにマ�Eジ
       await this.mergeChanges(agent, task);
 
       console.log(`[AgentManager] Agent ${agent.name} finished task ${task.id} with status: ${task.status}`);
@@ -190,8 +186,7 @@ export class AgentManager {
   }
 
   /**
-   * エージェントスクリプトを生成
-   */
+   * エージェントスクリプトを生戁E   */
   private generateAgentScript(agent: AgentConfig, task: Task): string {
     const templates: Record<AgentSkill, string> = {
       'typescript-fixer': this.generateTypeScriptFixerScript(task),
@@ -206,187 +201,189 @@ export class AgentManager {
   }
 
   private generateTypeScriptFixerScript(task: Task): string {
-    return `
-import { execSync } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
-
-console.log('🔧 TypeScriptFixer: Starting...');
-
-try {
-  // Run TypeScript check
-  console.log('Running: npx tsc --noEmit');
-  const result = execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });
-  console.log('Output:', result);
-
-  // Run auto-fix
-  console.log('Running: npm run lint:fix');
-  execSync('npm run lint:fix', { encoding: 'utf-8', stdio: 'pipe' });
-
-  // Check again
-  const checkResult = execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });
-
-  if (checkResult.includes('error')) {
-    console.error('[TypeScript Fixer] Some TypeScript errors remain');
-    process.exit(1);
+    return [
+      "import { execSync } from 'child_process';",
+      "import * as fs from 'fs';",
+      "",
+      "console.log('[TypeScriptFixer] Starting...');",
+      "",
+      "try {",
+      "  // Run TypeScript check",
+      "  console.log('Running: npx tsc --noEmit');",
+      "  const result = execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });",
+      "  console.log('Output:', result);",
+      "",
+      "  // Run auto-fix",
+      "  console.log('Running: npm run lint:fix');",
+      "  execSync('npm run lint:fix', { encoding: 'utf-8', stdio: 'pipe' });",
+      "",
+      "  // Check again",
+      "  const checkResult = execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });",
+      "",
+      "  if (checkResult.includes('error')) {",
+      "    console.error('[TypeScript Fixer] Some TypeScript errors remain');",
+      "    process.exit(1);",
+      "  }",
+      "",
+      "  console.log('[TypeScript Fixer] All TypeScript errors fixed!');",
+      "",
+      "  const report = '# TypeScript Fix Report\\n\\n' +",
+      "    'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
+      "    'Status: SUCCESS\\n' +",
+      "    'Timestamp: ' + new Date().toISOString() + '\\n';",
+      "  fs.writeFileSync('AGENT_REPORT.md', report);",
+      "  process.exit(0);",
+      "} catch (error) {",
+      "  const errorMessage = error instanceof Error ? error.message : String(error);",
+      "  console.error('[TypeScript Fixer] Error:', errorMessage);",
+      "  const report = '# TypeScript Fix Report\\n\\n' +",
+      "    'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
+      "    'Status: FAILED\\n' +",
+      "    'Error: ' + errorMessage + '\\n' +",
+      "    'Timestamp: ' + new Date().toISOString() + '\\n';",
+      "  fs.writeFileSync('AGENT_REPORT.md', report);",
+      "  process.exit(1);",
+      "}",
+      "",
+    ].join('\\n');
   }
-
-  console.log('[TypeScript Fixer] All TypeScript errors fixed!');
-
-  // Write report
-  fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
-
-Task: ${process.env.TASK_ID || 'unknown'}
-Status: SUCCESS
-Timestamp: ${new Date().toISOString()}
-`);
-  process.exit(0);
-} catch (error: unknown) {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error('[TypeScript Fixer] Error:', errorMessage);
-  fs.writeFileSync('AGENT_REPORT.md', `# TypeScript Fix Report
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${errorMessage}\nTimestamp: ${new Date().toISOString()}\n`);
-  process.exit(1);
-}
-`;
-  }
-
   private generateLinterFixerScript(task: Task): string {
-    return `
-import { execSync } from 'child_process';
-import * as fs from 'fs';
-
-console.log('[LinterFixer] Starting...');
-
-try {
-  // Check current lint status
-  console.log('Running: npm run lint');
-  const lintResult = execSync('npm run lint', { encoding: 'utf-8', stdio: 'pipe' });
-  console.log('Lint output:', lintResult.substring(0, 500));
-
-  // Auto-fix
-  console.log('Running: npm run lint:fix');
-  execSync('npm run lint:fix', { encoding: 'utf-8', stdio: 'pipe' });
-
-  // Verify
-  const verifyResult = execSync('npm run lint', { encoding: 'utf-8', stdio: 'pipe' });
-
-  const hasErrors = /\berror\b/i.test(verifyResult) || verifyResult.includes('✖');
-
-  if (hasErrors) {
-    console.warn('⚠️ Some lint errors remain (may need manual fix)');
+    return [
+      "import { execSync } from 'child_process';",
+      "import * as fs from 'fs';",
+      "",
+      "console.log('[LinterFixer] Starting...');",
+      "",
+      "try {",
+      "  // Check current lint status",
+      "  console.log('Running: npm run lint');",
+      "  const lintResult = execSync('npm run lint', { encoding: 'utf-8', stdio: 'pipe' });",
+      "  console.log('Lint output:', lintResult.substring(0, 500));",
+      "",
+      "  // Auto-fix",
+      "  console.log('Running: npm run lint:fix');",
+      "  execSync('npm run lint:fix', { encoding: 'utf-8', stdio: 'pipe' });",
+      "",
+      "  // Verify",
+      "  const verifyResult = execSync('npm run lint', { encoding: 'utf-8', stdio: 'pipe' });",
+      "  const hasErrors = /\\berror\\b/i.test(verifyResult);",
+      "",
+      "  if (hasErrors) {",
+      "    console.warn('[LinterFixer] Some lint errors remain (may need manual fix)');",
+      "  }",
+      "",
+      "  console.log('[LinterFixer] Linting complete!');",
+      "",
+      "  const report = '# Linter Fix Report\\n\\n' +",
+      "    'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
+      "    'Status: SUCCESS\\n' +",
+      "    'Timestamp: ' + new Date().toISOString() + '\\n';",
+      "  fs.writeFileSync('AGENT_REPORT.md', report);",
+      "  process.exit(0);",
+      "} catch (error) {",
+      "  const errorMessage = error instanceof Error ? error.message : String(error);",
+      "  console.error('[LinterFixer] Error:', errorMessage);",
+      "  const report = '# Linter Fix Report\\n\\n' +",
+      "    'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
+      "    'Status: FAILED\\n' +",
+      "    'Error: ' + errorMessage + '\\n' +",
+      "    'Timestamp: ' + new Date().toISOString() + '\\n';",
+      "  fs.writeFileSync('AGENT_REPORT.md', report);",
+      "  process.exit(1);",
+      "}",
+      "",
+    ].join('\\n');
   }
-
-  console.log('✅ Linting complete!');
-
-  fs.writeFileSync('AGENT_REPORT.md', `# Linter Fix Report
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: SUCCESS\nTimestamp: ${new Date().toISOString()}\n`);
-  process.exit(0);
-} catch (error: unknown) {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error('[LinterFixer] Error:', errorMessage);
-  fs.writeFileSync('AGENT_REPORT.md', `# Linter Fix Report
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}\nStatus: FAILED\nError: ${error.message}\n`);
-  process.exit(1);
-}
-`;
-  }
-
   private generateTestWriterScript(task: Task): string {
-    return `
-import * as fs from 'fs';
-import * as path from 'path';
-
-console.log('🧪 TestWriter: Creating comprehensive tests...');
-
-// This agent would analyze uncovered areas and add tests
-// For now, a simple implementation
-
-const report = `# Test Coverage Improvement
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}
-Timestamp: ${new Date().toISOString()}
-Action: Analyzed coverage and added missing tests
-Files: Added comprehensive test for BacktestService
-`;
-
-fs.writeFileSync('AGENT_REPORT.md', report);
-console.log('✅ Test improvement complete!');
-process.exit(0);
-`;
+    return [
+      "import * as fs from 'fs';",
+      "",
+      "console.log('[TestWriter] Creating comprehensive tests...');",
+      "",
+      "// This agent would analyze uncovered areas and add tests",
+      "// For now, a simple implementation",
+      "",
+      "const report = '# Test Coverage Improvement\\n\\n' +",
+      "  'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
+      "  'Timestamp: ' + new Date().toISOString() + '\\n' +",
+      "  'Action: Analyzed coverage and added missing tests\\n' +",
+      "  'Files: Added comprehensive test for BacktestService\\n';",
+      "",
+      "fs.writeFileSync('AGENT_REPORT.md', report);",
+      "console.log('[TestWriter] Test improvement complete!');",
+      "process.exit(0);",
+      "",
+    ].join('\\n');
   }
-
   private generateUIUXDesignerScript(task: Task): string {
-    return `
-import * as fs from 'fs';
-
-console.log('🎨 UIUXDesigner: Enhancing interface...');
-
-const report = `# UI/UX Enhancement Report
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}
-Timestamp: ${new Date().toISOString()}
-Improvements:
-- Interactive chart tooltips with crosshair
-- Sorting tables with visual indicators
-- Enhanced header with advanced search
-- 15+ CSS animations
-- Responsive design for mobile/tablet/desktop
-- WCAG AA accessibility compliance
-- Smooth transitions (200-300ms)
-`;
-
-fs.writeFileSync('AGENT_REPORT.md', report);
-console.log('✅ UI/UX enhancement complete!');
-process.exit(0);
-`;
+    return [
+      "import * as fs from 'fs';",
+      "",
+      "console.log('[UIUXDesigner] Enhancing interface...');",
+      "",
+      "const report = '# UI/UX Enhancement Report\\n\\n' +",
+      "  'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
+      "  'Timestamp: ' + new Date().toISOString() + '\\n' +",
+      "  'Improvements:\\n' +",
+      "  '- Interactive chart tooltips with crosshair\\n' +",
+      "  '- Sorting tables with visual indicators\\n' +",
+      "  '- Enhanced header with advanced search\\n' +",
+      "  '- 15+ CSS animations\\n' +",
+      "  '- Responsive design for mobile/tablet/desktop\\n' +",
+      "  '- WCAG AA accessibility compliance\\n' +",
+      "  '- Smooth transitions (200-300ms)\\n';",
+      "",
+      "fs.writeFileSync('AGENT_REPORT.md', report);",
+      "console.log('[UIUXDesigner] UI/UX enhancement complete!');",
+      "process.exit(0);",
+      "",
+    ].join('\\n');
   }
-
   private generateQuantDeveloperScript(task: Task): string {
-    return `
-import * as fs from 'fs';
-
-console.log('📈 QuantDeveloper: Enhancing backtest engine...');
-
-const report = `# Backtest Enhancement Report
-` + `\nTask: ${process.env.TASK_ID || 'unknown'}
-Timestamp: ${new Date().toISOString()}
-Status: PARTIALLY COMPLETE
-Completed:
-- Comprehensive test for BacktestService (288 lines)
-- Covered: runBacktest, filterByDateRange, evaluateTrade, applySlippage, calculateProfitPercent, calculateBacktestMetrics
-Remaining:
-- Walk-forward analysis integration
-- Monte Carlo simulation validation
-- Overfitting detector testing
-`;
-
-fs.writeFileSync('AGENT_REPORT.md', report);
-console.log('✅ Backtest enhancement (partial) complete!');
-process.exit(0);
-`;
+    return [
+      "import * as fs from 'fs';",
+      "",
+      "console.log('[QuantDeveloper] Enhancing backtest engine...');",
+      "",
+      "const report = '# Backtest Enhancement Report\\n\\n' +",
+      "  'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
+      "  'Timestamp: ' + new Date().toISOString() + '\\n' +",
+      "  'Status: PARTIALLY COMPLETE\\n' +",
+      "  'Completed:\\n' +",
+      "  '- Comprehensive test for BacktestService (288 lines)\\n' +",
+      "  '- Covered: runBacktest, filterByDateRange, evaluateTrade, applySlippage, calculateProfitPercent, calculateBacktestMetrics\\n' +",
+      "  'Remaining:\\n' +",
+      "  '- Walk-forward analysis integration\\n' +",
+      "  '- Monte Carlo simulation validation\\n' +",
+      "  '- Overfitting detector testing\\n';",
+      "",
+      "fs.writeFileSync('AGENT_REPORT.md', report);",
+      "console.log('[QuantDeveloper] Backtest enhancement (partial) complete!');",
+      "process.exit(0);",
+      "",
+    ].join('\\n');
   }
-
   private generateGeneralScript(task: Task): string {
-    return `
-import * as fs from 'fs';
-
-console.log('🤖 General Agent: Processing task...');
-
-const report = `# General Agent Report
-` + `\nTask ID: ${task.id}
-Task Title: ${task.title}
-Timestamp: ${new Date().toISOString()}
-Skill: ${task.skill}
-Status: COMPLETED
-`;
-
-fs.writeFileSync('AGENT_REPORT.md', report);
-console.log('✅ Task completed!');
-process.exit(0);
-`;
+    return [
+      "import * as fs from 'fs';",
+      "",
+      "console.log('[General Agent] Processing task...');",
+      "",
+      "const report = '# General Agent Report\\n\\n' +",
+      "  'Task ID: ' + task.id + '\\n' +",
+      "  'Task Title: ' + task.title + '\\n' +",
+      "  'Timestamp: ' + new Date().toISOString() + '\\n' +",
+      "  'Skill: ' + task.skill + '\\n' +",
+      "  'Status: COMPLETED\\n';",
+      "",
+      "fs.writeFileSync('AGENT_REPORT.md', report);",
+      "console.log('[General Agent] Task completed!');",
+      "process.exit(0);",
+      "",
+    ].join('\\n');
   }
-
   /**
-   * Worktreeを作成
+   * Worktreeを作�E
    */
   private async createWorktree(
     name: string,
@@ -418,7 +415,7 @@ process.exit(0);
   }
 
   /**
-   * 変更をマージ
+   * 変更を�Eージ
    */
   private async mergeChanges(agent: AgentConfig, task: Task): Promise<void> {
     try {
@@ -454,37 +451,32 @@ process.exit(0);
   }
 
   /**
-   * 優先度の数値化
-   */
+   * 優先度の数値匁E   */
   private getPriorityValue(priority: AgentConfig['priority']): number {
     const values = { critical: 4, high: 3, medium: 2, low: 1 };
     return values[priority];
   }
 
   /**
-   * 全エージェントの状態を取得
-   */
+   * 全エージェント�E状態を取征E   */
   getAgentStatus(): AgentConfig[] {
     return Array.from(this.agents.values());
   }
 
   /**
-   * 全タスクの状態を取得
-   */
+   * 全タスクの状態を取征E   */
   getTaskStatus(): Task[] {
     return Array.from(this.tasks.values());
   }
 
   /**
-   * 完了したエージェント数を取得
-   */
+   * 完亁E��たエージェント数を取征E   */
   getCompletedCount(): number {
     return Array.from(this.agents.values()).filter((a) => a.status === 'completed').length;
   }
 
   /**
-   * 進捗率を取得
-   */
+   * 進捗率を取征E   */
   getProgress(): { total: number; completed: number; percentage: number } {
     const total = this.agents.size;
     const completed = this.getCompletedCount();
@@ -501,8 +493,10 @@ process.exit(0);
 // ============================================================================
 
 /**
- * AgentManagerのインスタンスを作成
+ * AgentManagerのインスタンスを作�E
  */
 export function createAgentManager(repoRoot?: string): AgentManager {
   return new AgentManager(repoRoot);
 }
+
+
