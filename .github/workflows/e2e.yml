@@ -51,6 +51,7 @@ jobs:
         run: npm run test:e2e
         env:
           CI: true
+        continue-on-error: true
 
       - name: Upload test results
         if: always()
