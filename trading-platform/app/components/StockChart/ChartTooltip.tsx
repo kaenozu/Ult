@@ -36,7 +36,7 @@ export const ChartTooltip = function ChartTooltip({
   const pricePosition = ((currentData.close - currentData.low) / dayRange) * 100;
 
   return (
-    <div className="absolute top-3 left-16 md:left-20 z-50 bg-[#1a2632]/95 border border-[#233648] rounded-lg shadow-2xl pointer-events-none backdrop-blur-md animate-fade-in-up min-w-[200px]">
+    <div className="absolute top-3 left-3 z-50 bg-[#1a2632]/95 border border-[#233648] rounded-lg shadow-2xl pointer-events-none backdrop-blur-md animate-fade-in-up min-w-[200px]">
       {/* Date/Time Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#233648]">
         <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
