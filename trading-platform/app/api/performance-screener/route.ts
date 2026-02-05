@@ -19,6 +19,8 @@ import { performanceScreenerService, StockDataSource } from '@/app/lib/Performan
 import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
 import { OHLCV } from '@/app/types';
 import { handleApiError } from '@/app/lib/error-handler';
+import { requireAuth } from '@/app/lib/auth';
+import { checkRateLimit } from '@/app/lib/api-middleware';
 
 // キャッシュ管理
 interface CacheEntry {
@@ -59,6 +61,10 @@ function createDataSources(): StockDataSource[] {
  * GET /api/performance-screener
  */
 export async function GET(request: NextRequest) {
+  // Rate limiting (Public endpoint but expensive)
+  const rateLimitResponse = checkRateLimit(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const searchParams = request.nextUrl.searchParams;
 
@@ -127,6 +133,10 @@ export async function GET(request: NextRequest) {
  * キャッシュをクリア
  */
 export async function POST(request: NextRequest) {
+  // Require authentication for administrative actions
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
   try {
     const { action } = await request.json();
 
