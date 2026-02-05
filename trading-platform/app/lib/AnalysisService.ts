@@ -89,7 +89,7 @@ class AnalysisService {
             bearish: { lower: bearishLower, upper: bearishUpper },
             bullish: { lower: bullishLower, upper: bullishUpper },
             base,
-            confidence: parseFloat(confidence.toFixed(1)),
+            confidence: parseFloat(confidence.toFixed(1))
         };
     }
 
