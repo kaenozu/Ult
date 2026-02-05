@@ -90,7 +90,7 @@ export async function monteCarloSimulation(
   const mcConfig: Partial<MonteCarloConfig> = {
     numSimulations: 100,
     confidenceLevel: 0.95,
-    resampleMethod: 'bootstrap',
+    method: 'bootstrap',
     randomSeed: 12345, // For reproducibility
   };
 
@@ -109,12 +109,10 @@ export async function monteCarloSimulation(
 
   // Run simulation
   const simulator = new MonteCarloSimulator(mcConfig);
-  const result = await simulator.runSimulation(
-    strategy,
-    data,
-    backtestConfig,
-    symbol
-  );
+  const engine = new RealisticBacktestEngine(backtestConfig);
+  engine.loadData(symbol, data);
+  const backtestResult = await engine.runBacktest(strategy, symbol);
+  const result = await simulator.runSimulation(backtestResult);
 
   // Display results
 
@@ -258,7 +256,7 @@ export async function completeWorkflow(
   const simulator = new MonteCarloSimulator({
     numSimulations: 100,
     confidenceLevel: 0.95,
-    resampleMethod: 'bootstrap',
+    method: 'bootstrap',
   });
 
   const backtestConfig: BacktestConfig = {
@@ -274,19 +272,17 @@ export async function completeWorkflow(
     riskPerTrade: 2,
   };
 
-  const mcResult = await simulator.runSimulation(
-    strategy,
-    testData,
-    backtestConfig,
-    symbol
-  );
+  const mcEngine = new RealisticBacktestEngine(backtestConfig);
+  mcEngine.loadData(symbol, testData);
+  const backtestResult = await mcEngine.runBacktest(strategy, symbol);
+  const mcResult = await simulator.runSimulation(backtestResult);
 
 
   // Step 7: Final decision
   const passWalkForward = wfResults.overallMetrics.winRate > 70;
   const notOverfitted = !overfitAnalysis.overfit;
-  const robustEnough = mcResult.robustnessScore > 0.6;
-  const probSuccess = mcResult.probabilityOfSuccess > 0.6;
+  const robustEnough = mcResult.riskAssessment.riskScore >= 60;
+  const probSuccess = mcResult.probabilities.probabilityOfProfit >= 60;
 
 
   const overallPass = passWalkForward && notOverfitted && robustEnough && probSuccess;

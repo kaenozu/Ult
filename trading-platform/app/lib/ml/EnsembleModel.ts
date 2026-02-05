@@ -12,6 +12,7 @@ import { OHLCV } from '../../types/shared';
  * モデルタイプ
  */
 export type ModelType = 'RF' | 'XGB' | 'LSTM' | 'TECHNICAL' | 'ENSEMBLE';
+type AdjustableModelType = Exclude<ModelType, 'ENSEMBLE'>;
 
 /**
  * モデルパフォーマンスメトリクス
@@ -73,6 +74,7 @@ interface EnsembleWeights {
   XGB: number;
   LSTM: number;
   TECHNICAL: number;
+  ENSEMBLE: number;
 }
 
 /**
@@ -80,8 +82,8 @@ interface EnsembleWeights {
  */
 export class EnsembleModel {
   private performanceHistory: Map<ModelType, ModelPerformance[]> = new Map();
-  private currentWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15 };
-  private baseWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15 };
+  private currentWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15, ENSEMBLE: 0 };
+  private baseWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15, ENSEMBLE: 0 };
   private lastRegimeUpdate: string = new Date().toISOString();
   private currentRegime: MarketRegime | null = null;
 
@@ -316,7 +318,7 @@ export class EnsembleModel {
    * 重みをパフォーマンスに基づいて更新
    */
   private updateWeightsBasedOnPerformance(): void {
-    const modelTypes: ModelType[] = ['RF', 'XGB', 'LSTM', 'TECHNICAL'];
+    const modelTypes: AdjustableModelType[] = ['RF', 'XGB', 'LSTM', 'TECHNICAL'];
 
     for (const modelType of modelTypes) {
       const history = this.performanceHistory.get(modelType);
@@ -330,12 +332,10 @@ export class EnsembleModel {
       const baselineAccuracy = 55; // 55%をベースラインとする
       const adjustment = (avgAccuracy - baselineAccuracy) / 100 * this.LEARNING_RATE;
 
-      // @ts-expect-error - 動的なアクセス
       this.currentWeights[modelType] = Math.max(
         this.MIN_WEIGHT,
         Math.min(
           this.MAX_WEIGHT,
-          // @ts-expect-error
           this.currentWeights[modelType] * (1 + adjustment)
         )
       );
@@ -350,11 +350,15 @@ export class EnsembleModel {
    */
   private normalizeWeights(weights: EnsembleWeights): EnsembleWeights {
     const total = weights.RF + weights.XGB + weights.LSTM + weights.TECHNICAL;
+    if (total === 0) {
+      return { ...weights };
+    }
     return {
       RF: weights.RF / total,
       XGB: weights.XGB / total,
       LSTM: weights.LSTM / total,
       TECHNICAL: weights.TECHNICAL / total,
+      ENSEMBLE: weights.ENSEMBLE,
     };
   }
 

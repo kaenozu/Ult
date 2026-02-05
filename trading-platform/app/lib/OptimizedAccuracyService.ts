@@ -131,8 +131,8 @@ export class OptimizedAccuracyService {
         }
 
         let bestAccuracy = -1;
-        let bestRsiPeriod = RSI_CONFIG.DEFAULT_PERIOD;
-        let bestSmaPeriod = SMA_CONFIG.MEDIUM_PERIOD;
+        let bestRsiPeriod: number = RSI_CONFIG.DEFAULT_PERIOD;
+        let bestSmaPeriod: number = SMA_CONFIG.MEDIUM_PERIOD;
 
         const closes = data.map(d => d.close);
         

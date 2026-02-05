@@ -411,7 +411,7 @@ export class EnhancedPsychologyMonitor {
     
     // 最近のセッションでの感情状態の変動を測定
     const recentSessions = this.sessions.slice(-10);
-    const emotionalScores = recentSessions.map(s => {
+    const emotionalScores: number[] = recentSessions.map(s => {
       switch (s.emotionalState) {
         case 'calm': return 0;
         case 'excited': return 50;

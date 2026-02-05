@@ -24,6 +24,7 @@ export interface EnhancedRiskMetrics extends RiskMetrics {
   sectorExposures: SectorExposure[];
   marketExposures: Map<string, number>;
   liquidity: number; // Portfolio liquidity score
+  correlationMatrix: Map<string, Map<string, number>>;
   concentration: {
     herfindahlIndex: number;
     effectivePositions: number;
