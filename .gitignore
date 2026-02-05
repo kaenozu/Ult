@@ -119,6 +119,7 @@ lerna-debug.log*
 *.avi
 *.mkv
 *.webm
+trading-platform/monkey-test-*.png
 
 # Database files
 *.db
