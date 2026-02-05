@@ -4,7 +4,8 @@ import dynamic from 'next/dynamic';
 import 'swagger-ui-react/swagger-ui.css';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
 
-const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false });
+// @ts-expect-error - swagger-ui-react types may not be installed
+const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false }) as React.ComponentType<{ url: string }>;
 
 export default function ApiDocPage() {
   return (

@@ -264,6 +264,13 @@ export interface DisciplineScoreProps {
   score: number;
   violations: DisciplineViolation[];
   showDetails?: boolean;
+  // Detailed score breakdown
+  overall: number;
+  planAdherence: number;
+  emotionalControl: number;
+  lossManagement: number;
+  journalConsistency: number;
+  coolingOffCompliance: number;
 }
 
 /**

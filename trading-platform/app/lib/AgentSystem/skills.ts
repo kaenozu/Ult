@@ -1,3 +1,10 @@
+import * as path from 'path';
+
+import * as fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 /**
  * ULT Trading Platform - Skill Definitions
  *
@@ -285,14 +292,10 @@ function generateAgentExecutionScript(task: TaskTemplate, skill: SkillDefinition
     "  console.log('Executing: ' + commands.join(', ') + '\\n');",
     '',
     '  const commandsOutput = commands.map((cmd, i) => {',
-    "    return '[Step ' + (i + 1) + '] Running: ' + cmd + '\\n' +" +
-      "      'try {\\n' +" +
-      "      \"  execSync('" + cmd + "', { encoding: 'utf-8', stdio: 'pipe' });\\n\" +" +
-      "      \"  console.log('[SUCCESS] ' + cmd);\\n\" +" +
-      "      '} catch (err) {\\n' +" +
-      "      \"  console.error('[FAILED] ' + cmd);\\n\" +" +
-      "      '  throw err;\\n' +" +
-      "      '}';",
+    '    return `[Step ${i + 1}] Running: ${cmd}` +',
+    '      `\\ntry {\\n  execSync(cmd, { encoding: \"utf-8\", stdio: \"pipe\" });` +',
+    '      `\\n  console.log(\"[SUCCESS] \" + cmd);` +',
+    '      `\\n} catch (err) {\\n  console.error(\"[FAILED] \" + cmd);\\n  throw err;\\n}`;',
     '  }).join("\\n\\n");',
     '  console.log(commandsOutput);',
     '',

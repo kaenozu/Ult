@@ -70,7 +70,7 @@ export class DataAggregator {
   private pendingRequests: Map<string, Promise<unknown>> = new Map();
 
   // Batch processing
-  private batchQueue: unknown[] = [];
+  private batchQueue: BatchRequest<unknown>[] = [];
   private batchTimer: NodeJS.Timeout | null = null;
   private batchOptions: BatchOptions;
 
@@ -363,9 +363,9 @@ export class DataAggregator {
       r => r.priority > request.priority
     );
     if (insertIndex === -1) {
-      this.batchQueue.push(request);
+      this.batchQueue.push(request as BatchRequest<unknown>);
     } else {
-      this.batchQueue.splice(insertIndex, 0, request);
+      this.batchQueue.splice(insertIndex, 0, request as BatchRequest<unknown>);
     }
 
     // Start batch timer if not running

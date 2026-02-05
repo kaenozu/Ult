@@ -23,6 +23,9 @@ export interface MonteCarloConfig {
 
   // シミュレーション方法
   method: 'trade_shuffling' | 'resampling' | 'bootstrap';
+  
+  // Alternative method name for compatibility
+  resampleMethod?: 'bootstrap' | 'trade_shuffling' | 'resampling';
 
   // コンフィデンスレベル
   confidenceLevel: 0.90 | 0.95 | 0.99;
@@ -332,11 +335,11 @@ export class MonteCarloSimulator extends EventEmitter {
 
     const maxDrawdown = this.calculateMaxDrawdown(equityCurve);
 
-    const winningTrades = trades.filter(t => t.pnl > 0);
+    const winningTrades = trades.filter(t => (t.pnl ?? 0) > 0);
     const winRate = trades.length > 0 ? (winningTrades.length / trades.length) * 100 : 0;
 
-    const grossProfit = winningTrades.reduce((sum, t) => sum + t.pnl, 0);
-    const grossLoss = Math.abs(trades.filter(t => t.pnl <= 0).reduce((sum, t) => sum + t.pnl, 0));
+    const grossProfit = winningTrades.reduce((sum, t) => sum + (t.pnl ?? 0), 0);
+    const grossLoss = Math.abs(trades.filter(t => (t.pnl ?? 0) <= 0).reduce((sum, t) => sum + (t.pnl ?? 0), 0));
     const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
 
     return {
@@ -355,7 +358,7 @@ export class MonteCarloSimulator extends EventEmitter {
       averageLoss: 0,
       largestWin: 0,
       largestLoss: 0,
-      averageTrade: trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0,
+      averageTrade: trades.length > 0 ? trades.reduce((sum, t) => sum + (t.pnl ?? 0), 0) / trades.length : 0,
       totalTrades: trades.length,
       winningTrades: winningTrades.length,
       losingTrades: trades.length - winningTrades.length,

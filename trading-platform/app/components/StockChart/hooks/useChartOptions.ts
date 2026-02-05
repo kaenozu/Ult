@@ -16,6 +16,9 @@ interface UseChartOptionsProps {
 
 interface ChartContext {
   index: number;
+  tick?: {
+    value: number;
+  };
 }
 
 export const useChartOptions = ({
@@ -147,10 +150,10 @@ export const useChartOptions = ({
         grid: {
           color: (ctx: ChartContext) => {
             // Highlight horizontal grid at hovered Y position
-            if (ctx.tick.value && hoveredIdx !== null && data[hoveredIdx]) {
+            if (ctx.tick?.value && hoveredIdx !== null && data[hoveredIdx]) {
               const price = data[hoveredIdx].close;
               // Check if this tick is approximately the current price
-              const tickValue = ctx.tick.value as number;
+              const tickValue = ctx.tick?.value as number;
               const priceDiff = Math.abs(tickValue - price);
               const priceRange = yAxisRange.max - yAxisRange.min;
               if (priceDiff / priceRange < 0.02) {
@@ -160,9 +163,9 @@ export const useChartOptions = ({
             return CHART_GRID.MAIN_COLOR;
           },
           lineWidth: (ctx: ChartContext) => {
-            if (ctx.tick.value && hoveredIdx !== null && data[hoveredIdx]) {
+            if (ctx.tick?.value && hoveredIdx !== null && data[hoveredIdx]) {
               const price = data[hoveredIdx].close;
-              const tickValue = ctx.tick.value as number;
+              const tickValue = ctx.tick?.value as number;
               const priceRange = yAxisRange.max - yAxisRange.min;
               if (Math.abs(tickValue - price) / priceRange < 0.02) {
                 return CHART_GRID.HOVER_LINE_WIDTH;

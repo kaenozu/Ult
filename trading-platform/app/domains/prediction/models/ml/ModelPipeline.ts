@@ -9,6 +9,7 @@
  * - Type confusion vulnerabilities
  */
 
+// @ts-expect-error - tensorflow types may not be installed
 import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 
@@ -214,9 +215,9 @@ export class ModelPipeline {
       batchSize: config.batchSize,
       validationData: [xVal, yVal],
       callbacks: {
-        onEpochEnd: (epoch, logs) => {
+        onEpochEnd: (epoch: number, logs: { loss?: number; valLoss?: number } | undefined) => {
           console.log(
-            `Epoch ${epoch + 1}: loss = ${logs?.loss.toFixed(4)}, val_loss = ${logs?.valLoss.toFixed(4)}`
+            `Epoch ${epoch + 1}: loss = ${logs?.loss?.toFixed(4)}, val_loss = ${logs?.valLoss?.toFixed(4)}`
           );
         },
       },
@@ -313,9 +314,9 @@ export class ModelPipeline {
       batchSize: config.batchSize,
       validationData: [xVal, yVal],
       callbacks: {
-        onEpochEnd: (epoch, logs) => {
+        onEpochEnd: (epoch: number, logs: { loss?: number; valLoss?: number } | undefined) => {
           console.log(
-            `Epoch ${epoch + 1}: loss = ${logs?.loss.toFixed(4)}, val_loss = ${logs?.valLoss.toFixed(4)}`
+            `Epoch ${epoch + 1}: loss = ${logs?.loss?.toFixed(4)}, val_loss = ${logs?.valLoss?.toFixed(4)}`
           );
         },
       },

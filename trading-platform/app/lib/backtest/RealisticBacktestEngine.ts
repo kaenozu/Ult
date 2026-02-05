@@ -21,6 +21,87 @@ import {
 } from './AdvancedBacktestEngine';
 import { SlippagePredictionService, OrderBook, OrderBookLevel } from '../execution/SlippagePredictionService';
 
+// Type definitions for realistic backtest
+export interface CommissionTier {
+  volumeThreshold: number;
+  rate: number;
+}
+
+export interface RealisticBacktestConfig extends BacktestConfig {
+  // Market impact settings
+  marketImpactEnabled?: boolean;
+  marketImpactFactor?: number;
+  marketImpactCoefficient?: number;
+  // Slippage settings
+  slippageModel?: 'static' | 'dynamic' | 'volume_based';
+  baseSlippage?: number;
+  useRealisticSlippage?: boolean;
+  averageDailyVolume?: number;
+  useTimeOfDaySlippage?: boolean;
+  marketOpenSlippageMultiplier?: number;
+  marketCloseSlippageMultiplier?: number;
+  useVolatilitySlippage?: boolean;
+  volatilityWindow?: number;
+  volatilitySlippageMultiplier?: number;
+  // Commission settings
+  commissionModel?: 'flat' | 'tiered' | 'percentage';
+  baseCommission?: number;
+  useTieredCommissions?: boolean;
+  commissionTiers?: CommissionTier[];
+  // Bid-ask spread
+  spreadEnabled?: boolean;
+  baseSpread?: number;
+  spread?: number;
+}
+
+export interface RealisticTradeMetrics extends Trade {
+  slippage: number;
+  commission: number;
+  marketImpact: number;
+  spread: number;
+  executionDelay: number;
+  effectivePrice: number;
+  effectiveSlippage: number;
+  quantity: number;
+}
+
+export interface RealisticBacktestResult {
+  trades: RealisticTradeMetrics[];
+  equityCurve: number[];
+  metrics: PerformanceMetrics;
+  realisticMetrics: {
+    totalSlippage: number;
+    totalCommission: number;
+    totalMarketImpact: number;
+    avgExecutionDelay: number;
+  };
+}
+
+export interface StrategyAction {
+  type: 'LONG' | 'SHORT' | 'CLOSE' | 'NONE';
+  size?: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  exitReason?: string;
+}
+
+const DEFAULT_REALISTIC_CONFIG: RealisticBacktestConfig = {
+  initialCapital: 1000000,
+  positionSizing: 'fixed_ratio',
+  positionSizePercent: 0.1,
+  maxPositionPercent: 0.25,
+  transactionCosts: 0.001,
+  slippage: 0.001,
+  marketImpactEnabled: true,
+  marketImpactFactor: 0.1,
+  slippageModel: 'dynamic',
+  baseSlippage: 0.0005,
+  commissionModel: 'tiered',
+  baseCommission: 0.001,
+  spreadEnabled: true,
+  baseSpread: 0.0002,
+};
+
 export class RealisticBacktestEngine extends EventEmitter {
   private config: RealisticBacktestConfig;
   private data: Map<string, OHLCV[]> = new Map();
@@ -41,8 +122,8 @@ export class RealisticBacktestEngine extends EventEmitter {
   private tradeTimestamps: number[] = [];
 
   constructor(config: Partial<RealisticBacktestConfig> = {}) {
-    const mergedConfig = { ...DEFAULT_REALISTIC_CONFIG, ...config } as BacktestConfig;
-    this.config = { ...(DEFAULT_REALISTIC_CONFIG as RealisticBacktestConfig), ...config } as RealisticBacktestConfig;
+    super();
+    this.config = { ...DEFAULT_REALISTIC_CONFIG, ...config } as RealisticBacktestConfig;
     this.realisticConfig = this.config;
     this.slippageService = new SlippagePredictionService();
     this.currentEquity = this.config.initialCapital;

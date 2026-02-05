@@ -118,6 +118,8 @@ export interface ModelPrediction {
 export interface Signal {
   symbol: string;
   type: 'BUY' | 'SELL' | 'HOLD';
+  /** Alias for type, for UI compatibility */
+  direction?: 'BUY' | 'SELL' | 'HOLD';
   confidence: number;
   accuracy?: number; // 過去の的中率 (%)
   atr?: number;      // 銘柄固有の変動幅
@@ -265,6 +267,35 @@ export interface Position {
   entryDate: string;
 }
 
+/**
+ * Emotion state for trading psychology tracking
+ */
+export interface EmotionState {
+  fear: number;      // 1-5 scale
+  greed: number;     // 1-5 scale
+  stress: number;    // 1-5 scale
+  confidence: number; // 1-5 scale
+}
+
+/**
+ * Trade plan for a journal entry
+ */
+export interface TradePlan {
+  targetPrice: number;
+  stopLoss?: number;
+  strategy?: string;
+  timeframe?: string;
+}
+
+/**
+ * Reflection after a trade
+ */
+export interface TradeReflection {
+  lessonsLearned?: string;
+  whatWentWell?: string;
+  whatToImprove?: string;
+}
+
 export interface JournalEntry {
   id: string;
   symbol: string;
@@ -277,6 +308,12 @@ export interface JournalEntry {
   profitPercent?: number;
   notes: string;
   status: 'OPEN' | 'CLOSED';
+  // Psychology tracking fields (optional)
+  emotionBefore?: EmotionState;
+  emotionAfter?: EmotionState;
+  tradePlan?: TradePlan;
+  followedPlan?: boolean;
+  reflection?: TradeReflection;
 }
 
 export interface Order {
@@ -330,6 +367,10 @@ export interface BacktestTrade {
   entryDate: string;
   exitDate?: string;
   profitPercent?: number;
+  /** Profit/Loss amount */
+  pnl?: number;
+  /** Quantity traded */
+  quantity?: number;
   status?: 'OPEN' | 'CLOSED';
   reason?: string;
   exitReason?: string;
@@ -930,3 +971,26 @@ export {
   ratioToPercentage,
 } from './branded';
 
+
+// Risk types re-export
+export type { MarketData, RiskMetrics } from './risk';
+
+// Additional types for market data services
+export interface HistoricalDataRequest {
+  symbol: string;
+  interval: string;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+}
+
+export interface RealtimeQuote {
+  symbol: string;
+  price: number;
+  bid?: number;
+  ask?: number;
+  volume: number;
+  timestamp: Date;
+  change?: number;
+  changePercent?: number;
+}

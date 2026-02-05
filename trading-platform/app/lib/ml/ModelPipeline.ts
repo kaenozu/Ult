@@ -4,6 +4,7 @@
  * Handles model training, loading, saving, and inference using TensorFlow.js
  */
 
+// @ts-expect-error - tensorflow types may not be installed
 import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 
@@ -43,7 +44,7 @@ export class ModelPipeline {
       batchSize: config.batchSize,
       validationData: [xVal, yVal],
       callbacks: {
-        onEpochEnd: (epoch, logs) => {
+        onEpochEnd: (epoch: number, logs: { loss?: number; valLoss?: number } | undefined) => {
           const loss = logs?.loss;
           const valLoss = logs?.valLoss;
           console.log(
@@ -140,7 +141,7 @@ export class ModelPipeline {
       batchSize: config.batchSize,
       validationData: [xVal, yVal],
       callbacks: {
-        onEpochEnd: (epoch, logs) => {
+        onEpochEnd: (epoch: number, logs: { loss?: number; valLoss?: number } | undefined) => {
           const loss = logs?.loss;
           const valLoss = logs?.valLoss;
           console.log(
