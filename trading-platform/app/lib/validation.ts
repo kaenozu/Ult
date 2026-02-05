@@ -138,6 +138,10 @@ export function validateSymbol(symbol: unknown): string {
 export function validateOrderSide(side: unknown): 'BUY' | 'SELL' {
   const validatedSide = validateRequiredString(side, 'side');
   
+  if (typeof validatedSide !== 'string') {
+    throw validationError('Invalid side: must be a string', 'side');
+  }
+  
   if (!['BUY', 'SELL'].includes(validatedSide)) {
     throw validationError('Invalid side: must be BUY or SELL', 'side');
   }
@@ -150,6 +154,10 @@ export function validateOrderSide(side: unknown): 'BUY' | 'SELL' {
  */
 export function validateOrderType(orderType: unknown): 'MARKET' | 'LIMIT' {
   const validatedType = validateRequiredString(orderType, 'orderType');
+  
+  if (typeof validatedType !== 'string') {
+    throw validationError('Invalid orderType: must be a string', 'orderType');
+  }
   
   if (!['MARKET', 'LIMIT'].includes(validatedType)) {
     throw validationError('Invalid orderType: must be MARKET or LIMIT', 'orderType');
@@ -302,30 +310,45 @@ export function buildCleanConfig(config: Record<string, unknown>): Record<string
   
   // モードの検証と設定
   if (config.mode) {
-    cleanConfig.mode = validateMode(config.mode);
+    const mode = validateMode(config.mode);
+    if (typeof mode === 'string') {
+      cleanConfig.mode = mode;
+    }
   }
   
   // 初期資本の検証と設定
   if (config.initialCapital !== undefined) {
-    cleanConfig.initialCapital = validateNumber(config.initialCapital, 'initialCapital', { positive: true });
+    const capital = validateNumber(config.initialCapital, 'initialCapital', { positive: true });
+    if (typeof capital === 'number') {
+      cleanConfig.initialCapital = capital;
+    }
   }
   
   // リスクリミットの検証と設定
   if (config.riskLimits !== undefined) {
-    cleanConfig.riskLimits = validateRiskLimits(config.riskLimits);
+    const limits = validateRiskLimits(config.riskLimits);
+    if (typeof limits === 'object' && limits !== null) {
+      cleanConfig.riskLimits = limits;
+    }
   }
   
   // 真偽値フィールドの検証と設定
   ['aiEnabled', 'sentimentEnabled', 'autoTrading'].forEach(field => {
     if (config[field] !== undefined) {
-      cleanConfig[field] = validateBoolean(config[field], field);
+      const boolValue = validateBoolean(config[field], field);
+      if (typeof boolValue === 'boolean') {
+        cleanConfig[field] = boolValue;
+      }
     }
   });
   
   // 配列フィールドの検証と設定
   ['exchanges', 'symbols'].forEach(field => {
     if (Array.isArray(config[field])) {
-      cleanConfig[field] = validateArray(config[field], field, item => validateRequiredString(item, field));
+      const arrayValue = validateArray(config[field], field, item => validateRequiredString(item, field));
+      if (Array.isArray(arrayValue)) {
+        cleanConfig[field] = arrayValue;
+      }
     }
   });
   

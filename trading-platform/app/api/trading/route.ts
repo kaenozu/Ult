@@ -298,6 +298,10 @@ export async function POST(req: NextRequest) {
         const side = validateOrderSide(body.side);
         const quantity = validateNumber(body.quantity, 'quantity', { positive: true });
         
+        if (typeof quantity !== 'number') {
+          return quantity; // Return validation error response
+        }
+        
         await platform.placeOrder(symbol, side, quantity, body.options);
         return NextResponse.json({ success: true });
       
@@ -312,6 +316,10 @@ export async function POST(req: NextRequest) {
         const type = validateRequiredString(body.type, 'type');
         const operator = mapToAlertOperator(validateOperator(body.operator));
         const value = validateNumber(body.value, 'value', { finite: true });
+        
+        if (typeof alertSymbol !== 'string' || typeof value !== 'number') {
+          return alertSymbol; // Return validation error response
+        }
         
         platform.createAlert(name, alertSymbol, type as AlertType, operator, value);
         return NextResponse.json({ success: true });
