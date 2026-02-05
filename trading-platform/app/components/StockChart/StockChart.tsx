@@ -144,6 +144,7 @@ export const StockChart = memo(function StockChart({
   }), [
     extendedData.labels,
     extendedData.prices,
+    actualData.prices,
     normalizedIndexData,
     forecastDatasets,
     ghostForecastDatasets,

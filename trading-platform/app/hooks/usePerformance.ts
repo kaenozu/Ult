@@ -371,7 +371,7 @@ export function usePropsMemo<T extends Record<string, unknown>>(
     return keys.some((key) => {
       return prevProps.current[key] !== props[key];
     });
-  }, keys.map((key) => props[key]));
+  }, [keys]);
   
   useEffect(() => {
     if (hasChanged) {
