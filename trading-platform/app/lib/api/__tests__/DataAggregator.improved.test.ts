@@ -151,7 +151,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       expect(jest.mocked(require('@/app/lib/api/idb').idbClient.mergeAndSave)).not.toHaveBeenCalled();
     });
 
-    test('should handle different intraday intervals', async () => => {
+    test('should handle different intraday intervals', async () => {
       const mockData5m = generateMockOHLCV(1000, 30);
       const mockData1h = generateMockOHLCV(1000, 30);
       

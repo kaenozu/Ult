@@ -1,7 +1,7 @@
 import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, TechnicalIndicator } from '@/app/types';
 import { ApiError as APIError, NetworkError, RateLimitError } from '@/app/lib/errors';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
-import { idbClient } from './idb';
+import { idbClient } from './idb-migrations';
 
 /**
  * Type alias for backward compatibility
@@ -71,13 +71,31 @@ class MarketDataClient {
   /**
    * Fetch Historical Data with Smart Persistence (IndexedDB + Delta fetching)
    * @param interval - Time interval for data (1m, 5m, 15m, 1h, 4h, 1d, etc.)
+   * @param forceRefresh - If true, skip cache/IDB and fetch fresh data from API
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string): Promise<FetchResult<OHLCV[]>> {
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string, forceRefresh: boolean = false): Promise<FetchResult<OHLCV[]>> {
     // Include interval in cache key to differentiate cached data by interval
     const cacheKey = `ohlcv-${symbol}-${interval || '1d'}`;
 
-    const cached = this.getFromCache<OHLCV[]>(cacheKey);
-    if (cached) return { success: true, data: cached, source: 'cache' };
+    if (!forceRefresh) {
+      const cached = this.getFromCache<OHLCV[]>(cacheKey);
+      if (cached) return { success: true, data: cached, source: 'cache' };
+
+      // Check IDB for non-intraday data
+      const isIntraday = interval && ['1m', '5m', '15m', '1h'].includes(interval);
+      if (!isIntraday) {
+        try {
+          const idbData = await idbClient.getData(symbol);
+          if (idbData && idbData.length > 0) {
+            const interpolatedData = this.interpolateOHLCV(idbData);
+            this.setCache(cacheKey, interpolatedData);
+            return { success: true, data: interpolatedData, source: 'idb' };
+          }
+        } catch (err) {
+          console.warn(`[Aggregator] Failed to read from IDB for ${symbol}:`, err);
+        }
+      }
+    }
 
     // Request Deduplication
     if (this.pendingRequests.has(cacheKey)) {

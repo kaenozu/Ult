@@ -146,9 +146,10 @@ export async function fetchOHLCV(
   market: 'japan' | 'usa' = 'japan',
   currentPrice?: number,
   signal?: AbortSignal,
-  interval?: string // New: interval parameter (1m, 5m, 15m, 1h, 4h, 1d, etc.)
+  interval?: string, // New: interval parameter (1m, 5m, 15m, 1h, 4h, 1d, etc.)
+  forceRefresh: boolean = false
 ): Promise<OHLCV[]> {
-  const result = await marketClient.fetchOHLCV(symbol, market, currentPrice, signal, interval);
+  const result = await marketClient.fetchOHLCV(symbol, market, currentPrice, signal, interval, forceRefresh);
   return result.data || [];
 }
 
