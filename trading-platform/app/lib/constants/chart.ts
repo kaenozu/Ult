@@ -1,9 +1,19 @@
 /**
  * Chart Configuration Constants
- * 
+ *
  * チャート表示に関する定数
  * Issue #522 - 定数一元化
  */
+
+// ============================================================================
+// Import dependencies from other constant files
+// ============================================================================
+
+import { SMA_CONFIG, BOLLINGER_BANDS } from './technical-indicators';
+
+// ============================================================================
+// Independent Constants
+// ============================================================================
 
 /**
  * Volume profile visualization
@@ -22,14 +32,6 @@ export const VOLUME_PROFILE = {
  */
 export const CHART_DIMENSIONS = {
   DEFAULT_HEIGHT: 500,
-} as const;
-
-/**
- * Chart colors
- */
-export const CHART_COLORS = {
-  INDEX_LINE: '#60a5fa',
-  INDEX_FILL: 'rgba(96, 165, 250, 0.05)',
 } as const;
 
 /**
@@ -58,11 +60,50 @@ export const CHART_GRID = {
 
 /**
  * Chart configuration
- * 
+ *
  * @deprecated MIN_DATA_POINTS is defined in DATA_REQUIREMENTS (common.ts).
  * Use DATA_REQUIREMENTS.MIN_DATA_POINTS instead.
  */
 export const CHART_CONFIG = {
   TENSION: 0.1,
   MIN_DATA_POINTS: 20, // Use DATA_REQUIREMENTS.MIN_DATA_POINTS
+} as const;
+
+// ============================================================================
+// Chart Colors - Backward Compatible Structure
+// ============================================================================
+
+/**
+ * Chart colors
+ *
+ * Provides both simplified main-branch structure and backward-compatible nested structure.
+ *
+ * Main branch simplified structure:
+ * - CHART_COLORS.INDEX_LINE
+ * - CHART_COLORS.INDEX_FILL
+ *
+ * Backward compatibility structure for legacy components:
+ * - CHART_COLORS.PRICE.{LINE, BACKGROUND}
+ * - CHART_COLORS.INDICATORS.{SMA, BOLLINGER, BOLLINGER_FILL}
+ * - CHART_COLORS.INDEX.{LINE, FILL}
+ */
+export const CHART_COLORS = {
+  // Simplified main structure
+  INDEX_LINE: '#60a5fa',
+  INDEX_FILL: 'rgba(96, 165, 250, 0.05)',
+
+  // Backward compatibility (nested structure)
+  PRICE: {
+    LINE: CANDLESTICK.MAIN_LINE_COLOR,
+    BACKGROUND: 'rgba(103, 232, 249, 0.1)',
+  },
+  INDICATORS: {
+    SMA: SMA_CONFIG.COLOR,
+    BOLLINGER: BOLLINGER_BANDS.UPPER_COLOR,
+    BOLLINGER_FILL: BOLLINGER_BANDS.UPPER_BACKGROUND,
+  },
+  INDEX: {
+    LINE: '#60a5fa',
+    FILL: 'rgba(96, 165, 250, 0.05)',
+  },
 } as const;

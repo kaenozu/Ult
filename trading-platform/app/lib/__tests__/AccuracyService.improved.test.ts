@@ -4,7 +4,17 @@
  */
 
 import { calculateAIHitRate, calculateRealTimeAccuracy } from '@/app/lib/AccuracyService';
-import { generateMockOHLCV } from '@/app/lib/__tests__/test-utils';
+import { MockMarketDataGenerator } from '@/app/lib/__tests__/test-utils';
+
+// Generate mock data helper
+const generateMockOHLCV = (basePrice: number, days: number) => {
+  return MockMarketDataGenerator.generateOHLCV({
+    count: days,
+    startPrice: basePrice,
+    volatility: 0.02,
+    trend: 'sideways'
+  });
+};
 
 // Mock constants
 jest.mock('@/app/lib/constants/common', () => ({

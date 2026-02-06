@@ -109,10 +109,14 @@ export const StockChart = memo(function StockChart({
   }, [data, sma20, upper, lower, showSMA, showBollinger]);
 
   // 2. Chart Configuration
-  const { options } = useChartOptions({
+  const options = useChartOptions({
+    data,
+    extendedData,
     market,
-    priceRange,
-    setHoveredIndex
+    hoveredIdx,
+    setHoveredIndex,
+    signal,
+    priceRange
   });
 
   const chartData = useMemo(() => ({
@@ -132,7 +136,7 @@ export const StockChart = memo(function StockChart({
       },
       ...(showSMA && sma20.length > 0 ? [
         {
-          label: `SMA (${SMA_CONFIG.PERIOD})`,
+          label: `SMA (${SMA_CONFIG.MEDIUM_PERIOD})`,
           data: sma20,
           borderColor: CHART_COLORS.INDICATORS.SMA,
           borderWidth: 1.5,
