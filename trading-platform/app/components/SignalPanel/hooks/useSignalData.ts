@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { Stock, Signal, PaperTrade } from '@/app/types';
 import { useAIStore } from '@/app/store/aiStore';
 import { useJournalStore } from '@/app/store/journalStore';
@@ -7,7 +7,7 @@ import { useSignalAlerts } from '@/app/hooks/useSignalAlerts';
 import { calculateAIStatusMetrics } from '../aiStatus';
 
 export function useSignalData(stock: Stock, signal: Signal | null) {
-  const { processAITrades, trades } = useAIStore();
+  const { toggleAI, trades } = useAIStore();
   const journal = useJournalStore((state) => state.journal);
   const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock);
 
@@ -27,17 +27,8 @@ export function useSignalData(stock: Stock, signal: Signal | null) {
     calculatingHitRate
   });
 
-  // Memoized process trades function
-  const processTradesCallback = useCallback(() => {
-    if (displaySignal && stock.price && processAITrades) {
-      processAITrades(stock.symbol, stock.price, displaySignal);
-    }
-  }, [displaySignal, stock.price, stock.symbol, processAITrades]);
-
-  // 閾ｪ蜍募｣ｲ雋ｷ繝励Ο繧ｻ繧ｹ繧偵ヨ繝ｪ繧ｬ繝ｼ - Use callback
-  useEffect(() => {
-    processTradesCallback();
-  }, [processTradesCallback]);
+  // AIPerformance handles signal evaluation, no need for processAITrades here
+  // removed processTradesCallback as it relied on non-existent processAITrades
 
   // Memoized trades transformation
   const aiTrades: PaperTrade[] = useMemo(() => {
@@ -77,5 +68,3 @@ export function useSignalData(stock: Stock, signal: Signal | null) {
     aiStatusData
   };
 }
-
-
