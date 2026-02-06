@@ -102,16 +102,13 @@ export const useForecastLayers = ({
     const lastIdx = data.length - 1;
     const currentPrice = data[lastIdx].close;
 
-    // Fallback signal if missing (ensure we render something)
-    const activeSignal = signal || {
-      type: 'HOLD' as const,
-      confidence: 50,
-      predictionError: 1.0,
-      atr: currentPrice * 0.02,
-      targetPrice: currentPrice,
-      stopLoss: currentPrice,
-      predictedChange: 0
-    };
+    // Only generate forecast if we have a proper signal
+    if (!signal) {
+      return [];
+    }
+
+    // Use the provided signal
+    const activeSignal = signal;
 
     const targetArr = new Array(extendedData.labels.length).fill(NaN);
     const stopArr = new Array(extendedData.labels.length).fill(NaN);

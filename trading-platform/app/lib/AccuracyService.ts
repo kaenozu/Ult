@@ -309,7 +309,17 @@ class AccuracyService {
             const startDate = data[0]?.date || new Date().toISOString();
             const endDate = data[data.length - 1]?.date || new Date().toISOString();
 
-            if (data.length < minPeriod) {
+            // Adapt to limited data: if data is less than minPeriod, adjust but warn
+            const effectiveMinPeriod = data.length >= minPeriod ? minPeriod : Math.max(30, data.length - 20);
+            const isDataLimited = data.length < minPeriod;
+
+            if (isDataLimited) {
+                console.warn(`[runBacktest] Data limited for ${symbol}: ${data.length} days (min recommended: ${minPeriod}). Using adaptive min period: ${effectiveMinPeriod}. Results may be less reliable.`);
+            }
+
+            // If data is critically short, we may not have enough for any trades
+            if (data.length < 40) { // Absolute minimum for any meaningful backtest
+                console.error(`[runBacktest] CRITICAL: Insufficient data for ${symbol}: ${data.length} days. Cannot perform backtest.`);
                 return {
                     symbol,
                     totalTrades: 0,
@@ -324,7 +334,8 @@ class AccuracyService {
                     sharpeRatio: 0,
                     trades: [],
                     startDate,
-                    endDate
+                    endDate,
+                    warning: 'データ不足のためバックテストを実行できません。最低40日分のデータが必要です。'
                 };
             }
 
@@ -346,7 +357,7 @@ class AccuracyService {
                 params: []
             };
 
-            for (let i = minPeriod; i < data.length - 1; i++) {
+            for (let i = effectiveMinPeriod; i < data.length - 1; i++) {
                 const nextDay = data[i + 1];
 
                 // Calculate start index to emulate original sliding window
@@ -489,18 +500,20 @@ class AccuracyService {
     /**
      * 過去的中率をリアルタイム計算（スライディングウィンドウ型）
      * データ期間を252日（1年分）に拡大して精度向上
+     * 動的にデータ長に合わせて計算範囲を調整
      */
     calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): {
         hitRate: number;
         directionalAccuracy: number;
         totalTrades: number;
     } | null {
-        if (data.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
-            console.warn('[calculateRealTimeAccuracy] Data insufficient:', { symbol, market, dataLength: data.length, minRequired: DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS });
+        const MIN_TOTAL_REQUIRED = 10; // Minimum trades for meaningful statistics
+        const MIN_DATA_FOR_ANY_CALCULATION = 30; // Absolute minimum days
+
+        if (data.length < MIN_DATA_FOR_ANY_CALCULATION) {
+            console.warn('[calculateRealTimeAccuracy] Data insufficient:', { symbol, market, dataLength: data.length, minRequired: MIN_DATA_FOR_ANY_CALCULATION });
             return null;
         }
-
-        console.log('[calculateRealTimeAccuracy]', { symbol, market, dataLength: data.length, startIndex: Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, 20) });
 
         const windowSize = 20;
         let hits = 0;
@@ -510,16 +523,49 @@ class AccuracyService {
         // Optimized: Pre-calculate indicators
         const preCalculatedIndicators = this.preCalculateIndicators(data);
 
-        // ループ開始インデックスを修正
-        const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, windowSize);
-        for (let i = startIndex; i < data.length - windowSize; i += 3) {
+        // Dynamically calculate start index based on available data
+        // We need at least windowSize (20) future days after the start index
+        // Desired start: at least LOOKBACK_PERIOD_DAYS (30) for indicator stability
+        const maxStartIndex = data.length - windowSize - 1;
+        const desiredStart = DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS;
+        const startIndex = Math.min(desiredStart, maxStartIndex);
+
+        if (startIndex >= data.length - windowSize) {
+            console.warn('[calculateRealTimeAccuracy] Not enough data for window calculation:', {
+                symbol,
+                market,
+                dataLength: data.length,
+                windowSize,
+                startIndex,
+                maxPossible: data.length - windowSize
+            });
+            return null;
+        }
+
+        console.log('[calculateRealTimeAccuracy]', {
+            symbol,
+            market,
+            dataLength: data.length,
+            startIndex,
+            endIndex: data.length - windowSize,
+            totalPossibleIterations: data.length - windowSize - startIndex
+        });
+
+        let iterationsWithHold = 0;
+        let iterationsWithSignal = 0;
+
+        for (let i = startIndex; i < data.length - windowSize; i += 1) {
             // Optimized: Use full data + endIndex
             const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i,
                 preCalculatedIndicators
             });
 
-            if (signal.type === 'HOLD') continue;
+            if (signal.type === 'HOLD') {
+                iterationsWithHold++;
+                continue;
+            }
+            iterationsWithSignal++;
 
             const future = data[i + windowSize];
             const priceChange = (future.close - data[i].close) / (data[i].close || 1);
@@ -543,7 +589,19 @@ class AccuracyService {
             directionalAccuracy: total > 0 ? Math.round((dirHits / total) * 100) : 0,
             totalTrades: total,
         };
-        console.log('[calculateRealTimeAccuracy] Result:', { symbol, market, ...result, hits, dirHits, total });
+        console.log('[calculateRealTimeAccuracy] Result:', {
+            symbol,
+            market,
+            ...result,
+            hits,
+            dirHits,
+            total,
+            iterationsWithHold,
+            iterationsWithSignal,
+            holdRatio: iterationsWithHold + iterationsWithSignal > 0
+                ? Math.round((iterationsWithHold / (iterationsWithHold + iterationsWithSignal)) * 100)
+                : 100
+        });
         return result;
     }
 
@@ -571,7 +629,7 @@ class AccuracyService {
 
         // ループ開始インデックスを修正
         const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, 10);
-        for (let i = startIndex; i < data.length - 10; i += step) {
+        for (let i = startIndex; i < data.length - 10; i += 1) {
             // Optimized: Use full data + endIndex
             const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i,

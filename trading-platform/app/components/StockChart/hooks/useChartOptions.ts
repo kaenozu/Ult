@@ -44,6 +44,7 @@ export const useChartOptions = ({
 
     if (data.length === 0) return { min: 0, max: 100 };
 
+    // Include forecast data in range calculation to ensure all data points are visible
     const lows = data.map(d => d.low);
     const highs = data.map(d => d.high);
     const minPrice = Math.min(...lows);

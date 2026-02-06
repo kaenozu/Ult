@@ -164,11 +164,12 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
 
       try {
         // Fetch historical data for accuracy calculation
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const startDate = oneYearAgo.toISOString().split('T')[0];
+        // Use 2 years to ensure sufficient data for backtest (min 60 days) and accuracy (min 30-50 days)
+        const twoYearsAgo = new Date();
+        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+        const startDate = twoYearsAgo.toISOString().split('T')[0];
 
-        console.log('[useSymbolAccuracy]', { symbol: currentSymbol, market: currentMarket, startDate });
+        console.log('[useSymbolAccuracy]', { symbol: currentSymbol, market: currentMarket, startDate, providedOHLCVCount: ohlcv.length });
 
         // Security: Use URLSearchParams to safely encode query parameters
         const params = new URLSearchParams({
@@ -193,15 +194,33 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         const result = await response.json();
         let historicalData = result.data || [];
 
-        // Check if we got enough data
-        if (historicalData.length < 200) {
-          console.warn(`[useSymbolAccuracy] Insufficient API data for ${currentSymbol}: ${historicalData.length} records. Accuracy might be low.`);
+        console.log('[useSymbolAccuracy] API returned:', { symbol: currentSymbol, dataLength: historicalData.length });
+
+        // STRATEGY: Use the best available data source
+        // 1. If API returned sufficient data (>= 60 days), use it
+        // 2. If API returned some data but insufficient (30-60 days), use it with warning
+        // 3. If API returned very little (< 30 days) and we have better OHLCV, use OHLCV
+        // 4. If both insufficient, try to combine or use best available
+
+        const MIN_DATA_FOR_ACCURACY = 30;  // Absolute minimum
+        const PREFERRED_DATA_LENGTH = 60;   // Preferred for reliable results
+
+        // Check if OHLCV is better than API data
+        const useOHLCV = ohlcv.length > historicalData.length && ohlcv.length >= MIN_DATA_FOR_ACCURACY;
+        const useAPI = historicalData.length >= MIN_DATA_FOR_ACCURACY;
+
+        if (useOHLCV) {
+          console.warn(`[useSymbolAccuracy] API returned insufficient data (${historicalData.length} days) for ${currentSymbol}. Using provided OHLCV data (${ohlcv.length} days) instead.`);
+          historicalData = ohlcv;
+        } else if (!useAPI && historicalData.length < MIN_DATA_FOR_ACCURACY) {
+          console.error(`[useSymbolAccuracy] CRITICAL: Insufficient data for ${currentSymbol}. API: ${historicalData.length} days, OHLCV: ${ohlcv.length} days. Cannot calculate accuracy.`);
+          setError('データが不足しています。精度計算には最低30日分の履歴データが必要です。');
+          setLoading(false);
+          return;
         }
 
-        // Fallback to provided OHLCV ONLY if API completely failed to give us *more* data than we had
-        if (historicalData.length < ohlcv.length && ohlcv.length > 0) {
-          console.warn(`[useSymbolAccuracy] API returned less data than provided OHLCV. Using provided OHLCV.`);
-          historicalData = ohlcv;
+        if (historicalData.length < PREFERRED_DATA_LENGTH) {
+          console.warn(`[useSymbolAccuracy] Warning: Data length ${historicalData.length} is below preferred ${PREFERRED_DATA_LENGTH}. Accuracy may be unreliable for ${currentSymbol}.`);
         }
 
         // Calculate accuracy metrics
@@ -209,7 +228,10 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
 
         if (!accuracyResult) {
           // Not enough data for accuracy calculation
-          setLoading(false);
+          // Only update loading if still the same symbol
+          if (stock.symbol === currentSymbol && stock.market === currentMarket) {
+            setLoading(false);
+          }
           return;
         }
 

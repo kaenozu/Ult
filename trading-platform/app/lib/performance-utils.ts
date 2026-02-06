@@ -156,7 +156,7 @@ export function measurePerformance<T>(
   fn: () => T,
   options: MeasureOptions = {}
 ): T {
-  const { threshold = 100 } = options;
+  const { threshold = 500 } = options;
   const start = performance.now();
 
   try {
@@ -196,7 +196,7 @@ export async function measurePerformanceAsync<T>(
   fn: () => Promise<T>,
   options: MeasureOptions = {}
 ): Promise<T> {
-  const { threshold = 100 } = options;
+  const { threshold = 500 } = options;
   const start = performance.now();
 
   try {
