@@ -18,8 +18,8 @@ export const YahooChartMetaSchema = z.object({
   regularMarketPrice: z.number().optional(),
   exchangeName: z.string().optional(),
   instrumentType: z.string().optional(),
-  firstTradeDate: z.union([z.number(), z.null()]).optional(),
-  regularMarketTime: z.number().optional(),
+  firstTradeDate: z.union([z.number(), z.date(), z.null()]).optional(),
+  regularMarketTime: z.union([z.number(), z.date()]).optional(),
   gmtoffset: z.number().optional(),
   timezone: z.string().optional(),
   exchangeTimezoneName: z.string().optional(),
@@ -43,7 +43,7 @@ export const YahooChartResultSchema = z.object({
       volume: z.array(z.number().nullable().optional()),
     })).optional(),
     adjclose: z.array(z.object({
-        adjclose: z.array(z.number().nullable().optional())
+      adjclose: z.array(z.number().nullable().optional())
     })).optional()
   }).optional()
 }).passthrough();
