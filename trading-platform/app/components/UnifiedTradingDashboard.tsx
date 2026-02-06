@@ -31,7 +31,6 @@ import {
 
 // Sub-components
 import { PortfolioPanel } from './PortfolioPanel';
-import { SignalPanel } from './SignalPanel';
 import { RiskPanel } from './RiskPanel';
 import { AlertPanel } from './AlertPanel';
 import { MarketDataPanel } from './MarketDataPanel';
@@ -61,14 +60,13 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
     reset,
     placeOrder,
     closePosition,
-    createAlert,
     updateConfig,
     isLoading,
     error,
   } = useUnifiedTrading(INITIAL_CONFIG);
 
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedSymbol, setSelectedSymbol] = useState('BTCUSD');
+  const [selectedSymbol, setSelectedSymbol] = useState(MARKET_DATA_SYMBOLS[0]);
 
   // Format currency (memoized)
   const formatCurrency = useCallback((value: number) => {
@@ -95,15 +93,6 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
       dailyPnL: portfolio.dailyPnL
     };
   }, [portfolio]);
-
-  // Memoize risk level
-  const riskLevel = useMemo(() => {
-    if (!riskMetrics) return '-';
-
-    if (riskMetrics.currentDrawdown > 10) return 'HIGH';
-    if (riskMetrics.currentDrawdown > 5) return 'MEDIUM';
-    return 'LOW';
-  }, [riskMetrics]);
 
   return (
     <div className="min-h-screen bg-[#0a0e14] text-white">
@@ -225,7 +214,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Risk Level</p>
+                  <p className="text-sm text-gray-400">Drawdown</p>
                   <p className={`text-2xl font-bold ${riskMetrics && riskMetrics.currentDrawdown > 10 ? 'text-red-400' :
                       riskMetrics && riskMetrics.currentDrawdown > 5 ? 'text-yellow-400' : 'text-green-400'
                     }`}>
