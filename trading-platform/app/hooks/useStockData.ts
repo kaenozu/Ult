@@ -164,11 +164,28 @@ export function useStockData() {
       }
 
       // 5. Background sync for long-term data (keep independent)
-      fetchOHLCV(stock.symbol, stock.market, undefined, controller.signal, apiInterval).catch(e => {
-        if (isMountedRef.current && !controller.signal.aborted) {
-          console.warn('Background sync failed:', e);
+      const syncInBackground = async (
+        sym: string,
+        mkt: 'japan' | 'usa',
+        setter: (data: OHLCV[]) => void,
+        label: string
+      ) => {
+        try {
+          const newData = await fetchOHLCV(sym, mkt, undefined, controller.signal, apiInterval, undefined, true);
+          if (isMountedRef.current && !controller.signal.aborted && newData.length > 0) {
+            setter(newData);
+          }
+        } catch (e) {
+          if (isMountedRef.current && !controller.signal.aborted) {
+            console.warn(`${label} background sync failed:`, e);
+          }
         }
-      });
+      };
+
+      // Sync stock data
+      syncInBackground(stock.symbol, stock.market, setChartData, 'Stock');
+      // Sync index data
+      syncInBackground(indexSymbol, stock.market, setIndexData, 'Index');
 
     } catch (err) {
       if (controller.signal.aborted || !isMountedRef.current) return;

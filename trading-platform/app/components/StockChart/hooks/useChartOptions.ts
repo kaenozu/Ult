@@ -44,9 +44,10 @@ export const useChartOptions = ({
 
     if (data.length === 0) return { min: 0, max: 100 };
 
-    const prices = data.map(d => d.close);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    const lows = data.map(d => d.low);
+    const highs = data.map(d => d.high);
+    const minPrice = Math.min(...lows);
+    const maxPrice = Math.max(...highs);
     const priceRange = maxPrice - minPrice;
 
     // 価格範囲に基づいて動的にマージンを設定（10%, 15%, 20%）

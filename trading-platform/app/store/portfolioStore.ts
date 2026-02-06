@@ -1,4 +1,3 @@
-// @ts-nocheck - Temporary
 import { useTradingStore } from './tradingStore';
 
 export const usePortfolioStore = () => {
@@ -10,7 +9,6 @@ export const usePortfolioStore = () => {
     const executeOrder = useTradingStore((state) => state.executeOrder);
     const closePosition = useTradingStore((state) => state.closePosition);
     const setCash = useTradingStore((state) => state.setCash);
-    const addJournalEntry = useTradingStore((state) => state.addJournalEntry);
     const updatePositionPrices = useTradingStore((state) => state.batchUpdateStockData);
 
     return {
@@ -21,7 +19,6 @@ export const usePortfolioStore = () => {
         executeOrder,
         closePosition,
         setCash,
-        addJournalEntry,
         updatePositionPrices,
     };
 };

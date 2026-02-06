@@ -21,17 +21,7 @@ jest.mock('react-chartjs-2', () => ({
 }));
 
 // Mock constants
-jest.mock('@/app/lib/constants/chart', () => ({
-  FORECAST_CONE: {
-    STEPS: 30,
-    ALPHA: 0.1,
-    CONFIDENCE_LEVELS: {
-      LOW: 0.68,
-      MEDIUM: 0.95,
-      HIGH: 0.99
-    }
-  }
-}));
+// Mock constants removed to use real values and avoid breaking chart-utils dependencies
 
 function generateMockOHLCV(startPrice: number, days: number): OHLCV[] {
   const data: OHLCV[] = [];
@@ -96,31 +86,31 @@ describe('useChartData Hook', () => {
       const mockData = generateMockOHLCV(1000, 120);
       const mockSignal = generateMockSignal('BUY');
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData(mockData, mockSignal, [])
       );
 
       expect(result.current.actualData.labels).toHaveLength(120);
       expect(result.current.actualData.prices).toHaveLength(120);
-      expect(result.current.forecastExtension.forecastPrices).toHaveLength(30);
-      expect(result.current.forecastExtension.extendedLabels).toHaveLength(150); // 120 actual + 30 forecast
+      expect(result.current.forecastExtension.forecastPrices).toHaveLength(60);
+      expect(result.current.forecastExtension.extendedLabels).toHaveLength(180); // 120 actual + 60 forecast
     });
 
     test('should return only actual data when no signal is provided', () => {
       const mockData = generateMockOHLCV(1000, 120);
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData(mockData, null, [])
       );
 
       expect(result.current.actualData.labels).toHaveLength(120);
       expect(result.current.actualData.prices).toHaveLength(120);
-      expect(result.current.forecastExtension.forecastPrices).toHaveLength(0);
-      expect(result.current.forecastExtension.extendedLabels).toHaveLength(120);
+      expect(result.current.forecastExtension.forecastPrices).toHaveLength(60);
+      expect(result.current.forecastExtension.extendedLabels).toHaveLength(180);
     });
 
     test('should handle empty data gracefully', () => {
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData([], null, [])
       );
 
@@ -136,7 +126,7 @@ describe('useChartData Hook', () => {
       const mockData = generateMockOHLCV(1000, 600);
       const mockSignal = generateMockSignal('BUY');
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData(mockData, mockSignal, [], 800) // 800px width
       );
 
@@ -150,7 +140,7 @@ describe('useChartData Hook', () => {
       const mockData = generateMockOHLCV(1000, 30);
       const mockSignal = generateMockSignal('BUY');
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData(mockData, mockSignal, [], 800)
       );
 
@@ -163,13 +153,13 @@ describe('useChartData Hook', () => {
       const mockData = generateMockOHLCV(1000, 600);
 
       // Test with narrow width
-      const { result: narrowResult } = renderHook(() => 
+      const { result: narrowResult } = renderHook(() =>
         useChartData(mockData, null, [], 400)
       );
       expect(narrowResult.current.actualData.labels.length).toBeLessThanOrEqual(200);
 
       // Test with wide width
-      const { result: wideResult } = renderHook(() => 
+      const { result: wideResult } = renderHook(() =>
         useChartData(mockData, null, [], 1200)
       );
       expect(wideResult.current.actualData.labels.length).toBeLessThanOrEqual(600);
@@ -181,27 +171,27 @@ describe('useChartData Hook', () => {
       const mockData = generateMockOHLCV(1000, 120);
       const mockSignal = generateMockSignal('BUY');
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData(mockData, mockSignal, [])
       );
 
       // Check that extendedData has the correct structure
       expect(result.current.extendedData.labels).toBeDefined();
       expect(result.current.extendedData.prices).toBeDefined();
-      
+
       // Extended data should include all labels (actual + forecast)
-      expect(result.current.extendedData.labels.length).toBe(150);
+      expect(result.current.extendedData.labels.length).toBe(180);
       // Extended data prices should only include actual prices (null for forecast)
-      expect(result.current.extendedData.prices.length).toBe(150);
+      expect(result.current.extendedData.prices.length).toBe(180);
       expect(result.current.extendedData.prices.slice(0, 120)).not.toContain(null);
-      expect(result.current.extendedData.prices.slice(120)).toEqual(new Array(30).fill(null));
+      expect(result.current.extendedData.prices.slice(120)).toEqual(new Array(60).fill(null));
     });
 
     test('should handle index data correctly', () => {
       const mockData = generateMockOHLCV(1000, 120);
       const mockIndexData = generateMockOHLCV(950, 120);
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData(mockData, null, mockIndexData)
       );
 
@@ -214,7 +204,7 @@ describe('useChartData Hook', () => {
     test('should handle single data point', () => {
       const mockData = generateMockOHLCV(1000, 1);
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData(mockData, null, [])
       );
 
@@ -226,7 +216,7 @@ describe('useChartData Hook', () => {
       // Generate 1000 days of data
       const mockData = generateMockOHLCV(1000, 1000);
 
-      const { result } = renderHook(() => 
+      const { result } = renderHook(() =>
         useChartData(mockData, null, [], 800)
       );
 
@@ -240,17 +230,17 @@ describe('useChartData Hook', () => {
       const mockSignal1 = generateMockSignal('BUY');
       const mockSignal2 = generateMockSignal('SELL');
 
-      const { result, rerender } = renderHook(({ data, signal, indexData }) => 
+      const { result, rerender } = renderHook(({ data, signal, indexData }) =>
         useChartData(data, signal, indexData)
-      , { initialProps: { data: mockData, signal: mockSignal1, indexData: [] } });
+        , { initialProps: { data: mockData, signal: mockSignal1, indexData: [] } });
 
       const initialForecastPrices = [...result.current.forecastExtension.forecastPrices];
-      expect(result.current.forecastExtension.forecastPrices).toHaveLength(30);
+      expect(result.current.forecastExtension.forecastPrices).toHaveLength(60);
 
       // Change signal type
       rerender({ data: mockData, signal: mockSignal2, indexData: [] });
 
-      expect(result.current.forecastExtension.forecastPrices).toHaveLength(30);
+      expect(result.current.forecastExtension.forecastPrices).toHaveLength(60);
       // Forecast prices should be different (regenerated)
       expect(result.current.forecastExtension.forecastPrices).not.toEqual(initialForecastPrices);
     });
@@ -282,12 +272,12 @@ describe('useChartData Hook', () => {
       const mockSignal1 = generateMockSignal('BUY');
       const mockSignal2 = generateMockSignal('SELL');
 
-      const { result, rerender } = renderHook(({ signal }) => 
+      const { result, rerender } = renderHook(({ signal }) =>
         useChartData(mockData, signal, [])
-      , { initialProps: { signal: mockSignal1 } });
+        , { initialProps: { signal: mockSignal1 } });
 
       const startTime = performance.now();
-      
+
       // Rapid signal changes
       for (let i = 0; i < 10; i++) {
         rerender({ signal: i % 2 === 0 ? mockSignal1 : mockSignal2 });

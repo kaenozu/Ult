@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, memo, useState, useMemo } from 'react';
+import { useRef, memo, useState, useMemo, useEffect } from 'react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
@@ -77,9 +77,10 @@ export const StockChart = memo(function StockChart({
 
     // 1. Current Price
     if (data.length > 0) {
-      const prices = data.map(d => d.close);
-      min = Math.min(min, ...prices);
-      max = Math.max(max, ...prices);
+      const lows = data.map(d => d.low);
+      const highs = data.map(d => d.high);
+      min = Math.min(min, ...lows);
+      max = Math.max(max, ...highs);
     }
 
     // 2. SMA
@@ -211,7 +212,7 @@ export const StockChart = memo(function StockChart({
   ]);
 
   // Force chart reset when data changes to ensure forecast is visible
-  useMemo(() => {
+  useEffect(() => {
     if (chartRef.current && extendedData.labels.length > 0) {
       chartRef.current.resetZoom();
     }
