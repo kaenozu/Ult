@@ -1009,4 +1009,4 @@ export interface AlertRule {
 }
 
 // TechnicalIndicators alias for backward compatibility
-export type TechnicalIndicators = TechnicalIndicator;
+// NOTE: TechnicalIndicators interface is defined above (line ~803)

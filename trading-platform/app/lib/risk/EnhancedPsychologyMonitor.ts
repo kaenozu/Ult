@@ -423,8 +423,9 @@ export class EnhancedPsychologyMonitor {
     });
     
     // 標準偏差を計算
-    const mean = emotionalScores.reduce((sum, s) => sum + s, 0) / emotionalScores.length;
-    const variance = emotionalScores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / emotionalScores.length;
+    const scoresArray = emotionalScores as number[];
+    const mean = scoresArray.reduce((sum, s) => sum + s, 0) / scoresArray.length;
+    const variance = scoresArray.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / scoresArray.length;
     
     return Math.min(100, Math.sqrt(variance));
   }

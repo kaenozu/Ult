@@ -48,3 +48,19 @@ export interface ModelPrediction {
   ensemblePrediction: number;
   confidence: number;
 }
+
+
+export interface EnhancedPrediction {
+  prediction: number;
+  confidence: number;
+  expectedValue: number;
+  kellyFraction: number;
+  recommendedPositionSize: number;
+  driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
+  marketRegime: {
+    trend: 'BULL' | 'BEAR' | 'SIDEWAYS';
+    volatility: 'LOW' | 'NORMAL' | 'HIGH';
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'INITIAL';
+  };
+  volatility: 'LOW' | 'NORMAL' | 'HIGH';
+}

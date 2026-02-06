@@ -5,7 +5,6 @@
  * using intelligent weighting and meta-learning.
  */
 
-// @ts-expect-error - tensorflow types may not be installed
 import * as tf from '@tensorflow/tfjs';
 import { ModelPipeline } from './ModelPipeline';
 import { EnsemblePrediction, TrainingData, ModelConfig, ModelPredictionResult } from './types';

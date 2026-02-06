@@ -5,7 +5,6 @@
  * Implements LSTM and GRU models for time series prediction
  */
 
-// @ts-expect-error - tensorflow types may not be installed
 import * as tf from '@tensorflow/tfjs';
 import { PredictionFeatures } from '../types';
 

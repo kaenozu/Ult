@@ -21,11 +21,16 @@ export class EnhancedMLService {
     // Create features from OHLCV data
     const features: PredictionFeatures = {
       rsi: this.calculateRSI(ohlcv),
-      macd: this.calculateMACD(ohlcv),
-      adx: this.calculateADX(ohlcv),
-      bbUpper: 0,
-      bbLower: 0,
-      sma: this.calculateSMA(ohlcv)
+      rsiChange: 0,
+      sma5: this.calculateSMA(ohlcv, 5),
+      sma20: this.calculateSMA(ohlcv, 20),
+      sma50: this.calculateSMA(ohlcv, 50),
+      priceMomentum: 0,
+      volumeRatio: 0,
+      volatility: 0,
+      macdSignal: this.calculateMACD(ohlcv),
+      bollingerPosition: 0,
+      atrPercent: 0,
     };
 
     // Simple prediction logic
@@ -64,10 +69,11 @@ export class EnhancedMLService {
     return 20 + Math.random() * 15;
   }
 
-  private calculateSMA(data: OHLCV[]): number {
+  private calculateSMA(data: OHLCV[], period: number = 20): number {
     // Simple SMA calculation
-    if (data.length === 0) return 0;
-    const sum = data.reduce((acc, d) => acc + d.close, 0);
-    return sum / data.length;
+    if (data.length < period) return 0;
+    const recentData = data.slice(-period);
+    const sum = recentData.reduce((acc, d) => acc + d.close, 0);
+    return sum / period;
   }
 }

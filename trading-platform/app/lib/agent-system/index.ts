@@ -4,7 +4,7 @@
  * Usage: npx tsx app/lib/agent-system/index.ts
  */
 
-import { main } from './launcher';
+import { main } from '../AgentSystem/launcher';
 
 // Execute the launcher
 main().catch((error) => {

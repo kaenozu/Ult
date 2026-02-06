@@ -126,6 +126,7 @@ export interface TaskTemplate {
   priority: 'low' | 'medium' | 'high' | 'critical';
   acceptanceCriteria: string[];
   subtasks?: TaskTemplate[];
+  branch?: string;
 }
 
 export const ULT_TASKS: TaskTemplate[] = [

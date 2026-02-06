@@ -265,8 +265,6 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
 
     const engine = new AdvancedBacktestEngine({
       ...this.config.backtest,
-      useRealisticSlippage: this.config.options.useRealisticSlippage,
-      averageDailyVolume: data.reduce((sum, d) => sum + d.volume, 0) / data.length,
     });
 
     engine.loadData(symbol, data);

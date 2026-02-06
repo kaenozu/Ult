@@ -9,7 +9,6 @@
  * - Type confusion vulnerabilities
  */
 
-// @ts-expect-error - tensorflow types may not be installed
 import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 

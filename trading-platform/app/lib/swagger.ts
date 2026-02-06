@@ -1,4 +1,3 @@
-// @ts-expect-error - swagger-jsdoc types not installed
 import swaggerJsdoc from 'swagger-jsdoc';
 
 const options: swaggerJsdoc.Options = {

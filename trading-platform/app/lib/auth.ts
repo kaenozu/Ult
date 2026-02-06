@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-// @ts-expect-error - jsonwebtoken types may not be installed
 import jwt from 'jsonwebtoken';
 import { getConfig } from './config/env-validator';
 

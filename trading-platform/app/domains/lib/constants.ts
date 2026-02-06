@@ -1,0 +1,23 @@
+/**
+ * Constants Module (Stub)
+ * 
+ * Trading platform constants
+ */
+
+export const BACKTEST_CONFIG = {
+  DEFAULT_INITIAL_CAPITAL: 1000000,
+  DEFAULT_MAX_POSITION_SIZE: 0.1,
+  DEFAULT_STOP_LOSS: 0.05,
+  DEFAULT_TAKE_PROFIT: 0.1,
+};
+
+export const PRICE_CALCULATION = {
+  PRECISION: 2,
+  MIN_PRICE: 0.01,
+};
+
+export const RISK_MANAGEMENT = {
+  MAX_DAILY_LOSS: 0.02,
+  MAX_POSITION_RISK: 0.01,
+  DEFAULT_RISK_REWARD_RATIO: 2,
+};

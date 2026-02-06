@@ -132,7 +132,7 @@ export class EnhancedPortfolioRiskMonitor {
       maxDrawdown,
       currentDrawdown,
       volatility,
-      correlationMatrix,
+      // correlationMatrix, // Not in EnhancedRiskMetrics interface
       alpha: 0, // Would need benchmark returns
       sectorExposures,
       marketExposures,
