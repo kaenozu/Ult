@@ -313,7 +313,11 @@ export async function POST(req: NextRequest) {
         const operator = mapToAlertOperator(validateOperator(body.operator));
         const value = validateNumber(body.value, 'value', { finite: true });
         
-        platform.createAlert(name, alertSymbol, type as AlertType, operator, value);
+         if (typeof name !== 'string') return name;
+         if (typeof type !== 'string') return type;
+         if (typeof value !== 'number') return value;
+         
+         platform.createAlert(name, alertSymbol, type as AlertType, operator, value);
         return NextResponse.json({ success: true });
       
       case 'update_config':
