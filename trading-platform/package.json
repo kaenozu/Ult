@@ -83,5 +83,8 @@
     "*.{json,md}": [
       "prettier --write"
     ]
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-wasm32-wasi": "4.1.18"
   }
 }
