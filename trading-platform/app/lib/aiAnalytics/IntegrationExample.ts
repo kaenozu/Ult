@@ -15,6 +15,7 @@ import { modelMonitor } from './ModelMonitor';
  * 
  * 従来の基本的な特徴量に加えて、21個の拡張特徴量を計算します。
  */
+import { logger } from '@/app/core/logger';
 export function calculateEnhancedFeatures(
   ohlcvData: OHLCV[],
   currentPrice: number,
@@ -33,12 +34,12 @@ export function calculateEnhancedFeatures(
 
     // 最も重要な特徴量トップ5を表示
     importance.slice(0, 5).forEach(item => {
-      console.log(`${item.name}: ${item.score.toFixed(4)}`);
+      logger.info(`${item.name}: ${item.score.toFixed(4)}`);
     });
 
     return features;
   } catch (error) {
-    console.error('Error calculating features:', error);
+    logger.error('Error calculating features:', error instanceof Error ? error : new Error(String(error)));
     throw error;
   }
 }
@@ -54,21 +55,21 @@ export function performEnsemblePrediction(
 ) {
   // 重み付き平均による予測
   const weightedPrediction = ensembleModel.predict(features, ohlcvData, 'weighted_average');
-  console.log(`(Score: ${weightedPrediction.score.toFixed(2)}, Confidence: ${(weightedPrediction.confidence * 100).toFixed(1)}%)`);
+  logger.info(`(Score: ${weightedPrediction.score.toFixed(2)}, Confidence: ${(weightedPrediction.confidence * 100).toFixed(1)}%)`);
 
   // スタッキングによる予測
   const stackingPrediction = ensembleModel.predict(features, ohlcvData, 'stacking');
-  console.log(`(Score: ${stackingPrediction.score.toFixed(2)}, Confidence: ${(stackingPrediction.confidence * 100).toFixed(1)}%)`);
+  logger.info(`(Score: ${stackingPrediction.score.toFixed(2)}, Confidence: ${(stackingPrediction.confidence * 100).toFixed(1)}%)`);
 
   // 投票による予測
   const votingPrediction = ensembleModel.predict(features, ohlcvData, 'voting');
-  console.log(`(Score: ${votingPrediction.score.toFixed(2)}, Confidence: ${(votingPrediction.confidence * 100).toFixed(1)}%)`);
+  logger.info(`(Score: ${votingPrediction.score.toFixed(2)}, Confidence: ${(votingPrediction.confidence * 100).toFixed(1)}%)`);
 
   // モデル間の合意度を確認
 
   // 個別モデルの予測を確認
   weightedPrediction.individualPredictions.forEach(pred => {
-    console.log(`Model: ${pred.model}, Value: ${pred.value.toFixed(2)}, Confidence: ${(pred.confidence * 100).toFixed(1)}%`);
+    logger.info(`Model: ${pred.model}, Value: ${pred.value.toFixed(2)}, Confidence: ${(pred.confidence * 100).toFixed(1)}%`);
   });
 
   return weightedPrediction;
@@ -88,12 +89,12 @@ export function validateModel(
   
   
   if (cvResult.isOverfitting) {
-    console.warn(`Overfitting Score: ${(cvResult.overfittingScore * 100).toFixed(1)}%`);
+    logger.warn(`Overfitting Score: ${(cvResult.overfittingScore * 100).toFixed(1)}%`);
   }
 
   // 各フォールドの結果
   cvResult.results.forEach(result => {
-    console.log(`F1 Score ${(result.f1Score * 100).toFixed(1)}%`);
+    logger.info(`F1 Score ${(result.f1Score * 100).toFixed(1)}%`);
   });
 
   return cvResult;
@@ -178,21 +179,21 @@ export function monitorPredictions(
 
   // ドリフトの検知
   if (stats.driftStatus) {
-    console.warn('MODEL DRIFT DETECTED:');
-    console.warn(`Type: ${stats.driftStatus.type}`);
-    console.warn(`Severity: ${stats.driftStatus.severity}`);
-    console.warn(`Drift: ${(stats.driftStatus.drift * 100).toFixed(1)}%`);
-    console.warn(`Recommended Action: ${stats.driftStatus.recommendedAction}`);
+    logger.warn('MODEL DRIFT DETECTED:');
+    logger.warn(`Type: ${stats.driftStatus.type}`);
+    logger.warn(`Severity: ${stats.driftStatus.severity}`);
+    logger.warn(`Drift: ${(stats.driftStatus.drift * 100).toFixed(1)}%`);
+    logger.warn(`Recommended Action: ${stats.driftStatus.recommendedAction}`);
   }
 
   // 再学習トリガーの確認
   const trigger = modelMonitor.getRetrainingTrigger();
   if (trigger) {
-    console.warn('RETRAINING RECOMMENDED:');
-    console.warn(`Reason: ${trigger.reason}`);
-    console.warn(`Urgency: ${trigger.urgency}`);
-    console.warn(`Current Accuracy: ${(trigger.metrics.currentAccuracy * 100).toFixed(1)}%`);
-    console.warn(`Performance Drop: ${trigger.metrics.performanceDropPercent.toFixed(1)}%`);
+    logger.warn('RETRAINING RECOMMENDED:');
+    logger.warn(`Reason: ${trigger.reason}`);
+    logger.warn(`Urgency: ${trigger.urgency}`);
+    logger.warn(`Current Accuracy: ${(trigger.metrics.currentAccuracy * 100).toFixed(1)}%`);
+    logger.warn(`Performance Drop: ${trigger.metrics.performanceDropPercent.toFixed(1)}%`);
   }
 }
 
@@ -213,7 +214,7 @@ export function updatePredictionActual(
   
   
   if (metrics.belowThreshold) {
-    console.warn('Performance is below threshold!');
+    logger.warn('Performance is below threshold!');
   }
 }
 
@@ -238,7 +239,7 @@ export function recordModelPerformance(
   // パフォーマンスサマリーを表示
   const summary = ensembleModel.getPerformanceSummary();
   summary.forEach(s => {
-    console.log(`Model: ${s.model}, Accuracy: ${(s.accuracy * 100).toFixed(1)}%, Weight: ${(s.weight * 100).toFixed(1)}%`);
+    logger.info(`Model: ${s.model}, Accuracy: ${(s.accuracy * 100).toFixed(1)}%, Weight: ${(s.weight * 100).toFixed(1)}%`);
   });
 }
 

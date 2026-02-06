@@ -9,6 +9,7 @@ import * as tf from '@tensorflow/tfjs';
 import { ModelPipeline } from './ModelPipeline';
 import { EnsemblePrediction, TrainingData, ModelConfig, ModelPredictionResult } from './types';
 
+import { logger } from '@/app/core/logger';
 export class EnsembleStrategy {
   private lstmPipeline: ModelPipeline;
   private transformerPipeline: ModelPipeline;
@@ -84,7 +85,7 @@ export class EnsembleStrategy {
       await this.lstmPipeline.loadModel('lstm-v1');
       await this.transformerPipeline.loadModel('transformer-v1');
     } catch (error) {
-      console.error('Error loading models:', error);
+      logger.error('Error loading models:', error instanceof Error ? error : new Error(String(error)));
       throw new Error('Failed to load ensemble models');
     }
   }

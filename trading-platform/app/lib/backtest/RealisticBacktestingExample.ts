@@ -29,6 +29,7 @@ import { OptimizationConfig } from '../optimization/types';
 // Example 1: Basic Realistic Backtest
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export async function basicRealisticBacktest(
   strategy: Strategy,
   data: OHLCV[],
@@ -371,7 +372,7 @@ export async function runAllExamples(data: OHLCV[], symbol: string = 'TEST'): Pr
     await completeWorkflow(strategy, data, symbol);
 
   } catch (error) {
-    console.error('Error running examples:', error);
+    logger.error('Error running examples:', error instanceof Error ? error : new Error(String(error)));
   }
 }
 

@@ -1,3 +1,4 @@
+import { logger } from '@/app/core/logger';
 /**
  * SmartDataCache
  * 
@@ -253,7 +254,7 @@ export class SmartDataCache<T = unknown> {
       const value = await strategy.fetcher(key);
       this.set(key, value as T);
     } catch (error) {
-      console.error(`Prefetch failed for key "${key}":`, error);
+      logger.error(`Prefetch failed for key "${key}":`, (error as Error) || new Error(String(error)));
     }
   }
 

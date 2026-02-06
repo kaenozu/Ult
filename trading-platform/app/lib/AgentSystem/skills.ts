@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
+import { logger } from '@/app/core/logger';
 const execAsync = promisify(exec);
 
 export interface SkillDefinition {
@@ -223,7 +224,7 @@ export async function launchAgent(
   taskId: string,
   worktreePath: string
 ): Promise<void> {
-  console.log(`噫 Launching agent ${agentName} for task ${taskId}`);
+  logger.info(`噫 Launching agent ${agentName} for task ${taskId}`);
 
   const task = ULT_TASKS.find((t) => t.id === taskId);
   if (!task) {
@@ -237,10 +238,10 @@ export async function launchAgent(
 
   const skill = SKILLS[task.skill];
 
-  console.log(`搭 Task: ${task.title}`);
-  console.log(`識 Skill: ${skill.name}`);
-  console.log(`竢ｱ・・Estimated: ${skill.estimatedTime}`);
-  console.log(`刀 Worktree: ${worktreePath}`);
+  logger.info(`搭 Task: ${task.title}`);
+  logger.info(`識 Skill: ${skill.name}`);
+  logger.info(`竢ｱ・・Estimated: ${skill.estimatedTime}`);
+  logger.info(`刀 Worktree: ${worktreePath}`);
 
   // Create agent execution script
   const script = generateAgentExecutionScript(task, skill);
@@ -249,7 +250,7 @@ export async function launchAgent(
   await fs.promises.writeFile(scriptPath, script, 'utf-8');
 
   // Execute agent
-  console.log(`\n[${agentName}] Starting execution...\n`);
+  logger.info(`\n[${agentName}] Starting execution...\n`);
 
   try {
     const { stdout, stderr } = await execAsync(`npx tsx ${scriptPath}`, {
@@ -257,13 +258,13 @@ export async function launchAgent(
       maxBuffer: 10 * 1024 * 1024, // 10MB
     });
 
-    if (stdout) console.log(stdout);
-    if (stderr) console.error(stderr);
+    if (stdout) logger.info(stdout);
+    if (stderr) logger.error(stderr);
 
-    console.log(`\n笨・Agent ${agentName} completed task ${taskId}`);
+    logger.info(`\n笨・Agent ${agentName} completed task ${taskId}`);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`\n笶・Agent ${agentName} failed: ${errorMessage}`);
+    logger.error(`\n笶・Agent ${agentName} failed: ${errorMessage}`);
     throw error;
   }
 }
@@ -280,30 +281,30 @@ function generateAgentExecutionScript(task: TaskTemplate, skill: SkillDefinition
     "import * as fs from 'fs';",
     "import * as path from 'path';",
     '',
-    `console.log('[Agent] Starting: ${task.title}');`,
-    `console.log('Description: ${task.description}');`,
-    'console.log(\'Acceptance Criteria:\');',
+    `logger.info('[Agent] Starting: ${task.title}');`,
+    `logger.info('Description: ${task.description}');`,
+    'logger.info(\'Acceptance Criteria:\');',
     `const acceptanceCriteria = ${JSON.stringify(task.acceptanceCriteria)};`,
-    "acceptanceCriteria.forEach((c) => console.log('  - ' + c));",
-    "console.log('\\n');",
+    "acceptanceCriteria.forEach((c) => logger.info('  - ' + c));",
+    "logger.info('\\n');",
     '',
     'try {',
     `  const commands = ${JSON.stringify(skill.commands)};`,
-    "  console.log('Executing: ' + commands.join(', ') + '\\n');",
+    "  logger.info('Executing: ' + commands.join(', ') + '\\n');",
     '',
     '  const commandsOutput = commands.map((cmd, i) => {',
     "    return '[Step ' + (i + 1) + '] Running: ' + cmd + '\\n' +" +
       "      'try {\\n' +" +
       "      \"  execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });\\n\" +" +
-      "      \"  console.log('[SUCCESS] ' + cmd);\\n\" +" +
+      "      \"  logger.info('[SUCCESS] ' + cmd);\\n\" +" +
       "      '} catch (err) {\\n' +" +
-      "      \"  console.error('[FAILED] ' + cmd);\\n\" +" +
+      "      \"  logger.error('[FAILED] ' + cmd);\\n\" +" +
       "      '  throw err;\\n' +" +
       "      '}';",
     '  }).join("\\n\\n");',
-    '  console.log(commandsOutput);',
+    '  logger.info(commandsOutput);',
     '',
-    "  console.log('\\n[Agent] All commands completed successfully!');",
+    "  logger.info('\\n[Agent] All commands completed successfully!');",
     '',
     "  const report = '# Agent Execution Report\\n\\n' +" +
       `    '- Task: ${task.title}\\n' +` +
@@ -313,11 +314,11 @@ function generateAgentExecutionScript(task: TaskTemplate, skill: SkillDefinition
       "    '- Acceptance Criteria: ALL MET\\n';",
     "  fs.writeFileSync('AGENT_EXECUTION_REPORT.md', report);",
     '',
-    "  console.log('[Report] Generated: AGENT_EXECUTION_REPORT.md');",
+    "  logger.info('[Report] Generated: AGENT_EXECUTION_REPORT.md');",
     '',
     '} catch (error) {',
     '  const errorMessage = error instanceof Error ? error.message : String(error);',
-    "  console.error('\\n[Agent] Failed:', errorMessage);",
+    "  logger.error('\\n[Agent] Failed:', errorMessage);",
     '',
     "  const failReport = '# Agent Execution Report (FAILED)\\n\\n' +" +
       `    '- Task: ${task.title}\\n' +` +
@@ -339,7 +340,7 @@ function generateAgentExecutionScript(task: TaskTemplate, skill: SkillDefinition
 /**
  * 縺吶∋縺ｦ縺ｮ繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝医ｒ荳ｦ蛻苓ｵｷ蜍・ */
 export async function launchAllAgents(worktreeBasePath: string): Promise<void> {
-  console.log('噫 Launching all agents in parallel...\\n');
+  logger.info('噫 Launching all agents in parallel...\\n');
 
   const promises = ULT_TASKS.map(async (task, index) => {
     const agentName = `agent-${index+1}-${task.id}`;
@@ -347,15 +348,15 @@ export async function launchAllAgents(worktreeBasePath: string): Promise<void> {
 
     try {
       await launchAgent(agentName, task.id, worktreePath);
-      console.log(`笨・${agentName} completed\n`);
+      logger.info(`笨・${agentName} completed\n`);
     } catch (error) {
-      console.error(`笶・${agentName} failed: ${error}\n`);
+      logger.error(`笶・${agentName} failed: ${error}\n`);
     }
   });
 
   await Promise.all(promises);
 
-  console.log('脂 All agents finished!');
+  logger.info('脂 All agents finished!');
 }
 
 // Default export

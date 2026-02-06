@@ -1,3 +1,4 @@
+import { logger } from '@/app/core/logger';
 ﻿/**
  * ULT Trading Platform - Agent System Entry Point
  *
@@ -8,7 +9,7 @@ import { main } from '../AgentSystem/launcher';
 
 // Execute the launcher
 main().catch((error: unknown) => {
-  console.error('笶・Agent system failed:', error);
+  logger.error('笶・Agent system failed:', error instanceof Error ? error : new Error(String(error)));
   process.exit(1);
 });
 

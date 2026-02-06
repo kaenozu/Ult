@@ -11,6 +11,7 @@ import { useEffect, useRef, useCallback } from 'react';
 // 型定義
 // =============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface PerformanceMetric {
   avg: number;
   min: number;
@@ -78,7 +79,7 @@ export function measurePerformance<T>(name: string, fn: () => T): T {
     return result;
   } catch (error) {
     const duration = performance.now() - start;
-    console.error(`[Performance] ${name} failed after ${duration.toFixed(2)}ms:`, error);
+    logger.error(`[Performance] ${name} failed after ${duration.toFixed(2)}ms:`, (error as Error) || new Error(String(error)));
     throw error;
   }
 }
@@ -107,7 +108,7 @@ export async function measurePerformanceAsync<T>(
     return result;
   } catch (error) {
     const duration = performance.now() - start;
-    console.error(`[Performance] ${name} failed after ${duration.toFixed(2)}ms:`, error);
+    logger.error(`[Performance] ${name} failed after ${duration.toFixed(2)}ms:`, (error as Error) || new Error(String(error)));
     throw error;
   }
 }
@@ -180,7 +181,7 @@ export function usePerformanceMonitor(
     return () => {
       if (trackUnmount && mountTimeRef.current) {
         const lifeTime = performance.now() - mountTimeRef.current;
-        console.log(
+        logger.info(
           `[Lifecycle] ${componentName} unmounted after ${lifeTime.toFixed(2)}ms ` +
           `(${renderCountRef.current} renders)`
         );
@@ -196,12 +197,12 @@ export function usePerformanceMonitor(
 
       if (lastRenderTimeRef.current) {
         const timeSinceLastRender = now - lastRenderTimeRef.current;
-        console.log(
+        logger.info(
           `[Render] ${componentName} #${renderCountRef.current} ` +
           `(${timeSinceLastRender.toFixed(2)}ms since last render)`
         );
       } else {
-        console.log(`[Render] ${componentName} #${renderCountRef.current} (first render)`);
+        logger.info(`[Render] ${componentName} #${renderCountRef.current} (first render)`);
       }
 
       lastRenderTimeRef.current = now;

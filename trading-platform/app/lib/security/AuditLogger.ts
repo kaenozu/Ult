@@ -11,6 +11,7 @@ import { SafeStorage } from './XSSProtection';
 // 監査ログ型定義
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export type AuditEventType = 
   | 'AUTH_LOGIN'
   | 'AUTH_LOGOUT'
@@ -82,7 +83,7 @@ class AuditLogger {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.startAutoFlush();
     // Load last hash asynchronously without blocking construction
-    this.loadLastHash().catch(e => console.error('Failed to load audit log history:', e));
+    this.loadLastHash().catch(e => logger.error('Failed to load audit log history:', e));
   }
   
   // ========================================================================
@@ -109,12 +110,12 @@ class AuditLogger {
     
      // クリティカルイベントは即座に保存
      if (event.riskLevel === 'CRITICAL') {
-       this.flush().catch(e => console.error('Flush error:', e));
+       this.flush().catch(e => logger.error('Flush error:', e));
      }
     
      // バッファサイズチェック
      if (this.eventBuffer.length >= 100) {
-       this.flush().catch(e => console.error('Flush error:', e));
+       this.flush().catch(e => logger.error('Flush error:', e));
      }
     
     // アラートチェック
@@ -262,7 +263,7 @@ class AuditLogger {
       
       this.eventBuffer = [];
     } catch (error) {
-      console.error('Failed to flush audit logs:', error);
+      logger.error('Failed to flush audit logs:', error instanceof Error ? error : new Error(String(error)));
     } finally {
       this.flushing = false;
     }
@@ -367,7 +368,7 @@ class AuditLogger {
     
     for (const log of logs) {
       if (log.previousHash !== expectedPreviousHash) {
-        console.warn(`Audit log chain broken at event ${log.id}`);
+        logger.warn(`Audit log chain broken at event ${log.id}`);
         // 改ざん検知イベントを記録
         this.logSuspiciousActivity(
           undefined,
@@ -380,7 +381,7 @@ class AuditLogger {
       // ハッシュを再計算して検証
       const recalculatedHash = this.calculateHash({ ...log, hash: undefined });
       if (recalculatedHash !== log.hash) {
-        console.warn(`Audit log hash mismatch at event ${log.id}`);
+        logger.warn(`Audit log hash mismatch at event ${log.id}`);
         this.logSuspiciousActivity(
           undefined,
           'Audit log hash mismatch detected',
@@ -421,7 +422,7 @@ class AuditLogger {
   
   private triggerAlert(event: AuditEvent): void {
     // アラートをコンソールに出力（本番環境では通知サービスへ）
-    console.warn(`[AUDIT ALERT] ${event.riskLevel}: ${event.action}`, {
+    logger.warn(`[AUDIT ALERT] ${event.riskLevel}: ${event.action}`, {
       eventId: event.id,
       userId: event.userId,
       timestamp: new Date(event.timestamp).toISOString(),
@@ -443,7 +444,7 @@ class AuditLogger {
   
   private startAutoFlush(): void {
     this.flushInterval = setInterval(() => {
-      this.flush().catch(e => console.error('Auto-flush error:', e));
+      this.flush().catch(e => logger.error('Auto-flush error:', e));
     }, 30000); // 30秒ごと
   }
   
@@ -454,7 +455,7 @@ class AuditLogger {
         this.lastHash = logs[logs.length - 1].hash || '0';
       }
     } catch (error) {
-      console.error('Failed to load last hash:', error);
+      logger.error('Failed to load last hash:', error instanceof Error ? error : new Error(String(error)));
     }
   }
   
@@ -521,7 +522,7 @@ class AuditLogger {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
     }
-    await this.flush().catch(e => console.error('Destroy flush error:', e));
+    await this.flush().catch(e => logger.error('Destroy flush error:', e));
   }
 }
 

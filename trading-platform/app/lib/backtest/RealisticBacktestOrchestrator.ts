@@ -17,6 +17,7 @@ import { MonteCarloSimulator, MonteCarloConfig, MonteCarloResult } from './Monte
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface RealisticBacktestConfig {
   // 基本バックテスト設定
   backtest: BacktestConfig;
@@ -205,7 +206,7 @@ export class RealisticBacktestOrchestrator extends EventEmitter {
 
       this.emit('walkforward_complete', walkForwardReport);
     } else if (this.config.options.runWalkForward) {
-      console.warn('[RealisticBacktestOrchestrator] Insufficient data for walk-forward analysis');
+      logger.warn('[RealisticBacktestOrchestrator] Insufficient data for walk-forward analysis');
     }
 
     // 3. モンテカルロシミュレーション

@@ -1,3 +1,4 @@
+import { logger } from '@/app/core/logger';
 /**
  * Environment Variable Validation Utility
  * 
@@ -171,10 +172,10 @@ export function validateEnvironment(): EnvironmentConfig {
     };
   } catch (error) {
     if (error instanceof EnvironmentValidationError) {
-      console.error('❌ Environment Validation Failed:');
-      console.error(`   ${error.message}`);
-      console.error('\nPlease check your .env.local file and ensure all required variables are set.');
-      console.error('See .env.example for reference.\n');
+      logger.error('❌ Environment Validation Failed:');
+      logger.error(`   ${error.message}`);
+      logger.error('\nPlease check your .env.local file and ensure all required variables are set.');
+      logger.error('See .env.example for reference.\n');
       throw error;
     }
     throw error;

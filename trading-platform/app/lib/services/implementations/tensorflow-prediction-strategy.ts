@@ -17,6 +17,7 @@ import {
  * Default TensorFlow prediction strategy
  * Coordinates multiple TensorFlow models for ensemble predictions
  */
+import { logger } from '@/app/core/logger';
 export class TensorFlowPredictionStrategy implements ITensorFlowPredictionStrategy {
   private useTensorFlowModels = false;
 
@@ -103,7 +104,7 @@ export class TensorFlowPredictionStrategy implements ITensorFlowPredictionStrate
     } catch (error) {
       // Log error but don't expose implementation details
       if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        console.error('TensorFlow prediction error:', error);
+        logger.error('TensorFlow prediction error:', error instanceof Error ? error : new Error(String(error)));
       }
       throw error;
     }

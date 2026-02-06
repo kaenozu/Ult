@@ -32,6 +32,7 @@ import { RISK_MANAGEMENT } from '../constants/risk-management';
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface RiskValidationResult {
   allowed: boolean;
   reasons: string[];
@@ -453,7 +454,7 @@ export class RiskManagementService {
     
     // Log any actions taken
     if (actions.length > 0) {
-      console.warn('[RiskManagement] Automatic actions triggered:', actions);
+      logger.warn('[RiskManagement] Automatic actions triggered:', actions);
     }
     
     return riskMetrics;

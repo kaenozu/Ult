@@ -22,6 +22,7 @@ import { BacktestConfig, BacktestResult, Strategy } from './backtest/AdvancedBac
 /**
  * Momentum戦略のパラメータを最適化する例
  */
+import { logger } from '@/app/core/logger';
 export async function optimizeMomentumStrategy(
   data: OHLCV[],
   backtestConfig: BacktestConfig
@@ -105,7 +106,7 @@ export async function compareStrategies(
   // 結果を比較
   
   results.forEach(({ name, result }) => {
-    console.log(
+    logger.info(
       name.padEnd(30) +
       `${result.metrics.totalReturn.toFixed(2)}%`.padEnd(15) +
       result.metrics.sharpeRatio.toFixed(2).padEnd(10) +
@@ -115,7 +116,7 @@ export async function compareStrategies(
 
   // Buy & Holdと比較
   const buyAndHoldResult = createBuyAndHoldResult(data, backtestConfig);
-    console.log(
+    logger.info(
       'Buy & Hold'.padEnd(30) +
       `${buyAndHoldResult.metrics.totalReturn.toFixed(2)}%`.padEnd(15) +
       buyAndHoldResult.metrics.sharpeRatio.toFixed(2).padEnd(10) +
@@ -252,7 +253,7 @@ export async function analyzeSensitivity(
 
 
   sensitivity.forEach(result => {
-    console.log(
+    logger.info(
       result.parameter.padEnd(20) +
       result.baseScore.toFixed(2).padEnd(15) +
       result.sensitivity.toFixed(4)
@@ -377,7 +378,7 @@ export async function runAllExamples(): Promise<void> {
     await walkForwardValidation(data, backtestConfig);
     await analyzeSensitivity(data, backtestConfig);
   } catch (error) {
-    console.error('エラーが発生しました:', error);
+    logger.error('エラーが発生しました:', error);
   }
 
 }

@@ -7,6 +7,7 @@
 
 import { ModelPerformance, ModelPredictionResult } from './types';
 
+import { logger } from '@/app/core/logger';
 export interface PredictionRecord {
   id: string;
   timestamp: Date;
@@ -59,7 +60,7 @@ export class PredictionQualityMonitor {
   updateActual(predictionId: string, actualValue: number): void {
     const record = this.predictions.get(predictionId);
     if (!record) {
-      console.warn(`Prediction ${predictionId} not found`);
+      logger.warn(`Prediction ${predictionId} not found`);
       return;
     }
 

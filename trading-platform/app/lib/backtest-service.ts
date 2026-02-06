@@ -6,6 +6,7 @@
 
 import { OHLCV, Stock, Signal, BacktestResult, BacktestTrade } from '../types';
 
+import { logger } from '@/app/core/logger';
 interface BacktestPosition {
   symbol: string;
   type: 'LONG' | 'SHORT';
@@ -122,7 +123,7 @@ class BacktestService {
             }
           }
         } catch (error) {
-          console.error('Error during backtest simulation:', error);
+          logger.error('Error during backtest simulation:', error instanceof Error ? error : new Error(String(error)));
           // エラーが発生しても処理を続ける
         }
       }

@@ -1,6 +1,7 @@
 import type { OHLCV } from '@/app/types';
 import { MarketHistoryResponseSchema } from '@/app/lib/schemas/market';
 
+import { logger } from '@/app/core/logger';
 export interface MarketHistoryMetadata {
   source?: string;
   isJapaneseStock?: boolean;
@@ -61,7 +62,7 @@ export async function fetchMarketHistory(
   const parseResult = MarketHistoryResponseSchema.safeParse(rawPayload);
 
   if (!parseResult.success) {
-    console.error('[MarketDataFetcher] Invalid API Response Schema:', JSON.stringify(parseResult.error.format(), null, 2));
+    logger.error('[MarketDataFetcher] Invalid API Response Schema:', new Error(JSON.stringify(parseResult.error.format(), null, 2)));
     throw new Error('Received invalid market data format from API');
   }
 

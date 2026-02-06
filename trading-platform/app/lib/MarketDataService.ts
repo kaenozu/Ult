@@ -17,6 +17,7 @@ import type { MarketData as QualityMarketData } from '@/app/types/data-quality';
  * @property name - 市場名
  * @property market - 市場区分（'japan' | 'usa'）
  */
+import { logger } from '@/app/core/logger';
 export interface MarketIndex {
   symbol: string;
   name: string;
@@ -115,7 +116,7 @@ export class MarketDataService {
 
       this.isInitialized = true;
     } catch (error) {
-      console.warn('[MarketDataService] Failed to initialize persistence:', error);
+      logger.warn('[MarketDataService] Failed to initialize persistence:', error instanceof Error ? error : new Error(String(error)));
       this.persistenceEnabled = false;
     }
   }
@@ -176,7 +177,7 @@ export class MarketDataService {
           }
         }
       } catch (error) {
-        console.warn(`[MarketDataService] Failed to load persisted data:`, error);
+        logger.warn(`[MarketDataService] Failed to load persisted data:`, error);
       }
     }
 
@@ -230,14 +231,14 @@ export class MarketDataService {
           try {
             await dataPersistenceLayer.saveOHLCV(ohlcv);
           } catch (error) {
-            console.warn(`[MarketDataService] Failed to persist data:`, error);
+            logger.warn(`[MarketDataService] Failed to persist data:`, error);
           }
         }
         
         // Log fetch performance
         const fetchDuration = Date.now() - fetchStartTime;
         if (fetchDuration > 5000) {
-          console.warn(`Slow market data fetch for ${symbol}: ${fetchDuration}ms`);
+          logger.warn(`Slow market data fetch for ${symbol}: ${fetchDuration}ms`);
         }
 
         return ohlcv;
@@ -280,12 +281,12 @@ export class MarketDataService {
         // Update historical data for anomaly detection
         dataQualityValidator.updateHistoricalData(symbol, item);
       } else {
-        console.warn(`Quality check failed for ${symbol} on ${item.date}:`, report.errors);
+        logger.warn(`Quality check failed for ${symbol} on ${item.date}:`, report.errors);
       }
 
       // Log warnings
       if (report.warnings.length > 0) {
-        console.warn(`Quality warnings for ${symbol} on ${item.date}:`, report.warnings);
+        logger.warn(`Quality warnings for ${symbol} on ${item.date}:`, report.warnings);
       }
     }
 
@@ -320,12 +321,12 @@ export class MarketDataService {
       if (report.isValid) {
         validData.push(item);
       } else {
-        console.warn(`Quality check failed for ${symbol} on ${item.date}:`, report.errors);
+        logger.warn(`Quality check failed for ${symbol} on ${item.date}:`, report.errors);
       }
 
       // Log warnings if any
       if (report.warnings.length > 0) {
-        console.info(`Quality warnings for ${symbol} on ${item.date}:`, report.warnings);
+        logger.info(`Quality warnings for ${symbol} on ${item.date}:`, report.warnings);
       }
     }
 
@@ -600,7 +601,7 @@ export class MarketDataService {
       try {
         return await dataPersistenceLayer.getStats();
       } catch (error) {
-        console.warn('[MarketDataService] Failed to get persistence stats:', error);
+        logger.warn('[MarketDataService] Failed to get persistence stats:', error instanceof Error ? error : new Error(String(error)));
       }
     }
     return null;
@@ -614,7 +615,7 @@ export class MarketDataService {
       try {
         return await dataPersistenceLayer.createBackup();
       } catch (error) {
-        console.error('[MarketDataService] Failed to create backup:', error);
+        logger.error('[MarketDataService] Failed to create backup:', error instanceof Error ? error : new Error(String(error)));
         throw error;
       }
     }
@@ -634,7 +635,7 @@ export class MarketDataService {
         const deleted = await dataPersistenceLayer.deleteOldOHLCV(symbol, beforeDate);
         return deleted;
       } catch (error) {
-        console.error('[MarketDataService] Failed to clear old data:', error);
+        logger.error('[MarketDataService] Failed to clear old data:', error instanceof Error ? error : new Error(String(error)));
         throw error;
       }
     }

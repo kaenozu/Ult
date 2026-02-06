@@ -11,6 +11,7 @@ import { LoadingSpinner, ChartSkeleton, FullPageSkeleton, CardSkeleton, TableSke
 // Lazy Loading Helper
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 interface LazyLoadOptions {
   fallback?: ReactNode;
   delay?: number;
@@ -132,12 +133,12 @@ export function preloadComponent<T>(importFn: () => Promise<T>): void {
 export function preloadNextPage(pagePath: string): void {
   // Security: Block external URLs to prevent RCE via arbitrary module loading
   if (pagePath.startsWith('http://') || pagePath.startsWith('https://') || pagePath.startsWith('//')) {
-    console.warn('[Security] Blocked external module preload:', pagePath);
+    logger.warn('[Security] Blocked external module preload:', pagePath);
     return;
   }
   // Ensure it's a relative path within the app
   if (!pagePath.startsWith('/')) {
-    console.warn('[Security] Blocked non-relative path:', pagePath);
+    logger.warn('[Security] Blocked non-relative path:', pagePath);
     return;
   }
   preloadComponent(() => import(/* @vite-ignore */ pagePath));
@@ -250,7 +251,7 @@ export function logChunkSizes(): void {
     
     resources.forEach((resource) => {
       if (resource.name.includes('.js') || resource.name.includes('.css')) {
-        console.log(`[Bundle] ${resource.name}: ${(resource as any).transferSize} bytes`);
+        logger.info(`[Bundle] ${resource.name}: ${(resource as any).transferSize} bytes`);
       }
     });
   }

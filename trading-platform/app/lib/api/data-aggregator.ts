@@ -8,6 +8,7 @@ import { isIntradayInterval } from '@/app/lib/constants/intervals';
  * Type alias for backward compatibility
  * Use APIResponse<T> for new code
  */
+import { logger } from '@/app/core/logger';
 export type FetchResult<T> = APIResponse<T>;
 
 interface QuoteData {
@@ -44,7 +45,7 @@ class MarketDataClient {
         // ... rate limit logic ...
         const retryAfter = httpResponse.headers.get('Retry-After');
         const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : backoff * 4;
-        console.warn(`Rate limit (429) hit. Waiting ${waitTime}ms before retry...`);
+        logger.warn(`Rate limit (429) hit. Waiting ${waitTime}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         return this.fetchWithRetry(url, options, retries - 1, backoff * 2);
       }
@@ -112,7 +113,7 @@ class MarketDataClient {
             return { success: true, data: interpolatedData, source: 'idb' };
           }
         } catch (err) {
-          console.warn(`[Aggregator] Failed to read from IDB for ${symbol}:`, err);
+          logger.warn(`[Aggregator] Failed to read from IDB for ${symbol}:`, err);
         }
       }
     }
@@ -162,7 +163,7 @@ class MarketDataClient {
           if (startDate && localData.length > 0) {
             if (new Date(localData[0].date) > new Date(startDate)) {
               missingHistory = true;
-              if (process.env.NODE_ENV !== 'test') console.log(`[Aggregator] Local data starts ${localData[0].date}, need ${startDate}. Fetching missing history.`);
+              if (process.env.NODE_ENV !== 'test') logger.info(`[Aggregator] Local data starts ${localData[0].date}, need ${startDate}. Fetching missing history.`);
             }
           } else if (startDate && localData.length === 0) {
             missingHistory = true;
@@ -232,7 +233,7 @@ class MarketDataClient {
       if (signal?.aborted) {
         return { success: false, data: null, source: 'error', error: 'Aborted' };
       }
-      console.error(`Fetch OHLCV failed for ${symbol}:`, err);
+      logger.error(`Fetch OHLCV failed for ${symbol}:`, (err as Error) || new Error(String(err)));
       return createErrorResult(err, source, `fetchOHLCV(${symbol})`);
     }
   }
@@ -269,7 +270,7 @@ class MarketDataClient {
 
       return results.flat();
     } catch (err) {
-      console.error('Batch fetch failed:', err);
+      logger.error('Batch fetch failed:', (err as Error) || new Error(String(err)));
       return [];
     }
   }
@@ -286,7 +287,7 @@ class MarketDataClient {
       if (data) this.setCache(cacheKey, data);
       return data;
     } catch (err) {
-      console.error(`Fetch Quote failed for ${symbol}:`, err);
+      logger.error(`Fetch Quote failed for ${symbol}:`, (err as Error) || new Error(String(err)));
       return null;
     }
   }
@@ -310,7 +311,7 @@ class MarketDataClient {
         return { data: [], error: 'Request aborted' };
       }
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.warn(`[Aggregator] Error fetching market index ${symbol}:`, errorMessage);
+      logger.warn(`[Aggregator] Error fetching market index ${symbol}:`, errorMessage);
       return {
         data: [],
         error: `Market index fetch failed: ${errorMessage}`
@@ -321,12 +322,12 @@ class MarketDataClient {
   async fetchSignal(stock: Stock, signal?: AbortSignal, interval?: string): Promise<FetchResult<Signal>> {
     let result: FetchResult<OHLCV[]> | null = null;
     try {
-      console.log('[data-aggregator] fetchSignal start', { symbol: stock.symbol, market: stock.market, interval });
+      logger.info('[data-aggregator] fetchSignal start', { symbol: stock.symbol, market: stock.market, interval });
       result = await this.fetchOHLCV(stock.symbol, stock.market, undefined, signal, interval);
-      console.log('[data-aggregator] fetchOHLCV done', { symbol: stock.symbol, dataLength: result.data?.length, success: result.success, source: result.source });
+      logger.info('[data-aggregator] fetchOHLCV done', { symbol: stock.symbol, dataLength: result.data?.length, success: result.success, source: result.source });
 
       if (!result.success || !result.data || result.data.length < 20) {
-        console.warn('[data-aggregator] Insufficient data or failed', { symbol: stock.symbol, length: result.data?.length, success: result.success });
+        logger.warn('[data-aggregator] Insufficient data or failed', { symbol: stock.symbol, length: result.data?.length, success: result.success });
         return {
           success: false,
           data: null,
@@ -341,10 +342,10 @@ class MarketDataClient {
         const indexResult = await this.fetchMarketIndex(stock.market, signal);
         indexData = indexResult.data;
         if (indexResult.error) {
-          console.warn(`[Aggregator] Macro data fetch warning for ${stock.symbol}:`, indexResult.error);
+          logger.warn(`[Aggregator] Macro data fetch warning for ${stock.symbol}:`, indexResult.error);
         }
       } catch (err) {
-        console.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol} due to error:`, err);
+        logger.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol} due to error:`, err);
       }
 
       if (signal?.aborted) throw new Error('Aborted');
@@ -358,7 +359,7 @@ class MarketDataClient {
       if (signal?.aborted) {
         return { success: false, data: null, source: result?.source ?? 'error', error: 'Aborted' };
       }
-      console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
+      logger.error(`Fetch Signal failed for ${stock.symbol}:`, (err as Error) || new Error(String(err)));
       return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
     }
   }

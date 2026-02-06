@@ -13,6 +13,7 @@ import { OHLCV } from '@/app/types/shared';
 /**
  * Example: Real-time anomaly monitoring
  */
+import { logger } from '@/app/core/logger';
 export class AnomalyMonitoringService {
   private anomalyDetector: AnomalyDetector;
   private eventPredictor: EventPredictor;
@@ -113,7 +114,7 @@ export class AnomalyMonitoringService {
         });
       }
     } catch (error) {
-      console.error('Error processing market data:', error);
+      logger.error('Error processing market data:', error instanceof Error ? error : new Error(String(error)));
     }
   }
 

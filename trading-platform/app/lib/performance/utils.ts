@@ -7,6 +7,7 @@
 
 import { performanceMonitor, PerformanceStats } from './monitor';
 
+import { logger } from '@/app/core/logger';
 export interface PerformanceReport {
   generatedAt: string;
   summary: {
@@ -60,7 +61,7 @@ export function logPerformanceReport(): void {
     .sort((a, b) => b.stats.average - a.stats.average)
     .slice(0, 10)
     .forEach(op => {
-      console.log(`${op.name}: avg=${formatDuration(op.stats.average)}, count=${op.stats.count}, p95=${formatDuration(op.stats.p95)}`);
+      logger.info(`${op.name}: avg=${formatDuration(op.stats.average)}, count=${op.stats.count}, p95=${formatDuration(op.stats.p95)}`);
     });
   
 }

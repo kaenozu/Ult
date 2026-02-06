@@ -17,6 +17,7 @@ import { PaperTradingEnvironment, PaperPortfolio, PaperTrade } from '../paperTra
 import type { OHLCV } from '../../types';
 
 // Re-export OHLCV for backward compatibility
+import { logger } from '@/app/core/logger';
 export type { OHLCV };
 
 // ============================================================================
@@ -191,7 +192,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
       this.status.isRunning = true;
       this.emit('started', this.status);
     } catch (error) {
-      console.error('[UnifiedTradingPlatform] Failed to start:', error);
+      logger.error('[UnifiedTradingPlatform] Failed to start:', error instanceof Error ? error : new Error(String(error)));
       this.emit('error', error);
       throw error;
     }
@@ -242,7 +243,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
       this.emit('cycle_complete', this.status);
     } catch (error) {
-      console.error('[UnifiedTradingPlatform] Update cycle error:', error);
+      logger.error('[UnifiedTradingPlatform] Update cycle error:', error instanceof Error ? error : new Error(String(error)));
       this.emit('error', error);
     }
   }

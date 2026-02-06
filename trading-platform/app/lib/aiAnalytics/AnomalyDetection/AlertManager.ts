@@ -16,6 +16,7 @@ import {
   NotificationChannelConfig,
 } from './types';
 
+import { logger } from '@/app/core/logger';
 export class AlertManager {
   private alertHistory: Alert[] = [];
   private channels: NotificationChannelConfig[];
@@ -190,12 +191,12 @@ export class AlertManager {
   ): Promise<void> {
     // In production, this would actually send notifications
     // For now, we'll just log
-    console.log({
+    logger.info('Alert notification', {
       type: alert.type,
       severity: alert.severity,
       message: alert.message,
       channel: channel.type,
-    });
+    } as Record<string, unknown>);
   }
 
   /**

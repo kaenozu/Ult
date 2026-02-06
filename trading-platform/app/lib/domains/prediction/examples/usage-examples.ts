@@ -1,5 +1,6 @@
 ﻿import { PredictionServiceFactory } from '../index';
 import type { PredictionFeatures } from '../../../services/feature-calculation-service';
+import { logger } from '@/app/core/logger';
 
 async function runExamples() {
   const predictionService = PredictionServiceFactory.createDefault();
@@ -18,14 +19,14 @@ async function runExamples() {
     atrPercent: 0.01,
   };
 
-  console.log('--- Prediction Example ---');
+  logger.info('--- Prediction Example ---');
   try {
     const prediction = predictionService.predict(features);
-    console.log('Prediction:', prediction);
+    logger.info('Prediction:', prediction);
   } catch (error) {
-    console.error('Prediction failed:', error);
+    logger.error('Prediction failed:', error instanceof Error ? error : new Error(String(error)));
   }
 }
 
 // Execute the examples
-runExamples().then(() => console.log('Examples completed'));
+runExamples().then(() => logger.info('Examples completed'));

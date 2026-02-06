@@ -251,7 +251,7 @@ class StructuredLogger {
     }
     
     if (entry.error?.stack) {
-      console.error(entry.error.stack);
+      logger.error(entry.error.stack);
     }
   }
   
@@ -294,7 +294,7 @@ class StructuredLogger {
     } catch (error) {
       // 送信失敗したログは再度キューに戻す
       this.remoteQueue.unshift(...batch);
-      console.error('Failed to send logs to remote endpoint:', error);
+      logger.error('Failed to send logs to remote endpoint:', error instanceof Error ? error : new Error(String(error)));
     }
   }
   

@@ -21,6 +21,7 @@ import {
 /**
  * ML予測モデルサービス
  */
+import { logger } from '@/app/core/logger';
 export class MLModelService {
   private readonly weights = PREDICTION.MODEL_WEIGHTS;
 
@@ -101,7 +102,7 @@ export class MLModelService {
     } catch (error) {
       // Log error but fallback to rule-based prediction
       if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        console.error('TensorFlow prediction error:', error);
+        logger.error('TensorFlow prediction error:', error);
       }
       return this.predict(features);
     }
@@ -200,7 +201,7 @@ export class MLModelService {
       this.useTensorFlowModels = true;
     } catch (error) {
       if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        console.error('Failed to load models:', error);
+        logger.error('Failed to load models:', error);
       }
       this.useTensorFlowModels = false;
     }

@@ -22,6 +22,7 @@ import { AlpacaConnector } from './AlpacaConnector';
 /**
  * Order Executor configuration
  */
+import { logger } from '@/app/core/logger';
 export interface OrderExecutorConfig {
   /** Default broker to use */
   defaultBroker: BrokerType;
@@ -97,9 +98,9 @@ export class OrderExecutor {
    * Connect to all configured brokers
    */
   async connectAll(): Promise<void> {
-    const promises = Array.from(this.connectors.values()).map(connector => 
+    const promises = Array.from(this.connectors.values()).map(connector =>
       connector.connect().catch(error => {
-        console.error(`Failed to connect to ${connector.getBrokerType()}:`, error);
+        logger.error(`Failed to connect to ${connector.getBrokerType()}:`, error instanceof Error ? error : new Error(String(error)));
       })
     );
     await Promise.all(promises);
@@ -117,9 +118,9 @@ export class OrderExecutor {
    * Disconnect from all brokers
    */
   async disconnectAll(): Promise<void> {
-    const promises = Array.from(this.connectors.values()).map(connector => 
+    const promises = Array.from(this.connectors.values()).map(connector =>
       connector.disconnect().catch(error => {
-        console.error(`Failed to disconnect from ${connector.getBrokerType()}:`, error);
+        logger.error(`Failed to disconnect from ${connector.getBrokerType()}:`, error instanceof Error ? error : new Error(String(error)));
       })
     );
     await Promise.all(promises);
@@ -203,7 +204,7 @@ export class OrderExecutor {
 
       return await connector.cancelOrder(orderId);
     } catch (error) {
-      console.error('Failed to cancel order:', error);
+      logger.error('Failed to cancel order:', error instanceof Error ? error : new Error(String(error)));
       return false;
     }
   }
@@ -221,7 +222,7 @@ export class OrderExecutor {
 
       return await connector.getOrder(orderId);
     } catch (error) {
-      console.error('Failed to get order:', error);
+      logger.error('Failed to get order:', error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }
@@ -239,7 +240,7 @@ export class OrderExecutor {
 
       return await connector.getOpenOrders();
     } catch (error) {
-      console.error('Failed to get open orders:', error);
+      logger.error('Failed to get open orders:', error instanceof Error ? error : new Error(String(error)));
       return [];
     }
   }
@@ -257,7 +258,7 @@ export class OrderExecutor {
 
       return await connector.getPositions();
     } catch (error) {
-      console.error('Failed to get positions:', error);
+      logger.error('Failed to get positions:', error instanceof Error ? error : new Error(String(error)));
       return [];
     }
   }
@@ -275,7 +276,7 @@ export class OrderExecutor {
 
       return await connector.getAccount();
     } catch (error) {
-      console.error('Failed to get account:', error);
+      logger.error('Failed to get account:', error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }

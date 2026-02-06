@@ -45,6 +45,7 @@ import SentimentAnalysisEngine, {
 /**
  * 投資家タイプ別センチメント
  */
+import { logger } from '@/app/core/logger';
 export interface InvestorSentiment {
   institutional: number; // 機関投資家のセンチメント (-1 to 1)
   retail: number;        // 個人投資家のセンチメント (-1 to 1)
@@ -214,7 +215,7 @@ export class EnhancedSentimentService extends EventEmitter {
           break;
       }
     } catch (error) {
-      console.error('[EnhancedSentimentService] Error processing data:', error);
+      logger.error('[EnhancedSentimentService] Error processing data:', error instanceof Error ? error : new Error(String(error)));
       this.emit('processing_error', { data, error });
     }
   }
@@ -675,7 +676,7 @@ export class EnhancedSentimentService extends EventEmitter {
       try {
         await this.analyzeSymbol(symbol);
       } catch (error) {
-        console.error(`[EnhancedSentimentService] Error updating ${symbol}:`, error);
+        logger.error(`[EnhancedSentimentService] Error updating ${symbol}:`, error instanceof Error ? error : new Error(String(error)));
       }
     }
   }

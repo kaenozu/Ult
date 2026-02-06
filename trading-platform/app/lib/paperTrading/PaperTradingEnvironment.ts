@@ -11,6 +11,7 @@ import { EventEmitter } from 'events';
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface PaperPosition {
   id: string;
   symbol: string;
@@ -218,13 +219,13 @@ export class PaperTradingEnvironment extends EventEmitter {
     } = {}
   ): Promise<PaperTrade | null> {
     if (!this.isRunning) {
-      console.warn('[PaperTrading] Trading not started');
+      logger.warn('[PaperTrading] Trading not started');
       return null;
     }
 
     const currentPrice = price || this.getCurrentPrice(symbol);
     if (!currentPrice) {
-      console.warn('[PaperTrading] No price available for', symbol);
+      logger.warn('[PaperTrading] No price available for', symbol);
       return null;
     }
 
@@ -234,7 +235,7 @@ export class PaperTradingEnvironment extends EventEmitter {
 
     // Check buying power
     if (totalCost > this.portfolio.buyingPower) {
-      console.warn('[PaperTrading] Insufficient buying power');
+      logger.warn('[PaperTrading] Insufficient buying power');
       this.emit('order_rejected', { reason: 'insufficient_funds', symbol, quantity });
       return null;
     }
@@ -243,7 +244,7 @@ export class PaperTradingEnvironment extends EventEmitter {
     const positionValue = totalValue;
     const portfolioValue = this.portfolio.totalValue;
     if ((positionValue / portfolioValue) * 100 > this.config.maxPositionSize) {
-      console.warn('[PaperTrading] Position size exceeds limit');
+      logger.warn('[PaperTrading] Position size exceeds limit');
       this.emit('order_rejected', { reason: 'position_size_limit', symbol, quantity });
       return null;
     }
@@ -325,25 +326,25 @@ export class PaperTradingEnvironment extends EventEmitter {
     options: { type?: 'MARKET' | 'LIMIT' } = {}
   ): Promise<PaperTrade | null> {
     if (!this.isRunning) {
-      console.warn('[PaperTrading] Trading not started');
+      logger.warn('[PaperTrading] Trading not started');
       return null;
     }
 
     const position = this.portfolio.positions.find((p) => p.symbol === symbol);
     if (!position) {
-      console.warn('[PaperTrading] No position to sell for', symbol);
+      logger.warn('[PaperTrading] No position to sell for', symbol);
       return null;
     }
 
     const sellQuantity = quantity || position.quantity;
     if (sellQuantity > position.quantity) {
-      console.warn('[PaperTrading] Cannot sell more than position size');
+      logger.warn('[PaperTrading] Cannot sell more than position size');
       return null;
     }
 
     const currentPrice = price || this.getCurrentPrice(symbol);
     if (!currentPrice) {
-      console.warn('[PaperTrading] No price available for', symbol);
+      logger.warn('[PaperTrading] No price available for', symbol);
       return null;
     }
 
@@ -422,7 +423,7 @@ export class PaperTradingEnvironment extends EventEmitter {
     } = {}
   ): Promise<PaperTrade | null> {
     if (!this.config.allowShortSelling) {
-      console.warn('[PaperTrading] Short selling not allowed');
+      logger.warn('[PaperTrading] Short selling not allowed');
       return null;
     }
 
@@ -541,7 +542,7 @@ export class PaperTradingEnvironment extends EventEmitter {
     const drawdown = ((this.peakValue - this.portfolio.totalValue) / this.peakValue) * 100;
     
     if (drawdown > this.config.maxDrawdown) {
-      console.warn('[PaperTrading] Max drawdown reached! Stopping trading.');
+      logger.warn('[PaperTrading] Max drawdown reached! Stopping trading.');
       this.emit('max_drawdown_reached', { drawdown, maxDrawdown: this.config.maxDrawdown });
       this.stop();
     }

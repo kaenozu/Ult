@@ -1,7 +1,7 @@
 /**
  * ULT Trading Platform - Agent System
  *
- * エージェント�Eネ�EジャーとスキルシスチE��
+ * エージェント�Eネ�EジャーとスキルシスチE��
  * 並列開発を可能にするためのインフラ
  */
 
@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 
+import { logger } from '@/app/core/logger';
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 const fsPromises = fs.promises;
@@ -64,8 +65,8 @@ export interface AgentReport {
 // ============================================================================
 
 /**
- * エージェント�Eネ�Eジャー
- * 全エージェント�E管琁E��タスク割り当て、E��捗監要E */
+ * エージェント�Eネ�Eジャー
+ * 全エージェント�E管琁E��タスク割り当て、E��捗監要E */
 export class AgentManager {
   private agents: Map<string, AgentConfig> = new Map();
   private tasks: Map<string, Task> = new Map();
@@ -99,10 +100,10 @@ export class AgentManager {
 
     this.agents.set(name, config);
 
-    // Worktreeを作�E
+    // Worktreeを作�E
     await this.createWorktree(name, branchName, worktreePath);
 
-    console.log(`[AgentManager] Registered agent: ${name} (skill: ${skill})`);
+    logger.info(`[AgentManager] Registered agent: ${name} (skill: ${skill})`);
     return config;
   }
 
@@ -110,7 +111,7 @@ export class AgentManager {
    * タスクをエージェントに割り当て
    */
   async assignTask(task: Task): Promise<string> {
-    // 適刁E��スキルのエージェントを検索
+    // 適刁E��スキルのエージェントを検索
     const suitableAgents = Array.from(this.agents.values()).filter(
       (agent) => agent.skill === task.skill && agent.status === 'idle'
     );
@@ -128,7 +129,7 @@ export class AgentManager {
 
     this.tasks.set(task.id, task);
 
-    console.log(`[AgentManager] Assigned task ${task.id} to agent ${agent.name}`);
+    logger.info(`[AgentManager] Assigned task ${task.id} to agent ${agent.name}`);
 
     // エージェントを起勁E    await this.startAgent(agent, task);
 
@@ -140,7 +141,7 @@ export class AgentManager {
   private async startAgent(agent: AgentConfig, task: Task): Promise<void> {
     agent.status = 'working';
 
-    // エージェントスクリプトを作�E
+    // エージェントスクリプトを作�E
     const agentScript = this.generateAgentScript(agent, task);
 
     const scriptPath = path.join(agent.worktreePath, `run-${task.id}.ts`);
@@ -159,11 +160,11 @@ export class AgentManager {
     let output = '';
     proc.stdout.on('data', (data) => {
       output += data.toString();
-      console.log(`[${agent.name}] ${data.toString().trim()}`);
+      logger.info(`[${agent.name}] ${data.toString().trim()}`);
     });
 
     proc.stderr.on('data', (data) => {
-      console.error(`[${agent.name} ERROR] ${data.toString().trim()}`);
+      logger.error(`[${agent.name} ERROR] ${data.toString().trim()}`);
     });
 
     proc.on('close', async (code) => {
@@ -178,10 +179,10 @@ export class AgentManager {
 
       task.endTime = new Date();
 
-      // 変更をメインブランチにマ�Eジ
+      // 変更をメインブランチにマ�Eジ
       await this.mergeChanges(agent, task);
 
-      console.log(`[AgentManager] Agent ${agent.name} finished task ${task.id} with status: ${task.status}`);
+      logger.info(`[AgentManager] Agent ${agent.name} finished task ${task.id} with status: ${task.status}`);
     });
   }
 
@@ -205,27 +206,27 @@ export class AgentManager {
       "import { execSync } from 'child_process';",
       "import * as fs from 'fs';",
       "",
-      "console.log('[TypeScriptFixer] Starting...');",
+      "logger.info('[TypeScriptFixer] Starting...');",
       "",
       "try {",
       "  // Run TypeScript check",
-      "  console.log('Running: npx tsc --noEmit');",
+      "  logger.info('Running: npx tsc --noEmit');",
       "  const result = execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });",
-      "  console.log('Output:', result);",
+      "  logger.info('Output:', result);",
       "",
       "  // Run auto-fix",
-      "  console.log('Running: npm run lint:fix');",
+      "  logger.info('Running: npm run lint:fix');",
       "  execSync('npm run lint:fix', { encoding: 'utf-8', stdio: 'pipe' });",
       "",
       "  // Check again",
       "  const checkResult = execSync('npx tsc --noEmit', { encoding: 'utf-8', stdio: 'pipe' });",
       "",
       "  if (checkResult.includes('error')) {",
-      "    console.error('[TypeScript Fixer] Some TypeScript errors remain');",
+      "    logger.error('[TypeScript Fixer] Some TypeScript errors remain');",
       "    process.exit(1);",
       "  }",
       "",
-      "  console.log('[TypeScript Fixer] All TypeScript errors fixed!');",
+      "  logger.info('[TypeScript Fixer] All TypeScript errors fixed!');",
       "",
       "  const report = '# TypeScript Fix Report\\n\\n' +",
       "    'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
@@ -235,7 +236,7 @@ export class AgentManager {
       "  process.exit(0);",
       "} catch (error) {",
       "  const errorMessage = error instanceof Error ? error.message : String(error);",
-      "  console.error('[TypeScript Fixer] Error:', errorMessage);",
+      "  logger.error('[TypeScript Fixer] Error:', errorMessage);",
       "  const report = '# TypeScript Fix Report\\n\\n' +",
       "    'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
       "    'Status: FAILED\\n' +",
@@ -252,16 +253,16 @@ export class AgentManager {
       "import { execSync } from 'child_process';",
       "import * as fs from 'fs';",
       "",
-      "console.log('[LinterFixer] Starting...');",
+      "logger.info('[LinterFixer] Starting...');",
       "",
       "try {",
       "  // Check current lint status",
-      "  console.log('Running: npm run lint');",
+      "  logger.info('Running: npm run lint');",
       "  const lintResult = execSync('npm run lint', { encoding: 'utf-8', stdio: 'pipe' });",
-      "  console.log('Lint output:', lintResult.substring(0, 500));",
+      "  logger.info('Lint output:', lintResult.substring(0, 500));",
       "",
       "  // Auto-fix",
-      "  console.log('Running: npm run lint:fix');",
+      "  logger.info('Running: npm run lint:fix');",
       "  execSync('npm run lint:fix', { encoding: 'utf-8', stdio: 'pipe' });",
       "",
       "  // Verify",
@@ -269,10 +270,10 @@ export class AgentManager {
       "  const hasErrors = /\\berror\\b/i.test(verifyResult);",
       "",
       "  if (hasErrors) {",
-      "    console.warn('[LinterFixer] Some lint errors remain (may need manual fix)');",
+      "    logger.warn('[LinterFixer] Some lint errors remain (may need manual fix)');",
       "  }",
       "",
-      "  console.log('[LinterFixer] Linting complete!');",
+      "  logger.info('[LinterFixer] Linting complete!');",
       "",
       "  const report = '# Linter Fix Report\\n\\n' +",
       "    'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
@@ -282,7 +283,7 @@ export class AgentManager {
       "  process.exit(0);",
       "} catch (error) {",
       "  const errorMessage = error instanceof Error ? error.message : String(error);",
-      "  console.error('[LinterFixer] Error:', errorMessage);",
+      "  logger.error('[LinterFixer] Error:', errorMessage);",
       "  const report = '# Linter Fix Report\\n\\n' +",
       "    'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
       "    'Status: FAILED\\n' +",
@@ -298,7 +299,7 @@ export class AgentManager {
     return [
       "import * as fs from 'fs';",
       "",
-      "console.log('[TestWriter] Creating comprehensive tests...');",
+      "logger.info('[TestWriter] Creating comprehensive tests...');",
       "",
       "// This agent would analyze uncovered areas and add tests",
       "// For now, a simple implementation",
@@ -310,7 +311,7 @@ export class AgentManager {
       "  'Files: Added comprehensive test for BacktestService\\n';",
       "",
       "fs.writeFileSync('AGENT_REPORT.md', report);",
-      "console.log('[TestWriter] Test improvement complete!');",
+      "logger.info('[TestWriter] Test improvement complete!');",
       "process.exit(0);",
       "",
     ].join('\\n');
@@ -319,7 +320,7 @@ export class AgentManager {
     return [
       "import * as fs from 'fs';",
       "",
-      "console.log('[UIUXDesigner] Enhancing interface...');",
+      "logger.info('[UIUXDesigner] Enhancing interface...');",
       "",
       "const report = '# UI/UX Enhancement Report\\n\\n' +",
       "  'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
@@ -334,7 +335,7 @@ export class AgentManager {
       "  '- Smooth transitions (200-300ms)\\n';",
       "",
       "fs.writeFileSync('AGENT_REPORT.md', report);",
-      "console.log('[UIUXDesigner] UI/UX enhancement complete!');",
+      "logger.info('[UIUXDesigner] UI/UX enhancement complete!');",
       "process.exit(0);",
       "",
     ].join('\\n');
@@ -343,7 +344,7 @@ export class AgentManager {
     return [
       "import * as fs from 'fs';",
       "",
-      "console.log('[QuantDeveloper] Enhancing backtest engine...');",
+      "logger.info('[QuantDeveloper] Enhancing backtest engine...');",
       "",
       "const report = '# Backtest Enhancement Report\\n\\n' +",
       "  'Task: ' + (process.env.TASK_ID || 'unknown') + '\\n' +",
@@ -358,7 +359,7 @@ export class AgentManager {
       "  '- Overfitting detector testing\\n';",
       "",
       "fs.writeFileSync('AGENT_REPORT.md', report);",
-      "console.log('[QuantDeveloper] Backtest enhancement (partial) complete!');",
+      "logger.info('[QuantDeveloper] Backtest enhancement (partial) complete!');",
       "process.exit(0);",
       "",
     ].join('\\n');
@@ -367,7 +368,7 @@ export class AgentManager {
     return [
       "import * as fs from 'fs';",
       "",
-      "console.log('[General Agent] Processing task...');",
+      "logger.info('[General Agent] Processing task...');",
       "",
       "const report = '# General Agent Report\\n\\n' +",
       "  'Task ID: ' + task.id + '\\n' +",
@@ -377,13 +378,13 @@ export class AgentManager {
       "  'Status: COMPLETED\\n';",
       "",
       "fs.writeFileSync('AGENT_REPORT.md', report);",
-      "console.log('[General Agent] Task completed!');",
+      "logger.info('[General Agent] Task completed!');",
       "process.exit(0);",
       "",
     ].join('\\n');
   }
   /**
-   * Worktreeを作�E
+   * Worktreeを作�E
    */
   private async createWorktree(
     name: string,
@@ -404,10 +405,10 @@ export class AgentManager {
         }
       );
 
-      console.log(`[AgentManager] Created worktree at ${worktreePath}`);
+      logger.info(`[AgentManager] Created worktree at ${worktreePath}`);
     } catch (error: unknown) {
       if (error instanceof Error && error.message.includes('already exists')) {
-        console.log(`[AgentManager] Worktree already exists, using existing`);
+        logger.info(`[AgentManager] Worktree already exists, using existing`);
       } else {
         throw error;
       }
@@ -415,11 +416,11 @@ export class AgentManager {
   }
 
   /**
-   * 変更を�Eージ
+   * 変更を�Eージ
    */
   private async mergeChanges(agent: AgentConfig, task: Task): Promise<void> {
     try {
-      console.log(`[AgentManager] Merging changes from ${agent.name}...`);
+      logger.info(`[AgentManager] Merging changes from ${agent.name}...`);
 
       // Check for changes
       const { stdout } = await execFileAsync(
@@ -440,13 +441,13 @@ export class AgentManager {
         await execFileAsync('git', ['push', 'origin', agent.branchName], { cwd: agent.worktreePath });
 
         // Create PR or merge to main (simplified: just merge)
-        console.log(`[AgentManager] Changes committed by ${agent.name}`);
+        logger.info(`[AgentManager] Changes committed by ${agent.name}`);
       } else {
-        console.log(`[AgentManager] No changes to merge for ${agent.name}`);
+        logger.info(`[AgentManager] No changes to merge for ${agent.name}`);
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`[AgentManager] Merge failed for ${agent.name}:`, errorMessage);
+      logger.error(`[AgentManager] Merge failed for ${agent.name}:`, error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -458,7 +459,7 @@ export class AgentManager {
   }
 
   /**
-   * 全エージェント�E状態を取征E   */
+   * 全エージェント�E状態を取征E   */
   getAgentStatus(): AgentConfig[] {
     return Array.from(this.agents.values());
   }
@@ -470,7 +471,7 @@ export class AgentManager {
   }
 
   /**
-   * 完亁E��たエージェント数を取征E   */
+   * 完亁E��たエージェント数を取征E   */
   getCompletedCount(): number {
     return Array.from(this.agents.values()).filter((a) => a.status === 'completed').length;
   }
@@ -493,7 +494,7 @@ export class AgentManager {
 // ============================================================================
 
 /**
- * AgentManagerのインスタンスを作�E
+ * AgentManagerのインスタンスを作�E
  */
 export function createAgentManager(repoRoot?: string): AgentManager {
   return new AgentManager(repoRoot);

@@ -58,6 +58,10 @@ export class AgentManager {
     return agent.name;
   }
 
+  getAgents(): AgentInfo[] {
+    return [...this.agents];
+  }
+
   getAgentStatus(): AgentInfo[] {
     return [...this.agents];
   }
@@ -71,6 +75,33 @@ export class AgentManager {
     const completed = this.tasks.filter(t => t.status === 'completed').length;
     const percentage = total === 0 ? 0 : (completed / total) * 100;
     return { completed, total, percentage };
+  }
+
+  async startAll(): Promise<void> {
+    // Start all registered agents
+    this.agents.forEach(agent => {
+      if (agent.status === 'idle') {
+        agent.status = 'working';
+      }
+    });
+  }
+
+  async stopAll(): Promise<void> {
+    // Stop all running agents
+    this.agents.forEach(agent => {
+      if (agent.status === 'working') {
+        agent.status = 'idle';
+        agent.currentTaskId = undefined;
+      }
+    });
+  }
+
+  async getStatus(): Promise<{ agents: AgentInfo[]; tasks: TaskInfo[]; progress: { completed: number; total: number; percentage: number } }> {
+    return {
+      agents: this.getAgents(),
+      tasks: this.getTaskStatus(),
+      progress: this.getProgress()
+    };
   }
 
   private findAvailableAgent(skill?: string): AgentInfo | undefined {

@@ -12,6 +12,7 @@ import { BrokerOrderRequest, OrderExecutionResult } from '../../types/broker';
 /**
  * Convert OrderRequest (store format) to BrokerOrderRequest (broker format)
  */
+import { logger } from '@/app/core/logger';
 export function convertOrderRequestToBrokerFormat(order: OrderRequest): BrokerOrderRequest {
   return {
     symbol: order.symbol,
@@ -121,7 +122,7 @@ export async function syncBrokerPositions() {
       cash: account?.cash || 0,
     };
   } catch (error) {
-    console.error('Failed to sync broker positions:', error);
+    logger.error('Failed to sync broker positions:', error instanceof Error ? error : new Error(String(error)));
     return null;
   }
 }

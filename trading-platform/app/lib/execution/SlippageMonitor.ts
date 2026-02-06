@@ -11,6 +11,7 @@ import { EventEmitter } from 'events';
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface Order {
   id: string;
   symbol: string;
@@ -119,7 +120,7 @@ export class SlippageMonitor extends EventEmitter {
   recordExecution(execution: Execution): SlippageRecord | null {
     const order = this.pendingOrders.get(execution.orderId);
     if (!order) {
-      console.warn(`[SlippageMonitor] Order ${execution.orderId} not found`);
+      logger.warn(`[SlippageMonitor] Order ${execution.orderId} not found`);
       return null;
     }
 

@@ -13,6 +13,7 @@ import { optimizedAccuracyService } from './OptimizedAccuracyService';
 /**
  * パフォーマンススコアリング結果
  */
+import { logger } from '@/app/core/logger';
 export interface PerformanceScore {
   symbol: string;
   name: string;
@@ -132,7 +133,7 @@ export class PerformanceScreenerService {
           try {
             return await this.evaluateStock(ds, lookbackDays);
           } catch (error) {
-            console.warn(`Failed to evaluate ${ds.symbol}:`, error);
+            logger.warn(`Failed to evaluate ${ds.symbol}:`, error);
             return null;
           }
         })
@@ -196,7 +197,7 @@ export class PerformanceScreenerService {
     const data = await fetchData();
     
     if (data.length < lookbackDays) {
-      console.warn(`[PerformanceScreener] Insufficient data for ${symbol}: ${data.length} days`);
+      logger.warn(`[PerformanceScreener] Insufficient data for ${symbol}: ${data.length} days`);
       return null;
     }
 
