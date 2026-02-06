@@ -116,7 +116,7 @@ class MarketDataClient {
           } else {
             throw new Error('No intraday data available');
           }
-} else {
+        } else {
           // For daily/weekly/monthly data, fetch from API to ensure sufficient data
           // Get 1 year of historical data for better analysis
           const now = new Date();
@@ -250,11 +250,18 @@ class MarketDataClient {
   async fetchSignal(stock: Stock, signal?: AbortSignal, interval?: string): Promise<FetchResult<Signal>> {
     let result: FetchResult<OHLCV[]> | null = null;
     try {
+      console.log('[data-aggregator] fetchSignal start', { symbol: stock.symbol, market: stock.market, interval });
       result = await this.fetchOHLCV(stock.symbol, stock.market, undefined, signal, interval);
+      console.log('[data-aggregator] fetchOHLCV done', { symbol: stock.symbol, dataLength: result.data?.length, success: result.success, source: result.source });
 
       if (!result.success || !result.data || result.data.length < 20) {
-        if (signal?.aborted) throw new Error('Aborted');
-        throw new Error('Insufficient data for ML analysis');
+        console.warn('[data-aggregator] Insufficient data or failed', { symbol: stock.symbol, length: result.data?.length, success: result.success });
+        return {
+          success: false,
+          data: null,
+          source: result?.source || 'error',
+          error: 'Insufficient data for ML analysis'
+        };
       }
 
       // マクロデータの取得（相関分析用）- 失敗しても全体を止めないフェイルセーフ設計
@@ -304,7 +311,7 @@ class MarketDataClient {
 
     const sorted = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const filledWithGaps = this.fillGaps(sorted);
-    
+
     return this.interpolateValues(filledWithGaps);
   }
 
@@ -327,7 +334,7 @@ class MarketDataClient {
       for (let d = 1; d < diffDays; d++) {
         const gapDate = new Date(current);
         gapDate.setDate(current.getDate() + d);
-        
+
         if (!WEEKEND_DAYS.includes(gapDate.getDay())) {
           filled.push(this.createGapOHLCV(gapDate));
         }
@@ -355,7 +362,7 @@ class MarketDataClient {
     for (const field of priceFields) {
       this.interpolateField(result, field);
     }
-    
+
     this.interpolateVolume(result);
     return result;
   }
@@ -398,10 +405,10 @@ class MarketDataClient {
       const diff = nextVal - prevVal;
       return Number((prevVal + (diff * (currentIdx - prevIdx)) / gap).toFixed(2));
     }
-    
+
     if (prevIdx >= 0) return result[prevIdx][field] as number;
     if (nextIdx < result.length) return result[nextIdx][field] as number;
-    
+
     return 0;
   }
 

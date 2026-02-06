@@ -1,30 +1,15 @@
 /**
  * Risk Management Configuration Constants
+ * 
+ * リスク管理に関する全定数を一元化
+ * Issue #522 - 定数一元化
  */
 
 /**
- * Risk management parameters
+ * Comprehensive risk management parameters
  */
 export const RISK_MANAGEMENT = {
-  BULL_TARGET_MULTIPLIER: 1.5,
-  BEAR_TARGET_MULTIPLIER: 1.5,
-  DEFAULT_STOP_LOSS_PERCENT: 2,
-  DEFAULT_TAKE_PROFIT_PERCENT: 4,
-  DEFAULT_KELLY_FRACTION: 0.25,
-  DEFAULT_ATR_MULTIPLIER: 2,
-  MAX_POSITION_PERCENT: 20,
-  DEFAULT_DAILY_LOSS_LIMIT: 5,
-  DEFAULT_MAX_POSITIONS: 10,
-  STOP_LOSS_RATIO: 0.5, // Stop loss is 50% of target distance
-  MIN_POSITION_PERCENT: 1.0, // Minimum position size as % of account
-  LOW_CONFIDENCE_REDUCTION: 0.5, // Additional reduction for low confidence (<60%)
-} as const;
-
-/**
- * Comprehensive risk parameters
- */
-export const RISK_PARAMS = {
-  // Stop Loss / Take Profit
+  // Stop Loss / Take Profit (percentage)
   DEFAULT_STOP_LOSS_PCT: 2,
   DEFAULT_TAKE_PROFIT_PCT: 4,
   BULL_STOP_LOSS_PCT: 3,
@@ -38,22 +23,28 @@ export const RISK_PARAMS = {
   DEFAULT_MAX_POSITION_PERCENT: 20,
   DEFAULT_DAILY_LOSS_LIMIT: 5,
   DEFAULT_MAX_POSITIONS: 10,
+  MIN_POSITION_PERCENT: 1.0,
   FIXED_RATIO_DEFAULT: 0.1,
+  DEFAULT_RATIO: 0.1, // Alias for FIXED_RATIO_DEFAULT
 
   // ATR Multipliers
   ATR_STOP_LOSS_MULTIPLIER: 2,
   ATR_TAKE_PROFIT_MULTIPLIER: 3,
+  DEFAULT_ATR_MULTIPLIER: 2, // Alias for ATR_STOP_LOSS_MULTIPLIER
+
+  // Target Multipliers
+  BULL_TARGET_MULTIPLIER: 1.5,
+  BEAR_TARGET_MULTIPLIER: 1.5,
+
+  // Risk Ratios
+  STOP_LOSS_RATIO: 0.5, // Stop loss is 50% of target distance
+  LOW_CONFIDENCE_REDUCTION: 0.5, // Additional reduction for low confidence (<60%)
 
   // Volatility Thresholds
   HIGH_VOLATILITY_THRESHOLD: 0.02,
   TREND_STRENGTH_THRESHOLD: 0.5,
-} as const;
 
-/**
- * Position sizing configuration
- */
-export const POSITION_SIZING = {
-  DEFAULT_RATIO: 0.1,
-  MIN_SIZE: 100,
+  // Order Execution
   SLIPPAGE_PERCENTAGE: 0.001,
+  MIN_SIZE: 100,
 } as const;

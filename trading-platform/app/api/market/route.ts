@@ -7,6 +7,13 @@ import {
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
+import {
+  validateSymbol,
+  validateMarketType,
+  validateDataType,
+  validateInterval,
+  validateDate
+} from '@/app/lib/validation';
 
 // Define explicit types for Yahoo Finance responses
 interface YahooChartResult {
@@ -38,6 +45,10 @@ interface YahooQuoteResult {
   shortName?: string;
   [key: string]: unknown; // Safer than 'any' or union of primitives
 }
+import {
+  YahooChartResultSchema,
+  YahooSingleQuoteSchema
+} from '@/app/lib/schemas/market';
 
 export const yf = new YahooFinance();
 
@@ -160,11 +171,13 @@ function formatSymbol(symbol: string, market?: string): string {
 }
 
 export async function GET(request: Request) {
-  // Rate limiting
-  const rateLimitResponse = checkRateLimit(request);
-  if (rateLimitResponse) return rateLimitResponse;
+  try {
+    console.log('[API/market] GET request received');
+    // Rate limiting
+    const rateLimitResponse = checkRateLimit(request);
+    if (rateLimitResponse) return rateLimitResponse;
 
-  const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
   const symbol = searchParams.get('symbol')?.trim().toUpperCase();
   const market = searchParams.get('market');
@@ -204,9 +217,8 @@ export async function GET(request: Request) {
     return validationError('Invalid interval. Use 1m, 5m, 15m, 1h, 4h, 1d, 1wk, or 1mo', 'interval');
   }
 
-  const yahooSymbol = formatSymbol(symbol, market || undefined);
+const yahooSymbol = formatSymbol(symbol, market || undefined);
 
-  try {
     if (type === 'history') {
       const startDateParam = searchParams.get('startDate');
       let period1: string;
@@ -218,8 +230,9 @@ export async function GET(request: Request) {
         }
         period1 = startDateParam;
       } else {
+        // Get 2 years of data to ensure sufficient backtest samples (252 trading days min)
         const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 6); // 6ヶ月前までのデータを取得
+        startDate.setFullYear(startDate.getFullYear() - 2);
         period1 = startDate.toISOString().split('T')[0];
       }
 
@@ -239,18 +252,29 @@ export async function GET(request: Request) {
         } else {
           finalInterval =
             interval === 'D' ? '1d' :
-              interval === '1H' ? '1h' :
-                interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
-                  interval?.toLowerCase() === '15m' ? '15m' :
-                    interval?.toLowerCase() === '1m' ? '1m' :
-                      interval?.toLowerCase() === '5m' ? '5m' :
-                        undefined;
+            interval === '1H' ? '1h' :
+            interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
+            interval?.toLowerCase() === '15m' ? '15m' :
+            interval?.toLowerCase() === '1m' ? '1m' :
+            interval?.toLowerCase() === '5m' ? '5m' :
+            undefined;
         }
 
         // Build chart options - pass interval if specified
-        const result = finalInterval
-          ? await yf.chart(yahooSymbol, { period1, interval: finalInterval }) as YahooChartResult
-          : await yf.chart(yahooSymbol, { period1 }) as YahooChartResult;
+        const rawResult = finalInterval
+          ? await yf.chart(yahooSymbol, { period1, interval: finalInterval })
+          : await yf.chart(yahooSymbol, { period1 });
+
+        const parseResult = YahooChartResultSchema.safeParse(rawResult);
+
+        if (!parseResult.success) {
+          console.error('[MarketAPI] Yahoo Finance Chart Schema Validation Failed:', JSON.stringify(parseResult.error.format(), null, 2));
+          // Don't fail completely, try to use best effort or fail gracefully
+          // In this case, we'll return a 502 because the upstream data is not what we expect
+          return handleApiError(new Error('Upstream API data schema mismatch'), 'market/history', 502);
+        }
+
+        const result = parseResult.data;
 
         if (!result || !result.quotes || result.quotes.length === 0) {
           return NextResponse.json({ data: [], warning: 'No historical data found' });
@@ -311,7 +335,7 @@ export async function GET(request: Request) {
           
           // 有効な終値を記録
           if (hasValidClose) {
-            lastValidClose = q.close;
+            lastValidClose = q.close ?? null;
           }
           
           // 補間値の計算
@@ -319,11 +343,11 @@ export async function GET(request: Request) {
           
           return {
             date: dateStr,
-            open: q.open ?? interpolatedClose,
-            high: q.high ?? interpolatedClose,
-            low: q.low ?? interpolatedClose,
-            close: interpolatedClose,
-            volume: q.volume ?? 0,
+            open: Number(q.open ?? interpolatedClose),
+            high: Number(q.high ?? interpolatedClose),
+            low: Number(q.low ?? interpolatedClose),
+            close: Number(interpolatedClose),
+            volume: Number(q.volume ?? 0),
             // 補間データフラグ（UI表示用）
             isInterpolated: !hasValidClose,
           };
@@ -349,10 +373,11 @@ export async function GET(request: Request) {
                 requestsPerDay: 2000
               },
               intradayUnavailableForJapaneseStocks: isJapaneseStock
-            }
-          }
+  }
+}
         });
       } catch (innerError: unknown) {
+        console.error('Market History Error:', innerError);
         return handleApiError(new Error('Failed to fetch historical data'), 'market/history', 502);
       }
     }
@@ -362,8 +387,15 @@ export async function GET(request: Request) {
 
       if (symbols.length === 1) {
         try {
-          const result = await yf.quote(symbols[0]) as YahooQuoteResult;
-          if (!result) throw new Error('Symbol not found');
+          const rawResult = await yf.quote(symbols[0]);
+          const parseResult = YahooSingleQuoteSchema.safeParse(rawResult);
+
+          if (!parseResult.success) {
+            console.error('[MarketAPI] Yahoo Finance Quote Schema Validation Failed:', JSON.stringify(parseResult.error.format(), null, 2));
+            throw new Error('Symbol not found or invalid format');
+          }
+
+          const result = parseResult.data;
 
           return NextResponse.json({
             symbol: symbol,
@@ -378,9 +410,19 @@ export async function GET(request: Request) {
         }
       } else {
         try {
-          const results = await yf.quote(symbols) as YahooQuoteResult[];
+          const results = await yf.quote(symbols);
+          // results is Array<unknown> here
+
+          if (!Array.isArray(results)) {
+            throw new Error('Expected array response for batch quotes');
+          }
+
           const data = results
-            .filter((r): r is YahooQuoteResult => !!r)
+            .map(r => {
+                const parsed = YahooSingleQuoteSchema.safeParse(r);
+                return parsed.success ? parsed.data : null;
+            })
+            .filter((r): r is NonNullable<typeof r> => !!r)
             .map(r => ({
               symbol: r.symbol ? r.symbol.replace('.T', '') : 'UNKNOWN',
               price: r.regularMarketPrice || 0,
@@ -396,7 +438,7 @@ export async function GET(request: Request) {
       }
     }
 
-    return validationError('Invalid type parameter. Use "history" or "quote".', 'type');
+return validationError('Invalid type parameter. Use "history" or "quote".', 'type');
 
   } catch (error: unknown) {
     return handleApiError(error, 'market/api', 500);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { calculateRealTimeAccuracy, calculatePredictionError } from '@/app/lib/analysis';
+import { DATA_REQUIREMENTS } from '@/app/lib/constants';
 
 interface AccuracyData {
   hitRate: number;
@@ -167,6 +168,8 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
         const startDate = oneYearAgo.toISOString().split('T')[0];
 
+        console.log('[useSymbolAccuracy]', { symbol: currentSymbol, market: currentMarket, startDate });
+
         // Security: Use URLSearchParams to safely encode query parameters
         const params = new URLSearchParams({
           type: 'history',
@@ -191,7 +194,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         let historicalData = result.data || [];
 
         // Fallback to provided OHLCV if API data is insufficient
-        if (historicalData.length < 252) {
+        if (historicalData.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
           console.warn(`Insufficient data for ${currentSymbol}: got ${historicalData.length} records, using provided OHLCV (${ohlcv.length} records)`);
           historicalData = ohlcv;
         }
@@ -240,7 +243,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           setError(ERROR_MESSAGES.CALCULATION_FAILED);
           
           // Try to calculate with existing OHLCV data as fallback
-          if (ohlcv.length >= 252) {
+          if (ohlcv.length >= DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
             try {
               const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
               if (accuracyResult) {

@@ -40,11 +40,16 @@ class AnalysisService {
      * 予測コーン（Forecast Cone）の計算
      */
     calculateForecastCone(data: OHLCV[]): Signal['forecastCone'] | undefined {
-        if (data.length < FORECAST_CONE.LOOKBACK_DAYS) return undefined;
+        console.log('[calculateForecastCone] input data length:', data.length, 'LOOKBACK:', FORECAST_CONE.LOOKBACK_DAYS);
+        if (data.length < FORECAST_CONE.LOOKBACK_DAYS) {
+            console.warn('[calculateForecastCone] Insufficient data, returning undefined');
+            return undefined;
+        }
 
         const recentData = data.slice(-FORECAST_CONE.LOOKBACK_DAYS);
         const closes = recentData.map(d => d.close);
         const currentPrice = closes[closes.length - 1];
+        console.log('[calculateForecastCone] recentData length:', recentData.length, 'currentPrice:', currentPrice);
 
         const priceReturns = [];
         for (let index = 1; index < closes.length; index++) {
@@ -59,14 +64,14 @@ class AnalysisService {
         const atr = (Math.max(...closes) - Math.min(...closes)) / (closes.length || 1);
         const volatility = stdDeviation * Math.sqrt(FORECAST_CONE.STEPS);
 
-        const bearishLower: number[] = [currentPrice];
-        const bearishUpper: number[] = [currentPrice];
-        const bullishLower: number[] = [currentPrice];
-        const bullishUpper: number[] = [currentPrice];
-        const base: number[] = [currentPrice];
+        const bearishLower: number[] = [];
+        const bearishUpper: number[] = [];
+        const bullishLower: number[] = [];
+        const bullishUpper: number[] = [];
+        const base: number[] = [];
 
         for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
-            const basePrice = base[base.length - 1];
+            const basePrice = data[data.length - 1].close;
             const confidenceFactor = Math.sqrt(i / FORECAST_CONE.STEPS);
             const priceVariation = basePrice * volatility * confidenceFactor;
 
@@ -76,7 +81,7 @@ class AnalysisService {
             bearishLower.push(Math.max(0, (basePrice - priceVariation * 1.5) * bearishFactor));
             bearishUpper.push((basePrice - priceVariation * 0.5) * bearishFactor);
             bullishLower.push((basePrice + priceVariation * 0.5) * bullishFactor);
-            bullishUpper.push((basePrice + priceVariation * 1.5) * bullishFactor);
+            bullishUpper.push((basePrice + priceVariation * 0.5) * bullishFactor);
             base.push(basePrice * (1 + meanPriceReturn));
         }
 
@@ -85,12 +90,20 @@ class AnalysisService {
             Math.max(50, 100 - (volatility * 100 * 10))
         );
 
-        return {
+        const forecastConeResult = {
             bearish: { lower: bearishLower, upper: bearishUpper },
             bullish: { lower: bullishLower, upper: bullishUpper },
             base,
-            confidence: parseFloat(confidence.toFixed(1)),
+            confidence: parseFloat(confidence.toFixed(1))
         };
+        console.log('[calculateForecastCone] success', {
+            dataLength: data.length,
+            bearishLowerCount: bearishLower.length,
+            bullishLowerCount: bullishLower.length,
+            baseCount: base.length,
+            confidence: forecastConeResult.confidence
+        });
+        return forecastConeResult;
     }
 
     /**
@@ -210,8 +223,8 @@ class AnalysisService {
     ): { hitRate: number; total: number } {
         let hits = 0;
         let total = 0;
-        const warmup = 100;
-        const step = 3;
+        const warmup = 50; // Reduced from 100 to allow more evaluation periods
+        const step = 1;
         const limit = (endIndex !== undefined ? endIndex : data.length) - 10;
         const start = (startIndex || 0) + warmup;
 
@@ -230,7 +243,11 @@ class AnalysisService {
             total++;
             // Use pre-calculated ATR (O(1) lookup)
             const atr = atrArray[i];
-            const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, closes[i] * 0.012);
+            // Match AnalysisService target calculation:
+            // targetPercent = max(atr / currentPrice, DEFAULT_ATR_RATIO)
+            // targetMove = currentPrice * targetPercent * 2 = max(atr * 2, currentPrice * DEFAULT_ATR_RATIO * 2)
+            const defaultTargetRatio = PRICE_CALCULATION.DEFAULT_ATR_RATIO * 2; // 0.04 = 4%
+            const targetMove = Math.max(atr * 2, closes[i] * defaultTargetRatio);
 
             const result = accuracyService.simulateTrade(data, i, type, targetMove);
             if (result.won) hits++;
@@ -316,10 +333,10 @@ class AnalysisService {
 
         const strategies: string[] = [];
         const exitReasons: string[] = [];
-        
+
         // Determine primary strategy based on regime
         let primary = 'TRAILING_ATR';
-        
+
         if (regime.regime === 'TRENDING') {
             if (regime.volatility === 'HIGH') {
                 primary = 'TRAILING_ATR';
@@ -352,7 +369,7 @@ class AnalysisService {
 
         // Calculate ATR-based trailing stop
         const atrMultiplier = regime.volatility === 'HIGH' ? 3 : regime.volatility === 'LOW' ? 1.5 : 2;
-        const trailingStopLevel = signalType === 'BUY' 
+        const trailingStopLevel = signalType === 'BUY'
             ? currentPrice - (atr * atrMultiplier)
             : currentPrice + (atr * atrMultiplier);
 
@@ -401,11 +418,14 @@ class AnalysisService {
      * ML予測が利用可能な場合は優先的に使用し、そうでない場合はルールベースにフォールバック
      */
     analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
+        console.log('[analyzeStock] start', { symbol, market, dataLength: data.length, context: context ? { endIndex: context.endIndex, startIndex: context.startIndex } : 'none' });
+
         // Handle window data for legacy components
         let windowData = data;
         if (context?.endIndex !== undefined) {
-             windowData = data.slice(context.startIndex || 0, context.endIndex + 1);
+            windowData = data.slice(context.startIndex || 0, context.endIndex + 1);
         }
+        console.log('[analyzeStock] windowData length:', windowData.length);
 
         // Detect market regime first (even for insufficient data)
         const regimeResult = marketRegimeDetector.detect(windowData);
@@ -479,10 +499,10 @@ class AnalysisService {
         let lastSMA: number;
 
         if (context?.preCalculatedIndicators) {
-             const rsiArr = context.preCalculatedIndicators.rsi.get(opt.rsiPeriod) || [];
-             const smaArr = context.preCalculatedIndicators.sma.get(opt.smaPeriod) || [];
-             lastRSI = rsiArr[effectiveEndIndex] || 50;
-             lastSMA = smaArr[effectiveEndIndex] || closes[effectiveEndIndex];
+            const rsiArr = context.preCalculatedIndicators.rsi.get(opt.rsiPeriod) || [];
+            const smaArr = context.preCalculatedIndicators.sma.get(opt.smaPeriod) || [];
+            lastRSI = rsiArr[effectiveEndIndex] || 50;
+            lastSMA = smaArr[effectiveEndIndex] || closes[effectiveEndIndex];
         } else {
             const rsi = technicalIndicatorService.calculateRSI(closes, opt.rsiPeriod);
             const sma = technicalIndicatorService.calculateSMA(closes, opt.smaPeriod);
@@ -494,12 +514,28 @@ class AnalysisService {
 
         const { type, reason } = this.determineSignalType(currentPrice, lastSMA, lastRSI, opt);
 
-        const recentCloses = windowData.map(d => d.close).slice(-RSI_CONFIG.DEFAULT_PERIOD);
-        const atr = (Math.max(...recentCloses) - Math.min(...recentCloses)) / 2;
-        const targetPercent = Math.max(atr / currentPrice, PRICE_CALCULATION.DEFAULT_ATR_RATIO);
+        const recentCloses = windowData.map(d => d.close)
+            .slice(-RSI_CONFIG.DEFAULT_PERIOD)
+            .filter(c => !isNaN(c) && c > 0);
 
-        const targetPrice = type === 'BUY' ? currentPrice * (1 + targetPercent * 2) : type === 'SELL' ? currentPrice * (1 - targetPercent * 2) : currentPrice;
-        const stopLoss = type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice;
+        let atr = 0;
+        if (recentCloses.length >= 2) {
+            atr = (Math.max(...recentCloses) - Math.min(...recentCloses)) / 2;
+        }
+
+        // Fallback for ATR if calculation failed or resulted in 0/NaN
+        if (!atr || isNaN(atr) || atr <= 0) {
+            atr = currentPrice * PRICE_CALCULATION.DEFAULT_ATR_RATIO;
+        }
+
+        const targetPercent = Math.max(atr / (currentPrice || 1), PRICE_CALCULATION.DEFAULT_ATR_RATIO);
+
+        let targetPrice = type === 'BUY' ? currentPrice * (1 + targetPercent * 2) : type === 'SELL' ? currentPrice * (1 - targetPercent * 2) : currentPrice;
+        let stopLoss = type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice;
+
+        // Final safety check for NaN
+        if (isNaN(targetPrice)) targetPrice = currentPrice;
+        if (isNaN(stopLoss)) stopLoss = currentPrice;
 
         let confidence = 50 + (type === 'HOLD' ? 0 : Math.min(Math.abs(50 - lastRSI) * 1.5, 45));
 
@@ -508,6 +544,7 @@ class AnalysisService {
         let marketContext: Signal['marketContext'];
 
         const indexData = indexDataOverride || marketDataService.getCachedMarketData(relatedIndexSymbol);
+        console.log('[marketContext] relatedIndexSymbol:', relatedIndexSymbol, 'indexData length:', indexData?.length);
         if (indexData && indexData.length >= 50) {
             const correlation = marketDataService.calculateCorrelation(windowData, indexData);
             const indexTrend = marketDataService.calculateTrend(indexData);
@@ -517,6 +554,7 @@ class AnalysisService {
                 correlation: parseFloat(correlation.toFixed(2)),
                 indexTrend,
             };
+            console.log('[marketContext] set', { indexSymbol: relatedIndexSymbol, correlation: marketContext.correlation, indexTrend });
 
             if (type === 'BUY' && indexTrend === 'DOWN' && correlation < -0.5) {
                 confidence -= Math.abs(correlation) * 30;
@@ -541,7 +579,7 @@ class AnalysisService {
         // Calculate exit strategy for BUY/SELL signals
         const exitStrategy = this.calculateExitStrategies(type, currentPrice, atr, regimeResult);
 
-        return {
+        const result: Signal = {
             symbol,
             type,
             confidence: parseFloat(finalConfidence.toFixed(1)),
@@ -573,6 +611,18 @@ class AnalysisService {
             positionSizeAdjustment: strategyRec.positionSizeAdjustment,
             exitStrategy,
         };
+        console.log('[analyzeStock] result', {
+            symbol, type, market,
+            accuracy: result.accuracy,
+            targetPrice: result.targetPrice,
+            stopLoss: result.stopLoss,
+            confidence: result.confidence,
+            forecastConeExists: !!forecastCone,
+            forecastConeConfidence: forecastCone?.confidence,
+            marketContextIndexSymbol: marketContext?.indexSymbol,
+            marketContextCorrelation: marketContext?.correlation
+        });
+        return result;
     }
 }
 

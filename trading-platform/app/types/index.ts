@@ -79,7 +79,32 @@ export interface Stock {
 }
 
 // Re-export shared types for backward compatibility
-export type { SharedOHLCV as OHLCV } from '@/shared/types/shared';
+export type { SharedOHLCV as OHLCV } from './shared';
+
+// Re-export selected shared types for easy access
+export type {
+  OrderSide,
+  OrderType,
+  OrderStatus,
+  SignalType,
+  MarketType,
+  TimeHorizon,
+  EntryTimingRecommendation,
+  PriceData,
+  TechnicalIndicatorResult,
+  EventMap,
+  AuditEventType,
+  AuditEventOutcome,
+  AuditEvent,
+  RateLimitConfig,
+  RateLimitResult,
+} from './shared';
+
+// Re-export order types
+export type {
+  OrderRequest,
+  OrderResult,
+} from './order';
 
 export interface TechnicalIndicator {
   symbol: string;

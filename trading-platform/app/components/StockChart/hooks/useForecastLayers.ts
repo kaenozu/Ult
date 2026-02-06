@@ -46,11 +46,10 @@ export const useForecastLayers = ({
     const pastSignal = analyzeStock(data[0].symbol || '', data.slice(0, hoveredIdx + 1), market);
     if (!pastSignal) return [];
 
-    const targetArr = new Array(extendedData.labels.length).fill(NaN);
-    const stopArr = new Array(extendedData.labels.length).fill(NaN);
-    const currentPrice = data[hoveredIdx].close;
-    targetArr[hoveredIdx] = stopArr[hoveredIdx] = currentPrice;
-
+const targetArr = new Array(data.length).fill(NaN);
+    const stopArr = new Array(data.length).fill(NaN);
+ 
+const currentPrice = data[hoveredIdx].close;
     const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
     const confidenceFactor = (110 - pastSignal.confidence) / 100;
     const momentum = pastSignal.predictedChange ? pastSignal.predictedChange / 100 : 0;
@@ -93,73 +92,88 @@ export const useForecastLayers = ({
     ];
   }, [hoveredIdx, data, market, extendedData.labels]);
 
-  // 4. 未来予測の予報円 (Forecast Cone) - 常に表示される最新の予測
-  // 注: 最新の全データを使用したsignalを元に計算（ゴースト予測とは異なります）
-  const forecastDatasets = useMemo(() => {
-    if (!signal || data.length === 0) return [];
-    const lastIdx = data.length - 1;
-    const currentPrice = data[lastIdx].close;
-    const targetArr = new Array(extendedData.labels.length).fill(NaN);
-    const stopArr = new Array(extendedData.labels.length).fill(NaN);
+   // 4. 未来予測の予報円 (Forecast Cone) - 常に表示される最新の予測
+   // 注: 最新の全データを使用したsignalを元に計算（ゴースト予測とは異なります）
+   const forecastDatasets = useMemo(() => {
+     console.log('[forecastDatasets] signal:', signal, 'data.length:', data.length, 'extendedData.labels.length:', extendedData?.labels.length);
+     if (!signal || data.length === 0) {
+       console.log('[forecastDatasets] Returning empty: no signal or no data');
+       return [];
+     }
+     const lastIdx = data.length - 1;
+     const currentPrice = data[lastIdx].close;
+     console.log('[forecastDatasets] lastIdx:', lastIdx, 'currentPrice:', currentPrice);
+     const targetArr = new Array(extendedData.labels.length).fill(NaN);
+     const stopArr = new Array(extendedData.labels.length).fill(NaN);
+  
+     const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
+     
+     // Use real-time prediction error from accuracy data if available
+     const predError = accuracyData?.predictionError ?? signal.predictionError ?? 1.0;
+     const errorFactor = Math.min(Math.max(predError, 0.5), 1.5);
+     const confidenceUncertainty = 0.4 + ((100 - signal.confidence) / 100) * 0.4;
+     const combinedFactor = errorFactor * confidenceUncertainty;
 
-    const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    
-    // Use real-time prediction error from accuracy data if available
-    const predError = accuracyData?.predictionError ?? signal.predictionError ?? 1.0;
-    const errorFactor = Math.min(Math.max(predError, 0.5), 1.5);
-    const confidenceUncertainty = 0.4 + ((100 - signal.confidence) / 100) * 0.4;
-    const combinedFactor = errorFactor * confidenceUncertainty;
+     const momentum = signal.predictedChange ? signal.predictedChange / 100 : 0;
+     const confidenceFactor = (110 - signal.confidence) / 100;
 
-    const momentum = signal.predictedChange ? signal.predictedChange / 100 : 0;
-    const confidenceFactor = (110 - signal.confidence) / 100;
+     console.log('[forecastDatasets] targetPrice:', signal.targetPrice, 'stopLoss:', signal.stopLoss, 'isNaN check:', isNaN(signal.targetPrice), isNaN(signal.stopLoss));
+     let target = signal.targetPrice, stop = signal.stopLoss;
+     if (signal.type === 'HOLD') {
+       target = currentPrice + (stockATR * combinedFactor * 2);
+       stop = currentPrice - (stockATR * combinedFactor * 2);
+     } else {
+       const uncertainty = stockATR * FORECAST_CONE.ATR_MULTIPLIER * combinedFactor;
+       target += (signal.type === 'BUY' ? 1 : -1) * uncertainty;
+       stop -= (signal.type === 'BUY' ? 1 : -1) * uncertainty;
+     }
 
-    let target = signal.targetPrice, stop = signal.stopLoss;
-    if (signal.type === 'HOLD') {
-      target = currentPrice + (stockATR * combinedFactor * 2);
-      stop = currentPrice - (stockATR * combinedFactor * 2);
-    } else {
-      const uncertainty = stockATR * FORECAST_CONE.ATR_MULTIPLIER * combinedFactor;
-      target += (signal.type === 'BUY' ? 1 : -1) * uncertainty;
-      stop -= (signal.type === 'BUY' ? 1 : -1) * uncertainty;
-    }
+     // NaN safety check
+     if (isNaN(target)) target = currentPrice;
+     if (isNaN(stop)) stop = currentPrice;
+     console.log('[forecastDatasets] final target:', target, 'final stop:', stop);
 
-    targetArr[lastIdx] = stopArr[lastIdx] = currentPrice;
-    const steps = FORECAST_CONE.STEPS;
-    for (let i = 1; i <= steps; i++) {
-      if (lastIdx + i < extendedData.labels.length) {
-        const timeRatio = i / steps;
-        const centerPrice = currentPrice * (1 + (momentum * timeRatio));
-        const spread = (stockATR * timeRatio) * confidenceFactor;
-        targetArr[lastIdx + i] = centerPrice + spread;
-        stopArr[lastIdx + i] = centerPrice - spread;
-      }
-    }
+     targetArr[lastIdx] = stopArr[lastIdx] = currentPrice;
+     const steps = FORECAST_CONE.STEPS;
+     console.log('[forecastDatasets] STEPS:', steps, 'lastIdx:', lastIdx, 'extendedData.labels.length:', extendedData.labels.length);
+     for (let i = 1; i <= steps; i++) {
+       if (lastIdx + i < extendedData.labels.length) {
+         const timeRatio = i / steps;
+         const centerPrice = currentPrice * (1 + (momentum * timeRatio));
+         const spread = (stockATR * timeRatio) * confidenceFactor;
+         targetArr[lastIdx + i] = centerPrice + spread;
+         stopArr[lastIdx + i] = centerPrice - spread;
+         console.log('[forecastDatasets] Set forecast at index:', lastIdx + i, 'target:', targetArr[lastIdx + i], 'stop:', stopArr[lastIdx + i]);
+       } else {
+         console.log('[forecastDatasets] Skipping index:', lastIdx + i, 'because extendedData.labels.length:', extendedData.labels.length);
+       }
+     }
 
-    const color = signal.type === 'BUY' ? '16, 185, 129' : signal.type === 'SELL' ? '239, 68, 68' : '146, 173, 201';
-    return [
-      {
-        label: 'ターゲット',
-        data: targetArr,
-        borderColor: `rgba(${color}, 1)`,
-        backgroundColor: `rgba(${color}, 0.3)`,
-        borderWidth: 3,
-        borderDash: [6, 4],
-        pointRadius: 0,
-        fill: '+1',
-        order: -1
-      },
-      {
-        label: 'リスク',
-        data: stopArr,
-        borderColor: `rgba(${color}, 0.7)`,
-        borderWidth: 3,
-        borderDash: [6, 4],
-        pointRadius: 0,
-        fill: false,
-        order: -1
-      }
-    ];
-  }, [signal, data, extendedData, accuracyData]);
+     const color = signal.type === 'BUY' ? '16, 185, 129' : signal.type === 'SELL' ? '239, 68, 68' : '146, 173, 201';
+     return [
+       {
+         label: 'ターゲット',
+         data: targetArr,
+         borderColor: `rgba(${color}, 1)`,
+         backgroundColor: `rgba(${color}, 0.3)`,
+         borderWidth: 3,
+         borderDash: [6, 4],
+         pointRadius: 0,
+         fill: '+1',
+         order: -1
+       },
+       {
+         label: 'リスク',
+         data: stopArr,
+         borderColor: `rgba(${color}, 0.7)`,
+         borderWidth: 3,
+         borderDash: [6, 4],
+         pointRadius: 0,
+         fill: false,
+         order: -1
+       }
+     ];
+   }, [signal, data, extendedData, accuracyData]);
 
   return { ghostForecastDatasets, forecastDatasets };
 };

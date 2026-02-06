@@ -1,5 +1,5 @@
 import { OHLCV, Position, PositionSizingMethod, StopLossType, RiskManagementSettings, RiskCalculationResult } from '../types';
-import { RISK_MANAGEMENT, VOLATILITY, POSITION_SIZING, TECHNICAL_INDICATORS, DATA_REQUIREMENTS, RISK_PARAMS } from './constants';
+import { RISK_MANAGEMENT, TECHNICAL_INDICATORS } from './constants';
 
 /**
  * ATR（Average True Range）を計算
@@ -70,13 +70,13 @@ export function calculatePositionSize(
     ? Math.abs(entryPrice - stopLossPrice)
     : entryPrice * (settings.stopLoss.enabled && settings.stopLoss.type === 'percentage'
       ? settings.stopLoss.value / 100 * entryPrice
-      : RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PERCENT / 100 * entryPrice);
+      : RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PCT / 100 * entryPrice);
 
   const rewardAmount = takeProfitPrice
     ? Math.abs(takeProfitPrice - entryPrice)
     : entryPrice * (settings.takeProfit.enabled && settings.takeProfit.type === 'percentage'
       ? settings.takeProfit.value / 100 * entryPrice
-      : RISK_MANAGEMENT.DEFAULT_TAKE_PROFIT_PERCENT / 100 * entryPrice);
+      : RISK_MANAGEMENT.DEFAULT_TAKE_PROFIT_PCT / 100 * entryPrice);
 
   let positionSize = 0;
   let methodRiskPercent = 0;  // サイジング方法に応じたリスク率
@@ -84,7 +84,7 @@ export function calculatePositionSize(
   switch (settings.sizingMethod) {
     case 'fixed_ratio':
       // 固定比率法
-      const ratio = settings.fixedRatio ?? RISK_PARAMS.FIXED_RATIO_DEFAULT;
+      const ratio = settings.fixedRatio ?? RISK_MANAGEMENT.FIXED_RATIO_DEFAULT;
       methodRiskPercent = ratio;
       positionSize = Math.floor((capital * ratio) / entryPrice);
       break;
@@ -108,41 +108,41 @@ export function calculatePositionSize(
         positionSize = Math.floor((capital * adjustedKelly) / entryPrice);
         methodRiskPercent = adjustedKelly;
       } else {
-        positionSize = Math.floor((capital * RISK_PARAMS.FIXED_RATIO_DEFAULT) / entryPrice);
+        positionSize = Math.floor((capital * RISK_MANAGEMENT.FIXED_RATIO_DEFAULT) / entryPrice);
       }
       break;
 
     case 'fixed_amount':
       // 固定金額法
-      const fixedAmount = capital * RISK_PARAMS.FIXED_RATIO_DEFAULT; // デフォルト10%
+      const fixedAmount = capital * RISK_MANAGEMENT.FIXED_RATIO_DEFAULT; // デフォルト10%
       positionSize = Math.floor(fixedAmount / entryPrice);
-      methodRiskPercent = RISK_PARAMS.FIXED_RATIO_DEFAULT;
+      methodRiskPercent = RISK_MANAGEMENT.FIXED_RATIO_DEFAULT;
       break;
 
     case 'volatility_based':
       // ボラティリティ基準（ATR使用）
       if (atr && atr > 0) {
         // ATRベース：資本の2%を1ATRあたりのリスクとしているサイズ
-        const capitalAtRisk = capital * (RISK_PARAMS.DEFAULT_RISK_PERCENT / 100);
+        const capitalAtRisk = capital * (RISK_MANAGEMENT.DEFAULT_RISK_PERCENT / 100);
         const atrMultiplier = settings.atrMultiplier ?? RISK_MANAGEMENT.DEFAULT_ATR_MULTIPLIER;
         positionSize = Math.floor(capitalAtRisk / (atr * atrMultiplier * entryPrice) * entryPrice);
       } else {
-        positionSize = Math.floor((capital * RISK_PARAMS.FIXED_RATIO_DEFAULT) / entryPrice);
+        positionSize = Math.floor((capital * RISK_MANAGEMENT.FIXED_RATIO_DEFAULT) / entryPrice);
       }
-      methodRiskPercent = RISK_PARAMS.FIXED_RATIO_DEFAULT;
+      methodRiskPercent = RISK_MANAGEMENT.FIXED_RATIO_DEFAULT;
       break;
 
     default:
-      positionSize = Math.floor((capital * RISK_PARAMS.FIXED_RATIO_DEFAULT) / entryPrice);
-      methodRiskPercent = RISK_PARAMS.FIXED_RATIO_DEFAULT;
+      positionSize = Math.floor((capital * RISK_MANAGEMENT.FIXED_RATIO_DEFAULT) / entryPrice);
+      methodRiskPercent = RISK_MANAGEMENT.FIXED_RATIO_DEFAULT;
   }
 
   // 最小サイズ制限
-  const minSize = POSITION_SIZING.MIN_SIZE;
+  const minSize = RISK_MANAGEMENT.MIN_SIZE;
   positionSize = Math.max(minSize, positionSize);
 
   // 最大サイズ制限（資本の一定比率以下）
-  const maxPositionPercent = settings.maxPositionPercent ?? RISK_MANAGEMENT.MAX_POSITION_PERCENT;
+  const maxPositionPercent = settings.maxPositionPercent ?? RISK_MANAGEMENT.DEFAULT_MAX_POSITION_PERCENT;
   const maxPositionValue = capital * (maxPositionPercent / 100);
   const maxPositionSizeByCapital = Math.floor(maxPositionValue / entryPrice);
   positionSize = Math.min(positionSize, maxPositionSizeByCapital);
@@ -162,8 +162,8 @@ export function calculatePositionSize(
 
   return {
     positionSize,
-    stopLossPrice: stopLossPrice || entryPrice * (1 - RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PERCENT / 100),
-    takeProfitPrice: takeProfitPrice || entryPrice * (1 + RISK_MANAGEMENT.DEFAULT_TAKE_PROFIT_PERCENT / 100),
+    stopLossPrice: stopLossPrice || entryPrice * (1 - RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PCT / 100),
+    takeProfitPrice: takeProfitPrice || entryPrice * (1 + RISK_MANAGEMENT.DEFAULT_TAKE_PROFIT_PCT / 100),
     riskAmount,
     riskPercent: riskPercentOfCapital,
     positionRiskPercent: riskPercentOfPosition,
@@ -268,24 +268,24 @@ export function calculateTakeProfitPrice(
  */
 export const DEFAULT_RISK_SETTINGS: RiskManagementSettings = {
   sizingMethod: 'fixed_ratio',
-  fixedRatio: RISK_PARAMS.FIXED_RATIO_DEFAULT,
-  maxRiskPercent: RISK_PARAMS.DEFAULT_RISK_PERCENT,
-  maxPositionPercent: RISK_PARAMS.DEFAULT_MAX_POSITION_PERCENT,
-  kellyFraction: RISK_PARAMS.DEFAULT_KELLY_FRACTION,
+  fixedRatio: RISK_MANAGEMENT.FIXED_RATIO_DEFAULT,
+  maxRiskPercent: RISK_MANAGEMENT.DEFAULT_RISK_PERCENT,
+  maxPositionPercent: RISK_MANAGEMENT.DEFAULT_MAX_POSITION_PERCENT,
+  kellyFraction: RISK_MANAGEMENT.DEFAULT_KELLY_FRACTION,
   stopLoss: {
     enabled: false,
     type: 'percentage',
-    value: RISK_PARAMS.DEFAULT_STOP_LOSS_PCT,
+    value: RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PCT,
     trailing: false,
   },
   takeProfit: {
     enabled: false,
     type: 'risk_reward_ratio',
-    value: RISK_PARAMS.ATR_TAKE_PROFIT_MULTIPLIER,
+    value: RISK_MANAGEMENT.ATR_TAKE_PROFIT_MULTIPLIER,
     partials: false,
   },
   maxLossPercent: 10,
-  dailyLossLimit: RISK_PARAMS.DEFAULT_DAILY_LOSS_LIMIT,
+  dailyLossLimit: RISK_MANAGEMENT.DEFAULT_DAILY_LOSS_LIMIT,
   useATR: true,
   atrPeriod: TECHNICAL_INDICATORS.ATR_PERIOD,
   atrMultiplier: TECHNICAL_INDICATORS.ATR_MULTIPLIER_DEFAULT,

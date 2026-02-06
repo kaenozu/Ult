@@ -1,4 +1,4 @@
-﻿import { useMemo } from 'react';
+import { useMemo } from 'react';
 import { ChartOptions, TooltipItem } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
@@ -27,22 +27,28 @@ export const useChartOptions = ({
   setHoveredIndex,
   signal
 }: UseChartOptionsProps) => {
-  // Y軸の範囲を計算（価格変動を見やすくするため）
+  // Y軸の範囲を計算（価格に応じて動的に調整）
   const yAxisRange = useMemo(() => {
     if (data.length === 0) return { min: 0, max: 100 };
 
-    const currentPrice = data[data.length - 1].close;
-
-    // 現在価格を中心に±1.5%の固定範囲を設定
+    const prices = data.map(d => d.close);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice;
+    
+    // 価格範囲に基づいて動的にマージンを設定（10%, 15%, 20%）
+    const marginPercentage = priceRange > 1000 ? 0.05 : priceRange > 5000 ? 0.03 : 0.02;
+    const margin = priceRange * marginPercentage;
+    
     return {
-      min: currentPrice * 0.985,
-      max: currentPrice * 1.015,
+      min: minPrice - margin,
+      max: maxPrice + margin,
     };
   }, [data]);
 
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     layout: {
 padding: {
         top: 15,
@@ -106,7 +112,6 @@ padding: {
     },
     scales: {
       x: {
-        min: extendedData.labels.length > 105 ? extendedData.labels[extendedData.labels.length - 105] : undefined,
         grid: {
           color: (ctx: ChartContext) => {
             // Highlight vertical grid line at hovered position
@@ -181,7 +186,10 @@ padding: {
             family: 'Inter, sans-serif'
           },
           padding: 12,
-          count: 8
+          // 動的目盛り数：価格範囲に応じて調整
+          count: yAxisRange.max - yAxisRange.min > 10000 ? 10 : 
+                   yAxisRange.max - yAxisRange.min > 5000 ? 8 : 
+                   yAxisRange.max - yAxisRange.min > 1000 ? 6 : 4
         }
       }
     },
@@ -201,7 +209,6 @@ padding: {
     }
   }), [
     market,
-    extendedData.labels,
     hoveredIdx,
     yAxisRange,
     setHoveredIndex,
