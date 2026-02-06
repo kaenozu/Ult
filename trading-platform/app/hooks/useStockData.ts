@@ -117,43 +117,46 @@ export function useStockData() {
               forecastCone: !!signalResult.data.forecastCone
             });
             setChartSignal(signalResult.data);
-          } else {
-            console.warn('[useStockData] Signal fetch returned unsuccessful:', signalResult.error);
-            // Fallback: generate consensus signal locally using technical analysis
-            try {
-              const fallbackSignal = consensusSignalService.generateConsensus(data);
-              console.log('[useStockData] Fallback signal generated:', {
-                type: fallbackSignal.type,
-                confidence: fallbackSignal.confidence,
-                accuracy: fallbackSignal.accuracy,
-                targetPrice: fallbackSignal.targetPrice,
-                forecastCone: !!fallbackSignal.forecastCone
-              });
-              setChartSignal(fallbackSignal);
-            } catch (fallbackErr) {
-              console.error('[useStockData] Fallback signal generation failed:', fallbackErr);
-            }
-          }
+           } else {
+             console.warn('[useStockData] Signal fetch returned unsuccessful:', signalResult.error);
+             // Fallback: generate consensus signal locally using technical analysis
+             try {
+               const fallbackSignal = consensusSignalService.generateConsensus(data);
+               console.log('[useStockData] Fallback signal generated:', {
+                 type: fallbackSignal.type,
+                 confidence: fallbackSignal.confidence,
+                 probability: fallbackSignal.probability,
+                 strength: fallbackSignal.strength,
+                 reason: fallbackSignal.reason
+               });
+               // Convert ConsensusSignal to Signal
+               const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
+               setChartSignal(signal);
+             } catch (fallbackErr) {
+               console.error('[useStockData] Fallback signal generation failed:', fallbackErr);
+             }
+           }
         }
-      } catch (signalErr) {
-        console.warn('[useStockData] Signal fetch threw error, using fallback consensus:', signalErr);
-        try {
-          const fallbackSignal = consensusSignalService.generateConsensus(data);
-          console.log('[useStockData] Fallback signal generated after error:', {
-            type: fallbackSignal.type,
-            confidence: fallbackSignal.confidence,
-            accuracy: fallbackSignal.accuracy,
-            targetPrice: fallbackSignal.targetPrice,
-            forecastCone: !!fallbackSignal.forecastCone
-          });
-          if (!controller.signal.aborted && isMountedRef.current) {
-            setChartSignal(fallbackSignal);
-          }
-        } catch (fallbackErr) {
-          console.error('[useStockData] Fallback also failed:', fallbackErr);
-          // Keep chartSignal as null if fallback fails
-        }
-      }
+       } catch (signalErr) {
+         console.warn('[useStockData] Signal fetch threw error, using fallback consensus:', signalErr);
+         try {
+           const fallbackSignal = consensusSignalService.generateConsensus(data);
+           console.log('[useStockData] Fallback signal generated after error:', {
+             type: fallbackSignal.type,
+             confidence: fallbackSignal.confidence,
+             probability: fallbackSignal.probability,
+             strength: fallbackSignal.strength,
+             reason: fallbackSignal.reason
+           });
+           const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
+           if (!controller.signal.aborted && isMountedRef.current) {
+             setChartSignal(signal);
+           }
+         } catch (fallbackErr) {
+           console.error('[useStockData] Fallback also failed:', fallbackErr);
+           // Keep chartSignal as null if fallback fails
+         }
+       }
 
       // 5. Background sync for long-term data (keep independent)
       fetchOHLCV(stock.symbol, stock.market, undefined, controller.signal, apiInterval).catch(e => {

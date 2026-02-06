@@ -365,19 +365,29 @@ export function usePropsMemo<T extends Record<string, unknown>>(
   props: T,
   keys: (keyof T)[]
 ): boolean {
-  const prevProps = useRef<T>(props);
+  // Store previous values in state (safe to access during render)
+  const [prevValues, setPrevValues] = useState<unknown[]>([]);
   
+  // Calculate current values
+  const currentValues = useMemo(() => {
+    return keys.map(key => props[key]);
+  }, [props, keys]);
+  
+  // Determine if any values changed (safe: uses state values)
   const hasChanged = useMemo(() => {
-    return keys.some((key) => {
-      return prevProps.current[key] !== props[key];
-    });
-  }, keys.map((key) => props[key]));
-  
-  useEffect(() => {
-    if (hasChanged) {
-      prevProps.current = props;
+    if (prevValues.length !== currentValues.length) {
+      return true;
     }
-  }, [hasChanged, props]);
+    return currentValues.some((val, idx) => val !== prevValues[idx]);
+  }, [currentValues, prevValues]);
+  
+  // Update previous values after render (async to avoid cascading renders)
+  useEffect(() => {
+    // Use setTimeout to defer state update, avoiding synchronous setState in effect
+    setTimeout(() => {
+      setPrevValues(currentValues);
+    }, 0);
+  }, [currentValues]);
   
   return hasChanged;
 }

@@ -19,7 +19,20 @@ describe('useStockData', () => {
             setSelectedStock: mockSetSelectedStock
         }));
         (fetchOHLCV as jest.Mock).mockResolvedValue([{ date: '2023-01-01', close: 100 }]);
-        (fetchSignal as jest.Mock).mockResolvedValue({ type: 'BUY' });
+        (fetchSignal as jest.Mock).mockResolvedValue({
+          success: true,
+          data: {
+            symbol: mockStock.symbol,
+            type: 'BUY',
+            confidence: 80,
+            targetPrice: 2500,
+            stopLoss: 2000,
+            reason: 'test reason',
+            predictedChange: 10,
+            predictionDate: '2023-01-01'
+          },
+          source: 'api'
+        });
     });
 
     it('initializes with default values', () => {
@@ -51,11 +64,11 @@ describe('useStockData', () => {
 
         const { result } = renderHook(() => useStockData());
 
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-            expect(result.current.chartData).toHaveLength(1);
-            expect(result.current.chartSignal).toEqual({ type: 'BUY' });
-        });
+         await waitFor(() => {
+             expect(result.current.loading).toBe(false);
+             expect(result.current.chartData).toHaveLength(1);
+             expect(result.current.chartSignal?.type).toBe('BUY');
+         });
 
         expect(fetchOHLCV).toHaveBeenCalledTimes(3); // Stock + Index + Background Sync
     });

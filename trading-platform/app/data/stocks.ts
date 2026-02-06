@@ -1,4 +1,4 @@
-import { Stock, OHLCV, Signal } from '../types';
+import { Stock, OHLCV, Signal, APIResponse } from '../types';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 
 export const JAPAN_STOCKS: Stock[] = [
@@ -152,9 +152,9 @@ export async function fetchOHLCV(
   return result.data || [];
 }
 
-export async function fetchSignal(stock: Stock, signal?: AbortSignal, interval?: string): Promise<Signal | null> {
+export async function fetchSignal(stock: Stock, signal?: AbortSignal, interval?: string): Promise<APIResponse<Signal>> {
   const result = await marketClient.fetchSignal(stock, signal, interval);
-  return result.data;
+  return result;
 }
 
 /**

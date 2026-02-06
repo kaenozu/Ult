@@ -7,7 +7,7 @@
  * - 売買の強さを0-1の確率として表現
  */
 
-import { OHLCV } from '../types';
+import { OHLCV, Signal } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { RSI_CONFIG, BOLLINGER_BANDS } from './constants';
 
@@ -351,6 +351,44 @@ class ConsensusSignalService {
     if (inMin === inMax) return outMin;
     const clamped = Math.max(inMin, Math.min(value, inMax));
     return ((clamped - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
+  }
+
+  /**
+   * ConsensusSignal を Signal に変換する
+   * フォールバック用の簡易実装
+   */
+  convertToSignal(consensus: ConsensusSignal, symbol: string, data: OHLCV[]): Signal {
+    const currentPrice = data[data.length - 1].close;
+    const adjustment = consensus.confidence / 100 * 0.05; // 5% adjustment based on confidence
+    
+    let targetPrice: number;
+    let stopLoss: number;
+    if (consensus.type === 'BUY') {
+      targetPrice = currentPrice * (1 + adjustment);
+      stopLoss = currentPrice * (1 - adjustment * 1.5);
+    } else if (consensus.type === 'SELL') {
+      targetPrice = currentPrice * (1 - adjustment);
+      stopLoss = currentPrice * (1 + adjustment * 1.5);
+    } else {
+      targetPrice = currentPrice;
+      stopLoss = currentPrice;
+    }
+    
+    const predictedChange = ((targetPrice - currentPrice) / currentPrice) * 100;
+    const now = new Date();
+    const predictionDate = now.toISOString().split('T')[0];
+    
+    return {
+      symbol,
+      type: consensus.type,
+      confidence: consensus.confidence,
+      targetPrice,
+      stopLoss,
+      reason: consensus.reason,
+      predictedChange,
+      predictionDate,
+      // optional fields omitted
+    };
   }
 
   /**
