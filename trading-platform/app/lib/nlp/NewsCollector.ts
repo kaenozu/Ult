@@ -7,6 +7,7 @@
 
 import { EventEmitter } from 'events';
 import type { NewsArticle } from '../sentiment/SentimentAnalysisEngine';
+import { logger } from '@/app/core/logger';
 
 // ============================================================================
 // Types
@@ -188,15 +189,23 @@ export class NewsCollector extends EventEmitter {
    * API経由でニュースを取得
    */
   private async fetchFromAPI(source: NewsSource): Promise<NewsArticle[]> {
-    // Simulate API call - in production, implement actual API integration
-    // For Alpha Vantage News API
-    if (source.id === 'alphavantage-news') {
-      const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
-      if (!apiKey) {
-        console.warn('[NewsCollector] Alpha Vantage API key not configured');
-        return [];
-      }
+    if (typeof window !== 'undefined') {
+      logger.warn('[NewsCollector] Alpha Vantage API cannot be called from client-side', undefined, 'NewsCollector');
+      return [];
+    }
 
+    const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+    if (!apiKey) {
+      logger.warn('[NewsCollector] Alpha Vantage API key not configured', undefined, 'NewsCollector');
+      return [];
+    }
+
+    if (apiKey.length < 10) {
+      logger.warn('[NewsCollector] Alpha Vantage API key appears invalid (too short)', undefined, 'NewsCollector');
+      return [];
+    }
+
+    if (source.id === 'alphavantage-news') {
       const symbols = this.config.symbols.join(',');
       const url = `${source.url}&tickers=${symbols}&apikey=${apiKey}`;
 
@@ -207,7 +216,7 @@ export class NewsCollector extends EventEmitter {
         }
 
         const data = await response.json();
-        
+
         if (data.feed) {
           return this.parseAlphaVantageNews(data.feed);
         }
