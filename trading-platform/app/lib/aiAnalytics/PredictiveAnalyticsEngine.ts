@@ -88,6 +88,8 @@ export interface PositionSizingInput {
   entryPrice: number;            // エントリー価格
   stopLossPrice: number;         // 損切り価格
   confidence?: number;           // シグナル信頼度 (0-100)
+  minShares?: number;            // 最小購入株数 (デフォルト: 100)
+  maxPositionPercent?: number;   // 最大ポジション比率 (デフォルト: 20%)
 }
 
 export interface PositionSizingResult {
@@ -907,6 +909,8 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
    */
   calculatePositionSize(input: PositionSizingInput): PositionSizingResult {
     const reasoning: string[] = [];
+    const minShares = input.minShares ?? 100;
+    const maxPositionPercent = input.maxPositionPercent ?? 20;
     
     // 1. 損切り距離を計算
     const stopLossDistance = Math.abs(input.entryPrice - input.stopLossPrice);
@@ -953,12 +957,12 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
       }
     }
     
-    // 5. 最小単位チェック（100株未満は警告）
-    if (recommendedShares < 100) {
-      reasoning.push(`⚠️ 推奨株数が100株未満です。リスク許容度または口座資金を見直してください。`);
+    // 6. 最小単位チェック
+    if (recommendedShares < minShares) {
+      reasoning.push(`⚠️ 推奨株数が最小単位（${minShares}株）未満です。リスク許容度または口座資金を見直してください。`);
     }
     
-    // 6. 最終結果を計算
+    // 7. 最終結果を計算
     const positionValue = recommendedShares * input.entryPrice;
     const maxLossAmount = recommendedShares * stopLossDistance;
     const actualRiskPercent = (maxLossAmount / input.accountEquity) * 100;
@@ -966,10 +970,10 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
     reasoning.push(`ポジション価値: ¥${positionValue.toFixed(0)}`);
     reasoning.push(`予想最大損失: ¥${maxLossAmount.toFixed(0)} (口座資金の${actualRiskPercent.toFixed(2)}%)`);
     
-    // 7. ポートフォリオ集中リスクのチェック
+    // 8. ポートフォリオ集中リスクのチェック
     const positionPercent = (positionValue / input.accountEquity) * 100;
-    if (positionPercent > 20) {
-      reasoning.push(`⚠️ ポジションが口座資金の${positionPercent.toFixed(1)}%を占めます（推奨: 20%以下）`);
+    if (positionPercent > maxPositionPercent) {
+      reasoning.push(`⚠️ ポジションが口座資金の${positionPercent.toFixed(1)}%を占めます（推奨: ${maxPositionPercent}%以下）`);
     } else {
       reasoning.push(`✓ ポジション比率: ${positionPercent.toFixed(1)}% (健全)`);
     }

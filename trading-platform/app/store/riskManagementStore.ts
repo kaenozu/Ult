@@ -15,6 +15,7 @@ export interface RiskManagementSettings {
   // ポジション制限
   maxPositionPercent: number;      // 最大ポジション比率（%）デフォルト: 20%
   minShares: number;               // 最小購入株数 デフォルト: 100
+  maxStopLossPercent: number;      // 最大許容損切り率（%）デフォルト: 5%
   
   // ATR設定
   atrMultiplier: number;           // ATR倍率（損切り距離）デフォルト: 2.0
@@ -42,6 +43,7 @@ const DEFAULT_SETTINGS: RiskManagementSettings = {
   riskPerTrade: 2,                 // 2%
   maxPositionPercent: 20,          // 20%
   minShares: 100,                  // 100株
+  maxStopLossPercent: 5,           // 5%
   atrMultiplier: 2.0,              // 2倍ATR
   useConfidenceAdjustment: true,
   enabled: true,

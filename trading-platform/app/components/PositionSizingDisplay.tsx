@@ -32,19 +32,19 @@ export function PositionSizingDisplay({
     const warns: string[] = [];
     
     // 少ない株数の警告
-    if (result.recommendedShares < 100) {
-      warns.push('推奨株数が最小単位未満です');
+    if (result.recommendedShares < settings.minShares) {
+      warns.push(`推奨株数が最小単位（${settings.minShares}株）未満です`);
     }
     
     // 高いポジション比率の警告
     const positionPercent = (result.positionValue / settings.accountEquity) * 100;
-    if (positionPercent > 20) {
-      warns.push('ポジション比率が高すぎます');
+    if (positionPercent > settings.maxPositionPercent) {
+      warns.push(`ポジション比率が高すぎます（${settings.maxPositionPercent}%超）`);
     }
     
     // 大きな損切り距離の警告
-    if (result.stopLossPercent > 5) {
-      warns.push('損切り距離が大きすぎます');
+    if (result.stopLossPercent > settings.maxStopLossPercent) {
+      warns.push(`損切り距離が大きすぎます（${settings.maxStopLossPercent}%超）`);
     }
     
     return warns;
