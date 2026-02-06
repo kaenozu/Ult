@@ -147,9 +147,10 @@ export async function fetchOHLCV(
   currentPrice?: number,
   signal?: AbortSignal,
   interval?: string, // New: interval parameter (1m, 5m, 15m, 1h, 4h, 1d, etc.)
-  startDate?: string // New: startDate parameter
+  startDate?: string, // New: startDate parameter
+  forceRefresh: boolean = false
 ): Promise<OHLCV[]> {
-  const result = await marketClient.fetchOHLCV(symbol, market, currentPrice, signal, interval, startDate);
+  const result = await marketClient.fetchOHLCV(symbol, market, currentPrice, signal, interval, startDate, forceRefresh);
   return result.data || [];
 }
 

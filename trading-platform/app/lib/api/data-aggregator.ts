@@ -1,7 +1,8 @@
 import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, TechnicalIndicator } from '@/app/types';
 import { ApiError as APIError, NetworkError, RateLimitError } from '@/app/lib/errors';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
-import { idbClient } from './idb';
+import { idbClient } from './idb-migrations';
+import { isIntradayInterval } from '@/app/lib/constants/intervals';
 
 /**
  * Type alias for backward compatibility
@@ -72,19 +73,49 @@ class MarketDataClient {
    * Fetch Historical Data with Smart Persistence (IndexedDB + Delta fetching)
    * @param interval - Time interval for data (1m, 5m, 15m, 1h, 4h, 1d, etc.)
    * @param startDate - Optional start date (YYYY-MM-DD) to ensure sufficient history
+   * @param forceRefresh - If true, skip cache/IDB and fetch fresh data from API
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string, startDate?: string): Promise<FetchResult<OHLCV[]>> {
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string, startDate?: string, forceRefresh: boolean = false): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}-${interval || '1d'}`;
 
-    const cached = this.getFromCache<OHLCV[]>(cacheKey);
-    let cacheValid = !!cached;
-    if (cached && startDate && cached.length > 0) {
-      if (new Date(cached[0].date) > new Date(startDate)) {
-        cacheValid = false;
+    if (!forceRefresh) {
+      const cached = this.getFromCache<OHLCV[]>(cacheKey);
+      let cacheValid = !!cached;
+      
+      // If we have cached data but need specific start date, check if cache covers it
+      if (cached && startDate && cached.length > 0) {
+        if (new Date(cached[0].date) > new Date(startDate)) {
+          cacheValid = false;
+        }
+      }
+
+      if (cacheValid && cached) return { success: true, data: cached, source: 'cache' };
+
+      // Check IDB for non-intraday data
+      const isIntraday = interval && isIntradayInterval(interval);
+      if (!isIntraday) {
+        try {
+          const idbData = await idbClient.getData(symbol);
+          
+          let idbValid = false;
+          if (idbData && idbData.length > 0) {
+            idbValid = true;
+            // Check if IDB covers start date
+            if (startDate && new Date(idbData[0].date) > new Date(startDate)) {
+              idbValid = false;
+            }
+          }
+
+          if (idbValid && idbData.length > 0) {
+            const interpolatedData = this.interpolateOHLCV(idbData);
+            this.setCache(cacheKey, interpolatedData);
+            return { success: true, data: interpolatedData, source: 'idb' };
+          }
+        } catch (err) {
+          console.warn(`[Aggregator] Failed to read from IDB for ${symbol}:`, err);
+        }
       }
     }
-
-    if (cacheValid && cached) return { success: true, data: cached, source: 'cache' };
 
     if (this.pendingRequests.has(cacheKey)) {
       try {
@@ -99,13 +130,19 @@ class MarketDataClient {
 
     const fetchPromise = (async () => {
       try {
-        const isIntraday = interval && ['1m', '5m', '15m', '1h'].includes(interval);
+        // Check if this is intraday data (1m, 5m, 15m, 1h)
+        // Intraday data should always be fetched fresh from API, not from IndexedDB
+        const isIntraday = interval && isIntradayInterval(interval);
+
         let finalData: OHLCV[] = [];
 
         if (isIntraday) {
+          // For intraday data, always fetch from API with current date
+          // Get last 30 days of intraday data
           const now = new Date();
           const start = new Date(now);
           start.setDate(start.getDate() - 30);
+          
           const fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&interval=${interval}&startDate=${start.toISOString().split('T')[0]}`;
           const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
           if (newData && newData.length > 0) {
@@ -115,7 +152,11 @@ class MarketDataClient {
             throw new Error('No intraday data available');
           }
         } else {
-          const localData = await idbClient.getData(symbol);
+          // Check IDB first (if not forced refresh)
+          let localData: OHLCV[] = [];
+          if (!forceRefresh) {
+             localData = await idbClient.getData(symbol);
+          }
 
           let missingHistory = false;
           if (startDate && localData.length > 0) {
@@ -133,7 +174,7 @@ class MarketDataClient {
           const now = new Date();
           const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
           const timeDiff = lastDataDate ? now.getTime() - lastDataDate.getTime() : null;
-          const needsUpdate = !lastDataDate || (timeDiff !== null && timeDiff > (24 * 60 * 60 * 1000)) || missingHistory;
+          const needsUpdate = forceRefresh || !lastDataDate || (timeDiff !== null && timeDiff > (24 * 60 * 60 * 1000)) || missingHistory;
 
           if (needsUpdate) {
             let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
@@ -141,24 +182,38 @@ class MarketDataClient {
 
             if (missingHistory && startDate) {
               fetchUrl += `&startDate=${startDate}`;
-            } else if (lastDataDate) {
+            } else if (lastDataDate && !forceRefresh) { // If appending
               const nextDay = new Date(lastDataDate);
               nextDay.setDate(nextDay.getDate() + 1);
               fetchUrl += `&startDate=${nextDay.toISOString().split('T')[0]}`;
             } else if (startDate) {
               fetchUrl += `&startDate=${startDate}`;
+            } else {
+               // Default 1 year if no startDate provided
+               const defaultStart = new Date();
+               defaultStart.setFullYear(defaultStart.getFullYear() - 1);
+               fetchUrl += `&startDate=${defaultStart.toISOString().split('T')[0]}`;
             }
 
             const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
 
             if (newData && newData.length > 0) {
-              finalData = await idbClient.mergeAndSave(symbol, newData);
+              if (forceRefresh) {
+                 finalData = await idbClient.mergeAndSave(symbol, newData);
+              } else {
+                 finalData = await idbClient.mergeAndSave(symbol, newData);
+              }
               source = 'api';
             }
           }
         }
 
         const interpolatedData = this.interpolateOHLCV(finalData);
+        
+        if (interpolatedData.length === 0) {
+          throw new Error('No data available');
+        }
+
         if (!isIntraday) {
           this.setCache(cacheKey, interpolatedData);
         }
@@ -308,7 +363,10 @@ class MarketDataClient {
     }
   }
 
-  public clearCache(): void {
+  /**
+   * Clear all cached data (useful for testing)
+   */
+  public clearCache() {
     this.cache.clear();
     this.pendingRequests.clear();
   }
