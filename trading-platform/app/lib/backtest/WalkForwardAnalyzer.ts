@@ -419,7 +419,27 @@ export class WalkForwardAnalyzer extends EventEmitter {
     const grossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
     const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
 
-    return { totalReturn, sharpeRatio, maxDrawdown: 0, winRate, profitFactor };
+    return {
+      totalReturn,
+      annualizedReturn: totalReturn,
+      volatility,
+      sharpeRatio,
+      sortinoRatio: 0,
+      maxDrawdown: 0,
+      maxDrawdownDuration: 0,
+      winRate,
+      profitFactor,
+      averageWin: winningTrades.length > 0 ? grossProfit / winningTrades.length : 0,
+      averageLoss: losingTrades.length > 0 ? grossLoss / losingTrades.length : 0,
+      largestWin: winningTrades.length > 0 ? Math.max(...winningTrades.map(t => t.pnl)) : 0,
+      largestLoss: losingTrades.length > 0 ? Math.min(...losingTrades.map(t => t.pnl)) : 0,
+      averageTrade: trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0,
+      totalTrades: trades.length,
+      winningTrades: winningTrades.length,
+      losingTrades: losingTrades.length,
+      calmarRatio: 0,
+      omegaRatio: 0,
+    };
   }
 
   /**

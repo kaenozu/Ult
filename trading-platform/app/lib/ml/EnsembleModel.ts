@@ -44,7 +44,7 @@ export interface ModelPrediction {
 export interface EnsemblePrediction {
   finalPrediction: number; // 最終予測騰落率（%）
   confidence: number; // 信頼度 0-100
-  weights: Record<ModelType, number>; // 各モデルの重み
+  weights: EnsembleWeights; // 各モデルの重み
   modelPredictions: ModelPrediction[]; // 各モデルの予測
   marketRegime: 'TRENDING' | 'RANGING' | 'VOLATILE' | 'QUIET';
   reasoning: string; // 予測の根拠
@@ -73,6 +73,7 @@ interface EnsembleWeights {
   XGB: number;
   LSTM: number;
   TECHNICAL: number;
+  ENSEMBLE?: number;
 }
 
 /**
@@ -330,13 +331,11 @@ export class EnsembleModel {
       const baselineAccuracy = 55; // 55%をベースラインとする
       const adjustment = (avgAccuracy - baselineAccuracy) / 100 * this.LEARNING_RATE;
 
-      // @ts-expect-error - 動的なアクセス
-      this.currentWeights[modelType] = Math.max(
+      (this.currentWeights as unknown as Record<string, number>)[modelType] = Math.max(
         this.MIN_WEIGHT,
         Math.min(
           this.MAX_WEIGHT,
-          // @ts-expect-error
-          this.currentWeights[modelType] * (1 + adjustment)
+          (this.currentWeights as unknown as Record<string, number>)[modelType] * (1 + adjustment)
         )
       );
     }
@@ -607,7 +606,8 @@ export class EnsembleModel {
     const maxWeightModel = Object.entries(weights).reduce((a, b) =>
       a[1] > b[1] ? a : b
     )[0] as ModelType;
-    parts.push(`主要モデル: ${maxWeightModel} (重み: ${(weights[maxWeightModel] * 100).toFixed(1)}%)`);
+    const weightValue = weights[maxWeightModel] ?? 0;
+    parts.push(`主要モデル: ${maxWeightModel} (重み: ${(weightValue * 100).toFixed(1)}%)`);
 
     // 予測の方向性
     const avgPrediction =

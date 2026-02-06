@@ -15,6 +15,19 @@ import { OHLCV } from '@/app/types';
 import { StrategyResult } from '../strategies/WinningStrategyEngine';
 import { PositionSizingResult } from '../risk/AdvancedRiskManager';
 
+// Simple Monte Carlo Result for this engine (different from MonteCarloSimulator's full version)
+export interface SimpleMonteCarloResult {
+  originalResult: BacktestResult;
+  simulations: BacktestResult[];
+  probabilityOfProfit: number;
+  probabilityOfDrawdown: number;
+  confidenceIntervals: {
+    returns: { lower: number; upper: number };
+    drawdown: { lower: number; upper: number };
+    sharpe: { lower: number; upper: number };
+  };
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -317,7 +330,7 @@ class WinningBacktestEngine {
   runMonteCarloSimulation(
     originalResult: BacktestResult,
     numSimulations: number = 1000
-  ): MonteCarloResult {
+  ): SimpleMonteCarloResult {
     const simulations: BacktestResult[] = [];
     
     for (let i = 0; i < numSimulations; i++) {

@@ -28,8 +28,7 @@ import type {
   PsychologyAnalysisResult,
   DisciplineScoreProps,
 } from '@/app/types/psychology';
-
-type DisciplineScore = DisciplineScoreProps;
+// DisciplineScore is already imported from @/app/types/risk above
 
 // Temporary definitions for missing types (to be moved to proper location)
 interface GoalSection {

@@ -11,30 +11,30 @@
 
 export type Market = 'japan' | 'usa';
 
+export interface JapanCommissionConfig {
+  baseCommissionRate: number; // 基本手数料率 (%)
+  minCommission: number; // 最低手数料 (円)
+  consumptionTax: number; // 消費税率 (%)
+}
+
+export interface USACommissionConfig {
+  perShareFee: number; // 1株あたりの手数料 ($)
+  minCommission: number; // 最低手数料 ($)
+  maxCommission: number; // 上限手数料 ($)
+  secFee: number; // SEC Fee (%)
+  tafFee: number; // TAF Fee ($ per trade, sell only)
+}
+
+export interface FXCommissionConfig {
+  conversionRate: number; // 為替手数料率 (%)
+  minFee: number; // 最低為替手数料
+}
+
 export interface CommissionConfig {
   market: Market;
-  
-  // 日本株手数料設定
-  japan?: {
-    baseCommissionRate: number; // 基本手数料率 (%)
-    minCommission: number; // 最低手数料 (円)
-    consumptionTax: number; // 消費税率 (%)
-  };
-  
-  // 米国株手数料設定
-  usa?: {
-    perShareFee: number; // 1株あたりの手数料 ($)
-    minCommission: number; // 最低手数料 ($)
-    maxCommission: number; // 上限手数料 ($)
-    secFee: number; // SEC Fee (%)
-    tafFee: number; // TAF Fee ($ per trade, sell only)
-  };
-  
-  // 為替手数料
-  fx?: {
-    conversionRate: number; // 為替手数料率 (%)
-    minFee: number; // 最低為替手数料
-  };
+  japan?: JapanCommissionConfig;
+  usa?: USACommissionConfig;
+  fx?: FXCommissionConfig;
 }
 
 export interface CommissionResult {
@@ -53,13 +53,13 @@ export interface CommissionResult {
 // Default Configurations
 // ============================================================================
 
-export const DEFAULT_JAPAN_COMMISSION: CommissionConfig['japan'] = {
+export const DEFAULT_JAPAN_COMMISSION: JapanCommissionConfig = {
   baseCommissionRate: 0.22, // 0.22% (税込)
   minCommission: 0, // 最低手数料なし (証券会社による)
   consumptionTax: 10, // 10%
 };
 
-export const DEFAULT_USA_COMMISSION: CommissionConfig['usa'] = {
+export const DEFAULT_USA_COMMISSION: USACommissionConfig = {
   perShareFee: 0.005, // $0.005/株
   minCommission: 0, // 最低手数料なし
   maxCommission: 1.0, // $1.00 上限 (証券会社による)
@@ -67,7 +67,7 @@ export const DEFAULT_USA_COMMISSION: CommissionConfig['usa'] = {
   tafFee: 0.000119, // $0.000119/株 TAF Fee (売却時のみ)
 };
 
-export const DEFAULT_FX_COMMISSION: CommissionConfig['fx'] = {
+export const DEFAULT_FX_COMMISSION: FXCommissionConfig = {
   conversionRate: 0.15, // 0.15% (一般的な外貨両替手数料)
   minFee: 0,
 };
@@ -82,9 +82,9 @@ export class CommissionCalculator {
   constructor(market: Market, config?: Partial<CommissionConfig>) {
     this.config = {
       market,
-      japan: market === 'japan' ? { ...DEFAULT_JAPAN_COMMISSION, ...(config?.japan ?? {}) } : undefined,
-      usa: market === 'usa' ? { ...DEFAULT_USA_COMMISSION, ...(config?.usa ?? {}) } : undefined,
-      fx: { ...DEFAULT_FX_COMMISSION, ...(config?.fx ?? {}) },
+      japan: market === 'japan' ? { ...DEFAULT_JAPAN_COMMISSION, ...config?.japan } : undefined,
+      usa: market === 'usa' ? { ...DEFAULT_USA_COMMISSION, ...config?.usa } : undefined,
+      fx: { ...DEFAULT_FX_COMMISSION, ...config?.fx },
     };
   }
   

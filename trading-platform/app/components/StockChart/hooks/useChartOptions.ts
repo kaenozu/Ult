@@ -70,7 +70,7 @@ export const useChartOptions = ({
           font: {
             size: 12,
             family: 'Inter, sans-serif',
-            weight: '500'
+            weight: 500
           },
           usePointStyle: true,
           boxWidth: 8,

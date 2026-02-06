@@ -4,7 +4,6 @@
  * Handles model training, loading, saving, and inference using TensorFlow.js
  */
 
-// @ts-expect-error - tensorflow types may not be installed
 import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 
@@ -374,7 +373,7 @@ export class ModelPipeline {
       throw new Error('Model not loaded');
     }
 
-    const { xTest, yTest } = this.prepareSequences(testData, this.config.sequenceLength);
+    const { xTrain: xTest, yTrain: yTest } = this.prepareSequences(testData, this.config.sequenceLength);
 
     const result = this.model.evaluate(xTest, yTest) as tf.Scalar[];
     

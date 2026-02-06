@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, Trade as BacktestTrade } from './AdvancedBacktestEngine';
+import { BacktestResult, Trade as BacktestTrade, BacktestConfig, PerformanceMetrics } from './AdvancedBacktestEngine';
 
 // ============================================================================
 // Types
@@ -336,7 +336,7 @@ export class MonteCarloSimulator extends EventEmitter {
     equityCurve: number[],
     trades: BacktestTrade[],
     config: BacktestConfig
-  ): MonteCarloResult {
+  ): PerformanceMetrics {
     const returns = equityCurve.slice(1).map((eq, i) => (eq - equityCurve[i]) / equityCurve[i]);
 
     const totalReturn = ((equityCurve[equityCurve.length - 1] - config.initialCapital) / config.initialCapital) * 100;

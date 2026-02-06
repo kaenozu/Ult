@@ -5,9 +5,8 @@
  * テスト時にモック実装に差し替え可能
  */
 
-import { OHLCV, Stock, Signal, BacktestTrade, Position } from '../types';
+import { OHLCV, Stock, Signal, BacktestTrade, Position, ModelPrediction } from '@/app/types';
 import { ExtendedTechnicalIndicator } from '../types/prediction-types';
-import { ModelPrediction } from '../../types';
 
 export interface IApiClient {
   fetch<T>(url: string, options?: RequestInit): Promise<T>;

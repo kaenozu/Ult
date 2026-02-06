@@ -7,9 +7,7 @@ export * from './SlippageModel';
 export * from './CommissionCalculator';
 export * from './PartialFillSimulator';
 export * from './LatencySimulator';
-export * from './WalkForwardAnalyzer';
 export * from './MonteCarloSimulator';
-export * from './RealisticBacktestOrchestrator';
 
 // Explicit re-exports to avoid naming conflicts
 export type {
@@ -27,6 +25,16 @@ export {
 
 // Enhanced realistic backtesting components
 export * from './RealisticBacktestEngine';
-// MonteCarloSimulator already exported above, skip duplicate
 export * from './OverfittingDetector';
+
+// WalkForward and Orchestrator - selective exports to avoid naming conflicts
+export {
+  WalkForwardAnalyzer,
+  type WalkForwardConfig as WalkForwardAnalyzerConfig,
+  type WalkForwardReport,
+} from './WalkForwardAnalyzer';
+export {
+  RealisticBacktestOrchestrator,
+  type RealisticBacktestConfig as OrchestratorConfig,
+} from './RealisticBacktestOrchestrator';
 export * from './WalkForwardAnalysis';

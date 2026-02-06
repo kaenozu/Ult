@@ -7,8 +7,10 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, BacktestConfig, PerformanceMetrics } from './AdvancedBacktestEngine';
-import { BacktestTrade } from '@/app/types';
+import { BacktestResult, BacktestConfig, PerformanceMetrics, Trade } from './AdvancedBacktestEngine';
+
+// Use Trade from AdvancedBacktestEngine for consistency
+type BacktestTrade = Trade;
 
 // ============================================================================
 // Types
@@ -309,7 +311,7 @@ export class MonteCarloSimulator extends EventEmitter {
     let equity = initialCapital;
 
     for (const trade of trades) {
-      equity += trade.pnl;
+      equity += trade.pnl ?? 0;
       equityCurve.push(equity);
     }
 

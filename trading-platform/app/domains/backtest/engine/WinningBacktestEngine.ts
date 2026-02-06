@@ -38,6 +38,19 @@ export interface BacktestTrade {
   holdingPeriods: number; // 保有期間（足数）
 }
 
+export interface BacktestPosition {
+  symbol: string;
+  side: 'BUY' | 'SELL';
+  entryPrice: number;
+  quantity: number;
+  entryDate: string;
+  entryIndex: number;
+  stopLoss?: number;
+  takeProfit?: number;
+  strategy: string;
+  riskRewardRatio?: number;
+}
+
 export interface BacktestConfig {
   initialCapital: number;
   commission: number; // % per trade
@@ -398,7 +411,7 @@ class WinningBacktestEngine {
     
     this.openPositions.set(symbol, {
       symbol,
-      side: signal.signal,
+      side: signal.signal as 'BUY' | 'SELL',
       entryPrice: price,
       quantity,
       entryDate: data.date,
@@ -453,7 +466,7 @@ class WinningBacktestEngine {
       slippage,
       exitReason: reason as any,
       strategy: position.strategy,
-      riskRewardRatio: position.riskRewardRatio,
+      riskRewardRatio: position.riskRewardRatio ?? 0,
       holdingPeriods: index - position.entryIndex,
     };
     

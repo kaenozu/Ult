@@ -167,6 +167,22 @@ export interface CooldownRecord {
   violationCount: number;
 }
 
+export interface DisciplineScore {
+  overall: number;
+  planAdherence: number;
+  emotionalControl: number;
+  lossManagement: number;
+  journalConsistency: number;
+  coolingOffCompliance: number;
+  breakdown: {
+    planAdherenceRate: number;
+    avgEmotionScore: number;
+    maxConsecutiveLosses: number;
+    journalEntryRate: number;
+    coolingOffRespectRate: number;
+  };
+}
+
 // ============================================================================
 // Market Data Types
 // ============================================================================

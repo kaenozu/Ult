@@ -17,7 +17,8 @@ import {
   Strategy,
   Trade,
   StrategyContext,
-  PerformanceMetrics
+  PerformanceMetrics,
+  StrategyAction as BaseStrategyAction
 } from './AdvancedBacktestEngine';
 import { SlippagePredictionService, OrderBook, OrderBookLevel } from '../execution/SlippagePredictionService';
 
@@ -27,7 +28,7 @@ export interface CommissionTier {
   rate: number;
 }
 
-export interface RealisticBacktestConfig extends BacktestConfig {
+export interface RealisticBacktestConfig extends Omit<BacktestConfig, 'spread'> {
   // Market impact settings
   marketImpactEnabled?: boolean;
   marketImpactFactor?: number;
@@ -52,46 +53,81 @@ export interface RealisticBacktestConfig extends BacktestConfig {
   spreadEnabled?: boolean;
   baseSpread?: number;
   spread?: number;
+  // Position sizing
+  positionSizing?: 'fixed_ratio' | 'kelly' | 'fixed';
+  positionSizePercent?: number;
+  maxPositionPercent?: number;
+  transactionCosts?: number;
+  // Order book
+  orderBookDepth?: number;
 }
 
 export interface RealisticTradeMetrics extends Trade {
-  slippage: number;
-  commission: number;
+  slippage?: number;
+  commission?: number;
   marketImpact: number;
-  spread: number;
-  executionDelay: number;
-  effectivePrice: number;
+  spread?: number;
+  executionDelay?: number;
+  effectivePrice?: number;
   effectiveSlippage: number;
-  quantity: number;
+  commissionTier?: number;
+  timeOfDayFactor?: number;
+  volatilityFactor?: number;
+}
+
+export interface TransactionCostMetrics {
+  totalCommissions: number;
+  totalSlippage: number;
+  totalMarketImpact: number;
+  totalSpread: number;
+  avgCommissionPerTrade: number;
+  avgSlippagePerTrade: number;
+  avgMarketImpactPerTrade: number;
+}
+
+export interface ExecutionQualityMetrics {
+  avgExecutionTime: number;
+  worstSlippage: number;
+  bestSlippage: number;
+  slippageStdDev: number;
 }
 
 export interface RealisticBacktestResult {
   trades: RealisticTradeMetrics[];
   equityCurve: number[];
   metrics: PerformanceMetrics;
-  realisticMetrics: {
+  config: RealisticBacktestConfig;
+  startDate: string;
+  endDate: string;
+  duration: number;
+  realisticMetrics?: {
     totalSlippage: number;
     totalCommission: number;
     totalMarketImpact: number;
     avgExecutionDelay: number;
   };
+  transactionCosts: TransactionCostMetrics;
+  executionQuality: ExecutionQualityMetrics;
 }
 
-export interface StrategyAction {
-  type: 'LONG' | 'SHORT' | 'CLOSE' | 'NONE';
-  size?: number;
-  stopLoss?: number;
-  takeProfit?: number;
-  exitReason?: string;
-}
+// Use StrategyAction from AdvancedBacktestEngine
+export type StrategyAction = BaseStrategyAction;
 
 const DEFAULT_REALISTIC_CONFIG: RealisticBacktestConfig = {
   initialCapital: 1000000,
+  commission: 0.1,
+  slippage: 0.001,
+  spread: 0.01,
+  maxPositionSize: 20,
+  maxDrawdown: 50,
+  allowShort: true,
+  useStopLoss: true,
+  useTakeProfit: true,
+  riskPerTrade: 2,
   positionSizing: 'fixed_ratio',
   positionSizePercent: 0.1,
   maxPositionPercent: 0.25,
   transactionCosts: 0.001,
-  slippage: 0.001,
   marketImpactEnabled: true,
   marketImpactFactor: 0.1,
   slippageModel: 'dynamic',
@@ -219,7 +255,7 @@ export class RealisticBacktestEngine extends EventEmitter {
        executionQuality
      };
 
-     strategy.onEnd?.(result);
+     strategy.onEnd?.(result as unknown as import('./AdvancedBacktestEngine').BacktestResult);
      if (this.emit instanceof Function) {
        this.emit('backtest_complete', result);
      }

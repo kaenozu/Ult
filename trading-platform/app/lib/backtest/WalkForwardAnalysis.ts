@@ -7,9 +7,9 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
-import { TrainingData, WalkForwardResult, MLBacktestConfig } from '../ml/types';
+import { TrainingData, WalkForwardResult, MLBacktestConfig, MLFeatures } from '../ml/types';
 import { EnsembleStrategy } from '../ml/EnsembleStrategy';
-import { FeatureEngineeringService } from '../ml/FeatureEngineering';
+import { FeatureEngineering, AllFeatures } from '../ml/FeatureEngineering';
 
 export interface WalkForwardConfig {
   trainWindowSize: number; // days
@@ -20,12 +20,12 @@ export interface WalkForwardConfig {
 }
 
 export class WalkForwardAnalysis extends EventEmitter {
-  private featureService: FeatureEngineeringService;
+  private featureService: FeatureEngineering;
   private ensembleStrategy: EnsembleStrategy;
 
   constructor() {
     super();
-    this.featureService = new FeatureEngineeringService();
+    this.featureService = new FeatureEngineering();
     this.ensembleStrategy = new EnsembleStrategy();
   }
 
@@ -58,12 +58,10 @@ export class WalkForwardAnalysis extends EventEmitter {
 
       console.log(`Walk-Forward Window ${windowId + 1}: Train ${trainData.length} samples, Test ${testData.length} samples`);
 
-      // Extract features
-      const trainFeatures = this.featureService.extractFeatures(trainData, 200);
-      const trainLabels = this.calculateReturns(trainData.slice(200));
-
-      // Normalize features
-      const { normalized: normalizedTrain, scalers } = this.featureService.normalizeFeatures(trainFeatures);
+      // Extract features using calculateAllFeatures
+      const trainAllFeatures = trainData.length >= 200 ? this.featureService.calculateAllFeatures(trainData) : null;
+      const trainFeatures = trainAllFeatures ? this.convertFeaturesToArray(trainAllFeatures) : [];
+      const trainLabels = this.calculateReturns(trainData.slice(Math.min(200, trainData.length)));
 
       // Prepare training data
       const trainingData: TrainingData = {
@@ -86,8 +84,9 @@ export class WalkForwardAnalysis extends EventEmitter {
       }
 
       // Test on out-of-sample data
-      const testFeatures = this.featureService.extractFeatures(testData, 200);
-      const testLabels = this.calculateReturns(testData.slice(200));
+      const testAllFeatures = testData.length >= 200 ? this.featureService.calculateAllFeatures(testData) : null;
+      const testFeatures = testAllFeatures ? this.convertFeaturesToArray(testAllFeatures) : [];
+      const testLabels = this.calculateReturns(testData.slice(Math.min(200, testData.length)));
 
       // Make predictions
       const predictions: { date: Date; predicted: number; actual: number }[] = [];
@@ -172,22 +171,24 @@ export class WalkForwardAnalysis extends EventEmitter {
       const trainData = data.slice(0, trainEndIdx);
       const testData = data.slice(trainEndIdx, testEndIdx);
 
-      // Extract features
-      const trainFeatures = this.featureService.extractFeatures(trainData, 200);
-      const trainLabels = this.calculateReturns(trainData.slice(200));
+      // Extract features using calculateAllFeatures
+      const trainAllFeatures = trainData.length >= 200 ? this.featureService.calculateAllFeatures(trainData) : null;
+      const trainFeatures = trainAllFeatures ? this.convertFeaturesToArray(trainAllFeatures) : [];
+      const trainLabels = this.calculateReturns(trainData.slice(Math.min(200, trainData.length)));
 
       const trainingData: TrainingData = {
         features: trainFeatures,
         labels: trainLabels,
-        dates: trainData.slice(200).map(d => new Date(d.date)),
+        dates: trainData.slice(Math.min(200, trainData.length)).map(d => new Date(d.date)),
       };
 
       // Train on this fold
       await this.ensembleStrategy.trainAllModels(trainingData);
 
       // Test
-      const testFeatures = this.featureService.extractFeatures(testData, 200);
-      const testLabels = this.calculateReturns(testData.slice(200));
+      const testAllFeatures = testData.length >= 200 ? this.featureService.calculateAllFeatures(testData) : null;
+      const testFeatures = testAllFeatures ? this.convertFeaturesToArray(testAllFeatures) : [];
+      const testLabels = this.calculateReturns(testData.slice(Math.min(200, testData.length)));
 
       const predictions: number[] = [];
       for (let j = 0; j < testFeatures.length; j++) {
@@ -295,6 +296,62 @@ export class WalkForwardAnalysis extends EventEmitter {
   }
 
   // Private helper methods
+
+  /**
+   * Convert AllFeatures to array of MLFeatures
+   */
+  private convertFeaturesToArray(allFeatures: AllFeatures): MLFeatures[] {
+    const technical = allFeatures.technical;
+    // Create a partial MLFeatures object and cast
+    const mlFeature = {
+      close: 0,
+      open: 0,
+      high: 0,
+      low: 0,
+      rsi: Array.isArray(technical.rsi) ? technical.rsi[0] ?? 0 : 0,
+      rsiChange: 0,
+      sma5: Array.isArray(technical.sma5) ? technical.sma5[0] ?? 0 : 0,
+      sma20: Array.isArray(technical.sma20) ? technical.sma20[0] ?? 0 : 0,
+      sma50: Array.isArray(technical.sma50) ? technical.sma50[0] ?? 0 : 0,
+      sma200: Array.isArray(technical.sma200) ? technical.sma200[0] ?? 0 : 0,
+      ema12: Array.isArray(technical.ema12) ? technical.ema12[0] ?? 0 : 0,
+      ema26: Array.isArray(technical.ema26) ? technical.ema26[0] ?? 0 : 0,
+      priceMomentum: 0,
+      volumeRatio: 0,
+      volatility: 0,
+      macdSignal: Array.isArray(technical.macdSignal) ? technical.macdSignal[0] ?? 0 : 0,
+      macdHistogram: Array.isArray(technical.macdHistogram) ? technical.macdHistogram[0] ?? 0 : 0,
+      bollingerPosition: 0,
+      atrPercent: Array.isArray(technical.atr) ? technical.atr[0] ?? 0 : 0,
+      stochasticK: 0,
+      stochasticD: 0,
+      williamsR: 0,
+      adx: 0,
+      cci: 0,
+      roc: 0,
+      obv: 0,
+      vwap: 0,
+      volumeProfile: [],
+      priceLevel: 0,
+      momentum5: 0,
+      momentum10: 0,
+      momentum20: 0,
+      historicalVolatility: 0,
+      parkinsonVolatility: 0,
+      garmanKlassVolatility: 0,
+      adxTrend: 0,
+      aroonUp: 0,
+      aroonDown: 0,
+      volumeSMA: 0,
+      volumeStd: 0,
+      volumeTrend: 0,
+      candlePattern: 0,
+      supportLevel: 0,
+      resistanceLevel: 0,
+      marketCorrelation: 0,
+    } as unknown as MLFeatures;
+    return [mlFeature];
+  }
 
   private calculateReturns(data: OHLCV[]): number[] {
     return data.slice(1).map((d, i) => {
