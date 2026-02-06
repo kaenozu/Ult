@@ -198,7 +198,6 @@ export const StockChart = memo(function StockChart({
     ],
   }), [
     extendedData.labels,
-    extendedData.prices,
     normalizedIndexData,
     forecastDatasets,
     ghostForecastDatasets,
@@ -207,8 +206,9 @@ export const StockChart = memo(function StockChart({
     lower,
     showSMA,
     showBollinger,
-    showBollinger,
-    market
+    market,
+    actualData.prices,
+    forecastExtension.forecastPrices.length
   ]);
 
   // Force chart reset when data changes to ensure forecast is visible

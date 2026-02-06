@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     if (!symbol) {
       const cacheStats = marketDataCache.getStats();
       const avgLatency = 150; // Mock latency for now or track real latency in cache
-      const anomalyCount = 0; // Track this in a service if needed
+      const anomalyCount = 0; // TODO: Implement anomaly detection service
 
       return NextResponse.json({
         type: 'global',
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
             status: 'healthy',
             latency: avgLatency,
             lastUpdate: Date.now(),
-            qualityScore: 100 // Always 100 if healthy (decoupled from cache hit rate)
+            qualityScore: 100 // TODO: Implement dynamic quality scoring based on data gaps/latency
           }
         ],
         anomalies: []
