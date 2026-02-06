@@ -1,143 +1,65 @@
+# Repository Size Check Workflow
 name: Repository Size Check
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
   schedule:
-    # Run weekly on Monday at 00:00 UTC
-    - cron: '0 0 * * 1'
+    - cron: '0 0 * * 1'  # Weekly on Mondays
+  workflow_dispatch:
 
 jobs:
-  check-repo-size:
+  check-size:
+    name: Check Repository Size
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
-      pull-requests: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history for accurate size check
+          fetch-depth: 0
 
       - name: Check repository size
-        id: size_check
+        id: size
         run: |
-          echo "Checking repository size..."
-          
-          # Get .git directory size
           GIT_SIZE=$(du -sm .git | cut -f1)
-          echo "git_size=${GIT_SIZE}" >> $GITHUB_OUTPUT
-          
-          # Get total repository size
           TOTAL_SIZE=$(du -sm . | cut -f1)
+          echo "git_size=${GIT_SIZE}" >> $GITHUB_OUTPUT
           echo "total_size=${TOTAL_SIZE}" >> $GITHUB_OUTPUT
-          
-          echo "�� Repository Size Report"
-          echo "========================="
-          echo ".git directory: ${GIT_SIZE}MB"
-          echo "Total size: ${TOTAL_SIZE}MB"
-          
-          # Warning threshold: 500MB for .git
-          if [ "$GIT_SIZE" -gt 500 ]; then
-            echo "⚠️ WARNING: .git directory is larger than 500MB"
-            echo "warning=true" >> $GITHUB_OUTPUT
-          else
-            echo "✓ Repository size is within acceptable limits"
-            echo "warning=false" >> $GITHUB_OUTPUT
-          fi
+          echo "📦 Repository Size"
+          echo ".git: ${GIT_SIZE}MB"
+          echo "Total: ${TOTAL_SIZE}MB"
+          [ "$GIT_SIZE" -gt 500 ] && echo "warning=true" >> $GITHUB_OUTPUT || echo "warning=false" >> $GITHUB_OUTPUT
 
       - name: Find large files
-        if: steps.size_check.outputs.warning == 'true'
+        if: steps.size.outputs.warning == 'true'
         run: |
-          echo "🔍 Finding large files in repository history..."
-          git rev-list --objects --all |
-            git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' |
-            sed -n 's/^blob //p' |
-            sort --numeric-sort --key=2 --reverse |
-            head -n 20 |
+          echo "🔍 Large files in history:"
+          git rev-list --objects --all | \
+            git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | \
+            sed -n 's/^blob //p' | sort -rn -k2 | head -20 | \
             while read hash size path; do
-              size_mb=$(echo "scale=2; $size / 1048576" | bc)
-              echo "  ${size_mb}MB - $path"
+              echo "  $((size/1048576))MB - $path"
             done
 
-      - name: Comment on PR
-        if: github.event_name == 'pull_request' && steps.size_check.outputs.warning == 'true'
+      - name: Create issue if needed
+        if: steps.size.outputs.warning == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            const gitSize = ${{ steps.size_check.outputs.git_size }};
-            const totalSize = ${{ steps.size_check.outputs.total_size }};
-            
-            const comment = `## ⚠️ Repository Size Warning
-            
-            The .git directory size is **${gitSize}MB**, which exceeds the recommended 500MB threshold.
-            
-            **Repository Statistics:**
-            - .git directory: ${gitSize}MB
-            - Total size: ${totalSize}MB
-            
-            **Recommendations:**
-            1. Review the large files listed in the CI logs
-            2. Consider using \`git filter-repo\` to remove large files from history
-            3. Ensure .gitignore is properly configured
-            4. Use Git LFS for large binary files
-            
-            See the workflow logs for a list of the largest files in the repository history.
-            `;
-            
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-      - name: Create issue if size exceeds threshold
-        if: github.event_name == 'schedule' && steps.size_check.outputs.warning == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const gitSize = ${{ steps.size_check.outputs.git_size }};
-            const totalSize = ${{ steps.size_check.outputs.total_size }};
-            
-            const title = `[Automated] Repository size exceeds threshold (${gitSize}MB)`;
-            const body = `## Repository Size Alert
-            
-            This automated issue was created because the repository size has exceeded the recommended threshold.
-            
-            **Current Size:**
-            - .git directory: ${gitSize}MB
-            - Total size: ${totalSize}MB
-            - Threshold: 500MB
-            
-            **Action Required:**
-            1. Review the workflow logs to identify large files
-            2. Clean up unnecessary large files from git history
-            3. Update .gitignore to prevent future issues
-            4. Consider implementing Git LFS for large binary files
-            
-            **Related Issues:**
-            - Check for related cleanup issues
-            - Review [issue #315](https://github.com/${context.repo.owner}/${context.repo.repo}/issues/315) for more context
-            `;
-            
-            // Check if similar issue already exists
             const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               state: 'open',
               labels: 'repository-size'
             });
-            
             if (issues.data.length === 0) {
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: title,
-                body: body,
+                title: `Repository size exceeds threshold (${{ steps.size.outputs.git_size }}MB)`,
+                body: `## Repository Size Alert\n\n- .git directory: ${{ steps.size.outputs.git_size }}MB\n- Total: ${{ steps.size.outputs.total_size }}MB\n- Threshold: 500MB\n\nConsider cleaning up large files from git history.`,
                 labels: ['repository-size', 'maintenance', 'automated']
               });
             }

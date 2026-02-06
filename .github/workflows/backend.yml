@@ -1,3 +1,4 @@
+# Backend Tests Workflow
 name: Backend Tests
 
 on:
@@ -10,8 +11,6 @@ on:
     branches: [main, develop]
     paths:
       - 'backend/**'
-      - '.github/workflows/backend.yml'
-  workflow_call:
   workflow_dispatch:
 
 env:
@@ -19,10 +18,11 @@ env:
 
 jobs:
   test:
+    name: Python Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,34 +37,24 @@ jobs:
         working-directory: ./backend
         run: |
           python -m pip install --upgrade pip
-          # Install test dependencies
           pip install pytest pytest-cov pytest-asyncio
-          # Install project dependencies (when requirements.txt is available)
-          # pip install -r requirements.txt || echo "No requirements.txt found"
-
-      - name: Run tests with coverage
-        working-directory: ./backend
-        run: |
-          # Check if tests directory exists
-          if [ -d "tests" ]; then
-            python -m pytest tests/ -v --cov=src --cov-report=xml --cov-report=html --cov-report=term
-          else
-            echo "No tests directory found"
-            exit 0
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
           fi
 
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage-report
-          path: backend/htmlcov
-          retention-days: 30
+      - name: Run tests
+        working-directory: ./backend
+        run: |
+          if [ -d "tests" ]; then
+            python -m pytest tests/ -v --cov=src --cov-report=xml --cov-report=term
+          else
+            echo "No tests directory found"
+          fi
 
-      - name: Upload coverage XML
+      - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-coverage-xml
+          name: backend-coverage
           path: backend/coverage.xml
-          retention-days: 30
+          retention-days: 7

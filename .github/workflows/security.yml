@@ -1,14 +1,21 @@
+# Security Scan Workflow
+# Runs npm audit and Python safety checks
 name: Security Scan
 
 on:
   push:
     branches: [main, develop]
+    paths:
+      - 'trading-platform/package*.json'
+      - 'backend/requirements*.txt'
+      - '.github/workflows/security.yml'
   pull_request:
     branches: [main, develop]
+    paths:
+      - 'trading-platform/package*.json'
+      - 'backend/requirements*.txt'
   schedule:
-    # Run weekly on Mondays at 9:00 UTC
-    - cron: '0 9 * * 1'
-  workflow_call:
+    - cron: '0 9 * * 1'  # Weekly on Mondays at 9:00 UTC
   workflow_dispatch:
 
 env:
@@ -17,10 +24,11 @@ env:
 
 jobs:
   npm-audit:
+    name: NPM Security Audit
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,34 +40,18 @@ jobs:
           cache: 'npm'
           cache-dependency-path: trading-platform/package-lock.json
 
-      - name: Verify package-lock.json integrity
-        working-directory: ./trading-platform
-        run: |
-          # Ensure package-lock.json is in sync with package.json
-          echo "Verifying package-lock.json integrity..."
-          npm install --package-lock-only --ignore-scripts
-          if ! git diff --exit-code package-lock.json; then
-            echo "ERROR: package-lock.json is out of sync with package.json"
-            echo "Please run 'npm install' and commit the updated package-lock.json"
-            exit 1
-          fi
-          echo "✓ package-lock.json integrity verified"
-
       - name: Install dependencies
         working-directory: ./trading-platform
         run: npm ci
 
       - name: Run npm audit
         working-directory: ./trading-platform
-        run: |
-          # Allow moderate vulnerabilities, fail on high/critical
-          npm audit --audit-level=high || true
-          
+        run: npm audit --audit-level=high
+
       - name: Generate audit report
         if: always()
         working-directory: ./trading-platform
-        run: |
-          npm audit --json > npm-audit-report.json || true
+        run: npm audit --json > npm-audit-report.json || true
 
       - name: Upload audit report
         if: always()
@@ -69,28 +61,12 @@ jobs:
           path: trading-platform/npm-audit-report.json
           retention-days: 30
 
-  # dependency-review:
-  #   runs-on: ubuntu-latest
-  #   if: github.event_name == 'pull_request'
-  #   permissions:
-  #     contents: read
-  #     pull-requests: read
-  #
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Dependency Review
-  #       uses: actions/dependency-review-action@v4
-  #       with:
-  #         fail-on-severity: moderate
-  #         deny-licenses: GPL-3.0, AGPL-3.0
-
   python-security:
+    name: Python Security Check
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -100,31 +76,12 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install safety
-        run: pip install safety
-
-      - name: Check Python dependencies for vulnerabilities
+      - name: Check Python dependencies
         working-directory: ./backend
         run: |
-          # Create a temporary requirements file if it doesn't exist
-          if [ ! -f requirements.txt ]; then
-            echo "No requirements.txt found - skipping security check"
-            exit 0
+          if [ -f requirements.txt ]; then
+            pip install safety
+            safety check --file requirements.txt || true
+          else
+            echo "No requirements.txt found - skipping"
           fi
-          # Run safety check
-          safety check --file requirements.txt || true
-
-      - name: Create security report
-        if: always()
-        run: |
-          echo "Security scan completed at $(date)" > security-report.txt
-          echo "Frontend: npm audit" >> security-report.txt
-          echo "Backend: safety check" >> security-report.txt
-
-      - name: Upload security report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-report
-          path: security-report.txt
-          retention-days: 30

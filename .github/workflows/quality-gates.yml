@@ -1,23 +1,28 @@
 # Quality Gates Workflow
-# Enforces code quality standards for all pull requests
+# Enforces code quality standards for pull requests
 name: Quality Gates
 
 on:
   pull_request:
     branches: [main, develop]
-  workflow_dispatch:
+    paths:
+      - 'trading-platform/**'
 
 env:
   NODE_VERSION: '20'
 
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  quality-check:
-    name: Quality Gates Check
+  quality-report:
+    name: Quality Report
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,145 +38,120 @@ jobs:
         working-directory: ./trading-platform
         run: npm ci
 
-      # Test Coverage Check (80% threshold)
       - name: Run tests with coverage
         id: coverage
         working-directory: ./trading-platform
+        continue-on-error: true
         run: |
-          echo "Running tests with coverage..."
-          # Run tests and capture exit code
-          set +e  # Don't exit on error
-          npm run test:coverage
-          TEST_EXIT_CODE=$?
-          set -e  # Re-enable exit on error
-          
-          if [ $TEST_EXIT_CODE -eq 0 ]; then
-            echo "✅ Coverage threshold met (≥80%)"
+          if npm run test:coverage; then
             echo "coverage_passed=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ Coverage threshold not met or tests failed!"
             echo "coverage_passed=false" >> $GITHUB_OUTPUT
-            exit 1
           fi
 
-      # TypeScript Type Check (0 errors)
       - name: TypeScript type check
         id: typecheck
         working-directory: ./trading-platform
+        continue-on-error: true
         run: |
-          echo "Running TypeScript type check..."
           if npx tsc --noEmit; then
-            echo "✅ TypeScript: 0 errors"
             echo "typecheck_passed=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ TypeScript errors found"
             echo "typecheck_passed=false" >> $GITHUB_OUTPUT
-            exit 1
           fi
 
-      # ESLint Check (0 errors)
       - name: Run ESLint
         id: lint
         working-directory: ./trading-platform
+        continue-on-error: true
         run: |
-          echo "Running ESLint..."
           if npm run lint; then
-            echo "✅ ESLint: 0 errors"
             echo "lint_passed=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ ESLint errors found"
             echo "lint_passed=false" >> $GITHUB_OUTPUT
-            exit 1
           fi
 
-      # Security Scan (0 high+ vulnerabilities)
       - name: Security audit
         id: security
         working-directory: ./trading-platform
+        continue-on-error: true
         run: |
-          echo "Running npm audit..."
           if npm audit --audit-level=high; then
-            echo "✅ Security: 0 high/critical vulnerabilities"
             echo "security_passed=true" >> $GITHUB_OUTPUT
           else
-            echo "❌ High or critical vulnerabilities found"
-            npm audit --audit-level=high || true
             echo "security_passed=false" >> $GITHUB_OUTPUT
-            exit 1
           fi
 
-      # Bundle Size Check
-      - name: Build and analyze bundle size
+      - name: Build and check bundle size
         id: bundle
         working-directory: ./trading-platform
+        continue-on-error: true
         run: |
-          echo "Building application..."
           npm run build
-          
-          echo "Analyzing bundle size..."
-          
-          # Check if .next directory exists
-          if [ ! -d ".next" ]; then
-            echo "❌ Build failed - .next directory not found"
-            exit 1
-          fi
-          
-          # Calculate bundle size (in KB)
-          BUNDLE_SIZE=$(du -sk .next | cut -f1)
-          BUNDLE_SIZE_MB=$((BUNDLE_SIZE / 1024))
-          
-          echo "Current bundle size: ${BUNDLE_SIZE_MB}MB (${BUNDLE_SIZE}KB)"
-          
-          # Set threshold to 500KB (500KB = ~0.5MB for main JS bundle)
-          # Note: .next folder is larger, but this checks the entire build
-          # For more precise checking, we'd need to analyze specific chunks
-          
-          if [ $BUNDLE_SIZE -lt 100000 ]; then
-            echo "✅ Bundle size within acceptable range"
+          if [ -d ".next" ]; then
+            BUNDLE_SIZE=$(du -sk .next | cut -f1)
+            BUNDLE_SIZE_MB=$((BUNDLE_SIZE / 1024))
             echo "bundle_size=${BUNDLE_SIZE_MB}MB" >> $GITHUB_OUTPUT
             echo "bundle_passed=true" >> $GITHUB_OUTPUT
           else
-            echo "⚠️  Bundle size: ${BUNDLE_SIZE_MB}MB"
-            echo "bundle_size=${BUNDLE_SIZE_MB}MB" >> $GITHUB_OUTPUT
-            echo "bundle_passed=true" >> $GITHUB_OUTPUT
+            echo "bundle_passed=false" >> $GITHUB_OUTPUT
           fi
+        env:
+          NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY || 'demo' }}
 
-      # Generate quality report
       - name: Generate quality report
-        if: always()
+        id: report
         run: |
-          cat << 'EOF' > quality-report.md
+          cat << EOF > quality-report.md
           # Quality Gates Report
-          
-          ## Results Summary
-          
+
           | Check | Status |
           |-------|--------|
           | Test Coverage (≥80%) | ${{ steps.coverage.outputs.coverage_passed == 'true' && '✅ Passed' || '❌ Failed' }} |
           | TypeScript (0 errors) | ${{ steps.typecheck.outputs.typecheck_passed == 'true' && '✅ Passed' || '❌ Failed' }} |
           | ESLint (0 errors) | ${{ steps.lint.outputs.lint_passed == 'true' && '✅ Passed' || '❌ Failed' }} |
           | Security (0 high+ vulnerabilities) | ${{ steps.security.outputs.security_passed == 'true' && '✅ Passed' || '❌ Failed' }} |
-          | Bundle Size | ${{ steps.bundle.outputs.bundle_passed == 'true' && '✅ Passed' || '⚠️  Review' }} (${{ steps.bundle.outputs.bundle_size }}) |
-          
-          ## Quality Standards
-          
-          - ✅ Test coverage must be ≥80% (lines, branches, functions, statements)
-          - ✅ TypeScript compilation must succeed with 0 errors
-          - ✅ ESLint must pass with 0 errors
-          - ✅ No high or critical security vulnerabilities
-          - ✅ Bundle size monitoring enabled
-          
-          EOF
-          
-          cat quality-report.md
+          | Bundle Size | ${{ steps.bundle.outputs.bundle_passed == 'true' && '✅' || '❌' }} (${{ steps.bundle.outputs.bundle_size || 'N/A' }}) |
 
-      - name: Upload quality report
-        if: always()
-        uses: actions/upload-artifact@v4
+          ---
+          *Generated by Quality Gates workflow*
+          EOF
+
+          cat quality-report.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
         with:
-          name: quality-report
-          path: quality-report.md
-          retention-days: 30
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('quality-report.md', 'utf8');
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Quality Gates Report')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: report
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: report
+              });
+            }
 
       - name: Upload coverage report
         if: always()
@@ -179,23 +159,10 @@ jobs:
         with:
           name: coverage-report
           path: trading-platform/coverage
-          retention-days: 30
+          retention-days: 7
 
-      # Final status check
-      - name: Quality gates status
-        if: always()
+      - name: Check quality gates
         run: |
-          echo "========================================="
-          echo "Quality Gates Summary"
-          echo "========================================="
-          echo "Coverage:   ${{ steps.coverage.outputs.coverage_passed == 'true' && '✅' || '❌' }}"
-          echo "TypeCheck:  ${{ steps.typecheck.outputs.typecheck_passed == 'true' && '✅' || '❌' }}"
-          echo "Lint:       ${{ steps.lint.outputs.lint_passed == 'true' && '✅' || '❌' }}"
-          echo "Security:   ${{ steps.security.outputs.security_passed == 'true' && '✅' || '❌' }}"
-          echo "Bundle:     ${{ steps.bundle.outputs.bundle_passed == 'true' && '✅' || '⚠️' }}"
-          echo "========================================="
-          
-          # Fail the workflow if any required check failed
           if [ "${{ steps.coverage.outputs.coverage_passed }}" != "true" ] || \
              [ "${{ steps.typecheck.outputs.typecheck_passed }}" != "true" ] || \
              [ "${{ steps.lint.outputs.lint_passed }}" != "true" ] || \
@@ -203,5 +170,4 @@ jobs:
             echo "❌ Quality gates failed!"
             exit 1
           fi
-          
           echo "✅ All quality gates passed!"

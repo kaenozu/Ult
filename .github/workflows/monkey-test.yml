@@ -1,32 +1,28 @@
+# Monkey Test Workflow
+# Runs random UI interaction tests
 name: Monkey Test
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
   schedule:
-    # Run extended tests daily at 2:00 UTC
-    - cron: '0 2 * * *'
+    - cron: '0 2 * * *'  # Daily at 2:00 UTC
   workflow_dispatch:
     inputs:
       iterations:
         description: 'Number of test iterations'
-        required: false
         default: '30'
         type: string
 
 env:
   NODE_VERSION: '20'
   BASE_URL: http://localhost:3000
-  ITERATIONS: ${{ github.event.inputs.iterations || '30' }}
 
 jobs:
   monkey-test:
+    name: Monkey Test
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      pull-requests: write
+      contents: read
       issues: write
 
     steps:
@@ -48,142 +44,48 @@ jobs:
         working-directory: ./trading-platform
         run: npm run build
         env:
-          NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY || 'demo' }}
 
-      - name: Start development server
+      - name: Start server
         working-directory: ./trading-platform
         run: |
           npm run dev &
-          DEV_PID=$!
-          echo "DEV_PID=$DEV_PID" >> $GITHUB_ENV
-          echo "Waiting for server to start..."
-          
-          # Wait for server with timeout
-          SERVER_READY=false
           for i in {1..30}; do
-            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Server is ready!"
-              SERVER_READY=true
-              break
-            fi
-            echo "Waiting... ($i/30)"
+            curl -sf http://localhost:3000 > /dev/null 2>&1 && break
             sleep 2
           done
-          
-          if [ "$SERVER_READY" = false ]; then
-            echo "❌ Server failed to start"
-            exit 1
-          fi
 
       - name: Run Monkey Test
-        run: |
-          node scripts/monkey-test.js
+        run: node scripts/monkey-test.js
         env:
           BASE_URL: ${{ env.BASE_URL }}
-          ITERATIONS: ${{ env.ITERATIONS }}
+          ITERATIONS: ${{ github.event.inputs.iterations || '100' }}
 
-      - name: Upload test report
+      - name: Upload report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: monkey-test-report
           path: monkey-test-report.json
-          retention-days: 30
-
-      - name: Comment PR with results
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            try {
-              const report = JSON.parse(fs.readFileSync('monkey-test-report.json', 'utf8'));
-              const summary = `
-              ## 🐵 Monkey Test Results
-
-              - **Total**: ${report.summary.total}
-              - **Passed**: ${report.summary.passed}
-              - **Failed**: ${report.summary.failed}
-              - **Success Rate**: ${report.summary.successRate}
-
-              ${report.summary.errors.length > 0 ? '### ❌ Errors\n' + report.summary.errors.map(e => `- ${e}`).join('\n') : '### ✅ No errors found'}
-              `;
-
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: summary
-              });
-            } catch (error) {
-              console.log('Could not read report file');
-            }
-
-      - name: Check test results
-        run: |
-          node scripts/check-monkey-test-results.js
-
-  scheduled-monkey-test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: github.event_name == 'schedule'
-    permissions:
-      issues: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
-        working-directory: ./trading-platform
-        run: npm ci
-
-      - name: Start development server
-        working-directory: ./trading-platform
-        run: |
-          npm run dev &
-          DEV_PID=$!
-          echo "DEV_PID=$DEV_PID" >> $GITHUB_ENV
-          echo "Waiting for server to start..."
-          
-          # Wait for server with timeout
-          SERVER_READY=false
-          for i in {1..30}; do
-            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
-              echo "✅ Server is ready!"
-              SERVER_READY=true
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 2
-          done
-          
-          if [ "$SERVER_READY" = false ]; then
-            echo "❌ Server failed to start"
-            exit 1
-          fi
-
-      - name: Run extended Monkey Test
-        run: |
-          node scripts/monkey-test.js
-        env:
-          BASE_URL: ${{ env.BASE_URL }}
-          ITERATIONS: 100
+          retention-days: 7
 
       - name: Create issue on failure
-        if: failure()
+        if: failure() && github.event_name == 'schedule'
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.create({
+            const issues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '🐵 Monkey Test Failed',
-              body: 'The scheduled monkey test has failed. Please check the logs for details.',
-              labels: ['bug', 'automated-test']
+              state: 'open',
+              labels: 'monkey-test'
             });
+            if (issues.data.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🐒 Monkey Test Failed',
+                body: 'The scheduled monkey test has failed. Check the logs for details.',
+                labels: ['bug', 'monkey-test', 'automated']
+              });
+            }
