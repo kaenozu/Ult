@@ -12,6 +12,7 @@ interface UseChartOptionsProps {
   hoveredIdx: number | null;
   setHoveredIndex: (idx: number | null) => void;
   signal?: Signal | null;
+  supplyDemandLevels?: { price: number; strength: number }[];
 }
 
 interface ChartContext {
@@ -25,7 +26,8 @@ export const useChartOptions = ({
   market,
   hoveredIdx,
   setHoveredIndex,
-  signal
+  signal,
+  supplyDemandLevels
 }: UseChartOptionsProps) => {
   // Y軸の範囲を計算（価格に応じて動的に調整）
   const yAxisRange = useMemo(() => {
@@ -106,7 +108,7 @@ padding: {
       } as any,
       volumeProfile: {
         enabled: true,
-        data: signal?.volumeResistance,
+        data: signal?.volumeResistance || supplyDemandLevels,
         currentPrice: data.length > 0 ? data[data.length - 1].close : 0
       } as VolumeProfilePluginOptions
     },

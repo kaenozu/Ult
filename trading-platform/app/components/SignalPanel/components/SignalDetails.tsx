@@ -1,14 +1,16 @@
 ﻿import { BacktestView } from '../BacktestView';
 import { ForecastView } from '../ForecastView';
 import { AIPerformanceView } from '../AIPerformanceView';
+import { SupplyDemandView } from '../SupplyDemandView';
 import { SignalDisplay } from './SignalDisplay';
-import { Signal, Stock, BacktestResult, PaperTrade, AIStatus } from '@/app/types';
+import { Signal, Stock, BacktestResult, PaperTrade, AIStatus, OHLCV } from '@/app/types';
 import { PositionSizeRecommendation } from '@/app/types/risk';
 
 interface SignalDetailsProps {
-  activeTab: 'signal' | 'backtest' | 'ai' | 'forecast';
+  activeTab: 'signal' | 'backtest' | 'ai' | 'forecast' | 'supplyDemand';
   displaySignal: Signal;
   stock: Stock;
+  ohlcv: OHLCV[];
   backtestResult: BacktestResult | null;
   isBacktesting: boolean;
   preciseHitRate: { hitRate: number; trades: number } | null;
@@ -23,6 +25,7 @@ export function SignalDetails({
   activeTab,
   displaySignal,
   stock,
+  ohlcv,
   backtestResult,
   isBacktesting,
   preciseHitRate,
@@ -56,6 +59,9 @@ export function SignalDetails({
     
     case 'ai':
       return <AIPerformanceView aiStatus={aiStatusData} stock={stock} aiTrades={aiTrades} />;
+
+    case 'supplyDemand':
+      return <SupplyDemandView ohlcv={ohlcv} stock={stock} />;
     
     default:
       return null;

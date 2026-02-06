@@ -576,6 +576,77 @@ export class MarketDataService {
   }
 
   /**
+   * 市場データを取得する（getMarketDataエイリアス）
+   * 
+   * テスト互換性とMarketData構造での取得をサポート
+   * 
+   * @param symbol - 銘柄シンボル
+   * @returns MarketData構造（symbol, data, trend, changePercent）
+   */
+  async getMarketData(symbol: string): Promise<MarketData> {
+    const data = await this.fetchMarketData(symbol);
+    const trend = data.length > 0 ? this.calculateTrend(data) : 'NEUTRAL';
+    
+    let changePercent = 0;
+    if (data.length >= 2) {
+      const firstClose = data[0].close;
+      const lastClose = data[data.length - 1].close;
+      changePercent = ((lastClose - firstClose) / firstClose) * 100;
+    }
+    
+    return {
+      symbol,
+      data,
+      trend,
+      changePercent
+    };
+  }
+
+  /**
+   * キャッシュされた市場データを取得する（getCachedDataエイリアス）
+   * 
+   * @param symbol - 銘柄シンボル
+   * @returns キャッシュされたMarketData、存在しない場合はundefined
+   */
+  getCachedData(symbol: string): MarketData | undefined {
+    const data = this.getCachedMarketData(symbol);
+    if (!data) return undefined;
+    
+    const trend = data.length > 0 ? this.calculateTrend(data) : 'NEUTRAL';
+    let changePercent = 0;
+    if (data.length >= 2) {
+      const firstClose = data[0].close;
+      const lastClose = data[data.length - 1].close;
+      changePercent = ((lastClose - firstClose) / firstClose) * 100;
+    }
+    
+    return {
+      symbol,
+      data,
+      trend,
+      changePercent
+    };
+  }
+
+  /**
+   * 日本市場のインデックスを取得する
+   * 
+   * @returns 日本市場のMarketIndex配列
+   */
+  getJapanMarketIndices(): MarketIndex[] {
+    return MARKET_INDICES.filter(index => index.market === 'japan');
+  }
+
+  /**
+   * 米国市場のインデックスを取得する
+   * 
+   * @returns 米国市場のMarketIndex配列
+   */
+  getUSAMarketIndices(): MarketIndex[] {
+    return MARKET_INDICES.filter(index => index.market === 'usa');
+  }
+
+  /**
    * Get cache statistics
    */
   getCacheStats() {

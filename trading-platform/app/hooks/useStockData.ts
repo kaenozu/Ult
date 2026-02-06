@@ -216,6 +216,39 @@ export function useStockData() {
     fetchData(stock);
   }, [setSelectedStock, fetchData]);
 
+  // Handle real-time updates from WebSocket
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleRealtimeUpdate = (event: any) => {
+      const data = event.detail;
+      if (selectedStock && data.symbol === selectedStock.symbol) {
+        setChartData(prevData => {
+          if (prevData.length === 0) return prevData;
+          
+          const newData = [...prevData];
+          const lastIndex = newData.length - 1;
+          const lastPoint = newData[lastIndex];
+          
+          // Update the last data point with real-time price
+          // In a real implementation, we might check timestamps to see if we need a new candle
+          newData[lastIndex] = {
+            ...lastPoint,
+            close: data.price,
+            high: Math.max(lastPoint.high, data.price),
+            low: Math.min(lastPoint.low, data.price),
+            volume: data.volume || lastPoint.volume,
+          };
+          
+          return newData;
+        });
+      }
+    };
+
+    window.addEventListener('market-data-update', handleRealtimeUpdate);
+    return () => window.removeEventListener('market-data-update', handleRealtimeUpdate);
+  }, [selectedStock]);
+
   return {
     selectedStock,
     chartData,

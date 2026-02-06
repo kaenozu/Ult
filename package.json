@@ -6,5 +6,8 @@
   },
   "scripts": {
     "prepare": "husky"
+  },
+  "devDependencies": {
+    "@types/ws": "8.18.1"
   }
 }

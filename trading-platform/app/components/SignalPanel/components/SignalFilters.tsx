@@ -2,14 +2,14 @@ import { cn, getConfidenceColor } from '@/app/lib/utils';
 import { Signal } from '@/app/types';
 
 interface SignalFiltersProps {
-  activeTab: 'signal' | 'backtest' | 'ai' | 'forecast';
-  setActiveTab: (tab: 'signal' | 'backtest' | 'ai' | 'forecast') => void;
+  activeTab: 'signal' | 'backtest' | 'ai' | 'forecast' | 'supplyDemand';
+  setActiveTab: (tab: 'signal' | 'backtest' | 'ai' | 'forecast' | 'supplyDemand') => void;
   displaySignal: Signal | null;
 }
 
 export function SignalFilters({ activeTab, setActiveTab, displaySignal }: SignalFiltersProps) {
   // Helper for tab props to ensure accessibility and DRY
-  const getTabProps = (tabName: 'signal' | 'backtest' | 'ai' | 'forecast', label: string) => ({
+  const getTabProps = (tabName: 'signal' | 'backtest' | 'ai' | 'forecast' | 'supplyDemand', label: string) => ({
     role: 'tab',
     id: `tab-${tabName}`,
     'aria-selected': activeTab === tabName,
@@ -17,7 +17,7 @@ export function SignalFilters({ activeTab, setActiveTab, displaySignal }: Signal
     tabIndex: activeTab === tabName ? 0 : -1,
     onClick: () => setActiveTab(tabName),
     className: cn(
-      'px-3 py-1 text-xs font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#233648]',
+      'px-2 py-1 text-[10px] font-medium rounded transition-colors focus:outline-none focus:ring-2 focus:ring-[#233648]',
       activeTab === tabName ? 'bg-[#233648] text-white' : 'text-[#92adc9] hover:text-white'
     ),
     children: label
@@ -28,9 +28,10 @@ export function SignalFilters({ activeTab, setActiveTab, displaySignal }: Signal
       {/* Tab List */}
       <div className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5" role="tablist" aria-label="分析パネル">
         <button {...getTabProps('signal', 'シグナル')} />
-        <button {...getTabProps('backtest', 'バックテスト')} />
-        <button {...getTabProps('forecast', '予測コーン')} />
-        <button {...getTabProps('ai', 'AI戦績')} />
+        <button {...getTabProps('backtest', 'テスト')} />
+        <button {...getTabProps('forecast', '予測')} />
+        <button {...getTabProps('ai', '戦績')} />
+        <button {...getTabProps('supplyDemand', '需給')} />
       </div>
 
       {activeTab === 'signal' && displaySignal && (

@@ -30,7 +30,7 @@ interface SignalPanelProps {
  * @returns {JSX.Element} シグナルパネルUI
  */
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
-  const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
+  const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast' | 'supplyDemand'>('signal');
 
   // Custom hooks for separated concerns
   const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal);
@@ -65,6 +65,7 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         activeTab={activeTab}
         displaySignal={displaySignal}
         stock={stock}
+        ohlcv={ohlcv}
         backtestResult={backtestResult}
         isBacktesting={isBacktesting}
         preciseHitRate={preciseHitRate}

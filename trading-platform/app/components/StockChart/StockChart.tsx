@@ -13,6 +13,7 @@ import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
 import { useForecastLayers } from './hooks/useForecastLayers';
 import { useChartOptions } from './hooks/useChartOptions';
+import { useSupplyDemandAnalysis } from './hooks/useSupplyDemandAnalysis';
 import { ChartTooltip } from './ChartTooltip';
 import { AccuracyBadge } from '@/app/components/AccuracyBadge';
 
@@ -52,6 +53,8 @@ export const StockChart = memo(function StockChart({
 // 1. Data Preparation Hooks
   const { actualData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
+  const { chartLevels } = useSupplyDemandAnalysis(data);
+
    const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
      data: data, // 元のOHLCVデータを渡す
      extendedData: extendedData,
@@ -76,7 +79,8 @@ export const StockChart = memo(function StockChart({
     market,
     hoveredIdx,
     setHoveredIndex,
-    signal
+    signal,
+    supplyDemandLevels: chartLevels
   });
 
   // 3. Assemble Chart Data with memoization for performance

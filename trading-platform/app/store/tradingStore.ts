@@ -475,7 +475,36 @@ export const useTradingStore = create<TradingStore>()(
       isConnected: true,
       toggleConnection: () => set((state) => ({ isConnected: !state.isConnected })),
 
-      batchUpdateStockData: () => { /* Mock implementation */ },
+      batchUpdateStockData: (updates: StockDataUpdate[]) => set((state) => {
+        const positions = [...state.portfolio.positions];
+        let hasChanges = false;
+
+        updates.forEach((update) => {
+          const index = positions.findIndex((p) => p.symbol === update.symbol);
+          if (index !== -1) {
+            const position = positions[index];
+            if (update.price !== undefined) {
+              positions[index] = {
+                ...position,
+                currentPrice: update.price,
+                change: update.change !== undefined ? update.change : position.change,
+              };
+              hasChanges = true;
+            }
+          }
+        });
+
+        if (!hasChanges) return state;
+
+        const stats = calculatePortfolioStats(positions);
+        return {
+          portfolio: {
+            ...state.portfolio,
+            positions,
+            ...stats,
+          },
+        };
+      }),
     }),
     {
       name: 'trading-platform-storage-legacy',

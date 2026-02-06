@@ -55,6 +55,7 @@ interface ClientInfo {
   messageCount: number;
   lastMessageTime: number;
   authenticated: boolean;
+  subscriptions: Set<string>;
 }
 
 // Rate limiting tracking
@@ -188,7 +189,7 @@ function broadcast(message: WebSocketMessage, excludeClient?: string): void {
     timestamp: Date.now(),
   });
 
-  wss.clients.forEach((client) => {
+  wss.clients.forEach((client: WebSocket) => {
     if (client.readyState === WebSocket.OPEN) {
       const clientInfo = Array.from(clients.values()).find(
         (info) => info.ws === client
@@ -279,7 +280,7 @@ server.on('upgrade', (request: IncomingMessage, socket, head) => {
   // Increment connection count for this IP
   connectionsPerIP.set(clientIP, currentConnections + 1);
 
-  wss.handleUpgrade(request, socket, head, (ws) => {
+  wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
     wss.emit('connection', ws, request);
   });
 });
@@ -301,6 +302,7 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
     messageCount: 0,
     lastMessageTime: Date.now(),
     authenticated: true, // Already validated in upgrade handler
+    subscriptions: new Set<string>(),
   });
 
   console.log(`[WebSocket] Client connected: ${clientId} from IP: ${clientIP}`);
@@ -384,22 +386,30 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
 
         case 'subscribe':
           // Handle subscription to data channels
-          console.log(`[WebSocket] Client ${clientId} subscribed to:`, message.data);
-          ws.send(JSON.stringify({
-            type: 'subscribed',
-            data: message.data,
-            timestamp: Date.now(),
-          }));
+          if (message.data && typeof message.data === 'string') {
+            const symbols = message.data.split(',').map(s => s.trim().toUpperCase());
+            symbols.forEach(s => clientInfo.subscriptions.add(s));
+            console.log(`[WebSocket] Client ${clientId} subscribed to:`, symbols);
+            ws.send(JSON.stringify({
+              type: 'subscribed',
+              data: Array.from(clientInfo.subscriptions),
+              timestamp: Date.now(),
+            }));
+          }
           break;
 
         case 'unsubscribe':
           // Handle unsubscription from data channels
-          console.log(`[WebSocket] Client ${clientId} unsubscribed from:`, message.data);
-          ws.send(JSON.stringify({
-            type: 'unsubscribed',
-            data: message.data,
-            timestamp: Date.now(),
-          }));
+          if (message.data && typeof message.data === 'string') {
+            const symbols = message.data.split(',').map(s => s.trim().toUpperCase());
+            symbols.forEach(s => clientInfo.subscriptions.delete(s));
+            console.log(`[WebSocket] Client ${clientId} unsubscribed from:`, symbols);
+            ws.send(JSON.stringify({
+              type: 'unsubscribed',
+              data: Array.from(clientInfo.subscriptions),
+              timestamp: Date.now(),
+            }));
+          }
           break;
 
         default:
@@ -471,10 +481,65 @@ const heartbeatInterval = setInterval(() => {
   });
 }, HEARTBEAT_INTERVAL);
 
+// --- Market Data Simulator ---
+
+// Base prices for simulation
+const basePrices: Record<string, number> = {
+  'AAPL': 180.50,
+  'GOOGL': 140.20,
+  'TSLA': 190.10,
+  'AMZN': 175.40,
+  '^N225': 38000.00,
+  '7203': 3300.00,
+  '6758': 13000.00,
+};
+
+// Simulation interval
+const simulationInterval = setInterval(() => {
+  if (clients.size === 0) return;
+
+  // Get all unique symbols currently subscribed to
+  const allSubscribedSymbols = new Set<string>();
+  clients.forEach(client => {
+    client.subscriptions.forEach(symbol => allSubscribedSymbols.add(symbol));
+  });
+
+  if (allSubscribedSymbols.size === 0) return;
+
+  // Generate and send updates for each symbol
+  allSubscribedSymbols.forEach(symbol => {
+    const basePrice = basePrices[symbol] || 100.00;
+    // Small random walk: -0.1% to +0.1%
+    const change = (Math.random() - 0.5) * 0.002;
+    basePrices[symbol] = basePrice * (1 + change);
+    
+    const marketData = {
+      symbol,
+      price: basePrices[symbol],
+      change: basePrices[symbol] - basePrice,
+      changePercent: change * 100,
+      volume: Math.floor(Math.random() * 1000),
+      timestamp: Date.now(),
+    };
+
+    // Broadcast only to clients who subscribed to this symbol
+    clients.forEach(client => {
+      if (client.subscriptions.has(symbol)) {
+        client.ws.send(JSON.stringify({
+          type: 'market_data',
+          data: marketData,
+          timestamp: Date.now(),
+        }));
+      }
+    });
+  });
+}, 1000); // 1 second updates
+
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n[WebSocket] Shutting down server...');
   clearInterval(heartbeatInterval);
+  clearInterval(simulationInterval);
 
   // Close all client connections
   clients.forEach((clientInfo) => {
