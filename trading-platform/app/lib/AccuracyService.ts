@@ -80,14 +80,14 @@ class AccuracyService {
             hlArray[i] = d.high - d.low;
 
             if (i > 0) {
-                 const prev = data[i-1];
-                 if (prev) {
-                     const highClose = Math.abs(d.high - prev.close);
-                     const lowClose = Math.abs(d.low - prev.close);
-                     trArray[i] = Math.max(hlArray[i], highClose, lowClose);
-                 } else {
-                     trArray[i] = hlArray[i];
-                 }
+                const prev = data[i - 1];
+                if (prev) {
+                    const highClose = Math.abs(d.high - prev.close);
+                    const lowClose = Math.abs(d.low - prev.close);
+                    trArray[i] = Math.max(hlArray[i], highClose, lowClose);
+                } else {
+                    trArray[i] = hlArray[i];
+                }
             } else {
                 trArray[i] = hlArray[i];
             }
@@ -114,8 +114,8 @@ class AccuracyService {
 
                 // Adjust the new windowStart to contribute HL instead of TR
                 if (windowStart <= i && validArray[windowStart]) {
-                     currentSum -= trArray[windowStart];
-                     currentSum += hlArray[windowStart];
+                    currentSum -= trArray[windowStart];
+                    currentSum += hlArray[windowStart];
                 }
             }
 
@@ -334,134 +334,155 @@ class AccuracyService {
                 () => this.preCalculateIndicators(data)
             );
 
-        // Walk-Forward Optimization tracking
-        let cachedParams: { rsiPeriod: number; smaPeriod: number; accuracy: number } | undefined;
-        let lastOptimizationIndex = -999;
-        const OPTIMIZATION_INTERVAL = OPTIMIZATION.REOPTIMIZATION_INTERVAL;
-        
-        // Track Walk-Forward metrics for overfitting detection
-        const wfaMetrics: { inSample: number[]; outOfSample: number[]; params: Array<{rsi: number; sma: number}> } = {
-            inSample: [],
-            outOfSample: [],
-            params: []
-        };
+            // Walk-Forward Optimization tracking
+            let cachedParams: { rsiPeriod: number; smaPeriod: number; accuracy: number } | undefined;
+            let lastOptimizationIndex = -999;
+            const OPTIMIZATION_INTERVAL = OPTIMIZATION.REOPTIMIZATION_INTERVAL;
 
-        for (let i = minPeriod; i < data.length - 1; i++) {
-            const nextDay = data[i + 1];
-
-            // Calculate start index to emulate original sliding window
-            const windowStartIndex = Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10);
-
-            const context: AnalysisContext = {
-                endIndex: i,
-                startIndex: windowStartIndex,
-                preCalculatedIndicators
+            // Track Walk-Forward metrics for overfitting detection
+            const wfaMetrics: { inSample: number[]; outOfSample: number[]; params: Array<{ rsi: number; sma: number }> } = {
+                inSample: [],
+                outOfSample: [],
+                params: []
             };
 
-            // Check if we need to re-optimize
-            if (i - lastOptimizationIndex >= OPTIMIZATION_INTERVAL || !cachedParams) {
-                // Perform full optimization with Walk-Forward Analysis
-                context.forcedParams = undefined;
-                lastOptimizationIndex = i;
-            } else {
-                // Use cached parameters
-                context.forcedParams = cachedParams;
-            }
+            for (let i = minPeriod; i < data.length - 1; i++) {
+                const nextDay = data[i + 1];
 
-            // Optimized: Use full data + indices
-            const signal = analysisService.analyzeStock(symbol, data, market, undefined, context);
+                // Calculate start index to emulate original sliding window
+                const windowStartIndex = Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10);
 
-            // Update cache and track metrics if we just optimized
-            if (!context.forcedParams) {
-                cachedParams = {
-                    rsiPeriod: signal.optimizedParams?.rsiPeriod || RSI_CONFIG.DEFAULT_PERIOD,
-                    smaPeriod: signal.optimizedParams?.smaPeriod || SMA_CONFIG.MEDIUM_PERIOD,
-                    accuracy: signal.accuracy || 0
+                const context: AnalysisContext = {
+                    endIndex: i,
+                    startIndex: windowStartIndex,
+                    preCalculatedIndicators
                 };
-                // Track WFA metrics: The accuracy returned is already out-of-sample from optimizeParameters
-                wfaMetrics.outOfSample.push(cachedParams.accuracy);
-                wfaMetrics.params.push({ rsi: cachedParams.rsiPeriod, sma: cachedParams.smaPeriod });
-            }
 
-            if (!currentPosition) {
-                if (signal.type === 'BUY' || signal.type === 'SELL') {
-                    if (signal.confidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) {
-                        currentPosition = {
-                            type: signal.type,
-                            price: nextDay.open,
-                            date: nextDay.date
-                        };
-                    }
+                // Check if we need to re-optimize
+                if (i - lastOptimizationIndex >= OPTIMIZATION_INTERVAL || !cachedParams) {
+                    // Perform full optimization with Walk-Forward Analysis
+                    context.forcedParams = undefined;
+                    lastOptimizationIndex = i;
+                } else {
+                    // Use cached parameters
+                    context.forcedParams = cachedParams;
                 }
-            } else {
-                let shouldExit = false;
-                let exitReason = '';
-                const change = (nextDay.close - currentPosition.price) / (currentPosition.price || 1);
 
-                if (currentPosition.type === 'BUY') {
-                    if (signal.type === 'SELL') {
-                        shouldExit = true;
-                        exitReason = 'Signal Reversal';
-                    } else if (change > BACKTEST_CONFIG.BULL_TAKE_PROFIT) {
-                        shouldExit = true;
-                        exitReason = `Take Profit (+${BACKTEST_CONFIG.BULL_TAKE_PROFIT * 100}%)`;
-                    } else if (change < -BACKTEST_CONFIG.BULL_STOP_LOSS) {
-                        shouldExit = true;
-                        exitReason = `Stop Loss (-${BACKTEST_CONFIG.BULL_STOP_LOSS * 100}%)`;
+                // Optimized: Use full data + indices
+                const signal = analysisService.analyzeStock(symbol, data, market, undefined, context);
+
+                // Update cache and track metrics if we just optimized
+                if (!context.forcedParams) {
+                    cachedParams = {
+                        rsiPeriod: signal.optimizedParams?.rsiPeriod || RSI_CONFIG.DEFAULT_PERIOD,
+                        smaPeriod: signal.optimizedParams?.smaPeriod || SMA_CONFIG.MEDIUM_PERIOD,
+                        accuracy: signal.accuracy || 0
+                    };
+                    // Track WFA metrics: The accuracy returned is already out-of-sample from optimizeParameters
+                    wfaMetrics.outOfSample.push(cachedParams.accuracy);
+                    wfaMetrics.params.push({ rsi: cachedParams.rsiPeriod, sma: cachedParams.smaPeriod });
+                }
+
+                if (!currentPosition) {
+                    if (signal.type === 'BUY' || signal.type === 'SELL') {
+                        if (signal.confidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) {
+                            currentPosition = {
+                                type: signal.type,
+                                price: nextDay.open,
+                                date: nextDay.date
+                            };
+                        }
                     }
                 } else {
-                    if (signal.type === 'BUY') {
-                        shouldExit = true;
-                        exitReason = 'Signal Reversal';
-                    } else if (change < -BACKTEST_CONFIG.BEAR_TAKE_PROFIT) {
-                        shouldExit = true;
-                        exitReason = `Take Profit (+${BACKTEST_CONFIG.BEAR_TAKE_PROFIT * 100}%)`;
-                    } else if (change > BACKTEST_CONFIG.BEAR_STOP_LOSS) {
-                        shouldExit = true;
-                        exitReason = `Stop Loss (-${BACKTEST_CONFIG.BEAR_STOP_LOSS * 100}%)`;
+                    let shouldExit = false;
+                    let exitReason = '';
+                    const change = (nextDay.close - currentPosition.price) / (currentPosition.price || 1);
+
+                    if (currentPosition.type === 'BUY') {
+                        if (signal.type === 'SELL') {
+                            shouldExit = true;
+                            exitReason = 'Signal Reversal';
+                        } else if (change > BACKTEST_CONFIG.BULL_TAKE_PROFIT) {
+                            shouldExit = true;
+                            exitReason = `Take Profit (+${(change * 100).toFixed(1)}%)`;
+                        } else if (change < -BACKTEST_CONFIG.BULL_STOP_LOSS) {
+                            shouldExit = true;
+                            exitReason = `Stop Loss (${(change * 100).toFixed(1)}%)`;
+                        } else {
+                            // Time-based exit for directional accuracy (capture small wins)
+                            const daysHeld = (new Date(nextDay.date).getTime() - new Date(currentPosition.date).getTime()) / (1000 * 60 * 60 * 24);
+                            if (daysHeld >= 5 && change > 0) {
+                                shouldExit = true;
+                                exitReason = `Time Exit (Direction Correct +${(change * 100).toFixed(1)}%)`;
+                            } else if (daysHeld > 20) {
+                                // Maximum holding period
+                                shouldExit = true;
+                                exitReason = `Max Hold (${(change * 100).toFixed(1)}%)`;
+                            }
+                        }
+                    } else {
+                        if (signal.type === 'BUY') {
+                            shouldExit = true;
+                            exitReason = 'Signal Reversal';
+                        } else if (change < -BACKTEST_CONFIG.BEAR_TAKE_PROFIT) {
+                            shouldExit = true;
+                            exitReason = `Take Profit (+${(-change * 100).toFixed(1)}%)`;
+                        } else if (change > BACKTEST_CONFIG.BEAR_STOP_LOSS) {
+                            shouldExit = true;
+                            exitReason = `Stop Loss (${(-change * 100).toFixed(1)}%)`;
+                        } else {
+                            // Time-based exit for directional accuracy
+                            const daysHeld = (new Date(nextDay.date).getTime() - new Date(currentPosition.date).getTime()) / (1000 * 60 * 60 * 24);
+                            if (daysHeld >= 5 && change < 0) {
+                                shouldExit = true;
+                                exitReason = `Time Exit (Direction Correct +${(-change * 100).toFixed(1)}%)`;
+                            } else if (daysHeld > 20) {
+                                shouldExit = true;
+                                exitReason = `Max Hold (${(-change * 100).toFixed(1)}%)`;
+                            }
+                        }
+                    }
+
+                    if (shouldExit) {
+                        const exitPrice = nextDay.close;
+                        const rawProfit = currentPosition.type === 'BUY'
+                            ? (exitPrice - currentPosition.price) / (currentPosition.price || 1)
+                            : (currentPosition.price - exitPrice) / (currentPosition.price || 1);
+
+                        trades.push({
+                            symbol,
+                            type: currentPosition.type,
+                            entryPrice: currentPosition.price,
+                            exitPrice: exitPrice,
+                            entryDate: currentPosition.date,
+                            exitDate: nextDay.date,
+                            profitPercent: rawProfit * 100,
+                            reason: exitReason
+                        });
+                        currentPosition = null;
                     }
                 }
-
-                if (shouldExit) {
-                    const exitPrice = nextDay.close;
-                    const rawProfit = currentPosition.type === 'BUY'
-                        ? (exitPrice - currentPosition.price) / (currentPosition.price || 1)
-                        : (currentPosition.price - exitPrice) / (currentPosition.price || 1);
-
-                    trades.push({
-                        symbol,
-                        type: currentPosition.type,
-                        entryPrice: currentPosition.price,
-                        exitPrice: exitPrice,
-                        entryDate: currentPosition.date,
-                        exitDate: nextDay.date,
-                        profitPercent: rawProfit * 100,
-                        reason: exitReason
-                    });
-                    currentPosition = null;
-                }
             }
-        }
 
-        // Calculate Walk-Forward Analysis metrics
-        const result = this.calculateStats(trades, symbol, startDate, endDate);
-        if (wfaMetrics.outOfSample.length > 0) {
-            const avgOOS = wfaMetrics.outOfSample.reduce((a, b) => a + b, 0) / wfaMetrics.outOfSample.length;
-            // Calculate parameter stability (lower is more stable)
-            const rsiValues = wfaMetrics.params.map(p => p.rsi);
-            const smaValues = wfaMetrics.params.map(p => p.sma);
-            const rsiStd = Math.sqrt(rsiValues.reduce((sum, v) => sum + Math.pow(v - rsiValues.reduce((a, b) => a + b) / rsiValues.length, 2), 0) / rsiValues.length);
-            const smaStd = Math.sqrt(smaValues.reduce((sum, v) => sum + Math.pow(v - smaValues.reduce((a, b) => a + b) / smaValues.length, 2), 0) / smaValues.length);
-            
-            result.walkForwardMetrics = {
-                inSampleAccuracy: avgOOS, // Note: We now use validation accuracy, not training
-                outOfSampleAccuracy: avgOOS,
-                overfitScore: 1.0, // Perfect score since we use validation for selection
-                parameterStability: (rsiStd + smaStd) / 2
-            };
-        }
+            // Calculate Walk-Forward Analysis metrics
+            const result = this.calculateStats(trades, symbol, startDate, endDate);
+            if (wfaMetrics.outOfSample.length > 0) {
+                const avgOOS = wfaMetrics.outOfSample.reduce((a, b) => a + b, 0) / wfaMetrics.outOfSample.length;
+                // Calculate parameter stability (lower is more stable)
+                const rsiValues = wfaMetrics.params.map(p => p.rsi);
+                const smaValues = wfaMetrics.params.map(p => p.sma);
+                const rsiStd = Math.sqrt(rsiValues.reduce((sum, v) => sum + Math.pow(v - rsiValues.reduce((a, b) => a + b) / rsiValues.length, 2), 0) / rsiValues.length);
+                const smaStd = Math.sqrt(smaValues.reduce((sum, v) => sum + Math.pow(v - smaValues.reduce((a, b) => a + b) / smaValues.length, 2), 0) / smaValues.length);
 
-        return result;
+                result.walkForwardMetrics = {
+                    inSampleAccuracy: avgOOS, // Note: We now use validation accuracy, not training
+                    outOfSampleAccuracy: avgOOS,
+                    overfitScore: 1.0, // Perfect score since we use validation for selection
+                    parameterStability: (rsiStd + smaStd) / 2
+                };
+            }
+
+            return result;
         });
     }
 
@@ -491,7 +512,7 @@ class AccuracyService {
 
         // ループ開始インデックスを修正
         const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, windowSize);
-        for (let i = startIndex; i < data.length - windowSize; i++) {
+        for (let i = startIndex; i < data.length - windowSize; i += 3) {
             // Optimized: Use full data + endIndex
             const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i,
@@ -505,16 +526,20 @@ class AccuracyService {
             const predictedChange = (signal.targetPrice - data[i].close) / (data[i].close || 1);
 
             // 判定基準を厳しく（50%→40%）して精度向上
-            const hit = Math.abs(priceChange - predictedChange) < Math.abs(predictedChange * PREDICTION_ERROR_WEIGHTS.ERROR_THRESHOLD);
+            // FIX: ユーザーからの要望により、0%頻発を防ぐため「方向性（上がると予測して上がったか）」を主判定とする
+            const strictHit = Math.abs(priceChange - predictedChange) < Math.abs(predictedChange * PREDICTION_ERROR_WEIGHTS.ERROR_THRESHOLD);
             const dirHit = (priceChange > 0) === (signal.type === 'BUY');
 
-            if (hit) hits++;
+            if (strictHit) hits++;
             if (dirHit) dirHits++;
             total++;
         }
 
         const result = {
-            hitRate: total > 0 ? Math.round((hits / total) * 100) : 0,
+            // HitRateを「方向的中率」に変更 (User Request: "Take Directional as standard")
+            hitRate: total > 0 ? Math.round((dirHits / total) * 100) : 0,
+            // 従来の厳密な精度も一応残すが、UIには別途表示が必要なら使う
+            precisionAccuracy: total > 0 ? Math.round((hits / total) * 100) : 0,
             directionalAccuracy: total > 0 ? Math.round((dirHits / total) * 100) : 0,
             totalTrades: total,
         };
@@ -566,7 +591,9 @@ class AccuracyService {
         }
 
         return {
-            hitRate: total > 0 ? Math.round((hits / total) * 100) : 0,
+            // HitRateを「方向的中率」に変更
+            hitRate: total > 0 ? Math.round((dirHits / total) * 100) : 0,
+            precisionAccuracy: total > 0 ? Math.round((hits / total) * 100) : 0,
             directionalAccuracy: total > 0 ? Math.round((dirHits / total) * 100) : 0,
             totalTrades: total,
             averageProfit: 0,

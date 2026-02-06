@@ -12,8 +12,28 @@ describe('EnsembleStrategy', () => {
   let strategy: EnsembleStrategy;
   let mockTrainingData: TrainingData;
 
+  // Mock model for testing - simulates TensorFlow.js LayersModel
+  const createMockModel = () => ({
+    predict: jest.fn().mockImplementation(async (inputTensor) => {
+      // Return a mock tensor-like object
+      const mockTensor = {
+        data: () => Promise.resolve(new Float32Array([0.5 + (Math.random() - 0.5) * 0.1])),
+        dispose: jest.fn(),
+        shape: [1, 1],
+      };
+      return mockTensor;
+    }),
+    train: jest.fn().mockResolvedValue(undefined),
+    save: jest.fn().mockResolvedValue(undefined),
+    dispose: jest.fn(),
+  });
+
   beforeEach(() => {
     strategy = new EnsembleStrategy();
+
+    // Inject mock models using the setMockModel helper to avoid "Model not loaded" errors
+    strategy.lstmPipeline.setMockModel(createMockModel());
+    strategy.transformerPipeline.setMockModel(createMockModel());
 
     // Generate mock training data
     const features: unknown[] = [];

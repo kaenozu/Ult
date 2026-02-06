@@ -178,12 +178,12 @@ interface DataSourceRowProps {
 const DataSourceRow: React.FC<DataSourceRowProps> = ({ name, health }) => {
   // Render status icon directly to avoid creating components during render
   const renderStatusIcon = () => {
-    const iconClass = cn('w-4 h-4 shrink-0', 
+    const iconClass = cn('w-4 h-4 shrink-0',
       health.status === 'healthy' ? 'text-green-400' :
-      health.status === 'degraded' ? 'text-yellow-400' :
-      'text-red-400'
+        health.status === 'degraded' ? 'text-yellow-400' :
+          'text-red-400'
     );
-    
+
     switch (health.status) {
       case 'healthy':
         return <CheckCircle2 className={iconClass} />;
@@ -195,10 +195,10 @@ const DataSourceRow: React.FC<DataSourceRowProps> = ({ name, health }) => {
     }
   };
 
-  const statusColorClass = 
+  const statusColorClass =
     health.status === 'healthy' ? 'text-green-400' :
-    health.status === 'degraded' ? 'text-yellow-400' :
-    'text-red-400';
+      health.status === 'degraded' ? 'text-yellow-400' :
+        'text-red-400';
 
   return (
     <div className="flex items-center gap-3 py-2 px-3 bg-[#1a1a2e] rounded-lg border border-[#233648]">
@@ -256,77 +256,72 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
 
   // メトリクス更新
   useEffect(() => {
-    const updateMetrics = () => {
-      // キャッシュヒット率からスコアを計算
-      const cacheScore = cacheStats.hitRate * 100;
+    const fetchMetrics = async () => {
+      try {
+        const res = await fetch(`/api/data-quality?t=${Date.now()}`);
+        if (!res.ok) return;
+        const data = await res.json();
 
-      // 全体スコアを計算（HTTPベースのためキャッシュスコア中心）
-      const overallScore = cacheScore;
+        if (data.type === 'global') {
+          const stats = data.cacheStats as CacheStats;
+          setCacheStats(stats);
 
-      // ステータス判定
-      const dataFreshness: QualityMetrics['dataFreshness'] = overallScore >= 90 ? 'excellent' :
-        overallScore >= 75 ? 'good' :
-        overallScore >= 60 ? 'fair' : 'poor';
+          // APIから返却されたデータソース情報を使用
+          if (data.dataSources) {
+            setDataSources(data.dataSources);
+          }
 
-      const cachePerformance: QualityMetrics['cachePerformance'] = cacheStats.hitRate >= 0.9 ? 'excellent'
-        : cacheStats.hitRate >= 0.7 ? 'good'
-        : cacheStats.hitRate >= 0.5 ? 'fair'
-        : 'poor';
+          const overallScore = data.overallScore || 0;
 
-      setQualityMetrics({
-        overallScore,
-        dataFreshness,
-        cachePerformance,
-        anomalyCount: anomalies.length,
-        validationPassRate: overallScore,
-      });
+          setQualityMetrics({
+            overallScore,
+            dataFreshness: overallScore >= 90 ? 'excellent' : overallScore >= 75 ? 'good' : overallScore >= 60 ? 'fair' : 'poor',
+            cachePerformance: stats.hitRate >= 0.9 ? 'excellent' : stats.hitRate >= 0.7 ? 'good' : stats.hitRate >= 0.5 ? 'fair' : 'poor',
+            anomalyCount: data.anomalies?.length || 0,
+            validationPassRate: overallScore,
+          });
 
-      // データソース状態を更新
-      const now = Date.now();
-      setDataSources([
-        {
-          source: 'Yahoo Finance',
-          status: 'healthy', // REST APIは常に利用可能と仮定
-          latency: 0,
-          lastUpdate: now,
-          qualityScore: cacheScore,
-        },
-      ]);
+          if (data.anomalies) {
+            setAnomalies(data.anomalies);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch data quality metrics', e);
+      }
     };
 
-    updateMetrics();
-
-    const interval = setInterval(updateMetrics, updateInterval);
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, updateInterval);
     return () => clearInterval(interval);
-  }, [cacheStats, updateInterval, anomalies]);
+  }, [updateInterval]);
 
   // リフレッシュハンドラー
   const handleRefresh = useCallback(() => {
-    // 実装: データの再取得
     console.log('Refreshing data quality metrics...');
   }, []);
 
   // コンパクトモード
+  // コンパクトモード
   if (compact) {
     return (
-    <div className="p-4 bg-[#141e27] rounded-lg border border-[#233648]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {qualityMetrics.overallScore >= 60 ? (
-            <CheckCircle2 className="w-4 h-4 text-green-400" />
-          ) : (
-            <AlertTriangle className="w-4 h-4 text-red-400" />
-          )}
-          <span className="text-sm font-bold text-white">データ品質</span>
-        </div>
-        <div className="text-right">
-          <div className="text-[10px] text-[#92adc9]">スコア</div>
-          <div className={cn('text-lg font-bold', getQualityColor(qualityMetrics.overallScore))}>
-            {qualityMetrics.overallScore.toFixed(0)}%
+      <div className="p-4 bg-[#141e27] rounded-lg border border-[#233648]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {qualityMetrics.overallScore >= 60 ? (
+              <CheckCircle2 className="w-4 h-4 text-green-400" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+            )}
+            <span className="text-sm font-bold text-white">データ品質</span>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] text-[#92adc9]">スコア</div>
+            <div className={cn('text-lg font-bold', getQualityColor(qualityMetrics.overallScore))}>
+              {qualityMetrics.overallScore.toFixed(0)}%
+            </div>
           </div>
         </div>
       </div>
-    </div>
     );
   }
 
@@ -376,8 +371,8 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
           title="データ鮮度"
           value={qualityMetrics.dataFreshness === 'excellent' ? '優秀'
             : qualityMetrics.dataFreshness === 'good' ? '良好'
-            : qualityMetrics.dataFreshness === 'fair' ? '普通'
-            : '不良'}
+              : qualityMetrics.dataFreshness === 'fair' ? '普通'
+                : '不良'}
           status={qualityMetrics.dataFreshness}
           icon={Clock}
         />
@@ -422,9 +417,9 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
             <div className={cn(
               'text-lg font-bold',
               cacheStats.hitRate >= 0.9 ? 'text-green-400' :
-              cacheStats.hitRate >= 0.7 ? 'text-blue-400' :
-              cacheStats.hitRate >= 0.5 ? 'text-yellow-400' :
-              'text-red-400'
+                cacheStats.hitRate >= 0.7 ? 'text-blue-400' :
+                  cacheStats.hitRate >= 0.5 ? 'text-yellow-400' :
+                    'text-red-400'
             )}>
               {(cacheStats.hitRate * 100).toFixed(1)}%
             </div>
@@ -445,27 +440,29 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
       </div>
 
       {/* 異常アラート */}
-      {anomalies.length > 0 && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-          <div className="flex items-center gap-2 text-red-400 mb-2">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="text-sm font-bold">検出された異常</span>
+      {
+        anomalies.length > 0 && (
+          <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <div className="flex items-center gap-2 text-red-400 mb-2">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-sm font-bold">検出された異常</span>
+            </div>
+            <ul className="space-y-1">
+              {anomalies.slice(0, 5).map((anomaly, index) => (
+                <li key={index} className="text-[10px] text-red-300">
+                  • {anomaly}
+                </li>
+              ))}
+              {anomalies.length > 5 && (
+                <li className="text-[10px] text-[#92adc9]">
+                  他 {anomalies.length - 5} 件...
+                </li>
+              )}
+            </ul>
           </div>
-          <ul className="space-y-1">
-            {anomalies.slice(0, 5).map((anomaly, index) => (
-              <li key={index} className="text-[10px] text-red-300">
-                • {anomaly}
-              </li>
-            ))}
-            {anomalies.length > 5 && (
-              <li className="text-[10px] text-[#92adc9]">
-                他 {anomalies.length - 5} 件...
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 

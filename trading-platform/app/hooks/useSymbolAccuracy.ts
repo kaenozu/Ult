@@ -193,9 +193,14 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         const result = await response.json();
         let historicalData = result.data || [];
 
-        // Fallback to provided OHLCV if API data is insufficient
-        if (historicalData.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
-          console.warn(`Insufficient data for ${currentSymbol}: got ${historicalData.length} records, using provided OHLCV (${ohlcv.length} records)`);
+        // Check if we got enough data
+        if (historicalData.length < 200) {
+          console.warn(`[useSymbolAccuracy] Insufficient API data for ${currentSymbol}: ${historicalData.length} records. Accuracy might be low.`);
+        }
+
+        // Fallback to provided OHLCV ONLY if API completely failed to give us *more* data than we had
+        if (historicalData.length < ohlcv.length && ohlcv.length > 0) {
+          console.warn(`[useSymbolAccuracy] API returned less data than provided OHLCV. Using provided OHLCV.`);
           historicalData = ohlcv;
         }
 
@@ -237,11 +242,11 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
         }
 
         console.error('Failed to calculate accuracy:', err);
-        
+
         // Only update error state if the symbol hasn't changed
         if (stock.symbol === currentSymbol && stock.market === currentMarket) {
           setError(ERROR_MESSAGES.CALCULATION_FAILED);
-          
+
           // Try to calculate with existing OHLCV data as fallback
           if (ohlcv.length >= DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
             try {
