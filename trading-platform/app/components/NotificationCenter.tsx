@@ -351,18 +351,22 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                 <div
                   key={alert.id}
                   role="listitem"
-                  className={cn(
-                    'p-3 border-b border-[#233648] hover:bg-[#1a2632] transition-colors cursor-pointer',
-                    !alert.acknowledged && 'bg-[#233648]/30'
-                  )}
-                  onClick={() => !alert.acknowledged && handleAcknowledge(alert.id)}
+                  className="border-b border-[#233648]"
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Severity Icon */}
-                    <div className={cn(
-                      'w-8 h-8 rounded flex items-center justify-center text-lg flex-shrink-0',
-                      getSeverityColor(alert.severity)
-                    )}>
+                  <button
+                    type="button"
+                    className={cn(
+                      'w-full text-left p-3 hover:bg-[#1a2632] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/50 block',
+                      !alert.acknowledged && 'bg-[#233648]/30'
+                    )}
+                    onClick={() => !alert.acknowledged && handleAcknowledge(alert.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      {/* Severity Icon */}
+                      <div className={cn(
+                        'w-8 h-8 rounded flex items-center justify-center text-lg flex-shrink-0',
+                        getSeverityColor(alert.severity)
+                      )}>
                       {getSeverityIcon(alert.severity)}
                     </div>
 
@@ -429,6 +433,7 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                       )}
                     </div>
                   </div>
+                  </button>
                 </div>
               ))
             )}
