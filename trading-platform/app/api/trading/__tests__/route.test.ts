@@ -44,6 +44,13 @@ jest.mock('@/app/lib/api-middleware', () => ({
   checkRateLimit: jest.fn(() => null), // Return null = no rate limit
 }));
 
+// Mock csrf-protection
+jest.mock('@/app/lib/csrf/csrf-protection', () => ({
+  requireCSRF: jest.fn(() => null), // Return null = valid CSRF
+  generateCSRFToken: jest.fn(() => 'test-csrf-token'),
+  csrfTokenMiddleware: jest.fn(() => null),
+}));
+
 describe('POST /api/trading', () => {
   const originalEnv = process.env;
 

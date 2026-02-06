@@ -275,6 +275,10 @@ export async function POST(req: NextRequest) {
   // Rate limiting for trading actions
   const rateLimitResponse = checkRateLimit(req);
   if (rateLimitResponse) return rateLimitResponse;
+
+  // CSRF Protection
+  const csrfError = requireCSRF(req);
+  if (csrfError) return csrfError;
   
   try {
     const body = await req.json();
