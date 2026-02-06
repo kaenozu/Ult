@@ -30,6 +30,7 @@ export function generateMockOHLCV(
     const volume = Math.floor(Math.random() * 1000000) + 100000;
 
     data.push({
+      date: new Date(timestamp).toISOString().split('T')[0],
       timestamp,
       open: Number(open.toFixed(2)),
       high: Number(high.toFixed(2)),

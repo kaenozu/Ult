@@ -12,6 +12,7 @@ interface UseChartOptionsProps {
   hoveredIdx: number | null;
   setHoveredIndex: (idx: number | null) => void;
   signal?: Signal | null;
+  priceRange?: { min: number, max: number } | null;
 }
 
 interface ChartContext {
@@ -25,32 +26,45 @@ export const useChartOptions = ({
   market,
   hoveredIdx,
   setHoveredIndex,
-  signal
+  signal,
+  priceRange: propPriceRange
 }: UseChartOptionsProps) => {
   // Y軸の範囲を計算（価格に応じて動的に調整）
   const yAxisRange = useMemo(() => {
+    // 外部から範囲が指定されている場合はそれを使用
+    if (propPriceRange) {
+      const range = propPriceRange.max - propPriceRange.min;
+      // 余裕を持たせる (5%)
+      const margin = range * 0.05;
+      return {
+        min: propPriceRange.min - margin,
+        max: propPriceRange.max + margin
+      };
+    }
+
     if (data.length === 0) return { min: 0, max: 100 };
 
-    const prices = data.map(d => d.close);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    const lows = data.map(d => d.low);
+    const highs = data.map(d => d.high);
+    const minPrice = Math.min(...lows);
+    const maxPrice = Math.max(...highs);
     const priceRange = maxPrice - minPrice;
-    
+
     // 価格範囲に基づいて動的にマージンを設定（10%, 15%, 20%）
     const marginPercentage = priceRange > 1000 ? 0.05 : priceRange > 5000 ? 0.03 : 0.02;
     const margin = priceRange * marginPercentage;
-    
+
     return {
       min: minPrice - margin,
       max: maxPrice + margin,
     };
-  }, [data]);
+  }, [data, propPriceRange]);
 
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     layout: {
-padding: {
+      padding: {
         top: 15,
         bottom: 5,
         left: 20,
@@ -65,6 +79,22 @@ padding: {
       setHoveredIndex(elements.length > 0 ? elements[0].index : null);
     },
     plugins: {
+      zoom: {
+        pan: {
+          enabled: true,
+          mode: 'xy',
+          modifierKey: undefined, // Default: no modifier key required
+        },
+        zoom: {
+          wheel: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true
+          },
+          mode: 'xy',
+        }
+      },
       legend: {
         display: true,
         position: 'top',
@@ -187,9 +217,9 @@ padding: {
           },
           padding: 12,
           // 動的目盛り数：価格範囲に応じて調整
-          count: yAxisRange.max - yAxisRange.min > 10000 ? 10 : 
-                   yAxisRange.max - yAxisRange.min > 5000 ? 8 : 
-                   yAxisRange.max - yAxisRange.min > 1000 ? 6 : 4
+          count: yAxisRange.max - yAxisRange.min > 10000 ? 10 :
+            yAxisRange.max - yAxisRange.min > 5000 ? 8 :
+              yAxisRange.max - yAxisRange.min > 1000 ? 6 : 4
         }
       }
     },

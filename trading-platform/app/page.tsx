@@ -69,7 +69,7 @@ function Workstation() {
       targetPrice: chartSignal.targetPrice,
       stopLoss: chartSignal.stopLoss,
       predictedChange: chartSignal.predictedChange,
-      forecastCone: chartSignal.forecastCone ? { exists: true, confidence: chartSignal.forecastCone.confidence, baseLast: chartSignal.forecastCone.base[chartSignal.forecastCone.base.length-1] } : null,
+      forecastCone: chartSignal.forecastCone ? { exists: true, confidence: chartSignal.forecastCone.confidence, baseLast: chartSignal.forecastCone.base[chartSignal.forecastCone.base.length - 1] } : null,
       marketContext: chartSignal.marketContext ? { indexSymbol: chartSignal.marketContext.indexSymbol, correlation: chartSignal.marketContext.correlation } : null
     };
     // @ts-ignore - intentional
@@ -219,7 +219,7 @@ function Workstation() {
               />
 
               {/* Main Chart Visualization */}
-              <div className="flex-1 relative p-3 flex flex-col">
+              <div className="flex-1 relative flex flex-col">
                 <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
                   <Suspense fallback={<ChartLoading height={400} />}>
                     <StockChart

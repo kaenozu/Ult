@@ -13,6 +13,22 @@ export class ModelPipeline {
   private metadata: ModelMetadata | null = null;
 
   /**
+   * Set a mock model for testing purposes
+   * @internal
+   */
+  setMockModel(mockModel: any): void {
+    this.model = mockModel;
+  }
+
+  /**
+   * Clear the model (for testing cleanup)
+   * @internal
+   */
+  clearModel(): void {
+    this.model = null;
+  }
+
+  /**
    * Create and train a new LSTM model
    */
   async trainLSTMModel(

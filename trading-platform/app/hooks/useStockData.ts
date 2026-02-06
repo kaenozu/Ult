@@ -82,9 +82,14 @@ export function useStockData() {
         dataDelayMinutes: isJapaneseStock ? JAPANESE_MARKET_DELAY_MINUTES : undefined
       });
 
+      // Calculate start date (2 years ago) for robust chart history
+      const twoYearsAgo = new Date();
+      twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+      const startDate = twoYearsAgo.toISOString().split('T')[0];
+
       // 1. Kick off all requests in parallel
-      const stockDataPromise = fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval);
-      const indexDataPromise = fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal, apiInterval);
+      const stockDataPromise = fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval, startDate);
+      const indexDataPromise = fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal, apiInterval, startDate);
       const signalPromise = fetchSignal(stock, controller.signal, apiInterval);
 
       // 2. Await Critical Data (OHLCV) first
@@ -117,53 +122,70 @@ export function useStockData() {
               forecastCone: !!signalResult.data.forecastCone
             });
             setChartSignal(signalResult.data);
-           } else {
-             console.warn('[useStockData] Signal fetch returned unsuccessful:', signalResult.error);
-             // Fallback: generate consensus signal locally using technical analysis
-             try {
-               const fallbackSignal = consensusSignalService.generateConsensus(data);
-               console.log('[useStockData] Fallback signal generated:', {
-                 type: fallbackSignal.type,
-                 confidence: fallbackSignal.confidence,
-                 probability: fallbackSignal.probability,
-                 strength: fallbackSignal.strength,
-                 reason: fallbackSignal.reason
-               });
-               // Convert ConsensusSignal to Signal
-               const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
-               setChartSignal(signal);
-             } catch (fallbackErr) {
-               console.error('[useStockData] Fallback signal generation failed:', fallbackErr);
-             }
-           }
+          } else {
+            console.warn('[useStockData] Signal fetch returned unsuccessful:', signalResult.error);
+            // Fallback: generate consensus signal locally using technical analysis
+            try {
+              const fallbackSignal = consensusSignalService.generateConsensus(data);
+              console.log('[useStockData] Fallback signal generated:', {
+                type: fallbackSignal.type,
+                confidence: fallbackSignal.confidence,
+                probability: fallbackSignal.probability,
+                strength: fallbackSignal.strength,
+                reason: fallbackSignal.reason
+              });
+              // Convert ConsensusSignal to Signal
+              const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
+              setChartSignal(signal);
+            } catch (fallbackErr) {
+              console.error('[useStockData] Fallback signal generation failed:', fallbackErr);
+            }
+          }
         }
-       } catch (signalErr) {
-         console.warn('[useStockData] Signal fetch threw error, using fallback consensus:', signalErr);
-         try {
-           const fallbackSignal = consensusSignalService.generateConsensus(data);
-           console.log('[useStockData] Fallback signal generated after error:', {
-             type: fallbackSignal.type,
-             confidence: fallbackSignal.confidence,
-             probability: fallbackSignal.probability,
-             strength: fallbackSignal.strength,
-             reason: fallbackSignal.reason
-           });
-           const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
-           if (!controller.signal.aborted && isMountedRef.current) {
-             setChartSignal(signal);
-           }
-         } catch (fallbackErr) {
-           console.error('[useStockData] Fallback also failed:', fallbackErr);
-           // Keep chartSignal as null if fallback fails
-         }
-       }
+      } catch (signalErr) {
+        console.warn('[useStockData] Signal fetch threw error, using fallback consensus:', signalErr);
+        try {
+          const fallbackSignal = consensusSignalService.generateConsensus(data);
+          console.log('[useStockData] Fallback signal generated after error:', {
+            type: fallbackSignal.type,
+            confidence: fallbackSignal.confidence,
+            probability: fallbackSignal.probability,
+            strength: fallbackSignal.strength,
+            reason: fallbackSignal.reason
+          });
+          const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
+          if (!controller.signal.aborted && isMountedRef.current) {
+            setChartSignal(signal);
+          }
+        } catch (fallbackErr) {
+          console.error('[useStockData] Fallback also failed:', fallbackErr);
+          // Keep chartSignal as null if fallback fails
+        }
+      }
 
       // 5. Background sync for long-term data (keep independent)
-      fetchOHLCV(stock.symbol, stock.market, undefined, controller.signal, apiInterval).catch(e => {
-        if (isMountedRef.current && !controller.signal.aborted) {
-          console.warn('Background sync failed:', e);
+      const syncInBackground = async (
+        sym: string,
+        mkt: 'japan' | 'usa',
+        setter: (data: OHLCV[]) => void,
+        label: string
+      ) => {
+        try {
+          const newData = await fetchOHLCV(sym, mkt, undefined, controller.signal, apiInterval, undefined, true);
+          if (isMountedRef.current && !controller.signal.aborted && newData.length > 0) {
+            setter(newData);
+          }
+        } catch (e) {
+          if (isMountedRef.current && !controller.signal.aborted) {
+            console.warn(`${label} background sync failed:`, e);
+          }
         }
-      });
+      };
+
+      // Sync stock data
+      syncInBackground(stock.symbol, stock.market, setChartData, 'Stock');
+      // Sync index data
+      syncInBackground(indexSymbol, stock.market, setIndexData, 'Index');
 
     } catch (err) {
       if (controller.signal.aborted || !isMountedRef.current) return;
