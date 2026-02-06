@@ -176,15 +176,16 @@ export function usePsychology() {
   const getTodayStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return psychologyState.getCalendarDay(today);
-  }, [psychologyState.calendar]);
+  }, [psychologyState]);
 
   /**
    * 直近24時間のアラートを取得
    */
   const recentAlerts = useMemo(() => {
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const now = new Date().getTime();
+    const cutoff = now - 24 * 60 * 60 * 1000;
     return psychologyState.alerts.filter(a => new Date(a.timestamp).getTime() >= cutoff);
-  }, [psychologyState.alerts]);
+  }, [psychologyState]);
 
   return {
     // State
