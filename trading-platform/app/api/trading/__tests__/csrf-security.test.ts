@@ -39,4 +39,19 @@ describe('POST /api/trading CSRF Protection', () => {
     const data = await res.json();
     expect(data.error).toBe('CSRF validation failed');
   });
+
+  it('should accept valid CSRF token', async () => {
+    const token = 'a'.repeat(32); // 32 chars hex token
+    const req = new NextRequest('http://localhost:3000/api/trading', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'start' }),
+      headers: {
+        'x-csrf-token': token,
+        'Cookie': `csrf-token=${token}`
+      }
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+  });
 });
