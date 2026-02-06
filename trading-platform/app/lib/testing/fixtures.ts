@@ -40,6 +40,8 @@ export const createMockOHLCV = (
 export const createMockStock = (overrides: Partial<Stock> = {}): Stock => ({
   symbol: 'AAPL',
   name: 'Apple Inc.',
+  market: 'usa',
+  sector: 'Technology',
   price: 150,
   change: 2.5,
   changePercent: 1.69,
@@ -70,11 +72,14 @@ export const createMockIndicators = (
 });
 
 export const createMockSignal = (overrides: Partial<Signal> = {}): Signal => ({
-  id: 'test-signal-1',
   symbol: 'AAPL',
-  type: 'buy',
-  strength: 0.8,
-  timestamp: Date.now(),
+  type: 'BUY',
+  confidence: 80,
+  targetPrice: 155,
+  stopLoss: 145,
+  reason: 'Test signal',
+  predictedChange: 3.5,
+  predictionDate: new Date().toISOString().split('T')[0],
   ...overrides
 });
 
