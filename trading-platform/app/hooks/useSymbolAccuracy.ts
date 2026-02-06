@@ -164,9 +164,10 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
 
       try {
         // Fetch historical data for accuracy calculation
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const startDate = oneYearAgo.toISOString().split('T')[0];
+        // Increased to 3 years to ensure calculateRealTimeAccuracy has enough data (requires > 252 days start index)
+        const threeYearsAgo = new Date();
+        threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+        const startDate = threeYearsAgo.toISOString().split('T')[0];
 
         console.log('[useSymbolAccuracy]', { symbol: currentSymbol, market: currentMarket, startDate });
 
@@ -274,12 +275,16 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
       }
     };
 
+    // Use a stable dependency for OHLCV to prevent infinite loops if array reference changes
+    // but content is the same.
+    const ohlcvSignature = ohlcv.length > 0 ? `${ohlcv.length}-${ohlcv[ohlcv.length - 1].date}` : 'empty';
+
     fetchAccuracy();
 
     return () => {
       controller.abort();
     };
-  }, [stock.symbol, stock.market, ohlcv]);
+  }, [stock.symbol, stock.market, ohlcv.length, ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty']);
 
   return { accuracy, loading, error };
 }

@@ -4,7 +4,7 @@
  * 認証・認可のエンドツーエンドテスト
  */
 
-import { test, expect } from '../fixtures';
+import { test, expect, TEST_USERS } from '../fixtures';
 import { waitForPageLoad, clickWhenVisible, waitForToast } from '../helpers';
 
 test.describe('Authentication', () => {
@@ -136,8 +136,8 @@ test.describe('Authentication', () => {
     test('admin should access admin panel', async ({ page }) => {
       // Adminとしてログイン
       await page.goto('/login');
-      await page.fill('[data-testid="email-input"]', 'admin@test.com');
-      await page.fill('[data-testid="password-input"]', 'Admin123!');
+      await page.fill('[data-testid="email-input"]', TEST_USERS.admin.email);
+      await page.fill('[data-testid="password-input"]', TEST_USERS.admin.password);
       await page.click('[data-testid="login-button"]');
       
       await page.waitForURL('/dashboard');
@@ -150,8 +150,8 @@ test.describe('Authentication', () => {
     test('viewer should not access admin panel', async ({ page }) => {
       // Viewerとしてログイン
       await page.goto('/login');
-      await page.fill('[data-testid="email-input"]', 'viewer@test.com');
-      await page.fill('[data-testid="password-input"]', 'Viewer123!');
+      await page.fill('[data-testid="email-input"]', TEST_USERS.viewer.email);
+      await page.fill('[data-testid="password-input"]', TEST_USERS.viewer.password);
       await page.click('[data-testid="login-button"]');
       
       await page.waitForURL('/dashboard');
