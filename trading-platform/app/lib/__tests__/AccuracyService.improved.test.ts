@@ -24,7 +24,7 @@ jest.mock('@/app/lib/constants/common', () => ({
 }));
 
 // Mock analysis service
-jest.mock('@/app/lib/analysis', () => ({
+jest.mock('@/app/lib/AnalysisService', () => ({
   analysisService: {
     analyzeStock: jest.fn()
   }
@@ -35,7 +35,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should calculate accuracy with realistic data requirements', () => {
       // Generate 120 days of data (more than the 60-day requirement)
       const mockData = generateMockOHLCV(1000, 120);
-      
+
       // Mock the analysis service to return a simple signal
       const mockSignal = {
         type: 'BUY',
@@ -45,8 +45,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateRealTimeAccuracy('TEST', mockData, 'japan');
@@ -60,7 +60,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should return null for insufficient data', () => {
       // Generate only 30 days of data (less than 60-day requirement)
       const mockData = generateMockOHLCV(1000, 30);
-      
+
       const result = calculateRealTimeAccuracy('TEST', mockData, 'japan');
 
       expect(result).toBeNull();
@@ -69,7 +69,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should handle edge case with exactly 60 days', () => {
       // Generate exactly 60 days of data (minimum requirement)
       const mockData = generateMockOHLCV(1000, 60);
-      
+
       const mockSignal = {
         type: 'BUY',
         direction: 'LONG',
@@ -78,8 +78,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateRealTimeAccuracy('TEST', mockData, 'japan');
@@ -91,7 +91,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should use improved loop conditions', () => {
       // Generate 100 days of data
       const mockData = generateMockOHLCV(1000, 100);
-      
+
       const mockSignal = {
         type: 'BUY',
         direction: 'LONG',
@@ -100,8 +100,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateRealTimeAccuracy('TEST', mockData, 'japan');
@@ -114,7 +114,7 @@ describe('AccuracyService - Improved Calculations', () => {
 
     test('should handle different market types', () => {
       const mockData = generateMockOHLCV(1000, 120);
-      
+
       const mockSignal = {
         type: 'BUY',
         direction: 'LONG',
@@ -123,8 +123,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       // Test Japanese market
@@ -144,7 +144,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should calculate hit rate with realistic data requirements', () => {
       // Generate 120 days of data
       const mockData = generateMockOHLCV(1000, 120);
-      
+
       // Mock the analysis service to return a simple signal
       const mockSignal = {
         type: 'BUY',
@@ -154,8 +154,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateAIHitRate('TEST', mockData, 'japan');
@@ -179,7 +179,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should use improved loop conditions', () => {
       // Generate 100 days of data
       const mockData = generateMockOHLCV(1000, 100);
-      
+
       const mockSignal = {
         type: 'BUY',
         direction: 'LONG',
@@ -188,8 +188,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateAIHitRate('TEST', mockData, 'japan');
@@ -201,7 +201,7 @@ describe('AccuracyService - Improved Calculations', () => {
 
     test('should handle HOLD signals correctly', () => {
       const mockData = generateMockOHLCV(1000, 120);
-      
+
       // Mock HOLD signals (should be skipped)
       const mockSignal = {
         type: 'HOLD',
@@ -211,8 +211,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1000,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateAIHitRate('TEST', mockData, 'japan');
@@ -223,7 +223,7 @@ describe('AccuracyService - Improved Calculations', () => {
 
     test('should calculate directional accuracy correctly', () => {
       const mockData = generateMockOHLCV(1000, 120);
-      
+
       // Create a scenario where directional accuracy should be high
       const mockSignal = {
         type: 'BUY',
@@ -233,8 +233,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateAIHitRate('TEST', mockData, 'japan');
@@ -248,7 +248,7 @@ describe('AccuracyService - Improved Calculations', () => {
   describe('Performance Improvements', () => {
     test('should complete calculations quickly with realistic data', () => {
       const mockData = generateMockOHLCV(1000, 120);
-      
+
       const mockSignal = {
         type: 'BUY',
         direction: 'LONG',
@@ -257,14 +257,14 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const startTime = performance.now();
-      
+
       const result = calculateRealTimeAccuracy('TEST', mockData, 'japan');
-      
+
       const endTime = performance.now();
       const duration = endTime - startTime;
 
@@ -276,7 +276,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should handle large datasets efficiently', () => {
       // Generate 500 days of data
       const mockData = generateMockOHLCV(1000, 500);
-      
+
       const mockSignal = {
         type: 'BUY',
         direction: 'LONG',
@@ -285,14 +285,14 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1050,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const startTime = performance.now();
-      
+
       const result = calculateRealTimeAccuracy('TEST', mockData, 'japan');
-      
+
       const endTime = performance.now();
       const duration = endTime - startTime;
 
@@ -306,7 +306,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should handle Panasonic (7203) data correctly', () => {
       // Simulate Panasonic stock data
       const mockData = generateMockOHLCV(3742, 120);
-      
+
       const mockSignal = {
         type: 'BUY',
         direction: 'LONG',
@@ -315,8 +315,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 3900,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateRealTimeAccuracy('7203', mockData, 'japan');
@@ -330,7 +330,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should handle Hino Motors (7205) data correctly', () => {
       // Simulate Hino Motors stock data
       const mockData = generateMockOHLCV(500, 120);
-      
+
       const mockSignal = {
         type: 'SELL',
         direction: 'SHORT',
@@ -339,8 +339,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 480,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateRealTimeAccuracy('7205', mockData, 'japan');
@@ -354,7 +354,7 @@ describe('AccuracyService - Improved Calculations', () => {
     test('should handle volatile stocks correctly', () => {
       // Generate more volatile data
       const mockData = generateMockOHLCV(1000, 120);
-      
+
       // Add more volatility
       mockData.forEach((point, index) => {
         if (index % 5 === 0) {
@@ -365,7 +365,7 @@ describe('AccuracyService - Improved Calculations', () => {
           point.close += volatility;
         }
       });
-      
+
       const mockSignal = {
         type: 'BUY',
         direction: 'LONG',
@@ -374,8 +374,8 @@ describe('AccuracyService - Improved Calculations', () => {
         targetPrice: 1100,
         timeframe: '1D'
       };
-      
-      jest.mocked(require('@/app/lib/analysis').analysisService.analyzeStock)
+
+      jest.mocked(require('@/app/lib/AnalysisService').analysisService.analyzeStock)
         .mockReturnValue(mockSignal);
 
       const result = calculateRealTimeAccuracy('VOLATILE', mockData, 'japan');

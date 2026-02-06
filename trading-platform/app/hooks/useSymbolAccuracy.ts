@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { calculateRealTimeAccuracy, calculatePredictionError } from '@/app/lib/analysis';
 import { DATA_REQUIREMENTS } from '@/app/lib/constants';
+import { logger } from '@/app/core/logger';
 
 interface AccuracyData {
   hitRate: number;
@@ -20,7 +21,7 @@ const accuracyCache = new Map<string, CacheEntry>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const MAX_CACHE_SIZE = 1000; // Security: Limit cache size to prevent memory exhaustion
 
-// Constants for error messages (can be moved to i18n later)
+// Constants for error messages
 const ERROR_MESSAGES = {
   CALCULATION_FAILED: '精度計算に失敗しました',
   INSUFFICIENT_DATA: 'Insufficient data for accuracy calculation',
@@ -29,50 +30,14 @@ const ERROR_MESSAGES = {
 
 /**
  * Security: Sanitize cache key to prevent cache poisoning attacks
- *
- * Prevents:
- * - Prototype pollution
- * - Cache key collision
- * - Injection attacks
- * - Memory exhaustion via unbounded keys
  */
 function sanitizeCacheKey(symbol: string, market: string): string {
-  // Validate inputs
-  if (!symbol || typeof symbol !== 'string') {
-    throw new Error('Invalid symbol: must be a non-empty string');
-  }
+  if (!symbol || typeof symbol !== 'string') throw new Error('Invalid symbol');
+  if (!market || typeof market !== 'string') throw new Error('Invalid market');
 
-  if (!market || typeof market !== 'string') {
-    throw new Error('Invalid market: must be a non-empty string');
-  }
-
-  // Remove potentially dangerous characters
-  // Allow only alphanumeric, dash, underscore, and period
   const sanitizedSymbol = symbol.replace(/[^a-zA-Z0-9._-]/g, '').toUpperCase();
   const sanitizedMarket = market.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase();
 
-  // Validate sanitized values
-  if (sanitizedSymbol.length === 0) {
-    throw new Error('Invalid symbol: contains no valid characters');
-  }
-
-  if (sanitizedMarket.length === 0) {
-    throw new Error('Invalid market: contains no valid characters');
-  }
-
-  // Limit key length to prevent memory issues
-  const maxSymbolLength = 20;
-  const maxMarketLength = 20;
-
-  if (sanitizedSymbol.length > maxSymbolLength) {
-    throw new Error(`Symbol too long: maximum ${maxSymbolLength} characters`);
-  }
-
-  if (sanitizedMarket.length > maxMarketLength) {
-    throw new Error(`Market identifier too long: maximum ${maxMarketLength} characters`);
-  }
-
-  // Prevent prototype pollution by using a prefix
   return `acc_${sanitizedSymbol}_${sanitizedMarket}`;
 }
 
@@ -81,35 +46,20 @@ function sanitizeCacheKey(symbol: string, market: string): string {
  */
 function manageCacheSize(): void {
   if (accuracyCache.size >= MAX_CACHE_SIZE) {
-    // Remove oldest entries (LRU-style eviction)
     let oldestKey: string | null = null;
     let oldestTimestamp = Infinity;
-
     for (const [key, entry] of accuracyCache.entries()) {
       if (entry.timestamp < oldestTimestamp) {
         oldestTimestamp = entry.timestamp;
         oldestKey = key;
       }
     }
-
-    if (oldestKey) {
-      accuracyCache.delete(oldestKey);
-    }
+    if (oldestKey) accuracyCache.delete(oldestKey);
   }
 }
 
 /**
  * useSymbolAccuracy - Hook to fetch and cache prediction accuracy for a symbol
- * 
- * Features:
- * - Fetches real-time accuracy using AccuracyService
- * - Caches results per symbol for 5 minutes
- * - Calculates prediction error for confidence intervals
- * - Handles loading and error states
- * 
- * @param stock - Stock information
- * @param ohlcv - Historical OHLCV data
- * @returns Accuracy data, loading state, and error
  */
 export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
   const [accuracy, setAccuracy] = useState<AccuracyData | null>(null);
@@ -121,19 +71,6 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     const currentSymbol = stock.symbol;
     const currentMarket = stock.market;
 
-    // Security: Sanitize cache key to prevent cache poisoning
-    let cacheKey: string;
-    try {
-      cacheKey = sanitizeCacheKey(currentSymbol, currentMarket);
-    } catch (error) {
-      // Invalid symbol/market, set error and return
-      const errorMessage = error instanceof Error ? error.message : 'Invalid symbol or market';
-      setError(errorMessage);
-      setLoading(false);
-      return;
-    }
-
-    // Skip if no symbol is selected
     if (!currentSymbol || currentSymbol === '') {
       setAccuracy(null);
       setLoading(false);
@@ -141,7 +78,15 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
       return;
     }
 
-    // Check cache first
+    let cacheKey: string;
+    try {
+      cacheKey = sanitizeCacheKey(currentSymbol, currentMarket);
+    } catch (e) {
+      setError('Invalid symbol or market');
+      setLoading(false);
+      return;
+    }
+
     const cached = accuracyCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       setAccuracy(cached.data);
@@ -149,12 +94,9 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
       return;
     }
 
-    // Abort previous request if still running
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      abortControllerRef.current = null;
     }
-
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
@@ -163,80 +105,57 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
       setError(null);
 
       try {
-        // Fetch historical data for accuracy calculation
-        // Use 2 years to ensure sufficient data for backtest (min 60 days) and accuracy (min 30-50 days)
-        const twoYearsAgo = new Date();
-        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-        const startDate = twoYearsAgo.toISOString().split('T')[0];
+        // Increased to 3 years to ensure calculateRealTimeAccuracy has enough data
+        const threeYearsAgo = new Date();
+        threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+        const startDate = threeYearsAgo.toISOString().split('T')[0];
 
-        console.log('[useSymbolAccuracy]', { symbol: currentSymbol, market: currentMarket, startDate, providedOHLCVCount: ohlcv.length });
+        logger.info(`[useSymbolAccuracy] Fetching for ${currentSymbol}`, { startDate }, 'useSymbolAccuracy');
 
-        // Security: Use URLSearchParams to safely encode query parameters
         const params = new URLSearchParams({
           type: 'history',
-          symbol: currentSymbol, // Already validated by sanitizeCacheKey
-          market: currentMarket, // Already validated by sanitizeCacheKey
+          symbol: currentSymbol,
+          market: currentMarket,
           startDate: startDate
         });
 
-        const response = await fetch(
-          `/api/market?${params.toString()}`,
-          { signal: controller.signal }
-        );
+        const response = await fetch(`/api/market?${params.toString()}`, { signal: controller.signal });
 
         if (!response.ok) {
-          if (response.status === 429) {
-            throw new Error('Too Many Requests - Please try again later');
-          }
+          if (response.status === 429) throw new Error('Too Many Requests');
           throw new Error('Failed to fetch historical data');
         }
 
         const result = await response.json();
         let historicalData = result.data || [];
 
-        console.log('[useSymbolAccuracy] API returned:', { symbol: currentSymbol, dataLength: historicalData.length });
+        const MIN_DATA_FOR_ACCURACY = 30;
+        const PREFERRED_DATA_LENGTH = 60;
 
-        // STRATEGY: Use the best available data source
-        // 1. If API returned sufficient data (>= 60 days), use it
-        // 2. If API returned some data but insufficient (30-60 days), use it with warning
-        // 3. If API returned very little (< 30 days) and we have better OHLCV, use OHLCV
-        // 4. If both insufficient, try to combine or use best available
-
-        const MIN_DATA_FOR_ACCURACY = 30;  // Absolute minimum
-        const PREFERRED_DATA_LENGTH = 60;   // Preferred for reliable results
-
-        // Check if OHLCV is better than API data
         const useOHLCV = ohlcv.length > historicalData.length && ohlcv.length >= MIN_DATA_FOR_ACCURACY;
         const useAPI = historicalData.length >= MIN_DATA_FOR_ACCURACY;
 
         if (useOHLCV) {
-          console.warn(`[useSymbolAccuracy] API returned insufficient data (${historicalData.length} days) for ${currentSymbol}. Using provided OHLCV data (${ohlcv.length} days) instead.`);
+          logger.warn(`[useSymbolAccuracy] API returned insufficient data, using provided OHLCV for ${currentSymbol}`, undefined, 'useSymbolAccuracy');
           historicalData = ohlcv;
         } else if (!useAPI && historicalData.length < MIN_DATA_FOR_ACCURACY) {
-          console.error(`[useSymbolAccuracy] CRITICAL: Insufficient data for ${currentSymbol}. API: ${historicalData.length} days, OHLCV: ${ohlcv.length} days. Cannot calculate accuracy.`);
+          logger.error(`[useSymbolAccuracy] CRITICAL: Insufficient data for ${currentSymbol}`, undefined, 'useSymbolAccuracy');
           setError('データが不足しています。精度計算には最低30日分の履歴データが必要です。');
           setLoading(false);
           return;
         }
 
         if (historicalData.length < PREFERRED_DATA_LENGTH) {
-          console.warn(`[useSymbolAccuracy] Warning: Data length ${historicalData.length} is below preferred ${PREFERRED_DATA_LENGTH}. Accuracy may be unreliable for ${currentSymbol}.`);
+          logger.warn(`[useSymbolAccuracy] Unreliable accuracy due to short data length for ${currentSymbol}`, undefined, 'useSymbolAccuracy');
         }
 
-        // Calculate accuracy metrics
         const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
-
         if (!accuracyResult) {
-          // Not enough data for accuracy calculation
-          // Only update loading if still the same symbol
-          if (stock.symbol === currentSymbol && stock.market === currentMarket) {
-            setLoading(false);
-          }
+          if (stock.symbol === currentSymbol) setLoading(false);
           return;
         }
 
         const predError = calculatePredictionError(historicalData);
-
         const accuracyData: AccuracyData = {
           hitRate: accuracyResult.hitRate,
           directionalAccuracy: accuracyResult.directionalAccuracy,
@@ -244,55 +163,35 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           predictionError: predError
         };
 
-        // Security: Manage cache size before adding new entry
         manageCacheSize();
+        accuracyCache.set(cacheKey, { data: accuracyData, timestamp: Date.now() });
 
-        // Update cache
-        accuracyCache.set(cacheKey, {
-          data: accuracyData,
-          timestamp: Date.now()
-        });
-
-        // Only update state if the symbol hasn't changed
-        if (stock.symbol === currentSymbol && stock.market === currentMarket) {
+        if (stock.symbol === currentSymbol) {
           setAccuracy(accuracyData);
         }
       } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          // Request was aborted, don't update state
-          return;
-        }
+        if (err instanceof Error && err.name === 'AbortError') return;
+        logger.error('Failed to calculate accuracy:', err instanceof Error ? err : new Error(String(err)), 'useSymbolAccuracy');
 
-        console.error('Failed to calculate accuracy:', err);
-
-        // Only update error state if the symbol hasn't changed
-        if (stock.symbol === currentSymbol && stock.market === currentMarket) {
+        if (stock.symbol === currentSymbol) {
           setError(ERROR_MESSAGES.CALCULATION_FAILED);
-
-          // Try to calculate with existing OHLCV data as fallback
           if (ohlcv.length >= DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
             try {
               const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
               if (accuracyResult) {
-                const predError = calculatePredictionError(ohlcv);
-                const fallbackData: AccuracyData = {
+                setAccuracy({
                   hitRate: accuracyResult.hitRate,
                   directionalAccuracy: accuracyResult.directionalAccuracy,
                   totalTrades: accuracyResult.totalTrades,
-                  predictionError: predError
-                };
-                setAccuracy(fallbackData);
+                  predictionError: calculatePredictionError(ohlcv)
+                });
                 setError(null);
               }
-            } catch {
-              // Fallback also failed, keep error state
-            }
+            } catch { /* Fallback failed */ }
           }
         }
       } finally {
-        if (stock.symbol === currentSymbol && stock.market === currentMarket) {
-          setLoading(false);
-        }
+        if (stock.symbol === currentSymbol) setLoading(false);
       }
     };
 
@@ -301,7 +200,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       controller.abort();
     };
-  }, [stock.symbol, stock.market, ohlcv]);
+  }, [stock.symbol, stock.market, ohlcv.length, ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty']);
 
   return { accuracy, loading, error };
 }

@@ -12,8 +12,8 @@ import { PsychologyMonitor } from '@/app/lib/risk/PsychologyMonitor';
 import { CoolingOffManager } from '@/app/lib/risk/CoolingOffManager';
 import { DisciplineScoreCalculator } from '@/app/lib/psychology/DisciplineScoreCalculator';
 import { Order } from '@/app/types';
-import type { DisciplineScoreProps } from '@/app/types/psychology';
-import type { DisciplineScore } from '@/app/types/risk';
+import type { DisciplineScoreProps, PsychologyAlert } from '@/app/types/psychology';
+import type { DisciplineScore, PsychologyAlert as RiskPsychologyAlert } from '@/app/types/risk';
 
 /**
  * 心理管理フック
@@ -56,7 +56,21 @@ export function usePsychology() {
 
     // Generate alerts
     const alerts = psychologyMonitorRef.current.generatePsychologyAlerts();
-    alerts.forEach(alert => psychologyState.addAlert(alert));
+    alerts.forEach((alert: RiskPsychologyAlert) => {
+      // Map RiskPsychologyAlert to PsychologyAlert
+      const newAlert: PsychologyAlert = {
+        id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: alert.type === 'overtrading' ? 'violation' : (alert.type === 'revenge_trading' ? 'tilt' : 'stress'),
+        severity: alert.severity === 'high' ? 'critical' : (alert.severity === 'medium' ? 'warning' : 'info'),
+        title: alert.type.toUpperCase(),
+        message: alert.message,
+        timestamp: new Date().toISOString(),
+        acknowledged: false,
+        requires_action: true,
+        suggested_action: alert.recommendation
+      };
+      psychologyState.addAlert(newAlert);
+    });
 
     // Check if cooling off should be triggered
     const metrics = psychologyMonitorRef.current.analyzeTradingBehavior();
@@ -84,7 +98,8 @@ export function usePsychology() {
     }
 
     const analysis = psychologyMonitorRef.current.detectBiases(order);
-    psychologyState.setBiasAnalysis(analysis);
+    // Bias analysis result is now part of mental health metrics in the new store
+    // This is a simplified mapping
     return analysis;
   };
 
@@ -161,23 +176,22 @@ export function usePsychology() {
   const getTodayStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     return psychologyState.getCalendarDay(today);
-  }, [psychologyState]); // psychologyState全体を依存に含める
+  }, [psychologyState]);
 
   /**
    * 直近24時間のアラートを取得
    */
   const recentAlerts = useMemo(() => {
-    return psychologyState.getRecentAlerts(24);
-  }, [psychologyState]); // psychologyState全体を依存に含める
+    const now = new Date().getTime();
+    const cutoff = now - 24 * 60 * 60 * 1000;
+    return psychologyState.alerts.filter(a => new Date(a.timestamp).getTime() >= cutoff);
+  }, [psychologyState]);
 
   return {
     // State
     alerts: psychologyState.alerts,
-    currentBiasAnalysis: psychologyState.currentBiasAnalysis,
-    consecutiveLossInfo: psychologyState.consecutiveLossInfo,
-    currentEmotion: psychologyState.currentEmotion,
-    tradePlans: psychologyState.tradePlans,
-    reflections: psychologyState.reflections,
+    currentMentalHealth: psychologyState.currentMentalHealth,
+    currentEmotions: psychologyState.current_emotions,
     currentCooldown: psychologyState.currentCooldown,
     disciplineScore: psychologyState.disciplineScore,
     goals: psychologyState.goals,
@@ -185,7 +199,6 @@ export function usePsychology() {
     // Computed
     recentAlerts,
     todayStats: getTodayStats,
-    alertStats: psychologyState.getAlertStats(),
 
     // Actions
     recordTrade,
@@ -200,15 +213,9 @@ export function usePsychology() {
     addAlert: psychologyState.addAlert,
     clearAlerts: psychologyState.clearAlerts,
     dismissAlert: psychologyState.dismissAlert,
-    addTradePlan: psychologyState.addTradePlan,
-    updateTradePlan: psychologyState.updateTradePlan,
-    deleteTradePlan: psychologyState.deleteTradePlan,
-    getTradePlan: psychologyState.getTradePlan,
-    addReflection: psychologyState.addReflection,
-    getReflection: psychologyState.getReflection,
     updateGoals: psychologyState.updateGoals,
     updateCalendarDay: psychologyState.updateCalendarDay,
-    setCurrentEmotion: psychologyState.setCurrentEmotion,
+    addEmotion: psychologyState.addEmotion,
 
     // Services (using callbacks for safe access)
     getPsychologyMonitor: () => psychologyMonitorRef.current,

@@ -1,6 +1,6 @@
 /**
  * UnifiedTradingDashboard.tsx
- * 
+ *
  * 統合トレーディングプラットフォームのメインダッシュボードコンポーネント。
  * 全機能へのアクセスと可視化を提供します。
  */
@@ -31,11 +31,21 @@ import {
 
 // Sub-components
 import { PortfolioPanel } from './PortfolioPanel';
-import { SignalPanel } from './SignalPanel';
 import { RiskPanel } from './RiskPanel';
 import { AlertPanel } from './AlertPanel';
 import { MarketDataPanel } from './MarketDataPanel';
 import { LazyBacktestPanel } from '@/app/components/lazy/LazyComponents';
+
+const MARKET_DATA_SYMBOLS = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'ADAUSD'];
+
+const INITIAL_CONFIG = {
+  mode: 'paper' as const,
+  initialCapital: 1000000,
+  aiEnabled: true,
+  sentimentEnabled: true,
+  autoTrading: false,
+  symbols: MARKET_DATA_SYMBOLS,
+};
 
 export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboard() {
   const {
@@ -50,21 +60,13 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
     reset,
     placeOrder,
     closePosition,
-    createAlert,
     updateConfig,
     isLoading,
     error,
-  } = useUnifiedTrading({
-    mode: 'paper',
-    initialCapital: 1000000,
-    aiEnabled: true,
-    sentimentEnabled: true,
-    autoTrading: false,
-    symbols: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'ADAUSD'],
-  });
+  } = useUnifiedTrading(INITIAL_CONFIG);
 
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedSymbol, setSelectedSymbol] = useState('BTCUSD');
+  const [selectedSymbol, setSelectedSymbol] = useState(MARKET_DATA_SYMBOLS[0]);
 
   // Format currency (memoized)
   const formatCurrency = useCallback((value: number) => {
@@ -91,15 +93,6 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
       dailyPnL: portfolio.dailyPnL
     };
   }, [portfolio]);
-
-  // Memoize risk level
-  const riskLevel = useMemo(() => {
-    if (!riskMetrics) return '-';
-
-    if (riskMetrics.currentDrawdown > 10) return 'HIGH';
-    if (riskMetrics.currentDrawdown > 5) return 'MEDIUM';
-    return 'LOW';
-  }, [riskMetrics]);
 
   return (
     <div className="min-h-screen bg-[#0a0e14] text-white">
@@ -221,7 +214,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Risk Level</p>
+                  <p className="text-sm text-gray-400">Drawdown</p>
                   <p className={`text-2xl font-bold ${riskMetrics && riskMetrics.currentDrawdown > 10 ? 'text-red-400' :
                       riskMetrics && riskMetrics.currentDrawdown > 5 ? 'text-yellow-400' : 'text-green-400'
                     }`}>
@@ -357,7 +350,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
 
           <TabsContent value="market">
             <MarketDataPanel
-              symbols={['BTCUSD', 'ETHUSD', 'SOLUSD', 'ADAUSD']}
+              symbols={MARKET_DATA_SYMBOLS}
               selectedSymbol={selectedSymbol}
               onSelectSymbol={setSelectedSymbol}
             />

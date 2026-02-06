@@ -64,11 +64,11 @@ class AnalysisService {
         const atr = (Math.max(...closes) - Math.min(...closes)) / (closes.length || 1);
         const volatility = stdDeviation * Math.sqrt(FORECAST_CONE.STEPS);
 
-        const bearishLower: number[] = [];
-        const bearishUpper: number[] = [];
-        const bullishLower: number[] = [];
-        const bullishUpper: number[] = [];
-        const base: number[] = [];
+        const bearishLower: number[] = [currentPrice];
+        const bearishUpper: number[] = [currentPrice];
+        const bullishLower: number[] = [currentPrice];
+        const bullishUpper: number[] = [currentPrice];
+        const base: number[] = [currentPrice];
 
         for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
             const basePrice = data[data.length - 1].close;
@@ -225,7 +225,9 @@ class AnalysisService {
         let total = 0;
         const warmup = 50; // Reduced from 100 to allow more evaluation periods
         const step = 1;
-        const limit = (endIndex !== undefined ? endIndex : data.length) - 10;
+        // FIX: Prevent look-ahead bias by ensuring we only simulate trades that FINISH before endIndex
+        // simulateTrade looks ahead FORECAST_CONE.STEPS (60) days
+        const limit = (endIndex !== undefined ? endIndex : data.length) - FORECAST_CONE.STEPS;
         const start = (startIndex || 0) + warmup;
 
         const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
