@@ -42,6 +42,8 @@ export function SignalCard({
                 entryPrice: stock.price,
                 stopLossPrice: signal.stopLoss,
                 confidence: signal.confidence,
+                minShares: riskSettings.minShares,
+                maxPositionPercent: riskSettings.maxPositionPercent,
             });
         } catch (error) {
             console.error('Position sizing calculation error:', error);
