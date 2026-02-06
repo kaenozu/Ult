@@ -8,7 +8,6 @@ import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
-import zoomPlugin from 'chartjs-plugin-zoom';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
@@ -19,8 +18,8 @@ import { AccuracyBadge } from '@/app/components/AccuracyBadge';
 
 export { volumeProfilePlugin };
 
-// Register ChartJS components and custom plugin
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin, zoomPlugin);
+// Register ChartJS components and custom plugins
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
 
 export interface StockChartProps {
   data: OHLCV[];
@@ -211,13 +210,6 @@ export const StockChart = memo(function StockChart({
     forecastExtension.forecastPrices.length
   ]);
 
-  // Force chart reset when data changes to ensure forecast is visible
-  useEffect(() => {
-    if (chartRef.current && extendedData.labels.length > 0) {
-      chartRef.current.resetZoom();
-    }
-  }, [extendedData.labels.length, market, signal]);
-
   // 4. Loading / Error States
   if (error) {
     return (
@@ -246,26 +238,13 @@ export const StockChart = memo(function StockChart({
   return (
     <div className="flex flex-col w-full h-full" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px', maxHeight: '600px' }}>
       {/* Header Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#233648] bg-[#1a2632]">
-        {/* Left: Accuracy Badge */}
-        <div className="flex items-center">
-          {accuracyData && (
-            <AccuracyBadge
-              hitRate={accuracyData.hitRate}
-              totalTrades={accuracyData.totalTrades}
-              predictionError={accuracyData.predictionError}
-              loading={accuracyData.loading}
-            />
-          )}
-        </div>
-
-        {/* Right: Reset Zoom Button */}
-        <button
-          onClick={() => chartRef.current?.resetZoom()}
-          className="px-3 py-1.5 text-xs font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded hover:bg-blue-500/20 transition-colors"
-        >
-          Reset Zoom
-        </button>
+      <div className="flex items-center justify-end px-4 py-2 border-b border-[#233648] bg-[#1a2632]">
+        <AccuracyBadge
+          hitRate={accuracyData?.hitRate || 0}
+          totalTrades={accuracyData?.totalTrades || 0}
+          predictionError={accuracyData?.predictionError}
+          loading={accuracyData?.loading}
+        />
       </div>
 
       {/* Main Chart Area */}
