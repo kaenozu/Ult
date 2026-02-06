@@ -109,10 +109,14 @@ export const StockChart = memo(function StockChart({
   }, [data, sma20, upper, lower, showSMA, showBollinger]);
 
   // 2. Chart Configuration
-  const { options } = useChartOptions({
+  const options = useChartOptions({
+    data,
+    extendedData,
     market,
-    priceRange,
-    setHoveredIndex
+    hoveredIdx,
+    setHoveredIndex,
+    signal,
+    priceRange
   });
 
   const chartData = useMemo(() => ({
