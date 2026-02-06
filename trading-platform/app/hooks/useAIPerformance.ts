@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { calculateAIHitRate } from '@/app/lib/analysis';
+import { logger } from '@/app/core/logger';
 
 export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
   const [calculatingHitRate, setCalculatingHitRate] = useState(false);
@@ -54,8 +55,10 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
             const result = calculateAIHitRate(currentSymbol, resultData.data, currentMarket);
             setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           } else {
-            console.warn(
-              `Insufficient data for ${currentSymbol}: got ${resultData.data?.length || 0} records, using provided OHLCV (${ohlcv.length} records)`
+            logger.warn(
+              `Insufficient data for ${currentSymbol}: got ${resultData.data?.length || 0} records, using provided OHLCV (${ohlcv.length} records)`,
+              undefined,
+              'useAIPerformance'
             );
 
             // If OHLCV data is sparse, synthesize up to 30 points.
@@ -83,8 +86,10 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
                 });
               }
 
-              console.log(
-                `Enhanced OHLCV data from ${ohlcv.length} to ${enhancedOHLCV.length} records for ${currentSymbol}`
+              logger.info(
+                `Enhanced OHLCV data from ${ohlcv.length} to ${enhancedOHLCV.length} records for ${currentSymbol}`,
+                undefined,
+                'useAIPerformance'
               );
             }
 
@@ -93,7 +98,11 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
           }
         }
       } catch (e) {
-        console.error('Precise hit rate fetch failed:', e);
+        logger.error(
+          'Precise hit rate fetch failed:',
+          e instanceof Error ? e : new Error(String(e)),
+          'useAIPerformance'
+        );
         // Verify the symbol hasn't changed before setting error state
         if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
           // Fallback to provided OHLCV
