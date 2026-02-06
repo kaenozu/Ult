@@ -1,6 +1,6 @@
 /**
  * UnifiedTradingDashboard.tsx
- * 
+ *
  * 統合トレーディングプラットフォームのメインダッシュボードコンポーネント。
  * 全機能へのアクセスと可視化を提供します。
  */
@@ -37,6 +37,17 @@ import { AlertPanel } from './AlertPanel';
 import { MarketDataPanel } from './MarketDataPanel';
 import { LazyBacktestPanel } from '@/app/components/lazy/LazyComponents';
 
+const MARKET_DATA_SYMBOLS = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'ADAUSD'];
+
+const INITIAL_CONFIG = {
+  mode: 'paper' as const,
+  initialCapital: 1000000,
+  aiEnabled: true,
+  sentimentEnabled: true,
+  autoTrading: false,
+  symbols: MARKET_DATA_SYMBOLS,
+};
+
 export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboard() {
   const {
     isRunning,
@@ -54,14 +65,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
     updateConfig,
     isLoading,
     error,
-  } = useUnifiedTrading({
-    mode: 'paper',
-    initialCapital: 1000000,
-    aiEnabled: true,
-    sentimentEnabled: true,
-    autoTrading: false,
-    symbols: ['BTCUSD', 'ETHUSD', 'SOLUSD', 'ADAUSD'],
-  });
+  } = useUnifiedTrading(INITIAL_CONFIG);
 
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSymbol, setSelectedSymbol] = useState('BTCUSD');
@@ -357,7 +361,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
 
           <TabsContent value="market">
             <MarketDataPanel
-              symbols={['BTCUSD', 'ETHUSD', 'SOLUSD', 'ADAUSD']}
+              symbols={MARKET_DATA_SYMBOLS}
               selectedSymbol={selectedSymbol}
               onSelectSymbol={setSelectedSymbol}
             />
