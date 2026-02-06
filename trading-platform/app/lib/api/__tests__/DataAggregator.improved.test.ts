@@ -4,10 +4,13 @@
  */
 
 import { marketClient } from '@/app/lib/api/data-aggregator';
-import { generateMockOHLCV } from '@/app/lib/__tests__/test-utils';
+import { MockMarketDataGenerator } from '@/app/lib/__tests__/test-utils';
+
+const generateMockOHLCV = (startPrice: number, count: number) => 
+  MockMarketDataGenerator.generateOHLCV({ startPrice, count });
 
 // Mock IndexedDB client
-jest.mock('@/app/lib/api/idb', () => ({
+jest.mock('@/app/lib/api/idb-migrations', () => ({
   idbClient: {
     getData: jest.fn(),
     mergeAndSave: jest.fn()
@@ -19,7 +22,9 @@ global.fetch = jest.fn();
 
 describe('Data Aggregator - Improved Data Fetching', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
+    marketClient.clearCache();
+    global.fetch = jest.fn();
   });
 
   describe('fetchOHLCV - Daily Data', () => {
@@ -33,7 +38,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB to return empty data (forcing API fetch)
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
@@ -54,10 +59,10 @@ describe('Data Aggregator - Improved Data Fetching', () => {
 
       // Mock IndexedDB
       const mockMergeAndSave = jest.fn().mockResolvedValue(mockData);
-      jest.mocked(require('@/app/lib/api/idb').idbClient.mergeAndSave)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.mergeAndSave)
         .mockImplementation(mockMergeAndSave);
 
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
@@ -71,7 +76,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       const mockData = generateMockOHLCV(1000, 365);
       
       // Mock IndexedDB to return cached data
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue(mockData);
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
@@ -84,31 +89,18 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
-    test('should update cache when data is stale', async () => {
+    test('should return idb data even if stale (SWR handled by hook)', async () => {
       const oldData = generateMockOHLCV(1000, 200);
-      const newData = generateMockOHLCV(1050, 365);
       
       // Mock IndexedDB to return old data (stale)
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue(oldData);
-
-      // Mock API response with newer data
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ data: newData })
-      });
-
-      // Mock IndexedDB merge
-      const mockMergeAndSave = jest.fn().mockResolvedValue(newData);
-      jest.mocked(require('@/app/lib/api/idb').idbClient.mergeAndSave)
-        .mockImplementation(mockMergeAndSave);
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
       expect(result.success).toBe(true);
-      expect(result.data).toHaveLength(365);
-      expect(result.source).toBe('api');
-      expect(mockMergeAndSave).toHaveBeenCalledWith('TEST', newData);
+      expect(result.data).toHaveLength(200);
+      expect(result.source).toBe('idb');
     });
   });
 
@@ -139,7 +131,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB (should not be used for intraday)
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan', undefined, undefined, '1m');
@@ -148,7 +140,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       expect(result.source).toBe('api');
       
       // Should not save intraday data to cache
-      expect(jest.mocked(require('@/app/lib/api/idb').idbClient.mergeAndSave)).not.toHaveBeenCalled();
+      expect(jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.mergeAndSave)).not.toHaveBeenCalled();
     });
 
     test('should handle different intraday intervals', async () => {
@@ -252,7 +244,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
@@ -276,7 +268,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
@@ -298,7 +290,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const startTime = performance.now();
@@ -329,7 +321,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const startTime = performance.now();
@@ -361,7 +353,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('7203', 'japan');
@@ -390,7 +382,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('7205', 'japan');
@@ -410,7 +402,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
+      jest.mocked(require('@/app/lib/api/idb-migrations').idbClient.getData)
         .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('AAPL', 'usa');

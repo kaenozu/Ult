@@ -2,6 +2,7 @@ import { Stock, Signal, OHLCV, APIResponse, APIResult, APIErrorResult, Technical
 import { ApiError as APIError, NetworkError, RateLimitError } from '@/app/lib/errors';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { idbClient } from './idb-migrations';
+import { isIntradayInterval } from '@/app/lib/constants/intervals';
 
 /**
  * Type alias for backward compatibility
@@ -82,7 +83,7 @@ class MarketDataClient {
       if (cached) return { success: true, data: cached, source: 'cache' };
 
       // Check IDB for non-intraday data
-      const isIntraday = interval && ['1m', '5m', '15m', '1h'].includes(interval);
+      const isIntraday = interval && isIntradayInterval(interval);
       if (!isIntraday) {
         try {
           const idbData = await idbClient.getData(symbol);
@@ -113,7 +114,7 @@ class MarketDataClient {
       try {
         // Check if this is intraday data (1m, 5m, 15m, 1h)
         // Intraday data should always be fetched fresh from API, not from IndexedDB
-        const isIntraday = interval && ['1m', '5m', '15m', '1h'].includes(interval);
+        const isIntraday = interval && isIntradayInterval(interval);
 
         let finalData: OHLCV[] = [];
 
@@ -322,6 +323,14 @@ class MarketDataClient {
 
   private setCache(key: string, data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData) {
     this.cache.set(key, { data, timestamp: Date.now() });
+  }
+
+  /**
+   * Clear all cached data (useful for testing)
+   */
+  clearCache() {
+    this.cache.clear();
+    this.pendingRequests.clear();
   }
 
   private interpolateOHLCV(data: OHLCV[]): OHLCV[] {
