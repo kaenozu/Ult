@@ -48,7 +48,7 @@ export const useChartOptions = ({
 
   const options: ChartOptions<'line'> = useMemo(() => ({
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     layout: {
 padding: {
         top: 15,
