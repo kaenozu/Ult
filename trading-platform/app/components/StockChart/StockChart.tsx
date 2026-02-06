@@ -8,6 +8,7 @@ import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
+// @ts-ignore
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 import { useChartData } from './hooks/useChartData';
@@ -214,7 +215,7 @@ export const StockChart = memo(function StockChart({
   // Force chart reset when data changes to ensure forecast is visible
   useEffect(() => {
     if (chartRef.current && extendedData.labels.length > 0) {
-      chartRef.current.resetZoom();
+      (chartRef.current as any).resetZoom();
     }
   }, [extendedData.labels.length, market, signal]);
 
@@ -261,7 +262,7 @@ export const StockChart = memo(function StockChart({
 
         {/* Right: Reset Zoom Button */}
         <button
-          onClick={() => chartRef.current?.resetZoom()}
+          onClick={() => (chartRef.current as any)?.resetZoom()}
           className="px-3 py-1.5 text-xs font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded hover:bg-blue-500/20 transition-colors"
         >
           Reset Zoom
