@@ -346,11 +346,13 @@ class AccuracyService {
                 params: []
             };
 
-            for (let i = minPeriod; i < data.length - 1; i++) {
+            for (let i = minPeriod; i < data.length - FORECAST_CONE.STEPS; i++) {
                 const nextDay = data[i + 1];
 
                 // Calculate start index to emulate original sliding window
-                const windowStartIndex = Math.max(0, i - OPTIMIZATION.MIN_DATA_PERIOD + 10);
+                // FIX: Reduced window size from 300 to 150 to improve performance (O(N) reduction)
+                // maintaining sufficient buffer over REQUIRED_DATA_PERIOD (100)
+                const windowStartIndex = Math.max(0, i - 150);
 
                 const context: AnalysisContext = {
                     endIndex: i,
@@ -396,63 +398,90 @@ class AccuracyService {
                 } else {
                     let shouldExit = false;
                     let exitReason = '';
-                    const change = (nextDay.close - currentPosition.price) / (currentPosition.price || 1);
+                    let exitPrice = nextDay.close; // Default to close, override for SL/TP
+
+                    const entryPrice = currentPosition.price;
+                    const stopLossPct = currentPosition.type === 'BUY'
+                        ? BACKTEST_CONFIG.BULL_STOP_LOSS
+                        : BACKTEST_CONFIG.BEAR_STOP_LOSS;
+                    const takeProfitPct = currentPosition.type === 'BUY'
+                        ? BACKTEST_CONFIG.BULL_TAKE_PROFIT
+                        : BACKTEST_CONFIG.BEAR_TAKE_PROFIT;
+
+                    const stopLossPrice = currentPosition.type === 'BUY'
+                        ? entryPrice * (1 - stopLossPct)
+                        : entryPrice * (1 + stopLossPct);
+                    const takeProfitPrice = currentPosition.type === 'BUY'
+                        ? entryPrice * (1 + takeProfitPct)
+                        : entryPrice * (1 - takeProfitPct);
 
                     if (currentPosition.type === 'BUY') {
-                        if (signal.type === 'SELL') {
+                        // Check intraday low for stop loss hit
+                        if (nextDay.low <= stopLossPrice) {
                             shouldExit = true;
+                            exitPrice = stopLossPrice;
+                            exitReason = `Stop Loss (${(-stopLossPct * 100).toFixed(1)}%)`;
+                        }
+                        // Check intraday high for take profit hit
+                        else if (nextDay.high >= takeProfitPrice) {
+                            shouldExit = true;
+                            exitPrice = takeProfitPrice;
+                            exitReason = `Take Profit (+${(takeProfitPct * 100).toFixed(1)}%)`;
+                        }
+                        // Signal reversal
+                        else if (signal.type === 'SELL') {
+                            shouldExit = true;
+                            exitPrice = nextDay.close;
                             exitReason = 'Signal Reversal';
-                        } else if (change > BACKTEST_CONFIG.BULL_TAKE_PROFIT) {
-                            shouldExit = true;
-                            exitReason = `Take Profit (+${(change * 100).toFixed(1)}%)`;
-                        } else if (change < -BACKTEST_CONFIG.BULL_STOP_LOSS) {
-                            shouldExit = true;
-                            exitReason = `Stop Loss (${(change * 100).toFixed(1)}%)`;
-                        } else {
-                            // Time-based exit for directional accuracy (capture small wins)
+                        }
+                        // Max hold period
+                        else {
                             const daysHeld = (new Date(nextDay.date).getTime() - new Date(currentPosition.date).getTime()) / (1000 * 60 * 60 * 24);
-                            if (daysHeld >= 5 && change > 0) {
+                            if (daysHeld > 20) {
                                 shouldExit = true;
-                                exitReason = `Time Exit (Direction Correct +${(change * 100).toFixed(1)}%)`;
-                            } else if (daysHeld > 20) {
-                                // Maximum holding period
-                                shouldExit = true;
-                                exitReason = `Max Hold (${(change * 100).toFixed(1)}%)`;
+                                exitPrice = nextDay.close;
+                                exitReason = `Max Hold`;
                             }
                         }
                     } else {
-                        if (signal.type === 'BUY') {
+                        // SELL position: Check intraday high for stop loss hit
+                        if (nextDay.high >= stopLossPrice) {
                             shouldExit = true;
+                            exitPrice = stopLossPrice;
+                            exitReason = `Stop Loss (${(-stopLossPct * 100).toFixed(1)}%)`;
+                        }
+                        // Check intraday low for take profit hit
+                        else if (nextDay.low <= takeProfitPrice) {
+                            shouldExit = true;
+                            exitPrice = takeProfitPrice;
+                            exitReason = `Take Profit (+${(takeProfitPct * 100).toFixed(1)}%)`;
+                        }
+                        // Signal reversal
+                        else if (signal.type === 'BUY') {
+                            shouldExit = true;
+                            exitPrice = nextDay.close;
                             exitReason = 'Signal Reversal';
-                        } else if (change < -BACKTEST_CONFIG.BEAR_TAKE_PROFIT) {
-                            shouldExit = true;
-                            exitReason = `Take Profit (+${(-change * 100).toFixed(1)}%)`;
-                        } else if (change > BACKTEST_CONFIG.BEAR_STOP_LOSS) {
-                            shouldExit = true;
-                            exitReason = `Stop Loss (${(-change * 100).toFixed(1)}%)`;
-                        } else {
-                            // Time-based exit for directional accuracy
+                        }
+                        // Max hold period
+                        else {
                             const daysHeld = (new Date(nextDay.date).getTime() - new Date(currentPosition.date).getTime()) / (1000 * 60 * 60 * 24);
-                            if (daysHeld >= 5 && change < 0) {
+                            if (daysHeld > 20) {
                                 shouldExit = true;
-                                exitReason = `Time Exit (Direction Correct +${(-change * 100).toFixed(1)}%)`;
-                            } else if (daysHeld > 20) {
-                                shouldExit = true;
-                                exitReason = `Max Hold (${(-change * 100).toFixed(1)}%)`;
+                                exitPrice = nextDay.close;
+                                exitReason = `Max Hold`;
                             }
                         }
                     }
 
                     if (shouldExit) {
-                        const exitPrice = nextDay.close;
                         const rawProfit = currentPosition.type === 'BUY'
-                            ? (exitPrice - currentPosition.price) / (currentPosition.price || 1)
-                            : (currentPosition.price - exitPrice) / (currentPosition.price || 1);
+                            ? (exitPrice - entryPrice) / (entryPrice || 1)
+                            : (entryPrice - exitPrice) / (entryPrice || 1);
 
                         trades.push({
                             symbol,
                             type: currentPosition.type,
-                            entryPrice: currentPosition.price,
+                            entryPrice: entryPrice,
                             exitPrice: exitPrice,
                             entryDate: currentPosition.date,
                             exitDate: nextDay.date,
