@@ -8,6 +8,7 @@ import { OHLCV, TechnicalIndicatorsWithATR } from '../../types';
 import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
 import { EnhancedPredictionFeatures } from '../types/prediction-types';
 import { enhancedFeatureService } from './enhanced-feature-service';
+import { OHLCVData, OHLCVConverter } from '../../types/optimized-data';
 
 export interface PredictionFeatures {
   rsi: number;
@@ -62,6 +63,19 @@ export class FeatureCalculationService {
       ),
       atrPercent: (this.getLastValue(indicators.atr, 0) / currentPrice) * 100,
     };
+  }
+
+  /**
+   * Optimized feature calculation using TypedArray data
+   * (High-performance variant)
+   */
+  calculateFeaturesOptimized(
+    data: OHLCVData,
+    indicators: TechnicalIndicatorsWithATR
+  ): PredictionFeatures {
+    // For now, convert back to standard objects to reuse existing logic
+    const standardData = OHLCVConverter.fromTypedArray(data);
+    return this.calculateFeatures(standardData as any, indicators);
   }
 
   /**
