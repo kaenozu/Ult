@@ -29,7 +29,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
 
       try {
         // Add rate limiting delay to prevent rapid requests
-        const delay = Math.random() * 200 + 100; // 100-300ms 縺ｮ繝ｩ繝ｳ繝繝縺ｪ驕・ｻｶ
+        const delay = Math.random() * 200 + 100; // 100-300ms 縺ｮ繝ｩ繝ｳ繝繝縺ｪ驕・
         await new Promise(resolve => setTimeout(resolve, delay));
         
         // Adjust data period to include current date (fix for "today's date missing" issue)
@@ -100,7 +100,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
              const result = calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
              setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
           } catch {
-             setError('逧・ｸｭ邇・・險育ｮ励↓螟ｱ謨励＠縺ｾ縺励◆');
+             setError('逧・邇・E險育ｮ励↓螟ｱ謨励＠縺ｾ縺励◆');
           }
         }
       } finally {
@@ -116,7 +116,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       isMounted = false;
     };
-  }, [stock.symbol, stock.market, stockPrice, ohlcv]); // ohlcv繧剃ｾ晏ｭ倬・蛻励↓蜷ｫ繧√ｋ
+  }, [stock.symbol, stock.market, stockPrice, ohlcv]); // ohlcv繧剃ｾ晏ｭ櫓蛻励↓蜷ｫ繧√ｋ
 
   return { preciseHitRate, calculatingHitRate, error };
 }

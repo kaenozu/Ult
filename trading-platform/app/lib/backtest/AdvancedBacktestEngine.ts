@@ -31,7 +31,7 @@ export interface Trade {
   pnl: number;
   pnlPercent: number;
   fees: number;
-  exitReason: 'target' | 'stop' | 'signal' | 'end_of_data';
+  exitReason: 'target' | 'stop' | 'signal' | 'trailing_stop' | 'time' | 'end_of_data';
   
   // Realistic mode details
   slippageAmount?: number;

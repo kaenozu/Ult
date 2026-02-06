@@ -67,7 +67,7 @@ export async function fetchMarketHistory(
       close: Number(item.close ?? 0),
       volume: Number(item.volume ?? 0),
     }))
-    .filter((item) => Number.isFinite(item.open) && Number.isFinite(item.close) && item.date);
+    .filter((item: OHLCV) => Number.isFinite(item.open) && Number.isFinite(item.close) && item.date);
   data.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
 
   return {
