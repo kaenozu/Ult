@@ -12,6 +12,7 @@ export interface RiskConfig {
   enableDynamicPositionSizing: boolean;
   maxRiskPerTrade: number;
   minRiskRewardRatio: number;
+  maxPositionPercent?: number;
 }
 
 export interface OrderRequest {
