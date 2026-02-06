@@ -8,6 +8,7 @@ import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
@@ -19,7 +20,7 @@ import { AccuracyBadge } from '@/app/components/AccuracyBadge';
 export { volumeProfilePlugin };
 
 // Register ChartJS components and custom plugin
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin, zoomPlugin);
 
 export interface StockChartProps {
   data: OHLCV[];
@@ -49,11 +50,11 @@ export const StockChart = memo(function StockChart({
   // 固定高さを使用
   const dynamicHeight = propHeight ?? CHART_DIMENSIONS.DEFAULT_HEIGHT;
 
-// 1. Data Preparation Hooks
-  const { actualData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
+  // 1. Data Preparation Hooks
+  const { actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
-    data,
+    data: optimizedData, // Use optimized/reduced data for correct index alignment
     extendedData,
     signal,
     market,
@@ -69,6 +70,50 @@ export const StockChart = memo(function StockChart({
     return sma20[hoveredIdx];
   }, [sma20, hoveredIdx, showSMA]);
 
+  // Calculate global min/max for Y-axis scaling
+  const priceRange = useMemo(() => {
+    let min = Infinity;
+    let max = -Infinity;
+
+    // 1. Current Price
+    if (data.length > 0) {
+      const prices = data.map(d => d.close);
+      min = Math.min(min, ...prices);
+      max = Math.max(max, ...prices);
+    }
+
+    // 2. SMA
+    if (showSMA && sma20.length > 0) {
+      const validSma = sma20.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+      if (validSma.length > 0) {
+        min = Math.min(min, ...validSma);
+        max = Math.max(max, ...validSma);
+      }
+    }
+
+    // 3. Bollinger Bands
+    if (showBollinger && upper.length > 0 && lower.length > 0) {
+      const validUpper = upper.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+      const validLower = lower.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+      if (validUpper.length > 0) max = Math.max(max, ...validUpper);
+      if (validLower.length > 0) min = Math.min(min, ...validLower);
+    }
+
+    // 4. Forecasts
+    [...forecastDatasets, ...ghostForecastDatasets].forEach(dataset => {
+      if (dataset.data) {
+        const values = dataset.data.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+        if (values.length > 0) {
+          min = Math.min(min, ...values);
+          max = Math.max(max, ...values);
+        }
+      }
+    });
+
+    if (min === Infinity || max === -Infinity) return null;
+    return { min, max };
+  }, [data, showSMA, sma20, showBollinger, upper, lower, forecastDatasets, ghostForecastDatasets]);
+
   // 2. Chart Options Hook
   const options = useChartOptions({
     data,
@@ -76,7 +121,8 @@ export const StockChart = memo(function StockChart({
     market,
     hoveredIdx,
     setHoveredIndex,
-    signal
+    signal,
+    priceRange
   });
 
   // 3. Assemble Chart Data with memoization for performance
@@ -92,9 +138,10 @@ export const StockChart = memo(function StockChart({
         pointRadius: 0,
         borderWidth: 1,
         tension: CHART_CONFIG.TENSION,
-        order: 10
+        order: 10,
+        spanGaps: true
       },
-{
+      {
         label: '現在価格',
         data: [
           ...actualData.prices,           // 実際の価格データのみ
@@ -106,7 +153,8 @@ export const StockChart = memo(function StockChart({
         pointRadius: 0,
         pointHoverRadius: CANDLESTICK.HOVER_RADIUS,
         borderWidth: CANDLESTICK.MAIN_LINE_WIDTH,
-        order: 1
+        order: 1,
+        spanGaps: true
       },
       ...forecastDatasets,
       ...ghostForecastDatasets,
@@ -118,7 +166,8 @@ export const StockChart = memo(function StockChart({
         pointRadius: 0,
         tension: CHART_CONFIG.TENSION,
         fill: false,
-        order: 2
+        order: 2,
+        spanGaps: true
       }] : []),
       ...(showBollinger ? [
         {
@@ -130,7 +179,8 @@ export const StockChart = memo(function StockChart({
           pointRadius: 0,
           tension: CHART_CONFIG.TENSION,
           fill: '+1',
-          order: 3
+          order: 3,
+          spanGaps: true
         },
         {
           label: 'BB Lower',
@@ -140,7 +190,8 @@ export const StockChart = memo(function StockChart({
           pointRadius: 0,
           tension: CHART_CONFIG.TENSION,
           fill: false,
-          order: 4
+          order: 4,
+          spanGaps: true
         }
       ] : []),
     ],
@@ -155,10 +206,18 @@ export const StockChart = memo(function StockChart({
     lower,
     showSMA,
     showBollinger,
+    showBollinger,
     market
   ]);
 
-// 4. Loading / Error States
+  // Force chart reset when data changes to ensure forecast is visible
+  useMemo(() => {
+    if (chartRef.current && extendedData.labels.length > 0) {
+      chartRef.current.resetZoom();
+    }
+  }, [extendedData.labels.length, market, signal]);
+
+  // 4. Loading / Error States
   if (error) {
     return (
       <div className={`relative w-full flex items-center justify-center ${CHART_THEME.ERROR.BACKGROUND} border ${CHART_THEME.ERROR.BORDER} rounded`} style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT }}>
@@ -183,37 +242,51 @@ export const StockChart = memo(function StockChart({
     );
   }
 
-return (
-    <div className="relative w-full h-full overflow-hidden" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px', maxHeight: '600px' }}>
-      {/* Accuracy Badge Overlay */}
-      {accuracyData && (
-        <div className="absolute top-2 right-2 z-20 pointer-events-none animate-fade-in">
-          <AccuracyBadge
-            hitRate={accuracyData.hitRate}
-            totalTrades={accuracyData.totalTrades}
-            predictionError={accuracyData.predictionError}
-            loading={accuracyData.loading}
-          />
+  return (
+    <div className="flex flex-col w-full h-full" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px', maxHeight: '600px' }}>
+      {/* Header Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-[#233648] bg-[#1a2632]">
+        {/* Left: Accuracy Badge */}
+        <div className="flex items-center">
+          {accuracyData && (
+            <AccuracyBadge
+              hitRate={accuracyData.hitRate}
+              totalTrades={accuracyData.totalTrades}
+              predictionError={accuracyData.predictionError}
+              loading={accuracyData.loading}
+            />
+          )}
         </div>
-      )}
-      
-      {/* Custom Tooltip */}
-      <ChartTooltip
-        hoveredIdx={hoveredIdx}
-        data={data}
-        labels={extendedData.labels}
-        market={market}
-        signal={signal}
-        showSMA={showSMA}
-        smaValue={currentSmaValue}
-      />
-      
-      <Line ref={chartRef} data={chartData} options={options} />
-      {showVolume && (
-        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
-           <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />
-        </div>
-      )}
+
+        {/* Right: Reset Zoom Button */}
+        <button
+          onClick={() => chartRef.current?.resetZoom()}
+          className="px-3 py-1.5 text-xs font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded hover:bg-blue-500/20 transition-colors"
+        >
+          Reset Zoom
+        </button>
+      </div>
+
+      {/* Main Chart Area */}
+      <div className="relative flex-1 w-full overflow-hidden">
+        {/* Custom Tooltip */}
+        <ChartTooltip
+          hoveredIdx={hoveredIdx}
+          data={data}
+          labels={extendedData.labels}
+          market={market}
+          signal={signal}
+          showSMA={showSMA}
+          smaValue={currentSmaValue}
+        />
+
+        <Line ref={chartRef} data={chartData} options={options} />
+        {showVolume && (
+          <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
+            <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />
+          </div>
+        )}
+      </div>
     </div>
   );
 });

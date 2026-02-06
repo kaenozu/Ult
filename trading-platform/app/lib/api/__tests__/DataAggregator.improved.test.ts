@@ -4,13 +4,19 @@
  */
 
 import { marketClient } from '@/app/lib/api/data-aggregator';
-import { generateMockOHLCV } from '@/app/lib/__tests__/test-utils';
+import { generateMockOHLCV } from './test-utils';
 
 // Mock IndexedDB client
+let mockIdbStorage: Record<string, any[]> = {};
 jest.mock('@/app/lib/api/idb', () => ({
   idbClient: {
-    getData: jest.fn(),
-    mergeAndSave: jest.fn()
+    getData: jest.fn((symbol) => Promise.resolve(mockIdbStorage[symbol] || [])),
+    mergeAndSave: jest.fn((symbol, data) => {
+      const existing = mockIdbStorage[symbol] || [];
+      const merged = [...existing, ...data];
+      mockIdbStorage[symbol] = merged;
+      return Promise.resolve(merged);
+    })
   }
 }));
 
@@ -20,21 +26,20 @@ global.fetch = jest.fn();
 describe('Data Aggregator - Improved Data Fetching', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    marketClient.clearCache();
+    mockIdbStorage = {};
   });
 
   describe('fetchOHLCV - Daily Data', () => {
     test('should fetch 1 year of historical data from API', async () => {
       const mockData = generateMockOHLCV(1000, 365);
       
-      // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      mockIdbStorage['TEST'] = [];
+      (global.fetch as jest.Mock).mockReset();
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
-
-      // Mock IndexedDB to return empty data (forcing API fetch)
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
@@ -47,7 +52,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       const mockData = generateMockOHLCV(1000, 365);
       
       // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
@@ -57,8 +62,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       jest.mocked(require('@/app/lib/api/idb').idbClient.mergeAndSave)
         .mockImplementation(mockMergeAndSave);
 
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
+      // Using shared mock storage
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
@@ -70,9 +74,12 @@ describe('Data Aggregator - Improved Data Fetching', () => {
     test('should use cached data when available', async () => {
       const mockData = generateMockOHLCV(1000, 365);
       
-      // Mock IndexedDB to return cached data
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue(mockData);
+      // Ensure the data is very recent to avoid "needs update"
+      const today = new Date().toISOString().split('T')[0];
+      mockData[mockData.length - 1].date = today;
+      
+      mockIdbStorage['TEST'] = mockData;
+      (global.fetch as jest.Mock).mockReset();
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
@@ -80,20 +87,32 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       expect(result.data).toHaveLength(365);
       expect(result.source).toBe('idb');
       
-      // API should not be called when cached data is available
+      // API should not be called when cached data is available and fresh
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
     test('should update cache when data is stale', async () => {
       const oldData = generateMockOHLCV(1000, 200);
-      const newData = generateMockOHLCV(1050, 365);
+      // Make the data stale by moving dates back
+      oldData.forEach(d => {
+        const date = new Date(d.date);
+        date.setDate(date.getDate() - 2);
+        d.date = date.toISOString().split('T')[0];
+      });
       
-      // Mock IndexedDB to return old data (stale)
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue(oldData);
+      const newData = generateMockOHLCV(1050, 165); 
+      
+      mockIdbStorage['TEST'] = oldData;
+      
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ data: newData })
+      });
+
+      let result = await marketClient.fetchOHLCV('TEST', 'japan');
 
       // Mock API response with newer data
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: newData })
       });
@@ -103,7 +122,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       jest.mocked(require('@/app/lib/api/idb').idbClient.mergeAndSave)
         .mockImplementation(mockMergeAndSave);
 
-      const result = await marketClient.fetchOHLCV('TEST', 'japan');
+      result = await marketClient.fetchOHLCV('TEST', 'japan');
 
       expect(result.success).toBe(true);
       expect(result.data).toHaveLength(365);
@@ -117,7 +136,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       const mockData = generateMockOHLCV(1000, 30);
       
       // Mock API response for intraday data
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
@@ -133,14 +152,13 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       const mockData = generateMockOHLCV(1000, 30);
       
       // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
 
       // Mock IndexedDB (should not be used for intraday)
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
+      // Using shared mock storage
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan', undefined, undefined, '1m');
 
@@ -151,12 +169,12 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       expect(jest.mocked(require('@/app/lib/api/idb').idbClient.mergeAndSave)).not.toHaveBeenCalled();
     });
 
-    test('should handle different intraday intervals', async () => => {
+    test('should handle different intraday intervals', async () => {
       const mockData5m = generateMockOHLCV(1000, 30);
       const mockData1h = generateMockOHLCV(1000, 30);
       
       // Test 5m interval
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData5m })
       });
@@ -166,7 +184,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       expect(result5m.data).toHaveLength(30);
 
       // Test 1h interval
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData1h })
       });
@@ -180,7 +198,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
   describe('Error Handling', () => {
     test('should handle API errors gracefully', async () => {
       // Mock API error
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
+      (global.fetch as jest.Mock).mockRejectedValue(new Error('API Error'));
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
@@ -191,7 +209,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
 
     test('should handle rate limiting', async () => {
       // Mock rate limit error
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Rate limit exceeded'));
+      (global.fetch as jest.Mock).mockRejectedValue(new Error('Rate limit exceeded'));
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
@@ -202,7 +220,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
 
     test('should handle empty API response', async () => {
       // Mock empty response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: [] })
       });
@@ -216,7 +234,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
 
     test('should handle malformed API response', async () => {
       // Mock malformed response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.reject(new Error('Invalid JSON'))
       });
@@ -246,14 +264,13 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       ];
 
       // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: dataWithGaps })
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
+      // Using shared mock storage
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
@@ -270,14 +287,13 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       const mockData = generateMockOHLCV(1000, 10);
       
       // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
+      // Using shared mock storage
 
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
@@ -291,15 +307,16 @@ describe('Data Aggregator - Improved Data Fetching', () => {
     test('should complete API fetch quickly', async () => {
       const mockData = generateMockOHLCV(1000, 365);
       
+      mockIdbStorage['TEST'] = [];
+      (global.fetch as jest.Mock).mockReset();
       // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
+      // Using shared mock storage
 
       const startTime = performance.now();
       
@@ -319,7 +336,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       const mockData2 = generateMockOHLCV(1050, 365);
       
       // Mock API responses
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData1 })
       });
@@ -329,8 +346,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
+      // Using shared mock storage
 
       const startTime = performance.now();
       
@@ -354,15 +370,16 @@ describe('Data Aggregator - Improved Data Fetching', () => {
     test('should handle Panasonic (7203) data fetching', async () => {
       const mockData = generateMockOHLCV(3742, 365);
       
+      mockIdbStorage['7203'] = [];
+      (global.fetch as jest.Mock).mockReset();
       // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
+      // Using shared mock storage
 
       const result = await marketClient.fetchOHLCV('7203', 'japan');
 
@@ -383,15 +400,16 @@ describe('Data Aggregator - Improved Data Fetching', () => {
     test('should handle Hino Motors (7205) data fetching', async () => {
       const mockData = generateMockOHLCV(500, 365);
       
+      mockIdbStorage['7205'] = [];
+      (global.fetch as jest.Mock).mockReset();
       // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
 
       // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
+      // Using shared mock storage
 
       const result = await marketClient.fetchOHLCV('7205', 'japan');
 
@@ -403,15 +421,13 @@ describe('Data Aggregator - Improved Data Fetching', () => {
     test('should handle US market data fetching', async () => {
       const mockData = generateMockOHLCV(150, 365);
       
+      mockIdbStorage['AAPL'] = [];
+      (global.fetch as jest.Mock).mockReset();
       // Mock API response
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ data: mockData })
       });
-
-      // Mock IndexedDB
-      jest.mocked(require('@/app/lib/api/idb').idbClient.getData)
-        .mockResolvedValue([]);
 
       const result = await marketClient.fetchOHLCV('AAPL', 'usa');
 

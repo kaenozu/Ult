@@ -39,7 +39,7 @@ class MarketDataClient {
     try {
       const httpResponse = await fetch(url, options);
 
-      if (httpResponse.status === 429) {
+      if (httpResponse && httpResponse.status === 429) {
         // ... rate limit logic ...
         const retryAfter = httpResponse.headers.get('Retry-After');
         const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : backoff * 4;
@@ -71,21 +71,27 @@ class MarketDataClient {
   /**
    * Fetch Historical Data with Smart Persistence (IndexedDB + Delta fetching)
    * @param interval - Time interval for data (1m, 5m, 15m, 1h, 4h, 1d, etc.)
+   * @param startDate - Optional start date (YYYY-MM-DD) to ensure sufficient history
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string): Promise<FetchResult<OHLCV[]>> {
-    // Include interval in cache key to differentiate cached data by interval
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string, startDate?: string): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}-${interval || '1d'}`;
 
     const cached = this.getFromCache<OHLCV[]>(cacheKey);
-    if (cached) return { success: true, data: cached, source: 'cache' };
+    let cacheValid = !!cached;
+    if (cached && startDate && cached.length > 0) {
+      if (new Date(cached[0].date) > new Date(startDate)) {
+        cacheValid = false;
+      }
+    }
 
-    // Request Deduplication
+    if (cacheValid && cached) return { success: true, data: cached, source: 'cache' };
+
     if (this.pendingRequests.has(cacheKey)) {
       try {
         const data = await this.pendingRequests.get(cacheKey) as OHLCV[];
-        return { success: true, data, source: 'aggregated' }; // 'aggregated' to indicate shared request
+        return { success: true, data, source: 'aggregated' };
       } catch (err) {
-        // Fallback to error handling below if shared promise fails
+        // Fallback
       }
     }
 
@@ -93,23 +99,15 @@ class MarketDataClient {
 
     const fetchPromise = (async () => {
       try {
-        // Check if this is intraday data (1m, 5m, 15m, 1h)
-        // Intraday data should always be fetched fresh from API, not from IndexedDB
         const isIntraday = interval && ['1m', '5m', '15m', '1h'].includes(interval);
-
         let finalData: OHLCV[] = [];
 
         if (isIntraday) {
-          // For intraday data, always fetch from API with current date
-          // Get last 30 days of intraday data
           const now = new Date();
-          const startDate = new Date(now);
-          startDate.setDate(startDate.getDate() - 30);
-
-          const fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&interval=${interval}&startDate=${startDate.toISOString().split('T')[0]}`;
-
+          const start = new Date(now);
+          start.setDate(start.getDate() - 30);
+          const fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&interval=${interval}&startDate=${start.toISOString().split('T')[0]}`;
           const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
-
           if (newData && newData.length > 0) {
             finalData = newData;
             source = 'api';
@@ -117,32 +115,50 @@ class MarketDataClient {
             throw new Error('No intraday data available');
           }
         } else {
-          // For daily/weekly/monthly data, fetch from API to ensure sufficient data
-          // Get 1 year of historical data for better analysis
-          const now = new Date();
-          const startDate = new Date(now);
-          startDate.setFullYear(startDate.getFullYear() - 1);
+          const localData = await idbClient.getData(symbol);
 
-          let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&startDate=${startDate.toISOString().split('T')[0]}`;
-          // Add interval parameter if specified (defaults to daily on API side)
-          if (interval) {
-            fetchUrl += `&interval=${interval}`;
+          let missingHistory = false;
+          if (startDate && localData.length > 0) {
+            if (new Date(localData[0].date) > new Date(startDate)) {
+              missingHistory = true;
+              if (process.env.NODE_ENV !== 'test') console.log(`[Aggregator] Local data starts ${localData[0].date}, need ${startDate}. Fetching missing history.`);
+            }
+          } else if (startDate && localData.length === 0) {
+            missingHistory = true;
           }
 
-          const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
+          finalData = localData;
+          source = 'idb';
 
-          if (newData && newData.length > 0) {
-            finalData = newData;
-            source = 'api';
-            // Also save to IndexedDB for persistence
-            await idbClient.mergeAndSave(symbol, newData);
-          } else {
-            throw new Error('No historical data available');
+          const now = new Date();
+          const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
+          const timeDiff = lastDataDate ? now.getTime() - lastDataDate.getTime() : null;
+          const needsUpdate = !lastDataDate || (timeDiff !== null && timeDiff > (24 * 60 * 60 * 1000)) || missingHistory;
+
+          if (needsUpdate) {
+            let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
+            if (interval) fetchUrl += `&interval=${interval}`;
+
+            if (missingHistory && startDate) {
+              fetchUrl += `&startDate=${startDate}`;
+            } else if (lastDataDate) {
+              const nextDay = new Date(lastDataDate);
+              nextDay.setDate(nextDay.getDate() + 1);
+              fetchUrl += `&startDate=${nextDay.toISOString().split('T')[0]}`;
+            } else if (startDate) {
+              fetchUrl += `&startDate=${startDate}`;
+            }
+
+            const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
+
+            if (newData && newData.length > 0) {
+              finalData = await idbClient.mergeAndSave(symbol, newData);
+              source = 'api';
+            }
           }
         }
 
         const interpolatedData = this.interpolateOHLCV(finalData);
-        // Don't cache intraday data as it becomes stale quickly
         if (!isIntraday) {
           this.setCache(cacheKey, interpolatedData);
         }
@@ -290,6 +306,11 @@ class MarketDataClient {
       console.error(`Fetch Signal failed for ${stock.symbol}:`, err);
       return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
     }
+  }
+
+  public clearCache(): void {
+    this.cache.clear();
+    this.pendingRequests.clear();
   }
 
   private getFromCache<T>(key: string): T | null {

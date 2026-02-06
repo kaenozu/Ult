@@ -18,7 +18,7 @@ export const JAPAN_STOCKS: Stock[] = [
   { symbol: '6981', name: '村田製作所', market: 'japan', sector: '電子部品', price: 3000, change: 0, changePercent: 0, volume: 0 },
   { symbol: '6954', name: 'ファナック', market: 'japan', sector: '機械', price: 4200, change: 0, changePercent: 0, volume: 0 },
   { symbol: '6503', name: '三菱電機', market: 'japan', sector: '電機', price: 2500, change: 0, changePercent: 0, volume: 0 },
-  
+
   // 金融
   { symbol: '8306', name: '三菱UFJ FG', market: 'japan', sector: '金融', price: 1500, change: 0, changePercent: 0, volume: 0 },
   { symbol: '8316', name: '三井住友 FG', market: 'japan', sector: '金融', price: 9000, change: 0, changePercent: 0, volume: 0 },
@@ -26,7 +26,7 @@ export const JAPAN_STOCKS: Stock[] = [
   { symbol: '8604', name: '野村ホールディングス', market: 'japan', sector: '証券', price: 900, change: 0, changePercent: 0, volume: 0 },
   { symbol: '8766', name: '東京海上 HD', market: 'japan', sector: '保険', price: 5000, change: 0, changePercent: 0, volume: 0 },
   { symbol: '8591', name: 'オリックス', market: 'japan', sector: '金融', price: 3200, change: 0, changePercent: 0, volume: 0 },
-  
+
   // エネルギー・商社
   { symbol: '1605', name: 'INPEX', market: 'japan', sector: 'エネルギー', price: 2300, change: 0, changePercent: 0, volume: 0 },
   { symbol: '5020', name: 'ENEOS HD', market: 'japan', sector: 'エネルギー', price: 700, change: 0, changePercent: 0, volume: 0 },
@@ -35,7 +35,7 @@ export const JAPAN_STOCKS: Stock[] = [
   { symbol: '8031', name: '三井物産', market: 'japan', sector: '卸売', price: 6000, change: 0, changePercent: 0, volume: 0 },
   { symbol: '8053', name: '住友商事', market: 'japan', sector: '卸売', price: 3500, change: 0, changePercent: 0, volume: 0 },
   { symbol: '2768', name: '双日', market: 'japan', sector: '卸売', price: 3800, change: 0, changePercent: 0, volume: 0 },
-  
+
   // 輸送・機械
   { symbol: '7201', name: '日産自動車', market: 'japan', sector: '自動車', price: 550, change: 0, changePercent: 0, volume: 0 },
   { symbol: '7267', name: 'ホンダ', market: 'japan', sector: '自動車', price: 1800, change: 0, changePercent: 0, volume: 0 },
@@ -45,7 +45,7 @@ export const JAPAN_STOCKS: Stock[] = [
   { symbol: '7011', name: '三菱重工業', market: 'japan', sector: '産業機械', price: 12000, change: 0, changePercent: 0, volume: 0 },
   { symbol: '7012', name: '川崎重工業', market: 'japan', sector: '産業機械', price: 5000, change: 0, changePercent: 0, volume: 0 },
   { symbol: '7013', name: 'IHI', market: 'japan', sector: '産業機械', price: 4500, change: 0, changePercent: 0, volume: 0 },
-  
+
   // 通信・サービス
   { symbol: '9984', name: 'ソフトバンクグループ', market: 'japan', sector: 'テクノロジー', price: 8500, change: 0, changePercent: 0, volume: 0 },
   { symbol: '9432', name: 'NTT', market: 'japan', sector: '通信', price: 180, change: 0, changePercent: 0, volume: 0 },
@@ -55,7 +55,7 @@ export const JAPAN_STOCKS: Stock[] = [
   { symbol: '6098', name: 'リクルート HD', market: 'japan', sector: 'サービス', price: 7500, change: 0, changePercent: 0, volume: 0 },
   { symbol: '4385', name: 'メルカリ', market: 'japan', sector: 'テクノロジー', price: 2200, change: 0, changePercent: 0, volume: 0 },
   { symbol: '2413', name: 'エムスリー', market: 'japan', sector: 'サービス', price: 2000, change: 0, changePercent: 0, volume: 0 },
-  
+
   // 消費財・小売・製薬
   { symbol: '3382', name: 'セブン&アイ', market: 'japan', sector: '小売', price: 2100, change: 0, changePercent: 0, volume: 0 },
   { symbol: '9843', name: 'ニトリ HD', market: 'japan', sector: '小売', price: 22000, change: 0, changePercent: 0, volume: 0 },
@@ -89,7 +89,7 @@ export const USA_STOCKS: Stock[] = [
   { symbol: 'NFLX', name: 'Netflix Inc.', market: 'usa', sector: 'エンターテイメント', price: 600, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'CSCO', name: 'Cisco Systems', market: 'usa', sector: 'ネットワーク', price: 50, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'ORCL', name: 'Oracle Corp.', market: 'usa', sector: 'ソフトウェア', price: 125, change: 0, changePercent: 0, volume: 0 },
-  
+
   // 金融
   { symbol: 'JPM', name: 'JPMorgan Chase', market: 'usa', sector: '金融', price: 195, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'BAC', name: 'Bank of America', market: 'usa', sector: '金融', price: 38, change: 0, changePercent: 0, volume: 0 },
@@ -99,7 +99,7 @@ export const USA_STOCKS: Stock[] = [
   { symbol: 'MS', name: 'Morgan Stanley', market: 'usa', sector: '金融', price: 90, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'AXP', name: 'American Express', market: 'usa', sector: '決済', price: 220, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'PYPL', name: 'PayPal Holdings', market: 'usa', sector: '決済', price: 65, change: 0, changePercent: 0, volume: 0 },
-  
+
   // 消費財・小売・ヘルスケア
   { symbol: 'KO', name: 'Coca-Cola Co', market: 'usa', sector: '消費財', price: 60, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'PG', name: 'Procter & Gamble', market: 'usa', sector: '消費財', price: 160, change: 0, changePercent: 0, volume: 0 },
@@ -115,7 +115,7 @@ export const USA_STOCKS: Stock[] = [
   { symbol: 'ABBV', name: 'AbbVie Inc.', market: 'usa', sector: 'ヘルスケア', price: 175, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'MRK', name: 'Merck & Co.', market: 'usa', sector: 'ヘルスケア', price: 130, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'LLY', name: 'Eli Lilly & Co.', market: 'usa', sector: 'ヘルスケア', price: 750, change: 0, changePercent: 0, volume: 0 },
-  
+
   // エネルギー・インフラ・他
   { symbol: 'XOM', name: 'Exxon Mobil', market: 'usa', sector: 'エネルギー', price: 115, change: 0, changePercent: 0, volume: 0 },
   { symbol: 'CVX', name: 'Chevron Corp.', market: 'usa', sector: 'エネルギー', price: 150, change: 0, changePercent: 0, volume: 0 },
@@ -146,9 +146,10 @@ export async function fetchOHLCV(
   market: 'japan' | 'usa' = 'japan',
   currentPrice?: number,
   signal?: AbortSignal,
-  interval?: string // New: interval parameter (1m, 5m, 15m, 1h, 4h, 1d, etc.)
+  interval?: string, // New: interval parameter (1m, 5m, 15m, 1h, 4h, 1d, etc.)
+  startDate?: string // New: startDate parameter
 ): Promise<OHLCV[]> {
-  const result = await marketClient.fetchOHLCV(symbol, market, currentPrice, signal, interval);
+  const result = await marketClient.fetchOHLCV(symbol, market, currentPrice, signal, interval, startDate);
   return result.data || [];
 }
 
@@ -165,7 +166,7 @@ export async function fetchStockMetadata(symbol: string): Promise<Stock | null> 
   // 4桁の数字または.Tで終わる場合は日本市場と判定
   const isJapan = /^\d{4}$/.test(cleanSymbol) || cleanSymbol.endsWith('.T');
   const market = isJapan ? 'japan' : 'usa';
-  
+
   try {
     const quote = await marketClient.fetchQuote(cleanSymbol, market);
     if (!quote) return null;
