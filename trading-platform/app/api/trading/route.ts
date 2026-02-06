@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
     // Set CSRF token cookie for client-side use
     const csrfToken = generateCSRFToken();
     response.cookies.set('csrf-token', csrfToken, {
-      httpOnly: true,
+      httpOnly: false, // Must be false for Double-Submit Cookie pattern
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 60 * 60 * 24, // 24 hours
@@ -275,6 +275,10 @@ export async function POST(req: NextRequest) {
   // Rate limiting for trading actions
   const rateLimitResponse = checkRateLimit(req);
   if (rateLimitResponse) return rateLimitResponse;
+
+  // CSRF Protection
+  const csrfError = requireCSRF(req);
+  if (csrfError) return csrfError;
   
   try {
     const body = await req.json();

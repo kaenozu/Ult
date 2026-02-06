@@ -1,16 +1,13 @@
-﻿import { BacktestView } from '../BacktestView';
-import { ForecastView } from '../ForecastView';
+﻿import { ForecastView } from '../ForecastView';
 import { AIPerformanceView } from '../AIPerformanceView';
 import { SignalDisplay } from './SignalDisplay';
-import { Signal, Stock, BacktestResult, PaperTrade, AIStatus } from '@/app/types';
+import { Signal, Stock, PaperTrade, AIStatus } from '@/app/types';
 import { PositionSizeRecommendation } from '@/app/types/risk';
 
 interface SignalDetailsProps {
-  activeTab: 'signal' | 'backtest' | 'ai' | 'forecast';
+  activeTab: 'signal' | 'ai' | 'forecast';
   displaySignal: Signal;
   stock: Stock;
-  backtestResult: BacktestResult | null;
-  isBacktesting: boolean;
   preciseHitRate: { hitRate: number; trades: number } | null;
   calculatingHitRate: boolean;
   error: string | null;
@@ -23,8 +20,6 @@ export function SignalDetails({
   activeTab,
   displaySignal,
   stock,
-  backtestResult,
-  isBacktesting,
   preciseHitRate,
   calculatingHitRate,
   error,
@@ -47,16 +42,13 @@ export function SignalDetails({
           />
         </div>
       );
-    
-    case 'backtest':
-      return <BacktestView backtestResult={backtestResult} loading={isBacktesting} />;
-    
+
     case 'forecast':
       return <ForecastView signal={displaySignal} stock={stock} />;
-    
+
     case 'ai':
       return <AIPerformanceView aiStatus={aiStatusData} stock={stock} aiTrades={aiTrades} />;
-    
+
     default:
       return null;
   }

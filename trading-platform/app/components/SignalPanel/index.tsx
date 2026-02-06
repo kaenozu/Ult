@@ -1,9 +1,6 @@
-
-
 import { useState } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
 import { useSignalData } from './hooks/useSignalData';
-import { useBacktestControls } from './hooks/useBacktestControls';
 import { useKellyPositionSizing } from './hooks/useKellyPositionSizing';
 import { SignalFilters } from './components/SignalFilters';
 import { SignalDetails } from './components/SignalDetails';
@@ -20,34 +17,14 @@ interface SignalPanelProps {
  * 
  * AIが生成した売買シグナル、バックテスト結果、AI性能、価格予測を
  * タブ形式で表示する統合分析パネル。
- * 
- * 主な機能:
- * - シグナル表示
- * - バックテスト実行と結果可視化
- * - AI予測精度の追跡
- * - 価格予測チャート
- * - 自動アラート通知
- * 
- * @component
- * @example
- * ```tsx
- * <SignalPanel 
- *   stock={{ symbol: 'AAPL', name: 'Apple Inc.', market: 'usa' }}
- *   signal={aiGeneratedSignal}
- *   ohlcv={historicalPriceData}
- *   loading={false}
- * />
- * ```
- * 
- * @param {SignalPanelProps} props - コンポーネントのプロパティ
- * @returns {JSX.Element} シグナルパネルUI
  */
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
-  const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast'>('signal');
+  const [activeTab, setActiveTab] = useState<'signal' | 'ai' | 'forecast'>('signal');
 
   // Custom hooks for separated concerns
+  // Passed ohlcv to useSignalData for enhanced accuracy calculation
   const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal, ohlcv);
-  const { backtestResult, isBacktesting } = useBacktestControls(stock, ohlcv, activeTab, loading);
+  
   const kellyRecommendation = useKellyPositionSizing(stock, displaySignal);
 
   if (loading || !displaySignal) {
@@ -78,8 +55,6 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         activeTab={activeTab}
         displaySignal={displaySignal}
         stock={stock}
-        backtestResult={backtestResult}
-        isBacktesting={isBacktesting}
         preciseHitRate={preciseHitRate}
         calculatingHitRate={calculatingHitRate}
         error={error}

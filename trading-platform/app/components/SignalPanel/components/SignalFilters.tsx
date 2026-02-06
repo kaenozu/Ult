@@ -2,14 +2,14 @@ import { cn, getConfidenceColor } from '@/app/lib/utils';
 import { Signal } from '@/app/types';
 
 interface SignalFiltersProps {
-  activeTab: 'signal' | 'backtest' | 'ai' | 'forecast';
-  setActiveTab: (tab: 'signal' | 'backtest' | 'ai' | 'forecast') => void;
+  activeTab: 'signal' | 'ai' | 'forecast';
+  setActiveTab: (tab: 'signal' | 'ai' | 'forecast') => void;
   displaySignal: Signal | null;
 }
 
 export function SignalFilters({ activeTab, setActiveTab, displaySignal }: SignalFiltersProps) {
   // Helper for tab props to ensure accessibility and DRY
-  const getTabProps = (tabName: 'signal' | 'backtest' | 'ai' | 'forecast', label: string) => ({
+  const getTabProps = (tabName: 'signal' | 'ai' | 'forecast', label: string) => ({
     role: 'tab',
     id: `tab-${tabName}`,
     'aria-selected': activeTab === tabName,
@@ -28,7 +28,6 @@ export function SignalFilters({ activeTab, setActiveTab, displaySignal }: Signal
       {/* Tab List */}
       <div className="flex bg-[#192633] rounded-lg p-0.5 gap-0.5" role="tablist" aria-label="分析パネル">
         <button {...getTabProps('signal', 'シグナル')} />
-        <button {...getTabProps('backtest', 'バックテスト')} />
         <button {...getTabProps('forecast', '予測コーン')} />
         <button {...getTabProps('ai', 'AI戦績')} />
       </div>

@@ -225,7 +225,9 @@ class AnalysisService {
         let total = 0;
         const warmup = 50; // Reduced from 100 to allow more evaluation periods
         const step = 1;
-        const limit = (endIndex !== undefined ? endIndex : data.length) - 10;
+        // FIX: Prevent look-ahead bias by ensuring we only simulate trades that FINISH before endIndex
+        // simulateTrade looks ahead FORECAST_CONE.STEPS (60) days
+        const limit = (endIndex !== undefined ? endIndex : data.length) - FORECAST_CONE.STEPS;
         const start = (startIndex || 0) + warmup;
 
         const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);

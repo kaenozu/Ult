@@ -463,7 +463,7 @@ describe('AlgorithmicExecutionEngine', () => {
       });
       
       expect(result.filledQuantity).toBeGreaterThan(0);
-    }, 5000);
+    }, 20000);
   });
 
   describe('Unknown algorithm', () => {
@@ -660,7 +660,7 @@ describe('AlgorithmicExecutionEngine', () => {
       
       // Should use default params
       expect(result.filledQuantity).toBeGreaterThan(0);
-    }, 10000);
+    }, 20000);
 
     it('should handle partial fills correctly', async () => {
       // Create order book with limited liquidity

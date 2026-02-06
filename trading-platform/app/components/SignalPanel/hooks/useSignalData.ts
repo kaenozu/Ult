@@ -6,8 +6,11 @@ import { useSymbolAccuracy } from '@/app/hooks/useSymbolAccuracy';
 import { useSignalAlerts } from '@/app/hooks/useSignalAlerts';
 import { calculateAIStatusMetrics } from '../aiStatus';
 
+/**
+ * Hook to manage signal-related data and performance metrics
+ */
 export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[] = []) {
-  const { processAITrades, trades } = useAIStore();
+  const { toggleAI, trades } = useAIStore();
   const journal = useJournalStore((state) => state.journal);
   const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(stock, ohlcv);
   
@@ -31,18 +34,6 @@ export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[
     preciseHitRate: hitRateData,
     calculatingHitRate
   });
-
-  // Memoized process trades function
-  const processTradesCallback = useCallback(() => {
-    if (displaySignal && stock.price && processAITrades) {
-      processAITrades(stock.symbol, stock.price, displaySignal);
-    }
-  }, [displaySignal, stock.price, stock.symbol, processAITrades]);
-
-  // 閾ｪ蜍募｣ｲ雋ｷ繝励Ο繧ｻ繧ｹ繧偵ヨ繝ｪ繧ｬ繝ｼ - Use callback
-  useEffect(() => {
-    processTradesCallback();
-  }, [processTradesCallback]);
 
   // Memoized trades transformation
   const aiTrades: PaperTrade[] = useMemo(() => {
@@ -82,5 +73,3 @@ export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[
     aiStatusData
   };
 }
-
-

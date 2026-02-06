@@ -42,7 +42,7 @@ export function useBacktestControls(stock: Stock, ohlcv: OHLCV[] = [], activeTab
       // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
       setTimeout(() => {
         try {
-          const result = measure('runBacktest', () => 
+          const result = measure('runBacktest', () =>
             runBacktest(stock.symbol, ohlcv, stock.market)
           );
           setBacktestResult(result);
@@ -53,7 +53,7 @@ export function useBacktestControls(stock: Stock, ohlcv: OHLCV[] = [], activeTab
         }
       }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv, stock.symbol, stock.market, loading, measure]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv.length, ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty', stock.symbol, stock.market, loading, measure]);
 
   return {
     backtestResult,

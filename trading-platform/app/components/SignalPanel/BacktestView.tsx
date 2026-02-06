@@ -1,4 +1,4 @@
-import { BacktestResult } from '@/app/lib/backtest';
+import { BacktestResult, BacktestTrade } from '@/app/lib/backtest';
 import { cn } from '@/app/lib/utils';
 
 interface BacktestViewProps {
@@ -33,7 +33,7 @@ export function BacktestView({ backtestResult, loading }: BacktestViewProps) {
 
             <div className="space-y-2">
                 <div className="text-xs font-bold text-[#92adc9] uppercase tracking-wider mb-1">直近のシミュレーション</div>
-                {backtestResult.trades.slice(0, 5).map((trade: any, i: number) => (
+                {backtestResult.trades.slice(0, 5).map((trade: BacktestTrade, i: number) => (
                 <div key={i} className="bg-[#192633]/30 p-2 rounded border border-[#233648]/50 flex justify-between items-center text-xs">
                     <div>
                     <div className="flex items-center gap-2">
@@ -43,8 +43,8 @@ export function BacktestView({ backtestResult, loading }: BacktestViewProps) {
                         <span className="text-[#92adc9]">{trade.entryDate}</span>
                     </div>
                     </div>
-                    <div className={cn('font-bold', trade.profitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
-                    {trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent.toFixed(1)}%
+                    <div className={cn('font-bold', trade.profitPercent !== undefined && trade.profitPercent >= 0 ? 'text-green-500' : 'text-red-500')}>
+                      {trade.profitPercent !== undefined && trade.profitPercent > 0 ? '+' : ''}{trade.profitPercent !== undefined ? trade.profitPercent.toFixed(1) : 'N/A'}%
                     </div>
                 </div>
                 ))}
