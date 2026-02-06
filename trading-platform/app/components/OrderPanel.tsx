@@ -97,6 +97,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       quantity: quantity,
       price: price,
       orderType: orderType,
+      riskConfig: riskConfig,
     };
 
     // アトミックな注文実行

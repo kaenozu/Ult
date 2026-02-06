@@ -3,6 +3,17 @@
  */
 import { OrderSide, OrderType, MarketType } from './shared';
 
+export interface RiskConfig {
+  enableTrailingStop: boolean;
+  trailingStopATRMultiple: number;
+  trailingStopMinPercent: number;
+  enableVolatilityAdjustment: boolean;
+  volatilityMultiplier: number;
+  enableDynamicPositionSizing: boolean;
+  maxRiskPerTrade: number;
+  minRiskRewardRatio: number;
+}
+
 export interface OrderRequest {
   /** 銘柄シンボル */
   symbol: string;
@@ -22,6 +33,8 @@ export interface OrderRequest {
   stopLoss?: number;
   /** 利確価格（オプション） */
   takeProfit?: number;
+  /** リスク管理設定（オプション） */
+  riskConfig?: RiskConfig;
 }
 
 /**
