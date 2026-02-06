@@ -15,7 +15,7 @@ import { useUIStore } from '@/app/store/uiStore';
 
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const positions = useTradingStore(state => state.portfolio.positions);
-  const selectedStock = useUIStore(state => state.selectedStock);
+  const { selectedStock } = useUIStore();
 
   useEffect(() => {
     // 1. サーバーに接続
