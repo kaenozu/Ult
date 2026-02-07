@@ -233,7 +233,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
   private async executeVWAP(order: Order): Promise<ExecutionResult> {
     const params = order.algorithm!.params;
     const duration = params.duration || 1;
-    const volumeProfile = (params.volumeProfile as any) || this.generateVolumeProfile();
+    const volumeProfile = (params.volumeProfile as number[]) || this.generateVolumeProfile();
     const fills: ExecutionFill[] = [];
     const interval = (duration * 1000) / volumeProfile.length;
     for (let i = 0; i < volumeProfile.length; i++) {
@@ -344,7 +344,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     return this.aggregateFills(order, fills);
   }
 
-  private aggregateFills(order: Order, fills: any[]): ExecutionResult {
+  private aggregateFills(order: Order, fills: ExecutionFill[]): ExecutionResult {
     const filledQty = fills.reduce((s, f) => s + f.quantity, 0);
     const val = fills.reduce((s, f) => s + f.price * f.quantity, 0);
     const avg = filledQty > 0 ? val / filledQty : 0;

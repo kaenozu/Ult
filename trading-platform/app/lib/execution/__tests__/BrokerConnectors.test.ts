@@ -310,7 +310,7 @@ describe('BrokerConnectors', () => {
 
     it('should throw error for unknown broker type', () => {
       expect(() => {
-        createBrokerConnector('Unknown' as any, mockConfig);
+        createBrokerConnector('Unknown' as unknown, mockConfig);
       }).toThrow('Unknown broker type');
     });
   });

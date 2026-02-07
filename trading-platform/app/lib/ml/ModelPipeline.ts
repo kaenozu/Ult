@@ -17,7 +17,7 @@ export class ModelPipeline {
    * Set a mock model for testing purposes
    * @internal
    */
-  setMockModel(mockModel: any): void {
+  setMockModel(mockModel: unknown): void {
     this.model = mockModel;
   }
 
