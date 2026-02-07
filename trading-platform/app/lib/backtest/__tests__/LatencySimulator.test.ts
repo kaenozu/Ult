@@ -296,7 +296,7 @@ describe('LatencySimulator', () => {
       const originalMax = simulator.getConfig().apiLatency.max;
       
       simulator.updateConfig({
-        apiLatency: { min: 50 } as any,
+        apiLatency: { min: 50 } as Partial<LatencyConfig>,
       });
 
       const config = simulator.getConfig();
