@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import YahooFinance from 'yahoo-finance2';
 import {
   handleApiError,
@@ -8,49 +9,33 @@ import { checkRateLimit } from '@/app/lib/api-middleware';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
 import {
-  validateSymbol,
-  validateMarketType,
-  validateDataType,
-  validateInterval,
-  validateDate
-} from '@/app/lib/validation';
-
-// Define explicit types for Yahoo Finance responses
-interface YahooChartResult {
-  meta: {
-    currency: string;
-    symbol: string;
-    regularMarketPrice: number;
-    [key: string]: unknown;
-  };
-  quotes: {
-    date: Date | string;
-    open: number | null;
-    high: number | null;
-    low: number | null;
-    close: number | null;
-    volume: number | null;
-    [key: string]: unknown;
-  }[];
-}
-
-interface YahooQuoteResult {
-  symbol: string;
-  regularMarketPrice?: number;
-  regularMarketChange?: number;
-  regularMarketChangePercent?: number;
-  regularMarketVolume?: number;
-  marketState?: string;
-  longName?: string;
-  shortName?: string;
-  [key: string]: unknown; // Safer than 'any' or union of primitives
-}
-import {
   YahooChartResultSchema,
   YahooSingleQuoteSchema
 } from '@/app/lib/schemas/market';
 
 export const yf = new YahooFinance();
+
+// --- Zod Schemas for Request ---
+
+const MarketRequestSchema = z.object({
+  type: z.enum(['history', 'quote']).default('quote'),
+  symbol: z.string().min(1).max(1000).transform(s => s.toUpperCase()),
+  market: z.enum(['japan', 'usa']).optional(),
+  interval: z.enum(['1m', '5m', '15m', '1h', '4h', '1d', '1wk', '1mo']).optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+function formatSymbol(symbol: string, market?: string): string {
+  // Never add suffix to indices (starting with ^)
+  if (symbol.startsWith('^')) {
+    return symbol;
+  }
+
+  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
+    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
+  }
+  return symbol;
+}
 
 /**
  * @swagger
@@ -153,59 +138,6 @@ export const yf = new YahooFinance();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-
-function formatSymbol(symbol: string, market?: string): string {
-  // Never add suffix to indices (starting with ^)
-  if (symbol.startsWith('^')) {
-    return symbol;
-  }
-
-  if (market === 'japan') {
-    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
-  }
-
-  if (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T')) {
-    return `${symbol}.T`;
-  }
-  return symbol;
-}
-
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import YahooFinance from 'yahoo-finance2';
-import {
-  handleApiError,
-  validationError,
-} from '@/app/lib/error-handler';
-import { checkRateLimit } from '@/app/lib/api-middleware';
-import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
-import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
-
-// --- Zod Schemas for Request ---
-
-const MarketRequestSchema = z.object({
-  type: z.enum(['history', 'quote']).default('quote'),
-  symbol: z.string().min(1).max(1000).transform(s => s.toUpperCase()),
-  market: z.enum(['japan', 'usa']).optional(),
-  interval: z.enum(['1m', '5m', '15m', '1h', '4h', '1d', '1wk', '1mo']).optional(),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-});
-
-// --- Yahoo Finance Schemas ---
-import {
-  YahooChartResultSchema,
-  YahooSingleQuoteSchema
-} from '@/app/lib/schemas/market';
-
-
-function formatSymbol(symbol: string, market?: string): string {
-  if (symbol.startsWith('^')) return symbol;
-  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
-    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
-  }
-  return symbol;
-}
-
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting

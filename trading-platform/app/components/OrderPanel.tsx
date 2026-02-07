@@ -58,12 +58,18 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative">
       {showSuccess && (
-        <div className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+        <div 
+          role="status"
+          className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
+        >
           注文を送信しました
         </div>
       )}
       {errorMessage && (
-        <div className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+        <div 
+          role="alert"
+          className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
+        >
           {errorMessage}
           <button
             onClick={() => setErrorMessage(null)}
@@ -151,6 +157,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
         onClick={() => setShowRiskSettings(!showRiskSettings)}
         className="flex items-center justify-between w-full py-2 text-xs font-bold text-[#92adc9] hover:text-white transition-colors border-t border-[#233648] mt-2"
         aria-expanded={showRiskSettings}
+        aria-controls={ids.riskSettings}
       >
         <span>リスク管理設定</span>
         <svg
@@ -166,7 +173,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
       {/* Risk Management Settings Panel */}
       {showRiskSettings && (
-        <div className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3">
+        <div id={ids.riskSettings} className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3">
           {/* Trailing Stop Toggle */}
           <div className="flex items-center justify-between">
             <span id={ids.trailingStop} className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
