@@ -362,7 +362,7 @@ export class WalkForwardAnalyzer extends EventEmitter {
     // 直接シミュレーションを実行
 
     const trades: Trade[] = [];
-    let equity = config.initialCapital;
+    const equity = config.initialCapital;
     const equityCurve: number[] = [equity];
     let position: { side: 'LONG' | 'SHORT' | null; entryPrice: number; quantity: number; entryDate: string } | null = null;
 

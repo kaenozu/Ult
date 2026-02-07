@@ -6,17 +6,6 @@
 
 import { test, expect, Page } from '@playwright/test';
 
-// Helper function to wait for WebSocket connection
-async function waitForWebSocketConnection(page: Page, timeout = 10000): Promise<void> {
-  await page.waitForFunction(
-    () => {
-      const ws = (window as unknown as { __testWebSocket?: WebSocket }).__testWebSocket;
-      return ws?.readyState === WebSocket.OPEN;
-    },
-    { timeout }
-  );
-}
-
 // Helper function to simulate WebSocket disconnection
 async function simulateWebSocketDisconnect(page: Page): Promise<void> {
   await page.evaluate(() => {

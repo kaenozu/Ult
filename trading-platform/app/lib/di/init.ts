@@ -1,16 +1,16 @@
 /**
- * Initialize DI Container
- * 
- * This file should be imported early in the application lifecycle
- * to ensure all services are registered before they are needed.
- */
+  * Initialize DI Container
+  * 
+  * This file should be imported early in application lifecycle
+  * to ensure all services are registered before they are needed.
+  */
 
-import { initializeContainer, registerService, TOKENS } from '@/app/lib/di/container';
+import { initializeContainer, container } from '@/app/lib/di/container';
 import { logger } from '@/app/core/logger';
 
 /**
- * Register all platform services
- */
+  * Register all platform services
+  */
 export function registerPlatformServices(): void {
   // Note: Services will be registered when they are imported
   // This prevents circular dependencies and enables lazy loading
@@ -19,8 +19,20 @@ export function registerPlatformServices(): void {
 }
 
 /**
- * Initialize container with all services
- */
+  * Register a service
+  * Helper function for registering services
+  */
+export function registerService<T>(
+  token: symbol,
+  factory: () => T,
+  singleton = true
+): void {
+  container.register<T>(token, factory, singleton);
+}
+
+/**
+  * Initialize container with all services
+  */
 export function initializeDI(): void {
   try {
     initializeContainer();

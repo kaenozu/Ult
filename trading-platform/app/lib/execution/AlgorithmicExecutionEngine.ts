@@ -363,7 +363,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     if (!ob) return { temporaryImpact: 0, permanentImpact: 0, totalCost: 0, optimalSize: 0 };
     const dailyVol = 1000000;
     const part = q / dailyVol;
-    let impact = 0.1 * Math.sqrt(part);
+    const impact = 0.1 * Math.sqrt(part);
     const mid = ob.midPrice;
     return { temporaryImpact: impact, permanentImpact: impact * 0.5, totalCost: impact * 1.5 * mid * q, optimalSize: Math.floor(dailyVol * 0.01) };
   }

@@ -92,16 +92,16 @@ export class UnifiedTradingPlatform extends EventEmitter {
   private config: PlatformConfig;
   private status: PlatformStatus;
   
-  // Core components
-  private dataFeed: MultiExchangeDataFeed;
-  private aiEngine: PredictiveAnalyticsEngine;
-  private sentimentEngine: SentimentAnalysisEngine;
-  private riskManager: AdvancedRiskManager;
-  private executionEngine: AlgorithmicExecutionEngine;
-  private backtestEngine: AdvancedBacktestEngine;
-  private alertSystem: AlertSystem;
-  private paperTrading: PaperTradingEnvironment;
-
+  // Core components - definite assignment assertion
+  private dataFeed!: MultiExchangeDataFeed;
+  private aiEngine!: PredictiveAnalyticsEngine;
+  private sentimentEngine!: SentimentAnalysisEngine;
+  private riskManager!: AdvancedRiskManager;
+  private executionEngine!: AlgorithmicExecutionEngine;
+  private backtestEngine!: AdvancedBacktestEngine;
+  private alertSystem!: AlertSystem;
+  private paperTrading!: PaperTradingEnvironment;
+  
   // Data storage
   private marketData: Map<string, OHLCVWithTimestamp[]> = new Map();
   private signals: Map<string, TradingSignal> = new Map();
@@ -629,30 +629,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
 }
 
 // ============================================================================
-// Static Factory Methods
-// ============================================================================
-
-/**
- * Register a service in DI container
- * Useful for testing and custom implementations
- */
-export static registerService<T>(
-  token: symbol,
-  factory: () => T,
-  singleton = true
-): void {
-  container.register<T>(token, factory, singleton);
-}
-
-/**
- * Reset DI container
- * Useful for testing
- */
-export static resetDIContainer(): void {
-  container.reset();
-}
-
-// ============================================================================
 // Singleton Instance
 // ============================================================================
 
@@ -666,3 +642,27 @@ export const getGlobalTradingPlatform = getInstance;
 export const resetGlobalTradingPlatform = resetInstance;
 
 export default UnifiedTradingPlatform;
+
+// ============================================================================
+// Static Factory Methods
+// ============================================================================
+
+/**
+ * Register a service in DI container
+ * Useful for testing and custom implementations
+ */
+export function registerService<T>(
+  token: symbol,
+  factory: () => T,
+  singleton = true
+): void {
+  container.register<T>(token, factory, singleton);
+}
+
+/**
+ * Reset DI container
+ * Useful for testing
+ */
+export function resetDIContainer(): void {
+  container.reset();
+}

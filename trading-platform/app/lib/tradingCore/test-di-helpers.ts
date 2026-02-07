@@ -4,8 +4,8 @@
  * Provides utilities to mock services in tests
  */
 
-import { UnifiedTradingPlatform, TOKENS } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { container } from '@/app/lib/di/container';
+import { TOKENS } from '@/app/lib/di/tokens';
 
 /**
  * Create a mock service for DI container
@@ -18,14 +18,14 @@ export function createMockService<T>(mock: Partial<T>): () => T {
  * Register a mock service
  */
 export function registerMockService<T>(token: symbol, mock: Partial<T>): void {
-  UnifiedTradingPlatform.registerService(token, createMockService(mock));
+  container.register<T>(token, createMockService(mock));
 }
 
 /**
  * Reset all mocks
  */
 export function resetAllMocks(): void {
-  UnifiedTradingPlatform.resetDIContainer();
+  container.reset();
 }
 
 /**

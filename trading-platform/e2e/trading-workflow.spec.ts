@@ -257,7 +257,6 @@ test.describe('Trading Workflow - Complete Flow', () => {
       // Switch to different market views
       const japanButton = page.locator('button:has-text("JAPAN"), button:has-text("日本")').first();
       const usaButton = page.locator('button:has-text("USA"), button:has-text("米国")').first();
-      const globalButton = page.locator('button:has-text("Global"), button:has-text("全世界")').first();
 
       if (await japanButton.isVisible()) {
         await japanButton.click();

@@ -36,15 +36,14 @@ test.describe('Real-time Data Quality and WebSocket Integration', () => {
   test('should receive and validate real-time market data', async ({ page }) => {
     // Wait for market data to load
     await page.waitForSelector('[data-testid="market-data"]', { timeout: 15000 });
-    
+
     // Check if data is being updated
     const priceElement = page.locator('[data-testid="current-price"]').first();
-    const initialPrice = await priceElement.textContent();
-    
+
     // Wait for data update (should happen within 5 seconds)
     await page.waitForTimeout(5000);
     const updatedPrice = await priceElement.textContent();
-    
+
     // Verify data is updating or validate it's real data
     expect(updatedPrice).toBeTruthy();
     expect(parseFloat(updatedPrice || '0')).toBeGreaterThan(0);
