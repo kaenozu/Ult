@@ -4,7 +4,9 @@
  * TRADING-003: リスク管理システムの高度化
  */
 
-import { Position, Portfolio, OHLCV } from './index';
+import type { Position } from './index';
+import type { Portfolio } from './performance';
+import type { OHLCV } from './shared';
 
 // ============================================================================
 // Dynamic Position Sizing Types
@@ -137,14 +139,16 @@ export interface PsychologyAlert {
   timestamp: Date;
 }
 
-export interface TradingSession {
+export interface RiskTradingSession {
   startTime: Date;
   endTime?: Date;
   tradesCount: number;
   profitLoss: number;
   emotionalState: 'calm' | 'excited' | 'fearful' | 'angry' | 'tired';
-  decisionQuality: number; // 0-100
+  decisionQuality: number;
 }
+
+export { TradingSession } from './psychology';
 
 export interface DisciplineScore {
   overall: number;
@@ -187,7 +191,9 @@ export interface CooldownRecord {
 // Market Data Types
 // ============================================================================
 
-export interface MarketData {
+export { MarketData } from './data-quality';
+
+export interface RiskMarketData {
   symbol: string;
   price: number;
   volume: number;

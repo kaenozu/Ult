@@ -19,7 +19,8 @@ const HOST = process.env.WS_HOST || '0.0.0.0';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
 
 // Security Configuration
-const AUTH_TOKEN = process.env.WS_AUTH_TOKEN || generateDefaultToken();
+// Development: use fixed token for simplicity
+const AUTH_TOKEN = process.env.WS_AUTH_TOKEN || 'dev-token-placeholder';
 const MAX_CONNECTIONS_PER_IP = parseInt(process.env.WS_MAX_CONNECTIONS_PER_IP || '5', 10);
 const MAX_MESSAGE_SIZE = parseInt(process.env.WS_MAX_MESSAGE_SIZE || '1048576', 10); // 1MB default
 const RATE_LIMIT_WINDOW = 60000; // 1 minute

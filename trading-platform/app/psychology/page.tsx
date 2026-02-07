@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Navigation } from '@/app/components/Navigation';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
@@ -21,30 +21,41 @@ function PsychologyContent() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [analysis, setAnalysis] = useState<PsychologyAnalysisResult | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    // Simulate loading psychology analysis
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
-      const mockAnalysis = getPsychologyData();
-      setAnalysis(mockAnalysis);
-      addAnalysis(mockAnalysis);
-      setIsLoading(false);
+      if (mountedRef.current) {
+        const mockAnalysis = getPsychologyData();
+        setAnalysis(mockAnalysis);
+        addAnalysis(mockAnalysis);
+        setIsLoading(false);
+      }
     }, 500);
 
     return () => clearTimeout(timer);
   }, [addAnalysis]);
 
-  const refreshAnalysis = () => {
+  const refreshAnalysis = useCallback(() => {
     setIsLoading(true);
     const timer = setTimeout(() => {
-      const mockAnalysis = getPsychologyData();
-      setAnalysis(mockAnalysis);
-      addAnalysis(mockAnalysis);
-      setIsLoading(false);
+      if (mountedRef.current) {
+        const mockAnalysis = getPsychologyData();
+        setAnalysis(mockAnalysis);
+        addAnalysis(mockAnalysis);
+        setIsLoading(false);
+      }
     }, 500);
 
     return () => clearTimeout(timer);
-  };
+  }, [addAnalysis]);
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">

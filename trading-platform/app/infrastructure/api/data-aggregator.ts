@@ -177,7 +177,7 @@ class MarketDataClient {
     }
   }
 
-  async fetchQuotes(symbols: string[]): Promise<QuoteData[]> {
+  async fetchQuotes(symbols: string[], retries: number = 3): Promise<QuoteData[]> {
     if (symbols.length === 0) return [];
 
     const CHUNK_SIZE = 50;
@@ -192,8 +192,12 @@ class MarketDataClient {
         const httpResponse = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
 
         if (httpResponse.status === 429) {
+          if (retries <= 0) {
+            console.error('Rate limit exceeded, no retries left');
+            return [];
+          }
           await new Promise(resolve => setTimeout(resolve, 2000));
-          return this.fetchQuotes(chunk); // Retry chunk
+          return this.fetchQuotes(chunk, retries - 1);
         }
 
         const parsedJson = await httpResponse.json();

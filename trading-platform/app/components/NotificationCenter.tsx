@@ -3,6 +3,12 @@ import { useAlertStore } from '@/app/store/alertStore';
 import { Alert, AlertSeverity, AlertSettings } from '@/app/lib/alertTypes';
 import { cn } from '@/app/lib/utils';
 import { Bell, X, Settings, Trash2, Check, Filter, BellOff } from 'lucide-react';
+import {
+  getSeverityIcon,
+  getSeverityColor,
+  getTypeColor,
+  formatTimestamp
+} from '@/app/hooks/useAlertLogic';
 
 interface NotificationCenterProps {
   onClose?: () => void;
@@ -36,41 +42,6 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const getSeverityColor = (severity: AlertSeverity) => {
-    switch (severity) {
-      case 'HIGH':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'MEDIUM':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'LOW':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-    }
-  };
-
-  const getSeverityIcon = (severity: AlertSeverity) => {
-    switch (severity) {
-      case 'HIGH':
-        return '🔴';
-      case 'MEDIUM':
-        return '🟡';
-      case 'LOW':
-        return '🟢';
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'MARKET':
-        return 'text-purple-400';
-      case 'STOCK':
-        return 'text-green-400';
-      case 'COMPOSITE':
-        return 'text-orange-400';
-      default:
-        return 'text-gray-400';
-    }
-  };
-
   const filteredAlerts = alerts.filter(alert => {
     if (filterType === 'ALL') return true;
     return alert.severity === filterType;
@@ -91,17 +62,6 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
 
   const handleClearAcknowledged = () => {
     clearAcknowledged();
-  };
-
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-
-    if (diff < 60000) return 'たった今';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}分前`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}時間前`;
-    return `${Math.floor(diff / 86400000)}日前`;
   };
 
   return (
@@ -378,7 +338,7 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
 
                         {/* Time */}
                         <span className="text-[10px] text-[#92adc9]/60 ml-auto">
-                          {formatTime(alert.timestamp)}
+                          {formatTimestamp(alert.timestamp)}
                         </span>
                       </div>
 

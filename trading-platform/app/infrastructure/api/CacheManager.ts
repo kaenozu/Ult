@@ -41,8 +41,10 @@ export class CacheManager<T = unknown> {
       return undefined;
     }
 
-    // Update last accessed time for LRU tracking by creating new entry
+    // Update last accessed time for LRU tracking
+    // Delete first to update Map iteration order
     const now = Date.now();
+    this.cache.delete(key);
     this.cache.set(key, {
       ...entry,
       lastAccessed: now,

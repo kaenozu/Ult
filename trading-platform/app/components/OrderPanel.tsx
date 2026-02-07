@@ -37,6 +37,7 @@ interface OrderPanelProps {
  * @returns {JSX.Element} 注文パネルUI
  */
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
+  const portfolio = useTradingStore((state) => state.portfolio);
   const {
     side,
     setSide,
@@ -282,7 +283,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       {/* Dynamic Risk Metrics Display */}
       {ohlcv.length > 0 && (
         <DynamicRiskMetrics
-          portfolio={useTradingStore.getState().portfolio}
+          portfolio={portfolio}
           marketData={ohlcv}
           riskConfig={riskConfig}
         />

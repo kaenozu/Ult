@@ -4,7 +4,7 @@
  * センチメントデータAPI - 全シンボルのセンチメント情報を取得
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
