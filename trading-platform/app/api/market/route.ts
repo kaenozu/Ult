@@ -197,7 +197,6 @@ import {
   YahooSingleQuoteSchema
 } from '@/app/lib/schemas/market';
 
-export const yf = new YahooFinance();
 
 function formatSymbol(symbol: string, market?: string): string {
   if (symbol.startsWith('^')) return symbol;

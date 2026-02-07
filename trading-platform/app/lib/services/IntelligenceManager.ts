@@ -10,7 +10,7 @@ export class IntelligenceManager {
   constructor() {
     if (typeof window !== 'undefined') {
       // Worker の初期化
-      this.worker = new Worker(new URL('./IntelligenceWorker.ts', import.meta.url));
+       this.worker = new Worker(new URL('../workers/IntelligenceWorker.ts', import.meta.url));
     }
   }
 

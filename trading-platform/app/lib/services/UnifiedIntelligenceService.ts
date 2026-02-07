@@ -1,6 +1,6 @@
 import { OHLCV } from '@/app/types';
-import { marketDataService } from './MarketDataService';
-import { technicalIndicatorService } from './TechnicalIndicatorService';
+import { marketDataService } from '../MarketDataService';
+import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import { SignalValidatorService } from '../SignalValidatorService';
 import { DynamicWeightingService, Weights } from '../DynamicWeightingService';
 import { parameterOptimizerService } from '../ParameterOptimizerService';
