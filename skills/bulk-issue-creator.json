@@ -1,0 +1,64 @@
+{
+  "name": "bulk-issue-creator",
+  "description": "レビュー結果や課題リストをGitHub Issuesに一括作成するスキル。テンプレートに基づく効率的なIssue生成、ラベル付け、マイルストーン設定、関連Issueリンクを自動化する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": true,
+  "triggers": [
+    "Issueを作成",
+    "イシュー作成",
+    "課題をIssueに",
+    "Issue一括作成",
+    "GitHub Issues作成"
+  ],
+  "rules": [
+    "template-based-creation",
+    "batch-processing",
+    "categorization",
+    "cross-referencing",
+    "priority-assignment"
+  ],
+  "issue_categories": {
+    "PRED": "予測精度関連",
+    "PERF": "パフォーマンス関連",
+    "SEC": "セキュリティ関連",
+    "CI": "CI/CD関連",
+    "DEBT": "技術的負債",
+    "DOC": "ドキュメント",
+    "DX": "開発体験",
+    "FEAT": "機能追加"
+  },
+  "workflow": {
+    "step1": "作成対象の課題リスト収集",
+    "step2": "カテゴリ分類とラベル決定",
+    "step3": "Issueテンプレート選択",
+    "step4": "一括作成実行",
+    "step5": "ラベル・マイルストーン設定",
+    "step6": "関連Issue間のリンク設定",
+    "step7": "サマリー・ロードマップ作成"
+  },
+  "issue_templates": {
+    "bug_report": "バグ報告テンプレート",
+    "feature_request": "機能要望テンプレート",
+    "improvement": "改善提案テンプレート",
+    "technical_debt": "技術的負債テンプレート"
+  },
+  "fields": {
+    "title": "簡潔で分かりやすいタイトル",
+    "body": "## 現状の問題\n## 課題点\n## 改善案\n## 期待される効果\n## 関連ファイル",
+    "labels": "カテゴリラベル + 優先度ラベル",
+    "milestone": "マイルストーン（あれば）"
+  },
+  "commands": [
+    "gh issue create --title \"{title}\" --body \"{body}\" --label \"{label}\" --repo {owner}/{repo}",
+    "gh issue list --state open",
+    "gh issue edit {number} --add-label {label}"
+  ],
+  "capabilities": [
+    "レビュー結果からの自動Issue生成",
+    "テンプレートに基づく一括作成",
+    "自動カテゴリ分類とラベル付け",
+    "関連Issueの自動リンク",
+    "ロードマップIssueの作成"
+  ]
+}

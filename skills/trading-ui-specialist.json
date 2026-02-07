@@ -1,0 +1,56 @@
+{
+  "name": "trading-ui-specialist",
+  "description": "取引プラットフォームのUI/UXを専門とするスキル。ダークモード、レスポンシブデザイン、インタラクティブなチャート、注文画面の実装を行う。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "dark-mode-implementation",
+    "responsive-design",
+    "chart-interactivity",
+    "order-panel-design",
+    "accessibility"
+  ],
+  "capabilities": [
+    "Tailwind CSSによるダークモード",
+    "モバイル対応のレスポンシブ設計",
+    "インタラクティブなチャートコンポーネント",
+    "使いやすい注文画面",
+    "アクセシビリティ対応"
+  ],
+  "components": [
+    "OrderPanel",
+    "StockChart",
+    "WatchList",
+    "PortfolioView",
+    "SignalPanel"
+  ]
+}
+  "name": "trading-ui-specialist",
+  "description": "取引プラットフォームのUI/UXを専門とするスキル。ダークモード、レスポンシブデザイン、インタラクティブなチャート、注文画面の実装を行う。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "dark-mode-implementation",
+    "responsive-design",
+    "chart-interactivity",
+    "order-panel-design",
+    "accessibility"
+  ],
+  "capabilities": [
+    "Tailwind CSSによるダークモード",
+    "モバイル対応のレスポンシブ設計",
+    "インタラクティブなチャートコンポーネント",
+    "使いやすい注文画面",
+    "アクセシビリティ対応"
+  ],
+  "components": [
+    "OrderPanel",
+    "StockChart",
+    "WatchList",
+    "PortfolioView",
+    "SignalPanel"
+  ]
+}
+

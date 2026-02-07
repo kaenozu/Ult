@@ -1,0 +1,57 @@
+# Playwright Web Scraper Configuration
+
+# Target URL
+url: "https://example.com/data"
+
+# Authentication (leave empty if not required)
+username: ""
+password: ""
+
+# Browser settings
+headless: true
+viewport_width: 1920
+viewport_height: 1080
+
+# CSS Selectors
+login_username_selector: "input[type='text'], input[name='username'], input[name='email']"
+login_password_selector: "input[type='password'], input[name='password']"
+login_button_selector: "button[type='submit'], input[type='submit']"
+data_container_selector: ".data-container, .items-list"
+item_selector: ".item, .data-row"
+next_page_selector: ".next-page, .pagination-next"
+
+# Pagination
+max_pages: 10
+
+# Retry settings
+max_retries: 3
+base_delay: 1.0
+max_delay: 60.0
+
+# Request interception
+block_images: false
+block_stylesheets: false
+block_javascript: false
+blocked_urls: []
+allowed_urls: []
+
+# Output settings
+output_dir: "./output"
+json_filename: null
+csv_filename: null
+
+# Logging
+log_dir: "./logs"
+log_level: "INFO"
+log_max_bytes: 10485760  # 10MB
+log_backup_count: 5
+
+# Proxy settings (optional)
+proxy_server: null
+proxy_username: null
+proxy_password: null
+
+# Advanced settings
+user_agent: null
+extra_http_headers: {}
+cookies: []

@@ -1,0 +1,67 @@
+{
+  "name": "Property-Based Testing Expert",
+  "description": "Specialist for implementing property-based testing using fast-check",
+  "skills": [
+    "fast-check",
+    "property-based testing",
+    "test generation",
+    "invariant testing",
+    "Jest integration"
+  ],
+  "guidelines": [
+    {
+      "category": "Setup",
+      "items": [
+        "Install @fast-check/jest and fast-check packages",
+        "Configure Jest to work with fast-check",
+        "Add type definitions for TypeScript support"
+      ]
+    },
+    {
+      "category": "Arbitrary Creation",
+      "items": [
+        "Create custom arbitraries for domain-specific data types",
+        "Use built-in arbitraries (nat, string, array, record, etc.)",
+        "Combine arbitraries with map, chain, and filter operators",
+        "Define constraints for realistic data generation"
+      ]
+    },
+    {
+      "category": "Property Definition",
+      "items": [
+        "Use fc.assert with fc.property for property tests",
+        "Define invariants that should always hold true",
+        "Test edge cases and boundary conditions",
+        "Use pre-conditions with fc.pre when needed"
+      ]
+    },
+    {
+      "category": "Best Practices",
+      "items": [
+        "Keep properties simple and focused on single behavior",
+        "Use meaningful failure examples to debug issues",
+        "Generate sufficient test cases (default: 100)",
+        "Add shrinking to find minimal failing cases"
+      ]
+    },
+    {
+      "category": "Financial Data Testing",
+      "items": [
+        "Generate realistic OHLCV data with proper high/low relationships",
+        "Create price series with trends (rising, falling, flat)",
+        "Generate volume data with realistic distributions",
+        "Test technical indicators with various market conditions"
+      ]
+    }
+  ],
+  "examples": {
+    "sma_test": "fc.assert(fc.property(positivePriceArb(0, 100), periodArb, (prices, period) => { const sma = calculateSMA(prices, period); expect(sma.length).toBe(prices.length); }))",
+    "ohlcv_generator": "fc.record({ open: fc.nat(10000), high: fc.nat(10000), low: fc.nat(10000), close: fc.nat(10000), volume: fc.nat(1000000), date: fc.string({ minLength: 10, maxLength: 10 }) })"
+  },
+  "troubleshooting": [
+    "If tests timeout, reduce the number of iterations with { numRuns: 50 }",
+    "If generating NaN values, use pre-conditions to filter invalid data",
+    "If tests fail randomly, check for floating-point comparison issues",
+    "Add explicit type annotations to arbitraries for better TypeScript support"
+  ]
+}

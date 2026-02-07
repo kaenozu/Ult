@@ -1,0 +1,39 @@
+{
+  "connection": {
+    "failed": "接続に失敗しました",
+    "timeout": "接続がタイムアウトしました",
+    "lost": "接続が切断されました",
+    "retry": "再接試行中..."
+  },
+  "authentication": {
+    "required": "認証が必要です",
+    "failed": "認証に失敗しました",
+    "expired": "セッションが期限切れです",
+    "invalidToken": "無効なトークンです"
+  },
+  "validation": {
+    "required": "このフィールドは必須です",
+    "invalidFormat": "形式が正しくありません",
+    "minLength": "最低{min}文字 necessary",
+    "maxLength": "最大{max}文字を超えています",
+    "numeric": "数字を入力してください"
+  },
+  "trading": {
+    "insufficientFunds": "資金が不足しています",
+    "invalidOrder": "無効な注文です",
+    "marketClosed": "市場は閉鎖中です",
+    "priceChanged": "価格が変動しました",
+    "orderNotFound": "注文が見つかりません"
+  },
+  "api": {
+    "rateLimited": "リクエスト制限に達しました",
+    "serverError": "サーバーエラーが発生しました",
+    "noData": "データがありません",
+    "syncFailed": "同期に失敗しました"
+  },
+  "generic": {
+    "unknownError": "不明なエラーが発生しました",
+    "retry": "再試行してください",
+    "contactSupport": "サポートにお問い合わせください"
+  }
+}

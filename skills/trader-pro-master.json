@@ -1,0 +1,7 @@
+{
+  "name": "trader-pro-master",
+  "description": "二度と退行（デグレード）させないための、全機能・全翻訳を統合した開発マスタースキル",
+  "version": "1.2.0",
+  "priority": "critical",
+  "auto_activate": true
+}

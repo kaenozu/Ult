@@ -1,0 +1,25 @@
+PASS app/lib/__tests__/WinningTradingSystem.test.ts
+  WinningTradingSystem
+    Session Management
+      √ should start a new trading session (4 ms)
+      √ should stop a trading session (1 ms)
+      √ should track current session (1 ms)
+    Trading Logic
+      √ should process market data and generate signals (11 ms)
+      √ should respect max positions limit (5 ms)
+    Backtesting
+      √ should run backtest successfully (792 ms)
+      √ should compare multiple strategies (1567 ms)
+    Performance Report
+      √ should generate performance report (11 ms)
+    Risk Management
+      √ should validate risk/reward ratio (830 ms)
+    Configuration
+      √ should update configuration (1 ms)
+      √ should maintain default values for unspecified config (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        5.562 s
+Ran all test suites matching /app\\lib\\__tests__\\WinningTradingSystem.test.ts/i.

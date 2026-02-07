@@ -1,0 +1,72 @@
+{
+  "name": "chart-performance-optimizer",
+  "description": "Guidelines and patterns for optimizing chart performance in React applications",
+  "version": "1.0.0",
+  "patterns": {
+    "memoization": [
+      "Use React.memo() for chart components to prevent unnecessary re-renders",
+      "Memoize expensive calculations with useMemo()",
+      "Memoize callback functions with useCallback()"
+    ],
+    "virtualization": [
+      "Implement virtualization for large datasets (only render visible items)",
+      "Calculate visible range based on scroll position",
+      "Use fixed row heights for efficient rendering"
+    ],
+    "data_processing": [
+      "Process data in chunks to avoid blocking the main thread",
+      "Use Web Workers for heavy computations",
+      "Implement progressive loading for large datasets"
+    ],
+    "rendering_optimization": [
+      "Use CSS transforms instead of layout properties for animations",
+      "Avoid inline functions in render methods",
+      "Use key props correctly to help React's diffing algorithm"
+    ]
+  },
+  "best_practices": {
+    "component_structure": [
+      "Separate data fetching from rendering logic",
+      "Use custom hooks for chart-specific logic",
+      "Keep components small and focused"
+    ],
+    "state_management": [
+      "Use local state for UI-specific concerns",
+      "Use context for shared data but consider performance impact",
+      "Implement selective subscription to prevent unnecessary updates"
+    ],
+    "testing": [
+      "Test component re-render behavior",
+      "Test virtualization boundaries",
+      "Benchmark rendering performance"
+    ]
+  },
+  "code_examples": {
+    "memoized_chart": {
+      "description": "Example of a memoized chart component",
+      "code": "export const OptimizedStockChart = memo(function OptimizedStockChart({\n  data,\n  width,\n  height,\n  indicators = []\n}: OptimizedStockChartProps) {\n  const chartData = useMemo(() => {\n    return processDataForRendering(data, visibleRange);\n  }, [data, visibleRange.start, visibleRange.end]);\n\n  const handleZoom = useCallback((newRange) => {\n    setVisibleRange(newRange);\n  }, []);\n\n  return <ChartCanvas data={chartData} onZoom={handleZoom} />;\n});"
+    },
+    "virtualization_hook": {
+      "description": "Example of a custom virtualization hook",
+      "code": "function useChartVirtualization(\n  data: OHLCV[],\n  containerHeight: number,\n  itemHeight: number\n) {\n  const [scrollTop, setScrollTop] = useState(0);\n  \n  const visibleStart = Math.max(0, Math.floor(scrollTop / itemHeight));\n  const visibleEnd = Math.min(\n    data.length,\n    Math.ceil((scrollTop + containerHeight) / itemHeight)\n  );\n  \n  return { visibleStart, visibleEnd };\n}"
+    }
+  },
+  "metrics": {
+    "performance_indicators": [
+      "First Contentful Paint (FCP)",
+      "Largest Contentful Paint (LCP)",
+      "Time to Interactive (TTI)",
+      "Frame rate during interactions"
+    ],
+    "optimization_targets": {
+      "re_render_threshold": "50ms",
+      "frame_rate_target": "60fps",
+      "memory_usage": "Monitor for leaks"
+    }
+  },
+  "related_skills": [
+    "api-batch-processor",
+    "state-management-optimizer",
+    "react-performance"
+  ]
+}

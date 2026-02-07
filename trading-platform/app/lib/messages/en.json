@@ -1,0 +1,39 @@
+{
+  "connection": {
+    "failed": "Connection failed",
+    "timeout": "Connection timeout",
+    "lost": "Connection lost",
+    "retry": "Retrying connection..."
+  },
+  "authentication": {
+    "required": "Authentication required",
+    "failed": "Authentication failed",
+    "expired": "Session expired",
+    "invalidToken": "Invalid token"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidFormat": "Invalid format",
+    "minLength": "Minimum {min} characters required",
+    "maxLength": "Maximum {max} characters exceeded",
+    "numeric": "Please enter a number"
+  },
+  "trading": {
+    "insufficientFunds": "Insufficient funds",
+    "invalidOrder": "Invalid order",
+    "marketClosed": "Market is closed",
+    "priceChanged": "Price has changed",
+    "orderNotFound": "Order not found"
+  },
+  "api": {
+    "rateLimited": "Rate limit exceeded",
+    "serverError": "Server error occurred",
+    "noData": "No data available",
+    "syncFailed": "Sync failed"
+  },
+  "generic": {
+    "unknownError": "An unknown error occurred",
+    "retry": "Please try again",
+    "contactSupport": "Please contact support"
+  }
+}

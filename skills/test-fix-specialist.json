@@ -1,0 +1,50 @@
+{
+  "name": "test-fix-specialist",
+  "description": "テストファイルの型エラー、モック問題、非同期処理の問題を専門的に修正するスキル。Jest + TypeScript環境に最適化。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "test-type-fix",
+    "mock-cleanup",
+    "async-test-pattern",
+    "test-data-factory"
+  ],
+  "capabilities": [
+    "テストデータの型整合性チェック",
+    "モック関数の適切な型付け",
+    "非同期テストのawait処理",
+    "describe/itブロックの構造修正",
+    "テスト用ヘルパー関数の生成"
+  ],
+  "file_patterns": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**/*.ts"
+  ]
+}
+  "name": "test-fix-specialist",
+  "description": "テストファイルの型エラー、モック問題、非同期処理の問題を専門的に修正するスキル。Jest + TypeScript環境に最適化。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "test-type-fix",
+    "mock-cleanup",
+    "async-test-pattern",
+    "test-data-factory"
+  ],
+  "capabilities": [
+    "テストデータの型整合性チェック",
+    "モック関数の適切な型付け",
+    "非同期テストのawait処理",
+    "describe/itブロックの構造修正",
+    "テスト用ヘルパー関数の生成"
+  ],
+  "file_patterns": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**/*.ts"
+  ]
+}
+

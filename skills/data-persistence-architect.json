@@ -1,0 +1,54 @@
+{
+  "name": "data-persistence-architect",
+  "description": "IndexedDB、localStorage、SessionStorageを使用したデータ永続化アーキテクチャを設計するスキル。5年分データ保存、マイグレーション、バックアップ戦略を提供する。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "storage-strategy",
+    "data-migration",
+    "backup-recovery",
+    "quota-management",
+    "encryption-at-rest"
+  ],
+  "capabilities": [
+    "IndexedDBスキーマ設計",
+    "データマイグレーションスクリプト",
+    "自動バックアップと復元",
+    "ストレージクォータ管理",
+    "保存データの暗号化"
+  ],
+  "storage_types": [
+    "indexeddb-primary",
+    "localstorage-cache",
+    "sessionstorage-temp",
+    "memory-cache"
+  ]
+}
+  "name": "data-persistence-architect",
+  "description": "IndexedDB、localStorage、SessionStorageを使用したデータ永続化アーキテクチャを設計するスキル。5年分データ保存、マイグレーション、バックアップ戦略を提供する。",
+  "version": "1.0.0",
+  "priority": "high",
+  "auto_activate": false,
+  "rules": [
+    "storage-strategy",
+    "data-migration",
+    "backup-recovery",
+    "quota-management",
+    "encryption-at-rest"
+  ],
+  "capabilities": [
+    "IndexedDBスキーマ設計",
+    "データマイグレーションスクリプト",
+    "自動バックアップと復元",
+    "ストレージクォータ管理",
+    "保存データの暗号化"
+  ],
+  "storage_types": [
+    "indexeddb-primary",
+    "localstorage-cache",
+    "sessionstorage-temp",
+    "memory-cache"
+  ]
+}
+

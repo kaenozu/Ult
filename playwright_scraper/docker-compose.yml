@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # Production scraper service
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: playwright-scraper
+    environment:
+      - SCRAPER_URL=${SCRAPER_URL:-https://example.com}
+      - SCRAPER_HEADLESS=true
+      - SCRAPER_LOG_LEVEL=INFO
+      - SCRAPER_OUTPUT_DIR=/app/output
+      - SCRAPER_LOG_DIR=/app/logs
+    volumes:
+      - ./output:/app/output
+      - ./logs:/app/logs
+    command: ["--url", "${SCRAPER_URL:-https://example.com}"]
+    networks:
+      - scraper-network
+
+  # Development service with testing
+  scraper-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: playwright-scraper-dev
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+      - /app/.pytest_cache
+      - /app/__pycache__
+      - ./output:/app/output
+      - ./logs:/app/logs
+    command: ["python", "-m", "pytest", "tests/", "-v", "--tb=short"]
+    networks:
+      - scraper-network
+    profiles:
+      - dev
+
+  # Interactive development shell
+  scraper-shell:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: playwright-scraper-shell
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/app
+      - ./output:/app/output
+      - ./logs:/app/logs
+    stdin_open: true
+    tty: true
+    command: ["/bin/bash"]
+    networks:
+      - scraper-network
+    profiles:
+      - shell
+
+  # Service with custom config file
+  scraper-config:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: playwright-scraper-config
+    environment:
+      - SCRAPER_LOG_LEVEL=DEBUG
+    volumes:
+      - ./config:/app/config:ro
+      - ./output:/app/output
+      - ./logs:/app/logs
+    command: ["--config", "/app/config/scraper.json"]
+    networks:
+      - scraper-network
+    profiles:
+      - config
+
+networks:
+  scraper-network:
+    driver: bridge
+
+volumes:
+  output:
+  logs:

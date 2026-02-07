@@ -1,0 +1,28 @@
+{
+  "name": "backtest-calculator",
+  "description": "バックテスト計算エンジンの実装を専門とするスキル。計算量最適化、メモリ管理、並列処理を含む高性能なバックテストシステムを構築する。",
+  "version": "1.0.0",
+  "priority": "medium",
+  "auto_activate": false,
+  "rules": [
+    "calculation-optimization",
+    "memory-management",
+    "parallel-processing",
+    "caching-strategy",
+    "progressive-calculation"
+  ],
+  "capabilities": [
+    "O(N)計算量のバックテストアルゴリズム",
+    "Web Workerによる並列計算",
+    "インクリメンタル計算による高速化",
+    "計算結果のキャッシュ戦略",
+    "大規模データセットの効率的な処理"
+  ],
+  "algorithms": [
+    "vectorized-operations",
+    "sliding-window",
+    "memoization",
+    "lazy-evaluation"
+  ]
+}
+

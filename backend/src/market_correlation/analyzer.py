@@ -1,0 +1,249 @@
+"""
+Market Correlation Analyzer
+
+Analyzes correlation between individual stocks and market indices.
+"""
+
+import math
+import statistics
+from typing import List, Dict, Any
+from .models import MarketTrend
+
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
+# Constants for trend detection
+MIN_DATA_POINTS = 5
+TREND_DETECTION_THRESHOLD = 0.0005  # 0.05% change per step (approx 1% over 20 days)
+
+# Constants for correlation-based signal generation
+LOW_CORRELATION_THRESHOLD = 0.4
+HIGH_CORRELATION_THRESHOLD = 0.6
+
+
+class MarketCorrelation:
+    """Analyzes market correlation and generates composite signals"""
+
+    def calculate_correlation(self, stock_prices: List[float], index_prices: List[float]) -> float:
+        """Calculate Pearson correlation coefficient using NumPy if available
+
+        Args:
+            stock_prices: List of stock prices
+            index_prices: List of index prices
+
+        Returns:
+            Correlation coefficient (-1 to 1)
+        """
+        if len(stock_prices) != len(index_prices):
+            raise ValueError("Price series must have the same length")
+        if len(stock_prices) < 2:
+            raise ValueError("Need at least 2 data points")
+
+        # Use NumPy for vectorized operations if available
+        if HAS_NUMPY:
+            stock_array = np.array(stock_prices)
+            index_array = np.array(index_prices)
+            
+            # Single pass calculation using NumPy
+            correlation_matrix = np.corrcoef(stock_array, index_array)
+            return float(correlation_matrix[0, 1])
+        
+        # Fallback to pure Python implementation
+        # Calculate means
+        stock_mean = statistics.mean(stock_prices)
+        index_mean = statistics.mean(index_prices)
+
+        # Calculate correlation
+        numerator = sum((stock_price - stock_mean) * (index_price - index_mean) 
+                       for stock_price, index_price in zip(stock_prices, index_prices))
+        stock_std = math.sqrt(sum((stock_price - stock_mean) ** 2 for stock_price in stock_prices))
+        index_std = math.sqrt(sum((index_price - index_mean) ** 2 for index_price in index_prices))
+
+        if stock_std == 0 or index_std == 0:
+            return 0.0
+
+        return numerator / (stock_std * index_std)
+
+    def calculate_beta(self, stock_prices: List[float], index_prices: List[float]) -> float:
+        """Calculate beta value (stock sensitivity to market)
+
+        Args:
+            stock_prices: List of stock prices
+            index_prices: List of index prices
+
+        Returns:
+            Beta value (sensitivity to market movements)
+        """
+        if len(stock_prices) != len(index_prices):
+            raise ValueError("Price series must have the same length")
+        if len(stock_prices) < 2:
+            raise ValueError("Need at least 2 data points")
+
+        # Calculate returns
+        stock_returns = [(stock_prices[index] - stock_prices[index-1]) / stock_prices[index-1]
+                         for index in range(1, len(stock_prices))]
+        index_returns = [(index_prices[index] - index_prices[index-1]) / index_prices[index-1]
+                         for index in range(1, len(index_prices))]
+
+        if len(stock_returns) != len(index_returns):
+            raise ValueError("Returns calculation error")
+
+        returns_count = len(stock_returns)
+        if returns_count < 2:
+            return 1.0
+
+        # Calculate means
+        stock_mean = statistics.mean(stock_returns)
+        index_mean = statistics.mean(index_returns)
+
+        # Calculate covariance (population)
+        covariance = sum((stock_return - stock_mean) * (index_return - index_mean) 
+                        for stock_return, index_return in zip(stock_returns, index_returns)) / returns_count
+
+        # Calculate variance (population)
+        variance = sum((index_return - index_mean) ** 2 for index_return in index_returns) / returns_count
+
+        if variance == 0:
+            return 1.0  # No market movement, beta is neutral
+
+        return covariance / variance
+
+    def detect_trend(self, prices: List[float]) -> MarketTrend:
+        """Detect market trend from price series using linear regression slope
+
+        Args:
+            prices: List of prices (oldest to newest)
+
+        Returns:
+            MarketTrend enum value
+        """
+        if len(prices) < MIN_DATA_POINTS:
+            return MarketTrend.NEUTRAL
+
+        price_count = len(prices)
+        time_indices = list(range(price_count))
+        price_values = prices
+
+        # Calculate slope using linear regression
+        # slope = (N * Σ(xy) - Σx * Σy) / (N * Σ(x^2) - (Σx)^2)
+
+        sum_time_indices = sum(time_indices)
+        sum_prices = sum(price_values)
+        sum_products = sum(time_idx * price for time_idx, price in zip(time_indices, price_values))
+        sum_squared_indices = sum(time_idx ** 2 for time_idx in time_indices)
+
+        denominator = price_count * sum_squared_indices - sum_time_indices ** 2
+        if denominator == 0:
+            return MarketTrend.NEUTRAL
+
+        slope = (price_count * sum_products - sum_time_indices * sum_prices) / denominator
+
+        # Normalize slope by dividing by average price to get percentage change per step
+        average_price = sum_prices / price_count
+        if average_price == 0:
+            return MarketTrend.NEUTRAL
+
+        normalized_slope = slope / average_price
+
+        threshold = TREND_DETECTION_THRESHOLD
+
+        if normalized_slope > threshold:
+            return MarketTrend.BULLISH
+        elif normalized_slope < -threshold:
+            return MarketTrend.BEARISH
+        else:
+            return MarketTrend.NEUTRAL
+
+    def generate_composite_signal(
+        self,
+        market_trend: MarketTrend,
+        individual_signal: str,
+        correlation: float
+    ) -> Dict[str, Any]:
+        """Generate composite trading signal
+
+        Args:
+            market_trend: Current market trend
+            individual_signal: Individual stock signal ("buy", "sell", "hold")
+            correlation: Correlation coefficient (-1 to 1)
+
+        Returns:
+            Dictionary with recommendation and reasoning
+        """
+        # Normalize individual signal
+        individual_signal = individual_signal.lower()
+
+        # Determine base recommendation
+        base_rec = individual_signal
+        confidence = "medium"
+
+        # Adjust based on market trend
+        if individual_signal == "buy":
+            if market_trend == MarketTrend.BULLISH:
+                if correlation < LOW_CORRELATION_THRESHOLD:
+                    # Bullish market + buy signal + low correlation = strong buy
+                    base_rec = "buy"
+                    confidence = "high"
+                    reasoning = "Bullish market with individual strength (low correlation = stock-specific catalyst)"
+                else:
+                    # Bullish market + buy signal + high correlation = buy
+                    base_rec = "buy"
+                    confidence = "high"
+                    reasoning = "Bullish market supporting individual signal"
+            elif market_trend == MarketTrend.BEARISH:
+                if correlation > HIGH_CORRELATION_THRESHOLD:
+                    # Bearish market + buy signal + high correlation = caution
+                    base_rec = "wait"
+                    confidence = "low"
+                    reasoning = "Bearish market overriding individual signal (high correlation)"
+                else:
+                    # Bearish market + buy signal + low correlation = cautious buy
+                    base_rec = "cautious_buy"
+                    confidence = "low"
+                    reasoning = "Individual strength despite bearish market (low correlation)"
+            else:
+                # Neutral market
+                base_rec = "buy"
+                confidence = "medium"
+                reasoning = "Individual signal in neutral market"
+
+        elif individual_signal == "sell":
+            if market_trend == MarketTrend.BEARISH:
+                if correlation < LOW_CORRELATION_THRESHOLD:
+                    base_rec = "sell"
+                    confidence = "high"
+                    reasoning = "Bearish market with individual weakness (low correlation)"
+                else:
+                    base_rec = "sell"
+                    confidence = "high"
+                    reasoning = "Bearish market supporting individual signal"
+            elif market_trend == MarketTrend.BULLISH:
+                if correlation > HIGH_CORRELATION_THRESHOLD:
+                    base_rec = "wait"
+                    confidence = "low"
+                    reasoning = "Bullish market overriding individual signal (high correlation)"
+                else:
+                    base_rec = "cautious_sell"
+                    confidence = "low"
+                    reasoning = "Individual weakness despite bullish market (low correlation)"
+            else:
+                base_rec = "sell"
+                confidence = "medium"
+                reasoning = "Individual signal in neutral market"
+
+        else:  # hold
+            base_rec = "hold"
+            confidence = "medium"
+            reasoning = "No clear signal"
+
+        return {
+            "recommendation": base_rec,
+            "confidence": confidence,
+            "reasoning": reasoning,
+            "market_trend": str(market_trend),
+            "individual_signal": individual_signal,
+            "correlation": correlation
+        }
