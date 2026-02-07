@@ -145,12 +145,12 @@ export function measureAsyncPerformance(name: string, options: MeasureOptions = 
   ): PropertyDescriptor {
     const originalMethod = descriptor.value;
 
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = async function (...args: any[]) {
       const start = performance.now();
       const fullName = `${name}`;
 
       try {
-        const result = originalMethod.apply(this, args);
+        const result = await originalMethod.apply(this, args);
         const duration = performance.now() - start;
 
         // Determine severity based on thresholds

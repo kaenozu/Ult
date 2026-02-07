@@ -281,30 +281,30 @@ function generateAgentExecutionScript(task: TaskTemplate, skill: SkillDefinition
     "import * as fs from 'fs';",
     "import * as path from 'path';",
     '',
-    `logger.info('[Agent] Starting: ${task.title}');`,
-    `logger.info('Description: ${task.description}');`,
-    'logger.info(\'Acceptance Criteria:\');',
+    `console.log('[Agent] Starting: ${task.title}');`,
+    `console.log('Description: ${task.description}');`,
+    'console.log(\'Acceptance Criteria:\');',
     `const acceptanceCriteria = ${JSON.stringify(task.acceptanceCriteria)};`,
-    "acceptanceCriteria.forEach((c) => logger.info('  - ' + c));",
-    "logger.info('\\n');",
+    "acceptanceCriteria.forEach((c) => console.log('  - ' + c));",
+    "console.log('\\n');",
     '',
     'try {',
     `  const commands = ${JSON.stringify(skill.commands)};`,
-    "  logger.info('Executing: ' + commands.join(', ') + '\\n');",
+    "  console.log('Executing: ' + commands.join(', ') + '\\n');",
     '',
     '  const commandsOutput = commands.map((cmd, i) => {',
     "    return '[Step ' + (i + 1) + '] Running: ' + cmd + '\\n' +" +
       "      'try {\\n' +" +
       "      \"  execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });\\n\" +" +
-      "      \"  logger.info('[SUCCESS] ' + cmd);\\n\" +" +
+      "      \"  console.log(\\\'[SUCCESS] \\\' + cmd);\\n\" +" +
       "      '} catch (err) {\\n' +" +
-      "      \"  logger.error('[FAILED] ' + cmd);\\n\" +" +
+      "      \"  console.error(\\\'[FAILED] \\\' + cmd);\\n\" +" +
       "      '  throw err;\\n' +" +
       "      '}';",
     '  }).join("\\n\\n");',
-    '  logger.info(commandsOutput);',
+    '  console.log(commandsOutput);',
     '',
-    "  logger.info('\\n[Agent] All commands completed successfully!');",
+    "  console.log('\\n[Agent] All commands completed successfully!');",
     '',
     "  const report = '# Agent Execution Report\\n\\n' +" +
       `    '- Task: ${task.title}\\n' +` +
@@ -314,11 +314,11 @@ function generateAgentExecutionScript(task: TaskTemplate, skill: SkillDefinition
       "    '- Acceptance Criteria: ALL MET\\n';",
     "  fs.writeFileSync('AGENT_EXECUTION_REPORT.md', report);",
     '',
-    "  logger.info('[Report] Generated: AGENT_EXECUTION_REPORT.md');",
+    "  console.log('[Report] Generated: AGENT_EXECUTION_REPORT.md');",
     '',
     '} catch (error) {',
     '  const errorMessage = error instanceof Error ? error.message : String(error);',
-    "  logger.error('\\n[Agent] Failed:', errorMessage);",
+    "  console.error('\\n[Agent] Failed:', errorMessage);",
     '',
     "  const failReport = '# Agent Execution Report (FAILED)\\n\\n' +" +
       `    '- Task: ${task.title}\\n' +` +
