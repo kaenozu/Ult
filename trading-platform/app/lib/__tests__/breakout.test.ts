@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from '@jest/globals';
 import { detectBreakouts } from '../breakout';
-import { MockMarketDataGenerator } from './test-utils';
+import { MockMarketDataGenerator } from './mocks/test-utils';
 import type { VolumeProfileLevel } from '../breakout';
 
 describe('detectBreakouts', () => {

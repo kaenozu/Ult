@@ -51,7 +51,7 @@ export const useChartData = (
 
     // Only generate extension if we have a proper signal
     if (!signal) {
-      return { extendedLabels: [], forecastPrices: [] };
+      return { extendedLabels: actualData.labels, forecastPrices: [] };
     }
 
     // Use the provided signal
