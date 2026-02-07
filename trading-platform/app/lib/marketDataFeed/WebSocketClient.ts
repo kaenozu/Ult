@@ -34,9 +34,8 @@ class WebSocketClient {
   connect() {
     this.isManualClose = false;
     try {
-      // 接続URLにトークンをクエリパラメータとして付与
-      const connectUrl = `${this.url}?token=${this.token}`;
-      this.socket = new WebSocket(connectUrl);
+      // セキュリティ向上のため、クエリパラメータでのトークン送信を廃止
+      this.socket = new WebSocket(this.url);
 
       this.socket.onopen = this.handleOpen.bind(this);
       this.socket.onmessage = this.handleMessage.bind(this);
@@ -91,13 +90,15 @@ class WebSocketClient {
   }
 
   private handleOpen() {
-    console.log('[WebSocket] Connected to server');
+    console.log('[WebSocket] Connected to server, sending auth...');
     this.reconnectAttempts = 0;
-    useTradingStore.getState().toggleConnection(); // 接続状態をストアに反映
-
-    // 既存の購読を再送
-    if (this.subscriptions.size > 0) {
-      this.subscribe(Array.from(this.subscriptions));
+    
+    // 接続直後に認証メッセージを送信
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({
+        type: 'auth',
+        data: { token: this.token }
+      }));
     }
   }
 
@@ -106,6 +107,14 @@ class WebSocketClient {
       const message: WebSocketMessage = JSON.parse(event.data);
 
       switch (message.type) {
+        case 'authenticated':
+          console.log('[WebSocket] Authentication successful');
+          useTradingStore.getState().setConnectionStatus(true);
+          // 認証成功後に既存の購読を再送
+          if (this.subscriptions.size > 0) {
+            this.subscribe(Array.from(this.subscriptions));
+          }
+          break;
         case 'market_data':
           this.handleMarketData(message.data);
           break;
@@ -114,6 +123,9 @@ class WebSocketClient {
           break;
         case 'error':
           console.error('[WebSocket] Server Error:', message.data.message);
+          if (message.data.code === 'AUTH_FAILED') {
+            this.disconnect(); // 認証失敗時は再接続しない
+          }
           break;
       }
     } catch (error) {
@@ -162,6 +174,7 @@ class WebSocketClient {
 // シングルトンインスタンスのエクスポート
 // デフォルトの接続先とトークン（開発用）
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001/ws';
-const WS_TOKEN = process.env.NEXT_PUBLIC_WS_TOKEN || '0fdc450f15eaaf43df04ab75b86323fd';
+// 注意: 本番環境では必ず NEXT_PUBLIC_WS_TOKEN 環境変数を設定してください
+const WS_TOKEN = process.env.NEXT_PUBLIC_WS_TOKEN || 'dev-token-placeholder';
 
 export const webSocketClient = new WebSocketClient(WS_URL, WS_TOKEN);

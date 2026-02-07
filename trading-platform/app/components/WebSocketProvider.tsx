@@ -8,7 +8,7 @@
  * また、ポートフォリオ内の銘柄を自動的に購読します。
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { webSocketClient } from '@/app/lib/marketDataFeed/WebSocketClient';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { useUIStore } from '@/app/store/uiStore';
@@ -17,19 +17,20 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const positions = useTradingStore(state => state.portfolio.positions);
   const { selectedStock } = useUIStore();
 
+  // シンボルリストをメモ化して変更を検知
+  const currentSymbols = useMemo(() => {
+    const symbols = new Set<string>();
+    positions.forEach(p => symbols.add(p.symbol.toUpperCase()));
+    if (selectedStock) symbols.add(selectedStock.symbol.toUpperCase());
+    return symbols;
+  }, [positions, selectedStock]);
+
+  const prevSymbolsRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     // 1. サーバーに接続
     console.log('[WebSocketProvider] Initializing connection...');
     webSocketClient.connect();
-
-    // 2. 初期状態で持っているポジションのシンボルを購読
-    const initialSymbols = new Set<string>();
-    positions.forEach(p => initialSymbols.add(p.symbol));
-    if (selectedStock) initialSymbols.add(selectedStock.symbol);
-
-    if (initialSymbols.size > 0) {
-      webSocketClient.subscribe(Array.from(initialSymbols));
-    }
 
     return () => {
       // クリーンアップ：切断
@@ -40,14 +41,23 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // 3. ポジションや選択銘柄が変更された場合に購読を更新
   useEffect(() => {
-    const currentSymbols = new Set<string>();
-    positions.forEach(p => currentSymbols.add(p.symbol));
-    if (selectedStock) currentSymbols.add(selectedStock.symbol);
-
-    if (currentSymbols.size > 0) {
-      webSocketClient.subscribe(Array.from(currentSymbols));
+    const prevSymbols = prevSymbolsRef.current;
+    
+    // 新しく追加された銘柄を特定して購読
+    const toSubscribe = Array.from(currentSymbols).filter(s => !prevSymbols.has(s));
+    if (toSubscribe.length > 0) {
+      webSocketClient.subscribe(toSubscribe);
     }
-  }, [positions.length, selectedStock?.symbol]); 
+    
+    // 削除された銘柄を特定して購読解除
+    const toUnsubscribe = Array.from(prevSymbols).filter(s => !currentSymbols.has(s));
+    if (toUnsubscribe.length > 0) {
+      webSocketClient.unsubscribe(toUnsubscribe);
+    }
+    
+    // 現在の状態を保存
+    prevSymbolsRef.current = new Set(currentSymbols);
+  }, [currentSymbols]); 
 
   return <>{children}</>;
 };

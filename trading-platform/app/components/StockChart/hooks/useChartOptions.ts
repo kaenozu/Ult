@@ -215,7 +215,8 @@ padding: {
     yAxisRange,
     setHoveredIndex,
     signal,
-    data
+    data,
+    supplyDemandLevels
   ]);
 
   return options;

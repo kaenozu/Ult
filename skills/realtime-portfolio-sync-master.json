@@ -1,0 +1,18 @@
+{
+  "name": "realtime-portfolio-sync-master",
+  "description": "リアルタイムな市場価格とポートフォリオ評価額、およびリスク管理指標を同期させるスキル",
+  "version": "1.0.0",
+  "capabilities": [
+    "sync_portfolio_valuation",
+    "calculate_dynamic_pnl",
+    "monitor_margin_safety"
+  ],
+  "rules": [
+    "市場価格の更新を受け取った際は、即座に含み損益 (totalProfit) と日次損益 (dailyPnL) を再計算すること",
+    "再計算ロジックは calculatePortfolioStats ヘルパーに集約し、計算の不一致を避けること",
+    "ポートフォリオの現金 (cash) と評価額の合計が、常に正確に Zustand ストアに反映されていることを保証すること"
+  ],
+  "automation": {
+    "store_test": "npm test trading-platform/app/store/__tests__/tradingStore.test.ts"
+  }
+}

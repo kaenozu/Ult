@@ -115,8 +115,8 @@ export function SupplyDemandView({ ohlcv, stock }: SupplyDemandViewProps) {
       <div className="flex-1">
         <h4 className="text-xs font-bold text-[#92adc9] mb-2 uppercase tracking-wider">検出された重要レベル</h4>
         <div className="space-y-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-          {levels.slice(0, 10).map((level, idx) => (
-            <div key={idx} className="flex items-center justify-between p-2 bg-[#192633]/30 rounded hover:bg-[#192633]/50 transition-colors border border-transparent hover:border-[#233648]">
+          {levels.slice(0, 10).map((level) => (
+            <div key={`${level.type}-${level.price}`} className="flex items-center justify-between p-2 bg-[#192633]/30 rounded hover:bg-[#192633]/50 transition-colors border border-transparent hover:border-[#233648]">
               <div className="flex items-center gap-2">
                 <div className={`w-1 h-6 rounded-full ${level.type === 'SUPPORT' ? 'bg-green-500' : 'bg-red-500'}`} />
                 <div>

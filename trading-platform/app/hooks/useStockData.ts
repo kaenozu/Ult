@@ -220,9 +220,16 @@ export function useStockData() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const handleRealtimeUpdate = (event: any) => {
-      const data = event.detail;
-      if (selectedStock && data.symbol === selectedStock.symbol) {
+    const handleRealtimeUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const data = customEvent.detail;
+
+      // Basic data validation
+      if (!data || typeof data.symbol !== 'string' || typeof data.price !== 'number') {
+        return;
+      }
+
+      if (selectedStock && data.symbol.toUpperCase() === selectedStock.symbol.toUpperCase()) {
         setChartData(prevData => {
           if (prevData.length === 0) return prevData;
           
@@ -237,7 +244,7 @@ export function useStockData() {
             close: data.price,
             high: Math.max(lastPoint.high, data.price),
             low: Math.min(lastPoint.low, data.price),
-            volume: data.volume || lastPoint.volume,
+            volume: typeof data.volume === 'number' ? data.volume : lastPoint.volume,
           };
           
           return newData;

@@ -62,6 +62,7 @@ interface TradingStore {
   // Connection Status (Mock for now)
   isConnected: boolean;
   toggleConnection: () => void;
+  setConnectionStatus: (isConnected: boolean) => void;
 
   // Market Data (Mock for compatibility)
   batchUpdateStockData: (data: StockDataUpdate[]) => void;
@@ -474,6 +475,7 @@ export const useTradingStore = create<TradingStore>()(
 
       isConnected: true,
       toggleConnection: () => set((state) => ({ isConnected: !state.isConnected })),
+      setConnectionStatus: (isConnected) => set({ isConnected }),
 
       batchUpdateStockData: (updates: StockDataUpdate[]) => set((state) => {
         const positions = [...state.portfolio.positions];

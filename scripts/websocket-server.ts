@@ -239,22 +239,10 @@ server.on('upgrade', (request: IncomingMessage, socket, head) => {
   // Validate path
   const protocol = request.headers['x-forwarded-proto'] || 'http';
   const host = request.headers.host || `localhost:${PORT}`;
-  const { pathname, searchParams } = new URL(request.url || '/', `${protocol}://${host}`);
+  const { pathname } = new URL(request.url || '/', `${protocol}://${host}`);
 
   if (pathname !== '/ws') {
     socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
-    socket.destroy();
-    return;
-  }
-
-  // Validate authentication token from query parameter or header
-  const tokenFromQuery = searchParams.get('token');
-  const tokenFromHeader = request.headers['authorization']?.replace('Bearer ', '');
-  const token = tokenFromQuery || tokenFromHeader;
-  
-  if (!validateAuthToken(token)) {
-    console.log(`[WebSocket] Rejected: Invalid or missing authentication token from ${clientIP}`);
-    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
     socket.destroy();
     return;
   }
@@ -292,8 +280,8 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
   const clientId = generateClientId();
   const clientIP = getClientIP(request);
 
-  // Register client
-  clients.set(clientId, {
+  // Register client (initially unauthenticated)
+  const clientInfo: ClientInfo = {
     id: clientId,
     ws,
     isAlive: true,
@@ -301,12 +289,25 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
     connectedAt: Date.now(),
     messageCount: 0,
     lastMessageTime: Date.now(),
-    authenticated: true, // Already validated in upgrade handler
+    authenticated: false, 
     subscriptions: new Set<string>(),
-  });
+  };
+  clients.set(clientId, clientInfo);
 
-  console.log(`[WebSocket] Client connected: ${clientId} from IP: ${clientIP}`);
-  console.log(`[WebSocket] Total clients: ${clients.size}`);
+  console.log(`[WebSocket] Client connected: ${clientId} from IP: ${clientIP} (Pending Auth)`);
+
+  // Set auth timeout
+  const authTimeout = setTimeout(() => {
+    if (!clientInfo.authenticated) {
+      console.log(`[WebSocket] Auth timeout for ${clientId}, closing...`);
+      ws.send(JSON.stringify({
+        type: 'error',
+        data: { message: 'Authentication timeout', code: 'AUTH_TIMEOUT' },
+        timestamp: Date.now(),
+      }));
+      ws.close(4001, 'Authentication timeout');
+    }
+  }, 10000); // 10 seconds to authenticate
 
   // Set maximum message size
   ws.on('message', (_data: Buffer) => {
@@ -322,7 +323,7 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
     type: 'connection',
     data: {
       clientId,
-      message: 'Connected to Trader Pro WebSocket Server',
+      message: 'Connected to Trader Pro WebSocket Server. Please authenticate.',
       serverTime: new Date().toISOString(),
     },
     timestamp: Date.now(),
@@ -330,21 +331,6 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
 
   // Handle incoming messages from client
   ws.on('message', (data: Buffer) => {
-    const clientInfo = clients.get(clientId);
-    if (!clientInfo) return;
-
-    // Check message size limit
-    if (data.length > MAX_MESSAGE_SIZE) {
-      console.log(`[WebSocket] Message exceeds size limit from ${clientId}`);
-      ws.send(JSON.stringify({
-        type: 'error',
-        data: { message: 'Message too large' },
-        timestamp: Date.now(),
-      }));
-      ws.close(1009, 'Message too large');
-      return;
-    }
-
     // Check rate limit
     if (!checkRateLimit(clientId)) {
       console.log(`[WebSocket] Rate limit exceeded for ${clientId}`);
@@ -366,6 +352,41 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
       // Validate message structure
       if (!message.type || typeof message.type !== 'string') {
         throw new Error('Invalid message structure: missing or invalid type');
+      }
+
+      // Handle Authentication message
+      if (message.type === 'auth') {
+        const token = (message.data as any)?.token;
+        if (validateAuthToken(token)) {
+          clientInfo.authenticated = true;
+          clearTimeout(authTimeout);
+          console.log(`[WebSocket] Client ${clientId} authenticated successfully`);
+          ws.send(JSON.stringify({
+            type: 'authenticated',
+            data: { message: 'Authentication successful' },
+            timestamp: Date.now(),
+          }));
+        } else {
+          console.log(`[WebSocket] Authentication failed for ${clientId}`);
+          ws.send(JSON.stringify({
+            type: 'error',
+            data: { message: 'Invalid authentication token', code: 'AUTH_FAILED' },
+            timestamp: Date.now(),
+          }));
+          ws.close(4003, 'Authentication failed');
+        }
+        return;
+      }
+
+      // Reject all other messages if not authenticated
+      if (!clientInfo.authenticated) {
+        console.log(`[WebSocket] Unauthorized message from ${clientId}`);
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: { message: 'Not authenticated', code: 'UNAUTHORIZED' },
+          timestamp: Date.now(),
+        }));
+        return;
       }
 
       // Sanitize message data
