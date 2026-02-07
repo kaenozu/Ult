@@ -1,20 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireAuth } from '@/app/lib/auth';
 import { handleApiError } from '@/app/lib/error-handler';
 import { csrfTokenMiddleware, requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
 import { AlertType } from '@/app/lib/alerts/AlertSystem';
-import {
-  validateSymbol,
-  validateOrderSide,
-  validateOrderType,
-  validateTradingAction,
-  validateNumber,
-  validateRequiredString,
-  validateOperator,
-  buildCleanConfig
-} from '@/app/lib/validation';
+
+// --- Zod Schemas ---
+
+const TradingActionSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('start') }),
+  z.object({ action: z.literal('stop') }),
+  z.object({ action: z.literal('reset') }),
+  z.object({
+    action: z.literal('place_order'),
+    symbol: z.string().min(1),
+    side: z.enum(['BUY', 'SELL', 'LONG', 'SHORT']),
+    quantity: z.number().positive(),
+    options: z.record(z.unknown()).optional(),
+  }),
+  z.object({
+    action: z.literal('close_position'),
+    symbol: z.string().min(1),
+  }),
+  z.object({
+    action: z.literal('create_alert'),
+    name: z.string().min(1),
+    symbol: z.string().min(1),
+    type: z.string().min(1),
+    operator: z.string().min(1),
+    value: z.number().finite(),
+  }),
+  z.object({
+    action: z.literal('update_config'),
+    config: z.record(z.unknown()),
+  }),
+]);
 
 /**
  * 比較演算子をアラートオペレーターにマッピング
@@ -27,7 +49,6 @@ function mapToAlertOperator(op: string): 'above' | 'below' | 'crosses_above' | '
     case '<=': return 'below';
     case '==': return 'equals';
     default:
-      // 既にアラートオペレーターの場合はそのまま返す
       if (['above', 'below', 'crosses_above', 'crosses_below', 'equals', 'between'].includes(op)) {
         return op as 'above' | 'below' | 'crosses_above' | 'crosses_below' | 'equals' | 'between';
       }
@@ -281,10 +302,21 @@ export async function POST(req: NextRequest) {
   if (csrfError) return csrfError;
   
   try {
-    const body = await req.json();
+    const rawBody = await req.json();
+    
+    // Validate request body using Zod
+    const result = TradingActionSchema.safeParse(rawBody);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Invalid request data', details: result.error.format() },
+        { status: 400 }
+      );
+    }
+
+    const data = result.data;
     const platform = getGlobalTradingPlatform();
 
-    switch (body.action) {
+    switch (data.action) {
       case 'start':
         await platform.start();
         return NextResponse.json({ success: true });
@@ -298,31 +330,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       
       case 'place_order':
-        const symbol = validateSymbol(body.symbol);
-        const side = validateOrderSide(body.side);
-        const quantity = validateNumber(body.quantity, 'quantity', { positive: true });
-        
-        await platform.placeOrder(symbol, side, quantity, body.options);
+        // Map side to what the platform expects (if needed)
+        const platformSide = (data.side === 'BUY' || data.side === 'LONG') ? 'BUY' : 'SELL';
+        await platform.placeOrder(data.symbol, platformSide as any, data.quantity, data.options);
         return NextResponse.json({ success: true });
       
       case 'close_position':
-        const closeSymbol = validateSymbol(body.symbol);
-        await platform.closePosition(closeSymbol);
+        await platform.closePosition(data.symbol);
         return NextResponse.json({ success: true });
       
       case 'create_alert':
-        const name = validateRequiredString(body.name, 'name');
-        const alertSymbol = validateSymbol(body.symbol);
-        const type = validateRequiredString(body.type, 'type');
-        const operator = mapToAlertOperator(validateOperator(body.operator));
-        const value = validateNumber(body.value, 'value', { finite: true });
-        
-        platform.createAlert(name, alertSymbol, type as AlertType, operator, value);
+        const operator = mapToAlertOperator(data.operator);
+        platform.createAlert(data.name, data.symbol, data.type as AlertType, operator, data.value);
         return NextResponse.json({ success: true });
       
       case 'update_config':
-        const config = buildCleanConfig(body.config);
-        platform.updateConfig(config);
+        platform.updateConfig(data.config);
         return NextResponse.json({ success: true });
       
       default:
