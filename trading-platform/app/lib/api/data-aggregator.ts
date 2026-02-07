@@ -108,9 +108,8 @@ class MarketDataClient {
           }
 
           if (idbValid && idbData.length > 0) {
-            const interpolatedData = this.interpolateOHLCV(idbData);
-            this.setCache(cacheKey, interpolatedData);
-            return { success: true, data: interpolatedData, source: 'idb' };
+            // Early return only for tests or specific cases if needed
+            // But we want to proceed to delta fetching for normal flow
           }
         } catch (err) {
           logger.warn(`[Aggregator] Failed to read from IDB for ${symbol}:`, err);

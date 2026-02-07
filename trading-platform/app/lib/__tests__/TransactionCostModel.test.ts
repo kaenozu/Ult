@@ -111,11 +111,16 @@ describe('TransactionCostModel', () => {
     });
 
     it('should consider order size relative to average volume', () => {
+      // Math.randomをモックして一貫した結果を得る
+      const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+      
       // Large order relative to volume should have higher slippage
       const smallOrder = transactionCostModel.estimateSlippage(10000, 'normal', 1000000);
       const largeOrder = transactionCostModel.estimateSlippage(500000, 'normal', 1000000);
       
       expect(largeOrder.slippageRate).toBeGreaterThan(smallOrder.slippageRate);
+      
+      randomSpy.mockRestore();
     });
   });
 

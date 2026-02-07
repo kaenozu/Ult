@@ -211,6 +211,18 @@ export class RiskManagementService {
       reasons.push(`サイズ制限(最大${effectiveConfig.maxPositionPercent}%): ${finalQuantity}`);
     }
 
+    // 10. Max Positions Count Check
+    if (portfolio.positions.length >= effectiveConfig.maxPositions) {
+      const isExisting = portfolio.positions.some(p => p.symbol === order.symbol && p.side === order.side);
+      if (!isExisting) {
+        return {
+          allowed: false,
+          reasons: [`最大ポジション数超過: ${effectiveConfig.maxPositions}`],
+          violations: [{ type: 'max_positions', severity: 'medium', message: 'ポジション数制限' }],
+        };
+      }
+    }
+
     // Sync back
     order.quantity = finalQuantity;
     order.stopLoss = finalStopLoss;

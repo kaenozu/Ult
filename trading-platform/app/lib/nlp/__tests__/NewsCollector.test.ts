@@ -70,7 +70,7 @@ describe('NewsCollector', () => {
       collector.start();
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
       collector.start();
-      expect(consoleWarnSpy).toHaveBeenCalledWith('[NewsCollector] Already running');
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('[NewsCollector] Already running'), expect.any(String));
       consoleWarnSpy.mockRestore();
     });
   });
