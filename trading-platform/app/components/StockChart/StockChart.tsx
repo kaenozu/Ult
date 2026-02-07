@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, memo, useState, useMemo, useEffect } from 'react';
+import { useRef, memo, useState, useMemo } from 'react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
@@ -13,13 +13,13 @@ import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
 import { useForecastLayers } from './hooks/useForecastLayers';
 import { useChartOptions } from './hooks/useChartOptions';
+import { useSupplyDemandAnalysis } from './hooks/useSupplyDemandAnalysis';
 import { ChartTooltip } from './ChartTooltip';
 import { AccuracyBadge } from '@/app/components/AccuracyBadge';
 
 export { volumeProfilePlugin };
 
-// Register ChartJS components and custom plugins
-// Removed zoomPlugin to resolve resetZoom runtime errors
+// Register ChartJS components and custom plugin
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
 
 export interface StockChartProps {
@@ -53,6 +53,8 @@ export const StockChart = memo(function StockChart({
   // 1. Data Preparation Hooks
   const { actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
+  const { chartLevels } = useSupplyDemandAnalysis(data);
+
   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
     data: optimizedData, // Use optimized/reduced data for correct index alignment
     extendedData,
@@ -108,7 +110,7 @@ export const StockChart = memo(function StockChart({
     return { min: min - padding, max: max + padding };
   }, [data, sma20, upper, lower, showSMA, showBollinger]);
 
-  // 2. Chart Configuration
+  // 2. Chart Options Hook
   const options = useChartOptions({
     data,
     extendedData,
@@ -116,9 +118,11 @@ export const StockChart = memo(function StockChart({
     hoveredIdx,
     setHoveredIndex,
     signal,
-    priceRange
+    priceRange,
+    supplyDemandLevels: chartLevels
   });
 
+  // 3. Assemble Chart Data with memoization for performance
   const chartData = useMemo(() => ({
     labels: extendedData.labels,
     datasets: [

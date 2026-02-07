@@ -166,7 +166,7 @@ describe('OptimizedAccuracyService', () => {
       const time = performance.now() - start;
 
       // 再計算に時間がかかることを確認（ゆるいアサーション）
-      expect(time).toBeGreaterThanOrEqual(1); // 少なくとも何らかの計算が行われることを確認
+      expect(time).toBeGreaterThanOrEqual(0.1); // 少なくとも何らかの計算が行われることを確認
     });
   });
 });

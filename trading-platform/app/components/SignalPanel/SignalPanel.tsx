@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Stock, Signal, OHLCV } from '@/app/types';
 import { useSignalData } from './hooks/useSignalData';
+import { useBacktestControls } from './hooks/useBacktestControls';
 import { useKellyPositionSizing } from './hooks/useKellyPositionSizing';
 import { SignalFilters } from './components/SignalFilters';
 import { SignalDetails } from './components/SignalDetails';
@@ -29,10 +30,12 @@ interface SignalPanelProps {
  * @returns {JSX.Element} シグナルパネルUI
  */
 export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: SignalPanelProps) {
-  const [activeTab, setActiveTab] = useState<'signal' | 'ai' | 'forecast'>('signal');
+  const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast' | 'supplyDemand'>('signal');
 
   // Custom hooks for separated concerns
-  const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal);
+  // Passed ohlcv to useSignalData for enhanced accuracy calculation
+  const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal, ohlcv);
+  const { backtestResult, isBacktesting } = useBacktestControls(stock, ohlcv, activeTab, loading);
   const kellyRecommendation = useKellyPositionSizing(stock, displaySignal);
 
   if (loading || !displaySignal) {
@@ -63,6 +66,9 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
         activeTab={activeTab}
         displaySignal={displaySignal}
         stock={stock}
+        ohlcv={ohlcv}
+        backtestResult={backtestResult}
+        isBacktesting={isBacktesting}
         preciseHitRate={preciseHitRate}
         calculatingHitRate={calculatingHitRate}
         error={error}
