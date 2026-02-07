@@ -58,7 +58,7 @@ export function csrfTokenMiddleware(request: NextRequest): NextResponse | null {
     const response = NextResponse.next();
     
     response.cookies.set(CSRF_COOKIE_NAME, token, {
-      httpOnly: true,           // Prevent XSS access
+      httpOnly: false,           // Allow JS access for Double-Submit Cookie
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',      // Prevent CSRF via cross-site requests
       maxAge: 60 * 60 * 24,    // 24 hours

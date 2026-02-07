@@ -1,4 +1,4 @@
-﻿import { BacktestView } from '../BacktestView';
+import { BacktestView } from '../BacktestView';
 import { ForecastView } from '../ForecastView';
 import { AIPerformanceView } from '../AIPerformanceView';
 import { SupplyDemandView } from '../SupplyDemandView';
@@ -67,5 +67,3 @@ export function SignalDetails({
       return null;
   }
 }
-
-

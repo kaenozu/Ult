@@ -37,6 +37,7 @@ import {
   BarElement,
   Title,
   Tooltip,
+  TooltipItem,
   Legend,
   LogarithmicScale,
 } from 'chart.js';

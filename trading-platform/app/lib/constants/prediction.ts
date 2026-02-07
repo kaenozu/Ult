@@ -138,7 +138,7 @@ export const ML_SCORING = {
  * Forecast cone configuration
  */
 export const FORECAST_CONE = {
-  STEPS: 7,
+  STEPS: 60, // Steps for forecast cone visualization
   LOOKBACK_DAYS: 60,
   ATR_MULTIPLIER: 2.0,
 } as const;

@@ -33,7 +33,8 @@ export function SignalPanel({ stock, signal, ohlcv = [], loading = false }: Sign
   const [activeTab, setActiveTab] = useState<'signal' | 'backtest' | 'ai' | 'forecast' | 'supplyDemand'>('signal');
 
   // Custom hooks for separated concerns
-  const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal);
+  // Passed ohlcv to useSignalData for enhanced accuracy calculation
+  const { displaySignal, preciseHitRate, calculatingHitRate, error, aiTrades, aiStatusData } = useSignalData(stock, signal, ohlcv);
   const { backtestResult, isBacktesting } = useBacktestControls(stock, ohlcv, activeTab, loading);
   const kellyRecommendation = useKellyPositionSizing(stock, displaySignal);
 

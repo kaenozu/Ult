@@ -12,8 +12,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "lint": "eslint --ext .ts,.tsx --rule \"@typescript-eslint/ban-ts-comment: off\" --ignore-pattern \"**/__tests__/**\" --ignore-pattern \"**/*.test.ts\" --ignore-pattern \"**/*.test.tsx\" --ignore-pattern \"**/*.spec.ts\" --ignore-pattern \"**/*.spec.tsx\" --ignore-pattern \"**/example*.ts\" --ignore-pattern \"**/example*.tsx\" --ignore-pattern \"**/examples/**\" --ignore-pattern \"**/Demo*.ts\" --ignore-pattern \"**/Demo*.tsx\" --ignore-pattern \"**/demo/**\" --ignore-pattern \"**/template/**\" --ignore-pattern \"**/fixtures.ts\" --ignore-pattern \"**/mock-*.ts\" --ignore-pattern \"**/testing/**\" --ignore-pattern \"**/test-*.ts\" --ignore-pattern \"app/strategy-optimization-example.ts\" --ignore-pattern \"app/performance-examples.ts\" --ignore-pattern \"app/performance-quickstart.ts\" --ignore-pattern \"app/WinningTradingSystem.ts\" --ignore-pattern \"app/types/__tests__/**\" --ignore-pattern \"coverage/**\" --ignore-pattern \"eslint.config.*\" --ignore-pattern \"app/lib/**\" --ignore-pattern \"playwright-report/**\"",
-    "lint:fix": "eslint --ext .ts,.tsx --fix --rule \"@typescript-eslint/ban-ts-comment: off\" --ignore-pattern \"**/__tests__/**\" --ignore-pattern \"**/*.test.ts\" --ignore-pattern \"**/*.test.tsx\" --ignore-pattern \"**/*.spec.ts\" --ignore-pattern \"**/*.spec.tsx\" --ignore-pattern \"**/example*.ts\" --ignore-pattern \"**/example*.tsx\" --ignore-pattern \"**/examples/**\" --ignore-pattern \"**/Demo*.ts\" --ignore-pattern \"**/Demo*.tsx\" --ignore-pattern \"**/demo/**\" --ignore-pattern \"**/template/**\" --ignore-pattern \"**/fixtures.ts\" --ignore-pattern \"**/mock-*.ts\" --ignore-pattern \"**/testing/**\" --ignore-pattern \"**/test-*.ts\" --ignore-pattern \"app/strategy-optimization-example.ts\" --ignore-pattern \"app/performance-examples.ts\" --ignore-pattern \"app/performance-quickstart.ts\" --ignore-pattern \"app/WinningTradingSystem.ts\" --ignore-pattern \"app/types/__tests__/**\" --ignore-pattern \"coverage/**\" --ignore-pattern \"eslint.config.*\" --ignore-pattern \"app/lib/**\" --ignore-pattern \"playwright-report/**\"",
+    "lint": "eslint --ext .ts,.tsx --rule \"@typescript-eslint/ban-ts-comment: off\" --ignore-pattern \"**/example*.ts\" --ignore-pattern \"**/example*.tsx\" --ignore-pattern \"**/examples/**\" --ignore-pattern \"**/Demo*.ts\" --ignore-pattern \"**/Demo*.tsx\" --ignore-pattern \"**/demo/**\" --ignore-pattern \"**/template/**\" --ignore-pattern \"**/fixtures.ts\" --ignore-pattern \"**/mock-*.ts\" --ignore-pattern \"**/test-*.ts\" --ignore-pattern \"app/strategy-optimization-example.ts\" --ignore-pattern \"app/performance-examples.ts\" --ignore-pattern \"app/performance-quickstart.ts\" --ignore-pattern \"app/WinningTradingSystem.ts\" --ignore-pattern \"coverage/**\" --ignore-pattern \"eslint.config.*\" --ignore-pattern \"playwright-report/**\"",
+    "lint:fix": "eslint --ext .ts,.tsx --fix --rule \"@typescript-eslint/ban-ts-comment: off\" --ignore-pattern \"**/example*.ts\" --ignore-pattern \"**/example*.tsx\" --ignore-pattern \"**/examples/**\" --ignore-pattern \"**/Demo*.ts\" --ignore-pattern \"**/Demo*.tsx\" --ignore-pattern \"**/demo/**\" --ignore-pattern \"**/template/**\" --ignore-pattern \"**/fixtures.ts\" --ignore-pattern \"**/mock-*.ts\" --ignore-pattern \"**/test-*.ts\" --ignore-pattern \"app/strategy-optimization-example.ts\" --ignore-pattern \"app/performance-examples.ts\" --ignore-pattern \"app/performance-quickstart.ts\" --ignore-pattern \"app/WinningTradingSystem.ts\" --ignore-pattern \"coverage/**\" --ignore-pattern \"eslint.config.*\" --ignore-pattern \"playwright-report/**\"",
     "db:migrate:status": "node ../scripts/db-migrate.js status",
     "db:migrate:create": "node ../scripts/db-migrate.js create",
     "db:migrate:validate": "node ../scripts/db-migrate.js validate",
@@ -27,6 +27,7 @@
     "@tanstack/react-query-devtools": "5.91.3",
     "@tensorflow/tfjs": "4.22.0",
     "chart.js": "^4.5.1",
+    "chartjs-plugin-zoom": "2.2.0",
     "clsx": "^2.1.1",
     "dompurify": "^3.3.1",
     "jsonwebtoken": "^9.0.3",
@@ -83,5 +84,8 @@
     "*.{json,md}": [
       "prettier --write"
     ]
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-wasm32-wasi": "4.1.18"
   }
 }

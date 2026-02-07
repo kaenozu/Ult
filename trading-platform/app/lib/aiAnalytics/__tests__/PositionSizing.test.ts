@@ -162,7 +162,7 @@ describe('PredictiveAnalyticsEngine - Position Sizing', () => {
 
       expect(result.recommendedShares).toBeLessThan(100);
       expect(result.reasoning.some(r => r.includes('⚠️'))).toBe(true);
-      expect(result.reasoning.some(r => r.includes('100株未満'))).toBe(true);
+      expect(result.reasoning.some(r => r.includes('最小単位'))).toBe(true);
     });
 
     it('should warn about high position concentration', () => {

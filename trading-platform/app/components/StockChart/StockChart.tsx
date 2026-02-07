@@ -50,27 +50,65 @@ export const StockChart = memo(function StockChart({
   // 固定高さを使用
   const dynamicHeight = propHeight ?? CHART_DIMENSIONS.DEFAULT_HEIGHT;
 
-// 1. Data Preparation Hooks
-  const { actualData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
+  // 1. Data Preparation Hooks
+  const { actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   const { chartLevels } = useSupplyDemandAnalysis(data);
 
-   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
-     data: data, // 元のOHLCVデータを渡す
-     extendedData: extendedData,
-     signal,
-     market,
-     hoveredIdx,
-     accuracyData: accuracyData ? {
-       predictionError: accuracyData.predictionError || 1.0
-     } : null
-   });
+  const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
+    data: optimizedData, // Use optimized/reduced data for correct index alignment
+    extendedData,
+    signal,
+    market,
+    hoveredIdx,
+    accuracyData: accuracyData ? {
+      predictionError: accuracyData.predictionError || 1.0
+    } : null
+  });
 
   // Get current SMA value for tooltip
   const currentSmaValue = useMemo(() => {
     if (!showSMA || !sma20 || sma20.length === 0 || hoveredIdx === null) return undefined;
     return sma20[hoveredIdx];
   }, [sma20, hoveredIdx, showSMA]);
+
+  // Calculate global min/max for Y-axis scaling
+  const priceRange = useMemo(() => {
+    let min = Infinity;
+    let max = -Infinity;
+
+    // 1. Current Price
+    if (data.length > 0) {
+      const lows = data.map(d => d.low);
+      const highs = data.map(d => d.high);
+      min = Math.min(min, ...lows);
+      max = Math.max(max, ...highs);
+    }
+
+    // 2. SMA
+    if (showSMA && sma20.length > 0) {
+      const validSma = sma20.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+      if (validSma.length > 0) {
+        min = Math.min(min, ...validSma);
+        max = Math.max(max, ...validSma);
+      }
+    }
+
+    // 3. Bollinger Bands
+    if (showBollinger && upper.length > 0 && lower.length > 0) {
+      const validUpper = upper.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+      const validLower = lower.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+      if (validUpper.length > 0) max = Math.max(max, ...validUpper);
+      if (validLower.length > 0) min = Math.min(min, ...validLower);
+    }
+
+    // Fallback if no data
+    if (min === Infinity) return { min: 0, max: 100 };
+
+    // Add 5% padding
+    const padding = (max - min) * 0.05;
+    return { min: min - padding, max: max + padding };
+  }, [data, sma20, upper, lower, showSMA, showBollinger]);
 
   // 2. Chart Options Hook
   const options = useChartOptions({
@@ -80,6 +118,7 @@ export const StockChart = memo(function StockChart({
     hoveredIdx,
     setHoveredIndex,
     signal,
+    priceRange,
     supplyDemandLevels: chartLevels
   });
 
@@ -88,66 +127,69 @@ export const StockChart = memo(function StockChart({
     labels: extendedData.labels,
     datasets: [
       {
-        label: market === 'japan' ? '日経平均 (相対)' : 'NASDAQ (相対)',
-        data: normalizedIndexData,
-        borderColor: CHART_COLORS.INDEX_LINE,
-        backgroundColor: CHART_COLORS.INDEX_FILL,
-        fill: false,
+        label: `${market === 'japan' ? '株価' : 'Stock Price'}`,
+        data: actualData.prices,
+        borderColor: CHART_COLORS.PRICE.LINE,
+        backgroundColor: CHART_COLORS.PRICE.BACKGROUND,
+        borderWidth: 2,
         pointRadius: 0,
-        borderWidth: 1,
-        tension: CHART_CONFIG.TENSION,
-        order: 10
+        pointHoverRadius: 4,
+        fill: true,
+        tension: 0.1,
+        yAxisID: 'y',
       },
-{
-        label: '現在価格',
-        data: actualData.prices,  // 実際の価格データのみを正確に表示
-        borderColor: CANDLESTICK.MAIN_LINE_COLOR,
-        fill: false,
-        tension: CHART_CONFIG.TENSION,
-        pointRadius: 0,
-        pointHoverRadius: CANDLESTICK.HOVER_RADIUS,
-        borderWidth: CANDLESTICK.MAIN_LINE_WIDTH,
-        order: 1
-      },
-      ...forecastDatasets,
-      ...ghostForecastDatasets,
-      ...(showSMA ? [{
-        label: `SMA (${SMA_CONFIG.SHORT_PERIOD})`,
-        data: sma20,
-        borderColor: SMA_CONFIG.COLOR,
-        borderWidth: SMA_CONFIG.LINE_WIDTH,
-        pointRadius: 0,
-        tension: CHART_CONFIG.TENSION,
-        fill: false,
-        order: 2
-      }] : []),
-      ...(showBollinger ? [
+      ...(showSMA && sma20.length > 0 ? [
         {
-          label: 'BB Upper',
-          data: upper,
-          borderColor: BOLLINGER_BANDS.UPPER_COLOR,
-          backgroundColor: BOLLINGER_BANDS.UPPER_BACKGROUND,
-          borderWidth: 1,
+          label: `SMA (${SMA_CONFIG.PERIOD})`,
+          data: sma20,
+          borderColor: CHART_COLORS.INDICATORS.SMA,
+          borderWidth: 1.5,
           pointRadius: 0,
-          tension: CHART_CONFIG.TENSION,
-          fill: '+1',
-          order: 3
+          fill: false,
+          tension: 0.1,
+          yAxisID: 'y',
+        }
+      ] : []),
+      ...(showBollinger && upper.length > 0 && lower.length > 0 ? [
+        {
+          label: 'Bollinger Upper',
+          data: upper,
+          borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
+          borderWidth: 1,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: false,
+          yAxisID: 'y',
         },
         {
-          label: 'BB Lower',
+          label: 'Bollinger Lower',
           data: lower,
-          borderColor: BOLLINGER_BANDS.LOWER_COLOR,
+          borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
+          borderWidth: 1,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: '-1',
+          backgroundColor: CHART_COLORS.INDICATORS.BOLLINGER_FILL,
+          yAxisID: 'y',
+        }
+      ] : []),
+      ...forecastDatasets,
+      ...ghostForecastDatasets,
+      ...(normalizedIndexData ? [
+        {
+          label: market === 'japan' ? '日経平均 (正規化)' : 'S&P 500 (Normalized)',
+          data: normalizedIndexData,
+          borderColor: CHART_COLORS.INDEX.LINE,
           borderWidth: 1,
           pointRadius: 0,
-          tension: CHART_CONFIG.TENSION,
           fill: false,
-          order: 4
+          tension: 0.1,
+          yAxisID: 'yIndex',
         }
       ] : []),
     ],
   }), [
     extendedData.labels,
-    actualData.prices,
     normalizedIndexData,
     forecastDatasets,
     ghostForecastDatasets,
@@ -156,10 +198,12 @@ export const StockChart = memo(function StockChart({
     lower,
     showSMA,
     showBollinger,
-    market
+    market,
+    actualData.prices,
+    forecastExtension.forecastPrices.length
   ]);
 
-// 4. Loading / Error States
+  // 4. Loading / Error States
   if (error) {
     return (
       <div className={`relative w-full flex items-center justify-center ${CHART_THEME.ERROR.BACKGROUND} border ${CHART_THEME.ERROR.BORDER} rounded`} style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT }}>
@@ -184,37 +228,38 @@ export const StockChart = memo(function StockChart({
     );
   }
 
-return (
-    <div className="relative w-full" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px' }}>
-      {/* Accuracy Badge Overlay */}
-      {accuracyData && (
-        <div className="absolute top-2 right-2 z-20 pointer-events-none animate-fade-in">
-          <AccuracyBadge
-            hitRate={accuracyData.hitRate}
-            totalTrades={accuracyData.totalTrades}
-            predictionError={accuracyData.predictionError}
-            loading={accuracyData.loading}
-          />
-        </div>
-      )}
-      
-      {/* Custom Tooltip */}
-      <ChartTooltip
-        hoveredIdx={hoveredIdx}
-        data={data}
-        labels={extendedData.labels}
-        market={market}
-        signal={signal}
-        showSMA={showSMA}
-        smaValue={currentSmaValue}
-      />
-      
-      <Line ref={chartRef} data={chartData} options={options} />
-      {showVolume && (
-        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
-           <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />
-        </div>
-      )}
+  return (
+    <div className="flex flex-col w-full h-full" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px', maxHeight: '600px' }}>
+      {/* Header Toolbar */}
+      <div className="flex items-center justify-end px-4 py-2 border-b border-[#233648] bg-[#1a2632]">
+        <AccuracyBadge
+          hitRate={accuracyData?.hitRate || 0}
+          totalTrades={accuracyData?.totalTrades || 0}
+          predictionError={accuracyData?.predictionError}
+          loading={accuracyData?.loading}
+        />
+      </div>
+
+      {/* Main Chart Area */}
+      <div className="relative flex-1 w-full overflow-hidden">
+        {/* Custom Tooltip */}
+        <ChartTooltip
+          hoveredIdx={hoveredIdx}
+          data={data}
+          labels={extendedData.labels}
+          market={market}
+          signal={signal}
+          showSMA={showSMA}
+          smaValue={currentSmaValue}
+        />
+
+        <Line ref={chartRef} data={chartData} options={options} />
+        {showVolume && (
+          <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
+            <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />
+          </div>
+        )}
+      </div>
     </div>
   );
 });
