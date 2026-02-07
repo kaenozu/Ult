@@ -42,7 +42,7 @@ export function createApiHandler<T = unknown>(
   handler: (request: NextRequest) => Promise<NextResponse<ApiResponse<T>>>,
   options: ApiHandlerOptions = {}
 ) {
-  const { requireAuth: needsAuth = false, rateLimit = true, csrfProtection = false, cache } = options;
+  const { requireAuth: needsAuth = false, rateLimit = true, csrfProtection = true, cache } = options;
 
   // Create cache manager if caching is enabled - cache the JSON data, not Response objects
   const cacheManager = cache?.enabled 
@@ -177,12 +177,15 @@ export function createGetHandler<T>(
  * Unified POST handler factory
  */
 export function createPostHandler<TBody, TResponse>(
-  handler: (request: NextRequest, body: TBody) => Promise<TResponse>,
+  handler: (request: NextRequest, body: TBody) => Promise<TResponse | NextResponse>,
   options: ApiHandlerOptions = {}
 ) {
   return createApiHandler<TResponse>(async (request: NextRequest) => {
     const body = await parseJsonBody<TBody>(request);
     const result = await handler(request, body);
+    if (result instanceof NextResponse) {
+      return result;
+    }
     return successResponse(result);
   }, options);
 }

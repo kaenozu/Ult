@@ -1,4 +1,4 @@
-﻿/**
+/**
  * GET /api/sentiment/route.ts
  *
  * センチメントデータAPI - 全シンボルのセンチメント情報を取得
@@ -8,6 +8,7 @@ import { NextRequest } from 'next/server';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
+import { requireAdmin } from '@/app/lib/auth';
 
 export const GET = createGetHandler(
   async () => {
@@ -49,6 +50,12 @@ interface SentimentAction {
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
   async (request: NextRequest, body: SentimentAction) => {
+    // Admin access required for control actions
+    const adminError = requireAdmin(request);
+    if (adminError) {
+      return adminError;
+    }
+
     // Validate action
     const validationError = validateField({
       value: body.action,
@@ -58,10 +65,10 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
     });
 
     if (validationError) {
-      return {
-        success: false,
-        message: `Invalid action: ${body.action}`,
-      };
+      return NextResponse.json(
+        { success: false, message: `Invalid action: ${body.action}` },
+        { status: 400 }
+      );
     }
 
     const sentimentService = getGlobalSentimentIntegration();
