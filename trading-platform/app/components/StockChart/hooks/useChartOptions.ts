@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { ChartOptions, TooltipItem } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
+import { calculateChartMinMax } from '@/app/lib/chart-utils';
 import { CHART_GRID, CHART_CONFIG } from '@/app/lib/constants';
 import { VolumeProfilePluginOptions } from '../types';
 
@@ -47,10 +48,7 @@ export const useChartOptions = ({
     if (data.length === 0) return { min: 0, max: 100 };
 
     // Include forecast data in range calculation to ensure all data points are visible
-    const lows = data.map(d => d.low);
-    const highs = data.map(d => d.high);
-    const minPrice = Math.min(...lows);
-    const maxPrice = Math.max(...highs);
+    const { min: minPrice, max: maxPrice } = calculateChartMinMax(data);
     const priceRange = maxPrice - minPrice;
 
     // 価格範囲に基づいて動的にマージンを設定（10%, 15%, 20%）
