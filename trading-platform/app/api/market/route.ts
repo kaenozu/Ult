@@ -170,175 +170,119 @@ function formatSymbol(symbol: string, market?: string): string {
   return symbol;
 }
 
-export async function GET(request: Request) {
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import YahooFinance from 'yahoo-finance2';
+import {
+  handleApiError,
+  validationError,
+} from '@/app/lib/error-handler';
+import { checkRateLimit } from '@/app/lib/api-middleware';
+import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
+import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
+
+// --- Zod Schemas for Request ---
+
+const MarketRequestSchema = z.object({
+  type: z.enum(['history', 'quote']).default('quote'),
+  symbol: z.string().min(1).max(1000).transform(s => s.toUpperCase()),
+  market: z.enum(['japan', 'usa']).optional(),
+  interval: z.enum(['1m', '5m', '15m', '1h', '4h', '1d', '1wk', '1mo']).optional(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+
+// --- Yahoo Finance Schemas ---
+import {
+  YahooChartResultSchema,
+  YahooSingleQuoteSchema
+} from '@/app/lib/schemas/market';
+
+
+function formatSymbol(symbol: string, market?: string): string {
+  if (symbol.startsWith('^')) return symbol;
+  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
+    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
+  }
+  return symbol;
+}
+
+export async function GET(request: NextRequest) {
   try {
-    console.log('[API/market] GET request received');
     // Rate limiting
     const rateLimitResponse = checkRateLimit(request);
     if (rateLimitResponse) return rateLimitResponse;
 
     const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type');
-  const symbol = searchParams.get('symbol')?.trim().toUpperCase();
-  const market = searchParams.get('market');
-  const interval = searchParams.get('interval'); // New: 1m, 5m, 15m, 1h, 4h, 1d
+    const rawParams = Object.fromEntries(searchParams.entries());
+    
+    // Validate parameters with Zod
+    const result = MarketRequestSchema.safeParse(rawParams);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Invalid request parameters', details: result.error.format() },
+        { status: 400 }
+      );
+    }
 
-  // Input validation and sanitization
-  if (!symbol) {
-    return validationError('Symbol is required', 'symbol');
-  }
-
-  // Validate symbol format (alphanumeric, dots, commas, and caret for indices)
-  if (!/^[A-Z0-9.,^]+$/.test(symbol)) {
-    return validationError('Invalid symbol format', 'symbol');
-  }
-
-  // Validate symbol length to prevent DoS
-  // Single symbol: max 20 chars
-  // Batch symbols (comma separated): max 1000 chars
-  const isBatch = symbol.includes(',');
-  if (symbol.length > (isBatch ? 1000 : 20)) {
-    return NextResponse.json({ error: 'Symbol too long' }, { status: 400 });
-  }
-
-  // Validate type parameter
-  if (type && !['history', 'quote'].includes(type)) {
-    return validationError('Invalid type parameter', 'type');
-  }
-
-  // Validate market parameter
-  if (market && !['japan', 'usa'].includes(market)) {
-    return validationError('Invalid market parameter', 'market');
-  }
-
-  // Validate interval parameter (for history type)
-  const validIntervals = ['1m', '5m', '15m', '1h', '4h', '1d', '1wk', '1mo'];
-  if (interval && !validIntervals.includes(interval)) {
-    return validationError('Invalid interval. Use 1m, 5m, 15m, 1h, 4h, 1d, 1wk, or 1mo', 'interval');
-  }
-
-const yahooSymbol = formatSymbol(symbol, market || undefined);
+    const { type, symbol, market, interval, startDate: startDateParam } = result.data;
+    const yahooSymbol = formatSymbol(symbol, market);
 
     if (type === 'history') {
-      const startDateParam = searchParams.get('startDate');
       let period1: string;
-
       if (startDateParam) {
-        // Validate date format (YYYY-MM-DD)
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(startDateParam) || isNaN(Date.parse(startDateParam))) {
-          return validationError('Invalid startDate format. Use YYYY-MM-DD.', 'startDate');
-        }
         period1 = startDateParam;
       } else {
-        // Get 2 years of data to ensure sufficient backtest samples (252 trading days min)
         const startDate = new Date();
         startDate.setFullYear(startDate.getFullYear() - 2);
         period1 = startDate.toISOString().split('T')[0];
       }
 
       try {
-        // Map UI interval names to Yahoo Finance interval format
-        // Note: Yahoo Finance doesn't support 4h, so we map 4H to 1h
-        // IMPORTANT: Yahoo Finance doesn't support intraday intervals (1m, 5m, 15m, 1h) for Japanese stocks
-        // We need to check if this is a Japanese stock and an intraday interval
         const isJapaneseStock = yahooSymbol.endsWith('.T');
         const isIntraday = interval && isIntradayInterval(interval);
 
-        let finalInterval: '1d' | '1m' | '5m' | '15m' | '1h' | '1wk' | '1mo' | '2m' | '30m' | '60m' | '90m' | '5d' | '3mo' | undefined;
-
+        let finalInterval: any = undefined;
         if (isJapaneseStock && isIntraday) {
-          // Japanese stocks don't support intraday data, fall back to daily
           finalInterval = '1d';
-        } else {
-          finalInterval =
-            interval === 'D' ? '1d' :
-            interval === '1H' ? '1h' :
-            interval === '4H' ? '1h' :  // 4h not supported, use 1h instead
-            interval?.toLowerCase() === '15m' ? '15m' :
-            interval?.toLowerCase() === '1m' ? '1m' :
-            interval?.toLowerCase() === '5m' ? '5m' :
-            undefined;
+        } else if (interval) {
+          finalInterval = interval === '4h' ? '1h' : interval;
         }
 
-        // Build chart options - pass interval if specified
-        const rawResult = finalInterval
-          ? await yf.chart(yahooSymbol, { period1, interval: finalInterval })
-          : await yf.chart(yahooSymbol, { period1 });
-
+        const rawResult = await yf.chart(yahooSymbol, { period1, interval: finalInterval });
         const parseResult = YahooChartResultSchema.safeParse(rawResult);
 
         if (!parseResult.success) {
-          console.error('[MarketAPI] Yahoo Finance Chart Schema Validation Failed:', JSON.stringify(parseResult.error.format(), null, 2));
-          // Don't fail completely, try to use best effort or fail gracefully
-          // In this case, we'll return a 502 because the upstream data is not what we expect
           return handleApiError(new Error('Upstream API data schema mismatch'), 'market/history', 502);
         }
 
-        const result = parseResult.data;
-
-        if (!result || !result.quotes || result.quotes.length === 0) {
+        const data = parseResult.data;
+        if (!data || !data.quotes || data.quotes.length === 0) {
           return NextResponse.json({ data: [], warning: 'No historical data found' });
         }
 
-        // Format date based on interval type
-        // Daily/Weekly/Monthly: YYYY-MM-DD
-        // Intraday (1m, 5m, 15m, 1h): YYYY-MM-DD HH:mm
-        const isFinalIntervalIntraday = finalInterval && isIntradayInterval(finalInterval);
-
-        // Build comprehensive warnings array
         const warnings: string[] = [];
-        
-        // Add warning if we fell back to daily data for Japanese stock with intraday interval
         if (isJapaneseStock && isIntraday) {
-          warnings.push('イントラデイデータ（1m, 5m, 15m, 1h, 4h）は日本株では利用できません。日次データを表示しています。');
+          warnings.push('イントラデイデータは日本株では利用できません。日次データを表示しています。');
         }
-        
-        // Add Yahoo Finance limitation warnings
-        warnings.push('⚠️ Yahoo Finance使用中: 15分遅延データです。リアルタイム取引には不適切です。');
-        
-        if (!isJapaneseStock) {
-          warnings.push('💡 推奨: IEX Cloud、Polygon.io、またはAlpacaなどのリアルタイムデータソースの使用を検討してください。');
-        } else {
-          warnings.push('💡 日本株のリアルタイムデータには専用の有料データプロバイダーが必要です。');
-        }
-        
-        warnings.push('ℹ️ 現在のデータ品質: 「FAIR」- スキャルピング/デイトレードには不十分');
+        warnings.push('⚠️ Yahoo Finance使用中: 15分遅延データです。');
 
-        // Data delay metadata for Japanese stocks
-        const dataDelayMinutes = isJapaneseStock ? JAPANESE_MARKET_DELAY_MINUTES : 15;
-
-        // データ欠損処理: 前日の終値を追跡
+        const isFinalIntervalIntraday = finalInterval && isIntradayInterval(finalInterval);
         let lastValidClose: number | null = null;
 
-        const ohlcv = result.quotes.map((q, index) => {
+        const ohlcv = data.quotes.map((q) => {
           let dateStr: string;
           if (q.date instanceof Date) {
             if (isFinalIntervalIntraday) {
-              // Format: YYYY-MM-DD HH:mm (e.g., "2026-01-28 09:30")
-              const year = q.date.getFullYear();
-              const month = String(q.date.getMonth() + 1).padStart(2, '0');
-              const day = String(q.date.getDate()).padStart(2, '0');
-              const hours = String(q.date.getHours()).padStart(2, '0');
-              const minutes = String(q.date.getMinutes()).padStart(2, '0');
-              dateStr = `${year}-${month}-${day} ${hours}:${minutes}`;
+              dateStr = q.date.toISOString().replace('T', ' ').substring(0, 16);
             } else {
-              // Format: YYYY-MM-DD for daily/weekly/monthly
               dateStr = q.date.toISOString().split('T')[0];
             }
           } else {
             dateStr = String(q.date);
           }
 
-          // データ欠損処理: nullを0で埋めると価格急落のように見えるため、
-          // 前日の終値で補間する
           const hasValidClose = q.close !== null && q.close !== undefined && q.close > 0;
-          
-          // 有効な終値を記録
-          if (hasValidClose) {
-            lastValidClose = q.close ?? null;
-          }
-          
-          // 補間値の計算
+          if (hasValidClose) lastValidClose = q.close ?? null;
           const interpolatedClose = hasValidClose ? q.close : (lastValidClose ?? 0);
           
           return {
@@ -348,7 +292,6 @@ const yahooSymbol = formatSymbol(symbol, market || undefined);
             low: Number(q.low ?? interpolatedClose),
             close: Number(interpolatedClose),
             volume: Number(q.volume ?? 0),
-            // 補間データフラグ（UI表示用）
             isInterpolated: !hasValidClose,
           };
         });
@@ -359,88 +302,63 @@ const yahooSymbol = formatSymbol(symbol, market || undefined);
           metadata: {
             source: DataSourceProvider.YAHOO_FINANCE,
             isJapaneseStock,
-            dataDelayMinutes,
-            interval: finalInterval,
-            requestedInterval: interval,
+            interval: finalInterval || '1d',
             fallbackApplied: isJapaneseStock && isIntraday,
-            isRealtime: false,
-            quality: 'fair',
-            limitations: {
-              noTickData: true,
-              noBidAsk: true,
-              rateLimit: {
-                requestsPerMinute: 5,
-                requestsPerDay: 2000
-              },
-              intradayUnavailableForJapaneseStocks: isJapaneseStock
-  }
-}
+          }
         });
-      } catch (innerError: unknown) {
-        console.error('Market History Error:', innerError);
-        return handleApiError(new Error('Failed to fetch historical data'), 'market/history', 502);
+      } catch (err) {
+        return handleApiError(err, 'market/history', 502);
       }
     }
 
     if (type === 'quote') {
-      const symbols = symbol.split(',').map(s => formatSymbol(s.trim(), market || undefined));
+      const symbols = symbol.split(',').map(s => formatSymbol(s.trim(), market));
 
       if (symbols.length === 1) {
         try {
           const rawResult = await yf.quote(symbols[0]);
           const parseResult = YahooSingleQuoteSchema.safeParse(rawResult);
+          if (!parseResult.success) throw new Error('Symbol not found');
 
-          if (!parseResult.success) {
-            console.error('[MarketAPI] Yahoo Finance Quote Schema Validation Failed:', JSON.stringify(parseResult.error.format(), null, 2));
-            throw new Error('Symbol not found or invalid format');
-          }
-
-          const result = parseResult.data;
-
+          const quote = parseResult.data;
           return NextResponse.json({
             symbol: symbol,
-            price: result.regularMarketPrice,
-            change: result.regularMarketChange,
-            changePercent: result.regularMarketChangePercent,
-            volume: result.regularMarketVolume,
-            marketState: result.marketState
+            price: quote.regularMarketPrice,
+            change: quote.regularMarketChange,
+            changePercent: quote.regularMarketChangePercent,
+            volume: quote.regularMarketVolume,
+            marketState: quote.marketState
           });
-        } catch (quoteError: unknown) {
-          return handleApiError(quoteError, 'market/quote', 404);
+        } catch (err) {
+          return handleApiError(err, 'market/quote', 404);
         }
       } else {
         try {
           const results = await yf.quote(symbols);
-          // results is Array<unknown> here
-
-          if (!Array.isArray(results)) {
-            throw new Error('Expected array response for batch quotes');
-          }
-
           const data = results
             .map(r => {
-                const parsed = YahooSingleQuoteSchema.safeParse(r);
-                return parsed.success ? parsed.data : null;
+              const p = YahooSingleQuoteSchema.safeParse(r);
+              return p.success ? p.data : null;
             })
-            .filter((r): r is NonNullable<typeof r> => !!r)
+            .filter(r => !!r)
             .map(r => ({
-              symbol: r.symbol ? r.symbol.replace('.T', '') : 'UNKNOWN',
-              price: r.regularMarketPrice || 0,
-              change: r.regularMarketChange || 0,
-              changePercent: r.regularMarketChangePercent || 0,
-              volume: r.regularMarketVolume || 0,
-              marketState: r.marketState || 'UNKNOWN'
+              symbol: r!.symbol.replace('.T', ''),
+              price: r!.regularMarketPrice || 0,
+              change: r!.regularMarketChange || 0,
+              changePercent: r!.regularMarketChangePercent || 0,
+              volume: r!.regularMarketVolume || 0,
+              marketState: r!.marketState || 'UNKNOWN'
             }));
           return NextResponse.json({ data });
-        } catch (batchError: unknown) {
-          return handleApiError(batchError, 'market/batch-quote', 502);
+        } catch (err) {
+          return handleApiError(err, 'market/batch-quote', 502);
         }
       }
     }
 
-return validationError('Invalid type parameter. Use "history" or "quote".', 'type');
-
-  } catch (error: unknown) {
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+  } catch (error) {
     return handleApiError(error, 'market/api', 500);
   }
 }
+

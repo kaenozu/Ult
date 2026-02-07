@@ -1,4 +1,3 @@
-// @ts-nocheck - Comparison type issues
 /**
  * RiskManagementService.ts
  * 
@@ -11,7 +10,7 @@
  * 4. トレードごとのリスク検証
  */
 
-import { Portfolio, Position, OHLCV } from '@/app/types';
+import { Portfolio, OHLCV } from '@/app/types';
 import { OrderRequest } from '@/app/types/order';
 import { AutomaticRiskController } from '../risk/AutomaticRiskController';
 import { RealTimeRiskCalculator, RealTimeRiskMetrics } from '../risk/RealTimeRiskCalculator';
@@ -163,13 +162,28 @@ export class RiskManagementService {
     // 5. Stop Loss Calculation
     if (!finalStopLoss && effectiveConfig.enableAutoStopLoss) {
       const atr = marketData ? getLatestATR(marketData) : undefined;
-      finalStopLoss = calculateStopLossPrice(order.price, order.side, { enabled: true, type: 'percentage', value: RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PCT, trailing: order.riskConfig?.enableTrailingStop ?? false }, atr);
+      finalStopLoss = calculateStopLossPrice(
+        order.price, 
+        order.side, 
+        { 
+          enabled: true, 
+          type: 'percentage', 
+          value: RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PCT, 
+          trailing: order.riskConfig?.enableTrailingStop ?? false 
+        }, 
+        atr
+      );
       reasons.push(`自動SL: ${finalStopLoss.toFixed(2)}`);
     }
 
     // 6. Position Sizing (Kelly / Volatility)
     if (effectiveConfig.enablePositionSizing && finalStopLoss) {
-      const sizing = this.calculateOptimalPositionSize({ ...order, stopLoss: finalStopLoss, takeProfit: finalTakeProfit }, portfolio, marketData, effectiveConfig);
+      const sizing = this.calculateOptimalPositionSize(
+        { ...order, stopLoss: finalStopLoss, takeProfit: finalTakeProfit }, 
+        portfolio, 
+        marketData, 
+        effectiveConfig
+      );
       if (sizing.adjustedQuantity < finalQuantity) {
         finalQuantity = sizing.adjustedQuantity;
         reasons.push(...sizing.reasons);
@@ -254,21 +268,23 @@ export class RiskManagementService {
 
     const avgWin = order.takeProfit ? Math.abs(order.takeProfit - order.price) : riskPerShare * config.minRiskRewardRatio;
     const b = avgWin / riskPerShare;
-    const winRate = 0.5;
+    const winRate = 0.5; // TODO: Use actual win rate from history
     const kellyFraction = ((winRate * b) - (1 - winRate)) / b;
     const safeKelly = Math.max(0, kellyFraction * config.kellyFraction);
     
     let kellyQty = Math.floor((totalValue * safeKelly) / order.price);
     const reasons = [`Kelly: ${(safeKelly * 100).toFixed(2)}%`];
 
+    // Volatility Adjustment based on riskConfig
     if (marketData && order.riskConfig?.enableVolatilityAdjustment !== false) {
       const atr = getLatestATR(marketData);
       if (atr) {
         const volatility = atr / order.price;
         const multiplier = order.riskConfig?.volatilityMultiplier ?? 1.0;
+        // Adjust size inversely proportional to volatility relative to 2% benchmark
         const adjustment = Math.min(1.0, (0.02 * multiplier) / volatility);
         kellyQty = Math.floor(kellyQty * adjustment);
-        reasons.push(`Vol調整: ${(adjustment * 100).toFixed(0)}%`);
+        reasons.push(`Vol調整: ${(adjustment * 100).toFixed(0)}% (Mult: ${multiplier})`);
       }
     }
 

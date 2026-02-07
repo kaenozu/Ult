@@ -8,6 +8,9 @@ import { useExecuteOrder } from '@/app/store/orderExecutionStore';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 import { DynamicRiskMetrics } from './DynamicRiskMetrics';
 import { OrderRequest } from '@/app/types/order';
+import { TraderHealthCard } from './TraderHealthCard';
+import { MarketCorrelationCard } from './MarketCorrelationCard';
+import { UnifiedIntelligenceCard } from './UnifiedIntelligenceCard';
 
 /**
  * OrderPanelコンポーネントのプロパティ
@@ -115,7 +118,11 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   };
 
   return (
-    <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative">
+    <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative overflow-y-auto">
+      <UnifiedIntelligenceCard stock={stock} />
+      <TraderHealthCard />
+      <MarketCorrelationCard stock={stock} />
+      
       {showSuccess && (
         <div className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
           注文を送信しました
