@@ -54,6 +54,12 @@ export interface ExecutionResult {
   }>;
 }
 
+export interface ExecutionFill {
+  price: number;
+  quantity: number;
+  timestamp: number;
+}
+
 export interface ExecutionConfig {
   maxLatency: number;
   slippageTolerance: number;
@@ -214,7 +220,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const duration = params.duration || 1;
     const slices = params.slices || 10;
     const interval = (duration * 1000) / slices;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const sliceQty = order.quantity / slices;
     for (let i = 0; i < slices; i++) {
       await this.delay(interval);
@@ -228,7 +234,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const params = order.algorithm!.params;
     const duration = params.duration || 1;
     const volumeProfile = (params.volumeProfile as any) || this.generateVolumeProfile();
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const interval = (duration * 1000) / volumeProfile.length;
     for (let i = 0; i < volumeProfile.length; i++) {
       await this.delay(interval);
@@ -244,7 +250,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const params = order.algorithm!.params;
     const displaySize = params.displaySize || Math.floor(order.quantity * 0.1);
     const variance = params.variance || 0.2;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     let remainingQty = order.quantity;
     while (remainingQty > 0) {
       const currentDisplaySize = Math.floor(displaySize * (1 + (Math.random() - 0.5) * variance));
@@ -278,7 +284,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const params = order.algorithm!.params;
     const offset = params.offset || 0.01;
     const duration = params.duration || 1;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const endTime = Date.now() + duration * 1000;
     while (Date.now() < endTime) {
       const ob = this.orderBook.get(order.symbol);
@@ -296,7 +302,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const params = order.algorithm!.params;
     const targetPct = params.targetPercentage || 5;
     const duration = params.duration || 1;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const endTime = Date.now() + duration * 1000;
     while (Date.now() < endTime) {
       const ob = this.orderBook.get(order.symbol);
@@ -317,7 +323,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const duration = params.duration || 1;
     const maxSlice = params.maxSliceSize || Math.floor(order.quantity * 0.2);
     const interval = params.checkInterval || 0.1;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const endTime = Date.now() + duration * 1000;
     let totalVol = 0;
     while (Date.now() < endTime) {

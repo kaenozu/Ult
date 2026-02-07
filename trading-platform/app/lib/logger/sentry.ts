@@ -364,7 +364,7 @@ export interface ErrorBoundaryState {
 /**
  * エラーをキャプチャするデコレータ
  */
-export function captureErrors<T extends (...args: any[]) => any>(
+export function captureErrors<T extends (...args: unknown[]) => unknown>(
   fn: T,
   context?: Record<string, unknown>
 ): T {
@@ -375,10 +375,40 @@ export function captureErrors<T extends (...args: any[]) => any>(
       sentry.captureException(error as Error, {
         ...context,
         function: fn.name,
-        args: args.map(arg => typeof arg === 'object' ? '[Object]' : String(arg)),
+        args: args.map(arg =>
+          typeof arg === 'object' ? '[Object]' : String(arg)
+        ),
       });
       throw error;
     }
+  }) as T;
+}
+
+/**
+ * パフォーマンスを計測するデコレータ
+ */
+export function measurePerformance<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  operationName?: string
+): T {
+  const name = operationName || fn.name;
+
+  return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+    const transaction = sentry.startTransaction(name, 'function');
+    transaction.startChild('execution', `${name} execution`);
+
+    try {
+      const result = await fn(...args as Parameters<T>);
+      transaction.finishChild();
+      transaction.finish();
+      return result;
+    } catch (error) {
+      transaction.finishChild();
+      transaction.finish();
+      throw error;
+    }
+  }) as T;
+}
   }) as T;
 }
 

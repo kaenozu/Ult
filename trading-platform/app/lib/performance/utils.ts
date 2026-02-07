@@ -8,6 +8,13 @@
 import { performanceMonitor, PerformanceStats } from './monitor';
 
 import { logger } from '@/app/core/logger';
+
+interface PerformanceEntry extends PerformanceEntry {
+  hadRecentInput?: boolean;
+  processingStart?: number;
+  value?: number;
+}
+
 export interface PerformanceReport {
   generatedAt: string;
   summary: {
@@ -81,7 +88,8 @@ export function observeWebVitals(): void {
   new PerformanceObserver((list) => {
     const entries = list.getEntries();
     entries.forEach(entry => {
-      const fid = (entry as any).processingStart - entry.startTime;
+      const perfEntry = entry as unknown as PerformanceEntry;
+      const fid = perfEntry.processingStart - entry.startTime;
       performanceMonitor.recordMetric('web-vitals-fid', fid);
     });
   }).observe({ entryTypes: ['first-input'] });
@@ -91,8 +99,9 @@ export function observeWebVitals(): void {
   new PerformanceObserver((list) => {
     const entries = list.getEntries();
     entries.forEach(entry => {
-      if (!(entry as any).hadRecentInput) {
-        clsValue += (entry as any).value;
+      const perfEntry = entry as unknown as PerformanceEntry;
+      if (!perfEntry.hadRecentInput) {
+        clsValue += perfEntry.value ?? 0;
       }
     });
     performanceMonitor.recordMetric('web-vitals-cls', clsValue);
