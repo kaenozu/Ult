@@ -252,3 +252,56 @@ export function calculateOptimalDataPoints(
 export function shouldReduceData(dataLength: number, threshold: number = 500): boolean {
   return dataLength > threshold;
 }
+
+/**
+ * Efficiently calculates the min and max values for chart Y-axis scaling.
+ * Avoids creating intermediate arrays and uses a single pass loop.
+ *
+ * @param data - OHLCV data array
+ * @param indicators - Optional object containing indicator arrays (sma, upper, lower)
+ * @returns Object containing min and max values
+ */
+export function calculateChartMinMax(
+  data: OHLCV[],
+  indicators: {
+    sma?: number[],
+    upper?: number[],
+    lower?: number[],
+  } = {}
+): { min: number, max: number } {
+  let min = Infinity;
+  let max = -Infinity;
+  const hasData = data.length > 0;
+
+  // 1. Current Price
+  if (hasData) {
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      if (d.low < min) min = d.low;
+      if (d.high > max) max = d.high;
+    }
+  }
+
+  // 2. Indicators (SMA, Bollinger)
+  const { sma, upper, lower } = indicators;
+
+  // Helper to update min/max from number array
+  const updateFromSeries = (arr: number[]) => {
+    for (let i = 0; i < arr.length; i++) {
+      const v = arr[i];
+      if (typeof v === 'number' && !isNaN(v)) {
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+    }
+  };
+
+  if (sma) updateFromSeries(sma);
+  if (upper) updateFromSeries(upper);
+  if (lower) updateFromSeries(lower);
+
+  // Fallback if no valid numbers found
+  if (min === Infinity) return { min: 0, max: 100 };
+
+  return { min, max };
+}
