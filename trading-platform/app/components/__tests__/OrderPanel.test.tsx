@@ -1,15 +1,21 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
-import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useOrderExecutionStore, useExecuteOrder } from '@/app/store/orderExecutionStore';
+import { useTradingStore } from '@/app/store/tradingStore';
+import { useExecuteOrder } from '@/app/store/orderExecutionStore';
 
 // Mock stores
-jest.mock('@/app/store/portfolioStore');
+jest.mock('@/app/store/tradingStore');
 jest.mock('@/app/store/orderExecutionStore', () => ({
-    useOrderExecutionStore: jest.fn(),
     useExecuteOrder: jest.fn()
 }));
+
+// Mock ResizeObserver for any chart components (if any)
+global.ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+};
 
 describe('OrderPanel', () => {
     const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const, sector: 'Automotive', volume: 1000000 };
@@ -21,7 +27,8 @@ describe('OrderPanel', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
+        // Setup useTradingStore mock
+        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
         (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrder);
@@ -63,13 +70,18 @@ describe('OrderPanel', () => {
         }));
 
         // Success message
-        expect(screen.getByText('注文を送信しました')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText('注文を送信しました')).toBeInTheDocument();
+        });
 
         // Fast forward timer
         act(() => {
             jest.runAllTimers();
         });
-        expect(screen.queryByText('注文を送信しました')).not.toBeInTheDocument();
+
+        await waitFor(() => {
+             expect(screen.queryByText('注文を送信しました')).not.toBeInTheDocument();
+        });
 
         jest.useRealTimers();
     });
