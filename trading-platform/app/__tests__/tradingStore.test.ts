@@ -1,6 +1,22 @@
 import { useTradingStore } from '../store/tradingStore';
 import { Signal } from '../types';
 
+interface WatchlistStock {
+  symbol: string;
+  name: string;
+  price: number;
+  [key: string]: unknown;
+}
+
+interface PositionInput {
+  symbol: string;
+  side: 'LONG' | 'SHORT';
+  quantity: number;
+  avgPrice: number;
+  currentPrice: number;
+  [key: string]: unknown;
+}
+
 describe('tradingStore', () => {
   beforeEach(() => {
     useTradingStore.setState(useTradingStore.getInitialState());
@@ -14,7 +30,7 @@ describe('tradingStore', () => {
   });
 
   it('manages watchlist', () => {
-    const stock = { symbol: 'AAPL', name: 'Apple', price: 150 } as any;
+    const stock: WatchlistStock = { symbol: 'AAPL', name: 'Apple', price: 150 };
     const { addToWatchlist, removeFromWatchlist, updateStockData } = useTradingStore.getState();
 
     addToWatchlist(stock);
@@ -30,8 +46,8 @@ describe('tradingStore', () => {
 
   it('batch updates stock data', () => {
     const { addToWatchlist, batchUpdateStockData } = useTradingStore.getState();
-    addToWatchlist({ symbol: 'S1', price: 100 } as any);
-    addToWatchlist({ symbol: 'S2', price: 200 } as any);
+    addToWatchlist({ symbol: 'S1', price: 100 } as WatchlistStock);
+    addToWatchlist({ symbol: 'S2', price: 200 } as WatchlistStock);
 
     batchUpdateStockData([
       { symbol: 'S1', data: { price: 110 } },
@@ -46,9 +62,9 @@ describe('tradingStore', () => {
   it('manages portfolio positions including averaging down', () => {
     const { addPosition } = useTradingStore.getState();
 
-    addPosition({ symbol: '7203', side: 'LONG', quantity: 100, avgPrice: 3000, currentPrice: 3000 } as any);
+    addPosition({ symbol: '7203', side: 'LONG', quantity: 100, avgPrice: 3000, currentPrice: 3000 } as PositionInput);
     // Add more of the same
-    addPosition({ symbol: '7203', side: 'LONG', quantity: 100, avgPrice: 2800, currentPrice: 2900 } as any);
+    addPosition({ symbol: '7203', side: 'LONG', quantity: 100, avgPrice: 2800, currentPrice: 2900 } as PositionInput);
 
     const state = useTradingStore.getState();
     expect(state.portfolio.positions).toHaveLength(1);
@@ -63,14 +79,14 @@ describe('tradingStore', () => {
   });
 
   it('manages portfolio positions', () => {
-    const position = {
+    const position: PositionInput = {
       symbol: 'AAPL',
       side: 'LONG',
       quantity: 10,
       avgPrice: 150,
       currentPrice: 160,
       change: 10
-    } as any;
+    };
 
     const { addPosition, closePosition } = useTradingStore.getState();
 
@@ -85,25 +101,25 @@ describe('tradingStore', () => {
 
   describe('processAITrades', () => {
     it('enters a LONG position', () => {
-      const signal: Signal = { type: 'BUY', confidence: 90, targetPrice: 110, stopLoss: 90 } as any;
+      const signal: Partial<Signal> = { type: 'BUY', confidence: 90, targetPrice: 110, stopLoss: 90 };
       const { processAITrades } = useTradingStore.getState();
-      processAITrades('AAPL', 100, signal);
+      processAITrades('AAPL', 100, signal as Signal);
       expect(useTradingStore.getState().aiStatus.trades).toHaveLength(1);
     });
 
     it('does nothing on HOLD or low confidence', () => {
       const { processAITrades } = useTradingStore.getState();
-      processAITrades('HOLD', 100, { type: 'HOLD', confidence: 90 } as any);
-      processAITrades('LOW', 100, { type: 'BUY', confidence: 70 } as any);
+      processAITrades('HOLD', 100, { type: 'HOLD', confidence: 90 } as Partial<Signal> as Signal);
+      processAITrades('LOW', 100, { type: 'BUY', confidence: 70 } as Partial<Signal> as Signal);
       expect(useTradingStore.getState().aiStatus.trades).toHaveLength(0);
     });
 
     it('closes positions on targets/stoploss', () => {
       const { processAITrades } = useTradingStore.getState();
       // Enter
-      processAITrades('EXIT', 100, { type: 'BUY', confidence: 90, targetPrice: 110, stopLoss: 90 } as any);
+      processAITrades('EXIT', 100, { type: 'BUY', confidence: 90, targetPrice: 110, stopLoss: 90 } as Partial<Signal> as Signal);
       // Exit on Target
-      processAITrades('EXIT', 115, { type: 'BUY', confidence: 90, targetPrice: 110, stopLoss: 90 } as any);
+      processAITrades('EXIT', 115, { type: 'BUY', confidence: 90, targetPrice: 110, stopLoss: 90 } as Partial<Signal> as Signal);
 
       const state = useTradingStore.getState();
       expect(state.aiStatus.trades[0].status).toBe('CLOSED');
@@ -112,12 +128,12 @@ describe('tradingStore', () => {
 
     it('handles market drag reflections', () => {
       const { processAITrades } = useTradingStore.getState();
-      processAITrades('DRAG', 100, { type: 'BUY', confidence: 90, targetPrice: 150, stopLoss: 95 } as any);
+      processAITrades('DRAG', 100, { type: 'BUY', confidence: 90, targetPrice: 150, stopLoss: 95 } as Partial<Signal> as Signal);
       processAITrades('DRAG', 90, {
         type: 'BUY',
         stopLoss: 95,
         marketContext: { indexTrend: 'DOWN', correlation: 0.9, indexSymbol: '^N225' }
-      } as any);
+      } as Partial<Signal> as Signal);
 
       const state = useTradingStore.getState();
       expect(state.aiStatus.trades[0].reflection).toContain('市場全体');

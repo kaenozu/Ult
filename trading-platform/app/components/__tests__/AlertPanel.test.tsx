@@ -19,9 +19,9 @@ describe('AlertPanel', () => {
 
   beforeEach(() => {
     // Reset singleton state
-    (alertService as any).alerts = [];
-    (alertService as any).settings.enabled = true;
-    (alertService as any).settings.severities = {
+    (alertService as { alerts: unknown[]; settings: { enabled: boolean; severities: Record<string, boolean> } }).alerts = [];
+    (alertService as { settings: { enabled: boolean; severities: Record<string, boolean> } }).settings.enabled = true;
+    (alertService as { settings: { enabled: boolean; severities: Record<string, boolean> } }).settings.severities = {
       HIGH: true,
       MEDIUM: true,
       LOW: true,

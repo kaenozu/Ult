@@ -30,7 +30,7 @@ export function UniverseManagerPanel() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [newSymbol, setNewSymbol] = useState('');
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<unknown>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -345,7 +345,7 @@ interface AddStockModalProps {
   symbol: string;
   onSymbolChange: (symbol: string) => void;
   isValidating: boolean;
-  validationResult: any;
+  validationResult: unknown;
 }
 
 function AddStockModal({ onClose, onAdd, symbol, onSymbolChange, isValidating, validationResult }: AddStockModalProps) {

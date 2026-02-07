@@ -25,9 +25,9 @@ import type {
 
 // Define local interfaces for types not present in main type files
 interface PsychologyGoals {
-  daily: Record<string, any>;
-  weekly: Record<string, any>;
-  monthly: Record<string, any>;
+  daily: Record<string, unknown>;
+  weekly: Record<string, unknown>;
+  monthly: Record<string, unknown>;
 }
 
 interface TradingCalendarDay {

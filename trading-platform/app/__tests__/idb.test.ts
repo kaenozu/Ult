@@ -66,7 +66,7 @@ describe('IndexedDBClient', () => {
         const initPromise = client.init();
 
         // Trigger success
-        (mockRequest as any).onsuccess();
+        (mockRequest as { onsuccess?: () => void }).onsuccess?.();
         await initPromise;
 
         expect(mockIDB.open).toHaveBeenCalledWith('TraderProDB', 1);
@@ -85,19 +85,19 @@ describe('IndexedDBClient', () => {
 
         // Trigger upgrade
         const event = { target: { result: mockDb }, oldVersion: 0 };
-        (mockRequest as any).onupgradeneeded(event);
+        (mockRequest as { onupgradeneeded?: (event: { target: { result: MockDB }; oldVersion: number }) => void }).onupgradeneeded?.(event);
 
         expect(mockDb.createObjectStore).toHaveBeenCalledWith('ohlcv_data');
     });
 
     it('returns early if already initialized', async () => {
-        (client as any).db = mockDb;
+        (client as { db: MockDB | null }).db = mockDb;
         await client.init();
         expect(mockIDB.open).not.toHaveBeenCalled();
     });
 
     it('rejects if db is missing during operation', async () => {
-        (client as any).db = null;
+        (client as { db: MockDB | null }).db = null;
         // Mock init to not set db
         jest.spyOn(client, 'init').mockResolvedValue();
         await expect(client.getData('AAPL')).rejects.toBe('DB not initialized');
@@ -106,11 +106,11 @@ describe('IndexedDBClient', () => {
     it('gets data successfully', async () => {
         const mockRequest = { onsuccess: null, result: [{ date: '2026-01-01' }] };
         mockStore.get.mockReturnValue(mockRequest);
-        (client as any).db = mockDb;
+        (client as { db: MockDB | null }).db = mockDb;
 
         const getPromise = client.getData('AAPL');
         await Promise.resolve(); // Wait for init()
-        (mockRequest as any).onsuccess();
+        (mockRequest as { onsuccess?: () => void }).onsuccess?.();
         const data = await getPromise;
 
         expect(data).toHaveLength(1);
@@ -119,12 +119,12 @@ describe('IndexedDBClient', () => {
     it('saves data successfully', async () => {
         const mockRequest = { onsuccess: null };
         mockStore.put.mockReturnValue(mockRequest);
-        (client as any).db = mockDb;
+        (client as { db: MockDB | null }).db = mockDb;
 
         const data = [{ date: '2026-01-02' }, { date: '2026-01-01' }];
-        const savePromise = client.saveData('AAPL', data as any);
+        const savePromise = client.saveData('AAPL', data as unknown[]);
         await Promise.resolve();
-        (mockRequest as any).onsuccess();
+        (mockRequest as { onsuccess?: () => void }).onsuccess?.();
         await savePromise;
 
         expect(mockStore.put).toHaveBeenCalled();
@@ -134,24 +134,24 @@ describe('IndexedDBClient', () => {
         const existing = [{ date: '2026-01-01', close: 100 }];
         const newData = [{ date: '2026-01-02', close: 105 }, { date: '2026-01-01', close: 101 }]; // overlap
 
-        jest.spyOn(client, 'getData').mockResolvedValue(existing as any);
+        jest.spyOn(client, 'getData').mockResolvedValue(existing as unknown[]);
         const saveSpy = jest.spyOn(client, 'saveData').mockResolvedValue();
 
-        const result = await client.mergeAndSave('AAPL', newData as any);
+        const result = await client.mergeAndSave('AAPL', newData as unknown[]);
 
         expect(result).toHaveLength(2);
-        expect(result[0].close).toBe(101); // overwritten
+        expect((result[0] as { close: number }).close).toBe(101); // overwritten
         expect(saveSpy).toHaveBeenCalled();
     });
 
     it('clears all data', async () => {
         const mockRequest = { onsuccess: null };
         mockStore.clear.mockReturnValue(mockRequest);
-        (client as any).db = mockDb;
+        (client as { db: MockDB | null }).db = mockDb;
 
         const clearPromise = client.clearAllData();
         await Promise.resolve();
-        (mockRequest as any).onsuccess();
+        (mockRequest as { onsuccess?: () => void }).onsuccess?.();
         await clearPromise;
 
         expect(mockStore.clear).toHaveBeenCalled();

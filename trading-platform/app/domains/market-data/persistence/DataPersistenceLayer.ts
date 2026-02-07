@@ -539,7 +539,7 @@ export class DataPersistenceLayer {
   /**
    * Helper: Load backup data
    */
-  private async loadBackup(backupId: string): Promise<any> {
+  private async loadBackup(backupId: string): Promise<unknown> {
     if (!this.db) return null;
 
     return new Promise((resolve, reject) => {

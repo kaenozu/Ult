@@ -18,7 +18,7 @@ jest.mock('../lib/api/idb-migrations', () => ({
   }
 }));
 
-global.fetch = jest.fn() as any;
+global.fetch = jest.fn() as jest.Mock;
 
 // Test constants to avoid magic numbers
 const TEST_PRICES = {
@@ -67,7 +67,7 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
 
   it('uses cache when available', async () => {
     const mockData = [{ date: '2026-01-01', close: TEST_PRICES.INITIAL }];
-    (marketClient as any).setCache('ohlcv-AAPL-1d', mockData);
+    (marketClient as { setCache: (key: string, data: unknown[]) => void }).setCache('ohlcv-AAPL-1d', mockData);
 
     const result = await marketClient.fetchOHLCV('AAPL');
     expect(result.source).toBe('cache');
@@ -88,7 +88,7 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect((marketClient as any).pendingRequests.size).toBe(1);
+    expect((marketClient as { pendingRequests: Set<unknown> }).pendingRequests.size).toBe(1);
   });
 
   it('performs delta fetching when IDB has old data', async () => {
@@ -149,11 +149,11 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
       { date: '2026-01-07', open: TEST_PRICES.HIGH, high: TEST_PRICES.HIGH, low: TEST_PRICES.HIGH, close: TEST_PRICES.HIGH, volume: TEST_VOLUMES.LARGE }
     ];
 
-    const result = (marketClient as any).interpolateOHLCV(data);
+    const result = (marketClient as { interpolateOHLCV: (data: unknown[]) => unknown[] }).interpolateOHLCV(data);
     expect(result.length).toBeGreaterThan(2);
-    const gapDay = result.find((d: any) => d.date === '2026-01-06');
+    const gapDay = result.find((d: { date: string }) => d.date === '2026-01-06');
     expect(gapDay).toBeDefined();
-    expect(gapDay.close).toBeCloseTo((TEST_PRICES.INITIAL + TEST_PRICES.HIGH) / 2);
+    expect((gapDay as { close: number }).close).toBeCloseTo((TEST_PRICES.INITIAL + TEST_PRICES.HIGH) / 2);
   });
 
   it('handles fetchMarketIndex failure gracefully', async () => {

@@ -171,7 +171,7 @@ export class MarketDataService {
           if (age < this.cacheTimeout) {
             this.marketDataCache.set(symbol, persisted);
             if (this.useSmartCache) {
-              marketDataCache.set(`market-data:${symbol}`, persisted as any);
+              marketDataCache.set(`market-data:${symbol}`, persisted as unknown);
             }
             return persisted;
           }
@@ -221,9 +221,9 @@ export class MarketDataService {
 
         this.marketDataCache.set(symbol, ohlcv);
         
-        // Store in smart cache
+         // Store in smart cache
         if (this.useSmartCache) {
-          marketDataCache.set(`market-data:${symbol}`, ohlcv as any, this.cacheTimeout);
+          marketDataCache.set(`market-data:${symbol}`, ohlcv as unknown, this.cacheTimeout);
         }
 
         // Persist to IndexedDB

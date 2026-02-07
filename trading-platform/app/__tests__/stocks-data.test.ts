@@ -137,7 +137,7 @@ describe('stocks data', () => {
             source: 'api' as const
           };
           (marketClient.fetchSignal as jest.Mock).mockResolvedValue(mockResponse);
-          const result = await fetchSignal({ symbol: '7203' } as any);
+          const result = await fetchSignal({ symbol: '7203' } as { symbol: string });
           expect(result).toEqual(mockResponse);
         });
     });

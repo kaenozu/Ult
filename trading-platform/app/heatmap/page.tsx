@@ -166,7 +166,7 @@ function HeatmapContent() {
             {['all', 'japan', 'usa'].map((m) => (
               <button
                 key={m}
-                onClick={() => setSelectedMarket(m as any)}
+                onClick={() => setSelectedMarket(m as 'all' | 'japan' | 'usa')}
                 className={cn(
                   'px-2 py-0.5 rounded text-[9px] font-black uppercase transition-all',
                   selectedMarket === m ? 'bg-primary text-white' : 'text-[#92adc9] hover:text-white'

@@ -32,9 +32,9 @@ describe('Trading Details', () => {
     });
 
     describe('OrderBook', () => {
-        it('renders order book with data', () => {
-            const stock = { symbol: 'TEST', name: 'Test', price: 1000, market: 'japan' as const };
-            render(<OrderBook stock={stock as any} />); // partial mock
+    it('renders order book with data', () => {
+        const stock = { symbol: 'TEST', name: 'Test', price: 1000, market: 'japan' as const };
+        render(<OrderBook stock={stock as { symbol: string; name: string; price: number; market: 'japan' | 'usa' }} />); // partial mock
             expect(screen.getByText('板情報')).toBeInTheDocument();
             expect(screen.getByText('東証')).toBeInTheDocument();
             // Check for generated prices

@@ -34,7 +34,7 @@ describe('Trading API Authentication', () => {
     jest.clearAllMocks();
   });
 
-  const createRequest = (method: string = 'GET', body?: any) => {
+  const createRequest = (method: string = 'GET', body?: Record<string, unknown>) => {
     return new NextRequest('http://localhost:3000/api/trading', {
       method,
       body: body ? JSON.stringify(body) : undefined,

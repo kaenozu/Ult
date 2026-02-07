@@ -241,8 +241,8 @@ class AccuracyService {
             if (data.length < 40) return { symbol, totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalReturn: 0, avgProfit: 0, avgLoss: 0, profitFactor: 0, maxDrawdown: 0, sharpeRatio: 0, trades: [], startDate, endDate, warning: 'データ不足' };
 
             const preCalculatedIndicators = this.preCalculateIndicators(data);
-            let cachedParams: any, lastOptimizationIndex = -999;
-            const wfaMetrics: any = { inSample: [], outOfSample: [], params: [] };
+            let cachedParams: { rsiPeriod: number; smaPeriod: number; accuracy: number } | null, lastOptimizationIndex = -999;
+            const wfaMetrics: { inSample: number[]; outOfSample: number[]; params: unknown[] } = { inSample: [], outOfSample: [], params: [] };
 
             for (let i = effectiveMinPeriod; i < data.length - 1; i++) {
                 const nextDay = data[i + 1];
