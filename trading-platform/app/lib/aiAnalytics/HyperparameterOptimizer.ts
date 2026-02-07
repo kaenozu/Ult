@@ -301,8 +301,8 @@ export class HyperparameterOptimizer {
       const [key, values] = entries[index];
       for (const value of values) {
         const newConfig = { ...currentConfig };
-         
-        (newConfig as any)[key] = value;
+          
+        (newConfig as Record<keyof HyperparameterConfig, unknown>)[key] = value;
         generateRecursive(index + 1, newConfig);
       }
     };
@@ -323,8 +323,8 @@ export class HyperparameterOptimizer {
     for (const [key, values] of Object.entries(paramRanges)) {
       if (values && values.length > 0) {
         const randomValue = values[Math.floor(Math.random() * values.length)];
-         
-        (config as any)[key] = randomValue;
+          
+        (config as Record<keyof HyperparameterConfig, unknown>)[key as keyof HyperparameterConfig] = randomValue;
       }
     }
     
@@ -346,8 +346,8 @@ export class HyperparameterOptimizer {
       if (values && values.length > 0) {
         // 最良設定から近い値を選ぶ
         const randomValue = values[Math.floor(Math.random() * Math.min(values.length, 3))];
-         
-        (config as any)[key] = randomValue;
+          
+        (config as Record<keyof HyperparameterConfig, unknown>)[key as keyof HyperparameterConfig] = randomValue;
       }
     }
     
