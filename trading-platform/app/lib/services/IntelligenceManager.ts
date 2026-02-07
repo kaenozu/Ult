@@ -1,6 +1,6 @@
 /**
  * Intelligence Manager (Parallel Brain Controller)
- * 
+ *
  * Web Worker をオーケストレートし、バックグラウンドでの並列分析を管理します。
  */
 

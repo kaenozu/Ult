@@ -214,7 +214,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const rawParams = Object.fromEntries(searchParams.entries());
-    
+
     // Validate parameters with Zod
     const result = MarketRequestSchema.safeParse(rawParams);
     if (!result.success) {
@@ -361,4 +361,3 @@ export async function GET(request: NextRequest) {
     return handleApiError(error, 'market/api', 500);
   }
 }
-

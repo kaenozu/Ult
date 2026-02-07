@@ -9,13 +9,13 @@ import { AlertCircle, Brain, CheckCircle2, Zap } from 'lucide-react';
  * トレーダーの心理状態と規律を可視化するコンポーネント。
  */
 export function TraderHealthCard() {
-  const { 
-    mentalState, 
-    overallScore, 
-    stressLevel, 
-    disciplineScore, 
-    riskOfTilt, 
-    recommendations 
+  const {
+    mentalState,
+    overallScore,
+    stressLevel,
+    disciplineScore,
+    riskOfTilt,
+    recommendations
   } = usePsychologyStore();
 
   const getStatusConfig = () => {
@@ -63,7 +63,7 @@ export function TraderHealthCard() {
           <span className={cn("text-2xl font-black", config.color)}>{overallScore}</span>
         </div>
         <div className="h-1.5 w-full bg-[#192633] rounded-full overflow-hidden">
-          <div 
+          <div
             className={cn("h-full transition-all duration-1000", config.color.replace('text-', 'bg-'))}
             style={{ width: `${overallScore}%` }}
           />
@@ -76,8 +76,8 @@ export function TraderHealthCard() {
           <span className="text-[10px] text-[#92adc9] block mb-1">ストレス</span>
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1 bg-[#192633] rounded-full">
-              <div 
-                className="h-full bg-orange-400 rounded-full" 
+              <div
+                className="h-full bg-orange-400 rounded-full"
                 style={{ width: `${stressLevel}%` }}
               />
             </div>
@@ -88,8 +88,8 @@ export function TraderHealthCard() {
           <span className="text-[10px] text-[#92adc9] block mb-1">規律</span>
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1 bg-[#192633] rounded-full">
-              <div 
-                className="h-full bg-blue-400 rounded-full" 
+              <div
+                className="h-full bg-blue-400 rounded-full"
                 style={{ width: `${disciplineScore}%` }}
               />
             </div>

@@ -8,7 +8,11 @@ import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
+<<<<<<< HEAD
 import { calculateChartMinMax } from '@/app/lib/chart-utils';
+=======
+import { calculatePriceRange } from '@/app/lib/chart-utils';
+>>>>>>> cd09c9d (feat(perf): Optimize StockChart Y-axis calculation)
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
@@ -73,16 +77,16 @@ export const StockChart = memo(function StockChart({
     return sma20[hoveredIdx];
   }, [sma20, hoveredIdx, showSMA]);
 
-  // Calculate global min/max for Y-axis scaling
-  const priceRange = useMemo(() => {
-    const { min, max } = calculateChartMinMax(data, {
-      sma: showSMA ? sma20 : undefined,
-      upper: showBollinger ? upper : undefined,
-      lower: showBollinger ? lower : undefined,
-    });
+   // Calculate global min/max for Y-axis scaling
+   const priceRange = useMemo(() => {
+     const { min, max } = calculateChartMinMax(data, {
+       sma: showSMA ? sma20 : undefined,
+       upper: showBollinger ? upper : undefined,
+       lower: showBollinger ? lower : undefined,
+     });
 
      return { min, max };
-  }, [data, sma20, upper, lower, showSMA, showBollinger]);
+   }, [data, sma20, upper, lower, showSMA, showBollinger]);
 
   // 2. Chart Options Hook
   const options = useChartOptions({

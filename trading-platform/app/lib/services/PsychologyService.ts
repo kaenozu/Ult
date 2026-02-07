@@ -15,27 +15,27 @@ export class PsychologyService {
 
     const recentOrders = orders.slice(-10); // 直近10件
     const filledOrders = recentOrders.filter(o => o.status === 'FILLED');
-    
+
     if (filledOrders.length === 0) return;
 
     // 1. ストレスレベルの計算 (連敗や大きなドローダウンに基づく)
     const stressLevel = this.calculateStress(filledOrders);
-    
+
     // 2. 規律スコアの計算 (計画外の取引や過剰な取引頻度)
     const disciplineScore = this.calculateDiscipline(filledOrders);
-    
+
     // 3. 感情スコアの特定
     const emotions = this.identifyEmotions(filledOrders, stressLevel, disciplineScore);
-    
+
     // 4. メンタル状態の決定
     const mentalState = this.determineMentalState(stressLevel, disciplineScore);
-    
+
     // 5. タイト（感情的暴走）リスク
     const riskOfTilt = this.calculateTiltRisk(filledOrders, stressLevel);
 
     // ストアに反映
     const recommendations = this.generateRecommendations(mentalState, stressLevel, disciplineScore, riskOfTilt);
-    
+
     usePsychologyStore.getState().updateMetrics({
       mentalState,
       stressLevel,
@@ -53,7 +53,7 @@ export class PsychologyService {
 
   private calculateStress(orders: Order[]): number {
     let stress = 0;
-    
+
     // 連敗チェック
     let consecutiveLosses = 0;
     for (let i = orders.length - 1; i >= 0; i--) {
@@ -64,9 +64,9 @@ export class PsychologyService {
         else break;
       }
     }
-    
+
     stress += Math.min(consecutiveLosses * 15, 60);
-    
+
     // 取引密度のチェック（短時間に多すぎる取引）
     const timeSpan = orders[orders.length - 1].timestamp - orders[0].timestamp;
     if (timeSpan < 30 * 60 * 1000 && orders.length > 5) { // 30分以内に5回以上
@@ -78,7 +78,7 @@ export class PsychologyService {
 
   private calculateDiscipline(orders: Order[]): number {
     let score = 100;
-    
+
     // リベンジトレードの兆候（負けの直後に大きなサイズでエントリー）
     for (let i = 1; i < orders.length; i++) {
       if (orders[i-1].status === 'FILLED' && orders[i].status === 'FILLED') {

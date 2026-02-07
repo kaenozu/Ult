@@ -1,4 +1,4 @@
-import { useState, useId, useCallback, useMemo, Dispatch, SetStateAction } from 'react';
+import { useState, useId, useCallback, useMemo, useEffect, Dispatch, SetStateAction } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { useExecuteOrder } from '@/app/store/orderExecutionStore';
@@ -134,7 +134,6 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
     if (result.success) {
       setIsConfirming(false);
       setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
     } else {
       setErrorMessage(result.error || '注文の実行に失敗しました');
     }
@@ -150,6 +149,17 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
     stock.name,
     stock.symbol
   ]);
+
+  // Auto-hide success message after 3 seconds with cleanup
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showSuccess) {
+      timer = setTimeout(() => setShowSuccess(false), 3000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [showSuccess, setShowSuccess]);
 
   return {
     side, setSide,
