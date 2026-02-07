@@ -1,23 +1,16 @@
 'use client';
 
-import { useState, useId } from 'react';
+import { useMemo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { useExecuteOrder } from '@/app/store/orderExecutionStore';
-import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 import { DynamicRiskMetrics } from './DynamicRiskMetrics';
-import { OrderRequest } from '@/app/types/order';
+import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { TraderHealthCard } from './TraderHealthCard';
 import { MarketCorrelationCard } from './MarketCorrelationCard';
 import { UnifiedIntelligenceCard } from './UnifiedIntelligenceCard';
 
-/**
- * OrderPanelコンポーネントのプロパティ
- * @property stock - 取引対象の銘柄情報
- * @property currentPrice - 現在の株価
- * @property ohlcv - OHLCVデータ（ボラティリティ計算に使用）
- */
 interface OrderPanelProps {
   stock: Stock;
   currentPrice: number;
@@ -26,119 +19,68 @@ interface OrderPanelProps {
 
 /**
  * 注文パネルコンポーネント
- * 
+ *
  * 株式の売買注文を作成・実行するためのUIコンポーネント。
  * 成行注文と指値注文に対応し、動的リスク管理機能を提供する。
- * 
+ *
  * @component
  * @example
  * ```tsx
- * <OrderPanel 
+ * <OrderPanel
  *   stock={{ symbol: 'AAPL', name: 'Apple Inc.', market: 'usa' }}
  *   currentPrice={150.25}
  *   ohlcv={historicalData}
  * />
  * ```
- * 
+ *
  * @param {OrderPanelProps} props - コンポーネントのプロパティ
  * @returns {JSX.Element} 注文パネルUI
  */
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
-  // Optimized: select only cash to prevent re-renders on every portfolio update
-  const cash = useTradingStore((state) => state.portfolio.cash);
-  const executeOrder = useExecuteOrder();
-  const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
-  const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
-  const [quantity, setQuantity] = useState<number>(100);
-  const [limitPrice, setLimitPrice] = useState<string>(currentPrice.toString());
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // 動的リスク管理設定
-  const [riskConfig, setRiskConfig] = useState<DynamicRiskConfig>({
-    enableTrailingStop: true,
-    trailingStopATRMultiple: 2.0,
-    trailingStopMinPercent: 1.0,
-    enableVolatilityAdjustment: true,
-    volatilityMultiplier: 1.5,
-    enableDynamicPositionSizing: true,
-    maxRiskPerTrade: 2.0,
-    minRiskRewardRatio: 2.0,
-  });
-  const [showRiskSettings, setShowRiskSettings] = useState(false);
-
-  const orderTypeId = useId();
-  const quantityId = useId();
-  const limitPriceId = useId();
-  const modalTitleId = useId();
-
-  const trailingStopId = useId();
-  const volAdjustId = useId();
-  const kellyId = useId();
-  const riskPanelId = useId();
-
-  const parsedPrice = parseFloat(limitPrice);
-  const price = orderType === 'MARKET' 
-    ? currentPrice 
-    : (Number.isNaN(parsedPrice) || parsedPrice <= 0 ? currentPrice : parsedPrice);
-  const totalCost = quantity > 0 ? price * quantity : 0;
-  const canAfford = cash >= totalCost && quantity > 0;
-
-  const handleOrder = () => {
-    if (quantity <= 0) return;
-    if (side === 'BUY' && !canAfford) return;
-
-    // Clear any previous error
-    setErrorMessage(null);
-
-    // 注文リクエスト作成
-    const orderRequest: OrderRequest = {
-      symbol: stock.symbol,
-      name: stock.name,
-      market: stock.market,
-      side: side === 'BUY' ? 'LONG' : 'SHORT',
-      quantity: quantity,
-      price: price,
-      orderType: orderType,
-      riskConfig: riskConfig,
-    };
-
-    // アトミックな注文実行
-    const result = executeOrder(orderRequest);
-
-    if (result.success) {
-      // 注文成功
-      setIsConfirming(false);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } else {
-      // 注文失敗
-      setErrorMessage(result.error || '注文の実行に失敗しました');
-    }
-  };
+  const {
+    side,
+    setSide,
+    orderType,
+    setOrderType,
+    quantity,
+    setQuantity,
+    limitPrice,
+    setLimitPrice,
+    showSuccess,
+    setShowSuccess,
+    errorMessage,
+    setErrorMessage,
+    riskConfig,
+    setRiskConfig,
+    showRiskSettings,
+    setShowRiskSettings,
+    cash,
+    price,
+    totalCost,
+    canAfford,
+    handleOrder,
+    ids
+  } = useOrderEntry({ stock, currentPrice });
 
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative overflow-y-auto">
+      {/* Intelligence Cards - comprehensive trading insights */}
       <UnifiedIntelligenceCard stock={stock} />
       <TraderHealthCard />
       <MarketCorrelationCard stock={stock} />
-      
+
+      {/* Success message with proper ARIA role for accessibility */}
       {showSuccess && (
-        <div
-          className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
-          role="status"
-        >
+        <div role="status" className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
           注文を送信しました
         </div>
       )}
+
+      {/* Error message with alert role for screen readers */}
       {errorMessage && (
-        <div
-          className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
-          role="alert"
-        >
+        <div role="alert" className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
           {errorMessage}
-          <button 
+          <button
             onClick={() => setErrorMessage(null)}
             className="ml-2 text-white/80 hover:text-white"
             aria-label="エラーを閉じる"
@@ -147,6 +89,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
           </button>
         </div>
       )}
+
       <div className="flex justify-between items-center border-b border-[#233648] pb-2">
         <h3 className="text-white font-bold">{stock.symbol} を取引</h3>
         <span className="text-xs text-[#92adc9]">
@@ -157,261 +100,192 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       {/* Side Selection */}
       <div className="flex bg-[#192633] rounded-lg p-1" role="group" aria-label="注文サイドの選択">
         <button
+          type="button"
           onClick={() => setSide('BUY')}
-          aria-pressed={side === 'BUY'}
           className={cn(
-            'flex-1 py-2 text-sm font-bold rounded-md transition-all',
-            side === 'BUY' ? 'bg-green-600 text-white shadow-lg' : 'text-[#92adc9] hover:text-white'
+            "flex-1 py-2 px-4 rounded text-sm font-medium transition-colors",
+            side === 'BUY'
+              ? "bg-green-600 text-white"
+              : "text-[#92adc9] hover:text-white hover:bg-[#233648]"
           )}
+          aria-pressed={side === 'BUY'}
         >
           買い
         </button>
         <button
+          type="button"
           onClick={() => setSide('SELL')}
-          aria-pressed={side === 'SELL'}
           className={cn(
-            'flex-1 py-2 text-sm font-bold rounded-md transition-all',
-            side === 'SELL' ? 'bg-red-600 text-white shadow-lg' : 'text-[#92adc9] hover:text-white'
+            "flex-1 py-2 px-4 rounded text-sm font-medium transition-colors",
+            side === 'SELL'
+              ? "bg-red-600 text-white"
+              : "text-[#92adc9] hover:text-white hover:bg-[#233648]"
           )}
+          aria-pressed={side === 'SELL'}
         >
-          空売り
+          売り
         </button>
       </div>
 
-      {/* Order Type */}
-      <div className="flex flex-col gap-1">
-        <label htmlFor={orderTypeId} className="text-[10px] uppercase text-[#92adc9] font-bold">注文種別</label>
-        <select
-          id={orderTypeId}
-          value={orderType}
-          onChange={(e) => setOrderType(e.target.value as 'MARKET' | 'LIMIT')}
-          className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
+      {/* Order Type Selection */}
+      <div className="flex bg-[#192633] rounded-lg p-1" role="group" aria-label="注文タイプの選択">
+        <button
+          type="button"
+          onClick={() => setOrderType('MARKET')}
+          className={cn(
+            "flex-1 py-2 px-4 rounded text-sm font-medium transition-colors",
+            orderType === 'MARKET'
+              ? "bg-blue-600 text-white"
+              : "text-[#92adc9] hover:text-white hover:bg-[#233648]"
+          )}
+          aria-pressed={orderType === 'MARKET'}
         >
-          <option value="MARKET">成行 (Market)</option>
-          <option value="LIMIT">指値 (Limit)</option>
-        </select>
+          成行
+        </button>
+        <button
+          type="button"
+          onClick={() => setOrderType('LIMIT')}
+          className={cn(
+            "flex-1 py-2 px-4 rounded text-sm font-medium transition-colors",
+            orderType === 'LIMIT'
+              ? "bg-blue-600 text-white"
+              : "text-[#92adc9] hover:text-white hover:bg-[#233648]"
+          )}
+          aria-pressed={orderType === 'LIMIT'}
+        >
+          指値
+        </button>
       </div>
 
-      {/* Quantity */}
-      <div className="flex flex-col gap-1">
-        <label htmlFor={quantityId} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
+      {/* Quantity Input */}
+      <div>
+        <label htmlFor={ids.quantity} className="block text-sm text-[#92adc9] mb-1">
+          数量 (株)
+        </label>
         <input
-          id={quantityId}
+          id={ids.quantity}
           type="number"
-          min="1"
           value={quantity}
-          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 0))}
-          className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
+          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+          className="w-full bg-[#192633] border border-[#233648] rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          min="1"
         />
       </div>
 
-      {/* Limit Price (if LIMIT) */}
+      {/* Limit Price Input */}
       {orderType === 'LIMIT' && (
-        <div className="flex flex-col gap-1">
-          <label htmlFor={limitPriceId} className="text-[10px] uppercase text-[#92adc9] font-bold">指値価格</label>
+        <div>
+          <label htmlFor={ids.limitPrice} className="block text-sm text-[#92adc9] mb-1">
+            指値価格
+          </label>
           <input
-            id={limitPriceId}
+            id={ids.limitPrice}
             type="number"
             value={limitPrice}
             onChange={(e) => setLimitPrice(e.target.value)}
-            className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
+            className="w-full bg-[#192633] border border-[#233648] rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            step="0.01"
           />
         </div>
       )}
 
-      {/* Risk Management Settings Toggle */}
-      <button
-        onClick={() => setShowRiskSettings(!showRiskSettings)}
-        className="flex items-center justify-between w-full py-2 text-xs font-bold text-[#92adc9] hover:text-white transition-colors border-t border-[#233648] mt-2"
-        aria-expanded={showRiskSettings}
-        aria-controls={riskPanelId}
-      >
-        <span>リスク管理設定</span>
-        <svg
-          className={cn("w-4 h-4 transition-transform", showRiskSettings && "rotate-180")}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {/* Risk Management Settings Panel */}
-      {showRiskSettings && (
-        <div
-          id={riskPanelId}
-          className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3"
-        >
-          {/* Trailing Stop Toggle */}
-          <div className="flex items-center justify-between">
-            <span id={trailingStopId} className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
-            <button
-              onClick={() => setRiskConfig(prev => ({ ...prev, enableTrailingStop: !prev.enableTrailingStop }))}
-              className={cn(
-                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-                riskConfig.enableTrailingStop ? "bg-green-500" : "bg-[#233648]"
-              )}
-              role="switch"
-              aria-checked={riskConfig.enableTrailingStop}
-              aria-labelledby={trailingStopId}
-            >
-              <span
-                className={cn(
-                  "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
-                  riskConfig.enableTrailingStop ? "translate-x-5" : "translate-x-1"
-                )}
-              />
-            </button>
-          </div>
-
-          {/* Volatility Adjustment Toggle */}
-          <div className="flex items-center justify-between">
-            <span id={volAdjustId} className="text-[10px] text-[#92adc9]">ボラティリティ調整</span>
-            <button
-              onClick={() => setRiskConfig(prev => ({ ...prev, enableVolatilityAdjustment: !prev.enableVolatilityAdjustment }))}
-              className={cn(
-                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-                riskConfig.enableVolatilityAdjustment ? "bg-green-500" : "bg-[#233648]"
-              )}
-              role="switch"
-              aria-checked={riskConfig.enableVolatilityAdjustment}
-              aria-labelledby={volAdjustId}
-            >
-              <span
-                className={cn(
-                  "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
-                  riskConfig.enableVolatilityAdjustment ? "translate-x-5" : "translate-x-1"
-                )}
-              />
-            </button>
-          </div>
-
-          {/* Kelly-based Position Sizing Toggle */}
-          <div className="flex items-center justify-between">
-            <span id={kellyId} className="text-[10px] text-[#92adc9]">ケリー基準ポジションサイジング</span>
-            <button
-              onClick={() => setRiskConfig(prev => ({ ...prev, enableDynamicPositionSizing: !prev.enableDynamicPositionSizing }))}
-              className={cn(
-                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-                riskConfig.enableDynamicPositionSizing ? "bg-green-500" : "bg-[#233648]"
-              )}
-              role="switch"
-              aria-checked={riskConfig.enableDynamicPositionSizing}
-              aria-labelledby={kellyId}
-            >
-              <span
-                className={cn(
-                  "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
-                  riskConfig.enableDynamicPositionSizing ? "translate-x-5" : "translate-x-1"
-                )}
-              />
-            </button>
-          </div>
-
-          {/* Volatility Level Selector */}
-          <div className="pt-2 border-t border-[#233648]/50" role="group" aria-label="ボラティリティ係数">
-            <span className="text-[10px] text-[#92adc9] block mb-2">ボラティリティ係数</span>
-            <div className="grid grid-cols-4 gap-1">
-              {[
-                { value: 1.3, label: '低', color: 'bg-blue-500' },
-                { value: 1.0, label: '中', color: 'bg-yellow-500' },
-                { value: 0.7, label: '高', color: 'bg-orange-500' },
-                { value: 0.4, label: '極端', color: 'bg-red-500' },
-              ].map(({ value, label, color }) => (
-                <button
-                  key={value}
-                  onClick={() => setRiskConfig(prev => ({ ...prev, volatilityMultiplier: value }))}
-                  aria-pressed={riskConfig.volatilityMultiplier === value}
-                  className={cn(
-                    "px-2 py-1 text-[10px] font-bold rounded transition-all",
-                    riskConfig.volatilityMultiplier === value
-                      ? `${color} text-white`
-                      : "bg-[#233648] text-[#92adc9] hover:text-white"
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Risk Metrics Display */}
-          {ohlcv.length > 0 && (
-            <div className="pt-2 border-t border-[#233648]/50 space-y-2">
-              <span className="text-[10px] text-[#92adc9] block">計算されたリスク指標</span>
-              <DynamicRiskMetrics
-                stock={stock}
-                currentPrice={price}
-                side={side}
-                ohlcv={ohlcv}
-                cash={cash}
-                config={riskConfig}
-              />
-            </div>
-          )}
+      {/* Price and Cost Display */}
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-[#92adc9]">現在の価格:</span>
+          <span className="text-white font-medium">{formatCurrency(price)}</span>
         </div>
-      )}
-
-      {/* Summary */}
-      <div className="mt-auto bg-[#192633]/50 rounded-lg p-3 border border-[#233648]">
-        <div className="flex justify-between text-xs mb-1">
-          <span className="text-[#92adc9]">概算価格</span>
-          <span className="text-white">{formatCurrency(price)}</span>
+        <div className="flex justify-between">
+          <span className="text-[#92adc9]">総コスト:</span>
+          <span className="text-white font-medium">{formatCurrency(totalCost)}</span>
         </div>
-        <div className="flex justify-between text-sm font-bold">
-          <span className="text-[#92adc9]">合計概算額</span>
-          <span className="text-white">{formatCurrency(totalCost)}</span>
+        <div className={`flex justify-between ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+          <span>余力状況:</span>
+          <span>{canAfford ? '十分な余力があります' : '余力が不足しています'}</span>
         </div>
       </div>
 
-      {/* Action Button */}
-      <button
-        onClick={() => setIsConfirming(true)}
-        disabled={side === 'BUY' && !canAfford}
-        className={cn(
-          "w-full py-3 rounded-lg font-bold text-white shadow-lg transition-all",
-          side === 'BUY'
-            ? (canAfford ? "bg-green-600 hover:bg-green-500" : "bg-[#233648] cursor-not-allowed")
-            : "bg-red-600 hover:bg-red-500"
-        )}
-      >
-        {side === 'BUY' ? (canAfford ? '\u8CB7\u3044\u6CE8\u6587\u3092\u767A\u6CE8' : '\u8CC7\u91D1\u4E0D\u8DB3\u3067\u3059') : '\u7A7A\u58F2\u308A\u6CE8\u6587\u3092\u767A\u6CE8'}
-      </button>
-
-      {/* Confirmation Modal */}
-      {isConfirming && (
-        <div
-          className="absolute inset-0 bg-black/80 flex items-center justify-center p-4 z-50 rounded-lg backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={modalTitleId}
+      {/* Toggle Risk Settings */}
+      <div className="border-t border-[#233648] pt-3">
+        <button
+          type="button"
+          onClick={() => setShowRiskSettings(!showRiskSettings)}
+          className="flex items-center gap-2 text-sm text-[#92adc9] hover:text-white transition-colors w-full"
+          aria-expanded={showRiskSettings}
+          aria-controls={ids.kelly}
         >
-          <div className="bg-[#141e27] border border-[#233648] p-4 rounded-lg w-full max-w-xs shadow-2xl">
-            <h4 id={modalTitleId} className="text-white font-bold mb-2">注文の確認</h4>
-            <div className="text-sm text-[#92adc9] mb-4">
-              {side === 'BUY' ? '買い' : '空売り'} {quantity} {stock.symbol} @ {orderType === 'MARKET' ? '成行' : limitPrice}
+          <span className={cn(
+            "transform transition-transform",
+            showRiskSettings ? "rotate-90" : ""
+          )}>
+            ▶
+          </span>
+          リスク設定を編集
+        </button>
+
+        {showRiskSettings && (
+          <div id={ids.kelly} className="mt-3 space-y-4 bg-[#192633] p-3 rounded">
+            <div>
+              <label className="flex items-center gap-2 text-sm text-[#92adc9]">
+                <input
+                  type="checkbox"
+                  checked={riskConfig.enableTrailingStop}
+                  onChange={(e) => setRiskConfig({ ...riskConfig, enableTrailingStop: e.target.checked })}
+                  className="rounded border-[#233648] bg-[#141e27] text-blue-600 focus:ring-blue-600"
+                />
+                トレーリングストップを有効化
+              </label>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsConfirming(false)}
-                className="flex-1 py-2 bg-[#233648] text-white rounded hover:bg-[#324d67]"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleOrder}
-                className={cn(
-                  "flex-1 py-2 text-white rounded font-bold",
-                  side === 'BUY' ? "bg-green-600 hover:bg-green-500" : "bg-red-600 hover:bg-red-500"
-                )}
-              >
-                注文を確定
-              </button>
+            <div>
+              <label className="flex items-center gap-2 text-sm text-[#92adc9]">
+                <input
+                  type="checkbox"
+                  checked={riskConfig.enableVolatilityAdjustment}
+                  onChange={(e) => setRiskConfig({ ...riskConfig, enableVolatilityAdjustment: e.target.checked })}
+                  className="rounded border-[#233648] bg-[#141e27] text-blue-600 focus:ring-blue-600"
+                />
+                ボラティリティ調整を有効化
+              </label>
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-sm text-[#92adc9]">
+                <input
+                  type="checkbox"
+                  checked={riskConfig.enableDynamicPositionSizing}
+                  onChange={(e) => setRiskConfig({ ...riskConfig, enableDynamicPositionSizing: e.target.checked })}
+                  className="rounded border-[#233648] bg-[#141e27] text-blue-600 focus:ring-blue-600"
+                />
+                動的ポジションサイジングを有効化
+              </label>
             </div>
           </div>
-        </div>
+        )}
+      </div>
+
+      {/* Submit Button */}
+      <button
+        type="button"
+        onClick={handleOrder}
+        className={cn(
+          "w-full py-3 px-4 rounded font-bold transition-colors",
+          canAfford && quantity > 0
+            ? side === 'BUY'
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-red-600 hover:bg-red-700 text-white"
+            : "bg-gray-600 text-gray-300 cursor-not-allowed"
+        )}
+        disabled={!canAfford || quantity <= 0}
+      >
+        {`${side === 'BUY' ? '買い' : '売り'}注文を送信`}
+      </button>
+
+      {/* Dynamic Risk Metrics Display */}
+      {ohlcv.length > 0 && (
+        <DynamicRiskMetrics
+          portfolio={useTradingStore.getState().portfolio}
+          marketData={ohlcv}
+          riskConfig={riskConfig}
+        />
       )}
     </div>
   );
