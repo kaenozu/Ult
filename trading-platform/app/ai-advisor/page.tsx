@@ -7,7 +7,6 @@
 
 'use client';
 
-import { useEffect } from 'react';
 import { Navigation } from '@/app/components/Navigation';
 import { PatternAnalysisPanel } from '@/app/components/PatternAnalysisPanel';
 import { PsychologyWarningPanel } from '@/app/components/PsychologyWarningPanel';

@@ -3,13 +3,11 @@ import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPl
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireAuth } from '@/app/lib/auth';
 import { handleApiError } from '@/app/lib/error-handler';
-import { csrfTokenMiddleware, requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
+import { requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
 import { AlertType } from '@/app/lib/alerts/AlertSystem';
 import {
   validateSymbol,
   validateOrderSide,
-  validateOrderType,
-  validateTradingAction,
   validateNumber,
   validateRequiredString,
   validateOperator,

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { UnifiedTradingPlatform, getGlobalTradingPlatform, resetGlobalTradingPlatform } from '../tradingCore/UnifiedTradingPlatform';
+import { UnifiedTradingPlatform, resetGlobalTradingPlatform } from '../tradingCore/UnifiedTradingPlatform';
 import { MarketDataService } from '../MarketDataService';
 import { AdvancedRiskManager } from '../risk/AdvancedRiskManager';
 
@@ -28,7 +28,7 @@ describe('Integration Tests', () => {
     if (platform) {
       try {
         await platform.stop();
-      } catch (e) {
+      } catch (_e) {
         // Ignore errors during cleanup
       }
     }

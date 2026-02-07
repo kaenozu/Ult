@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAlertStore } from '@/app/store/alertStore';
 import { Alert, AlertSeverity, AlertType, AlertSettings } from '@/app/lib/alertTypes';
 import { cn, formatCurrency } from '@/app/lib/utils';
