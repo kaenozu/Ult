@@ -1,13 +1,9 @@
 'use client';
 
-import { useState, useId } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
-import { useTradingStore } from '@/app/store/tradingStore';
-import { useExecuteOrder } from '@/app/store/orderExecutionStore';
-import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 import { DynamicRiskMetrics } from './DynamicRiskMetrics';
-import { OrderRequest } from '@/app/types/order';
+import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 
 /**
  * OrderPanelコンポーネントのプロパティ
@@ -23,108 +19,59 @@ interface OrderPanelProps {
 
 /**
  * 注文パネルコンポーネント
- * 
+ *
  * 株式の売買注文を作成・実行するためのUIコンポーネント。
  * 成行注文と指値注文に対応し、動的リスク管理機能を提供する。
- * 
+ *
  * @component
  * @example
  * ```tsx
- * <OrderPanel 
+ * <OrderPanel
  *   stock={{ symbol: 'AAPL', name: 'Apple Inc.', market: 'usa' }}
  *   currentPrice={150.25}
  *   ohlcv={historicalData}
  * />
  * ```
- * 
+ *
  * @param {OrderPanelProps} props - コンポーネントのプロパティ
  * @returns {JSX.Element} 注文パネルUI
  */
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
-  // Optimized: select only cash to prevent re-renders on every portfolio update
-  const cash = useTradingStore((state) => state.portfolio.cash);
-  const executeOrder = useExecuteOrder();
-  const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
-  const [orderType, setOrderType] = useState<'MARKET' | 'LIMIT'>('MARKET');
-  const [quantity, setQuantity] = useState<number>(100);
-  const [limitPrice, setLimitPrice] = useState<string>(currentPrice.toString());
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // 動的リスク管理設定
-  const [riskConfig, setRiskConfig] = useState<DynamicRiskConfig>({
-    enableTrailingStop: true,
-    trailingStopATRMultiple: 2.0,
-    trailingStopMinPercent: 1.0,
-    enableVolatilityAdjustment: true,
-    volatilityMultiplier: 1.5,
-    enableDynamicPositionSizing: true,
-    maxRiskPerTrade: 2.0,
-    minRiskRewardRatio: 2.0,
-  });
-  const [showRiskSettings, setShowRiskSettings] = useState(false);
-
-  const orderTypeId = useId();
-  const quantityId = useId();
-  const limitPriceId = useId();
-  const modalTitleId = useId();
-
-  const trailingStopId = useId();
-  const volAdjustId = useId();
-  const kellyId = useId();
-
-  const parsedPrice = parseFloat(limitPrice);
-  const price = orderType === 'MARKET' 
-    ? currentPrice 
-    : (Number.isNaN(parsedPrice) || parsedPrice <= 0 ? currentPrice : parsedPrice);
-  const totalCost = quantity > 0 ? price * quantity : 0;
-  const canAfford = cash >= totalCost && quantity > 0;
-
-  const handleOrder = () => {
-    if (quantity <= 0) return;
-    if (side === 'BUY' && !canAfford) return;
-
-    // Clear any previous error
-    setErrorMessage(null);
-
-    // 注文リクエスト作成
-    const orderRequest: OrderRequest = {
-      symbol: stock.symbol,
-      name: stock.name,
-      market: stock.market,
-      side: side === 'BUY' ? 'LONG' : 'SHORT',
-      quantity: quantity,
-      price: price,
-      orderType: orderType,
-      riskConfig: riskConfig,
-    };
-
-    // アトミックな注文実行
-    const result = executeOrder(orderRequest);
-
-    if (result.success) {
-      // 注文成功
-      setIsConfirming(false);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } else {
-      // 注文失敗
-      setErrorMessage(result.error || '注文の実行に失敗しました');
-    }
-  };
+  const {
+    side, setSide,
+    orderType, setOrderType,
+    quantity, setQuantity,
+    limitPrice, setLimitPrice,
+    isConfirming, setIsConfirming,
+    showSuccess, setShowSuccess,
+    errorMessage, setErrorMessage,
+    riskConfig, setRiskConfig,
+    showRiskSettings, setShowRiskSettings,
+    cash,
+    price,
+    totalCost,
+    canAfford,
+    handleOrder,
+    ids
+  } = useOrderEntry({ stock, currentPrice });
 
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative">
       {showSuccess && (
-        <div className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+        <div 
+          role="status"
+          className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
+        >
           注文を送信しました
         </div>
       )}
       {errorMessage && (
-        <div className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+        <div 
+          role="alert"
+          className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
+        >
           {errorMessage}
-          <button 
+          <button
             onClick={() => setErrorMessage(null)}
             className="ml-2 text-white/80 hover:text-white"
             aria-label="エラーを閉じる"
@@ -166,9 +113,9 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
       {/* Order Type */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={orderTypeId} className="text-[10px] uppercase text-[#92adc9] font-bold">注文種別</label>
+        <label htmlFor={ids.orderType} className="text-[10px] uppercase text-[#92adc9] font-bold">注文種別</label>
         <select
-          id={orderTypeId}
+          id={ids.orderType}
           value={orderType}
           onChange={(e) => setOrderType(e.target.value as 'MARKET' | 'LIMIT')}
           className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
@@ -180,9 +127,9 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
       {/* Quantity */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={quantityId} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
+        <label htmlFor={ids.quantity} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
         <input
-          id={quantityId}
+          id={ids.quantity}
           type="number"
           min="1"
           value={quantity}
@@ -194,9 +141,9 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       {/* Limit Price (if LIMIT) */}
       {orderType === 'LIMIT' && (
         <div className="flex flex-col gap-1">
-          <label htmlFor={limitPriceId} className="text-[10px] uppercase text-[#92adc9] font-bold">指値価格</label>
+          <label htmlFor={ids.limitPrice} className="text-[10px] uppercase text-[#92adc9] font-bold">指値価格</label>
           <input
-            id={limitPriceId}
+            id={ids.limitPrice}
             type="number"
             value={limitPrice}
             onChange={(e) => setLimitPrice(e.target.value)}
@@ -210,6 +157,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
         onClick={() => setShowRiskSettings(!showRiskSettings)}
         className="flex items-center justify-between w-full py-2 text-xs font-bold text-[#92adc9] hover:text-white transition-colors border-t border-[#233648] mt-2"
         aria-expanded={showRiskSettings}
+        aria-controls={ids.riskSettings}
       >
         <span>リスク管理設定</span>
         <svg
@@ -225,10 +173,10 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
       {/* Risk Management Settings Panel */}
       {showRiskSettings && (
-        <div className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3">
+        <div id={ids.riskSettings} className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3">
           {/* Trailing Stop Toggle */}
           <div className="flex items-center justify-between">
-            <span id={trailingStopId} className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
+            <span id={ids.trailingStop} className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
             <button
               onClick={() => setRiskConfig(prev => ({ ...prev, enableTrailingStop: !prev.enableTrailingStop }))}
               className={cn(
@@ -237,7 +185,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
               )}
               role="switch"
               aria-checked={riskConfig.enableTrailingStop}
-              aria-labelledby={trailingStopId}
+              aria-labelledby={ids.trailingStop}
             >
               <span
                 className={cn(
@@ -250,7 +198,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
           {/* Volatility Adjustment Toggle */}
           <div className="flex items-center justify-between">
-            <span id={volAdjustId} className="text-[10px] text-[#92adc9]">ボラティリティ調整</span>
+            <span id={ids.volAdjust} className="text-[10px] text-[#92adc9]">ボラティリティ調整</span>
             <button
               onClick={() => setRiskConfig(prev => ({ ...prev, enableVolatilityAdjustment: !prev.enableVolatilityAdjustment }))}
               className={cn(
@@ -259,7 +207,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
               )}
               role="switch"
               aria-checked={riskConfig.enableVolatilityAdjustment}
-              aria-labelledby={volAdjustId}
+              aria-labelledby={ids.volAdjust}
             >
               <span
                 className={cn(
@@ -272,7 +220,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
           {/* Kelly-based Position Sizing Toggle */}
           <div className="flex items-center justify-between">
-            <span id={kellyId} className="text-[10px] text-[#92adc9]">ケリー基準ポジションサイジング</span>
+            <span id={ids.kelly} className="text-[10px] text-[#92adc9]">ケリー基準ポジションサイジング</span>
             <button
               onClick={() => setRiskConfig(prev => ({ ...prev, enableDynamicPositionSizing: !prev.enableDynamicPositionSizing }))}
               className={cn(
@@ -281,7 +229,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
               )}
               role="switch"
               aria-checked={riskConfig.enableDynamicPositionSizing}
-              aria-labelledby={kellyId}
+              aria-labelledby={ids.kelly}
             >
               <span
                 className={cn(
@@ -368,10 +316,10 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
           className="absolute inset-0 bg-black/80 flex items-center justify-center p-4 z-50 rounded-lg backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
-          aria-labelledby={modalTitleId}
+          aria-labelledby={ids.modalTitle}
         >
           <div className="bg-[#141e27] border border-[#233648] p-4 rounded-lg w-full max-w-xs shadow-2xl">
-            <h4 id={modalTitleId} className="text-white font-bold mb-2">注文の確認</h4>
+            <h4 id={ids.modalTitle} className="text-white font-bold mb-2">注文の確認</h4>
             <div className="text-sm text-[#92adc9] mb-4">
               {side === 'BUY' ? '買い' : '空売り'} {quantity} {stock.symbol} @ {orderType === 'MARKET' ? '成行' : limitPrice}
             </div>

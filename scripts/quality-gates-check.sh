@@ -24,8 +24,21 @@ echo ""
 
 FAILED_CHECKS=()
 
-# 1. Test Coverage
-echo "📊 1/5 Checking test coverage (≥80%)..."
+# 1. TypeScript & Lint (via Build)
+echo "🏗️  1/3 Running Build (includes Type Check & Lint)..."
+if npm run build > /tmp/quality-gates-build.log 2>&1; then
+  # Calculate bundle size
+  BUNDLE_SIZE=$(du -sh .next 2>/dev/null | cut -f1 || echo "N/A")
+  echo "   ✅ Build, Type Check, and Lint passed (size: $BUNDLE_SIZE)"
+else
+  echo "   ❌ Build failed (Check types or lint)"
+  echo "   See: /tmp/quality-gates-build.log"
+  FAILED_CHECKS+=("Build/Lint/TypeCheck")
+fi
+echo ""
+
+# 2. Test Coverage
+echo "📊 2/3 Checking test coverage (≥80%)..."
 if npm run test:coverage > /tmp/quality-gates-test.log 2>&1; then
   echo "   ✅ Test coverage passed"
 else
@@ -34,32 +47,8 @@ else
 fi
 echo ""
 
-# 2. TypeScript Type Check
-echo "🔍 2/5 Checking TypeScript types..."
-if npx tsc --noEmit > /tmp/quality-gates-tsc.log 2>&1; then
-  echo "   ✅ TypeScript check passed (0 errors)"
-else
-  ERROR_COUNT=$(grep -c "error TS" /tmp/quality-gates-tsc.log || echo "0")
-  echo "   ❌ TypeScript check failed ($ERROR_COUNT errors)"
-  echo "   See: /tmp/quality-gates-tsc.log"
-  FAILED_CHECKS+=("TypeScript")
-fi
-echo ""
-
-# 3. ESLint
-echo "🎨 3/5 Checking ESLint..."
-if npm run lint > /tmp/quality-gates-lint.log 2>&1; then
-  echo "   ✅ ESLint passed (0 errors)"
-else
-  echo "   ❌ ESLint failed"
-  echo "   Run 'npm run lint:fix' to auto-fix some issues"
-  echo "   See: /tmp/quality-gates-lint.log"
-  FAILED_CHECKS+=("ESLint")
-fi
-echo ""
-
-# 4. Security Audit
-echo "🔒 4/5 Checking security vulnerabilities..."
+# 3. Security Audit
+echo "🔒 3/3 Checking security vulnerabilities..."
 if npm audit --audit-level=high > /tmp/quality-gates-audit.log 2>&1; then
   echo "   ✅ Security audit passed (0 high+ vulnerabilities)"
 else
@@ -67,19 +56,6 @@ else
   echo "   Run 'npm audit fix' to attempt auto-fix"
   echo "   See: /tmp/quality-gates-audit.log"
   FAILED_CHECKS+=("Security")
-fi
-echo ""
-
-# 5. Build
-echo "🏗️  5/5 Checking build..."
-if npm run build > /tmp/quality-gates-build.log 2>&1; then
-  # Calculate bundle size
-  BUNDLE_SIZE=$(du -sh .next 2>/dev/null | cut -f1 || echo "N/A")
-  echo "   ✅ Build passed (size: $BUNDLE_SIZE)"
-else
-  echo "   ❌ Build failed"
-  echo "   See: /tmp/quality-gates-build.log"
-  FAILED_CHECKS+=("Build")
 fi
 echo ""
 

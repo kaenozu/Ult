@@ -66,17 +66,24 @@ export const MARKET_INDICES: MarketIndex[] = [
 ];
 
 /**
+ * 市場データの取得結果
+ * 成功時はデータ、失敗時はエラーメッセージを保持する
+ */
+export type MarketDataResult = {
+  success: true;
+  data: OHLCV[];
+  source: 'cache' | 'persistence' | 'api';
+} | {
+  success: false;
+  error: string;
+  code: 'NETWORK_ERROR' | 'VALIDATION_ERROR' | 'NOT_FOUND' | 'INITIALIZATION_ERROR';
+};
+
+/**
  * 市場データ管理サービス
  * 
  * 市場データの取得、キャッシュ管理、相関分析、トレンド計算を担当するサービスクラス。
  * クライアントサイドで動作し、APIからのデータ取得とキャッシュ制御を行う。
- * 
- * @example
- * ```typescript
- * const service = new MarketDataService();
- * const data = await service.fetchMarketData('^N225');
- * const trend = service.calculateTrend(data);
- * ```
  */
 export class MarketDataService {
   private marketDataCache = new Map<string, OHLCV[]>();
@@ -89,74 +96,33 @@ export class MarketDataService {
   private isInitialized = false;
 
   /**
-   * Initialize the service with persistence layer
-   */
-  async initialize(): Promise<void> {
-    if (this.isInitialized) return;
-
-    try {
-      // Initialize persistence layer
-      if (typeof window !== 'undefined' && window.indexedDB) {
-        await dataPersistenceLayer.initialize();
-        this.persistenceEnabled = true;
-      }
-      
-      // Set up cache prefetch strategies
-      if (this.useSmartCache) {
-        marketDataCache.addPrefetchStrategy({
-          name: 'common-symbols',
-          predicate: (key) => key.includes('market-data'),
-          fetcher: async (key) => {
-            const symbol = key.split(':')[1];
-            return this.fetchMarketData(symbol);
-          },
-          priority: 1
-        });
-      }
-
-      this.isInitialized = true;
-    } catch (error) {
-      logger.warn('[MarketDataService] Failed to initialize persistence:', error instanceof Error ? error : new Error(String(error)));
-      this.persistenceEnabled = false;
-    }
-  }
-
-  /**
    * 市場データを取得する
    * 
    * キャッシュが有効な場合はキャッシュから返却し、
    * 無効な場合はAPIから新規取得する。
    * 
    * @param symbol - 銘柄シンボル（例: '^N225', 'AAPL'）
-   * @returns OHLCVデータ配列。エラー時は空配列を返す
-   * @throws エラーは内部で捕捉され、空配列を返す
-   * 
-   * @example
-   * ```typescript
-   * const data = await marketDataService.fetchMarketData('^N225');
-   * if (data.length > 0) {
-   * }
-   * ```
+   * @returns MarketDataResult
    */
-  async fetchMarketData(symbol: string): Promise<OHLCV[]> {
+  async fetchMarketData(symbol: string): Promise<MarketDataResult> {
     const now = Date.now();
 
-    // Try smart cache first
+    // 1. Try smart cache first
     if (this.useSmartCache) {
       const cacheKey = `market-data:${symbol}`;
       const cached = marketDataCache.get(cacheKey);
       if (cached) {
-        return cached as OHLCV[];
+        return { success: true, data: cached as OHLCV[], source: 'cache' };
       }
     }
 
-    // Fallback to old cache
+    // 2. Fallback to old cache
     const cached = this.marketDataCache.get(symbol);
     if (cached && cached.length > 0 && (now - new Date(cached[cached.length - 1].date).getTime()) < this.cacheTimeout) {
-      return cached;
+      return { success: true, data: cached, source: 'cache' };
     }
 
-    // Try to load from persistence layer
+    // 3. Try to load from persistence layer
     if (this.persistenceEnabled) {
       try {
         const persisted = await dataPersistenceLayer.getOHLCV(symbol, {
@@ -167,13 +133,12 @@ export class MarketDataService {
           const latestDate = new Date(persisted[0].date);
           const age = now - latestDate.getTime();
           
-          // If persisted data is fresh enough, use it
           if (age < this.cacheTimeout) {
             this.marketDataCache.set(symbol, persisted);
             if (this.useSmartCache) {
               marketDataCache.set(`market-data:${symbol}`, persisted as unknown);
             }
-            return persisted;
+            return { success: true, data: persisted, source: 'persistence' };
           }
         }
       } catch (error) {
@@ -181,73 +146,93 @@ export class MarketDataService {
       }
     }
 
+    // 4. Fetch from API
     try {
       const fetchStartTime = Date.now();
       const response = await fetch(`/api/market?type=history&symbol=${symbol}`);
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch market data: ${response.statusText}`);
+        return {
+          success: false,
+          error: `API returned ${response.status}: ${response.statusText}`,
+          code: 'NETWORK_ERROR'
+        };
       }
 
       const result = await response.json();
-      if (result.success && result.data) {
-        let ohlcv = result.data.map((item: { date: string; open: string; high: string; low: string; close: string; volume: string | number }) => ({
-          symbol,
-          date: item.date,
-          open: parseFloat(item.open),
-          high: parseFloat(item.high),
-          low: parseFloat(item.low),
-          close: parseFloat(item.close),
-          volume: parseFloat(String(item.volume)) || 0,
-        }));
-
-        // Record data latency
-        if (this.latencyMonitoringEnabled && ohlcv.length > 0) {
-          const latestDataTime = new Date(ohlcv[ohlcv.length - 1].date).getTime();
-          dataLatencyMonitor.recordLatency(symbol, latestDataTime, Date.now(), 'api');
-        }
-
-        // Apply enhanced quality checks
-        if (this.qualityCheckEnabled) {
-          ohlcv = this.applyEnhancedQualityChecks(symbol, ohlcv);
-        }
-
-        // Apply data completion
-        if (this.dataCompletionEnabled) {
-          const completionResult = await dataCompletionPipeline.complete(ohlcv, symbol);
-          if (completionResult.success) {
-            ohlcv = completionResult.data;
-          }
-        }
-
-        this.marketDataCache.set(symbol, ohlcv);
-        
-         // Store in smart cache
-        if (this.useSmartCache) {
-          marketDataCache.set(`market-data:${symbol}`, ohlcv as unknown, this.cacheTimeout);
-        }
-
-        // Persist to IndexedDB
-        if (this.persistenceEnabled) {
-          try {
-            await dataPersistenceLayer.saveOHLCV(ohlcv);
-          } catch (error) {
-            logger.warn(`[MarketDataService] Failed to persist data:`, error);
-          }
-        }
-        
-        // Log fetch performance
-        const fetchDuration = Date.now() - fetchStartTime;
-        if (fetchDuration > 5000) {
-          logger.warn(`Slow market data fetch for ${symbol}: ${fetchDuration}ms`);
-        }
-
-        return ohlcv;
+      if (!result.success || !result.data) {
+        return {
+          success: false,
+          error: result.error || 'No data returned from API',
+          code: 'NOT_FOUND'
+        };
       }
 
-      return [];
+      let ohlcv = result.data.map((item: { date: string; open: string; high: string; low: string; close: string; volume: string | number }) => ({
+        symbol,
+        date: item.date,
+        open: parseFloat(item.open),
+        high: parseFloat(item.high),
+        low: parseFloat(item.low),
+        close: parseFloat(item.close),
+        volume: parseFloat(String(item.volume)) || 0,
+      }));
+
+      // Record data latency
+      if (this.latencyMonitoringEnabled && ohlcv.length > 0) {
+        const latestDataTime = new Date(ohlcv[ohlcv.length - 1].date).getTime();
+        dataLatencyMonitor.recordLatency(symbol, latestDataTime, Date.now(), 'api');
+      }
+
+      // Validation and cleaning
+      if (this.qualityCheckEnabled) {
+        ohlcv = this.applyEnhancedQualityChecks(symbol, ohlcv);
+        if (ohlcv.length === 0) {
+          return {
+            success: false,
+            error: 'Data failed quality validation checks',
+            code: 'VALIDATION_ERROR'
+          };
+        }
+      }
+
+      // Apply data completion
+      if (this.dataCompletionEnabled) {
+        const completionResult = await dataCompletionPipeline.complete(ohlcv, symbol);
+        if (completionResult.success) {
+          ohlcv = completionResult.data;
+        }
+      }
+
+      // Update caches
+      this.marketDataCache.set(symbol, ohlcv);
+      if (this.useSmartCache) {
+        marketDataCache.set(`market-data:${symbol}`, ohlcv as unknown, this.cacheTimeout);
+      }
+
+      // Persist to IndexedDB
+      if (this.persistenceEnabled) {
+        try {
+          await dataPersistenceLayer.saveOHLCV(ohlcv);
+        } catch (error) {
+          logger.warn(`[MarketDataService] Failed to persist data:`, error);
+        }
+      }
+
+      // Log fetch performance
+      const fetchDuration = Date.now() - fetchStartTime;
+      if (fetchDuration > 5000) {
+        logger.warn(`Slow market data fetch for ${symbol}: ${fetchDuration}ms`);
+      }
+
+      return { success: true, data: ohlcv, source: 'api' };
     } catch (error) {
       logError(error, `MarketDataService.fetchMarketData(${symbol})`);
-      return [];
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error during fetch',
+        code: 'NETWORK_ERROR'
+      };
     }
   }
 
@@ -360,8 +345,10 @@ export class MarketDataService {
     const dataMap = new Map<string, OHLCV[]>();
 
     for (const index of MARKET_INDICES) {
-      const data = await this.fetchMarketData(index.symbol);
-      dataMap.set(index.symbol, data);
+      const result = await this.fetchMarketData(index.symbol);
+      if (result.success) {
+        dataMap.set(index.symbol, result.data);
+      }
     }
 
     return dataMap;
@@ -585,7 +572,8 @@ export class MarketDataService {
    * @returns MarketData構造（symbol, data, trend, changePercent）
    */
   async getMarketData(symbol: string): Promise<MarketData> {
-    const data = await this.fetchMarketData(symbol);
+    const result = await this.fetchMarketData(symbol);
+    const data = result.success ? result.data : [];
     const trend = data.length > 0 ? this.calculateTrend(data) : 'NEUTRAL';
     
     let changePercent = 0;
