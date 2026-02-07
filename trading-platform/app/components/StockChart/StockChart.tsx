@@ -120,84 +120,83 @@ export const StockChart = memo(function StockChart({
   });
 
   const chartData = useMemo(() => ({
-    labels: extendedData.labels,
-    datasets: [
-      {
-        label: `${market === 'japan' ? '株価' : 'Stock Price'}`,
-        data: actualData.prices,
-        borderColor: CHART_COLORS.PRICE.LINE,
-        backgroundColor: CHART_COLORS.PRICE.BACKGROUND,
-        borderWidth: 2,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        fill: true,
-        tension: 0.1,
-        yAxisID: 'y',
-      },
-      ...(showSMA && sma20.length > 0 ? [
-        {
-          label: `SMA (${SMA_CONFIG.MEDIUM_PERIOD})`,
-          data: sma20,
-          borderColor: CHART_COLORS.INDICATORS.SMA,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.1,
-          yAxisID: 'y',
-        }
-      ] : []),
-      ...(showBollinger && upper.length > 0 && lower.length > 0 ? [
-        {
-          label: 'Bollinger Upper',
-          data: upper,
-          borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
-          borderWidth: 1,
-          borderDash: [5, 5],
-          pointRadius: 0,
-          fill: false,
-          yAxisID: 'y',
-        },
-        {
-          label: 'Bollinger Lower',
-          data: lower,
-          borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
-          borderWidth: 1,
-          borderDash: [5, 5],
-          pointRadius: 0,
-          fill: '-1',
-          backgroundColor: CHART_COLORS.INDICATORS.BOLLINGER_FILL,
-          yAxisID: 'y',
-        }
-      ] : []),
-      ...forecastDatasets,
-      ...ghostForecastDatasets,
-      ...(normalizedIndexData ? [
-        {
-          label: market === 'japan' ? '日経平均 (正規化)' : 'S&P 500 (Normalized)',
-          data: normalizedIndexData,
-          borderColor: CHART_COLORS.INDEX.LINE,
-          borderWidth: 1,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.1,
-          yAxisID: 'yIndex',
-        }
-      ] : []),
-    ],
-  }), [
-    extendedData.labels,
-    normalizedIndexData,
-    forecastDatasets,
-    ghostForecastDatasets,
-    sma20,
-    upper,
-    lower,
-    showSMA,
-    showBollinger,
-    market,
-    actualData.prices,
-    forecastExtension.forecastPrices.length
-  ]);
+     labels: extendedData.labels,
+     datasets: [
+       {
+         label: `${market === 'japan' ? '株価' : 'Stock Price'}`,
+         data: actualData.prices,
+         borderColor: CHART_COLORS.PRICE.LINE,
+         backgroundColor: CHART_COLORS.PRICE.BACKGROUND,
+         borderWidth: 2,
+         pointRadius: 0,
+         pointHoverRadius: 4,
+         fill: true,
+         tension: 0.1,
+         yAxisID: 'y',
+       },
+       ...(showSMA && sma20.length > 0 ? [
+         {
+           label: `SMA (${SMA_CONFIG.MEDIUM_PERIOD})`,
+           data: sma20,
+           borderColor: CHART_COLORS.INDICATORS.SMA,
+           borderWidth: 1.5,
+           pointRadius: 0,
+           fill: false,
+           tension: 0.1,
+           yAxisID: 'y',
+         }
+       ] : []),
+       ...(showBollinger && upper.length > 0 && lower.length > 0 ? [
+         {
+           label: 'Bollinger Upper',
+           data: upper,
+           borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
+           borderWidth: 1,
+           borderDash: [5, 5],
+           pointRadius: 0,
+           fill: false,
+           yAxisID: 'y',
+         },
+         {
+           label: 'Bollinger Lower',
+           data: lower,
+           borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
+           borderWidth: 1,
+           borderDash: [5, 5],
+           pointRadius: 0,
+           fill: '-1',
+           backgroundColor: CHART_COLORS.INDICATORS.BOLLINGER_FILL,
+           yAxisID: 'y',
+         }
+       ] : []),
+       ...forecastDatasets,
+       ...ghostForecastDatasets,
+       ...(normalizedIndexData ? [
+         {
+           label: market === 'japan' ? '日経平均 (正規化)' : 'S&P 500 (Normalized)',
+           data: normalizedIndexData,
+           borderColor: CHART_COLORS.INDEX.LINE,
+           borderWidth: 1,
+           pointRadius: 0,
+           fill: false,
+           tension: 0.1,
+           yAxisID: 'yIndex',
+         }
+       ] : []),
+     ],
+   }), [
+     extendedData.labels,
+     normalizedIndexData,
+     forecastDatasets,
+     ghostForecastDatasets,
+     sma20,
+     upper,
+     lower,
+     showSMA,
+     showBollinger,
+     market,
+     actualData.prices,
+   ]);
 
   // 4. Loading / Error States
   if (error) {

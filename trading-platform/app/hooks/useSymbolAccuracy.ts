@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { calculateRealTimeAccuracy, calculatePredictionError } from '@/app/lib/analysis';
 import { DATA_REQUIREMENTS } from '@/app/lib/constants';
@@ -67,6 +67,8 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const lastOhlcvDate = ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty';
+
   useEffect(() => {
     const currentSymbol = stock.symbol;
     const currentMarket = stock.market;
@@ -105,7 +107,6 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
       setError(null);
 
       try {
-        // Increased to 3 years to ensure calculateRealTimeAccuracy has enough data
         const threeYearsAgo = new Date();
         threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
         const startDate = threeYearsAgo.toISOString().split('T')[0];
@@ -200,7 +201,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       controller.abort();
     };
-  }, [stock.symbol, stock.market, ohlcv.length, ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty']);
+  }, [stock.symbol, stock.market, ohlcv, lastOhlcvDate]);
 
   return { accuracy, loading, error };
 }

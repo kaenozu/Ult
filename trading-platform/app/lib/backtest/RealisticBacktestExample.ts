@@ -281,10 +281,12 @@ export async function compareRealisticVsIdeal(data: OHLCV[], strategy: Strategy)
 // Export Usage Functions
 // ============================================================================
 
-export default {
+const backtestExamples = {
   createJapanRealisticConfig,
   createUSARealisticConfig,
   ManualRealisticBacktest,
   smaRealisticStrategy,
   compareRealisticVsIdeal,
 };
+
+export default backtestExamples;

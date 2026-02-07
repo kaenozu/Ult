@@ -354,15 +354,15 @@ export async function launchAllAgents(worktreeBasePath: string): Promise<void> {
   });
 
   await Promise.all(promises);
-
-  console.log('脂 All agents finished!');
+  console.log(' All agents finished!');
 }
 
-// Default export
-export default {
+const skillsDefault = {
   launchAgent,
   launchAllAgents,
   SKILLS,
   ULT_TASKS,
 };
+
+export default skillsDefault;
 

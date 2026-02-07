@@ -13,11 +13,14 @@ export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[
   const { toggleAI, trades } = useAIStore();
   const journal = useJournalStore((state) => state.journal);
   const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(stock, ohlcv);
-  
-  // Map useSymbolAccuracy result to expected preciseHitRate format
-  const preciseHitRate = accuracy ? { hitRate: accuracy.hitRate, trades: accuracy.totalTrades } : null;
+
+  // Precise hit rate initialized in useMemo to avoid conditional dependency issues
+  const preciseHitRate = useMemo(() => 
+    accuracy ? { hitRate: accuracy.hitRate, trades: accuracy.totalTrades } : null,
+    [accuracy]
+  );
   const calculatingHitRate = accuracyLoading;
-  const error: string | null = null; // useSymbolAccuracy doesn't return error
+  const error: string | null = null;
 
   const displaySignal = signal;
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { usePerformanceMonitor } from '@/app/lib/performance';
@@ -8,12 +8,12 @@ export function useBacktestControls(stock: Stock, ohlcv: OHLCV[] = [], activeTab
   const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null);
   const [isBacktesting, setIsBacktesting] = useState(false);
 
-  // Reset backtest when stock changes
   useEffect(() => {
     setBacktestResult(null);
   }, [stock.symbol]);
 
-  // Lazy load backtest result
+  const lastOhlcvDate = ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty';
+
   useEffect(() => {
     if (loading) return;
 
@@ -39,21 +39,24 @@ export function useBacktestControls(stock: Stock, ohlcv: OHLCV[] = [], activeTab
       }
 
       setIsBacktesting(true);
-      // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
       setTimeout(() => {
         try {
           const result = measure('runBacktest', () =>
             runBacktest(stock.symbol, ohlcv, stock.market)
           );
           setBacktestResult(result);
-        } catch (e) {
-          console.error("Backtest failed", e);
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            console.error("Backtest failed", error.message);
+          } else {
+            console.error("Backtest failed with unknown error", error);
+          }
         } finally {
           setIsBacktesting(false);
         }
       }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv.length, ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty', stock.symbol, stock.market, loading, measure]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, lastOhlcvDate, stock.symbol, stock.market, loading, measure]);
 
   return {
     backtestResult,

@@ -177,12 +177,14 @@ export function usePerformanceMonitor(
       mountTimeRef.current = performance.now();
     }
 
+    const currentRenderCount = renderCountRef.current;
+
     return () => {
       if (trackUnmount && mountTimeRef.current) {
         const lifeTime = performance.now() - mountTimeRef.current;
         console.log(
           `[Lifecycle] ${componentName} unmounted after ${lifeTime.toFixed(2)}ms ` +
-          `(${renderCountRef.current} renders)`
+          `(${currentRenderCount} renders)`
         );
       }
     };
@@ -193,32 +195,32 @@ export function usePerformanceMonitor(
     if (trackRender) {
       renderCountRef.current++;
       const now = performance.now();
+      const currentRenderCount = renderCountRef.current;
 
       if (lastRenderTimeRef.current) {
         const timeSinceLastRender = now - lastRenderTimeRef.current;
         console.log(
-          `[Render] ${componentName} #${renderCountRef.current} ` +
+          `[Render] ${componentName} #${currentRenderCount} ` +
           `(${timeSinceLastRender.toFixed(2)}ms since last render)`
         );
       } else {
-        console.log(`[Render] ${componentName} #${renderCountRef.current} (first render)`);
+        console.log(`[Render] ${componentName} #${currentRenderCount} (first render)`);
       }
 
       lastRenderTimeRef.current = now;
     }
-  }, [trackRender]);
+  }, [componentName, trackRender]);
 
-  // 計測用のヘルパー関数
-  const measure = useCallback(<T,>(operationName: string, fn: () => T): T => {
-    return measurePerformance(`${componentName}.${operationName}`, fn);
-  }, [componentName]);
+    const measure = useCallback(<T,>(operationName: string, fn: () => T): T => {
+      return measurePerformance(`${componentName}.${operationName}`, fn);
+    }, [componentName]);
 
-  const measureAsync = useCallback(
-    async <T,>(operationName: string, fn: () => Promise<T>): Promise<T> => {
-      return measurePerformanceAsync(`${componentName}.${operationName}`, fn);
-    },
-    [componentName]
-  );
+    const measureAsync = useCallback(
+      async <T,>(operationName: string, fn: () => Promise<T>): Promise<T> => {
+        return measurePerformanceAsync(`${componentName}.${operationName}`, fn);
+      },
+      [componentName]
+    );
 
   // Use a getter to avoid accessing ref during render
   const getRenderCount = () => renderCountRef.current;
@@ -236,47 +238,47 @@ export function usePerformanceMonitor(
  * @returns ベンチマーク関数
  */
 export function usePerformanceBenchmark(name: string) {
-  const resultsRef = useRef<Map<string, number[]>>(new Map());
+   const resultsRef = useRef<Map<string, number[]>>(new Map());
 
-  const benchmark = useCallback(<T,>(label: string, fn: () => T): T => {
-    const start = performance.now();
-    const result = fn();
-    const duration = performance.now() - start;
+   const benchmark = useCallback(<T,>(label: string, fn: () => T): T => {
+     const start = performance.now();
+     const result = fn();
+     const duration = performance.now() - start;
 
-    if (!resultsRef.current.has(label)) {
-      resultsRef.current.set(label, []);
-    }
-    resultsRef.current.get(label)!.push(duration);
+     if (!resultsRef.current.has(label)) {
+       resultsRef.current.set(label, []);
+     }
+     resultsRef.current.get(label)!.push(duration);
 
-    return result;
-  }, [name]);
+     return result;
+   }, []);
 
-  const getResults = useCallback(() => {
-    const results: Record<string, PerformanceMetric> = {};
-    
-    for (const [label, durations] of resultsRef.current.entries()) {
-      if (durations.length === 0) continue;
-      
-      const sorted = [...durations].sort((a, b) => a - b);
-      const sum = sorted.reduce((a, b) => a + b, 0);
-      
-      results[label] = {
-        avg: sum / sorted.length,
-        min: sorted[0],
-        max: sorted[sorted.length - 1],
-        count: sorted.length,
-        p50: sorted[Math.floor(sorted.length * 0.5)],
-        p95: sorted[Math.floor(sorted.length * 0.95)],
-        p99: sorted[Math.floor(sorted.length * 0.99)],
-      };
-    }
-    
-    return results;
-  }, []);
+   const getResults = useCallback(() => {
+     const results: Record<string, PerformanceMetric> = {};
+     
+     for (const [label, durations] of resultsRef.current.entries()) {
+       if (durations.length === 0) continue;
+       
+       const sorted = [...durations].sort((a, b) => a - b);
+       const sum = sorted.reduce((a, b) => a + b, 0);
+       
+       results[label] = {
+         avg: sum / sorted.length,
+         min: sorted[0],
+         max: sorted[sorted.length - 1],
+         count: sorted.length,
+         p50: sorted[Math.floor(sorted.length * 0.5)],
+         p95: sorted[Math.floor(sorted.length * 0.95)],
+         p99: sorted[Math.floor(sorted.length * 0.99)],
+       };
+     }
+     
+     return results;
+   }, []);
 
-  const reset = useCallback(() => {
-    resultsRef.current.clear();
-  }, []);
+   const reset = useCallback(() => {
+     resultsRef.current.clear();
+   }, []);
 
   return { benchmark, getResults, reset };
 }
