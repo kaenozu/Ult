@@ -282,7 +282,7 @@ export class AlternativeDataCollector extends EventEmitter {
       
       // 品質基準を満たさない場合は破棄
       if (quality.overall < this.config.qualityThreshold) {
-        console.warn(`[AlternativeDataCollector] Data quality below threshold for ${source.name}: ${quality.overall}`);
+        logger.warn(`[AlternativeDataCollector] Data quality below threshold for ${source.name}: ${quality.overall}`);
         this.collectionStats.errors++;
         this.emit('quality_warning', { source, quality });
         return;
@@ -307,7 +307,7 @@ export class AlternativeDataCollector extends EventEmitter {
       this.emit('data_collected', collectedData);
       
     } catch (error) {
-      console.error(`[AlternativeDataCollector] Error collecting from ${source.name}:`, error);
+      logger.error(`[AlternativeDataCollector] Error collecting from ${source.name}:`, error instanceof Error ? error : new Error(String(error)));
       this.collectionStats.errors++;
       this.updateStats(source, false);
       this.emit('collection_error', { source, error });
@@ -441,7 +441,7 @@ export class AlternativeDataCollector extends EventEmitter {
    */
   private async retryCollection(source: DataSourceConfig, attempt: number): Promise<void> {
     if (attempt > this.config.retryAttempts) {
-      console.error(`[AlternativeDataCollector] Max retry attempts reached for ${source.name}`);
+      logger.error(`[AlternativeDataCollector] Max retry attempts reached for ${source.name}`);
       return;
     }
 
@@ -568,6 +568,7 @@ export class AlternativeDataCollector extends EventEmitter {
 
 import { createSingleton } from '../utils/singleton';
 
+import { logger } from '@/app/core/logger';
 const { getInstance, resetInstance } = createSingleton(
   (config?: Partial<CollectorConfig>) => new AlternativeDataCollector(config)
 );

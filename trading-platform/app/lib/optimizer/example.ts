@@ -11,6 +11,7 @@ import { OHLCV } from '@/app/types';
 // Example 1: 過去のトレード履歴から学習
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export function example1_learnFromHistory() {
   
   // 実際のトレード履歴をシミュレート
@@ -284,6 +285,6 @@ if (require.main === module) {
     example4_customConfiguration();
     
   } catch (error) {
-    console.error('❌ エラーが発生しました:', error);
+    logger.error('❌ エラーが発生しました:', error instanceof Error ? error : new Error(String(error)));
   }
 }

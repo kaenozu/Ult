@@ -7,6 +7,7 @@
 
 import { OHLCV } from '@/app/types';
 
+import { logger } from '@/app/core/logger';
 const DB_NAME = 'TraderProDB';
 const DB_VERSION = 2; // Increment when schema changes
 const MIGRATIONS_STORE = '_migrations';
@@ -131,7 +132,7 @@ export class IndexedDBClient {
                 });
               }
             } catch (error) {
-              console.error(`[IndexedDB] Migration failed: ${migration.name}`, error);
+              logger.error(`[IndexedDB] Migration failed: ${migration.name}`, (error as Error) || new Error(String(error)));
               throw error;
             }
           }

@@ -1,3 +1,4 @@
+import { logger } from '@/app/core/logger';
 /**
  * Performance Monitor
  * 
@@ -73,9 +74,9 @@ export class PerformanceMonitor {
     this.record(name, duration, severity);
 
     if (severity === 'error') {
-      console.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
+      logger.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
     } else if (severity === 'warning') {
-      console.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
+      logger.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
     }
   }
 
@@ -93,9 +94,9 @@ export class PerformanceMonitor {
     this.record(name, duration, severity);
 
     if (severity === 'error') {
-      console.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
+      logger.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
     } else if (severity === 'warning') {
-      console.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
+      logger.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
     }
   }
 
@@ -279,9 +280,9 @@ export function measurePerformance(name: string, threshold: number = 100) {
       PerformanceMonitor.record(name, duration, severity);
 
       if (severity === 'error') {
-        console.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
+        logger.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
       } else if (severity === 'warning') {
-        console.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
+        logger.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
       }
 
       return result;

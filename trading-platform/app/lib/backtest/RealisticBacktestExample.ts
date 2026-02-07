@@ -20,6 +20,7 @@ import { OHLCV } from '@/app/types';
 /**
  * 日本株の現実的なバックテスト設定
  */
+import { logger } from '@/app/core/logger';
 export function createJapanRealisticConfig(): BacktestConfig {
   return {
     initialCapital: 1000000, // 100万円
@@ -138,20 +139,20 @@ export class ManualRealisticBacktest {
     this.engine.loadData('TEST', data);
     const result = await this.engine.runBacktest(strategy, 'TEST');
     
-    console.log('=== Backtest Results ===');
-    console.log(`Total Trades: ${result.metrics.totalTrades}`);
-    console.log(`Win Rate: ${result.metrics.winRate.toFixed(2)}%`);
-    console.log(`Total Return: ${result.metrics.totalReturn.toFixed(2)}%`);
-    console.log(`Sharpe Ratio: ${result.metrics.sharpeRatio.toFixed(2)}`);
-    console.log(`Max Drawdown: ${result.metrics.maxDrawdown.toFixed(2)}%`);
+    logger.info('=== Backtest Results ===');
+    logger.info(`Total Trades: ${result.metrics.totalTrades}`);
+    logger.info(`Win Rate: ${result.metrics.winRate.toFixed(2)}%`);
+    logger.info(`Total Return: ${result.metrics.totalReturn.toFixed(2)}%`);
+    logger.info(`Sharpe Ratio: ${result.metrics.sharpeRatio.toFixed(2)}`);
+    logger.info(`Max Drawdown: ${result.metrics.maxDrawdown.toFixed(2)}%`);
     
     // 手数料とスリッページの合計を計算
     const totalFees = result.trades.reduce((sum, t) => sum + t.fees, 0);
-    console.log(`\nTotal Fees: $${totalFees.toFixed(2)}`);
+    logger.info(`\nTotal Fees: $${totalFees.toFixed(2)}`);
     
     if (result.trades.length > 0 && result.trades[0].slippageAmount) {
       const totalSlippage = result.trades.reduce((sum, t) => sum + (t.slippageAmount || 0), 0);
-      console.log(`Total Slippage Cost: $${totalSlippage.toFixed(2)}`);
+      logger.info(`Total Slippage Cost: $${totalSlippage.toFixed(2)}`);
     }
   }
   
@@ -160,20 +161,20 @@ export class ManualRealisticBacktest {
    */
   showStatistics(): void {
     // 遅延統計
-    console.log('\n=== Latency Statistics ===');
+    logger.info('\n=== Latency Statistics ===');
     const latencies = Array(1000).fill(null).map(() => 
       this.latencySim.calculateLatency().totalLatency
     );
     const avgLatency = latencies.reduce((sum, l) => sum + l, 0) / latencies.length;
-    console.log(`Average Latency: ${avgLatency.toFixed(0)}ms`);
+    logger.info(`Average Latency: ${avgLatency.toFixed(0)}ms`);
     
     // 手数料例
-    console.log('\n=== Commission Examples ===');
+    logger.info('\n=== Commission Examples ===');
     const smallOrder = this.commissionCalc.calculateCommission(1000, 100, 'BUY');
-    console.log(`Small Order (100 shares @ $1000): $${smallOrder.commission.toFixed(2)} (${smallOrder.effectiveRate.toFixed(3)}%)`);
+    logger.info(`Small Order (100 shares @ $1000): $${smallOrder.commission.toFixed(2)} (${smallOrder.effectiveRate.toFixed(3)}%)`);
     
     const largeOrder = this.commissionCalc.calculateCommission(1000, 10000, 'BUY');
-    console.log(`Large Order (10,000 shares @ $1000): $${largeOrder.commission.toFixed(2)} (${largeOrder.effectiveRate.toFixed(3)}%)`);
+    logger.info(`Large Order (10,000 shares @ $1000): $${largeOrder.commission.toFixed(2)} (${largeOrder.effectiveRate.toFixed(3)}%)`);
   }
 }
 
@@ -220,8 +221,8 @@ export const smaRealisticStrategy: Strategy = {
   },
   
   onEnd: (result) => {
-    console.log('\n=== Strategy Complete ===');
-    console.log(`Final Equity: $${result.equityCurve[result.equityCurve.length - 1].toFixed(2)}`);
+    logger.info('\n=== Strategy Complete ===');
+    logger.info(`Final Equity: $${result.equityCurve[result.equityCurve.length - 1].toFixed(2)}`);
   },
 };
 
@@ -233,7 +234,7 @@ export const smaRealisticStrategy: Strategy = {
  * 理想的な環境と現実的な環境でのバックテストを比較
  */
 export async function compareRealisticVsIdeal(data: OHLCV[], strategy: Strategy): Promise<void> {
-  console.log('=== Comparing Ideal vs Realistic Backtest ===\n');
+  logger.info('=== Comparing Ideal vs Realistic Backtest ===\n');
   
   // 理想的な環境 (手数料・スリッページなし)
   const idealConfig: BacktestConfig = {
@@ -261,20 +262,20 @@ export async function compareRealisticVsIdeal(data: OHLCV[], strategy: Strategy)
   const realisticResult = await realisticEngine.runBacktest(strategy, 'REALISTIC');
   
   // 比較結果を表示
-  console.log('Metric                  | Ideal        | Realistic    | Difference');
-  console.log('------------------------|--------------|--------------|------------');
-  console.log(`Total Return           | ${idealResult.metrics.totalReturn.toFixed(2)}%     | ${realisticResult.metrics.totalReturn.toFixed(2)}%     | ${(idealResult.metrics.totalReturn - realisticResult.metrics.totalReturn).toFixed(2)}%`);
-  console.log(`Sharpe Ratio           | ${idealResult.metrics.sharpeRatio.toFixed(2)}       | ${realisticResult.metrics.sharpeRatio.toFixed(2)}       | ${(idealResult.metrics.sharpeRatio - realisticResult.metrics.sharpeRatio).toFixed(2)}`);
-  console.log(`Win Rate               | ${idealResult.metrics.winRate.toFixed(2)}%     | ${realisticResult.metrics.winRate.toFixed(2)}%     | ${(idealResult.metrics.winRate - realisticResult.metrics.winRate).toFixed(2)}%`);
-  console.log(`Max Drawdown           | ${idealResult.metrics.maxDrawdown.toFixed(2)}%    | ${realisticResult.metrics.maxDrawdown.toFixed(2)}%    | ${(realisticResult.metrics.maxDrawdown - idealResult.metrics.maxDrawdown).toFixed(2)}%`);
-  console.log(`Profit Factor          | ${idealResult.metrics.profitFactor.toFixed(2)}       | ${realisticResult.metrics.profitFactor.toFixed(2)}       | ${(idealResult.metrics.profitFactor - realisticResult.metrics.profitFactor).toFixed(2)}`);
+  logger.info('Metric                  | Ideal        | Realistic    | Difference');
+  logger.info('------------------------|--------------|--------------|------------');
+  logger.info(`Total Return           | ${idealResult.metrics.totalReturn.toFixed(2)}%     | ${realisticResult.metrics.totalReturn.toFixed(2)}%     | ${(idealResult.metrics.totalReturn - realisticResult.metrics.totalReturn).toFixed(2)}%`);
+  logger.info(`Sharpe Ratio           | ${idealResult.metrics.sharpeRatio.toFixed(2)}       | ${realisticResult.metrics.sharpeRatio.toFixed(2)}       | ${(idealResult.metrics.sharpeRatio - realisticResult.metrics.sharpeRatio).toFixed(2)}`);
+  logger.info(`Win Rate               | ${idealResult.metrics.winRate.toFixed(2)}%     | ${realisticResult.metrics.winRate.toFixed(2)}%     | ${(idealResult.metrics.winRate - realisticResult.metrics.winRate).toFixed(2)}%`);
+  logger.info(`Max Drawdown           | ${idealResult.metrics.maxDrawdown.toFixed(2)}%    | ${realisticResult.metrics.maxDrawdown.toFixed(2)}%    | ${(realisticResult.metrics.maxDrawdown - idealResult.metrics.maxDrawdown).toFixed(2)}%`);
+  logger.info(`Profit Factor          | ${idealResult.metrics.profitFactor.toFixed(2)}       | ${realisticResult.metrics.profitFactor.toFixed(2)}       | ${(idealResult.metrics.profitFactor - realisticResult.metrics.profitFactor).toFixed(2)}`);
   
   const idealFees = idealResult.trades.reduce((sum, t) => sum + t.fees, 0);
   const realisticFees = realisticResult.trades.reduce((sum, t) => sum + t.fees, 0);
-  console.log(`\nTotal Transaction Costs | $${idealFees.toFixed(2)}      | $${realisticFees.toFixed(2)}      | $${(realisticFees - idealFees).toFixed(2)}`);
+  logger.info(`\nTotal Transaction Costs | $${idealFees.toFixed(2)}      | $${realisticFees.toFixed(2)}      | $${(realisticFees - idealFees).toFixed(2)}`);
   
-  console.log('\n✅ Realistic backtest shows the true performance after all costs');
-  console.log('💡 Use realistic mode for production strategies to avoid overfitting');
+  logger.info('\n✅ Realistic backtest shows the true performance after all costs');
+  logger.info('💡 Use realistic mode for production strategies to avoid overfitting');
 }
 
 // ============================================================================

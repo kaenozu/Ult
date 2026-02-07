@@ -1,9 +1,12 @@
+import { logger } from '@/app/core/logger';
 /**
  * Performance Monitor
  * 
  * Provides performance tracking and metrics collection for ULT Trading Platform.
  * Tracks render times, API calls, and other performance-critical operations.
  */
+
+export type PerformanceSeverity = 'ok' | 'warning' | 'error';
 
 export interface PerformanceMetric {
   avg: number;
@@ -128,6 +131,20 @@ export class PerformanceMonitor {
   }
 
   /**
+   * Static record method for backward compatibility and simplified usage
+   */
+  static record(name: string, duration: number, severity: PerformanceSeverity = 'ok'): void {
+    performanceMonitor.recordMetric(name, duration);
+    
+    // Log based on severity
+    if (severity === 'error') {
+      logger.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
+    } else if (severity === 'warning') {
+      logger.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
+    }
+  }
+
+  /**
    * Check if operation is slower than average and log warning
    */
   private checkForSlowOperation(name: string, duration: number): void {
@@ -140,7 +157,7 @@ export class PerformanceMonitor {
     const threshold = avg * this.WARNING_THRESHOLD_MULTIPLIER;
     
     if (duration > threshold) {
-      console.warn(
+      logger.warn(
         `[Performance] ${name} took ${duration.toFixed(2)}ms ` +
         `(avg: ${avg.toFixed(2)}ms, threshold: ${threshold.toFixed(2)}ms)`
       );

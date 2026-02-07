@@ -48,7 +48,7 @@ jobs:
         working-directory: ./trading-platform
         run: npm run build
         env:
-          NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
         if: ${{ false }}
 
       - name: Run E2E tests

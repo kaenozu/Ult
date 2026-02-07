@@ -18,6 +18,7 @@ import { StrategyResult } from '../strategies/WinningStrategyEngine';
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export type AlertType = 
   | 'ENTRY_SIGNAL'
   | 'EXIT_SIGNAL'
@@ -590,7 +591,7 @@ class WinningAlertEngine {
       try {
         callback(alert);
       } catch (error) {
-        console.error('Alert subscriber error:', error);
+        logger.error('Alert subscriber error:', error instanceof Error ? error : new Error(String(error)));
       }
     });
 
@@ -721,7 +722,7 @@ class WinningAlertEngine {
           requireInteraction: alert.priority === 'CRITICAL',
         });
       } catch (error) {
-        console.error('Push notification failed:', error);
+        logger.error('Push notification failed:', error instanceof Error ? error : new Error(String(error)));
       }
     }
   }

@@ -9,6 +9,7 @@ import { EntryTimingRecommendation } from '../../types/shared';
 import { analyzeStock } from '@/app/lib/analysis';
 import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION, RISK_MANAGEMENT } from '@/app/lib/constants';
 
+import { logger } from '@/app/core/logger';
 interface MarketCorrelationResult {
   marketInfo: {
     indexSymbol: string;
@@ -319,7 +320,7 @@ export class SignalGenerationService {
       };
     } catch (error) {
       // エラーが発生した場合は基本シグナルを返す
-      console.error('Multi-timeframe analysis failed:', error);
+      logger.error('Multi-timeframe analysis failed:', error instanceof Error ? error : new Error(String(error)));
       return baseSignal;
     }
   }

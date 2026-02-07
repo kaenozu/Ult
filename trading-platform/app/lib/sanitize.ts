@@ -7,6 +7,7 @@ import DOMPurify from 'dompurify';
  * @param value - The string value to sanitize
  * @returns The sanitized string safe for rendering
  */
+import { logger } from '@/app/core/logger';
 export function sanitizeString(value: string | undefined | null): string {
   if (!value) return '';
   
@@ -21,7 +22,7 @@ export function sanitizeString(value: string | undefined | null): string {
       });
     } catch (error) {
       // Fallback to escaping if DOMPurify fails
-      console.error('DOMPurify failed, falling back to basic escaping:', error);
+      logger.error('DOMPurify failed, falling back to basic escaping:', error instanceof Error ? error : new Error(String(error)));
     }
   }
   

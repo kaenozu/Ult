@@ -14,6 +14,7 @@ import { RSI_CONFIG, BOLLINGER_BANDS } from './constants';
 /**
  * 各指標からのシグナル
  */
+import { logger } from '@/app/core/logger';
 interface IndicatorSignal {
   type: 'BUY' | 'SELL' | 'NEUTRAL';
   strength: number; // 0-1の確率
@@ -458,7 +459,7 @@ class ConsensusSignalService {
       };
     } catch (error) {
       // エラーが発生した場合は基本コンセンサスを返す
-      console.error('Multi-timeframe consensus analysis failed:', error);
+      logger.error('Multi-timeframe consensus analysis failed:', error instanceof Error ? error : new Error(String(error)));
       return baseConsensus;
     }
   }

@@ -11,6 +11,7 @@ import { ML_MODEL_CONFIG } from '@/app/lib/constants/prediction';
 /**
  * ML Model Status
  */
+import { logger } from '@/app/core/logger';
 export interface MLModelStatus {
   available: boolean;
   initialized: boolean;
@@ -67,7 +68,7 @@ export class MLIntegrationService {
     try {
       // Check if models are configured as trained
       if (!ML_MODEL_CONFIG.MODELS_TRAINED) {
-        console.info('[ML Integration] ML models not yet trained. Using rule-based predictions.');
+        logger.info('[ML Integration] ML models not yet trained. Using rule-based predictions.');
         this.modelStatus = {
           available: false,
           initialized: true,
@@ -80,7 +81,7 @@ export class MLIntegrationService {
 
       // TODO: Actual model loading will be implemented here when models are trained
       // For now, we prepare the infrastructure
-      console.info('[ML Integration] Model loading infrastructure ready');
+      logger.info('[ML Integration] Model loading infrastructure ready');
       
       this.modelStatus = {
         available: false,
@@ -91,7 +92,7 @@ export class MLIntegrationService {
       };
 
     } catch (error) {
-      console.error('[ML Integration] Initialization failed:', error);
+      logger.error('[ML Integration] Initialization failed:', error instanceof Error ? error : new Error(String(error)));
       this.modelStatus = {
         available: false,
         initialized: true,
@@ -141,7 +142,7 @@ export class MLIntegrationService {
       // For now, return null to use rule-based predictions
       return null;
     } catch (error) {
-      console.error('[ML Integration] Prediction failed:', error);
+      logger.error('[ML Integration] Prediction failed:', error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }
@@ -156,7 +157,7 @@ export class MLIntegrationService {
   ): void {
     // TODO: Implement prediction tracking for model performance monitoring
     if (this.modelStatus.available) {
-      console.debug('[ML Integration] Recording prediction outcome:', {
+      logger.debug('[ML Integration] Recording prediction outcome:', {
         predictionId,
         actualValue,
         predictedValue,

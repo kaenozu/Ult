@@ -12,6 +12,7 @@ import type { SocialMediaPost } from '../sentiment/SentimentAnalysisEngine';
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface SocialMediaSource {
   id: string;
   platform: 'twitter' | 'reddit' | 'stocktwits' | 'telegram';
@@ -108,7 +109,7 @@ export class SocialMediaCollector extends EventEmitter {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn('[SocialMediaCollector] Already running');
+      logger.warn('[SocialMediaCollector] Already running');
       return;
     }
 
@@ -143,14 +144,14 @@ export class SocialMediaCollector extends EventEmitter {
   private startSourceCollection(source: SocialMediaSource): void {
     // Initial fetch
     this.fetchFromSource(source).catch((error) => {
-      console.error(`[SocialMediaCollector] Error fetching from ${source.platform}:`, error);
+      logger.error(`[SocialMediaCollector] Error fetching from ${source.platform}:`, error);
       this.emit('error', { source: source.id, error });
     });
 
     // Set up periodic updates
     const timer = setInterval(() => {
       this.fetchFromSource(source).catch((error) => {
-        console.error(`[SocialMediaCollector] Error fetching from ${source.platform}:`, error);
+        logger.error(`[SocialMediaCollector] Error fetching from ${source.platform}:`, error);
         this.emit('error', { source: source.id, error });
       });
     }, source.updateInterval);
@@ -188,7 +189,7 @@ export class SocialMediaCollector extends EventEmitter {
         this.emit('posts', { source: source.id, posts: newPosts });
       }
     } catch (error) {
-      console.error(`[SocialMediaCollector] Failed to fetch from ${source.platform}:`, error);
+      logger.error(`[SocialMediaCollector] Failed to fetch from ${source.platform}:`, (error as Error) || new Error(String(error)));
       throw error;
     }
   }
@@ -201,7 +202,7 @@ export class SocialMediaCollector extends EventEmitter {
     // For now, return empty array as placeholder
     
     if (!source.apiKey) {
-      console.warn('[SocialMediaCollector] Twitter API key not configured');
+      logger.warn('[SocialMediaCollector] Twitter API key not configured');
       return [];
     }
 
@@ -216,7 +217,7 @@ export class SocialMediaCollector extends EventEmitter {
     // Reddit API would be used in production
     
     if (!source.apiKey) {
-      console.warn('[SocialMediaCollector] Reddit API credentials not configured');
+      logger.warn('[SocialMediaCollector] Reddit API credentials not configured');
       return [];
     }
 

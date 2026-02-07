@@ -14,6 +14,7 @@ import type { OHLCV, Stock, Signal, TechnicalIndicator } from '@/app/types';
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -448,7 +449,7 @@ export class DataAggregator {
         }
       } catch (error) {
         // Continue with other requests
-        console.error('Batch request failed:', error);
+        logger.error('Batch request failed:', error instanceof Error ? error : new Error(String(error)));
       }
     }
 

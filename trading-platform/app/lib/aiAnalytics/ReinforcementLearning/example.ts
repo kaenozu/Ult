@@ -17,6 +17,7 @@ import { ActionType } from './types';
 /**
  * Example 1: Basic training loop with single agent
  */
+import { logger } from '@/app/core/logger';
 export async function basicTrainingExample(marketData: OHLCV[]): Promise<void> {
   // Initialize agent and environment
   const agent = new TradingAgent({
@@ -72,15 +73,15 @@ export async function basicTrainingExample(marketData: OHLCV[]): Promise<void> {
     if (episode > 0) {
       try {
         const metrics = await agent.learn();
-        console.log({
+        logger.info(JSON.stringify({
           reward: episodeReward.toFixed(4),
           steps: stepCount,
           epsilon: agent.getEpsilon().toFixed(3),
           policyLoss: metrics.policyLoss.toFixed(4),
           valueLoss: metrics.valueLoss.toFixed(4),
-        });
+        }));
       } catch (error) {
-        console.error('Learning failed:', error);
+        logger.error('Learning failed:', error instanceof Error ? error : new Error(String(error)));
       }
     }
 

@@ -1,10 +1,11 @@
 
 import { PerformanceMonitor } from './performance/monitor';
 
+import { logger } from '@/app/core/logger';
 const monitor = new PerformanceMonitor();
 
 async function simulateOperations() {
-  console.log('Starting performance simulation...');
+  logger.info('Starting performance simulation...');
 
   // Simulate a fast operation
   await monitor.measureAsync('fast_operation', () => new Promise(resolve => setTimeout(resolve, 50)));
@@ -22,8 +23,8 @@ async function simulateOperations() {
   }
 
   // Log report
-  console.log('\nPerformance Report:');
-  console.log(JSON.stringify(monitor.getReport(), null, 2));
+  logger.info('\nPerformance Report:');
+  logger.info(JSON.stringify(monitor.getReport(), null, 2));
 }
 
 simulateOperations().catch(console.error);

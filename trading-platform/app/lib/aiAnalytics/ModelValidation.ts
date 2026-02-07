@@ -10,6 +10,7 @@ import { OHLCV } from '../../types/shared';
 /**
  * 訓練データセット
  */
+import { logger } from '@/app/core/logger';
 export interface TrainingData {
   features: number[][];
   targets: number[];
@@ -426,7 +427,7 @@ export class ModelValidation {
 
     // 組み合わせが多すぎる場合は制限（最大100個）
     if (combinations.length > 100) {
-      console.warn(`Too many parameter combinations (${combinations.length}). Sampling 100 combinations.`);
+      logger.warn(`Too many parameter combinations (${combinations.length}). Sampling 100 combinations.`);
       const step = Math.floor(combinations.length / 100);
       return combinations.filter((_, i) => i % step === 0).slice(0, 100);
     }

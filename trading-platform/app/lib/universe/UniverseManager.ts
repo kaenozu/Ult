@@ -10,6 +10,7 @@ import { Stock } from '@/app/types';
 /**
  * Universe stock with metadata
  */
+import { logger } from '@/app/core/logger';
 export interface UniverseStock {
   symbol: string;
   name: string;
@@ -102,7 +103,7 @@ export class UniverseManager {
       try {
         await this.addStock(symbol, false);
       } catch (error) {
-        console.warn(`Failed to add default stock ${symbol}:`, error);
+        logger.warn(`Failed to add default stock ${symbol}:`, error);
       }
     }
   }
@@ -261,7 +262,7 @@ export class UniverseManager {
           stock.marketCap = updatedInfo.marketCap;
           stock.volatility = updatedInfo.volatility || 0;
         } catch (error) {
-          console.warn(`Failed to update stock ${symbol}:`, error);
+          logger.warn(`Failed to update stock ${symbol}:`, error);
           // Deactivate stocks that fail to update multiple times
           stock.active = false;
         }

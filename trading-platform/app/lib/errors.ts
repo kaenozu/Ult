@@ -1,3 +1,4 @@
+import { logger } from '@/app/core/logger';
 /**
  * Trading Platform Unified Error Handling
  * 
@@ -525,20 +526,20 @@ export function logError(error: unknown, context: string): void {
   const timestamp = new Date().toISOString();
   
   if (error instanceof TradingError) {
-    console.error(`[${timestamp}] [${context}] ${error.name}:`, {
+    logger.error(`[${timestamp}] [${context}] ${error.name}:`, {
       code: error.code,
       severity: error.severity,
       message: error.message,
       stack: error.stack,
-    });
+    } as any);
   } else if (error instanceof Error) {
-    console.error(`[${timestamp}] [${context}] ${error.name}:`, {
+    logger.error(`[${timestamp}] [${context}] ${error.name}:`, {
       name: error.name,
       message: error.message,
       stack: error.stack,
-    });
+    } as any);
   } else {
-    console.error(`[${timestamp}] [${context}] Unknown error:`, error);
+    logger.error(`[${timestamp}] [${context}] Unknown error:`, error instanceof Error ? error : new Error(String(error)));
   }
 }
 
@@ -646,7 +647,7 @@ export function getUserErrorMessage(error: unknown): string {
  * const result = divide(10, 2);
  * if (result.isOk) {
  * } else {
- *   console.error('Error:', result.error);
+ *   logger.error('Error:', result.error);
  * }
  * ```
  */

@@ -9,6 +9,7 @@ import { OHLCV, Stock } from '@/app/types';
 import { realTimeDataService, RealTimeData } from './realtime-data-service';
 import { DataError, logError } from '@/app/lib/errors';
 
+import { logger } from '@/app/core/logger';
 export interface TickData {
   symbol: string;
   price: number;
@@ -82,7 +83,7 @@ class HighFrequencyDataProcessingService {
    */
   startDataStream(symbols: string[]): void {
     if (this.isRunning) {
-      console.warn('Data stream is already running');
+      logger.warn('Data stream is already running');
       return;
     }
 
@@ -97,7 +98,7 @@ class HighFrequencyDataProcessingService {
         this.isRunning = false;
       },
       onError: (error) => {
-        console.error('Real-time data stream error:', error);
+        logger.error('Real-time data stream error:', error);
       },
       onData: (data) => {
         this.handleIncomingData(data);

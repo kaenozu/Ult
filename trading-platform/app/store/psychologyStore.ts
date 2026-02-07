@@ -62,6 +62,10 @@ interface PsychologyState {
   // Trading calendar
   calendar: Record<string, TradingCalendarDay>; // key: YYYY-MM-DD
   
+  // Trade Plans & Reflections
+  tradePlans: any[];
+  reflections: any[];
+
   // Enhanced Psychology Features
   current_emotions: EmotionScore[];
   active_recommendations: CoachingRecommendation[];
@@ -74,7 +78,9 @@ interface PsychologyState {
   // Actions
   addAlert: (alert: PsychologyAlertType) => void;
   clearAlerts: () => void;
-  dismissAlert: (id: string) => void;
+  dismissAlert: (id: string | Date) => void;
+  getAlertStats: () => any;
+  getRecentAlerts: (hours: number) => PsychologyAlertType[];
   
   setMentalHealth: (metrics: MentalHealthMetrics) => void;
   
@@ -89,6 +95,16 @@ interface PsychologyState {
   updateCalendarDay: (date: string, day: Partial<TradingCalendarDay>) => void;
   getCalendarDay: (date: string) => TradingCalendarDay | undefined;
   
+  // Trade Plan Actions
+  addTradePlan: (plan: any) => void;
+  updateTradePlan: (id: string, plan: any) => void;
+  deleteTradePlan: (id: string) => void;
+  getTradePlan: (id: string) => any;
+
+  // Reflection Actions
+  addReflection: (reflection: any) => void;
+  getReflection: (tradeId: string) => any;
+
   // Enhanced Psychology Actions
   addEmotion: (emotion: EmotionScore) => void;
   addRecommendation: (recommendation: CoachingRecommendation) => void;
@@ -129,6 +145,8 @@ export const usePsychologyStore = create<PsychologyState>()(
       disciplineScore: null,
       goals: defaultGoals,
       calendar: {},
+      tradePlans: [],
+      reflections: [],
 
       // Enhanced Psychology state
       current_emotions: [],
@@ -156,8 +174,34 @@ export const usePsychologyStore = create<PsychologyState>()(
       clearAlerts: () => set({ alerts: [] }),
 
       dismissAlert: (id) => set((state) => ({
-        alerts: state.alerts.filter(a => a.id !== id)
+        alerts: state.alerts.filter(a => {
+          if (id instanceof Date) {
+            return (a.timestamp as any) !== id;
+          }
+          return a.id !== id;
+        })
       })),
+
+      getAlertStats: () => {
+        const { alerts } = get();
+        return {
+          total: alerts.length,
+          byType: alerts.reduce((acc: any, a) => {
+            acc[a.type] = (acc[a.type] || 0) + 1;
+            return acc;
+          }, {}),
+          bySeverity: alerts.reduce((acc: any, a) => {
+            acc[a.severity] = (acc[a.severity] || 0) + 1;
+            return acc;
+          }, {})
+        };
+      },
+
+      getRecentAlerts: (hours) => {
+        const { alerts } = get();
+        const cutoff = Date.now() - hours * 60 * 60 * 1000;
+        return alerts.filter(a => new Date(a.timestamp).getTime() > cutoff);
+      },
 
       // Mental health actions
       setMentalHealth: (metrics) => set({ currentMentalHealth: metrics }),
@@ -225,6 +269,28 @@ export const usePsychologyStore = create<PsychologyState>()(
         return get().calendar[date];
       },
 
+      // Trade Plan Actions
+      addTradePlan: (plan) => set((state) => ({
+        tradePlans: [plan, ...state.tradePlans]
+      })),
+
+      updateTradePlan: (id, updates) => set((state) => ({
+        tradePlans: state.tradePlans.map(p => p.id === id ? { ...p, ...updates } : p)
+      })),
+
+      deleteTradePlan: (id) => set((state) => ({
+        tradePlans: state.tradePlans.filter(p => p.id !== id)
+      })),
+
+      getTradePlan: (id) => get().tradePlans.find(p => p.id === id),
+
+      // Reflection Actions
+      addReflection: (reflection) => set((state) => ({
+        reflections: [reflection, ...state.reflections]
+      })),
+
+      getReflection: (tradeId) => get().reflections.find(r => r.tradeId === tradeId),
+
       // Enhanced Psychology Actions
       addEmotion: (emotion: EmotionScore) => {
         set((state) => ({
@@ -290,6 +356,8 @@ export const usePsychologyStore = create<PsychologyState>()(
         disciplineScore: null,
         goals: defaultGoals,
         calendar: {},
+        tradePlans: [],
+        reflections: [],
         current_emotions: [],
         active_recommendations: [],
         sessions: [],

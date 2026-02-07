@@ -11,6 +11,7 @@ import { TrainingData, WalkForwardResult, MLBacktestConfig } from '../ml/types';
 import { EnsembleStrategy } from '../ml/EnsembleStrategy';
 import { FeatureEngineering } from '../ml/FeatureEngineering';
 
+import { logger } from '@/app/core/logger';
 export interface WalkForwardConfig {
   trainWindowSize: number; // days
   testWindowSize: number; // days
@@ -56,7 +57,7 @@ export class WalkForwardAnalysis extends EventEmitter {
       const trainData = data.slice(startIdx, trainEndIdx);
       const testData = data.slice(trainEndIdx, testEndIdx);
 
-      console.log(`Walk-Forward Window ${windowId + 1}: Train ${trainData.length} samples, Test ${testData.length} samples`);
+      logger.info(`Walk-Forward Window ${windowId + 1}: Train ${trainData.length} samples, Test ${testData.length} samples`);
 
       // Extract features
       const trainFeatures = this.featureService.extractFeatures(trainData, 200);
@@ -77,7 +78,7 @@ export class WalkForwardAnalysis extends EventEmitter {
         try {
           await this.ensembleStrategy.trainAllModels(trainingData);
         } catch (error) {
-          console.error('Error training models:', error);
+          logger.error('Error training models:', error instanceof Error ? error : new Error(String(error)));
           // Skip this window if training fails
           startIdx += config.stepSize;
           windowId++;
@@ -106,7 +107,7 @@ export class WalkForwardAnalysis extends EventEmitter {
             actual: testLabels[i],
           });
         } catch (error) {
-          console.error('Error making prediction:', error);
+          logger.error('Error making prediction:', error instanceof Error ? error : new Error(String(error)));
         }
       }
 

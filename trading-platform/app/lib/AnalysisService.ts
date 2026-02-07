@@ -17,6 +17,7 @@ import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetec
 import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
 import { mlIntegrationService } from './services/MLIntegrationService';
 
+import { logger } from '@/app/core/logger';
 export interface AnalysisContext {
     startIndex?: number;
     endIndex?: number;
@@ -40,16 +41,16 @@ class AnalysisService {
      * 予測コーン（Forecast Cone）の計算
      */
     calculateForecastCone(data: OHLCV[]): Signal['forecastCone'] | undefined {
-        console.log('[calculateForecastCone] input data length:', data.length, 'LOOKBACK:', FORECAST_CONE.LOOKBACK_DAYS);
+        logger.info('[calculateForecastCone] input data length:', data.length, `LOOKBACK: ${FORECAST_CONE.LOOKBACK_DAYS}`);
         if (data.length < FORECAST_CONE.LOOKBACK_DAYS) {
-            console.warn('[calculateForecastCone] Insufficient data, returning undefined');
+            logger.warn('[calculateForecastCone] Insufficient data, returning undefined');
             return undefined;
         }
 
         const recentData = data.slice(-FORECAST_CONE.LOOKBACK_DAYS);
         const closes = recentData.map(d => d.close);
         const currentPrice = closes[closes.length - 1];
-        console.log('[calculateForecastCone] recentData length:', recentData.length, 'currentPrice:', currentPrice);
+        logger.info('[calculateForecastCone] recentData length:', recentData.length, `currentPrice: ${currentPrice}`);
 
         const priceReturns = [];
         for (let index = 1; index < closes.length; index++) {
@@ -96,7 +97,7 @@ class AnalysisService {
             base,
             confidence: parseFloat(confidence.toFixed(1))
         };
-        console.log('[calculateForecastCone] success', {
+        logger.info('[calculateForecastCone] success', {
             dataLength: data.length,
             bearishLowerCount: bearishLower.length,
             bullishLowerCount: bullishLower.length,
@@ -420,14 +421,14 @@ class AnalysisService {
      * ML予測が利用可能な場合は優先的に使用し、そうでない場合はルールベースにフォールバック
      */
     analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
-        console.log('[analyzeStock] start', { symbol, market, dataLength: data.length, context: context ? { endIndex: context.endIndex, startIndex: context.startIndex } : 'none' });
+        logger.info('[analyzeStock] start', { symbol, market, dataLength: data.length, context: context ? { endIndex: context.endIndex, startIndex: context.startIndex } : 'none' });
 
         // Handle window data for legacy components
         let windowData = data;
         if (context?.endIndex !== undefined) {
             windowData = data.slice(context.startIndex || 0, context.endIndex + 1);
         }
-        console.log('[analyzeStock] windowData length:', windowData.length);
+        logger.info('[analyzeStock] windowData length:', windowData.length);
 
         // Detect market regime first (even for insufficient data)
         const regimeResult = marketRegimeDetector.detect(windowData);
@@ -546,7 +547,7 @@ class AnalysisService {
         let marketContext: Signal['marketContext'];
 
         const indexData = indexDataOverride || marketDataService.getCachedMarketData(relatedIndexSymbol);
-        console.log('[marketContext] relatedIndexSymbol:', relatedIndexSymbol, 'indexData length:', indexData?.length);
+        logger.info('[marketContext] relatedIndexSymbol:', relatedIndexSymbol, `indexData length: ${indexData?.length}`);
         if (indexData && indexData.length >= 50) {
             const correlation = marketDataService.calculateCorrelation(windowData, indexData);
             const indexTrend = marketDataService.calculateTrend(indexData);
@@ -556,7 +557,7 @@ class AnalysisService {
                 correlation: parseFloat(correlation.toFixed(2)),
                 indexTrend,
             };
-            console.log('[marketContext] set', { indexSymbol: relatedIndexSymbol, correlation: marketContext.correlation, indexTrend });
+            logger.info('[marketContext] set', { indexSymbol: relatedIndexSymbol, correlation: marketContext.correlation, indexTrend });
 
             if (type === 'BUY' && indexTrend === 'DOWN' && correlation < -0.5) {
                 confidence -= Math.abs(correlation) * 30;
@@ -613,7 +614,7 @@ class AnalysisService {
             positionSizeAdjustment: strategyRec.positionSizeAdjustment,
             exitStrategy,
         };
-        console.log('[analyzeStock] result', {
+        logger.info('[analyzeStock] result', {
             symbol, type, market,
             accuracy: result.accuracy,
             targetPrice: result.targetPrice,

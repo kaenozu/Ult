@@ -22,6 +22,7 @@ import {
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface IntegrationConfig {
   news?: Partial<NewsCollectorConfig>;
   social?: Partial<SocialMediaCollectorConfig>;
@@ -90,7 +91,7 @@ export class SentimentIntegrationService extends EventEmitter {
     });
 
     this.newsCollector.on('error', (error) => {
-      console.error('[SentimentIntegration] News collector error:', error);
+      logger.error('[SentimentIntegration] News collector error:', error);
       this.emit('error', { source: 'news', error });
     });
 
@@ -100,7 +101,7 @@ export class SentimentIntegrationService extends EventEmitter {
     });
 
     this.socialCollector.on('error', (error) => {
-      console.error('[SentimentIntegration] Social collector error:', error);
+      logger.error('[SentimentIntegration] Social collector error:', error);
       this.emit('error', { source: 'social', error });
     });
 
@@ -123,7 +124,7 @@ export class SentimentIntegrationService extends EventEmitter {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn('[SentimentIntegration] Already running');
+      logger.warn('[SentimentIntegration] Already running');
       return;
     }
 

@@ -24,10 +24,11 @@ import type {
  * const checker = new DataQualityChecker();
  * const report = checker.check(marketData);
  * if (!report.isValid) {
- *   console.error('Data quality issues:', report.errors);
+ *   logger.error('Data quality issues:', report.errors);
  * }
  * ```
  */
+import { logger } from '@/app/core/logger';
 export class DataQualityChecker {
   private rules: DataQualityRule[] = [];
   private config: QualityCheckerConfig;

@@ -7,6 +7,7 @@
 import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 
+import { logger } from '@/app/core/logger';
 export class ModelPipeline {
   private model: tf.LayersModel | null = null;
   private config: ModelConfig | null = null;
@@ -63,7 +64,7 @@ export class ModelPipeline {
           if (!logs) return;
           const loss = logs.loss;
           const valLoss = logs.valLoss;
-          console.log(
+          logger.info(
             `Epoch ${epoch + 1}: loss = ${typeof loss === 'number' ? loss.toFixed(4) : 'N/A'}, val_loss = ${typeof valLoss === 'number' ? valLoss.toFixed(4) : 'N/A'}`
           );
         },
@@ -161,7 +162,7 @@ export class ModelPipeline {
           if (!logs) return;
           const loss = logs.loss;
           const valLoss = logs.valLoss;
-          console.log(
+          logger.info(
             `Epoch ${epoch + 1}: loss = ${typeof loss === 'number' ? loss.toFixed(4) : 'N/A'}, val_loss = ${typeof valLoss === 'number' ? valLoss.toFixed(4) : 'N/A'}`
           );
         },
@@ -363,7 +364,7 @@ export class ModelPipeline {
     try {
       this.model = await tf.loadLayersModel(`indexeddb://${modelId}`);
     } catch (error) {
-      console.error('Error loading model:', error);
+      logger.error('Error loading model:', error instanceof Error ? error : new Error(String(error)));
       throw new Error(`Failed to load model: ${modelId}`);
     }
   }
@@ -450,7 +451,7 @@ export class ModelPipeline {
         // Dispose model
         model.dispose();
       } catch (error) {
-        console.error('Error during hyperparameter optimization:', error);
+        logger.error('Error during hyperparameter optimization:', error instanceof Error ? error : new Error(String(error)));
       }
     }
 

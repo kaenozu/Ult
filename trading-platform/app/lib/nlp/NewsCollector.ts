@@ -103,7 +103,7 @@ export class NewsCollector extends EventEmitter {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn('[NewsCollector] Already running');
+      logger.warn('[NewsCollector] Already running');
       return;
     }
 
@@ -138,14 +138,14 @@ export class NewsCollector extends EventEmitter {
   private startSourceCollection(source: NewsSource): void {
     // Initial fetch
     this.fetchFromSource(source).catch((error) => {
-      console.error(`[NewsCollector] Error fetching from ${source.name}:`, error);
+      logger.error(`[NewsCollector] Error fetching from ${source.name}:`, error instanceof Error ? error : new Error(String(error)));
       this.emit('error', { source: source.id, error });
     });
 
     // Set up periodic updates
     const timer = setInterval(() => {
       this.fetchFromSource(source).catch((error) => {
-        console.error(`[NewsCollector] Error fetching from ${source.name}:`, error);
+        logger.error(`[NewsCollector] Error fetching from ${source.name}:`, error instanceof Error ? error : new Error(String(error)));
         this.emit('error', { source: source.id, error });
       });
     }, source.updateInterval);
@@ -180,7 +180,7 @@ export class NewsCollector extends EventEmitter {
         this.emit('articles', { source: source.id, articles: newArticles });
       }
     } catch (error) {
-      console.error(`[NewsCollector] Failed to fetch from ${source.name}:`, error);
+      logger.error(`[NewsCollector] Failed to fetch from ${source.name}:`, error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
@@ -221,7 +221,7 @@ export class NewsCollector extends EventEmitter {
           return this.parseAlphaVantageNews(data.feed);
         }
       } catch (error) {
-        console.error('[NewsCollector] Alpha Vantage API error:', error);
+        logger.error('[NewsCollector] Alpha Vantage API error:', error instanceof Error ? error : new Error(String(error)));
       }
     }
 
@@ -336,9 +336,6 @@ export class NewsCollector extends EventEmitter {
     });
 
     toDelete.forEach((id) => this.articles.delete(id));
-
-    if (toDelete.length > 0) {
-    }
   }
 
   /**

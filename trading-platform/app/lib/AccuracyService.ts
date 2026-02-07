@@ -14,6 +14,7 @@ import {
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { measurePerformance } from './performance-utils';
+import { logger } from '@/app/core/logger';
 
 /**
  * Service to handle simulation, backtesting, and accuracy metrics.
@@ -236,7 +237,7 @@ class AccuracyService {
             const endDate = data[data.length - 1]?.date || new Date().toISOString();
 
             const effectiveMinPeriod = data.length >= minPeriod ? minPeriod : Math.max(30, data.length - 20);
-            if (data.length < minPeriod) console.warn(`[runBacktest] Data limited for ${symbol}: ${data.length} days.`);
+            if (data.length < minPeriod) logger.warn(`[runBacktest] Data limited for ${symbol}: ${data.length} days.`);
             if (data.length < 40) return { symbol, totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalReturn: 0, avgProfit: 0, avgLoss: 0, profitFactor: 0, maxDrawdown: 0, sharpeRatio: 0, trades: [], startDate, endDate, warning: 'データ不足' };
 
             const preCalculatedIndicators = this.preCalculateIndicators(data);
@@ -303,8 +304,19 @@ class AccuracyService {
     /**
      * 過去的中率をリアルタイム計算
      */
-    calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan') {
-        if (data.length < 30) return null;
+    calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): {
+        hitRate: number;
+        precisionAccuracy: number;
+        directionalAccuracy: number;
+        totalTrades: number;
+    } | null {
+        if (data.length < 30) {
+            logger.warn('[calculateRealTimeAccuracy] Data insufficient:', { symbol, market, dataLength: data.length, minRequired: 30 });
+            return null;
+        }
+
+        logger.info('[calculateRealTimeAccuracy]', { symbol, market, dataLength: data.length });
+
         const windowSize = 20;
         let hits = 0, dirHits = 0, total = 0;
         const preCalculatedIndicators = this.preCalculateIndicators(data);
@@ -323,12 +335,15 @@ class AccuracyService {
             total++;
         }
 
-        return {
+        const result = {
             hitRate: total > 0 ? Math.round((dirHits / total) * 100) : 0,
             precisionAccuracy: total > 0 ? Math.round((hits / total) * 100) : 0,
             directionalAccuracy: total > 0 ? Math.round((dirHits / total) * 100) : 0,
             totalTrades: total,
         };
+
+        logger.info('[calculateRealTimeAccuracy] Result:', { symbol, market, ...result, hits, dirHits, total });
+        return result;
     }
 
     /**

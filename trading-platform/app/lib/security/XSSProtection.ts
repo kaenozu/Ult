@@ -11,6 +11,7 @@ import { escapeHtml } from './InputSanitizer';
 // CSP (Content Security Policy) ヘルパー
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface CSPConfig {
   defaultSrc: string[];
   scriptSrc: string[];
@@ -301,7 +302,7 @@ export function safePostMessageListener(
   return (event: MessageEvent) => {
     // 許可されたオリジンのみ処理
     if (!allowedOrigins.includes(event.origin)) {
-      console.warn(`Rejected message from unauthorized origin: ${event.origin}`);
+      logger.warn(`Rejected message from unauthorized origin: ${event.origin}`);
       return;
     }
     

@@ -24,6 +24,7 @@ import { winningAnalytics, PerformanceReport } from './analytics';
 // Types
 // ============================================================================
 
+import { logger } from '@/app/core/logger';
 export interface TradingSession {
   id: string;
   symbol: string;
@@ -577,7 +578,7 @@ class WinningTradingSystem {
       try {
         callback(event);
       } catch (error) {
-        console.error('Event subscriber error:', error);
+        logger.error('Event subscriber error:', error);
       }
     });
   }

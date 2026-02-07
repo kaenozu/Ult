@@ -14,12 +14,13 @@
 import { Portfolio, Position, OHLCV } from '@/app/types';
 import { OrderRequest } from '@/app/types/order';
 import { AutomaticRiskController } from '../risk/AutomaticRiskController';
-import { RealTimeRiskCalculator } from '../risk/RealTimeRiskCalculator';
+import { RealTimeRiskCalculator, RealTimeRiskMetrics } from '../risk/RealTimeRiskCalculator';
 import { 
   calculateStopLossPrice,
   getLatestATR
 } from '../riskManagement';
 import { RISK_MANAGEMENT } from '../constants/risk-management';
+import { logger } from '@/app/core/logger';
 
 // ============================================================================
 // Types
@@ -210,6 +211,18 @@ export class RiskManagementService {
       reasons.push(`サイズ制限(最大${effectiveConfig.maxPositionPercent}%): ${finalQuantity}`);
     }
 
+    // 10. Max Positions Count Check
+    if (portfolio.positions.length >= effectiveConfig.maxPositions) {
+      const isExisting = portfolio.positions.some(p => p.symbol === order.symbol && p.side === order.side);
+      if (!isExisting) {
+        return {
+          allowed: false,
+          reasons: [`最大ポジション数超過: ${effectiveConfig.maxPositions}`],
+          violations: [{ type: 'max_positions', severity: 'medium', message: 'ポジション数制限' }],
+        };
+      }
+    }
+
     // Sync back
     order.quantity = finalQuantity;
     order.stopLoss = finalStopLoss;
@@ -260,6 +273,23 @@ export class RiskManagementService {
     }
 
     return { adjustedQuantity: Math.max(1, Math.min(order.quantity, kellyQty)), reasons };
+  }
+
+  /**
+   * ポートフォリオのリスクメトリクスを更新し、自動制御を実行
+   */
+  updateRiskMetrics(portfolio: Portfolio): RealTimeRiskMetrics {
+    const riskMetrics = this.riskCalculator.calculatePortfolioRisk(portfolio);
+    
+    // Run automatic risk controller
+    const actions = this.riskController.evaluateAndAct(riskMetrics, portfolio);
+    
+    // Log any actions taken
+    if (actions.length > 0) {
+      logger.warn('[RiskManagement] Automatic actions triggered:', actions);
+    }
+    
+    return riskMetrics;
   }
 
   private checkAndResetDailyTracking(currentBalance: number): void {

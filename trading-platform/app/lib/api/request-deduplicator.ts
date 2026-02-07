@@ -1,3 +1,4 @@
+import { logger } from '@/app/core/logger';
 /**
  * Request Deduplicator
  * 
@@ -37,20 +38,20 @@ export class RequestDeduplicator {
     // Check cache first
     const cached = this.getFromCache<T>(key);
     if (cached !== null) {
-      console.debug(`[RequestDeduplicator] Cache hit: ${key}`);
+      logger.debug(`[RequestDeduplicator] Cache hit: ${key}`);
       return cached;
     }
 
     // Check if request is already pending
     const pending = this.pendingRequests.get(key);
     if (pending) {
-      console.debug(`[RequestDeduplicator] Request already pending: ${key}`);
+      logger.debug(`[RequestDeduplicator] Request already pending: ${key}`);
       return pending as Promise<T>;
     }
 
     // Limit number of pending requests
     if (this.pendingRequests.size >= this.MAX_PENDING_REQUESTS) {
-      console.warn(
+      logger.warn(
         `[RequestDeduplicator] Too many pending requests, ` +
         `dropping oldest: ${this.pendingRequests.keys().next().value}`
       );
@@ -130,7 +131,7 @@ export class RequestDeduplicator {
    */
   clearCache(): void {
     this.cache.clear();
-    console.debug('[RequestDeduplicator] Cache cleared');
+    logger.debug('[RequestDeduplicator] Cache cleared');
   }
 
   /**
@@ -138,7 +139,7 @@ export class RequestDeduplicator {
    */
   clearCacheKey(key: string): void {
     this.cache.delete(key);
-    console.debug(`[RequestDeduplicator] Cache cleared for: ${key}`);
+    logger.debug(`[RequestDeduplicator] Cache cleared for: ${key}`);
   }
 
   /**
@@ -161,7 +162,7 @@ export class RequestDeduplicator {
       }
     }
     
-    console.debug(`[RequestDeduplicator] Cache cleared for pattern: ${pattern}`);
+    logger.debug(`[RequestDeduplicator] Cache cleared for pattern: ${pattern}`);
   }
 
   /**
@@ -194,9 +195,9 @@ export class RequestDeduplicator {
 
     try {
       await this.fetch(key, fetcher, ttl);
-      console.debug(`[RequestDeduplicator] Prefetched: ${key}`);
+      logger.debug(`[RequestDeduplicator] Prefetched: ${key}`);
     } catch (error) {
-      console.warn(`[RequestDeduplicator] Prefetch failed: ${key}`, error);
+      logger.warn(`[RequestDeduplicator] Prefetch failed: ${key}`, error);
       // Don't throw - prefetch failures shouldn't block app
     }
   }
@@ -210,7 +211,7 @@ export class RequestDeduplicator {
     for (const key of keys) {
       this.cache.delete(key);
     }
-    console.debug(`[RequestDeduplicator] Invalidated ${keys.length} cache entries`);
+    logger.debug(`[RequestDeduplicator] Invalidated ${keys.length} cache entries`);
   }
 
   /**

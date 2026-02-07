@@ -14,6 +14,7 @@ import {
  * Example 1: Basic Sentiment Analysis
  * 基本的なセンチメント分析
  */
+import { logger } from '@/app/core/logger';
 export async function basicSentimentAnalysis(symbol: string): Promise<void> {
   
   // Get the global service instance
@@ -155,7 +156,7 @@ export async function completeAnalysis(symbol: string): Promise<void> {
     dataCollectionStatistics();
     
   } catch (error) {
-    console.error('Error during analysis:', error);
+    logger.error('Error during analysis:', error instanceof Error ? error : new Error(String(error)));
   }
 }
 
@@ -189,7 +190,7 @@ export function setupEventHandlers(): void {
   });
   
   collector.on('collection_error', ({ source, error }: any) => {
-    console.error(`❌ Collection Error for ${source.name}:`, error);
+    logger.error(`❌ Collection Error for ${source.name}:`, error);
   });
   
 }
