@@ -81,9 +81,7 @@ export const StockChart = memo(function StockChart({
       lower: showBollinger ? lower : undefined,
     });
 
-    // Add 5% padding
-    const padding = (max - min) * 0.05;
-    return { min: min - padding, max: max + padding };
+     return { min, max };
   }, [data, sma20, upper, lower, showSMA, showBollinger]);
 
   // 2. Chart Options Hook
