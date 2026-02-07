@@ -9,11 +9,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleApiError } from '../error-handler';
 import { checkRateLimit } from '../api-middleware';
 import { requireAuth } from '../auth';
+import { requireCSRF } from '../csrf/csrf-protection';
 import { CacheManager } from './CacheManager';
 
 export interface ApiHandlerOptions {
   requireAuth?: boolean;
   rateLimit?: boolean;
+  csrfProtection?: boolean;
   cache?: {
     enabled: boolean;
     ttl?: number;
@@ -40,7 +42,7 @@ export function createApiHandler<T = unknown>(
   handler: (request: NextRequest) => Promise<NextResponse<ApiResponse<T>>>,
   options: ApiHandlerOptions = {}
 ) {
-  const { requireAuth: needsAuth = false, rateLimit = true, cache } = options;
+  const { requireAuth: needsAuth = false, rateLimit = true, csrfProtection = false, cache } = options;
 
   // Create cache manager if caching is enabled - cache the JSON data, not Response objects
   const cacheManager = cache?.enabled 
@@ -53,6 +55,12 @@ export function createApiHandler<T = unknown>(
       if (needsAuth) {
         const authError = requireAuth(request);
         if (authError) return authError as NextResponse<ApiResponse<T>>;
+      }
+
+      // CSRF check
+      if (csrfProtection) {
+        const csrfError = requireCSRF(request);
+        if (csrfError) return csrfError as NextResponse<ApiResponse<T>>;
       }
 
       // Rate limiting
