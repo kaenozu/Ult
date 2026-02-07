@@ -31,7 +31,7 @@ export default [
       "prefer-const": "warn",
       "@typescript-eslint/no-require-imports": "off",
       "react-hooks/exhaustive-deps": "warn",
-      "@typescript-eslint/ban-ts-comment": "off"
+      "@typescript-eslint/ban-ts-comment": "error"
     }
   },
 ];
