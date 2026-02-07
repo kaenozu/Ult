@@ -8,8 +8,7 @@ import {
     notFoundError,
     rateLimitError,
     internalError,
-    ErrorType,
-    ERROR_MESSAGES
+    ErrorType
 } from '../lib/error-handler';
 import { APIError, ValidationError } from '../types';
 

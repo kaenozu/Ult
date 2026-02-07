@@ -14,7 +14,7 @@ import { OrderRequest, OrderResult } from '../types/order';
 // リスク管理サービスをモック化して、テストの純粋性を保つ
 jest.mock('../lib/services/RiskManagementService', () => ({
   getRiskManagementService: jest.fn(() => ({
-    validateOrder: jest.fn((order) => ({
+    validateOrder: jest.fn((_order) => ({
       allowed: true,
       reasons: [],
       violations: [],

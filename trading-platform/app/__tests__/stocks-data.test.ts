@@ -4,9 +4,7 @@ import {
     getStocksBySector,
     fetchStockMetadata,
     fetchOHLCV,
-    fetchSignal,
-    JAPAN_STOCKS,
-    USA_STOCKS
+    fetchSignal
 } from '../data/stocks';
 import { marketClient } from '../lib/api/data-aggregator';
 

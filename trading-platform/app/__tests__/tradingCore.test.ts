@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { UnifiedTradingPlatform } from '../lib/tradingCore/UnifiedTradingPlatform';
 import { getGlobalTradingPlatform, resetGlobalTradingPlatform } from '../lib/tradingCore/UnifiedTradingPlatform';
 

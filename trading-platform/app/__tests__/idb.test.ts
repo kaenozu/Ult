@@ -1,12 +1,34 @@
 /** @jest-environment node */
 import { IndexedDBClient } from '../lib/api/idb';
 
+interface MockStore {
+    get: jest.Mock;
+    put: jest.Mock;
+    clear: jest.Mock;
+}
+
+interface MockTransaction {
+    objectStore: jest.Mock;
+}
+
+interface MockDB {
+    transaction: jest.Mock;
+    objectStoreNames: {
+        contains: jest.Mock;
+    };
+    createObjectStore: jest.Mock;
+}
+
+interface MockIDB {
+    open: jest.Mock;
+}
+
 describe('IndexedDBClient', () => {
     let client: IndexedDBClient;
-    let mockIDB: any;
-    let mockStore: any;
-    let mockTransaction: any;
-    let mockDb: any;
+    let mockIDB: MockIDB;
+    let mockStore: MockStore;
+    let mockTransaction: MockTransaction;
+    let mockDb: MockDB;
 
     beforeEach(() => {
         mockStore = {

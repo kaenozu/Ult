@@ -57,11 +57,19 @@ export function csrfTokenMiddleware(request: NextRequest): NextResponse | null {
     
     const response = NextResponse.next();
     
+    // SECURITY NOTE: httpOnly: false is required for Double-Submit Cookie pattern
+    // This allows JavaScript to read the token for inclusion in request headers.
+    // Mitigate XSS risks by:
+    // 1. Implementing strict Content Security Policy (CSP)
+    // 2. Using SameSite=strict to prevent CSRF
+    // 3. Validating all user inputs
+    // 4. Sanitizing dynamic content
+    // 5. Using secure flag in production
     response.cookies.set(CSRF_COOKIE_NAME, token, {
-      httpOnly: false,           // Allow JS access for Double-Submit Cookie
+      httpOnly: false,           // Allow JS access for Double-Submit Cookie (required)
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',      // Prevent CSRF via cross-site requests
-      maxAge: 60 * 60 * 24,    // 24 hours
+      sameSite: 'strict',        // Prevent CSRF via cross-site requests
+      maxAge: 60 * 60 * 24,      // 24 hours
       path: '/',
     });
     

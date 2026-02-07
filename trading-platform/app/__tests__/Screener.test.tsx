@@ -62,7 +62,7 @@ describe('Screener Page', () => {
             ]
         });
 
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             addToWatchlist: mockAddToWatchlist,
             setSelectedStock: mockSetSelectedStock,
         });
@@ -157,7 +157,7 @@ describe('Screener Page', () => {
             { symbol: 'AAPL', price: 185, change: 5, changePercent: 2.7, volume: 5500000 },
             { symbol: 'MSFT', price: 400, change: 10, changePercent: 2.5, volume: 2000000 },
         ]);
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             addToWatchlist: mockAddToWatchlist,
             setSelectedStock: mockSetSelectedStock,
         });

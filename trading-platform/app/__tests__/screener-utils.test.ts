@@ -68,6 +68,6 @@ describe('screener-utils', () => {
     });
 
     it('handles missing OHLCV elegantly', () => {
-        expect(filterByTechnicals(mockStock, null as any, {})).toBe(false);
+        expect(filterByTechnicals(mockStock, undefined, {})).toBe(false);
     });
 });

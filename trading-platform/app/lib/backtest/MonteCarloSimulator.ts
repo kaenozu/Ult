@@ -537,10 +537,6 @@ export class MonteCarloSimulator extends EventEmitter {
    * リスク評価を計算
    */
   private calculateRiskAssessment(simulations: BacktestResult[]): MonteCarloRiskAssessment {
-    const finalCapitals = simulations.map(s => {
-      return s.config.initialCapital * (1 + s.metrics.totalReturn / 100);
-    });
-
     const sortedReturns = simulations.map(s => s.metrics.totalReturn).sort((a, b) => a - b);
     const sortedDrawdowns = simulations.map(s => s.metrics.maxDrawdown).sort((a, b) => a - b);
 

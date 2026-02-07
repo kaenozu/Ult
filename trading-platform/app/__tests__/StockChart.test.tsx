@@ -44,9 +44,20 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() { }
 };
 
+interface ChartProps {
+  options?: {
+    onHover?: (...args: unknown[]) => void;
+  };
+}
+
+interface ChartElement {
+  index: number;
+  datasetIndex: number;
+}
+
 // Mock Chart.js to avoid canvas errors in JSDOM
 jest.mock('react-chartjs-2', () => ({
-  Line: (props: any) => {
+  Line: (props: ChartProps) => {
     return (
       <div
         data-testid="line-chart"
@@ -54,7 +65,7 @@ jest.mock('react-chartjs-2', () => ({
         onClick={() => {
           // Simulate hover on index 5 if options.onHover exists
           if (props.options?.onHover) {
-            props.options.onHover(null, [{ index: 5, element: {} as any, datasetIndex: 0 }]);
+            props.options.onHover(null, [{ index: 5, element: {} as ChartElement, datasetIndex: 0 }]);
           }
         }}
       >

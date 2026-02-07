@@ -3,6 +3,10 @@ import Journal from '../journal/page';
 import { useTradingStore } from '../store/tradingStore';
 import '@testing-library/jest-dom';
 
+interface MockStore {
+    setState: (state: Partial<ReturnType<typeof useTradingStore>>) => void;
+}
+
 // Mock Dependencies
 jest.mock('../components/Navigation', () => ({
     Navigation: () => <div data-testid="navigation">Navigation</div>,
@@ -14,7 +18,7 @@ describe('Journal Page', () => {
     });
 
     it('renders empty stats and empty state message when journal is empty', () => {
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             journal: [],
         });
 
@@ -60,7 +64,7 @@ describe('Journal Page', () => {
             }
         ];
 
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             journal: mockJournal,
         });
 
@@ -79,7 +83,7 @@ describe('Journal Page', () => {
     });
 
     it('switches between Trades and Analysis tabs', () => {
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             journal: [],
         });
 
@@ -99,7 +103,7 @@ describe('Journal Page', () => {
 
     it('calculates Profit Factor correctly (Infinity, zero win, and regular)', () => {
         // Only wins
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             journal: [
                 { id: '1', status: 'CLOSED', profit: 1000 },
             ],
@@ -108,7 +112,7 @@ describe('Journal Page', () => {
         expect(screen.getByText('∞')).toBeInTheDocument();
 
         // Zero wins (avoid infinity but check 0.00)
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             journal: [
                 { id: '1', status: 'CLOSED', profit: -1000 },
             ],
@@ -117,7 +121,7 @@ describe('Journal Page', () => {
         expect(screen.getAllByText('0.00')[0]).toBeInTheDocument();
 
         // One win, one loss
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             journal: [
                 { id: '1', status: 'CLOSED', profit: 1000 },
                 { id: '2', status: 'CLOSED', profit: -500 },
@@ -129,7 +133,7 @@ describe('Journal Page', () => {
     });
 
     it('renders net loss correctly', () => {
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             journal: [
                 { id: '1', status: 'CLOSED', profit: -5000, symbol: 'LOSS' },
             ],
@@ -140,7 +144,7 @@ describe('Journal Page', () => {
     });
 
     it('handles trades without profit value', () => {
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             journal: [
                 { id: '1', status: 'CLOSED', symbol: 'TEST' }, // profit undefined
             ],

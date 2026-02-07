@@ -7,7 +7,6 @@
 
 import { marketClient } from '../lib/api/data-aggregator';
 import { idbClient } from '../lib/api/idb-migrations';
-import { mlPredictionService } from '../lib/mlPrediction';
 
 jest.mock('../lib/api/idb-migrations', () => ({
   idbClient: {
@@ -16,14 +15,6 @@ jest.mock('../lib/api/idb-migrations', () => ({
     getData: jest.fn(),
     saveData: jest.fn(),
     mergeAndSave: jest.fn(),
-  }
-}));
-
-jest.mock('../lib/mlPrediction', () => ({
-  mlPredictionService: {
-    calculateIndicators: jest.fn(),
-    predict: jest.fn(),
-    generateSignal: jest.fn(),
   }
 }));
 
@@ -59,10 +50,6 @@ const TEST_BATCH = {
   EXPECTED_CHUNKS: 2,
 } as const;
 
-const TEST_RETRY = {
-  MAX_ITERATIONS: 5,
-} as const;
-
 const HTTP_STATUS = {
   TOO_MANY_REQUESTS: 429,
 } as const;
@@ -94,8 +81,8 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
     // fetchは未完了のPromiseを返すようにする
     (global.fetch as jest.Mock).mockReturnValue(new Promise(() => { })); 
 
-    const p1 = marketClient.fetchOHLCV('DEDUP');
-    const p2 = marketClient.fetchOHLCV('DEDUP');
+    marketClient.fetchOHLCV('DEDUP');
+    marketClient.fetchOHLCV('DEDUP');
 
     // 微小な時間待って非同期処理を1ステップ進める
     await Promise.resolve();
