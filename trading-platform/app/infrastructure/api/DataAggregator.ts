@@ -63,14 +63,14 @@ const DEFAULT_RATE_LIMIT: RateLimitConfig = {
 
 export class DataAggregator {
   // Cache
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
   private readonly cacheTTL: number;
 
   // Request deduplication
-  private pendingRequests: Map<string, Promise<any>> = new Map();
+  private pendingRequests: Map<string, Promise<unknown>> = new Map();
 
   // Batch processing
-  private batchQueue: BatchRequest<any>[] = [];
+  private batchQueue: BatchRequest<unknown>[] = [];
   private batchTimer: NodeJS.Timeout | null = null;
   private batchOptions: BatchOptions;
 
@@ -363,9 +363,9 @@ export class DataAggregator {
       r => r.priority > request.priority
     );
     if (insertIndex === -1) {
-      this.batchQueue.push(request);
+      this.batchQueue.push(request as BatchRequest<unknown>);
     } else {
-      this.batchQueue.splice(insertIndex, 0, request);
+      this.batchQueue.splice(insertIndex, 0, request as BatchRequest<unknown>);
     }
 
     // Start batch timer if not running
@@ -409,13 +409,13 @@ export class DataAggregator {
 
       // Resolve individual requests
       for (const request of batch) {
-        const requestResults = new Map<string, any>();
+        const requestResults = new Map<string, unknown>();
         for (const key of request.keys) {
           if (results.has(key)) {
             requestResults.set(key, results.get(key));
           }
         }
-        request.resolve(requestResults);
+        request.resolve(requestResults as Map<string, unknown>);
       }
     } catch (error) {
       for (const request of batch) {
@@ -426,11 +426,11 @@ export class DataAggregator {
 
   private async batchFetcher(
     keys: string[],
-    batch: BatchRequest<any>[]
-  ): Promise<Map<string, any>> {
+    batch: BatchRequest<unknown>[]
+  ): Promise<Map<string, unknown>> {
     // This is a simplified batch fetcher
     // In production, you would implement actual batching logic
-    const results = new Map<string, any>();
+    const results = new Map<string, unknown>();
 
     // For now, execute each request sequentially
     for (const request of batch) {

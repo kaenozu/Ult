@@ -16,6 +16,8 @@ import { OHLCV } from '../../types/shared';
 import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import { ConsensusSignalService } from '../ConsensusSignalService';
 import type { ConsensusSignal } from '../ConsensusSignalService';
+import { TECHNICAL_INDICATORS } from '../constants/technical-indicators';
+import { CHART_ANALYSIS, BOLLINGER_BANDS_CONFIG } from '../constants/chart';
 
 // ============================================================================
 // Types
@@ -180,7 +182,7 @@ export class CompositeTechnicalAnalysisEngine {
 
   private analyzeRSI(data: OHLCV[]): RSIAnalysis {
     const prices = data.map(d => d.close);
-    const rsi = technicalIndicatorService.calculateRSI(prices, 14);
+    const rsi = technicalIndicatorService.calculateRSI(prices, TECHNICAL_INDICATORS.RSI_PERIOD);
     const currentRSI = rsi[rsi.length - 1];
     const prevRSI = rsi[rsi.length - 2];
     const rsi5Back = rsi[rsi.length - 6];
@@ -195,19 +197,19 @@ export class CompositeTechnicalAnalysisEngine {
 
     // シグナル判定
     let signal: RSIAnalysis['signal'] = 'neutral';
-    if (currentRSI < 20) {
+    if (currentRSI < TECHNICAL_INDICATORS.RSI_EXTREME_OVERSOLD) {
       signal = 'extreme_oversold';
       score = 0.8;
       reasons.push(`RSI(${currentRSI.toFixed(1)})が極度の売られすぎ水準`);
-    } else if (currentRSI < 30) {
+    } else if (currentRSI < TECHNICAL_INDICATORS.RSI_OVERSOLD) {
       signal = 'oversold';
       score = 0.5;
       reasons.push(`RSI(${currentRSI.toFixed(1)})が売られすぎ水準`);
-    } else if (currentRSI > 80) {
+    } else if (currentRSI > TECHNICAL_INDICATORS.RSI_EXTREME_OVERBOUGHT) {
       signal = 'extreme_overbought';
       score = -0.8;
       reasons.push(`RSI(${currentRSI.toFixed(1)})が極度の買われすぎ水準`);
-    } else if (currentRSI > 70) {
+    } else if (currentRSI > TECHNICAL_INDICATORS.RSI_OVERBOUGHT) {
       signal = 'overbought';
       score = -0.5;
       reasons.push(`RSI(${currentRSI.toFixed(1)})が買われすぎ水準`);
@@ -219,10 +221,10 @@ export class CompositeTechnicalAnalysisEngine {
     const divergence = this.detectRSIDivergence(data, rsi);
     if (divergence.detected) {
       if (divergence.type === 'bullish') {
-        score = Math.max(score, divergence.strength * 0.7);
+        score = Math.max(score, divergence.strength * CHART_ANALYSIS.DIVERGENCE_STRENGTH_MULTIPLIER);
         reasons.push(`強気ダイバージェンス検出 (強度: ${(divergence.strength * 100).toFixed(0)}%)`);
       } else {
-        score = Math.min(score, -divergence.strength * 0.7);
+        score = Math.min(score, -divergence.strength * CHART_ANALYSIS.DIVERGENCE_STRENGTH_MULTIPLIER);
         reasons.push(`弱気ダイバージェンス検出 (強度: ${(divergence.strength * 100).toFixed(0)}%)`);
       }
     }
@@ -244,11 +246,11 @@ export class CompositeTechnicalAnalysisEngine {
     data: OHLCV[],
     rsi: number[]
   ): { detected: boolean; type: 'bullish' | 'bearish' | 'none'; strength: number } {
-    if (data.length < 20) {
+    if (data.length < CHART_ANALYSIS.MIN_DATA_LENGTH) {
       return { detected: false, type: 'none', strength: 0 };
     }
 
-    const lookback = 14;
+    const lookback = CHART_ANALYSIS.DIVERGENCE_LOOKBACK;
     const recentPrices = data.slice(-lookback).map(d => d.close);
     const recentRSI = rsi.slice(-lookback);
 
@@ -297,11 +299,11 @@ export class CompositeTechnicalAnalysisEngine {
     const prices = data.map(d => d.close);
     const currentPrice = prices[prices.length - 1];
     
-    const sma5 = technicalIndicatorService.calculateSMA(prices, 5);
-    const sma20 = technicalIndicatorService.calculateSMA(prices, 20);
-    const sma50 = technicalIndicatorService.calculateSMA(prices, 50);
-    const sma200 = data.length >= 200 
-      ? technicalIndicatorService.calculateSMA(prices, 200)
+    const sma5 = technicalIndicatorService.calculateSMA(prices, TECHNICAL_INDICATORS.SMA_PERIOD_5);
+    const sma20 = technicalIndicatorService.calculateSMA(prices, TECHNICAL_INDICATORS.SMA_PERIOD_20);
+    const sma50 = technicalIndicatorService.calculateSMA(prices, TECHNICAL_INDICATORS.SMA_PERIOD_MEDIUM);
+    const sma200 = data.length >= TECHNICAL_INDICATORS.SMA_PERIOD_LONG
+      ? technicalIndicatorService.calculateSMA(prices, TECHNICAL_INDICATORS.SMA_PERIOD_LONG)
       : [];
 
     const reasons: string[] = [];
@@ -334,21 +336,21 @@ export class CompositeTechnicalAnalysisEngine {
     const alignment = this.calculateAlignment(maArray, currentPrice);
 
     // スコア計算
-    if (shortTerm === 'bullish') score += 0.3;
-    else if (shortTerm === 'bearish') score -= 0.3;
+    if (shortTerm === 'bullish') score += CHART_ANALYSIS.TREND_SHORT_TERM_WEIGHT;
+    else if (shortTerm === 'bearish') score -= CHART_ANALYSIS.TREND_SHORT_TERM_WEIGHT;
 
-    if (mediumTerm === 'bullish') score += 0.4;
-    else if (mediumTerm === 'bearish') score -= 0.4;
+    if (mediumTerm === 'bullish') score += CHART_ANALYSIS.TREND_MEDIUM_TERM_WEIGHT;
+    else if (mediumTerm === 'bearish') score -= CHART_ANALYSIS.TREND_MEDIUM_TERM_WEIGHT;
 
-    if (longTerm === 'bullish') score += 0.3;
-    else if (longTerm === 'bearish') score -= 0.3;
+    if (longTerm === 'bullish') score += CHART_ANALYSIS.TREND_LONG_TERM_WEIGHT;
+    else if (longTerm === 'bearish') score -= CHART_ANALYSIS.TREND_LONG_TERM_WEIGHT;
 
     if (crossover.detected) {
       if (crossover.type === 'golden') {
-        score += crossover.strength * 0.5;
+        score += crossover.strength * CHART_ANALYSIS.CROSSOVER_STRENGTH_MULTIPLIER;
         reasons.push(`ゴールデンクロス検出 (強度: ${(crossover.strength * 100).toFixed(0)}%)`);
       } else {
-        score -= crossover.strength * 0.5;
+        score -= crossover.strength * CHART_ANALYSIS.CROSSOVER_STRENGTH_MULTIPLIER;
         reasons.push(`デッドクロス検出 (強度: ${(crossover.strength * 100).toFixed(0)}%)`);
       }
     }
@@ -453,8 +455,8 @@ export class CompositeTechnicalAnalysisEngine {
     const prices = data.map(d => d.close);
     const currentPrice = prices[prices.length - 1];
     
-    const bollinger = technicalIndicatorService.calculateBollingerBands(prices, 20, 2);
-    const atr = technicalIndicatorService.calculateATR(data, 14);
+    const bollinger = technicalIndicatorService.calculateBollingerBands(prices, TECHNICAL_INDICATORS.BB_PERIOD, TECHNICAL_INDICATORS.BB_STD_DEV);
+    const atr = technicalIndicatorService.calculateATR(data, TECHNICAL_INDICATORS.ATR_PERIOD);
 
     const reasons: string[] = [];
     let score = 0;
@@ -474,26 +476,26 @@ export class CompositeTechnicalAnalysisEngine {
 
     // 状態判定
     let state: VolatilityAnalysis['state'] = 'normal';
-    if (bandwidth < avgBandwidth * 0.7) {
+    if (bandwidth < avgBandwidth * BOLLINGER_BANDS_CONFIG.BANDWIDTH_SQUEEZE_MULTIPLIER) {
       state = 'squeeze';
       reasons.push('ボリンジャーバンドがスクイーズ（ブレイクアウト待ち）');
-    } else if (bandwidth > avgBandwidth * 1.3) {
+    } else if (bandwidth > avgBandwidth * BOLLINGER_BANDS_CONFIG.BANDWIDTH_EXPANSION_MULTIPLIER) {
       state = 'expansion';
       reasons.push('ボリンジャーバンドが拡張（高ボラティリティ）');
     }
 
     // スコア計算
-    if (bollingerPosition < 10) {
-      score = 0.6; // 下限付近 → 買いシグナル
+    if (bollingerPosition < BOLLINGER_BANDS_CONFIG.POSITION_LOWER_THRESHOLD) {
+      score = BOLLINGER_BANDS_CONFIG.POSITION_LOWER_SCORE; // 下限付近 → 買いシグナル
       reasons.push(`価格がボリンジャーバンド下限付近 (${bollingerPosition.toFixed(1)}%)`);
-    } else if (bollingerPosition > 90) {
-      score = -0.6; // 上限付近 → 売りシグナル
+    } else if (bollingerPosition > BOLLINGER_BANDS_CONFIG.POSITION_UPPER_THRESHOLD) {
+      score = BOLLINGER_BANDS_CONFIG.POSITION_UPPER_SCORE; // 上限付近 → 売りシグナル
       reasons.push(`価格がボリンジャーバンド上限付近 (${bollingerPosition.toFixed(1)}%)`);
-    } else if (bollingerPosition > 80) {
-      score = -0.3;
+    } else if (bollingerPosition > BOLLINGER_BANDS_CONFIG.POSITION_EXTREME_UPPER) {
+      score = BOLLINGER_BANDS_CONFIG.POSITION_EXTREME_UPPER_SCORE;
       reasons.push(`価格がボリンジャーバンド上部 (${bollingerPosition.toFixed(1)}%)`);
-    } else if (bollingerPosition < 20) {
-      score = 0.3;
+    } else if (bollingerPosition < BOLLINGER_BANDS_CONFIG.POSITION_EXTREME_LOWER) {
+      score = BOLLINGER_BANDS_CONFIG.POSITION_EXTREME_LOWER_SCORE;
       reasons.push(`価格がボリンジャーバンド下部 (${bollingerPosition.toFixed(1)}%)`);
     }
 
@@ -537,7 +539,7 @@ export class CompositeTechnicalAnalysisEngine {
 
   private analyzeMomentum(data: OHLCV[]): MomentumAnalysis {
     const prices = data.map(d => d.close);
-    const macd = technicalIndicatorService.calculateMACD(prices, 12, 26, 9);
+    const macd = technicalIndicatorService.calculateMACD(prices, TECHNICAL_INDICATORS.MACD_FAST, TECHNICAL_INDICATORS.MACD_SLOW, TECHNICAL_INDICATORS.MACD_SIGNAL);
 
     const reasons: string[] = [];
     let score = 0;
@@ -556,27 +558,27 @@ export class CompositeTechnicalAnalysisEngine {
 
     // スコア計算
     if (currentHistogram > 0) {
-      score += Math.min(Math.abs(currentHistogram) * 10, 0.5);
+      score += Math.min(Math.abs(currentHistogram) * CHART_ANALYSIS.MACD_HISTOGRAM_MULTIPLIER, CHART_ANALYSIS.MACD_HISTOGRAM_MAX_SCORE);
       reasons.push(`MACDヒストグラムが正(${currentHistogram.toFixed(3)})`);
     } else if (currentHistogram < 0) {
-      score -= Math.min(Math.abs(currentHistogram) * 10, 0.5);
+      score -= Math.min(Math.abs(currentHistogram) * CHART_ANALYSIS.MACD_HISTOGRAM_MULTIPLIER, CHART_ANALYSIS.MACD_HISTOGRAM_MAX_SCORE);
       reasons.push(`MACDヒストグラムが負(${currentHistogram.toFixed(3)})`);
     }
 
     if (histogramTrend === 'increasing') {
-      score += 0.2;
+      score += CHART_ANALYSIS.HISTOGRAM_TREND_SCORE;
       reasons.push('MACDヒストグラムが上昇中');
     } else if (histogramTrend === 'decreasing') {
-      score -= 0.2;
+      score -= CHART_ANALYSIS.HISTOGRAM_TREND_SCORE;
       reasons.push('MACDヒストグラムが下降中');
     }
 
     if (macdCross.detected) {
       if (macdCross.type === 'bullish') {
-        score += macdCross.strength * 0.5;
+        score += macdCross.strength * CHART_ANALYSIS.MACD_CROSS_STRENGTH_MULTIPLIER;
         reasons.push(`MACDが強気クロス (強度: ${(macdCross.strength * 100).toFixed(0)}%)`);
       } else {
-        score -= macdCross.strength * 0.5;
+        score -= macdCross.strength * CHART_ANALYSIS.MACD_CROSS_STRENGTH_MULTIPLIER;
         reasons.push(`MACDが弱気クロス (強度: ${(macdCross.strength * 100).toFixed(0)}%)`);
       }
     }
@@ -637,11 +639,11 @@ export class CompositeTechnicalAnalysisEngine {
   }): number {
     // 重み付け
     const weights = {
-      rsi: 0.20,
-      trend: 0.25,
-      volatility: 0.15,
-      momentum: 0.20,
-      consensus: 0.20,
+      rsi: CHART_ANALYSIS.AGREEMENT_INDICATOR_WEIGHT,
+      trend: CHART_ANALYSIS.AGREEMENT_INDICATOR_WEIGHT + 0.05,
+      volatility: CHART_ANALYSIS.AGREEMENT_INDICATOR_WEIGHT - 0.05,
+      momentum: CHART_ANALYSIS.AGREEMENT_INDICATOR_WEIGHT,
+      consensus: CHART_ANALYSIS.AGREEMENT_INDICATOR_WEIGHT,
     };
 
     const finalScore =
@@ -668,8 +670,8 @@ export class CompositeTechnicalAnalysisEngine {
   }
 
   private determineDirection(score: number): 'BUY' | 'SELL' | 'NEUTRAL' {
-    if (score > 0.2) return 'BUY';
-    if (score < -0.2) return 'SELL';
+    if (score > CHART_ANALYSIS.DIRECTION_THRESHOLD) return 'BUY';
+    if (score < -CHART_ANALYSIS.DIRECTION_THRESHOLD) return 'SELL';
     return 'NEUTRAL';
   }
 
@@ -684,18 +686,18 @@ export class CompositeTechnicalAnalysisEngine {
     const scores = [rsi.score, trend.score, volatility.score, momentum.score];
     const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
     const variance = scores.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) / scores.length;
-    const agreement = 1 - Math.min(variance * 2, 1);
+    const agreement = 1 - Math.min(variance * CHART_ANALYSIS.AGREEMENT_VARIANCE_MULTIPLIER, 1);
 
     // コンセンサス確信度も考慮
     const consensusConfidence = consensus.confidence / 100;
 
     // 特殊なシグナルがある場合は確信度を上げる
     let specialSignalBonus = 0;
-    if (rsi.divergence.detected) specialSignalBonus += 0.1;
-    if (trend.crossover.detected) specialSignalBonus += 0.1;
-    if (momentum.macdCross.detected) specialSignalBonus += 0.1;
+    if (rsi.divergence.detected) specialSignalBonus += CHART_ANALYSIS.SPECIAL_SIGNAL_BONUS;
+    if (trend.crossover.detected) specialSignalBonus += CHART_ANALYSIS.SPECIAL_SIGNAL_BONUS;
+    if (momentum.macdCross.detected) specialSignalBonus += CHART_ANALYSIS.SPECIAL_SIGNAL_BONUS;
 
-    const confidence = agreement * 0.5 + consensusConfidence * 0.5 + specialSignalBonus;
+    const confidence = agreement * CHART_ANALYSIS.AGREEMENT_CONSENSUS_WEIGHT + consensusConfidence * CHART_ANALYSIS.AGREEMENT_CONSENSUS_WEIGHT + specialSignalBonus;
     
     return Math.max(0, Math.min(1, confidence));
   }
@@ -703,8 +705,8 @@ export class CompositeTechnicalAnalysisEngine {
   private determineStrength(confidence: number, score: number): 'WEAK' | 'MODERATE' | 'STRONG' {
     const magnitude = Math.abs(score);
     
-    if (confidence > 0.75 && magnitude > 0.6) return 'STRONG';
-    if (confidence > 0.5 && magnitude > 0.4) return 'MODERATE';
+    if (confidence > CHART_ANALYSIS.CONFIDENCE_HIGH_THRESHOLD && magnitude > CHART_ANALYSIS.MAGNITUDE_STRONG_THRESHOLD) return 'STRONG';
+    if (confidence > CHART_ANALYSIS.CONFIDENCE_MEDIUM_THRESHOLD && magnitude > CHART_ANALYSIS.MAGNITUDE_MODERATE_THRESHOLD) return 'MODERATE';
     return 'WEAK';
   }
 

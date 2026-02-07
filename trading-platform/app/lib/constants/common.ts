@@ -58,3 +58,54 @@ export const MULTIPLIERS = {
   SLIPPAGE_FACTOR_HIGH: 0.5,
   SLIPPAGE_FACTOR_MEDIUM: 0.8,
 } as const;
+
+/**
+ * Analysis configuration
+ */
+export const ANALYSIS = {
+  // Data length thresholds
+  MIN_DATA_LENGTH: 60,
+  MIN_RSI_DATA_LENGTH: 60,
+
+  // Window sizes
+  ACCURACY_WINDOW_SIZE: 20,
+  ACCURACY_STEP: 3,
+  ACCURACY_START_INDEX: 10,
+
+  // Error bounds
+  ERROR_MIN_BOUND: 0.75,
+  ERROR_MAX_BOUND: 2.0,
+
+  // Target move
+  TARGET_MOVE_MULTIPLIER: 0.012,
+
+  // Optimization
+  OPTIMIZATION_WINDOW_SIZE: 150,
+  LAST_OPTIMIZATION_INDEX: -999,
+
+  // Days held threshold
+  DAYS_HELD_THRESHOLD: 20,
+
+  // Forecast cone steps
+  FORECAST_CONE_STEPS: 60,
+  FORECAST_CONE_LOOKBACK_DAYS: 60,
+  FORECAST_CONE_ATR_MULTIPLIER: 2.0,
+
+  // Prediction error
+  PREDICTION_ERROR_THRESHOLD: 0.1,
+  PREDICTION_ERROR_MULTIPLIER: 0.9,
+
+  // Hit rate calculation
+  HIT_RATE_STEP: 3,
+  HIT_RATE_START_INDEX: 10,
+  HIT_RATE_END_INDEX: 10,
+
+  // Score thresholds
+  PERFECT_OVERFIT_SCORE: 1.0,
+
+  // Parameter stability
+  PARAMETER_STABILITY_DIVISOR: 2,
+
+  // Equities
+  INITIAL_EQUITY: 100,
+} as const;

@@ -41,3 +41,79 @@ export const DATA_QUALITY = {
 export const API_ENDPOINTS = {
   ALPHA_VANTAGE: 'https://www.alphavantage.co/query',
 } as const;
+
+/**
+ * Alert system configuration
+ */
+export const ALERT_SYSTEM = {
+  // Monitoring
+  DEFAULT_MONITORING_INTERVAL_MS: 5000,
+
+  // Alert limits
+  MAX_ALERT_HISTORY: 50,
+  MAX_INDICATOR_HISTORY: 100,
+
+  // Condition defaults
+  DEFAULT_COOLDOWN_MS: 300000, // 5 minutes
+
+  // Severity scores
+  SEVERITY_SCORES: {
+    LOW: 1,
+    MEDIUM: 2,
+    HIGH: 3,
+    CRITICAL: 4,
+  },
+
+  // Severity thresholds
+  SEVERITY_HIGH_THRESHOLD: 70,
+  SEVERITY_MEDIUM_THRESHOLD: 40,
+
+  // Correlation thresholds
+  CORRELATION_STRONG_THRESHOLD: 0.5,
+  CORRELATION_MODERATE_THRESHOLD: 0.4,
+  CORRELATION_WEAK_THRESHOLD: 0.7,
+
+  // Price change thresholds
+  PRICE_CHANGE_HIGH_THRESHOLD: 3,
+  PRICE_CHANGE_LOW_THRESHOLD: 5,
+
+  // Accuracy thresholds
+  ACCURACY_HIGH_THRESHOLD: 40,
+  ACCURACY_MEDIUM_THRESHOLD: 60,
+
+  // Confidence change thresholds
+  CONFIDENCE_CHANGE_HIGH_THRESHOLD: 0.2,
+  CONFIDENCE_CHANGE_MEDIUM_THRESHOLD: 0.1,
+
+  // Volume thresholds
+  VOLUME_AVERAGE_PERIOD: 20,
+  VOLUME_SPIKE_MULTIPLIER: 2,
+
+  // Price comparison
+  PRICE_EQUALS_TOLERANCE: 0.0001,
+
+  // Alert history limits
+  ALERT_HISTORY_DEFAULT_LIMIT: 100,
+} as const;
+
+/**
+ * Alert manager configuration
+ */
+export const ALERT_MANAGER = {
+  // Time windows
+  DUPLICATE_WINDOW_MS: 300000, // 5 minutes
+  AGGREGATE_TIME_WINDOW_MS: 300000, // 5 minutes
+  ANALYSIS_PERIOD_MS: 86400000, // 24 hours
+
+  // History limits
+  MAX_HISTORY_SIZE: 1000,
+  MAX_ALERT_HISTORY: 1000,
+
+  // Severity mapping
+  SEVERITY_SCORES: {
+    LOW: 1,
+    MEDIUM: 2,
+    HIGH: 3,
+    CRITICAL: 4,
+  },
+} as const;

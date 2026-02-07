@@ -108,3 +108,26 @@ export const CHART_THEME = {
     TEXT_VALUE: 'text-white',
   }
 } as const;
+
+/**
+* Alert system UI configuration
+*/
+export const ALERT_UI = {
+// Severity colors
+SEVERITY_HIGH_COLOR: 'text-red-400',
+SEVERITY_MEDIUM_COLOR: 'text-yellow-400',
+SEVERITY_LOW_COLOR: 'text-green-400',
+
+// Confidence thresholds
+CONFIDENCE_HIGH_THRESHOLD: 60,
+CONFIDENCE_MEDIUM_THRESHOLD: 40,
+
+// Actionable confidence
+ACTIONABLE_CONFIDENCE: 50,
+
+// Target price multiplier
+TARGET_PRICE_MULTIPLIER: 1.03,
+
+// Alert history limit
+MAX_ALERT_HISTORY: 50,
+} as const;

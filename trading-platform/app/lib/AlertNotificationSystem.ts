@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { ALERT_SYSTEM } from './constants/api';
 
 export interface AlertCondition {
   id: string;
@@ -233,7 +234,7 @@ export class AlertNotificationSystem extends EventEmitter {
   }
 
   // Monitoring
-  startMonitoring(intervalMs: number = 5000): void {
+  startMonitoring(intervalMs: number = ALERT_SYSTEM.DEFAULT_MONITORING_INTERVAL_MS): void {
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
     }

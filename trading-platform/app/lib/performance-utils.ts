@@ -33,28 +33,28 @@ export interface MeasureOptions {
  * });
  * ```
  */
-export function measurePerformance(name: string, arg1: any, arg2?: any) {
+export function measurePerformance(name: string, arg1: unknown, arg2?: unknown) {
   // Check if this is a decorator use case (target, propertyKey, descriptor) or functional use case
   if (typeof arg1 === 'function') {
     // Functional use case: measurePerformance(name, fn, options)
-    const fn = arg1;
-    const options: MeasureOptions = arg2 || {};
+    const fn = arg1 as () => unknown;
+    const options: MeasureOptions = (arg2 as MeasureOptions) || {};
     const { threshold = 100 } = options;
     const start = performance.now();
-
+    
     try {
       const result = fn();
       const duration = performance.now() - start;
-
+      
       const severity: PerformanceSeverity = duration > threshold * 2 ? 'error'
         : duration > threshold ? 'warning' : 'ok';
-
+      
       if (severity === 'error') {
         logger.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
       } else if (severity === 'warning') {
         logger.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
       }
-
+      
       PerformanceMonitor.record(name, duration, severity);
       return result;
     } catch (error) {
@@ -66,26 +66,26 @@ export function measurePerformance(name: string, arg1: any, arg2?: any) {
     }
   } else if (typeof arg1 === 'object') {
     // Decorator use case: @measurePerformance(name, options)
-    const options: MeasureOptions = arg1;
+    const options: MeasureOptions = arg1 as MeasureOptions;
     const { threshold = 100, warningThreshold, errorThreshold } = options;
     const warnThreshold = warningThreshold || threshold;
     const errThreshold = errorThreshold || threshold * 2;
-
+    
     return function (
-      target: any,
+      target: unknown,
       propertyKey: string,
       descriptor: PropertyDescriptor
     ): PropertyDescriptor {
       const originalMethod = descriptor.value;
-
-      descriptor.value = async function (...args: any[]) {
+      
+      descriptor.value = async function (...args: unknown[]) {
         const start = performance.now();
         const fullName = `${name}`;
-
+        
         try {
           const result = await originalMethod.apply(this, args);
           const duration = performance.now() - start;
-
+          
           // Determine severity based on thresholds
           let severity: PerformanceSeverity = 'ok';
           if (duration > errThreshold) {
@@ -95,10 +95,10 @@ export function measurePerformance(name: string, arg1: any, arg2?: any) {
             severity = 'warning';
             logger.warn(`[SLOW] ${fullName}: ${duration.toFixed(2)}ms (threshold: ${warnThreshold}ms)`);
           }
-
+          
           // Record metric
           PerformanceMonitor.record(fullName, duration, severity);
-
+          
           return result;
         } catch (error) {
           const duration = performance.now() - start;
@@ -108,7 +108,7 @@ export function measurePerformance(name: string, arg1: any, arg2?: any) {
           throw error;
         }
       };
-
+      
       return descriptor;
     };
   }
@@ -137,22 +137,22 @@ export function measureAsyncPerformance(name: string, options: MeasureOptions = 
   const { threshold = 100, warningThreshold, errorThreshold } = options;
   const warnThreshold = warningThreshold || threshold;
   const errThreshold = errorThreshold || threshold * 2;
-
+  
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ): PropertyDescriptor {
     const originalMethod = descriptor.value;
-
-    descriptor.value = function (...args: any[]) {
+    
+    descriptor.value = function (...args: unknown[]) {
       const start = performance.now();
       const fullName = `${name}`;
-
+      
       try {
         const result = originalMethod.apply(this, args);
         const duration = performance.now() - start;
-
+        
         // Determine severity based on thresholds
         let severity: PerformanceSeverity = 'ok';
         if (duration > errThreshold) {
@@ -162,10 +162,10 @@ export function measureAsyncPerformance(name: string, options: MeasureOptions = 
           severity = 'warning';
           logger.warn(`[SLOW] ${fullName}: ${duration.toFixed(2)}ms (threshold: ${warnThreshold}ms)`);
         }
-
+        
         // Record metric
         PerformanceMonitor.record(fullName, duration, severity);
-
+        
         return result;
       } catch (error) {
         const duration = performance.now() - start;
@@ -175,7 +175,7 @@ export function measureAsyncPerformance(name: string, options: MeasureOptions = 
         throw error;
       }
     };
-
+    
     return descriptor;
   };
 }
@@ -230,7 +230,7 @@ export async function measurePerformanceAsync<T>(
  */
 export async function measureBatchPerformance(
   name: string,
-  operations: Array<{ name: string; fn: () => Promise<any> }>
+  operations: Array<{ name: string; fn: () => Promise<unknown> }>
 ): Promise<void> {
   const batchStart = performance.now();
 

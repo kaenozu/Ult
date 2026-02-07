@@ -263,31 +263,31 @@ export class PerformanceMonitor {
 // Decorator for measuring function performance (deprecated, use decorators from performance-utils.ts)
 export function measurePerformance(name: string, threshold: number = 100) {
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
-
-    descriptor.value = function (...args: any[]) {
+    
+    descriptor.value = function (...args: unknown[]) {
       const start = performance.now();
       const result = originalMethod.apply(this, args);
       const duration = performance.now() - start;
-
+      
       const severity: PerformanceSeverity = duration > threshold * 2 ? 'error'
         : duration > threshold ? 'warning' : 'ok';
-
+      
       PerformanceMonitor.record(name, duration, severity);
-
+      
       if (severity === 'error') {
         logger.error(`[SLOW-CRITICAL] ${name}: ${duration.toFixed(2)}ms`);
       } else if (severity === 'warning') {
         logger.warn(`[SLOW] ${name}: ${duration.toFixed(2)}ms`);
       }
-
+      
       return result;
     };
-
+    
     return descriptor;
   };
 }

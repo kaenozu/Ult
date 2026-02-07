@@ -5,11 +5,13 @@ import {
     RISK_MANAGEMENT,
     PRICE_CALCULATION,
     BACKTEST_CONFIG,
-    RSI_CONFIG,
-    SMA_CONFIG,
     FORECAST_CONE,
     DATA_REQUIREMENTS,
-    PREDICTION_ERROR_WEIGHTS
+    PREDICTION_ERROR_WEIGHTS,
+    ANALYSIS,
+    TECHNICAL_INDICATORS,
+    RSI_CONFIG,
+    SMA_CONFIG
 } from './constants';
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
@@ -164,7 +166,7 @@ class AccuracyService {
      */
     calculatePredictionError(data: OHLCV[]): number {
         if (data.length < VOLATILITY.CALCULATION_PERIOD + 5) return 1.0;
-        const period = SMA_CONFIG.SHORT_PERIOD;
+        const period = TECHNICAL_INDICATORS.SMA_PERIOD_SHORT;
         const endIndex = data.length - 5;
         let totalError = 0;
         let count = 0;
@@ -277,7 +279,7 @@ class AccuracyService {
             trades: [...trades].reverse(),
             startDate,
             endDate
-        };
+        } as BacktestResult;
     }
 
     private preCalculateIndicators(data: OHLCV[]): AnalysisContext['preCalculatedIndicators'] {
@@ -295,7 +297,7 @@ class AccuracyService {
         // Calculate ATR once for the whole dataset using the optimized batch method
         const atr = this.calculateBatchSimpleATR(data);
 
-        return { rsi, sma, atr };
+        return { rsi, sma, atr } as { rsi: Map<number, number[]>; sma: Map<number, number[]>; atr?: number[] | undefined };
     }
 
     /**
@@ -353,12 +355,12 @@ class AccuracyService {
                 // Calculate start index to emulate original sliding window
                 // FIX: Reduced window size from 300 to 150 to improve performance (O(N) reduction)
                 // maintaining sufficient buffer over REQUIRED_DATA_PERIOD (100)
-                const windowStartIndex = Math.max(0, i - 150);
+                const windowStartIndex = Math.max(0, i - ANALYSIS.OPTIMIZATION_WINDOW_SIZE);
 
                 const context: AnalysisContext = {
                     endIndex: i,
                     startIndex: windowStartIndex,
-                    preCalculatedIndicators
+                    preCalculatedIndicators: preCalculatedIndicators as AnalysisContext['preCalculatedIndicators']
                 };
 
                 // Check if we need to re-optimize
@@ -378,7 +380,7 @@ class AccuracyService {
                 if (!context.forcedParams) {
                     cachedParams = {
                         rsiPeriod: signal.optimizedParams?.rsiPeriod || RSI_CONFIG.DEFAULT_PERIOD,
-                        smaPeriod: signal.optimizedParams?.smaPeriod || SMA_CONFIG.MEDIUM_PERIOD,
+                        smaPeriod: signal.optimizedParams?.smaPeriod || TECHNICAL_INDICATORS.SMA_PERIOD_MEDIUM,
                         accuracy: signal.accuracy || 0
                     };
                     // Track WFA metrics: The accuracy returned is already out-of-sample from optimizeParameters
@@ -438,7 +440,7 @@ class AccuracyService {
                         // Max hold period
                         else {
                             const daysHeld = (new Date(nextDay.date).getTime() - new Date(currentPosition.date).getTime()) / (1000 * 60 * 60 * 24);
-                            if (daysHeld > 20) {
+                            if (daysHeld > ANALYSIS.DAYS_HELD_THRESHOLD) {
                                 shouldExit = true;
                                 exitPrice = nextDay.close;
                                 exitReason = `Max Hold`;
@@ -466,7 +468,7 @@ class AccuracyService {
                         // Max hold period
                         else {
                             const daysHeld = (new Date(nextDay.date).getTime() - new Date(currentPosition.date).getTime()) / (1000 * 60 * 60 * 24);
-                            if (daysHeld > 20) {
+                            if (daysHeld > ANALYSIS.DAYS_HELD_THRESHOLD) {
                                 shouldExit = true;
                                 exitPrice = nextDay.close;
                                 exitReason = `Max Hold`;
@@ -507,13 +509,13 @@ class AccuracyService {
                 result.walkForwardMetrics = {
                     inSampleAccuracy: avgOOS, // Note: We now use validation accuracy, not training
                     outOfSampleAccuracy: avgOOS,
-                    overfitScore: 1.0, // Perfect score since we use validation for selection
+                    overfitScore: ANALYSIS.PERFECT_OVERFIT_SCORE,
                     parameterStability: (rsiStd + smaStd) / 2
                 };
             }
 
             return result;
-        });
+        }) as BacktestResult;
     }
 
     /**
@@ -530,9 +532,9 @@ class AccuracyService {
             return null;
         }
 
-        logger.info('[calculateRealTimeAccuracy]', { symbol, market, dataLength: data.length, startIndex: Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, 20) });
+        logger.info('[calculateRealTimeAccuracy]', { symbol, market, dataLength: data.length, startIndex: Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, ANALYSIS.ACCURACY_WINDOW_SIZE) });
 
-        const windowSize = 20;
+        const windowSize = ANALYSIS.ACCURACY_WINDOW_SIZE;
         let hits = 0;
         let dirHits = 0;
         let total = 0;
@@ -542,7 +544,7 @@ class AccuracyService {
 
         // ループ開始インデックスを修正
         const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, windowSize);
-        for (let i = startIndex; i < data.length - windowSize; i += 3) {
+        for (let i = startIndex; i < data.length - windowSize; i += ANALYSIS.ACCURACY_STEP) {
             // Optimized: Use full data + endIndex
             const signal = analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i,
@@ -557,7 +559,7 @@ class AccuracyService {
 
             // 判定基準を厳しく（50%→40%）して精度向上
             // FIX: ユーザーからの要望により、0%頻発を防ぐため「方向性（上がると予測して上がったか）」を主判定とする
-            const strictHit = Math.abs(priceChange - predictedChange) < Math.abs(predictedChange * PREDICTION_ERROR_WEIGHTS.ERROR_THRESHOLD);
+            const strictHit = Math.abs(priceChange - predictedChange) < Math.abs(predictedChange * ANALYSIS.PREDICTION_ERROR_THRESHOLD);
             const dirHit = (priceChange > 0) === (signal.type === 'BUY');
 
             if (strictHit) hits++;
@@ -613,7 +615,7 @@ class AccuracyService {
             total++;
             // Use pre-calculated ATR if available, fallback to calculation
             const atr = preCalculatedIndicators?.atr ? preCalculatedIndicators.atr[i] : this.calculateSimpleATR(data, i);
-            const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, data[i].close * 0.012);
+            const targetMove = Math.max(atr * RISK_MANAGEMENT.BULL_TARGET_MULTIPLIER, data[i].close * ANALYSIS.TARGET_MOVE_MULTIPLIER);
 
             const result = this.simulateTrade(data, i, signal.type as 'BUY' | 'SELL', targetMove);
             if (result.won) hits++;

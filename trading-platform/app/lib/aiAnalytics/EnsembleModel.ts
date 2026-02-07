@@ -8,6 +8,8 @@
 
 import { OHLCV } from '../../types/shared';
 import { ExtendedTechnicalFeatures } from './FeatureEngineering';
+import { ENSEMBLE_CONFIG } from '../constants/prediction';
+import { TECHNICAL_INDICATORS } from '../constants/technical-indicators';
 
 /**
  * ベースモデル予測結果
@@ -66,9 +68,9 @@ export interface ModelPerformance {
  */
 export class EnsembleModel {
   private weights: ModelWeights = {
-    RF: 0.35,
-    XGB: 0.35,
-    LSTM: 0.30,
+    RF: ENSEMBLE_CONFIG.WEIGHTS.RF,
+    XGB: ENSEMBLE_CONFIG.WEIGHTS.XGB,
+    LSTM: ENSEMBLE_CONFIG.WEIGHTS.LSTM,
   };
 
   private performanceHistory: Map<string, number[]> = new Map([
@@ -77,9 +79,9 @@ export class EnsembleModel {
     ['LSTM', []],
   ]);
 
-  private readonly CONFIDENCE_THRESHOLD = 0.65;
-  private readonly AGREEMENT_THRESHOLD = 0.7;
-  private readonly MAX_HISTORY_SIZE = 100;
+  private readonly CONFIDENCE_THRESHOLD = ENSEMBLE_CONFIG.CONFIDENCE_THRESHOLD;
+  private readonly AGREEMENT_THRESHOLD = ENSEMBLE_CONFIG.AGREEMENT_THRESHOLD;
+  private readonly MAX_HISTORY_SIZE = ENSEMBLE_CONFIG.MAX_HISTORY_SIZE;
 
   /**
    * モデル重みを設定
@@ -148,9 +150,9 @@ export class EnsembleModel {
 
     // シグナル方向を決定
     let direction: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-    if (score > 1.0 && confidence >= this.CONFIDENCE_THRESHOLD) {
+    if (score > ENSEMBLE_CONFIG.BUY_SCORE_THRESHOLD && confidence >= this.CONFIDENCE_THRESHOLD) {
       direction = 'BUY';
-    } else if (score < -1.0 && confidence >= this.CONFIDENCE_THRESHOLD) {
+    } else if (score < ENSEMBLE_CONFIG.SELL_SCORE_THRESHOLD && confidence >= this.CONFIDENCE_THRESHOLD) {
       direction = 'SELL';
     }
 
@@ -205,13 +207,13 @@ export class EnsembleModel {
     ];
 
     // メタモデル（線形結合）
-    const weights = [0.25, 0.25, 0.20, 0.10, 0.10, 0.05, 0.03, 0.02];
+    const weights = ENSEMBLE_CONFIG.STACKING_WEIGHTS;
     const score = metaFeatures.reduce((sum, feat, i) => sum + feat * weights[i], 0);
 
     // 信頼度は個別モデルの最大値と合意度の組み合わせ
     const maxConfidence = Math.max(...predictions.map(p => p.confidence));
     const agreementScore = this.calculateAgreementScore(predictions);
-    const confidence = maxConfidence * 0.7 + agreementScore * 0.3;
+    const confidence = maxConfidence * ENSEMBLE_CONFIG.MAX_CONFIDENCE_WEIGHT + agreementScore * ENSEMBLE_CONFIG.AGREEMENT_CONFIDENCE_WEIGHT;
 
     return { score, confidence };
   }
@@ -260,26 +262,26 @@ export class EnsembleModel {
     let score = 0;
 
     // RSIベースの判定
-    if (features.rsi < 30) score += 3;
-    else if (features.rsi > 70) score -= 3;
+    if (features.rsi < TECHNICAL_INDICATORS.RSI_OVERSOLD) score += ENSEMBLE_CONFIG.RF_RSI_OVERSOLD_SCORE;
+    else if (features.rsi > TECHNICAL_INDICATORS.RSI_OVERBOUGHT) score += ENSEMBLE_CONFIG.RF_RSI_OVERBOUGHT_SCORE;
 
     // SMAトレンド
-    if (features.sma5 > 0 && features.sma20 > 0) score += 2;
-    else if (features.sma5 < 0 && features.sma20 < 0) score -= 2;
+    if (features.sma5 > 0 && features.sma20 > 0) score += ENSEMBLE_CONFIG.RF_SMA_BULL_SCORE;
+    else if (features.sma5 < 0 && features.sma20 < 0) score += ENSEMBLE_CONFIG.RF_SMA_BEAR_SCORE;
 
     // モメンタム
-    if (features.momentum > 5) score += 2;
-    else if (features.momentum < -5) score -= 2;
+    if (features.momentum > TECHNICAL_INDICATORS.MOMENTUM_STRONG_THRESHOLD) score += ENSEMBLE_CONFIG.RF_MOMENTUM_STRONG_SCORE;
+    else if (features.momentum < TECHNICAL_INDICATORS.MOMENTUM_WEAK_THRESHOLD) score += ENSEMBLE_CONFIG.RF_MOMENTUM_WEAK_SCORE;
 
     // 出来高
-    if (features.volumeRatio > 1.5) score += 1;
+    if (features.volumeRatio > TECHNICAL_INDICATORS.VOLUME_RATIO_THRESHOLD) score += ENSEMBLE_CONFIG.RF_VOLUME_SPIKE_SCORE;
 
     // ボラティリティ考慮
-    const volatilityFactor = features.volatility > 30 ? 0.7 : 1.0;
+    const volatilityFactor = features.volatility > TECHNICAL_INDICATORS.VOLATILITY_HIGH_THRESHOLD ? ENSEMBLE_CONFIG.RF_VOLATILITY_HIGH_FACTOR : 1.0;
     score *= volatilityFactor;
 
     // スケーリング
-    score *= 0.8;
+    score *= ENSEMBLE_CONFIG.RF_SCALING_FACTOR;
 
     // 信頼度の計算
     const confidence = this.calculateConfidence(features, 'RF');
@@ -298,25 +300,25 @@ export class EnsembleModel {
     let score = 0;
 
     // RSIと変化率
-    if (features.rsi < 30) score += 3;
-    else if (features.rsi > 70) score -= 3;
+    if (features.rsi < TECHNICAL_INDICATORS.RSI_OVERSOLD) score += ENSEMBLE_CONFIG.XGB_RSI_OVERSOLD_SCORE;
+    else if (features.rsi > TECHNICAL_INDICATORS.RSI_OVERBOUGHT) score += ENSEMBLE_CONFIG.XGB_RSI_OVERBOUGHT_SCORE;
 
     // モメンタムとROC
-    score += Math.min(features.momentum / 3, 3);
-    score += Math.min(features.rateOfChange / 3, 2);
+    score += Math.min(features.momentum / ENSEMBLE_CONFIG.XGB_MOMENTUM_DIVISOR, ENSEMBLE_CONFIG.XGB_MOMENTUM_MAX_SCORE);
+    score += Math.min(features.rateOfChange / ENSEMBLE_CONFIG.XGB_RATE_OF_CHANGE_DIVISOR, ENSEMBLE_CONFIG.XGB_RATE_OF_CHANGE_MAX_SCORE);
 
     // SMA乖離率
-    score += (features.sma5 * 0.5 + features.sma20 * 0.3) / 10;
+    score += (features.sma5 * ENSEMBLE_CONFIG.XGB_SMA_WEIGHT_5 + features.sma20 * ENSEMBLE_CONFIG.XGB_SMA_WEIGHT_20) / ENSEMBLE_CONFIG.XGB_SMA_DIVISOR;
 
     // テクニカル指標
-    if (features.cci > 100) score += 1.5;
-    else if (features.cci < -100) score -= 1.5;
+    if (features.cci > TECHNICAL_INDICATORS.CCI_OVERBOUGHT) score += ENSEMBLE_CONFIG.XGB_CCI_OVERBOUGHT_SCORE;
+    else if (features.cci < TECHNICAL_INDICATORS.CCI_OVERSOLD) score += ENSEMBLE_CONFIG.XGB_CCI_OVERSOLD_SCORE;
 
-    if (features.williamsR < -80) score += 1;
-    else if (features.williamsR > -20) score -= 1;
+    if (features.williamsR < TECHNICAL_INDICATORS.WILLIAMS_R_OVERSOLD) score += ENSEMBLE_CONFIG.XGB_WILLIAMS_R_OVERSOLD_SCORE;
+    else if (features.williamsR > TECHNICAL_INDICATORS.WILLIAMS_R_OVERBOUGHT) score += ENSEMBLE_CONFIG.XGB_WILLIAMS_R_OVERBOUGHT_SCORE;
 
     // スケーリング
-    score *= 0.9;
+    score *= ENSEMBLE_CONFIG.XGB_SCALING_FACTOR;
 
     // 信頼度の計算
     const confidence = this.calculateConfidence(features, 'XGB');
@@ -332,8 +334,8 @@ export class EnsembleModel {
    * LSTM予測（時系列パターン認識）
    */
   private predictLSTM(data: OHLCV[], features: ExtendedTechnicalFeatures): BaseModelPrediction {
-    const prices = data.map(d => d.close).slice(-20);
-    
+    const prices = data.map(d => d.close).slice(-ENSEMBLE_CONFIG.LSTM_PRICE_HISTORY_LENGTH);
+
     if (prices.length < 2) {
       return { value: 0, confidence: 0.5, model: 'LSTM' };
     }
@@ -359,7 +361,7 @@ export class EnsembleModel {
     }
 
     // スコアの計算
-    const score = (priceTrend * 0.6 + momentumWeight * 0.4) * 0.6;
+    const score = (priceTrend * ENSEMBLE_CONFIG.LSTM_PRICE_TREND_WEIGHT + momentumWeight * ENSEMBLE_CONFIG.LSTM_MOMENTUM_WEIGHT) * ENSEMBLE_CONFIG.LSTM_SCALING_FACTOR;
 
     // 信頼度の計算
     const confidence = this.calculateConfidence(features, 'LSTM');
@@ -379,37 +381,37 @@ export class EnsembleModel {
 
     // RSI極端値
     if (features.rsi < 25 || features.rsi > 75) {
-      confidence += 0.15;
+      confidence += ENSEMBLE_CONFIG.RSI_EXTREME_BONUS;
     }
 
     // モメンタムの強さ
-    if (Math.abs(features.momentum) > 5) {
-      confidence += 0.1;
+    if (Math.abs(features.momentum) > TECHNICAL_INDICATORS.MOMENTUM_STRONG_THRESHOLD) {
+      confidence += ENSEMBLE_CONFIG.MOMENTUM_STRONG_BONUS;
     }
 
     // ボリンジャーバンド位置
-    if (features.bollingerPosition < 10 || features.bollingerPosition > 90) {
-      confidence += 0.1;
+    if (features.bollingerPosition < TECHNICAL_INDICATORS.BB_POSITION_LOWER_THRESHOLD || features.bollingerPosition > TECHNICAL_INDICATORS.BB_POSITION_UPPER_THRESHOLD) {
+      confidence += ENSEMBLE_CONFIG.BOLLINGER_POSITION_BONUS;
     }
 
     // 出来高
-    if (features.volumeRatio > 1.5) {
-      confidence += 0.05;
+    if (features.volumeRatio > TECHNICAL_INDICATORS.VOLUME_RATIO_THRESHOLD) {
+      confidence += ENSEMBLE_CONFIG.VOLUME_SPIKE_BONUS;
     }
 
     // ボラティリティレジームに応じた調整
     if (features.volatilityRegime === 'HIGH') {
-      confidence *= 0.8; // 高ボラティリティ時は信頼度を下げる
+      confidence *= ENSEMBLE_CONFIG.VOLATILITY_HIGH_MULTIPLIER; // 高ボラティリティ時は信頼度を下げる
     } else if (features.volatilityRegime === 'LOW') {
-      confidence *= 1.1; // 低ボラティリティ時は信頼度を上げる
+      confidence *= ENSEMBLE_CONFIG.VOLATILITY_LOW_MULTIPLIER; // 低ボラティリティ時は信頼度を上げる
     }
 
     // モデル固有の調整
     const recentPerformance = this.getRecentPerformance(model);
     if (recentPerformance > 0.7) {
-      confidence *= 1.1;
+      confidence *= ENSEMBLE_CONFIG.PERFORMANCE_HIGH_MULTIPLIER;
     } else if (recentPerformance < 0.5) {
-      confidence *= 0.9;
+      confidence *= ENSEMBLE_CONFIG.PERFORMANCE_LOW_MULTIPLIER;
     }
 
     return Math.min(Math.max(confidence, 0), 1);
@@ -428,7 +430,7 @@ export class EnsembleModel {
 
     // 標準偏差が小さいほど合意度が高い
     // 標準偏差0で1.0、標準偏差5で0に近づく
-    const agreementScore = Math.max(0, 1 - std / 5);
+    const agreementScore = Math.max(0, 1 - std / ENSEMBLE_CONFIG.AGREEMENT_STD_DIVISOR);
 
     return agreementScore;
   }
@@ -537,13 +539,13 @@ export class EnsembleModel {
     const std = Math.sqrt(variance);
 
     // 標準偏差を不確実性の指標として使用
-    const varianceUncertainty = Math.min(std / 5, 1);
+    const varianceUncertainty = Math.min(std / ENSEMBLE_CONFIG.UNCERTAINTY_STD_DIVISOR, 1);
 
     // 信頼度の逆数も不確実性に寄与
     const confidenceUncertainty = 1 - confidence;
 
     // 加重平均で総合的な不確実性を計算
-    const uncertainty = varianceUncertainty * 0.6 + confidenceUncertainty * 0.4;
+    const uncertainty = varianceUncertainty * ENSEMBLE_CONFIG.UNCERTAINTY_VARIANCE_WEIGHT + confidenceUncertainty * ENSEMBLE_CONFIG.UNCERTAINTY_CONFIDENCE_WEIGHT;
 
     return Math.min(Math.max(uncertainty, 0), 1);
   }
@@ -576,7 +578,7 @@ export class EnsembleModel {
     const history = this.performanceHistory.get(model) || [];
     if (history.length === 0) return 0.5;
 
-    const recent = history.slice(-10);
+    const recent = history.slice(-ENSEMBLE_CONFIG.RECENT_PERFORMANCE_WINDOW);
     return recent.reduce((sum, acc) => sum + acc, 0) / recent.length;
   }
 
@@ -595,7 +597,7 @@ export class EnsembleModel {
     const maxPerf = Math.max(...Object.values(performances));
 
     // パフォーマンスが類似している場合は調整しない
-    if (maxPerf - minPerf < 0.1) {
+    if (maxPerf - minPerf < ENSEMBLE_CONFIG.MIN_PERFORMANCE_DIFF) {
       return;
     }
 
@@ -609,7 +611,7 @@ export class EnsembleModel {
     const sum = rawWeights.RF + rawWeights.XGB + rawWeights.LSTM;
 
     // 既存の重みとブレンド（急激な変化を避ける）
-    const blendFactor = 0.3;
+    const blendFactor = ENSEMBLE_CONFIG.WEIGHT_BLEND_FACTOR;
     this.weights = {
       RF: this.weights.RF * (1 - blendFactor) + (rawWeights.RF / sum) * blendFactor,
       XGB: this.weights.XGB * (1 - blendFactor) + (rawWeights.XGB / sum) * blendFactor,

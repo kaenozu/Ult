@@ -17,6 +17,7 @@ import {
 } from './types';
 
 import { logger } from '@/app/core/logger';
+import { ALERT_MANAGER } from '../../constants/api';
 export class AlertManager {
   private alertHistory: Alert[] = [];
   private channels: NotificationChannelConfig[];
@@ -27,8 +28,8 @@ export class AlertManager {
     this.config = {
       channels: config?.channels ?? [],
       escalationRules: config?.escalationRules ?? [],
-      duplicateWindow: config?.duplicateWindow ?? 300000, // 5 minutes
-      maxHistorySize: config?.maxHistorySize ?? 1000,
+      duplicateWindow: config?.duplicateWindow ?? ALERT_MANAGER.DUPLICATE_WINDOW_MS, // 5 minutes
+      maxHistorySize: config?.maxHistorySize ?? ALERT_MANAGER.MAX_HISTORY_SIZE,
     };
 
     this.channels = this.config.channels;
@@ -83,7 +84,7 @@ export class AlertManager {
   /**
    * Aggregate alerts within a time window
    */
-  aggregateAlerts(timeWindow: number = 300000): AggregatedAlert[] {
+  aggregateAlerts(timeWindow: number = ALERT_MANAGER.AGGREGATE_TIME_WINDOW_MS): AggregatedAlert[] {
     const now = Date.now();
     const recentAlerts = this.alertHistory.filter(
       alert => now - alert.timestamp.getTime() < timeWindow
@@ -105,7 +106,7 @@ export class AlertManager {
   /**
    * Analyze alerts over a period
    */
-  analyzeAlerts(period: number = 86400000): AlertAnalysis {
+  analyzeAlerts(period: number = ALERT_MANAGER.ANALYSIS_PERIOD_MS): AlertAnalysis {
     const alerts = this.alertHistory.filter(
       alert => Date.now() - alert.timestamp.getTime() < period
     );
@@ -168,8 +169,8 @@ export class AlertManager {
     this.alertHistory.unshift(alert);
 
     // Maintain max history size
-    if (this.alertHistory.length > this.config.maxHistorySize) {
-      this.alertHistory = this.alertHistory.slice(0, this.config.maxHistorySize);
+    if (this.alertHistory.length > ALERT_MANAGER.MAX_HISTORY_SIZE) {
+      this.alertHistory = this.alertHistory.slice(0, ALERT_MANAGER.MAX_HISTORY_SIZE);
     }
   }
 
@@ -311,7 +312,7 @@ export class AlertManager {
    * Calculate aggregate severity
    */
   private calculateAggregateSeverity(alerts: Alert[]): AnomalySeverity {
-    const severityScores = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
+    const severityScores = ALERT_MANAGER.SEVERITY_SCORES;
     const maxScore = Math.max(...alerts.map(a => severityScores[a.severity]));
     
     const scoreToSeverity: Record<number, AnomalySeverity> = {
@@ -430,7 +431,7 @@ export class AlertManager {
     trend: 'INCREASING' | 'DECREASING' | 'STABLE';
   }> {
     // Simplified trend analysis
-    const severityScores = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
+    const severityScores = ALERT_MANAGER.SEVERITY_SCORES;
     const avgSeverity = alerts.length > 0
       ? alerts.reduce((sum, a) => sum + severityScores[a.severity], 0) / alerts.length
       : 0;

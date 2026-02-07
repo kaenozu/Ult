@@ -8,61 +8,61 @@ import { performanceMonitor } from './monitor';
 
 export interface MeasureOptions {
   name?: string;
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
   enabled?: boolean;
 }
 
 // Method decorator for synchronous functions
 export function measure(options: MeasureOptions = {}) {
-  return function <T extends (...args: any[]) => any>(
-    target: any,
+  return function <T extends (...args: unknown[]) => unknown>(
+    target: { constructor: { name: string } },
     propertyKey: string,
     descriptor: TypedPropertyDescriptor<T>
   ): TypedPropertyDescriptor<T> {
     const originalMethod = descriptor.value!;
     const metricName = options.name || `${target.constructor.name}.${propertyKey}`;
-
-    descriptor.value = function (this: any, ...args: any[]): ReturnType<T> {
+    
+    descriptor.value = function (this: unknown, ...args: unknown[]): unknown {
       if (options.enabled === false) {
         return originalMethod.apply(this, args);
       }
-
+      
       const context = {
         ...options.context,
         args: args.map(arg => 
           typeof arg === 'object' ? '[object]' : String(arg).slice(0, 50)
         ),
       };
-
+      
       return performanceMonitor.measure(
         metricName,
         () => originalMethod.apply(this, args),
         context
       );
     } as T;
-
+    
     return descriptor;
   };
 }
 
 // Method decorator for asynchronous functions
 export function measureAsync(options: MeasureOptions = {}) {
-  return function <T extends (...args: any[]) => Promise<any>>(
-    target: any,
+  return function <T extends (...args: unknown[]) => Promise<unknown>>(
+    target: { constructor: { name: string } },
     propertyKey: string,
     descriptor: TypedPropertyDescriptor<T>
   ): TypedPropertyDescriptor<T> {
     const originalMethod = descriptor.value!;
     const metricName = options.name || `${target.constructor.name}.${propertyKey}`;
-
-    descriptor.value = async function (this: any, ...args: any[]): Promise<ReturnType<T>> {
+    
+    descriptor.value = async function (this: unknown, ...args: unknown[]): Promise<unknown> {
       if (options.enabled === false) {
         return originalMethod.apply(this, args);
       }
 
       const context = {
         ...options.context,
-        args: args.map(arg => 
+        args: args.map(arg =>
           typeof arg === 'object' ? '[object]' : String(arg).slice(0, 50)
         ),
       };
@@ -73,50 +73,50 @@ export function measureAsync(options: MeasureOptions = {}) {
         context
       );
     } as T;
-
+    
     return descriptor;
   };
 }
 
 // Class decorator to measure all methods
 export function measureAllClass(options: MeasureOptions = {}) {
-  return function <T extends { new (...args: any[]): any }>(constructor: T): T {
+  return function <T extends { new (...args: any[]): object }>(constructor: T): T {
     const className = constructor.name;
-
+    
     return class extends constructor {
       constructor(...args: any[]) {
         super(...args);
-
+        
         // Get all method names
         const prototype = constructor.prototype;
         const methodNames = Object.getOwnPropertyNames(prototype).filter(
           name => name !== 'constructor' && typeof prototype[name] === 'function'
         );
-
+        
         // Wrap each method
         methodNames.forEach(methodName => {
-          const originalMethod = (this as any)[methodName];
+          const originalMethod = (this as Record<string, unknown>)[methodName] as (...args: unknown[]) => unknown;
           const isAsync = originalMethod.constructor.name === 'AsyncFunction';
           const metricName = options.name || `${className}.${methodName}`;
-
-          (this as any)[methodName] = isAsync
-            ? async (...methodArgs: any[]) => {
+          
+          (this as Record<string, unknown>)[methodName] = isAsync
+            ? async (...methodArgs: unknown[]) => {
                 if (options.enabled === false) {
                   return originalMethod.apply(this, methodArgs);
                 }
                 return performanceMonitor.measureAsync(
                   metricName,
-                  () => originalMethod.apply(this, methodArgs),
+                  () => originalMethod.apply(this, methodArgs) as Promise<unknown>,
                   options.context
                 );
               }
-            : (...methodArgs: any[]) => {
+            : (...methodArgs: unknown[]) => {
                 if (options.enabled === false) {
                   return originalMethod.apply(this, methodArgs);
                 }
                 return performanceMonitor.measure(
                   metricName,
-                  () => originalMethod.apply(this, methodArgs),
+                  () => originalMethod.apply(this, methodArgs) as unknown,
                   options.context
                 );
               };

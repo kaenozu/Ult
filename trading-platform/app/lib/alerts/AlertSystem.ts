@@ -6,6 +6,8 @@
  */
 
 import { EventEmitter } from 'events';
+import { ALERT_MANAGER, ALERT_SYSTEM } from '../constants/api';
+import { TECHNICAL_INDICATORS } from '../constants/technical-indicators';
 
 // ============================================================================
 // Types
@@ -96,8 +98,8 @@ export const ALERT_TEMPLATES: AlertTemplate[] = [
     description: 'Alert when RSI falls below 30',
     type: 'rsi',
     defaultOperator: 'below',
-    defaultValue: 30,
-    defaultParameters: { period: 14 },
+    defaultValue: TECHNICAL_INDICATORS.RSI_OVERSOLD,
+    defaultParameters: { period: TECHNICAL_INDICATORS.RSI_PERIOD },
     category: 'momentum',
   },
   {
@@ -105,8 +107,8 @@ export const ALERT_TEMPLATES: AlertTemplate[] = [
     description: 'Alert when RSI rises above 70',
     type: 'rsi',
     defaultOperator: 'above',
-    defaultValue: 70,
-    defaultParameters: { period: 14 },
+    defaultValue: TECHNICAL_INDICATORS.RSI_OVERBOUGHT,
+    defaultParameters: { period: TECHNICAL_INDICATORS.RSI_PERIOD },
     category: 'momentum',
   },
   {
@@ -115,7 +117,7 @@ export const ALERT_TEMPLATES: AlertTemplate[] = [
     type: 'macd',
     defaultOperator: 'crosses_above',
     defaultValue: 0,
-    defaultParameters: { fast: 12, slow: 26, signal: 9 },
+    defaultParameters: { fast: TECHNICAL_INDICATORS.MACD_FAST, slow: TECHNICAL_INDICATORS.MACD_SLOW, signal: TECHNICAL_INDICATORS.MACD_SIGNAL },
     category: 'momentum',
   },
   {
@@ -124,7 +126,7 @@ export const ALERT_TEMPLATES: AlertTemplate[] = [
     type: 'sma',
     defaultOperator: 'crosses_above',
     defaultValue: 0,
-    defaultParameters: { period: 20 },
+    defaultParameters: { period: TECHNICAL_INDICATORS.SMA_PERIOD_20 },
     category: 'trend',
   },
   {
@@ -133,7 +135,7 @@ export const ALERT_TEMPLATES: AlertTemplate[] = [
     type: 'bollinger',
     defaultOperator: 'above',
     defaultValue: 100,
-    defaultParameters: { period: 20, stdDev: 2 },
+    defaultParameters: { period: TECHNICAL_INDICATORS.BB_PERIOD, stdDev: TECHNICAL_INDICATORS.BB_STD_DEV },
     category: 'volatility',
   },
   {
@@ -142,7 +144,7 @@ export const ALERT_TEMPLATES: AlertTemplate[] = [
     type: 'volume_spike',
     defaultOperator: 'above',
     defaultValue: 200,
-    defaultParameters: { period: 20, multiplier: 2 },
+    defaultParameters: { period: TECHNICAL_INDICATORS.VOLUME_AVERAGE_PERIOD, multiplier: TECHNICAL_INDICATORS.VOLUME_SPIKE_MULTIPLIER },
     category: 'volume',
   },
   {
@@ -167,7 +169,7 @@ export const ALERT_TEMPLATES: AlertTemplate[] = [
     type: 'atr',
     defaultOperator: 'above',
     defaultValue: 2,
-    defaultParameters: { period: 14 },
+    defaultParameters: { period: TECHNICAL_INDICATORS.ATR_PERIOD },
     category: 'volatility',
   },
   {
@@ -222,7 +224,7 @@ export class AlertSystem extends EventEmitter {
       enabled: options.enabled !== false,
       createdAt: Date.now(),
       triggerCount: 0,
-      cooldown: options.cooldown || 300000, // 5 minutes default
+      cooldown: options.cooldown || ALERT_SYSTEM.DEFAULT_COOLDOWN_MS,
       notificationChannels: options.notificationChannels || ['ui'],
     };
 
@@ -350,7 +352,7 @@ export class AlertSystem extends EventEmitter {
         }
         const values = history.get(indicator)!;
         values.push(value);
-        if (values.length > 100) values.shift();
+        if (values.length > ALERT_SYSTEM.MAX_INDICATOR_HISTORY) values.shift();
       });
     }
 
@@ -432,7 +434,7 @@ export class AlertSystem extends EventEmitter {
         break;
       case 'volume_spike':
         const volumeHistory = this.indicatorHistory.get(data.symbol)?.get('volume') || [];
-        const avgVolume = volumeHistory.slice(-20).reduce((a, b) => a + b, 0) / 20;
+        const avgVolume = volumeHistory.slice(-TECHNICAL_INDICATORS.VOLUME_AVERAGE_PERIOD).reduce((a, b) => a + b, 0) / TECHNICAL_INDICATORS.VOLUME_AVERAGE_PERIOD;
         currentValue = avgVolume > 0 ? (data.volume / avgVolume) * 100 : 100;
         break;
       default:
@@ -463,7 +465,7 @@ export class AlertSystem extends EventEmitter {
                     previousValue >= (targetValue as number);
         break;
       case 'equals':
-        triggered = Math.abs(currentValue - (targetValue as number)) < 0.0001;
+        triggered = Math.abs(currentValue - (targetValue as number)) < ALERT_SYSTEM.PRICE_EQUALS_TOLERANCE;
         break;
       case 'between':
         const [min, max] = targetValue as [number, number];
@@ -581,14 +583,14 @@ export class AlertSystem extends EventEmitter {
   /**
    * アラート履歴を取得
    */
-  getAlertHistory(limit: number = 100): AlertTrigger[] {
+  getAlertHistory(limit: number = ALERT_SYSTEM.ALERT_HISTORY_DEFAULT_LIMIT): AlertTrigger[] {
     return this.history.triggers.slice(-limit);
   }
 
   /**
    * シンボル別アラート履歴を取得
    */
-  getAlertHistoryBySymbol(symbol: string, limit: number = 100): AlertTrigger[] {
+  getAlertHistoryBySymbol(symbol: string, limit: number = ALERT_SYSTEM.ALERT_HISTORY_DEFAULT_LIMIT): AlertTrigger[] {
     return this.history.triggers
       .filter((t) => t.symbol === symbol)
       .slice(-limit);

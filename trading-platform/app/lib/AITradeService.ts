@@ -1,6 +1,6 @@
 import { Signal, AIStatus, PaperTrade } from '../types';
 import { RISK_MANAGEMENT } from './constants/risk-management';
-import { MARKET_CORRELATION } from './constants/trading';
+import { MARKET_CORRELATION, AI_TRADING } from './constants/trading';
 
 /**
  * Service to handle AI trading logic.
@@ -100,8 +100,7 @@ class AITradeService {
         }
 
         // New Entry Logic
-        const HIGH_CONFIDENCE_THRESHOLD = 80;
-        if (!openTrade && signal && signal.confidence >= HIGH_CONFIDENCE_THRESHOLD && signal.type !== 'HOLD') {
+        if (!openTrade && signal && signal.confidence >= AI_TRADING.HIGH_CONFIDENCE_THRESHOLD && signal.type !== 'HOLD') {
             const entryPrice = signal.type === 'BUY' ? currentPrice * (1 + slippage) : currentPrice * (1 - slippage);
             const quantity = Math.floor((currentStatus.virtualBalance * RISK_MANAGEMENT.DEFAULT_RATIO) / entryPrice);
 

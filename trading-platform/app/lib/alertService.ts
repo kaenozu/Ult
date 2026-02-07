@@ -1,4 +1,6 @@
 import { Alert, AlertSeverity, AlertType, AlertActionable } from './alertTypes';
+import { ALERT_SYSTEM } from './constants/api';
+import { ALERT_UI } from './constants/ui';
 
 export class AlertService {
   private static instance: AlertService;
@@ -73,8 +75,8 @@ export class AlertService {
   ): AlertSeverity {
     const weightedScore = (marketImpact * 0.4) + (stockSignalStrength * 0.6);
 
-    if (weightedScore >= 70) return 'HIGH';
-    if (weightedScore >= 40) return 'MEDIUM';
+    if (weightedScore >= ALERT_SYSTEM.SEVERITY_HIGH_THRESHOLD) return 'HIGH';
+    if (weightedScore >= ALERT_SYSTEM.SEVERITY_MEDIUM_THRESHOLD) return 'MEDIUM';
     return 'LOW';
   }
 
@@ -83,14 +85,14 @@ export class AlertService {
     stockSignal: 'BUY' | 'SELL' | 'HOLD',
     correlation: number
   ): boolean {
-    if (Math.abs(correlation) < 0.5) return false;
+    if (Math.abs(correlation) < ALERT_SYSTEM.CORRELATION_STRONG_THRESHOLD) return false;
 
-    if (correlation > 0.5) {
+    if (correlation > ALERT_SYSTEM.CORRELATION_STRONG_THRESHOLD) {
       return (
         (marketTrend === 'UP' && stockSignal === 'BUY') ||
         (marketTrend === 'DOWN' && stockSignal === 'SELL')
       );
-    } else if (correlation < -0.5) {
+    } else if (correlation < -ALERT_SYSTEM.CORRELATION_STRONG_THRESHOLD) {
       return (
         (marketTrend === 'UP' && stockSignal === 'SELL') ||
         (marketTrend === 'DOWN' && stockSignal === 'BUY')
@@ -109,7 +111,7 @@ export class AlertService {
     const { symbol, trend, changePercent } = data;
 
     let severity: AlertSeverity = 'MEDIUM';
-    if (Math.abs(changePercent) >= 3) {
+    if (Math.abs(changePercent) >= ALERT_SYSTEM.PRICE_CHANGE_HIGH_THRESHOLD) {
       severity = 'HIGH';
     }
 
@@ -173,8 +175,8 @@ export class AlertService {
           ? ((details.confidence || 0) - details.previousConfidence) / details.previousConfidence
           : 0;
 
-        if (Math.abs(confidenceChange) >= 0.2) severity = 'HIGH';
-        else if (Math.abs(confidenceChange) >= 0.1) severity = 'MEDIUM';
+        if (Math.abs(confidenceChange) >= ALERT_SYSTEM.CONFIDENCE_CHANGE_HIGH_THRESHOLD) severity = 'HIGH';
+        else if (Math.abs(confidenceChange) >= ALERT_SYSTEM.CONFIDENCE_CHANGE_MEDIUM_THRESHOLD) severity = 'MEDIUM';
         else severity = 'LOW';
 
         const changeText = confidenceChange > 0 ? '上昇' : '低下';
@@ -183,8 +185,8 @@ export class AlertService {
         break;
 
       case 'ACCURACY_DROP':
-        if ((details.hitRate || 0) < 40) severity = 'HIGH';
-        else if ((details.hitRate || 0) < 60) severity = 'MEDIUM';
+        if ((details.hitRate || 0) < ALERT_SYSTEM.ACCURACY_HIGH_THRESHOLD) severity = 'HIGH';
+        else if ((details.hitRate || 0) < ALERT_SYSTEM.ACCURACY_MEDIUM_THRESHOLD) severity = 'MEDIUM';
         else severity = 'LOW';
 
         title = `的中率急低下: ${symbol}`;
@@ -197,7 +199,7 @@ export class AlertService {
         message = `RSI・SMAがシグナル反転。注視要。`;
         actionable = {
           type: 'HOLD',
-          confidence: 50,
+          confidence: ALERT_UI.ACTIONABLE_CONFIDENCE,
         };
         break;
     }
@@ -234,8 +236,8 @@ export class AlertService {
     const severity = this.calculateSeverity(80, 85);
 
     const correlationText =
-      Math.abs(correlation) >= 0.7 ? '強い相関' :
-        Math.abs(correlation) >= 0.5 ? '中程度の相関' : '弱い相関';
+      Math.abs(correlation) >= ALERT_SYSTEM.CORRELATION_WEAK_THRESHOLD ? '強い相関' :
+        Math.abs(correlation) >= ALERT_SYSTEM.CORRELATION_STRONG_THRESHOLD ? '中程度の相関' : '弱い相関';
 
     const message =
       marketTrend === 'UP' && stockSignal === 'BUY'
@@ -255,7 +257,7 @@ export class AlertService {
       acknowledged: false,
       actionable: {
         type: stockSignal,
-        confidence: 85,
+        confidence: ALERT_UI.CONFIDENCE_HIGH_THRESHOLD + 25,
         targetPrice: undefined,
         stopLoss: undefined,
       },
@@ -280,8 +282,8 @@ export class AlertService {
 
     this.alerts.unshift(alert);
 
-    if (this.alerts.length > 50) {
-      this.alerts = this.alerts.slice(0, 50);
+    if (this.alerts.length > ALERT_SYSTEM.MAX_ALERT_HISTORY) {
+      this.alerts = this.alerts.slice(0, ALERT_SYSTEM.MAX_ALERT_HISTORY);
     }
   }
 

@@ -11,8 +11,8 @@ interface CacheEntry<T> {
 }
 
 export class RequestDeduplicator {
-  private pendingRequests = new Map<string, Promise<any>>();
-  private cache = new Map<string, CacheEntry<any>>();
+  private pendingRequests = new Map<string, Promise<unknown>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private CACHE_TTL: number;
   private readonly MAX_CACHE_SIZE = 1000;
   private readonly MAX_PENDING_REQUESTS = 50;
@@ -45,7 +45,7 @@ export class RequestDeduplicator {
     const pending = this.pendingRequests.get(key);
     if (pending) {
       console.debug(`[RequestDeduplicator] Request already pending: ${key}`);
-      return pending;
+      return pending as Promise<T>;
     }
 
     // Limit number of pending requests

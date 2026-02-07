@@ -34,3 +34,33 @@ export const BACKTEST_METRICS = {
   EXCELLENT_HIT_RATE: 70,
   MIN_TRADES: 2,
 } as const;
+
+/**
+ * Walk-forward analysis configuration
+ */
+export const WALK_FORWARD_ANALYSIS = {
+  // Data length
+  MIN_DATA_LENGTH: 60,
+
+  // Window sizes
+  OPTIMIZATION_WINDOW_SIZE: 150,
+  REQUIRED_DATA_PERIOD: 100,
+
+  // Optimization interval
+  OPTIMIZATION_INTERVAL: 30,
+
+  // Parameters
+  WFA_TRAIN_RATIO: 0.7, // 70% for training, 30% for validation
+  WFA_MIN_VALIDATION_PERIOD: 20,
+
+  // Forecast cone
+  FORECAST_CONE_STEPS: 60,
+  FORECAST_CONE_LOOKBACK_DAYS: 60,
+  FORECAST_CONE_ATR_MULTIPLIER: 2.0,
+
+  // Performance
+  PERFECT_OVERFIT_SCORE: 1.0,
+
+  // Parameter stability
+  PARAMETER_STABILITY_DIVISOR: 2,
+} as const;
