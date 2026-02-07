@@ -90,3 +90,57 @@ export function requireAuth(req: NextRequest): NextResponse | null {
 export function getAuthUser(req: NextRequest): JWTPayload | null {
   return verifyAuthToken(req);
 }
+
+/**
+ * Require admin role for sensitive operations
+ * Checks against ADMIN_USER_IDS and ADMIN_USERNAMES environment variables
+ * Returns 403 Forbidden if user is not admin
+ */
+export function requireAdmin(req: NextRequest): NextResponse | null {
+  const payload = verifyAuthToken(req);
+  if (!payload) {
+    return requireAuth(req);
+  }
+
+  const config = getConfig();
+  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+  const adminNames = (process.env.ADMIN_USERNAMES || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  const isAdmin = adminIds.includes(payload.userId) || (payload.username && adminNames.includes(payload.username));
+
+  if (!isAdmin) {
+    return NextResponse.json(
+      { error: 'Forbidden', message: 'Admin access required' },
+      { status: 403 }
+    );
+  }
+
+  return null; // Admin check passed
+}
+
+/**
+ * Require admin role for sensitive operations
+ * Checks against ADMIN_USER_IDS and ADMIN_USERNAMES environment variables
+ * Returns 403 Forbidden if user is not admin
+ */
+export function requireAdmin(req: NextRequest): NextResponse | null {
+  const payload = verifyAuthToken(req);
+  if (!payload) {
+    return requireAuth(req);
+  }
+
+  const config = getConfig();
+  const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+  const adminNames = (process.env.ADMIN_USERNAMES || '').split(',').map(s => s.trim()).filter(Boolean);
+
+  const isAdmin = adminIds.includes(payload.userId) || (payload.username && adminNames.includes(payload.username));
+
+  if (!isAdmin) {
+    return NextResponse.json(
+      { error: 'Forbidden', message: 'Admin access required' },
+      { status: 403 }
+    );
+  }
+
+  return null; // Admin check passed
+}

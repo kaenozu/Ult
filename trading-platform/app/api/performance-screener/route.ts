@@ -21,6 +21,7 @@ import { OHLCV } from '@/app/types';
 import { handleApiError } from '@/app/lib/error-handler';
 import { requireAuth } from '@/app/lib/auth';
 import { checkRateLimit } from '@/app/lib/api-middleware';
+import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
 
 // キャッシュ管理
 interface CacheEntry {
@@ -136,6 +137,10 @@ export async function POST(request: NextRequest) {
   // Require authentication for administrative actions
   const authError = requireAuth(request);
   if (authError) return authError;
+
+  // CSRF protection
+  const csrfError = requireCSRF(request);
+  if (csrfError) return csrfError;
 
   try {
     const { action } = await request.json();
