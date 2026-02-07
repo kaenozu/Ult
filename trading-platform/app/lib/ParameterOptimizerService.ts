@@ -22,7 +22,7 @@ export class ParameterOptimizerService {
 
     for (const period of periods) {
       const rsiValues = technicalIndicatorService.calculateRSI(closes, period);
-      
+
       // RSIに基づいたバックテスト用シグナルの生成
       // (例: 30以下で買いシグナル)
       const mockSignals: Signal[] = [];

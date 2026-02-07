@@ -150,10 +150,10 @@ export class MarketDataService {
     try {
       const fetchStartTime = Date.now();
       const response = await fetch(`/api/market?type=history&symbol=${symbol}`);
-      
+
       if (!response.ok) {
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: `API returned ${response.status}: ${response.statusText}`,
           code: 'NETWORK_ERROR'
         };
@@ -161,8 +161,8 @@ export class MarketDataService {
 
       const result = await response.json();
       if (!result.success || !result.data) {
-        return { 
-          success: false, 
+        return {
+          success: false,
           error: result.error || 'No data returned from API',
           code: 'NOT_FOUND'
         };
@@ -212,12 +212,12 @@ export class MarketDataService {
           logger.warn(`[MarketDataService] Failed to persist data:`, error);
         }
       }
-      
+
       return { success: true, data: ohlcv, source: 'api' };
     } catch (error) {
       logError(error, `MarketDataService.fetchMarketData(${symbol})`);
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error during fetch',
         code: 'NETWORK_ERROR'
       };

@@ -9,7 +9,7 @@ describe('DynamicWeightingService', () => {
 
   test('的中率が高いコンポーネントの重みが自動的に引き上げられること', () => {
     const baseWeights = { ai: 0.25, technical: 0.25, correlation: 0.25, supplyDemand: 0.25 };
-    
+
     // AIの的中率が非常に高く、テクニカルが低いケース
     const performance: ComponentPerformance = {
       ai: { hitRate: 80 },        // 高精度
@@ -23,7 +23,7 @@ describe('DynamicWeightingService', () => {
     // AIの重みがベース(0.25)より増え、テクニカルが減っていることを確認
     expect(optimized.ai).toBeGreaterThan(0.25);
     expect(optimized.technical).toBeLessThan(0.25);
-    
+
     // 合計が1.0であることを確認
     const sum = optimized.ai + optimized.technical + optimized.correlation + optimized.supplyDemand;
     expect(sum).toBeCloseTo(1.0);

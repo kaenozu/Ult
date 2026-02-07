@@ -15,12 +15,12 @@ describe('SignalValidatorService', () => {
     ];
 
     const signals: Signal[] = [
-      { 
-        symbol: '7203', 
-        type: 'BUY', 
-        price: 105, 
+      {
+        symbol: '7203',
+        type: 'BUY',
+        price: 105,
         timestamp: new Date('2026-01-01').getTime(),
-        confidence: 0.8 
+        confidence: 0.8
       }
     ];
 
@@ -37,12 +37,12 @@ describe('SignalValidatorService', () => {
     ];
 
     const signals: Signal[] = [
-      { 
-        symbol: '7203', 
-        type: 'BUY', 
-        price: 105, 
+      {
+        symbol: '7203',
+        type: 'BUY',
+        price: 105,
         timestamp: new Date('2026-01-01').getTime(),
-        confidence: 0.8 
+        confidence: 0.8
       }
     ];
 

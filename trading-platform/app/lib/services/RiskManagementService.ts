@@ -163,14 +163,14 @@ export class RiskManagementService {
     if (!finalStopLoss && effectiveConfig.enableAutoStopLoss) {
       const atr = marketData ? getLatestATR(marketData) : undefined;
       finalStopLoss = calculateStopLossPrice(
-        order.price, 
-        order.side, 
-        { 
-          enabled: true, 
-          type: 'percentage', 
-          value: RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PCT, 
-          trailing: order.riskConfig?.enableTrailingStop ?? false 
-        }, 
+        order.price,
+        order.side,
+        {
+          enabled: true,
+          type: 'percentage',
+          value: RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PCT,
+          trailing: order.riskConfig?.enableTrailingStop ?? false
+        },
         atr
       );
       reasons.push(`自動SL: ${finalStopLoss.toFixed(2)}`);
@@ -179,9 +179,9 @@ export class RiskManagementService {
     // 6. Position Sizing (Kelly / Volatility)
     if (effectiveConfig.enablePositionSizing && finalStopLoss) {
       const sizing = this.calculateOptimalPositionSize(
-        { ...order, stopLoss: finalStopLoss, takeProfit: finalTakeProfit }, 
-        portfolio, 
-        marketData, 
+        { ...order, stopLoss: finalStopLoss, takeProfit: finalTakeProfit },
+        portfolio,
+        marketData,
         effectiveConfig
       );
       if (sizing.adjustedQuantity < finalQuantity) {

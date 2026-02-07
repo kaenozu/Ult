@@ -25,7 +25,7 @@ export function MarketCorrelationCard({ stock }: MarketCorrelationCardProps) {
       try {
         // 銘柄データの取得
         const stockDataResult = await marketDataService.fetchMarketData(stock.symbol);
-        
+
         // 市場インデックスデータの取得
         const indexSymbol = stock.market === 'japan' ? '^N225' : '^GSPC';
         const indexDataResult = await marketDataService.fetchMarketData(indexSymbol);
@@ -113,7 +113,7 @@ export function MarketCorrelationCard({ stock }: MarketCorrelationCardProps) {
       {/* Visual Indicator */}
       {correlation !== null && (
         <div className="mt-4 h-1 w-full bg-[#141e27] rounded-full overflow-hidden">
-          <div 
+          <div
             className={cn("h-full transition-all duration-1000", getCorrelationColor(correlation).replace('text-', 'bg-'))}
             style={{ width: `${Math.abs(correlation) * 100}%`, marginLeft: correlation < 0 ? 'auto' : '0' }}
           />

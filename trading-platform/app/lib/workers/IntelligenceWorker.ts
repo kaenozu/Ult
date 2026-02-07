@@ -1,6 +1,6 @@
 /**
  * Intelligence Worker
- * 
+ *
  * メインスレッドをブロックせずに重い計算（ML推論、パラメータ最適化）を実行します。
  */
 
@@ -20,13 +20,13 @@ self.onmessage = async (e: MessageEvent) => {
         for (let i = 0; i < 1000000; i++) {
           result += Math.sqrt(i);
         }
-        
-        self.postMessage({ 
-          type: 'RESULT', 
-          data: { 
-            status: 'success', 
-            computationTime: Date.now() 
-          } 
+
+        self.postMessage({
+          type: 'RESULT',
+          data: {
+            status: 'success',
+            computationTime: Date.now()
+          }
         });
         break;
 
