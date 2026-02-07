@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, memo, useState, useMemo, useEffect } from 'react';
+import { useRef, memo, useState, useMemo } from 'react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
@@ -13,12 +13,13 @@ import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
 import { useForecastLayers } from './hooks/useForecastLayers';
 import { useChartOptions } from './hooks/useChartOptions';
+import { useSupplyDemandAnalysis } from './hooks/useSupplyDemandAnalysis';
 import { ChartTooltip } from './ChartTooltip';
 import { AccuracyBadge } from '@/app/components/AccuracyBadge';
 
 export { volumeProfilePlugin };
 
-// Register ChartJS components and custom plugins
+// Register ChartJS components and custom plugin
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
 
 export interface StockChartProps {
@@ -52,6 +53,8 @@ export const StockChart = memo(function StockChart({
   // 1. Data Preparation Hooks
   const { actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
+  const { chartLevels } = useSupplyDemandAnalysis(data);
+
   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
     data: optimizedData, // Use optimized/reduced data for correct index alignment
     extendedData,
@@ -99,20 +102,13 @@ export const StockChart = memo(function StockChart({
       if (validLower.length > 0) min = Math.min(min, ...validLower);
     }
 
-    // 4. Forecasts
-    [...forecastDatasets, ...ghostForecastDatasets].forEach(dataset => {
-      if (dataset.data) {
-        const values = dataset.data.filter((v): v is number => typeof v === 'number' && !isNaN(v));
-        if (values.length > 0) {
-          min = Math.min(min, ...values);
-          max = Math.max(max, ...values);
-        }
-      }
-    });
+    // Fallback if no data
+    if (min === Infinity) return { min: 0, max: 100 };
 
-    if (min === Infinity || max === -Infinity) return null;
-    return { min, max };
-  }, [data, showSMA, sma20, showBollinger, upper, lower, forecastDatasets, ghostForecastDatasets]);
+    // Add 5% padding
+    const padding = (max - min) * 0.05;
+    return { min: min - padding, max: max + padding };
+  }, [data, sma20, upper, lower, showSMA, showBollinger]);
 
   // 2. Chart Options Hook
   const options = useChartOptions({
@@ -122,7 +118,8 @@ export const StockChart = memo(function StockChart({
     hoveredIdx,
     setHoveredIndex,
     signal,
-    priceRange
+    priceRange,
+    supplyDemandLevels: chartLevels
   });
 
   // 3. Assemble Chart Data with memoization for performance
@@ -130,68 +127,64 @@ export const StockChart = memo(function StockChart({
     labels: extendedData.labels,
     datasets: [
       {
-        label: market === 'japan' ? '日経平均 (相対)' : 'NASDAQ (相対)',
-        data: normalizedIndexData,
-        borderColor: CHART_COLORS.INDEX_LINE,
-        backgroundColor: CHART_COLORS.INDEX_FILL,
-        fill: false,
+        label: `${market === 'japan' ? '株価' : 'Stock Price'}`,
+        data: actualData.prices,
+        borderColor: CHART_COLORS.PRICE.LINE,
+        backgroundColor: CHART_COLORS.PRICE.BACKGROUND,
+        borderWidth: 2,
         pointRadius: 0,
-        borderWidth: 1,
-        tension: CHART_CONFIG.TENSION,
-        order: 10,
-        spanGaps: true
+        pointHoverRadius: 4,
+        fill: true,
+        tension: 0.1,
+        yAxisID: 'y',
       },
-      {
-        label: '現在価格',
-        data: [
-          ...actualData.prices,           // 実際の価格データのみ
-          ...new Array(forecastExtension.forecastPrices.length).fill(null) // 予測期間はnull
-        ],
-        borderColor: CANDLESTICK.MAIN_LINE_COLOR,
-        fill: false,
-        tension: CHART_CONFIG.TENSION,
-        pointRadius: 0,
-        pointHoverRadius: CANDLESTICK.HOVER_RADIUS,
-        borderWidth: CANDLESTICK.MAIN_LINE_WIDTH,
-        order: 1,
-        spanGaps: true
-      },
-      ...forecastDatasets,
-      ...ghostForecastDatasets,
-      ...(showSMA ? [{
-        label: `SMA (${SMA_CONFIG.SHORT_PERIOD})`,
-        data: sma20,
-        borderColor: SMA_CONFIG.COLOR,
-        borderWidth: SMA_CONFIG.LINE_WIDTH,
-        pointRadius: 0,
-        tension: CHART_CONFIG.TENSION,
-        fill: false,
-        order: 2,
-        spanGaps: true
-      }] : []),
-      ...(showBollinger ? [
+      ...(showSMA && sma20.length > 0 ? [
         {
-          label: 'BB Upper',
-          data: upper,
-          borderColor: BOLLINGER_BANDS.UPPER_COLOR,
-          backgroundColor: BOLLINGER_BANDS.UPPER_BACKGROUND,
-          borderWidth: 1,
+          label: `SMA (${SMA_CONFIG.PERIOD})`,
+          data: sma20,
+          borderColor: CHART_COLORS.INDICATORS.SMA,
+          borderWidth: 1.5,
           pointRadius: 0,
-          tension: CHART_CONFIG.TENSION,
-          fill: '+1',
-          order: 3,
-          spanGaps: true
+          fill: false,
+          tension: 0.1,
+          yAxisID: 'y',
+        }
+      ] : []),
+      ...(showBollinger && upper.length > 0 && lower.length > 0 ? [
+        {
+          label: 'Bollinger Upper',
+          data: upper,
+          borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
+          borderWidth: 1,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: false,
+          yAxisID: 'y',
         },
         {
-          label: 'BB Lower',
+          label: 'Bollinger Lower',
           data: lower,
-          borderColor: BOLLINGER_BANDS.LOWER_COLOR,
+          borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
+          borderWidth: 1,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          fill: '-1',
+          backgroundColor: CHART_COLORS.INDICATORS.BOLLINGER_FILL,
+          yAxisID: 'y',
+        }
+      ] : []),
+      ...forecastDatasets,
+      ...ghostForecastDatasets,
+      ...(normalizedIndexData ? [
+        {
+          label: market === 'japan' ? '日経平均 (正規化)' : 'S&P 500 (Normalized)',
+          data: normalizedIndexData,
+          borderColor: CHART_COLORS.INDEX.LINE,
           borderWidth: 1,
           pointRadius: 0,
-          tension: CHART_CONFIG.TENSION,
           fill: false,
-          order: 4,
-          spanGaps: true
+          tension: 0.1,
+          yAxisID: 'yIndex',
         }
       ] : []),
     ],

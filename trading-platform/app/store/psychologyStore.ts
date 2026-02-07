@@ -1,23 +1,16 @@
-// @ts-nocheck - Temporary: needs type fixes
 /**
  * Psychology Store
  * 
  * TRADING-025: トレーディング心理学と感情取引防止機能のストア
  * 心理状態、クーリングオフ、規律スコア、感情ログなどを管理
- * Enhanced with comprehensive emotion detection and mental health tracking
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
-  PsychologyAlert,
-  BiasAnalysis,
-  ConsecutiveLossInfo,
-  EmotionLevel,
-  TradePlan,
-  TradeReflection,
+  PsychologyAlert as RiskPsychologyAlert,
   CooldownRecord,
-  DisciplineScore
+  DisciplineScore as RiskDisciplineScore
 } from '@/app/types/risk';
 import type {
   MentalHealthMetrics,
@@ -27,54 +20,41 @@ import type {
   TradingSession as PsychologySession,
   PsychologyAnalysisResult,
   DisciplineScoreProps,
+  PsychologyAlert as PsychologyAlertType,
 } from '@/app/types/psychology';
 
-type DisciplineScore = DisciplineScoreProps;
-
-// Temporary definitions for missing types (to be moved to proper location)
-interface GoalSection {
-  [key: string]: unknown;
-}
-
+// Define local interfaces for types not present in main type files
 interface PsychologyGoals {
-  daily?: GoalSection;
-  weekly?: GoalSection;
-  monthly?: GoalSection;
+  daily: Record<string, any>;
+  weekly: Record<string, any>;
+  monthly: Record<string, any>;
 }
 
 interface TradingCalendarDay {
-  date: string; // YYYY-MM-DD
+  date: string;
   isTradingDay: boolean;
-  maxTrades?: number;
-  maxLossLimit?: number;
+  tradesCount?: number;
+  profitLoss?: number;
+  emotionScore?: number;
+  disciplineScore?: number;
+  hasViolation?: boolean;
+  isCoolingOff?: boolean;
   notes?: string;
 }
 
 interface PsychologyState {
   // Alerts
-  alerts: PsychologyAlert[];
+  alerts: PsychologyAlertType[];
   
-  // Current bias analysis
-  currentBiasAnalysis: BiasAnalysis | null;
-  
-  // Consecutive loss tracking
-  consecutiveLossInfo: ConsecutiveLossInfo | null;
-  
-  // Current emotion state
-  currentEmotion: EmotionLevel | null;
-  
-  // Trade plans
-  tradePlans: TradePlan[];
-  
-  // Trade reflections
-  reflections: TradeReflection[];
+  // Current bias analysis (using mental health metrics as a proxy)
+  currentMentalHealth?: MentalHealthMetrics;
   
   // Cooling-off records
   cooldownRecords: CooldownRecord[];
   currentCooldown: CooldownRecord | null;
   
   // Discipline score
-  disciplineScore: DisciplineScore | null;
+  disciplineScore: DisciplineScoreProps | null;
   
   // Goals
   goals: PsychologyGoals;
@@ -83,7 +63,6 @@ interface PsychologyState {
   calendar: Record<string, TradingCalendarDay>; // key: YYYY-MM-DD
   
   // Enhanced Psychology Features
-  current_mental_health?: MentalHealthMetrics;
   current_emotions: EmotionScore[];
   active_recommendations: CoachingRecommendation[];
   discipline_rules: DisciplineRules;
@@ -93,27 +72,17 @@ interface PsychologyState {
   analysis_history: PsychologyAnalysisResult[];
   
   // Actions
-  addAlert: (alert: PsychologyAlert) => void;
+  addAlert: (alert: PsychologyAlertType) => void;
   clearAlerts: () => void;
-  dismissAlert: (timestamp: Date) => void;
+  dismissAlert: (id: string) => void;
   
-  setBiasAnalysis: (analysis: BiasAnalysis) => void;
-  setConsecutiveLossInfo: (info: ConsecutiveLossInfo) => void;
-  setCurrentEmotion: (emotion: EmotionLevel) => void;
-  
-  addTradePlan: (plan: TradePlan) => void;
-  updateTradePlan: (id: string, updates: Partial<TradePlan>) => void;
-  deleteTradePlan: (id: string) => void;
-  getTradePlan: (id: string) => TradePlan | undefined;
-  
-  addReflection: (reflection: TradeReflection) => void;
-  getReflection: (tradeId: string) => TradeReflection | undefined;
+  setMentalHealth: (metrics: MentalHealthMetrics) => void;
   
   startCooldown: (cooldown: CooldownRecord) => void;
   endCooldown: () => void;
   recordCooldownViolation: () => void;
   
-  setDisciplineScore: (score: DisciplineScore) => void;
+  setDisciplineScore: (score: DisciplineScoreProps) => void;
   
   updateGoals: (goals: Partial<PsychologyGoals>) => void;
   
@@ -121,7 +90,6 @@ interface PsychologyState {
   getCalendarDay: (date: string) => TradingCalendarDay | undefined;
   
   // Enhanced Psychology Actions
-  updateMentalHealth: (metrics: MentalHealthMetrics) => void;
   addEmotion: (emotion: EmotionScore) => void;
   addRecommendation: (recommendation: CoachingRecommendation) => void;
   dismissRecommendation: (index: number) => void;
@@ -129,15 +97,6 @@ interface PsychologyState {
   addSession: (session: PsychologySession) => void;
   addAnalysis: (analysis: PsychologyAnalysisResult) => void;
   resetPsychology: () => void;
-  
-  // Statistics
-  getAlertStats: () => {
-    total: number;
-    byType: Record<string, number>;
-    bySeverity: Record<string, number>;
-  };
-  
-  getRecentAlerts: (hours: number) => PsychologyAlert[];
   
   reset: () => void;
 }
@@ -164,11 +123,7 @@ export const usePsychologyStore = create<PsychologyState>()(
     (set, get) => ({
       // Initial state
       alerts: [],
-      currentBiasAnalysis: null,
-      consecutiveLossInfo: null,
-      currentEmotion: null,
-      tradePlans: [],
-      reflections: [],
+      currentMentalHealth: undefined,
       cooldownRecords: [],
       currentCooldown: null,
       disciplineScore: null,
@@ -176,7 +131,6 @@ export const usePsychologyStore = create<PsychologyState>()(
       calendar: {},
 
       // Enhanced Psychology state
-      current_mental_health: undefined,
       current_emotions: [],
       active_recommendations: [],
       discipline_rules: {
@@ -201,44 +155,12 @@ export const usePsychologyStore = create<PsychologyState>()(
 
       clearAlerts: () => set({ alerts: [] }),
 
-      dismissAlert: (timestamp) => set((state) => ({
-        alerts: state.alerts.filter(a => a.timestamp.getTime() !== timestamp.getTime())
+      dismissAlert: (id) => set((state) => ({
+        alerts: state.alerts.filter(a => a.id !== id)
       })),
 
-      // Bias analysis actions
-      setBiasAnalysis: (analysis) => set({ currentBiasAnalysis: analysis }),
-
-      setConsecutiveLossInfo: (info) => set({ consecutiveLossInfo: info }),
-
-      setCurrentEmotion: (emotion) => set({ currentEmotion: emotion }),
-
-      // Trade plan actions
-      addTradePlan: (plan) => set((state) => ({
-        tradePlans: [plan, ...state.tradePlans]
-      })),
-
-      updateTradePlan: (id, updates) => set((state) => ({
-        tradePlans: state.tradePlans.map(plan =>
-          plan.id === id ? { ...plan, ...updates } : plan
-        )
-      })),
-
-      deleteTradePlan: (id) => set((state) => ({
-        tradePlans: state.tradePlans.filter(plan => plan.id !== id)
-      })),
-
-      getTradePlan: (id) => {
-        return get().tradePlans.find(plan => plan.id === id);
-      },
-
-      // Reflection actions
-      addReflection: (reflection) => set((state) => ({
-        reflections: [reflection, ...state.reflections]
-      })),
-
-      getReflection: (tradeId) => {
-        return get().reflections.find(r => r.tradeId === tradeId);
-      },
+      // Mental health actions
+      setMentalHealth: (metrics) => set({ currentMentalHealth: metrics }),
 
       // Cooldown actions
       startCooldown: (cooldown) => set((state) => ({
@@ -281,6 +203,7 @@ export const usePsychologyStore = create<PsychologyState>()(
       updateCalendarDay: (date, updates) => set((state) => {
         const existing = state.calendar[date] || {
           date,
+          isTradingDay: true,
           tradesCount: 0,
           profitLoss: 0,
           emotionScore: 0,
@@ -303,10 +226,6 @@ export const usePsychologyStore = create<PsychologyState>()(
       },
 
       // Enhanced Psychology Actions
-      updateMentalHealth: (metrics: MentalHealthMetrics) => {
-        set({ current_mental_health: metrics });
-      },
-
       addEmotion: (emotion: EmotionScore) => {
         set((state) => ({
           current_emotions: [...state.current_emotions, emotion].slice(-5), // Keep last 5
@@ -343,7 +262,7 @@ export const usePsychologyStore = create<PsychologyState>()(
       addAnalysis: (analysis: PsychologyAnalysisResult) => {
         set((state) => ({
           analysis_history: [analysis, ...state.analysis_history].slice(0, 30),
-          current_mental_health: analysis.mental_health,
+          currentMentalHealth: analysis.mental_health,
           current_emotions: analysis.dominant_emotions,
           active_recommendations: [
             ...analysis.coaching_recommendations.filter(r => !r.dismissed),
@@ -354,7 +273,7 @@ export const usePsychologyStore = create<PsychologyState>()(
 
       resetPsychology: () => {
         set({
-          current_mental_health: undefined,
+          currentMentalHealth: undefined,
           current_emotions: [],
           active_recommendations: [],
           sessions: [],
@@ -362,43 +281,15 @@ export const usePsychologyStore = create<PsychologyState>()(
         });
       },
 
-      // Statistics
-      getAlertStats: () => {
-        const alerts = get().alerts;
-        const byType: Record<string, number> = {};
-        const bySeverity: Record<string, number> = {};
-
-        alerts.forEach(alert => {
-          byType[alert.type] = (byType[alert.type] || 0) + 1;
-          bySeverity[alert.severity] = (bySeverity[alert.severity] || 0) + 1;
-        });
-
-        return {
-          total: alerts.length,
-          byType,
-          bySeverity
-        };
-      },
-
-      getRecentAlerts: (hours) => {
-        const cutoff = Date.now() - hours * 60 * 60 * 1000;
-        return get().alerts.filter(alert => alert.timestamp.getTime() >= cutoff);
-      },
-
       // Reset
       reset: () => set({
         alerts: [],
-        currentBiasAnalysis: null,
-        consecutiveLossInfo: null,
-        currentEmotion: null,
-        tradePlans: [],
-        reflections: [],
+        currentMentalHealth: undefined,
         cooldownRecords: [],
         currentCooldown: null,
         disciplineScore: null,
         goals: defaultGoals,
         calendar: {},
-        current_mental_health: undefined,
         current_emotions: [],
         active_recommendations: [],
         sessions: [],
@@ -407,12 +298,11 @@ export const usePsychologyStore = create<PsychologyState>()(
     }),
     {
       name: 'psychology-storage',
-      // Custom serialization for Date objects and selective persistence
       partialize: (state) => ({
         ...state,
         alerts: state.alerts.map(a => ({
           ...a,
-          timestamp: a.timestamp.toISOString()
+          timestamp: typeof a.timestamp === 'string' ? a.timestamp : a.timestamp
         })),
         sessions: state.sessions.slice(0, 10),
         analysis_history: state.analysis_history.slice(0, 5),

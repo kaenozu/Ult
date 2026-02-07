@@ -49,8 +49,13 @@ export const useChartData = (
       return { extendedLabels: [], forecastPrices: [] };
     }
 
-    // Default fallback if signal is missing (ensure we fill the gap)
-    const activeSignal = signal || { type: 'HOLD' as const, confidence: 50, predictionError: 1.0 };
+    // Only generate extension if we have a proper signal
+    if (!signal) {
+      return { extendedLabels: [], forecastPrices: [] };
+    }
+
+    // Use the provided signal
+    const activeSignal = signal;
 
     // Always generate extension to prevent "gap" issues
     const extendedLabels = [...actualData.labels];
@@ -108,14 +113,14 @@ export const useChartData = (
     });
   }, [optimizedData, indexData, actualData, indexMap]);
 
-  return {
-    actualData,           // 実際の価格データのみ
-    optimizedData,        // 最適化済みデータ（Forecast用）
-    forecastExtension,    // 予測用の拡張データ
-    normalizedIndexData,
-    extendedData: {
-      labels: forecastExtension.extendedLabels,  // 予測期間を含む拡張ラベルを使用
-      prices: [...actualData.prices, ...Array(forecastExtension.extendedLabels.length - actualData.prices.length).fill(null)]  // 予測部分はnullで埋めて別途レイヤーで描画
-    }
-  };
+   return {
+     actualData,           // 実際の価格データのみ
+     optimizedData,        // 最適化済みデータ（Forecast用）
+     forecastExtension,    // 予測用の拡張データ
+     normalizedIndexData,
+     extendedData: {
+       labels: forecastExtension.extendedLabels,  // 予測期間を含む拡張ラベルを使用
+       prices: [...actualData.prices, ...Array(Math.max(0, forecastExtension.extendedLabels.length - actualData.prices.length)).fill(null)]  // 予測部分はnullで埋めて別途レイヤーで描画
+     }
+   };
 };

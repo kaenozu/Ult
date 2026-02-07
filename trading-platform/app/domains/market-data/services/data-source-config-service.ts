@@ -15,6 +15,7 @@ import {
   getBestDataSource,
   detectMarketType,
 } from '../types/data-source';
+import { logger } from '@/app/core/logger';
 
 /**
  * Data source configuration manager
@@ -37,43 +38,60 @@ export class DataSourceConfigService {
       priority: 1,
       capabilities: DATA_SOURCE_CAPABILITIES[DataSourceProvider.YAHOO_FINANCE],
     });
-    
+
     // Alternative sources (disabled by default, will be enabled when API keys are provided)
     this.configs.set(DataSourceProvider.IEX_CLOUD, {
       provider: DataSourceProvider.IEX_CLOUD,
       apiKey: process.env.IEX_CLOUD_API_KEY,
-      enabled: !!process.env.IEX_CLOUD_API_KEY,
+      enabled: !!process.env.IEX_CLOUD_API_KEY && this.validateApiKey(process.env.IEX_CLOUD_API_KEY),
       priority: 5,
       capabilities: DATA_SOURCE_CAPABILITIES[DataSourceProvider.IEX_CLOUD],
       baseUrl: 'https://cloud.iexapis.com/stable',
     });
-    
+
     this.configs.set(DataSourceProvider.POLYGON, {
       provider: DataSourceProvider.POLYGON,
       apiKey: process.env.POLYGON_API_KEY,
-      enabled: !!process.env.POLYGON_API_KEY,
+      enabled: !!process.env.POLYGON_API_KEY && this.validateApiKey(process.env.POLYGON_API_KEY),
       priority: 4,
       capabilities: DATA_SOURCE_CAPABILITIES[DataSourceProvider.POLYGON],
       baseUrl: 'https://api.polygon.io',
     });
-    
+
     this.configs.set(DataSourceProvider.ALPACA, {
       provider: DataSourceProvider.ALPACA,
       apiKey: process.env.ALPACA_API_KEY,
-      enabled: !!process.env.ALPACA_API_KEY && !!process.env.ALPACA_SECRET_KEY,
+      enabled: !!process.env.ALPACA_API_KEY && !!process.env.ALPACA_SECRET_KEY &&
+              this.validateApiKey(process.env.ALPACA_API_KEY) &&
+              this.validateApiKey(process.env.ALPACA_SECRET_KEY),
       priority: 3,
       capabilities: DATA_SOURCE_CAPABILITIES[DataSourceProvider.ALPACA],
       baseUrl: 'https://data.alpaca.markets',
     });
-    
+
     this.configs.set(DataSourceProvider.ALPHA_VANTAGE, {
       provider: DataSourceProvider.ALPHA_VANTAGE,
       apiKey: process.env.ALPHA_VANTAGE_API_KEY,
-      enabled: !!process.env.ALPHA_VANTAGE_API_KEY,
+      enabled: !!process.env.ALPHA_VANTAGE_API_KEY && this.validateApiKey(process.env.ALPHA_VANTAGE_API_KEY),
       priority: 2,
       capabilities: DATA_SOURCE_CAPABILITIES[DataSourceProvider.ALPHA_VANTAGE],
       baseUrl: 'https://www.alphavantage.co/query',
     });
+  }
+
+  private validateApiKey(apiKey: string | undefined): boolean {
+    if (!apiKey || typeof apiKey !== 'string') {
+      return false;
+    }
+    if (apiKey.length < 10) {
+      logger.warn('[DataSourceConfigService] API key appears invalid (too short)', undefined, 'DataSourceConfigService');
+      return false;
+    }
+    if (['demo', 'test', 'your_api_key', 'your-key-here'].includes(apiKey.toLowerCase())) {
+      logger.warn('[DataSourceConfigService] API key appears to be a placeholder', undefined, 'DataSourceConfigService');
+      return false;
+    }
+    return true;
   }
   
   /**

@@ -17,6 +17,8 @@ export function AccountSettingsPanel() {
   const [accountEquity, setAccountEquity] = useState(settings.accountEquity);
   const [riskPerTrade, setRiskPerTrade] = useState(settings.riskPerTrade);
   const [maxPositionPercent, setMaxPositionPercent] = useState(settings.maxPositionPercent);
+  const [minShares, setMinShares] = useState(settings.minShares);
+  const [maxStopLossPercent, setMaxStopLossPercent] = useState(settings.maxStopLossPercent || 5);
   const [atrMultiplier, setAtrMultiplier] = useState(settings.atrMultiplier);
   
   // Sync local state with store when settings change externally
@@ -24,6 +26,8 @@ export function AccountSettingsPanel() {
     setAccountEquity(settings.accountEquity);
     setRiskPerTrade(settings.riskPerTrade);
     setMaxPositionPercent(settings.maxPositionPercent);
+    setMinShares(settings.minShares);
+    setMaxStopLossPercent(settings.maxStopLossPercent || 5);
     setAtrMultiplier(settings.atrMultiplier);
   }, [settings]);
   
@@ -32,6 +36,8 @@ export function AccountSettingsPanel() {
       accountEquity,
       riskPerTrade,
       maxPositionPercent,
+      minShares,
+      maxStopLossPercent,
       atrMultiplier,
     });
   };
@@ -145,6 +151,54 @@ export function AccountSettingsPanel() {
             </div>
             <p className="text-xs text-[#92adc9] mt-1">
               最大ポジション: {formatCurrency(maxPositionValue)} (推奨: 10-20%)
+            </p>
+          </div>
+          
+          {/* 最小単位株数 */}
+          <div>
+            <label className="block text-sm font-medium text-[#92adc9] mb-1">
+              最小単位株数
+            </label>
+            <input
+              type="number"
+              value={minShares}
+              onChange={(e) => setMinShares(Number(e.target.value))}
+              className="w-full px-3 py-2 bg-[#192633] border border-[#233648] rounded text-white focus:outline-none focus:border-primary"
+              min="1"
+              step="1"
+            />
+            <p className="text-xs text-[#92adc9] mt-1">
+              日本株の多くは100株単位です
+            </p>
+          </div>
+
+          {/* 最大許容損切り率 */}
+          <div>
+            <label className="block text-sm font-medium text-[#92adc9] mb-1">
+              最大許容損切り率 (%)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min="1"
+                max="20"
+                step="1"
+                value={maxStopLossPercent}
+                onChange={(e) => setMaxStopLossPercent(Number(e.target.value))}
+                className="flex-1"
+              />
+              <input
+                type="number"
+                value={maxStopLossPercent}
+                onChange={(e) => setMaxStopLossPercent(Number(e.target.value))}
+                className="w-20 px-2 py-1 bg-[#192633] border border-[#233648] rounded text-white text-sm focus:outline-none focus:border-primary"
+                min="1"
+                max="20"
+                step="1"
+              />
+            </div>
+            <p className="text-xs text-[#92adc9] mt-1">
+              これを超える損切り距離は警告されます (推奨: 5-10%)
             </p>
           </div>
           

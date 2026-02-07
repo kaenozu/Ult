@@ -64,16 +64,16 @@ export function measurePerformance(name: string, arg1: any, arg2?: any) {
       PerformanceMonitor.record(name, duration, 'error');
       throw error;
     }
-  } else if (typeof arg1 === 'object') {
+  } else if (typeof arg1 === 'object' || arg1 === undefined) {
     // Decorator use case: @measurePerformance(name, options)
-    const options: MeasureOptions = arg1;
+    const options: MeasureOptions = arg1 || {};
     const { threshold = 100, warningThreshold, errorThreshold } = options;
     const warnThreshold = warningThreshold || threshold;
     const errThreshold = errorThreshold || threshold * 2;
 
     return function (
-      target: any,
-      propertyKey: string,
+      _target: any,
+      _propertyKey: string,
       descriptor: PropertyDescriptor
     ): PropertyDescriptor {
       const originalMethod = descriptor.value;
@@ -139,8 +139,8 @@ export function measureAsyncPerformance(name: string, options: MeasureOptions = 
   const errThreshold = errorThreshold || threshold * 2;
 
   return function (
-    target: any,
-    propertyKey: string,
+    _target: any,
+    _propertyKey: string,
     descriptor: PropertyDescriptor
   ): PropertyDescriptor {
     const originalMethod = descriptor.value;
@@ -194,7 +194,7 @@ export async function measurePerformanceAsync<T>(
   fn: () => Promise<T>,
   options: MeasureOptions = {}
 ): Promise<T> {
-  const { threshold = 100 } = options;
+  const { threshold = 500 } = options;
   const start = performance.now();
 
   try {

@@ -28,8 +28,21 @@ export const CHART_DIMENSIONS = {
  * Chart colors
  */
 export const CHART_COLORS = {
-  INDEX_LINE: '#60a5fa',
-  INDEX_FILL: 'rgba(96, 165, 250, 0.05)',
+  INDEX: {
+    LINE: '#60a5fa',
+    FILL: 'rgba(96, 165, 250, 0.05)',
+  },
+  INDEX_LINE: '#60a5fa', // Backward compatibility
+  INDEX_FILL: 'rgba(96, 165, 250, 0.05)', // Backward compatibility
+  PRICE: {
+    LINE: '#22d3ee',
+    BACKGROUND: 'rgba(34, 211, 238, 0.1)',
+  },
+  INDICATORS: {
+    SMA: '#fbbf24',
+    BOLLINGER: '#a78bfa',
+    BOLLINGER_FILL: 'rgba(167, 139, 250, 0.1)',
+  },
 } as const;
 
 /**

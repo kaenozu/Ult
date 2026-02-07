@@ -1,15 +1,23 @@
-﻿import { useEffect, useMemo, useCallback } from 'react';
-import { Stock, Signal, PaperTrade } from '@/app/types';
+import { useEffect, useMemo, useCallback } from 'react';
+import { Stock, Signal, PaperTrade, OHLCV } from '@/app/types';
 import { useAIStore } from '@/app/store/aiStore';
 import { useJournalStore } from '@/app/store/journalStore';
-import { useAIPerformance } from '@/app/hooks/useAIPerformance';
+import { useSymbolAccuracy } from '@/app/hooks/useSymbolAccuracy';
 import { useSignalAlerts } from '@/app/hooks/useSignalAlerts';
 import { calculateAIStatusMetrics } from '../aiStatus';
 
-export function useSignalData(stock: Stock, signal: Signal | null) {
-  const { processAITrades, trades } = useAIStore();
+/**
+ * Hook to manage signal-related data and performance metrics
+ */
+export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[] = []) {
+  const { toggleAI, trades } = useAIStore();
   const journal = useJournalStore((state) => state.journal);
-  const { preciseHitRate, calculatingHitRate, error } = useAIPerformance(stock);
+  const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(stock, ohlcv);
+  
+  // Map useSymbolAccuracy result to expected preciseHitRate format
+  const preciseHitRate = accuracy ? { hitRate: accuracy.hitRate, trades: accuracy.totalTrades } : null;
+  const calculatingHitRate = accuracyLoading;
+  const error: string | null = null; // useSymbolAccuracy doesn't return error
 
   const displaySignal = signal;
 
@@ -26,18 +34,6 @@ export function useSignalData(stock: Stock, signal: Signal | null) {
     preciseHitRate: hitRateData,
     calculatingHitRate
   });
-
-  // Memoized process trades function
-  const processTradesCallback = useCallback(() => {
-    if (displaySignal && stock.price && processAITrades) {
-      processAITrades(stock.symbol, stock.price, displaySignal);
-    }
-  }, [displaySignal, stock.price, stock.symbol, processAITrades]);
-
-  // 閾ｪ蜍募｣ｲ雋ｷ繝励Ο繧ｻ繧ｹ繧偵ヨ繝ｪ繧ｬ繝ｼ - Use callback
-  useEffect(() => {
-    processTradesCallback();
-  }, [processTradesCallback]);
 
   // Memoized trades transformation
   const aiTrades: PaperTrade[] = useMemo(() => {
@@ -77,5 +73,3 @@ export function useSignalData(stock: Stock, signal: Signal | null) {
     aiStatusData
   };
 }
-
-

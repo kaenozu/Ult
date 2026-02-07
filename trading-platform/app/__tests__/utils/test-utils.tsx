@@ -175,7 +175,7 @@ export const renderWithProviders = (
 /**
  * Create mock successful API response
  */
-export const createMockSuccessResponse = <T>(data: T) => ({
+export const createMockSuccessResponse = <T,>(data: T) => ({
   success: true,
   data,
   source: 'api' as const,

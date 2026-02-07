@@ -55,6 +55,7 @@ interface ClientInfo {
   messageCount: number;
   lastMessageTime: number;
   authenticated: boolean;
+  subscriptions: Set<string>;
 }
 
 // Rate limiting tracking
@@ -188,7 +189,7 @@ function broadcast(message: WebSocketMessage, excludeClient?: string): void {
     timestamp: Date.now(),
   });
 
-  wss.clients.forEach((client) => {
+  wss.clients.forEach((client: WebSocket) => {
     if (client.readyState === WebSocket.OPEN) {
       const clientInfo = Array.from(clients.values()).find(
         (info) => info.ws === client
@@ -238,22 +239,10 @@ server.on('upgrade', (request: IncomingMessage, socket, head) => {
   // Validate path
   const protocol = request.headers['x-forwarded-proto'] || 'http';
   const host = request.headers.host || `localhost:${PORT}`;
-  const { pathname, searchParams } = new URL(request.url || '/', `${protocol}://${host}`);
+  const { pathname } = new URL(request.url || '/', `${protocol}://${host}`);
 
   if (pathname !== '/ws') {
     socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
-    socket.destroy();
-    return;
-  }
-
-  // Validate authentication token from query parameter or header
-  const tokenFromQuery = searchParams.get('token');
-  const tokenFromHeader = request.headers['authorization']?.replace('Bearer ', '');
-  const token = tokenFromQuery || tokenFromHeader;
-  
-  if (!validateAuthToken(token)) {
-    console.log(`[WebSocket] Rejected: Invalid or missing authentication token from ${clientIP}`);
-    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
     socket.destroy();
     return;
   }
@@ -279,7 +268,7 @@ server.on('upgrade', (request: IncomingMessage, socket, head) => {
   // Increment connection count for this IP
   connectionsPerIP.set(clientIP, currentConnections + 1);
 
-  wss.handleUpgrade(request, socket, head, (ws) => {
+  wss.handleUpgrade(request, socket, head, (ws: WebSocket) => {
     wss.emit('connection', ws, request);
   });
 });
@@ -291,8 +280,8 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
   const clientId = generateClientId();
   const clientIP = getClientIP(request);
 
-  // Register client
-  clients.set(clientId, {
+  // Register client (initially unauthenticated)
+  const clientInfo: ClientInfo = {
     id: clientId,
     ws,
     isAlive: true,
@@ -300,11 +289,25 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
     connectedAt: Date.now(),
     messageCount: 0,
     lastMessageTime: Date.now(),
-    authenticated: true, // Already validated in upgrade handler
-  });
+    authenticated: false, 
+    subscriptions: new Set<string>(),
+  };
+  clients.set(clientId, clientInfo);
 
-  console.log(`[WebSocket] Client connected: ${clientId} from IP: ${clientIP}`);
-  console.log(`[WebSocket] Total clients: ${clients.size}`);
+  console.log(`[WebSocket] Client connected: ${clientId} from IP: ${clientIP} (Pending Auth)`);
+
+  // Set auth timeout
+  const authTimeout = setTimeout(() => {
+    if (!clientInfo.authenticated) {
+      console.log(`[WebSocket] Auth timeout for ${clientId}, closing...`);
+      ws.send(JSON.stringify({
+        type: 'error',
+        data: { message: 'Authentication timeout', code: 'AUTH_TIMEOUT' },
+        timestamp: Date.now(),
+      }));
+      ws.close(4001, 'Authentication timeout');
+    }
+  }, 10000); // 10 seconds to authenticate
 
   // Set maximum message size
   ws.on('message', (_data: Buffer) => {
@@ -320,7 +323,7 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
     type: 'connection',
     data: {
       clientId,
-      message: 'Connected to Trader Pro WebSocket Server',
+      message: 'Connected to Trader Pro WebSocket Server. Please authenticate.',
       serverTime: new Date().toISOString(),
     },
     timestamp: Date.now(),
@@ -328,21 +331,6 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
 
   // Handle incoming messages from client
   ws.on('message', (data: Buffer) => {
-    const clientInfo = clients.get(clientId);
-    if (!clientInfo) return;
-
-    // Check message size limit
-    if (data.length > MAX_MESSAGE_SIZE) {
-      console.log(`[WebSocket] Message exceeds size limit from ${clientId}`);
-      ws.send(JSON.stringify({
-        type: 'error',
-        data: { message: 'Message too large' },
-        timestamp: Date.now(),
-      }));
-      ws.close(1009, 'Message too large');
-      return;
-    }
-
     // Check rate limit
     if (!checkRateLimit(clientId)) {
       console.log(`[WebSocket] Rate limit exceeded for ${clientId}`);
@@ -366,6 +354,41 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
         throw new Error('Invalid message structure: missing or invalid type');
       }
 
+      // Handle Authentication message
+      if (message.type === 'auth') {
+        const token = (message.data as any)?.token;
+        if (validateAuthToken(token)) {
+          clientInfo.authenticated = true;
+          clearTimeout(authTimeout);
+          console.log(`[WebSocket] Client ${clientId} authenticated successfully`);
+          ws.send(JSON.stringify({
+            type: 'authenticated',
+            data: { message: 'Authentication successful' },
+            timestamp: Date.now(),
+          }));
+        } else {
+          console.log(`[WebSocket] Authentication failed for ${clientId}`);
+          ws.send(JSON.stringify({
+            type: 'error',
+            data: { message: 'Invalid authentication token', code: 'AUTH_FAILED' },
+            timestamp: Date.now(),
+          }));
+          ws.close(4003, 'Authentication failed');
+        }
+        return;
+      }
+
+      // Reject all other messages if not authenticated
+      if (!clientInfo.authenticated) {
+        console.log(`[WebSocket] Unauthorized message from ${clientId}`);
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: { message: 'Not authenticated', code: 'UNAUTHORIZED' },
+          timestamp: Date.now(),
+        }));
+        return;
+      }
+
       // Sanitize message data
       if (message.data) {
         message.data = sanitizeMessageData(message.data);
@@ -384,22 +407,30 @@ wss.on('connection', (ws: WebSocket, request: IncomingMessage) => {
 
         case 'subscribe':
           // Handle subscription to data channels
-          console.log(`[WebSocket] Client ${clientId} subscribed to:`, message.data);
-          ws.send(JSON.stringify({
-            type: 'subscribed',
-            data: message.data,
-            timestamp: Date.now(),
-          }));
+          if (message.data && typeof message.data === 'string') {
+            const symbols = message.data.split(',').map(s => s.trim().toUpperCase());
+            symbols.forEach(s => clientInfo.subscriptions.add(s));
+            console.log(`[WebSocket] Client ${clientId} subscribed to:`, symbols);
+            ws.send(JSON.stringify({
+              type: 'subscribed',
+              data: Array.from(clientInfo.subscriptions),
+              timestamp: Date.now(),
+            }));
+          }
           break;
 
         case 'unsubscribe':
           // Handle unsubscription from data channels
-          console.log(`[WebSocket] Client ${clientId} unsubscribed from:`, message.data);
-          ws.send(JSON.stringify({
-            type: 'unsubscribed',
-            data: message.data,
-            timestamp: Date.now(),
-          }));
+          if (message.data && typeof message.data === 'string') {
+            const symbols = message.data.split(',').map(s => s.trim().toUpperCase());
+            symbols.forEach(s => clientInfo.subscriptions.delete(s));
+            console.log(`[WebSocket] Client ${clientId} unsubscribed from:`, symbols);
+            ws.send(JSON.stringify({
+              type: 'unsubscribed',
+              data: Array.from(clientInfo.subscriptions),
+              timestamp: Date.now(),
+            }));
+          }
           break;
 
         default:
@@ -471,10 +502,65 @@ const heartbeatInterval = setInterval(() => {
   });
 }, HEARTBEAT_INTERVAL);
 
+// --- Market Data Simulator ---
+
+// Base prices for simulation
+const basePrices: Record<string, number> = {
+  'AAPL': 180.50,
+  'GOOGL': 140.20,
+  'TSLA': 190.10,
+  'AMZN': 175.40,
+  '^N225': 38000.00,
+  '7203': 3300.00,
+  '6758': 13000.00,
+};
+
+// Simulation interval
+const simulationInterval = setInterval(() => {
+  if (clients.size === 0) return;
+
+  // Get all unique symbols currently subscribed to
+  const allSubscribedSymbols = new Set<string>();
+  clients.forEach(client => {
+    client.subscriptions.forEach(symbol => allSubscribedSymbols.add(symbol));
+  });
+
+  if (allSubscribedSymbols.size === 0) return;
+
+  // Generate and send updates for each symbol
+  allSubscribedSymbols.forEach(symbol => {
+    const basePrice = basePrices[symbol] || 100.00;
+    // Small random walk: -0.1% to +0.1%
+    const change = (Math.random() - 0.5) * 0.002;
+    basePrices[symbol] = basePrice * (1 + change);
+    
+    const marketData = {
+      symbol,
+      price: basePrices[symbol],
+      change: basePrices[symbol] - basePrice,
+      changePercent: change * 100,
+      volume: Math.floor(Math.random() * 1000),
+      timestamp: Date.now(),
+    };
+
+    // Broadcast only to clients who subscribed to this symbol
+    clients.forEach(client => {
+      if (client.subscriptions.has(symbol)) {
+        client.ws.send(JSON.stringify({
+          type: 'market_data',
+          data: marketData,
+          timestamp: Date.now(),
+        }));
+      }
+    });
+  });
+}, 1000); // 1 second updates
+
 // Graceful shutdown
 process.on('SIGINT', () => {
   console.log('\n[WebSocket] Shutting down server...');
   clearInterval(heartbeatInterval);
+  clearInterval(simulationInterval);
 
   // Close all client connections
   clients.forEach((clientInfo) => {

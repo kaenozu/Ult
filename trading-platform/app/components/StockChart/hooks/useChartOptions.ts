@@ -13,6 +13,7 @@ interface UseChartOptionsProps {
   setHoveredIndex: (idx: number | null) => void;
   signal?: Signal | null;
   priceRange?: { min: number, max: number } | null;
+  supplyDemandLevels?: { price: number; strength: number }[];
 }
 
 interface ChartContext {
@@ -27,7 +28,8 @@ export const useChartOptions = ({
   hoveredIdx,
   setHoveredIndex,
   signal,
-  priceRange: propPriceRange
+  priceRange: propPriceRange,
+  supplyDemandLevels
 }: UseChartOptionsProps) => {
   // Y軸の範囲を計算（価格に応じて動的に調整）
   const yAxisRange = useMemo(() => {
@@ -44,6 +46,7 @@ export const useChartOptions = ({
 
     if (data.length === 0) return { min: 0, max: 100 };
 
+    // Include forecast data in range calculation to ensure all data points are visible
     const lows = data.map(d => d.low);
     const highs = data.map(d => d.high);
     const minPrice = Math.min(...lows);
@@ -79,22 +82,6 @@ export const useChartOptions = ({
       setHoveredIndex(elements.length > 0 ? elements[0].index : null);
     },
     plugins: {
-      zoom: {
-        pan: {
-          enabled: true,
-          mode: 'xy',
-          modifierKey: undefined, // Default: no modifier key required
-        },
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true
-          },
-          mode: 'xy',
-        }
-      },
       legend: {
         display: true,
         position: 'top',
@@ -136,7 +123,7 @@ export const useChartOptions = ({
       } as any,
       volumeProfile: {
         enabled: true,
-        data: signal?.volumeResistance,
+        data: signal?.volumeResistance || supplyDemandLevels,
         currentPrice: data.length > 0 ? data[data.length - 1].close : 0
       } as VolumeProfilePluginOptions
     },
@@ -243,10 +230,9 @@ export const useChartOptions = ({
     yAxisRange,
     setHoveredIndex,
     signal,
-    data
+    data,
+    supplyDemandLevels
   ]);
 
   return options;
 };
-
-
