@@ -76,6 +76,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   const trailingStopId = useId();
   const volAdjustId = useId();
   const kellyId = useId();
+  const riskPanelId = useId();
 
   const parsedPrice = parseFloat(limitPrice);
   const price = orderType === 'MARKET' 
@@ -124,12 +125,18 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       <MarketCorrelationCard stock={stock} />
       
       {showSuccess && (
-        <div className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+        <div
+          className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
+          role="status"
+        >
           注文を送信しました
         </div>
       )}
       {errorMessage && (
-        <div className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+        <div
+          className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
+          role="alert"
+        >
           {errorMessage}
           <button 
             onClick={() => setErrorMessage(null)}
@@ -217,6 +224,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
         onClick={() => setShowRiskSettings(!showRiskSettings)}
         className="flex items-center justify-between w-full py-2 text-xs font-bold text-[#92adc9] hover:text-white transition-colors border-t border-[#233648] mt-2"
         aria-expanded={showRiskSettings}
+        aria-controls={riskPanelId}
       >
         <span>リスク管理設定</span>
         <svg
@@ -232,7 +240,10 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
       {/* Risk Management Settings Panel */}
       {showRiskSettings && (
-        <div className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3">
+        <div
+          id={riskPanelId}
+          className="bg-[#192633] rounded-lg p-3 border border-[#233648] space-y-3"
+        >
           {/* Trailing Stop Toggle */}
           <div className="flex items-center justify-between">
             <span id={trailingStopId} className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
