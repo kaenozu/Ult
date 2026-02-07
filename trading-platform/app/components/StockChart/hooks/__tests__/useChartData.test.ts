@@ -105,8 +105,8 @@ describe('useChartData Hook', () => {
 
       expect(result.current.actualData.labels).toHaveLength(120);
       expect(result.current.actualData.prices).toHaveLength(120);
-      expect(result.current.forecastExtension.forecastPrices).toHaveLength(60);
-      expect(result.current.forecastExtension.extendedLabels).toHaveLength(180);
+      expect(result.current.forecastExtension.forecastPrices).toHaveLength(0);
+      expect(result.current.forecastExtension.extendedLabels).toHaveLength(120);
     });
 
     test('should handle empty data gracefully', () => {

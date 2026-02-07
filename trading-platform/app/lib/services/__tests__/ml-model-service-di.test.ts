@@ -12,7 +12,7 @@ import {
   createBullishFeatures,
   createBearishFeatures,
   createTrainingData
-} from './fixtures/test-data-factory';
+} from './fixtures/test-data-factory.util';
 
 describe('MLModelService with Dependency Injection', () => {
   describe('constructor and initialization', () => {

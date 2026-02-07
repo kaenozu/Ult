@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { VolumeAnalysisService } from '../VolumeAnalysis';
-import { MockMarketDataGenerator, TestDataValidators } from './test-utils';
+import { MockMarketDataGenerator, TestDataValidators } from './mocks/test-utils';
 import type { OHLCV } from '@/app/types';
 
 describe('VolumeAnalysisService', () => {

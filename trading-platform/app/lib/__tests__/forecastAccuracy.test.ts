@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { forecastAccuracyService } from '../forecastAccuracy';
-import { MockMarketDataGenerator } from './test-utils';
+import { MockMarketDataGenerator } from './mocks/test-utils';
 import type { Prediction } from '../forecastAccuracy';
 
 describe('ForecastAccuracyService', () => {

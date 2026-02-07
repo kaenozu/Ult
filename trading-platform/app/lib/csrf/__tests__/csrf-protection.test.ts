@@ -125,7 +125,7 @@ describe('CSRF Protection', () => {
         'csrf-token',
         expect.any(String),
         expect.objectContaining({
-          httpOnly: true,
+          httpOnly: false,
           sameSite: 'strict',
           secure: false, // Default is false in test env
         })

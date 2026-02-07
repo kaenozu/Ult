@@ -10,7 +10,7 @@ import {
   createBullishFeatures,
   createBearishFeatures,
   createExtremeFeatures
-} from './fixtures/test-data-factory';
+} from './fixtures/test-data-factory.util';
 
 describe('PredictionCalculator', () => {
   let calculator: PredictionCalculator;

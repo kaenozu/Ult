@@ -9,9 +9,9 @@ import {
   InvestorSentiment,
   SentimentLeadingIndicator,
   EnhancedSentimentResult
-} from '../EnhancedSentimentService';
-import { AlternativeDataCollector } from '../DataCollector';
-import SentimentAnalysisEngine from '../../sentiment/SentimentAnalysisEngine';
+} from '../../EnhancedSentimentService';
+import { AlternativeDataCollector } from '../../DataCollector';
+import SentimentAnalysisEngine from '../../../sentiment/SentimentAnalysisEngine';
 
 describe('EnhancedSentimentService', () => {
   let service: EnhancedSentimentService;
@@ -273,7 +273,20 @@ describe('EnhancedSentimentService', () => {
 
   describe('Historical Data', () => {
     it('should store and retrieve historical sentiment', async () => {
-      await service.analyzeSymbol('AAPL');
+      // データがないと履歴に保存されないため、まずデータを追加
+      sentimentEngine.addNewsArticle({
+        id: 'news-h1',
+        title: 'Positive news',
+        content: 'Strong results',
+        source: 'Test',
+        url: 'https://test.com/h1',
+        publishedAt: Date.now(),
+        symbol: 'AAPL'
+      });
+
+      // 内部メソッドを呼び出して即座に集計を実行
+      (sentimentEngine as any).aggregateSentiment('AAPL');
+
       await service.analyzeSymbol('AAPL');
       
       const history = service.getHistoricalSentiment('AAPL');
