@@ -363,9 +363,3 @@ export async function GET(request: NextRequest) {
   }
 }
 
-return validationError('Invalid type parameter. Use "history" or "quote".', 'type');
-
-  } catch (error: unknown) {
-    return handleApiError(error, 'market/api', 500);
-  }
-}

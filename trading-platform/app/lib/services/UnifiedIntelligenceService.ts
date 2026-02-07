@@ -105,33 +105,6 @@ export class UnifiedIntelligenceService {
     };
   }
 
-    if (!ev.isPositive) {
-      finalScore *= 0.7; 
-    }
-
-    const recommendation = this.determineRecommendation(finalScore);
-    const reasoning = this.generateReasoning({
-      aiScore, technicalScore, correlationScore, supplyDemandScore, recommendation, 
-      optimizedWeights, optimizedRSIPeriod, ev
-    });
-
-    return {
-      symbol,
-      confidenceScore: Math.round(finalScore),
-      recommendation,
-      expectedValue: ev,
-      components: {
-        aiPrediction: aiScore,
-        technicalScore,
-        marketCorrelation: correlationScore,
-        supplyDemandScore
-      },
-      appliedWeights: optimizedWeights,
-      optimizedRSIPeriod,
-      reasoning,
-      timestamp: new Date().toISOString()
-    };
-  }
 
   private calculateTechnicalScore(ohlcv: OHLCV[], rsiPeriod: number): number {
     const closes = ohlcv.map(d => d.close);
