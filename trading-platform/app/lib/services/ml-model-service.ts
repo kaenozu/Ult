@@ -1,4 +1,3 @@
-// @ts-nocheck - Missing module
 /**
  * ML予測モデルサービス
  * 
@@ -18,6 +17,7 @@ import {
   ModelTrainingData
 } from './tensorflow-model-service';
 import { PredictionCalculator } from './implementations/prediction-calculator';
+import { logger } from '@/app/core/logger';
 
 export interface MLServiceConfig {
   weights: {
@@ -31,7 +31,6 @@ export interface MLServiceConfig {
 /**
  * ML予測モデルサービス
  */
-import { logger } from '@/app/core/logger';
 export class MLModelService {
   private readonly weights: MLServiceConfig['weights'];
   private useTensorFlowModels: boolean;

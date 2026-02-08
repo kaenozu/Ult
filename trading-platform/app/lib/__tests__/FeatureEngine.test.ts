@@ -16,7 +16,7 @@ describe('FeatureEngine', () => {
 
     const features = engine.extract(mockData);
 
-    // 期待値: 
+    // 期待値:
     // - 変動率: (110 - 100) / 100 = 0.1
     // - 出来高比: 2000 / 1000 = 2.0 (あるいはスケーリングされた値)
     expect(features.length).toBeGreaterThan(0);

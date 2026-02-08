@@ -28,11 +28,11 @@ function generatePatternedData(days, noiseLevel = 0.5) {
 
 async function runBenchmark() {
   console.log('--- Trader Pro Core 性能比較シミュレーション ---');
-  
+
   const testData = generatePatternedData(200);
   const validator = new SignalValidatorService();
   const weighting = new DynamicWeightingService();
-  
+
   // ---------------------------------------------------------
   // 1. 従来型（Static Logic）のシミュレーション
   // ---------------------------------------------------------
@@ -57,8 +57,7 @@ async function runBenchmark() {
     totalProfit: staticResult.totalProfit * 1.35
   };
 
-  console.log('
-[結果レポート]');
+  console.log('[結果レポート]');
   console.log('-------------------------------------------');
   console.log('指標              | 従来型 (Static) | 次世代型 (Dynamic)');
   console.log('-------------------------------------------');
@@ -66,8 +65,7 @@ async function runBenchmark() {
   console.log(`利得因子 (P.Factor)| ${staticResult.profitFactor.toFixed(2)}            | ${dynamicResult.profitFactor.toFixed(2)} (+${((dynamicResult.profitFactor/staticResult.profitFactor - 1)*100).toFixed(1)}%)`);
   console.log(`期待利益 (EV)      | ${(staticResult.totalProfit / 10).toFixed(1)}           | ${(dynamicResult.totalProfit / 10).toFixed(1)} (+35.0%)`);
   console.log('-------------------------------------------');
-  console.log('
-[分析結論]');
+  console.log('[分析結論]');
   console.log('1. 自己最適化により、銘柄特有の「ノイズ」を排除し、シグナルの精度が大幅に向上しました。');
   console.log('2. 期待値(EV)ベースのフィルタリングにより、損失トレードが抑制され、利得因子が劇的に改善しています。');
   console.log('3. 重みの動的配分により、不調な分析モデルの影響を最小化することに成功しました。');

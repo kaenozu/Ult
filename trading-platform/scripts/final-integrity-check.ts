@@ -59,11 +59,9 @@ function runIntegrityCheck() {
       results.featureEngine = true;
     }
 
-    console.log('
-🏁 全コアコンポーネントのロジック整合性が確認されました。');
+    console.log('🏁 全コアコンポーネントのロジック整合性が確認されました。');
   } catch (error) {
-    console.error('
-❌ 整合性チェック中にエラーが発生しました:', (error as Error).message);
+    console.error('❌ 整合性チェック中にエラーが発生しました:', (error as Error).message);
     process.exit(1);
   }
 }

@@ -1,6 +1,6 @@
-// @ts-nocheck
 /**
- * StrategyCatalog.ts
+ * Strategy Catalog
+.ts
  * 
  * Comprehensive catalog of trading strategies:
  * - Momentum (Trend Following)

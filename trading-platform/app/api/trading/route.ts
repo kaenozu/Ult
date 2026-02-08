@@ -303,7 +303,7 @@ export async function POST(req: NextRequest) {
   
   try {
     const rawBody = await req.json();
-    
+
     // Validate request body using Zod
     const result = TradingActionSchema.safeParse(rawBody);
     if (!result.success) {

@@ -5,7 +5,7 @@ import { Signal } from '../app/types';
 
 async function runLiveBacktest(symbol: string) {
   console.log(`[BACKTEST] Starting strategy verification for ${symbol}...`);
-  
+
   const result = await marketDataService.fetchMarketData(symbol);
   if (!result.success) {
     console.error('Data fetch failed:', result.error);
@@ -17,7 +17,7 @@ async function runLiveBacktest(symbol: string) {
 
   // Generate intelligence report
   const report = await unifiedIntelligenceService.generateReport(symbol, 'japan');
-  
+
   console.log('\n--- UNIFIED ENGINE ANALYSIS ---');
   console.log(`Confidence: ${report.confidenceScore}%`);
   console.log(`Recommendation: ${report.recommendation}`);
@@ -26,7 +26,7 @@ async function runLiveBacktest(symbol: string) {
 
   // Backtest across history
   const validator = new SignalValidatorService();
-  
+
   // Create mock signals for each data point (simplified backtest)
   const mockSignals: Signal[] = history.slice(50, -5).map((d) => ({
     symbol,
@@ -49,7 +49,7 @@ async function runLiveBacktest(symbol: string) {
   console.log(`Hit Rate: ${backtestResult.hitRate.toFixed(1)}%`);
   console.log(`Profit Factor: ${backtestResult.profitFactor.toFixed(2)}`);
   console.log(`Total Profit Points: ${(backtestResult.totalProfit - backtestResult.totalLoss).toFixed(2)}`);
-  
+
   if (backtestResult.profitFactor > 1.2) {
     console.log('\n✅ CONCLUSION: Strategy shows statistical edge. Deployment recommended.');
   } else {
