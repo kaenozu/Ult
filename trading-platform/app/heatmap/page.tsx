@@ -114,8 +114,8 @@ function HeatmapContent() {
           return quote ? { ...s, ...quote } : s;
         });
         setDisplayStocks(updatedStocks);
-      } catch (error) {
-        console.error('Universe sync failed:', error);
+      } catch {
+        // Silently handle quote fetch failures
       } finally {
         setLoading(false);
       }
@@ -163,10 +163,10 @@ function HeatmapContent() {
           </div>
           <div className="h-4 w-px bg-[#233648]" />
           <div className="flex bg-[#192633] rounded p-0.5 border border-[#233648]">
-            {['all', 'japan', 'usa'].map((m) => (
+            {(['all', 'japan', 'usa'] as const).map((m) => (
               <button
                 key={m}
-                onClick={() => setSelectedMarket(m as 'all' | 'japan' | 'usa')}
+                onClick={() => setSelectedMarket(m)}
                 className={cn(
                   'px-2 py-0.5 rounded text-[9px] font-black uppercase transition-all',
                   selectedMarket === m ? 'bg-primary text-white' : 'text-[#92adc9] hover:text-white'

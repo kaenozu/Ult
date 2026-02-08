@@ -121,7 +121,34 @@ export function usePsychology() {
       journal,
       psychologyState.cooldownRecords
     );
-    psychologyState.setDisciplineScore(typeof score === 'number' ? score : score.overall);
+    
+    // 新しいAPI: updateMentalHealthは完全なMentalHealthMetricsを必要とするため、
+    // 既存の値を保持しつつdiscipline_scoreだけを更新
+    const currentMetrics = psychologyState.current_mental_health;
+    const overallScore = typeof score === 'number' ? score : (score as DisciplineScoreProps).overall ?? 0;
+    
+    if (currentMetrics) {
+      psychologyState.updateMentalHealth({
+        ...currentMetrics,
+        discipline_score: overallScore
+      });
+    } else {
+      // current_mental_healthが未定義の場合は、デフォルト値で初期化
+      psychologyState.updateMentalHealth({
+        overall_score: overallScore,
+        stress_level: 0,
+        discipline_score: overallScore,
+        emotional_stability: 100,
+        fatigue_level: 0,
+        state: 'optimal',
+        days_since_break: 0,
+        consecutive_losing_days: 0,
+        consecutive_winning_days: 0,
+        risk_of_tilt: 0,
+        risk_of_burnout: 0,
+        recommendations: []
+      });
+    }
     return score;
   };
 
@@ -129,10 +156,10 @@ export function usePsychology() {
    * 改善エリアを特定
    */
   const identifyImprovements = () => {
-    if (!disciplineCalculatorRef.current || !psychologyState.disciplineScore) return [];
+    if (!disciplineCalculatorRef.current || !psychologyState.current_mental_health?.discipline_score) return [];
 
     return disciplineCalculatorRef.current.identifyImprovementAreas(
-      psychologyState.disciplineScore as unknown as DisciplineScore
+      psychologyState.current_mental_health.discipline_score as unknown as DisciplineScore
     );
   };
 
@@ -193,7 +220,7 @@ export function usePsychology() {
     currentMentalHealth: psychologyState.current_mental_health,
     currentEmotions: psychologyState.current_emotions,
     currentCooldown: psychologyState.currentCooldown,
-    disciplineScore: psychologyState.disciplineScore,
+    disciplineScore: psychologyState.current_mental_health?.discipline_score,
     goals: psychologyState.goals,
 
     // Computed

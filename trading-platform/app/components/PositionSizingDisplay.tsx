@@ -25,30 +25,32 @@ export function PositionSizingDisplay({
 }: PositionSizingDisplayProps) {
   const { settings } = useRiskManagementStore();
   
-  // 警告判定
+  // 警告判定 - 個別の依存関係を使用して再レンダリングを最適化
+  const { minShares, accountEquity, maxPositionPercent, maxStopLossPercent } = settings;
+  
   const warnings = useMemo(() => {
     if (!result) return [];
     
     const warns: string[] = [];
     
     // 少ない株数の警告
-    if (result.recommendedShares < settings.minShares) {
-      warns.push(`推奨株数が最小単位（${settings.minShares}株）未満です`);
+    if (result.recommendedShares < minShares) {
+      warns.push(`推奨株数が最小単位（${minShares}株）未満です`);
     }
     
     // 高いポジション比率の警告
-    const positionPercent = (result.positionValue / settings.accountEquity) * 100;
-    if (positionPercent > settings.maxPositionPercent) {
-      warns.push(`ポジション比率が高すぎます（${settings.maxPositionPercent}%超）`);
+    const positionPercent = (result.positionValue / accountEquity) * 100;
+    if (positionPercent > maxPositionPercent) {
+      warns.push(`ポジション比率が高すぎます（${maxPositionPercent}%超）`);
     }
     
     // 大きな損切り距離の警告
-    if (result.stopLossPercent > settings.maxStopLossPercent) {
-      warns.push(`損切り距離が大きすぎます（${settings.maxStopLossPercent}%超）`);
+    if (result.stopLossPercent > maxStopLossPercent) {
+      warns.push(`損切り距離が大きすぎます（${maxStopLossPercent}%超）`);
     }
     
     return warns;
-  }, [result, settings.accountEquity]);
+  }, [result, minShares, accountEquity, maxPositionPercent, maxStopLossPercent]);
   
   if (!settings.enabled) {
     return (

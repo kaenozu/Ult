@@ -9,9 +9,10 @@
 // Base Types
 // ============================================================================
 
-export type OrderSide = 'BUY' | 'SELL';
+import type { OrderSide as SharedOrderSide } from './shared';
+export type OrderSide = SharedOrderSide;
 export type TimeInForce = 'GTC' | 'IOC' | 'FOK' | 'DAY';
-export type OrderStatus = 'PENDING' | 'ACTIVE' | 'FILLED' | 'PARTIALLY_FILLED' | 'CANCELLED' | 'REJECTED' | 'EXPIRED';
+export type AdvancedOrderStatus = 'PENDING' | 'ACTIVE' | 'FILLED' | 'PARTIALLY_FILLED' | 'CANCELLED' | 'REJECTED' | 'EXPIRED';
 
 /**
  * Base order interface that all orders extend from
@@ -22,7 +23,7 @@ export interface BaseOrder {
   side: OrderSide;
   quantity: number;
   timeInForce: TimeInForce;
-  status: OrderStatus;
+  status: AdvancedOrderStatus;
   createdAt: number;
   updatedAt: number;
   filledQuantity?: number;
@@ -65,7 +66,7 @@ export interface OCOOrder {
   order1: StopLossOrder | TakeProfitOrder;
   order2: StopLossOrder | TakeProfitOrder;
   timeInForce: TimeInForce;
-  status: OrderStatus;
+  status: AdvancedOrderStatus;
   createdAt: number;
   updatedAt: number;
   activeOrderId?: string;
@@ -110,7 +111,7 @@ export interface BracketOrder {
   entryOrder: BaseOrder;
   stopLossOrder: StopLossOrder;
   takeProfitOrder: TakeProfitOrder;
-  status: OrderStatus;
+  status: AdvancedOrderStatus;
   createdAt: number;
   updatedAt: number;
   entryFilled: boolean;

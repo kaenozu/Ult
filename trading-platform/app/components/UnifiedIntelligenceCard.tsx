@@ -19,22 +19,30 @@ export function UnifiedIntelligenceCard({ stock }: UnifiedIntelligenceCardProps)
   const [isComputing, setIsComputing] = useState(false);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    
     async function fetchAnalysis() {
       setIsLoading(true);
       try {
         // 1. 統合レポート生成
         const result = await unifiedIntelligenceService.generateReport(stock.symbol, stock.market as any);
+        if (abortController.signal.aborted) return;
         setReport(result);
 
         // 2. 並列スレッドによる高度なバックグラウンド計算のシミュレーション
         setIsComputing(true);
         await intelligenceManager.runAsyncAnalysis(stock.symbol, result);
+        if (abortController.signal.aborted) return;
         setIsComputing(false);
 
         // 3. 的中率の計算
         if (result && result.symbol) {
           const validator = new SignalValidatorService();
-          const marketData = await fetch(`/api/market?type=history&symbol=${stock.symbol}`).then(res => res.json());
+          const response = await fetch(`/api/market?type=history&symbol=${stock.symbol}`, {
+            signal: abortController.signal
+          });
+          const marketData = await response.json();
+          if (abortController.signal.aborted) return;
           if (marketData.success) {
             const mockSignals = marketData.data.slice(-20, -1).map((d: any) => ({
               symbol: stock.symbol,
@@ -48,13 +56,20 @@ export function UnifiedIntelligenceCard({ stock }: UnifiedIntelligenceCardProps)
           }
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
         console.error('Unified analysis failed:', error);
       } finally {
-        setIsLoading(false);
-        setIsComputing(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+          setIsComputing(false);
+        }
       }
     }
     fetchAnalysis();
+    
+    return () => {
+      abortController.abort();
+    };
   }, [stock.symbol, stock.market]);
 
   if (isLoading || !report) {

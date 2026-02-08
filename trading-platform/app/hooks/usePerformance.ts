@@ -40,7 +40,7 @@ export function useEventCallback<T extends (...args: unknown[]) => unknown>(
     ref.current = fn;
   }, [fn]);
   
-  // @ts-ignore - Type assertion for event callback
+  // @ts-expect-error - Type assertion for event callback
   return useCallback(function(...args: Parameters<T>) {
     return ref.current(...args);
   }, []) as T;

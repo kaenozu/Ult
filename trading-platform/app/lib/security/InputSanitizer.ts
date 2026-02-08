@@ -442,7 +442,7 @@ export function sanitizeObject<T extends Record<string, string>>(
         results[field as string] = sanitizeSymbol(value as string);
         break;
       case 'number':
-        // @ts-ignore - Type assertion for options
+        // @ts-expect-error - Type assertion for options
         results[field as string] = sanitizeNumber(value as string, config.options || {});
         break;
       case 'json':
@@ -450,7 +450,7 @@ export function sanitizeObject<T extends Record<string, string>>(
         break;
       case 'text':
       default:
-        // @ts-ignore - Type assertion for options
+        // @ts-expect-error - Type assertion for options
         results[field as string] = sanitizeText(value as string, config.options || {});
         break;
     }

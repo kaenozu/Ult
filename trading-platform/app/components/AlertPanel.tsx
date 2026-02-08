@@ -3,6 +3,11 @@ import { useAlertStore } from '@/app/store/alertStore';
 import { Alert, AlertSeverity, AlertType, AlertSettings } from '@/app/lib/alertTypes';
 import { cn, formatCurrency } from '@/app/lib/utils';
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Check, X, Filter, Bell, Clock, Target, Zap, Activity, Settings } from 'lucide-react';
+import {
+  getSeverityColor as getSeverityColorBase,
+  formatTimestamp,
+  useAlertLogic
+} from '@/app/hooks/useAlertLogic';
 
 interface AlertPanelProps {
   symbol?: string;
@@ -22,6 +27,59 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
   const [filterType, setFilterType] = useState<'ALL' | 'MARKET' | 'STOCK' | 'COMPOSITE'>('ALL');
   const [filterSeverity, setFilterSeverity] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
   const [showSettings, setShowSettings] = useState(false);
+  
+  const {
+    getSeverityIconComponent,
+    getTypeIconComponent,
+    getTrendIconComponent
+  } = useAlertLogic();
+
+  const getSeverityIcon = (severity: AlertSeverity) => {
+    const Icon = getSeverityIconComponent(severity);
+    switch (severity) {
+      case 'HIGH':
+        return <Icon className="w-4 h-4 text-red-400" />;
+      case 'MEDIUM':
+        return <Icon className="w-4 h-4 text-yellow-400" />;
+      case 'LOW':
+        return <Icon className="w-4 h-4 text-blue-400" />;
+    }
+  };
+
+  const getSeverityColor = (severity: AlertSeverity) => {
+    switch (severity) {
+      case 'HIGH':
+        return 'bg-red-500/20 border-red-500/30';
+      case 'MEDIUM':
+        return 'bg-yellow-500/20 border-yellow-500/30';
+      case 'LOW':
+        return 'bg-blue-500/20 border-blue-500/30';
+    }
+  };
+
+  const getTypeIcon = (type: AlertType) => {
+    const Icon = getTypeIconComponent(type);
+    switch (type) {
+      case 'MARKET':
+        return <Icon className="w-4 h-4 text-purple-400" />;
+      case 'STOCK':
+        return <Icon className="w-4 h-4 text-green-400" />;
+      case 'COMPOSITE':
+        return <Icon className="w-4 h-4 text-orange-400" />;
+    }
+  };
+
+  const getTrendIcon = (trend: 'UP' | 'DOWN' | 'NEUTRAL') => {
+    const Icon = getTrendIconComponent(trend);
+    switch (trend) {
+      case 'UP':
+        return <Icon className="w-3 h-3 text-green-400" />;
+      case 'DOWN':
+        return <Icon className="w-3 h-3 text-red-400" />;
+      case 'NEUTRAL':
+        return <Icon className="w-3 h-3 text-gray-400" />;
+    }
+  };
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter(alert => {
@@ -38,61 +96,6 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
   const unreadAlerts = useMemo(() => {
     return filteredAlerts.filter(a => !a.acknowledged);
   }, [filteredAlerts]);
-
-  const getSeverityIcon = (severity: AlertSeverity) => {
-    switch (severity) {
-      case 'HIGH':
-        return <AlertTriangle className="w-4 h-4 text-red-400" />;
-      case 'MEDIUM':
-        return <Clock className="w-4 h-4 text-yellow-400" />;
-      case 'LOW':
-        return <Bell className="w-4 h-4 text-blue-400" />;
-    }
-  };
-
-  const getSeverityColor = (severity: AlertSeverity) => {
-    switch (severity) {
-      case 'HIGH':
-        return 'bg-red-500/20 border-red-500/30';
-      case 'MEDIUM':
-        return 'bg-yellow-500/20 border-yellow-500/30';
-      case 'LOW':
-        return 'bg-blue-500/20 border-blue-500/30';
-    }
-  };
-
-  const getTypeIcon = (type: AlertType) => {
-    switch (type) {
-      case 'MARKET':
-        return <Activity className="w-4 h-4 text-purple-400" />;
-      case 'STOCK':
-        return <Target className="w-4 h-4 text-green-400" />;
-      case 'COMPOSITE':
-        return <Zap className="w-4 h-4 text-orange-400" />;
-    }
-  };
-
-  const getTrendIcon = (trend: 'UP' | 'DOWN' | 'NEUTRAL') => {
-    switch (trend) {
-      case 'UP':
-        return <TrendingUp className="w-3 h-3 text-green-400" />;
-      case 'DOWN':
-        return <TrendingDown className="w-3 h-3 text-red-400" />;
-      case 'NEUTRAL':
-        return <Minus className="w-3 h-3 text-gray-400" />;
-    }
-  };
-
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-
-    if (diff < 60000) return 'たった今';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}分前`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}時間前`;
-    return `${Math.floor(diff / 86400000)}日前`;
-  };
 
   const handleAcknowledge = (id: string) => {
     acknowledgeAlert(id);
@@ -389,7 +392,7 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
 
                     {/* Time */}
                     <span className="text-[10px] text-[#92adc9]/60 ml-auto">
-                      {formatTime(alert.timestamp)}
+                      {formatTimestamp(alert.timestamp)}
                     </span>
                   </div>
 

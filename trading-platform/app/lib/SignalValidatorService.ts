@@ -25,14 +25,14 @@ export class SignalValidatorService {
     let correctCount = 0;
     let totalProfit = 0;
     let totalLoss = 0;
-
+    
     for (const signal of signals) {
-      const signalDate = new Date(signal.predictionDate).toISOString().split('T')[0];
+      const signalDate = new Date(signal.predictionDate || 0).toISOString().split('T')[0];
       const signalIdx = history.findIndex(h => h.date === signalDate);
 
       if (signalIdx !== -1 && signalIdx + 1 < history.length) {
         const nextDay = history[signalIdx + 1];
-        const profit = nextDay.close - signal.targetPrice;
+        const profit = nextDay.close - (signal.targetPrice || 0);
 
         if (signal.type === 'BUY') {
           if (profit > 0) {

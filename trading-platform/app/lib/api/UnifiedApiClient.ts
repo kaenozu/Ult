@@ -74,7 +74,7 @@ export function createApiHandler<T = unknown>(
         const cacheKey = cache.keyGenerator(request);
         const cached = cacheManager.get(cacheKey);
         if (cached) {
-          return NextResponse.json(cached, { status: 200 });
+          return NextResponse.json(cached, { status: 200 }) as NextResponse<ApiResponse<T>>;
         }
       }
 
@@ -184,6 +184,8 @@ export function createPostHandler<TBody, TResponse>(
     const body = await parseJsonBody<TBody>(request);
     const result = await handler(request, body);
     if (result instanceof NextResponse) {
+      // Type assertion is needed here because TypeScript cannot infer
+      // that the NextResponse from the handler matches the expected type
       return result as NextResponse<ApiResponse<TResponse>>;
     }
     return successResponse(result);

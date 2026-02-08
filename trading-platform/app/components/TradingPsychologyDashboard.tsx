@@ -13,6 +13,7 @@ import { usePsychologyStore } from '@/app/store/psychologyStore';
 import { createAITradingCoach, TradingPattern, ImprovementSuggestion } from '@/app/lib/psychology/AITradingCoach';
 import { createSentimentAnalyzer, FearGreedIndex, EmotionTradeCorrelation } from '@/app/lib/psychology/SentimentAnalyzer';
 import { createDisciplineMonitor, RuleViolation, LearningPattern } from '@/app/lib/psychology/DisciplineMonitor';
+import { DisciplineScoreCalculator } from '@/app/lib/psychology/DisciplineScoreCalculator';
 import { cn } from '@/app/lib/utils';
 
 interface TradingPsychologyDashboardProps {
@@ -21,18 +22,30 @@ interface TradingPsychologyDashboardProps {
 
 export function TradingPsychologyDashboard({ className }: TradingPsychologyDashboardProps) {
   const { journal } = useJournalStore();
-  const disciplineScore = usePsychologyStore((state) => state.disciplineScore);
+  const { current_mental_health, cooldownRecords } = usePsychologyStore();
+  
+  // discipline_score は number 型なので、そのまま使用
+  const disciplineScoreValue = current_mental_health?.discipline_score ?? 0;
+  
+  // 個別の規律メトリクスを計算
   const disciplineMetrics = useMemo(() => {
-    const score = disciplineScore as number | { overall?: number; planAdherence?: number; emotionalControl?: number; lossManagement?: number; journalConsistency?: number; coolingOffCompliance?: number } | undefined;
+    const calculator = new DisciplineScoreCalculator();
+    // journalはJournalEntry[]配列
+    const entries = journal || [];
+    const records = cooldownRecords || [];
+    
+    const detailedScore = calculator.calculateDisciplineScore(entries, records);
+    
+    // Storeの値（全体の集計値）がある場合はそれを優先しつつ、詳細メトリクスを補完
     return {
-      overall: typeof score === 'number' ? score : (score?.overall ?? 0),
-      planAdherence: typeof score === 'number' ? score : (score?.planAdherence ?? 0),
-      emotionalControl: typeof score === 'number' ? score : (score?.emotionalControl ?? 0),
-      lossManagement: typeof score === 'number' ? score : (score?.lossManagement ?? 0),
-      journalConsistency: typeof score === 'number' ? score : (score?.journalConsistency ?? 0),
-      coolingOffCompliance: typeof score === 'number' ? score : (score?.coolingOffCompliance ?? 0),
+      overall: disciplineScoreValue || detailedScore.overall,
+      planAdherence: detailedScore.planAdherence,
+      emotionalControl: detailedScore.emotionalControl,
+      lossManagement: detailedScore.lossManagement,
+      journalConsistency: detailedScore.journalConsistency,
+      coolingOffCompliance: detailedScore.coolingOffCompliance,
     };
-  }, [disciplineScore]);
+  }, [disciplineScoreValue, journal, cooldownRecords]);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'patterns' | 'sentiment' | 'discipline'>('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -199,37 +212,35 @@ export function TradingPsychologyDashboard({ className }: TradingPsychologyDashb
           {/* Score Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* 規律スコア */}
-            {disciplineScore && (
-              <div className={cn(
-                'p-4 rounded-lg border',
-                getScoreBgColor(disciplineMetrics.overall)
-              )}>
-                <div className="text-sm text-gray-400 mb-1">規律スコア</div>
-                <div className={cn('text-3xl font-bold', getScoreColor(disciplineMetrics.overall))}>
-                  {disciplineMetrics.overall}
+            <div className={cn(
+              'p-4 rounded-lg border',
+              getScoreBgColor(disciplineMetrics.overall)
+            )}>
+              <div className="text-sm text-gray-400 mb-1">規律スコア</div>
+              <div className={cn('text-3xl font-bold', getScoreColor(disciplineMetrics.overall))}>
+                {disciplineMetrics.overall}
+              </div>
+              <div className="mt-2 space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">計画遵守</span>
+                  <span className={getScoreColor(disciplineMetrics.planAdherence)}>
+                    {disciplineMetrics.planAdherence.toFixed(1)}
+                  </span>
                 </div>
-                <div className="mt-2 space-y-1 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">計画遵守</span>
-                    <span className={getScoreColor(disciplineMetrics.planAdherence)}>
-                      {disciplineMetrics.planAdherence.toFixed(1)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">感情コントロール</span>
-                    <span className={getScoreColor(disciplineMetrics.emotionalControl)}>
-                      {disciplineMetrics.emotionalControl.toFixed(1)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">損失管理</span>
-                    <span className={getScoreColor(disciplineMetrics.lossManagement)}>
-                      {disciplineMetrics.lossManagement.toFixed(1)}
-                    </span>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">感情コントロール</span>
+                  <span className={getScoreColor(disciplineMetrics.emotionalControl)}>
+                    {disciplineMetrics.emotionalControl.toFixed(1)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">損失管理</span>
+                  <span className={getScoreColor(disciplineMetrics.lossManagement)}>
+                    {disciplineMetrics.lossManagement.toFixed(1)}
+                  </span>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Fear & Greed Index */}
             {fearGreedIndex && (
@@ -578,103 +589,101 @@ export function TradingPsychologyDashboard({ className }: TradingPsychologyDashb
           )}
 
           {/* Discipline Score Breakdown */}
-          {disciplineScore && (
-            <div className="p-4 rounded-lg border border-gray-700 bg-gray-800/50">
-              <h3 className="text-lg font-semibold text-white mb-3">規律スコア詳細</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">計画遵守</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full transition-all',
-                          disciplineMetrics.planAdherence >= 80 ? 'bg-green-500' :
-                          disciplineMetrics.planAdherence >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        )}
-                        style={{ width: `${disciplineMetrics.planAdherence}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-white font-medium">
-                      {disciplineMetrics.planAdherence.toFixed(1)}
-                    </span>
+          <div className="p-4 rounded-lg border border-gray-700 bg-gray-800/50">
+            <h3 className="text-lg font-semibold text-white mb-3">規律スコア詳細</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">計画遵守</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full transition-all',
+                        disciplineMetrics.planAdherence >= 80 ? 'bg-green-500' :
+                        disciplineMetrics.planAdherence >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      )}
+                      style={{ width: `${disciplineMetrics.planAdherence}%` }}
+                    />
                   </div>
+                  <span className="text-sm text-white font-medium">
+                    {disciplineMetrics.planAdherence.toFixed(1)}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">感情コントロール</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full transition-all',
-                          disciplineMetrics.emotionalControl >= 80 ? 'bg-green-500' :
-                          disciplineMetrics.emotionalControl >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        )}
-                        style={{ width: `${disciplineMetrics.emotionalControl}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-white font-medium">
-                      {disciplineMetrics.emotionalControl.toFixed(1)}
-                    </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">感情コントロール</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full transition-all',
+                        disciplineMetrics.emotionalControl >= 80 ? 'bg-green-500' :
+                        disciplineMetrics.emotionalControl >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      )}
+                      style={{ width: `${disciplineMetrics.emotionalControl}%` }}
+                    />
                   </div>
+                  <span className="text-sm text-white font-medium">
+                    {disciplineMetrics.emotionalControl.toFixed(1)}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">損失管理</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full transition-all',
-                          disciplineMetrics.lossManagement >= 80 ? 'bg-green-500' :
-                          disciplineMetrics.lossManagement >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        )}
-                        style={{ width: `${disciplineMetrics.lossManagement}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-white font-medium">
-                      {disciplineMetrics.lossManagement.toFixed(1)}
-                    </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">損失管理</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full transition-all',
+                        disciplineMetrics.lossManagement >= 80 ? 'bg-green-500' :
+                        disciplineMetrics.lossManagement >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      )}
+                      style={{ width: `${disciplineMetrics.lossManagement}%` }}
+                    />
                   </div>
+                  <span className="text-sm text-white font-medium">
+                    {disciplineMetrics.lossManagement.toFixed(1)}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">ジャーナル記録</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full transition-all',
-                          disciplineMetrics.journalConsistency >= 80 ? 'bg-green-500' :
-                          disciplineMetrics.journalConsistency >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        )}
-                        style={{ width: `${disciplineMetrics.journalConsistency}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-white font-medium">
-                      {disciplineMetrics.journalConsistency.toFixed(1)}
-                    </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">ジャーナル記録</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full transition-all',
+                        disciplineMetrics.journalConsistency >= 80 ? 'bg-green-500' :
+                        disciplineMetrics.journalConsistency >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      )}
+                      style={{ width: `${disciplineMetrics.journalConsistency}%` }}
+                    />
                   </div>
+                  <span className="text-sm text-white font-medium">
+                    {disciplineMetrics.journalConsistency.toFixed(1)}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-400">クーリングオフ遵守</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full transition-all',
-                          disciplineMetrics.coolingOffCompliance >= 80 ? 'bg-green-500' :
-                          disciplineMetrics.coolingOffCompliance >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                        )}
-                        style={{ width: `${disciplineMetrics.coolingOffCompliance}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-white font-medium">
-                      {disciplineMetrics.coolingOffCompliance.toFixed(1)}
-                    </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-400">クーリングオフ遵守</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full transition-all',
+                        disciplineMetrics.coolingOffCompliance >= 80 ? 'bg-green-500' :
+                        disciplineMetrics.coolingOffCompliance >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      )}
+                      style={{ width: `${disciplineMetrics.coolingOffCompliance}%` }}
+                    />
                   </div>
+                  <span className="text-sm text-white font-medium">
+                    {disciplineMetrics.coolingOffCompliance.toFixed(1)}
+                  </span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

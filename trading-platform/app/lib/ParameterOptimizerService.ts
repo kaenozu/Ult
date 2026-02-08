@@ -32,12 +32,12 @@ export class ParameterOptimizerService {
           mockSignals.push({
             symbol,
             type: 'BUY',
-            targetPrice: ohlcv[i].close,
-            stopLoss: ohlcv[i].close * 0.95,
+            targetPrice: ohlcv[i].close * 1.02,
+            stopLoss: ohlcv[i].close * 0.98,
             predictionDate: ohlcv[i].date,
             confidence: 0.5,
-            reason: 'RSI oversold',
-            predictedChange: 0
+            reason: `RSI(${period}) <= 30`,
+            predictedChange: 2
           });
         }
       }

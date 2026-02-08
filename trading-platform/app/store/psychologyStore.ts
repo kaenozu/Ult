@@ -1,199 +1,366 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
+  CooldownRecord,
+} from '@/app/types/risk';
+import type {
+  PsychologyAlert,
   MentalHealthMetrics,
+  DisciplineRules,
   EmotionScore,
   CoachingRecommendation,
-  DisciplineRules,
   TradingSession,
   PsychologyAnalysisResult,
-  PsychologyAlert,
-} from '../types/psychology';
-import type { CooldownRecord, CoolingReason, DisciplineScore } from '../types/risk';
+  MentalState,
+} from '@/app/types/psychology';
 
-export type MentalState = 'optimal' | 'cautious' | 'stressed' | 'tilt' | 'burnout';
+// ============================================================================
+// Trade Plan Types
+// ============================================================================
 
-// Re-export EmotionScore from types for convenience
-export type { EmotionScore } from '../types/psychology';
-
-export interface CalendarDay {
-  date: string;
-  trades: number;
-  profit: number;
-  emotions: EmotionScore[];
+export interface TradePlan {
+  id: string;
+  symbol: string;
+  strategy: string;
+  entryReason: string;
+  targetPrice: number;
+  stopLoss: number;
+  riskRewardRatio: number;
+  positionSize: number;
+  createdAt: Date;
 }
 
-export interface PsychologyState {
-  // Legacy properties for compatibility
-  mentalState: MentalState;
-  overallScore: number;
-  stressLevel: number;
-  disciplineScore: number;
-  riskOfTilt: number;
-  dominantEmotions: EmotionScore[];
-  recommendations: string[];
-  lastUpdate: string;
+// ============================================================================
+// Reflection Types
+// ============================================================================
 
-  // Current state
+export interface Reflection {
+  tradeId: string;
+  lessonsLearned: string;
+  whatWorked: string;
+  whatDidntWork: string;
+  emotionalState: {
+    fear: number;
+    greed: number;
+    confidence: number;
+    stress: number;
+    overall: number;
+  };
+  wouldDoAgain: boolean;
+  improvementAreas: string[];
+  createdAt: Date;
+}
+
+// ============================================================================
+// Goals Types
+// ============================================================================
+
+export interface DailyGoal {
+  maxTrades: number;
+  maxLoss: number;
+  minDisciplineScore: number;
+}
+
+export interface WeeklyGoal {
+  maxTrades: number;
+  maxLoss: number;
+  minDisciplineScore: number;
+}
+
+export interface MonthlyGoal {
+  maxTrades: number;
+  maxLoss: number;
+  minDisciplineScore: number;
+}
+
+// ============================================================================
+// Calendar Types
+// ============================================================================
+
+export interface CalendarDay {
+  tradesCount: number;
+  profitLoss: number;
+  emotionScore: number;
+}
+
+// ============================================================================
+// Complete Store State
+// ============================================================================
+
+export interface PsychologyStoreState {
+  // Current mental health
   current_mental_health?: MentalHealthMetrics;
+
+  // Current emotions
   current_emotions: EmotionScore[];
+
+  // Active coaching recommendations
   active_recommendations: CoachingRecommendation[];
 
-  // Settings
+  // Discipline settings
   discipline_rules: DisciplineRules;
   alerts_enabled: boolean;
   coaching_enabled: boolean;
 
-  // History
-  sessions: TradingSession[];
-  analysis_history: PsychologyAnalysisResult[];
-
-  // Alerts and cooling
+  // Alert management
   alerts: PsychologyAlert[];
-  cooldownRecords: CooldownRecord[];
-  currentCooldown: CooldownRecord | null;
 
-  // Goals and calendar
+  // Trade planning
+  tradePlans: TradePlan[];
+
+  // Reflections
+  reflections: Reflection[];
+
+  // Cooldown management
+  currentCooldown: CooldownRecord | null;
+  cooldownRecords: CooldownRecord[];
+
+  // Goals
   goals: {
-    dailyProfit?: number;
-    maxDailyLoss?: number;
-    maxTradesPerDay?: number;
-    targetWinRate?: number;
+    daily: DailyGoal;
+    weekly?: WeeklyGoal;
+    monthly?: MonthlyGoal;
   };
+
+  // Calendar tracking
   calendar: Record<string, CalendarDay>;
 
+  // Trading sessions history
+  sessions: TradingSession[];
+
+  // Analysis history
+  analysis_history: PsychologyAnalysisResult[];
+
   // Actions
-  updateMetrics: (metrics: Partial<Omit<PsychologyState, 'updateMetrics' | 'resetMetrics' | 'addAlert' | 'startCooldown' | 'setDisciplineScore' | 'endCooldown' | 'getCalendarDay' | 'clearAlerts' | 'dismissAlert' | 'updateGoals' | 'updateCalendarDay' | 'addEmotion' | 'addAnalysis' | 'dismissRecommendation'>>) => void;
-  resetMetrics: () => void;
+  updateMentalHealth: (metrics: MentalHealthMetrics) => void;
+  addEmotion: (emotion: EmotionScore) => void;
+  addRecommendation: (recommendation: CoachingRecommendation) => void;
+  dismissRecommendation: (index: number) => void;
+  updateDisciplineRules: (rules: Partial<DisciplineRules>) => void;
+  addSession: (session: TradingSession) => void;
+  addAnalysis: (analysis: PsychologyAnalysisResult) => void;
+  resetState: () => void;
+
+  // Alert actions
   addAlert: (alert: PsychologyAlert) => void;
   clearAlerts: () => void;
-  dismissAlert: (alertId: string) => void;
+  dismissAlert: (timestamp: string) => void;
+  getAlertStats: () => {
+    total: number;
+    byType: Record<string, number>;
+    bySeverity: Record<string, number>;
+  };
+  getRecentAlerts: (hours: number) => PsychologyAlert[];
+
+  // Trade plan actions
+  addTradePlan: (plan: TradePlan) => void;
+  updateTradePlan: (id: string, updates: Partial<TradePlan>) => void;
+  deleteTradePlan: (id: string) => void;
+  getTradePlan: (id: string) => TradePlan | undefined;
+
+  // Reflection actions
+  addReflection: (reflection: Reflection) => void;
+  getReflection: (tradeId: string) => Reflection | undefined;
+
+  // Cooldown actions
   startCooldown: (cooldown: CooldownRecord) => void;
-  endCooldown: (cooldownId: string) => void;
-  setDisciplineScore: (score: number) => void;
+  endCooldown: (cooldownId?: string) => void;
+  recordCooldownViolation: () => void;
+
+  // Goals actions
+  updateGoals: (goals: {
+    daily?: Partial<DailyGoal>;
+    weekly?: Partial<WeeklyGoal>;
+    monthly?: Partial<MonthlyGoal>;
+  }) => void;
+
+  // Calendar actions
+  updateCalendarDay: (date: string, data: Partial<CalendarDay>) => void;
   getCalendarDay: (date: string) => CalendarDay | undefined;
-  updateCalendarDay: (date: string, day: Partial<CalendarDay>) => void;
-  updateGoals: (goals: Partial<PsychologyState['goals']>) => void;
-  addEmotion: (emotion: EmotionScore) => void;
-  addAnalysis: (analysis: PsychologyAnalysisResult) => void;
-  dismissRecommendation: (index: number) => void;
 }
 
-const initialState: Omit<PsychologyState, 'updateMetrics' | 'resetMetrics' | 'addAlert' | 'startCooldown' | 'setDisciplineScore' | 'endCooldown' | 'getCalendarDay' | 'clearAlerts' | 'dismissAlert' | 'updateGoals' | 'updateCalendarDay' | 'addEmotion' | 'addAnalysis' | 'dismissRecommendation'> = {
-  // Legacy
-  mentalState: 'optimal',
-  overallScore: 100,
-  stressLevel: 0,
-  disciplineScore: 100,
-  riskOfTilt: 0,
-  dominantEmotions: [{ emotion: 'neutral', score: 1.0, confidence: 1.0, indicators: ['取引開始前'] }],
-  recommendations: ['メンタル状態は良好です。計画通りに取引を続けてください。'],
-  lastUpdate: new Date().toISOString(),
-
-  // Current state
-  current_mental_health: undefined,
-  current_emotions: [],
-  active_recommendations: [],
-
-  // Settings
-  discipline_rules: {
-    max_position_size: 100000,
-    max_daily_loss: 5000,
-    max_risk_per_trade: 0.02,
-    max_trades_per_day: 10,
-    min_risk_reward_ratio: 1.5,
-    required_stop_loss: true,
-    max_consecutive_losses: 3,
-    max_trading_hours: 8,
-  },
-  alerts_enabled: true,
-  coaching_enabled: true,
-
-  // History
-  sessions: [],
-  analysis_history: [],
-
-  // Alerts and cooling
-  alerts: [],
-  cooldownRecords: [],
-  currentCooldown: null,
-
-  // Goals and calendar
-  goals: {},
-  calendar: {},
+const defaultDailyGoal: DailyGoal = {
+  maxTrades: 10,
+  maxLoss: 2000,
+  minDisciplineScore: 80,
 };
 
-export const usePsychologyStore = create<PsychologyState>()(
+export const usePsychologyStore = create<PsychologyStoreState>()(
   persist(
     (set, get) => ({
-      ...initialState,
+      // Initial state
+      current_mental_health: undefined,
+      current_emotions: [{ emotion: 'neutral', score: 1.0, confidence: 1.0, indicators: ['取引開始前'] }],
+      active_recommendations: [],
+      discipline_rules: {},
+      alerts_enabled: true,
+      coaching_enabled: true,
+      alerts: [],
+      tradePlans: [],
+      reflections: [],
+      currentCooldown: null,
+      cooldownRecords: [],
+      goals: {
+        daily: defaultDailyGoal,
+      },
+      calendar: {},
+      sessions: [],
+      analysis_history: [],
 
-      updateMetrics: (metrics) => set((state) => ({
-        ...state,
-        ...metrics,
-        lastUpdate: new Date().toISOString(),
+      // Core actions
+      updateMentalHealth: (metrics) => set((state) => ({
+        current_mental_health: metrics,
       })),
 
-      resetMetrics: () => set({
-        ...initialState,
-        lastUpdate: new Date().toISOString(),
+      addEmotion: (emotion) => set((state) => ({
+        current_emotions: [...state.current_emotions, emotion],
+      })),
+
+      addRecommendation: (recommendation) => set((state) => ({
+        active_recommendations: [...state.active_recommendations, recommendation],
+      })),
+
+      dismissRecommendation: (index) => set((state) => {
+        const newRecs = [...state.active_recommendations];
+        if (newRecs[index]) {
+          newRecs[index] = { ...newRecs[index], dismissed: true };
+        }
+        return { active_recommendations: newRecs };
       }),
 
+      updateDisciplineRules: (rules) => set((state) => ({
+        discipline_rules: { ...state.discipline_rules, ...rules },
+      })),
+
+      addSession: (session) => set((state) => ({
+        sessions: [...state.sessions, session],
+      })),
+
+      addAnalysis: (analysis) => set((state) => ({
+        analysis_history: [...state.analysis_history, analysis],
+        current_mental_health: analysis.mental_health,
+        active_recommendations: analysis.coaching_recommendations.filter(r => !r.dismissed)
+      })),
+
+      resetState: () => set({
+        current_mental_health: undefined,
+        current_emotions: [{ emotion: 'neutral', score: 1.0, confidence: 1.0, indicators: ['リセット済み'] }],
+        active_recommendations: [],
+        discipline_rules: {},
+        alerts: [],
+        tradePlans: [],
+        reflections: [],
+        currentCooldown: null,
+        cooldownRecords: [],
+        goals: {
+          daily: defaultDailyGoal,
+        },
+        calendar: {},
+        sessions: [],
+        analysis_history: [],
+      }),
+
+      // Alert actions
       addAlert: (alert) => set((state) => ({
         alerts: [...state.alerts, alert],
       })),
 
       clearAlerts: () => set({ alerts: [] }),
 
-      dismissAlert: (alertId) => set((state) => ({
-        alerts: state.alerts.filter(a => a.id !== alertId),
+      dismissAlert: (timestamp) => set((state) => ({
+        alerts: state.alerts.filter(a => (a.timestamp !== timestamp && a.id !== timestamp)),
       })),
 
-      startCooldown: (cooldown) => set((state) => ({
-        currentCooldown: cooldown,
-        cooldownRecords: [...state.cooldownRecords, cooldown],
+      getAlertStats: () => {
+        const state = get();
+        const stats = {
+          total: state.alerts.length,
+          byType: {} as Record<string, number>,
+          bySeverity: {} as Record<string, number>,
+        };
+
+        state.alerts.forEach(alert => {
+          stats.byType[alert.type] = (stats.byType[alert.type] || 0) + 1;
+          stats.bySeverity[alert.severity] = (stats.bySeverity[alert.severity] || 0) + 1;
+        });
+
+        return stats;
+      },
+
+      getRecentAlerts: (hours) => {
+        const state = get();
+        const cutoff = Date.now() - hours * 60 * 60 * 1000;
+        return state.alerts.filter(alert => new Date(alert.timestamp).getTime() >= cutoff);
+      },
+
+      // Trade plan actions
+      addTradePlan: (plan) => set((state) => ({
+        tradePlans: [...state.tradePlans, plan],
       })),
 
-      endCooldown: (cooldownId) => set((state) => ({
-        currentCooldown: state.currentCooldown?.id === cooldownId ? null : state.currentCooldown,
-        cooldownRecords: state.cooldownRecords.map(c =>
-          c.id === cooldownId ? { ...c, endTime: new Date() } : c
+      updateTradePlan: (id, updates) => set((state) => ({
+        tradePlans: state.tradePlans.map(plan =>
+          plan.id === id ? { ...plan, ...updates } : plan
         ),
       })),
 
-      setDisciplineScore: (score) => set({ disciplineScore: score }),
+      deleteTradePlan: (id) => set((state) => ({
+        tradePlans: state.tradePlans.filter(plan => plan.id !== id),
+      })),
 
-      getCalendarDay: (date) => get().calendar[date],
+      getTradePlan: (id) => get().tradePlans.find(plan => plan.id === id),
 
-      updateCalendarDay: (date, day) => set((state) => ({
-        calendar: {
-          ...state.calendar,
-          [date]: { ...state.calendar[date], ...day, date },
+      // Reflection actions
+      addReflection: (reflection) => set((state) => ({
+        reflections: [...state.reflections, reflection],
+      })),
+
+      getReflection: (tradeId) => get().reflections.find(r => r.tradeId === tradeId),
+
+      // Cooldown actions
+      startCooldown: (cooldown) => set({
+        currentCooldown: cooldown,
+        cooldownRecords: [...get().cooldownRecords, cooldown],
+      }),
+
+      endCooldown: (cooldownId) => set((state) => ({
+        currentCooldown: cooldownId ? (state.currentCooldown?.id === cooldownId ? null : state.currentCooldown) : null,
+        cooldownRecords: cooldownId ? state.cooldownRecords.map(c => 
+          c.id === cooldownId ? { ...c, endTime: new Date() } : c
+        ) : state.cooldownRecords
+      })),
+
+      recordCooldownViolation: () => set((state) => {
+        if (!state.currentCooldown) return state;
+        return {
+          currentCooldown: {
+            ...state.currentCooldown,
+            violationCount: state.currentCooldown.violationCount + 1,
+            wasRespected: false,
+          },
+        };
+      }),
+
+      // Goals actions
+      updateGoals: (newGoals) => set((state) => ({
+        goals: {
+          ...state.goals,
+          ...newGoals,
+          daily: { ...state.goals.daily, ...newGoals.daily },
+          weekly: newGoals.weekly ? { ...state.goals.weekly, ...newGoals.weekly } as any : state.goals.weekly,
+          monthly: newGoals.monthly ? { ...state.goals.monthly, ...newGoals.monthly } as any : state.goals.monthly,
         },
       })),
 
-      updateGoals: (goals) => set((state) => ({
-        goals: { ...state.goals, ...goals },
+      // Calendar actions
+      updateCalendarDay: (date, data) => set((state) => ({
+        calendar: {
+          ...state.calendar,
+          [date]: { ...(state.calendar[date] || {}), ...data },
+        },
       })),
 
-      addEmotion: (emotion) => set((state) => ({
-        current_emotions: [...state.current_emotions, emotion],
-        dominantEmotions: [...state.dominantEmotions.slice(-4), emotion],
-      })),
-
-      addAnalysis: (analysis) => set((state) => ({
-        analysis_history: [...state.analysis_history, analysis],
-        current_mental_health: analysis.mental_health,
-        active_recommendations: analysis.coaching_recommendations.filter(r => !r.dismissed),
-      })),
-
-      dismissRecommendation: (index) => set((state) => {
-        const updated = [...state.active_recommendations];
-        if (updated[index]) {
-          updated[index] = { ...updated[index], dismissed: true };
-        }
-        return { active_recommendations: updated.filter(r => !r.dismissed) };
-      }),
+      getCalendarDay: (date) => get().calendar[date],
     }),
     {
       name: 'trader-pro-psychology-storage',

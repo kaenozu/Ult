@@ -51,7 +51,7 @@ export interface PortfolioSnapshot {
   positions: Record<string, PortfolioPosition>;
 }
 
-export interface Portfolio {
+export interface DetailedPortfolio {
   id: string;
   initialValue: number;
   currentValue: number;
@@ -70,6 +70,8 @@ export interface Portfolio {
   history: PortfolioSnapshot[];
   createdAt: number;
 }
+
+export type { DetailedPortfolio as Portfolio };
 
 // ============================================================================
 // Performance Metrics Types

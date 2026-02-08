@@ -10,36 +10,47 @@ import { useState, useEffect } from 'react';
 import { useRiskManagementStore } from '@/app/store/riskManagementStore';
 import { cn } from '@/app/lib/utils';
 
+interface FormState {
+  accountEquity: number;
+  riskPerTrade: number;
+  maxPositionPercent: number;
+  minShares: number;
+  maxStopLossPercent: number;
+  atrMultiplier: number;
+}
+
 export function AccountSettingsPanel() {
   const { settings, updateSettings, resetToDefaults, toggleEnabled } = useRiskManagementStore();
   
-  // Local state for form inputs
-  const [accountEquity, setAccountEquity] = useState(settings.accountEquity);
-  const [riskPerTrade, setRiskPerTrade] = useState(settings.riskPerTrade);
-  const [maxPositionPercent, setMaxPositionPercent] = useState(settings.maxPositionPercent);
-  const [minShares, setMinShares] = useState(settings.minShares);
-  const [maxStopLossPercent, setMaxStopLossPercent] = useState(settings.maxStopLossPercent || 5);
-  const [atrMultiplier, setAtrMultiplier] = useState(settings.atrMultiplier);
+  // Local state for form inputs - 単一のオブジェクトに統合
+  const [formState, setFormState] = useState<FormState>({
+    accountEquity: settings.accountEquity,
+    riskPerTrade: settings.riskPerTrade,
+    maxPositionPercent: settings.maxPositionPercent,
+    minShares: settings.minShares,
+    maxStopLossPercent: settings.maxStopLossPercent || 5,
+    atrMultiplier: settings.atrMultiplier,
+  });
   
   // Sync local state with store when settings change externally
   useEffect(() => {
-    setAccountEquity(settings.accountEquity);
-    setRiskPerTrade(settings.riskPerTrade);
-    setMaxPositionPercent(settings.maxPositionPercent);
-    setMinShares(settings.minShares);
-    setMaxStopLossPercent(settings.maxStopLossPercent || 5);
-    setAtrMultiplier(settings.atrMultiplier);
+    setFormState({
+      accountEquity: settings.accountEquity,
+      riskPerTrade: settings.riskPerTrade,
+      maxPositionPercent: settings.maxPositionPercent,
+      minShares: settings.minShares,
+      maxStopLossPercent: settings.maxStopLossPercent || 5,
+      atrMultiplier: settings.atrMultiplier,
+    });
   }, [settings]);
   
+  // 個別のフィールド更新ヘルパー
+  const updateField = <K extends keyof FormState>(field: K, value: FormState[K]) => {
+    setFormState(prev => ({ ...prev, [field]: value }));
+  };
+  
   const handleSave = () => {
-    updateSettings({
-      accountEquity,
-      riskPerTrade,
-      maxPositionPercent,
-      minShares,
-      maxStopLossPercent,
-      atrMultiplier,
-    });
+    updateSettings(formState);
   };
   
   const handleReset = () => {
@@ -54,8 +65,8 @@ export function AccountSettingsPanel() {
     }).format(value);
   };
   
-  const calculatedRiskAmount = (accountEquity * riskPerTrade) / 100;
-  const maxPositionValue = (accountEquity * maxPositionPercent) / 100;
+  const calculatedRiskAmount = (formState.accountEquity * formState.riskPerTrade) / 100;
+  const maxPositionValue = (formState.accountEquity * formState.maxPositionPercent) / 100;
   
   return (
     <div className="p-4 bg-[#141e27] rounded-lg border border-[#233648]">
@@ -83,14 +94,14 @@ export function AccountSettingsPanel() {
             </label>
             <input
               type="number"
-              value={accountEquity}
-              onChange={(e) => setAccountEquity(Number(e.target.value))}
+              value={formState.accountEquity}
+              onChange={(e) => updateField('accountEquity', Number(e.target.value))}
               className="w-full px-3 py-2 bg-[#192633] border border-[#233648] rounded text-white focus:outline-none focus:border-primary"
               min="0"
               step="10000"
             />
             <p className="text-xs text-[#92adc9] mt-1">
-              現在の設定: {formatCurrency(accountEquity)}
+              現在の設定: {formatCurrency(formState.accountEquity)}
             </p>
           </div>
           
@@ -105,14 +116,14 @@ export function AccountSettingsPanel() {
                 min="0.5"
                 max="5"
                 step="0.5"
-                value={riskPerTrade}
-                onChange={(e) => setRiskPerTrade(Number(e.target.value))}
+                value={formState.riskPerTrade}
+                onChange={(e) => updateField('riskPerTrade', Number(e.target.value))}
                 className="flex-1"
               />
               <input
                 type="number"
-                value={riskPerTrade}
-                onChange={(e) => setRiskPerTrade(Number(e.target.value))}
+                value={formState.riskPerTrade}
+                onChange={(e) => updateField('riskPerTrade', Number(e.target.value))}
                 className="w-20 px-2 py-1 bg-[#192633] border border-[#233648] rounded text-white text-sm focus:outline-none focus:border-primary"
                 min="0.5"
                 max="5"
@@ -135,14 +146,14 @@ export function AccountSettingsPanel() {
                 min="5"
                 max="50"
                 step="5"
-                value={maxPositionPercent}
-                onChange={(e) => setMaxPositionPercent(Number(e.target.value))}
+                value={formState.maxPositionPercent}
+                onChange={(e) => updateField('maxPositionPercent', Number(e.target.value))}
                 className="flex-1"
               />
               <input
                 type="number"
-                value={maxPositionPercent}
-                onChange={(e) => setMaxPositionPercent(Number(e.target.value))}
+                value={formState.maxPositionPercent}
+                onChange={(e) => updateField('maxPositionPercent', Number(e.target.value))}
                 className="w-20 px-2 py-1 bg-[#192633] border border-[#233648] rounded text-white text-sm focus:outline-none focus:border-primary"
                 min="5"
                 max="50"
@@ -161,8 +172,8 @@ export function AccountSettingsPanel() {
             </label>
             <input
               type="number"
-              value={minShares}
-              onChange={(e) => setMinShares(Number(e.target.value))}
+              value={formState.minShares}
+              onChange={(e) => updateField('minShares', Number(e.target.value))}
               className="w-full px-3 py-2 bg-[#192633] border border-[#233648] rounded text-white focus:outline-none focus:border-primary"
               min="1"
               step="1"
@@ -183,14 +194,14 @@ export function AccountSettingsPanel() {
                 min="1"
                 max="20"
                 step="1"
-                value={maxStopLossPercent}
-                onChange={(e) => setMaxStopLossPercent(Number(e.target.value))}
+                value={formState.maxStopLossPercent}
+                onChange={(e) => updateField('maxStopLossPercent', Number(e.target.value))}
                 className="flex-1"
               />
               <input
                 type="number"
-                value={maxStopLossPercent}
-                onChange={(e) => setMaxStopLossPercent(Number(e.target.value))}
+                value={formState.maxStopLossPercent}
+                onChange={(e) => updateField('maxStopLossPercent', Number(e.target.value))}
                 className="w-20 px-2 py-1 bg-[#192633] border border-[#233648] rounded text-white text-sm focus:outline-none focus:border-primary"
                 min="1"
                 max="20"
@@ -213,14 +224,14 @@ export function AccountSettingsPanel() {
                 min="1"
                 max="4"
                 step="0.5"
-                value={atrMultiplier}
-                onChange={(e) => setAtrMultiplier(Number(e.target.value))}
+                value={formState.atrMultiplier}
+                onChange={(e) => updateField('atrMultiplier', Number(e.target.value))}
                 className="flex-1"
               />
               <input
                 type="number"
-                value={atrMultiplier}
-                onChange={(e) => setAtrMultiplier(Number(e.target.value))}
+                value={formState.atrMultiplier}
+                onChange={(e) => updateField('atrMultiplier', Number(e.target.value))}
                 className="w-20 px-2 py-1 bg-[#192633] border border-[#233648] rounded text-white text-sm focus:outline-none focus:border-primary"
                 min="1"
                 max="4"
@@ -228,7 +239,7 @@ export function AccountSettingsPanel() {
               />
             </div>
             <p className="text-xs text-[#92adc9] mt-1">
-              損切り距離: ATR × {atrMultiplier} (推奨: 2.0-2.5)
+              損切り距離: ATR × {formState.atrMultiplier} (推奨: 2.0-2.5)
             </p>
           </div>
           

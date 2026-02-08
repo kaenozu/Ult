@@ -13,6 +13,7 @@ interface CacheEntry<T> {
 export class RequestDeduplicator {
   private pendingRequests = new Map<string, Promise<unknown>>();
   private cache = new Map<string, CacheEntry<unknown>>();
+  private expiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private CACHE_TTL: number;
   private readonly MAX_CACHE_SIZE = 1000;
   private readonly MAX_PENDING_REQUESTS = 50;
@@ -119,9 +120,15 @@ export class RequestDeduplicator {
 
     // If custom TTL is provided, set up auto-expiry
     if (ttl && ttl !== this.CACHE_TTL) {
-      setTimeout(() => {
+      const existingTimer = this.expiryTimers.get(key);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      const timer = setTimeout(() => {
         this.cache.delete(key);
+        this.expiryTimers.delete(key);
       }, ttl);
+      this.expiryTimers.set(key, timer);
     }
   }
 
@@ -129,6 +136,10 @@ export class RequestDeduplicator {
    * Clear all cached values
    */
   clearCache(): void {
+    for (const timer of this.expiryTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.expiryTimers.clear();
     this.cache.clear();
     console.debug('[RequestDeduplicator] Cache cleared');
   }
@@ -138,6 +149,11 @@ export class RequestDeduplicator {
    */
   clearCacheKey(key: string): void {
     this.cache.delete(key);
+    const existingTimer = this.expiryTimers.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      this.expiryTimers.delete(key);
+    }
     console.debug(`[RequestDeduplicator] Cache cleared for: ${key}`);
   }
 
@@ -158,6 +174,11 @@ export class RequestDeduplicator {
       
       if (shouldDelete) {
         this.cache.delete(key);
+        const existingTimer = this.expiryTimers.get(key);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          this.expiryTimers.delete(key);
+        }
       }
     }
     
@@ -209,6 +230,11 @@ export class RequestDeduplicator {
   invalidate(keys: string[]): void {
     for (const key of keys) {
       this.cache.delete(key);
+      const existingTimer = this.expiryTimers.get(key);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        this.expiryTimers.delete(key);
+      }
     }
     console.debug(`[RequestDeduplicator] Invalidated ${keys.length} cache entries`);
   }

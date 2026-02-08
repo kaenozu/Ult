@@ -71,7 +71,7 @@ export class DataAggregator {
 
   // Batch processing
   private batchQueue: BatchRequest<any>[] = [];
-  private batchTimer: NodeJS.Timeout | null = null;
+  private batchTimer: ReturnType<typeof setTimeout> | null = null;
   private batchOptions: BatchOptions;
 
   // Rate limiting

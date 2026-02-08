@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Psychology Store Tests
  * 
@@ -13,7 +12,7 @@ describe('PsychologyStore', () => {
   beforeEach(() => {
     // Reset store before each test
     act(() => {
-      usePsychologyStore.getState().reset();
+      usePsychologyStore.getState().resetState();
     });
   });
 
@@ -415,7 +414,7 @@ describe('PsychologyStore', () => {
 
       act(() => {
         usePsychologyStore.getState().addAlert(alert);
-        usePsychologyStore.getState().reset();
+        usePsychologyStore.getState().resetState();
       });
 
       const state = usePsychologyStore.getState();

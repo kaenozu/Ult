@@ -1,4 +1,3 @@
-// @ts-nocheck - Missing exports
 /**
  * WinningTradingSystem.ts
  * 
