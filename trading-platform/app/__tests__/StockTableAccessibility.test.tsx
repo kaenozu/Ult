@@ -4,14 +4,26 @@ import { useTradingStore } from '../store/tradingStore';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
+const mockTradingStore = jest.fn();
+// @ts-ignore
+mockTradingStore.setState = jest.fn();
+
+jest.mock('../store/tradingStore', () => ({
+  useTradingStore: mockTradingStore,
+}));
+
 const mockStocks: Stock[] = [
   { symbol: '7203', name: 'トヨタ自動車', market: 'japan', sector: '自動車', price: 3000, change: 0, changePercent: 0, volume: 0 },
 ];
 
 describe('StockTable Component - Accessibility', () => {
   beforeEach(() => {
-    useTradingStore.setState({
-      watchlist: mockStocks,
+    const mockState = {
+        watchlist: mockStocks,
+    };
+    (mockTradingStore as unknown as jest.Mock).mockReturnValue(mockState);
+    (mockTradingStore as any).setState.mockImplementation((newState: any) => {
+        Object.assign(mockState, newState);
     });
   });
 

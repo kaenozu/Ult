@@ -195,15 +195,24 @@ class MarketDataClient {
                fetchUrl += `&startDate=${defaultStart.toISOString().split('T')[0]}`;
             }
 
-            const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
+            try {
+              const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
 
-            if (newData && newData.length > 0) {
-              if (forceRefresh) {
-                 finalData = await idbClient.mergeAndSave(symbol, newData);
-              } else {
-                 finalData = await idbClient.mergeAndSave(symbol, newData);
+              if (newData && newData.length > 0) {
+                if (forceRefresh) {
+                   finalData = await idbClient.mergeAndSave(symbol, newData);
+                } else {
+                   finalData = await idbClient.mergeAndSave(symbol, newData);
+                }
+                source = 'api';
               }
-              source = 'api';
+            } catch (err) {
+              if (finalData.length > 0) {
+                logger.warn(`[Aggregator] Failed to update data for ${symbol}, using stale data. Error: ${err instanceof Error ? err.message : String(err)}`);
+                // Continue with stale data (source remains 'idb')
+              } else {
+                throw err;
+              }
             }
           }
         }
