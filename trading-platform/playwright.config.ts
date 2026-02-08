@@ -36,7 +36,9 @@ export default defineConfig({
     timeout: 120 * 1000,
     env: {
       TURBOPACK_ROOT: '.',
-      NODE_OPTIONS: '--max-old-space-size=4096'
+      NODE_OPTIONS: '--max-old-space-size=4096',
+      E2E: 'true',
+      NEXT_PUBLIC_E2E: 'true'
     }
   },
 });

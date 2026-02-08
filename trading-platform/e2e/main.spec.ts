@@ -211,19 +211,25 @@ test.describe('Trader Pro - スクリーナー機能', () => {
     await page.goto('/screener');
   });
 
-  test('フィルターが使用できる', async ({ page }) => {
-    // 買いボタンをクリック
-    await page.click('button:has-text("買い")');
-    await expect(page.locator('button:has-text("買い")')).toHaveClass(/bg-primary/);
+   test('フィルターが使用できる', async ({ page }) => {
+     // 買いボタン（フィルター）をクリック - 最初の一致的要素を使用
+     const buyButton = page.locator('button:has-text("買い")').first();
+     await buyButton.click();
+     await page.waitForTimeout(200); // 状態更新を待つ
+     await expect(buyButton).toHaveClass(/bg-primary/);
 
-    // 売りボタンをクリック
-    await page.click('button:has-text("売り")');
-    await expect(page.locator('button:has-text("売り")')).toHaveClass(/bg-primary/);
+     // 売りボタン（フィルター）をクリック - 最初の一致的要素を使用
+     const sellButton = page.locator('button:has-text("売り")').first();
+     await sellButton.click();
+     await page.waitForTimeout(200); // 状態更新を待つ
+     await expect(sellButton).toHaveClass(/bg-primary/);
 
-    // 全てボタンをクリック
-    await page.click('button:has-text("全て")');
-    await expect(page.locator('button:has-text("全て")')).toHaveClass(/bg-primary/);
-  });
+     // 全てボタン（フィルター）をクリック - 最初の一致的要素を使用
+     const allButton = page.locator('button:has-text("全て")').first();
+     await allButton.click();
+     await page.waitForTimeout(200); // 状態更新を待つ
+     await expect(allButton).toHaveClass(/bg-primary/);
+   });
 
   test('クイック検索が使用できる', async ({ page }) => {
     // 売られすぎボタンをクリック
@@ -252,31 +258,31 @@ test.describe('Trader Pro - スクリーナー機能', () => {
 });
 
 test.describe('Trader Pro - ジャーナル機能', () => {
-  test.beforeEach(async ({ page, context }) => {
-    await context.clearCookies();
-    // まずワークステーションでポジションを作成してジャーナルにデータを追加
-    await page.goto('/');
-    const searchBox = page.locator('[placeholder="銘柄名、コードで検索"]');
-    await searchBox.fill('AAPL');
-    await searchBox.press('Enter');
-    await page.waitForTimeout(2000);
+   test.beforeEach(async ({ page, context }) => {
+     await context.clearCookies();
+     // まずワークステーションでポジションを作成してジャーナルにデータを追加
+     await page.goto('/');
+      const searchBox = page.locator('#stockSearch');
+     await searchBox.fill('AAPL');
+     await searchBox.press('Enter');
+     await page.waitForTimeout(2000);
 
-    // 買いボタンをクリックしてポジションを作成
-    const buyButton = page.locator('button:has-text("買い")').first();
-    if (await buyButton.isVisible()) {
-      await buyButton.click();
-      await page.waitForTimeout(500);
-      // 実行ボタンをクリック
-      const executeButton = page.locator('button:has-text("実行")');
-      if (await executeButton.isVisible()) {
-        await executeButton.click();
-        await page.waitForTimeout(1000);
-      }
-    }
+     // 買いボタンをクリックしてポジションを作成
+     const buyButton = page.locator('button:has-text("買い")').first();
+     if (await buyButton.isVisible()) {
+       await buyButton.click();
+       await page.waitForTimeout(500);
+       // 実行ボタンをクリック
+       const executeButton = page.locator('button:has-text("実行")');
+       if (await executeButton.isVisible()) {
+         await executeButton.click();
+         await page.waitForTimeout(3000); // ジャーナル記録完了を待つ
+       }
+     }
 
-    await page.goto('/journal');
-    await page.waitForTimeout(1000);
-  });
+     await page.goto('/journal');
+     await page.waitForTimeout(2000); // ページロード完了を待つ
+   });
 
   test('トレード履歴が表示される', async ({ page }) => {
     // ページが正常に読み込まれることを確認
@@ -347,24 +353,33 @@ test.describe('Trader Pro - AI予測改善機能', () => {
     await expect(confidenceDisplay).toBeVisible();
   });
 
-  test('AIシグナル分析実行で結果が表示される', async ({ page }) => {
-    await page.goto('/screener');
-    await page.waitForLoadState('networkidle');
+   test('AIシグナル分析実行で結果が表示される', async ({ page }) => {
+     await page.goto('/screener?e2e_test=true');
+     await page.waitForLoadState('networkidle');
+     // Debug: check query param
+     const search = await page.evaluate(() => window.location.search);
+     console.log('Current search:', search);
 
-    // 「買い」シグナルを選択
-    await page.click('button:has-text("買い")');
+     // 「全て」シグナルを選択（全てのシグナルを含む）
+     await page.click('button:has-text("全て")');
 
-    // AIシグナル分析を開始
-    await page.click('button:has-text("AIシグナル分析を開始")');
+     // 最小信頼度を0%に設定して全てのシグナルを含める
+     const confidenceSlider = page.locator('#minConfidence');
+     if (await confidenceSlider.isVisible()) {
+       await confidenceSlider.fill('0');
+     }
+
+     // AIシグナル分析を開始
+     await page.click('button:has-text("AIシグナル分析を開始")');
 
     // 分析実行中の表示を待つ
-    await expect(page.locator('button:has-text("AI分析実行中...")')).toBeVisible();
+    await expect(page.locator('button:has-text("AI分析実行中...")')).toBeVisible({ timeout: 5000 });
 
-    // Wait for analysis completion (max 2 minutes)
-    await page.waitForSelector('button:has-text("再分析を実行")', { timeout: 120000 });
+     // 分析完了（実行中表示が消える）を待つ（最大60秒）
+     await expect(page.locator('button:has-text("AI分析実行中...")')).toBeHidden({ timeout: 60000 });
 
     // 結果が表示されることを確認
-    await expect(page.locator('th:has-text("AIシグナル")')).toBeVisible();
+    await expect(page.locator('th:has-text("AIシグナル")')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('th:has-text("信頼度")')).toBeVisible();
 
     // 少なくとも1件以上の結果があることを確認

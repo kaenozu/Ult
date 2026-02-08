@@ -4,6 +4,7 @@ import { Portfolio, Position, Order } from '../types';
 import { OrderRequest, OrderResult } from '../types/order';
 import { getRiskManagementService } from '../lib/services/RiskManagementService';
 import { AI_TRADING } from '../lib/constants';
+import { useJournalStore } from './index';
 
 interface PortfolioState {
   portfolio: Portfolio;
@@ -132,6 +133,19 @@ export const usePortfolioStore = create<PortfolioState>()(
         // --- 3. POST-EXECUTION HOOKS (Non-blocking) ---
         if (result.success) {
           setTimeout(() => {
+            // Add journal entry for the executed order
+            const journalEntry = {
+              id: `trade_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              symbol: order.symbol,
+              date: new Date().toISOString(),
+              signalType: order.side === 'LONG' ? 'BUY' : 'SELL',
+              entryPrice: order.price,
+              quantity: order.quantity,
+              status: 'OPEN' as const,
+              notes: `Order executed: ${order.side === 'LONG' ? 'BUY' : 'SELL'} ${order.quantity} ${order.symbol} at ${order.price}`,
+            };
+            useJournalStore.getState().addJournalEntry(journalEntry);
+
             // Trigger psychology analysis and sync with backend
             import('../lib/services/PsychologyService').then(({ psychologyService }) => {
               const { portfolio } = get();
@@ -145,6 +159,7 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       closePosition: (symbol, exitPrice) => {
         let result: OrderResult = { success: false };
+        let closedPosition: Position | null = null;
         set((state) => {
           const idx = state.portfolio.positions.findIndex(p => p.symbol === symbol);
           if (idx < 0) return state;
@@ -154,6 +169,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           const newPositions = state.portfolio.positions.filter(pos => pos.symbol !== symbol);
           const newCash = state.portfolio.cash + (p.avgPrice * p.quantity) + profit;
 
+          closedPosition = { ...p, exitPrice, profit, change: (exitPrice - p.avgPrice) / p.avgPrice };
           result = { success: true, remainingCash: newCash };
           return {
             portfolio: {
@@ -164,6 +180,44 @@ export const usePortfolioStore = create<PortfolioState>()(
             }
           };
         });
+
+        // Post-execution: Update journal entry
+        if (result.success && closedPosition) {
+          setTimeout(() => {
+            const journal = useJournalStore.getState().journal;
+            // Find existing OPEN entry for this symbol and side
+            const existingEntry = journal.find(
+              e => e.symbol === symbol && e.status === 'OPEN' && e.signalType === (closedPosition!.side === 'LONG' ? 'BUY' : 'SELL')
+            );
+            if (existingEntry) {
+              const profitPercent = (closedPosition!.profit! / (closedPosition!.avgPrice * closedPosition!.quantity)) * 100;
+              useJournalStore.getState().updateJournalEntry(existingEntry.id, {
+                exitPrice: closedPosition!.exitPrice,
+                profit: closedPosition!.profit,
+                profitPercent,
+                status: 'CLOSED',
+                notes: `Position closed at ${closedPosition!.exitPrice}. P&L: ${closedPosition!.profit?.toFixed(2)}`,
+              });
+            } else {
+              // Create new CLOSED entry if OPEN not found
+              const newEntry = {
+                id: `trade_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                symbol: closedPosition!.symbol,
+                date: new Date().toISOString(),
+                signalType: closedPosition!.side === 'LONG' ? 'BUY' : 'SELL',
+                entryPrice: closedPosition!.avgPrice,
+                exitPrice: closedPosition!.exitPrice,
+                quantity: closedPosition!.quantity,
+                profit: closedPosition!.profit,
+                profitPercent: (closedPosition!.profit! / (closedPosition!.avgPrice * closedPosition!.quantity)) * 100,
+                status: 'CLOSED' as const,
+                notes: `Position closed. P&L: ${closedPosition!.profit?.toFixed(2)}`,
+              };
+              useJournalStore.getState().addJournalEntry(newEntry);
+            }
+          }, 10);
+        }
+
         return result;
       },
 
