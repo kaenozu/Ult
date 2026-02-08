@@ -107,12 +107,17 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
 
   const handleOrder = useCallback(async () => {
     try {
+      // Convert OrderSide to LONG/SHORT for OrderRequest
+      const positionSide: 'LONG' | 'SHORT' = side === 'BUY' ? 'LONG' : 'SHORT';
+
       const success = await placeOrder({
         symbol: stock.symbol,
-        type: orderType,
-        side,
+        name: stock.name,
+        market: stock.market,
+        orderType,
+        side: positionSide,
         quantity,
-        price: orderType === 'LIMIT' ? price : undefined,
+        price: orderType === 'LIMIT' ? Number(price) : 0,
       });
 
       if (success) {
