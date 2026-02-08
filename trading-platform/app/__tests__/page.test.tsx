@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import Workstation from '../page';
-import { useTradingStore } from '../store/tradingStore';
+import { useWatchlistStore } from '../store/watchlistStore';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
@@ -14,6 +14,16 @@ jest.mock('../components/SignalPanel', () => ({ SignalPanel: () => <div>SignalPa
 jest.mock('../components/StockChart', () => ({ StockChart: () => <div>StockChart</div> }));
 jest.mock('../components/OrderPanel', () => ({ OrderPanel: () => <div>OrderPanel</div> }));
 
+// Mock translations
+jest.mock('@/app/i18n/provider', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+import { useStockData } from '../hooks/useStockData';
+
+// Mock useStockData
+jest.mock('../hooks/useStockData');
+
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
@@ -21,17 +31,30 @@ jest.mock('next/navigation', () => ({
 }));
 
 describe('Workstation Page - Initial State', () => {
-  it('shows placeholder message when watchlist is empty', () => {
-    // ストアを「銘柄なし」の状態にする
-    useTradingStore.setState({
-      watchlist: [],
-      selectedStock: null,
-    });
+  const defaultMockStockData = {
+    loading: false,
+    error: null,
+    selectedStock: null,
+    chartData: [],
+    indexData: [],
+    chartSignal: null,
+    interval: 'daily',
+    handleStockSelect: jest.fn(),
+    setInterval: jest.fn(),
+    fallbackApplied: false,
+    dataDelayMinutes: 0
+  };
 
+  beforeEach(() => {
+    (useStockData as jest.Mock).mockReturnValue(defaultMockStockData);
+  });
+
+  it('shows placeholder message when watchlist is empty', () => {
+    // Mock useStockData returns null selectedStock by default
     render(<Workstation />);
     
-    expect(screen.getByText('銘柄が未選択です')).toBeInTheDocument();
-    expect(screen.getByText(/ウォッチリストから銘柄を選択するか/)).toBeInTheDocument();
+    expect(screen.getByText('page.noStockSelected')).toBeInTheDocument();
+    expect(screen.getByText('page.noStockSelectedDescription')).toBeInTheDocument();
   });
 
   it('does not show placeholder when a stock is selected', () => {
@@ -46,13 +69,13 @@ describe('Workstation Page - Initial State', () => {
       volume: 1000000
     };
     
-    useTradingStore.setState({
+    (useStockData as jest.Mock).mockReturnValue({
+      ...defaultMockStockData,
       selectedStock: mockStock,
-      watchlist: [mockStock],
     });
 
     render(<Workstation />);
     
-    expect(screen.queryByText('銘柄が未選択です')).not.toBeInTheDocument();
+    expect(screen.queryByText('page.noStockSelected')).not.toBeInTheDocument();
   });
 });

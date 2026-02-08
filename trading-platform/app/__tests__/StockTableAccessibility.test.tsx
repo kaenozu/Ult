@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StockTable } from '../components/StockTable';
-import { useTradingStore } from '../store/tradingStore';
+import { useWatchlistStore } from '../store/watchlistStore';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
@@ -10,7 +10,7 @@ const mockStocks: Stock[] = [
 
 describe('StockTable Component - Accessibility', () => {
   beforeEach(() => {
-    useTradingStore.setState({
+    useWatchlistStore.setState({
       watchlist: mockStocks,
     });
   });

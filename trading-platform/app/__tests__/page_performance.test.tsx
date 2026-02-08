@@ -1,11 +1,33 @@
 /** @jest-environment jsdom */
 import { render, act } from '@testing-library/react';
 import Workstation from '../page';
-import { useTradingStore } from '../store/tradingStore';
-import { Header } from '../components/Header';
+import { usePortfolioStore } from '../store/portfolioStore';
+import { useUIStore } from '../store/uiStore';
+import { useWatchlistStore } from '../store/watchlistStore';
+import { Header } from '@/app/components/Header';
+
+// Mock translations
+jest.mock('@/app/i18n/provider', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+// Mock useStockData
+jest.mock('../hooks/useStockData', () => ({
+  useStockData: () => ({
+    loading: false,
+    error: null,
+    selectedStock: null,
+    chartData: [],
+    indexData: [],
+    chartSignal: null,
+    interval: 'daily',
+    handleStockSelect: jest.fn(),
+    setInterval: jest.fn(),
+  }),
+}));
 
 // Mock child components
-jest.mock('../components/Header', () => ({ Header: jest.fn(() => <div>Header</div>) }));
+jest.mock('@/app/components/Header', () => ({ Header: jest.fn(() => <div>Header</div>) }));
 jest.mock('../components/Navigation', () => ({ Navigation: () => <div>Navigation</div> }));
 jest.mock('../components/StockTable', () => ({ StockTable: () => <div>StockTable</div> }));
 jest.mock('../components/PositionTable', () => ({ PositionTable: () => <div>PositionTable</div> }));
@@ -27,7 +49,9 @@ jest.mock('next/navigation', () => ({
 describe('Workstation Performance', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    useTradingStore.setState({ theme: 'dark', watchlist: [], portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 } });
+    useUIStore.setState({ theme: 'dark' });
+    useWatchlistStore.setState({ watchlist: [] });
+    usePortfolioStore.setState({ portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 } });
   });
 
   it('should not re-render when unrelated store state changes', () => {
@@ -38,7 +62,7 @@ describe('Workstation Performance', () => {
 
     // Trigger unrelated state change (theme toggle)
     act(() => {
-      useTradingStore.getState().toggleTheme();
+      useUIStore.getState().toggleTheme();
     });
 
     // If optimized, should still be 1. If not, it will be 2.

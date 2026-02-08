@@ -1,7 +1,14 @@
 
 import { act } from '@testing-library/react';
-import { useTradingStore } from '../tradingStore';
+import { usePortfolioStore } from '../portfolioStore';
 import { AI_TRADING } from '@/app/lib/constants';
+
+// Mock RiskManagementService to prevent side effects
+jest.mock('@/app/lib/services/RiskManagementService', () => ({
+  getRiskManagementService: jest.fn(() => ({
+    validateOrder: jest.fn(() => ({ allowed: true, reasons: [] }))
+  }))
+}));
 
 // Mock localStorage for Zustand persist
 const localStorageMock = (function() {
@@ -24,14 +31,15 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-describe('TradingStore', () => {
+describe('PortfolioStore', () => {
   beforeEach(() => {
     // Reset store state
-    const { portfolio } = useTradingStore.getState();
-    useTradingStore.setState({
+    const { portfolio } = usePortfolioStore.getState();
+    usePortfolioStore.setState({
       portfolio: {
         ...portfolio,
         positions: [],
+        orders: [], // Ensure orders array is also reset
         cash: 1000000, // Explicit start cash
         totalValue: 0,
         totalProfit: 0,
@@ -41,7 +49,7 @@ describe('TradingStore', () => {
   });
 
   it('executeOrder should atomically update cash and add a new position', () => {
-    const { executeOrder } = useTradingStore.getState();
+    const { executeOrder } = usePortfolioStore.getState();
     const initialCash = 1000000;
     const price = 1000;
     const quantity = 100;
@@ -59,7 +67,7 @@ describe('TradingStore', () => {
       });
     });
 
-    const state = useTradingStore.getState();
+    const state = usePortfolioStore.getState();
     expect(state.portfolio.cash).toBe(initialCash - totalCost);
     expect(state.portfolio.positions).toHaveLength(1);
     expect(state.portfolio.positions[0]).toEqual(expect.objectContaining({
@@ -71,7 +79,7 @@ describe('TradingStore', () => {
   });
 
   it('executeOrder should average down correctly when adding to existing position', () => {
-    const { executeOrder } = useTradingStore.getState();
+    const { executeOrder } = usePortfolioStore.getState();
 
     // First order: 100 @ 1000
     act(() => {
@@ -99,7 +107,7 @@ describe('TradingStore', () => {
       });
     });
 
-    const state = useTradingStore.getState();
+    const state = usePortfolioStore.getState();
     const expectedAvgPrice = (100 * 1000 + 100 * 2000) / 200; // 1500
     const expectedCash = 1000000 - (100 * 1000) - (100 * 2000);
 
@@ -110,12 +118,12 @@ describe('TradingStore', () => {
   });
 
   it('executeOrder should not execute if cash is insufficient', () => {
-    const { executeOrder } = useTradingStore.getState();
+    const { executeOrder } = usePortfolioStore.getState();
 
     // Set low cash
-    useTradingStore.setState({
+    usePortfolioStore.setState({
         portfolio: {
-            ...useTradingStore.getState().portfolio,
+            ...usePortfolioStore.getState().portfolio,
             cash: 500
         }
     });
@@ -132,7 +140,7 @@ describe('TradingStore', () => {
       });
     });
 
-    const state = useTradingStore.getState();
+    const state = usePortfolioStore.getState();
     expect(state.portfolio.cash).toBe(500); // Unchanged
     expect(state.portfolio.positions).toHaveLength(0); // No position added
   });

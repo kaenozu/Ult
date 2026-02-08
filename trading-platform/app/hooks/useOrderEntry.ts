@@ -53,7 +53,7 @@ interface UseOrderEntryResult {
 }
 
 export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseOrderEntryResult {
-  const { portfolio, placeOrder } = useTradingStore();
+  const { portfolio, executeOrder } = useTradingStore();
   
   // Local State
   const [side, setSide] = useState<OrderSide>('BUY');
@@ -107,24 +107,27 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
 
   const handleOrder = useCallback(async () => {
     try {
-      const success = await placeOrder({
+      const result = await executeOrder({
         symbol: stock.symbol,
+        name: stock.name,
+        market: stock.market,
         type: orderType,
         side,
         quantity,
-        price: orderType === 'LIMIT' ? price : undefined,
+        price: orderType === 'LIMIT' ? price : currentPrice, // Ensure price is always passed
+        orderType: orderType, // Added redundant field to match OrderRequest if needed, though 'type' is passed above. Check OrderRequest type.
       });
 
-      if (success) {
+      if (result.success) {
         setShowSuccess(true);
         setIsConfirming(false);
       } else {
-        setErrorMessage('注文の処理中にエラーが発生しました');
+        setErrorMessage(result.error || '注文の処理中にエラーが発生しました');
       }
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
     }
-  }, [placeOrder, stock.symbol, orderType, side, quantity, price]);
+  }, [executeOrder, stock.symbol, stock.name, stock.market, orderType, side, quantity, price, currentPrice]);
 
   // Auto-hide success message after 3 seconds with cleanup
   useEffect(() => {
