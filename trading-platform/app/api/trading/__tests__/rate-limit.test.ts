@@ -9,6 +9,12 @@ jest.mock('@/app/lib/auth', () => ({
   requireAuth: jest.fn(() => null),
 }));
 
+// Mock CSRF protection
+jest.mock('@/app/lib/csrf/csrf-protection', () => ({
+  requireCSRF: jest.fn(() => null),
+  generateCSRFToken: jest.fn(() => 'mock-token'),
+}));
+
 // Mock the trading platform
 jest.mock('@/app/lib/tradingCore/UnifiedTradingPlatform', () => ({
   getGlobalTradingPlatform: jest.fn(() => ({
@@ -60,8 +66,8 @@ describe('Trading API Rate Limiting', () => {
     });
 
     it('should block requests over rate limit', async () => {
-      // Make requests up to the limit (default is 60 per minute)
-      for (let i = 0; i < 60; i++) {
+      // Make requests up to the limit (default is 120 per minute)
+      for (let i = 0; i < 120; i++) {
         const req = createRequest('/api/trading');
         await GET(req);
       }
@@ -85,8 +91,8 @@ describe('Trading API Rate Limiting', () => {
     });
 
     it('should block requests over rate limit', async () => {
-      // Make requests up to the limit (default is 60 per minute)
-      for (let i = 0; i < 60; i++) {
+      // Make requests up to the limit (default is 120 per minute)
+      for (let i = 0; i < 120; i++) {
         const req = createRequest('/api/trading', 'POST', { action: 'reset' });
         await POST(req);
       }

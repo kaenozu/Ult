@@ -23,6 +23,7 @@ describe('OrderPanel', () => {
 
     const mockPortfolioState = {
         portfolio: { cash: 1000000, positions: [] },
+        placeOrder: mockExecuteOrder,
     };
 
     beforeEach(() => {

@@ -1,7 +1,9 @@
 /** @jest-environment jsdom */
 import { render, act } from '@testing-library/react';
 import Workstation from '../page';
-import { useTradingStore } from '../store/tradingStore';
+import { useUIStore } from '../store/uiStore';
+import { useWatchlistStore } from '../store/watchlistStore';
+import { usePortfolioStore } from '../store/portfolioStore';
 import { Header } from '../components/Header';
 
 // Mock child components
@@ -27,7 +29,9 @@ jest.mock('next/navigation', () => ({
 describe('Workstation Performance', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    useTradingStore.setState({ theme: 'dark', watchlist: [], portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 } });
+    useUIStore.setState({ theme: 'dark' });
+    useWatchlistStore.setState({ watchlist: [] });
+    usePortfolioStore.setState({ portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 }, aiStatus: 'active' });
   });
 
   it('should not re-render when unrelated store state changes', () => {
@@ -38,7 +42,7 @@ describe('Workstation Performance', () => {
 
     // Trigger unrelated state change (theme toggle)
     act(() => {
-      useTradingStore.getState().toggleTheme();
+      useUIStore.getState().toggleTheme();
     });
 
     // If optimized, should still be 1. If not, it will be 2.

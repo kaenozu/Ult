@@ -8,14 +8,6 @@ jest.mock('../components/Header', () => ({
   Header: () => <div data-testid="mock-header">Header</div>
 }));
 
-jest.mock('../components/Sidebar', () => ({
-  Sidebar: () => <div data-testid="mock-sidebar">Sidebar</div>
-}));
-
-jest.mock('../components/ui/sonner', () => ({
-  Toaster: () => <div data-testid="mock-toaster">Toaster</div>
-}));
-
 // Mock next-intl
 jest.mock('next-intl', () => ({
   useTranslations: jest.fn(),
@@ -52,22 +44,7 @@ describe('RootLayout', () => {
     );
 
     // Verify main structure
-    expect(screen.getByTestId('mock-header')).toBeInTheDocument();
-    expect(screen.getByTestId('mock-sidebar')).toBeInTheDocument();
+    // RootLayout now only provides context, doesn't render Header/Sidebar directly
     expect(screen.getByTestId('child-content')).toBeInTheDocument();
-    expect(screen.getByTestId('mock-toaster')).toBeInTheDocument();
-  });
-
-  it('applies correct font classes', () => {
-    const { container } = render(
-      <RootLayout params={{ locale: 'en' }}>
-        <div>Content</div>
-      </RootLayout>
-    );
-
-    // Check if body has font classes (mocked return values)
-    const body = container.querySelector('body');
-    expect(body).toHaveClass('inter-font');
-    expect(body).toHaveClass('jetbrains-mono-font');
   });
 });

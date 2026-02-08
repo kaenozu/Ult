@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import Workstation from '../page';
-import { useTradingStore } from '../store/tradingStore';
+import { useWatchlistStore } from '../store/watchlistStore';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
@@ -20,10 +20,21 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 
+// Mock next-intl
+jest.mock('@/app/i18n/provider', () => ({
+  useTranslations: () => (key: string) => {
+    if (key === 'page.noStockSelected') return '銘柄が未選択です';
+    if (key === 'page.noStockSelectedDescription') return 'ウォッチリストから銘柄を選択するか、検索してください。';
+    if (key === 'page.searchStock') return '銘柄を検索';
+    if (key === 'page.dataFetchError') return 'データ取得エラー';
+    return key;
+  },
+}));
+
 describe('Workstation Page - Initial State', () => {
   it('shows placeholder message when watchlist is empty', () => {
     // ストアを「銘柄なし」の状態にする
-    useTradingStore.setState({
+    useWatchlistStore.setState({
       watchlist: [],
       selectedStock: null,
     });
@@ -46,7 +57,7 @@ describe('Workstation Page - Initial State', () => {
       volume: 1000000
     };
     
-    useTradingStore.setState({
+    useWatchlistStore.setState({
       selectedStock: mockStock,
       watchlist: [mockStock],
     });
