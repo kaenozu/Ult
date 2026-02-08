@@ -7,7 +7,7 @@
  * 注意: このテストはexecuteOrderを使用してアトミック注文実行を検証
  */
 
-import { useTradingStore } from '../store/tradingStore';
+import { usePortfolioStore } from '../store/portfolioStore';
 import { act, renderHook } from '@testing-library/react';
 import { OrderRequest, OrderResult } from '../types/order';
 
@@ -27,7 +27,7 @@ describe('TradingStore Atomic Order Execution', () => {
   beforeEach(() => {
     // ストアの状態を完全リセット
     act(() => {
-      useTradingStore.setState({
+      usePortfolioStore.setState({
         portfolio: {
           positions: [],
           orders: [],
@@ -42,7 +42,7 @@ describe('TradingStore Atomic Order Execution', () => {
 
   describe('executeOrder', () => {
     it('should execute buy order atomically', () => {
-      const { result } = renderHook(() => useTradingStore());
+      const { result } = renderHook(() => usePortfolioStore());
       
       const order: OrderRequest = {
         symbol: 'AAPL',
@@ -74,7 +74,7 @@ describe('TradingStore Atomic Order Execution', () => {
     });
 
     it('should reject order with insufficient funds', () => {
-      const { result } = renderHook(() => useTradingStore());
+      const { result } = renderHook(() => usePortfolioStore());
       
       const order: OrderRequest = {
         symbol: 'AAPL',
@@ -104,7 +104,7 @@ describe('TradingStore Atomic Order Execution', () => {
     });
 
     it('should handle concurrent orders atomically', () => {
-      const { result } = renderHook(() => useTradingStore());
+      const { result } = renderHook(() => usePortfolioStore());
       
       // 同時に複数の注文を実行
       const orders: OrderRequest[] = [
@@ -159,7 +159,7 @@ describe('TradingStore Atomic Order Execution', () => {
     });
 
     it('should prevent double spending with concurrent orders', () => {
-      const { result } = renderHook(() => useTradingStore());
+      const { result } = renderHook(() => usePortfolioStore());
       
       // 残高を超える注文を同時に実行
       const orders: OrderRequest[] = [
@@ -202,7 +202,7 @@ describe('TradingStore Atomic Order Execution', () => {
     });
 
     it('should average existing position when adding to same side', () => {
-      const { result } = renderHook(() => useTradingStore());
+      const { result } = renderHook(() => usePortfolioStore());
       
       // 最初の注文
       const order1: OrderRequest = {
@@ -246,7 +246,7 @@ describe('TradingStore Atomic Order Execution', () => {
     });
 
     it('should maintain data consistency after multiple operations', () => {
-      const { result } = renderHook(() => useTradingStore());
+      const { result } = renderHook(() => usePortfolioStore());
       
       // 複数の注文と決済を実行
       const order1: OrderRequest = {

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import Workstation from '../page';
-import { useTradingStore } from '../store/tradingStore';
+import { useWatchlistStore } from '../store/watchlistStore';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
@@ -23,7 +23,7 @@ jest.mock('next/navigation', () => ({
 describe('Workstation Page - Initial State', () => {
   it('shows placeholder message when watchlist is empty', () => {
     // ストアを「銘柄なし」の状態にする
-    useTradingStore.setState({
+    useWatchlistStore.setState({
       watchlist: [],
       selectedStock: null,
     });
@@ -46,7 +46,7 @@ describe('Workstation Page - Initial State', () => {
       volume: 1000000
     };
     
-    useTradingStore.setState({
+    useWatchlistStore.setState({
       selectedStock: mockStock,
       watchlist: [mockStock],
     });
