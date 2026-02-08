@@ -233,7 +233,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
   private async executeVWAP(order: Order): Promise<ExecutionResult> {
     const params = order.algorithm!.params;
     const duration = params.duration || 1;
-    const volumeProfile = (params.volumeProfile as number[]) || this.generateVolumeProfile();
+    const volumeProfile = Array.isArray(params.volumeProfile) ? params.volumeProfile as number[] : this.generateVolumeProfile();
     const fills: ExecutionFill[] = [];
     const interval = (duration * 1000) / volumeProfile.length;
     for (let i = 0; i < volumeProfile.length; i++) {

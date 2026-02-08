@@ -86,7 +86,7 @@ export class MLModelService {
    * TensorFlow.jsモデルを使用した予測
    */
   private async predictWithTensorFlow(features: PredictionFeatures): Promise<ModelPrediction> {
-    const featureArray = featuresToArray(features);
+    const featureArray = featuresToArray(features as unknown as Record<string, unknown>);
 
     try {
       // Get predictions from all models
@@ -118,7 +118,7 @@ export class MLModelService {
     } catch (error) {
       // Log error but fallback to rule-based prediction
       if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        logger.error('TensorFlow prediction error:', error);
+        logger.error('TensorFlow prediction error:', error as Error);
       }
       return this.predict(features);
     }
@@ -217,7 +217,7 @@ export class MLModelService {
       this.useTensorFlowModels = true;
     } catch (error) {
       if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-        logger.error('Failed to load models:', error);
+        logger.error('Failed to load models:', error as Error);
       }
       this.useTensorFlowModels = false;
     }

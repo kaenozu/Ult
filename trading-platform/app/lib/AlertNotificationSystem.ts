@@ -160,7 +160,7 @@ export class AlertNotificationSystem extends EventEmitter {
   }
 
   // Channel Management
-  configureChannel(type: NotificationChannelType, config: Record<string, unknown>): void {
+  configureChannel(type: NotificationChannelType, config: NotificationChannelConfig): void {
     const channel = this.channels.get(type);
     if (channel) {
       channel.config = config;

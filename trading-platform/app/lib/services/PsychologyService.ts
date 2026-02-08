@@ -90,9 +90,11 @@ export class PsychologyService {
       const currOrder = orders[i];
       if (prevOrder && currOrder && prevOrder.status === 'FILLED' && currOrder.status === 'FILLED') {
         // 前のトレードが損切りの可能性がある場合
-        const timeDiff = currOrder.timestamp - prevOrder.timestamp;
-        if (timeDiff < 5 * 60 * 1000) { // 5分以内
-          score -= 10;
+        if (currOrder.timestamp && prevOrder.timestamp) {
+          const timeDiff = currOrder.timestamp - prevOrder.timestamp;
+          if (timeDiff < 5 * 60 * 1000) { // 5分以内
+            score -= 10;
+          }
         }
       }
     }

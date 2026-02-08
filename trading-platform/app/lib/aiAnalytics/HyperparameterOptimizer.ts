@@ -302,7 +302,7 @@ export class HyperparameterOptimizer {
       for (const value of values) {
         const newConfig = { ...currentConfig };
           
-        (newConfig as Record<keyof HyperparameterConfig, unknown>)[key] = value;
+        (newConfig as unknown as Record<string, unknown>)[key] = value;
         generateRecursive(index + 1, newConfig);
       }
     };

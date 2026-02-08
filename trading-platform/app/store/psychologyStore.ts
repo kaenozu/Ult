@@ -8,9 +8,8 @@ import type {
   TradingSession,
   PsychologyAnalysisResult,
   PsychologyAlert,
-  DisciplineScore,
 } from '../types/psychology';
-import type { CooldownRecord, CoolingReason } from '../types/risk';
+import type { CooldownRecord, CoolingReason, DisciplineScore } from '../types/risk';
 
 export type MentalState = 'optimal' | 'cautious' | 'stressed' | 'tilt' | 'burnout';
 
@@ -87,7 +86,7 @@ const initialState: Omit<PsychologyState, 'updateMetrics' | 'resetMetrics' | 'ad
   stressLevel: 0,
   disciplineScore: 100,
   riskOfTilt: 0,
-  dominantEmotions: [{ emotion: 'neutral', score: 1.0, indicators: ['取引開始前'] }],
+  dominantEmotions: [{ emotion: 'neutral', score: 1.0, confidence: 1.0, indicators: ['取引開始前'] }],
   recommendations: ['メンタル状態は良好です。計画通りに取引を続けてください。'],
   lastUpdate: new Date().toISOString(),
 

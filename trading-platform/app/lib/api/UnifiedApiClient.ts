@@ -177,14 +177,14 @@ export function createGetHandler<T>(
  * Unified POST handler factory
  */
 export function createPostHandler<TBody, TResponse>(
-  handler: (request: NextRequest, body: TBody) => Promise<TResponse | NextResponse>,
+  handler: (request: NextRequest, body: TBody) => Promise<TResponse | NextResponse<ApiResponse<TResponse>>>,
   options: ApiHandlerOptions = {}
 ) {
   return createApiHandler<TResponse>(async (request: NextRequest) => {
     const body = await parseJsonBody<TBody>(request);
     const result = await handler(request, body);
     if (result instanceof NextResponse) {
-      return result;
+      return result as NextResponse<ApiResponse<TResponse>>;
     }
     return successResponse(result);
   }, options);
