@@ -199,7 +199,7 @@ export function importWithChunkName<T>(
   return import(
     /* webpackChunkName: "[request]" */
     /* webpackMode: "lazy" */
-    // @ts-ignore
+    // @ts-expect-error: Dynamic import type issues
     importFn()
   );
 }

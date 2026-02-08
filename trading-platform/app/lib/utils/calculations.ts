@@ -1,4 +1,3 @@
-// @ts-nocheck - Needs type fixes
 /**
  * 計算ユーティリティ（純粋関数・メモ化対応）
  * 
@@ -226,7 +225,6 @@ export function calculateVolatility(
   return vol * 100;
 }
 
-// @ts-nocheck - Type mismatch between calculateVolatility and memoizeArray
 /**
  * メモ化されたボラティリティ計算
  */

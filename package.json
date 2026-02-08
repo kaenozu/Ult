@@ -2,7 +2,7 @@
   "dependencies": {
     "@tanstack/react-query": "5.90.20",
     "@tanstack/react-query-devtools": "5.91.3",
-    "ws": "8.19.0"
+    "ws": "^8.19.0"
   },
   "scripts": {
     "prepare": "husky"

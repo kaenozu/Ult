@@ -82,17 +82,18 @@ export class OHLCVConverter {
    * This is much more efficient than array slice operations
    */
   static slice(data: OHLCVData, start: number, end?: number): OHLCVData {
-    const actualEnd = end ?? data.length;
-    const length = actualEnd - start;
+    const clampedStart = Math.max(0, Math.min(start, data.length));
+    const actualEnd = Math.min(end ?? data.length, data.length);
+    const length = Math.max(0, actualEnd - clampedStart);
 
     return {
       length,
-      opens: data.opens.subarray(start, actualEnd),
-      highs: data.highs.subarray(start, actualEnd),
-      lows: data.lows.subarray(start, actualEnd),
-      closes: data.closes.subarray(start, actualEnd),
-      volumes: data.volumes.subarray(start, actualEnd),
-      timestamps: data.timestamps.subarray(start, actualEnd),
+      opens: data.opens.subarray(clampedStart, actualEnd),
+      highs: data.highs.subarray(clampedStart, actualEnd),
+      lows: data.lows.subarray(clampedStart, actualEnd),
+      closes: data.closes.subarray(clampedStart, actualEnd),
+      volumes: data.volumes.subarray(clampedStart, actualEnd),
+      timestamps: data.timestamps.subarray(clampedStart, actualEnd),
     };
   }
 

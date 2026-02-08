@@ -3,10 +3,9 @@ import { z } from 'zod';
 import YahooFinance from 'yahoo-finance2';
 import {
   handleApiError,
-  validationError,
 } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
-import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
+import { isIntradayInterval } from '@/app/lib/constants/intervals';
 import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
 import {
   YahooChartResultSchema,

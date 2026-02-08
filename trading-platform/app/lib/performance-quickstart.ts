@@ -1,5 +1,3 @@
-// @ts-nocheck - Example file, not part of production code
-
 /**
  * Quick Start Example for Performance Measurement System
  *

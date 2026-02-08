@@ -1,6 +1,6 @@
-// @ts-nocheck
 /**
- * StrategyComposer.ts
+ * Strategy Composer
+.ts
  * 
  * Multi-strategy composition and portfolio management
  * 

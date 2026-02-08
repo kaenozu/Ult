@@ -95,20 +95,40 @@ export class IndexedDBClient {
     if (this.initPromise) return this.initPromise;
 
     // Start new initialization
+    let pendingMigrations: Array<{ version: number; name: string }> = [];
+
     this.initPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        this.initPromise = null; // Reset on error to allow retry
+        this.initPromise = null;
         reject(request.error);
       };
 
-      request.onsuccess = () => {
+      request.onsuccess = async () => {
         this.db = request.result;
+        
+        // Record migrations after database is successfully opened
+        if (pendingMigrations.length > 0 && this.db.objectStoreNames.contains(MIGRATIONS_STORE)) {
+          try {
+            const transaction = this.db.transaction(MIGRATIONS_STORE, 'readwrite');
+            const store = transaction.objectStore(MIGRATIONS_STORE);
+            for (const migration of pendingMigrations) {
+              store.put({
+                version: migration.version,
+                name: migration.name,
+                appliedAt: new Date().toISOString(),
+              });
+            }
+          } catch (error) {
+            console.error('[IndexedDB] Failed to record migrations:', error);
+          }
+        }
+        pendingMigrations = [];
         resolve();
       };
 
-      request.onupgradeneeded = async (event) => {
+      request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         const transaction = (event.target as IDBOpenDBRequest).transaction!;
         const oldVersion = event.oldVersion;
@@ -122,16 +142,7 @@ export class IndexedDBClient {
             console.log(`[IndexedDB] Applying migration: ${migration.name} (v${migration.version})`);
             try {
               migration.up(db, transaction);
-              
-              // Record migration if migrations store exists
-              if (db.objectStoreNames.contains(MIGRATIONS_STORE)) {
-                const migrationStore = transaction.objectStore(MIGRATIONS_STORE);
-                migrationStore.put({
-                  version: migration.version,
-                  name: migration.name,
-                  appliedAt: new Date().toISOString(),
-                });
-              }
+              pendingMigrations.push({ version: migration.version, name: migration.name });
             } catch (error) {
               console.error(`[IndexedDB] Migration failed: ${migration.name}`, error);
               throw error;
@@ -160,7 +171,7 @@ export class IndexedDBClient {
   async getMigrationHistory(): Promise<Array<{ version: number; name: string; appliedAt: string }>> {
     await this.init();
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
+      if (!this.db) return reject(new Error('DB not initialized'));
       
       if (!this.db.objectStoreNames.contains(MIGRATIONS_STORE)) {
         return resolve([]);
@@ -181,9 +192,9 @@ export class IndexedDBClient {
   async clearStore(storeName: string): Promise<void> {
     await this.init();
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
+      if (!this.db) return reject(new Error('DB not initialized'));
       if (!this.db.objectStoreNames.contains(storeName)) {
-        return reject(`Store '${storeName}' does not exist`);
+        return reject(new Error(`Store '${storeName}' does not exist`));
       }
 
       const transaction = this.db.transaction(storeName, 'readwrite');
@@ -221,7 +232,7 @@ export class IndexedDBClient {
   async getData(symbol: string): Promise<OHLCV[]> {
     await this.init();
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
+      if (!this.db) return reject(new Error('DB not initialized'));
       const transaction = this.db.transaction('ohlcv_data', 'readonly');
       const store = transaction.objectStore('ohlcv_data');
       const request = store.get(symbol);
@@ -237,7 +248,7 @@ export class IndexedDBClient {
   async saveData(symbol: string, data: OHLCV[]): Promise<void> {
     await this.init();
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
+      if (!this.db) return reject(new Error('DB not initialized'));
       const transaction = this.db.transaction('ohlcv_data', 'readwrite');
       const store = transaction.objectStore('ohlcv_data');
 
@@ -279,7 +290,7 @@ export class IndexedDBClient {
   async getPreference(key: string): Promise<unknown> {
     await this.init();
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
+      if (!this.db) return reject(new Error('DB not initialized'));
       if (!this.db.objectStoreNames.contains('user_preferences')) {
         return resolve(null);
       }
@@ -299,9 +310,9 @@ export class IndexedDBClient {
   async setPreference(key: string, value: unknown, category = 'general'): Promise<void> {
     await this.init();
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
+      if (!this.db) return reject(new Error('DB not initialized'));
       if (!this.db.objectStoreNames.contains('user_preferences')) {
-        return reject('user_preferences store does not exist');
+        return reject(new Error('user_preferences store does not exist'));
       }
 
       const transaction = this.db.transaction('user_preferences', 'readwrite');

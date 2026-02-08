@@ -17,6 +17,7 @@ interface ServiceMetadata {
 class ServiceRegistry {
   private services = new Map<string, ServiceMetadata>();
   private initialized = false;
+  private lock = new Map<string, Promise<unknown>>();
 
   /**
    * Register a service class

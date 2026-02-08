@@ -61,6 +61,14 @@ function ScreenerContent() {
   const [activePreset, setActivePreset] = useState<PresetType | null>(null);
 
   useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     let mounted = true;
     const fetchAllData = async () => {
       const allStocks = [...JAPAN_STOCKS, ...USA_STOCKS];
@@ -118,12 +126,9 @@ function ScreenerContent() {
 
       await Promise.all(chunk.map(async (stock) => {
         try {
-          // Fetch OHLCV data once for both signal generation and technical filtering
           const ohlcv = await fetchOHLCV(stock.symbol, stock.market, stock.price);
           
-          // Early exit if insufficient data for technical analysis
           if (ohlcv.length < 20) {
-            console.warn(`Insufficient data for ${stock.symbol}`);
             return;
           }
 
@@ -136,8 +141,8 @@ function ScreenerContent() {
           if (signalResult.success && signalResult.data) {
             results.push({ symbol: stock.symbol, signal: signalResult.data });
           }
-        } catch (e) {
-          console.error(`Failed to analyze ${stock.symbol}`, e);
+        } catch {
+          // Silently skip failed analyses
         }
       }));
     }

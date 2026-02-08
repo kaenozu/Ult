@@ -60,24 +60,6 @@ function Workstation() {
 
   const displayStock = selectedStock;
 
-  // Debug: log chartSignal
-  if (chartSignal) {
-    const logObj = {
-      type: chartSignal.type,
-      confidence: chartSignal.confidence,
-      accuracy: chartSignal.accuracy,
-      targetPrice: chartSignal.targetPrice,
-      stopLoss: chartSignal.stopLoss,
-      predictedChange: chartSignal.predictedChange,
-      forecastCone: chartSignal.forecastCone ? { exists: true, confidence: chartSignal.forecastCone.confidence, baseLast: chartSignal.forecastCone.base[chartSignal.forecastCone.base.length - 1] } : null,
-      marketContext: chartSignal.marketContext ? { indexSymbol: chartSignal.marketContext.indexSymbol, correlation: chartSignal.marketContext.correlation } : null
-    };
-    // @ts-ignore - intentional
-    console.log('[page] chartSignal:', JSON.stringify(logObj, null, 2));
-  } else {
-    console.log('[page] chartSignal is null/undefined');
-  }
-
   if (loading) {
     return (
       <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">

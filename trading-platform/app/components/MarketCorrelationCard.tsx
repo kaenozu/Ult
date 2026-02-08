@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Stock, OHLCV } from '@/app/types';
+import { Stock } from '@/app/types';
 import { marketDataService } from '@/app/lib/MarketDataService';
 import { cn } from '@/app/lib/utils';
 import { Link2, Activity, Info } from 'lucide-react';
@@ -20,30 +20,44 @@ export function MarketCorrelationCard({ stock }: MarketCorrelationCardProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    
     async function analyzeCorrelation() {
       setIsLoading(true);
       try {
         // 銘柄データの取得
         const stockDataResult = await marketDataService.fetchMarketData(stock.symbol);
-
+        if (!mounted) return;
+        
         // 市場インデックスデータの取得
         const indexSymbol = stock.market === 'japan' ? '^N225' : '^GSPC';
         const indexDataResult = await marketDataService.fetchMarketData(indexSymbol);
+        if (!mounted) return;
 
         if (stockDataResult.success && indexDataResult.success) {
           const corr = marketDataService.calculateCorrelation(stockDataResult.data, indexDataResult.data);
           const b = marketDataService.calculateBeta(stockDataResult.data, indexDataResult.data);
-          setCorrelation(corr);
-          setBeta(b);
+          if (mounted) {
+            setCorrelation(corr);
+            setBeta(b);
+          }
         }
       } catch (error) {
-        console.error('Correlation analysis failed:', error);
+        if (mounted) {
+          console.error('Correlation analysis failed:', error);
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 
     analyzeCorrelation();
+    
+    return () => {
+      mounted = false;
+    };
   }, [stock.symbol, stock.market]);
 
   if (isLoading) {
