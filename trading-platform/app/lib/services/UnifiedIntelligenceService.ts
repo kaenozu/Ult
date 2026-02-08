@@ -12,7 +12,7 @@ import { logger } from '@/app/core/logger';
 
 export interface IntelligenceReport {
   symbol: string;
-  confidenceScore: number; 
+  confidenceScore: number;
   recommendation: 'STRONG_BUY' | 'BUY' | 'HOLD' | 'SELL' | 'STRONG_SELL';
   expectedValue: EVResult;
   regime: MarketRegime; // New field in report
@@ -58,7 +58,7 @@ export class UnifiedIntelligenceService {
     // --- 3. 動的最適化（実績 × 文脈）---
     const performance = await this.getHistoricalPerformance(symbol, ohlcv);
     const baseWeights: Weights = { ai: 0.4, technical: 0.25, correlation: 0.15, supplyDemand: 0.2 };
-    
+
     // 実績だけでなく、現在の regime も考慮して重みを決定
     const optimizedWeights = this.weightingService.optimize(baseWeights, performance, regime);
 
@@ -73,16 +73,16 @@ export class UnifiedIntelligenceService {
     // 期待値(EV)によるフィルタリング
     const ev = expectedValueService.calculate({
       hitRate: performance.ai.hitRate,
-      avgProfit: 1500, 
-      avgLoss: 1000,   
+      avgProfit: 1500,
+      avgLoss: 1000,
       totalTrades: 50
     });
 
-    if (!ev.isPositive) finalScore *= 0.7; 
+    if (!ev.isPositive) finalScore *= 0.7;
 
     const recommendation = this.determineRecommendation(finalScore);
     const reasoning = this.generateReasoning({
-      aiScore, technicalScore, correlationScore, supplyDemandScore, recommendation, 
+      aiScore, technicalScore, correlationScore, supplyDemandScore, recommendation,
       optimizedWeights, optimizedRSIPeriod, ev, regime
     });
 
@@ -110,10 +110,10 @@ export class UnifiedIntelligenceService {
     const closes = ohlcv.map(d => d.close);
     const rsi = technicalIndicatorService.calculateRSI(closes, rsiPeriod);
     const lastRSI = rsi[rsi.length - 1];
-    
+
     let score = 50;
-    if (lastRSI > 70) score += 20; 
-    if (lastRSI < 30) score -= 20; 
+    if (lastRSI > 70) score += 20;
+    if (lastRSI < 30) score -= 20;
 
     return Math.min(100, Math.max(0, score));
   }
@@ -125,7 +125,7 @@ export class UnifiedIntelligenceService {
 
     if (indexData.success && stockData.success) {
       const corr = marketDataService.calculateCorrelation(stockData.data, indexData.data);
-      return Math.round((corr + 1) * 50); 
+      return Math.round((corr + 1) * 50);
     }
     return 50;
   }
@@ -136,7 +136,7 @@ export class UnifiedIntelligenceService {
     const range = high - low;
     if (range === 0) return 50;
     const position = (lastPrice - low) / range;
-    return Math.round((1 - position) * 100); 
+    return Math.round((1 - position) * 100);
   }
 
   private async getHistoricalPerformance(symbol: string, ohlcv: OHLCV[]) {

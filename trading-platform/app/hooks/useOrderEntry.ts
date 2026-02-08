@@ -180,3 +180,14 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
     ids
   };
 }
+
+// Auto-hide success message after 3 seconds with cleanup
+useEffect(() => {
+  let timer: NodeJS.Timeout;
+  if (showSuccess) {
+    timer = setTimeout(() => setShowSuccess(false), 3000);
+  }
+  return () => {
+    if (timer) clearTimeout(timer);
+  };
+}, [showSuccess, setShowSuccess]);

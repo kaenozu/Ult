@@ -8,7 +8,7 @@ import { AI_TRADING } from '../lib/constants';
 interface PortfolioState {
   portfolio: Portfolio;
   aiStatus: 'active' | 'stopped';
-  
+
   // Actions
   updatePortfolio: (positions: Position[]) => void;
   executeOrder: (order: OrderRequest) => OrderResult;
@@ -32,7 +32,7 @@ function calculatePortfolioStats(positions: Position[]) {
     totalProfit += pnl;
     dailyPnL += p.change * p.quantity;
   }
-  
+
   return { totalValue, totalProfit, dailyPnL };
 }
 
@@ -55,12 +55,12 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       executeOrder: (order) => {
         let result: OrderResult = { success: false };
-        
+
         // --- 1. PRE-FLIGHT VALIDATION (Atomic Read) ---
         const { portfolio } = get();
         const riskService = getRiskManagementService();
         const riskValidation = riskService.validateOrder(order, portfolio);
-        
+
         if (!riskValidation.allowed) {
           return { success: false, error: `Risk Denied: ${riskValidation.reasons.join('; ')}` };
         }
@@ -78,7 +78,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           const orderId = `at_ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
           const existingIdx = state.portfolio.positions.findIndex(p => p.symbol === order.symbol && p.side === order.side);
           const positions = [...state.portfolio.positions];
-          
+
           if (existingIdx >= 0) {
             const p = positions[existingIdx];
             positions[existingIdx] = {
@@ -103,7 +103,7 @@ export const usePortfolioStore = create<PortfolioState>()(
 
           const newCash = order.side === 'LONG' ? state.portfolio.cash - totalCost : state.portfolio.cash + totalCost;
           const stats = calculatePortfolioStats(positions);
-          
+
           const newOrder = {
             id: orderId,
             symbol: order.symbol,
@@ -153,7 +153,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           const profit = p.side === 'LONG' ? (exitPrice - p.avgPrice) * p.quantity : (p.avgPrice - exitPrice) * p.quantity;
           const newPositions = state.portfolio.positions.filter(pos => pos.symbol !== symbol);
           const newCash = state.portfolio.cash + (p.avgPrice * p.quantity) + profit;
-          
+
           result = { success: true, remainingCash: newCash };
           return {
             portfolio: {

@@ -42,13 +42,13 @@ export const useTradingStore = (selector?: (state: TradingStore) => any) => {
     theme: ui.theme,
     toggleTheme: ui.toggleTheme,
     isConnected: ui.isConnected,
-    
+
     watchlist: watchlist.watchlist,
     addToWatchlist: watchlist.addToWatchlist,
     removeFromWatchlist: watchlist.removeFromWatchlist,
     selectedStock: watchlist.selectedStock,
     setSelectedStock: watchlist.setSelectedStock,
-    
+
     portfolio: portfolio.portfolio,
     aiStatus: portfolio.aiStatus,
     updatePortfolio: portfolio.updatePortfolio,
@@ -72,18 +72,18 @@ export const useTradingStore = (selector?: (state: TradingStore) => any) => {
     getPortfolioStats: () => {
       const orders = portfolio.portfolio.orders.filter(o => o.status === 'FILLED');
       if (orders.length === 0) return { winRate: 0.5, avgWin: 0, avgLoss: 0, totalTrades: 0 };
-      
+
       const winningTrades = orders.filter(o => o.side === 'SELL' && (o.price || 0) > 100); // Simple mock logic
-      return { 
-        winRate: winningTrades.length / orders.length || 0.5, 
-        avgWin: 100, 
-        avgLoss: 50, 
-        totalTrades: orders.length 
+      return {
+        winRate: winningTrades.length / orders.length || 0.5,
+        avgWin: 100,
+        avgLoss: 50,
+        totalTrades: orders.length
       };
     }
   };
 
-  // Note: This proxy approach is for transition. 
+  // Note: This proxy approach is for transition.
   // Selectors won't benefit from partial re-renders as much as direct store usage.
   return selector ? selector(state) : state;
 };

@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import YahooFinance from 'yahoo-finance2';
 import {
   handleApiError,
-  validationError,
 } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
-import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
+import { isIntradayInterval } from '@/app/lib/constants/intervals';
 import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
-import {
-  validateSymbol,
-  validateMarketType,
-  validateDataType,
-  validateInterval,
-  validateDate
-} from '@/app/lib/validation';
-import { z } from 'zod';
 import {
   YahooChartResultSchema,
   YahooSingleQuoteSchema
@@ -32,17 +24,119 @@ const MarketRequestSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
-// --- Yahoo Finance Schemas ---
-
-
 function formatSymbol(symbol: string, market?: string): string {
-  if (symbol.startsWith('^')) return symbol;
+  // Never add suffix to indices (starting with ^)
+  if (symbol.startsWith('^')) {
+    return symbol;
+  }
+
   if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
     return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
   }
   return symbol;
 }
 
+/**
+ * @swagger
+ * /api/market:
+ *   get:
+ *     summary: Get market data
+ *     description: Fetch historical price data or real-time quotes for stocks and indices
+ *     tags:
+ *       - Market Data
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [history, quote]
+ *         description: Type of data to retrieve (history for historical data, quote for current price)
+ *       - in: query
+ *         name: symbol
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Stock symbol (e.g., ^N225 for Nikkei 225, AAPL for Apple, 7203 for Toyota)
+ *         example: ^N225
+ *       - in: query
+ *         name: market
+ *         schema:
+ *           type: string
+ *           enum: [japan, usa]
+ *         description: Market type for symbol formatting
+ *       - in: query
+ *         name: interval
+ *         schema:
+ *           type: string
+ *           enum: [1m, 5m, 15m, 1h, 4h, 1d, 1wk, 1mo]
+ *         description: Data interval (only for history type). Note - Intraday intervals (1m, 5m, 15m, 1h, 4h) not available for Japanese stocks
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for historical data in YYYY-MM-DD format (only for history type)
+ *         example: 2021-01-01
+ *     responses:
+ *       200:
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/OHLCV'
+ *                     warning:
+ *                       type: string
+ *                       description: Warning message if applicable
+ *                   description: Historical data response
+ *                 - $ref: '#/components/schemas/Quote'
+ *                   description: Quote data response
+ *                 - type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Quote'
+ *                   description: Batch quotes response
+ *       400:
+ *         description: Bad request - Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               oneOf:
+ *                 - $ref: '#/components/schemas/Error'
+ *                 - $ref: '#/components/schemas/ValidationError'
+ *       404:
+ *         description: Symbol not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         description: Rate limit exceeded
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       502:
+ *         description: Bad gateway - External API error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting
@@ -51,7 +145,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const rawParams = Object.fromEntries(searchParams.entries());
-    
+
     // Validate parameters with Zod
     const result = MarketRequestSchema.safeParse(rawParams);
     if (!result.success) {
@@ -198,4 +292,3 @@ export async function GET(request: NextRequest) {
     return handleApiError(error, 'market/api', 500);
   }
 }
-

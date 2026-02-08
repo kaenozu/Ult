@@ -28,11 +28,11 @@ function generatePatternedData(days, noiseLevel = 0.5) {
 
 async function runBenchmark() {
   console.log('--- Trader Pro Core 性能比較シミュレーション ---');
-  
+
   const testData = generatePatternedData(200);
   const validator = new SignalValidatorService();
   const weighting = new DynamicWeightingService();
-  
+
   // ---------------------------------------------------------
   // 1. 従来型（Static Logic）のシミュレーション
   // ---------------------------------------------------------

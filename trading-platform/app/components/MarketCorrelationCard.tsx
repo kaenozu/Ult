@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Stock, OHLCV } from '@/app/types';
+import { Stock } from '@/app/types';
 import { marketDataService } from '@/app/lib/MarketDataService';
 import { cn } from '@/app/lib/utils';
 import { Link2, Activity, Info } from 'lucide-react';
@@ -127,7 +127,7 @@ export function MarketCorrelationCard({ stock }: MarketCorrelationCardProps) {
       {/* Visual Indicator */}
       {correlation !== null && (
         <div className="mt-4 h-1 w-full bg-[#141e27] rounded-full overflow-hidden">
-          <div 
+          <div
             className={cn("h-full transition-all duration-1000", getCorrelationColor(correlation).replace('text-', 'bg-'))}
             style={{ width: `${Math.abs(correlation) * 100}%`, marginLeft: correlation < 0 ? 'auto' : '0' }}
           />

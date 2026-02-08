@@ -16,7 +16,7 @@ export class MarketRegimeService {
 
     const closes = history.map(d => d.close);
     const lastPrice = closes[closes.length - 1];
-    
+
     // 1. ボラティリティの算出 (直近5日間の値幅平均)
     const recentChanges = history.slice(-5).map(d => Math.abs(d.high - d.low) / d.close);
     const avgVolatility = recentChanges.reduce((a, b) => a + b, 0) / recentChanges.length;
@@ -27,7 +27,7 @@ export class MarketRegimeService {
     const trendSlope = (lastPrice - closes[closes.length - 10]) / closes[closes.length - 10];
 
     // --- 分類ロジック ---
-    
+
     // 急激なボラティリティ上昇と価格下落 = CRASH
     if (avgVolatility > 0.05 && lastPrice < lastSMA) {
       return 'CRASH';

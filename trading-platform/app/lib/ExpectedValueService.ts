@@ -28,10 +28,10 @@ export class ExpectedValueService {
   calculate(stats: TradeStats, config: EVConfig = { commission: 0, slippage: 0 }): EVResult {
     const winRate = stats.hitRate / 100;
     const lossRate = 1 - winRate;
-    
+
     // 基本期待値 = (勝率 * 平均利益) - (敗率 * 平均損失)
     const rawEV = (winRate * stats.avgProfit) - (lossRate * stats.avgLoss);
-    
+
     // 諸経費を差し引く
     const totalCost = config.commission + config.slippage;
     const finalEV = rawEV - totalCost;
