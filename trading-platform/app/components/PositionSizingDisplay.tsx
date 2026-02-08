@@ -48,7 +48,13 @@ export function PositionSizingDisplay({
     }
     
     return warns;
-  }, [result, settings.accountEquity]);
+  }, [
+    result, 
+    settings.accountEquity, 
+    settings.minShares, 
+    settings.maxPositionPercent, 
+    settings.maxStopLossPercent
+  ]);
   
   if (!settings.enabled) {
     return (

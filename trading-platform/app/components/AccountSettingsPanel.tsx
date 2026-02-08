@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRiskManagementStore } from '@/app/store/riskManagementStore';
 import { cn } from '@/app/lib/utils';
 
@@ -20,16 +20,19 @@ export function AccountSettingsPanel() {
   const [minShares, setMinShares] = useState(settings.minShares);
   const [maxStopLossPercent, setMaxStopLossPercent] = useState(settings.maxStopLossPercent || 5);
   const [atrMultiplier, setAtrMultiplier] = useState(settings.atrMultiplier);
-  
-  // Sync local state with store when settings change externally
-  useEffect(() => {
+
+  // Track previous settings to sync local state
+  const [prevSettings, setPrevSettings] = useState(settings);
+
+  if (settings !== prevSettings) {
+    setPrevSettings(settings);
     setAccountEquity(settings.accountEquity);
     setRiskPerTrade(settings.riskPerTrade);
     setMaxPositionPercent(settings.maxPositionPercent);
     setMinShares(settings.minShares);
     setMaxStopLossPercent(settings.maxStopLossPercent || 5);
     setAtrMultiplier(settings.atrMultiplier);
-  }, [settings]);
+  }
   
   const handleSave = () => {
     updateSettings({

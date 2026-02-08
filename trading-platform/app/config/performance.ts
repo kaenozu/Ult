@@ -196,7 +196,6 @@ export const FEATURE_SUPPORT = {
   modern: {
     webp: () => {
       const elem = document.createElement('canvas');
-      // @ts-ignore - toDataURL may not be recognized but it exists on canvas
       return elem.getContext && elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
     },
     intersectionObserver: () => 'IntersectionObserver' in window,

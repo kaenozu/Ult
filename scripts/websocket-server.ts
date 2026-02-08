@@ -19,12 +19,12 @@ const HOST = process.env.WS_HOST || '0.0.0.0';
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
 
 // Security Configuration
-// Development: use fixed token for simplicity
-const AUTH_TOKEN = process.env.WS_AUTH_TOKEN || 'dev-token-placeholder';
+const AUTH_TOKEN = process.env.WS_AUTH_TOKEN || generateDefaultToken();
 const MAX_CONNECTIONS_PER_IP = parseInt(process.env.WS_MAX_CONNECTIONS_PER_IP || '5', 10);
 const MAX_MESSAGE_SIZE = parseInt(process.env.WS_MAX_MESSAGE_SIZE || '1048576', 10); // 1MB default
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const RATE_LIMIT_MAX_MESSAGES = parseInt(process.env.WS_RATE_LIMIT_MAX_MESSAGES || '100', 10);
+const TRUST_PROXY = process.env.TRUST_PROXY === 'true';
 
 /**
  * Generate a default authentication token (only for development)
@@ -34,7 +34,7 @@ function generateDefaultToken(): string {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('WS_AUTH_TOKEN must be set in production environment');
   }
-  const token = createHash('sha256').update('dev-token-' + Date.now()).digest('hex').substring(0, 32);
+  const token = createHash('sha256').update('dev-token-' + Date.now() + Math.random()).digest('hex').substring(0, 32);
   console.warn('[WebSocket] WARNING: Using auto-generated auth token for development');
   console.warn(`[WebSocket] Auth token: ${token}`);
   return token;
@@ -94,16 +94,18 @@ function generateClientId(): string {
  * Extract IP address from request
  */
 function getClientIP(request: IncomingMessage): string {
-  // Check for proxy headers first
-  const forwarded = request.headers['x-forwarded-for'];
-  if (forwarded) {
-    const ips = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-    return ips.split(',')[0].trim();
-  }
-  
-  const realIP = request.headers['x-real-ip'];
-  if (realIP) {
-    return Array.isArray(realIP) ? realIP[0] : realIP;
+  if (TRUST_PROXY) {
+    // Check for proxy headers first
+    const forwarded = request.headers['x-forwarded-for'];
+    if (forwarded) {
+      const ips = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+      return ips.split(',')[0].trim();
+    }
+    
+    const realIP = request.headers['x-real-ip'];
+    if (realIP) {
+      return Array.isArray(realIP) ? realIP[0] : realIP;
+    }
   }
   
   return request.socket.remoteAddress || 'unknown';
