@@ -120,10 +120,12 @@ describe('Authentication Module', () => {
       // Generate token with different secret
       const originalSecret = process.env.JWT_SECRET;
       process.env.JWT_SECRET = 'different-secret';
+      resetConfig(); // ensure new secret is picked up
       const token = generateAuthToken(validUserId);
       
       // Try to verify with original secret
       process.env.JWT_SECRET = originalSecret;
+      resetConfig(); // ensure original secret is picked up
       const mockRequest = new MockNextRequest('http://localhost:3000/api/test', {
         headers: {
           'authorization': `Bearer ${token}`,
