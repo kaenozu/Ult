@@ -21,11 +21,13 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps) {
   // Risk management configuration
   const [riskConfig, setRiskConfig] = useState<DynamicRiskConfig>({
     maxRiskPerTrade: 0.02, // 2%
-    riskRewardRatio: 2.0,
+    minRiskRewardRatio: 2.0,
     volatilityMultiplier: 1.0,
     enableTrailingStop: false,
     enableVolatilityAdjustment: true,
-    enableDynamicPositionSizing: true
+    enableDynamicPositionSizing: true,
+    trailingStopATRMultiple: 2.0,
+    trailingStopMinPercent: 1.0,
   });
   
   const [showRiskSettings, setShowRiskSettings] = useState(false);
