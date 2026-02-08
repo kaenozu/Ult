@@ -25,7 +25,8 @@ import type {
   ParticleSwarmConfig,
   GridSearchConfig,
   WalkForwardResult,
-  CrossValidationResult
+  CrossValidationResult,
+  Particle
 } from './types';
 
 // ============================================================================
@@ -321,16 +322,16 @@ export class ParameterOptimizer {
     return {};
   }
 
-  private async selectNextBayesianPoint(config: any): Promise<Record<string, number | string>> {
+  private async selectNextBayesianPoint(config: BayesianOptimizationConfig): Promise<Record<string, number | string>> {
     return {};
   }
 
-  private evaluateAndStore(
+  private async evaluateAndStore(
     objectiveFunction: ObjectiveFunction,
     parameters: Record<string, number | string>,
     iteration: number
-  ): number {
-    const score = 0;
+  ): Promise<number> {
+    const score = await objectiveFunction(parameters);
     this.allResults.push({ parameters, score, metrics: {} });
     if (score > this.bestScore) {
       this.bestScore = score;
@@ -359,29 +360,31 @@ export class ParameterOptimizer {
     return Promise.resolve([]);
   }
 
-  private selection(population: any[], config: any): any[] {
+  private selection(population: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
     return [];
   }
 
-  private crossover(selected: any[], config: any): any[] {
+  private crossover(selected: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
     return [];
   }
 
-  private mutate(offspring: any[], config: any): any[] {
+  private mutate(offspring: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
     return [];
   }
 
-  private evaluatePopulation(population: any[], objectiveFunction: ObjectiveFunction): Promise<number[]> {
+  private evaluatePopulation(population: Record<string, number | string>[], objectiveFunction: ObjectiveFunction): Promise<number[]> {
     return Promise.resolve([]);
   }
 
-  private nextGeneration(current: any[], offspring: any[], config: any): any[] {
+  private nextGeneration(current: Record<string, number | string>[], offspring: number[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
+    // Note: evaluatePopulation returns number[] (scores), but logic might need structured results.
+    // For stub purposes, returning Record[] is fine.
     return [];
   }
 
   private reportProgress(iteration: number): void {}
 
-  private initializeSwarm(size: number): any[] {
+  private initializeSwarm(size: number): Particle[] {
     return [];
   }
 
