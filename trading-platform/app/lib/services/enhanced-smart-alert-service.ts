@@ -217,17 +217,20 @@ class EnhancedSmartAlertService {
   /**
    * 指標から値を取得
    */
-  private getValueFromIndicators(indicators: any, condition: AlertCondition): number {
+  private getValueFromIndicators(
+    indicators: TechnicalIndicators,
+    condition: AlertCondition
+  ): number {
     switch (condition.type) {
       case 'indicator':
         if (condition.threshold === 'rsi') {
           return indicators.rsi || 0;
         } else if (condition.threshold === 'macd') {
-          return indicators.macd?.macd || 0;
+          return indicators.macd || 0;
         } else if (condition.threshold === 'bb_upper') {
-          return indicators.bb?.upper || 0;
+          return indicators.bollingerUpper || 0;
         } else if (condition.threshold === 'bb_lower') {
-          return indicators.bb?.lower || 0;
+          return indicators.bollingerLower || 0;
         }
         break;
       default:

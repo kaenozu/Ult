@@ -63,9 +63,9 @@ export class PerformanceMonitor {
   /**
    * Measure execution time of a function
    */
-  static measure(name: string, fn: () => void, threshold: number = 100): void {
+  static measure(name: string, fn: () => unknown, threshold: number = 100): void {
     const start = performance.now();
-    fn();
+    const result = fn();
     const duration = performance.now() - start;
 
     const severity: PerformanceSeverity = duration > threshold * 2 ? 'error'
@@ -83,9 +83,9 @@ export class PerformanceMonitor {
   /**
    * Measure execution time of an async function
    */
-  static async measureAsync(name: string, fn: () => Promise<void>, threshold: number = 100): Promise<void> {
+  static async measureAsync(name: string, fn: () => Promise<unknown>, threshold: number = 100): Promise<void> {
     const start = performance.now();
-    await fn();
+    const result = await fn();
     const duration = performance.now() - start;
 
     const severity: PerformanceSeverity = duration > threshold * 2 ? 'error'
@@ -263,13 +263,13 @@ export class PerformanceMonitor {
 // Decorator for measuring function performance (deprecated, use decorators from performance-utils.ts)
 export function measurePerformance(name: string, threshold: number = 100) {
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = function (this: unknown, ...args: unknown[]) {
       const start = performance.now();
       const result = originalMethod.apply(this, args);
       const duration = performance.now() - start;

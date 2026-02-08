@@ -156,14 +156,19 @@ export class UnifiedIntelligenceService {
     return 'HOLD';
   }
 
-  private generateReasoning(data: any): string[] {
+  private generateReasoning(data: Record<string, unknown>): string[] {
     const reasons: string[] = [];
-    if (data.optimizedRSIPeriod !== 14) {
-      reasons.push(`銘柄最適化: RSI期間を ${data.optimizedRSIPeriod} 日に調整して精度を高めています。`);
+    const optimizedRSIPeriod = data.optimizedRSIPeriod as number | undefined;
+    const aiScore = data.aiScore as number | undefined;
+    const technicalScore = data.technicalScore as number | undefined;
+    const supplyDemandScore = data.supplyDemandScore as number | undefined;
+    
+    if (optimizedRSIPeriod !== undefined && optimizedRSIPeriod !== 14) {
+      reasons.push(`銘柄最適化: RSI期間を ${optimizedRSIPeriod} 日に調整して精度を高めています。`);
     }
-    if (data.aiScore > 75) reasons.push('AIモデルが強力な上昇シグナルを検知しています。');
-    if (data.technicalScore > 70) reasons.push('主要なテクニカル指標が強気転換を示唆しています。');
-    if (data.supplyDemandScore > 80) reasons.push('価格が強力なサポートゾーン（需要の壁）に位置しています。');
+    if (aiScore !== undefined && aiScore > 75) reasons.push('AIモデルが強力な上昇シグナルを検知しています。');
+    if (technicalScore !== undefined && technicalScore > 70) reasons.push('主要なテクニカル指標が強気転換を示唆しています。');
+    if (supplyDemandScore !== undefined && supplyDemandScore > 80) reasons.push('価格が強力なサポートゾーン（需要の壁）に位置しています。');
     if (reasons.length === 0) reasons.push('明確なトレンドは確認されず、市場は保ち合いの状態です。');
     return reasons;
   }

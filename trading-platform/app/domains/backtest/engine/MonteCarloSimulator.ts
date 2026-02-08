@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MonteCarloSimulator.ts
  *
  * モンテカルロシミュレーター
@@ -459,17 +459,17 @@ export class MonteCarloSimulator extends EventEmitter {
         returns: getInterval(returns, 0.90),
         sharpe: getInterval(sharpe, 0.90),
         drawdown: getInterval(drawdown, 0.90),
-      } as any,
+      } as PerMetricConfidence,
       confidence95: {
         returns: getInterval(returns, 0.95),
         sharpe: getInterval(sharpe, 0.95),
         drawdown: getInterval(drawdown, 0.95),
-      } as any,
+      } as PerMetricConfidence,
       confidence99: {
         returns: getInterval(returns, 0.99),
         sharpe: getInterval(sharpe, 0.99),
         drawdown: getInterval(drawdown, 0.99),
-      } as any,
+      } as PerMetricConfidence,
     };
   }
 
@@ -556,10 +556,6 @@ export class MonteCarloSimulator extends EventEmitter {
    * リスク評価を計算
    */
   private calculateRiskAssessment(simulations: BacktestResult[]): MonteCarloRiskAssessment {
-    const finalCapitals = simulations.map(s => {
-      return s.config.initialCapital * (1 + s.metrics.totalReturn / 100);
-    });
-
     const sortedReturns = simulations.map(s => s.metrics.totalReturn).sort((a, b) => a - b);
     const sortedDrawdowns = simulations.map(s => s.metrics.maxDrawdown).sort((a, b) => a - b);
 

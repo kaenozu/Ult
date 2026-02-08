@@ -7,7 +7,7 @@
  * - 売買の強さを0-1の確率として表現
  */
 
-import { OHLCV, Signal } from '../types';
+import { OHLCV, Signal, TimeFrame } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { RSI_CONFIG, BOLLINGER_BANDS } from './constants';
 
@@ -399,7 +399,7 @@ class ConsensusSignalService {
    */
   async generateEnhancedConsensus(
     data: OHLCV[],
-    dataByTimeFrame?: Map<string, OHLCV[]>,
+    dataByTimeFrame?: Map<TimeFrame, OHLCV[]>,
     customWeights?: Partial<ConsensusWeights>
   ): Promise<ConsensusSignal> {
     // まず基本コンセンサスを生成
@@ -420,7 +420,7 @@ class ConsensusSignalService {
       // マルチ時間枠分析を実行
       const mtfAnalysis = await multiTimeFrameStrategy.analyzeMultipleTimeFrames(
         symbol,
-        dataByTimeFrame as any
+        dataByTimeFrame
       );
 
       // 時間枠間の整合性に基づいて信頼度を調整

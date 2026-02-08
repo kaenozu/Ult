@@ -1,9 +1,10 @@
 
 import { accuracyService } from '../app/lib/AccuracyService';
+import { OHLCV } from '../app/types';
 
 // Self-contained generator to avoid import issues
-function generateMockOHLCV(startPrice: number, count: number) {
-    const data: any[] = [];
+function generateMockOHLCV(startPrice: number, count: number): OHLCV[] {
+    const data: OHLCV[] = [];
     let currentPrice = startPrice;
     const volatility = 0.02;
 

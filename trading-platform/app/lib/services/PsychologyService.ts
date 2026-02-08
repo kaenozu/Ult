@@ -120,7 +120,7 @@ export class PsychologyService {
     }
 
     if (discipline < 70) {
-      emotions.push({ emotion: 'frustration', score: (100 - discipline) / 100, confidence: 0.7, indicators: ['短期的な再エントリー'] });
+      emotions.push({ emotion: 'frustration', score: (100 - discipline) / 100, confidence: 0.75, indicators: ['短期的な再エントリー'] });
     }
 
     if (emotions.length === 0) {

@@ -136,7 +136,7 @@ export class MarketDataService {
           if (age < this.cacheTimeout) {
             this.marketDataCache.set(symbol, persisted);
             if (this.useSmartCache) {
-              marketDataCache.set(`market-data:${symbol}`, persisted as any);
+              marketDataCache.set(`market-data:${symbol}`, persisted as unknown);
             }
             return { success: true, data: persisted, source: 'persistence' };
           }
@@ -178,6 +178,12 @@ export class MarketDataService {
         volume: parseFloat(String(item.volume)) || 0,
       }));
 
+      // Record data latency
+      if (this.latencyMonitoringEnabled && ohlcv.length > 0) {
+        const latestDataTime = new Date(ohlcv[ohlcv.length - 1].date).getTime();
+        dataLatencyMonitor.recordLatency(symbol, latestDataTime, Date.now(), 'api');
+      }
+
       // Validation and cleaning
       if (this.qualityCheckEnabled) {
         ohlcv = this.applyEnhancedQualityChecks(symbol, ohlcv);
@@ -201,7 +207,7 @@ export class MarketDataService {
       // Update caches
       this.marketDataCache.set(symbol, ohlcv);
       if (this.useSmartCache) {
-        marketDataCache.set(`market-data:${symbol}`, ohlcv as any, this.cacheTimeout);
+        marketDataCache.set(`market-data:${symbol}`, ohlcv as unknown, this.cacheTimeout);
       }
 
       // Persist to IndexedDB
@@ -211,6 +217,12 @@ export class MarketDataService {
         } catch (error) {
           logger.warn(`[MarketDataService] Failed to persist data:`, error);
         }
+      }
+
+      // Log fetch performance
+      const fetchDuration = Date.now() - fetchStartTime;
+      if (fetchDuration > 5000) {
+        logger.warn(`Slow market data fetch for ${symbol}: ${fetchDuration}ms`);
       }
 
       return { success: true, data: ohlcv, source: 'api' };

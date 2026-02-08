@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUniverseStore } from '@/app/store/universeStore';
-import { UniverseStock, UniverseStats } from '@/app/lib/universe/UniverseManager';
+import { UniverseStock, UniverseStats, SymbolValidationResult } from '@/app/lib/universe/UniverseManager';
 import { cn, formatCurrency } from '@/app/lib/utils';
 
 export function UniverseManagerPanel() {
@@ -30,7 +30,7 @@ export function UniverseManagerPanel() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [newSymbol, setNewSymbol] = useState('');
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<SymbolValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
@@ -63,6 +63,7 @@ export function UniverseManagerPanel() {
     } catch (error) {
       setValidationResult({
         valid: false,
+        symbol: newSymbol,
         error: error instanceof Error ? error.message : 'Failed to validate symbol',
       });
     } finally {
@@ -345,7 +346,7 @@ interface AddStockModalProps {
   symbol: string;
   onSymbolChange: (symbol: string) => void;
   isValidating: boolean;
-  validationResult: any;
+  validationResult: SymbolValidationResult | null;
 }
 
 function AddStockModal({ onClose, onAdd, symbol, onSymbolChange, isValidating, validationResult }: AddStockModalProps) {
@@ -404,7 +405,7 @@ function AddStockModal({ onClose, onAdd, symbol, onSymbolChange, isValidating, v
             </button>
             <button
               onClick={onAdd}
-              disabled={!symbol.trim() || isValidating || (validationResult && !validationResult.valid)}
+              disabled={!symbol.trim() || isValidating || (!!validationResult && !validationResult.valid)}
               className="flex-1 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isValidating ? '検証中...' : '追加'}

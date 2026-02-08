@@ -47,7 +47,7 @@ describe('useSignalAlerts', () => {
       symbol: 'AAPL',
       name: 'Apple Inc.',
       price: 150,
-      market: 'us' as any
+      market: 'usa' as const
     };
 
     mockSignal = {

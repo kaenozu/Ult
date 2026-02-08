@@ -4,7 +4,7 @@ import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPl
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireAuth } from '@/app/lib/auth';
 import { handleApiError } from '@/app/lib/error-handler';
-import { csrfTokenMiddleware, requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
+import { requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
 import { AlertType } from '@/app/lib/alerts/AlertSystem';
 
 // --- Zod Schemas ---
@@ -331,8 +331,8 @@ export async function POST(req: NextRequest) {
       
       case 'place_order':
         // Map side to what the platform expects (if needed)
-        const platformSide = (data.side === 'BUY' || data.side === 'LONG') ? 'BUY' : 'SELL';
-        await platform.placeOrder(data.symbol, platformSide as any, data.quantity, data.options);
+        const platformSide: 'BUY' | 'SELL' = (data.side === 'BUY' || data.side === 'LONG') ? 'BUY' : 'SELL';
+        await platform.placeOrder(data.symbol, platformSide, data.quantity, data.options);
         return NextResponse.json({ success: true });
       
       case 'close_position':

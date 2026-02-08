@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Theme as AppTheme, Stock } from '../types';
 
-interface UIState {
+export interface UIState {
   theme: AppTheme;
   isConnected: boolean;
   selectedStock: Stock | null;

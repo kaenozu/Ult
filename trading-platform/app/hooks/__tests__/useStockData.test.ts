@@ -13,13 +13,13 @@ describe('useStockData', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({
+        (useTradingStore as unknown as jest.Mock).mockImplementation((selector: unknown) => selector({
             watchlist: [],
             selectedStock: null,
             setSelectedStock: mockSetSelectedStock
         }));
-        (fetchOHLCV as jest.Mock).mockResolvedValue([{ date: '2023-01-01', close: 100 }]);
-        (fetchSignal as jest.Mock).mockResolvedValue({
+        (fetchOHLCV as unknown as jest.Mock).mockResolvedValue([{ date: '2023-01-01', close: 100 }]);
+        (fetchSignal as unknown as jest.Mock).mockResolvedValue({
           success: true,
           data: {
             symbol: mockStock.symbol,
@@ -42,7 +42,7 @@ describe('useStockData', () => {
     });
 
     it('auto-selects first stock from watchlist if nothing selected', async () => {
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({
+        (useTradingStore as unknown as jest.Mock).mockImplementation((selector: unknown) => selector({
             watchlist: [mockStock],
             selectedStock: null,
             setSelectedStock: mockSetSelectedStock
@@ -56,7 +56,7 @@ describe('useStockData', () => {
     });
 
     it('fetches data when stock is selected', async () => {
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector: any) => selector({
+        (useTradingStore as unknown as jest.Mock).mockImplementation((selector: unknown) => selector({
             watchlist: [],
             selectedStock: mockStock,
             setSelectedStock: mockSetSelectedStock
@@ -88,7 +88,7 @@ describe('useStockData', () => {
     });
 
     it('handles fetch errors', async () => {
-        (fetchOHLCV as jest.Mock).mockRejectedValue(new Error('Network error'));
+        (fetchOHLCV as unknown as jest.Mock).mockRejectedValue(new Error('Network error'));
 
         const { result } = renderHook(() => useStockData());
 

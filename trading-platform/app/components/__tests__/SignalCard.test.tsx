@@ -128,7 +128,7 @@ describe('SignalCard', () => {
                         volume: 100,
                         strength: 0.8,
                         type: 'resistance' as const,
-                        level: '<img src=x onerror="alert(1)">' as any
+                        level: '<img src=x onerror="alert(1)">' as string
                     },
                     breakoutConfidence: 'high' as const
                 }

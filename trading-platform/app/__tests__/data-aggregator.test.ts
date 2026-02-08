@@ -7,7 +7,6 @@
 
 import { marketClient } from '../lib/api/data-aggregator';
 import { idbClient } from '../lib/api/idb-migrations';
-import { mlPredictionService } from '../lib/mlPrediction';
 
 jest.mock('../lib/api/idb-migrations', () => ({
   idbClient: {
@@ -19,15 +18,7 @@ jest.mock('../lib/api/idb-migrations', () => ({
   }
 }));
 
-jest.mock('../lib/mlPrediction', () => ({
-  mlPredictionService: {
-    calculateIndicators: jest.fn(),
-    predict: jest.fn(),
-    generateSignal: jest.fn(),
-  }
-}));
-
-global.fetch = jest.fn() as any;
+global.fetch = jest.fn() as jest.Mock;
 
 // Test constants to avoid magic numbers
 const TEST_PRICES = {
@@ -59,10 +50,6 @@ const TEST_BATCH = {
   EXPECTED_CHUNKS: 2,
 } as const;
 
-const TEST_RETRY = {
-  MAX_ITERATIONS: 5,
-} as const;
-
 const HTTP_STATUS = {
   TOO_MANY_REQUESTS: 429,
 } as const;
@@ -80,7 +67,7 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
 
   it('uses cache when available', async () => {
     const mockData = [{ date: '2026-01-01', close: TEST_PRICES.INITIAL }];
-    (marketClient as any).setCache('ohlcv-AAPL-1d', mockData);
+    (marketClient as { setCache: (key: string, data: unknown[]) => void }).setCache('ohlcv-AAPL-1d', mockData);
 
     const result = await marketClient.fetchOHLCV('AAPL');
     expect(result.source).toBe('cache');
@@ -94,14 +81,14 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
     // fetchは未完了のPromiseを返すようにする
     (global.fetch as jest.Mock).mockReturnValue(new Promise(() => { })); 
 
-    const p1 = marketClient.fetchOHLCV('DEDUP');
-    const p2 = marketClient.fetchOHLCV('DEDUP');
+    marketClient.fetchOHLCV('DEDUP');
+    marketClient.fetchOHLCV('DEDUP');
 
     // 微小な時間待って非同期処理を1ステップ進める
     await Promise.resolve();
     await Promise.resolve();
 
-    expect((marketClient as any).pendingRequests.size).toBe(1);
+    expect((marketClient as { pendingRequests: Set<unknown> }).pendingRequests.size).toBe(1);
   });
 
   it('performs delta fetching when IDB has old data', async () => {
@@ -162,11 +149,11 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
       { date: '2026-01-07', open: TEST_PRICES.HIGH, high: TEST_PRICES.HIGH, low: TEST_PRICES.HIGH, close: TEST_PRICES.HIGH, volume: TEST_VOLUMES.LARGE }
     ];
 
-    const result = (marketClient as any).interpolateOHLCV(data);
+    const result = (marketClient as { interpolateOHLCV: (data: unknown[]) => unknown[] }).interpolateOHLCV(data);
     expect(result.length).toBeGreaterThan(2);
-    const gapDay = result.find((d: any) => d.date === '2026-01-06');
+    const gapDay = result.find((d: { date: string }) => d.date === '2026-01-06');
     expect(gapDay).toBeDefined();
-    expect(gapDay.close).toBeCloseTo((TEST_PRICES.INITIAL + TEST_PRICES.HIGH) / 2);
+    expect((gapDay as { close: number }).close).toBeCloseTo((TEST_PRICES.INITIAL + TEST_PRICES.HIGH) / 2);
   });
 
   it('handles fetchMarketIndex failure gracefully', async () => {

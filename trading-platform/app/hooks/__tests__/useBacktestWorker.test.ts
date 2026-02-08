@@ -3,13 +3,13 @@ import { useBacktestWorker } from '../useBacktestWorker';
 import { BacktestResult } from '../../types';
 
 // Mock Worker
-let mockWorkerInstance: any = null;
+let mockWorkerInstance: { onmessage: ((event: unknown) => void) | null; onerror: ((error: unknown) => void) | null; postMessage: jest.Mock; terminate: jest.Mock } | null = null;
 const mockPostMessage = jest.fn();
 const mockTerminate = jest.fn();
 
 class MockWorker {
-  onmessage: ((event: any) => void) | null = null;
-  onerror: ((error: any) => void) | null = null;
+  onmessage: ((event: unknown) => void) | null = null;
+  onerror: ((error: unknown) => void) | null = null;
   postMessage = mockPostMessage;
   terminate = mockTerminate;
 
@@ -18,7 +18,7 @@ class MockWorker {
   }
 }
 
-global.Worker = MockWorker as any;
+global.Worker = MockWorker as unknown;
 
 describe('useBacktestWorker', () => {
   beforeEach(() => {

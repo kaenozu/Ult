@@ -7,17 +7,11 @@ import type {
   PsychologyAlert,
   MentalHealthMetrics,
   DisciplineRules,
-  DisciplineViolation,
   EmotionScore,
   CoachingRecommendation,
   TradingSession,
   PsychologyAnalysisResult,
-  EmotionType,
   MentalState,
-  CoachingPriority,
-  CoachingType,
-  WarningLevel,
-  EnhancedJournalEntry,
 } from '@/app/types/psychology';
 
 // ============================================================================
@@ -170,7 +164,7 @@ export interface PsychologyStoreState {
 
   // Cooldown actions
   startCooldown: (cooldown: CooldownRecord) => void;
-  endCooldown: () => void;
+  endCooldown: (cooldownId?: string) => void;
   recordCooldownViolation: () => void;
 
   // Goals actions
@@ -228,7 +222,9 @@ export const usePsychologyStore = create<PsychologyStoreState>()(
 
       dismissRecommendation: (index) => set((state) => {
         const newRecs = [...state.active_recommendations];
-        newRecs[index] = { ...newRecs[index], dismissed: true };
+        if (newRecs[index]) {
+          newRecs[index] = { ...newRecs[index], dismissed: true };
+        }
         return { active_recommendations: newRecs };
       }),
 
@@ -242,6 +238,8 @@ export const usePsychologyStore = create<PsychologyStoreState>()(
 
       addAnalysis: (analysis) => set((state) => ({
         analysis_history: [...state.analysis_history, analysis],
+        current_mental_health: analysis.mental_health,
+        active_recommendations: analysis.coaching_recommendations.filter(r => !r.dismissed)
       })),
 
       resetState: () => set({
@@ -270,7 +268,7 @@ export const usePsychologyStore = create<PsychologyStoreState>()(
       clearAlerts: () => set({ alerts: [] }),
 
       dismissAlert: (timestamp) => set((state) => ({
-        alerts: state.alerts.filter(a => a.timestamp !== timestamp),
+        alerts: state.alerts.filter(a => (a.timestamp !== timestamp && a.id !== timestamp)),
       })),
 
       getAlertStats: () => {
@@ -325,7 +323,12 @@ export const usePsychologyStore = create<PsychologyStoreState>()(
         cooldownRecords: [...get().cooldownRecords, cooldown],
       }),
 
-      endCooldown: () => set({ currentCooldown: null }),
+      endCooldown: (cooldownId) => set((state) => ({
+        currentCooldown: cooldownId ? (state.currentCooldown?.id === cooldownId ? null : state.currentCooldown) : null,
+        cooldownRecords: cooldownId ? state.cooldownRecords.map(c => 
+          c.id === cooldownId ? { ...c, endTime: new Date() } : c
+        ) : state.cooldownRecords
+      })),
 
       recordCooldownViolation: () => set((state) => {
         if (!state.currentCooldown) return state;
@@ -344,8 +347,8 @@ export const usePsychologyStore = create<PsychologyStoreState>()(
           ...state.goals,
           ...newGoals,
           daily: { ...state.goals.daily, ...newGoals.daily },
-          weekly: newGoals.weekly ? { ...state.goals.weekly, ...newGoals.weekly } as WeeklyGoal : state.goals.weekly,
-          monthly: newGoals.monthly ? { ...state.goals.monthly, ...newGoals.monthly } as MonthlyGoal : state.goals.monthly,
+          weekly: newGoals.weekly ? { ...state.goals.weekly, ...newGoals.weekly } as any : state.goals.weekly,
+          monthly: newGoals.monthly ? { ...state.goals.monthly, ...newGoals.monthly } as any : state.goals.monthly,
         },
       })),
 

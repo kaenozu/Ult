@@ -500,7 +500,7 @@ class WinningTradingSystem {
       pnlPercent: t.pnlPercent,
       fees: 0,
       slippage: 0,
-      exitReason: t.exitReason as any,
+      exitReason: t.exitReason as 'target' | 'stop' | 'signal' | 'trailing_stop' | 'time' | 'end_of_data',
       strategy: t.strategy,
       riskRewardRatio: 0,
       holdingPeriods: 0,

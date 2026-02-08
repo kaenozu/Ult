@@ -110,14 +110,27 @@ export function validateEnvironment(): EnvironmentConfig {
     if (isProduction && !isBuildPhase) {
       // In production runtime, JWT_SECRET is required
       jwtSecret = getEnv('JWT_SECRET');
+      
+      // Validate JWT secret strength
       if (jwtSecret === 'default-secret-change-in-production') {
         throw new EnvironmentValidationError(
           'JWT_SECRET must be changed from default value in production'
         );
       }
+      
+      // Minimum 32 characters for security
+      if (jwtSecret.length < 32) {
+        throw new EnvironmentValidationError(
+          'JWT_SECRET must be at least 32 characters long for security'
+        );
+      }
     } else {
-      // In development/test or build phase, allow fallback
+      // In development/test or build phase, allow fallback but warn
       jwtSecret = getOptionalEnv('JWT_SECRET', 'dev-secret-key-do-not-use-in-production');
+      
+      if (jwtSecret === 'dev-secret-key-do-not-use-in-production' && isDevelopment) {
+        logger.warn('⚠️  Using default JWT secret for development. Do not use in production!');
+      }
     }
 
     const jwtExpiration = getOptionalEnv('JWT_EXPIRATION', '24h');

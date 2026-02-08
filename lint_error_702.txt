@@ -1,0 +1,1846 @@
+
+> trading-platform@0.1.0 lint
+> eslint .
+
+
+/home/neoenox/Ult/trading-platform/app/__tests__/Heatmap.test.tsx
+  58:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/Journal.test.tsx
+   17:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   63:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   82:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  111:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  143:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/Screener.test.tsx
+   65:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  160:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/StockChart.test.tsx
+  49:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/breakout.test.ts
+  1:48  warning  'BreakoutEvent' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/__tests__/data-aggregator.test.ts
+   10:10  warning  'mlPredictionService' is defined but never used  @typescript-eslint/no-unused-vars
+   30:29  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   62:7   warning  'TEST_RETRY' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   83:22  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   97:11  warning  'p1' is assigned a value but never used          @typescript-eslint/no-unused-vars
+   98:11  warning  'p2' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  104:29  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  165:37  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  167:36  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/error-handler.test.ts
+   12:5   warning  'ERROR_MESSAGES' is defined but never used  @typescript-eslint/no-unused-vars
+   19:45  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   67:55  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   77:64  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   86:54  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+   96:55  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  114:55  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  139:29  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  141:55  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  150:29  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  152:55  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  158:29  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  160:55  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  168:67  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  178:44  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  182:63  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  187:45  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+  193:51  warning  Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/idb.test.ts
+    6:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    7:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    8:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    9:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   47:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   66:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   72:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   78:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   91:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  118:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  132:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/property-based.test.ts
+  20:3  warning  'validateSymbol' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/__tests__/route_robustness.test.ts
+  5:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/screener-utils.test.ts
+  71:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/stocks-data.test.ts
+    8:5   warning  'JAPAN_STOCKS' is defined but never used  @typescript-eslint/no-unused-vars
+    9:5   warning  'USA_STOCKS' is defined but never used    @typescript-eslint/no-unused-vars
+  142:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/tradingCore.test.ts
+    1:32  warning  'jest' is defined but never used                       @typescript-eslint/no-unused-vars
+  110:13  warning  'initialPositions' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/__tests__/tradingStore-atomic.test.ts
+  17:29  warning  'order' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/__tests__/tradingStore.test.ts
+   17:68   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   33:52   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   34:52   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:104  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:104  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:10   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:97   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:72   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   97:70   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:103  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:103  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:103  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:12   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/types.test.ts
+  60:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  79:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  88:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  89:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  90:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/__tests__/utils/test-utils.tsx
+  138:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  139:11  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  201:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  201:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:63  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:76  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  221:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  221:79  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  236:73  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  236:86  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  270:42  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/ai-advisor/page.tsx
+  10:10  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/api/data-quality/route.ts
+   3:26  warning  'validationError' is defined but never used        @typescript-eslint/no-unused-vars
+  31:13  warning  'anomalyCount' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/api/market/route.ts
+  175:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/api/sentiment/enhanced/route.ts
+  30:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/api/trading/__tests__/auth.test.ts
+  37:57  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/api/trading/route.ts
+    7:10  warning  'csrfTokenMiddleware' is defined but never used  @typescript-eslint/no-unused-vars
+  335:64  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/AccountSettingsPanel.tsx
+  37:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/neoenox/Ult/trading-platform/app/components/AccountSettingsPanel.tsx:37:5
+  35 |   // Sync local state with store when settings change externally
+  36 |   useEffect(() => {
+> 37 |     setFormState({
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  38 |       accountEquity: settings.accountEquity,
+  39 |       riskPerTrade: settings.riskPerTrade,
+  40 |       maxPositionPercent: settings.maxPositionPercent,  react-hooks/set-state-in-effect
+
+/home/neoenox/Ult/trading-platform/app/components/AccuracyBadge/AccuracyBadge.tsx
+  5:22  warning  'TrendingDown' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/AlertConditionManager.tsx
+   14:5   warning  'updateCondition' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  158:97  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/AlertPanel.tsx
+   1:20  warning  'useEffect' is defined but never used                                         @typescript-eslint/no-unused-vars
+   3:10  warning  'Alert' is defined but never used                                             @typescript-eslint/no-unused-vars
+   4:14  warning  'formatCurrency' is defined but never used                                    @typescript-eslint/no-unused-vars
+   5:10  warning  'TrendingUp' is defined but never used                                        @typescript-eslint/no-unused-vars
+   5:22  warning  'TrendingDown' is defined but never used                                      @typescript-eslint/no-unused-vars
+   5:36  warning  'Minus' is defined but never used                                             @typescript-eslint/no-unused-vars
+   5:43  warning  'AlertTriangle' is defined but never used                                     @typescript-eslint/no-unused-vars
+   5:65  warning  'X' is defined but never used                                                 @typescript-eslint/no-unused-vars
+   5:82  warning  'Clock' is defined but never used                                             @typescript-eslint/no-unused-vars
+   7:23  warning  'getSeverityColorBase' is defined but never used                              @typescript-eslint/no-unused-vars
+  17:38  warning  'stockPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  72:9   warning  'getTrendIcon' is assigned a value but never used                             @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/ChartToolbar.tsx
+  35:9  warning  'isIntraday' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/DashboardCustomizer.tsx
+  5:24  warning  'Settings' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/Header.tsx
+  4:46  warning  'TrendingUp' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/KellyPositionSizingDisplay.tsx
+   9:10  warning  'useMemo' is defined but never used     @typescript-eslint/no-unused-vars
+  12:37  warning  'DollarSign' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/KeyboardShortcutHelp.tsx
+  6:10  warning  'Button' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/LeftSidebar.tsx
+  7:10  warning  'useWatchlistStore' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/MarketDataPanel.tsx
+   9:38  warning  'useCallback' is defined but never used                                  @typescript-eslint/no-unused-vars
+  37:31  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/Navigation.tsx
+  6:23  warning  'FileText' is defined but never used   @typescript-eslint/no-unused-vars
+  7:13  warning  'Target' is defined but never used     @typescript-eslint/no-unused-vars
+  7:21  warning  'Activity' is defined but never used   @typescript-eslint/no-unused-vars
+  7:31  warning  'Globe' is defined but never used      @typescript-eslint/no-unused-vars
+  7:38  warning  'Settings2' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/NotificationCenter.tsx
+   3:10  warning  'Alert' is defined but never used                                          @typescript-eslint/no-unused-vars
+   3:17  warning  'AlertSeverity' is defined but never used                                  @typescript-eslint/no-unused-vars
+   3:32  warning  'AlertSettings' is defined but never used                                  @typescript-eslint/no-unused-vars
+  17:38  warning  'onClose' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/RiskDashboard.tsx
+   18:3   warning  'TrendingDown' is defined but never used                                     @typescript-eslint/no-unused-vars
+   24:3   warning  'Settings' is defined but never used                                         @typescript-eslint/no-unused-vars
+   27:3   warning  'Info' is defined but never used                                             @typescript-eslint/no-unused-vars
+   43:3   warning  'HedgeStrategy' is defined but never used                                    @typescript-eslint/no-unused-vars
+  442:3   warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  544:49  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  622:3   warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/RiskMonitoringDashboard.tsx
+  21:3  warning  'CheckCircle' is defined but never used              @typescript-eslint/no-unused-vars
+  23:3  warning  'Settings' is defined but never used                 @typescript-eslint/no-unused-vars
+  37:5  warning  'alerts' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  72:9  warning  'criticalAlerts' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/SignalPanel/SupplyDemandView.tsx
+  3:30  warning  'SupplyDemandLevel' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/SignalPanel/components/SignalDisplay.tsx
+  3:10  warning  'cn' is defined but never used                  @typescript-eslint/no-unused-vars
+  3:14  warning  'getConfidenceColor' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/SignalPanel/hooks/useBacktestControls.ts
+  56:6   warning  React Hook useEffect has a missing dependency: 'ohlcv'. Either include it or remove the dependency array                                  react-hooks/exhaustive-deps
+  56:63  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+
+/home/neoenox/Ult/trading-platform/app/components/SignalPanel/hooks/useSignalData.ts
+   1:10  warning  'useEffect' is defined but never used                                                                                                                                                                 @typescript-eslint/no-unused-vars
+   1:30  warning  'useCallback' is defined but never used                                                                                                                                                               @typescript-eslint/no-unused-vars
+  13:11  warning  'toggleAI' is assigned a value but never used                                                                                                                                                         @typescript-eslint/no-unused-vars
+  18:9   warning  The 'preciseHitRate' conditional could make the dependencies of useMemo Hook (at line 28) change on every render. To fix this, wrap the initialization of 'preciseHitRate' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+/home/neoenox/Ult/trading-platform/app/components/StockChart/OptimizedStockChart.tsx
+   57:21  warning  'setScrollTop' is assigned a value but never used                                      @typescript-eslint/no-unused-vars
+  143:3   warning  'indicators' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  170:9   warning  'chartData' is assigned a value but never used                                         @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/StockChart/StockChart.tsx
+    9:10  warning  'formatCurrency' is defined but never used                                                                                                     @typescript-eslint/no-unused-vars
+   10:10  warning  'CANDLESTICK' is defined but never used                                                                                                        @typescript-eslint/no-unused-vars
+   10:35  warning  'BOLLINGER_BANDS' is defined but never used                                                                                                    @typescript-eslint/no-unused-vars
+   10:52  warning  'CHART_CONFIG' is defined but never used                                                                                                       @typescript-eslint/no-unused-vars
+   52:9   warning  'dynamicHeight' is assigned a value but never used                                                                                             @typescript-eslint/no-unused-vars
+  165:7   warning  React Hook useMemo has an unnecessary dependency: 'forecastExtension.forecastPrices.length'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+/home/neoenox/Ult/trading-platform/app/components/StockChart/hooks/__tests__/useChartData.test.ts
+  275:15  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/StockChart/hooks/useChartOptions.ts
+    2:24  warning  'TooltipItem' is defined but never used                                         @typescript-eslint/no-unused-vars
+   27:3   warning  'extendedData' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  121:12  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/StockChart/hooks/useSupplyDemandAnalysis.ts
+  3:30  warning  'SupplyDemandLevel' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/StockChart/plugins/supplyDemandWalls.ts
+  10:17  warning  'ChartType' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/StockTable.tsx
+   18:3  warning  'showVolume' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  121:9  warning  'direction' is assigned a value but never used                                @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/StrategyDashboard.tsx
+   40:3   warning  'TooltipItem' is defined but never used                                       @typescript-eslint/no-unused-vars
+  422:28  warning  Unexpected any. Specify a different type                                      @typescript-eslint/no-explicit-any
+  450:34  warning  'strategies' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/UnifiedIntelligenceCard.tsx
+  28:102  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  47:72   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/UnifiedTradingDashboard.tsx
+  10:27  warning  'useEffect' is defined but never used                @typescript-eslint/no-unused-vars
+  12:29  warning  'CardHeader' is defined but never used               @typescript-eslint/no-unused-vars
+  12:41  warning  'CardTitle' is defined but never used                @typescript-eslint/no-unused-vars
+  21:3   warning  'TrendingUp' is defined but never used               @typescript-eslint/no-unused-vars
+  22:3   warning  'TrendingDown' is defined but never used             @typescript-eslint/no-unused-vars
+  27:3   warning  'Bell' is defined but never used                     @typescript-eslint/no-unused-vars
+  28:3   warning  'Settings' is defined but never used                 @typescript-eslint/no-unused-vars
+  61:5   warning  'placeOrder' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  63:5   warning  'updateConfig' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  86:9   warning  'portfolioStats' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/UniverseManagerPanel.tsx
+   33:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  348:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/__tests__/AlertPanel.test.tsx
+  22:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  23:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/__tests__/NotificationCenter.test.tsx
+  11:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  12:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  13:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/__tests__/OrderPanel_UX_Enhancement.test.tsx
+  1:37  warning  'waitFor' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/__tests__/SignalCard.test.tsx
+  131:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/__tests__/StockTable.test.tsx
+   42:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   48:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   68:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   84:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  119:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/__tests__/TradingDetails.test.tsx
+  37:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/__tests__/VolumeProfilePlugin.test.ts
+  4:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  5:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/components/backtest/BacktestResultsDashboard.tsx
+   16:8   warning  'AdvancedMetrics' is defined but never used            @typescript-eslint/no-unused-vars
+   18:8   warning  'TradeAnalysis' is defined but never used              @typescript-eslint/no-unused-vars
+   27:3   warning  'Calendar' is defined but never used                   @typescript-eslint/no-unused-vars
+   66:9   warning  'tradeAnalysis' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   94:9   warning  'rowCount' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  496:21  warning  'setSortField' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  497:25  warning  'setSortDirection' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/components/ui/LoadingStates.tsx
+  144:3  warning  'height' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/AdvancedPerformanceMetrics.ts
+  260:5   warning  'equity' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
+  908:68  warning  'isProfit' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/MonteCarloSimulator.ts
+  462:12  warning  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  467:12  warning  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  472:12  warning  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  559:11  warning  'finalCapitals' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/MultiAssetBacktestEngine.ts
+   16:3   warning  'RISK_MANAGEMENT' is defined but never used                              @typescript-eslint/no-unused-vars
+  384:46  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/OverfittingDetector.ts
+  324:7  warning  'factors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/RealisticBacktestEngine.ts
+   13:10  warning  'EventEmitter' is defined but never used                                @typescript-eslint/no-unused-vars
+   21:3   warning  'StrategyContext' is defined but never used                             @typescript-eslint/no-unused-vars
+  304:44  warning  'side' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/RealisticBacktestOrchestrator.ts
+  305:5  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  466:5  warning  'monteCarloResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  556:5  warning  'monteCarloResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/SlippageModel.ts
+  294:3  warning  'marketCap' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/WalkForwardAnalyzer.ts
+   15:3  warning  'StrategyAction' is defined but never used                              @typescript-eslint/no-unused-vars
+  743:5  warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/WinningBacktestEngine.ts
+   16:10  warning  'PositionSizingResult' is defined but never used                          @typescript-eslint/no-unused-vars
+  469:29  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  481:5   warning  'index' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  507:17  warning  'symbol' is assigned a value but never used                               @typescript-eslint/no-unused-vars
+  514:27  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/__tests__/AdvancedBacktestEngine.realistic-slippage.test.ts
+  366:27  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  377:7   warning  'tradeCount' is assigned a value but never used                            @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/__tests__/MonteCarloSimulator.test.ts
+   12:8   warning  'MonteCarloConfig' is defined but never used    @typescript-eslint/no-unused-vars
+  181:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  192:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  203:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  250:19  warning  'metric' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  265:19  warning  'metric' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  312:19  warning  'goal' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/__tests__/OverfittingDetector.test.ts
+  8:26  warning  'BacktestConfig' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/__tests__/RealisticBacktestEngine.test.ts
+  195:13  warning  'haslowerTier' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/__tests__/SlippageModel.test.ts
+  13:8  warning  'SlippageConfig' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/backtest/engine/__tests__/WalkForwardAnalyzer.test.ts
+  11:8   warning  'WalkForwardConfig' is defined but never used                             @typescript-eslint/no-unused-vars
+  12:8   warning  'WalkForwardReport' is defined but never used                             @typescript-eslint/no-unused-vars
+  79:32  warning  'params' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/market-data/FlashCrashDetector.ts
+  363:11  warning  'lastData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/market-data/GapRiskManager.ts
+  442:11  warning  'absGap' is assigned a value but never used                                  @typescript-eslint/no-unused-vars
+  471:5   warning  'riskLevel' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/market-data/__tests__/SmartDataCache.test.ts
+  305:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/domains/market-data/integration/MultiSourceDataAggregator.ts
+   14:15  warning  'OHLCV' is defined but never used             @typescript-eslint/no-unused-vars
+  181:11  warning  'latency' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/market-data/integration/__tests__/MultiSourceDataAggregator.test.ts
+   9:8  warning  'AggregationConfig' is defined but never used  @typescript-eslint/no-unused-vars
+  10:8  warning  'AggregationResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/market-data/persistence/DataPersistenceLayer.ts
+  542:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/domains/market-data/services/market-data-service.ts
+  8:45  warning  'RealtimeQuote' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/portfolio/BlackLitterman.ts
+  179:11  warning  'n' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  236:11  warning  'n' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/portfolio/CovarianceCalculator.ts
+  73:11  warning  'T' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/portfolio/FactorModeling.ts
+   17:3   warning  'FactorRiskDecomposition' is defined but never used  @typescript-eslint/no-unused-vars
+  361:11  warning  'n' is assigned a value but never used               @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/portfolio/PortfolioOptimizer.ts
+  717:9  warning  'bestPoint' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  756:9  warning  'bestPoint' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  951:7  warning  'totalWeight' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/portfolio/QuadraticOptimizer.ts
+   11:57  warning  'OptimizationResult' is defined but never used        @typescript-eslint/no-unused-vars
+   89:13  warning  'sharpeRatio' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  142:13  warning  'portfolioReturn' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/portfolio/ReturnsCalculator.ts
+  77:13  warning  'historicalReturn' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/portfolio/RiskParity.ts
+   75:13  warning  'portfolioVol' is assigned a value but never used                                         @typescript-eslint/no-unused-vars
+  207:5   warning  'linkageMethod' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  209:11  warning  'n' is assigned a value but never used                                                    @typescript-eslint/no-unused-vars
+  337:11  warning  'n' is assigned a value but never used                                                    @typescript-eslint/no-unused-vars
+  389:5   warning  'assets' is defined but never used. Allowed unused args must match /^_/u                  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/models/ml/EnsembleModel.ts
+  227:11  warning  'highs' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  228:11  warning  'lows' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  665:11  warning  'closes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/models/ml/FeatureEngineering.ts
+  922:34  warning  'windowSize' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  930:79  warning  Unexpected any. Specify a different type                                      @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/models/ml/MLService.ts
+  118:30  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/models/ml/ModelDriftDetector.ts
+  126:11  warning  'overallDriftSeverity' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/models/ml/__tests__/EnsembleModel.test.ts
+    7:44  warning  'jest' is defined but never used                     @typescript-eslint/no-unused-vars
+    8:25  warning  'EnsembleModel' is defined but never used            @typescript-eslint/no-unused-vars
+    8:40  warning  'ModelType' is defined but never used                @typescript-eslint/no-unused-vars
+  145:13  warning  'initialWeights' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/models/ml/__tests__/FeatureEngineering.test.ts
+  8:43  warning  'TechnicalFeatures' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/models/ml/__tests__/MLService.test.ts
+  8:21  warning  'MLService' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/models/ml/__tests__/ModelDriftDetector.test.ts
+  10:3  warning  'ModelDriftDetector' is defined but never used    @typescript-eslint/no-unused-vars
+  12:3  warning  'DriftDetectionResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/services/enhanced-ml-service.ts
+   16:24  warning  'Signal' is defined but never used                                           @typescript-eslint/no-unused-vars
+   18:10  warning  'FeatureCalculationService' is defined but never used                        @typescript-eslint/no-unused-vars
+  194:28  warning  'features' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  393:32  warning  'modelType' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/services/feature-calculation-service.ts
+  111:11  warning  'macdLine' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/services/integrated-prediction-service.ts
+   8:32  warning  'TechnicalIndicator' is defined but never used   @typescript-eslint/no-unused-vars
+  14:10  warning  'BACKTEST_CONFIG' is defined but never used      @typescript-eslint/no-unused-vars
+  54:11  warning  'indicators' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/domains/prediction/services/model-training-example.ts
+  11:10  warning  'mlModelService' is defined but never used       @typescript-eslint/no-unused-vars
+  13:10  warning  'PredictionFeatures' is defined but never used   @typescript-eslint/no-unused-vars
+  74:10  warning  'calculateIndicators' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/hooks/__tests__/useAIPerformance.test.ts
+  106:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/hooks/__tests__/useBacktestWorker.test.ts
+   6:25  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  11:23  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  12:21  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  16:15  warning  'scriptURL' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  21:31  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  59:11  warning  'backtestPromise' is assigned a value but never used                         @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/hooks/__tests__/useSignalAlerts.test.ts
+   50:23  warning  Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+   76:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   98:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  125:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  150:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  169:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  188:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  303:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  465:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  546:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  565:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/hooks/__tests__/useStockData.test.ts
+  16:81  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  45:81  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:81  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/hooks/queries/usePortfolio.ts
+  191:9  warning  'queryClient' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/hooks/useOrderEntry.ts
+  1:20  warning  'useMemo' is defined but never used  @typescript-eslint/no-unused-vars
+  2:39  warning  'OHLCV' is defined but never used    @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/hooks/usePerformance.ts
+   11:10  warning  'isEqual' is defined but never used              @typescript-eslint/no-unused-vars
+   34:54  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   34:64  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  133:58  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  133:68  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  156:58  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  156:68  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  203:38  warning  'startIndex' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  203:50  warning  'endIndex' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/hooks/useSignalAlerts.ts
+  26:72  warning  'previousHitRate' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/hooks/useSymbolAccuracy.ts
+   84:14  warning  'e' is defined but never used                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  203:6   warning  React Hook useEffect has a missing dependency: 'ohlcv'. Either include it or remove the dependency array. If 'setAccuracy' needs the current value of 'ohlcv', you can also switch to useReducer instead of useState and read 'ohlcv' in the reducer  react-hooks/exhaustive-deps
+  203:49  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                              react-hooks/exhaustive-deps
+
+/home/neoenox/Ult/trading-platform/app/i18n/__tests__/utils.test.ts
+  18:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/infrastructure/api/DataAggregator.ts
+   11:15  warning  'OHLCV' is defined but never used                                      @typescript-eslint/no-unused-vars
+   11:22  warning  'Stock' is defined but never used                                      @typescript-eslint/no-unused-vars
+   11:29  warning  'Signal' is defined but never used                                     @typescript-eslint/no-unused-vars
+   11:37  warning  'TechnicalIndicator' is defined but never used                         @typescript-eslint/no-unused-vars
+   66:41  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+   70:48  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+   73:36  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  251:17  warning  '_' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  278:45  warning  'ttl' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  412:48  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  429:25  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  430:26  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+  433:37  warning  Unexpected any. Specify a different type                               @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/infrastructure/api/UnifiedApiClient.ts
+  120:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/infrastructure/api/__tests__/DataAggregator.test.ts
+  86:13  warning  'maxBatchSize' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/infrastructure/api/__tests__/idb-migrations.test.ts
+  21:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/infrastructure/api/__tests__/idb.test.ts
+  72:13  warning  'updated' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/infrastructure/api/data-aggregator.ts
+   1:45  warning  'APIResult' is defined but never used     @typescript-eslint/no-unused-vars
+  31:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  87:16  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/infrastructure/api/request-deduplicator.ts
+  14:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/infrastructure/cache.ts
+  71:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/AccuracyService.ts
+  244:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  245:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/AgentManager.ts
+    8:17  warning  'ChildProcess' is defined but never used                                @typescript-eslint/no-unused-vars
+    8:47  warning  'execSync' is defined but never used                                    @typescript-eslint/no-unused-vars
+   14:7   warning  'execAsync' is assigned a value but never used                          @typescript-eslint/no-unused-vars
+  204:41  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  251:37  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  298:36  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  319:38  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  343:40  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  367:33  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  449:13  warning  'errorMessage' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/AgentSystem/skills.ts
+  363:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+/home/neoenox/Ult/trading-platform/app/lib/AlertNotificationSystem.ts
+  163:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:81  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/AnalysisService.ts
+   1:25  warning  'Stock' is defined but never used                @typescript-eslint/no-unused-vars
+  10:5   warning  'SIGNAL_THRESHOLDS' is defined but never used    @typescript-eslint/no-unused-vars
+  11:5   warning  'RISK_MANAGEMENT' is defined but never used      @typescript-eslint/no-unused-vars
+  13:5   warning  'VOLATILITY' is defined but never used           @typescript-eslint/no-unused-vars
+  17:10  warning  'exitStrategy' is defined but never used         @typescript-eslint/no-unused-vars
+  17:24  warning  'ExitType' is defined but never used             @typescript-eslint/no-unused-vars
+  17:34  warning  'TrailingStopConfig' is defined but never used   @typescript-eslint/no-unused-vars
+  17:54  warning  'TimeBasedExitConfig' is defined but never used  @typescript-eslint/no-unused-vars
+  17:75  warning  'CompoundExitConfig' is defined but never used   @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/BacktestVisualizationUtils.ts
+  8:26  warning  'BacktestTrade' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ConsensusSignalService.ts
+   94:44  warning  'currentPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  423:28  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/ExitStrategy.ts
+  126:11  warning  'trailingDistance' is assigned a value but never used                     @typescript-eslint/no-unused-vars
+  375:5   warning  'config' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/MarketDataService.ts
+  139:73  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  151:13  warning  'fetchStartTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  204:63  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/OptimizedAccuracyService.ts
+   10:17  warning  'Signal' is defined but never used                                        @typescript-eslint/no-unused-vars
+   15:5   warning  'PRICE_CALCULATION' is defined but never used                             @typescript-eslint/no-unused-vars
+  124:47  warning  'market' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  351:15  warning  'startTime' is assigned a value but never used                            @typescript-eslint/no-unused-vars
+  359:15  warning  'endTime' is assigned a value but never used                              @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/VolumeAnalysis.ts
+  2:32  warning  'DATA_REQUIREMENTS' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/WinningTradingSystem.ts
+   14:17  warning  'Stock' is defined but never used                 @typescript-eslint/no-unused-vars
+   16:32  warning  'PositionSizingResult' is defined but never used  @typescript-eslint/no-unused-vars
+   18:15  warning  'PerformanceMetrics' is defined but never used    @typescript-eslint/no-unused-vars
+  503:35  warning  Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/AccuracyService.test.ts
+  2:17  warning  'BacktestTrade' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/AnalysisService.test.ts
+   7:10  warning  'technicalIndicatorService' is defined but never used                     @typescript-eslint/no-unused-vars
+   8:10  warning  'accuracyService' is defined but never used                               @typescript-eslint/no-unused-vars
+   9:10  warning  'marketDataService' is defined but never used                             @typescript-eslint/no-unused-vars
+  10:10  warning  'volumeAnalysisService' is defined but never used                         @typescript-eslint/no-unused-vars
+  16:46  warning  'period' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/BacktestService.test.ts
+    7:10  warning  'backtestService' is defined but never used  @typescript-eslint/no-unused-vars
+  175:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  180:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  185:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  190:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  195:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  220:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  241:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  262:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  292:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  322:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/ConsensusSignalService.test.ts
+  8:32  warning  'beforeEach' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/ExitStrategy.test.ts
+   8:3  warning  'ExitStrategy' is defined but never used                @typescript-eslint/no-unused-vars
+  14:3  warning  'ExitSignal' is defined but never used                  @typescript-eslint/no-unused-vars
+  37:9  warning  'generateOHLCVData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/MarketDataService.test.ts
+  9:29  warning  'MARKET_INDICES' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/MarketRegimeDetector.test.ts
+  6:32  warning  'MarketRegime' is defined but never used      @typescript-eslint/no-unused-vars
+  6:46  warning  'VolatilityRegime' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/MarketRegimeService.test.ts
+  1:31  warning  'MarketRegime' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/OptimizedBacktest.perf.test.ts
+  93:15  warning  'executionTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/TechnicalIndicatorService.test.ts
+  3:10  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/TransactionCostModel.test.ts
+   8:3  warning  'TransactionCostModel' is defined but never used   @typescript-eslint/no-unused-vars
+  10:3  warning  'TradeType' is defined but never used              @typescript-eslint/no-unused-vars
+  11:3  warning  'FeeStructure' is defined but never used           @typescript-eslint/no-unused-vars
+  12:3  warning  'TransactionCostResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/VolumeAnalysis.test.ts
+   10:35  warning  'TestDataValidators' is defined but never used  @typescript-eslint/no-unused-vars
+  286:59  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  287:64  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/WinningTradingSystem.test.ts
+  76:13  warning  'session' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/alertService.test.ts
+  65:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/api-middleware.test.ts
+   5:10  warning  'NextRequest' is defined but never used       @typescript-eslint/no-unused-vars
+  44:11  warning  'limited' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/auth.test.ts
+    1:29  warning  'verifyAuthToken' is defined but never used  @typescript-eslint/no-unused-vars
+    1:46  warning  'requireAuth' is defined but never used      @typescript-eslint/no-unused-vars
+    1:59  warning  'getAuthUser' is defined but never used      @typescript-eslint/no-unused-vars
+   51:44  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   62:26  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  139:22  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  177:22  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  207:44  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  216:44  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/chart-utils.test.ts
+  49:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/forecastAccuracy.test.ts
+    8:32  warning  'beforeEach' is defined but never used    @typescript-eslint/no-unused-vars
+  235:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  273:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/integration.test.ts
+   9:32  warning  'MarketRegime' is defined but never used                                  @typescript-eslint/no-unused-vars
+   9:46  warning  'VolatilityRegime' is defined but never used                              @typescript-eslint/no-unused-vars
+  15:46  warning  'period' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/logic_coverage.test.ts
+  3:5   warning  'generateDateRange' is defined but never used  @typescript-eslint/no-unused-vars
+  9:10  warning  'RSI_CONFIG' is defined but never used         @typescript-eslint/no-unused-vars
+  9:22  warning  'SMA_CONFIG' is defined but never used         @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/mlPrediction.test.ts
+  4:32  warning  'beforeEach' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/performance-utils.test.ts
+  12:3  warning  'PerformanceSeverity' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/performance.test.ts
+  121:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/result-type.test.ts
+   47:58  warning  'e' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  286:18  warning  'x' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/__tests__/utils.test.ts
+  22:15  warning  'CurrencyCode' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/AnomalyDetection/AlertManager.ts
+  226:35  warning  'alert' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  274:33  warning  'alert' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  274:47  warning  'rule' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
+  281:31  warning  'alert' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  418:40  warning  'alerts' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/AnomalyDetection/EventPredictor.ts
+   78:11  warning  'features' is assigned a value but never used                                @typescript-eslint/no-unused-vars
+  177:52  warning  'eventType' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/CompositeTechnicalAnalysisEngine.ts
+  434:11  warning  'sorted' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/EnsembleModel.ts
+  449:5  warning  'finalScore' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/HyperparameterOptimizer.ts
+  305:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  327:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  350:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/IntegrationExample.ts
+  237:9  warning  'weights' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/ModelMonitor.ts
+  459:43  warning  'trueNegative' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/ModelValidation.ts
+    8:10  warning  'OHLCV' is defined but never used                   @typescript-eslint/no-unused-vars
+  113:13  warning  'trainFeatures' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  117:13  warning  'trainTargets' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  189:13  warning  'trainFeatures' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  190:13  warning  'trainTargets' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  316:14  warning  'trueNegative' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/PredictiveAnalyticsEngine.ts
+   760:13  warning  'ensemblePrediction' is assigned a value but never used                     @typescript-eslint/no-unused-vars
+   813:79  warning  'features' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  1014:13  warning  'nextPrice' is assigned a value but never used                              @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/ReinforcementLearning/TradingAgent.ts
+  255:26  warning  'loss' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/aiAnalytics/__tests__/ModelValidation.test.ts
+  222:48  warning  'params' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
+  243:26  warning  'features' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/alertService.ts
+  1:32  warning  'AlertType' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/alerts/EnhancedAlertSystem.ts
+    8:10  warning  'EventEmitter' is defined but never used        @typescript-eslint/no-unused-vars
+    9:76  warning  'ALERT_TEMPLATES' is defined but never used     @typescript-eslint/no-unused-vars
+  345:17  warning  'id' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  779:11  warning  'firstBody' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  781:11  warning  'lastBody' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/alerts/WinningAlertEngine.ts
+  14:17  warning  'Stock' is defined but never used   @typescript-eslint/no-unused-vars
+  14:24  warning  'Signal' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/alternativeData/DataCollector.ts
+  451:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/alternativeData/EnhancedSentimentService.ts
+   34:51  warning  'DataSourceType' is defined but never used                                @typescript-eslint/no-unused-vars
+  469:40  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  514:38  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/alternativeData/__tests__/DataCollector.test.ts
+  9:3  warning  'DataSourceType' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/alternativeData/__tests__/__integration__/EnhancedSentimentService.test.ts
+    9:3   warning  'InvestorSentiment' is defined but never used          @typescript-eslint/no-unused-vars
+   10:3   warning  'SentimentLeadingIndicator' is defined but never used  @typescript-eslint/no-unused-vars
+  288:27  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/analysis.ts
+  6:17  warning  'Signal' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/analytics/WinningAnalytics.ts
+  14:10  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/api/DataAggregator.ts
+   11:15  warning  'OHLCV' is defined but never used                                      @typescript-eslint/no-unused-vars
+   11:22  warning  'Stock' is defined but never used                                      @typescript-eslint/no-unused-vars
+   11:29  warning  'Signal' is defined but never used                                     @typescript-eslint/no-unused-vars
+   11:37  warning  'TechnicalIndicator' is defined but never used                         @typescript-eslint/no-unused-vars
+  252:17  warning  '_' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  279:45  warning  'ttl' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/api/UnifiedApiClient.ts
+  128:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/api/__tests__/DataAggregator.improved.test.ts
+   13:36  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  153:13  warning  'idbClient' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/api/__tests__/DataAggregator.test.ts
+  86:13  warning  'maxBatchSize' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/api/__tests__/idb-migrations.test.ts
+  18:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/api/__tests__/idb.test.ts
+  72:13  warning  'updated' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/api/data-aggregator.ts
+    1:45  warning  'APIResult' is defined but never used  @typescript-eslint/no-unused-vars
+  124:16  warning  'err' is defined but never used        @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/api/rate-limiter.ts
+  132:15  warning  'minutes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  134:15  warning  'seconds' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/auth.ts
+   39:12  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+  105:9   warning  'config' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest-service.ts
+  197:5  warning  'capital' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  198:5  warning  'config' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/AdvancedBacktestEngine.ts
+  447:9   warning  'partialFills' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  460:67  warning  'index' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/AdvancedPerformanceMetrics.ts
+  260:5   warning  'equity' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
+  908:68  warning  'isProfit' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/CommissionCalculator.ts
+  175:11  warning  'tax' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/MonteCarloSimulator.ts
+  540:11  warning  'finalCapitals' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/MultiAssetBacktestEngine.ts
+   16:3   warning  'RISK_MANAGEMENT' is defined but never used                              @typescript-eslint/no-unused-vars
+  383:46  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/OverfittingDetector.ts
+  324:7  warning  'factors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/PartialFillSimulator.ts
+  117:11  warning  'orderValue' is assigned a value but never used                         @typescript-eslint/no-unused-vars
+  118:11  warning  'barValue' is assigned a value but never used                           @typescript-eslint/no-unused-vars
+  282:57  warning  'side' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/RealisticBacktestEngine.ts
+  312:15  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  313:15  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  319:68  warning  'index' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  320:45  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  336:33  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  375:15  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  376:15  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  522:45  warning  'side' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  747:14  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/RealisticBacktestExample.ts
+  285:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/RealisticBacktestOrchestrator.ts
+  285:5  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  446:5  warning  'monteCarloResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  536:5  warning  'monteCarloResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/RealisticBacktestingExample.ts
+   22:3   warning  'ComplexityMetrics' is defined but never used                              @typescript-eslint/no-unused-vars
+   25:10  warning  'ParameterOptimizer' is defined but never used                             @typescript-eslint/no-unused-vars
+   26:10  warning  'OptimizationConfig' is defined but never used                             @typescript-eslint/no-unused-vars
+   72:9   warning  'result' is assigned a value but never used                                @typescript-eslint/no-unused-vars
+  116:9   warning  'result' is assigned a value but never used                                @typescript-eslint/no-unused-vars
+  175:32  warning  'warning' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  175:41  warning  'i' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
+  180:39  warning  'rec' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
+  180:44  warning  'i' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
+  292:58  warning  'rec' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
+  292:63  warning  'i' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/SlippageModel.ts
+  294:3  warning  'marketCap' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/WalkForwardAnalysis.ts
+  10:43  warning  'MLBacktestConfig' is defined but never used          @typescript-eslint/no-unused-vars
+  67:27  warning  'normalizedTrain' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  67:44  warning  'scalers' is assigned a value but never used          @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/WalkForwardAnalyzer.ts
+   11:52  warning  'StrategyAction' is defined but never used                              @typescript-eslint/no-unused-vars
+  365:9   warning  'equity' is never reassigned. Use 'const' instead                       prefer-const
+  680:5   warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/WinningBacktestEngine.ts
+   17:15  warning  'PositionSizingResult' is defined but never used                          @typescript-eslint/no-unused-vars
+  484:29  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  496:5   warning  'index' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  522:17  warning  'symbol' is assigned a value but never used                               @typescript-eslint/no-unused-vars
+  529:27  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  887:22  warning  'result' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/__tests__/AdvancedBacktestEngine.realistic-slippage.test.ts
+  421:27  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  432:7   warning  'tradeCount' is assigned a value but never used                            @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/__tests__/LatencySimulator.test.ts
+  299:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/__tests__/MonteCarloSimulator.test.ts
+   12:8   warning  'MonteCarloConfig' is defined but never used    @typescript-eslint/no-unused-vars
+  181:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  192:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  203:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  250:19  warning  'metric' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  265:19  warning  'metric' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  312:19  warning  'goal' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/__tests__/OverfittingDetector.test.ts
+  8:26  warning  'BacktestConfig' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/__tests__/PartialFillSimulator.test.ts
+  123:13  warning  'queueResults' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/__tests__/RealisticBacktestEngine.test.ts
+  195:13  warning  'haslowerTier' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/__tests__/SlippageModel.test.ts
+  13:8  warning  'SlippageConfig' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/backtest/__tests__/WalkForwardAnalyzer.test.ts
+  11:8   warning  'WalkForwardConfig' is defined but never used                             @typescript-eslint/no-unused-vars
+  12:8   warning  'WalkForwardReport' is defined but never used                             @typescript-eslint/no-unused-vars
+  79:32  warning  'params' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/brokers/OrderExecutor.ts
+   18:10  warning  'BaseBrokerConnector' is defined but never used     @typescript-eslint/no-unused-vars
+  149:13  warning  'executionTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/brokers/__tests__/OrderExecutor.test.ts
+  198:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/config/__tests__/env-validator.test.ts
+  10:8  warning  'EnvironmentConfig' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/csrf/__tests__/csrf-protection.test.ts
+   2:23  warning  'NextResponse' is defined but never used                                @typescript-eslint/no-unused-vars
+  10:23  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
+  64:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
+  92:32  warning  'name' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/data/__tests__/SmartDataCache.test.ts
+  305:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/data/persistence/DataPersistenceLayer.ts
+  112:44  warning  'oldVersion' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  112:64  warning  'newVersion' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  541:55  warning  Unexpected any. Specify a different type                                      @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/data/quality/DataQualityChecker.ts
+  31:10  warning  'logger' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/di/container.ts
+  19:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/error-handler.ts
+  18:3  warning  'AuthenticationError' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/errors.ts
+  534:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  540:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/AdvancedOrderManager.ts
+  626:15  warning  'message' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/AlgorithmicExecutionEngine.ts
+  217:18  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  230:52  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  231:18  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  247:18  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  281:18  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  299:18  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  320:18  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  341:47  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  351:46  warning  'reason' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  366:9   warning  'impact' is never reassigned. Use 'const' instead                         prefer-const
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/BrokerConnectors.ts
+  334:40  warning  'callback' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  493:40  warning  'callback' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  646:40  warning  'callback' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/ExecutionQualityMonitor.ts
+    9:10  warning  'BrokerOrder' is defined but never used           @typescript-eslint/no-unused-vars
+   10:24  warning  'OrderFill' is defined but never used             @typescript-eslint/no-unused-vars
+  163:11  warning  'brokerOrder' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/OrderManagementSystem.ts
+  13:3  warning  'OrderStatus' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/SmartOrderRouter.ts
+  515:30  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/__tests__/AdvancedOrderManager.test.ts
+  7:55  warning  'jest' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/__tests__/AlgorithmicExecutionEngine.test.ts
+    6:3   warning  'Order' is defined but never used                     @typescript-eslint/no-unused-vars
+    9:3   warning  'DEFAULT_EXECUTION_CONFIG' is defined but never used  @typescript-eslint/no-unused-vars
+  260:13  warning  'result' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  478:30  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/__tests__/BrokerConnectors.test.ts
+  313:44  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/__tests__/ExecutionQualityMonitor.test.ts
+  100:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/execution/__tests__/SlippageMonitor.test.ts
+   11:8   warning  'SlippageRecord' is defined but never used                                     @typescript-eslint/no-unused-vars
+  360:50  warning  'symbolIndex' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/forecastAccuracy.ts
+  43:7  warning  'MIN_PREDICTIONS_FOR_STATS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/forecastMaster.ts
+   12:10  warning  'calculateATR' is defined but never used                             @typescript-eslint/no-unused-vars
+   14:52  warning  'BreakoutEvent' is defined but never used                            @typescript-eslint/no-unused-vars
+   15:52  warning  'Prediction' is defined but never used                               @typescript-eslint/no-unused-vars
+   46:7   warning  'CONFIDENCE_LEVELS' is assigned a value but never used               @typescript-eslint/no-unused-vars
+  118:8   warning  'd' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  118:11  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/lazyLoad.tsx
+    8:73  warning  'TableSkeleton' is defined but never used                                    @typescript-eslint/no-unused-vars
+   25:50  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+   26:27  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  119:16  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  196:3   warning  'chunkName' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  230:14  warning  'e' is defined but never used                                                @typescript-eslint/no-unused-vars
+  254:64  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  278:17  warning  'userId' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/logger/__tests__/index.test.ts
+  1:10  warning  'StructuredLogger' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/logger/index.ts
+  122:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  137:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/logger/sentry.ts
+  367:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  367:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  388:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  388:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/market/FlashCrashDetector.ts
+  363:11  warning  'lastData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/market/GapRiskManager.ts
+  442:11  warning  'absGap' is assigned a value but never used                                  @typescript-eslint/no-unused-vars
+  471:5   warning  'riskLevel' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/EnsembleModel.ts
+  199:11  warning  'highs' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  200:11  warning  'lows' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  637:11  warning  'closes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/FeatureEngineering.ts
+  226:13  warning  'highs' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  227:13  warning  'lows' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/MLService.ts
+  115:30  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/ModelDriftDetector.ts
+  126:11  warning  'overallDriftSeverity' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/ModelPipeline.ts
+  20:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/__tests__/EnsembleModel.test.ts
+    7:44  warning  'jest' is defined but never used                     @typescript-eslint/no-unused-vars
+    8:25  warning  'EnsembleModel' is defined but never used            @typescript-eslint/no-unused-vars
+    8:40  warning  'ModelType' is defined but never used                @typescript-eslint/no-unused-vars
+  145:13  warning  'initialWeights' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/__tests__/EnsembleStrategy.test.ts
+   17:50  warning  'inputTensor' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  381:13  warning  'importance1' is assigned a value but never used                               @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/__tests__/FeatureEngineering.test.ts
+  8:43  warning  'TechnicalFeatures' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/__tests__/MLService.test.ts
+  8:21  warning  'MLService' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/ml/__tests__/ModelDriftDetector.test.ts
+  10:3  warning  'ModelDriftDetector' is defined but never used    @typescript-eslint/no-unused-vars
+  12:3  warning  'DriftDetectionResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/mlPrediction.ts
+  175:47  warning  'marketComment' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  178:11  warning  'isStrong' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  212:7   warning  'correctionComment' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/mockPsychologyData.ts
+  72:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/monitoring/__tests__/monitoring.test.ts
+   59:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   60:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   61:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   63:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  233:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/monitoring/api-middleware.ts
+  60:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  64:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/nlp/NLPProcessor.ts
+  47:7  warning  'PERCENTAGE_PATTERN' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/nlp/NewsCollector.ts
+  278:30  warning  'source' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  287:34  warning  'source' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  295:52  warning  'source' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/nlp/SocialMediaCollector.ts
+  231:37  warning  'source' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  242:35  warning  'source' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  252:50  warning  'source' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/optimization/ParameterOptimizer.ts
+   20:3  warning  'OptimizationParameter' is defined but never used                         @typescript-eslint/no-unused-vars
+  331:5  warning  'config' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/optimizedBacktest.ts
+    9:78  warning  'calculateATR' is defined but never used               @typescript-eslint/no-unused-vars
+  345:9   warning  'cachedParams' is defined but never used               @typescript-eslint/no-unused-vars
+  352:13  warning  'shouldReoptimize' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/optimizer/WinRateMaximizer.ts
+   13:17  warning  'Signal' is defined but never used                                                @typescript-eslint/no-unused-vars
+  260:11  warning  'highs' is assigned a value but never used                                        @typescript-eslint/no-unused-vars
+  261:11  warning  'lows' is assigned a value but never used                                         @typescript-eslint/no-unused-vars
+  515:5   warning  'portfolioValue' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  555:5   warning  'data' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/optimizer/__tests__/WinRateMaximizer.test.ts
+  7:43  warning  'DEFAULT_OPTIMIZATION_CONFIG' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/paperTrading/PaperTradingEnvironment.ts
+  420:5   warning  'options' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  503:27  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/performance-examples.ts
+  22:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/performance-utils.ts
+   36:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   36:68  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   75:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   81:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  142:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  148:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  233:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/performance.ts
+   54:14  warning  'e' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   68:16  warning  'e' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   75:53  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   76:18  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  104:53  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  105:18  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  186:30  warning  The ref value 'renderCountRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'renderCountRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+  210:6   warning  React Hook useEffect has a missing dependency: 'componentName'. Either include it or remove the dependency array                                                                                                                                                             react-hooks/exhaustive-deps
+  253:6   warning  React Hook useCallback has an unnecessary dependency: 'name'. Either exclude it or remove the dependency array                                                                                                                                                               react-hooks/exhaustive-deps
+  395:14  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  400:51  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  401:23  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  440:14  warning  Unexpected any. Specify a different type                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/performance/PerformanceAnalyzer.ts
+  21:28  warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/performance/PerformanceMetrics.ts
+  112:59  warning  'returns' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  412:25  warning  'returns' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/performance/__tests__/PerformanceReporter.test.ts
+  138:13  warning  'now' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/performance/decorators.ts
+   11:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   17:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   17:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   18:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   25:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   25:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:58  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   58:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   58:60  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   87:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  113:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/performance/monitor.ts
+  357:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  361:33  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/performance/utils.ts
+  83:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  93:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  94:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/portfolio/PortfolioOptimizer.ts
+  717:9  warning  'bestPoint' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  756:9  warning  'bestPoint' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  951:7  warning  'totalWeight' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/portfolioOptimization/BlackLitterman.ts
+  179:11  warning  'n' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  236:11  warning  'n' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/portfolioOptimization/CovarianceCalculator.ts
+  73:11  warning  'T' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/portfolioOptimization/FactorModeling.ts
+   17:3   warning  'FactorRiskDecomposition' is defined but never used  @typescript-eslint/no-unused-vars
+  361:11  warning  'n' is assigned a value but never used               @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/portfolioOptimization/QuadraticOptimizer.ts
+   11:57  warning  'OptimizationResult' is defined but never used        @typescript-eslint/no-unused-vars
+   89:13  warning  'sharpeRatio' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  142:13  warning  'portfolioReturn' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/portfolioOptimization/ReturnsCalculator.ts
+  77:13  warning  'historicalReturn' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/portfolioOptimization/RiskParity.ts
+   75:13  warning  'portfolioVol' is assigned a value but never used                                         @typescript-eslint/no-unused-vars
+  207:5   warning  'linkageMethod' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  209:11  warning  'n' is assigned a value but never used                                                    @typescript-eslint/no-unused-vars
+  337:11  warning  'n' is assigned a value but never used                                                    @typescript-eslint/no-unused-vars
+  389:5   warning  'assets' is defined but never used. Allowed unused args must match /^_/u                  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/AdvancedRiskManager.ts
+  402:14  warning  'amount' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  697:11  warning  'positionWeight' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+  955:52  warning  'constraints' is assigned a value but never used                          @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/AutomaticRiskController.ts
+  11:21  warning  'Position' is defined but never used   @typescript-eslint/no-unused-vars
+  12:31  warning  'RiskAlert' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/CorrelationManager.ts
+  253:11  warning  'key1' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  254:11  warning  'key2' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  288:17  warning  'key' is assigned a value but never used                                  @typescript-eslint/no-unused-vars
+  296:21  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/DynamicPositionSizer.ts
+    9:10  warning  'Position' is defined but never used                                        @typescript-eslint/no-unused-vars
+  201:13  warning  'symbol' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  261:13  warning  'symbol' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  402:5   warning  'warnings' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  440:9   warning  'totalCorrelation' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/DynamicPositionSizing.ts
+  10:10  warning  'Position' is defined but never used                  @typescript-eslint/no-unused-vars
+  11:46  warning  'RiskMetrics' is defined but never used               @typescript-eslint/no-unused-vars
+  38:11  warning  'stopLossPercent' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/DynamicRiskAdjuster.ts
+  11:10  warning  'Position' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/EnhancedPortfolioRiskMonitor.ts
+   8:10  warning  'Position' is defined but never used             @typescript-eslint/no-unused-vars
+  96:11  warning  'totalValue' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/EnhancedPsychologyMonitor.ts
+    8:17  warning  'Position' is defined but never used                                          @typescript-eslint/no-unused-vars
+  583:5   warning  'indicators' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  610:11  warning  'indicators' is assigned a value but never used                               @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/PortfolioRiskMonitor.ts
+    9:10  warning  'Position' is defined but never used                                          @typescript-eslint/no-unused-vars
+  122:11  warning  'totalValue' is assigned a value but never used                               @typescript-eslint/no-unused-vars
+  270:5   warning  'confidence' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  296:5   warning  'confidence' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  300:11  warning  'timeHorizon' is assigned a value but never used                              @typescript-eslint/no-unused-vars
+  303:11  warning  'covarianceMatrix' is assigned a value but never used                         @typescript-eslint/no-unused-vars
+  726:40  warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/PsychologyMonitor.ts
+   41:11  warning  'losses' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  442:13  warning  'avgHoldTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/RealTimeRiskCalculator.ts
+  368:40  warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/TailRiskHedging.ts
+  11:10  warning  'Position' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/__tests__/AdvancedRiskManager.test.ts
+  8:3  warning  'DEFAULT_RISK_LIMITS' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/__tests__/AutomaticRiskController.test.ts
+  7:35  warning  'DEFAULT_CONTROL_CONFIG' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/__tests__/DynamicPositionSizing.test.ts
+  8:32  warning  'SizingResult' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/__tests__/EnhancedPortfolioRiskMonitor.test.ts
+  5:40  warning  'SectorExposure' is defined but never used  @typescript-eslint/no-unused-vars
+  5:56  warning  'RiskAlert' is defined but never used       @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/__tests__/PortfolioRiskMonitor.test.ts
+  10:3  warning  'VaRResult' is defined but never used           @typescript-eslint/no-unused-vars
+  11:3  warning  'SectorExposure' is defined but never used      @typescript-eslint/no-unused-vars
+  12:3  warning  'StressTestScenario' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/__tests__/StressTestEngine.test.ts
+  8:21  warning  'Position' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/__tests__/TailRiskHedging.test.ts
+  5:42  warning  'TailRiskMetrics' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/risk/__tests__/integration.test.ts
+    7:31  warning  'DEFAULT_RISK_LIMITS' is defined but never used  @typescript-eslint/no-unused-vars
+  141:16  warning  'error' is defined but never used                @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/riskManagement.ts
+    1:27  warning  'PositionSizingMethod' is defined but never used        @typescript-eslint/no-unused-vars
+    1:49  warning  'StopLossType' is defined but never used                @typescript-eslint/no-unused-vars
+  137:7   warning  'methodRiskPercent' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  337:9   warning  'maxCorrelation' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/security/InputSanitizer.ts
+  433:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/sentiment/SentimentAnalysisEngine.ts
+  338:49  warning  'type' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/IntelligenceManager.ts
+  20:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/MLIntegrationService.ts
+  126:5  warning  'stock' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
+  127:5  warning  'ohlcvData' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  128:5  warning  'indexData' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/PsychologyService.ts
+   14:28  warning  'positions' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   29:11  warning  'emotions' is assigned a value but never used                                @typescript-eslint/no-unused-vars
+  146:91  warning  'tiltRisk' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/UnifiedIntelligenceService.ts
+   11:10  warning  'logger' is defined but never used                                        @typescript-eslint/no-unused-vars
+  142:42  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  142:58  warning  'ohlcv' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  159:35  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/__tests__/MLIntegrationService.test.ts
+  60:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  63:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/__tests__/enhanced-feature-service.test.ts
+  351:13  warning  'candlestick' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/__tests__/enhanced-ml-service.test.ts
+  254:53  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/__tests__/feature-calculation-service.test.ts
+  34:52  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/__tests__/integrated-prediction-service.test.ts
+  138:13  warning  'initialMetrics' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  209:13  warning  'initial' is assigned a value but never used         @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/__tests__/ml-model-service-di.test.ts
+    9:10  warning  'MockTensorFlowModel' is defined but never used  @typescript-eslint/no-unused-vars
+  191:29  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/__tests__/signal-generation-service.test.ts
+   10:26  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   10:42  warning  'data' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
+   10:57  warning  'market' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  205:71  warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/advanced-stop-loss-service.ts
+    9:10  warning  'calculateATR' is defined but never used                                              @typescript-eslint/no-unused-vars
+  223:63  warning  'accelerationFactor' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  223:91  warning  'maxAcceleration' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/alternative-data-service.ts
+    8:10  warning  'withErrorHandling' is defined but never used  @typescript-eslint/no-unused-vars
+    8:29  warning  'DataError' is defined but never used          @typescript-eslint/no-unused-vars
+  303:11  warning  'latest' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  304:11  warning  'oldest' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/dynamic-position-sizing-service.ts
+  8:10  warning  'calculateATR' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/enhanced-feature-service.ts
+   14:3   warning  'EnhancedPredictionFeatures' is defined but never used  @typescript-eslint/no-unused-vars
+   15:3   warning  'ExtendedTechnicalIndicator' is defined but never used  @typescript-eslint/no-unused-vars
+  342:9   warning  'lastTrough' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  386:11  warning  'firstAvg' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  387:11  warning  'secondAvg' is assigned a value but never used          @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/enhanced-ml-service.ts
+  57:24  warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  62:25  warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/enhanced-smart-alert-service.ts
+    8:17  warning  'Stock' is defined but never used                                            @typescript-eslint/no-unused-vars
+    8:24  warning  'Signal' is defined but never used                                           @typescript-eslint/no-unused-vars
+  220:46  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  242:27  warning  'data' is defined but never used. Allowed unused args must match /^_/u       @typescript-eslint/no-unused-vars
+  242:56  warning  'condition' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  242:83  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
+  251:27  warning  'data' is defined but never used. Allowed unused args must match /^_/u       @typescript-eslint/no-unused-vars
+  251:56  warning  'condition' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  251:83  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/feature-calculation-service.ts
+   8:10  warning  'RSI_CONFIG' is defined but never used    @typescript-eslint/no-unused-vars
+   8:22  warning  'SMA_CONFIG' is defined but never used    @typescript-eslint/no-unused-vars
+  78:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/high-frequency-data-processing-service.ts
+    8:17  warning  'Stock' is defined but never used                                         @typescript-eslint/no-unused-vars
+   10:21  warning  'logError' is defined but never used                                      @typescript-eslint/no-unused-vars
+  245:11  warning  'endTimestamp' is assigned a value but never used                         @typescript-eslint/no-unused-vars
+  267:31  warning  'bar' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
+  267:43  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/integrated-prediction-service.ts
+  17:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  18:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/ml-model-service.ts
+  45:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/multiple-trading-strategies-service.ts
+    7:17  warning  'Stock' is defined but never used                    @typescript-eslint/no-unused-vars
+    7:24  warning  'Signal' is defined but never used                   @typescript-eslint/no-unused-vars
+    8:10  warning  'calculateRSI' is defined but never used             @typescript-eslint/no-unused-vars
+    8:24  warning  'calculateSMA' is defined but never used             @typescript-eslint/no-unused-vars
+    8:38  warning  'calculateBollingerBands' is defined but never used  @typescript-eslint/no-unused-vars
+    8:63  warning  'calculateATR' is defined but never used             @typescript-eslint/no-unused-vars
+  164:11  warning  'lowerBand' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  243:11  warning  'middleBand' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  289:11  warning  'atr' is assigned a value but never used             @typescript-eslint/no-unused-vars
+  371:11  warning  'atr' is assigned a value but never used             @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/portfolio-risk-management-service.ts
+  9:10  warning  'calculateATR' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/realtime-data-service.ts
+  27:21  warning  'symbols' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/services/signal-generation-service.ts
+  280:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/tensorflow-model-service.ts
+   23:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   75:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/services/walk-forward-analysis-service.ts
+   10:10   warning  'multipleTradingStrategiesService' is defined but never used              @typescript-eslint/no-unused-vars
+   10:44   warning  'StrategyInput' is defined but never used                                 @typescript-eslint/no-unused-vars
+  172:14   warning  Unexpected any. Specify a different type                                  @typescript-eslint/no-explicit-any
+  216:24   warning  'error' is defined but never used                                         @typescript-eslint/no-unused-vars
+  292:80   warning  'config' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  339:126  warning  'config' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/strategies/WinningStrategyEngine.ts
+   13:17  warning  'Signal' is defined but never used                 @typescript-eslint/no-unused-vars
+   13:25  warning  'Stock' is defined but never used                  @typescript-eslint/no-unused-vars
+   15:32  warning  'RegimeDetectionResult' is defined but never used  @typescript-eslint/no-unused-vars
+  200:11  warning  'prev' is assigned a value but never used          @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/strategies/__tests__/MultiTimeFrameStrategy.test.ts
+  8:28  warning  'TimeFrameSignal' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/strategy-optimization-example.ts
+   11:51  warning  'strategyCatalog' is defined but never used                                     @typescript-eslint/no-unused-vars
+   14:42  warning  'Strategy' is defined but never used                                            @typescript-eslint/no-unused-vars
+   56:11  warning  'strategy' is assigned a value but never used                                   @typescript-eslint/no-unused-vars
+   65:9   warning  'result' is assigned a value but never used                                     @typescript-eslint/no-unused-vars
+   93:11  warning  'strategy' is assigned a value but never used                                   @typescript-eslint/no-unused-vars
+  125:22  warning  'name' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  126:11  warning  'comparison' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  213:27  warning  'periodResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  213:41  warning  'i' is defined but never used. Allowed unused args must match /^_/u             @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/strategy/StrategyCatalog.ts
+  446:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  567:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  682:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  874:11  warning  'skewFactor' is assigned a value but never used                                   @typescript-eslint/no-unused-vars
+  909:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/strategy/StrategyComposer.ts
+   16:3  warning  'Strategy' is defined but never used                                            @typescript-eslint/no-unused-vars
+   18:3  warning  'StrategyPerformance' is defined but never used                                 @typescript-eslint/no-unused-vars
+  321:5  warning  'targetReturn' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/supplyDemandMaster.ts
+   81:13  warning  'volumePerPrice' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  127:15  warning  'currentPrice' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/trading/__tests__/patternRecognition.test.ts
+  6:36  warning  'TradePattern' is defined but never used   @typescript-eslint/no-unused-vars
+  6:50  warning  'PatternReport' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/trading/__tests__/psychology.test.ts
+  6:48  warning  'PsychologyState' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/trading/patternRecognition.ts
+  34:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/tradingCore/UnifiedTradingPlatform.ts
+    9:33  warning  'MarketData' is defined but never used            @typescript-eslint/no-unused-vars
+   13:38  warning  'ExecutionResult' is defined but never used       @typescript-eslint/no-unused-vars
+   13:55  warning  'Order' is defined but never used                 @typescript-eslint/no-unused-vars
+  399:11  warning  'riskMetrics' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/universe/UniverseManager.ts
+    8:10  warning  'Stock' is defined but never used         @typescript-eslint/no-unused-vars
+  387:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/universe/__tests__/UniverseManager.test.ts
+   6:27  warning  'UniverseStock' is defined but never used    @typescript-eslint/no-unused-vars
+   6:42  warning  'UniverseStats' is defined but never used    @typescript-eslint/no-unused-vars
+  26:13  warning  'stock2' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/utils.ts
+  3:10  warning  'TECHNICAL_INDICATORS' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/utils/__tests__/memoize.test.ts
+  306:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/utils/__tests__/performanceMonitor.test.ts
+  7:30  warning  'PerformanceSeverity' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/utils/__tests__/singleton.test.ts
+  6:27  warning  'Singleton' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/utils/memoize.ts
+   56:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  162:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/utils/performanceMonitor.ts
+  266:13  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  272:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/lib/utils/singleton.ts
+  99:33  warning  'T' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/validation.ts
+  245:53  warning  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  249:31  warning  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  297:9   warning  'allowedFields' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/lib/workers/IntelligenceWorker.ts
+  11:17  warning  'data' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  21:11  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/shared/types/risk.ts
+  7:10  warning  'Position' is defined but never used   @typescript-eslint/no-unused-vars
+  7:20  warning  'Portfolio' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/shared/utils/__tests__/singleton.test.ts
+  6:27  warning  'Singleton' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/shared/utils/performanceMonitor.ts
+   88:23  warning  'values' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  121:13  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  127:43  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/shared/utils/singleton.ts
+   99:33  warning  'T' is defined but never used             @typescript-eslint/no-unused-vars
+  101:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/store/__tests__/tradingStore.test.ts
+  4:10  warning  'AI_TRADING' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/store/__tests__/utils.test.ts
+  344:22  warning  'state' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/store/aiStore.ts
+  2:10  warning  'Order' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/store/alertNotificationStore.ts
+  31:79  warning  'get' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/store/optimizedPortfolioStore.ts
+  12:10  warning  'subscribeWithSelector' is defined but never used  @typescript-eslint/no-unused-vars
+  13:20  warning  'persist' is defined but never used                @typescript-eslint/no-unused-vars
+  14:32  warning  'Portfolio' is defined but never used              @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/store/portfolioStore.ts
+    3:31  warning  'Order' is defined but never used         @typescript-eslint/no-unused-vars
+   94:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  110:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/store/psychologyStore.ts
+   10:3   warning  'DisciplineViolation' is defined but never used                          @typescript-eslint/no-unused-vars
+   15:3   warning  'EmotionType' is defined but never used                                  @typescript-eslint/no-unused-vars
+   16:3   warning  'MentalState' is defined but never used                                  @typescript-eslint/no-unused-vars
+   17:3   warning  'CoachingPriority' is defined but never used                             @typescript-eslint/no-unused-vars
+   18:3   warning  'CoachingType' is defined but never used                                 @typescript-eslint/no-unused-vars
+   19:3   warning  'WarningLevel' is defined but never used                                 @typescript-eslint/no-unused-vars
+   20:3   warning  'EnhancedJournalEntry' is defined but never used                         @typescript-eslint/no-unused-vars
+  217:45  warning  'state' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/store/tradingStore.ts
+   4:38  warning  'Order' is defined but never used         @typescript-eslint/no-unused-vars
+  36:69  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/app/store/universeStore.ts
+  46:11  warning  'get' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/types/order.ts
+  4:10  warning  'OrderSide' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/types/risk.ts
+  7:15  warning  'Position' is defined but never used   @typescript-eslint/no-unused-vars
+  8:15  warning  'Portfolio' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/app/workers/backtest.worker.ts
+   42:6  warning  'WorkerResponse' is defined but never used             @typescript-eslint/no-unused-vars
+  104:9  warning  'optimizationTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/authentication.spec.ts
+   13:69  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  146:9   warning  'refreshAttempted' is assigned a value but never used                      @typescript-eslint/no-unused-vars
+  185:11  warning  'newToken' is assigned a value but never used                              @typescript-eslint/no-unused-vars
+  239:75  warning  'page' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/data-integrity.spec.ts
+  273:11  warning  'hasDecimalPnL' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/error-handling.spec.ts
+   48:9   warning  'timeoutOccurred' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   75:11  warning  'hasTimeoutError' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   79:11  warning  'hasCancelOption' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  211:11  warning  'hasDataError' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  283:11  warning  'hasWsError' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  287:11  warning  'hasOfflineMode' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  315:11  warning  'hasError' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  319:11  warning  'hasConnectionError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  336:14  warning  'error' is defined but never used                        @typescript-eslint/no-unused-vars
+  344:11  warning  'hasQuotaError' is assigned a value but never used       @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/main.spec.ts
+  10:16  warning  'addStockToWatchlist' is defined but never used                         @typescript-eslint/no-unused-vars
+  10:64  warning  'name' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/monkey.spec.ts
+  112:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+  124:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/order-execution.spec.ts
+   55:13  warning  'orderConfirmation' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  133:13  warning  'hasPartialFill' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  137:13  warning  'hasPendingOrders' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  211:7   warning  'originalPrice' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  229:11  warning  'hasSlippageWarning' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  233:11  warning  'hasExecutedPrice' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  276:15  warning  'isDisabled' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  301:13  warning  'hasError' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  305:13  warning  'hasWarning' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  340:15  warning  'hasOrderType' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  346:15  warning  'hasConfirm' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  347:15  warning  'hasCancel' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  370:11  warning  'hasWarning' is assigned a value but never used          @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/realtime-data-quality.spec.ts
+  42:11  warning  'initialPrice' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/specs/auth.spec.ts
+  118:81  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/specs/performance.spec.ts
+   10:3   warning  'getPerformanceMetrics' is defined but never used  @typescript-eslint/no-unused-vars
+  141:34  warning  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  156:22  warning  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  163:34  warning  Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/e2e/trading-workflow.spec.ts
+  260:13  warning  'globalButton' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/e2e/websocket-resilience.spec.ts
+  10:16  warning  'waitForWebSocketConnection' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/scripts/benchmark/data-pipeline-benchmark.ts
+   31:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:11  warning  '_' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  103:11  warning  '_' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  113:11  warning  '_' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  121:11  warning  '_' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  129:11  warning  '_' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  133:11  warning  '_' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  145:11  warning  '_' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  164:11  warning  '_' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+/home/neoenox/Ult/trading-platform/scripts/final-integrity-check.ts
+  56:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/neoenox/Ult/trading-platform/scripts/verification_backtest.ts
+  6:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 1065 problems (1 error, 1064 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+

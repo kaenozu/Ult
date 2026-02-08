@@ -8,6 +8,7 @@ interface WatchlistState {
   addToWatchlist: (stock: Stock) => void;
   removeFromWatchlist: (symbol: string) => void;
   setSelectedStock: (stock: Stock | null) => void;
+  updateStockData: (symbol: string, data: Partial<Stock>) => void;
   batchUpdateStockData: (updates: Array<{ symbol: string; data: Partial<Stock> }>) => void;
 }
 
@@ -25,6 +26,14 @@ export const useWatchlistStore = create<WatchlistState>()(
         selectedStock: state.selectedStock?.symbol === symbol ? null : state.selectedStock,
       })),
       setSelectedStock: (stock) => set({ selectedStock: stock }),
+      updateStockData: (symbol, data) => set((state) => ({
+        watchlist: state.watchlist.map((s) =>
+          s.symbol === symbol ? { ...s, ...data } : s
+        ),
+        selectedStock: state.selectedStock?.symbol === symbol
+          ? { ...state.selectedStock, ...data }
+          : state.selectedStock,
+      })),
       batchUpdateStockData: (updates) => set((state) => {
         const updateMap = new Map(updates.map((u) => [u.symbol, u.data]));
 
@@ -40,7 +49,6 @@ export const useWatchlistStore = create<WatchlistState>()(
           .filter((u) => !existingSymbols.has(u.symbol))
           .map((u): Stock => {
             // 最小限のStockオブジェクトを作成
-            // marketは'japan'または'usa'のみ許容されるため、デフォルトは'usa'
             const market: 'japan' | 'usa' = u.data.market === 'japan' ? 'japan' : 'usa';
             return {
               symbol: u.symbol,

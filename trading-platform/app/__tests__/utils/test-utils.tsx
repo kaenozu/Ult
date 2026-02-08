@@ -106,7 +106,7 @@ export const createMockPosition = (overrides: Partial<{
   change: 5,
   entryDate: '2026-01-01',
   ...overrides,
-});
+} as unknown);
 
 /**
  * Generate mock order data
@@ -135,19 +135,19 @@ export const createMockOrder = (overrides: Partial<{
  * Generate mock portfolio data
  */
 export const createMockPortfolio = (overrides: Partial<{
-  positions: any[];
-  orders: any[];
+  positions: unknown[];
+  orders: unknown[];
   totalValue: number;
   totalProfit: number;
   dailyPnL: number;
   cash: number;
-}> = {}) => ({
+}>) => ({
   positions: [],
   orders: [],
   totalValue: 100000,
   totalProfit: 5000,
   dailyPnL: 200,
-  cash: 20000,
+  cash: 200,
   ...overrides,
 });
 
@@ -198,7 +198,7 @@ export const createMockErrorResponse = (error: string) => ({
 /**
  * Test component with loading state
  */
-export const testLoadingState = (Component: React.ComponentType<any>, props: any = {}) => {
+export const testLoadingState = (Component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown> = {}) => {
   it('should show loading state', () => {
     renderWithProviders(<Component {...props} loading />);
     // Add loading-specific assertions here
@@ -208,7 +208,7 @@ export const testLoadingState = (Component: React.ComponentType<any>, props: any
 /**
  * Test component with error state
  */
-export const testErrorState = (Component: React.ComponentType<any>, props: any = {}) => {
+export const testErrorState = (Component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown> = {}) => {
   it('should show error state', () => {
     renderWithProviders(<Component {...props} error="Test error" />);
     // Add error-specific assertions here
@@ -218,7 +218,7 @@ export const testErrorState = (Component: React.ComponentType<any>, props: any =
 /**
  * Test component accessibility
  */
-export const testAccessibility = (Component: React.ComponentType<any>, props: any = {}) => {
+export const testAccessibility = (Component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown> = {}) => {
   it('should be accessible', async () => {
     const { container } = renderWithProviders(<Component {...props} />);
     // Add accessibility-specific assertions here
@@ -233,7 +233,7 @@ export const testAccessibility = (Component: React.ComponentType<any>, props: an
 /**
  * Measure render performance
  */
-export const measureRenderPerformance = (Component: React.ComponentType<any>, props: any = {}, iterations: number = 10) => {
+export const measureRenderPerformance = (Component: React.ComponentType<Record<string, unknown>>, props: Record<string, unknown> = {}, iterations: number = 10) => {
   const times: number[] = [];
   
   for (let i = 0; i < iterations; i++) {
@@ -267,7 +267,7 @@ export const mockFetch = jest.fn();
 /**
  * Setup mock fetch implementation
  */
-export const setupMockFetch = (response: any, ok = true) => {
+export const setupMockFetch = (response: unknown, ok = true) => {
   mockFetch.mockResolvedValueOnce({
     ok,
     json: async () => response,

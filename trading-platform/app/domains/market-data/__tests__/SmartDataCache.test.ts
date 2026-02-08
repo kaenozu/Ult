@@ -302,7 +302,7 @@ describe('SmartDataCache', () => {
     });
 
     it('should handle undefined values', () => {
-      cache.set('key1', undefined as any);
+      cache.set('key1', undefined as unknown);
       expect(cache.has('key1')).toBe(true);
       expect(cache.get('key1')).toBeUndefined();
     });

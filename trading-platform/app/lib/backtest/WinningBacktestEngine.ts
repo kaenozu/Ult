@@ -481,7 +481,7 @@ class WinningBacktestEngine {
       pnlPercent,
       fees,
       slippage,
-      exitReason: reason as any,
+      exitReason: reason as 'target' | 'stop' | 'signal' | 'trailing_stop' | 'time' | 'end_of_data',
       strategy: position.strategy,
       riskRewardRatio: position.riskRewardRatio,
       holdingPeriods: index - position.entryIndex,

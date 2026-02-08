@@ -118,7 +118,7 @@ describe('Global Performance Monitor', () => {
   it('should record metrics in global monitor when available', () => {
     // Setup global monitor
     if (typeof window === 'undefined') {
-      (global as any).window = {};
+      (global as unknown as { window: Record<string, unknown> }).window = {};
     }
 
     const monitor = getGlobalPerformanceMonitor();

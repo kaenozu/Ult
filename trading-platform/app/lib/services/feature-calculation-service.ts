@@ -75,7 +75,7 @@ export class FeatureCalculationService {
   ): PredictionFeatures {
     // For now, convert back to standard objects to reuse existing logic
     const standardData = OHLCVConverter.fromTypedArray(data);
-    return this.calculateFeatures(standardData as any, indicators);
+    return this.calculateFeatures(standardData, indicators);
   }
 
   /**

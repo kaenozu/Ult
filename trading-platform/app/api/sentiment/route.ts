@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGlobalSentimentIntegration } from '@/app/lib/nlp/SentimentIntegrationService';
 import { createGetHandler, createPostHandler } from '@/app/lib/api/UnifiedApiClient';
+import type { ApiResponse } from '@/app/lib/api/UnifiedApiClient';
 import { validateField } from '@/app/lib/api/ApiValidator';
 import { requireAdmin } from '@/app/lib/auth';
 
@@ -49,11 +50,11 @@ interface SentimentAction {
 }
 
 export const POST = createPostHandler<SentimentAction, { success: boolean; message: string }>(
-  async (request: NextRequest, body: SentimentAction) => {
+  async (request: NextRequest, body: SentimentAction): Promise<{ success: boolean; message: string } | NextResponse<ApiResponse<{ success: boolean; message: string }>>> => {
     // Admin access required for control actions
     const adminError = requireAdmin(request);
     if (adminError) {
-      return adminError;
+      return adminError as NextResponse<ApiResponse<{ success: boolean; message: string }>>;
     }
 
     // Validate action
@@ -66,7 +67,7 @@ export const POST = createPostHandler<SentimentAction, { success: boolean; messa
 
     if (validationError) {
       return NextResponse.json(
-        { success: false, message: `Invalid action: ${body.action}` },
+        { success: false, message: `Invalid action: ${body.action}` } as { success: boolean; message: string },
         { status: 400 }
       );
     }

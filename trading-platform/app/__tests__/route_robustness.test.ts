@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 describe('Market API Robustness Tests', () => {
-  let GET: any;
+  let GET: (req: Request) => Promise<Response>;
   let mockChart: jest.Mock;
   let mockQuote: jest.Mock;
 

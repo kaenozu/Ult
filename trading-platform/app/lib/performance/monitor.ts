@@ -354,13 +354,14 @@ export function trackWebVitals() {
           );
         }
         if (entry.entryType === 'first-input') {
-          const fid = (entry as any).processingStart - entry.startTime;
+          const firstInputEntry = entry as PerformanceEventTiming;
+          const fid = firstInputEntry.processingStart - entry.startTime;
           performanceMonitor.recordMetric('web-vitals.FID', fid);
         }
         if (entry.entryType === 'layout-shift') {
-          const cls = (entry as any).value;
-          if (!cls.hadRecentInput) {
-            performanceMonitor.recordMetric('web-vitals.CLS', cls);
+          const layoutShiftEntry = entry as LayoutShiftEntry;
+          if (!layoutShiftEntry.hadRecentInput) {
+            performanceMonitor.recordMetric('web-vitals.CLS', layoutShiftEntry.value);
           }
         }
       }
@@ -368,6 +369,16 @@ export function trackWebVitals() {
 
     observer.observe({ entryTypes: ['largest-contentful-paint', 'first-input', 'layout-shift'] });
   }
+}
+
+// Type definitions for Performance API entries
+interface PerformanceEventTiming extends PerformanceEntry {
+  processingStart: number;
+}
+
+interface LayoutShiftEntry extends PerformanceEntry {
+  value: number;
+  hadRecentInput: boolean;
 }
 
 // Initialize Web Vitals tracking on mount

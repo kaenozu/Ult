@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checkRateLimit } from '@/app/lib/api-middleware';
-import { handleApiError, validationError } from '@/app/lib/error-handler';
+import { handleApiError } from '@/app/lib/error-handler';
 import { fetchMarketHistory } from '@/app/lib/market-data-fetcher';
 import { buildDataQualitySummary } from '@/app/lib/market-data-quality';
 import { marketDataCache } from '@/app/lib/data/cache/SmartDataCache';

@@ -4,7 +4,7 @@
  * このモジュールは、ML予測結果から取引シグナルを生成する機能を提供します。
  */
 
-import { Stock, OHLCV, Signal, ModelPrediction, TechnicalIndicatorsWithATR } from '../../types';
+import { Stock, OHLCV, Signal, ModelPrediction, TechnicalIndicatorsWithATR, TimeFrame } from '../../types';
 import { EntryTimingRecommendation } from '../../types/shared';
 import { analyzeStock } from '@/app/lib/analysis';
 import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION, RISK_MANAGEMENT } from '@/app/lib/constants';
@@ -259,7 +259,7 @@ export class SignalGenerationService {
     data: OHLCV[],
     prediction: ModelPrediction,
     indicators: TechnicalIndicatorsWithATR,
-    dataByTimeFrame?: Map<string, OHLCV[]>, // TimeFrame -> OHLCV[]
+    dataByTimeFrame?: Map<TimeFrame, OHLCV[]>,
     indexData?: OHLCV[]
   ): Promise<Signal> {
     // まず基本シグナルを生成
@@ -277,7 +277,7 @@ export class SignalGenerationService {
       // マルチ時間枠分析を実行
       const mtfAnalysis = await multiTimeFrameStrategy.analyzeMultipleTimeFrames(
         stock.symbol,
-        dataByTimeFrame as any
+        dataByTimeFrame
       );
 
       // 時間枠間の整合性チェック

@@ -17,7 +17,6 @@ import {
 import {
   validateRequiredString,
   validateNumber,
-  validateSymbol,
   validateOrderSide,
 } from '../validation';
 

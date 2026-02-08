@@ -74,7 +74,7 @@ export function createApiHandler<T = unknown>(
         const cacheKey = cache.keyGenerator(request);
         const cached = cacheManager.get(cacheKey);
         if (cached) {
-          return NextResponse.json(cached, { status: 200 });
+          return NextResponse.json(cached, { status: 200 }) as NextResponse<ApiResponse<T>>;
         }
       }
 
@@ -177,7 +177,7 @@ export function createGetHandler<T>(
  * Unified POST handler factory
  */
 export function createPostHandler<TBody, TResponse>(
-  handler: (request: NextRequest, body: TBody) => Promise<TResponse | NextResponse>,
+  handler: (request: NextRequest, body: TBody) => Promise<TResponse | NextResponse<ApiResponse<TResponse>>>,
   options: ApiHandlerOptions = {}
 ) {
   return createApiHandler<TResponse>(async (request: NextRequest) => {

@@ -57,17 +57,17 @@ export async function monitoredFetch<T = unknown>(
  * Monitored API route handler wrapper
  * Use this to wrap API route handlers for automatic performance tracking
  */
-export function withApiMonitoring<T extends (...args: any[]) => Promise<Response>>(
+export function withApiMonitoring<T extends (...args: unknown[]) => Promise<Response>>(
   handler: T,
   routeName: string
 ): T {
-  return (async (...args: any[]) => {
+  return (async (...args: unknown[]) => {
     const startTime = performance.now();
     let status = 500;
     let success = false;
 
     try {
-      const response = await handler(...args);
+      const response = await handler(...(args as Parameters<T>));
       status = response.status;
       success = response.ok;
 

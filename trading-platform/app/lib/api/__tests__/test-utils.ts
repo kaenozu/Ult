@@ -51,7 +51,7 @@ export function createMockAPIResponse(data: any, success: boolean = true) {
   };
 }
 
-export function validateOHLCVStructure(data: any[]): boolean {
+export function validateOHLCVStructure(data: OHLCV[]): boolean {
   if (!Array.isArray(data) || data.length === 0) return false;
   
   return data.every(item => 
