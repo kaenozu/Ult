@@ -5,6 +5,7 @@ import "./globals.css";
 import { MonitoringProvider } from "./components/MonitoringProvider";
 import { BehavioralWarningProvider } from "./components/BehavioralWarningProvider";
 import { MLProvider } from "./components/MLProvider";
+import { ThemeProvider } from "./components/ThemeProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,19 +23,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
-        <MLProvider>
-          <MonitoringProvider>
-            <BehavioralWarningProvider>
-              <I18nProvider>
-                {children}
-              </I18nProvider>
-            </BehavioralWarningProvider>
-          </MonitoringProvider>
-        </MLProvider>
-      </body>
-    </html>
+    <ThemeProvider>
+      <html lang="ja" className="dark" suppressHydrationWarning>
+        <body className={`${inter.variable} font-sans antialiased`}>
+          <MLProvider>
+            <MonitoringProvider>
+              <BehavioralWarningProvider>
+                <I18nProvider>
+                  {children}
+                </I18nProvider>
+              </BehavioralWarningProvider>
+            </MonitoringProvider>
+          </MLProvider>
+        </body>
+      </html>
+    </ThemeProvider>
   );
 }
 

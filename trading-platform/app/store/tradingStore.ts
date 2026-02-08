@@ -13,6 +13,7 @@ interface TradingStore {
   watchlist: Stock[];
   addToWatchlist: (stock: Stock) => void;
   removeFromWatchlist: (symbol: string) => void;
+  clearWatchlist: () => void;
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   closePosition: (symbol: string, exitPrice: number) => OrderResult;
@@ -46,6 +47,7 @@ export const useTradingStore = (selector?: (state: TradingStore) => any) => {
     watchlist: watchlist.watchlist,
     addToWatchlist: watchlist.addToWatchlist,
     removeFromWatchlist: watchlist.removeFromWatchlist,
+    clearWatchlist: watchlist.clearWatchlist,
     selectedStock: watchlist.selectedStock,
     setSelectedStock: watchlist.setSelectedStock,
 

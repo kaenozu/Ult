@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(team list)",
+      "Bash(claude --version)",
+      "Bash(echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS)",
+      "Bash(echo \"TMUX: $TMUX\")"
+    ]
+  }
+}

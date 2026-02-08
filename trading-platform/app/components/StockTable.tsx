@@ -228,12 +228,14 @@ export const StockTable = memo(({
 
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
+
     const fetchQuotes = async () => {
       await measureAsync('fetchQuotes', async () => {
         const symbols = symbolKey.split(',').filter(Boolean);
         if (symbols.length === 0) return;
 
-        const quotes = await marketClient.fetchQuotes(symbols);
+        const quotes = await marketClient.fetchQuotes(symbols, undefined, controller.signal);
 
         if (mounted && quotes.length > 0) {
           const updates = quotes
@@ -257,9 +259,10 @@ export const StockTable = memo(({
 
     fetchQuotes();
     intervalRef.current = setInterval(fetchQuotes, pollingInterval);
-    
+
     return () => {
       mounted = false;
+      controller.abort();
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }

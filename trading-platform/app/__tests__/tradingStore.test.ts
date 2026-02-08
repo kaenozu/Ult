@@ -15,7 +15,7 @@ describe('tradingStore', () => {
 
   it('manages watchlist', () => {
     const stock = { symbol: 'AAPL', name: 'Apple', price: 150 } as any;
-    const { addToWatchlist, removeFromWatchlist, updateStockData } = useTradingStore.getState();
+    const { addToWatchlist, removeFromWatchlist, clearWatchlist, updateStockData } = useTradingStore.getState();
 
     addToWatchlist(stock);
     expect(useTradingStore.getState().watchlist).toHaveLength(1);
@@ -26,6 +26,15 @@ describe('tradingStore', () => {
 
     removeFromWatchlist('AAPL');
     expect(useTradingStore.getState().watchlist).toHaveLength(0);
+
+    // Add multiple and clear
+    addToWatchlist({ symbol: 'AAPL', name: 'Apple', price: 150 } as any);
+    addToWatchlist({ symbol: 'GOOGL', name: 'Google', price: 2800 } as any);
+    expect(useTradingStore.getState().watchlist).toHaveLength(2);
+
+    clearWatchlist();
+    expect(useTradingStore.getState().watchlist).toHaveLength(0);
+    expect(useTradingStore.getState().selectedStock).toBeNull();
   });
 
   it('batch updates stock data', () => {

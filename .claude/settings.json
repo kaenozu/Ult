@@ -1,0 +1,38 @@
+{
+  "$schema": "https://code.claude.com/settings.schema.json",
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm run lint)",
+      "Bash(npm test)",
+      "Bash(./scripts/quality-gates-check.sh)",
+      "Bash(team list)",
+      "Bash(claude --version)"
+    ]
+  },
+  "experimental": {
+    "autoSaveAllFiles": true,
+    "enableChatScrolling": true
+  },
+  "disableAllHooks": false,
+  "hooks": {
+    "preToolUse": [
+      "sound:click"
+    ],
+    "postToolUse": [
+      "sound:click"
+    ],
+    "userPromptSubmit": [
+      "sound:notify"
+    ],
+    "stop": [
+      "sound:alert"
+    ],
+    "subagentStart": [
+      "sound:start"
+    ],
+    "subagentStop": [
+      "sound:stop"
+    ]
+  }
+}

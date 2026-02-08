@@ -237,7 +237,7 @@ class MarketDataClient {
     }
   }
 
-  async fetchQuotes(symbols: string[]): Promise<QuoteData[]> {
+  async fetchQuotes(symbols: string[], signal?: AbortSignal): Promise<QuoteData[]> {
     if (symbols.length === 0) return [];
 
     const CHUNK_SIZE = 50;
@@ -249,11 +249,11 @@ class MarketDataClient {
     try {
       const results = await Promise.all(chunks.map(async (chunk) => {
         const symbolStr = chunk.join(',');
-        const httpResponse = await fetch(`/api/market?type=quote&symbol=${symbolStr}`);
+        const httpResponse = await fetch(`/api/market?type=quote&symbol=${symbolStr}`, { signal });
 
         if (httpResponse.status === 429) {
           await new Promise(resolve => setTimeout(resolve, 2000));
-          return this.fetchQuotes(chunk); // Retry chunk
+          return this.fetchQuotes(chunk, signal); // Retry chunk with signal
         }
 
         const parsedJson = await httpResponse.json();
@@ -297,7 +297,7 @@ class MarketDataClient {
   }> {
     const symbol = market === 'japan' ? '^N225' : '^IXIC';
     try {
-      const result = await this.fetchOHLCV(symbol, market, undefined, signal, interval);
+      const result = await this.fetchOHLCV(symbol, market, undefined, signal, interval ?? '1d');
       if (!result.success || !result.data) {
         return {
           data: [],
