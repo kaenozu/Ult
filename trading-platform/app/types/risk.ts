@@ -148,7 +148,7 @@ export interface RiskTradingSession {
   decisionQuality: number;
 }
 
-export { TradingSession } from './psychology';
+export type { TradingSession } from './psychology';
 
 export interface DisciplineScore {
   overall: number;
@@ -191,7 +191,7 @@ export interface CooldownRecord {
 // Market Data Types
 // ============================================================================
 
-export { MarketData } from './data-quality';
+export type { MarketData } from './data-quality';
 
 export interface RiskMarketData {
   symbol: string;

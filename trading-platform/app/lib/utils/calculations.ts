@@ -225,7 +225,6 @@ export function calculateVolatility(
   return vol * 100;
 }
 
-// @ts-expect-error - Type mismatch between calculateVolatility and memoizeArray
 /**
  * メモ化されたボラティリティ計算
  */
