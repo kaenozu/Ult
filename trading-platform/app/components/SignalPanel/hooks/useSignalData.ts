@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useCallback } from 'react';
-import { Stock, Signal, PaperTrade, OHLCV } from '@/app/types';
+import { Stock, Signal, PaperTrade, OHLCV, Order } from '@/app/types';
 import { useAIStore } from '@/app/store/aiStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useSymbolAccuracy } from '@/app/hooks/useSymbolAccuracy';
@@ -37,9 +37,9 @@ export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[
 
   // Memoized trades transformation
   const aiTrades: PaperTrade[] = useMemo(() => {
-    return trades
-      .filter(t => t.symbol === stock.symbol)
-      .map(o => ({
+    return (trades || [])
+      .filter((t: Order) => t.symbol === stock.symbol)
+      .map((o: Order) => ({
         id: o.id,
         symbol: o.symbol,
         type: (o.side === 'BUY') ? 'BUY' : 'SELL',

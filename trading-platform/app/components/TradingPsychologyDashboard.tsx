@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Trading Psychology Dashboard
  *
  * TRADING-029: トレード心理学分析
@@ -13,6 +13,7 @@ import { usePsychologyStore } from '@/app/store/psychologyStore';
 import { createAITradingCoach, TradingPattern, ImprovementSuggestion } from '@/app/lib/psychology/AITradingCoach';
 import { createSentimentAnalyzer, FearGreedIndex, EmotionTradeCorrelation } from '@/app/lib/psychology/SentimentAnalyzer';
 import { createDisciplineMonitor, RuleViolation, LearningPattern } from '@/app/lib/psychology/DisciplineMonitor';
+import { DisciplineScoreCalculator } from '@/app/lib/psychology/DisciplineScoreCalculator';
 import { cn } from '@/app/lib/utils';
 
 interface TradingPsychologyDashboardProps {
@@ -21,15 +22,28 @@ interface TradingPsychologyDashboardProps {
 
 export function TradingPsychologyDashboard({ className }: TradingPsychologyDashboardProps) {
   const { journal } = useJournalStore();
-  const { disciplineScore } = usePsychologyStore();
-  const disciplineMetrics = useMemo(() => ({
-    overall: disciplineScore?.overall ?? disciplineScore?.score ?? 0,
-    planAdherence: disciplineScore?.planAdherence ?? 0,
-    emotionalControl: disciplineScore?.emotionalControl ?? 0,
-    lossManagement: disciplineScore?.lossManagement ?? 0,
-    journalConsistency: disciplineScore?.journalConsistency ?? 0,
-    coolingOffCompliance: disciplineScore?.coolingOffCompliance ?? 0,
-  }), [disciplineScore]);
+  const { current_mental_health } = usePsychologyStore();
+  // discipline_score は number 型なので、そのまま使用
+  const disciplineScore = current_mental_health?.discipline_score ?? 0;
+  
+  // 個別の規律メトリクスを計算
+  const disciplineMetrics = useMemo(() => {
+    const calculator = new DisciplineScoreCalculator();
+    // journalはJournalEntry[]配列
+    const entries = journal || [];
+    const cooldownRecords: never[] = []; // CooldownRecords は別途取得が必要な場合あり
+    
+    const detailedScore = calculator.calculateDisciplineScore(entries, cooldownRecords);
+    
+    return {
+      overall: disciplineScore || detailedScore.overall,
+      planAdherence: detailedScore.planAdherence,
+      emotionalControl: detailedScore.emotionalControl,
+      lossManagement: detailedScore.lossManagement,
+      journalConsistency: detailedScore.journalConsistency,
+      coolingOffCompliance: detailedScore.coolingOffCompliance,
+    };
+  }, [disciplineScore, journal]);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'patterns' | 'sentiment' | 'discipline'>('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);

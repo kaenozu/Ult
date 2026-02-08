@@ -15,7 +15,6 @@ import {
   TrailingStopOrder,
   BracketOrder,
   BaseOrder,
-  OrderStatus,
   OrderEvent,
   isStopLossOrder,
   isTakeProfitOrder,

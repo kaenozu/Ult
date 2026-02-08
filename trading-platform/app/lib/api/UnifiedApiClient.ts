@@ -184,7 +184,9 @@ export function createPostHandler<TBody, TResponse>(
     const body = await parseJsonBody<TBody>(request);
     const result = await handler(request, body);
     if (result instanceof NextResponse) {
-      return result;
+      // Type assertion is needed here because TypeScript cannot infer
+      // that the NextResponse from the handler matches the expected type
+      return result as NextResponse<ApiResponse<TResponse>>;
     }
     return successResponse(result);
   }, options);

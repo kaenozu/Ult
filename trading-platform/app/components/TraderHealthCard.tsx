@@ -10,13 +10,16 @@ import { AlertCircle, Brain, CheckCircle2, Zap } from 'lucide-react';
  */
 export function TraderHealthCard() {
   const {
-    mentalState,
-    overallScore,
-    stressLevel,
-    disciplineScore,
-    riskOfTilt,
-    recommendations
+    current_mental_health,
+    active_recommendations
   } = usePsychologyStore();
+
+  // 新しいAPIから値を取得（オプショナルチェーンを使用）
+  const mentalState = current_mental_health?.state;
+  const overallScore = current_mental_health?.overall_score ?? 0;
+  const stressLevel = current_mental_health?.stress_level ?? 0;
+  const disciplineScore = current_mental_health?.discipline_score ?? 0;
+  const riskOfTilt = current_mental_health?.risk_of_tilt ?? 0;
 
   const getStatusConfig = () => {
     switch (mentalState) {
@@ -63,7 +66,7 @@ export function TraderHealthCard() {
           <span className={cn("text-2xl font-black", config.color)}>{overallScore}</span>
         </div>
         <div className="h-1.5 w-full bg-[#192633] rounded-full overflow-hidden">
-          <div
+          <div 
             className={cn("h-full transition-all duration-1000", config.color.replace('text-', 'bg-'))}
             style={{ width: `${overallScore}%` }}
           />
@@ -76,8 +79,8 @@ export function TraderHealthCard() {
           <span className="text-[10px] text-[#92adc9] block mb-1">ストレス</span>
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1 bg-[#192633] rounded-full">
-              <div
-                className="h-full bg-orange-400 rounded-full"
+              <div 
+                className="h-full bg-orange-400 rounded-full" 
                 style={{ width: `${stressLevel}%` }}
               />
             </div>
@@ -88,8 +91,8 @@ export function TraderHealthCard() {
           <span className="text-[10px] text-[#92adc9] block mb-1">規律</span>
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1 bg-[#192633] rounded-full">
-              <div
-                className="h-full bg-blue-400 rounded-full"
+              <div 
+                className="h-full bg-blue-400 rounded-full" 
                 style={{ width: `${disciplineScore}%` }}
               />
             </div>
@@ -100,10 +103,10 @@ export function TraderHealthCard() {
 
       {/* AI Recommendations */}
       <div className="space-y-2">
-        {recommendations.map((rec, i) => (
+        {active_recommendations.map((rec, i) => (
           <div key={i} className="flex gap-2 text-[11px] leading-relaxed text-[#92adc9]">
             <span className={cn("mt-1.5 w-1 h-1 rounded-full shrink-0", config.color.replace('text-', 'bg-'))} />
-            <p>{rec}</p>
+            <p>{rec.message}</p>
           </div>
         ))}
       </div>
