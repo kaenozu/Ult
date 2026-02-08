@@ -1,5 +1,6 @@
 import { Order, Position } from '@/app/types';
-import { MentalState, EmotionScore, usePsychologyStore } from '@/app/store/psychologyStore';
+import { MentalState, usePsychologyStore } from '@/app/store/psychologyStore';
+import type { EmotionScore } from '@/app/types/psychology';
 import { logger } from '@/app/core/logger';
 
 /**
@@ -68,9 +69,13 @@ export class PsychologyService {
     stress += Math.min(consecutiveLosses * 15, 60);
 
     // 取引密度のチェック（短時間に多すぎる取引）
-    const timeSpan = orders[orders.length - 1].timestamp - orders[0].timestamp;
-    if (timeSpan < 30 * 60 * 1000 && orders.length > 5) { // 30分以内に5回以上
-      stress += 20;
+    const firstOrder = orders[0];
+    const lastOrder = orders[orders.length - 1];
+    if (firstOrder?.timestamp && lastOrder?.timestamp) {
+      const timeSpan = lastOrder.timestamp - firstOrder.timestamp;
+      if (timeSpan < 30 * 60 * 1000 && orders.length > 5) { // 30分以内に5回以上
+        stress += 20;
+      }
     }
 
     return Math.min(stress, 100);
@@ -81,9 +86,11 @@ export class PsychologyService {
 
     // リベンジトレードの兆候（負けの直後に大きなサイズでエントリー）
     for (let i = 1; i < orders.length; i++) {
-      if (orders[i-1].status === 'FILLED' && orders[i].status === 'FILLED') {
+      const prevOrder = orders[i-1];
+      const currOrder = orders[i];
+      if (prevOrder && currOrder && prevOrder.status === 'FILLED' && currOrder.status === 'FILLED') {
         // 前のトレードが損切りの可能性がある場合
-        const timeDiff = orders[i].timestamp - orders[i-1].timestamp;
+        const timeDiff = currOrder.timestamp - prevOrder.timestamp;
         if (timeDiff < 5 * 60 * 1000) { // 5分以内
           score -= 10;
         }
@@ -97,15 +104,15 @@ export class PsychologyService {
     const emotions: EmotionScore[] = [];
 
     if (stress > 50) {
-      emotions.push({ emotion: 'anxiety', score: stress / 100, indicators: ['連敗による不安'] });
+      emotions.push({ emotion: 'anxiety', score: stress / 100, confidence: 0.8, indicators: ['連敗による不安'] });
     }
 
     if (discipline < 70) {
-      emotions.push({ emotion: 'frustration', score: (100 - discipline) / 100, indicators: ['短期的な再エントリー'] });
+      emotions.push({ emotion: 'frustration', score: (100 - discipline) / 100, confidence: 0.75, indicators: ['短期的な再エントリー'] });
     }
 
     if (emotions.length === 0) {
-      emotions.push({ emotion: 'discipline', score: 0.9, indicators: ['安定した取引パターン'] });
+      emotions.push({ emotion: 'discipline', score: 0.9, confidence: 0.9, indicators: ['安定した取引パターン'] });
     }
 
     return emotions;

@@ -50,6 +50,7 @@ interface UseOrderEntryResult {
     trailingStop: string;
     volAdjust: string;
     kelly: string;
+    riskSettings: string;
   };
 }
 
@@ -88,6 +89,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
   const trailingStopId = useId();
   const volAdjustId = useId();
   const kellyId = useId();
+  const riskSettingsId = useId();
 
   const ids = useMemo(() => ({
     orderType: orderTypeId,
@@ -97,7 +99,8 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
     trailingStop: trailingStopId,
     volAdjust: volAdjustId,
     kelly: kellyId,
-  }), [orderTypeId, quantityId, limitPriceId, modalTitleId, trailingStopId, volAdjustId, kellyId]);
+    riskSettings: riskSettingsId,
+  }), [orderTypeId, quantityId, limitPriceId, modalTitleId, trailingStopId, volAdjustId, kellyId, riskSettingsId]);
 
   // Derived Values
   const parsedPrice = parseFloat(limitPrice);
@@ -181,13 +184,3 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
   };
 }
 
-// Auto-hide success message after 3 seconds with cleanup
-useEffect(() => {
-  let timer: NodeJS.Timeout;
-  if (showSuccess) {
-    timer = setTimeout(() => setShowSuccess(false), 3000);
-  }
-  return () => {
-    if (timer) clearTimeout(timer);
-  };
-}, [showSuccess, setShowSuccess]);

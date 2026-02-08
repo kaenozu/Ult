@@ -121,7 +121,7 @@ export function usePsychology() {
       journal,
       psychologyState.cooldownRecords
     );
-    psychologyState.setDisciplineScore(score as unknown as DisciplineScoreProps);
+    psychologyState.setDisciplineScore(typeof score === 'number' ? score : score.overall);
     return score;
   };
 
@@ -164,8 +164,8 @@ export function usePsychology() {
     if (!coolingOffManagerRef.current) return false;
 
     const success = coolingOffManagerRef.current.manualEndCooldown();
-    if (success) {
-      psychologyState.endCooldown();
+    if (success && psychologyState.currentCooldown) {
+      psychologyState.endCooldown(psychologyState.currentCooldown.id);
     }
     return success;
   };
@@ -190,7 +190,7 @@ export function usePsychology() {
   return {
     // State
     alerts: psychologyState.alerts,
-    currentMentalHealth: psychologyState.currentMentalHealth,
+    currentMentalHealth: psychologyState.current_mental_health,
     currentEmotions: psychologyState.current_emotions,
     currentCooldown: psychologyState.currentCooldown,
     disciplineScore: psychologyState.disciplineScore,

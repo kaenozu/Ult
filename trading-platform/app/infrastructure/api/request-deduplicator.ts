@@ -45,7 +45,7 @@ export class RequestDeduplicator {
     const pending = this.pendingRequests.get(key);
     if (pending) {
       console.debug(`[RequestDeduplicator] Request already pending: ${key}`);
-      return pending;
+      return pending as Promise<T>;
     }
 
     // Limit number of pending requests

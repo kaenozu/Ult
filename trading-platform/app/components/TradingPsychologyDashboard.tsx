@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Trading Psychology Dashboard
  *
  * TRADING-029: トレード心理学分析
@@ -21,15 +21,18 @@ interface TradingPsychologyDashboardProps {
 
 export function TradingPsychologyDashboard({ className }: TradingPsychologyDashboardProps) {
   const { journal } = useJournalStore();
-  const { disciplineScore } = usePsychologyStore();
-  const disciplineMetrics = useMemo(() => ({
-    overall: disciplineScore?.overall ?? disciplineScore?.score ?? 0,
-    planAdherence: disciplineScore?.planAdherence ?? 0,
-    emotionalControl: disciplineScore?.emotionalControl ?? 0,
-    lossManagement: disciplineScore?.lossManagement ?? 0,
-    journalConsistency: disciplineScore?.journalConsistency ?? 0,
-    coolingOffCompliance: disciplineScore?.coolingOffCompliance ?? 0,
-  }), [disciplineScore]);
+  const disciplineScore = usePsychologyStore((state) => state.disciplineScore);
+  const disciplineMetrics = useMemo(() => {
+    const score = disciplineScore as number | { overall?: number; planAdherence?: number; emotionalControl?: number; lossManagement?: number; journalConsistency?: number; coolingOffCompliance?: number } | undefined;
+    return {
+      overall: typeof score === 'number' ? score : (score?.overall ?? 0),
+      planAdherence: typeof score === 'number' ? score : (score?.planAdherence ?? 0),
+      emotionalControl: typeof score === 'number' ? score : (score?.emotionalControl ?? 0),
+      lossManagement: typeof score === 'number' ? score : (score?.lossManagement ?? 0),
+      journalConsistency: typeof score === 'number' ? score : (score?.journalConsistency ?? 0),
+      coolingOffCompliance: typeof score === 'number' ? score : (score?.coolingOffCompliance ?? 0),
+    };
+  }, [disciplineScore]);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'patterns' | 'sentiment' | 'discipline'>('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);

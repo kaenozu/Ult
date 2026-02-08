@@ -18,7 +18,7 @@ export class ModelPipeline {
    * @internal
    */
   setMockModel(mockModel: unknown): void {
-    this.model = mockModel;
+    this.model = mockModel as tf.LayersModel | null;
   }
 
   /**

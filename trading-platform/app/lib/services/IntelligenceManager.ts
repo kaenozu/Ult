@@ -17,7 +17,7 @@ export class IntelligenceManager {
   /**
    * 銘柄の統合分析をバックグラウンドで実行する
    */
-  async runAsyncAnalysis(symbol: string, data: any): Promise<any> {
+  async runAsyncAnalysis<TInput = unknown, TOutput = unknown>(symbol: string, data: TInput): Promise<TOutput> {
     return new Promise((resolve, reject) => {
       if (!this.worker) {
         reject(new Error('Worker not supported or initialized'));

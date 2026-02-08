@@ -173,11 +173,12 @@ export async function GET(request: NextRequest) {
         const isJapaneseStock = yahooSymbol.endsWith('.T');
         const isIntraday = interval && isIntradayInterval(interval);
 
-        let finalInterval: any = undefined;
+        type YahooInterval = "1m" | "5m" | "15m" | "1h" | "1d" | "1wk" | "1mo" | "2m" | "30m" | "60m" | "90m" | "5d" | "3mo" | undefined;
+        let finalInterval: YahooInterval = undefined;
         if (isJapaneseStock && isIntraday) {
           finalInterval = '1d';
         } else if (interval) {
-          finalInterval = interval === '4h' ? '1h' : interval;
+          finalInterval = (interval === '4h' ? '1h' : interval) as YahooInterval;
         }
 
         const rawResult = await yf.chart(yahooSymbol, { period1, interval: finalInterval });

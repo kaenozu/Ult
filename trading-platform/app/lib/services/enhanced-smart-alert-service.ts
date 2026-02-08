@@ -217,7 +217,10 @@ class EnhancedSmartAlertService {
   /**
    * 指標から値を取得
    */
-  private getValueFromIndicators(indicators: any, condition: AlertCondition): number {
+  private getValueFromIndicators(
+    indicators: { rsi?: number; macd?: { macd: number }; bb?: { upper: number; lower: number } },
+    condition: AlertCondition
+  ): number {
     switch (condition.type) {
       case 'indicator':
         if (condition.threshold === 'rsi') {

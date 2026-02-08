@@ -91,7 +91,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             positions.push({
               symbol: order.symbol,
               name: order.name,
-              market: order.market as any,
+              market: order.market,
               side: order.side,
               quantity: order.quantity,
               avgPrice: order.price,
@@ -107,7 +107,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           const newOrder = {
             id: orderId,
             symbol: order.symbol,
-            side: order.side === 'LONG' ? 'BUY' : 'SELL' as any,
+            side: (order.side === 'LONG' ? 'BUY' : 'SELL') as 'BUY' | 'SELL',
             type: order.orderType,
             quantity: order.quantity,
             price: order.price,

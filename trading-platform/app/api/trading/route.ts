@@ -18,7 +18,7 @@ const TradingActionSchema = z.discriminatedUnion('action', [
     symbol: z.string().min(1),
     side: z.enum(['BUY', 'SELL', 'LONG', 'SHORT']),
     quantity: z.number().positive(),
-    options: z.record(z.unknown()).optional(),
+    options: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({
     action: z.literal('close_position'),
@@ -34,7 +34,7 @@ const TradingActionSchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('update_config'),
-    config: z.record(z.unknown()),
+    config: z.record(z.string(), z.unknown()),
   }),
 ]);
 
@@ -331,8 +331,8 @@ export async function POST(req: NextRequest) {
       
       case 'place_order':
         // Map side to what the platform expects (if needed)
-        const platformSide = (data.side === 'BUY' || data.side === 'LONG') ? 'BUY' : 'SELL';
-        await platform.placeOrder(data.symbol, platformSide as any, data.quantity, data.options);
+        const platformSide: 'BUY' | 'SELL' = (data.side === 'BUY' || data.side === 'LONG') ? 'BUY' : 'SELL';
+        await platform.placeOrder(data.symbol, platformSide, data.quantity, data.options);
         return NextResponse.json({ success: true });
       
       case 'close_position':

@@ -12,7 +12,7 @@ import type { PsychologyAnalysisResult } from '@/app/types/psychology';
 
 function PsychologyContent() {
   const {
-    currentMentalHealth,
+    current_mental_health,
     current_emotions,
     active_recommendations,
     dismissRecommendation,
@@ -127,7 +127,7 @@ function PsychologyContent() {
               {/* Mental Health Dashboard */}
               <div className="lg:col-span-1">
                 <MentalHealthDashboard
-                  metrics={currentMentalHealth}
+                  metrics={current_mental_health}
                   emotions={current_emotions}
                 />
               </div>

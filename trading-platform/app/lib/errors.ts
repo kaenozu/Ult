@@ -522,22 +522,39 @@ export function handleError(error: unknown, context?: string): TradingError {
 /**
  * エラーをログに出力する
  */
+interface TradingErrorLog {
+  name: string;
+  code: string;
+  severity: ErrorSeverity;
+  message: string;
+  stack?: string;
+}
+
+interface StandardErrorLog {
+  name: string;
+  message: string;
+  stack?: string;
+}
+
 export function logError(error: unknown, context: string): void {
   const timestamp = new Date().toISOString();
   
   if (error instanceof TradingError) {
-    logger.error(`[${timestamp}] [${context}] ${error.name}:`, {
+    const errorLog: TradingErrorLog = {
+      name: error.name,
       code: error.code,
       severity: error.severity,
       message: error.message,
       stack: error.stack,
-    } as any);
+    };
+    logger.error(`[${timestamp}] [${context}] ${error.name}:`, errorLog);
   } else if (error instanceof Error) {
-    logger.error(`[${timestamp}] [${context}] ${error.name}:`, {
+    const errorLog: StandardErrorLog = {
       name: error.name,
       message: error.message,
       stack: error.stack,
-    } as any);
+    };
+    logger.error(`[${timestamp}] [${context}] ${error.name}:`, errorLog);
   } else {
     logger.error(`[${timestamp}] [${context}] Unknown error:`, error instanceof Error ? error : new Error(String(error)));
   }

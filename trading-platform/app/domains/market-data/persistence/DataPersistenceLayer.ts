@@ -50,6 +50,15 @@ export interface BackupMetadata {
   compressed: boolean;
 }
 
+export interface BackupData {
+  metadata: BackupMetadata;
+  data: {
+    ohlcv: unknown;
+    tradeHistory: unknown;
+    modelConfig: unknown;
+  };
+}
+
 export interface PersistenceOptions {
   storeName: string;
   dbName?: string;
@@ -432,9 +441,9 @@ export class DataPersistenceLayer {
     }
 
     // Restore each store
-    await this.restoreStore('ohlcv', backup.data.ohlcv);
-    await this.restoreStore('tradeHistory', backup.data.tradeHistory);
-    await this.restoreStore('modelConfig', backup.data.modelConfig);
+    await this.restoreStore('ohlcv', backup.data.ohlcv as unknown[]);
+    await this.restoreStore('tradeHistory', backup.data.tradeHistory as unknown[]);
+    await this.restoreStore('modelConfig', backup.data.modelConfig as unknown[]);
   }
 
   /**
@@ -539,7 +548,7 @@ export class DataPersistenceLayer {
   /**
    * Helper: Load backup data
    */
-  private async loadBackup(backupId: string): Promise<unknown> {
+  private async loadBackup(backupId: string): Promise<BackupData | null> {
     if (!this.db) return null;
 
     return new Promise((resolve, reject) => {

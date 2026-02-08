@@ -305,3 +305,26 @@ export function calculateChartMinMax(
 
   return { min, max };
 }
+
+/**
+ * Calculate price range from OHLCV data
+ * Returns the min and max price from the data
+ * 
+ * @param data - OHLCV data array
+ * @returns Object containing min and max price
+ */
+export function calculatePriceRange(data: OHLCV[]): { min: number, max: number } {
+  if (data.length === 0) {
+    return { min: 0, max: 100 };
+  }
+
+  let min = Infinity;
+  let max = -Infinity;
+
+  for (const d of data) {
+    if (d.low < min) min = d.low;
+    if (d.high > max) max = d.high;
+  }
+
+  return { min, max };
+}

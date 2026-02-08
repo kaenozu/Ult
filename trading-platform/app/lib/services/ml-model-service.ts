@@ -42,7 +42,7 @@ export class MLModelService {
 
   constructor(
     private calculator: PredictionCalculator = new PredictionCalculator(),
-    _placeholder?: any,
+    _placeholder?: unknown,
     config: Partial<MLServiceConfig> = {}
   ) {
     this.weights = config.weights || PREDICTION.MODEL_WEIGHTS;

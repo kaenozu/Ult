@@ -118,6 +118,10 @@ export class RealisticBacktestEngine extends EventEmitter {
   private cumulativeVolume: number = 0;
   private volatilityCache: Map<number, number> = new Map();
   private tradeTimestamps: number[] = [];
+  
+  // Temporary trade data for position tracking
+  private openTrade: RealisticTradeMetrics | null = null;
+  private entryCommission: number = 0;
 
   constructor(config: Partial<RealisticBacktestConfig> = {}) {
     super();
@@ -309,15 +313,15 @@ export class RealisticBacktestEngine extends EventEmitter {
      };
      
      // Store temporary trade data for closing
-     (this as any).openTrade = trade;
-     (this as any).entryCommission = entryCommission;
+     this.openTrade = trade;
+     this.entryCommission = entryCommission;
    }
 
   /**
    * Close position and finalize trade metrics
    */
    private closePosition(data: OHLCV, reason: Trade['exitReason'], index: number = 0): void {
-     if (!this.currentPosition || !(this as any).openTrade) return;
+     if (!this.currentPosition || !this.openTrade) return;
 
      const quantity = this.calculatePositionSize(this.entryPrice);
      const exitPrice = this.applySlippage(
@@ -333,7 +337,7 @@ export class RealisticBacktestEngine extends EventEmitter {
      const exitCommission = exitValue * (exitCommissionRate / 100);
      
      // Entry commission from stored trade
-     const openTrade = (this as any).openTrade as RealisticTradeMetrics;
+     const openTrade = this.openTrade;
      const entryCommission = openTrade.fees;
      const totalCommission = entryCommission + exitCommission;
 
@@ -372,8 +376,8 @@ export class RealisticBacktestEngine extends EventEmitter {
      this.entryPrice = 0;
      this.stopLoss = 0;
      this.takeProfit = 0;
-     (this as any).openTrade = null;
-     (this as any).entryCommission = null;
+     this.openTrade = null;
+     this.entryCommission = 0;
    }
 
 
@@ -744,7 +748,8 @@ export class RealisticBacktestEngine extends EventEmitter {
     this.cumulativeVolume = 0;
     this.volatilityCache.clear();
     this.tradeTimestamps = [];
-    (this as any).openTrade = null;
+    this.openTrade = null;
+    this.entryCommission = 0;
   }
 
   /**

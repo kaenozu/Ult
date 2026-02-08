@@ -29,50 +29,21 @@ export function useDeepMemo<T>(factory: () => T, deps: unknown[]): T {
 }
 
 /**
- * イベントコールバック（依存配列なしで常に同じ関数を返す）
+ * 関数のメモ化（依存配列なしで常に同じ関数を返す）
  */
-export function useEventCallback<T>(fn: T): T {
+export function useEventCallback<T extends (...args: unknown[]) => unknown>(
+  fn: T
+): T {
   const ref = useRef<T>(fn);
-
+  
   useEffect(() => {
     ref.current = fn;
   }, [fn]);
-
+  
   // @ts-ignore - Type assertion for event callback
-  return useCallback(function(...args: unknown[]) {
-    return ref.current(...(args as unknown[]));
+  return useCallback(function(...args: Parameters<T>) {
+    return ref.current(...args);
   }, []) as T;
-}
-
-      timeoutRef.current = setTimeout(() => {
-        fn(...args as Parameters<T>);
-      }, delay);
-    },
-    [fn, delay]
-  );
-}
-
-/**
- * コールバックのスロットル
- */
-export function useThrottledCallback<T extends (...args: unknown[]) => unknown>(
-  callback: T,
-  limit: number
-): T {
-  const inThrottle = useRef(false);
-
-  return useCallback(
-    (...args: Parameters<T>) => {
-      if (!inThrottle.current) {
-        callback(...args as Parameters<T>);
-        inThrottle.current = true;
-        setTimeout(() => {
-          inThrottle.current = false;
-        }, limit);
-      }
-    },
-    [callback, limit]
-  );
 }
 
 // ============================================================================

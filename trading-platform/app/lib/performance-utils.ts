@@ -33,11 +33,15 @@ export interface MeasureOptions {
  * });
  * ```
  */
-export function measurePerformance(name: string, arg1: any, arg2?: any) {
+type DecoratorTarget = unknown;
+type AsyncMethod = (...args: unknown[]) => Promise<unknown>;
+type SyncMethod = (...args: unknown[]) => unknown;
+
+export function measurePerformance(name: string, arg1: SyncMethod | MeasureOptions | undefined, arg2?: MeasureOptions) {
   // Check if this is a decorator use case (target, propertyKey, descriptor) or functional use case
   if (typeof arg1 === 'function') {
     // Functional use case: measurePerformance(name, fn, options)
-    const fn = arg1;
+    const fn = arg1 as SyncMethod;
     const options: MeasureOptions = arg2 || {};
     const { threshold = 100 } = options;
     const start = performance.now();
@@ -72,13 +76,13 @@ export function measurePerformance(name: string, arg1: any, arg2?: any) {
     const errThreshold = errorThreshold || threshold * 2;
 
     return function (
-      _target: any,
+      _target: DecoratorTarget,
       _propertyKey: string,
       descriptor: PropertyDescriptor
     ): PropertyDescriptor {
-      const originalMethod = descriptor.value;
+      const originalMethod = descriptor.value as AsyncMethod;
 
-      descriptor.value = async function (...args: any[]) {
+      descriptor.value = async function (...args: unknown[]) {
         const start = performance.now();
         const fullName = `${name}`;
 
@@ -139,13 +143,13 @@ export function measureAsyncPerformance(name: string, options: MeasureOptions = 
   const errThreshold = errorThreshold || threshold * 2;
 
   return function (
-    _target: any,
+    _target: DecoratorTarget,
     _propertyKey: string,
     descriptor: PropertyDescriptor
   ): PropertyDescriptor {
-    const originalMethod = descriptor.value;
+    const originalMethod = descriptor.value as AsyncMethod;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: unknown[]) {
       const start = performance.now();
       const fullName = `${name}`;
 

@@ -5,12 +5,45 @@
  * 購読の管理、自動再接続、ストアへのデータ反映を行います。
  */
 
-import { useTradingStore } from '@/app/store/tradingStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useUIStore } from '@/app/store/uiStore';
+
+interface MarketData {
+  symbol: string;
+  price: number;
+  change: number;
+  volume: number;
+}
+
+interface WelcomeData {
+  message: string;
+}
+
+interface ErrorData {
+  message: string;
+  code: string;
+}
+
+type WebSocketData = MarketData | WelcomeData | ErrorData | Record<string, unknown>;
 
 interface WebSocketMessage {
   type: string;
-  data: any;
+  data: WebSocketData;
   timestamp?: number;
+}
+
+// Type guards
+function isMarketData(data: WebSocketData): data is MarketData {
+  return typeof data === 'object' && data !== null &&
+    'symbol' in data && 'price' in data && 'change' in data && 'volume' in data;
+}
+
+function isWelcomeData(data: WebSocketData): data is WelcomeData {
+  return typeof data === 'object' && data !== null && 'message' in data && !('code' in data);
+}
+
+function isErrorData(data: WebSocketData): data is ErrorData {
+  return typeof data === 'object' && data !== null && 'message' in data && 'code' in data;
 }
 
 class WebSocketClient {
@@ -109,22 +142,29 @@ class WebSocketClient {
       switch (message.type) {
         case 'authenticated':
           console.log('[WebSocket] Authentication successful');
-          useTradingStore.getState().setConnectionStatus(true);
+          // Update connection status in UI store
+          useUIStore.getState().setConnectionStatus(true);
           // 認証成功後に既存の購読を再送
           if (this.subscriptions.size > 0) {
             this.subscribe(Array.from(this.subscriptions));
           }
           break;
         case 'market_data':
-          this.handleMarketData(message.data);
+          if (isMarketData(message.data)) {
+            this.handleMarketData(message.data);
+          }
           break;
         case 'connection':
-          console.log('[WebSocket] Server Welcome:', message.data.message);
+          if (isWelcomeData(message.data)) {
+            console.log('[WebSocket] Server Welcome:', message.data.message);
+          }
           break;
         case 'error':
-          console.error('[WebSocket] Server Error:', message.data.message);
-          if (message.data.code === 'AUTH_FAILED') {
-            this.disconnect(); // 認証失敗時は再接続しない
+          if (isErrorData(message.data)) {
+            console.error('[WebSocket] Server Error:', message.data.message);
+            if (message.data.code === 'AUTH_FAILED') {
+              this.disconnect(); // 認証失敗時は再接続しない
+            }
           }
           break;
       }
@@ -133,14 +173,13 @@ class WebSocketClient {
     }
   }
 
-  private handleMarketData(data: any) {
-    // 1. ストアにデータを反映
-    useTradingStore.getState().batchUpdateStockData([{
-      symbol: data.symbol,
+  private handleMarketData(data: MarketData) {
+    // 1. Update watchlist store with real-time data
+    useWatchlistStore.getState().updateStockData(data.symbol, {
       price: data.price,
       change: data.change,
       volume: data.volume,
-    }]);
+    });
 
     // 2. カスタムイベントを発行（フックなどがリッスンできるようにする）
     if (typeof window !== 'undefined') {

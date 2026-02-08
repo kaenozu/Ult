@@ -33,7 +33,9 @@ interface TradingStore {
  * Proxies to specialized stores for backward compatibility.
  * This ensures existing components continue to work while we transition to specialized stores.
  */
-export const useTradingStore = (selector?: (state: TradingStore) => any) => {
+export function useTradingStore(): TradingStore;
+export function useTradingStore<T>(selector: (state: TradingStore) => T): T;
+export function useTradingStore<T>(selector?: (state: TradingStore) => T): TradingStore | T {
   const ui = useUIStore();
   const watchlist = useWatchlistStore();
   const portfolio = usePortfolioStore();
@@ -83,7 +85,5 @@ export const useTradingStore = (selector?: (state: TradingStore) => any) => {
     }
   };
 
-  // Note: This proxy approach is for transition.
-  // Selectors won't benefit from partial re-renders as much as direct store usage.
   return selector ? selector(state) : state;
-};
+}
