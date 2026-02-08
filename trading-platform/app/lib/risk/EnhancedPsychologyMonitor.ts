@@ -9,7 +9,7 @@ import { Order, Position } from '@/app/types';
 import {
   TradingBehaviorMetrics,
   PsychologyAlert,
-  TradingSession,
+  RiskTradingSession,
   CoolingReason
 } from '@/app/types/risk';
 import { CoolingOffManager } from './CoolingOffManager';
@@ -51,8 +51,8 @@ export interface PsychologicalState {
 
 export class EnhancedPsychologyMonitor {
   private tradingHistory: Order[] = [];
-  private sessions: TradingSession[] = [];
-  private currentSession: TradingSession | null = null;
+  private sessions: RiskTradingSession[] = [];
+  private currentSession: RiskTradingSession | null = null;
   private alerts: PsychologyAlert[] = [];
   private coolingOffManager: CoolingOffManager;
   private tradeTimestamps: number[] = [];

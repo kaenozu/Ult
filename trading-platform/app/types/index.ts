@@ -151,6 +151,8 @@ export interface Signal {
   reason: string;
   predictedChange: number;
   predictionDate: string;
+  timestamp?: number; // Unix timestamp of signal generation (milliseconds)
+  price?: number;     // Current price when signal was generated
   optimizedParams?: {
     rsiPeriod: number;
     smaPeriod: number;

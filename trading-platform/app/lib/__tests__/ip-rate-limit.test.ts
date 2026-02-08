@@ -30,6 +30,16 @@ describe('IpRateLimiter', () => {
 });
 
 describe('getClientIp', () => {
+  const originalEnv = process.env.TRUST_PROXY;
+
+  beforeEach(() => {
+    process.env.TRUST_PROXY = 'true';
+  });
+
+  afterEach(() => {
+    process.env.TRUST_PROXY = originalEnv;
+  });
+
   function createRequest(headers: Record<string, string>) {
     return {
       headers: {

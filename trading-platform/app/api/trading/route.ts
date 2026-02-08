@@ -18,7 +18,7 @@ const TradingActionSchema = z.discriminatedUnion('action', [
     symbol: z.string().min(1),
     side: z.enum(['BUY', 'SELL', 'LONG', 'SHORT']),
     quantity: z.number().positive(),
-    options: z.record(z.unknown()).optional(),
+    options: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({
     action: z.literal('close_position'),
@@ -34,7 +34,7 @@ const TradingActionSchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('update_config'),
-    config: z.record(z.unknown()),
+    config: z.record(z.string(), z.unknown()),
   }),
 ]);
 

@@ -29,11 +29,16 @@ export class ParameterOptimizerService {
       for (let i = period; i < rsiValues.length - 1; i++) {
         if (rsiValues[i] <= 30) {
           mockSignals.push({
-            symbol: ohlcv[0].symbol,
+            symbol: ohlcv[0].symbol ?? '',
             type: 'BUY',
             price: ohlcv[i].close,
             timestamp: new Date(ohlcv[i].date).getTime(),
-            confidence: 0.5
+            confidence: 0.5,
+            targetPrice: ohlcv[i].close * 1.02,
+            stopLoss: ohlcv[i].close * 0.98,
+            reason: `RSI(${period}) <= 30`,
+            predictedChange: 2,
+            predictionDate: ohlcv[i].date,
           });
         }
       }

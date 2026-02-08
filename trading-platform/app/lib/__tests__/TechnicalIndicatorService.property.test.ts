@@ -11,14 +11,14 @@ import fc from 'fast-check';
 const positivePriceArb = (minLength: number, maxLength: number): fc.Arbitrary<number[]> => 
   fc.array(fc.nat(10000).map((n: number) => n + 1), { minLength, maxLength });
 
-// Helper to generate OHLCV data
+// Helper to generate OHLCV data with positive prices only (>= 1)
 const ohlcvArb = (minLength: number, maxLength: number): fc.Arbitrary<SharedOHLCV[]> => 
   fc.array(
     fc.record({
-      open: fc.nat(10000),
-      high: fc.nat(10000),
-      low: fc.nat(10000),
-      close: fc.nat(10000),
+      open: fc.nat(10000).map((n: number) => n + 1),
+      high: fc.nat(10000).map((n: number) => n + 1),
+      low: fc.nat(10000).map((n: number) => n + 1),
+      close: fc.nat(10000).map((n: number) => n + 1),
       volume: fc.nat(1000000),
       date: fc.string({ minLength: 10, maxLength: 10 }),
       symbol: fc.option(fc.string({ minLength: 1, maxLength: 10 })),

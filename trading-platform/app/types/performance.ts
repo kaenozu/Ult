@@ -71,7 +71,7 @@ export interface DetailedPortfolio {
   createdAt: number;
 }
 
-export { DetailedPortfolio as Portfolio };
+export type { DetailedPortfolio as Portfolio };
 
 // ============================================================================
 // Performance Metrics Types

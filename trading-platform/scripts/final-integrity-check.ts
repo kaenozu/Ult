@@ -9,8 +9,7 @@ import { MarketRegimeService } from '../app/lib/MarketRegimeService';
 import { FeatureEngine } from '../app/lib/FeatureEngine';
 
 function runIntegrityCheck() {
-  console.log('🚀 Trader Pro コアロジック最終整合性チェックを開始します...
-');
+  console.log('🚀 Trader Pro コアロジック最終整合性チェックを開始します...');
 
   const results = {
     expectedValue: false,

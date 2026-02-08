@@ -86,7 +86,7 @@ export type {
 export type {
   OrderSide,
   TimeInForce,
-  OrderStatus,
+  AdvancedOrderStatus,
   BaseOrder,
   StopLossOrder,
   TakeProfitOrder,

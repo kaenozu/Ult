@@ -9,14 +9,17 @@ import { AlertCircle, Brain, CheckCircle2, Zap } from 'lucide-react';
  * トレーダーの心理状態と規律を可視化するコンポーネント。
  */
 export function TraderHealthCard() {
-  const { 
-    mentalState, 
-    overallScore, 
-    stressLevel, 
-    disciplineScore, 
-    riskOfTilt, 
-    recommendations 
+  const {
+    current_mental_health,
+    active_recommendations
   } = usePsychologyStore();
+
+  // 新しいAPIから値を取得（オプショナルチェーンを使用）
+  const mentalState = current_mental_health?.state;
+  const overallScore = current_mental_health?.overall_score ?? 0;
+  const stressLevel = current_mental_health?.stress_level ?? 0;
+  const disciplineScore = current_mental_health?.discipline_score ?? 0;
+  const riskOfTilt = current_mental_health?.risk_of_tilt ?? 0;
 
   const getStatusConfig = () => {
     switch (mentalState) {
@@ -100,10 +103,10 @@ export function TraderHealthCard() {
 
       {/* AI Recommendations */}
       <div className="space-y-2">
-        {recommendations.map((rec, i) => (
+        {active_recommendations.map((rec, i) => (
           <div key={i} className="flex gap-2 text-[11px] leading-relaxed text-[#92adc9]">
             <span className={cn("mt-1.5 w-1 h-1 rounded-full shrink-0", config.color.replace('text-', 'bg-'))} />
-            <p>{rec}</p>
+            <p>{rec.message}</p>
           </div>
         ))}
       </div>
