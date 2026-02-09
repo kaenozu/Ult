@@ -3,7 +3,23 @@
  */
 
 import { PerformanceScreenerService, StockDataSource } from '../PerformanceScreenerService';
-import { OHLCV } from '@/app/types';
+import { OHLCV, BacktestResult } from '@/app/types';
+
+// Mock OptimizedAccuracyService
+jest.mock('../OptimizedAccuracyService', () => ({
+  optimizedAccuracyService: {
+    runOptimizedBacktest: jest.fn().mockResolvedValue({
+      winRate: 60,
+      totalReturn: 15,
+      profitFactor: 2.0,
+      sharpeRatio: 1.2,
+      maxDrawdown: 12,
+      totalTrades: 25,
+      startDate: '2025-11-01',
+      endDate: '2026-02-08',
+    } as BacktestResult),
+  },
+}));
 
 describe('PerformanceScreenerService', () => {
   let service: PerformanceScreenerService;
