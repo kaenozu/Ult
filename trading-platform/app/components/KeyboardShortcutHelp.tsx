@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { keyboardShortcutManager, KeyboardShortcutManager } from '@/app/lib/KeyboardShortcutManager';
 import { Keyboard, X } from 'lucide-react';
-import { Button } from '@/app/components/ui/Button';
+import { useUIStore } from '@/app/store/uiStore';
 
 export function KeyboardShortcutHelp() {
-  const [isOpen, setIsOpen] = useState(false);
+  const isOpen = useUIStore((state) => state.showKeyboardShortcuts);
+  const setKeyboardShortcuts = useUIStore((state) => state.setKeyboardShortcuts);
   const [shortcuts, setShortcuts] = useState(keyboardShortcutManager.getAllShortcuts());
 
   useEffect(() => {
@@ -25,7 +26,7 @@ export function KeyboardShortcutHelp() {
       shift: true,
       description: 'Show keyboard shortcuts',
       category: 'general',
-      action: () => setIsOpen(true),
+      action: () => setKeyboardShortcuts(true),
     });
 
     return () => {
@@ -34,7 +35,7 @@ export function KeyboardShortcutHelp() {
         shift: true,
       });
     };
-  }, []);
+  }, [setKeyboardShortcuts]);
 
   const categories = {
     navigation: shortcuts.filter(s => s.category === 'navigation'),
@@ -58,7 +59,7 @@ export function KeyboardShortcutHelp() {
               Keyboard Shortcuts
             </h2>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={() => setKeyboardShortcuts(false)}
               className="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white"
             >
               <X className="w-5 h-5" />

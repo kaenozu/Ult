@@ -108,24 +108,7 @@ export type MarketType = "japan" | "usa";
 /**
  * Get the tick size for a given price
  * Supports both Japanese and US stock markets
- *
- * Japanese stock tick sizes follow Tokyo Stock Exchange rules:
- * - Price ≤ ¥3,000: ¥1
- * - Price ≤ ¥5,000: ¥5
- * - Price ≤ ¥10,000: ¥10
- * - Price ≤ ¥30,000: ¥50
- * - Price ≤ ¥50,000: ¥100
- * - Price ≤ ¥100,000: ¥500
- * - Price ≤ ¥300,000: ¥1,000
- * - Price ≤ ¥500,000: ¥5,000
- * - Price ≤ ¥1,000,000: ¥10,000
- * - Price ≤ ¥3,000,000: ¥50,000
- * - Price ≤ ¥5,000,000: ¥100,000
- * - Price > ¥5,000,000: ¥500,000
- *
- * US stocks typically use $0.01 (1 cent) tick size
  */
-// Threshold configuration for tick sizes (TSE rules)
 const TICK_SIZE_THRESHOLDS = [
   { max: 3000, value: 1 },
   { max: 5000, value: 5 },
@@ -172,9 +155,6 @@ export function roundToTickSize(
   market: MarketType = "japan",
 ): number {
   const tickSize = getTickSize(price, market);
-  if (market === "usa") {
-    return Math.round(price / tickSize) * tickSize;
-  }
   return Math.round(price / tickSize) * tickSize;
 }
 
@@ -216,6 +196,14 @@ export function getPriceLimit(referencePrice: number): number {
 }
 
 /**
+ * Internal helper to validate a price value.
+ * Consistent with project-wide technical analysis logic.
+ */
+function _getValidPrice(p: number | null | undefined): number {
+  return p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
+}
+
+/**
  * Calculate returns from a series of prices
  */
 export function calculateReturns(prices: number[]): number[] {
@@ -245,23 +233,15 @@ export function calculateSMA(prices: number[], period: number): number[] {
   let validCount = 0;
 
   for (let i = 0; i < prices.length; i++) {
-    // Add new value (check validity inline)
-    const p = prices[i];
-    const val =
-      p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
+    const val = _getValidPrice(prices[i]);
 
     if (!isNaN(val)) {
       sum += val;
       validCount++;
     }
 
-    // Remove old value
     if (i >= period) {
-      const oldP = prices[i - period];
-      const oldVal =
-        oldP != null && typeof oldP === "number" && !isNaN(oldP) && oldP > 0
-          ? oldP
-          : NaN;
+      const oldVal = _getValidPrice(prices[i - period]);
       if (!isNaN(oldVal)) {
         sum -= oldVal;
         validCount--;
@@ -271,7 +251,6 @@ export function calculateSMA(prices: number[], period: number): number[] {
     if (i < period - 1) {
       result.push(NaN);
     } else {
-      // Check if we have enough valid values (must have NO NaNs in the window)
       if (validCount === period) {
         result.push(sum / period);
       } else {
@@ -290,33 +269,19 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   const changes: number[] = [];
 
   for (let i = 1; i < prices.length; i++) {
-    // 有効な価格データのみで変化量を計算
-    const pCurrent = prices[i];
-    const valCurrent =
-      pCurrent != null &&
-      typeof pCurrent === "number" &&
-      !isNaN(pCurrent) &&
-      pCurrent > 0
-        ? pCurrent
-        : NaN;
-
-    const pPrev = prices[i - 1];
-    const valPrev =
-      pPrev != null && typeof pPrev === "number" && !isNaN(pPrev) && pPrev > 0
-        ? pPrev
-        : NaN;
+    const valCurrent = _getValidPrice(prices[i]);
+    const valPrev = _getValidPrice(prices[i - 1]);
 
     if (!isNaN(valCurrent) && !isNaN(valPrev)) {
       changes.push(valCurrent - valPrev);
     } else {
-      changes.push(NaN); // 無効なデータの場合はNaNを挿入
+      changes.push(NaN);
     }
   }
 
   let avgGain = 0;
   let avgLoss = 0;
 
-  // 有効な変化量のみを使用して初期化
   let validChangesCount = 0;
   for (let i = 0; i < period && i < changes.length; i++) {
     if (!isNaN(changes[i])) {
@@ -329,7 +294,6 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
     }
   }
 
-  // 有効な変化量がある場合のみ平均を計算
   if (validChangesCount > 0) {
     avgGain /= validChangesCount;
     avgLoss /= validChangesCount;
@@ -349,7 +313,6 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
     } else {
       const change = changes[i - 1];
 
-      // 無効な変化量の場合はNaNを返す
       if (isNaN(change)) {
         result.push(NaN);
       } else {
@@ -385,24 +348,15 @@ export function calculateEMA(prices: number[], period: number): number[] {
   let initialized = false;
 
   for (let i = 0; i < prices.length; i++) {
-    const p = prices[i];
-    const val =
-      p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
+    const val = _getValidPrice(prices[i]);
 
     if (!initialized) {
-      // Not initialized yet, try to build SMA
       if (!isNaN(val)) {
         sum += val;
         validCount++;
       }
 
-      // We push NaN until we hit the 'period'-th valid value
       if (validCount === period && !isNaN(val)) {
-        // Note: validCount increments even if we don't push value, but we only init when we have 'period' valid values
-        // Wait, if we have [10, NaN, 20]. period=2.
-        // i=0: sum=10. count=1.
-        // i=1: sum=10. count=1.
-        // i=2: sum=30. count=2. Init!
         const sma = sum / period;
         result.push(sma);
         initialized = true;
@@ -410,19 +364,11 @@ export function calculateEMA(prices: number[], period: number): number[] {
         result.push(NaN);
       }
     } else {
-      // Initialized
       if (!isNaN(val) && !isNaN(result[i - 1])) {
         const ema = (val - result[i - 1]) * multiplier + result[i - 1];
         result.push(ema);
       } else {
-        // If current value is invalid, we can't update EMA properly.
-        // Option: Propagate NaN, or hold previous value.
-        // Propagating NaN is safer to indicate missing data.
         result.push(NaN);
-        // NOTE: Once NaN is pushed, next iteration result[i-1] is NaN, so it propagates NaN forever?
-        // This might be undesirable if data comes back.
-        // If data comes back, maybe we should re-initialize?
-        // For now, let's just push NaN. Robust re-init is complex.
       }
     }
   }
@@ -467,44 +413,57 @@ export function calculateMACD(
 
 /**
  * Calculate Bollinger Bands
+ * Optimized to use O(N) single-pass calculation for both SMA and Standard Deviation.
  */
 export function calculateBollingerBands(
   prices: number[],
   period: number = 20,
   standardDeviations: number = 2,
 ): { upper: number[]; middle: number[]; lower: number[] } {
-  const middle = calculateSMA(prices, period);
   const upper: number[] = [];
+  const middle: number[] = [];
   const lower: number[] = [];
 
+  let sum = 0;
+  let sumSq = 0;
+  let validCount = 0;
+
   for (let i = 0; i < prices.length; i++) {
-    if (i < period - 1 || isNaN(middle[i])) {
+    const val = _getValidPrice(prices[i]);
+
+    if (!isNaN(val)) {
+      sum += val;
+      sumSq += val * val;
+      validCount++;
+    }
+
+    if (i >= period) {
+      const oldVal = _getValidPrice(prices[i - period]);
+
+      if (!isNaN(oldVal)) {
+        sum -= oldVal;
+        sumSq -= oldVal * oldVal;
+        validCount--;
+      }
+    }
+
+    if (i < period - 1) {
       upper.push(NaN);
+      middle.push(NaN);
       lower.push(NaN);
     } else {
-      const mean = middle[i];
-      let sumSq = 0;
-      let validCount = 0;
+      if (validCount === period) {
+        const mean = sum / period;
+        const variance = sumSq / period - mean * mean;
+        const stdDev = Math.sqrt(Math.max(0, variance));
 
-      // Calculate variance directly without array allocation
-      for (let j = 0; j < period; j++) {
-        const p = prices[i - j];
-        const val =
-          p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
-        if (!isNaN(val)) {
-          const diff = val - mean;
-          sumSq += diff * diff;
-          validCount++;
-        }
-      }
-
-      if (validCount < period) {
-        upper.push(NaN);
-        lower.push(NaN);
-      } else {
-        const stdDev = Math.sqrt(sumSq / period);
+        middle.push(mean);
         upper.push(mean + standardDeviations * stdDev);
         lower.push(mean - standardDeviations * stdDev);
+      } else {
+        upper.push(NaN);
+        middle.push(NaN);
+        lower.push(NaN);
       }
     }
   }
@@ -514,7 +473,6 @@ export function calculateBollingerBands(
 
 /**
  * Calculate Average True Range (ATR)
- * Optimized to reduce memory allocation by performing inline validation and calculation.
  */
 export function calculateATR(
   highs: number[],
@@ -529,26 +487,14 @@ export function calculateATR(
   let validCount = 0;
 
   for (let i = 0; i < length; i++) {
-    // 1. Validate inputs inline
-    const h = highs[i];
-    const valHigh =
-      h != null && typeof h === "number" && !isNaN(h) && h > 0 ? h : NaN;
+    const valHigh = _getValidPrice(highs[i]);
+    const valLow = _getValidPrice(lows[i]);
 
-    const l = lows[i];
-    const valLow =
-      l != null && typeof l === "number" && !isNaN(l) && l > 0 ? l : NaN;
-
-    // Previous close is needed for i > 0
     let valPrevClose = NaN;
     if (i > 0) {
-      const cPrev = closes[i - 1];
-      valPrevClose =
-        cPrev != null && typeof cPrev === "number" && !isNaN(cPrev) && cPrev > 0
-          ? cPrev
-          : NaN;
+      valPrevClose = _getValidPrice(closes[i - 1]);
     }
 
-    // 2. Calculate True Range
     let tr = NaN;
     if (i === 0) {
       if (!isNaN(valHigh) && !isNaN(valLow)) {
@@ -564,25 +510,17 @@ export function calculateATR(
       }
     }
 
-    // 3. Calculate ATR
     if (i < period) {
-      // Accumulate for initial SMA
       if (!isNaN(tr)) {
         sum += tr;
         validCount++;
       }
       result.push(NaN);
 
-      // Check if we can initialize at period-1
       if (i === period - 1) {
-        if (validCount >= period) {
-          result[i] = sum / validCount;
-        } else {
-          result[i] = NaN;
-        }
+        result[i] = validCount >= period ? sum / validCount : NaN;
       }
     } else {
-      // Smoothing: (Prior ATR * (period-1) + Current TR) / period
       if (isNaN(tr)) {
         result.push(NaN);
       } else if (!isNaN(result[i - 1])) {
