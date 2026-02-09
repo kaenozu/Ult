@@ -18,6 +18,8 @@ import type { OHLCV } from '../../types';
 
 // Re-export OHLCV for backward compatibility
 import { logger } from '@/app/core/logger';
+import { TOKENS } from '../di/tokens';
+import { container } from '../di/container';
 export type { OHLCV };
 
 // ============================================================================
@@ -90,16 +92,16 @@ export class UnifiedTradingPlatform extends EventEmitter {
   private config: PlatformConfig;
   private status: PlatformStatus;
   
-  // Core components
-  private dataFeed: MultiExchangeDataFeed;
-  private aiEngine: PredictiveAnalyticsEngine;
-  private sentimentEngine: SentimentAnalysisEngine;
-  private riskManager: AdvancedRiskManager;
-  private executionEngine: AlgorithmicExecutionEngine;
-  private backtestEngine: AdvancedBacktestEngine;
-  private alertSystem: AlertSystem;
-  private paperTrading: PaperTradingEnvironment;
-
+  // Core components - definite assignment assertion
+  private dataFeed!: MultiExchangeDataFeed;
+  private aiEngine!: PredictiveAnalyticsEngine;
+  private sentimentEngine!: SentimentAnalysisEngine;
+  private riskManager!: AdvancedRiskManager;
+  private executionEngine!: AlgorithmicExecutionEngine;
+  private backtestEngine!: AdvancedBacktestEngine;
+  private alertSystem!: AlertSystem;
+  private paperTrading!: PaperTradingEnvironment;
+  
   // Data storage
   private marketData: Map<string, OHLCVWithTimestamp[]> = new Map();
   private signals: Map<string, TradingSignal> = new Map();
@@ -136,6 +138,18 @@ export class UnifiedTradingPlatform extends EventEmitter {
     };
 
     // Initialize components
+    this.initializeComponents();
+    
+    this.setupEventHandlers();
+  }
+
+  /**
+   * Initialize components (can be overridden for DI)
+   * @protected
+   */
+  protected initializeComponents(): void {
+    // Note: Direct instantiation for now.
+    // TODO: Migrate to DI container when all services are registered
     this.dataFeed = new MultiExchangeDataFeed();
     this.aiEngine = new PredictiveAnalyticsEngine();
     this.sentimentEngine = new SentimentAnalysisEngine();
@@ -150,8 +164,6 @@ export class UnifiedTradingPlatform extends EventEmitter {
     this.paperTrading = new PaperTradingEnvironment({
       initialCapital: this.config.initialCapital,
     });
-
-    this.setupEventHandlers();
   }
 
   // ============================================================================
@@ -630,3 +642,27 @@ export const getGlobalTradingPlatform = getInstance;
 export const resetGlobalTradingPlatform = resetInstance;
 
 export default UnifiedTradingPlatform;
+
+// ============================================================================
+// Static Factory Methods
+// ============================================================================
+
+/**
+ * Register a service in DI container
+ * Useful for testing and custom implementations
+ */
+export function registerService<T>(
+  token: symbol,
+  factory: () => T,
+  singleton = true
+): void {
+  container.register<T>(token, factory, singleton);
+}
+
+/**
+ * Reset DI container
+ * Useful for testing
+ */
+export function resetDIContainer(): void {
+  container.reset();
+}

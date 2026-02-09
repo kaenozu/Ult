@@ -11,8 +11,8 @@ interface CacheEntry<T> {
 }
 
 export class RequestDeduplicator {
-  private pendingRequests = new Map<string, Promise<any>>();
-  private cache = new Map<string, CacheEntry<any>>();
+  private pendingRequests = new Map<string, Promise<unknown>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private expiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private CACHE_TTL: number;
   private readonly MAX_CACHE_SIZE = 1000;
@@ -46,7 +46,7 @@ export class RequestDeduplicator {
     const pending = this.pendingRequests.get(key);
     if (pending) {
       console.debug(`[RequestDeduplicator] Request already pending: ${key}`);
-      return pending;
+      return pending as Promise<T>;
     }
 
     // Limit number of pending requests
@@ -149,6 +149,11 @@ export class RequestDeduplicator {
    */
   clearCacheKey(key: string): void {
     this.cache.delete(key);
+    const existingTimer = this.expiryTimers.get(key);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      this.expiryTimers.delete(key);
+    }
     console.debug(`[RequestDeduplicator] Cache cleared for: ${key}`);
   }
 
@@ -169,6 +174,11 @@ export class RequestDeduplicator {
       
       if (shouldDelete) {
         this.cache.delete(key);
+        const existingTimer = this.expiryTimers.get(key);
+        if (existingTimer) {
+          clearTimeout(existingTimer);
+          this.expiryTimers.delete(key);
+        }
       }
     }
     
@@ -220,6 +230,11 @@ export class RequestDeduplicator {
   invalidate(keys: string[]): void {
     for (const key of keys) {
       this.cache.delete(key);
+      const existingTimer = this.expiryTimers.get(key);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        this.expiryTimers.delete(key);
+      }
     }
     console.debug(`[RequestDeduplicator] Invalidated ${keys.length} cache entries`);
   }

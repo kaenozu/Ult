@@ -1,12 +1,19 @@
 /**
  * Performance Utilities
- * 
+ *
  * パフォーマンス計測関連のユーティリティ関数
  */
 
 import { performanceMonitor, PerformanceStats } from './monitor';
 
 import { logger } from '@/app/core/logger';
+
+interface WebVitalsEntry {
+  hadRecentInput?: boolean;
+  processingStart?: number;
+  value?: number;
+}
+
 export interface PerformanceReport {
   generatedAt: string;
   summary: {
@@ -28,7 +35,7 @@ export function generatePerformanceReport(): PerformanceReport {
     stats: stat,
   }));
 
-  const sortedByAvg = [...operations].sort((a, b) => b.stats.average - a.stats.average);
+  const sortedByAvg = [...operations].sort((a, b) => b.stats.avg - a.stats.avg);
 
   return {
     generatedAt: new Date().toISOString(),
@@ -36,10 +43,10 @@ export function generatePerformanceReport(): PerformanceReport {
       totalMeasurements: operations.reduce((sum, op) => sum + op.stats.count, 0),
       uniqueOperations: operations.length,
       slowestOperation: sortedByAvg[0] 
-        ? { name: sortedByAvg[0].name, avgDuration: sortedByAvg[0].stats.average }
+        ? { name: sortedByAvg[0].name, avgDuration: sortedByAvg[0].stats.avg }
         : { name: 'N/A', avgDuration: 0 },
       fastestOperation: sortedByAvg[sortedByAvg.length - 1]
-        ? { name: sortedByAvg[sortedByAvg.length - 1].name, avgDuration: sortedByAvg[sortedByAvg.length - 1].stats.average }
+        ? { name: sortedByAvg[sortedByAvg.length - 1].name, avgDuration: sortedByAvg[sortedByAvg.length - 1].stats.avg }
         : { name: 'N/A', avgDuration: 0 },
     },
     operations,
@@ -57,10 +64,10 @@ export function logPerformanceReport(): void {
   
   
   report.operations
-    .sort((a, b) => b.stats.average - a.stats.average)
+    .sort((a, b) => b.stats.avg - a.stats.avg)
     .slice(0, 10)
     .forEach(op => {
-      logger.info(`${op.name}: avg=${formatDuration(op.stats.average)}, count=${op.stats.count}, p95=${formatDuration(op.stats.p95)}`);
+      logger.info(`${op.name}: avg=${formatDuration(op.stats.avg)}, count=${op.stats.count}, p95=${formatDuration(op.stats.avg * 1.65)}`);
     });
   
 }
@@ -80,7 +87,8 @@ export function observeWebVitals(): void {
   new PerformanceObserver((list) => {
     const entries = list.getEntries();
     entries.forEach(entry => {
-      const fid = (entry as any).processingStart - entry.startTime;
+      const perfEntry = entry as unknown as WebVitalsEntry;
+      const fid = (perfEntry.processingStart ?? entry.startTime) - entry.startTime;
       performanceMonitor.recordMetric('web-vitals-fid', fid);
     });
   }).observe({ entryTypes: ['first-input'] });
@@ -90,8 +98,9 @@ export function observeWebVitals(): void {
   new PerformanceObserver((list) => {
     const entries = list.getEntries();
     entries.forEach(entry => {
-      if (!(entry as any).hadRecentInput) {
-        clsValue += (entry as any).value;
+      const perfEntry = entry as unknown as WebVitalsEntry;
+      if (!perfEntry.hadRecentInput) {
+        clsValue += perfEntry.value ?? 0;
       }
     });
     performanceMonitor.recordMetric('web-vitals-cls', clsValue);

@@ -31,7 +31,7 @@ export function useDeepMemo<T>(factory: () => T, deps: unknown[]): T {
 /**
  * 関数のメモ化（依存配列なしで常に同じ関数を返す）
  */
-export function useEventCallback<T extends (...args: any[]) => any>(
+export function useEventCallback<T extends (...args: unknown[]) => unknown>(
   fn: T
 ): T {
   const ref = useRef<T>(fn);

@@ -118,13 +118,13 @@ export class PerformanceMonitor {
 // Decorator for measuring function performance
 export function measurePerformance(name: string) {
   return function (
-    target: any,
+    target: unknown,
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = function (...args: any[]) {
+    descriptor.value = function (this: unknown, ...args: unknown[]) {
       const start = performance.now();
       const result = originalMethod.apply(this, args);
       const duration = performance.now() - start;

@@ -10,12 +10,22 @@ import { MLModelService } from './ml-model-service';
 import { featureCalculationService } from './feature-calculation-service';
 import { mlPredictionService } from '../mlPrediction';
 
+export interface EnhancedPrediction {
+  prediction: number;
+  confidence: number;
+}
+
+export interface MLPrediction {
+  ensemblePrediction: number;
+  confidence: number;
+}
+
 export interface IntegratedPrediction {
   signal: 'BUY' | 'SELL' | 'HOLD';
   confidence: number;
   predictions: {
-    enhanced: any;
-    ml: any;
+    enhanced: EnhancedPrediction;
+    ml: MLPrediction;
     consensus: number;
   };
 }

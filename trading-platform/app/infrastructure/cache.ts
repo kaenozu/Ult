@@ -68,4 +68,4 @@ export class Cache<T> {
   }
 }
 
-export const globalCache = new Cache<any>();
+export const globalCache = new Cache<unknown>();

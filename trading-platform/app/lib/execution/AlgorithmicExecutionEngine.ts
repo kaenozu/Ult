@@ -54,6 +54,12 @@ export interface ExecutionResult {
   }>;
 }
 
+export interface ExecutionFill {
+  price: number;
+  quantity: number;
+  timestamp: number;
+}
+
 export interface ExecutionConfig {
   maxLatency: number;
   slippageTolerance: number;
@@ -214,7 +220,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const duration = params.duration || 1;
     const slices = params.slices || 10;
     const interval = (duration * 1000) / slices;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const sliceQty = order.quantity / slices;
     for (let i = 0; i < slices; i++) {
       await this.delay(interval);
@@ -227,8 +233,8 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
   private async executeVWAP(order: Order): Promise<ExecutionResult> {
     const params = order.algorithm!.params;
     const duration = params.duration || 1;
-    const volumeProfile = (params.volumeProfile as any) || this.generateVolumeProfile();
-    const fills: any[] = [];
+    const volumeProfile = Array.isArray(params.volumeProfile) ? params.volumeProfile as number[] : this.generateVolumeProfile();
+    const fills: ExecutionFill[] = [];
     const interval = (duration * 1000) / volumeProfile.length;
     for (let i = 0; i < volumeProfile.length; i++) {
       await this.delay(interval);
@@ -244,7 +250,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const params = order.algorithm!.params;
     const displaySize = params.displaySize || Math.floor(order.quantity * 0.1);
     const variance = params.variance || 0.2;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     let remainingQty = order.quantity;
     while (remainingQty > 0) {
       const currentDisplaySize = Math.floor(displaySize * (1 + (Math.random() - 0.5) * variance));
@@ -278,7 +284,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const params = order.algorithm!.params;
     const offset = params.offset || 0.01;
     const duration = params.duration || 1;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const endTime = Date.now() + duration * 1000;
     while (Date.now() < endTime) {
       const ob = this.orderBook.get(order.symbol);
@@ -296,7 +302,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const params = order.algorithm!.params;
     const targetPct = params.targetPercentage || 5;
     const duration = params.duration || 1;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const endTime = Date.now() + duration * 1000;
     while (Date.now() < endTime) {
       const ob = this.orderBook.get(order.symbol);
@@ -317,7 +323,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     const duration = params.duration || 1;
     const maxSlice = params.maxSliceSize || Math.floor(order.quantity * 0.2);
     const interval = params.checkInterval || 0.1;
-    const fills: any[] = [];
+    const fills: ExecutionFill[] = [];
     const endTime = Date.now() + duration * 1000;
     let totalVol = 0;
     while (Date.now() < endTime) {
@@ -338,7 +344,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     return this.aggregateFills(order, fills);
   }
 
-  private aggregateFills(order: Order, fills: any[]): ExecutionResult {
+  private aggregateFills(order: Order, fills: ExecutionFill[]): ExecutionResult {
     const filledQty = fills.reduce((s, f) => s + f.quantity, 0);
     const val = fills.reduce((s, f) => s + f.price * f.quantity, 0);
     const avg = filledQty > 0 ? val / filledQty : 0;
@@ -363,7 +369,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
     if (!ob) return { temporaryImpact: 0, permanentImpact: 0, totalCost: 0, optimalSize: 0 };
     const dailyVol = 1000000;
     const part = q / dailyVol;
-    let impact = 0.1 * Math.sqrt(part);
+    const impact = 0.1 * Math.sqrt(part);
     const mid = ob.midPrice;
     return { temporaryImpact: impact, permanentImpact: impact * 0.5, totalCost: impact * 1.5 * mid * q, optimalSize: Math.floor(dailyVol * 0.01) };
   }

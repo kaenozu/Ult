@@ -40,7 +40,7 @@ describe('useAIPerformance', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (analysis.calculateAIHitRate as jest.Mock).mockReturnValue({
+    (analysis.calculateAIHitRate as unknown as jest.Mock).mockReturnValue({
       hitRate: 65.5,
       totalTrades: 10
     });
@@ -54,7 +54,7 @@ describe('useAIPerformance', () => {
   });
 
   it('fetches and calculates hit rate successfully', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: mockHistoryData })
     });
@@ -72,7 +72,7 @@ describe('useAIPerformance', () => {
 
   it('uses fallback OHLCV data when API data is insufficient', async () => {
     const shortData = mockHistoryData.slice(0, 50); // Less than 100 items
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: shortData })
     });
@@ -87,7 +87,7 @@ describe('useAIPerformance', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: false,
       statusText: 'Internal Server Error'
     });
@@ -103,13 +103,13 @@ describe('useAIPerformance', () => {
   });
 
   it('prevents race condition when symbol changes during fetch', async () => {
-    let resolveFirstFetch: (value: any) => void;
+    let resolveFirstFetch: (value: { ok: boolean; json: () => Promise<{ data: unknown[] }> }) => void;
     const firstFetchPromise = new Promise(resolve => {
       resolveFirstFetch = resolve;
     });
 
     // First fetch is delayed
-    (global.fetch as jest.Mock).mockImplementationOnce(() => firstFetchPromise);
+    (global.fetch as unknown as jest.Mock).mockImplementationOnce(() => firstFetchPromise);
 
     const { result, rerender } = renderHook(
       ({ stock, ohlcv }) => useAIPerformance(stock, ohlcv),
@@ -125,7 +125,7 @@ describe('useAIPerformance', () => {
     const newStock: Stock = { ...mockStock, symbol: 'AAPL', market: 'usa' };
     
     // Setup second fetch to resolve immediately
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: mockHistoryData })
     });
@@ -155,7 +155,7 @@ describe('useAIPerformance', () => {
   });
 
   it('does not update state after unmount', async () => {
-    (global.fetch as jest.Mock).mockImplementation(() =>
+    (global.fetch as unknown as jest.Mock).mockImplementation(() =>
       new Promise(resolve => {
         setTimeout(() => {
           resolve({
@@ -181,7 +181,7 @@ describe('useAIPerformance', () => {
   });
 
   it('handles calculation errors in fallback', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: false,
       statusText: 'Error'
     });
@@ -203,7 +203,7 @@ describe('useAIPerformance', () => {
 
   it('resets error state on new fetch', async () => {
     // First fetch fails
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: false,
       statusText: 'Error'
     });
@@ -221,9 +221,9 @@ describe('useAIPerformance', () => {
     await waitFor(() => {
       expect(result.current.error).toBe('的中率の計算に失敗しました');
     });
-
+    
     // Second fetch succeeds
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: mockHistoryData })
     });

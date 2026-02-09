@@ -5,6 +5,10 @@ import { marketClient } from '../lib/api/data-aggregator';
 import { useRouter } from 'next/navigation';
 import '@testing-library/jest-dom';
 
+interface MockStore {
+    setState: (state: Partial<ReturnType<typeof useTradingStore>>) => void;
+}
+
 // Mock Dependencies
 jest.mock('next/navigation', () => ({
     useRouter: jest.fn(),
@@ -55,7 +59,7 @@ describe('Heatmap Page', () => {
         (marketClient.fetchQuotes as jest.Mock).mockResolvedValue(mockQuotes);
 
         // Mock Store
-        (useTradingStore as any).setState({
+        (useTradingStore as unknown as MockStore).setState({
             batchUpdateStockData: mockBatchUpdateStockData,
             setSelectedStock: mockSetSelectedStock,
         });

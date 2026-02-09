@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useId } from 'react';
+import { useState, useMemo, useCallback, useEffect, useId, Dispatch, SetStateAction } from 'react';
 import { Stock, OrderSide, OrderType, OHLCV } from '@/app/types';
 import { useTradingStore } from '@/app/store/tradingStore';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
@@ -8,8 +8,54 @@ interface UseOrderEntryProps {
   currentPrice: number;
 }
 
-export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps) {
-  const { portfolio, placeOrder } = useTradingStore();
+interface UseOrderEntryResult {
+  // State
+  side: OrderSide;
+  setSide: (side: OrderSide) => void;
+  orderType: OrderType;
+  setOrderType: (type: OrderType) => void;
+  quantity: number;
+  setQuantity: (q: number) => void;
+  limitPrice: string;
+  setLimitPrice: (p: string) => void;
+  isConfirming: boolean;
+  setIsConfirming: (v: boolean) => void;
+  showSuccess: boolean;
+  setShowSuccess: (v: boolean) => void;
+  errorMessage: string | null;
+  setErrorMessage: (msg: string | null) => void;
+  riskConfig: DynamicRiskConfig;
+  setRiskConfig: Dispatch<SetStateAction<DynamicRiskConfig>>;
+  showRiskSettings: boolean;
+  setShowRiskSettings: (v: boolean) => void;
+
+  // Derived Values
+  cash: number;
+  parsedPrice: number;
+  price: number;
+  totalCost: number;
+  canAfford: boolean;
+
+  // Handlers
+  handleOrder: () => void;
+
+  // IDs
+  ids: {
+    orderType: string;
+    quantity: string;
+    limitPrice: string;
+    modalTitle: string;
+    trailingStop: string;
+    volAdjust: string;
+    kelly: string;
+    riskSettings: string;
+  };
+}
+
+export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseOrderEntryResult {
+  const { portfolio, executeOrder } = useTradingStore();
+  
+  // Local State
   const [side, setSide] = useState<OrderSide>('BUY');
   const [orderType, setOrderType] = useState<OrderType>('MARKET');
   const [quantity, setQuantity] = useState<number>(100);
@@ -21,25 +67,37 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps) {
   // Risk management configuration
   const [riskConfig, setRiskConfig] = useState<DynamicRiskConfig>({
     maxRiskPerTrade: 0.02, // 2%
-    riskRewardRatio: 2.0,
+    minRiskRewardRatio: 2.0,
     volatilityMultiplier: 1.0,
     enableTrailingStop: false,
     enableVolatilityAdjustment: true,
-    enableDynamicPositionSizing: true
+    enableDynamicPositionSizing: true,
+    trailingStopATRMultiple: 2.0,
+    trailingStopMinPercent: 1.0,
   });
   
   const [showRiskSettings, setShowRiskSettings] = useState(false);
 
-  const ids = {
-    orderType: useId(),
-    quantity: useId(),
-    limitPrice: useId(),
-    riskSettings: useId(),
-    trailingStop: useId(),
-    volAdjust: useId(),
-    kelly: useId(),
-    modalTitle: useId(),
-  };
+  // ID Generation (stable across renders)
+  const orderTypeId = useId();
+  const quantityId = useId();
+  const limitPriceId = useId();
+  const modalTitleId = useId();
+  const trailingStopId = useId();
+  const volAdjustId = useId();
+  const kellyId = useId();
+  const riskSettingsId = useId();
+
+  const ids = useMemo(() => ({
+    orderType: orderTypeId,
+    quantity: quantityId,
+    limitPrice: limitPriceId,
+    modalTitle: modalTitleId,
+    trailingStop: trailingStopId,
+    volAdjust: volAdjustId,
+    kelly: kellyId,
+    riskSettings: riskSettingsId,
+  }), [orderTypeId, quantityId, limitPriceId, modalTitleId, trailingStopId, volAdjustId, kellyId, riskSettingsId]);
 
   const cash = portfolio?.cash || 0;
   const parsedPrice = orderType === 'LIMIT' ? parseFloat(limitPrice) : currentPrice;
@@ -49,24 +107,26 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps) {
 
   const handleOrder = useCallback(async () => {
     try {
-      const success = await placeOrder({
+      const result = executeOrder({
         symbol: stock.symbol,
-        type: orderType,
-        side,
+        orderType, // Mapped from local state 'orderType' to OrderRequest 'orderType'
+        side: side === 'BUY' ? 'LONG' : 'SHORT', // Map 'BUY'/'SELL' to 'LONG'/'SHORT' expected by store
         quantity,
-        price: orderType === 'LIMIT' ? price : undefined,
+        price: orderType === 'LIMIT' ? price : currentPrice,
+        name: stock.name, // Add required fields
+        market: stock.market,
       });
 
-      if (success) {
+      if (result.success) {
         setShowSuccess(true);
         setIsConfirming(false);
       } else {
-        setErrorMessage('注文の処理中にエラーが発生しました');
+        setErrorMessage(result.error || '注文の処理中にエラーが発生しました');
       }
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
     }
-  }, [placeOrder, stock.symbol, orderType, side, quantity, price]);
+  }, [executeOrder, stock, orderType, side, quantity, price, currentPrice]);
 
   // Auto-hide success message after 3 seconds with cleanup
   useEffect(() => {

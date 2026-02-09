@@ -27,7 +27,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // サービスがまだ開始されていない場合は開始
     try {
       service.start();
-    } catch (error) {
+    } catch (_error) {
       // 既に開始されている場合はエラーを無視
     }
 

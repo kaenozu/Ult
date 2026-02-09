@@ -19,8 +19,15 @@ export interface ModelTrainingData {
   labels: number[];
 }
 
+export interface ModelConfig {
+  inputSize?: number;
+  hiddenUnits?: number;
+  outputSize?: number;
+  learningRate?: number;
+}
+
 export class LSTMModel {
-  constructor(_config?: any) {}
+  constructor(_config?: ModelConfig) {}
   
   async predict(_input: number[]): Promise<number> {
     // Stub prediction
@@ -46,7 +53,7 @@ export class LSTMModel {
 }
 
 export class GRUModel {
-  constructor(_config?: any) {}
+  constructor(_config?: ModelConfig) {}
   
   async predict(_input: number[]): Promise<number> {
     // Stub prediction
@@ -72,7 +79,7 @@ export class GRUModel {
 }
 
 export class FeedForwardModel {
-  constructor(_config?: any) {}
+  constructor(_config?: ModelConfig) {}
   
   async predict(_input: number[]): Promise<number> {
     // Stub prediction
@@ -97,7 +104,7 @@ export class FeedForwardModel {
   }
 }
 
-export function featuresToArray(features: any): number[] {
+export function featuresToArray(features: Record<string, unknown>): number[] {
   // Convert feature object to array representation
-  return Object.values(features).filter(v => typeof v === 'number') as number[];
+  return Object.values(features).filter((v): v is number => typeof v === 'number');
 }

@@ -12,4 +12,13 @@ export const TOKENS = {
   MLModelService: Symbol.for('MLModelService'),
   SignalGenerationService: Symbol.for('SignalGenerationService'),
   PortfolioRiskManagementService: Symbol.for('PortfolioRiskManagementService'),
+  // UnifiedTradingPlatform dependencies
+  MultiExchangeDataFeed: Symbol.for('MultiExchangeDataFeed'),
+  PredictiveAnalyticsEngine: Symbol.for('PredictiveAnalyticsEngine'),
+  SentimentAnalysisEngine: Symbol.for('SentimentAnalysisEngine'),
+  AdvancedRiskManager: Symbol.for('AdvancedRiskManager'),
+  AlgorithmicExecutionEngine: Symbol.for('AlgorithmicExecutionEngine'),
+  AdvancedBacktestEngine: Symbol.for('AdvancedBacktestEngine'),
+  AlertSystem: Symbol.for('AlertSystem'),
+  PaperTradingEnvironment: Symbol.for('PaperTradingEnvironment'),
 } as const;

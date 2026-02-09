@@ -28,8 +28,8 @@ class SimplifiedOHLCVConverter {
     };
   }
 
-  static slice(data: any, start: number, end?: number) {
-    const actualEnd = end ?? data.length;
+  static slice(data: { closes: Float64Array }, start: number, end?: number) {
+    const actualEnd = end ?? data.closes.length;
     return {
       length: actualEnd - start,
       closes: data.closes.subarray(start, actualEnd),

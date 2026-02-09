@@ -364,13 +364,13 @@ export interface ErrorBoundaryState {
 /**
  * エラーをキャプチャするデコレータ
  */
-export function captureErrors<T extends (...args: any[]) => any>(
+export function captureErrors<T extends (...args: unknown[]) => unknown>(
   fn: T,
   context?: Record<string, unknown>
 ): T {
   return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
     try {
-      return await fn(...args);
+      return (await fn(...args)) as ReturnType<T>;
     } catch (error) {
       sentry.captureException(error as Error, {
         ...context,

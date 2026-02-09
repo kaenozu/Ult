@@ -98,7 +98,7 @@ export function createSingleton<T, TConfig = undefined>(
  */
 export abstract class Singleton<T> {
    
-  private static instances = new Map<new () => any, any>();
+  private static instances = new Map<new () => unknown, unknown>();
 
   protected constructor() {}
 
@@ -106,14 +106,14 @@ export abstract class Singleton<T> {
     if (!Singleton.instances.has(this)) {
       Singleton.instances.set(this, new this());
     }
-    return Singleton.instances.get(this);
+    return Singleton.instances.get(this) as T;
   }
 
   public static resetInstance<T>(this: { new (): T }): void {
-    const instance = Singleton.instances.get(this);
+    const instance = Singleton.instances.get(this) as T | null;
     if (instance) {
       // Call cleanup methods if available
-      const cleanable = instance as MaybeCleanable;
+      const cleanable = instance as unknown as MaybeCleanable;
       if (typeof cleanable.cleanup === 'function') {
         cleanable.cleanup();
       }

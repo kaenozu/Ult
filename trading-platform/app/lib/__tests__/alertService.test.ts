@@ -62,7 +62,7 @@ describe('AlertService', () => {
 
     it('returns null when alerts match disabled severity (tested via shouldAlert)', () => {
       // Accessing private settings for testing
-      (serviceInstance as any).settings.severities.MEDIUM = false;
+      (serviceInstance as unknown as { settings: { severities: { MEDIUM: boolean } } }).settings.severities.MEDIUM = false;
       const alert = serviceInstance.createMarketAlert({
         symbol: '^N225',
         trend: 'UP',

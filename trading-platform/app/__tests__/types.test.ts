@@ -57,7 +57,7 @@ describe('Type Guards and Extractors', () => {
     describe('extractIntradayTimeSeries', () => {
         it('extracts data matching the interval', () => {
             const data: AlphaVantageTimeSeriesIntraday = {
-                'Meta Data': {} as any,
+                'Meta Data': {} as Record<string, unknown>,
                 'Time Series (5min)': {
                     '2023-01-01 10:00:00': {
                         '1. open': '100',
@@ -66,7 +66,7 @@ describe('Type Guards and Extractors', () => {
                         '4. close': '102',
                         '5. volume': '1000'
                     }
-                } as any
+                } as Record<string, unknown>
             };
 
             const result = extractIntradayTimeSeries(data, '5min');
@@ -76,7 +76,7 @@ describe('Type Guards and Extractors', () => {
 
         it('returns undefined if interval matches but value is null', () => {
             // Just covering the branch `if (typeof value === 'object' && value !== null)`
-            const data: any = {
+            const data: Record<string, unknown> = {
                 'Meta Data': {},
                 'Time Series (5min)': null
             };
@@ -85,9 +85,9 @@ describe('Type Guards and Extractors', () => {
 
         it('returns undefined if interval does not match', () => {
             const data: AlphaVantageTimeSeriesIntraday = {
-                'Meta Data': {} as any,
-                'Time Series (1min)': {} as any
-            } as any;
+                'Meta Data': {} as Record<string, unknown>,
+                'Time Series (1min)': {} as Record<string, unknown>
+            };
             expect(extractIntradayTimeSeries(data, '5min')).toBeUndefined();
         });
     });

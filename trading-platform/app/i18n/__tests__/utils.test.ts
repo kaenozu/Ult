@@ -15,7 +15,7 @@ describe('i18n utilities', () => {
     });
 
     it('should fallback to Japanese for unknown locale', () => {
-      const messages = getMessages('fr' as any);
+      const messages = getMessages('fr' as unknown);
       expect(messages.common.loading).toBe('読み込み中...');
     });
   });

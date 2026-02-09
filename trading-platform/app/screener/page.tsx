@@ -146,8 +146,9 @@ function ScreenerContent() {
           if (signalResult.success && signalResult.data) {
             results.push({ symbol: stock.symbol, signal: signalResult.data });
           }
-        } catch {
-          // Silently skip failed analyses
+        } catch (error) {
+          // Log error for debugging/monitoring but don't stop the whole process
+          console.error('Failed to analyze', error);
         }
       }));
     }

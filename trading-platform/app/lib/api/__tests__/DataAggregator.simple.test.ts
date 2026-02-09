@@ -4,33 +4,14 @@
  */
 
 import { marketClient } from '../data-aggregator';
-import { generateMockOHLCV } from './test-utils';
+import { generateMockOHLCV } from './test-helpers';
 
 // Mock fetch for API calls
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-// Mock IndexedDB for JSDOM
-const mockIndexedDB = {
-  open: jest.fn(() => ({
-    onsuccess: jest.fn(),
-    onerror: jest.fn(),
-    result: {
-      transaction: jest.fn(() => ({
-        objectStore: jest.fn(() => ({
-          getAll: jest.fn(() => ({
-            onsuccess: jest.fn(),
-            onerror: jest.fn()
-          })),
-          add: jest.fn(),
-          clear: jest.fn()
-        }))
-      }))
-    }
-  }))
-};
-
-global.indexedDB = mockIndexedDB;
+// Use fake-indexeddb from setup
+// global.indexedDB is already set up by jest.setup.js
 
 describe('MarketDataClient Integration Tests', () => {
   beforeEach(() => {

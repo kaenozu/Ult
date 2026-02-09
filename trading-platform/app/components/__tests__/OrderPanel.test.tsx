@@ -23,6 +23,7 @@ describe('OrderPanel', () => {
 
     const mockPortfolioState = {
         portfolio: { cash: 1000000, positions: [] },
+        executeOrder: jest.fn().mockReturnValue({ success: true }), // Add executeOrder to the store mock
     };
 
     beforeEach(() => {
@@ -32,6 +33,7 @@ describe('OrderPanel', () => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
         (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrder);
+        mockPortfolioState.executeOrder.mockClear(); // Clear spy
     });
 
     it('renders correctly', () => {
@@ -63,7 +65,8 @@ describe('OrderPanel', () => {
         // Confirm
         fireEvent.click(screen.getByText('注文を確定'));
 
-        expect(mockExecuteOrder).toHaveBeenCalledWith(expect.objectContaining({
+        // Check if executeOrder (from store) was called
+        expect(mockPortfolioState.executeOrder).toHaveBeenCalledWith(expect.objectContaining({
             symbol: '7203',
             quantity: 100,
             side: 'LONG'

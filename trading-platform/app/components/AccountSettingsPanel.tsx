@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from "react";
 import { useRiskManagementStore } from '@/app/store/riskManagementStore';
 import { cn } from '@/app/lib/utils';
 
@@ -31,9 +31,13 @@ export function AccountSettingsPanel() {
     maxStopLossPercent: settings.maxStopLossPercent || 5,
     atrMultiplier: settings.atrMultiplier,
   });
-  
-  // Sync local state with store when settings change externally
-  useEffect(() => {
+
+  // Track the last settings we synced from to detect external changes
+  const [lastSyncedSettings, setLastSyncedSettings] = useState(settings);
+
+  // Sync local state if external settings change (e.g. from another tab or reset)
+  if (settings !== lastSyncedSettings) {
+    setLastSyncedSettings(settings);
     setFormState({
       accountEquity: settings.accountEquity,
       riskPerTrade: settings.riskPerTrade,
@@ -42,7 +46,7 @@ export function AccountSettingsPanel() {
       maxStopLossPercent: settings.maxStopLossPercent || 5,
       atrMultiplier: settings.atrMultiplier,
     });
-  }, [settings]);
+  }
   
   // 個別のフィールド更新ヘルパー
   const updateField = <K extends keyof FormState>(field: K, value: FormState[K]) => {

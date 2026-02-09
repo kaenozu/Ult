@@ -241,12 +241,13 @@ export function validateOperator(operator: unknown): '>' | '<' | '>=' | '<=' | '
   const validatedOperator = validateRequiredString(operator, 'operator');
   
   const validOperators = ['>', '<', '>=', '<=', '==', 'above', 'below', 'crosses_above', 'crosses_below', 'equals', 'between'] as const;
+  type ValidOperator = typeof validOperators[number];
   
-  if (!validOperators.includes(validatedOperator as any)) {
+  if (!validOperators.includes(validatedOperator as ValidOperator)) {
     throw new ValidationError('operator', 'Invalid operator: must be >, <, >=, <=, ==, above, below, crosses_above, crosses_below, equals, or between');
   }
   
-  return validatedOperator as any;
+  return validatedOperator as ValidOperator;
 }
 
 // ============================================================================

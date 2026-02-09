@@ -7,10 +7,10 @@
 import { IApiClient } from '../interfaces';
 
 export class MockApiClient implements IApiClient {
-  private mockResponses = new Map<string, any>();
-  private callHistory: { method: string; url: string; body?: any }[] = [];
+  private mockResponses = new Map<string, unknown>();
+  private callHistory: { method: string; url: string; body?: unknown }[] = [];
 
-  setMockResponse(url: string, response: any): void {
+  setMockResponse(url: string, response: unknown): void {
     this.mockResponses.set(url, response);
   }
 
@@ -23,7 +23,7 @@ export class MockApiClient implements IApiClient {
     return Promise.resolve(response as T);
   }
 
-  async post<T>(url: string, body: any): Promise<T> {
+  async post<T>(url: string, body: unknown): Promise<T> {
     this.callHistory.push({ method: 'post', url, body });
     const response = this.mockResponses.get(url);
     if (response === undefined) {
@@ -41,7 +41,7 @@ export class MockApiClient implements IApiClient {
     return Promise.resolve(response as T);
   }
 
-  getCallHistory(): { method: string; url: string; body?: any }[] {
+  getCallHistory(): { method: string; url: string; body?: unknown }[] {
     return [...this.callHistory];
   }
 

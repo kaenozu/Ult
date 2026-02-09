@@ -4,10 +4,10 @@
  */
 
 import { marketClient } from '@/app/lib/api/data-aggregator';
-import { MockMarketDataGenerator } from '@/app/lib/__tests__/test-utils';
+import { generateMockOHLCV as generateMock } from './test-helpers';
 
 const generateMockOHLCV = (startPrice: number, count: number) => 
-  MockMarketDataGenerator.generateOHLCV({ startPrice, count });
+  generateMock(startPrice, count);
 
 // Mock IndexedDB client
 let mockIdbStorage: Record<string, any[]> = {};
@@ -106,6 +106,13 @@ describe('Data Aggregator - Improved Data Fetching', () => {
       
       mockIdbStorage['TEST'] = oldData;
       
+      // Mock fetch to fail, so we fallback/return stale data
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Fetch failed' })
+      });
+
       const result = await marketClient.fetchOHLCV('TEST', 'japan');
 
       expect(result.success).toBe(true);

@@ -1,8 +1,19 @@
 import { volumeProfilePlugin } from '../StockChart';
 
 describe('volumeProfilePlugin', () => {
-    let mockChart: any;
-    let mockContext: any;
+    let mockChart: {
+        ctx: unknown;
+        chartArea: { right: number; width: number; top: number; bottom: number };
+        scales: { y: { getPixelForValue: jest.Mock } };
+    };
+    let mockContext: {
+        save: jest.Mock;
+        restore: jest.Mock;
+        createLinearGradient: jest.Mock;
+        fillRect: jest.Mock;
+        fillStyle: unknown;
+        shadowBlur: unknown;
+    };
 
     beforeEach(() => {
         mockContext = {

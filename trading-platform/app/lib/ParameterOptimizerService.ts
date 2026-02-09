@@ -19,6 +19,7 @@ export class ParameterOptimizerService {
     let maxHitRate = -1;
 
     const closes = ohlcv.map(d => d.close);
+    const symbol = ohlcv[0]?.symbol ?? 'UNKNOWN';
 
     for (const period of periods) {
       const rsiValues = technicalIndicatorService.calculateRSI(closes, period);
@@ -29,16 +30,14 @@ export class ParameterOptimizerService {
       for (let i = period; i < rsiValues.length - 1; i++) {
         if (rsiValues[i] <= 30) {
           mockSignals.push({
-            symbol: ohlcv[0].symbol ?? '',
+            symbol,
             type: 'BUY',
-            price: ohlcv[i].close,
-            timestamp: new Date(ohlcv[i].date).getTime(),
-            confidence: 0.5,
             targetPrice: ohlcv[i].close * 1.02,
             stopLoss: ohlcv[i].close * 0.98,
-            reason: `RSI(${period}) <= 30`,
-            predictedChange: 2,
             predictionDate: ohlcv[i].date,
+            confidence: 0.5,
+            reason: `RSI(${period}) <= 30`,
+            predictedChange: 2
           });
         }
       }

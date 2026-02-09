@@ -63,13 +63,13 @@ export function generateMockEmotions(): EmotionScore[] {
   const emotions: EmotionScore[] = [];
   
   // Randomly select 1-3 emotions
-  const emotionTypes = ['discipline', 'confidence', 'neutral', 'cautious'];
+  const emotionTypes: Array<'discipline' | 'confidence' | 'neutral' | 'fear' | 'greed' | 'anxiety' | 'euphoria' | 'frustration'> = ['discipline', 'confidence', 'neutral', 'fear', 'anxiety'];
   const selectedCount = 1 + Math.floor(Math.random() * 2);
-  
+
   for (let i = 0; i < selectedCount; i++) {
     const emotion = emotionTypes[Math.floor(Math.random() * emotionTypes.length)];
     emotions.push({
-      emotion: emotion as any,
+      emotion,
       score: 0.5 + Math.random() * 0.4,
       confidence: 0.7 + Math.random() * 0.3,
       indicators: ['トレード履歴から検出'],

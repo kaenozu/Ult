@@ -745,3 +745,83 @@ Configuration:
 - `CSRF_TOKEN_LENGTH` (default: 32 bytes)
 
 See `app/lib/csrf/csrf-protection.ts` for implementation details.
+
+## 🔧 Dependency Injection (DI)
+
+The platform uses a lightweight DI container for managing service dependencies, making testing easier and code more maintainable.
+
+### DI Container Structure
+
+**Files**:
+- `app/lib/di/container.ts` - Core DI container implementation
+- `app/lib/di/tokens.ts` - Service token definitions
+- `app/lib/di/init.ts` - DI initialization utilities
+- `app/lib/tradingCore/test-di-helpers.ts` - Testing utilities
+
+### Available Tokens
+
+```typescript
+import { TOKENS } from '@/app/lib/di/tokens';
+
+// Core services
+TOKENS.PredictionService
+TOKENS.ApiClient
+TOKENS.MarketDataService
+TOKENS.BacktestService
+TOKENS.MLModelService
+
+// Trading platform dependencies
+TOKENS.MultiExchangeDataFeed
+TOKENS.PredictiveAnalyticsEngine
+TOKENS.SentimentAnalysisEngine
+TOKENS.AdvancedRiskManager
+TOKENS.AlgorithmicExecutionEngine
+TOKENS.AdvancedBacktestEngine
+TOKENS.AlertSystem
+TOKENS.PaperTradingEnvironment
+```
+
+### Usage in Tests
+
+```typescript
+import { 
+  createMockService, 
+  registerMockService, 
+  resetAllMocks 
+} from '@/app/lib/tradingCore/test-di-helpers';
+import { TOKENS } from '@/app/lib/di/tokens';
+
+// Register a mock service
+registerMockService(TOKENS.MarketDataService, {
+  fetchMarketData: jest.fn().mockResolvedValue(mockData),
+});
+
+// Use the mocked service
+const platform = getGlobalTradingPlatform();
+
+// Reset all mocks after test
+resetAllMocks();
+```
+
+### Usage in Application
+
+```typescript
+import { initializeDI } from '@/app/lib/di/init';
+
+// Initialize DI container early in app lifecycle
+initializeDI();
+```
+
+### Benefits
+
+1. **Easier Testing**: Mock any service by registering a replacement
+2. **Loose Coupling**: Services depend on tokens, not concrete implementations
+3. **Singleton Management**: Automatic singleton lifecycle for services
+4. **Lazy Loading**: Services are instantiated only when first needed
+
+### Future Improvements
+
+- [ ] Migrate UnifiedTradingPlatform to use DI for all dependencies
+- [ ] Register all services in DI container
+- [ ] Add service lifecycle hooks (onCreate, onDestroy)
+- [ ] Implement service health checks

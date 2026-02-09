@@ -229,7 +229,7 @@ class AccuracyService {
      * 本格的なバックテスト実行
      */
     runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): BacktestResult {
-        return measurePerformance(`backtest.${symbol}`, () => {
+        return measurePerformance(`backtest.${symbol}`, (): BacktestResult => {
             const trades: BacktestTrade[] = [];
             let currentPosition: { type: 'BUY' | 'SELL', price: number, date: string } | null = null;
             const minPeriod = OPTIMIZATION.MIN_DATA_PERIOD;
@@ -238,11 +238,11 @@ class AccuracyService {
 
             const effectiveMinPeriod = data.length >= minPeriod ? minPeriod : Math.max(30, data.length - 20);
             if (data.length < minPeriod) logger.warn(`[runBacktest] Data limited for ${symbol}: ${data.length} days.`);
-            if (data.length < 40) return { symbol, totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalReturn: 0, avgProfit: 0, avgLoss: 0, profitFactor: 0, maxDrawdown: 0, sharpeRatio: 0, trades: [], startDate, endDate, warning: 'データ不足' };
+            if (data.length < 40) return { symbol, totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalReturn: 0, avgProfit: 0, avgLoss: 0, profitFactor: 0, maxDrawdown: 0, sharpeRatio: 0, trades: [], startDate, endDate };
 
             const preCalculatedIndicators = this.preCalculateIndicators(data);
-            let cachedParams: any, lastOptimizationIndex = -999;
-            const wfaMetrics: any = { inSample: [], outOfSample: [], params: [] };
+            let cachedParams: { rsiPeriod: number; smaPeriod: number; accuracy: number } | null = null, lastOptimizationIndex = -999;
+            const wfaMetrics: { inSample: number[]; outOfSample: number[]; params: unknown[] } = { inSample: [], outOfSample: [], params: [] };
 
             for (let i = effectiveMinPeriod; i < data.length - 1; i++) {
                 const nextDay = data[i + 1];
@@ -297,8 +297,8 @@ class AccuracyService {
                 const avgOOS = wfaMetrics.outOfSample.reduce((a: number, b: number) => a + b, 0) / wfaMetrics.outOfSample.length;
                 result.walkForwardMetrics = { inSampleAccuracy: avgOOS, outOfSampleAccuracy: avgOOS, overfitScore: 1.0, parameterStability: 0.5 };
             }
-            return result;
-        });
+            return result as BacktestResult;
+        }) as BacktestResult;
     }
 
     /**

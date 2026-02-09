@@ -121,10 +121,11 @@ export function usePsychology() {
       journal,
       psychologyState.cooldownRecords
     );
+    
     // 新しいAPI: updateMentalHealthは完全なMentalHealthMetricsを必要とするため、
     // 既存の値を保持しつつdiscipline_scoreだけを更新
     const currentMetrics = psychologyState.current_mental_health;
-    const overallScore = (score as unknown as DisciplineScoreProps).overall ?? 0;
+    const overallScore = typeof score === 'number' ? score : 'overall' in score ? score.overall : 0;
     
     if (currentMetrics) {
       psychologyState.updateMentalHealth({
@@ -190,8 +191,8 @@ export function usePsychology() {
     if (!coolingOffManagerRef.current) return false;
 
     const success = coolingOffManagerRef.current.manualEndCooldown();
-    if (success) {
-      psychologyState.endCooldown();
+    if (success && psychologyState.currentCooldown) {
+      psychologyState.endCooldown(psychologyState.currentCooldown.id);
     }
     return success;
   };

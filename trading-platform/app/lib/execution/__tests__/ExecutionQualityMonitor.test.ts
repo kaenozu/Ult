@@ -97,7 +97,7 @@ describe('ExecutionQualityMonitor', () => {
       });
 
       // Remove fills to make it incomplete
-      (incompleteOrder as any).fills = [];
+      (incompleteOrder as { fills: unknown[] }).fills = [];
 
       monitor.recordExecution(incompleteOrder);
 

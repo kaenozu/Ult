@@ -467,44 +467,66 @@ export function calculateMACD(
 
 /**
  * Calculate Bollinger Bands
+ * Optimized to O(N) using sliding window for sum and sumSq.
  */
 export function calculateBollingerBands(
   prices: number[],
   period: number = 20,
   standardDeviations: number = 2,
 ): { upper: number[]; middle: number[]; lower: number[] } {
-  const middle = calculateSMA(prices, period);
   const upper: number[] = [];
+  const middle: number[] = [];
   const lower: number[] = [];
 
+  let sum = 0;
+  let sumSq = 0;
+  let validCount = 0;
+
   for (let i = 0; i < prices.length; i++) {
-    if (i < period - 1 || isNaN(middle[i])) {
+    // Add new value
+    const p = prices[i];
+    const val =
+      p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
+
+    if (!isNaN(val)) {
+      sum += val;
+      sumSq += val * val;
+      validCount++;
+    }
+
+    // Remove old value
+    if (i >= period) {
+      const oldP = prices[i - period];
+      const oldVal =
+        oldP != null && typeof oldP === "number" && !isNaN(oldP) && oldP > 0
+          ? oldP
+          : NaN;
+      if (!isNaN(oldVal)) {
+        sum -= oldVal;
+        sumSq -= oldVal * oldVal;
+        validCount--;
+      }
+    }
+
+    if (i < period - 1) {
       upper.push(NaN);
+      middle.push(NaN);
       lower.push(NaN);
     } else {
-      const mean = middle[i];
-      let sumSq = 0;
-      let validCount = 0;
+      if (validCount === period) {
+        const mean = sum / period;
+        // Variance = E[X^2] - (E[X])^2
+        const variance = sumSq / period - mean * mean;
+        // Handle floating point errors (variance could be slightly negative)
+        const stdDev = Math.sqrt(Math.max(0, variance));
 
-      // Calculate variance directly without array allocation
-      for (let j = 0; j < period; j++) {
-        const p = prices[i - j];
-        const val =
-          p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
-        if (!isNaN(val)) {
-          const diff = val - mean;
-          sumSq += diff * diff;
-          validCount++;
-        }
-      }
-
-      if (validCount < period) {
-        upper.push(NaN);
-        lower.push(NaN);
-      } else {
-        const stdDev = Math.sqrt(sumSq / period);
+        middle.push(mean);
         upper.push(mean + standardDeviations * stdDev);
         lower.push(mean - standardDeviations * stdDev);
+      } else {
+        upper.push(NaN);
+        middle.push(NaN);
+        lower.push(NaN);
       }
     }
   }

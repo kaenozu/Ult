@@ -16,8 +16,8 @@ export interface ServiceDefinition<T> {
 }
 
 export class DIContainer {
-  private services = new Map<symbol, ServiceDefinition<any>>();
-  private singletons = new Map<symbol, any>();
+  private services = new Map<symbol, ServiceDefinition<unknown>>();
+  private singletons = new Map<symbol, unknown>();
 
   register<T>(token: symbol, factory: Factory<T>, singleton = false): void {
     this.services.set(token, { token, factory, singleton });
@@ -33,10 +33,10 @@ export class DIContainer {
       if (!this.singletons.has(token)) {
         this.singletons.set(token, definition.factory());
       }
-      return this.singletons.get(token);
+      return this.singletons.get(token) as T;
     }
 
-    return definition.factory();
+    return definition.factory() as T;
   }
 
   registerSingleton<T>(token: symbol, factory: Factory<T>): void {
@@ -56,4 +56,26 @@ export const container = new DIContainer();
 
 export function inject<T>(token: symbol): T {
   return container.resolve<T>(token);
+}
+
+/**
+ * Initialize default services
+ * Call this once at application startup
+ */
+export function initializeContainer(): void {
+  // Register UnifiedTradingPlatform dependencies as singletons
+  // Note: Imports and actual service implementations will be added when needed
+  // This allows for lazy loading and easier testing with mocks
+}
+
+/**
+ * Register a service
+ * Helper function for registering services
+ */
+export function registerService<T>(
+  token: symbol,
+  factory: () => T,
+  singleton = true
+): void {
+  container.register<T>(token, factory, singleton);
 }

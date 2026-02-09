@@ -8,15 +8,14 @@ import {
     notFoundError,
     rateLimitError,
     internalError,
-    ErrorType,
-    ERROR_MESSAGES
+    ErrorType
 } from '../lib/error-handler';
 import { APIError, ValidationError } from '../types';
 
 // Mock NextResponse - simple mock with only used properties
 jest.mock('next/server', () => ({
     NextResponse: {
-        json: jest.fn((body: Record<string, any>, init?: { status?: number }) => ({
+        json: jest.fn((body: Record<string, unknown>, init?: { status?: number }) => ({
             body,
             status: init?.status || 200
         }))
@@ -64,17 +63,17 @@ describe('error-handler', () => {
     describe('handleApiError', () => {
         it('handles standard Error objects', () => {
             const error = new Error('Something went wrong');
-            const response = handleApiError(error) as any;
+            const response = handleApiError(error) as unknown as { status: number; body: Record<string, unknown> };
 
             expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
-                error: 'Something went wrong', // Default internal error message
+                error: 'Something went wrong',
                 code: ErrorType.INTERNAL
             }));
         });
 
         it('handles string errors', () => {
-            const response = handleApiError('String Error') as any;
+            const response = handleApiError('String Error') as unknown as { status: number; body: Record<string, unknown> };
             expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
                 error: 'String Error',
@@ -83,7 +82,7 @@ describe('error-handler', () => {
         });
 
         it('handles unknown error types', () => {
-            const response = handleApiError(null) as any; // Invalid type
+            const response = handleApiError(null) as unknown as { status: number; body: Record<string, unknown> };
             expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
                 code: ErrorType.INTERNAL
@@ -93,11 +92,11 @@ describe('error-handler', () => {
         // Custom Error Classes Logic
         it('extracts info from ValidationError class', () => {
             const error = new ValidationError('Invalid Input', 'fieldA');
-            const response = handleApiError(error) as any;
+            const response = handleApiError(error) as unknown as { status: number; body: Record<string, unknown> };
 
             expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
-                error: 'Something went wrong', // Default internal error message
+                error: 'Something went wrong',
                 code: ErrorType.INTERNAL
             }));
         });
@@ -111,7 +110,7 @@ describe('error-handler', () => {
         // Plain Object Fallback Logic
         it('extracts info from plain object with code (VALIDATION)', () => {
             const error = { code: 'VALIDATION_ERROR', message: 'Plain object error' };
-            const response = handleApiError(error) as any;
+            const response = handleApiError(error) as unknown as { status: number; body: { code: string } };
 
             expect(response.status).toBe(400);
             expect(response.body.code).toBe('VALIDATION_ERROR');
@@ -136,9 +135,9 @@ describe('error-handler', () => {
         });
 
         it('includes debug info in non-production', () => {
-            (process.env as any).NODE_ENV = 'development';
+            process.env.NODE_ENV = 'development';
             const error = new Error('Debug Me');
-            const response = handleApiError(error) as any;
+            const response = handleApiError(error) as unknown as { body: { debug: { message: string } } };
 
             expect(response.body).toHaveProperty('debug');
             expect(response.body.debug).toEqual(expect.objectContaining({
@@ -147,17 +146,17 @@ describe('error-handler', () => {
         });
 
         it('excludes debug info in production', () => {
-            (process.env as any).NODE_ENV = 'production';
+            process.env.NODE_ENV = 'production';
             const error = new Error('Hide Me');
-            const response = handleApiError(error) as any;
+            const response = handleApiError(error) as unknown as { body: { debug?: unknown } };
 
             expect(response.body).not.toHaveProperty('debug');
         });
 
         it('includes details if available in mapping', () => {
-            (process.env as any).NODE_ENV = 'development';
-            const error = { code: 'VALIDATION_ERROR' }; // Should trigger mapping with details
-            const response = handleApiError(error) as any;
+            process.env.NODE_ENV = 'development';
+            const error = { code: 'VALIDATION_ERROR' };
+            const response = handleApiError(error) as unknown as { body: { details: string } };
             expect(response.body).toHaveProperty('details');
             expect(response.body.details).toBe('無効なパラメータが含まれています');
         });
@@ -165,7 +164,7 @@ describe('error-handler', () => {
 
     describe('Helper functions', () => {
         it('validationError creates 400 response', () => {
-            const res = validationError('Bad Input', 'fieldA') as any;
+            const res = validationError('Bad Input', 'fieldA') as unknown as { status: number; body: Record<string, unknown> };
             expect(res.status).toBe(400);
             expect(res.body).toEqual({
                 error: 'Bad Input',
@@ -175,22 +174,22 @@ describe('error-handler', () => {
         });
 
         it('notFoundError creates 404 response', () => {
-            const res = notFoundError() as any;
+            const res = notFoundError() as unknown as { status: number; body: { code: string } };
             expect(res.status).toBe(404);
             expect(res.body.code).toBe(ErrorType.NOT_FOUND);
 
-            const res2 = notFoundError('Custom Not Found') as any;
+            const res2 = notFoundError('Custom Not Found') as unknown as { body: { error: string } };
             expect(res2.body.error).toBe('Custom Not Found');
         });
 
         it('rateLimitError creates 429 response', () => {
-            const res = rateLimitError() as any;
+            const res = rateLimitError() as unknown as { status: number; body: { code: string } };
             expect(res.status).toBe(429);
             expect(res.body.code).toBe(ErrorType.RATE_LIMIT);
         });
 
         it('internalError creates 500 response', () => {
-            const res = internalError('Fatal') as any;
+            const res = internalError('Fatal') as unknown as { status: number; body: { error: string } };
             expect(res.status).toBe(500);
             expect(res.body.error).toBe('Fatal');
         });

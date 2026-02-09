@@ -1,4 +1,4 @@
-import { detectBreakouts, predictNextBreakout, BreakoutEvent, VolumeProfileLevel } from '../lib/breakout';
+import { detectBreakouts, predictNextBreakout, VolumeProfileLevel } from '../lib/breakout';
 import { OHLCV } from '../types';
 
 describe('Breakout Detection', () => {

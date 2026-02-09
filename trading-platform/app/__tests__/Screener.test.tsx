@@ -1,15 +1,24 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Screener from '../screener/page';
-import { useTradingStore } from '../store/tradingStore';
 import { marketClient } from '../lib/api/data-aggregator';
 import { fetchOHLCV } from '../data/stocks';
 import { filterByTechnicals } from '../lib/screener-utils';
 import { useRouter } from 'next/navigation';
+import { useUIStore } from '../store/uiStore';
+import { useWatchlistStore } from '../store/watchlistStore';
 import '@testing-library/jest-dom';
 
 // Mock Dependencies
 jest.mock('next/navigation', () => ({
     useRouter: jest.fn(),
+}));
+
+jest.mock('../store/uiStore', () => ({
+    useUIStore: jest.fn(),
+}));
+
+jest.mock('../store/watchlistStore', () => ({
+    useWatchlistStore: jest.fn(),
 }));
 
 jest.mock('../lib/api/data-aggregator', () => ({
@@ -50,6 +59,13 @@ describe('Screener Page', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+        (useUIStore as unknown as jest.Mock).mockReturnValue({ setSelectedStock: mockSetSelectedStock });
+        (useWatchlistStore as unknown as jest.Mock).mockReturnValue({
+            addToWatchlist: mockAddToWatchlist,
+            removeFromWatchlist: jest.fn(),
+            batchUpdateStockData: jest.fn()
+        });
+
         (marketClient.fetchQuotes as jest.Mock).mockResolvedValue([
             { symbol: '7203', price: 3100, change: 100, changePercent: 3.3, volume: 1100000 },
             { symbol: 'AAPL', price: 185, change: 5, changePercent: 2.7, volume: 5500000 },
@@ -60,11 +76,6 @@ describe('Screener Page', () => {
             data: [
                 { date: '2026-01-01', open: 1000, high: 1050, low: 990, close: 1020, volume: 1000000 }
             ]
-        });
-
-        (useTradingStore as any).setState({
-            addToWatchlist: mockAddToWatchlist,
-            setSelectedStock: mockSetSelectedStock,
         });
     });
 
@@ -157,10 +168,9 @@ describe('Screener Page', () => {
             { symbol: 'AAPL', price: 185, change: 5, changePercent: 2.7, volume: 5500000 },
             { symbol: 'MSFT', price: 400, change: 10, changePercent: 2.5, volume: 2000000 },
         ]);
-        (useTradingStore as any).setState({
-            addToWatchlist: mockAddToWatchlist,
-            setSelectedStock: mockSetSelectedStock,
-        });
+
+        // No need to call setState here as beforeEach sets defaults,
+        // but if we needed to change it we could use the mocked setState.
 
         // Mock signal: 7203=BUY(90), AAPL=SELL(70), MSFT=null
         (marketClient.fetchSignal as jest.Mock).mockImplementation((stock) => {
@@ -404,10 +414,8 @@ describe('Screener Page', () => {
         render(<Screener />);
         await waitFor(() => screen.getByText('7203'));
 
-        const toyotaRow = screen.getByText('7203').closest('tr');
-        if (toyotaRow) {
-            fireEvent.click(toyotaRow);
-        }
+        const stockCell = screen.getByText('7203');
+        fireEvent.click(stockCell);
 
         expect(mockAddToWatchlist).toHaveBeenCalled();
         expect(mockSetSelectedStock).toHaveBeenCalled();

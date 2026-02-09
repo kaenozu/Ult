@@ -8,7 +8,7 @@ import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
-import { calculateChartMinMax } from '@/app/lib/chart-utils';
+import { calculateChartMinMax, calculatePriceRange } from '@/app/lib/chart-utils';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
@@ -56,15 +56,18 @@ export const StockChart = memo(function StockChart({
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   const { chartLevels } = useSupplyDemandAnalysis(data);
 
+  // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
+  const memoizedAccuracyData = useMemo(() => accuracyData ? {
+    predictionError: accuracyData.predictionError || 1.0
+  } : null, [accuracyData?.predictionError]);
+
   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
     data: optimizedData, // Use optimized/reduced data for correct index alignment
     extendedData,
     signal,
     market,
     hoveredIdx,
-    accuracyData: accuracyData ? {
-      predictionError: accuracyData.predictionError || 1.0
-    } : null
+    accuracyData: memoizedAccuracyData
   });
 
   // Get current SMA value for tooltip

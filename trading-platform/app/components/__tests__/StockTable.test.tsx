@@ -35,23 +35,23 @@ describe('StockTable', () => {
             };
             return selector(state);
         });
-        (marketClient.fetchQuotes as jest.Mock).mockResolvedValue([]);
+        (marketClient.fetchQuotes as unknown as jest.Mock).mockResolvedValue([]);
     });
 
     it('renders list of stocks', () => {
-        render(<StockTable stocks={mockStocks as any[]} />);
+        render(<StockTable stocks={mockStocks as unknown[]} />);
         expect(screen.getByText('Toyota')).toBeInTheDocument();
         expect(screen.getByText('Apple')).toBeInTheDocument();
     });
 
     it('handles stock selection click', () => {
-        render(<StockTable stocks={mockStocks as any[]} />);
+        render(<StockTable stocks={mockStocks as unknown[]} />);
         fireEvent.click(screen.getByText('Toyota'));
         expect(mockSetSelectedStock).toHaveBeenCalledWith(mockStocks[0]);
     });
 
     it('handles keyboard navigation (Enter/Space)', () => {
-        render(<StockTable stocks={mockStocks as any[]} />);
+        render(<StockTable stocks={mockStocks as unknown[]} />);
         const row = screen.getByText('Toyota').closest('tr');
 
         if (row) {
@@ -65,7 +65,7 @@ describe('StockTable', () => {
     });
 
     it('handles stock removal', () => {
-        render(<StockTable stocks={mockStocks as any[]} />);
+        render(<StockTable stocks={mockStocks as unknown[]} />);
         // Find remove buttons
         const removeButtons = screen.getAllByRole('button', { name: /ウォッチリストから削除/ });
         fireEvent.click(removeButtons[0]);
@@ -79,9 +79,9 @@ describe('StockTable', () => {
         const freshQuotes = [
             { symbol: '7203', price: 2005, change: 15, changePercent: 0.75, volume: 100 }
         ];
-        (marketClient.fetchQuotes as jest.Mock).mockResolvedValue(freshQuotes);
+        (marketClient.fetchQuotes as unknown as jest.Mock).mockResolvedValue(freshQuotes);
 
-        render(<StockTable stocks={mockStocks as any[]} />);
+        render(<StockTable stocks={mockStocks as unknown[]} />);
 
         await waitFor(() => {
             expect(marketClient.fetchQuotes).toHaveBeenCalledWith(['7203', 'AAPL']);
@@ -102,7 +102,7 @@ describe('StockTable', () => {
         const mockFocus = jest.fn();
         const mockGetElementById = jest.spyOn(document, 'getElementById').mockReturnValue({
             focus: mockFocus
-        } as any);
+        } as { focus: jest.Mock });
 
         render(<StockTable stocks={[]} />);
 
@@ -116,7 +116,7 @@ describe('StockTable', () => {
     });
 
     it('handles accessible sorting via column headers', () => {
-        render(<StockTable stocks={mockStocks as any[]} />);
+        render(<StockTable stocks={mockStocks as unknown[]} />);
 
         const symbolHeaderButton = screen.getByRole('button', { name: /銘柄/ });
         const th = symbolHeaderButton.closest('th');

@@ -12,6 +12,19 @@ import { useEffect, useRef, useCallback } from 'react';
 // =============================================================================
 
 import { logger } from '@/app/core/logger';
+
+// Window拡張型定義
+interface PerformanceUtils {
+  printReport: () => void;
+  exportMetrics: () => string;
+  getMonitor: () => GlobalPerformanceMonitor | null;
+}
+
+interface WindowWithPerformance extends Window {
+  __performanceMonitor?: GlobalPerformanceMonitor;
+  performanceUtils?: PerformanceUtils;
+}
+
 export interface PerformanceMetric {
   avg: number;
   min: number;
@@ -72,8 +85,11 @@ export function measurePerformance<T>(name: string, fn: () => T): T {
     
     
     // Record to global monitor if available
-    if (typeof window !== 'undefined' && (window as any).__performanceMonitor) {
-      (window as any).__performanceMonitor.recordMetric(name, duration);
+    if (typeof window !== 'undefined') {
+      const win = window as WindowWithPerformance;
+      if (win.__performanceMonitor) {
+        win.__performanceMonitor.recordMetric(name, duration);
+      }
     }
     
     return result;
@@ -101,8 +117,11 @@ export async function measurePerformanceAsync<T>(
     
     
     // Record to global monitor if available
-    if (typeof window !== 'undefined' && (window as any).__performanceMonitor) {
-      (window as any).__performanceMonitor.recordMetric(name, duration);
+    if (typeof window !== 'undefined') {
+      const win = window as WindowWithPerformance;
+      if (win.__performanceMonitor) {
+        win.__performanceMonitor.recordMetric(name, duration);
+      }
     }
     
     return result;
@@ -392,13 +411,16 @@ class GlobalPerformanceMonitor {
 
 // グローバルインスタンスの初期化
 if (typeof window !== 'undefined') {
-  (window as any).__performanceMonitor = new GlobalPerformanceMonitor();
+  (window as WindowWithPerformance).__performanceMonitor = new GlobalPerformanceMonitor();
 }
 
 // ヘルパー関数でグローバルモニターにアクセス
 export function getGlobalPerformanceMonitor(): GlobalPerformanceMonitor | null {
-  if (typeof window !== 'undefined' && (window as any).__performanceMonitor) {
-    return (window as any).__performanceMonitor;
+  if (typeof window !== 'undefined') {
+    const win = window as WindowWithPerformance;
+    if (win.__performanceMonitor) {
+      return win.__performanceMonitor;
+    }
   }
   return null;
 }
@@ -437,7 +459,7 @@ export function exportPerformanceMetrics(): string {
  * コンソールからパフォーマンスレポートを確認できるようにグローバルに公開
  */
 if (typeof window !== 'undefined') {
-  (window as any).performanceUtils = {
+  (window as WindowWithPerformance).performanceUtils = {
     printReport: printPerformanceReport,
     exportMetrics: exportPerformanceMetrics,
     getMonitor: getGlobalPerformanceMonitor,
