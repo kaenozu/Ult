@@ -44,6 +44,7 @@ describe('PortfolioStore', () => {
         totalValue: 0,
         totalProfit: 0,
         dailyPnL: 0,
+        orders: []
       }
     });
   });

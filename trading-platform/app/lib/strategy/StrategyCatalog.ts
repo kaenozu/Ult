@@ -224,8 +224,8 @@ abstract class BaseStrategy implements Strategy {
       informationRatio: sharpeRatio,
       trackingError: volatility,
       period: {
-        start: data[0].timestamp,
-        end: data[data.length - 1].timestamp,
+        start: data[0].date,
+        end: data[data.length - 1].date,
         days
       }
     };
@@ -244,7 +244,7 @@ abstract class BaseStrategy implements Strategy {
     return downsideDeviation > 0 ? (annualizedReturn - targetReturn * 252) / downsideDeviation : 0;
   }
 
-  protected abstract randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string>;
+   protected abstract randomizeParameters(originalParams: Record<string, unknown>): Record<string, unknown>;
 
   protected calculateSMA(prices: number[], period: number): number[] {
     const sma: number[] = [];
@@ -435,7 +435,7 @@ export class MomentumStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -443,7 +443,7 @@ export class MomentumStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+  protected randomizeParameters(originalParams: Record<string, number | string | boolean>): Record<string, number | string | boolean> {
     return {
       lookbackPeriod: Math.floor(10 + Math.random() * 40), // 10-50
       momentumThreshold: 0.01 + Math.random() * 0.04, // 1%-5%
@@ -556,7 +556,7 @@ export class MeanReversionStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -564,7 +564,7 @@ export class MeanReversionStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+  protected randomizeParameters(originalParams: Record<string, number | string | boolean>): Record<string, number | string | boolean> {
     return {
       bollingerPeriod: Math.floor(15 + Math.random() * 15), // 15-30
       bollingerStdDev: 1.5 + Math.random() * 1, // 1.5-2.5
@@ -585,13 +585,13 @@ export class BreakoutStrategy extends BaseStrategy {
       name: 'Breakout Strategy',
       type: 'breakout',
       description: 'Breakout strategy using price action and volume',
-      parameters: {
-        breakoutPeriod: 20,
-        volumeConfirmation: true,
-        volumeThreshold: 1.5,
-        atrMultiplier: 2.0,
-        ...params
-      },
+       parameters: {
+         breakoutPeriod: 20,
+         volumeConfirmation: true,
+         volumeThreshold: 1.5,
+         atrMultiplier: 2.0,
+         ...params
+       },
       enabled: true
     });
   }
@@ -671,7 +671,7 @@ export class BreakoutStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -679,7 +679,7 @@ export class BreakoutStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+  protected randomizeParameters(originalParams: Record<string, number | string | boolean>): Record<string, number | string | boolean> {
     return {
       breakoutPeriod: Math.floor(10 + Math.random() * 30), // 10-40
       volumeConfirmation: Math.random() > 0.3, // 70% true
@@ -790,7 +790,7 @@ export class StatArbStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -798,7 +798,7 @@ export class StatArbStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+  protected randomizeParameters(originalParams: Record<string, number | string | boolean>): Record<string, number | string | boolean> {
     return {
       pairSymbol: originalParams.pairSymbol,
       lookbackPeriod: Math.floor(20 + Math.random() * 40), // 20-60
@@ -898,7 +898,7 @@ export class MarketMakingStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -906,7 +906,7 @@ export class MarketMakingStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+  protected randomizeParameters(originalParams: Record<string, number | string | boolean>): Record<string, number | string | boolean> {
     return {
       spreadBps: 5 + Math.random() * 15, // 5-20 bps
       inventoryLimit: 500 + Math.random() * 1000, // 500-1500
@@ -1020,7 +1020,7 @@ export class MLAlphaStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -1028,7 +1028,7 @@ export class MLAlphaStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
+  protected randomizeParameters(originalParams: Record<string, number | string | boolean>): Record<string, number | string | boolean> {
     return {
       model: originalParams.model,
       features: originalParams.features,
