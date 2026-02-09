@@ -5,7 +5,7 @@
  * reducing duplication and ensuring consistent validation behavior.
  */
 
-import { validationError } from '@/app/lib/error-handler';
+import { validationError } from '@/app/lib/errors';
 
 export interface ValidationRule<T = string> {
   value: T | null | undefined;

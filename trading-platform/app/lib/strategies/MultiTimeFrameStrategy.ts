@@ -331,12 +331,14 @@ export class MultiTimeFrameStrategy {
     }
 
     // 各シグナルタイプのカウント
-    const counts = { BUY: 0, SELL: 0, HOLD: 0 };
+    const counts: Record<'BUY' | 'SELL' | 'HOLD', number> = { BUY: 0, SELL: 0, HOLD: 0 };
     let totalWeight = 0;
 
     for (const signal of signals) {
-      counts[signal.signal] += signal.weight;
-      totalWeight += signal.weight;
+      if (signal.signal in counts) {
+        counts[signal.signal as 'BUY' | 'SELL' | 'HOLD'] += signal.weight;
+        totalWeight += signal.weight;
+      }
     }
 
     if (totalWeight === 0) {

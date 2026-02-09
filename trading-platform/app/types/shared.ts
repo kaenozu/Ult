@@ -98,6 +98,62 @@ export type MarketType = 'japan' | 'usa';
  */
 export type TimeHorizon = 'short' | 'medium' | 'long';
 
+/**
+ * Time frame intervals for multi-timeframe analysis
+ */
+export type TimeFrame = '1min' | '5min' | '15min' | '30min' | '60min' | 'daily' | 'weekly' | 'monthly';
+
+/**
+ * Signal from a specific timeframe
+ */
+export interface TimeFrameSignal {
+  timeFrame: TimeFrame;
+  signal: 'BUY' | 'SELL' | 'HOLD';
+  strength: number; // 0-1
+  confidence: number; // 0-100
+  indicators: {
+    rsi: number;
+    macd: number;
+    adx: number;
+    trend: 'UP' | 'DOWN' | 'NEUTRAL';
+  };
+  weight: number; // Weight of this timeframe in the final decision
+}
+
+/**
+ * Multi-timeframe analysis result
+ */
+export interface MultiTimeFrameAnalysis {
+  symbol: string;
+  primarySignal: 'BUY' | 'SELL' | 'HOLD';
+  alignment: number; // 0-1, 1 = perfect alignment across all timeframes
+  weightedSignal: 'BUY' | 'SELL' | 'HOLD';
+  confidence: number; // 0-100
+  timeFrameSignals: TimeFrameSignal[];
+  trendDirection: 'bullish' | 'bearish' | 'neutral';
+  divergenceDetected: boolean; // True if timeframes show conflicting signals
+  recommendation: string;
+  reasoning: string[];
+}
+
+/**
+ * Configuration for multi-timeframe weights
+ */
+export interface TimeFrameWeights {
+  [key: string]: number; // TimeFrame -> Weight mapping
+}
+
+/**
+ * Configuration for multi-timeframe strategy
+ */
+export interface MultiTimeFrameConfig {
+  timeFrames: TimeFrame[];
+  weights: TimeFrameWeights;
+  minAlignment: number; // Minimum alignment score to generate signal (0-1)
+  requireHigherTimeFrameConfirmation: boolean;
+  divergenceThreshold: number; // Max allowed divergence between timeframes (0-1)
+}
+
 // ============================================================================
 // Risk Management Types
 // ============================================================================
