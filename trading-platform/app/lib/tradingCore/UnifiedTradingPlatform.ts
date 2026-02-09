@@ -20,6 +20,7 @@ import type { OHLCV } from '../../types';
 import { logger } from '@/app/core/logger';
 import { TOKENS } from '../di/tokens';
 import { container } from '../di/container';
+import { BACKTEST_DEFAULTS } from '../constants/backtest-config';
 export type { OHLCV };
 
 // ============================================================================
@@ -112,11 +113,11 @@ export class UnifiedTradingPlatform extends EventEmitter {
     
     this.config = {
       mode: 'paper',
-      initialCapital: 1000000,
+      initialCapital: BACKTEST_DEFAULTS.LARGE_INITIAL_CAPITAL,
       riskLimits: {
-        maxPositionSize: 20,
-        maxDailyLoss: 5,
-        maxDrawdown: 15,
+        maxPositionSize: BACKTEST_DEFAULTS.MAX_POSITION_SIZE,
+        maxDailyLoss: 5, // strategy-specific
+        maxDrawdown: BACKTEST_DEFAULTS.CONSERVATIVE_MAX_DRAWDOWN,
       },
       aiEnabled: true,
       sentimentEnabled: true,

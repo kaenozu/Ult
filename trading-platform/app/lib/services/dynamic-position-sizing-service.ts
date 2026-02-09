@@ -7,6 +7,7 @@
 import { RiskManagementSettings, RiskCalculationResult } from '@/app/types';
 import { calculateATR } from '@/app/lib/utils';
 import { RISK_MANAGEMENT } from '@/app/lib/constants';
+import { BACKTEST_DEFAULTS } from '../constants/backtest-config';
 
 export interface PositionSizingInput {
   entryPrice: number;
@@ -188,18 +189,18 @@ class DynamicPositionSizingService {
   private getDefaultSettings(): RiskManagementSettings {
     return {
       sizingMethod: 'volatility_adjusted',
-      maxRiskPercent: 2,
-      maxPositionPercent: 10,
-      maxLossPerTrade: 100000,
+      maxRiskPercent: 2, // strategy-specific
+      maxPositionPercent: BACKTEST_DEFAULTS.MAX_POSITION_SIZE / 2, // 10% (half of max)
+      maxLossPerTrade: BACKTEST_DEFAULTS.INITIAL_CAPITAL,
       stopLoss: {
         enabled: true,
         type: 'atr',
-        value: 2
+        value: 2 // ATR multiplier - strategy-specific
       },
       takeProfit: {
         enabled: true,
         type: 'atr',
-        value: 3
+        value: 3 // ATR multiplier - strategy-specific
       }
     };
   }

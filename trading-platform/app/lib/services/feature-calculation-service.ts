@@ -6,6 +6,7 @@
 
 import { OHLCV, TechnicalIndicatorsWithATR } from '../../types';
 import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
+import { PORTFOLIO_OPTIMIZATION_DEFAULTS } from '../constants/portfolio';
 import { EnhancedPredictionFeatures } from '../types/prediction-types';
 import { enhancedFeatureService } from './enhanced-feature-service';
 import { OHLCVData, OHLCVConverter } from '../../types/optimized-data';
@@ -130,7 +131,7 @@ export class FeatureCalculationService {
     const returns = this.calculateReturns(prices);
     const avg = returns.reduce((a, b) => a + b, 0) / returns.length;
     const variance = returns.reduce((sum, r) => sum + Math.pow(r - avg, 2), 0) / returns.length;
-    return Math.sqrt(variance) * Math.sqrt(252) * 100;
+    return Math.sqrt(variance) * Math.sqrt(PORTFOLIO_OPTIMIZATION_DEFAULTS.TRADING_DAYS_PER_YEAR) * 100;
   }
 
   /**

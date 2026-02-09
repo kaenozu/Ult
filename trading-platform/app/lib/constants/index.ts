@@ -5,7 +5,7 @@
  * Issue #522 - 定数一元化
  */
 
-// 既存の定数を再エクスポート
+// Core constants
 export * from './api';
 export * from './backtest';
 export * from './chart';
@@ -16,4 +16,10 @@ export * from './risk-management';
 export * from './technical-indicators';
 export * from './trading';
 export * from './ui';
+
+// New consolidated constants (REFACTOR-001)
+export * from './ml';
+export * from './backtest-config';
+export * from './market-data';
+export * from './portfolio';
 

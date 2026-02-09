@@ -7,6 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { PORTFOLIO_OPTIMIZATION_DEFAULTS, PORTFOLIO_CONSTRAINTS } from '../constants/portfolio';
 
 // ============================================================================
 // Types
@@ -151,18 +152,18 @@ export interface OptimizerConfig {
 // ============================================================================
 
 const DEFAULT_CONFIG: OptimizerConfig = {
-  riskFreeRate: 2.0,
-  tradingDaysPerYear: 252,
-  maxIterations: 1000,
-  convergenceThreshold: 1e-8,
-  maxCorrelation: 0.99,
-  sectorConcentrationLimit: 0.4,
+  riskFreeRate: PORTFOLIO_OPTIMIZATION_DEFAULTS.RISK_FREE_RATE,
+  tradingDaysPerYear: PORTFOLIO_OPTIMIZATION_DEFAULTS.TRADING_DAYS_PER_YEAR,
+  maxIterations: PORTFOLIO_OPTIMIZATION_DEFAULTS.MAX_ITERATIONS,
+  convergenceThreshold: PORTFOLIO_OPTIMIZATION_DEFAULTS.CONVERGENCE_THRESHOLD,
+  maxCorrelation: 0.99, // correlation-specific, not consolidated
+  sectorConcentrationLimit: 0.4, // sector-specific, not consolidated
 };
 
 const DEFAULT_CONSTRAINTS: OptimizationConstraints = {
-  minWeight: 0,
-  maxWeight: 0.4,
-  minReturnThreshold: -10,
+  minWeight: PORTFOLIO_CONSTRAINTS.DEFAULT_MIN_WEIGHTS / 100, // Convert percentage to decimal
+  maxWeight: PORTFOLIO_CONSTRAINTS.DEFAULT_MAX_WEIGHTS / 100, // Convert percentage to decimal
+  minReturnThreshold: -10, // strategy-specific, not consolidated
 };
 
 // ============================================================================

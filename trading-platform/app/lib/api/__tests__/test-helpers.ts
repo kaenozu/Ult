@@ -43,7 +43,7 @@ export function generateMockOHLCV(
   return data;
 }
 
-export function createMockAPIResponse(data: any, success: boolean = true) {
+export function createMockAPIResponse<T = unknown>(data: T, success: boolean = true) {
   return {
     ok: success,
     status: success ? 200 : 500,

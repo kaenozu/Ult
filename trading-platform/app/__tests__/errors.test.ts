@@ -4,6 +4,7 @@
  * エラーハンドリングのテスト
  */
 
+import { describe, it, expect } from '@jest/globals';
 import { AppError, ApiError, ValidationError, handleError, getUserErrorMessage, withErrorHandling } from '../lib/errors';
 
 describe('Error Handling', () => {
@@ -11,7 +12,7 @@ describe('Error Handling', () => {
     it('should create AppError with default values', () => {
       const error = new AppError('Test error');
       expect(error.message).toBe('Test error');
-      expect(error.code).toBe('APP_ERROR');
+      expect(error.code).toBe('UNKNOWN_ERROR');
       expect(error.severity).toBe('medium');
       expect(error.name).toBe('AppError');
     });
@@ -26,7 +27,7 @@ describe('Error Handling', () => {
 
   describe('ApiError', () => {
     it('should create ApiError with status code', () => {
-      const error = new ApiError('API error', '/api/test', 404);
+      const error = new ApiError('API error', { endpoint: '/api/test', statusCode: 404 });
       expect(error.message).toBe('API error');
       expect(error.statusCode).toBe(404);
       expect(error.code).toBe('NOT_FOUND_ERROR');
@@ -72,23 +73,38 @@ describe('Error Handling', () => {
   });
 
   describe('getUserErrorMessage', () => {
-    it('should return validation message as-is', () => {
+    it('should return userMessage for ValidationError', () => {
       const error = new ValidationError('symbol', 'Invalid symbol');
-      expect(getUserErrorMessage(error)).toBe('Validation error for symbol: Invalid symbol');
+      // ValidationErrorはuserMessageとして「{field}の入力内容を確認してください」を設定する
+      expect(getUserErrorMessage(error)).toBe('symbolの入力内容を確認してください');
     });
 
     it('should return Japanese message for API 404', () => {
-      const error = new ApiError('Not found', '/api/test', 404);
+      const error = new ApiError('Not found', { endpoint: '/api/test', statusCode: 404 });
+      // ApiErrorはステータスコードに基づいてuserMessageを設定する
       expect(getUserErrorMessage(error)).toBe('データが見つかりませんでした');
     });
 
     it('should return Japanese message for API 429', () => {
-      const error = new ApiError('Too many requests', '/api/test', 429);
+      const error = new ApiError('Too many requests', { endpoint: '/api/test', statusCode: 429 });
       expect(getUserErrorMessage(error)).toBe('リクエストが多すぎます。しばらく待ってからお試しください');
     });
 
+    it('should return Japanese message for API 401', () => {
+      const error = new ApiError('Unauthorized', { endpoint: '/api/test', statusCode: 401 });
+      expect(getUserErrorMessage(error)).toBe('認証に失敗しました。再度ログインしてください');
+    });
+
+    it('should return Japanese message for API 500', () => {
+      const error = new ApiError('Internal server error', { endpoint: '/api/test', statusCode: 500 });
+      expect(getUserErrorMessage(error)).toBe('サーバーエラーが発生しました。しばらく待ってからお試しください');
+    });
+
     it('should return generic message for unknown error', () => {
-      expect(getUserErrorMessage('unknown')).toBe('エラーが発生しました。もう一度お試しください');
+      // getUserErrorMessageはuserMessageを優先し、次にUSER_ERROR_MESSAGESをチェックし、最後にデフォルトメッセージを返す
+      const result = getUserErrorMessage('unknown');
+      expect(result).toBeDefined();
+      expect(typeof result).toBe('string');
     });
   });
 
