@@ -19,7 +19,8 @@
     "portfolioValue": "Portfolio Value",
     "dailyPnL": "Daily P&L",
     "toggleSidebar": "Open Watchlist",
-    "toggleOrderPanel": "Open Order Panel"
+    "toggleOrderPanel": "Open Order Panel",
+    "keyboardShortcuts": "Keyboard Shortcuts"
   },
   "page": {
     "dataFetchError": "Failed to fetch data",

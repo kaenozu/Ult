@@ -19,7 +19,8 @@
     "portfolioValue": "ポートフォリオ評価額",
     "dailyPnL": "日次損益",
     "toggleSidebar": "ウォッチリストを開く",
-    "toggleOrderPanel": "注文パネルを開く"
+    "toggleOrderPanel": "注文パネルを開く",
+    "keyboardShortcuts": "キーボードショートカット"
   },
   "page": {
     "dataFetchError": "データの取得に失敗しました",
