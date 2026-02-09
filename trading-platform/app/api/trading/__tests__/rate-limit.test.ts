@@ -3,10 +3,17 @@
  */
 import { GET, POST } from '../route';
 import { ipRateLimiter } from '@/app/lib/ip-rate-limit';
+import { NextRequest } from 'next/server';
 
 // Mock auth middleware
 jest.mock('@/app/lib/auth', () => ({
   requireAuth: jest.fn(() => null),
+}));
+
+// Mock CSRF protection - we want to test rate limits, not CSRF
+jest.mock('@/app/lib/csrf/csrf-protection', () => ({
+  requireCSRF: jest.fn(() => null),
+  validateCSRFToken: jest.fn(() => true),
 }));
 
 // Mock the trading platform
@@ -38,17 +45,29 @@ describe('Trading API Rate Limiting', () => {
       'x-forwarded-for': '192.168.1.100',
     });
     
-    const options: RequestInit = {
-      method,
-      headers,
-    };
-    
     if (body) {
-      options.body = JSON.stringify(body);
       headers.set('content-type', 'application/json');
     }
-    
-    return new Request(`http://localhost${url}`, options);
+
+    // Mock NextRequest-like object with cookies
+    const req = new NextRequest(`http://localhost${url}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    // Ensure cookies.get works if not already provided by NextRequest mock environment
+    // (Note: NextRequest constructor in newer Next.js versions handles this, but mocks might not)
+    if (!req.cookies) {
+      Object.defineProperty(req, 'cookies', {
+        value: {
+          get: () => ({ value: 'mock-csrf-token' }),
+          getAll: () => [],
+        }
+      });
+    }
+
+    return req;
   };
 
   describe('GET /api/trading', () => {
@@ -111,10 +130,17 @@ describe('Trading API Rate Limiting', () => {
     const headers2 = new Headers({
       'x-forwarded-for': '192.168.1.101',
     });
-    const req2 = new Request('http://localhost/api/trading', {
+    const req2 = new NextRequest('http://localhost/api/trading', {
       method: 'GET',
       headers: headers2,
     });
+    // Ensure cookies are mocked for req2 as well
+    if (!req2.cookies) {
+        Object.defineProperty(req2, 'cookies', {
+            value: { get: () => ({ value: 'mock-csrf-token' }) }
+        });
+    }
+
     const res2 = await GET(req2);
     expect(res2.status).toBe(200);
   });
