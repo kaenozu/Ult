@@ -3,6 +3,14 @@ import { act } from '@testing-library/react';
 import { usePortfolioStore } from '../portfolioStore';
 import { AI_TRADING } from '@/app/lib/constants';
 
+// Mock RiskManagementService to isolate store logic
+jest.mock('../../lib/services/RiskManagementService', () => ({
+  getRiskManagementService: () => ({
+    validateOrder: jest.fn().mockReturnValue({ allowed: true, reasons: [] }),
+    calculateOptimalPositionSize: jest.fn().mockReturnValue(null),
+  })
+}));
+
 // Mock localStorage for Zustand persist
 const localStorageMock = (function() {
   let store: Record<string, string> = {};
@@ -36,6 +44,7 @@ describe('TradingStore (via PortfolioStore)', () => {
         totalValue: 0,
         totalProfit: 0,
         dailyPnL: 0,
+        orders: []
       }
     });
   });
