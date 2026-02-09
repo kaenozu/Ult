@@ -39,7 +39,15 @@ class MarketDataClient {
     backoff: number = 500
   ): Promise<T> {
     try {
-      const httpResponse = await fetch(url, options);
+      // Convert relative URL to absolute URL for server-side fetch
+      let finalUrl = url;
+      if (url.startsWith('/')) {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        finalUrl = `${baseUrl}${url}`;
+        console.log(`[DataAggregator] Converting relative URL to absolute: ${url} -> ${finalUrl}`);
+      }
+      
+      const httpResponse = await fetch(finalUrl, options);
 
       if (httpResponse && httpResponse.status === 429) {
         // ... rate limit logic ...
@@ -157,6 +165,7 @@ class MarketDataClient {
           if (!forceRefresh) {
              localData = await idbClient.getData(symbol);
           }
+          console.log(`[DataAggregator] Symbol: ${symbol}, IDB data length: ${localData.length}, forceRefresh: ${forceRefresh}, startDate: ${startDate}`);
 
           let missingHistory = false;
           if (startDate && localData.length > 0) {
@@ -175,6 +184,8 @@ class MarketDataClient {
           const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
           const timeDiff = lastDataDate ? now.getTime() - lastDataDate.getTime() : null;
           const needsUpdate = forceRefresh || !lastDataDate || (timeDiff !== null && timeDiff > (24 * 60 * 60 * 1000)) || missingHistory;
+
+          console.log(`[DataAggregator] ${symbol}: needsUpdate=${needsUpdate}, lastDataDate=${lastDataDate?.toISOString().split('T')[0]}, missingHistory=${missingHistory}`);
 
           if (needsUpdate) {
             let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
@@ -195,8 +206,10 @@ class MarketDataClient {
                fetchUrl += `&startDate=${defaultStart.toISOString().split('T')[0]}`;
             }
 
+            console.log(`[DataAggregator] Fetching from API: ${fetchUrl}`);
             try {
               const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
+              console.log(`[DataAggregator] API response for ${symbol}: ${newData?.length || 0} records`);
 
               if (newData && newData.length > 0) {
                 if (forceRefresh) {
@@ -205,8 +218,10 @@ class MarketDataClient {
                    finalData = await idbClient.mergeAndSave(symbol, newData);
                 }
                 source = 'api';
+                console.log(`[DataAggregator] Saved to IDB: ${symbol}, total records: ${finalData.length}`);
               }
             } catch (err) {
+              console.error(`[DataAggregator] API fetch error for ${symbol}:`, err);
               if (finalData.length > 0) {
                 logger.warn(`[Aggregator] Failed to update data for ${symbol}, using stale data. Error: ${err instanceof Error ? err.message : String(err)}`);
                 // Continue with stale data (source remains 'idb')

@@ -95,6 +95,13 @@ export class IndexedDBClient {
     // If initialization is in progress, return the existing promise
     if (this.initPromise) return this.initPromise;
 
+    // Server-side check: IndexedDB is not available in Node.js
+    if (typeof indexedDB === 'undefined') {
+      console.log('[IndexedDB] Running in server environment, skipping initialization');
+      this.initPromise = Promise.resolve();
+      return this.initPromise;
+    }
+
     // Start new initialization
     this.initPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -216,9 +223,15 @@ export class IndexedDBClient {
    */
   async getData(symbol: string): Promise<OHLCV[]> {
     await this.init();
+    
+    // Server-side: return empty array if DB is not available
+    if (!this.db) {
+      console.log(`[IndexedDB] Server environment - returning empty array for ${symbol}`);
+      return [];
+    }
+    
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
-      const transaction = this.db.transaction('ohlcv_data', 'readonly');
+      const transaction = this.db!.transaction('ohlcv_data', 'readonly');
       const store = transaction.objectStore('ohlcv_data');
       const request = store.get(symbol);
 
@@ -232,13 +245,19 @@ export class IndexedDBClient {
    */
   async saveData(symbol: string, data: OHLCV[]): Promise<void> {
     await this.init();
+    
+    // Server-side: cannot save to IndexedDB, just resolve
+    if (!this.db) {
+      console.log(`[IndexedDB] Server environment - skipping save for ${symbol} (${data.length} records)`);
+      return;
+    }
+    
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
-      const transaction = this.db.transaction('ohlcv_data', 'readwrite');
+      const transaction = this.db!.transaction('ohlcv_data', 'readwrite');
       const store = transaction.objectStore('ohlcv_data');
 
       // Sort by date before saving to ensure consistency
-      const sortedData = [...data].sort((a, b) => 
+      const sortedData = [...data].sort((a, b) =>
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
 

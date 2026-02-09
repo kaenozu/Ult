@@ -197,13 +197,17 @@ export class PerformanceScreenerService {
      const cacheKey = `${symbol}:${lookbackDays}`;
      const cached = this.cache.get(cacheKey);
      if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
+       console.log(`[PerformanceScreener] Cache hit for ${symbol}`);
        return cached.result;
      }
 
      // データ取得
+     console.log(`[PerformanceScreener] Fetching data for ${symbol} (market: ${market}, lookbackDays: ${lookbackDays})`);
      const data = await fetchData();
+     console.log(`[PerformanceScreener] Data fetched for ${symbol}: ${data.length} records (need ${lookbackDays})`);
      
      if (data.length < lookbackDays) {
+       console.warn(`[PerformanceScreener] Insufficient data for ${symbol}: ${data.length} < ${lookbackDays}`);
        return null;
      }
 

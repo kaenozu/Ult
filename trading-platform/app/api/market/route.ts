@@ -180,17 +180,24 @@ export async function GET(request: NextRequest) {
           finalInterval = (interval === '4h' ? '1h' : interval) as YahooInterval;
         }
 
+        console.error(`[MarketAPI] Fetching chart for ${yahooSymbol}: period1=${period1}, interval=${finalInterval ?? '1d'}`);
         const rawResult = await yf.chart(yahooSymbol, { period1, interval: finalInterval ?? '1d' });
+        console.error(`[MarketAPI] Chart response for ${yahooSymbol}:`, typeof rawResult === 'object' ? { quotesCount: rawResult?.quotes?.length, hasMeta: !!rawResult?.meta } : rawResult);
+        
         const parseResult = YahooChartResultSchema.safeParse(rawResult);
 
         if (!parseResult.success) {
+          console.error('[MarketAPI] Schema parse error:', parseResult.error);
           return handleApiError(new Error('Upstream API data schema mismatch'), 'market/history', 502);
         }
 
         const data = parseResult.data;
         if (!data || !data.quotes || data.quotes.length === 0) {
+          console.warn(`[MarketAPI] No data for ${yahooSymbol}:`, { hasData: !!data, hasQuotes: !!data?.quotes, quotesLength: data?.quotes?.length });
           return NextResponse.json({ data: [], warning: 'No historical data found' });
         }
+        
+        console.log(`[MarketAPI] Successfully fetched ${data.quotes.length} records for ${yahooSymbol}`);
 
         const warnings: string[] = [];
         if (isJapaneseStock && isIntraday) {

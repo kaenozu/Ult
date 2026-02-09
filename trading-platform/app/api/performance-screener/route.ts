@@ -94,8 +94,14 @@ export async function GET(request: NextRequest) {
 
     // データソース作成
     const dataSources = createDataSources();
+    console.error('[PerformanceScreenerAPI] Data sources created:', {
+      total: dataSources.length,
+      markets: { japan: dataSources.filter(ds => ds.market === 'japan').length, usa: dataSources.filter(ds => ds.market === 'usa').length },
+      sample: dataSources.slice(0, 3).map(ds => ({ symbol: ds.symbol, name: ds.name, market: ds.market }))
+    });
 
     // スクリーニング実行
+    console.error('[PerformanceScreenerAPI] Starting scan with config:', { market, minWinRate, minProfitFactor, minTrades, maxDrawdown, topN, lookbackDays });
     const result = await performanceScreenerService.scanMultipleStocks(dataSources, {
       market,
       minWinRate,
@@ -105,6 +111,7 @@ export async function GET(request: NextRequest) {
       topN,
       lookbackDays,
     });
+    console.error('[PerformanceScreenerAPI] Scan completed:', { totalScanned: result.totalScanned, filteredCount: result.filteredCount, resultsCount: result.results.length });
 
     // レスポンス
     const response = {

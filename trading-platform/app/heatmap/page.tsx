@@ -96,7 +96,7 @@ function HeatmapContent() {
       setLoading(true);
       try {
         const symbols = ALL_STOCKS.map(s => s.symbol);
-        const latestQuotes = await marketClient.fetchQuotes(symbols, undefined, controller.signal);
+        const latestQuotes = await marketClient.fetchQuotes(symbols, controller.signal);
 
         const updates = latestQuotes.map(q => ({
           symbol: q.symbol,
