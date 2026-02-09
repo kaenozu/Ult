@@ -5,9 +5,7 @@
  * performance measurement utilities.
  */
 
-import { measurePerformance, measurePerformanceAsync } from './performance';
-import { performanceMonitor } from './performance/monitor';
-import type { PerformanceMetric } from './performance/monitor';
+import { measurePerformance, measurePerformanceAsync, PerformanceMonitor } from './performance-utils';
 
 // Example 1: Using functional wrappers
 class ExampleService {
@@ -27,6 +25,12 @@ class ExampleService {
       return 'completed';
     });
   }
+
+  operationWithCustomThreshold(): void {
+    measurePerformance('example-with-threshold', () => {
+      // This operation should complete quickly
+    }, { threshold: 50 });
+  }
 }
 
 // Example 2: Run and view results
@@ -35,32 +39,47 @@ async function runExample(): Promise<void> {
 
   // Run operations
   service.syncOperation();
+
   await service.asyncOperation();
 
-  // Get metrics
-  const syncStats = performanceMonitor.getMetric('example-sync-operation');
-  const asyncStats = performanceMonitor.getMetric('example-async-operation');
+  service.operationWithCustomThreshold();
 
-  const defaultStats: PerformanceMetric = { avg: 0, min: 0, max: 0, count: 0 };
-  const s = syncStats || defaultStats;
-  const a = asyncStats || defaultStats;
+  // Get metrics
+
+  const syncStats = PerformanceMonitor.getStats(example-sync-operation);
+  const asyncStats = PerformanceMonitor.getStats(example-async-operation);
 
   console.table([
     {
       operation: 'example-sync-operation',
-      avg: `${s.avg.toFixed(2)}ms`,
-      count: s.count,
-      min: `${s.min.toFixed(2)}ms`,
-      max: `${s.max.toFixed(2)}ms`,
+      avg: `${syncStats.avg.toFixed(2)}ms`,
+      count: syncStats.count,
+      warnings: syncStats.warningCount,
+      errors: syncStats.errorCount,
     },
     {
       operation: 'example-async-operation',
-      avg: `${a.avg.toFixed(2)}ms`,
-      count: a.count,
-      min: `${a.min.toFixed(2)}ms`,
-      max: `${a.max.toFixed(2)}ms`,
+      avg: `${asyncStats.avg.toFixed(2)}ms`,
+      count: asyncStats.count,
+      warnings: asyncStats.warningCount,
+      errors: asyncStats.errorCount,
     }
   ]);
+  // Get summary
+  const summary = PerformanceMonitor.getSummary();
+
+  if (summary.slowOperations.length > 0) {
+  }
+
+  if (summary.criticalOperations.length > 0) {
+  }
+
+  // Check for issues
+  if (PerformanceMonitor.hasWarnings()) {
+  }
+
+  if (PerformanceMonitor.hasErrors()) {
+  }
 }
 
 // Run if this is executed directly

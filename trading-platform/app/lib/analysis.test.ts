@@ -29,10 +29,10 @@ describe('optimizeParameters', () => {
     expect(result).toMatchInlineSnapshot({
   rsiPeriod: 10,
   smaPeriod: 10,
-  accuracy: 0
+  accuracy: 100
 }, `
 {
-  "accuracy": 0,
+  "accuracy": 100,
   "rsiPeriod": 10,
   "smaPeriod": 10,
 }

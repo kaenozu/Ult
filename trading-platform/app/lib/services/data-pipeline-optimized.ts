@@ -35,7 +35,7 @@ export function toColumnarOHLCV(data: OHLCV[]): ColumnarOHLCV {
 
   for (let i = 0; i < length; i++) {
     const candle = data[i];
-    timestamps[i] = new Date(candle.date).getTime();
+    timestamps[i] = candle.timestamp;
     opens[i] = candle.open;
     highs[i] = candle.high;
     lows[i] = candle.low;
@@ -61,7 +61,7 @@ export function fromColumnarOHLCV(columnar: ColumnarOHLCV): OHLCV[] {
   const result: OHLCV[] = [];
   for (let i = 0; i < columnar.length; i++) {
     result.push({
-      date: new Date(columnar.timestamps[i]).toISOString(),
+      timestamp: columnar.timestamps[i],
       open: columnar.opens[i],
       high: columnar.highs[i],
       low: columnar.lows[i],
