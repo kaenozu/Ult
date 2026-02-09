@@ -59,6 +59,8 @@ describe('SignalCard', () => {
         expect(screen.getByText('Live')).toBeInTheDocument();
     });
 
+    // Note: AI Hit Rate display was removed from UI in PR #711
+    /*
     it('displays AI hit rate correctly', () => {
         render(<SignalCard stock={mockStockJP} signal={baseSignal} aiHitRate={75} aiTradesCount={10} />);
         expect(screen.getByText('75%')).toBeInTheDocument();
@@ -76,6 +78,7 @@ describe('SignalCard', () => {
         expect(screen.getByText('エラー')).toBeInTheDocument();
         expect(screen.getByTitle('Failed')).toBeInTheDocument();
     });
+    */
 
     it('displays prediction error with correct specific coloring', () => {
         const goodError = { ...baseSignal, predictionError: 0.5 };
@@ -94,7 +97,6 @@ describe('SignalCard', () => {
     it('formats currency correctly for US stocks', () => {
         render(<SignalCard stock={mockStockUS} signal={baseSignal} />);
         // Basic check for dollar sign or format, assuming formatCurrency works
-        // Ideally checking specific output if known
     });
 
     describe('XSS Protection', () => {
