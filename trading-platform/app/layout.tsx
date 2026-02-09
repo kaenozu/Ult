@@ -23,9 +23,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ThemeProvider>
-      <html lang="ja" className="dark" suppressHydrationWarning>
-        <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="ja" className="dark" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <ThemeProvider>
           <MLProvider>
             <MonitoringProvider>
               <BehavioralWarningProvider>
@@ -35,9 +35,8 @@ export default function RootLayout({
               </BehavioralWarningProvider>
             </MonitoringProvider>
           </MLProvider>
-        </body>
-      </html>
-    </ThemeProvider>
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }
-

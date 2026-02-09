@@ -18,7 +18,7 @@ export const yf = new YahooFinance();
 
 const MarketRequestSchema = z.object({
   type: z.enum(['history', 'quote']).default('quote'),
-  symbol: z.string().min(1).max(1000).transform(s => s.toUpperCase()),
+  symbol: z.string().min(1).max(1000).regex(/^[A-Z0-9^.,]+$/i, 'Invalid symbol format').transform(s => s.toUpperCase()),
   market: z.enum(['japan', 'usa']).optional(),
   interval: z.enum(['1m', '5m', '15m', '1h', '4h', '1d', '1wk', '1mo']).optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),

@@ -125,7 +125,7 @@ function HeatmapContent() {
 
     fetchAllQuotes();
     return () => controller.abort();
-  }, [batchUpdateStockData]);
+  }, []);
 
   const handleStockClick = (stock: Stock) => {
     addToWatchlist(stock);

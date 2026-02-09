@@ -134,6 +134,13 @@ export interface ParticleSwarmConfig {
   velocityClamp: number;
 }
 
+export interface Particle {
+  position: Record<string, number | string>;
+  velocity: Record<string, number>;
+  bestPosition: Record<string, number | string>;
+  bestScore: number;
+}
+
 // Grid Search
 export interface GridSearchConfig {
   gridPoints: number; // points per parameter

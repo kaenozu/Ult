@@ -624,7 +624,7 @@ export class SqliteStorage implements Storage {
     this.db.run(`CREATE INDEX IF NOT EXISTS idx_tag ON todos(tag)`);
   }
 
-  async save(todos:odoComment[]): Promise<void> {
+  async save(todos: TodoComment[]): Promise<void> {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO todos
       (id, file, line, column, tag, text, context, language, metadata)

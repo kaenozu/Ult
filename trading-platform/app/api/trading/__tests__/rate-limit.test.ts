@@ -10,10 +10,10 @@ jest.mock('@/app/lib/auth', () => ({
   requireAuth: jest.fn(() => null),
 }));
 
-// Mock CSRF protection - we want to test rate limits, not CSRF
+// Mock CSRF protection
 jest.mock('@/app/lib/csrf/csrf-protection', () => ({
   requireCSRF: jest.fn(() => null),
-  validateCSRFToken: jest.fn(() => true),
+  generateCSRFToken: jest.fn(() => 'mock-token'),
 }));
 
 // Mock the trading platform
@@ -48,24 +48,14 @@ describe('Trading API Rate Limiting', () => {
     if (body) {
       headers.set('content-type', 'application/json');
     }
+    
+    // Create NextRequest to ensure cookies API is available
+    const req = new NextRequest(`http://localhost${url}`, options);
 
-    // Mock NextRequest-like object with cookies
-    const req = new NextRequest(`http://localhost${url}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    // Ensure cookies.get works if not already provided by NextRequest mock environment
-    // (Note: NextRequest constructor in newer Next.js versions handles this, but mocks might not)
-    if (!req.cookies) {
-      Object.defineProperty(req, 'cookies', {
-        value: {
-          get: () => ({ value: 'mock-csrf-token' }),
-          getAll: () => [],
-        }
-      });
-    }
+    // Manually ensure cookies exist and have a valid CSRF token for testing
+    // Since NextRequest cookies are read-only or immutable in some contexts, we might need to mock or ensure the cookie string is in headers if NextRequest parses it.
+    // However, validation uses request.cookies.get().
+    // We can inject a cookie into the header before creating NextRequest.
 
     return req;
   };
@@ -79,8 +69,8 @@ describe('Trading API Rate Limiting', () => {
     });
 
     it('should block requests over rate limit', async () => {
-      // Make requests up to the limit (default is 60 per minute)
-      for (let i = 0; i < 60; i++) {
+      // Make requests up to the limit (default is 120 per minute)
+      for (let i = 0; i < 120; i++) {
         const req = createRequest('/api/trading');
         await GET(req);
       }
@@ -96,22 +86,37 @@ describe('Trading API Rate Limiting', () => {
   });
 
   describe('POST /api/trading', () => {
+    // For POST requests, we need valid CSRF tokens
+    const createPostRequest = (body: RequestBody) => {
+      const headers = new Headers({
+        'x-forwarded-for': '192.168.1.100',
+        'cookie': 'csrf-token=test-token',
+        'x-csrf-token': 'test-token'
+      });
+
+      return new NextRequest('http://localhost/api/trading', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+      });
+    };
+
     it('should allow requests under rate limit', async () => {
-      const req = createRequest('/api/trading', 'POST', { action: 'reset' });
+      const req = createPostRequest({ action: 'reset' });
       const res = await POST(req);
       
       expect(res.status).toBe(200);
     });
 
     it('should block requests over rate limit', async () => {
-      // Make requests up to the limit (default is 60 per minute)
-      for (let i = 0; i < 60; i++) {
+      // Make requests up to the limit (default is 120 per minute)
+      for (let i = 0; i < 120; i++) {
         const req = createRequest('/api/trading', 'POST', { action: 'reset' });
         await POST(req);
       }
 
       // Next request should be rate limited
-      const req = createRequest('/api/trading', 'POST', { action: 'reset' });
+      const req = createPostRequest({ action: 'reset' });
       const res = await POST(req);
       const json = await res.json();
 

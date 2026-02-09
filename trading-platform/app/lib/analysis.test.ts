@@ -6,7 +6,9 @@ describe('optimizeParameters', () => {
     const data: OHLCV[] = [];
     let price = 100;
     // Generate a sine wave pattern so RSI swings
-    for (let i = 0; i < 200; i++) {
+    // Need enough data for Walk-Forward Analysis (warmup + lookahead + validation split)
+    // 500 points ensures validation window is large enough
+    for (let i = 0; i < 500; i++) {
       const angle = i * 0.1;
       price = 100 + Math.sin(angle) * 10;
       data.push({
@@ -27,13 +29,13 @@ describe('optimizeParameters', () => {
     const result = optimizeParameters(data, 'usa');
     // Update snapshot inline
     expect(result).toMatchInlineSnapshot({
-  rsiPeriod: 10,
+  rsiPeriod: 20,
   smaPeriod: 10,
-  accuracy: 0
+  accuracy: 61.53846153846154
 }, `
 {
-  "accuracy": 0,
-  "rsiPeriod": 10,
+  "accuracy": 61.53846153846154,
+  "rsiPeriod": 20,
   "smaPeriod": 10,
 }
 `);

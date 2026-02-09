@@ -2,13 +2,8 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { useExecuteOrder } from '@/app/store/orderExecutionStore';
-
 // Mock stores
 jest.mock('@/app/store/tradingStore');
-jest.mock('@/app/store/orderExecutionStore', () => ({
-    useExecuteOrder: jest.fn()
-}));
 
 // Mock ResizeObserver for any chart components (if any)
 global.ResizeObserver = class ResizeObserver {
@@ -23,7 +18,7 @@ describe('OrderPanel', () => {
 
     const mockPortfolioState = {
         portfolio: { cash: 1000000, positions: [] },
-        executeOrder: jest.fn().mockReturnValue({ success: true }), // Add executeOrder to the store mock
+        placeOrder: mockExecuteOrder,
     };
 
     beforeEach(() => {
@@ -32,8 +27,6 @@ describe('OrderPanel', () => {
         (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
-        (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrder);
-        mockPortfolioState.executeOrder.mockClear(); // Clear spy
     });
 
     it('renders correctly', () => {

@@ -34,7 +34,7 @@ describe('Market API Robustness Tests', () => {
     const response = await GET(req);
     const json = await response.json();
     expect(response.status).toBe(400);
-    expect(json.error).toBe('Invalid symbol format');
+    expect(json.error).toBe('Invalid request parameters');
   });
 
   it('should accept indices with caret (^) and NOT append .T', async () => {

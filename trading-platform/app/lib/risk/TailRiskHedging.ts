@@ -224,14 +224,6 @@ export class TailRiskHedging {
       implementationPriority: Math.abs(metrics.skewness) > 1.0 ? 'high' : 'medium',
       hedgeRatio
     };
-   }
-
-  /**
-   * Get yield curve description for VIX term structure
-   */
-  private getYieldCurveDescription(): string {
-    // Simplified implementation - in production would check actual VIX futures term structure
-    return 'Normal contango (front month < next month)';
   }
 
   /**

@@ -34,7 +34,7 @@ export function verifyAuthToken(req: NextRequest): JWTPayload | null {
     const JWT_SECRET = config.jwt.secret;
 
     // Verify and decode token
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as JWTPayload;
     return decoded;
   } catch (error) {
     // Token is invalid or expired
@@ -60,6 +60,7 @@ export function generateAuthToken(userId: string, username?: string): string {
   const JWT_EXPIRATION = config.jwt.expiration;
 
   return jwt.sign(payload, JWT_SECRET, {
+    algorithm: 'HS256',
     expiresIn: JWT_EXPIRATION as jwt.SignOptions['expiresIn'],
   });
 }
