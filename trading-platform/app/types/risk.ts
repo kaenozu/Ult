@@ -1,25 +1,74 @@
 /**
  * Risk Management Type Definitions
- * 
- * TRADING-003: リスク管理システムの高度化
  */
 
-import type { Position } from './index';
-import type { Portfolio } from './performance';
-import type { OHLCV } from './shared';
+import { PositionSizingMethod, StopLossType } from './shared';
+import { OHLCV } from './shared';
 
 // ============================================================================
-// Dynamic Position Sizing Types
+// Basic Risk Types
+// ============================================================================
+
+export interface RiskManagementSettings {
+  sizingMethod: PositionSizingMethod;
+  fixedRatio?: number;
+  kellyFraction?: number;
+  atrMultiplier?: number;
+  maxRiskPercent: number;
+  maxPositionPercent: number;
+  maxLossPerTrade?: number;
+  maxLossPercent?: number;
+  dailyLossLimit?: number;
+  useATR?: boolean;
+  atrPeriod?: number;
+  maxPositions?: number;
+  maxCorrelation?: number;
+  stopLoss: {
+    enabled: boolean;
+    type: StopLossType;
+    value: number;
+    trailing?: boolean;
+  };
+  takeProfit: {
+    enabled: boolean;
+    type: 'percentage' | 'atr' | 'fixed' | 'price' | 'risk_reward_ratio';
+    value: number;
+    partials?: boolean;
+  };
+  trailingStop?: {
+    enabled: boolean;
+    activationPercent: number;
+    trailPercent: number;
+  };
+}
+
+export interface RiskCalculationResult {
+  positionSize: number;
+  riskAmount: number;
+  rewardAmount?: number;
+  riskRewardRatio?: number;
+  stopLossPrice?: number;
+  takeProfitPrice?: number;
+  maxLoss?: number;
+  maxGain?: number;
+  capitalAtRisk?: number;
+  riskPercent?: number;
+  positionRiskPercent?: number;
+  maxPositionSize?: number;
+}
+
+// ============================================================================
+// Advanced Risk Management Types
 // ============================================================================
 
 export interface PositionSizingConfig {
-  maxPositionSize: number; // 最大ポジションサイズ（ドル）
-  maxPositionPercent: number; // ポートフォリオの最大パーセンテージ
-  riskPerTrade: number; // 1取引あたりのリスク（パーセンテージ）
-  maxRisk: number; // 最大リスク（ドル）
-  volatilityAdjustment: boolean; // ボラティリティ調整の有無
-  correlationAdjustment: boolean; // 相関調整の有無
-  initialCapital?: number; // 初期資本（ケリー基準の動的調整用）
+  maxPositionSize: number;
+  maxPositionPercent: number;
+  riskPerTrade: number;
+  maxRisk: number;
+  volatilityAdjustment: boolean;
+  correlationAdjustment: boolean;
+  initialCapital?: number;
 }
 
 export interface SizingResult {
@@ -29,10 +78,6 @@ export interface SizingResult {
   confidence: number;
   reasons: string[];
 }
-
-// ============================================================================
-// Correlation Management Types
-// ============================================================================
 
 export interface CorrelationAnalysis {
   symbol1: string;
@@ -63,21 +108,17 @@ export interface HedgeRecommendation {
   reasoning: string;
 }
 
-// ============================================================================
-// Stress Testing Types
-// ============================================================================
-
 export interface StressScenario {
   name: string;
   description: string;
-  marketShock: number; // パーセンテージ
+  marketShock: number;
   volatilityMultiplier: number;
   correlationChange: number;
 }
 
 export interface StressTestResult {
   scenario: StressScenario;
-  portfolioImpact: number; // ドル
+  portfolioImpact: number;
   portfolioImpactPercent: number;
   maxDrawdown: number;
   var95: number;
@@ -91,7 +132,7 @@ export interface StressTestResult {
 
 export interface MonteCarloConfig {
   numSimulations: number;
-  timeHorizon: number; // days
+  timeHorizon: number;
   confidenceLevel: number;
 }
 
@@ -103,23 +144,11 @@ export interface MonteCarloResult {
   probabilityOfProfit: number;
   worstCase: number;
   bestCase: number;
-  percentiles: {
-    p5: number;
-    p10: number;
-    p25: number;
-    p50: number;
-    p75: number;
-    p90: number;
-    p95: number;
-  };
+  percentiles: Record<string, number>;
 }
 
-// ============================================================================
-// Psychology Management Types
-// ============================================================================
-
 export interface TradingBehaviorMetrics {
-  averageHoldTime: number; // hours
+  averageHoldTime: number;
   winRate: number;
   lossRate: number;
   avgWinSize: number;
@@ -127,8 +156,8 @@ export interface TradingBehaviorMetrics {
   profitFactor: number;
   consecutiveWins: number;
   consecutiveLosses: number;
-  overTradingScore: number; // 0-100
-  emotionalTradingScore: number; // 0-100
+  overTradingScore: number;
+  emotionalTradingScore: number;
 }
 
 export interface PsychologyAlert {
@@ -147,8 +176,6 @@ export interface RiskTradingSession {
   emotionalState: 'calm' | 'excited' | 'fearful' | 'angry' | 'tired';
   decisionQuality: number;
 }
-
-export type { TradingSession } from './psychology';
 
 export interface BiasAnalysis {
   detectedBiases: string[];
@@ -179,13 +206,9 @@ export interface DisciplineScore {
   };
 }
 
-// ============================================================================
-// Cooling-off Management Types
-// ============================================================================
-
 export interface CoolingReason {
   type: 'consecutive_losses' | 'daily_loss_limit' | 'weekly_loss_limit' | 'overtrading' | 'manual';
-  severity: number; // 1-10
+  severity: number;
   triggerValue: number;
   description: string;
 }
@@ -195,18 +218,12 @@ export interface CooldownRecord {
   startTime: Date;
   endTime: Date;
   reason: CoolingReason;
-  duration: number; // minutes
+  duration: number;
   wasRespected: boolean;
   violationCount: number;
 }
 
-// ============================================================================
-// Market Data Types
-// ============================================================================
-
-export type { MarketData } from './data-quality';
-
-export interface RiskMarketData {
+export interface MarketData {
   symbol: string;
   price: number;
   volume: number;
@@ -226,64 +243,46 @@ export interface RiskMetrics {
   alpha: number;
 }
 
-// ============================================================================
-// Kelly Criterion Types
-// ============================================================================
-
-/**
- * Kelly Criterion calculation parameters
- */
 export interface KellyParams {
-  winRate: number;        // 勝率 (0-1)
-  avgWin: number;         // 平均利益額
-  avgLoss: number;        // 平均損失額
-  portfolioValue: number; // ポートフォリオ総額
-  kellyFraction?: number; // Kelly fraction (デフォルト: 0.5)
+  winRate: number;
+  avgWin: number;
+  avgLoss: number;
+  portfolioValue: number;
+  kellyFraction?: number;
 }
 
-/**
- * Kelly calculation result
- */
 export interface KellyResult {
-  kellyPercentage: number;    // Kelly percentage (0-1)
-  recommendedSize: number;    // 推奨ポジションサイズ（ドル）
+  kellyPercentage: number;
+  recommendedSize: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  confidence: number;         // 計算の信頼度 (0-1)
-  warnings: string[];         // 警告メッセージ
+  confidence: number;
+  warnings: string[];
 }
 
-/**
- * Volatility adjustment parameters
- */
 export interface VolatilityAdjustment {
-  actualVolatility: number;   // 実際のボラティリティ (ATR)
-  targetVolatility: number;   // 目標ボラティリティ
-  adjustmentFactor: number;   // 調整係数
+  actualVolatility: number;
+  targetVolatility: number;
+  adjustmentFactor: number;
 }
 
-/**
- * Position size recommendation with all constraints
- */
 export interface PositionSizeRecommendation {
   symbol: string;
-  baseSize: number;              // 基本サイズ (Kelly)
-  adjustedSize: number;          // 調整後サイズ（ボラティリティ考慮）
-  finalSize: number;             // 最終サイズ（集中度制限後）
+  baseSize: number;
+  adjustedSize: number;
+  finalSize: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   constraints: {
-    singlePositionLimit: number;  // 単一銘柄制限 (%)
-    sectorLimit: number;          // セクター制限 (%)
-    appliedLimits: string[];      // 適用された制限
+    singlePositionLimit: number;
+    sectorLimit: number;
+    appliedLimits: string[];
   };
   volatilityAdjustment?: VolatilityAdjustment;
+  kellyResult: KellyResult;
 }
 
-/**
- * Concentration limits configuration
- */
 export interface ConcentrationLimits {
-  maxSinglePosition: number;  // 単一銘柄最大 (%) - デフォルト: 20%
-  maxSectorExposure: number;  // セクター最大 (%) - デフォルト: 40%
-  minPositions: number;       // 最小ポジション数 - デフォルト: 5
-  maxPositions: number;       // 最大ポジション数 - デフォルト: 10
+  maxSinglePosition: number;
+  maxSectorExposure: number;
+  minPositions: number;
+  maxPositions: number;
 }

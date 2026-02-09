@@ -1,3 +1,4 @@
+import { logger } from '@/app/core/logger';
 /**
  * Request Deduplicator
  * 
@@ -13,7 +14,6 @@ interface CacheEntry<T> {
 export class RequestDeduplicator {
   private pendingRequests = new Map<string, Promise<unknown>>();
   private cache = new Map<string, CacheEntry<unknown>>();
-  private expiryTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private CACHE_TTL: number;
   private readonly MAX_CACHE_SIZE = 1000;
   private readonly MAX_PENDING_REQUESTS = 50;
@@ -38,20 +38,20 @@ export class RequestDeduplicator {
     // Check cache first
     const cached = this.getFromCache<T>(key);
     if (cached !== null) {
-      console.debug(`[RequestDeduplicator] Cache hit: ${key}`);
+      logger.debug(`[RequestDeduplicator] Cache hit: ${key}`);
       return cached;
     }
 
     // Check if request is already pending
     const pending = this.pendingRequests.get(key);
     if (pending) {
-      console.debug(`[RequestDeduplicator] Request already pending: ${key}`);
+      logger.debug(`[RequestDeduplicator] Request already pending: ${key}`);
       return pending as Promise<T>;
     }
 
     // Limit number of pending requests
     if (this.pendingRequests.size >= this.MAX_PENDING_REQUESTS) {
-      console.warn(
+      logger.warn(
         `[RequestDeduplicator] Too many pending requests, ` +
         `dropping oldest: ${this.pendingRequests.keys().next().value}`
       );
@@ -120,15 +120,9 @@ export class RequestDeduplicator {
 
     // If custom TTL is provided, set up auto-expiry
     if (ttl && ttl !== this.CACHE_TTL) {
-      const existingTimer = this.expiryTimers.get(key);
-      if (existingTimer) {
-        clearTimeout(existingTimer);
-      }
-      const timer = setTimeout(() => {
+      setTimeout(() => {
         this.cache.delete(key);
-        this.expiryTimers.delete(key);
       }, ttl);
-      this.expiryTimers.set(key, timer);
     }
   }
 
@@ -136,12 +130,8 @@ export class RequestDeduplicator {
    * Clear all cached values
    */
   clearCache(): void {
-    for (const timer of this.expiryTimers.values()) {
-      clearTimeout(timer);
-    }
-    this.expiryTimers.clear();
     this.cache.clear();
-    console.debug('[RequestDeduplicator] Cache cleared');
+    logger.debug('[RequestDeduplicator] Cache cleared');
   }
 
   /**
@@ -149,12 +139,7 @@ export class RequestDeduplicator {
    */
   clearCacheKey(key: string): void {
     this.cache.delete(key);
-    const existingTimer = this.expiryTimers.get(key);
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-      this.expiryTimers.delete(key);
-    }
-    console.debug(`[RequestDeduplicator] Cache cleared for: ${key}`);
+    logger.debug(`[RequestDeduplicator] Cache cleared for: ${key}`);
   }
 
   /**
@@ -174,15 +159,10 @@ export class RequestDeduplicator {
       
       if (shouldDelete) {
         this.cache.delete(key);
-        const existingTimer = this.expiryTimers.get(key);
-        if (existingTimer) {
-          clearTimeout(existingTimer);
-          this.expiryTimers.delete(key);
-        }
       }
     }
     
-    console.debug(`[RequestDeduplicator] Cache cleared for pattern: ${pattern}`);
+    logger.debug(`[RequestDeduplicator] Cache cleared for pattern: ${pattern}`);
   }
 
   /**
@@ -215,9 +195,9 @@ export class RequestDeduplicator {
 
     try {
       await this.fetch(key, fetcher, ttl);
-      console.debug(`[RequestDeduplicator] Prefetched: ${key}`);
+      logger.debug(`[RequestDeduplicator] Prefetched: ${key}`);
     } catch (error) {
-      console.warn(`[RequestDeduplicator] Prefetch failed: ${key}`, error);
+      logger.warn(`[RequestDeduplicator] Prefetch failed: ${key}`, error);
       // Don't throw - prefetch failures shouldn't block app
     }
   }
@@ -230,13 +210,8 @@ export class RequestDeduplicator {
   invalidate(keys: string[]): void {
     for (const key of keys) {
       this.cache.delete(key);
-      const existingTimer = this.expiryTimers.get(key);
-      if (existingTimer) {
-        clearTimeout(existingTimer);
-        this.expiryTimers.delete(key);
-      }
     }
-    console.debug(`[RequestDeduplicator] Invalidated ${keys.length} cache entries`);
+    logger.debug(`[RequestDeduplicator] Invalidated ${keys.length} cache entries`);
   }
 
   /**
