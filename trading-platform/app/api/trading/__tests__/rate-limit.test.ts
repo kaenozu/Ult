@@ -10,6 +10,12 @@ jest.mock('@/app/lib/auth', () => ({
   requireAuth: jest.fn(() => null),
 }));
 
+// Mock CSRF protection - we want to test rate limits, not CSRF
+jest.mock('@/app/lib/csrf/csrf-protection', () => ({
+  requireCSRF: jest.fn(() => null),
+  validateCSRFToken: jest.fn(() => true),
+}));
+
 // Mock the trading platform
 jest.mock('@/app/lib/tradingCore/UnifiedTradingPlatform', () => ({
   getGlobalTradingPlatform: jest.fn(() => ({
@@ -39,13 +45,7 @@ describe('Trading API Rate Limiting', () => {
       'x-forwarded-for': '192.168.1.100',
     });
     
-    const options: RequestInit = {
-      method,
-      headers,
-    };
-    
     if (body) {
-      options.body = JSON.stringify(body);
       headers.set('content-type', 'application/json');
     }
     
@@ -135,10 +135,17 @@ describe('Trading API Rate Limiting', () => {
     const headers2 = new Headers({
       'x-forwarded-for': '192.168.1.101',
     });
-    const req2 = new Request('http://localhost/api/trading', {
+    const req2 = new NextRequest('http://localhost/api/trading', {
       method: 'GET',
       headers: headers2,
     });
+    // Ensure cookies are mocked for req2 as well
+    if (!req2.cookies) {
+        Object.defineProperty(req2, 'cookies', {
+            value: { get: () => ({ value: 'mock-csrf-token' }) }
+        });
+    }
+
     const res2 = await GET(req2);
     expect(res2.status).toBe(200);
   });

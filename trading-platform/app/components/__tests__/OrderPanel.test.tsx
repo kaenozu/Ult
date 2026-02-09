@@ -58,7 +58,8 @@ describe('OrderPanel', () => {
         // Confirm
         fireEvent.click(screen.getByText('注文を確定'));
 
-        expect(mockExecuteOrder).toHaveBeenCalledWith(expect.objectContaining({
+        // Check if executeOrder (from store) was called
+        expect(mockPortfolioState.executeOrder).toHaveBeenCalledWith(expect.objectContaining({
             symbol: '7203',
             quantity: 100,
             side: 'LONG'
