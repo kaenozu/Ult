@@ -1,9 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`optimizeParameters Correctness returns consistent parameters for known data 1`] = `
-{
-  "accuracy": 0,
-  "rsiPeriod": 14,
-  "smaPeriod": 50,
-}
-`;

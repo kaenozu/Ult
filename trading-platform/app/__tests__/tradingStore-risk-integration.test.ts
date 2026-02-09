@@ -5,14 +5,14 @@
  */
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { useTradingStore } from '../store/tradingStore';
+import { usePortfolioStore } from '../store/portfolioStore';
 import { OrderRequest } from '../types/order';
 
 describe('TradingStore Risk Management Integration', () => {
   beforeEach(() => {
     // Reset to initial state
-    const state = useTradingStore.getState();
-    useTradingStore.setState({
+    const state = usePortfolioStore.getState();
+    usePortfolioStore.setState({
       ...state,
       portfolio: {
         positions: [],
@@ -38,7 +38,7 @@ describe('TradingStore Risk Management Integration', () => {
         // No stop loss provided
       };
 
-      const result = useTradingStore.getState().executeOrder(order);
+      const result = usePortfolioStore.getState().executeOrder(order);
 
       // Should succeed with auto stop loss
       expect(result.success).toBe(true);
@@ -56,7 +56,7 @@ describe('TradingStore Risk Management Integration', () => {
         stopLoss: 145,
       };
 
-      const result = useTradingStore.getState().executeOrder(order);
+      const result = usePortfolioStore.getState().executeOrder(order);
 
       // Should succeed but with reduced quantity
       expect(result.success).toBe(true);
@@ -75,7 +75,7 @@ describe('TradingStore Risk Management Integration', () => {
         takeProfit: 152, // 2 point reward (poor R:R)
       };
 
-      const result = useTradingStore.getState().executeOrder(order);
+      const result = usePortfolioStore.getState().executeOrder(order);
 
       // Should succeed (take profit will be adjusted)
       expect(result.success).toBe(true);
@@ -94,12 +94,12 @@ describe('TradingStore Risk Management Integration', () => {
         stopLoss: 95,
       };
 
-      useTradingStore.getState().executeOrder(initialOrder);
+      usePortfolioStore.getState().executeOrder(initialOrder);
 
       // Simulate major losses (set cash to 750k = 25% drawdown)
-      useTradingStore.setState({
+      usePortfolioStore.setState({
         portfolio: {
-          ...useTradingStore.getState().portfolio,
+          ...usePortfolioStore.getState().portfolio,
           cash: 750000,
           totalValue: 0,
         },
@@ -117,7 +117,7 @@ describe('TradingStore Risk Management Integration', () => {
         stopLoss: 145,
       };
 
-      const result = useTradingStore.getState().executeOrder(order);
+      const result = usePortfolioStore.getState().executeOrder(order);
 
       // Should be blocked due to drawdown
       expect(result.success).toBe(false);
@@ -137,13 +137,13 @@ describe('TradingStore Risk Management Integration', () => {
         stopLoss: 90, // 10 point risk = 50k total (5% risk - too high)
       };
 
-      const result = useTradingStore.getState().executeOrder(order);
+      const result = usePortfolioStore.getState().executeOrder(order);
 
       // Should succeed but with reduced quantity
       expect(result.success).toBe(true);
       
       // Check position was created with adjusted size
-      const position = useTradingStore.getState().portfolio.positions.find(p => p.symbol === 'AAPL');
+      const position = usePortfolioStore.getState().portfolio.positions.find(p => p.symbol === 'AAPL');
       expect(position).toBeDefined();
       expect(position!.quantity).toBeLessThan(originalQuantity);
     });
@@ -162,7 +162,7 @@ describe('TradingStore Risk Management Integration', () => {
           stopLoss: 95,
         };
 
-        const result = useTradingStore.getState().executeOrder(order);
+        const result = usePortfolioStore.getState().executeOrder(order);
         expect(result.success).toBe(true);
       }
 
@@ -178,7 +178,7 @@ describe('TradingStore Risk Management Integration', () => {
         stopLoss: 95,
       };
 
-      const result = useTradingStore.getState().executeOrder(order);
+      const result = usePortfolioStore.getState().executeOrder(order);
 
       // Should be blocked
       expect(result.success).toBe(false);
@@ -199,12 +199,12 @@ describe('TradingStore Risk Management Integration', () => {
         takeProfit: 110,
       };
 
-      const result = useTradingStore.getState().executeOrder(order);
+      const result = usePortfolioStore.getState().executeOrder(order);
 
       // Should succeed with Kelly-adjusted size
       expect(result.success).toBe(true);
       
-      const position = useTradingStore.getState().portfolio.positions.find(p => p.symbol === 'AAPL');
+      const position = usePortfolioStore.getState().portfolio.positions.find(p => p.symbol === 'AAPL');
       expect(position).toBeDefined();
       // Kelly should significantly reduce this
       expect(position!.quantity).toBeLessThan(originalQuantity);
@@ -233,15 +233,15 @@ describe('TradingStore Risk Management Integration', () => {
         stopLoss: 95,
       };
 
-      const result1 = useTradingStore.getState().executeOrder(order1);
-      const result2 = useTradingStore.getState().executeOrder(order2);
+      const result1 = usePortfolioStore.getState().executeOrder(order1);
+      const result2 = usePortfolioStore.getState().executeOrder(order2);
 
       // Both should succeed (with possible risk adjustments)
       expect(result1.success).toBe(true);
       expect(result2.success).toBe(true);
 
       // Verify positions were created
-      expect(useTradingStore.getState().portfolio.positions).toHaveLength(2);
+      expect(usePortfolioStore.getState().portfolio.positions).toHaveLength(2);
     });
 
     it('should maintain position averaging when adding to existing position', () => {
@@ -267,10 +267,10 @@ describe('TradingStore Risk Management Integration', () => {
         stopLoss: 155,
       };
 
-      useTradingStore.getState().executeOrder(order1);
-      useTradingStore.getState().executeOrder(order2);
+      usePortfolioStore.getState().executeOrder(order1);
+      usePortfolioStore.getState().executeOrder(order2);
 
-      const positions = useTradingStore.getState().portfolio.positions;
+      const positions = usePortfolioStore.getState().portfolio.positions;
       const applePosition = positions.find(p => p.symbol === 'AAPL');
 
       // Should still be one position

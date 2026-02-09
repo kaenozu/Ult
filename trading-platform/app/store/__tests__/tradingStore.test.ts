@@ -3,11 +3,12 @@ import { act } from '@testing-library/react';
 import { usePortfolioStore } from '../portfolioStore';
 import { AI_TRADING } from '@/app/lib/constants';
 
-// Mock RiskManagementService to prevent side effects
-jest.mock('@/app/lib/services/RiskManagementService', () => ({
-  getRiskManagementService: jest.fn(() => ({
-    validateOrder: jest.fn(() => ({ allowed: true, reasons: [] }))
-  }))
+// Mock RiskManagementService to prevent order modification
+jest.mock('../../lib/services/RiskManagementService', () => ({
+  getRiskManagementService: () => ({
+    validateOrder: (order: any) => ({ allowed: true, adjustedQuantity: order.quantity, reasons: [] }),
+    updateRiskMetrics: () => ({}),
+  })
 }));
 
 // Mock localStorage for Zustand persist
