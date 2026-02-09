@@ -20,7 +20,7 @@ export const useWatchlistStore = create<WatchlistState>()(
       selectedStock: null,
       addToWatchlist: (stock) => set((state) => {
         if (state.watchlist.some((s) => s.symbol === stock.symbol)) return state;
-        return { watchlist: [...state.watchlist, stock] };
+        return { watchlist: [stock, ...state.watchlist] };
       }),
       removeFromWatchlist: (symbol) => set((state) => ({
         watchlist: state.watchlist.filter((s) => s.symbol !== symbol),
@@ -69,7 +69,7 @@ export const useWatchlistStore = create<WatchlistState>()(
             };
           });
 
-        const updatedWatchlist = [...newWatchlist, ...newStocks];
+        const updatedWatchlist = [...newStocks, ...newWatchlist];
 
         // selectedStockも更新
         let newSelectedStock = state.selectedStock;

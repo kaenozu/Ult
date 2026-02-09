@@ -83,7 +83,7 @@ function HeatmapBlock({ stock, className, onClick }: HeatmapBlockProps) {
 
 function HeatmapContent() {
   const router = useRouter();
-  const { batchUpdateStockData } = useWatchlistStore();
+  const { batchUpdateStockData, addToWatchlist } = useWatchlistStore();
   const { setSelectedStock } = useUIStore();
   const [displayStocks, setDisplayStocks] = useState<Stock[]>(ALL_STOCKS);
   const [selectedSector, setSelectedSector] = useState('全て');
@@ -128,6 +128,7 @@ function HeatmapContent() {
   }, [batchUpdateStockData]);
 
   const handleStockClick = (stock: Stock) => {
+    addToWatchlist(stock);
     setSelectedStock(stock);
     router.push('/');
   };
