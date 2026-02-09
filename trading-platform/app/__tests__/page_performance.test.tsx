@@ -1,7 +1,9 @@
 /** @jest-environment jsdom */
 import { render, act } from '@testing-library/react';
 import Workstation from '../page';
-import { useTradingStore } from '../store/tradingStore';
+import { useUIStore } from '../store/uiStore';
+import { useWatchlistStore } from '../store/watchlistStore';
+import { usePortfolioStore } from '../store/portfolioStore';
 import { Header } from '../components/Header';
 
 // Mock child components
@@ -24,10 +26,42 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 
+// Mock translations
+jest.mock('../i18n/provider', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+// Mock useStockData to prevent data fetching issues
+jest.mock('../hooks/useStockData', () => ({
+  useStockData: () => ({
+    selectedStock: null,
+    chartData: [],
+    indexData: [],
+    chartSignal: null,
+    loading: false,
+    error: null,
+    handleStockSelect: jest.fn(),
+    interval: 'daily',
+    setInterval: jest.fn(),
+    fallbackApplied: false,
+    dataDelayMinutes: 0
+  })
+}));
+
+// Mock useSymbolAccuracy
+jest.mock('../hooks/useSymbolAccuracy', () => ({
+  useSymbolAccuracy: () => ({
+    accuracy: null,
+    loading: false
+  })
+}));
+
 describe('Workstation Performance', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    useTradingStore.setState({ theme: 'dark', watchlist: [], portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 } });
+    useUIStore.setState({ theme: 'dark' });
+    useWatchlistStore.setState({ watchlist: [] });
+    usePortfolioStore.setState({ portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 } });
   });
 
   it('should not re-render when unrelated store state changes', () => {
@@ -38,7 +72,7 @@ describe('Workstation Performance', () => {
 
     // Trigger unrelated state change (theme toggle)
     act(() => {
-      useTradingStore.getState().toggleTheme();
+      useUIStore.getState().toggleTheme();
     });
 
     // If optimized, should still be 1. If not, it will be 2.
