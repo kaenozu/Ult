@@ -446,12 +446,25 @@ class WinningTradingSystem {
           entryPrice: 0,
           stopLoss: 0,
           takeProfit: 0,
+          positionSize: 0,
+          riskRewardRatio: 0,
+          reasoning: 'Insufficient data for analysis',
+          indicators: {
+            rsi: 0,
+            macd: 0,
+            sma20: 0,
+            sma50: 0,
+            bbUpper: 0,
+            bbLower: 0,
+            atr: 0,
+            adx: 0
+          },
           metadata: {
             trendStrength: 0,
             volatility: 0,
-            regime: 'UNKNOWN'
+            volumeConfirmation: false
           }
-        } as unknown as StrategyResult);
+        });
       } else {
         alignedResults.push(strategyResults[i - 50]);
       }
