@@ -1,4 +1,3 @@
-
 import { act } from '@testing-library/react';
 import { usePortfolioStore } from '../portfolioStore';
 import { AI_TRADING } from '@/app/lib/constants';
@@ -33,7 +32,7 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-describe('PortfolioStore', () => {
+describe('TradingStore (via PortfolioStore)', () => {
   beforeEach(() => {
     // Reset store state
     const { portfolio } = usePortfolioStore.getState();

@@ -883,7 +883,6 @@ export class ParameterOptimizer {
       convergenceHistory: this.convergenceHistory
     };
   }
-
 }
 
 /**

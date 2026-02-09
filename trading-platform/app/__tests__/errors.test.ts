@@ -103,8 +103,7 @@ describe('Error Handling', () => {
     it('should return generic message for unknown error', () => {
       // getUserErrorMessageはuserMessageを優先し、次にUSER_ERROR_MESSAGESをチェックし、最後にデフォルトメッセージを返す
       const result = getUserErrorMessage('unknown');
-      expect(result).toBeDefined();
-      expect(typeof result).toBe('string');
+      expect(result).toBe('予期しないエラーが発生しました');
     });
   });
 

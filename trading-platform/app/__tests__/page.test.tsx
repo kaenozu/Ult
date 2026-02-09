@@ -30,6 +30,17 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 
+// Mock next-intl
+jest.mock('@/app/i18n/provider', () => ({
+  useTranslations: () => (key: string) => {
+    if (key === 'page.noStockSelected') return '銘柄が未選択です';
+    if (key === 'page.noStockSelectedDescription') return 'ウォッチリストから銘柄を選択するか、検索してください。';
+    if (key === 'page.searchStock') return '銘柄を検索';
+    if (key === 'page.dataFetchError') return 'データ取得エラー';
+    return key;
+  },
+}));
+
 describe('Workstation Page - Initial State', () => {
   const defaultMockStockData = {
     loading: false,
