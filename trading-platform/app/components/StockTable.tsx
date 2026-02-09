@@ -235,7 +235,7 @@ export const StockTable = memo(({
         const symbols = symbolKey.split(',').filter(Boolean);
         if (symbols.length === 0) return;
 
-        const quotes = await marketClient.fetchQuotes(symbols, undefined, controller.signal);
+        const quotes = await marketClient.fetchQuotes(symbols, controller.signal);
 
         if (mounted && quotes.length > 0) {
           const updates = quotes

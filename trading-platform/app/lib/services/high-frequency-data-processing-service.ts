@@ -238,7 +238,7 @@ class HighFrequencyDataProcessingService {
    */
   private createOHLCVBar(tickData: TickData[]): OHLCV {
     if (tickData.length === 0) {
-      throw new DataError('Cannot create OHLCV bar from empty tick data', undefined, 'tick');
+      throw new DataError('Cannot create OHLCV bar from empty tick data', { context: { type: 'tick' } });
     }
 
     const startTimestamp = tickData[0].timestamp;

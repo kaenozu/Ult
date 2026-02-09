@@ -343,6 +343,15 @@ export class TailRiskHedging {
   }
 
   /**
+   * VIXイールドカーブの状態を説明（簡略化版）
+   */
+  private getYieldCurveDescription(): string {
+    // 実際にはVIX先物の期間構造データが必要
+    // ここでは一般的なコンタンゴ状態を想定
+    return 'Contango (Standard condition, roll costs apply)';
+  }
+
+  /**
    * リターンデータを更新
    */
   updateReturns(returns: number[]): void {

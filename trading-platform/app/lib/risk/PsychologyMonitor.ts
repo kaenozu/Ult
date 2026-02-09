@@ -9,7 +9,7 @@ import { Order, Position } from '@/app/types';
 import {
   TradingBehaviorMetrics,
   PsychologyAlert,
-  TradingSession,
+  RiskTradingSession,
   BiasAnalysis,
   ConsecutiveLossInfo
 } from '@/app/types/risk';
@@ -17,8 +17,8 @@ import { logger } from '@/app/core/logger';
 
 export class PsychologyMonitor {
   private tradingHistory: Order[] = [];
-  private sessions: TradingSession[] = [];
-  private currentSession: TradingSession | null = null;
+  private sessions: RiskTradingSession[] = [];
+  private currentSession: RiskTradingSession | null = null;
   private alerts: PsychologyAlert[] = [];
 
   /**
@@ -36,10 +36,6 @@ export class PsychologyMonitor {
     const wins = completedTrades.filter(trade => {
       // 簡易的な利益判定（実際にはentry/exit価格を比較する必要がある）
       return trade.side === 'SELL'; // 仮の実装
-    });
-
-    const losses = completedTrades.filter(trade => {
-      return trade.side === 'BUY' && trade.status === 'FILLED';
     });
 
     const winRate = completedTrades.length > 0
@@ -349,16 +345,12 @@ export class PsychologyMonitor {
       maxSeverity = this.escalateSeverity(maxSeverity, 'high');
     }
 
-    const recommendation = this.generateBiasRecommendation(detectedBiases);
+    const recommendations = this.generateBiasRecommendations(detectedBiases);
 
     return {
-      hasFOMO: fomo,
-      hasFear: fear,
-      hasConfirmationBias: confirmationBias,
-      hasLossAversion: lossAversion,
       detectedBiases,
       severity: maxSeverity,
-      recommendation
+      recommendations
     };
   }
 
@@ -366,9 +358,10 @@ export class PsychologyMonitor {
    * 連続損失情報を取得
    */
   detectConsecutiveLosses(history: Order[]): ConsecutiveLossInfo {
-    let currentStreak = 0;
-    let maxStreak = 0;
-    let totalLosses = 0;
+    let count = 0;
+    let totalLoss = 0;
+    let startedAt = new Date();
+    let lastLossAt = new Date();
 
     // 損失を判定するヘルパー
     const isLoss = (order: Order) => {
@@ -379,37 +372,20 @@ export class PsychologyMonitor {
     // 最新から遡って連続損失をカウント
     for (let i = history.length - 1; i >= 0; i--) {
       if (isLoss(history[i])) {
-        if (i === history.length - 1 || isLoss(history[i + 1])) {
-          currentStreak++;
-        }
-        totalLosses++;
-      } else if (currentStreak > 0) {
+        if (count === 0) lastLossAt = new Date(history[i].timestamp || Date.now());
+        count++;
+        totalLoss += 0; // TODO: 実際の損益
+        startedAt = new Date(history[i].timestamp || Date.now());
+      } else if (count > 0) {
         break;
       }
     }
 
-    // 全履歴から最大連続損失を計算
-    let tempStreak = 0;
-    for (const order of history) {
-      if (isLoss(order)) {
-        tempStreak++;
-        maxStreak = Math.max(maxStreak, tempStreak);
-      } else {
-        tempStreak = 0;
-      }
-    }
-
-    const shouldCoolOff = currentStreak >= 3;
-    const coolOffReason = shouldCoolOff
-      ? `連続損失${currentStreak}回により、クーリングオフを推奨します。`
-      : undefined;
-
     return {
-      currentStreak,
-      maxStreak: Math.max(maxStreak, currentStreak),
-      totalLosses,
-      shouldCoolOff,
-      coolOffReason
+      count,
+      totalLoss,
+      startedAt,
+      lastLossAt
     };
   }
 
@@ -439,9 +415,6 @@ export class PsychologyMonitor {
   private detectFearBias(trade: Order): boolean {
     // 売却取引で、平均保有時間より大幅に短い場合
     if (trade.side === 'SELL') {
-      const avgHoldTime = this.calculateAverageHoldTime();
-      // TODO: 実際の保有時間と比較
-      // 仮実装: 連続損失後の売りを恐怖と判定
       const metrics = this.analyzeTradingBehavior();
       return metrics.consecutiveLosses >= 2;
     }
@@ -483,21 +456,17 @@ export class PsychologyMonitor {
   /**
    * バイアス推奨メッセージを生成
    */
-  private generateBiasRecommendation(biases: string[]): string {
+  private generateBiasRecommendations(biases: string[]): string[] {
     if (biases.length === 0) {
-      return '心理的バイアスは検出されませんでした。良好な取引判断を継続してください。';
+      return ['心理的バイアスは検出されませんでした。良好な取引判断を継続してください。'];
     }
 
-    const recommendations = [
+    return [
       `以下のバイアスが検出されました: ${biases.join(', ')}`,
-      '',
-      '推奨アクション:',
-      '- 取引計画を見直し、客観的な判断を行ってください',
-      '- 必要に応じてクーリングオフ期間を設けてください',
-      '- 感情日記をつけて、バイアスのパターンを認識してください'
+      '取引計画を見直し、客観的な判断を行ってください',
+      '必要に応じてクーリングオフ期間を設けてください',
+      '感情日記をつけて、バイアスのパターンを認識してください'
     ];
-
-    return recommendations.join('\n');
   }
 
   /**
