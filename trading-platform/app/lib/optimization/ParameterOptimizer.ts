@@ -266,74 +266,6 @@ export class ParameterOptimizer {
   // Helper Methods
   // ============================================================================
 
-    // Simple implementation for 1-2 parameters
-    if (paramCount === 1) {
-      const param = this.config.parameters[0];
-      if (param.type === 'continuous' && param.min !== undefined && param.max !== undefined) {
-        const steps = Math.min(10, this.config.maxIterations);
-        const stepSize = (param.max - param.min) / steps;
-        for (let i = 0; i <= steps; i++) {
-          points.push({ [param.name]: param.min + i * stepSize });
-        }
-      } else if (param.type === 'discrete' && param.min !== undefined && param.max !== undefined) {
-        for (let v = param.min; v <= param.max; v++) {
-          points.push({ [param.name]: v });
-        }
-      } else if (param.type === 'categorical' && param.values) {
-        for (const v of param.values) {
-          points.push({ [param.name]: v });
-        }
-      }
-    } else if (paramCount === 2) {
-      // Cartesian product for 2 parameters
-      const p1 = this.config.parameters[0];
-      const p2 = this.config.parameters[1];
-      const values1 = this.getParameterValues(p1);
-      const values2 = this.getParameterValues(p2);
-      
-      for (const v1 of values1) {
-        for (const v2 of values2) {
-          points.push({ [p1.name]: v1, [p2.name]: v2 });
-        }
-      }
-    }
-
-    return points;
-  }
-
-  /**
-   * Get array of values for a parameter
-   */
-  private getParameterValues(param: OptimizationParameter): (number | string)[] {
-    if (param.type === 'continuous' && param.min !== undefined && param.max !== undefined) {
-      const steps = Math.min(5, this.config.maxIterations);
-      const stepSize = (param.max - param.min) / steps;
-      const values: number[] = [];
-      for (let i = 0; i <= steps; i++) {
-        values.push(param.min + i * stepSize);
-      }
-      return values;
-    } else if (param.type === 'discrete' && param.min !== undefined && param.max !== undefined) {
-      const values: number[] = [];
-      for (let v = param.min; v <= param.max; v++) {
-        values.push(v);
-      }
-      return values;
-    } else if (param.type === 'categorical' && param.values) {
-      return param.values;
-    }
-    return [];
-  }
-
-  // Stub methods to satisfy the compiler
-  private sampleRandomParameters(): Record<string, number | string> {
-    return {};
-  }
-
-  private async selectNextBayesianPoint(config: BayesianOptimizationConfig): Promise<Record<string, number | string>> {
-    return {};
-  }
-
   private async evaluateAndStore(
     objectiveFunction: ObjectiveFunction,
     parameters: Record<string, number | string>,
@@ -885,64 +817,6 @@ export class ParameterOptimizer {
       timeElapsed: Date.now() - this.startTime,
       convergenceHistory: this.convergenceHistory
     };
-  }
-
-  private shouldStop(): boolean {
-    return false;
-  }
-
-  private initializePopulation(size: number, objectiveFunction: ObjectiveFunction): Promise<Record<string, number | string>[]> {
-    return Promise.resolve([]);
-  }
-
-  private selection(population: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
-    return [];
-  }
-
-  private crossover(selected: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
-    return [];
-  }
-
-  private mutate(offspring: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
-    return [];
-  }
-
-  private evaluatePopulation(population: Record<string, number | string>[], objectiveFunction: ObjectiveFunction): Promise<number[]> {
-    return Promise.resolve([]);
-  }
-
-  private nextGeneration(current: Record<string, number | string>[], offspring: number[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
-    // Note: evaluatePopulation returns number[] (scores), but logic might need structured results.
-    // For stub purposes, returning Record[] is fine.
-    return [];
-  }
-
-  private reportProgress(iteration: number): void {}
-
-  private initializeSwarm(size: number): Particle[] {
-    return [];
-  }
-
-  private performWalkForwardAnalysis(
-    objectiveFunction: ObjectiveFunction,
-    bestParameters: Record<string, number | string>
-  ): Promise<WalkForwardResult[]> {
-    return Promise.resolve([]);
-  }
-
-  private calculateOverfittingScore(results: WalkForwardResult[]): number {
-    return 0;
-  }
-
-  private performCrossValidation(
-    objectiveFunction: ObjectiveFunction,
-    bestParameters: Record<string, number | string>
-  ): Promise<CrossValidationResult[]> {
-    return Promise.resolve([]);
-  }
-
-  private calculateStabilityScore(results: CrossValidationResult[]): number {
-    return 0;
   }
 }
 

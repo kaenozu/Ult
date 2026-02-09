@@ -5,8 +5,7 @@ import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
 const mockTradingStore = jest.fn();
-// @ts-ignore
-mockTradingStore.setState = jest.fn();
+(mockTradingStore as unknown as { setState: jest.Mock }).setState = jest.fn();
 
 jest.mock('../store/tradingStore', () => ({
   useTradingStore: mockTradingStore,
