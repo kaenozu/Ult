@@ -299,7 +299,7 @@ export class EnhancedPsychologyMonitor {
    */
   startSession(): void {
     this.currentSession = {
-      startTime: new Date(),
+      startTime: new Date().toISOString(),
       tradesCount: 0,
       profitLoss: 0,
       emotionalState: 'calm',
@@ -312,7 +312,7 @@ export class EnhancedPsychologyMonitor {
    */
   endSession(): void {
     if (this.currentSession) {
-      this.currentSession.endTime = new Date();
+      this.currentSession.endTime = new Date().toISOString();
       this.sessions.push(this.currentSession);
       this.currentSession = null;
     }

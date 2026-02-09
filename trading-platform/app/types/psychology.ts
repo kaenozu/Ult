@@ -108,15 +108,22 @@ export interface DisciplineRules {
  */
 export interface TradingSession {
   id: string;
-  start_time: string;
-  end_time?: string;
-  trades_count: number;
-  win_count: number;
-  loss_count: number;
-  total_profit: number;
+  startTime: string;
+  endTime?: string;
+  tradesCount: number;
+  winCount: number;
+  lossCount: number;
+  totalProfit: number;
   emotions: EmotionScore[];
   violations: DisciplineViolation[];
   notes: string;
+  // Backward compatibility aliases
+  /** @deprecated Use startTime */
+  start_time?: string;
+  /** @deprecated Use endTime */
+  end_time?: string;
+  /** @deprecated Use tradesCount */
+  trades_count?: number;
 }
 
 // ============================================================================
