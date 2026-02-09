@@ -16,6 +16,8 @@
 export interface SharedOHLCV {
   symbol?: string;
   date: string;
+  /** @deprecated Use date instead */
+  timestamp?: string | number;
   open: number;
   high: number;
   low: number;

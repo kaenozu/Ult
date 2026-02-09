@@ -180,6 +180,13 @@ export class ModelPipeline {
   }
 
   /**
+   * Type guard for training logs
+   */
+  private isTrainingLogs(logs: any): logs is { loss: number; val_loss?: number; valLoss?: number } {
+    return logs && typeof logs.loss === 'number';
+  }
+
+  /**
    * Create and train a new LSTM model
    */
   async trainLSTMModel(
@@ -215,11 +222,13 @@ export class ModelPipeline {
       validationData: [xVal, yVal],
       callbacks: {
         onEpochEnd: (epoch, logs) => {
-          const loss = logs?.loss ?? 0;
-          const valLoss = logs?.val_loss ?? logs?.valLoss ?? 0;
-          console.log(
-            `Epoch ${epoch + 1}: loss = ${Number(loss).toFixed(4)}, val_loss = ${Number(valLoss).toFixed(4)}`
-          );
+          if (this.isTrainingLogs(logs)) {
+            const loss = logs.loss;
+            const valLoss = logs.val_loss ?? logs.valLoss ?? 0;
+            console.log(
+              `Epoch ${epoch + 1}: loss = ${loss.toFixed(4)}, val_loss = ${valLoss.toFixed(4)}`
+            );
+          }
         },
       },
       shuffle: true,
@@ -316,11 +325,13 @@ export class ModelPipeline {
       validationData: [xVal, yVal],
       callbacks: {
         onEpochEnd: (epoch, logs) => {
-          const loss = logs?.loss ?? 0;
-          const valLoss = logs?.val_loss ?? logs?.valLoss ?? 0;
-          console.log(
-            `Epoch ${epoch + 1}: loss = ${Number(loss).toFixed(4)}, val_loss = ${Number(valLoss).toFixed(4)}`
-          );
+          if (this.isTrainingLogs(logs)) {
+            const loss = logs.loss;
+            const valLoss = logs.val_loss ?? logs.valLoss ?? 0;
+            console.log(
+              `Epoch ${epoch + 1}: loss = ${loss.toFixed(4)}, val_loss = ${valLoss.toFixed(4)}`
+            );
+          }
         },
       },
       shuffle: true,

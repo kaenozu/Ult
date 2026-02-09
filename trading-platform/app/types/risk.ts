@@ -140,8 +140,8 @@ export interface PsychologyAlert {
 }
 
 export interface RiskTradingSession {
-  startTime: Date;
-  endTime?: Date;
+  startTime: string;
+  endTime?: string;
   tradesCount: number;
   profitLoss: number;
   emotionalState: 'calm' | 'excited' | 'fearful' | 'angry' | 'tired';

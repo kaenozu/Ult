@@ -177,12 +177,19 @@ export class PsychologyMonitor {
    */
   startSession(): void {
     this.currentSession = {
-      startTime: new Date(),
+      id: `session_${Date.now()}`,
+      startTime: new Date().toISOString(),
       tradesCount: 0,
-      profitLoss: 0,
+      winCount: 0,
+      lossCount: 0,
+      totalProfit: 0,
+      emotions: [],
+      violations: [],
+      notes: '',
       emotionalState: 'calm',
-      decisionQuality: 100
-    };
+      decisionQuality: 100,
+      profitLoss: 0
+    } as any;
   }
 
   /**
@@ -190,7 +197,7 @@ export class PsychologyMonitor {
    */
   endSession(): void {
     if (this.currentSession) {
-      this.currentSession.endTime = new Date();
+      this.currentSession.endTime = new Date().toISOString();
       this.sessions.push(this.currentSession);
       this.currentSession = null;
     }
@@ -604,7 +611,7 @@ export class PsychologyMonitor {
   private isTraderFatigued(): boolean {
     if (!this.currentSession) return false;
 
-    const sessionDuration = Date.now() - this.currentSession.startTime.getTime();
+    const sessionDuration = Date.now() - new Date(this.currentSession.startTime).getTime();
     const hoursTrading = sessionDuration / (1000 * 60 * 60);
 
     // 4時間以上の連続取引で疲労と判定
