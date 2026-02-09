@@ -31,7 +31,7 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-describe('PortfolioStore', () => {
+describe('TradingStore (via PortfolioStore)', () => {
   beforeEach(() => {
     // Reset store state
     const { portfolio } = usePortfolioStore.getState();

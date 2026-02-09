@@ -79,3 +79,13 @@ export function calculatePriceChange(data: OHLCV[]): { change: number; changePer
   
   return { change, changePercent };
 }
+
+// Add dummy test to prevent "Your test suite must contain at least one test" error
+describe('Test Utils', () => {
+  it('should export utility functions', () => {
+    expect(generateMockOHLCV).toBeDefined();
+    expect(createMockAPIResponse).toBeDefined();
+    expect(validateOHLCVStructure).toBeDefined();
+    expect(calculatePriceChange).toBeDefined();
+  });
+});

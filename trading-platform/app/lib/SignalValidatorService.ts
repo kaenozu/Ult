@@ -27,7 +27,18 @@ export class SignalValidatorService {
     let totalLoss = 0;
     
     for (const signal of signals) {
-      const signalDate = new Date(signal.predictionDate || 0).toISOString().split('T')[0];
+      let signalDate: string;
+      try {
+        const d = new Date(signal.predictionDate || 0);
+        if (isNaN(d.getTime())) {
+          console.warn(`Invalid predictionDate: ${signal.predictionDate}`);
+          continue;
+        }
+        signalDate = d.toISOString().split('T')[0];
+      } catch (e) {
+        continue;
+      }
+
       const signalIdx = history.findIndex(h => h.date === signalDate);
 
       if (signalIdx !== -1 && signalIdx + 1 < history.length) {

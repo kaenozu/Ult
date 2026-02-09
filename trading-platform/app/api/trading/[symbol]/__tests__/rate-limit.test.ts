@@ -47,8 +47,8 @@ describe('Trading Symbol API Rate Limiting', () => {
   });
 
   it('should block requests over rate limit', async () => {
-    // Make requests up to the limit (default is 60 per minute)
-    for (let i = 0; i < 60; i++) {
+      // Make requests up to the limit (default is 120 per minute)
+      for (let i = 0; i < 120; i++) {
       const req = createRequest('AAPL');
       const context = createContext('AAPL');
       await GET(req, context);

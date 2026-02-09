@@ -51,7 +51,7 @@ describe('Workstation Performance', () => {
     jest.clearAllMocks();
     useUIStore.setState({ theme: 'dark' });
     useWatchlistStore.setState({ watchlist: [] });
-    usePortfolioStore.setState({ portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 } });
+    usePortfolioStore.setState({ portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 }, aiStatus: 'active' });
   });
 
   it('should not re-render when unrelated store state changes', () => {

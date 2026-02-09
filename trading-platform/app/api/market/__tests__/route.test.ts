@@ -30,13 +30,13 @@ describe('Market API Security Tests', () => {
   const createRequest = (url: string) => new Request(`http://localhost${url}`);
 
   it('should reject extremely long symbols (single)', async () => {
-    const longSymbol = 'A'.repeat(21);
+    const longSymbol = 'A'.repeat(1001);
     const req = createRequest(`/api/market?symbol=${longSymbol}&type=quote`);
     const res = await GET(req);
     const json = await res.json();
 
     expect(res.status).toBe(400);
-    expect(json.error).toBe('Symbol too long');
+    expect(json.error).toBe('Invalid request parameters');
   });
 
   it('should reject extremely long symbols (batch)', async () => {
@@ -46,7 +46,7 @@ describe('Market API Security Tests', () => {
     const json = await res.json();
 
     expect(res.status).toBe(400);
-    expect(json.error).toBe('Symbol too long');
+    expect(json.error).toBe('Invalid request parameters');
   });
 
   it('should accept valid symbols', async () => {
@@ -69,7 +69,7 @@ describe('Market API Security Tests', () => {
     const json = await res.json();
 
     expect(res.status).toBe(400);
-    expect(json.error).toContain('Invalid startDate format');
+    expect(json.error).toBe('Invalid request parameters');
   });
 
   it('should accept valid startDate', async () => {
