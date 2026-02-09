@@ -16,7 +16,41 @@ export type StrategyType =
   | 'breakout' 
   | 'stat_arb' 
   | 'market_making' 
-  | 'ml_alpha';
+  | 'ml_alpha'
+  | 'TREND_FOLLOWING'
+  | 'MEAN_REVERSION'
+  | 'BREAKOUT'
+  | 'COMPOSITE'
+  | 'ADAPTIVE';
+
+export interface StrategyResult {
+  signal: 'BUY' | 'SELL' | 'HOLD';
+  confidence: number; // 0-100
+  entryPrice: number;
+  stopLoss: number;
+  takeProfit: number;
+  positionSize: number; // Recommended position size (%)
+  riskRewardRatio: number;
+  strategy: StrategyType;
+  reasoning: string;
+  indicators: {
+    rsi: number;
+    macd: number;
+    sma20: number;
+    sma50: number;
+    bbUpper: number;
+    bbLower: number;
+    atr: number;
+    adx: number;
+  };
+  metadata: {
+    trendStrength: number;
+    volatility: number;
+    volumeConfirmation: boolean;
+    supportLevel?: number;
+    resistanceLevel?: number;
+  };
+}
 
 export interface StrategyConfig {
   name: string;
