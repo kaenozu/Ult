@@ -113,14 +113,16 @@ export const useChartData = (
     });
   }, [optimizedData, indexData, actualData, indexMap]);
 
-   return {
-     actualData,           // 実際の価格データのみ
-     optimizedData,        // 最適化済みデータ（Forecast用）
-     forecastExtension,    // 予測用の拡張データ
-     normalizedIndexData,
-     extendedData: {
-       labels: forecastExtension.extendedLabels,  // 予測期間を含む拡張ラベルを使用
-       prices: [...actualData.prices, ...Array(Math.max(0, forecastExtension.extendedLabels.length - actualData.prices.length)).fill(null)]  // 予測部分はnullで埋めて別途レイヤーで描画
-     }
-   };
+  const extendedData = useMemo(() => ({
+    labels: forecastExtension.extendedLabels,  // 予測期間を含む拡張ラベルを使用
+    prices: [...actualData.prices, ...Array(Math.max(0, forecastExtension.extendedLabels.length - actualData.prices.length)).fill(null)]  // 予測部分はnullで埋めて別途レイヤーで描画
+  }), [forecastExtension.extendedLabels, actualData.prices]);
+
+  return useMemo(() => ({
+    actualData,           // 実際の価格データのみ
+    optimizedData,        // 最適化済みデータ（Forecast用）
+    forecastExtension,    // 予測用の拡張データ
+    normalizedIndexData,
+    extendedData
+  }), [actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData]);
 };

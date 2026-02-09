@@ -26,6 +26,36 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 
+// Mock translations
+jest.mock('../i18n/provider', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+// Mock useStockData to prevent data fetching issues
+jest.mock('../hooks/useStockData', () => ({
+  useStockData: () => ({
+    selectedStock: null,
+    chartData: [],
+    indexData: [],
+    chartSignal: null,
+    loading: false,
+    error: null,
+    handleStockSelect: jest.fn(),
+    interval: 'daily',
+    setInterval: jest.fn(),
+    fallbackApplied: false,
+    dataDelayMinutes: 0
+  })
+}));
+
+// Mock useSymbolAccuracy
+jest.mock('../hooks/useSymbolAccuracy', () => ({
+  useSymbolAccuracy: () => ({
+    accuracy: null,
+    loading: false
+  })
+}));
+
 describe('Workstation Performance', () => {
   beforeEach(() => {
     jest.clearAllMocks();
