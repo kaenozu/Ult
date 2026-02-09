@@ -36,13 +36,15 @@ export function memoize<T extends (...args: number[]) => number>(
 /**
  * 配列用メモ化関数
  */
-export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: number[]) => number>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: any[]) => number>(
   fn: T,
   maxCacheSize: number = 100
 ): T {
   const cache = new Map<string, number>();
 
-  return ((arr: number[] | Float64Array, ...args: number[]): number => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((arr: number[] | Float64Array, ...args: any[]): number => {
     // 配列の内容をハッシュ化（最初の10要素と長さを使用）
     const sample = arr.slice(0, 10).join(',');
     const key = `${sample}|${arr.length}|${args.join(',')}`;
@@ -56,7 +58,9 @@ export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: n
     // キャッシュサイズ制限
     if (cache.size >= maxCacheSize) {
       const firstKey = cache.keys().next().value;
-      cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        cache.delete(firstKey);
+      }
     }
 
     cache.set(key, result);

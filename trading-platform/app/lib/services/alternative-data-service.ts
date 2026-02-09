@@ -4,8 +4,14 @@
  * このモジュールは、経済指標、センチメント分析、セクター性能などの代替データを統合する機能を提供します。
  */
 
-import { MarketContext } from './advanced-prediction-service';
 import { withErrorHandling, DataError, logError } from '@/app/lib/errors';
+
+export interface MarketContext {
+  economicIndicators: number[];
+  sentimentScore: number;
+  sectorPerformance: number[];
+  marketVolatility: number;
+}
 
 export interface EconomicIndicator {
   date: string;

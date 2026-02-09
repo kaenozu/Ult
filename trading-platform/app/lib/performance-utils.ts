@@ -2,6 +2,9 @@ import { logger } from '@/app/core/logger';
 import { PerformanceMonitor } from './performance/monitor';
 import type { PerformanceSeverity } from './performance/monitor';
 
+export { PerformanceMonitor };
+export type { PerformanceSeverity };
+
 export interface MeasureOptions {
   threshold?: number;
   warningThreshold?: number;
@@ -35,13 +38,15 @@ export interface MeasureOptions {
  */
 type DecoratorTarget = unknown;
 type AsyncMethod = (...args: unknown[]) => Promise<unknown>;
-type SyncMethod = (...args: unknown[]) => unknown;
+type SyncMethod<T = unknown> = (...args: unknown[]) => T;
 
-export function measurePerformance(name: string, arg1: SyncMethod | MeasureOptions | undefined, arg2?: MeasureOptions) {
+export function measurePerformance<T>(name: string, fn: () => T, options?: MeasureOptions): T;
+export function measurePerformance(name: string, options?: MeasureOptions): MethodDecorator;
+export function measurePerformance(name: string, arg1: SyncMethod<any> | MeasureOptions | undefined, arg2?: MeasureOptions): any {
   // Check if this is a decorator use case (target, propertyKey, descriptor) or functional use case
   if (typeof arg1 === 'function') {
     // Functional use case: measurePerformance(name, fn, options)
-    const fn = arg1 as SyncMethod;
+    const fn = arg1 as SyncMethod<any>;
     const options: MeasureOptions = arg2 || {};
     const { threshold = 100 } = options;
     const start = performance.now();

@@ -46,25 +46,26 @@ async function runExample(): Promise<void> {
 
   // Get metrics
 
-  const syncStats = PerformanceMonitor.getStats(example-sync-operation);
-  const asyncStats = PerformanceMonitor.getStats(example-async-operation);
+  const syncStats = PerformanceMonitor.getStats('example-sync-operation');
+  const asyncStats = PerformanceMonitor.getStats('example-async-operation');
 
-  console.table([
-    {
-      operation: 'example-sync-operation',
-      avg: `${syncStats.avg.toFixed(2)}ms`,
-      count: syncStats.count,
-      warnings: syncStats.warningCount,
-      errors: syncStats.errorCount,
-    },
-    {
-      operation: 'example-async-operation',
-      avg: `${asyncStats.avg.toFixed(2)}ms`,
-      count: asyncStats.count,
-      warnings: asyncStats.warningCount,
-      errors: asyncStats.errorCount,
-    }
-  ]);
+  if (syncStats && asyncStats) {
+    console.table([
+      {
+        operation: 'example-sync-operation',
+        avg: `${syncStats.avg.toFixed(2)}ms`,
+        count: syncStats.count,
+      },
+      {
+        operation: 'example-async-operation',
+        avg: `${asyncStats.avg.toFixed(2)}ms`,
+        count: asyncStats.count,
+      }
+    ]);
+  }
+
+  /*
+  // Summary and issue checking not yet implemented in PerformanceMonitor
   // Get summary
   const summary = PerformanceMonitor.getSummary();
 
@@ -80,6 +81,7 @@ async function runExample(): Promise<void> {
 
   if (PerformanceMonitor.hasErrors()) {
   }
+  */
 }
 
 // Run if this is executed directly

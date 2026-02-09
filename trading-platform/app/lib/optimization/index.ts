@@ -8,6 +8,7 @@ export { ParameterOptimizer } from './ParameterOptimizer';
 export type {
   OptimizationMethod,
   OptimizationParameter,
+  ParameterSpace,
   OptimizationConfig,
   OptimizationResult,
   WalkForwardResult,

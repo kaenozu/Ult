@@ -9,7 +9,7 @@ import { Order, Position } from '@/app/types';
 import {
   TradingBehaviorMetrics,
   PsychologyAlert,
-  TradingSession,
+  RiskTradingSession,
   BiasAnalysis,
   ConsecutiveLossInfo
 } from '@/app/types/risk';
@@ -17,8 +17,8 @@ import { logger } from '@/app/core/logger';
 
 export class PsychologyMonitor {
   private tradingHistory: Order[] = [];
-  private sessions: TradingSession[] = [];
-  private currentSession: TradingSession | null = null;
+  private sessions: RiskTradingSession[] = [];
+  private currentSession: RiskTradingSession | null = null;
   private alerts: PsychologyAlert[] = [];
 
   /**

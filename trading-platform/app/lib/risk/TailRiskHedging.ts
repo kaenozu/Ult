@@ -227,6 +227,14 @@ export class TailRiskHedging {
   }
 
   /**
+   * VIXイールドカーブの説明を取得
+   */
+  private getYieldCurveDescription(): string {
+    // 簡易実装: 通常は外部データが必要だが、ここでは一般的な状態を返す
+    return 'Typical Contango (Front-month lower than back-month)';
+  }
+
+  /**
    * インバースETFヘッジを推奨
    */
   private recommendInverseETFHedge(metrics: TailRiskMetrics): HedgeRecommendation {

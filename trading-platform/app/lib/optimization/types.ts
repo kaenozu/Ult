@@ -23,6 +23,8 @@ export interface OptimizationParameter {
   default?: number | string;
 }
 
+export type ParameterSpace = OptimizationParameter[];
+
 export interface OptimizationConfig {
   method: OptimizationMethod;
   parameters: OptimizationParameter[];

@@ -224,8 +224,8 @@ abstract class BaseStrategy implements Strategy {
       informationRatio: sharpeRatio,
       trackingError: volatility,
       period: {
-        start: data[0].timestamp,
-        end: data[data.length - 1].timestamp,
+        start: data[0].date,
+        end: data[data.length - 1].date,
         days
       }
     };
@@ -435,7 +435,7 @@ export class MomentumStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -556,7 +556,7 @@ export class MeanReversionStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -587,7 +587,7 @@ export class BreakoutStrategy extends BaseStrategy {
       description: 'Breakout strategy using price action and volume',
       parameters: {
         breakoutPeriod: 20,
-        volumeConfirmation: true,
+        volumeConfirmation: 1,
         volumeThreshold: 1.5,
         atrMultiplier: 2.0,
         ...params
@@ -640,7 +640,7 @@ export class BreakoutStrategy extends BaseStrategy {
     const atr = indicators.atr[lastIndex];
     const avgVolume = indicators.avgVolume[lastIndex];
     
-    const volumeConfirmation = this.config.parameters.volumeConfirmation as boolean;
+    const volumeConfirmation = this.config.parameters.volumeConfirmation === 1;
     const volumeThreshold = this.config.parameters.volumeThreshold as number;
     
     let signal: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
@@ -671,7 +671,7 @@ export class BreakoutStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -682,7 +682,7 @@ export class BreakoutStrategy extends BaseStrategy {
   protected randomizeParameters(originalParams: Record<string, number | string>): Record<string, number | string> {
     return {
       breakoutPeriod: Math.floor(10 + Math.random() * 30), // 10-40
-      volumeConfirmation: Math.random() > 0.3, // 70% true
+      volumeConfirmation: Math.random() > 0.3 ? 1 : 0, // 70% true
       volumeThreshold: 1.2 + Math.random() * 0.8, // 1.2-2.0
       atrMultiplier: 1.5 + Math.random() * 1.0 // 1.5-2.5
     };
@@ -790,7 +790,7 @@ export class StatArbStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -898,7 +898,7 @@ export class MarketMakingStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,
@@ -928,7 +928,7 @@ export class MLAlphaStrategy extends BaseStrategy {
       description: 'Machine learning-based alpha generation',
       parameters: {
         model: 'gradient_boosting',
-        features: ['price_momentum', 'volume_trend', 'volatility', 'rsi', 'macd'],
+        features: 'price_momentum,volume_trend,volatility,rsi,macd',
         lookbackPeriod: 30,
         retrainFrequency: 30,
         predictionThreshold: 0.6,
@@ -1020,7 +1020,7 @@ export class MLAlphaStrategy extends BaseStrategy {
     }
     
     return {
-      timestamp: currentData.timestamp,
+      timestamp: currentData.date,
       signal,
       strength,
       confidence,

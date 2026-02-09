@@ -132,7 +132,7 @@ export interface TradingBehaviorMetrics {
 }
 
 export interface PsychologyAlert {
-  type: 'overtrading' | 'revenge_trading' | 'fear' | 'greed' | 'fatigue';
+  type: 'overtrading' | 'revenge_trading' | 'fear' | 'greed' | 'fatigue' | 'fomo' | 'confirmation_bias' | 'loss_aversion';
   severity: 'low' | 'medium' | 'high';
   message: string;
   recommendation: string;
@@ -273,4 +273,26 @@ export interface ConcentrationLimits {
   maxSectorExposure: number;  // セクター最大 (%) - デフォルト: 40%
   minPositions: number;       // 最小ポジション数 - デフォルト: 5
   maxPositions: number;       // 最大ポジション数 - デフォルト: 10
+}
+
+// ============================================================================
+// Bias Analysis Types
+// ============================================================================
+
+export interface BiasAnalysis {
+  hasFOMO: boolean;
+  hasFear: boolean;
+  hasConfirmationBias: boolean;
+  hasLossAversion: boolean;
+  detectedBiases: string[];
+  severity: 'low' | 'medium' | 'high';
+  recommendation: string;
+}
+
+export interface ConsecutiveLossInfo {
+  currentStreak: number;
+  maxStreak: number;
+  totalLosses: number;
+  shouldCoolOff: boolean;
+  coolOffReason?: string;
 }

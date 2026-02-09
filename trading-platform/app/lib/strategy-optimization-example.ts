@@ -7,11 +7,16 @@
  * 組み合わせて使用する方法を示します。
  */
 
-import { ParameterOptimizer, createDefaultOptimizationConfig, ParameterSpace } from './optimization/ParameterOptimizer';
-import { MomentumStrategy, MeanReversionStrategy, strategyCatalog } from './strategy/StrategyCatalog';
-import { overfittingDetector, compareToBuyAndHold } from './validation/OverfittingDetector';
+import { ParameterOptimizer, createDefaultOptimizationConfig } from './optimization/ParameterOptimizer';
+import { ParameterSpace } from './optimization';
+import { MomentumStrategy, MeanReversionStrategy, StrategyCatalog } from './strategy/StrategyCatalog';
+import { OverfittingDetector } from './validation/OverfittingDetector';
 import { OHLCV } from '@/app/types';
 import { BacktestConfig, BacktestResult, Strategy } from './backtest/AdvancedBacktestEngine';
+import { logger } from '@/app/core/logger';
+
+// Instantiate the detector
+const detector = new OverfittingDetector();
 
 // ============================================================================
 // Example 1: 単一戦略の最適化
@@ -20,20 +25,19 @@ import { BacktestConfig, BacktestResult, Strategy } from './backtest/AdvancedBac
 /**
  * Momentum戦略のパラメータを最適化する例
  */
-import { logger } from '@/app/core/logger';
 export async function optimizeMomentumStrategy(
   data: OHLCV[],
   backtestConfig: BacktestConfig
 ): Promise<void> {
 
   // パラメータ空間を定義
-  const parameterSpace: ParameterSpace[] = [
-    { name: 'fastMA', type: 'int', min: 10, max: 30 },
-    { name: 'slowMA', type: 'int', min: 40, max: 60 },
-    { name: 'rsiPeriod', type: 'int', min: 10, max: 20 },
-    { name: 'rsiOverbought', type: 'int', min: 65, max: 80 },
-    { name: 'rsiOversold', type: 'int', min: 20, max: 35 },
-    { name: 'atrMultiplier', type: 'float', min: 1.5, max: 3.0 },
+  const parameterSpace: ParameterSpace = [
+    { name: 'fastMA', type: 'discrete', min: 10, max: 30 },
+    { name: 'slowMA', type: 'discrete', min: 40, max: 60 },
+    { name: 'rsiPeriod', type: 'discrete', min: 10, max: 20 },
+    { name: 'rsiOverbought', type: 'discrete', min: 65, max: 80 },
+    { name: 'rsiOversold', type: 'discrete', min: 20, max: 35 },
+    { name: 'atrMultiplier', type: 'continuous', min: 1.5, max: 3.0 },
   ];
 
   // 最適化設定
@@ -45,7 +49,10 @@ export async function optimizeMomentumStrategy(
   };
 
   // オプティマイザーを作成
-  const optimizer = new ParameterOptimizer(parameterSpace, optimizationConfig);
+  const optimizer = new ParameterOptimizer({
+    ...optimizationConfig,
+    parameters: parameterSpace,
+  });
 
   // 戦略エグゼキュータ（実際のバックテストエンジンを使用）
   const strategyExecutor = async (
@@ -53,7 +60,7 @@ export async function optimizeMomentumStrategy(
     data: OHLCV[],
     config: BacktestConfig
   ): Promise<BacktestResult> => {
-    const strategy = MomentumStrategy.createStrategy(params);
+    const strategy = new MomentumStrategy(params);
     // ここで実際のバックテストエンジンを呼び出す
     // return await backtestEngine.run(strategy, data, config);
     
@@ -61,8 +68,14 @@ export async function optimizeMomentumStrategy(
     return createMockResult(data, config);
   };
 
+  // Objective function for optimizer
+  const objectiveFunction = async (params: Record<string, number | string>): Promise<number> => {
+    const res = await strategyExecutor(params, data, backtestConfig);
+    return res.metrics.sharpeRatio;
+  };
+
   // 最適化を実行
-  const result = await optimizer.optimize(data, strategyExecutor, backtestConfig);
+  const result = await optimizer.optimize(objectiveFunction);
 
 }
 
@@ -79,8 +92,8 @@ export async function compareStrategies(
 ): Promise<void> {
 
   const strategies = [
-    MomentumStrategy,
-    MeanReversionStrategy,
+    new MomentumStrategy(),
+    new MeanReversionStrategy(),
   ];
 
   const results: Array<{
@@ -89,14 +102,12 @@ export async function compareStrategies(
   }> = [];
 
   // 各戦略を実行
-  for (const strategyTemplate of strategies) {
-    const strategy = strategyTemplate.createStrategy(strategyTemplate.defaultParams);
-    
+  for (const strategy of strategies) {
     // ここで実際のバックテストエンジンを呼び出す
     const result = createMockResult(data, backtestConfig);
     
     results.push({
-      name: strategyTemplate.name,
+      name: strategy.config.name,
       result,
     });
   }
@@ -153,19 +164,28 @@ export async function detectOverfitting(
   const valResult = createMockResult(valData, backtestConfig);
   const testResult = createMockResult(testData, backtestConfig);
 
+  // Mock parameters and eval function for the detector
+  const mockParams = { param1: 10, param2: 20 };
+  const mockEval = async (p: Record<string, number | string>) => {
+      // Return a random score for demonstration
+      return Math.random();
+  };
+
   // 過剰適合分析
-  const analysis = await overfittingDetector.analyzeOverfitting(
-    trainResult,
-    valResult,
-    testResult
+  const analysis = await detector.detectOverfitting(
+    trainResult.metrics.sharpeRatio,
+    valResult.metrics.sharpeRatio,
+    testResult.metrics.sharpeRatio,
+    mockParams,
+    mockEval
   );
 
-
-
   if (analysis.warnings.length > 0) {
+      logger.warn('Overfitting warnings:', analysis.warnings);
   }
 
   if (analysis.recommendations.length > 0) {
+      logger.info('Recommendations:', analysis.recommendations);
   }
 }
 
@@ -181,18 +201,27 @@ export async function walkForwardValidation(
   backtestConfig: BacktestConfig
 ): Promise<void> {
 
-  const parameterSpace: ParameterSpace[] = [
-    { name: 'fastMA', type: 'int', min: 10, max: 30 },
-    { name: 'slowMA', type: 'int', min: 40, max: 60 },
+  const parameterSpace: ParameterSpace = [
+    { name: 'fastMA', type: 'discrete', min: 10, max: 30 },
+    { name: 'slowMA', type: 'discrete', min: 40, max: 60 },
   ];
 
   const optimizationConfig = {
     ...createDefaultOptimizationConfig(),
-    method: 'grid' as const,
+    method: 'grid_search' as const,
     maxIterations: 20,
+    walkForward: {
+      enabled: true,
+      trainPeriod: 180,
+      testPeriod: 60,
+      anchorMode: 'rolling' as const,
+    }
   };
 
-  const optimizer = new ParameterOptimizer(parameterSpace, optimizationConfig);
+  const optimizer = new ParameterOptimizer({
+    ...optimizationConfig,
+    parameters: parameterSpace
+  });
 
   const strategyExecutor = async (
     params: Record<string, number | string>,
@@ -202,16 +231,18 @@ export async function walkForwardValidation(
     return createMockResult(data, config);
   };
 
-  const result = await optimizer.walkForwardValidation(
-    data,
-    strategyExecutor,
-    backtestConfig,
-    5 // 5期間
-  );
+  const objectiveFunction = async (params: Record<string, number | string>): Promise<number> => {
+    const res = await strategyExecutor(params, data, backtestConfig);
+    return res.metrics.sharpeRatio;
+  };
 
+  const result = await optimizer.optimize(objectiveFunction);
 
-  result.results.forEach((periodResult, i) => {
-  });
+  if (result.walkForwardResults) {
+    result.walkForwardResults.forEach((periodResult, i) => {
+      logger.info(`Period ${i}: Train=${periodResult.trainScore.toFixed(2)}, Test=${periodResult.testScore.toFixed(2)}`);
+    });
+  }
 }
 
 // ============================================================================
@@ -241,19 +272,16 @@ export async function analyzeSensitivity(
     return createMockResult(data, config);
   };
 
-  const sensitivity = await overfittingDetector.analyzeSensitivity(
+  const sensitivity = await detector.analyzeParameterStability(
     baseParams,
-    data,
-    strategyExecutor,
-    backtestConfig,
-    0.2 // ±20%の変動
+    async (p) => (await strategyExecutor(p, data, backtestConfig)).metrics.sharpeRatio
   );
 
 
   sensitivity.forEach(result => {
     logger.info(
       result.parameter.padEnd(20) +
-      result.baseScore.toFixed(2).padEnd(15) +
+      result.optimalValue.toString().padEnd(15) +
       result.sensitivity.toFixed(4)
     );
   });
@@ -295,8 +323,8 @@ function createMockResult(data: OHLCV[], config: BacktestConfig): BacktestResult
       omegaRatio: 1.3,
     },
     config,
-    startDate: data[0].timestamp,
-    endDate: data[data.length - 1].timestamp,
+    startDate: data[0].date,
+    endDate: data[data.length - 1].date,
     duration: data.length,
   };
 }
@@ -331,10 +359,17 @@ function createBuyAndHoldResult(data: OHLCV[], config: BacktestConfig): Backtest
       omegaRatio: 1.0,
     },
     config,
-    startDate: data[0].timestamp,
-    endDate: data[data.length - 1].timestamp,
+    startDate: data[0].date,
+    endDate: data[data.length - 1].date,
     duration: data.length,
   };
+}
+
+function compareToBuyAndHold(strategyResult: BacktestResult, benchmarkResult: BacktestResult) {
+  logger.info('--- Strategy vs Buy & Hold ---');
+  logger.info(`Strategy Return: ${strategyResult.metrics.totalReturn.toFixed(2)}%`);
+  logger.info(`Benchmark Return: ${benchmarkResult.metrics.totalReturn.toFixed(2)}%`);
+  logger.info(`Outperformance: ${(strategyResult.metrics.totalReturn - benchmarkResult.metrics.totalReturn).toFixed(2)}%`);
 }
 
 // ============================================================================
@@ -347,7 +382,7 @@ function createBuyAndHoldResult(data: OHLCV[], config: BacktestConfig): Backtest
 export async function runAllExamples(): Promise<void> {
   // モックデータ生成
   const data: OHLCV[] = Array(365).fill(0).map((_, i) => ({
-    timestamp: new Date(2023, 0, i + 1).toISOString(),
+    date: new Date(2023, 0, i + 1).toISOString(),
     open: 100 + Math.sin(i / 30) * 10,
     high: 100 + Math.sin(i / 30) * 10 + 2,
     low: 100 + Math.sin(i / 30) * 10 - 2,
@@ -376,7 +411,7 @@ export async function runAllExamples(): Promise<void> {
     await walkForwardValidation(data, backtestConfig);
     await analyzeSensitivity(data, backtestConfig);
   } catch (error) {
-    logger.error('エラーが発生しました:', error);
+    logger.error('エラーが発生しました:', error as Error);
   }
 
 }

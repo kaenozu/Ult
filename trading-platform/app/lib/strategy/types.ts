@@ -176,7 +176,7 @@ export interface MeanReversionStrategyParams {
 
 export interface BreakoutStrategyParams {
   breakoutPeriod: number;
-  volumeConfirmation: boolean;
+  volumeConfirmation: number;
   volumeThreshold: number;
   atrMultiplier: number;
 }
@@ -198,7 +198,7 @@ export interface MarketMakingStrategyParams {
 
 export interface MLAlphaStrategyParams {
   model: 'random_forest' | 'gradient_boosting' | 'neural_network';
-  features: string[];
+  features: string;
   lookbackPeriod: number;
   retrainFrequency: number; // days
   predictionThreshold: number;

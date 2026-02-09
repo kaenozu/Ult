@@ -145,6 +145,13 @@ export class PerformanceMonitor {
   }
 
   /**
+   * Static method to get stats for a specific metric
+   */
+  static getStats(name: string): PerformanceMetric | null {
+    return performanceMonitor.getMetric(name);
+  }
+
+  /**
    * Check if operation is slower than average and log warning
    */
   private checkForSlowOperation(name: string, duration: number): void {
