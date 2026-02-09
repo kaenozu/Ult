@@ -105,13 +105,6 @@ export type {
 } from './PortfolioRiskMonitor';
 
 export type {
-  OptionsHedge,
-  InverseAssetHedge,
-  FuturesHedge,
-  HedgePortfolio,
-} from './TailRiskHedging';
-
-export type {
   EnhancedBehaviorMetrics,
   TiltIndicators,
   PsychologicalState,

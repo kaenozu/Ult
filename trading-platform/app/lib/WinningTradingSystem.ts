@@ -18,6 +18,7 @@ import WinningBacktestEngine, { BacktestResult } from './backtest/WinningBacktes
 import type { PerformanceMetrics } from './backtest/WinningBacktestEngine';
 import { winningAlertEngine, Alert, AlertConfig } from './alerts';
 import { winningAnalytics, PerformanceReport } from './analytics';
+import { BACKTEST_DEFAULTS } from './constants/backtest-config';
 
 // ============================================================================
 // Types
@@ -77,13 +78,13 @@ export interface SystemConfig {
 }
 
 export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
-  initialCapital: 1000000,
-  maxPositions: 5,
+  initialCapital: BACKTEST_DEFAULTS.LARGE_INITIAL_CAPITAL,
+  maxPositions: 5, // strategy-specific
   defaultStrategy: 'ADAPTIVE',
   riskLimits: {
-    maxRiskPerTrade: 2,
-    maxDailyLoss: 5,
-    maxDrawdown: 20,
+    maxRiskPerTrade: 2, // strategy-specific
+    maxDailyLoss: 5, // strategy-specific
+    maxDrawdown: BACKTEST_DEFAULTS.CONSERVATIVE_MAX_DRAWDOWN,
   },
   alertConfig: {},
 };
@@ -441,8 +442,29 @@ class WinningTradingSystem {
         alignedResults.push({
           signal: 'HOLD',
           confidence: 0,
-          price: data[i].close,
-          timestamp: data[i].timestamp
+          timestamp: data[i].timestamp,
+          strategy: 'ADAPTIVE',
+          entryPrice: 0,
+          stopLoss: 0,
+          takeProfit: 0,
+          positionSize: 0,
+          riskRewardRatio: 0,
+          reasoning: 'Insufficient data for analysis',
+          indicators: {
+            rsi: 0,
+            macd: 0,
+            sma20: 0,
+            sma50: 0,
+            bbUpper: 0,
+            bbLower: 0,
+            atr: 0,
+            adx: 0
+          },
+          metadata: {
+            trendStrength: 0,
+            volatility: 0,
+            volumeConfirmation: false
+          }
         });
       } else {
         alignedResults.push(strategyResults[i - 50]);

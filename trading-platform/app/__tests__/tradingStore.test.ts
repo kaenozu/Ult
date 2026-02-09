@@ -23,10 +23,14 @@ describe('tradingStore (split stores)', () => {
 
   it('manages watchlist', () => {
     const stock: Stock = { symbol: 'AAPL', name: 'Apple', price: 150, market: 'usa', sector: 'tech', change: 0, changePercent: 0, volume: 0 };
-    const { addToWatchlist, removeFromWatchlist, clearWatchlist } = useWatchlistStore.getState();
+    const { addToWatchlist, removeFromWatchlist, updateStockData, clearWatchlist } = useWatchlistStore.getState();
 
     addToWatchlist(stock);
     expect(useWatchlistStore.getState().watchlist).toHaveLength(1);
+
+    // Update stock data
+    updateStockData('AAPL', { price: 155 });
+    expect(useWatchlistStore.getState().watchlist[0].price).toBe(155);
 
     removeFromWatchlist('AAPL');
     expect(useWatchlistStore.getState().watchlist).toHaveLength(0);
@@ -39,6 +43,21 @@ describe('tradingStore (split stores)', () => {
     clearWatchlist();
     expect(useWatchlistStore.getState().watchlist).toHaveLength(0);
     expect(useWatchlistStore.getState().selectedStock).toBeNull();
+  });
+
+  it('batch updates stock data', () => {
+    const { addToWatchlist, batchUpdateStockData } = useWatchlistStore.getState();
+    addToWatchlist({ symbol: 'S1', name: 'S1', price: 100, market: 'japan', sector: 'test', change: 0, changePercent: 0, volume: 0 });
+    addToWatchlist({ symbol: 'S2', name: 'S2', price: 200, market: 'japan', sector: 'test', change: 0, changePercent: 0, volume: 0 });
+
+    batchUpdateStockData([
+      { symbol: 'S1', data: { price: 110 } },
+      { symbol: 'S2', data: { price: 210 } }
+    ]);
+
+    const state = useWatchlistStore.getState();
+    expect(state.watchlist.find(s => s.symbol === 'S1')?.price).toBe(110);
+    expect(state.watchlist.find(s => s.symbol === 'S2')?.price).toBe(210);
   });
 
   it('sets cash amount', () => {

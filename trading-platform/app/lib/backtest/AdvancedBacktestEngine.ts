@@ -1,6 +1,6 @@
 /**
  * AdvancedBacktestEngine.ts
- * 
+ *
  * 高度なバックテストエンジン。複数の戦略、リスク管理、取引コストを考慮した
  * 包括的なバックテスト機能を提供します。
  */
@@ -11,6 +11,7 @@ import { SlippageModel } from './SlippageModel';
 import { CommissionCalculator } from './CommissionCalculator';
 import { PartialFillSimulator } from './PartialFillSimulator';
 import { LatencySimulator } from './LatencySimulator';
+import { BACKTEST_DEFAULTS, REALISTIC_BACKTEST_DEFAULTS } from '../constants/backtest-config';
 
 // ============================================================================
 // Types
@@ -137,21 +138,21 @@ export interface StrategyAction {
 // ============================================================================
 
 export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
-  initialCapital: 100000,
-  commission: 0.1, // 0.1%
-  slippage: 0.05, // 0.05%
-  spread: 0.01, // 0.01%
-  maxPositionSize: 20, // 20%
-  maxDrawdown: 50, // 50%
-  allowShort: true,
+  initialCapital: BACKTEST_DEFAULTS.INITIAL_CAPITAL,
+  commission: BACKTEST_DEFAULTS.DEFAULT_COMMISSION,
+  slippage: 0.05, // 0.05% - model-specific, not consolidated
+  spread: BACKTEST_DEFAULTS.DEFAULT_SPREAD,
+  maxPositionSize: BACKTEST_DEFAULTS.MAX_POSITION_SIZE,
+  maxDrawdown: BACKTEST_DEFAULTS.MAX_DRAWDOWN,
+  allowShort: BACKTEST_DEFAULTS.ALLOW_SHORT,
   useStopLoss: true,
   useTakeProfit: true,
-  riskPerTrade: 2, // 2%
+  riskPerTrade: 2, // 2% - strategy-specific, not consolidated
   
   // Realistic mode defaults
   realisticMode: false,
   market: 'japan',
-  averageDailyVolume: 1000000,
+  averageDailyVolume: REALISTIC_BACKTEST_DEFAULTS.AVERAGE_DAILY_VOLUME,
   slippageEnabled: false,
   commissionEnabled: false,
   partialFillEnabled: false,

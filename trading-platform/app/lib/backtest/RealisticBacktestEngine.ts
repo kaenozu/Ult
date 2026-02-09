@@ -21,6 +21,7 @@ import {
   StrategyAction
 } from './AdvancedBacktestEngine';
 import { SlippagePredictionService, OrderBook, OrderBookLevel } from '../execution/SlippagePredictionService';
+import { BACKTEST_DEFAULTS, REALISTIC_BACKTEST_DEFAULTS, TIERED_COMMISSIONS } from '../constants/backtest-config';
 
 export interface CommissionTier {
   volumeThreshold: number;
@@ -76,28 +77,28 @@ export interface RealisticBacktestResult {
 }
 
 export const DEFAULT_REALISTIC_CONFIG: RealisticBacktestConfig = {
-  initialCapital: 100000,
-  commission: 0.1,
-  slippage: 0.05,
-  spread: 0.01,
-  maxPositionSize: 20,
-  maxDrawdown: 50,
-  allowShort: true,
+  initialCapital: BACKTEST_DEFAULTS.INITIAL_CAPITAL,
+  commission: BACKTEST_DEFAULTS.DEFAULT_COMMISSION,
+  slippage: 0.05, // model-specific
+  spread: BACKTEST_DEFAULTS.DEFAULT_SPREAD,
+  maxPositionSize: BACKTEST_DEFAULTS.MAX_POSITION_SIZE,
+  maxDrawdown: BACKTEST_DEFAULTS.MAX_DRAWDOWN,
+  allowShort: BACKTEST_DEFAULTS.ALLOW_SHORT,
   useStopLoss: true,
   useTakeProfit: true,
-  riskPerTrade: 2,
-  useRealisticSlippage: false,
+  riskPerTrade: 2, // strategy-specific
+  useRealisticSlippage: REALISTIC_BACKTEST_DEFAULTS.USE_REALISTIC_SLIPPAGE,
   averageDailyVolume: undefined,
-  marketImpactCoefficient: 0.1,
+  marketImpactCoefficient: REALISTIC_BACKTEST_DEFAULTS.MARKET_IMPACT_COEFFICIENT,
   useTimeOfDaySlippage: false,
-  marketOpenSlippageMultiplier: 1.5,
-  marketCloseSlippageMultiplier: 1.3,
-  useVolatilitySlippage: false,
-  volatilityWindow: 20,
-  volatilitySlippageMultiplier: 2.0,
+  marketOpenSlippageMultiplier: 1.5, // time-specific, not consolidated
+  marketCloseSlippageMultiplier: 1.3, // time-specific, not consolidated
+  useVolatilitySlippage: REALISTIC_BACKTEST_DEFAULTS.USE_VOLATILITY_SLIPPAGE,
+  volatilityWindow: REALISTIC_BACKTEST_DEFAULTS.VOLATILITY_WINDOW,
+  volatilitySlippageMultiplier: REALISTIC_BACKTEST_DEFAULTS.VOLATILITY_SLIPPAGE_MULTIPLIER,
   useTieredCommissions: false,
-  commissionTiers: undefined,
-  orderBookDepth: 10,
+  commissionTiers: [...TIERED_COMMISSIONS.TIERS],
+  orderBookDepth: REALISTIC_BACKTEST_DEFAULTS.ORDER_BOOK_LEVELS,
 };
 
 export class RealisticBacktestEngine extends EventEmitter {

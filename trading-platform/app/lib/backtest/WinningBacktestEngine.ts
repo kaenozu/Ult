@@ -15,6 +15,7 @@
 import { OHLCV } from '@/app/types';
 import type { StrategyResult } from '../strategies/WinningStrategyEngine';
 import type { PositionSizingResult } from '../risk/AdvancedRiskManager';
+import { BACKTEST_DEFAULTS } from '../constants/backtest-config';
 
 // ============================================================================
 // Types
@@ -151,16 +152,16 @@ export interface WinningMonteCarloResult {
 }
 
 export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
-  initialCapital: 1000000, // 100万円
-  commission: 0.1, // 0.1%
-  slippage: 0.05, // 0.05%
-  spread: 0.01,
-  maxPositionSize: 20, // 20%
-  maxDrawdown: 20, // 20%
-  allowShort: false, // 現物取引のみ
+  initialCapital: BACKTEST_DEFAULTS.LARGE_INITIAL_CAPITAL, // 100万円
+  commission: BACKTEST_DEFAULTS.DEFAULT_COMMISSION, // 0.1%
+  slippage: 0.05, // 0.05% - model-specific
+  spread: BACKTEST_DEFAULTS.DEFAULT_SPREAD,
+  maxPositionSize: BACKTEST_DEFAULTS.MAX_POSITION_SIZE, // 20%
+  maxDrawdown: BACKTEST_DEFAULTS.CONSERVATIVE_MAX_DRAWDOWN, // 20%
+  allowShort: BACKTEST_DEFAULTS.ALLOW_SHORT, // 現物取引のみ
   useStopLoss: true,
   useTakeProfit: true,
-  riskPerTrade: 2, // 2%
+  riskPerTrade: 2, // 2% - strategy-specific
   maxOpenPositions: 5,
   rebalanceFrequency: 'daily',
 };
