@@ -36,7 +36,7 @@ export function memoize<T extends (...args: number[]) => number>(
 /**
  * 配列用メモ化関数
  */
-export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: any[]) => number>(
+export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: number[]) => number>(
   fn: T,
   maxCacheSize: number = 100
 ): T {
@@ -54,10 +54,10 @@ export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: a
     const result = fn(arr, ...args);
 
     // キャッシュサイズ制限
-     if (cache.size >= maxCacheSize) {
-       const firstKey = cache.keys().next().value;
-       cache.delete(firstKey!);
-     }
+    if (cache.size >= maxCacheSize) {
+      const firstKey = cache.keys().next().value;
+      cache.delete(firstKey);
+    }
 
     cache.set(key, result);
     return result;

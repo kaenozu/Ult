@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Trading Psychology Types
  * 
  * Types for trading psychology analysis, emotion detection,
@@ -117,10 +117,6 @@ export interface TradingSession {
   emotions: EmotionScore[];
   violations: DisciplineViolation[];
   notes: string;
-  emotionalState?: 'excited' | 'fearful' | 'tired' | 'calm';
-  decisionQuality?: number;
-  stressLevel?: number;
-  fatigueLevel?: number;
 }
 
 // ============================================================================

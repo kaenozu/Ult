@@ -13,10 +13,16 @@ jest.mock('../components/HistoryTable', () => ({ HistoryTable: () => <div>Histor
 jest.mock('../components/SignalPanel', () => ({ SignalPanel: () => <div>SignalPanel</div> }));
 jest.mock('../components/StockChart', () => ({ StockChart: () => <div>StockChart</div> }));
 jest.mock('../components/OrderPanel', () => ({ OrderPanel: () => <div>OrderPanel</div> }));
-jest.mock('../components/LeftSidebar', () => ({ LeftSidebar: () => <div>LeftSidebar</div> }));
-jest.mock('../components/RightSidebar', () => ({ RightSidebar: () => <div>RightSidebar</div> }));
-jest.mock('../components/ChartToolbar', () => ({ ChartToolbar: () => <div>ChartToolbar</div> }));
-jest.mock('../components/BottomPanel', () => ({ BottomPanel: () => <div>BottomPanel</div> }));
+
+// Mock translations
+jest.mock('@/app/i18n/provider', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+import { useStockData } from '../hooks/useStockData';
+
+// Mock useStockData
+jest.mock('../hooks/useStockData');
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -24,56 +30,29 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/',
 }));
 
-// Mock translations
-jest.mock('../i18n/provider', () => ({
-  useTranslations: () => (key: string) => key,
-}));
-
-// Mock useSymbolAccuracy
-jest.mock('../hooks/useSymbolAccuracy', () => ({
-  useSymbolAccuracy: () => ({
-    accuracy: null,
-    loading: false
-  })
-}));
-
-// Mock useStockData - configurable
-const mockUseStockData = jest.fn();
-jest.mock('../hooks/useStockData', () => ({
-  useStockData: () => mockUseStockData()
-}));
-
-const defaultStockData = {
-  selectedStock: null,
-  chartData: [],
-  indexData: [],
-  chartSignal: null,
-  loading: false,
-  error: null,
-  handleStockSelect: jest.fn(),
-  interval: 'daily',
-  setInterval: jest.fn(),
-  fallbackApplied: false,
-  dataDelayMinutes: 0
-};
-
 describe('Workstation Page - Initial State', () => {
+  const defaultMockStockData = {
+    loading: false,
+    error: null,
+    selectedStock: null,
+    chartData: [],
+    indexData: [],
+    chartSignal: null,
+    interval: 'daily',
+    handleStockSelect: jest.fn(),
+    setInterval: jest.fn(),
+    fallbackApplied: false,
+    dataDelayMinutes: 0
+  };
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockUseStockData.mockReturnValue(defaultStockData);
+    (useStockData as jest.Mock).mockReturnValue(defaultMockStockData);
   });
 
   it('shows placeholder message when watchlist is empty', () => {
-    // ストアを「銘柄なし」の状態にする
-    useWatchlistStore.setState({
-      watchlist: [],
-      selectedStock: null,
-    });
-    mockUseStockData.mockReturnValue({ ...defaultStockData, selectedStock: null });
-
+    // Mock useStockData returns null selectedStock by default
     render(<Workstation />);
     
-    // In test environment, translations return key
     expect(screen.getByText('page.noStockSelected')).toBeInTheDocument();
     expect(screen.getByText('page.noStockSelectedDescription')).toBeInTheDocument();
   });
@@ -90,11 +69,10 @@ describe('Workstation Page - Initial State', () => {
       volume: 1000000
     };
     
-    useWatchlistStore.setState({
+    (useStockData as jest.Mock).mockReturnValue({
+      ...defaultMockStockData,
       selectedStock: mockStock,
-      watchlist: [mockStock],
     });
-    mockUseStockData.mockReturnValue({ ...defaultStockData, selectedStock: mockStock });
 
     render(<Workstation />);
     

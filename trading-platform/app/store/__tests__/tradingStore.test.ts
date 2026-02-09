@@ -32,7 +32,7 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-describe('TradingStore (Portfolio)', () => {
+describe('PortfolioStore', () => {
   beforeEach(() => {
     // Reset store state
     const { portfolio } = usePortfolioStore.getState();
@@ -40,11 +40,11 @@ describe('TradingStore (Portfolio)', () => {
       portfolio: {
         ...portfolio,
         positions: [],
+        orders: [], // Ensure orders array is also reset
         cash: 1000000, // Explicit start cash
         totalValue: 0,
         totalProfit: 0,
         dailyPnL: 0,
-        orders: []
       }
     });
   });

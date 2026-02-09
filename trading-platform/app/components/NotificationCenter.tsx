@@ -311,13 +311,17 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                 <div
                   key={alert.id}
                   role="listitem"
-                  className={cn(
-                    'p-3 border-b border-[#233648] hover:bg-[#1a2632] transition-colors cursor-pointer',
-                    !alert.acknowledged && 'bg-[#233648]/30'
-                  )}
-                  onClick={() => !alert.acknowledged && handleAcknowledge(alert.id)}
+                  className="border-b border-[#233648]"
                 >
-                  <div className="flex items-start gap-3">
+                  <button
+                    type="button"
+                    className={cn(
+                      'w-full text-left p-3 hover:bg-[#1a2632] transition-colors flex items-start gap-3',
+                      !alert.acknowledged && 'bg-[#233648]/30',
+                      alert.acknowledged ? 'cursor-default' : 'cursor-pointer'
+                    )}
+                    onClick={() => !alert.acknowledged && handleAcknowledge(alert.id)}
+                  >
                     {/* Severity Icon */}
                     <div className={cn(
                       'w-8 h-8 rounded flex items-center justify-center text-lg flex-shrink-0',
@@ -388,7 +392,7 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 </div>
               ))
             )}

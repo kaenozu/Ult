@@ -1,13 +1,33 @@
 /** @jest-environment jsdom */
 import { render, act } from '@testing-library/react';
 import Workstation from '../page';
+import { usePortfolioStore } from '../store/portfolioStore';
 import { useUIStore } from '../store/uiStore';
 import { useWatchlistStore } from '../store/watchlistStore';
-import { usePortfolioStore } from '../store/portfolioStore';
-import { Header } from '../components/Header';
+import { Header } from '@/app/components/Header';
+
+// Mock translations
+jest.mock('@/app/i18n/provider', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+// Mock useStockData
+jest.mock('../hooks/useStockData', () => ({
+  useStockData: () => ({
+    loading: false,
+    error: null,
+    selectedStock: null,
+    chartData: [],
+    indexData: [],
+    chartSignal: null,
+    interval: 'daily',
+    handleStockSelect: jest.fn(),
+    setInterval: jest.fn(),
+  }),
+}));
 
 // Mock child components
-jest.mock('../components/Header', () => ({ Header: jest.fn(() => <div>Header</div>) }));
+jest.mock('@/app/components/Header', () => ({ Header: jest.fn(() => <div>Header</div>) }));
 jest.mock('../components/Navigation', () => ({ Navigation: () => <div>Navigation</div> }));
 jest.mock('../components/StockTable', () => ({ StockTable: () => <div>StockTable</div> }));
 jest.mock('../components/PositionTable', () => ({ PositionTable: () => <div>PositionTable</div> }));
@@ -24,36 +44,6 @@ jest.mock('../components/BottomPanel', () => ({ BottomPanel: () => <div>BottomPa
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
   usePathname: () => '/',
-}));
-
-// Mock translations
-jest.mock('../i18n/provider', () => ({
-  useTranslations: () => (key: string) => key,
-}));
-
-// Mock useStockData to prevent data fetching issues
-jest.mock('../hooks/useStockData', () => ({
-  useStockData: () => ({
-    selectedStock: null,
-    chartData: [],
-    indexData: [],
-    chartSignal: null,
-    loading: false,
-    error: null,
-    handleStockSelect: jest.fn(),
-    interval: 'daily',
-    setInterval: jest.fn(),
-    fallbackApplied: false,
-    dataDelayMinutes: 0
-  })
-}));
-
-// Mock useSymbolAccuracy
-jest.mock('../hooks/useSymbolAccuracy', () => ({
-  useSymbolAccuracy: () => ({
-    accuracy: null,
-    loading: false
-  })
 }));
 
 describe('Workstation Performance', () => {

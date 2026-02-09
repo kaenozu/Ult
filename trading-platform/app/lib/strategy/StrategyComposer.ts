@@ -101,7 +101,7 @@ export class StrategyComposer {
     }
 
     return {
-      timestamp: currentData.date,
+      timestamp: currentData.timestamp,
       signal: finalSignal,
       strength: finalStrength,
       confidence: totalConfidence,

@@ -56,18 +56,15 @@ export const StockChart = memo(function StockChart({
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   const { chartLevels } = useSupplyDemandAnalysis(data);
 
-  // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
-  const memoizedAccuracyData = useMemo(() => accuracyData ? {
-    predictionError: accuracyData.predictionError || 1.0
-  } : null, [accuracyData?.predictionError]);
-
   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
     data: optimizedData, // Use optimized/reduced data for correct index alignment
     extendedData,
     signal,
     market,
     hoveredIdx,
-    accuracyData: memoizedAccuracyData
+    accuracyData: accuracyData ? {
+      predictionError: accuracyData.predictionError || 1.0
+    } : null
   });
 
   // Get current SMA value for tooltip
