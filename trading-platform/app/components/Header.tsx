@@ -84,6 +84,10 @@ export const Header = memo(function Header() {
     setHighlightedIndex(-1);
   }, [searchQuery]);
 
+  const handleOpenKeyboardShortcuts = useCallback(() => {
+    setKeyboardShortcuts(true);
+  }, [setKeyboardShortcuts]);
+
   const handleSearchKeyDown = useCallback(async (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -316,7 +320,7 @@ export const Header = memo(function Header() {
 
         {/* Keyboard Shortcuts */}
         <button
-          onClick={() => setKeyboardShortcuts(true)}
+          onClick={handleOpenKeyboardShortcuts}
           className="hidden sm:flex p-1.5 sm:p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 shrink-0"
           aria-label={t('header.keyboardShortcuts')}
           title={t('header.keyboardShortcuts')}
