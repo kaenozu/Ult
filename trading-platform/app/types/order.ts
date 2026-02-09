@@ -36,6 +36,8 @@ export interface OrderRequest {
   takeProfit?: number;
   /** リスク管理設定（オプション） */
   riskConfig?: RiskConfig;
+  /** リスク管理をスキップするかどうか（テスト用） */
+  skipRiskManagement?: boolean;
 }
 
 /**

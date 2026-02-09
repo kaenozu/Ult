@@ -30,7 +30,7 @@ function calculatePortfolioStats(positions: Position[]) {
 
     totalValue += value;
     totalProfit += pnl;
-    dailyPnL += p.change * p.quantity;
+    dailyPnL += (p.change || 0) * p.quantity;
   }
 
   return { totalValue, totalProfit, dailyPnL };
@@ -53,70 +53,88 @@ export const usePortfolioStore = create<PortfolioState>()(
         portfolio: { ...state.portfolio, positions, ...calculatePortfolioStats(positions) }
       })),
 
-      executeOrder: (order) => {
+      executeOrder: (orderRequest) => {
         let result: OrderResult = { success: false };
 
         // --- 1. PRE-FLIGHT VALIDATION (Atomic Read) ---
         const { portfolio } = get();
-        const riskService = getRiskManagementService();
-        const riskValidation = riskService.validateOrder(order, portfolio);
+        
+        let finalQuantity = orderRequest.quantity;
+        let finalStopLoss = orderRequest.stopLoss;
+        let finalTakeProfit = orderRequest.takeProfit;
 
-        if (!riskValidation.allowed) {
-          return { success: false, error: `Risk Denied: ${riskValidation.reasons.join('; ')}` };
+        if (!orderRequest.skipRiskManagement) {
+          const riskService = getRiskManagementService();
+          const riskValidation = riskService.validateOrder(orderRequest, portfolio);
+
+          if (!riskValidation.allowed) {
+            return { success: false, error: `Risk Denied: ${riskValidation.reasons.join('; ')}` };
+          }
+          
+          // Use adjusted values from risk management
+          if (riskValidation.adjustedQuantity !== undefined) finalQuantity = riskValidation.adjustedQuantity;
+          if (riskValidation.stopLossPrice !== undefined) finalStopLoss = riskValidation.stopLossPrice;
+          if (riskValidation.takeProfitPrice !== undefined) finalTakeProfit = riskValidation.takeProfitPrice;
         }
 
-        const totalCost = order.quantity * order.price;
-        if (order.side === 'LONG' && portfolio.cash < totalCost) {
+        const totalCost = finalQuantity * orderRequest.price;
+        if (orderRequest.side === 'LONG' && portfolio.cash < totalCost) {
           return { success: false, error: 'Insufficient Funds' };
         }
 
         // --- 2. ATOMIC STATE UPDATE (Single Transaction) ---
         set((state) => {
           // Double-check funds inside set to prevent race conditions
-          if (order.side === 'LONG' && state.portfolio.cash < totalCost) return state;
+          if (orderRequest.side === 'LONG' && state.portfolio.cash < totalCost) return state;
 
           const orderId = `at_ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-          const existingIdx = state.portfolio.positions.findIndex(p => p.symbol === order.symbol && p.side === order.side);
+          const existingIdx = state.portfolio.positions.findIndex(p => p.symbol === orderRequest.symbol && p.side === orderRequest.side);
           const positions = [...state.portfolio.positions];
 
           if (existingIdx >= 0) {
             const p = positions[existingIdx];
             positions[existingIdx] = {
               ...p,
-              quantity: p.quantity + order.quantity,
-              avgPrice: (p.avgPrice * p.quantity + order.price * order.quantity) / (p.quantity + order.quantity),
-              currentPrice: order.price,
+              quantity: p.quantity + finalQuantity,
+              avgPrice: (p.avgPrice * p.quantity + orderRequest.price * finalQuantity) / (p.quantity + finalQuantity),
+              currentPrice: orderRequest.price,
             };
           } else {
             positions.push({
-              symbol: order.symbol,
-              name: order.name,
-              market: order.market,
-              side: order.side,
-              quantity: order.quantity,
-              avgPrice: order.price,
-              currentPrice: order.price,
+              symbol: orderRequest.symbol,
+              name: orderRequest.name,
+              market: orderRequest.market,
+              side: orderRequest.side,
+              quantity: finalQuantity,
+              avgPrice: orderRequest.price,
+              currentPrice: orderRequest.price,
               change: 0,
               entryDate: new Date().toISOString(),
             });
           }
 
-          const newCash = order.side === 'LONG' ? state.portfolio.cash - totalCost : state.portfolio.cash + totalCost;
+          const newCash = orderRequest.side === 'LONG' ? state.portfolio.cash - totalCost : state.portfolio.cash + totalCost;
           const stats = calculatePortfolioStats(positions);
 
           const newOrder = {
             id: orderId,
-            symbol: order.symbol,
-            side: (order.side === 'LONG' ? 'BUY' : 'SELL') as 'BUY' | 'SELL',
-            type: order.orderType,
-            quantity: order.quantity,
-            price: order.price,
+            symbol: orderRequest.symbol,
+            side: (orderRequest.side === 'LONG' ? 'BUY' : 'SELL') as 'BUY' | 'SELL',
+            type: orderRequest.orderType,
+            quantity: finalQuantity,
+            price: orderRequest.price,
             status: 'FILLED' as const,
             date: new Date().toISOString(),
             timestamp: Date.now(),
           };
 
-          result = { success: true, orderId, remainingCash: newCash };
+          const newPos = positions[existingIdx >= 0 ? existingIdx : positions.length - 1];
+          result = { 
+            success: true, 
+            orderId, 
+            remainingCash: newCash,
+            newPosition: { ...newPos }
+          };
 
           return {
             portfolio: {
@@ -134,8 +152,8 @@ export const usePortfolioStore = create<PortfolioState>()(
           setTimeout(() => {
             // Trigger psychology analysis and sync with backend
             import('../lib/services/PsychologyService').then(({ psychologyService }) => {
-              const { portfolio } = get();
-              psychologyService.analyze(portfolio.orders, portfolio.positions);
+              const { portfolio: currentPortfolio } = get();
+              psychologyService.analyze(currentPortfolio.orders, currentPortfolio.positions);
             });
           }, 10);
         }

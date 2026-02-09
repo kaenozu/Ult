@@ -215,8 +215,10 @@ export class ModelPipeline {
       validationData: [xVal, yVal],
       callbacks: {
         onEpochEnd: (epoch, logs) => {
+          const loss = logs?.loss ?? 0;
+          const valLoss = logs?.val_loss ?? logs?.valLoss ?? 0;
           console.log(
-            `Epoch ${epoch + 1}: loss = ${logs?.loss.toFixed(4)}, val_loss = ${logs?.valLoss.toFixed(4)}`
+            `Epoch ${epoch + 1}: loss = ${Number(loss).toFixed(4)}, val_loss = ${Number(valLoss).toFixed(4)}`
           );
         },
       },
@@ -314,8 +316,10 @@ export class ModelPipeline {
       validationData: [xVal, yVal],
       callbacks: {
         onEpochEnd: (epoch, logs) => {
+          const loss = logs?.loss ?? 0;
+          const valLoss = logs?.val_loss ?? logs?.valLoss ?? 0;
           console.log(
-            `Epoch ${epoch + 1}: loss = ${logs?.loss.toFixed(4)}, val_loss = ${logs?.valLoss.toFixed(4)}`
+            `Epoch ${epoch + 1}: loss = ${Number(loss).toFixed(4)}, val_loss = ${Number(valLoss).toFixed(4)}`
           );
         },
       },

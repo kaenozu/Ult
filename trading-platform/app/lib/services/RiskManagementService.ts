@@ -237,10 +237,10 @@ export class RiskManagementService {
       }
     }
 
-    // Sync back
-    order.quantity = finalQuantity;
-    order.stopLoss = finalStopLoss;
-    order.takeProfit = finalTakeProfit;
+    // Do not sync back to order object to avoid side effects
+    // order.quantity = finalQuantity;
+    // order.stopLoss = finalStopLoss;
+    // order.takeProfit = finalTakeProfit;
 
     return {
       allowed: true,
