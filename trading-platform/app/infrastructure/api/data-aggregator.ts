@@ -455,16 +455,16 @@ export function handleApiError(error: unknown, context: string): APIError {
   if (error instanceof Error) {
     // Check for common error patterns
     if (error.message.includes('fetch') || error.message.includes('network')) {
-      return new NetworkError(error.message, error);
+      return new NetworkError(error.message, { cause: error });
     }
     if (error.message.includes('429') || error.message.includes('rate limit')) {
       return new RateLimitError(error.message);
     }
-    // ApiError constructor: (message, endpoint?, statusCode?, response?)
-    return new APIError(error.message, context, undefined, error);
+    // ApiError constructor: (message, options?)
+    return new APIError(error.message, { endpoint: context, context: { originalError: error.message } });
   }
 
-  return new APIError(String(error), context, undefined, error);
+  return new APIError(String(error), { endpoint: context });
 }
 
 /**

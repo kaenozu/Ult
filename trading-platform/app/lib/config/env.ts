@@ -31,17 +31,17 @@ const envSchema = z.object({
   PORT: z.string().transform((val) => {
     const parsed = parseInt(val, 10);
     return isNaN(parsed) ? 3000 : parsed;
-  }).default('3000'),
+  }).optional(),
   
   // Feature Flags
   NEXT_PUBLIC_ENABLE_ML_PREDICTIONS: z
     .string()
-    .transform((val) => val === 'true')
-    .default('false'),
+    .default('false')
+    .transform((val) => val === 'true'),
   NEXT_PUBLIC_ENABLE_BACKTEST: z
     .string()
-    .transform((val) => val === 'true')
-    .default('true'),
+    .default('true')
+    .transform((val) => val === 'true'),
   
   // Logging
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),

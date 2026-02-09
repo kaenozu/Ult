@@ -12,8 +12,8 @@
 'use client';
 
 // 新しいモジュラー実装から再エクスポート
-export {
-  StrategyDashboard,
+export { StrategyDashboard } from './StrategyDashboard/index';
+export type {
   StrategyPerformance,
   StrategyDashboardProps,
   ViewMode,

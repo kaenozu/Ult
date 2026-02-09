@@ -1,16 +1,7 @@
 import { useMemo } from 'react';
-import { OHLCV } from '@/app/types';
+import { OHLCV, Portfolio } from '@/app/types';
 import { DynamicRiskConfig, calculateRiskMetrics } from '@/app/lib/DynamicRiskManagement';
 import { formatCurrency } from '@/app/lib/utils';
-
-interface Portfolio {
-  cash: number;
-  holdings: Array<{
-    symbol: string;
-    quantity: number;
-    averagePrice: number;
-  }>;
-}
 
 interface DynamicRiskMetricsProps {
   portfolio: Portfolio | null;

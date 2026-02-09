@@ -5,7 +5,7 @@
  * performance measurement utilities.
  */
 
-import { measurePerformance, measurePerformanceAsync, PerformanceMonitor } from './performance-utils';
+import { measurePerformance, measurePerformanceAsync } from './performance-utils';
 
 // Example 1: Using functional wrappers
 class ExampleService {
@@ -16,7 +16,7 @@ class ExampleService {
         result += Math.sqrt(i);
       }
       return result;
-    });
+    }) as number;
   }
 
   async asyncOperation(): Promise<string> {
@@ -44,42 +44,7 @@ async function runExample(): Promise<void> {
 
   service.operationWithCustomThreshold();
 
-  // Get metrics
-
-  const syncStats = PerformanceMonitor.getStats(example-sync-operation);
-  const asyncStats = PerformanceMonitor.getStats(example-async-operation);
-
-  console.table([
-    {
-      operation: 'example-sync-operation',
-      avg: `${syncStats.avg.toFixed(2)}ms`,
-      count: syncStats.count,
-      warnings: syncStats.warningCount,
-      errors: syncStats.errorCount,
-    },
-    {
-      operation: 'example-async-operation',
-      avg: `${asyncStats.avg.toFixed(2)}ms`,
-      count: asyncStats.count,
-      warnings: asyncStats.warningCount,
-      errors: asyncStats.errorCount,
-    }
-  ]);
-  // Get summary
-  const summary = PerformanceMonitor.getSummary();
-
-  if (summary.slowOperations.length > 0) {
-  }
-
-  if (summary.criticalOperations.length > 0) {
-  }
-
-  // Check for issues
-  if (PerformanceMonitor.hasWarnings()) {
-  }
-
-  if (PerformanceMonitor.hasErrors()) {
-  }
+  console.log('Performance example completed');
 }
 
 // Run if this is executed directly

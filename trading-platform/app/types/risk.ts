@@ -132,7 +132,7 @@ export interface TradingBehaviorMetrics {
 }
 
 export interface PsychologyAlert {
-  type: 'overtrading' | 'revenge_trading' | 'fear' | 'greed' | 'fatigue';
+  type: 'overtrading' | 'revenge_trading' | 'fear' | 'greed' | 'fatigue' | 'fomo' | 'confirmation_bias' | 'loss_aversion';
   severity: 'low' | 'medium' | 'high';
   message: string;
   recommendation: string;
@@ -149,6 +149,19 @@ export interface RiskTradingSession {
 }
 
 export type { TradingSession } from './psychology';
+
+export interface BiasAnalysis {
+  detectedBiases: string[];
+  severity: 'low' | 'medium' | 'high';
+  recommendations: string[];
+}
+
+export interface ConsecutiveLossInfo {
+  count: number;
+  totalLoss: number;
+  startedAt: Date;
+  lastLossAt: Date;
+}
 
 export interface DisciplineScore {
   overall: number;

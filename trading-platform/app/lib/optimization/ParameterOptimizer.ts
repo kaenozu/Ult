@@ -266,6 +266,12 @@ export class ParameterOptimizer {
   // Helper Methods
   // ============================================================================
 
+  /**
+   * Generate initial points for optimization
+   */
+  private generateInitialPoints(paramCount: number): Array<Record<string, number | string>> {
+    const points: Array<Record<string, number | string>> = [];
+    
     // Simple implementation for 1-2 parameters
     if (paramCount === 1) {
       const param = this.config.parameters[0];
@@ -323,15 +329,6 @@ export class ParameterOptimizer {
       return param.values;
     }
     return [];
-  }
-
-  // Stub methods to satisfy the compiler
-  private sampleRandomParameters(): Record<string, number | string> {
-    return {};
-  }
-
-  private async selectNextBayesianPoint(config: BayesianOptimizationConfig): Promise<Record<string, number | string>> {
-    return {};
   }
 
   private async evaluateAndStore(
@@ -887,63 +884,6 @@ export class ParameterOptimizer {
     };
   }
 
-  private shouldStop(): boolean {
-    return false;
-  }
-
-  private initializePopulation(size: number, objectiveFunction: ObjectiveFunction): Promise<Record<string, number | string>[]> {
-    return Promise.resolve([]);
-  }
-
-  private selection(population: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
-    return [];
-  }
-
-  private crossover(selected: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
-    return [];
-  }
-
-  private mutate(offspring: Record<string, number | string>[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
-    return [];
-  }
-
-  private evaluatePopulation(population: Record<string, number | string>[], objectiveFunction: ObjectiveFunction): Promise<number[]> {
-    return Promise.resolve([]);
-  }
-
-  private nextGeneration(current: Record<string, number | string>[], offspring: number[], config: GeneticAlgorithmConfig): Record<string, number | string>[] {
-    // Note: evaluatePopulation returns number[] (scores), but logic might need structured results.
-    // For stub purposes, returning Record[] is fine.
-    return [];
-  }
-
-  private reportProgress(iteration: number): void {}
-
-  private initializeSwarm(size: number): Particle[] {
-    return [];
-  }
-
-  private performWalkForwardAnalysis(
-    objectiveFunction: ObjectiveFunction,
-    bestParameters: Record<string, number | string>
-  ): Promise<WalkForwardResult[]> {
-    return Promise.resolve([]);
-  }
-
-  private calculateOverfittingScore(results: WalkForwardResult[]): number {
-    return 0;
-  }
-
-  private performCrossValidation(
-    objectiveFunction: ObjectiveFunction,
-    bestParameters: Record<string, number | string>
-  ): Promise<CrossValidationResult[]> {
-    return Promise.resolve([]);
-  }
-
-  private calculateStabilityScore(results: CrossValidationResult[]): number {
-    return 0;
-  }
 }
 
 /**

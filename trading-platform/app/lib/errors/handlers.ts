@@ -265,24 +265,20 @@ export function logError(
   const appError = isAppError(error) ? error : handleError(error, context);
   
   // エラーの重大度に応じてログレベルを変更
-  const logData = {
-    timestamp,
-    context,
-    ...appError.toJSON(),
-  };
+  const logMessage = `[${appError.severity.toUpperCase()}] [${timestamp}] [${context}] ${appError.name}: ${appError.message}`;
   
   switch (appError.severity) {
     case 'critical':
-      logger.error(`[CRITICAL] [${timestamp}] [${context}] ${appError.name}:`, logData);
+      logger.error(logMessage, appError, context);
       break;
     case 'high':
-      logger.error(`[HIGH] [${timestamp}] [${context}] ${appError.name}:`, logData);
+      logger.error(logMessage, appError, context);
       break;
     case 'medium':
-      logger.warn(`[MEDIUM] [${timestamp}] [${context}] ${appError.name}:`, logData);
+      logger.warn(logMessage);
       break;
     case 'low':
-      logger.info(`[LOW] [${timestamp}] [${context}] ${appError.name}:`, logData);
+      logger.info(logMessage);
       break;
   }
 }
@@ -304,12 +300,9 @@ export async function reportError(
     try {
       // 将来的にSentryや他のエラー追跡サービスに送信可能
       // 現在はログのみ
-      logger.error('Error reported:', {
-        ...context,
-        error: appError.toJSON(),
-      });
-    } catch (reportError) {
-      logger.error('Failed to report error:', reportError);
+      logger.error(`Error reported: ${appError.message}`, appError, context.operation);
+    } catch (err) {
+      logger.error('Failed to report error:', err instanceof Error ? err : new Error(String(err)));
     }
   }
 }
