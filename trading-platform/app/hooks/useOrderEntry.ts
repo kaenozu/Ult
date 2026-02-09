@@ -107,14 +107,14 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
 
   const handleOrder = useCallback(async () => {
     try {
-      const result = await executeOrder({
+      const result = executeOrder({
         symbol: stock.symbol,
-        name: stock.name,
-        market: stock.market,
-        orderType,
-        side: side === 'BUY' ? 'LONG' : 'SHORT',
+        orderType, // Mapped from local state 'orderType' to OrderRequest 'orderType'
+        side: side === 'BUY' ? 'LONG' : 'SHORT', // Map 'BUY'/'SELL' to 'LONG'/'SHORT' expected by store
         quantity,
         price: orderType === 'LIMIT' ? price : currentPrice,
+        name: stock.name, // Add required fields
+        market: stock.market,
       });
 
       if (result.success) {
@@ -126,7 +126,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
     }
-  }, [executeOrder, stock.symbol, stock.name, stock.market, orderType, side, quantity, price, currentPrice]);
+  }, [executeOrder, stock, orderType, side, quantity, price, currentPrice]);
 
   // Auto-hide success message after 3 seconds with cleanup
   useEffect(() => {
