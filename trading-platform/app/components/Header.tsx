@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, memo, useCallback } from 'react';
-import { Search, Settings, User, Loader2, X, TrendingUp, Star, Plus } from 'lucide-react';
+import { Search, Settings, User, Loader2, X, TrendingUp, Star, Plus, Keyboard } from 'lucide-react';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
@@ -15,7 +15,7 @@ import { useTranslations } from '@/app/i18n/provider';
 export const Header = memo(function Header() {
   const t = useTranslations();
   const { portfolio, setCash } = usePortfolioStore();
-  const { setSelectedStock } = useUIStore();
+  const { setSelectedStock, setKeyboardShortcuts } = useUIStore();
   const { watchlist, addToWatchlist } = useWatchlistStore();
 
   const [isEditingCash, setIsEditingCash] = useState(false);
@@ -313,6 +313,16 @@ export const Header = memo(function Header() {
         <div className="hidden xs:block shrink-0">
           <LocaleSwitcher />
         </div>
+
+        {/* Keyboard Shortcuts */}
+        <button
+          onClick={() => setKeyboardShortcuts(true)}
+          className="hidden sm:flex p-1.5 sm:p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 shrink-0"
+          aria-label={t('header.keyboardShortcuts')}
+          title={t('header.keyboardShortcuts')}
+        >
+          <Keyboard className="w-4 h-4 sm:w-5 sm:h-5" />
+        </button>
 
         {/* Settings */}
         <button
