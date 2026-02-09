@@ -1,4 +1,6 @@
 
+import type { NextRequest } from 'next/server';
+
 interface RateLimitRecord {
   count: number;
   resetTime: number;
@@ -102,7 +104,14 @@ if (process.env.NODE_ENV !== 'production') {
   globalForRateLimit.ipRateLimiter = ipRateLimiter;
 }
 
-export function getClientIp(request: Request): string {
+export function getClientIp(request: Request | NextRequest): string {
+    // Priority 0: Next.js parsed IP (most secure as it handles trust logic)
+    // This property is available on NextRequest objects in the Edge/Node.js runtime
+    // provided by Vercel or Next.js server when properly configured with trustHostHeader
+    if ('ip' in request && (request as NextRequest).ip) {
+        return (request as NextRequest).ip as string;
+    }
+
     const trustProxy = process.env.TRUST_PROXY === 'true';
 
     // Priority 1: Cloudflare (CF-Connecting-IP)
