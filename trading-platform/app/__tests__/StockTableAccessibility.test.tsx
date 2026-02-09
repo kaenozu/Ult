@@ -1,12 +1,31 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { StockTable } from '../components/StockTable';
-import { useWatchlistStore } from '../store/watchlistStore';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
+// Mock stores used by StockTable
+const mockWatchlistStore = {
+  watchlist: [],
+  removeFromWatchlist: jest.fn(),
+};
+
+const mockUIStore = {
+  selectedStock: null,
+  setSelectedStock: jest.fn(),
+};
+
+jest.mock('../store/watchlistStore', () => ({
+  useWatchlistStore: () => mockWatchlistStore,
+}));
+
+jest.mock('../store/uiStore', () => ({
+  useUIStore: () => mockUIStore,
+}));
+
+// Mock legacy tradingStore for completeness if needed by other components, 
+// though StockTable should now use the split stores.
 const mockTradingStore = jest.fn();
-// @ts-ignore
-mockTradingStore.setState = jest.fn();
+Object.assign(mockTradingStore, { setState: jest.fn() });
 
 jest.mock('../store/tradingStore', () => ({
   useTradingStore: mockTradingStore,
@@ -18,13 +37,9 @@ const mockStocks: Stock[] = [
 
 describe('StockTable Component - Accessibility', () => {
   beforeEach(() => {
-    const mockState = {
-        watchlist: mockStocks,
-    };
-    (mockTradingStore as unknown as jest.Mock).mockReturnValue(mockState);
-    (mockTradingStore as any).setState.mockImplementation((newState: any) => {
-        Object.assign(mockState, newState);
-    });
+    // Reset mocks
+    jest.clearAllMocks();
+    mockWatchlistStore.watchlist = [...mockStocks] as any;
   });
 
   it('allows selecting a stock via keyboard (Enter key)', () => {

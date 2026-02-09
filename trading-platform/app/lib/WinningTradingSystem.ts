@@ -441,8 +441,29 @@ class WinningTradingSystem {
         alignedResults.push({
           signal: 'HOLD',
           confidence: 0,
-          price: data[i].close,
-          timestamp: data[i].timestamp
+          timestamp: data[i].timestamp,
+          strategy: 'ADAPTIVE',
+          entryPrice: 0,
+          stopLoss: 0,
+          takeProfit: 0,
+          positionSize: 0,
+          riskRewardRatio: 0,
+          reasoning: 'Insufficient data for analysis',
+          indicators: {
+            rsi: 0,
+            macd: 0,
+            sma20: 0,
+            sma50: 0,
+            bbUpper: 0,
+            bbLower: 0,
+            atr: 0,
+            adx: 0
+          },
+          metadata: {
+            trendStrength: 0,
+            volatility: 0,
+            volumeConfirmation: false
+          }
         });
       } else {
         alignedResults.push(strategyResults[i - 50]);
