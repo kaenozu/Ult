@@ -5,10 +5,17 @@
  * This file demonstrates how to use the alternative data integration features.
  */
 
-import { 
+import {
   getGlobalEnhancedSentimentService,
-  getGlobalDataCollector 
+  getGlobalDataCollector
 } from '@/app/lib/alternativeData';
+import type {
+  SentimentAnalysisResult,
+  DivergenceAlertData,
+  CollectedData,
+  QualityWarningData,
+  CollectionErrorData,
+} from '@/app/lib/types/events';
 
 /**
  * Example 1: Basic Sentiment Analysis
@@ -173,23 +180,23 @@ export function setupEventHandlers(): void {
   service.on('started', () => {
   });
   
-  service.on('analysis_completed', (result: any) => {
+  service.on('analysis_completed', (result: SentimentAnalysisResult) => {
   });
   
-  service.on('divergence_alert', ({ symbol, divergence }: any) => {
+  service.on('divergence_alert', ({ symbol, divergence }: DivergenceAlertData) => {
   });
   
   // Data Collector Events
   collector.on('started', () => {
   });
   
-  collector.on('data_collected', (data: any) => {
+  collector.on('data_collected', (data: CollectedData) => {
   });
   
-  collector.on('quality_warning', ({ source, quality }: any) => {
+  collector.on('quality_warning', ({ source, quality }: QualityWarningData) => {
   });
   
-  collector.on('collection_error', ({ source, error }: any) => {
+  collector.on('collection_error', ({ source, error }: CollectionErrorData) => {
     logger.error(`❌ Collection Error for ${source.name}:`, error);
   });
   

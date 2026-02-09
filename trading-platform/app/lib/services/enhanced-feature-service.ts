@@ -14,6 +14,7 @@ import {
   EnhancedPredictionFeatures,
   ExtendedTechnicalIndicator
 } from '../types/prediction-types';
+import { PORTFOLIO_OPTIMIZATION_DEFAULTS } from '../constants/portfolio';
 
 /**
  * 拡張特徴量計算サービス
@@ -515,7 +516,7 @@ export class EnhancedFeatureService {
     if (returns.length < 2) return 0;
 
     const stdDev = this.calculateStandardDeviation(returns);
-    return stdDev * Math.sqrt(252) * 100; // 年率化（252取引日）
+    return stdDev * Math.sqrt(PORTFOLIO_OPTIMIZATION_DEFAULTS.TRADING_DAYS_PER_YEAR) * 100; // 年率化
   }
 
   private calculateRealizedVolatility(data: OHLCV[]): number {
@@ -532,7 +533,7 @@ export class EnhancedFeatureService {
     }
 
     const variance = sumSquares / (4 * data.length * Math.log(2));
-    return Math.sqrt(variance * 252) * 100; // 年率化
+    return Math.sqrt(variance * PORTFOLIO_OPTIMIZATION_DEFAULTS.TRADING_DAYS_PER_YEAR) * 100; // 年率化
   }
 
   private calculateSkewness(values: number[]): number {
@@ -601,7 +602,7 @@ export class EnhancedFeatureService {
       variance = omega + alpha * (ret * ret) + beta * variance;
     }
 
-    return Math.sqrt(variance * 252) * 100; // 年率化
+    return Math.sqrt(variance * PORTFOLIO_OPTIMIZATION_DEFAULTS.TRADING_DAYS_PER_YEAR) * 100; // 年率化
   }
 
   private calculateVolatilityMomentum(returns: number[]): number {

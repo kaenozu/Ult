@@ -5,17 +5,19 @@
  * without requiring actual TensorFlow.js dependencies
  */
 
-// Mock interface for testing
-interface ITensorFlowModel {
+import { ModelMetrics, ModelTrainingData } from '../../tensorflow-model-service';
+
+/**
+ * TensorFlow Model interface for testing
+ */
+export interface ITensorFlowModel {
   predict(features: number[]): Promise<number>;
-  train(data: any, epochs?: number): Promise<any>;
-  getMetrics(): any;
+  train(data: ModelTrainingData, epochs?: number): Promise<ModelMetrics>;
+  getMetrics(): ModelMetrics;
   saveModel(name: string): Promise<void>;
   loadModel(name: string): Promise<void>;
   dispose(): void;
 }
-
-import { ModelMetrics, ModelTrainingData } from '../../tensorflow-model-service';
 
 /**
  * Mock TensorFlow model for testing
@@ -121,64 +123,3 @@ describe('MockTensorFlowModel', () => {
     expect(prediction).toBe(0.8);
   });
 });
-
-  /**
-   * Set custom metrics
-   */
-  setMetrics(metrics: Partial<ModelMetrics>): void {
-    this.metrics = { ...this.metrics, ...metrics };
-  }
-
-  /**
-   * Mock prediction (returns configured value)
-   */
-  async predict(_features: number[]): Promise<number> {
-    if (!this.trained) {
-      throw new Error('Model not trained. Call train() first.');
-    }
-    return this.predictValue;
-  }
-
-  /**
-   * Mock training (just sets trained flag)
-   */
-  async train(_data: ModelTrainingData, _epochs?: number): Promise<ModelMetrics> {
-    this.trained = true;
-    return this.metrics;
-  }
-
-  /**
-   * Get mock metrics
-   */
-  getMetrics(): ModelMetrics {
-    return { ...this.metrics };
-  }
-
-  /**
-   * Mock save (no-op)
-   */
-  async saveModel(_name: string): Promise<void> {
-    // No-op for mock
-  }
-
-  /**
-   * Mock load (sets trained flag)
-   */
-  async loadModel(_name: string): Promise<void> {
-    this.trained = true;
-  }
-
-  /**
-   * Mock dispose (resets state)
-   */
-  dispose(): void {
-    this.trained = false;
-  }
-
-  /**
-   * Check if model is trained (for testing)
-   */
-  isTrained(): boolean {
-    return this.trained;
-  }
-}

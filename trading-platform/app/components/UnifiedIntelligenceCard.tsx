@@ -7,6 +7,7 @@ import { intelligenceManager } from '@/app/lib/services/IntelligenceManager';
 import { SignalValidatorService } from '@/app/lib/SignalValidatorService';
 import { cn } from '@/app/lib/utils';
 import { ShieldCheck, Target, BarChart3, Info, TrendingUp, TrendingDown, History, Coins, Cpu } from 'lucide-react';
+import type { OHLCVData } from '@/app/lib/types/api';
 
 interface UnifiedIntelligenceCardProps {
   stock: Stock;
@@ -44,9 +45,9 @@ export function UnifiedIntelligenceCard({ stock }: UnifiedIntelligenceCardProps)
           const marketData = await response.json();
           if (abortController.signal.aborted) return;
           if (marketData.success) {
-            const mockSignals = marketData.data.slice(-20, -1).map((d: any) => ({
+            const mockSignals = marketData.data.slice(-20, -1).map((d: OHLCVData) => ({
               symbol: stock.symbol,
-              type: 'BUY',
+              type: 'BUY' as const,
               price: d.close,
               timestamp: new Date(d.date).getTime(),
               confidence: 0.7

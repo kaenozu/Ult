@@ -3,22 +3,6 @@ import { useWatchlistStore } from '../store/watchlistStore';
 import { usePortfolioStore } from '../store/portfolioStore';
 import { Signal, Stock } from '../types';
 
-interface WatchlistStock {
-  symbol: string;
-  name: string;
-  price: number;
-  [key: string]: unknown;
-}
-
-interface PositionInput {
-  symbol: string;
-  side: 'LONG' | 'SHORT';
-  quantity: number;
-  avgPrice: number;
-  currentPrice: number;
-  [key: string]: unknown;
-}
-
 describe('tradingStore (split stores)', () => {
   beforeEach(() => {
     // Reset stores
@@ -27,9 +11,6 @@ describe('tradingStore (split stores)', () => {
     usePortfolioStore.setState({
         portfolio: { positions: [], orders: [], totalValue: 0, totalProfit: 0, dailyPnL: 0, cash: 1000000 },
         aiStatus: 'active',
-        // Note: aiStatus.trades is likely not in portfolioStore interface as shown in `portfolioStore.ts` read.
-        // Assuming AI logic might be handled differently or mocked if not present.
-        // If methods like addPosition/updateStockData are missing, we'll need to use what's available.
     });
   });
 
@@ -42,26 +23,37 @@ describe('tradingStore (split stores)', () => {
 
   it('manages watchlist', () => {
     const stock: Stock = { symbol: 'AAPL', name: 'Apple', price: 150, market: 'usa', sector: 'tech', change: 0, changePercent: 0, volume: 0 };
-    const { addToWatchlist, removeFromWatchlist } = useWatchlistStore.getState();
+    const { addToWatchlist, removeFromWatchlist, updateStockData } = useWatchlistStore.getState();
 
     addToWatchlist(stock);
     expect(useWatchlistStore.getState().watchlist).toHaveLength(1);
+
+    // Update stock data
+    updateStockData('AAPL', { price: 155 });
+    expect(useWatchlistStore.getState().watchlist[0].price).toBe(155);
 
     removeFromWatchlist('AAPL');
     expect(useWatchlistStore.getState().watchlist).toHaveLength(0);
   });
 
-  // Note: batchUpdateStockData might not exist in simple watchlistStore.
-  // Skipping if not implemented or needs separate test.
+  it('batch updates stock data', () => {
+    const { addToWatchlist, batchUpdateStockData } = useWatchlistStore.getState();
+    addToWatchlist({ symbol: 'S1', name: 'S1', price: 100, market: 'japan', sector: 'test', change: 0, changePercent: 0, volume: 0 });
+    addToWatchlist({ symbol: 'S2', name: 'S2', price: 200, market: 'japan', sector: 'test', change: 0, changePercent: 0, volume: 0 });
+
+    batchUpdateStockData([
+      { symbol: 'S1', data: { price: 110 } },
+      { symbol: 'S2', data: { price: 210 } }
+    ]);
+
+    const state = useWatchlistStore.getState();
+    expect(state.watchlist.find(s => s.symbol === 'S1')?.price).toBe(110);
+    expect(state.watchlist.find(s => s.symbol === 'S2')?.price).toBe(210);
+  });
 
   it('sets cash amount', () => {
     const { setCash } = usePortfolioStore.getState();
     setCash(5000000);
     expect(usePortfolioStore.getState().portfolio.cash).toBe(5000000);
   });
-
-  // Note: addPosition, closePosition (with legacy logic), processAITrades might be missing or different.
-  // Tests relying on specific legacy methods (addPosition, processAITrades) may need deeper refactoring
-  // if those methods don't exist on the new stores.
-  // For now, focusing on the clear replacements.
 });

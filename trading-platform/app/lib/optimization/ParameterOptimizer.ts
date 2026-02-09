@@ -266,6 +266,71 @@ export class ParameterOptimizer {
   // Helper Methods
   // ============================================================================
 
+  /**
+   * Generate initial points for optimization
+   */
+  private generateInitialPoints(paramCount: number): Array<Record<string, number | string>> {
+    const points: Array<Record<string, number | string>> = [];
+    
+    // Simple implementation for 1-2 parameters
+    if (paramCount === 1) {
+      const param = this.config.parameters[0];
+      if (param.type === 'continuous' && param.min !== undefined && param.max !== undefined) {
+        const steps = Math.min(10, this.config.maxIterations);
+        const stepSize = (param.max - param.min) / steps;
+        for (let i = 0; i <= steps; i++) {
+          points.push({ [param.name]: param.min + i * stepSize });
+        }
+      } else if (param.type === 'discrete' && param.min !== undefined && param.max !== undefined) {
+        for (let v = param.min; v <= param.max; v++) {
+          points.push({ [param.name]: v });
+        }
+      } else if (param.type === 'categorical' && param.values) {
+        for (const v of param.values) {
+          points.push({ [param.name]: v });
+        }
+      }
+    } else if (paramCount === 2) {
+      // Cartesian product for 2 parameters
+      const p1 = this.config.parameters[0];
+      const p2 = this.config.parameters[1];
+      const values1 = this.getParameterValues(p1);
+      const values2 = this.getParameterValues(p2);
+      
+      for (const v1 of values1) {
+        for (const v2 of values2) {
+          points.push({ [p1.name]: v1, [p2.name]: v2 });
+        }
+      }
+    }
+
+    return points;
+  }
+
+  /**
+   * Get array of values for a parameter
+   */
+  private getParameterValues(param: OptimizationParameter): (number | string)[] {
+    if (param.type === 'continuous' && param.min !== undefined && param.max !== undefined) {
+      const steps = Math.min(5, this.config.maxIterations);
+      const stepSize = (param.max - param.min) / steps;
+      const values: number[] = [];
+      for (let i = 0; i <= steps; i++) {
+        values.push(param.min + i * stepSize);
+      }
+      return values;
+    } else if (param.type === 'discrete' && param.min !== undefined && param.max !== undefined) {
+      const values: number[] = [];
+      for (let v = param.min; v <= param.max; v++) {
+        values.push(v);
+      }
+      return values;
+    } else if (param.type === 'categorical' && param.values) {
+      return param.values;
+    }
+    return [];
+  }
+
   private async evaluateAndStore(
     objectiveFunction: ObjectiveFunction,
     parameters: Record<string, number | string>,

@@ -1,12 +1,12 @@
-
 import { act } from '@testing-library/react';
 import { usePortfolioStore } from '../portfolioStore';
 import { AI_TRADING } from '@/app/lib/constants';
+import type { Order } from '@/app/types';
 
 // Mock RiskManagementService to prevent order modification
 jest.mock('../../lib/services/RiskManagementService', () => ({
   getRiskManagementService: () => ({
-    validateOrder: (order: any) => ({ allowed: true, adjustedQuantity: order.quantity, reasons: [] }),
+    validateOrder: (order: Partial<Order>) => ({ allowed: true, adjustedQuantity: order.quantity, reasons: [] }),
     updateRiskMetrics: () => ({}),
   })
 }));

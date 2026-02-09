@@ -61,6 +61,45 @@ Constants are organized by category into separate modules:
   - `JAPANESE_MARKET_DELAY_MINUTES`
   - Functions: `isIntradayInterval()`, `normalizeInterval()`
 
+### New Modules (REFACTOR-001)
+
+- **`ml.ts`** - Machine Learning configuration
+  - `ML_HYPERPARAMETERS` - Default training parameters (epochs, batch size, etc.)
+  - `ML_VALIDATION_LIMITS` - Model validation constraints
+  - `ML_DATA_QUALITY` - Data quality thresholds for ML
+  - `ML_TRAINING_PRESETS` - Pre-configured training settings for LSTM, Transformer, GRU
+  - `META_MODEL_CONFIG` - Meta-model training configuration
+
+- **`backtest-config.ts`** - Backtest Engine configuration
+  - `BACKTEST_DEFAULTS` - Default backtest parameters (capital, fees, position limits)
+  - `REALISTIC_BACKTEST_DEFAULTS` - Realistic simulation settings (slippage, market impact)
+  - `TIERED_COMMISSIONS` - Volume-based commission tiers
+  - `WALK_FORWARD_DEFAULTS` - Walk-forward analysis settings
+  - `MONTE_CARLO_DEFAULTS` - Monte Carlo simulation settings
+  - `PORTFOLIO_DEFAULTS` - Multi-asset portfolio settings
+  - `OVERFITTING_THRESHOLDS` - Overfitting detection thresholds
+  - `RISK_CATEGORIES`, `GRADE_THRESHOLDS`, `CONFIDENCE_LEVELS` - Assessment thresholds
+
+- **`market-data.ts`** - Market Data configuration
+  - `DATA_QUALITY_CONFIG` - Data validation parameters
+  - `DATA_SOURCE_CONFIG` - Data source rate limits and capabilities
+  - `CACHE_DEFAULTS` - Cache settings for market data, indicators, API
+  - `LATENCY_CONFIG` - Latency monitoring thresholds
+  - `MICROSTRUCTURE_CONFIG` - Order book analysis settings
+  - `FLASH_CRASH_CONFIG` - Flash crash detection parameters
+  - `QUALITY_SCORE_THRESHOLDS` - Quality assessment thresholds
+  - `VOLUME_THRESHOLDS` - Volume analysis thresholds
+
+- **`portfolio.ts`** - Portfolio Optimization configuration
+  - `PORTFOLIO_OPTIMIZATION_DEFAULTS` - Optimization parameters
+  - `COVARIANCE_METHODS` - Available covariance calculation methods
+  - `GAP_RISK_CONFIG` - Gap risk management settings
+  - `RISK_PARITY_DEFAULTS` - Risk parity configuration
+  - `BLACK_LITTERMAN_CONFIG` - Black-Litterman model parameters
+  - `PORTFOLIO_CONSTRAINTS` - Weight constraints
+  - `PERFORMANCE_THRESHOLDS` - Performance metric thresholds
+  - `REBALANCING_CONFIG` - Rebalancing frequency settings
+
 ## Usage
 
 ### Recommended: Import from specific modules
@@ -154,6 +193,29 @@ This constant structure was refactored to eliminate duplication and inconsistenc
 - [ ] Update `DATA_QUALITY.MIN_DATA_LENGTH` to `DATA_REQUIREMENTS.MIN_DATA_POINTS`
 - [ ] Update `CHART_CONFIG.MIN_DATA_POINTS` to `DATA_REQUIREMENTS.MIN_DATA_POINTS`
 
+### REFACTOR-001 Migration (2026)
+
+The following new modules were added to consolidate hardcoded values:
+
+1. **ML Configuration** (`ml.ts`)
+   - Replace hardcoded epochs (50, 100) with `ML_HYPERPARAMETERS.DEFAULT_EPOCHS`
+   - Replace hardcoded batch sizes (32) with `ML_HYPERPARAMETERS.DEFAULT_BATCH_SIZE`
+   - Replace hardcoded LSTM units (64, 32, 16) with `ML_HYPERPARAMETERS.*` values
+
+2. **Backtest Configuration** (`backtest-config.ts`)
+   - Replace hardcoded initial capital (100000, 1000000) with `BACKTEST_DEFAULTS.*`
+   - Replace hardcoded commission rates (0.1) with `BACKTEST_DEFAULTS.DEFAULT_COMMISSION`
+   - Replace hardcoded walk-forward sizes (252, 63) with `WALK_FORWARD_DEFAULTS.*`
+
+3. **Market Data Configuration** (`market-data.ts`)
+   - Replace hardcoded cache TTLs with `CACHE_DEFAULTS.*`
+   - Replace hardcoded latency thresholds with `LATENCY_CONFIG.*`
+   - Replace hardcoded data quality thresholds with `DATA_QUALITY_CONFIG.*`
+
+4. **Portfolio Configuration** (`portfolio.ts`)
+   - Replace hardcoded trading days (252) with `PORTFOLIO_OPTIMIZATION_DEFAULTS.TRADING_DAYS_PER_YEAR`
+   - Replace hardcoded risk-free rate (2.0) with `PORTFOLIO_OPTIMIZATION_DEFAULTS.RISK_FREE_RATE`
+
 ## Benefits
 
 1. **Maintainability** - Easy to find and update related constants
@@ -163,10 +225,28 @@ This constant structure was refactored to eliminate duplication and inconsistenc
 5. **Backward Compatibility** - Existing code continues to work via re-exports
 6. **Consistency** - Eliminated duplicate and conflicting definitions
 
+## Environment Variables
+
+Type-safe environment variable access is provided via `lib/config/env.ts`:
+
+```typescript
+import { config, env, validateRequiredEnvVars } from '@/app/lib/config/env';
+
+// Access typed environment variables
+if (config.isProduction) {
+  validateRequiredEnvVars(['DATABASE_URL', 'NEXT_PUBLIC_APP_URL']);
+}
+
+// Access feature flags
+if (config.features.mlPredictions) {
+  // Enable ML prediction features
+}
+```
+
 ## Future Enhancements (Phase 2)
 
-- Environment-specific configuration (`.env.development`, `.env.production`)
-- Runtime configuration validation using Zod
+- ✅ Environment-specific configuration (`.env.development`, `.env.production`)
+- ✅ Runtime configuration validation using Zod
 - Dynamic configuration management service
 - A/B testing support
 - Feature flags integration

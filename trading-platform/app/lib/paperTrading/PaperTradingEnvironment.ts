@@ -12,6 +12,7 @@ import { EventEmitter } from 'events';
 // ============================================================================
 
 import { logger } from '@/app/core/logger';
+import { BACKTEST_DEFAULTS } from '../constants/backtest-config';
 export interface PaperPosition {
   id: string;
   symbol: string;
@@ -114,18 +115,18 @@ export interface MarketData {
 // ============================================================================
 
 export const DEFAULT_PAPER_TRADING_CONFIG: PaperTradingConfig = {
-  initialCapital: 1000000,
-  commissionRate: 0.1, // 0.1%
-  slippageRate: 0.05, // 0.05%
+  initialCapital: BACKTEST_DEFAULTS.LARGE_INITIAL_CAPITAL,
+  commissionRate: BACKTEST_DEFAULTS.DEFAULT_COMMISSION, // 0.1%
+  slippageRate: 0.05, // 0.05% - model-specific
   allowShortSelling: true,
   useMargin: false,
-  marginRatio: 2,
-  maxPositionSize: 20, // 20%
-  maxDrawdown: 20, // 20%
+  marginRatio: 2, // margin-specific, not consolidated
+  maxPositionSize: BACKTEST_DEFAULTS.MAX_POSITION_SIZE, // 20%
+  maxDrawdown: BACKTEST_DEFAULTS.CONSERVATIVE_MAX_DRAWDOWN, // 20%
   enableAutoStopLoss: true,
-  defaultStopLossPercent: 5, // 5%
+  defaultStopLossPercent: 5, // 5% - strategy-specific
   enableAutoTakeProfit: true,
-  defaultTakeProfitPercent: 10, // 10%
+  defaultTakeProfitPercent: 10, // 10% - strategy-specific
 };
 
 // ============================================================================

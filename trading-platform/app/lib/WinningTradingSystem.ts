@@ -18,6 +18,7 @@ import WinningBacktestEngine, { BacktestResult } from './backtest/WinningBacktes
 import type { PerformanceMetrics } from './backtest/WinningBacktestEngine';
 import { winningAlertEngine, Alert, AlertConfig } from './alerts';
 import { winningAnalytics, PerformanceReport } from './analytics';
+import { BACKTEST_DEFAULTS } from './constants/backtest-config';
 
 // ============================================================================
 // Types
@@ -77,13 +78,13 @@ export interface SystemConfig {
 }
 
 export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
-  initialCapital: 1000000,
-  maxPositions: 5,
+  initialCapital: BACKTEST_DEFAULTS.LARGE_INITIAL_CAPITAL,
+  maxPositions: 5, // strategy-specific
   defaultStrategy: 'ADAPTIVE',
   riskLimits: {
-    maxRiskPerTrade: 2,
-    maxDailyLoss: 5,
-    maxDrawdown: 20,
+    maxRiskPerTrade: 2, // strategy-specific
+    maxDailyLoss: 5, // strategy-specific
+    maxDrawdown: BACKTEST_DEFAULTS.CONSERVATIVE_MAX_DRAWDOWN,
   },
   alertConfig: {},
 };
