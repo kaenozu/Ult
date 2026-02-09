@@ -3,12 +3,11 @@ import { act } from '@testing-library/react';
 import { usePortfolioStore } from '../portfolioStore';
 import { AI_TRADING } from '@/app/lib/constants';
 
-// Mock RiskManagementService to isolate store logic
-jest.mock('../../lib/services/RiskManagementService', () => ({
-  getRiskManagementService: () => ({
-    validateOrder: jest.fn().mockReturnValue({ allowed: true, reasons: [] }),
-    calculateOptimalPositionSize: jest.fn().mockReturnValue(null),
-  })
+// Mock RiskManagementService to prevent side effects
+jest.mock('@/app/lib/services/RiskManagementService', () => ({
+  getRiskManagementService: jest.fn(() => ({
+    validateOrder: jest.fn(() => ({ allowed: true, reasons: [] }))
+  }))
 }));
 
 // Mock localStorage for Zustand persist
@@ -32,7 +31,7 @@ Object.defineProperty(window, 'localStorage', {
   value: localStorageMock
 });
 
-describe('TradingStore (Portfolio)', () => {
+describe('PortfolioStore', () => {
   beforeEach(() => {
     // Reset store state
     const { portfolio } = usePortfolioStore.getState();
@@ -40,11 +39,11 @@ describe('TradingStore (Portfolio)', () => {
       portfolio: {
         ...portfolio,
         positions: [],
+        orders: [], // Ensure orders array is also reset
         cash: 1000000, // Explicit start cash
         totalValue: 0,
         totalProfit: 0,
         dailyPnL: 0,
-        orders: []
       }
     });
   });

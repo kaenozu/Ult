@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`optimizeParameters returns consistent results 1`] = `
+{
+  "accuracy": 0,
+  "rsiPeriod": 14,
+  "smaPeriod": 50,
+}
+`;

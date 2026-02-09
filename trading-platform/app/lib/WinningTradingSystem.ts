@@ -441,28 +441,8 @@ class WinningTradingSystem {
         alignedResults.push({
           signal: 'HOLD',
           confidence: 0,
-          entryPrice: data[i].close,
-          stopLoss: 0,
-          takeProfit: 0,
-          positionSize: 0,
-          riskRewardRatio: 0,
-          strategy: strategy,
-          reasoning: '',
-          indicators: {
-            rsi: 0,
-            macd: 0,
-            sma20: 0,
-            sma50: 0,
-            bbUpper: 0,
-            bbLower: 0,
-            atr: 0,
-            adx: 0,
-          },
-          metadata: {
-            trendStrength: 0,
-            volatility: 0,
-            volumeConfirmation: false,
-          },
+          price: data[i].close,
+          timestamp: data[i].timestamp
         });
       } else {
         alignedResults.push(strategyResults[i - 50]);
@@ -597,7 +577,7 @@ class WinningTradingSystem {
       try {
         callback(event);
       } catch (error) {
-        logger.error('Event subscriber error:', error instanceof Error ? error : new Error(String(error)));
+        logger.error('Event subscriber error:', error);
       }
     });
   }

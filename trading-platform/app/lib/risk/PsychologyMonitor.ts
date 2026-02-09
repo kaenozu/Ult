@@ -7,9 +7,11 @@
 
 import { Order, Position } from '@/app/types';
 import {
+  TradingBehaviorMetrics,
   PsychologyAlert,
   TradingSession,
-  TradingBehaviorMetrics,
+  BiasAnalysis,
+  ConsecutiveLossInfo
 } from '@/app/types/risk';
 import { logger } from '@/app/core/logger';
 
@@ -128,7 +130,7 @@ export class PsychologyMonitor {
     const recentTrades = this.getRecentTrades(1);
     if (recentTrades.length >= 3) {
       newAlerts.push({
-        type: 'overtrading',
+        type: 'fomo',
         severity: 'high',
         message: '短時間に複数の取引が検出されました。FOMO（取り残される恐怖）の可能性があります。',
         recommendation: '一度立ち止まり、取引計画を確認してください。感情ではなく戦略に基づいて取引してください。',
@@ -145,7 +147,7 @@ export class PsychologyMonitor {
       
       if (longLosingPositions.length > 0) {
         newAlerts.push({
-          type: 'revenge_trading',
+          type: 'confirmation_bias',
           severity: 'high',
           message: `${longLosingPositions.length}つの損失ポジションを長期保有しています。確認バイアスの可能性があります。`,
           recommendation: '客観的にポジションを評価し、損切りルールに従ってください。希望的観測ではなくデータに基づいて判断してください。',
@@ -161,7 +163,7 @@ export class PsychologyMonitor {
       
       if (symbols.size < recentBuys.length / 2) {
         newAlerts.push({
-          type: 'fear',
+          type: 'loss_aversion',
           severity: 'high',
           message: '連続損失後に同じシンボルを買い増ししています。損失嫌悪バイアスの可能性があります。',
           recommendation: '損失を取り戻そうとする心理に注意してください。平均化戦略は慎重に行い、リスク管理を優先してください。',
@@ -179,15 +181,11 @@ export class PsychologyMonitor {
    */
   startSession(): void {
     this.currentSession = {
-      start_time: new Date().toISOString(),
-      trades_count: 0,
-      win_count: 0,
-      loss_count: 0,
-      total_profit: 0,
-      emotions: [],
-      violations: [],
-      notes: '',
-      id: crypto.randomUUID(),
+      startTime: new Date(),
+      tradesCount: 0,
+      profitLoss: 0,
+      emotionalState: 'calm',
+      decisionQuality: 100
     };
   }
 
@@ -196,7 +194,7 @@ export class PsychologyMonitor {
    */
   endSession(): void {
     if (this.currentSession) {
-      this.currentSession.end_time = new Date().toISOString();
+      this.currentSession.endTime = new Date();
       this.sessions.push(this.currentSession);
       this.currentSession = null;
     }
@@ -209,9 +207,7 @@ export class PsychologyMonitor {
     this.tradingHistory.push(order);
 
     if (this.currentSession) {
-      this.currentSession.trades_count++;
-      this.currentSession.win_count++;
-      this.currentSession.loss_count++;
+      this.currentSession.tradesCount++;
       this.updateEmotionalState();
       this.updateDecisionQuality();
     }
@@ -321,7 +317,7 @@ export class PsychologyMonitor {
   /**
    * バイアス分析を実行
    */
-  detectBiases(trade: Order, positions?: Position[]): { hasFOMO: boolean; hasFear: boolean; hasConfirmationBias: boolean; hasLossAversion: boolean; detectedBiases: string[]; severity: 'low' | 'medium' | 'high'; recommendation: string } {
+  detectBiases(trade: Order, positions?: Position[]): BiasAnalysis {
     const detectedBiases: string[] = [];
     let maxSeverity: 'low' | 'medium' | 'high' = 'low';
 
@@ -369,7 +365,7 @@ export class PsychologyMonitor {
   /**
    * 連続損失情報を取得
    */
-  detectConsecutiveLosses(history: Order[]): { currentStreak: number; maxStreak: number; totalLosses: number; isWarning: boolean; shouldCoolOff: boolean; coolOffReason?: string } {
+  detectConsecutiveLosses(history: Order[]): ConsecutiveLossInfo {
     let currentStreak = 0;
     let maxStreak = 0;
     let totalLosses = 0;
@@ -412,7 +408,6 @@ export class PsychologyMonitor {
       currentStreak,
       maxStreak: Math.max(maxStreak, currentStreak),
       totalLosses,
-      isWarning: shouldCoolOff,
       shouldCoolOff,
       coolOffReason
     };
@@ -640,7 +635,7 @@ export class PsychologyMonitor {
   private isTraderFatigued(): boolean {
     if (!this.currentSession) return false;
 
-    const sessionDuration = Date.now() - new Date(this.currentSession.start_time).getTime();
+    const sessionDuration = Date.now() - this.currentSession.startTime.getTime();
     const hoursTrading = sessionDuration / (1000 * 60 * 60);
 
     // 4時間以上の連続取引で疲労と判定
