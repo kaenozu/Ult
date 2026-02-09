@@ -442,7 +442,6 @@ class WinningTradingSystem {
         alignedResults.push({
           signal: 'HOLD',
           confidence: 0,
-          timestamp: data[i].timestamp,
           strategy: 'ADAPTIVE',
           entryPrice: 0,
           stopLoss: 0,
@@ -599,7 +598,7 @@ class WinningTradingSystem {
       try {
         callback(event);
       } catch (error) {
-        logger.error('Event subscriber error:', error);
+        logger.error('Event subscriber error:', error instanceof Error ? error : new Error(String(error)));
       }
     });
   }

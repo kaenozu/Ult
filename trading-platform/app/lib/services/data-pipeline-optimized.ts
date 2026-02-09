@@ -12,7 +12,7 @@ import { OHLCV } from '../../types';
  * Float64Arrayを使用してメモリ効率と計算パフォーマンスを最適化
  */
 export interface ColumnarOHLCV {
-  timestamps: Float64Array;
+  timestamps: Float64Array; // Store as UNIX timestamps (ms)
   opens: Float64Array;
   highs: Float64Array;
   lows: Float64Array;
@@ -35,7 +35,7 @@ export function toColumnarOHLCV(data: OHLCV[]): ColumnarOHLCV {
 
   for (let i = 0; i < length; i++) {
     const candle = data[i];
-    timestamps[i] = candle.timestamp;
+    timestamps[i] = new Date(candle.date).getTime();
     opens[i] = candle.open;
     highs[i] = candle.high;
     lows[i] = candle.low;
@@ -61,7 +61,7 @@ export function fromColumnarOHLCV(columnar: ColumnarOHLCV): OHLCV[] {
   const result: OHLCV[] = [];
   for (let i = 0; i < columnar.length; i++) {
     result.push({
-      timestamp: columnar.timestamps[i],
+      date: new Date(columnar.timestamps[i]).toISOString().split('T')[0],
       open: columnar.opens[i],
       high: columnar.highs[i],
       low: columnar.lows[i],

@@ -108,8 +108,8 @@ export function getClientIp(request: Request | NextRequest): string {
     // Priority 0: Next.js parsed IP (most secure as it handles trust logic)
     // This property is available on NextRequest objects in the Edge/Node.js runtime
     // provided by Vercel or Next.js server when properly configured with trustHostHeader
-    if ('ip' in request) {
-        const ip = (request as NextRequest).ip;
+    if (request instanceof Object && 'ip' in request) {
+        const ip = (request as any).ip;
         if (ip) {
             return ip;
         }

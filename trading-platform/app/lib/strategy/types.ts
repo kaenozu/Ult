@@ -22,7 +22,7 @@ export interface StrategyConfig {
   name: string;
   type: StrategyType;
   description: string;
-  parameters: Record<string, number | string>;
+  parameters: Record<string, any>;
   enabled: boolean;
   weight?: number; // for portfolio composition (0-1)
 }
