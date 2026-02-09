@@ -272,7 +272,7 @@ describe('useChartData Hook', () => {
       const mockSignal1 = generateMockSignal('BUY');
       const mockSignal2 = generateMockSignal('SELL');
 
-      const { result, rerender } = renderHook(({ signal }) =>
+      const { rerender } = renderHook(({ signal }) =>
         useChartData(mockData, signal, [])
         , { initialProps: { signal: mockSignal1 } });
 
@@ -288,6 +288,27 @@ describe('useChartData Hook', () => {
 
       // Should complete quickly (under 200ms for 10 re-renders)
       expect(duration).toBeLessThan(200);
+    });
+
+    test('should maintain referential equality for extendedData and return object on re-renders with same props', () => {
+      const mockData = generateMockOHLCV(1000, 100);
+      const mockSignal = generateMockSignal('BUY');
+      const mockIndexData: OHLCV[] = [];
+
+      const { result, rerender } = renderHook(
+        ({ data, signal, indexData }) => useChartData(data, signal, indexData),
+        { initialProps: { data: mockData, signal: mockSignal, indexData: mockIndexData } }
+      );
+
+      const initialResult = result.current;
+      const initialExtendedData = result.current.extendedData;
+
+      // Re-render with same props
+      rerender({ data: mockData, signal: mockSignal, indexData: mockIndexData });
+
+      // These should be strictly equal
+      expect(result.current.extendedData).toBe(initialExtendedData);
+      expect(result.current).toBe(initialResult);
     });
   });
 });
