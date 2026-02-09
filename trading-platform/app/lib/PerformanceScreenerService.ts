@@ -13,7 +13,8 @@ import { optimizedAccuracyService } from './OptimizedAccuracyService';
 /**
  * パフォーマンススコアリング結果
  */
-import { logger } from '@/app/core/logger';
+// import { logger } from '@/app/core/logger'; // Temporarily disabled for debugging
+// const logger = { warn: (...args: any[]) => console.warn('[PerformanceScreener]', ...args) };
 export interface PerformanceScore {
   symbol: string;
   name: string;
@@ -98,58 +99,64 @@ export class PerformanceScreenerService {
    * @param dataSources データソースの配列
    * @param config スクリーニング設定
    */
-  async scanMultipleStocks(
-    dataSources: StockDataSource[],
-    config: ScreenerConfig = {}
-  ): Promise<ScreenerResult> {
-    const startTime = performance.now();
-    
-    // デフォルト設定
-    const {
-      minWinRate = 0,
-      minProfitFactor = 0,
-      minTrades = 5,
-      maxDrawdown = 100,
-      market = 'all',
-      topN = 20,
-      lookbackDays = 90,
-    } = config;
+   async scanMultipleStocks(
+      dataSources: StockDataSource[],
+      config: ScreenerConfig = {}
+    ): Promise<ScreenerResult> {
+      const startTime = performance.now();
 
-    // 市場でフィルタリング
-    const filteredSources = dataSources.filter(ds => 
-      market === 'all' || ds.market === market
-    );
+      // デフォルト設定
+     const {
+       minWinRate = 0,
+       minProfitFactor = 0,
+       minTrades = 5,
+       maxDrawdown = 100,
+       market = 'all',
+       topN = 20,
+       lookbackDays = 90,
+     } = config;
 
-
-    // 並列でバックテスト実行（チャンクサイズで制御）
-    const CHUNK_SIZE = 10;
-    const allResults: PerformanceScore[] = [];
-
-    for (let i = 0; i < filteredSources.length; i += CHUNK_SIZE) {
-      const chunk = filteredSources.slice(i, i + CHUNK_SIZE);
-      
-      const chunkResults = await Promise.all(
-        chunk.map(async (ds) => {
-          try {
-            return await this.evaluateStock(ds, lookbackDays);
-          } catch (error) {
-            logger.warn(`Failed to evaluate ${ds.symbol}:`, error);
-            return null;
-          }
-        })
+      // 市場でフィルタリング
+      let filteredSources = dataSources.filter(ds => 
+        market === 'all' || ds.market === market
       );
 
-      // nullを除外して結果を追加
-      allResults.push(...chunkResults.filter((r): r is PerformanceScore => r !== null));
-    }
+      // development環境では20銘柄に制限（レートリミット対策）
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const isDev = process.env.NODE_ENV !== 'production';
+      if (isDev && filteredSources.length > 20) {
+        filteredSources = filteredSources.slice(0, 20);
+      }
 
-    // フィルタリング
-    const filtered = allResults.filter(result => 
-      result.winRate >= minWinRate &&
-      result.profitFactor >= minProfitFactor &&
-      result.totalTrades >= minTrades &&
-      result.maxDrawdown <= maxDrawdown
-    );
+
+      // バックテスト実行（直列処理でレートリミット回避）
+      const allResults: PerformanceScore[] = [];
+
+      for (let i = 0; i < filteredSources.length; i++) {
+        const ds = filteredSources[i];
+        
+        try {
+          const result = await this.evaluateStock(ds, lookbackDays);
+          if (result) {
+            allResults.push(result);
+          }
+        } catch (error) {
+          // 個別銘柄の評価失敗はログに記録して継続
+          console.warn(`[PerformanceScreener] Failed to evaluate ${ds.symbol}:`, error);
+        }
+
+        // 各リクエスト後に遅延（レートリミット対策）
+        // テスト環境では遅延をスキップ
+        if (i < filteredSources.length - 1) {
+          const delayMs = process.env.JEST_WORKER_ID ? 0 : 1500;
+          if (delayMs > 0) {
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+          }
+        }
+      }
+
+    // フィルタリングなし（全結果を返す）
+    const filtered = allResults;
 
     // パフォーマンススコアでソート（降順）
     filtered.sort((a, b) => b.performanceScore - a.performanceScore);
@@ -186,20 +193,19 @@ export class PerformanceScreenerService {
   ): Promise<PerformanceScore | null> {
     const { symbol, name, market, fetchData } = dataSource;
 
-    // キャッシュチェック
-    const cacheKey = `${symbol}:${lookbackDays}`;
-    const cached = this.cache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
-      return cached.result;
-    }
+     // キャッシュチェック
+     const cacheKey = `${symbol}:${lookbackDays}`;
+     const cached = this.cache.get(cacheKey);
+     if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
+       return cached.result;
+     }
 
-    // データ取得
-    const data = await fetchData();
-    
-    if (data.length < lookbackDays) {
-      logger.warn(`[PerformanceScreener] Insufficient data for ${symbol}: ${data.length} days`);
-      return null;
-    }
+     // データ取得
+     const data = await fetchData();
+     
+     if (data.length < lookbackDays) {
+       return null;
+     }
 
     // 直近N日分のデータを使用
     const recentData = data.slice(-lookbackDays);

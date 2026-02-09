@@ -13,6 +13,7 @@ interface TradingStore {
   watchlist: Stock[];
   addToWatchlist: (stock: Stock) => void;
   removeFromWatchlist: (symbol: string) => void;
+  clearWatchlist: () => void;
   portfolio: Portfolio;
   updatePortfolio: (positions: Position[]) => void;
   closePosition: (symbol: string, exitPrice: number) => OrderResult;
@@ -48,6 +49,7 @@ export function useTradingStore<T>(selector?: (state: TradingStore) => T): Tradi
     watchlist: watchlist.watchlist,
     addToWatchlist: watchlist.addToWatchlist,
     removeFromWatchlist: watchlist.removeFromWatchlist,
+    clearWatchlist: watchlist.clearWatchlist,
     selectedStock: watchlist.selectedStock,
     setSelectedStock: watchlist.setSelectedStock,
 

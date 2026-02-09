@@ -80,8 +80,8 @@ export function SignalCard({
             )}
 
             {/* Header Section */}
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
+            <div className="flex justify-between items-center gap-4">
+                <div className="flex items-center gap-2 pl-2">
                     <div className={cn(
                         "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-sm",
                         signal.confidence >= 80 ? "bg-white text-black" : "bg-black/20 text-white/70"
@@ -94,7 +94,7 @@ export function SignalCard({
                         </div>
                     )}
                 </div>
-                <div className="text-right">
+                <div className="text-right pr-2">
                     <div className="text-[10px] text-[#92adc9] font-bold uppercase tracking-wider">予測信頼度</div>
                     <div className={cn("text-xl font-black tabular-nums", getConfidenceColor(signal.confidence))}>
                         {signal.confidence}%
@@ -103,8 +103,8 @@ export function SignalCard({
             </div>
 
             {/* Action Display */}
-            <div className="mt-2 flex items-end justify-between">
-                <div className="flex flex-col">
+            <div className="mt-2">
+                <div className="flex flex-col items-center">
                     <span className={cn(
                         'text-5xl font-black leading-none tracking-tighter',
                         isBuy && 'text-green-500 drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]',
@@ -114,24 +114,6 @@ export function SignalCard({
                         {isBuy ? '買い' : isSell ? '売り' : '維持'}
                     </span>
                     <span className="text-[10px] font-bold text-[#92adc9] mt-1 ml-1 uppercase">推奨アクション</span>
-                </div>
-                <div className="text-right">
-                    <div className="text-[10px] text-[#92adc9] font-bold uppercase tracking-wider">過去の的中率</div>
-                    <div className={cn(
-                        'text-lg font-black tabular-nums',
-                        (aiHitRate || 0) >= 50 ? 'text-white' : 'text-red-400'
-                    )}>
-                        {calculatingHitRate ? (
-                            <span className="text-xs text-[#92adc9] animate-pulse">計算中...</span>
-                        ) : error ? (
-                            <span className="text-xs text-red-400" title={error}>エラー</span>
-                        ) : (
-                            `${aiHitRate ?? 0}%`
-                        )}
-                    </div>
-                    {!calculatingHitRate && !error && (
-                        <div className="text-[8px] text-[#92adc9]/60">過去{aiTradesCount}回の試行</div>
-                    )}
                 </div>
             </div>
 

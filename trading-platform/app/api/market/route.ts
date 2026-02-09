@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
           finalInterval = (interval === '4h' ? '1h' : interval) as YahooInterval;
         }
 
-        const rawResult = await yf.chart(yahooSymbol, { period1, interval: finalInterval });
+        const rawResult = await yf.chart(yahooSymbol, { period1, interval: finalInterval ?? '1d' });
         const parseResult = YahooChartResultSchema.safeParse(rawResult);
 
         if (!parseResult.success) {

@@ -70,10 +70,12 @@ function ScreenerContent() {
 
   useEffect(() => {
     let mounted = true;
+    const controller = new AbortController();
+
     const fetchAllData = async () => {
       const allStocks = [...JAPAN_STOCKS, ...USA_STOCKS];
       const symbols = allStocks.map(s => s.symbol);
-      const quotes = await marketClient.fetchQuotes(symbols);
+      const quotes = await marketClient.fetchQuotes(symbols, undefined, controller.signal);
 
       if (mounted && quotes.length > 0) {
         setStocks(prev => prev.map(s => {
@@ -92,7 +94,10 @@ function ScreenerContent() {
       }
     };
     fetchAllData();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, []);
 
   const handleTechScreening = async () => {

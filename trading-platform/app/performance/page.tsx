@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
 import { cn, formatPercent } from '@/app/lib/utils';
 import { useUIStore } from '@/app/store/uiStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
 
@@ -54,9 +55,9 @@ function PerformanceDashboardContent() {
   
   // フィルター
   const [market, setMarket] = useState<'all' | 'japan' | 'usa'>('all');
-  const [minWinRate, setMinWinRate] = useState(50);
-  const [minProfitFactor, setMinProfitFactor] = useState(1.0);
-  const [lookbackDays, setLookbackDays] = useState(90);
+  const [minWinRate, setMinWinRate] = useState(30);
+  const [minProfitFactor, setMinProfitFactor] = useState(0.5);
+   const [lookbackDays, setLookbackDays] = useState(180);
   const [autoRefresh, setAutoRefresh] = useState(false);
   
   // ソート
@@ -73,10 +74,11 @@ function PerformanceDashboardContent() {
         market,
         minWinRate: minWinRate.toString(),
         minProfitFactor: minProfitFactor.toString(),
-        minTrades: '5',
+        minTrades: '3',
         maxDrawdown: '100',
         topN: '50',
         lookbackDays: lookbackDays.toString(),
+        debug: 'true', // キャッシュ無効化
       });
 
       const response = await fetch(`/api/performance-screener?${params}`);
@@ -145,20 +147,34 @@ function PerformanceDashboardContent() {
       : (bVal as number) - (aVal as number);
   }) : [];
 
-  // 銘柄クリック処理
-  const handleStockClick = (stock: PerformanceScore) => {
-    setSelectedStock({
-      symbol: stock.symbol,
-      name: stock.name,
-      market: stock.market,
-      price: 0,
-      change: 0,
-      changePercent: 0,
-      volume: 0,
-      sector: '',
-    });
-    router.push('/');
-  };
+   // 銘柄クリック処理
+   const handleStockClick = (stock: PerformanceScore) => {
+     // ウォッチリストに追加
+     const { addToWatchlist } = useWatchlistStore.getState();
+     addToWatchlist({
+       symbol: stock.symbol,
+       name: stock.name,
+       market: stock.market === 'japan' ? 'japan' : 'usa',
+       price: 0,
+       change: 0,
+       changePercent: 0,
+       volume: 0,
+       sector: '',
+     });
+     
+     // 銘柄選択
+     setSelectedStock({
+       symbol: stock.symbol,
+       name: stock.name,
+       market: stock.market,
+       price: 0,
+       change: 0,
+       changePercent: 0,
+       volume: 0,
+       sector: '',
+     });
+     router.push('/');
+   };
 
   // パフォーマンススコアの色
   const getScoreColor = (score: number) => {

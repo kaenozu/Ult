@@ -83,7 +83,7 @@ function HeatmapBlock({ stock, className, onClick }: HeatmapBlockProps) {
 
 function HeatmapContent() {
   const router = useRouter();
-  const { batchUpdateStockData } = useWatchlistStore();
+  const { batchUpdateStockData, addToWatchlist } = useWatchlistStore();
   const { setSelectedStock } = useUIStore();
   const [displayStocks, setDisplayStocks] = useState<Stock[]>(ALL_STOCKS);
   const [selectedSector, setSelectedSector] = useState('全て');
@@ -91,11 +91,12 @@ function HeatmapContent() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchAllQuotes = async () => {
       setLoading(true);
       try {
         const symbols = ALL_STOCKS.map(s => s.symbol);
-        const latestQuotes = await marketClient.fetchQuotes(symbols);
+        const latestQuotes = await marketClient.fetchQuotes(symbols, undefined, controller.signal);
 
         const updates = latestQuotes.map(q => ({
           symbol: q.symbol,
@@ -107,7 +108,8 @@ function HeatmapContent() {
           }
         }));
 
-        batchUpdateStockData(updates);
+        // Heatmap only updates display stocks, not watchlist
+        // batchUpdateStockData removed to prevent adding all heatmap stocks to watchlist
 
         const updatedStocks = ALL_STOCKS.map(s => {
           const quote = latestQuotes.find(q => q.symbol === s.symbol);
@@ -122,9 +124,11 @@ function HeatmapContent() {
     };
 
     fetchAllQuotes();
-  }, [batchUpdateStockData]);
+    return () => controller.abort();
+  }, []);
 
   const handleStockClick = (stock: Stock) => {
+    addToWatchlist(stock);
     setSelectedStock(stock);
     router.push('/');
   };

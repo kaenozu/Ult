@@ -14,13 +14,14 @@ interface IntervalTest {
   description: string;
 }
 
+// ChartToolbarの実際のボタンラベルに合わせる
 const intervalTests: IntervalTest[] = [
-  { buttonText: '1m', expectedIntervalParam: '1m', description: '1分足' },
-  { buttonText: '5m', expectedIntervalParam: '5m', description: '5分足' },
-  { buttonText: '15m', expectedIntervalParam: '15m', description: '15分足' },
-  { buttonText: '1H', expectedIntervalParam: '1h', description: '1時間足' },
-  { buttonText: '4H', expectedIntervalParam: '4h', description: '4時間足 (4hで送信、API側でフォールバック)' },
-  { buttonText: 'D', expectedIntervalParam: '1d', description: '日足' },
+  { buttonText: '1分', expectedIntervalParam: '1m', description: '1分足' },
+  { buttonText: '5分', expectedIntervalParam: '5m', description: '5分足' },
+  { buttonText: '15分', expectedIntervalParam: '15m', description: '15分足' },
+  { buttonText: '1時間', expectedIntervalParam: '1h', description: '1時間足' },
+  { buttonText: '4時間', expectedIntervalParam: '4h', description: '4時間足 (4hで送信、API側でフォールバック)' },
+  { buttonText: '日足', expectedIntervalParam: '1d', description: '日足' },
 ];
 
 // ASML銘柄を検索して選択するヘルパー関数（米国株のテスト用）
@@ -37,27 +38,40 @@ async function selectASMLStock(page: Page): Promise<boolean> {
   await searchBox.fill('ASML');
   await page.waitForTimeout(2500);
 
-  // 検索結果をクリック
-  const searchResults = page.locator('button:has-text("ASML")');
+  // 検索結果をクリック（id属性を使用）
+  const searchResults = page.locator('#stock-option-ASML');
   const results = await searchResults.count();
   console.log('検索結果数:', results);
 
   if (results > 0) {
-    await searchResults.first().click();
-    await page.waitForTimeout(2000);
-
-    // チャートが読み込まれるのを待つ
+    // 検索結果ボタンが有効になるまで待機
+    await searchResults.waitFor({ state: 'visible', timeout: 5000 });
+    
+    await searchResults.click();
+    console.log('ASML: 検索結果をクリックしました');
+    
+    // クリック後の待機時間を増やす
+    await page.waitForTimeout(3000);
+    
+    // 銘柄が選択されるまで待機（「銘柄が未選択です」が消えるのを待つ）
     try {
-      await page.waitForSelector('canvas', { timeout: 15000, state: 'visible' });
-
+      await page.waitForFunction(() => {
+        const html = document.body.innerHTML;
+        const hasNoStock = html.includes('銘柄が未選択です');
+        const hasToolbar = document.querySelector('.min-h-10.border-b') !== null;
+        return !hasNoStock || hasToolbar;
+      }, { timeout: 15000, polling: 500 });
+      
+      console.log('ASML: 銘柄が選択されました');
+      
       // チャートツールバーが表示されるのを待つ
-      await page.waitForSelector('.min-h-10.border-b', { state: 'visible', timeout: 5000 });
-      await page.waitForTimeout(500); // 追加の待機時間
+      await page.waitForSelector('.min-h-10.border-b', { state: 'visible', timeout: 10000 });
+      await page.waitForTimeout(1000);
 
       return true;
-    } catch {
-      // チャートが見つからない場合でも続行
-      console.log('チャート要素が見つかりませんでした');
+    } catch (error) {
+      console.log('ASML: チャート要素が見つかりませんでした:', error);
+      return false;
     }
   }
 
@@ -78,27 +92,40 @@ async function selectNintendoStock(page: Page): Promise<boolean> {
   await searchBox.fill('7974');  // 任天堂のコード
   await page.waitForTimeout(2500);
 
-  // 検索結果をクリック
-  const searchResults = page.locator('button:has-text("7974")');
+  // 検索結果をクリック（id属性を使用）
+  const searchResults = page.locator('#stock-option-7974');
   const results = await searchResults.count();
   console.log('検索結果数:', results);
 
   if (results > 0) {
-    await searchResults.first().click();
-    await page.waitForTimeout(2000);
-
-    // チャートが読み込まれるのを待つ
+    // 検索結果ボタンが有効になるまで待機
+    await searchResults.waitFor({ state: 'visible', timeout: 5000 });
+    
+    await searchResults.click();
+    console.log('7974: 検索結果をクリックしました');
+    
+    // クリック後の待機時間を増やす
+    await page.waitForTimeout(3000);
+    
+    // 銘柄が選択されるまで待機（「銘柄が未選択です」が消えるのを待つ）
     try {
-      await page.waitForSelector('canvas', { timeout: 15000, state: 'visible' });
-
+      await page.waitForFunction(() => {
+        const html = document.body.innerHTML;
+        const hasNoStock = html.includes('銘柄が未選択です');
+        const hasToolbar = document.querySelector('.min-h-10.border-b') !== null;
+        return !hasNoStock || hasToolbar;
+      }, { timeout: 15000, polling: 500 });
+      
+      console.log('7974: 銘柄が選択されました');
+      
       // チャートツールバーが表示されるのを待つ
-      await page.waitForSelector('.min-h-10.border-b', { state: 'visible', timeout: 5000 });
-      await page.waitForTimeout(500); // 追加の待機時間
+      await page.waitForSelector('.min-h-10.border-b', { state: 'visible', timeout: 10000 });
+      await page.waitForTimeout(1000);
 
       return true;
-    } catch {
-      // チャートが見つからない場合でも続行
-      console.log('チャート要素が見つかりませんでした');
+    } catch (error) {
+      console.log('7974: チャート要素が見つかりませんでした:', error);
+      return false;
     }
   }
 
@@ -124,23 +151,11 @@ test.describe('チャート - インターバル切り替え（日本株）', ()
   });
 
   test('日本株：日足ボタンが正しく動作する', async ({ page }) => {
-    // 日本株では分足ボタン（1m, 5m, 15m, 1H, 4H）は無効化されていることを確認
-    // 注：現在選択されているインターバル（5m）のボタンは無効化されない
-    const intradayButtonsOther = ['1m', '15m', '1H', '4H'] as const;
+    // 日本株では「日足」ボタンのみが表示される
+    // ChartToolbarでは japaneseIntervals = [{ value: 'D', label: '日足' }] のみ
 
-    for (const intervalText of intradayButtonsOther) {
-      const button = await getIntervalButton(page, intervalText);
-
-      // ボタンが表示されることを確認
-      await expect(button).toBeVisible();
-
-      // ボタンが無効化されていることを確認
-      await expect(button).toHaveAttribute('disabled');
-      await expect(button).toHaveAttribute('title', '日本株では日足データのみ利用可能です');
-    }
-
-    // 日足ボタン（D）は有効でクリック可能であることを確認
-    const buttonD = await getIntervalButton(page, 'D');
+    // 日足ボタンが有効でクリック可能であることを確認
+    const buttonD = await getIntervalButton(page, '日足');
     await expect(buttonD).toBeVisible();
     await expect(buttonD).not.toHaveAttribute('disabled');
 
@@ -150,31 +165,28 @@ test.describe('チャート - インターバル切り替え（日本株）', ()
 
     // 日足ボタンが押された状態になっていることを確認
     await expect(buttonD).toHaveAttribute('aria-pressed', 'true');
+
+    // 分足ボタン（1分, 5分など）は存在しないことを確認
+    const intradayButton = page.locator('.min-h-10.border-b').locator('button:has-text("1分"), button:has-text("5分")').first();
+    const hasIntradayButton = await intradayButton.isVisible().catch(() => false);
+    expect(hasIntradayButton).toBeFalsy();
   });
 
-  test('日本株：分足ボタンが無効化されていることを確認', async ({ page }) => {
-    // 分足ボタンが無効化されていることを確認
-    // 注：現在選択されているインターバル（5m）のボタンは無効化されない
-    const intradayButtonsOther = ['1m', '15m', '1H', '4H'] as const;
+  test('日本株：日足のみが表示されることを確認', async ({ page }) => {
+    // 日本株では「日足」ボタンのみが表示される
+    // 分足ボタンは存在しないことを確認
+    const intradayLabels = ['1分', '5分', '15分', '1時間', '4時間'];
 
-    for (const intervalText of intradayButtonsOther) {
-      const button = await getIntervalButton(page, intervalText);
-
-      // ボタンが表示されることを確認
-      await expect(button).toBeVisible();
-
-      // ボタンが無効化されていることを確認
-      await expect(button).toHaveAttribute('disabled');
-
-      // aria-pressedがfalseであることを確認
-      await expect(button).toHaveAttribute('aria-pressed', 'false');
+    for (const label of intradayLabels) {
+      const button = page.locator('.min-h-10.border-b').locator(`button:has-text("${label}")`).first();
+      const isVisible = await button.isVisible().catch(() => false);
+      expect(isVisible).toBeFalsy();
     }
 
-    // 5mボタンは現在選択されているため、無効化されていないことを確認
-    const button5m = await getIntervalButton(page, '5m');
-    await expect(button5m).toBeVisible();
-    await expect(button5m).not.toHaveAttribute('disabled');
-    await expect(button5m).toHaveAttribute('aria-pressed', 'true');
+    // 日足ボタンのみが存在することを確認
+    const buttonDaily = await getIntervalButton(page, '日足');
+    await expect(buttonDaily).toBeVisible();
+    await expect(buttonDaily).not.toHaveAttribute('disabled');
   });
 });
 
@@ -191,11 +203,14 @@ test.describe('チャート - インターバル切り替え（米国株）', ()
 
   test('米国株：各インターバルボタンが正しく動作する', async ({ page }) => {
     // 米国株ではすべてのインターバルボタンが有効
-    // 注：1mはYahoo Finance APIの制限によりテストをスキップ
-    const intervalsToTest = ['5m', 'D'] as const;
+    // ChartToolbarの実際のボタンラベルを使用
+    const intervalsToTest = [
+      { label: '5分', value: '5m' },
+      { label: '日足', value: 'D' }
+    ] as const;
 
-    for (const intervalText of intervalsToTest) {
-      const button = await getIntervalButton(page, intervalText);
+    for (const interval of intervalsToTest) {
+      const button = await getIntervalButton(page, interval.label);
 
       // ボタンが表示されるのを待つ
       await expect(button).toBeVisible();
@@ -210,7 +225,7 @@ test.describe('チャート - インターバル切り替え（米国株）', ()
       // クリックしたボタンが押された状態になっていることを確認
       await expect(button).toHaveAttribute('aria-pressed', 'true');
 
-      console.log(`${intervalText}: ✓ ボタンが正しく動作しました`);
+      console.log(`${interval.value}: ✓ ボタンが正しく動作しました`);
     }
   });
 
@@ -255,11 +270,16 @@ test.describe('チャート - インターバル切り替え（米国株）', ()
 
   test('米国株：連続してインターバルを切り替えても正しく動作する', async ({ page }) => {
     // 連続してインターバルを切り替え（ストレステスト）
-    // 注：1mはYahoo Finance APIの制限により除外
-    const intervals = ['5m', '1H', 'D', '5m'];
+    // ChartToolbarの実際のボタンラベルを使用
+    const intervals = [
+      { label: '5分', value: '5m' },
+      { label: '1時間', value: '1H' },
+      { label: '日足', value: 'D' },
+      { label: '5分', value: '5m' }
+    ];
 
-    for (const intervalText of intervals) {
-      const button = await getIntervalButton(page, intervalText);
+    for (const interval of intervals) {
+      const button = await getIntervalButton(page, interval.label);
       await button.click();
       await page.waitForTimeout(500); // 待機時間を増やす
 
@@ -278,9 +298,10 @@ test.describe('チャート - インターバル切り替エッジケース', ()
     await page.waitForTimeout(500);
 
     // 銘柄を選択せずにインターバルボタンをクリック（ボタンが表示されている場合）
-    const button1m = page.locator('.min-h-10.border-b').locator('button:has-text("1m")').first();
-    if (await button1m.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await button1m.click();
+    // ChartToolbarは銘柄未選択時でも表示される可能性がある
+    const button1min = page.locator('.min-h-10.border-b').locator('button:has-text("1分")').first();
+    if (await button1min.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await button1min.click();
       await page.waitForTimeout(500);
 
       // エラーが発生していないことを確認

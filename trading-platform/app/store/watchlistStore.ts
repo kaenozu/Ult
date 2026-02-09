@@ -7,6 +7,7 @@ interface WatchlistState {
   selectedStock: Stock | null;
   addToWatchlist: (stock: Stock) => void;
   removeFromWatchlist: (symbol: string) => void;
+  clearWatchlist: () => void;
   setSelectedStock: (stock: Stock | null) => void;
   updateStockData: (symbol: string, data: Partial<Stock>) => void;
   batchUpdateStockData: (updates: Array<{ symbol: string; data: Partial<Stock> }>) => void;
@@ -19,12 +20,16 @@ export const useWatchlistStore = create<WatchlistState>()(
       selectedStock: null,
       addToWatchlist: (stock) => set((state) => {
         if (state.watchlist.some((s) => s.symbol === stock.symbol)) return state;
-        return { watchlist: [...state.watchlist, stock] };
+        return { watchlist: [stock, ...state.watchlist] };
       }),
       removeFromWatchlist: (symbol) => set((state) => ({
         watchlist: state.watchlist.filter((s) => s.symbol !== symbol),
         selectedStock: state.selectedStock?.symbol === symbol ? null : state.selectedStock,
       })),
+      clearWatchlist: () => set({
+        watchlist: [],
+        selectedStock: null,
+      }),
       setSelectedStock: (stock) => set({ selectedStock: stock }),
       updateStockData: (symbol, data) => set((state) => ({
         watchlist: state.watchlist.map((s) =>
@@ -64,7 +69,7 @@ export const useWatchlistStore = create<WatchlistState>()(
             };
           });
 
-        const updatedWatchlist = [...newWatchlist, ...newStocks];
+        const updatedWatchlist = [...newStocks, ...newWatchlist];
 
         // selectedStockも更新
         let newSelectedStock = state.selectedStock;
