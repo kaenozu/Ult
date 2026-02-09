@@ -61,7 +61,7 @@ describe('OrderPanel', () => {
         expect(mockExecuteOrder).toHaveBeenCalledWith(expect.objectContaining({
             symbol: '7203',
             quantity: 100,
-            side: 'BUY'
+            side: 'LONG'
         }));
 
         // Success message

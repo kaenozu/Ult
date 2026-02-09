@@ -17,7 +17,6 @@ interface TradingStore {
   updatePortfolio: (positions: Position[]) => void;
   closePosition: (symbol: string, exitPrice: number) => OrderResult;
   executeOrder: (order: OrderRequest) => OrderResult;
-  placeOrder: (order: OrderRequest) => OrderResult; // Alias for executeOrder
   aiStatus: 'active' | 'stopped';
   toggleAI: () => void;
   selectedStock: Stock | null;
@@ -56,7 +55,6 @@ export function useTradingStore<T>(selector?: (state: TradingStore) => T): Tradi
     aiStatus: portfolio.aiStatus,
     updatePortfolio: portfolio.updatePortfolio,
     executeOrder: portfolio.executeOrder,
-    placeOrder: portfolio.executeOrder,
     closePosition: portfolio.closePosition,
     toggleAI: portfolio.toggleAI,
     setCash: portfolio.setCash,

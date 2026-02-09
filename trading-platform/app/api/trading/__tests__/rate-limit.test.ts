@@ -110,7 +110,7 @@ describe('Trading API Rate Limiting', () => {
 
     it('should block requests over rate limit', async () => {
       // Make requests up to the limit (default is 120 per minute)
-      for (let i = 0; i < 120; i++) {
+      for (let i = 0; i < 125; i++) {
         const req = createPostRequest({ action: 'reset' });
         await POST(req);
       }

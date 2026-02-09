@@ -55,6 +55,62 @@ export type {
   HedgePerformance,
 } from './TailRiskHedging';
 
+export {
+  EnhancedPortfolioRiskMonitor,
+  createEnhancedPortfolioRiskMonitor,
+} from './EnhancedPortfolioRiskMonitor';
+
+export type {
+  SectorExposure,
+  EnhancedRiskMetrics,
+} from './EnhancedPortfolioRiskMonitor';
+
+export {
+  EnhancedPsychologyMonitor,
+  createEnhancedPsychologyMonitor,
+} from './EnhancedPsychologyMonitor';
+
+export type {
+  DynamicRiskAdjustment,
+  DynamicRiskAdjusterConfig,
+  MarketCondition,
+  PerformanceMetrics,
+} from './DynamicRiskAdjuster';
+
+// TRADING-028: Advanced Risk Management
+export {
+  DynamicPositionSizer,
+  createDynamicPositionSizer,
+} from './DynamicPositionSizer';
+
+export type {
+  VolatilityMetrics,
+  PositionSizingRequest,
+  PositionSizingResponse,
+  PortfolioRiskLimits,
+} from './DynamicPositionSizer';
+
+export {
+  PortfolioRiskMonitor,
+  createPortfolioRiskMonitor,
+} from './PortfolioRiskMonitor';
+
+export type {
+  VaRResult,
+  CorrelationPair,
+  StressTestScenario,
+  StressTestResult,
+  RiskContribution,
+  PortfolioRiskReport,
+} from './PortfolioRiskMonitor';
+
+export type {
+  OptionsHedge,
+  InverseAssetHedge,
+  FuturesHedge,
+  HedgePortfolio,
+} from './TailRiskHedging';
+
 export type {
   EnhancedBehaviorMetrics,
   TiltIndicators,

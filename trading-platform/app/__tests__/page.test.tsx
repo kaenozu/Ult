@@ -13,10 +13,6 @@ jest.mock('../components/HistoryTable', () => ({ HistoryTable: () => <div>Histor
 jest.mock('../components/SignalPanel', () => ({ SignalPanel: () => <div>SignalPanel</div> }));
 jest.mock('../components/StockChart', () => ({ StockChart: () => <div>StockChart</div> }));
 jest.mock('../components/OrderPanel', () => ({ OrderPanel: () => <div>OrderPanel</div> }));
-jest.mock('../components/LeftSidebar', () => ({ LeftSidebar: () => <div>LeftSidebar</div> }));
-jest.mock('../components/RightSidebar', () => ({ RightSidebar: () => <div>RightSidebar</div> }));
-jest.mock('../components/ChartToolbar', () => ({ ChartToolbar: () => <div>ChartToolbar</div> }));
-jest.mock('../components/BottomPanel', () => ({ BottomPanel: () => <div>BottomPanel</div> }));
 
 // Mock translations
 jest.mock('@/app/i18n/provider', () => ({
@@ -33,39 +29,6 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn() }),
   usePathname: () => '/',
 }));
-
-// Mock translations
-jest.mock('../i18n/provider', () => ({
-  useTranslations: () => (key: string) => key,
-}));
-
-// Mock useSymbolAccuracy
-jest.mock('../hooks/useSymbolAccuracy', () => ({
-  useSymbolAccuracy: () => ({
-    accuracy: null,
-    loading: false
-  })
-}));
-
-// Mock useStockData - configurable
-const mockUseStockData = jest.fn();
-jest.mock('../hooks/useStockData', () => ({
-  useStockData: () => mockUseStockData()
-}));
-
-const defaultStockData = {
-  selectedStock: null,
-  chartData: [],
-  indexData: [],
-  chartSignal: null,
-  loading: false,
-  error: null,
-  handleStockSelect: jest.fn(),
-  interval: 'daily',
-  setInterval: jest.fn(),
-  fallbackApplied: false,
-  dataDelayMinutes: 0
-};
 
 describe('Workstation Page - Initial State', () => {
   const defaultMockStockData = {
@@ -110,7 +73,6 @@ describe('Workstation Page - Initial State', () => {
       ...defaultMockStockData,
       selectedStock: mockStock,
     });
-    mockUseStockData.mockReturnValue({ ...defaultStockData, selectedStock: mockStock });
 
     render(<Workstation />);
     

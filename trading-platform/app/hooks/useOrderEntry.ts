@@ -111,11 +111,10 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
         symbol: stock.symbol,
         name: stock.name,
         market: stock.market,
-        type: orderType,
-        side,
+        orderType,
+        side: side === 'BUY' ? 'LONG' : 'SHORT',
         quantity,
-        price: orderType === 'LIMIT' ? price : currentPrice, // Ensure price is always passed
-        orderType: orderType, // Added redundant field to match OrderRequest if needed, though 'type' is passed above. Check OrderRequest type.
+        price: orderType === 'LIMIT' ? price : currentPrice,
       });
 
       if (result.success) {
