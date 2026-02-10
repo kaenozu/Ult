@@ -346,6 +346,7 @@ export interface BacktestResult {
   trades: BacktestTrade[];
   startDate: string;
   endDate: string;
+  warning?: string;  // Optional warning message for insufficient data or other issues
 }
 
 // ============================================================================
