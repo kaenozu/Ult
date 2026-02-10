@@ -2,10 +2,17 @@
 Supply/Demand Analyzer
 
 Analyzes supply and demand zones from volume-by-price data.
+Optimized with NumPy for high-performance calculations.
 """
 
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
 from .models import Zone, ZoneType, BreakoutEvent
+
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
 
 # Constants for zone identification
 ZONE_STRENGTH_DEFAULT = 0.5
@@ -27,14 +34,23 @@ class SupplyDemandAnalyzer:
         Returns:
             Dictionary mapping price to total volume
         """
+        if not data:
+            return {}
+
+        if HAS_NUMPY:
+            prices = np.array([d[0] for d in data])
+            volumes = np.array([d[1] for d in data])
+            
+            # Group by price and sum volumes efficiently
+            unique_prices, indices = np.unique(prices, return_inverse=True)
+            total_volumes = np.bincount(indices, weights=volumes)
+            
+            return dict(zip(unique_prices.tolist(), total_volumes.tolist()))
+
+        # Fallback to pure Python
         volume_by_price: Dict[float, float] = {}
-
         for price, volume in data:
-            if price in volume_by_price:
-                volume_by_price[price] += volume
-            else:
-                volume_by_price[price] = volume
-
+            volume_by_price[price] = volume_by_price.get(price, 0) + volume
         return volume_by_price
 
     def identify_levels(
@@ -54,30 +70,52 @@ class SupplyDemandAnalyzer:
         if not volume_by_price:
             return []
 
-        # Calculate volume statistics
-        volumes = list(volume_by_price.values())
-        max_volume = max(volumes)
-        min_volume = min(volumes)
-        avg_volume = sum(volumes) / len(volumes)
+        prices_list = list(volume_by_price.keys())
+        volumes_list = list(volume_by_price.values())
 
-        zones = []
-
-        for price, volume in volume_by_price.items():
-            # Determine zone type based on current price
-            if price < current_price:
-                zone_type = ZoneType.SUPPORT
+        if HAS_NUMPY:
+            prices = np.array(prices_list)
+            volumes = np.array(volumes_list)
+            
+            avg_volume = np.mean(volumes)
+            max_vol = np.max(volumes)
+            min_vol = np.min(volumes)
+            
+            # Vectorized filtering and strength calculation
+            mask = volumes >= avg_volume * ZONE_VOLUME_THRESHOLD_MULTIPLIER
+            filtered_prices = prices[mask]
+            filtered_volumes = volumes[mask]
+            
+            if max_vol > min_vol:
+                strengths = (filtered_volumes - min_vol) / (max_vol - min_vol)
             else:
-                zone_type = ZoneType.RESISTANCE
-
-            # Calculate strength based on volume relative to max
-            # Higher volume = stronger zone
-            if max_volume > min_volume:
-                strength = (volume - min_volume) / (max_volume - min_volume)
-            else:
-                strength = ZONE_STRENGTH_DEFAULT
-
-            # Only include significant zones (volume above average)
-            if volume >= avg_volume * ZONE_VOLUME_THRESHOLD_MULTIPLIER:
+                strengths = np.full(len(filtered_prices), ZONE_STRENGTH_DEFAULT)
+                
+            zones = []
+            for p, v, s in zip(filtered_prices, filtered_volumes, strengths):
+                zone_type = ZoneType.SUPPORT if p < current_price else ZoneType.RESISTANCE
+                zones.append(Zone(
+                    price=float(p),
+                    volume=int(v),
+                    zone_type=zone_type,
+                    strength=float(s)
+                ))
+        else:
+            # Fallback to pure Python
+            max_volume = max(volumes_list)
+            min_volume = min(volumes_list)
+            avg_volume = sum(volumes_list) / len(volumes_list)
+            
+            zones = []
+            threshold = avg_volume * ZONE_VOLUME_THRESHOLD_MULTIPLIER
+            
+            for price, volume in volume_by_price.items():
+                if volume < threshold:
+                    continue
+                    
+                zone_type = ZoneType.SUPPORT if price < current_price else ZoneType.RESISTANCE
+                strength = (volume - min_volume) / (max_volume - min_volume) if max_volume > min_volume else ZONE_STRENGTH_DEFAULT
+                
                 zones.append(Zone(
                     price=price,
                     volume=int(volume),
@@ -87,7 +125,6 @@ class SupplyDemandAnalyzer:
 
         # Sort by strength (strongest first)
         zones.sort(key=lambda z: z.strength, reverse=True)
-
         return zones
 
     def detect_breakout(
@@ -97,86 +134,41 @@ class SupplyDemandAnalyzer:
         current_volume: int,
         average_volume: int
     ) -> Optional[BreakoutEvent]:
-        """Detect breakout from support or resistance zone
-
-        Args:
-            zones: List of support/resistance zones
-            current_price: Current market price
-            current_volume: Current trading volume
-            average_volume: Average trading volume
-
-        Returns:
-            BreakoutEvent if breakout detected, None otherwise
-        """
+        """Detect breakout from support or resistance zone"""
         if not zones:
             return None
 
-        # Check for bullish breakout (price above resistance)
-        resistance_zones = [z for z in zones if z.zone_type == ZoneType.RESISTANCE]
-        for zone in resistance_zones:
-            if current_price > zone.price:
-                # Price broke through resistance
-                is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
+        threshold = average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
 
+        for zone in zones:
+            # Resistance breakout (Bullish)
+            if zone.zone_type == ZoneType.RESISTANCE and current_price > zone.price:
                 return BreakoutEvent(
                     direction="bullish",
                     price=current_price,
                     zone=zone,
                     volume=current_volume,
-                    is_confirmed=is_confirmed
+                    is_confirmed=current_volume >= threshold
                 )
-
-        # Check for bearish breakout (price below support)
-        support_zones = [z for z in zones if z.zone_type == ZoneType.SUPPORT]
-        for zone in support_zones:
-            if current_price < zone.price:
-                # Price broke through support
-                is_confirmed = current_volume >= average_volume * BREAKOUT_VOLUME_SURGE_MULTIPLIER
-
+            
+            # Support breakout (Bearish)
+            if zone.zone_type == ZoneType.SUPPORT and current_price < zone.price:
                 return BreakoutEvent(
                     direction="bearish",
                     price=current_price,
                     zone=zone,
                     volume=current_volume,
-                    is_confirmed=is_confirmed
+                    is_confirmed=current_volume >= threshold
                 )
 
         return None
 
     def get_nearest_support(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
-        """Find nearest support zone below current price
-
-        Args:
-            zones: List of zones
-            current_price: Current market price
-
-        Returns:
-            Nearest support zone or None
-        """
-        support_zones = [z for z in zones if z.zone_type == ZoneType.SUPPORT and z.price < current_price]
-
-        if not support_zones:
-            return None
-
-        # Find closest support below current price
-        support_zones.sort(key=lambda z: z.price, reverse=True)  # Highest first
-        return support_zones[0]
+        """Find nearest support zone below current price"""
+        supports = [z for z in zones if z.zone_type == ZoneType.SUPPORT and z.price < current_price]
+        return max(supports, key=lambda z: z.price) if supports else None
 
     def get_nearest_resistance(self, zones: List[Zone], current_price: float) -> Optional[Zone]:
-        """Find nearest resistance zone above current price
-
-        Args:
-            zones: List of zones
-            current_price: Current market price
-
-        Returns:
-            Nearest resistance zone or None
-        """
-        resistance_zones = [z for z in zones if z.zone_type == ZoneType.RESISTANCE and z.price > current_price]
-
-        if not resistance_zones:
-            return None
-
-        # Find closest resistance above current price
-        resistance_zones.sort(key=lambda z: z.price)  # Lowest first
-        return resistance_zones[0]
+        """Find nearest resistance zone above current price"""
+        resistances = [z for z in zones if z.zone_type == ZoneType.RESISTANCE and z.price > current_price]
+        return min(resistances, key=lambda z: z.price) if resistances else None
