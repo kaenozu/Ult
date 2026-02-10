@@ -49,6 +49,12 @@ describe('Trading API Rate Limiting', () => {
       headers.set('content-type', 'application/json');
     }
     
+    const options = {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    };
+
     // Create NextRequest to ensure cookies API is available
     const req = new NextRequest(`http://localhost${url}`, options);
 
@@ -81,7 +87,7 @@ describe('Trading API Rate Limiting', () => {
       const json = await res.json();
 
       expect(res.status).toBe(429);
-      expect(json.error).toContain('リクエスト回数の上限を超えました');
+      expect(json.error).toContain('Too many requests');
     });
   });
 
@@ -121,7 +127,7 @@ describe('Trading API Rate Limiting', () => {
       const json = await res.json();
 
       expect(res.status).toBe(429);
-      expect(json.error).toContain('リクエスト回数の上限を超えました');
+      expect(json.error).toContain('Too many requests');
     });
   });
 
