@@ -5,6 +5,7 @@ import { Stock, Portfolio, Position, Order, Theme as AppTheme, Signal as AIAnaly
 import { OrderRequest, OrderResult } from '../types/order';
 import { PositionSizeRecommendation } from '../types/risk';
 import { kellyCalculator } from '../lib/risk/KellyCalculator';
+import { calculateTradingStats } from '../lib/utils/trading-stats';
 
 // Legacy interface for compatibility
 interface TradingStore {
@@ -74,36 +75,7 @@ export function useTradingStore<T>(selector?: (state: TradingStore) => T): Tradi
     },
 
     getPortfolioStats: () => {
-      const orders = portfolio.portfolio.orders.filter(o => o.status === 'FILLED');
-      if (orders.length === 0) return { winRate: 0.5, avgWin: 0, avgLoss: 0, totalTrades: 0 };
-
-      const sellOrders = orders.filter(o => o.side === 'SELL');
-      let winCount = 0;
-      let lossCount = 0;
-      let winAmount = 0;
-      let lossAmount = 0;
-
-      sellOrders.forEach(sell => {
-        const buy = orders.find(o => o.symbol === sell.symbol && o.side === 'BUY' && o.timestamp! < sell.timestamp!);
-        if (buy && buy.price && sell.price) {
-          const profit = (sell.price - buy.price) * sell.quantity;
-          if (profit > 0) {
-            winCount++;
-            winAmount += profit;
-          } else {
-            lossCount++;
-            lossAmount += Math.abs(profit);
-          }
-        }
-      });
-
-      const totalTrades = winCount + lossCount;
-      return {
-        winRate: totalTrades > 0 ? winCount / totalTrades : 0.5,
-        avgWin: winCount > 0 ? winAmount / winCount : 0,
-        avgLoss: lossCount > 0 ? lossAmount / lossCount : 0,
-        totalTrades: orders.length
-      };
+      return calculateTradingStats(portfolio.portfolio.orders);
     }
   };
 
