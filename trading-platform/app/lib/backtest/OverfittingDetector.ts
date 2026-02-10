@@ -97,15 +97,15 @@ export class OverfittingDetector {
       walkForwardConsistency: walkForwardResults ? 0.5 : 0,
     };
 
-    const parameterInstability = parameters 
+    const parameterInstability = parameters
       ? this.assessParameterStability(parameters, inSampleResult, outOfSampleResult)
       : 0;
 
-    const complexityPenalty = complexity 
+    const complexityPenalty = complexity
       ? this.calculateComplexityPenalty(complexity)
       : 0;
 
-    const walkForwardConsistency = walkForwardResults 
+    const walkForwardConsistency = walkForwardResults
       ? this.assessWalkForwardConsistency(walkForwardResults)
       : 0;
 
