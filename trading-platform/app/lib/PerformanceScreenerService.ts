@@ -100,6 +100,15 @@ export interface AISignalResult {
 }
 
 /**
+ * デュアルスキャン結果
+ */
+export interface DualScanResult {
+  performance: ScreenerResult<PerformanceScore>;
+  aiSignals: ScreenerResult<AISignalResult>;
+  dualMatchSymbols: string[];
+}
+
+/**
  * AI用スクリーニング設定
  */
 export interface AIScreenerConfig {
@@ -209,6 +218,163 @@ export class PerformanceScreenerService {
       scanDuration,
       lastUpdated: new Date(),
     } as ScreenerResult<PerformanceScore>;
+  }
+
+  /**
+   * パフォーマンスとAIシグナルの両方を統合スキャン
+   */
+  async scanDual(
+    dataSources: StockDataSource[],
+    config: ScreenerConfig & AIScreenerConfig = {}
+  ): Promise<DualScanResult> {
+    const startTime = performance.now();
+
+    const {
+      market = 'all',
+      lookbackDays = 90,
+      topN = 20,
+      minConfidence = 60,
+      minTrades = 3,
+    } = config;
+
+    // 市場フィルタリング
+    let filteredSources = dataSources.filter(ds =>
+      market === 'all' || ds.market === market
+    );
+
+    // 開発環境制限
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev && filteredSources.length > 30) {
+      filteredSources = filteredSources.slice(0, 30);
+    }
+
+    const performanceResults: PerformanceScore[] = [];
+    const aiSignalResults: AISignalResult[] = [];
+    const dualMatchSymbols: string[] = [];
+
+    for (let i = 0; i < filteredSources.length; i++) {
+      const ds = filteredSources[i];
+      try {
+        // 1回のデータ取得を共有
+        const data = await ds.fetchData();
+        if (data.length < lookbackDays) continue;
+        const recentData = data.slice(-lookbackDays);
+
+        // 1. パフォーマンス評価
+        const backtestResult = await this.runFastBacktest(ds.symbol, recentData, ds.market);
+        const pScoreValue = this.calculatePerformanceScore(backtestResult);
+
+        const perfScore: PerformanceScore = {
+          symbol: ds.symbol,
+          name: ds.name,
+          market: ds.market,
+          winRate: backtestResult.winRate,
+          totalReturn: backtestResult.totalReturn,
+          profitFactor: backtestResult.profitFactor,
+          sharpeRatio: backtestResult.sharpeRatio,
+          maxDrawdown: backtestResult.maxDrawdown,
+          totalTrades: backtestResult.totalTrades,
+          performanceScore: pScoreValue,
+          startDate: backtestResult.startDate,
+          endDate: backtestResult.endDate,
+        };
+
+        // 2. AIシグナル評価
+        const consensus = consensusSignalService.generateConsensus(recentData);
+        const currentPrice = recentData[recentData.length - 1].close;
+        const mockStock: Stock = {
+          symbol: ds.symbol,
+          name: ds.name,
+          market: ds.market,
+          sector: '不明',
+          price: currentPrice,
+          change: 0,
+          changePercent: 0,
+          volume: recentData[recentData.length - 1].volume,
+        };
+
+        const indicators = mlPredictionService.calculateIndicators(recentData);
+        const mlPred = await mlPredictionService.predictAsync(mockStock, recentData, indicators);
+        const mlSignal = mlPredictionService.generateSignal(mockStock, recentData, mlPred, indicators);
+
+        let finalType = consensus.type;
+        let finalConfidence = consensus.confidence;
+        if (mlSignal.type === consensus.type) {
+          finalConfidence = Math.min(finalConfidence + 10, 98);
+        } else if (mlSignal.type !== 'HOLD' && consensus.type === 'HOLD') {
+          finalType = mlSignal.type;
+          finalConfidence = Math.max(mlSignal.confidence * 0.8, 40);
+        }
+
+        // AI結果の保存（BUYのみに限定せず、上位抽出用に全て保持）
+        const targetPrice = (mlSignal.type === finalType) ? mlSignal.targetPrice : currentPrice * 1.05;
+        let enhancedReason = consensus.reason;
+        if (mlSignal.type === finalType) {
+          const icon = finalType === 'BUY' ? '🚀' : '📉';
+          enhancedReason = `${icon} AI予測 ${mlSignal.predictedChange}%: ${enhancedReason}`;
+        }
+
+        const aiResult: AISignalResult = {
+          symbol: ds.symbol,
+          name: ds.name,
+          market: ds.market,
+          signalType: finalType,
+          confidence: finalConfidence,
+          mlConfidence: mlSignal.confidence,
+          predictedChange: mlSignal.predictedChange,
+          targetPrice: targetPrice,
+          forecastCone: mlSignal.forecastCone,
+          reason: enhancedReason,
+        };
+
+        // 配列へ格納
+        if (perfScore.totalTrades >= minTrades) {
+          performanceResults.push(perfScore);
+
+          // AIがBUYで高信頼度であればデュアルマッチ候補
+          if (finalType === 'BUY' && finalConfidence >= 60 && pScoreValue >= 60) {
+            dualMatchSymbols.push(ds.symbol);
+          }
+        }
+
+        if (finalConfidence >= minConfidence) {
+          aiSignalResults.push(aiResult);
+        }
+      } catch (err) {
+        console.warn(`[PerformanceScreener] Dual scan failed for ${ds.symbol}:`, err);
+      }
+
+      // レートリミット
+      if (i < filteredSources.length - 1) {
+        const delayMs = process.env.JEST_WORKER_ID ? 0 : 800; // 統合スキャンなので少し短縮
+        if (delayMs > 0) await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+
+    // ソートとランキング
+    performanceResults.sort((a, b) => b.performanceScore - a.performanceScore).forEach((r, i) => r.rank = i + 1);
+    aiSignalResults.sort((a, b) => b.confidence - a.confidence).forEach((r, i) => r.rank = i + 1);
+
+    const scanDuration = performance.now() - startTime;
+    const lastUpdated = new Date();
+
+    return {
+      performance: {
+        results: performanceResults.slice(0, topN),
+        totalScanned: filteredSources.length,
+        filteredCount: performanceResults.length,
+        scanDuration,
+        lastUpdated,
+      },
+      aiSignals: {
+        results: aiSignalResults.slice(0, topN),
+        totalScanned: filteredSources.length,
+        filteredCount: aiSignalResults.length,
+        scanDuration,
+        lastUpdated,
+      },
+      dualMatchSymbols,
+    };
   }
 
   /**

@@ -55,11 +55,16 @@ function PerformanceDashboardContent() {
   const { setSelectedStock } = useUIStore();
 
   const [data, setData] = useState<ScreenerResult<PerformanceScore> | ScreenerResult<AISignalResult> | null>(null);
+  const [dualData, setDualData] = useState<{
+    performance: ScreenerResult<PerformanceScore>;
+    aiSignals: ScreenerResult<AISignalResult>;
+    dualMatchSymbols: string[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // タブ
-  const [activeTab, setActiveTab] = useState<'performance' | 'ai-signals'>('performance');
+  const [activeTab, setActiveTab] = useState<'performance' | 'ai-signals' | 'dual-match'>('dual-match');
 
   // フィルター
   const [market, setMarket] = useState<'all' | 'japan' | 'usa'>('all');
@@ -162,18 +167,14 @@ function PerformanceDashboardContent() {
         market,
         topN: '50',
         lookbackDays: lookbackDays.toString(),
-        mode: activeTab,
-        debug: 'true', // キャッシュ無効化
+        mode: 'dual-scan', // 常にデュアルスキャンして背景でデータを揃える
+        debug: 'true',
       });
 
-      if (activeTab === 'performance') {
-        params.append('minWinRate', minWinRate.toString());
-        params.append('minProfitFactor', minProfitFactor.toString());
-        params.append('minTrades', '3');
-        params.append('maxDrawdown', '100');
-      } else {
-        params.append('minConfidence', minConfidence.toString());
-      }
+      params.append('minWinRate', minWinRate.toString());
+      params.append('minProfitFactor', minProfitFactor.toString());
+      params.append('minTrades', '3');
+      params.append('minConfidence', minConfidence.toString());
 
       const response = await fetch(`/api/performance-screener?${params}`);
 
@@ -187,7 +188,19 @@ function PerformanceDashboardContent() {
       const result = await response.json();
 
       if (result.success) {
-        setData(result.data);
+        const dualResult = result.data as {
+          performance: ScreenerResult<PerformanceScore>;
+          aiSignals: ScreenerResult<AISignalResult>;
+          dualMatchSymbols: string[];
+        };
+        setDualData(dualResult);
+
+        // 互換性のために data も更新
+        if (activeTab === 'performance') {
+          setData(dualResult.performance);
+        } else if (activeTab === 'ai-signals') {
+          setData(dualResult.aiSignals);
+        }
       } else {
         throw new Error(result.error || 'Unknown error');
       }
@@ -228,68 +241,74 @@ function PerformanceDashboardContent() {
   };
 
   // ソート済みデータ
-  const sortedResults = data?.results ? [...data.results].sort((a, b) => {
-    // データの型判定
-    const isPerfA = 'performanceScore' in a;
-    const isPerfB = 'performanceScore' in b;
+  const sortedResults = (() => {
+    const rawResults = activeTab === 'dual-match'
+      ? dualData?.performance.results.filter(r => dualData.dualMatchSymbols.includes(r.symbol))
+      : activeTab === 'performance' ? dualData?.performance.results : dualData?.aiSignals.results;
 
-    if (activeTab === 'performance' && isPerfA && isPerfB) {
-      const aScore = a as PerformanceScore;
-      const bScore = b as PerformanceScore;
-      let aVal: any = aScore[sortField as keyof PerformanceScore];
-      let bVal: any = bScore[sortField as keyof PerformanceScore];
+    if (!rawResults) return [];
 
-      if (sortField === 'symbol') {
-        aVal = aScore.symbol;
-        bVal = bScore.symbol;
+    return [...rawResults].sort((a, b) => {
+      // データの型判定
+      const isPerfA = 'performanceScore' in a;
+      const isPerfB = 'performanceScore' in b;
+
+      if ((activeTab === 'performance' || activeTab === 'dual-match') && isPerfA && isPerfB) {
+        const aScore = a as PerformanceScore;
+        const bScore = b as PerformanceScore;
+        let aVal: any = aScore[sortField as keyof PerformanceScore];
+        let bVal: any = bScore[sortField as keyof PerformanceScore];
+
+        if (sortField === 'symbol') {
+          aVal = aScore.symbol;
+          bVal = bScore.symbol;
+        }
+
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+
+        const nA = Number(aVal || 0);
+        const nB = Number(bVal || 0);
+        return sortDirection === 'asc' ? nA - nB : nB - nA;
       }
 
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
-        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      if (activeTab === 'ai-signals' && !isPerfA && !isPerfB) {
+        const aSig = a as AISignalResult;
+        const bSig = b as AISignalResult;
+
+        let aVal: any;
+        let bVal: any;
+
+        if (sortField === 'symbol') {
+          aVal = aSig.symbol;
+          bVal = bSig.symbol;
+        } else if (sortField === 'confidence') {
+          aVal = aSig.confidence;
+          bVal = bSig.confidence;
+        } else if (sortField === 'targetPrice') {
+          aVal = aSig.targetPrice;
+          bVal = bSig.targetPrice;
+        } else if (sortField === 'totalReturn') {
+          aVal = aSig.predictedChange ?? 0;
+          bVal = bSig.predictedChange ?? 0;
+        } else {
+          aVal = aSig.confidence;
+          bVal = bSig.confidence;
+        }
+
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+          return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+
+        const nA = Number(aVal || 0);
+        const nB = Number(bVal || 0);
+        return sortDirection === 'asc' ? nA - nB : nB - nA;
       }
 
-      const nA = Number(aVal || 0);
-      const nB = Number(bVal || 0);
-      return sortDirection === 'asc' ? nA - nB : nB - nA;
-    }
-
-    if (activeTab === 'ai-signals' && !isPerfA && !isPerfB) {
-      const aSig = a as AISignalResult;
-      const bSig = b as AISignalResult;
-
-      // AI Signal用の特別ソートマッピング
-      let aVal: any;
-      let bVal: any;
-
-      if (sortField === 'symbol') {
-        aVal = aSig.symbol;
-        bVal = bSig.symbol;
-      } else if (sortField === 'confidence') {
-        aVal = aSig.confidence;
-        bVal = bSig.confidence;
-      } else if (sortField === 'targetPrice') {
-        aVal = aSig.targetPrice;
-        bVal = bSig.targetPrice;
-      } else if (sortField === 'totalReturn') {
-        aVal = aSig.predictedChange ?? 0;
-        bVal = bSig.predictedChange ?? 0;
-      } else {
-        // デフォルトは信頼度
-        aVal = aSig.confidence;
-        bVal = bSig.confidence;
-      }
-
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
-        return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      }
-
-      const nA = Number(aVal || 0);
-      const nB = Number(bVal || 0);
-      return sortDirection === 'asc' ? nA - nB : nB - nA;
-    }
-
-    return 0;
-  }) : [];
+      return 0;
+    });
+  })();
 
   // 銘柄クリック処理
   const handleStockClick = (stock: PerformanceScore | AISignalResult) => {
@@ -610,14 +629,27 @@ function PerformanceDashboardContent() {
               現在の相場に最もフィットしている銘柄
             </h1>
             <p className="text-[#92adc9] text-sm">
-              {activeTab === 'performance'
-                ? `直近${lookbackDays}日間のバックテスト結果に基づく総合ランキング`
-                : 'AI-derived buy signals with confidence scoring'
+              {activeTab === 'dual-match'
+                ? '過去の実績も良く、AI予測でも高信頼度な最強候補銘柄'
+                : activeTab === 'performance'
+                  ? `直近${lookbackDays}日間のバックテスト結果に基づく総合ランキング`
+                  : 'AI-derived buy signals with confidence scoring'
               }
             </p>
 
             {/* Tabs */}
             <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('dual-match')}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
+                  activeTab === 'dual-match'
+                    ? "bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg shadow-orange-900/20"
+                    : "bg-[#192633] text-[#92adc9] hover:text-white"
+                )}
+              >
+                <span>🔥</span> デュアルマッチ
+              </button>
               <button
                 onClick={() => setActiveTab('performance')}
                 className={cn(
@@ -671,9 +703,11 @@ function PerformanceDashboardContent() {
             {!loading && !error && sortedResults.length === 0 && (
               <div className="flex items-center justify-center h-full">
                 <p className="text-[#92adc9]">
-                  {activeTab === 'performance'
-                    ? '条件に一致する銘柄が見つかりませんでした'
-                    : '信頼度60%以上のBUYシグナルが見つかりませんでした'
+                  {activeTab === 'dual-match'
+                    ? 'パフォーマンス・AIの両方で高評価な銘柄は現在ありません'
+                    : activeTab === 'performance'
+                      ? '条件に一致する銘柄が見つかりませんでした'
+                      : '信頼度60%以上のBUYシグナルが見つかりませんでした'
                   }
                 </p>
               </div>
@@ -713,56 +747,68 @@ function PerformanceDashboardContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#233648]/50">
-                      {(sortedResults as PerformanceScore[]).map((stock) => (
-                        <tr
-                          key={stock.symbol}
-                          className="hover:bg-[#192633] cursor-pointer transition-colors"
-                          onClick={() => handleStockClick(stock)}
-                        >
-                          <td className="px-3 py-3 text-center">
-                            <span className={cn(
-                              "font-bold",
-                              stock.rank === 1 ? "text-yellow-400" :
-                                stock.rank === 2 ? "text-gray-300" :
-                                  stock.rank === 3 ? "text-orange-400" :
-                                    "text-white"
+                      {(sortedResults as PerformanceScore[]).map((stock) => {
+                        const isDualMatch = dualData?.dualMatchSymbols.includes(stock.symbol);
+                        return (
+                          <tr
+                            key={stock.symbol}
+                            className={cn(
+                              "hover:bg-[#192633] cursor-pointer transition-colors relative",
+                              isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
+                            )}
+                            onClick={() => handleStockClick(stock)}
+                          >
+                            {isDualMatch && (
+                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
+                            )}
+                            <td className="px-3 py-3 text-center">
+                              <span className={cn(
+                                "font-bold",
+                                stock.rank === 1 ? "text-yellow-400" :
+                                  stock.rank === 2 ? "text-gray-300" :
+                                    stock.rank === 3 ? "text-orange-400" :
+                                      "text-white"
+                              )}>
+                                {stock.rank}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 font-bold text-white flex items-center gap-2">
+                              {stock.symbol}
+                              {isDualMatch && <span className="text-[10px]" title="デュアルマッチ銘柄">🔥</span>}
+                            </td>
+                            <td className="px-3 py-3 text-[#92adc9] truncate" title={stock.name}>{stock.name}</td>
+                            <td className="px-3 py-3">
+                              <span className={cn(
+                                'text-[10px] px-1.5 py-0.5 rounded font-bold',
+                                stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
+                              )}>
+                                {stock.market === 'japan' ? 'JP' : 'US'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className={cn("font-bold text-lg", getScoreColor(stock.performanceScore || 0))}>
+                                {(stock.performanceScore || 0).toFixed(1)}
+                              </span>
+                            </td>
+                            <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(stock.winRate ?? 0))}>
+                              {(stock.winRate ?? 0).toFixed(1)}%
+                            </td>
+                            <td className={cn("px-3 py-3 text-right font-bold", getScoreColor((stock.profitFactor ?? 0) * 33.3))}>
+                              {(stock.profitFactor ?? 0).toFixed(2)}
+                            </td>
+                            <td className={cn(
+                              "px-3 py-3 text-right font-bold",
+                              (stock.totalReturn ?? 0) > 0 ? "text-green-400" : "text-red-400"
                             )}>
-                              {stock.rank}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 font-bold text-white">{stock.symbol}</td>
-                          <td className="px-3 py-3 text-[#92adc9] truncate" title={stock.name}>{stock.name}</td>
-                          <td className="px-3 py-3">
-                            <span className={cn(
-                              'text-[10px] px-1.5 py-0.5 rounded font-bold',
-                              stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
-                            )}>
-                              {stock.market === 'japan' ? 'JP' : 'US'}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <span className={cn("font-bold text-lg", getScoreColor(stock.performanceScore || 0))}>
-                              {(stock.performanceScore || 0).toFixed(1)}
-                            </span>
-                          </td>
-                          <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(stock.winRate ?? 0))}>
-                            {(stock.winRate ?? 0).toFixed(1)}%
-                          </td>
-                          <td className={cn("px-3 py-3 text-right font-bold", getScoreColor((stock.profitFactor ?? 0) * 33.3))}>
-                            {(stock.profitFactor ?? 0).toFixed(2)}
-                          </td>
-                          <td className={cn(
-                            "px-3 py-3 text-right font-bold",
-                            (stock.totalReturn ?? 0) > 0 ? "text-green-400" : "text-red-400"
-                          )}>
-                            {formatPercent(stock.totalReturn ?? 0)}
-                          </td>
-                          <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(((stock.sharpeRatio ?? 0) + 1) * 25))}>
-                            {(stock.sharpeRatio ?? 0).toFixed(2)}
-                          </td>
-                          <td className="px-3 py-3 text-center text-[#92adc9]">{stock.totalTrades || 0}</td>
-                        </tr>
-                      ))}
+                              {formatPercent(stock.totalReturn ?? 0)}
+                            </td>
+                            <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(((stock.sharpeRatio ?? 0) + 1) * 25))}>
+                              {(stock.sharpeRatio ?? 0).toFixed(2)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-[#92adc9]">{stock.totalTrades || 0}</td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -797,93 +843,105 @@ function PerformanceDashboardContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#233648]/50">
-                      {(sortedResults as AISignalResult[]).map((stock) => (
-                        <tr
-                          key={stock.symbol}
-                          className="hover:bg-[#192633] cursor-pointer transition-colors"
-                          onClick={() => handleStockClick(stock)}
-                        >
-                          <td className="px-3 py-3 text-center">
-                            <span className={cn(
-                              "font-bold",
-                              stock.rank === 1 ? "text-yellow-400" :
-                                stock.rank === 2 ? "text-gray-300" :
-                                  stock.rank === 3 ? "text-orange-400" :
-                                    "text-white"
-                            )}>
-                              {stock.rank}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 font-bold text-white">{stock.symbol}</td>
-                          <td className="px-3 py-3 text-[#92adc9] truncate max-w-[200px]" title={stock.name}>{stock.name}</td>
-                          <td className="px-3 py-3">
-                            <span className={cn(
-                              'text-[10px] px-1.5 py-0.5 rounded font-bold',
-                              stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
-                            )}>
-                              {stock.market === 'japan' ? 'JP' : 'US'}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3">
-                            <span className={cn(
-                              'text-[10px] px-1.5 py-0.5 rounded font-bold',
-                              stock.signalType === 'BUY' ? 'bg-green-500/20 text-green-400' :
-                                stock.signalType === 'SELL' ? 'bg-red-500/20 text-red-400' :
-                                  'bg-gray-500/20 text-gray-400'
-                            )}>
-                              {stock.signalType}
-                            </span>
-                          </td>
-                          <td className={cn("px-3 py-3 text-right font-bold text-base", (stock.predictedChange ?? 0) > 0 ? "text-green-400" : "text-red-400")}>
-                            {stock.predictedChange ? (stock.predictedChange > 0 ? `+${stock.predictedChange}%` : `${stock.predictedChange}%`) : '-'}
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <span className={cn(
-                              "font-bold",
-                              (stock.mlConfidence ?? 0) >= 80 ? "text-green-400" :
-                                (stock.mlConfidence ?? 0) >= 60 ? "text-yellow-400" : "text-gray-400"
-                            )}>
-                              {stock.mlConfidence ? `${stock.mlConfidence}%` : '-'}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            <div className="flex flex-col items-center">
+                      {(sortedResults as AISignalResult[]).map((stock) => {
+                        const isDualMatch = dualData?.dualMatchSymbols.includes(stock.symbol);
+                        return (
+                          <tr
+                            key={stock.symbol}
+                            className={cn(
+                              "hover:bg-[#192633] cursor-pointer transition-colors relative",
+                              isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
+                            )}
+                            onClick={() => handleStockClick(stock)}
+                          >
+                            {isDualMatch && (
+                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
+                            )}
+                            <td className="px-3 py-3 text-center">
                               <span className={cn(
-                                "font-bold text-lg leading-tight",
-                                stock.confidence >= 80 ? "text-green-400" :
-                                  stock.confidence >= 60 ? "text-yellow-400" : "text-orange-400"
+                                "font-bold",
+                                stock.rank === 1 ? "text-yellow-400" :
+                                  stock.rank === 2 ? "text-gray-300" :
+                                    stock.rank === 3 ? "text-orange-400" :
+                                      "text-white"
                               )}>
-                                {(stock.confidence ?? 0).toFixed(1)}%
+                                {stock.rank}
                               </span>
-                              <div className="w-full h-1 bg-gray-700 rounded-full mt-1 overflow-hidden">
-                                <div
-                                  className={cn(
-                                    "h-full rounded-full transition-all duration-500",
-                                    stock.confidence >= 80 ? "bg-green-400" :
-                                      stock.confidence >= 60 ? "bg-yellow-400" : "bg-orange-400"
-                                  )}
-                                  style={{ width: `${stock.confidence}%` }}
-                                />
-                              </div>
-                            </div>
-                          </td>
-                          <td className={cn("px-3 py-3 text-right font-bold", stock.targetPrice > 0 ? "text-green-400" : "text-gray-400")}>
-                            {stock.targetPrice > 0 ? (stock.market === 'japan' ? `¥${Math.round(stock.targetPrice).toLocaleString()}` : `$${stock.targetPrice.toFixed(2)}`) : '-'}
-                          </td>
-                          <td className="px-3 py-3">
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-start gap-2">
-                                <span className="mt-0.5 text-xs">
-                                  {stock.reason?.includes('🚀') ? '🤖' : '📊'}
+                            </td>
+                            <td className="px-3 py-3 font-bold text-white flex items-center gap-1">
+                              {stock.symbol}
+                              {isDualMatch && <span className="text-[10px]">🔥</span>}
+                            </td>
+                            <td className="px-3 py-3 text-[#92adc9] truncate max-w-[200px]" title={stock.name}>{stock.name}</td>
+                            <td className="px-3 py-3">
+                              <span className={cn(
+                                'text-[10px] px-1.5 py-0.5 rounded font-bold',
+                                stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
+                              )}>
+                                {stock.market === 'japan' ? 'JP' : 'US'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3">
+                              <span className={cn(
+                                'text-[10px] px-1.5 py-0.5 rounded font-bold',
+                                stock.signalType === 'BUY' ? 'bg-green-500/20 text-green-400' :
+                                  stock.signalType === 'SELL' ? 'bg-red-500/20 text-red-400' :
+                                    'bg-gray-500/20 text-gray-400'
+                              )}>
+                                {stock.signalType}
+                              </span>
+                            </td>
+                            <td className={cn("px-3 py-3 text-right font-bold text-base", (stock.predictedChange ?? 0) > 0 ? "text-green-400" : "text-red-400")}>
+                              {stock.predictedChange ? (stock.predictedChange > 0 ? `+${stock.predictedChange}%` : `${stock.predictedChange}%`) : '-'}
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span className={cn(
+                                "font-bold",
+                                (stock.mlConfidence ?? 0) >= 80 ? "text-green-400" :
+                                  (stock.mlConfidence ?? 0) >= 60 ? "text-yellow-400" : "text-gray-400"
+                              )}>
+                                {stock.mlConfidence ? `${stock.mlConfidence}%` : '-'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <div className="flex flex-col items-center">
+                                <span className={cn(
+                                  "font-bold text-lg leading-tight",
+                                  stock.confidence >= 80 ? "text-green-400" :
+                                    stock.confidence >= 60 ? "text-yellow-400" : "text-orange-400"
+                                )}>
+                                  {(stock.confidence ?? 0).toFixed(1)}%
                                 </span>
-                                <span className="text-[#92adc9] text-[11px] leading-relaxed line-clamp-2" title={stock.reason}>
-                                  {stock.reason || '理由を分析中...'}
-                                </span>
+                                <div className="w-full h-1 bg-gray-700 rounded-full mt-1 overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-all duration-500",
+                                      stock.confidence >= 80 ? "bg-green-400" :
+                                        stock.confidence >= 60 ? "bg-yellow-400" : "bg-orange-400"
+                                    )}
+                                    style={{ width: `${stock.confidence}%` }}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className={cn("px-3 py-3 text-right font-bold", stock.targetPrice > 0 ? "text-green-400" : "text-gray-400")}>
+                              {stock.targetPrice > 0 ? (stock.market === 'japan' ? `¥${Math.round(stock.targetPrice).toLocaleString()}` : `$${stock.targetPrice.toFixed(2)}`) : '-'}
+                            </td>
+                            <td className="px-3 py-3">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-start gap-2">
+                                  <span className="mt-0.5 text-xs">
+                                    {stock.reason?.includes('🚀') ? '🤖' : '📊'}
+                                  </span>
+                                  <span className="text-[#92adc9] text-[11px] leading-relaxed line-clamp-2" title={stock.reason}>
+                                    {stock.reason || '理由を分析中...'}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 )}
