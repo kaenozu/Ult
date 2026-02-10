@@ -197,15 +197,15 @@ export class PerformanceScreenerService {
     const filtered = allResults;
 
     // パフォーマンススコアでソート（降順）
-    minTradesFiltered.sort((a, b) => b.performanceScore - a.performanceScore);
+    filtered.sort((a, b) => b.performanceScore - a.performanceScore);
 
     // ランキング付与
-    minTradesFiltered.forEach((result, index) => {
+    filtered.forEach((result, index) => {
       result.rank = index + 1;
     });
 
     // 上位N件を取得
-    const topResults = minTradesFiltered.slice(0, topN);
+    const topResults = filtered.slice(0, topN);
 
     const endTime = performance.now();
     const scanDuration = endTime - startTime;
@@ -214,7 +214,7 @@ export class PerformanceScreenerService {
     return {
       results: topResults,
       totalScanned: filteredSources.length,
-      filteredCount: minTradesFiltered.length,
+      filteredCount: filtered.length,
       scanDuration,
       lastUpdated: new Date(),
     } as ScreenerResult<PerformanceScore>;

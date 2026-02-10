@@ -314,7 +314,7 @@ function PerformanceDashboardContent() {
   })();
 
    // 銘柄クリック処理
-   const handleStockClick = (stock: PerformanceScore) => {
+   const handleStockClick = (stock: PerformanceScore | AISignalResult) => {
      // ウォッチリストに追加
      const { addToWatchlist } = useWatchlistStore.getState();
      addToWatchlist({
