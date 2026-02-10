@@ -5,11 +5,41 @@ import { OHLCV } from '@/app/types';
 // MarketDataService のモック
 jest.mock('../MarketDataService');
 
+// Mock ModelPipeline
+jest.mock('@/app/domains/prediction/models/ml/ModelPipeline', () => {
+  return {
+    ModelPipeline: jest.fn().mockImplementation(() => ({
+      train: jest.fn().mockResolvedValue({}),
+      predict: jest.fn().mockResolvedValue([0.5, 0.5]),
+      saveModel: jest.fn().mockResolvedValue(undefined),
+      loadModel: jest.fn().mockResolvedValue(undefined),
+      dispose: jest.fn(),
+    })),
+  };
+});
+
+// Mock LSTMModel from tensorflow-model-service
+jest.mock('@/app/lib/services/tensorflow-model-service', () => {
+  return {
+    LSTMModel: jest.fn().mockImplementation(() => ({
+      train: jest.fn().mockResolvedValue({}),
+      predict: jest.fn().mockResolvedValue(0.5),
+      save: jest.fn(),
+      load: jest.fn(),
+      isTrained: true, // Force trained state
+    })),
+  };
+});
+
 describe('UnifiedIntelligenceService Integration', () => {
   let service: UnifiedIntelligenceService;
 
   beforeEach(() => {
     service = new UnifiedIntelligenceService();
+    // Explicitly mock internal ML model ready state if necessary,
+    // or rely on the mocked ModelPipeline which we just defined.
+    // However, UnifiedIntelligenceService often uses a real LSTMModel instance internally.
+    // If it uses 'tensorflow-model-service', we need to mock that instead if the error comes from there.
     jest.clearAllMocks();
   });
 

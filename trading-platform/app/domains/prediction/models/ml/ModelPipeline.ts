@@ -748,7 +748,15 @@ export class ModelPipeline {
    */
   dispose(): void {
     if (this.model) {
-      this.model.dispose();
+      try {
+        // Check if model is already disposed to avoid double-disposal errors
+        // TF.js models usually throw if disposed twice, but we can't easily check 'isDisposed' property on LayersModel
+        // So we wrap in try-catch
+        this.model.dispose();
+      } catch (e) {
+        // Ignore disposal errors (likely already disposed)
+        console.warn('Model disposal warning:', e);
+      }
       this.model = null;
     }
   }
