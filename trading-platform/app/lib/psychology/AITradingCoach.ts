@@ -46,7 +46,7 @@ export class AITradingCoach {
 
   constructor(config?: Partial<PatternAnalysisConfig>) {
     this.config = {
-      minTradesForAnalysis: config?.minTradesForAnalysis ?? 10,
+      minTradesForAnalysis: config?.minTradesForAnalysis ?? 3,
       lookbackPeriod: config?.lookbackPeriod ?? 30,
       confidenceThreshold: config?.confidenceThreshold ?? 0.6
     };

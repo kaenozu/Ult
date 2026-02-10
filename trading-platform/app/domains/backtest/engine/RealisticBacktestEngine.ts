@@ -18,7 +18,8 @@ import {
   BacktestResult,
   Strategy,
   Trade,
-  StrategyContext
+  StrategyContext,
+  StrategyAction
 } from './AdvancedBacktestEngine';
 import { SlippagePredictionService, OrderBook, OrderBookLevel } from '@/app/lib/execution/SlippagePredictionService';
 

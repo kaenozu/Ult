@@ -106,20 +106,36 @@ export class OverfittingDetector {
     );
 
     // Calculate overall overfitting score (weighted average)
-    const weights = {
-      performanceDegradation: 0.30,
-      parameterInstability: 0.15,
-      complexityPenalty: 0.15,
-      walkForwardConsistency: 0.25,
-      sharpeRatioDrop: 0.15
-    };
+    let totalWeight = 0;
+    let weightedScore = 0;
 
-    const overfittingScore = 
-      performanceDegradation * weights.performanceDegradation +
-      parameterInstability * weights.parameterInstability +
-      complexityPenalty * weights.complexityPenalty +
-      (1 - walkForwardConsistency) * weights.walkForwardConsistency +
-      sharpeRatioDrop * weights.sharpeRatioDrop;
+    // Performance degradation (Always included)
+    weightedScore += performanceDegradation * weights.performanceDegradation;
+    totalWeight += weights.performanceDegradation;
+
+    // Sharpe ratio drop (Always included)
+    weightedScore += sharpeRatioDrop * weights.sharpeRatioDrop;
+    totalWeight += weights.sharpeRatioDrop;
+
+    // Parameter instability (Only if parameters provided)
+    if (parameters) {
+      weightedScore += parameterInstability * weights.parameterInstability;
+      totalWeight += weights.parameterInstability;
+    }
+
+    // Complexity penalty (Only if complexity provided)
+    if (complexity) {
+      weightedScore += complexityPenalty * weights.complexityPenalty;
+      totalWeight += weights.complexityPenalty;
+    }
+
+    // Walk forward consistency (Only if results provided)
+    if (walkForwardResults && walkForwardResults.length > 0) {
+      weightedScore += (1 - walkForwardConsistency) * weights.walkForwardConsistency;
+      totalWeight += weights.walkForwardConsistency;
+    }
+
+    const overfittingScore = weightedScore / totalWeight;
 
     // Determine if overfitted
     const overfit = overfittingScore > 0.5; // Threshold for overfitting

@@ -509,7 +509,8 @@ export function handleApiError(
   };
   
   // 詳細情報の追加（開発環境のみ）
-  if (DEFAULT_CONFIG.includeStackTrace) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (!isProduction && DEFAULT_CONFIG.includeStackTrace) {
     const errorInfo = USER_ERROR_MESSAGES[appError.code];
     if (errorInfo?.details) {
       responseBody.details = errorInfo.details;

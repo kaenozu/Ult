@@ -33,7 +33,7 @@ class MarketCorrelation:
         if len(stock_prices) != len(index_prices):
             raise ValueError("Price series must have the same length")
         if len(stock_prices) < 2:
-            return 0.0
+            raise ValueError("At least 2 data points are required for correlation calculation")
 
         if HAS_NUMPY:
             return float(np.corrcoef(stock_prices, index_prices)[0, 1])
@@ -62,7 +62,7 @@ class MarketCorrelation:
                 return 1.0
                 
             covariance = np.cov(s_returns, i_returns)[0, 1]
-            variance = np.var(i_returns)
+            variance = np.var(i_returns, ddof=1)  # Use sample variance to match np.cov's default ddof=1
             return float(covariance / variance) if variance != 0 else 1.0
 
         # Fallback to statistics-based calculation
@@ -124,7 +124,7 @@ class MarketCorrelation:
 
         # Stock-specific catalyst detection
         if sig == "buy" and market_trend == MarketTrend.BULLISH and correlation < CORR_LOW:
-            reason = "Strong individual strength (uncorrelated to bullish market)"
+            reason = "Low correlation - strong individual strength"
 
         return {
             "recommendation": rec,

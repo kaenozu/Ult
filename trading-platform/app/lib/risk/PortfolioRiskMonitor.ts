@@ -381,6 +381,17 @@ export class PortfolioRiskMonitor {
       });
     }
 
+    // キャッシュをセクターとして追加
+    if (portfolio.cash > 0) {
+      sectorMap.set('Cash', {
+        sector: 'Cash',
+        totalValue: portfolio.cash,
+        percentOfPortfolio: (portfolio.cash / totalValue) * 100,
+        positionCount: 0,
+        positions: [],
+      });
+    }
+
     // パーセンテージを計算
     const exposures = Array.from(sectorMap.values());
     for (const exposure of exposures) {

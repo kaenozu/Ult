@@ -57,7 +57,7 @@ describe('DynamicPositionSizer', () => {
       expect(result.recommendedShares).toBeGreaterThan(0);
       expect(result.positionValue).toBeGreaterThan(0);
       expect(result.riskAmount).toBeGreaterThan(0);
-      expect(result.reasoning).toHaveLengthGreaterThan(0);
+      expect(result.reasoning.length).toBeGreaterThan(0);
     });
 
     it('should calculate Kelly criterion position size', () => {

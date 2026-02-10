@@ -126,6 +126,13 @@ export class CoolingOffManager {
   }
 
   /**
+   * クーリングオフを強制終了（主にテスト用）
+   */
+  endCooldown(): void {
+    this.currentCooldown = null;
+  }
+
+  /**
    * 手動でクーリングオフを終了
    */
   manualEndCooldown(): boolean {

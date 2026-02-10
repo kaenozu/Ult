@@ -67,7 +67,7 @@ describe('error-handler', () => {
 
             expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
-                error: 'Something went wrong',
+                error: 'Internal server error',
                 code: ErrorType.INTERNAL
             }));
         });
@@ -76,7 +76,7 @@ describe('error-handler', () => {
             const response = handleApiError('String Error') as unknown as { status: number; body: Record<string, unknown> };
             expect(response.status).toBe(500);
             expect(response.body).toEqual(expect.objectContaining({
-                error: 'String Error',
+                error: 'Internal server error',
                 code: ErrorType.INTERNAL
             }));
         });
@@ -94,10 +94,10 @@ describe('error-handler', () => {
             const error = new ValidationError('Invalid Input', 'fieldA');
             const response = handleApiError(error) as unknown as { status: number; body: Record<string, unknown> };
 
-            expect(response.status).toBe(500);
+            expect(response.status).toBe(400);
             expect(response.body).toEqual(expect.objectContaining({
-                error: 'Something went wrong',
-                code: ErrorType.INTERNAL
+                error: 'Invalid Input',
+                code: 'VALIDATION_ERROR'
             }));
         });
 
@@ -169,6 +169,7 @@ describe('error-handler', () => {
             expect(res.body).toEqual({
                 error: 'Bad Input',
                 code: ErrorType.VALIDATION,
+                field: 'fieldA',
                 details: 'Field: fieldA'
             });
         });

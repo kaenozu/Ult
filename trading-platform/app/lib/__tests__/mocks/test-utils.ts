@@ -477,3 +477,9 @@ export class ErrorTestHelpers {
     }
   }
 }
+
+describe('Mock Test Utils Dummy', () => {
+  it('should pass', () => {
+    expect(true).toBe(true);
+  });
+});

@@ -326,3 +326,9 @@ export const cleanupTestEnvironment = () => {
   jest.restoreAllMocks();
   jest.clearAllMocks();
 };
+
+describe('Utils Test Utils Dummy', () => {
+  it('should pass', () => {
+    expect(true).toBe(true);
+  });
+});

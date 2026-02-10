@@ -261,7 +261,8 @@ export class DataAggregator {
     return this.fetchWithCache(
       key,
       async () => {
-        const response = await fetch(`/api/market?symbol=${key}`);
+        const params = new URLSearchParams({ symbol: key });
+        const response = await fetch(`/api/market?${params.toString()}`);
         if (!response.ok) {
           throw new Error(response.statusText || 'API Error');
         }

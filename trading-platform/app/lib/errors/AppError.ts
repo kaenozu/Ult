@@ -223,7 +223,6 @@ export class AppError extends Error {
  */
 export class NetworkError extends AppError {
   readonly endpoint?: string;
-  readonly statusCode?: number;
   readonly response?: unknown;
 
   constructor(
@@ -249,7 +248,6 @@ export class NetworkError extends AppError {
     });
     
     this.endpoint = options?.endpoint;
-    this.statusCode = options?.statusCode;
     this.response = options?.response;
     this.name = 'NetworkError';
     
