@@ -1,5 +1,5 @@
 {
-  "compilerOptions": {
+   "compilerOptions": {
     "target": "ES2020",
     "lib": [
       "dom",
@@ -19,6 +19,7 @@
     "incremental": true,
     "experimentalDecorators": true,
     "baseUrl": ".",
+    "types": ["jest", "node"],
     "plugins": [
       {
         "name": "next"
