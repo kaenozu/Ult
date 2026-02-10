@@ -100,11 +100,23 @@ export interface AISignalResult {
 }
 
 /**
+ * デュアルスキャン結果の単一エントリ
+ */
+export interface DualMatchEntry {
+  symbol: string;
+  name: string;
+  market: 'japan' | 'usa';
+  performance: PerformanceScore;
+  aiSignal: AISignalResult;
+}
+
+/**
  * デュアルスキャン結果
  */
 export interface DualScanResult {
   performance: ScreenerResult<PerformanceScore>;
   aiSignals: ScreenerResult<AISignalResult>;
+  dualMatches: DualMatchEntry[];
   dualMatchSymbols: string[];
 }
 
@@ -242,14 +254,15 @@ export class PerformanceScreenerService {
       market === 'all' || ds.market === market
     );
 
-    // 開発環境制限
+    // 開発環境制限（デュアルスキャンでは50銘柄まで許可。母数が少ないとマッチが出にくい）
     const isDev = process.env.NODE_ENV !== 'production';
-    if (isDev && filteredSources.length > 30) {
-      filteredSources = filteredSources.slice(0, 30);
+    if (isDev && filteredSources.length > 50) {
+      filteredSources = filteredSources.slice(0, 50);
     }
 
     const performanceResults: PerformanceScore[] = [];
     const aiSignalResults: AISignalResult[] = [];
+    const dualMatches: DualMatchEntry[] = [];
     const dualMatchSymbols: string[] = [];
 
     for (let i = 0; i < filteredSources.length; i++) {
@@ -331,9 +344,23 @@ export class PerformanceScreenerService {
         if (perfScore.totalTrades >= minTrades) {
           performanceResults.push(perfScore);
 
-          // AIがBUYで高信頼度であればデュアルマッチ候補
-          if (finalType === 'BUY' && finalConfidence >= 60 && pScoreValue >= 60) {
+          // デュアルマッチ判定: パフォーマンス実績もAI予測も良好な銘柄
+          // 条件: パフォーマンススコア >= 40 AND (AI BUY信頼度 >= 50 OR AIが何らかのシグナルを出しており信頼度 >= 65)
+          const isDualCandidate =
+            (finalType === 'BUY' && finalConfidence >= 50 && pScoreValue >= 40) ||
+            (finalType !== 'HOLD' && finalConfidence >= 65 && pScoreValue >= 50);
+
+          console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}% → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
+
+          if (isDualCandidate) {
             dualMatchSymbols.push(ds.symbol);
+            dualMatches.push({
+              symbol: ds.symbol,
+              name: ds.name,
+              market: ds.market,
+              performance: perfScore,
+              aiSignal: aiResult,
+            });
           }
         }
 
@@ -373,6 +400,7 @@ export class PerformanceScreenerService {
         scanDuration,
         lastUpdated,
       },
+      dualMatches,
       dualMatchSymbols,
     };
   }

@@ -38,6 +38,14 @@ interface PerformanceScore {
   endDate: string;
 }
 
+interface DualMatchEntry {
+  symbol: string;
+  name: string;
+  market: 'japan' | 'usa';
+  performance: PerformanceScore;
+  aiSignal: AISignalResult;
+}
+
 // Generic result wrapper
 interface ScreenerResult<T> {
   results: T[];
@@ -58,6 +66,7 @@ function PerformanceDashboardContent() {
   const [dualData, setDualData] = useState<{
     performance: ScreenerResult<PerformanceScore>;
     aiSignals: ScreenerResult<AISignalResult>;
+    dualMatches: DualMatchEntry[];
     dualMatchSymbols: string[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -191,6 +200,7 @@ function PerformanceDashboardContent() {
         const dualResult = result.data as {
           performance: ScreenerResult<PerformanceScore>;
           aiSignals: ScreenerResult<AISignalResult>;
+          dualMatches: DualMatchEntry[];
           dualMatchSymbols: string[];
         };
         setDualData(dualResult);
@@ -243,7 +253,11 @@ function PerformanceDashboardContent() {
   // ソート済みデータ
   const sortedResults = (() => {
     const rawResults = activeTab === 'dual-match'
-      ? dualData?.performance.results.filter(r => dualData.dualMatchSymbols.includes(r.symbol))
+      ? dualData?.dualMatches.map(m => ({
+        ...m.performance,
+        confidence: m.aiSignal.confidence,
+        aiSignalType: m.aiSignal.signalType
+      }))
       : activeTab === 'performance' ? dualData?.performance.results : dualData?.aiSignals.results;
 
     if (!rawResults) return [];
@@ -715,8 +729,8 @@ function PerformanceDashboardContent() {
 
             {!loading && !error && sortedResults.length > 0 && (
               <div className="min-w-[1000px] lg:min-w-0">
-                {/* Performance Table */}
-                {activeTab === 'performance' && (
+                {/* Performance or Dual Match Table */}
+                {(activeTab === 'performance' || activeTab === 'dual-match') && (
                   <table className="w-full text-left text-xs tabular-nums">
                     <thead className="text-[10px] uppercase text-[#92adc9] font-medium sticky top-0 bg-[#141e27] z-10 border-b border-[#233648]">
                       <tr>
@@ -744,6 +758,14 @@ function PerformanceDashboardContent() {
                           シャープ {sortField === 'sharpeRatio' && (sortDirection === 'asc' ? '↑' : '↓')}
                         </th>
                         <th className="px-3 py-3 w-16 text-center">取引数</th>
+                        {activeTab === 'dual-match' && (
+                          <>
+                            <th className="px-3 py-3 w-20 text-center">AI信号</th>
+                            <th className="px-3 py-3 w-20 text-center cursor-pointer hover:text-white" onClick={() => handleSort('confidence')}>
+                              信頼度 {sortField === 'confidence' && (sortDirection === 'asc' ? '↑' : '↓')}
+                            </th>
+                          </>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#233648]/50">
@@ -758,10 +780,10 @@ function PerformanceDashboardContent() {
                             )}
                             onClick={() => handleStockClick(stock)}
                           >
-                            {isDualMatch && (
-                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
-                            )}
-                            <td className="px-3 py-3 text-center">
+                            <td className="px-3 py-3 text-center relative">
+                              {isDualMatch && (
+                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
+                              )}
                               <span className={cn(
                                 "font-bold",
                                 stock.rank === 1 ? "text-yellow-400" :
@@ -805,7 +827,34 @@ function PerformanceDashboardContent() {
                             <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(((stock.sharpeRatio ?? 0) + 1) * 25))}>
                               {(stock.sharpeRatio ?? 0).toFixed(2)}
                             </td>
-                            <td className="px-3 py-3 text-center text-[#92adc9]">{stock.totalTrades || 0}</td>
+                            <td className="px-3 py-3 text-center text-[#92adc9]">
+                              {stock.totalTrades || 0}
+                            </td>
+                            {activeTab === 'dual-match' && (
+                              <>
+                                <td className="px-3 py-3 text-center">
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded text-[10px] font-bold",
+                                    (stock as any).aiSignalType === 'BUY' ? "bg-green-500/20 text-green-400" :
+                                      (stock as any).aiSignalType === 'SELL' ? "bg-red-500/20 text-red-400" :
+                                        "bg-gray-500/20 text-gray-400"
+                                  )}>
+                                    {(stock as any).aiSignalType === 'BUY' ? '買い' : (stock as any).aiSignalType === 'SELL' ? '売り' : '保留'}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-3 text-center">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <div className="w-8 h-1 bg-[#233648] rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-gradient-to-r from-primary to-blue-400"
+                                        style={{ width: `${(stock as any).confidence}%` }}
+                                      />
+                                    </div>
+                                    <span className="text-white font-medium text-[10px]">{(stock as any).confidence?.toFixed(0)}%</span>
+                                  </div>
+                                </td>
+                              </>
+                            )}
                           </tr>
                         )
                       })}
@@ -854,10 +903,10 @@ function PerformanceDashboardContent() {
                             )}
                             onClick={() => handleStockClick(stock)}
                           >
-                            {isDualMatch && (
-                              <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
-                            )}
-                            <td className="px-3 py-3 text-center">
+                            <td className="px-3 py-3 text-center relative">
+                              {isDualMatch && (
+                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
+                              )}
                               <span className={cn(
                                 "font-bold",
                                 stock.rank === 1 ? "text-yellow-400" :
