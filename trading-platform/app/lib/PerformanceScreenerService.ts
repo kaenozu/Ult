@@ -100,11 +100,23 @@ export interface AISignalResult {
 }
 
 /**
+ * デュアルスキャン結果の単一エントリ
+ */
+export interface DualMatchEntry {
+  symbol: string;
+  name: string;
+  market: 'japan' | 'usa';
+  performance: PerformanceScore;
+  aiSignal: AISignalResult;
+}
+
+/**
  * デュアルスキャン結果
  */
 export interface DualScanResult {
   performance: ScreenerResult<PerformanceScore>;
   aiSignals: ScreenerResult<AISignalResult>;
+  dualMatches: DualMatchEntry[];
   dualMatchSymbols: string[];
 }
 
@@ -137,75 +149,75 @@ export class PerformanceScreenerService {
    * @param dataSources データソースの配列
    * @param config スクリーニング設定
    */
-   async scanMultipleStocks(
-      dataSources: StockDataSource[],
-      config: ScreenerConfig = {}
-    ): Promise<ScreenerResult> {
-      const startTime = performance.now();
+  async scanMultipleStocks(
+    dataSources: StockDataSource[],
+    config: ScreenerConfig = {}
+  ): Promise<ScreenerResult<PerformanceScore>> {
+    const startTime = performance.now();
 
-      // デフォルト設定
-     const {
-       minWinRate = 0,
-       minProfitFactor = 0,
-       minTrades = 5,
-       maxDrawdown = 100,
-       market = 'all',
-       topN = 20,
-       lookbackDays = 90,
-     } = config;
+    // デフォルト設定
+    const {
+      minWinRate = 0,
+      minProfitFactor = 0,
+      minTrades = 5,
+      maxDrawdown = 100,
+      market = 'all',
+      topN = 20,
+      lookbackDays = 90,
+    } = config;
 
-      // 市場でフィルタリング
-      let filteredSources = dataSources.filter(ds => 
-        market === 'all' || ds.market === market
-      );
+    // 市場でフィルタリング
+    let filteredSources = dataSources.filter(ds =>
+      market === 'all' || ds.market === market
+    );
 
-      // development環境では20銘柄に制限（レートリミット対策）
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const isDev = process.env.NODE_ENV !== 'production';
-      if (isDev && filteredSources.length > 20) {
-        filteredSources = filteredSources.slice(0, 20);
+    // development環境では20銘柄に制限（レートリミット対策）
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (isDev && filteredSources.length > 20) {
+      filteredSources = filteredSources.slice(0, 20);
+    }
+
+
+    // バックテスト実行（直列処理でレートリミット回避）
+    const allResults: PerformanceScore[] = [];
+
+    for (let i = 0; i < filteredSources.length; i++) {
+      const ds = filteredSources[i];
+
+      try {
+        const result = await this.evaluateStock(ds, lookbackDays);
+        if (result) {
+          allResults.push(result);
+        }
+      } catch (error) {
+        // 個別銘柄の評価失敗はログに記録して継続
+        console.warn(`[PerformanceScreener] Failed to evaluate ${ds.symbol}:`, error);
       }
 
-
-      // バックテスト実行（直列処理でレートリミット回避）
-      const allResults: PerformanceScore[] = [];
-
-      for (let i = 0; i < filteredSources.length; i++) {
-        const ds = filteredSources[i];
-        
-        try {
-          const result = await this.evaluateStock(ds, lookbackDays);
-          if (result) {
-            allResults.push(result);
-          }
-        } catch (error) {
-          // 個別銘柄の評価失敗はログに記録して継続
-          console.warn(`[PerformanceScreener] Failed to evaluate ${ds.symbol}:`, error);
-        }
-
-        // 各リクエスト後に遅延（レートリミット対策）
-        // テスト環境では遅延をスキップ
-        if (i < filteredSources.length - 1) {
-          const delayMs = process.env.JEST_WORKER_ID ? 0 : 1500;
-          if (delayMs > 0) {
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-          }
+      // 各リクエスト後に遅延（レートリミット対策）
+      // テスト環境では遅延をスキップ
+      if (i < filteredSources.length - 1) {
+        const delayMs = process.env.JEST_WORKER_ID ? 0 : 1500;
+        if (delayMs > 0) {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
         }
       }
+    }
 
-    // フィルタリングなし（全結果を返す）
-    const filtered = allResults;
+    // 最小トレード数でフィルタリング
+    const minTradesFiltered = allResults.filter(r => r.totalTrades >= (minTrades || 0));
 
     // パフォーマンススコアでソート（降順）
-    filtered.sort((a, b) => b.performanceScore - a.performanceScore);
+    minTradesFiltered.sort((a, b) => b.performanceScore - a.performanceScore);
 
     // ランキング付与
-    filtered.forEach((result, index) => {
+    minTradesFiltered.forEach((result, index) => {
       result.rank = index + 1;
     });
 
     // 上位N件を取得
-    const topResults = filtered.slice(0, topN);
+    const topResults = minTradesFiltered.slice(0, topN);
 
     const endTime = performance.now();
     const scanDuration = endTime - startTime;
@@ -214,7 +226,7 @@ export class PerformanceScreenerService {
     return {
       results: topResults,
       totalScanned: filteredSources.length,
-      filteredCount: filtered.length,
+      filteredCount: minTradesFiltered.length,
       scanDuration,
       lastUpdated: new Date(),
     } as ScreenerResult<PerformanceScore>;
@@ -242,14 +254,15 @@ export class PerformanceScreenerService {
       market === 'all' || ds.market === market
     );
 
-    // 開発環境制限
+    // 開発環境制限（デュアルスキャンでは50銘柄まで許可。母数が少ないとマッチが出にくい）
     const isDev = process.env.NODE_ENV !== 'production';
-    if (isDev && filteredSources.length > 30) {
-      filteredSources = filteredSources.slice(0, 30);
+    if (isDev && filteredSources.length > 50) {
+      filteredSources = filteredSources.slice(0, 50);
     }
 
     const performanceResults: PerformanceScore[] = [];
     const aiSignalResults: AISignalResult[] = [];
+    const dualMatches: DualMatchEntry[] = [];
     const dualMatchSymbols: string[] = [];
 
     for (let i = 0; i < filteredSources.length; i++) {
@@ -331,9 +344,23 @@ export class PerformanceScreenerService {
         if (perfScore.totalTrades >= minTrades) {
           performanceResults.push(perfScore);
 
-          // AIがBUYで高信頼度であればデュアルマッチ候補
-          if (finalType === 'BUY' && finalConfidence >= 60 && pScoreValue >= 60) {
+          // デュアルマッチ判定: パフォーマンス実績もAI予測も良好な銘柄
+          // 条件: パフォーマンススコア >= 40 AND (AI BUY信頼度 >= 50 OR AIが何らかのシグナルを出しており信頼度 >= 65)
+          const isDualCandidate =
+            (finalType === 'BUY' && finalConfidence >= 50 && pScoreValue >= 40) ||
+            (finalType !== 'HOLD' && finalConfidence >= 65 && pScoreValue >= 50);
+
+          console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}% → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
+
+          if (isDualCandidate) {
             dualMatchSymbols.push(ds.symbol);
+            dualMatches.push({
+              symbol: ds.symbol,
+              name: ds.name,
+              market: ds.market,
+              performance: perfScore,
+              aiSignal: aiResult,
+            });
           }
         }
 
@@ -373,6 +400,7 @@ export class PerformanceScreenerService {
         scanDuration,
         lastUpdated,
       },
+      dualMatches,
       dualMatchSymbols,
     };
   }
@@ -388,19 +416,23 @@ export class PerformanceScreenerService {
   ): Promise<PerformanceScore | null> {
     const { symbol, name, market, fetchData } = dataSource;
 
-     // キャッシュチェック
-     const cacheKey = `${symbol}:${lookbackDays}`;
-     const cached = this.cache.get(cacheKey);
-     if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
-       return cached.result;
-     }
+    // キャッシュチェック
+    const cacheKey = `${symbol}:${lookbackDays}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
+      console.log(`[PerformanceScreener] Cache hit for ${symbol}`);
+      return cached.result;
+    }
 
-     // データ取得
-     const data = await fetchData();
-     
-     if (data.length < lookbackDays) {
-       return null;
-     }
+    // データ取得
+    console.log(`[PerformanceScreener] Fetching data for ${symbol} (market: ${market}, lookbackDays: ${lookbackDays})`);
+    const data = await fetchData();
+    console.log(`[PerformanceScreener] Data fetched for ${symbol}: ${data.length} records (need ${lookbackDays})`);
+
+    if (data.length < lookbackDays) {
+      console.warn(`[PerformanceScreener] Insufficient data for ${symbol}: ${data.length} < ${lookbackDays}`);
+      return null;
+    }
 
     // 直近N日分のデータを使用
     const recentData = data.slice(-lookbackDays);
