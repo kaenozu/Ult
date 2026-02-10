@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { keyboardShortcutManager, KeyboardShortcutManager } from '@/app/lib/KeyboardShortcutManager';
 import { Keyboard, X } from 'lucide-react';
 import { useUIStore } from '@/app/store/uiStore';
@@ -37,6 +37,26 @@ export function KeyboardShortcutHelp() {
     };
   }, [setKeyboardShortcuts]);
 
+  // Handle Escape key to close
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setKeyboardShortcuts(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, setKeyboardShortcuts]);
+
+  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      setKeyboardShortcuts(false);
+    }
+  }, [setKeyboardShortcuts]);
+
   const categories = {
     navigation: shortcuts.filter(s => s.category === 'navigation'),
     trading: shortcuts.filter(s => s.category === 'trading'),
@@ -49,18 +69,29 @@ export function KeyboardShortcutHelp() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-[#1a2332] rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+    <div
+      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="keyboard-shortcuts-title"
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-[#1a2332] rounded-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold flex items-center gap-2">
+            <h2
+              id="keyboard-shortcuts-title"
+              className="text-xl font-bold flex items-center gap-2"
+            >
               <Keyboard className="w-6 h-6" />
               Keyboard Shortcuts
             </h2>
             <button
               onClick={() => setKeyboardShortcuts(false)}
-              className="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white"
+              className="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+              autoFocus
+              aria-label="Close keyboard shortcuts help"
             >
               <X className="w-5 h-5" />
             </button>
