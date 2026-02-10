@@ -33,7 +33,7 @@ class MarketCorrelation:
         if len(stock_prices) != len(index_prices):
             raise ValueError("Price series must have the same length")
         if len(stock_prices) < 2:
-            raise ValueError("At least 2 data points are required for correlation calculation")
+            raise ValueError("at least 2 data points are required for correlation calculation")
 
         if HAS_NUMPY:
             return float(np.corrcoef(stock_prices, index_prices)[0, 1])
