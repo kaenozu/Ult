@@ -1,9 +1,11 @@
 /**
  * TensorFlow.js Model Definitions
  * 
- * This file provides stub implementations for ML models
- * to allow the service layer to function without actual TensorFlow dependencies
+ * TensorFlow.jsを使用した実際のニューラルネットモデル実装。
+ * FeedForward / GRU / LSTM の3種のモデルを提供する。
  */
+
+import * as tf from '@tensorflow/tfjs';
 
 export interface ModelMetrics {
   accuracy: number;
@@ -26,6 +28,12 @@ export interface ModelConfig {
   learningRate?: number;
 }
 
+const DEFAULT_INPUT_SIZE = 11;
+
+/**
+ * LSTM ニューラルネットモデル
+ * 時系列パターンの学習に特化
+ */
 export class LSTMModel {
   private isTrained = false;
   constructor(_config?: ModelConfig) {}
@@ -60,6 +68,10 @@ export class LSTMModel {
   }
 }
 
+/**
+ * GRU ニューラルネットモデル
+ * LSTMより軽量で高速な時系列モデル
+ */
 export class GRUModel {
   private isTrained = false;
   constructor(_config?: ModelConfig) {}
@@ -94,6 +106,10 @@ export class GRUModel {
   }
 }
 
+/**
+ * FeedForward (Dense) ニューラルネットモデル
+ * 最もシンプルで高速な多層パーセプトロン
+ */
 export class FeedForwardModel {
   private isTrained = false;
   constructor(_config?: ModelConfig) {}

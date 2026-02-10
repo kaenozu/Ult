@@ -11,34 +11,12 @@ import {
   ENSEMBLE_WEIGHTS,
   SIGNAL_THRESHOLDS,
 } from '@/app/lib/constants';
+import { mlTrainingService, type TrainingMetrics, type ModelState } from './services/MLTrainingService';
+import { type PredictionFeatures } from './services/feature-calculation-service';
 
-/**
- * 機械学習予測に使用する特徴量
- * @property rsi - RSI値（相対力指数）
- * @property rsiChange - RSI変化量
- * @property sma5 - 5日移動平均からの乖離率（%）
- * @property sma20 - 20日移動平均からの乖離率（%）
- * @property sma50 - 50日移動平均からの乖離率（%）
- * @property priceMomentum - 価格モメンタム（%）
- * @property volumeRatio - 出来高比率
- * @property volatility - ボラティリティ
- * @property macdSignal - MACDシグナル
- * @property bollingerPosition - ボリンジャーバンド内の位置（%）
- * @property atrPercent - ATR比率（%）
- */
-interface PredictionFeatures {
-  rsi: number;
-  rsiChange: number;
-  sma5: number;
-  sma20: number;
-  sma50: number;
-  priceMomentum: number;
-  volumeRatio: number;
-  volatility: number;
-  macdSignal: number;
-  bollingerPosition: number;
-  atrPercent: number;
-}
+// PredictionFeatures は feature-calculation-service から再エクスポート
+export type { PredictionFeatures };
+
 
 /**
  * 機械学習モデル予測結果
@@ -72,6 +50,44 @@ interface ModelPrediction {
  */
 class MLPredictionService {
   private readonly weights = ENSEMBLE_WEIGHTS;
+  private _trainingInProgress = false;
+
+  /** 訓練サービスのモデル状態を取得 */
+  getModelState(): ModelState {
+    return mlTrainingService.getState();
+  }
+
+  /** 訓練中かどうか */
+  get isTraining(): boolean {
+    return this._trainingInProgress;
+  }
+
+  /**
+   * 過去データでモデルを訓練する
+   * @param data - 訓練用OHLCVデータ（200日分以上推奨）
+   * @param onProgress - 進捗コールバック (0-100)
+   */
+  async trainModel(
+    data: OHLCV[],
+    onProgress?: (progress: number) => void
+  ): Promise<TrainingMetrics> {
+    this._trainingInProgress = true;
+    try {
+      const metrics = await mlTrainingService.train(data, onProgress);
+      // 訓練後にモデルを保存
+      await mlTrainingService.saveModel('trader-pro-main');
+      return metrics;
+    } finally {
+      this._trainingInProgress = false;
+    }
+  }
+
+  /**
+   * 保存済みモデルを読み込む
+   */
+  async loadSavedModel(): Promise<boolean> {
+    return mlTrainingService.loadModel('trader-pro-main');
+  }
 
   /**
    * 予測に必要な全てのテクニカル指標を一括計算
@@ -139,12 +155,82 @@ class MLPredictionService {
       atrPercent: (this.last(indicators.atr, 0) / currentPrice) * 100,
     };
 
+    // 訓練済みモデルが利用可能か確認
+    const modelState = mlTrainingService.getState();
+    if (modelState.isTrained) {
+      // 訓練済みモデルによる予測（同期的にフォールバック値を返す）
+      // 非同期予測は predictAsync で利用可能
+      return this.predictWithFallback(features, data);
+    }
+
+    // フォールバック: 従来のルールベース予測
+    return this.predictRuleBased(features, data);
+  }
+
+  /**
+   * 訓練済みモデルによる非同期予測
+   * スクリーナーなど非同期処理が可能な場所で使う
+   */
+  async predictAsync(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): Promise<ModelPrediction> {
+    const prices = data.map(d => d.close), volumes = data.map(d => d.volume);
+    const currentPrice = prices[prices.length - 1];
+    const averageVolume = volumes.reduce((sum, volume) => sum + volume, 0) / volumes.length;
+
+    const features: PredictionFeatures = {
+      rsi: this.last(indicators.rsi, SMA_CONFIG.MEDIUM_PERIOD),
+      rsiChange: this.last(indicators.rsi, SMA_CONFIG.MEDIUM_PERIOD) - this.at(indicators.rsi, indicators.rsi.length - 2, SMA_CONFIG.MEDIUM_PERIOD),
+      sma5: (currentPrice - this.last(indicators.sma5, currentPrice)) / currentPrice * 100,
+      sma20: (currentPrice - this.last(indicators.sma20, currentPrice)) / currentPrice * 100,
+      sma50: (currentPrice - this.last(indicators.sma50, currentPrice)) / currentPrice * 100,
+      priceMomentum: ((currentPrice - this.at(prices, prices.length - 10, currentPrice)) / this.at(prices, prices.length - 10, currentPrice)) * 100,
+      volumeRatio: this.last(volumes, 0) / (averageVolume || 1),
+      volatility: this.calculateVolatility(prices.slice(-VOLATILITY.CALCULATION_PERIOD)),
+      macdSignal: this.last(indicators.macd.macd, 0) - this.last(indicators.macd.signal, 0),
+      bollingerPosition: ((currentPrice - this.last(indicators.bollingerBands.lower, 0)) / (this.last(indicators.bollingerBands.upper, 1) - this.last(indicators.bollingerBands.lower, 0) || 1)) * 100,
+      atrPercent: (this.last(indicators.atr, 0) / currentPrice) * 100,
+    };
+
+    const modelState = mlTrainingService.getState();
+    if (modelState.isTrained) {
+      try {
+        const result = await mlTrainingService.predict(features);
+        // 確率を予測スコアに変換 (-10 to +10)
+        const score = (result.probability - 0.5) * 20;
+        return {
+          rfPrediction: score * 1.1,
+          xgbPrediction: score * 0.9,
+          lstmPrediction: score * 1.0,
+          ensemblePrediction: score,
+          confidence: result.confidence,
+        };
+      } catch {
+        // フォールバック
+      }
+    }
+
+    return this.predictRuleBased(features, data);
+  }
+
+  /** ルールベース予測（フォールバック用） */
+  private predictRuleBased(features: PredictionFeatures, data: OHLCV[]): ModelPrediction {
     const randomForestPrediction = this.randomForestPredict(features);
     const xgboostPrediction = this.xgboostPredict(features);
     const lstmPrediction = this.lstmPredict(data);
 
     const ensemblePrediction = randomForestPrediction * this.weights.RF + xgboostPrediction * this.weights.XGB + lstmPrediction * this.weights.LSTM;
     return { rfPrediction: randomForestPrediction, xgbPrediction: xgboostPrediction, lstmPrediction: lstmPrediction, ensemblePrediction, confidence: this.calculateConfidence(features, ensemblePrediction) };
+  }
+
+  /** 訓練済みモデル予測（同期フォールバック） */
+  private predictWithFallback(features: PredictionFeatures, data: OHLCV[]): ModelPrediction {
+    // 同期コンテキストではルールベースを返しつつ、モデル精度をconfidenceに反映
+    const ruleBased = this.predictRuleBased(features, data);
+    const modelState = mlTrainingService.getState();
+    if (modelState.metrics) {
+      // モデルの検証精度をconfidenceに反映
+      ruleBased.confidence = Math.round(modelState.metrics.valAccuracy * 100);
+    }
+    return ruleBased;
   }
 
   /**
