@@ -8,10 +8,15 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
+import { NetworkError } from '@/app/lib/errors';
 
 // Mock components that throw errors
 const ComponentThatThrows = () => {
   throw new Error('Test error');
+};
+
+const ComponentThatThrowsRecoverable = () => {
+  throw new NetworkError('Network error');
 };
 
 const ComponentThatWorks = () => {
@@ -62,7 +67,7 @@ describe('ErrorBoundary Integration', () => {
   it('should show retry button', () => {
     render(
       <ErrorBoundary name="TestComponent">
-        <ComponentThatThrows />
+        <ComponentThatThrowsRecoverable />
       </ErrorBoundary>
     );
     

@@ -59,8 +59,20 @@ describe('getClientIp Security Tests', () => {
     expect(getClientIp(req)).toBe('unknown');
   });
 
-  it('should trust CF-Connecting-IP regardless of TRUST_PROXY', () => {
+  it('should NOT trust CF-Connecting-IP if TRUST_PROXY is false', () => {
     process.env.TRUST_PROXY = 'false';
+
+    const req = createMockRequest({
+        'cf-connecting-ip': '5.5.5.5',
+        'x-forwarded-for': '1.2.3.4'
+    });
+
+    // Should not trust the header
+    expect(getClientIp(req)).toBe('unknown');
+  });
+
+  it('should trust CF-Connecting-IP if TRUST_PROXY is true', () => {
+    process.env.TRUST_PROXY = 'true';
 
     const req = createMockRequest({
         'cf-connecting-ip': '5.5.5.5',
