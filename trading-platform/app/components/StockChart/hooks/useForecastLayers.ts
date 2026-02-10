@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { OHLCV, Signal } from '@/app/types';
 import { analyzeStock } from '@/app/lib/analysis';
 import { GHOST_FORECAST, FORECAST_CONE, OPTIMIZATION } from '@/app/lib/constants';
+import { usePreCalculatedIndicators } from './usePreCalculatedIndicators';
 
 interface UseForecastLayersProps {
   data: OHLCV[];
@@ -38,12 +39,22 @@ export const useForecastLayers = ({
   hoveredIdx,
   accuracyData = null
 }: UseForecastLayersProps) => {
+  // Optimized: Pre-calculate indicators once to avoid re-calculation on every hover
+  const preCalculatedIndicators = usePreCalculatedIndicators(data);
+
   // 2. AI Time Travel: Ghost Cloud (過去の予測再現)
   const ghostForecastDatasets = useMemo(() => {
     if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) return [];
 
     // Note: analyzeStock might be expensive, so it's good this is memoized
-    const pastSignal = analyzeStock(data[0].symbol || '', data.slice(0, hoveredIdx + 1), market);
+    // Optimized: Pass full data with endIndex and pre-calculated indicators to avoid slice & re-calc
+    const pastSignal = analyzeStock(
+      data[0].symbol || '',
+      data,
+      market,
+      undefined,
+      { endIndex: hoveredIdx, preCalculatedIndicators }
+    );
     if (!pastSignal) return [];
 
     const targetArr = new Array(data.length).fill(NaN);
@@ -90,7 +101,7 @@ export const useForecastLayers = ({
         order: -2
       }
     ];
-  }, [hoveredIdx, data, market, extendedData.labels]);
+  }, [hoveredIdx, data, market, extendedData.labels, preCalculatedIndicators]);
 
   // 4. 未来予測の予報円 (Forecast Cone) - 常に表示される最新の予測
   // 注: 最新の全データを使用したsignalを元に計算（ゴースト予測とは異なります）
