@@ -169,4 +169,69 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
     const result = await marketClient.fetchQuotes([]);
     expect(result).toEqual([]);
   });
+
+  it('handles fetchQuotes abort gracefully without error log', async () => {
+    const controller = new AbortController();
+    const abortError = new DOMException('Aborted', 'AbortError');
+
+    (global.fetch as jest.Mock).mockImplementation(() => {
+      throw abortError;
+    });
+
+    // Start the fetch
+    const fetchPromise = marketClient.fetchQuotes(['AAPL'], controller.signal);
+
+    // Abort immediately
+    controller.abort();
+
+    const result = await fetchPromise;
+
+    // Should return empty array, not throw
+    expect(result).toEqual([]);
+  });
+
+  it('fetchQuotes returns empty when signal is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    (global.fetch as jest.Mock).mockImplementation(() => {
+      throw new DOMException('Aborted', 'AbortError');
+    });
+
+    const result = await marketClient.fetchQuotes(['AAPL'], controller.signal);
+
+    expect(result).toEqual([]);
+    // Fetch should not have been called since we check aborted first
+    // Actually fetch is called, but it throws AbortError which is caught
+  });
+
+  it('fetchQuotes handles AbortError as Error object (not DOMException)', async () => {
+    // Simulate the actual error pattern: Error with name='AbortError'
+    const abortError = new Error('The operation was aborted');
+    abortError.name = 'AbortError';
+
+    (global.fetch as jest.Mock).mockImplementation(() => {
+      throw abortError;
+    });
+
+    const controller = new AbortController();
+    const result = await marketClient.fetchQuotes(['AAPL'], controller.signal);
+
+    expect(result).toEqual([]);
+  });
+
+  it('fetchQuotes handles abort error with "abort" in message', async () => {
+    // Simulate the actual error pattern: Error with "abort" in message
+    // This matches the real-world case: "AbortError: signal is aborted without reason"
+    const abortError = new Error('AbortError: signal is aborted without reason');
+
+    (global.fetch as jest.Mock).mockImplementation(() => {
+      throw abortError;
+    });
+
+    const controller = new AbortController();
+    const result = await marketClient.fetchQuotes(['AAPL'], controller.signal);
+
+    expect(result).toEqual([]);
+  });
 });

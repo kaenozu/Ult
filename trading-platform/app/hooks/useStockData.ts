@@ -39,7 +39,7 @@ export function useStockData() {
     return () => {
       isMountedRef.current = false;
       if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+        abortControllerRef.current.abort('Component unmounted');
         abortControllerRef.current = null;
       }
     };
@@ -48,7 +48,7 @@ export function useStockData() {
   const fetchData = useCallback(async (stock: Stock) => {
     // Cancel any pending request
     if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+      abortControllerRef.current.abort('New request started');
     }
 
     // Create new AbortController for this request
