@@ -106,6 +106,14 @@ export class OverfittingDetector {
     );
 
     // Calculate overall overfitting score (weighted average)
+    const weights = {
+      performanceDegradation: 0.35,
+      sharpeRatioDrop: 0.25,
+      parameterInstability: 0.2,
+      complexityPenalty: 0.1,
+      walkForwardConsistency: 0.3
+    };
+
     let totalWeight = 0;
     let weightedScore = 0;
 
