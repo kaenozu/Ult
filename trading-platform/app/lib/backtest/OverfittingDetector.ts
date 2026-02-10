@@ -87,6 +87,15 @@ export class OverfittingDetector {
       inSampleResult,
       outOfSampleResult
     );
+    
+    // Define weights for each indicator
+    const weights = {
+      performanceDegradation: 1.0,
+      sharpeRatioDrop: 1.0,
+      parameterInstability: parameters ? 0.5 : 0,
+      complexityPenalty: complexity ? 0.5 : 0,
+      walkForwardConsistency: walkForwardResults ? 0.5 : 0,
+    };
 
     const parameterInstability = parameters 
       ? this.assessParameterStability(parameters, inSampleResult, outOfSampleResult)
