@@ -1,9 +1,27 @@
 import { UnifiedIntelligenceService } from '../services/UnifiedIntelligenceService';
 import { marketDataService } from '../MarketDataService';
 import { OHLCV } from '@/app/types';
+import { LSTMModel, GRUModel, FeedForwardModel } from '../services/tensorflow-model-service';
 
 // MarketDataService のモック
 jest.mock('../MarketDataService');
+
+// Mock tensorflow models to avoid 'Model not trained' error
+jest.mock('../services/tensorflow-model-service', () => {
+  const originalModule = jest.requireActual('../services/tensorflow-model-service');
+  return {
+    ...originalModule,
+    LSTMModel: class extends originalModule.LSTMModel {
+      async predict() { return 0.5; }
+    },
+    GRUModel: class extends originalModule.GRUModel {
+      async predict() { return 0.5; }
+    },
+    FeedForwardModel: class extends originalModule.FeedForwardModel {
+      async predict() { return 0.5; }
+    }
+  };
+});
 
 describe('UnifiedIntelligenceService Integration', () => {
   let service: UnifiedIntelligenceService;

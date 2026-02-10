@@ -238,7 +238,7 @@ class AccuracyService {
 
             const effectiveMinPeriod = data.length >= minPeriod ? minPeriod : Math.max(30, data.length - 20);
             if (data.length < minPeriod) logger.warn(`[runBacktest] Data limited for ${symbol}: ${data.length} days.`);
-            if (data.length < 40) return { symbol, totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalReturn: 0, avgProfit: 0, avgLoss: 0, profitFactor: 0, maxDrawdown: 0, sharpeRatio: 0, trades: [], startDate, endDate };
+            if (data.length < 40) return { symbol, totalTrades: 0, winningTrades: 0, losingTrades: 0, winRate: 0, totalReturn: 0, avgProfit: 0, avgLoss: 0, profitFactor: 0, maxDrawdown: 0, sharpeRatio: 0, trades: [], startDate, endDate, warning: 'Insufficient data for reliable backtest' };
 
             const preCalculatedIndicators = this.preCalculateIndicators(data);
             let cachedParams: { rsiPeriod: number; smaPeriod: number; accuracy: number } | null = null, lastOptimizationIndex = -999;

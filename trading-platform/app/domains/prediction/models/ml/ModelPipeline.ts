@@ -687,7 +687,18 @@ export class ModelPipeline {
 
       try {
         const { model, history } = await this.trainLSTMModel(trainingData, config);
-        const valLoss = history.history.valLoss[history.history.valLoss.length - 1] as number;
+
+        let valLoss = Infinity;
+        // Check if history exists and has valid metrics
+        if (history && history.history && history.history.valLoss && history.history.valLoss.length > 0) {
+           const lastValLoss = history.history.valLoss[history.history.valLoss.length - 1];
+           // Handle tensor or number
+           valLoss = typeof lastValLoss === 'number' ? lastValLoss : (await (lastValLoss as any).data())[0];
+        } else if (history && history.history && history.history.loss && history.history.loss.length > 0) {
+           // Fallback to training loss if validation loss is unavailable
+           const lastLoss = history.history.loss[history.history.loss.length - 1];
+           valLoss = typeof lastLoss === 'number' ? lastLoss : (await (lastLoss as any).data())[0];
+        }
 
         if (valLoss < bestScore) {
           bestScore = valLoss;
@@ -696,6 +707,9 @@ export class ModelPipeline {
 
         // Dispose model
         model.dispose();
+        if (this.model === model) {
+          this.model = null;
+        }
       } catch (error) {
         console.error('Error during hyperparameter optimization:', error);
       }

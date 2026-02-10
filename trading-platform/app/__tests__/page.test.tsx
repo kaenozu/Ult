@@ -64,8 +64,9 @@ describe('Workstation Page - Initial State', () => {
     // Mock useStockData returns null selectedStock by default
     render(<Workstation />);
     
-    expect(screen.getByText('page.noStockSelected')).toBeInTheDocument();
-    expect(screen.getByText('page.noStockSelectedDescription')).toBeInTheDocument();
+    // The actual page renders the mocked translation string
+    expect(screen.getByText('銘柄が未選択です')).toBeInTheDocument();
+    expect(screen.getByText('ウォッチリストから銘柄を選択するか、検索してください。')).toBeInTheDocument();
   });
 
   it('does not show placeholder when a stock is selected', () => {

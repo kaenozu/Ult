@@ -33,6 +33,7 @@ export interface BacktestResult {
   trades: BacktestTrade[];
   startDate: string;
   endDate: string;
+  warning?: string;
   // Walk-Forward Analysis metrics
   walkForwardMetrics?: {
     inSampleAccuracy: number;  // Average accuracy during training

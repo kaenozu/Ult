@@ -221,7 +221,7 @@ class MLPredictionService {
     if (type === 'HOLD') finalPredictedChange = 0;
 
     // シグナル理由の生成
-    const reason = this.generateBaseReason(type);
+    const reason = marketComment || this.generateBaseReason(type);
 
     // Final safety check for NaN in target/stop
     if (isNaN(targetPrice)) targetPrice = currentPrice;

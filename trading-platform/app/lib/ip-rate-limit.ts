@@ -117,14 +117,15 @@ export function getClientIp(request: Request | NextRequest): string {
 
     const trustProxy = process.env.TRUST_PROXY === 'true';
 
-    // Priority 1: Cloudflare (CF-Connecting-IP)
-    // This header is immutable on Cloudflare, so it's safe if we are behind Cloudflare.
-    const cfConnectingIp = request.headers.get('cf-connecting-ip');
-    if (cfConnectingIp) {
-        return cfConnectingIp.trim();
-    }
-
     if (trustProxy) {
+        // Priority 1: Cloudflare (CF-Connecting-IP)
+        // This header is immutable on Cloudflare, so it's safe if we are behind Cloudflare.
+        // But we only trust it if TRUST_PROXY is enabled to prevent spoofing.
+        const cfConnectingIp = request.headers.get('cf-connecting-ip');
+        if (cfConnectingIp) {
+            return cfConnectingIp.trim();
+        }
+
         // Priority 2: X-Real-IP
         // Often set by the immediate reverse proxy (Nginx, etc.) to the connected peer's IP.
         // Harder to spoof than X-Forwarded-For if the proxy is correctly configured.
