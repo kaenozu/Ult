@@ -109,6 +109,14 @@ export class OverfittingDetector {
     let totalWeight = 0;
     let weightedScore = 0;
 
+    const weights = {
+      performanceDegradation: 0.35,
+      sharpeRatioDrop: 0.25,
+      parameterInstability: 0.15,
+      complexityPenalty: 0.1,
+      walkForwardConsistency: 0.15
+    };
+
     // Performance degradation (Always included)
     weightedScore += performanceDegradation * weights.performanceDegradation;
     totalWeight += weights.performanceDegradation;
