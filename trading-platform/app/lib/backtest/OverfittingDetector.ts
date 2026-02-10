@@ -115,7 +115,7 @@ export class OverfittingDetector {
     );
 
     // Define weights for scoring
-    const weights = {
+    const scoringWeights = {
       performanceDegradation: 0.35,
       sharpeRatioDrop: 0.25,
       parameterInstability: 0.15,
@@ -128,29 +128,29 @@ export class OverfittingDetector {
     let weightedScore = 0;
 
     // Performance degradation (Always included)
-    weightedScore += performanceDegradation * weights.performanceDegradation;
-    totalWeight += weights.performanceDegradation;
+    weightedScore += performanceDegradation * scoringWeights.performanceDegradation;
+    totalWeight += scoringWeights.performanceDegradation;
 
     // Sharpe ratio drop (Always included)
-    weightedScore += sharpeRatioDrop * weights.sharpeRatioDrop;
-    totalWeight += weights.sharpeRatioDrop;
+    weightedScore += sharpeRatioDrop * scoringWeights.sharpeRatioDrop;
+    totalWeight += scoringWeights.sharpeRatioDrop;
 
     // Parameter instability (Only if parameters provided)
     if (parameters) {
-      weightedScore += parameterInstability * weights.parameterInstability;
-      totalWeight += weights.parameterInstability;
+      weightedScore += parameterInstability * scoringWeights.parameterInstability;
+      totalWeight += scoringWeights.parameterInstability;
     }
 
     // Complexity penalty (Only if complexity provided)
     if (complexity) {
-      weightedScore += complexityPenalty * weights.complexityPenalty;
-      totalWeight += weights.complexityPenalty;
+      weightedScore += complexityPenalty * scoringWeights.complexityPenalty;
+      totalWeight += scoringWeights.complexityPenalty;
     }
 
     // Walk forward consistency (Only if results provided)
     if (walkForwardResults && walkForwardResults.length > 0) {
-      weightedScore += (1 - walkForwardConsistency) * weights.walkForwardConsistency;
-      totalWeight += weights.walkForwardConsistency;
+      weightedScore += (1 - walkForwardConsistency) * scoringWeights.walkForwardConsistency;
+      totalWeight += scoringWeights.walkForwardConsistency;
     }
 
     const overfittingScore = weightedScore / totalWeight;
