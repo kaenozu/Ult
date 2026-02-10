@@ -17,7 +17,7 @@ import { useUIStore } from '@/app/store/uiStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
-import { AISignalResult } from '@/app/lib/PerformanceScreenerService';
+import { AISignalResult, DualMatchEntry } from '@/app/lib/PerformanceScreenerService';
 import { Signal } from '../types';
 import { mlTrainingService, type TrainingMetrics, type ModelState } from '@/app/lib/services/MLTrainingService';
 import { fetchOHLCV } from '@/app/data/stocks';
@@ -37,14 +37,12 @@ interface PerformanceScore {
   startDate: string;
   endDate: string;
 }
-
-interface DualMatchEntry {
-  symbol: string;
-  name: string;
-  market: 'japan' | 'usa';
-  performance: PerformanceScore;
-  aiSignal: AISignalResult;
+interface DualMatchResult extends PerformanceScore {
+  confidence: number;
+  aiSignalType: string;
 }
+
+
 
 // Generic result wrapper
 interface ScreenerResult<T> {
@@ -835,11 +833,11 @@ function PerformanceDashboardContent() {
                                 <td className="px-3 py-3 text-center">
                                   <span className={cn(
                                     "px-2 py-0.5 rounded text-[10px] font-bold",
-                                    (stock as any).aiSignalType === 'BUY' ? "bg-green-500/20 text-green-400" :
-                                      (stock as any).aiSignalType === 'SELL' ? "bg-red-500/20 text-red-400" :
+                                    (stock as DualMatchResult).aiSignalType === 'BUY' ? "bg-green-500/20 text-green-400" :
+                                      (stock as DualMatchResult).aiSignalType === 'SELL' ? "bg-red-500/20 text-red-400" :
                                         "bg-gray-500/20 text-gray-400"
                                   )}>
-                                    {(stock as any).aiSignalType === 'BUY' ? '買い' : (stock as any).aiSignalType === 'SELL' ? '売り' : '保留'}
+                                    {(stock as DualMatchResult).aiSignalType === 'BUY' ? '買い' : (stock as DualMatchResult).aiSignalType === 'SELL' ? '売り' : '保留'}
                                   </span>
                                 </td>
                                 <td className="px-3 py-3 text-center">
@@ -847,10 +845,10 @@ function PerformanceDashboardContent() {
                                     <div className="w-8 h-1 bg-[#233648] rounded-full overflow-hidden">
                                       <div
                                         className="h-full bg-gradient-to-r from-primary to-blue-400"
-                                        style={{ width: `${(stock as any).confidence}%` }}
+                                        style={{ width: `${(stock as DualMatchResult).confidence}%` }}
                                       />
                                     </div>
-                                    <span className="text-white font-medium text-[10px]">{(stock as any).confidence?.toFixed(0)}%</span>
+                                    <span className="text-white font-medium text-[10px]">{(stock as DualMatchResult).confidence?.toFixed(0)}%</span>
                                   </div>
                                 </td>
                               </>

@@ -350,7 +350,7 @@ export class PerformanceScreenerService {
             (finalType === 'BUY' && finalConfidence >= 50 && pScoreValue >= 40) ||
             (finalType !== 'HOLD' && finalConfidence >= 65 && pScoreValue >= 50);
 
-          console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}% → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
+
 
           if (isDualCandidate) {
             dualMatchSymbols.push(ds.symbol);
