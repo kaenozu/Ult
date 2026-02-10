@@ -3,8 +3,21 @@ name: CI
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+
+# Cancel in-progress runs when a new run is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   NODE_VERSION: '20'
@@ -84,6 +97,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './trading-platform/package-lock.json'
 
+      - name: Cache Next.js
+        uses: actions/cache@v4
+        with:
+          path: trading-platform/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('trading-platform/package-lock.json') }}-${{ hashFiles('trading-platform/**/*.ts', 'trading-platform/**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('trading-platform/package-lock.json') }}-
+
       - name: Install dependencies
         run: npm ci
 
@@ -100,14 +121,16 @@ jobs:
           path: trading-platform/coverage/
           retention-days: 30
 
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
         if: always()
         with:
-          name: test-results
-          path: trading-platform/test-results/
-          retention-days: 30
-          if-no-files-found: ignore
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: trading-platform/coverage/
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          verbose: true
 
   # ============================================
   # E2E Tests
@@ -131,11 +154,33 @@ jobs:
           cache: 'npm'
           cache-dependency-path: './trading-platform/package-lock.json'
 
+      - name: Cache Next.js
+        uses: actions/cache@v4
+        with:
+          path: trading-platform/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('trading-platform/package-lock.json') }}-${{ hashFiles('trading-platform/**/*.ts', 'trading-platform/**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('trading-platform/package-lock.json') }}-
+
+      - name: Cache Playwright Browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('trading-platform/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - name: Install dependencies
         run: npm ci
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Install Playwright Dependencies
+        run: npx playwright install-deps chromium
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
 
       - name: Build Application
         run: npm run build
@@ -182,6 +227,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: './trading-platform/package-lock.json'
+
+      - name: Cache Next.js
+        uses: actions/cache@v4
+        with:
+          path: trading-platform/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('trading-platform/package-lock.json') }}-${{ hashFiles('trading-platform/**/*.ts', 'trading-platform/**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('trading-platform/package-lock.json') }}-
 
       - name: Install dependencies
         run: npm ci
@@ -231,6 +284,16 @@ jobs:
           path: backend/htmlcov/
           retention-days: 30
 
+      - name: Upload Backend Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: backend/
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+
   # ============================================
   # Security Audit
   # ============================================
@@ -262,3 +325,73 @@ jobs:
       - name: Run npm audit fix (dry-run)
         run: npm audit fix --dry-run
         continue-on-error: true
+
+  # ============================================
+  # Notification
+  # ============================================
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [lint, typecheck, test, e2e, build, backend-test, security]
+    if: always()
+    
+    steps:
+      - name: Determine Status
+        id: status
+        run: |
+          if [[ "${{ needs.test.result }}" == "failure" || "${{ needs.e2e.result }}" == "failure" || "${{ needs.build.result }}" == "failure" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=#FF0000" >> $GITHUB_OUTPUT
+            echo "emoji=x" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.lint.result }}" == "failure" || "${{ needs.typecheck.result }}" == "failure" || "${{ needs.security.result }}" == "failure" ]]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "color=#FFA500" >> $GITHUB_OUTPUT
+            echo "emoji=warning" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=#00FF00" >> $GITHUB_OUTPUT
+            echo "emoji=white_check_mark" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1.26.0
+        if: env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        with:
+          payload: |
+            {
+              "attachments": [
+                {
+                  "color": "${{ steps.status.outputs.color }}",
+                  "blocks": [
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": ":${{ steps.status.outputs.emoji }}: *CI ${{ steps.status.outputs.status }}*\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref_name }}\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+
+      - name: Notify Discord
+        uses: slackapi/slack-github-action@v1.26.0
+        if: env.DISCORD_WEBHOOK_URL != ''
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          payload: |
+            {
+              "content": null,
+              "embeds": [
+                {
+                  "title": "CI ${{ steps.status.outputs.status }}",
+                  "description": "Repository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: ${{ github.sha }}\nAuthor: ${{ github.actor }}",
+                  "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "color": ${{ steps.status.outputs.color == '#00FF00' && 65280 || steps.status.outputs.color == '#FFA500' && 16753920 || 16711680 }}
+                }
+              ]
+            }
