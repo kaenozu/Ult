@@ -29,6 +29,8 @@ const StockRow = memo(({
   return (
     <tr
       onClick={() => onSelect(stock)}
+      role="button"
+      aria-selected={isSelected}
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
