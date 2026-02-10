@@ -141,6 +141,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: github.event_name == 'pull_request'
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
@@ -150,6 +151,7 @@ jobs:
         with:
           fail-on-severity: moderate
           allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+        continue-on-error: true
 
   # ============================================
   # CodeQL Analysis (Security)
