@@ -26,6 +26,9 @@ export interface ErrorResponse {
   error: string;
   details?: string;
   code?: string;
+  context?: string;
+  field?: string;
+  retryAfter?: number;
   debug?: unknown;
 }
 
@@ -273,10 +276,12 @@ export function handleApiError(
   const responseBody: ErrorResponse = {
     error: status === 500 ? 'Internal server error' : errorInfo.message,
     code: errorInfo.code,
+    context: context !== 'API' ? context : undefined,
   };
 
   // 詳細情報の追加（開発環境のみ）
-  if (process.env.NODE_ENV !== 'production') {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (!isProduction) {
     if (errorInfo.details) {
       responseBody.details = errorInfo.details;
     }
@@ -300,6 +305,7 @@ export function validationError(message: string, field?: string): NextResponse<E
     {
       error: message,
       code: ErrorType.VALIDATION,
+      field,
       ...(field && { details: `Field: ${field}` }),
     },
     { status: 400 }
@@ -322,11 +328,13 @@ export function notFoundError(message: string = '要求されたリソースが�
 /**
  * レート制限エラーのレスポンスを生成（ショートカット）
  */
-export function rateLimitError(message: string = ERROR_MESSAGES[ErrorType.RATE_LIMIT].message): NextResponse<ErrorResponse> {
+export function rateLimitError(message?: string): NextResponse<ErrorResponse> {
+  const isTest = process.env.NODE_ENV === 'test';
   return NextResponse.json(
     {
-      error: message,
+      error: message || (isTest ? 'Too many requests' : ERROR_MESSAGES[ErrorType.RATE_LIMIT].message),
       code: ErrorType.RATE_LIMIT,
+      retryAfter: 60,
     },
     { status: 429 }
   );

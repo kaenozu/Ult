@@ -26,12 +26,17 @@ describe('EnsembleModel', () => {
       const change = (Math.random() - 0.48) * 20;
       price = Math.max(100, price + change);
 
+      const open = price;
+      const close = price + (Math.random() - 0.5) * 5;
+      const high = Math.max(open, close) + Math.random() * 5;
+      const low = Math.min(open, close) - Math.random() * 5;
+
       mockData.push({
         date: date.toISOString().split('T')[0],
-        open: price,
-        high: price + Math.random() * 10,
-        low: price - Math.random() * 10,
-        close: price + (Math.random() - 0.5) * 5,
+        open,
+        high,
+        low,
+        close,
         volume: Math.floor(1000000 + Math.random() * 500000),
       });
     }

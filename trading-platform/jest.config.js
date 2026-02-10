@@ -10,7 +10,12 @@ const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
-    // Handle module aliases (this will be automatically configured for you soon)
+    // Handle module aliases
+    '^@/domains/(.*)$': '<rootDir>/app/domains/$1',
+    '^@/infrastructure/(.*)$': '<rootDir>/app/infrastructure/$1',
+    '^@/shared/(.*)$': '<rootDir>/app/shared/$1',
+    '^@/shared$': '<rootDir>/app/shared/index.ts',
+    '^@/ui/(.*)$': '<rootDir>/app/ui/$1',
     '^@/(.*)$': '<rootDir>/$1',
   },
   collectCoverageFrom: [

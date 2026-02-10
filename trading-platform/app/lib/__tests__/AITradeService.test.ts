@@ -5,9 +5,19 @@
  * Tests trade processing, entry/exit logic, profit calculations, and reflections
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { aiTradeService } from '../AITradeService';
 import type { Signal, AIStatus, PaperTrade } from '@/app/types';
+
+// Polyfill for crypto.randomUUID in Node/Jest environment
+if (typeof crypto === 'undefined' || !crypto.randomUUID) {
+  Object.defineProperty(global, 'crypto', {
+    value: {
+      randomUUID: () => 'test-uuid-' + Math.random().toString(36).substring(2, 9),
+    },
+    configurable: true,
+  });
+}
 
 describe('AITradeService', () => {
   let mockStatus: AIStatus;

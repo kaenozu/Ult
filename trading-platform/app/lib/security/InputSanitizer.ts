@@ -27,13 +27,13 @@ const SQL_RESERVED_WORDS = [
 
 // JavaScript危険なパターン
 const JS_DANGEROUS_PATTERNS = [
-  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-  /javascript:/gi,
-  /on\w+\s*=/gi,
-  /data:text\/html/gi,
-  /<iframe/gi,
-  /<object/gi,
-  /<embed/gi,
+  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i,
+  /javascript:/i,
+  /on\w+\s*=/i,
+  /data:text\/html/i,
+  /<iframe/i,
+  /<object/i,
+  /<embed/i,
 ];
 
 // 危険なファイル拡張子

@@ -63,7 +63,7 @@ describe('SlippageModel', () => {
       const result = model.calculateSlippage(100, 'BUY', 100, morningData);
       const normalResult = model.calculateSlippage(100, 'BUY', 100, {
         ...mockOHLCV,
-        date: '2024-01-01T11:00:00Z',
+        date: '2024-01-01T14:00:00Z',
       });
 
       expect(result.slippageRate).toBeGreaterThan(normalResult.slippageRate);
@@ -78,7 +78,7 @@ describe('SlippageModel', () => {
       const result = model.calculateSlippage(100, 'BUY', 100, afternoonData);
       const normalResult = model.calculateSlippage(100, 'BUY', 100, {
         ...mockOHLCV,
-        date: '2024-01-01T13:00:00Z',
+        date: '2024-01-01T14:00:00Z',
       });
 
       expect(result.slippageRate).toBeGreaterThan(normalResult.slippageRate);
@@ -143,7 +143,7 @@ describe('SlippageModel', () => {
     });
 
     it('should apply almgren-chriss model', () => {
-      model.updateConfig({ marketImpactModel: 'algren_chriss' });
+      model.updateConfig({ marketImpactModel: 'almgren_chriss' });
 
       const result = model.calculateSlippage(100, 'BUY', 1000);
 

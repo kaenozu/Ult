@@ -247,6 +247,12 @@ export class DataCompletionPipeline {
       return result;
     }
 
+    // バウンドチェック: ギャップサイズが大きすぎる場合は拒否
+    const MAX_MISSING_POINTS = 10000;
+    if (gap.missingPoints > MAX_MISSING_POINTS) {
+      throw new Error(`Gap size (${gap.missingPoints}) exceeds maximum allowed (${MAX_MISSING_POINTS})`);
+    }
+
     const lastValue = result[startIndex];
     const startDate = new Date(gap.startDate);
     const endDate = new Date(gap.endDate);
@@ -282,6 +288,12 @@ export class DataCompletionPipeline {
     
     if (endIndex === -1) {
       return result;
+    }
+
+    // バウンドチェック: ギャップサイズが大きすぎる場合は拒否
+    const MAX_MISSING_POINTS = 10000;
+    if (gap.missingPoints > MAX_MISSING_POINTS) {
+      throw new Error(`Gap size (${gap.missingPoints}) exceeds maximum allowed (${MAX_MISSING_POINTS})`);
     }
 
     const nextValue = result[endIndex];
@@ -323,6 +335,12 @@ export class DataCompletionPipeline {
       return result;
     }
 
+    // バウンドチェック: ギャップサイズが大きすぎる場合は拒否
+    const MAX_MISSING_POINTS = 10000;
+    if (gap.missingPoints > MAX_MISSING_POINTS) {
+      throw new Error(`Gap size (${gap.missingPoints}) exceeds maximum allowed (${MAX_MISSING_POINTS})`);
+    }
+
     const startValue = result[startIndex];
     const endValue = result[endIndex];
     const steps = gap.missingPoints + 1;
@@ -361,6 +379,12 @@ export class DataCompletionPipeline {
     
     if (startIndex === -1) {
       return result;
+    }
+
+    // バウンドチェック: ギャップサイズが大きすぎる場合は拒否
+    const MAX_MISSING_POINTS = 10000;
+    if (gap.missingPoints > MAX_MISSING_POINTS) {
+      throw new Error(`Gap size (${gap.missingPoints}) exceeds maximum allowed (${MAX_MISSING_POINTS})`);
     }
 
     // Calculate mean from nearby values

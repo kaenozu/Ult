@@ -5,22 +5,22 @@
  * APIバッチ処理、キャッシング、リクエスト重複排除のテスト
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { DataAggregator } from '../DataAggregator';
 import type { OHLCV } from '@/app/types';
 
 describe('DataAggregator', () => {
   let aggregator: DataAggregator;
-  let fetchMock: ReturnType<typeof vi.fn>;
+  let fetchMock: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
     aggregator = new DataAggregator();
-    fetchMock = vi.fn();
+    fetchMock = jest.fn();
     global.fetch = fetchMock;
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('キャッシュ機能', () => {

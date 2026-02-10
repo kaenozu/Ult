@@ -77,11 +77,31 @@ export function useTradingStore<T>(selector?: (state: TradingStore) => T): Tradi
       const orders = portfolio.portfolio.orders.filter(o => o.status === 'FILLED');
       if (orders.length === 0) return { winRate: 0.5, avgWin: 0, avgLoss: 0, totalTrades: 0 };
 
-      const winningTrades = orders.filter(o => o.side === 'SELL' && (o.price || 0) > 100); // Simple mock logic
+      const sellOrders = orders.filter(o => o.side === 'SELL');
+      let winCount = 0;
+      let lossCount = 0;
+      let winAmount = 0;
+      let lossAmount = 0;
+
+      sellOrders.forEach(sell => {
+        const buy = orders.find(o => o.symbol === sell.symbol && o.side === 'BUY' && o.timestamp! < sell.timestamp!);
+        if (buy && buy.price && sell.price) {
+          const profit = (sell.price - buy.price) * sell.quantity;
+          if (profit > 0) {
+            winCount++;
+            winAmount += profit;
+          } else {
+            lossCount++;
+            lossAmount += Math.abs(profit);
+          }
+        }
+      });
+
+      const totalTrades = winCount + lossCount;
       return {
-        winRate: winningTrades.length / orders.length || 0.5,
-        avgWin: 100,
-        avgLoss: 50,
+        winRate: totalTrades > 0 ? winCount / totalTrades : 0.5,
+        avgWin: winCount > 0 ? winAmount / winCount : 0,
+        avgLoss: lossCount > 0 ? lossAmount / lossCount : 0,
         totalTrades: orders.length
       };
     }

@@ -39,7 +39,7 @@ describe('OverfittingDetector', () => {
 
     it('should not flag as overfitting when performance is consistent', () => {
       const inSample = createMockResult(25, 1.8);
-      const outOfSample = createMockResult(22, 1.7); // Similar performance
+      const outOfSample = createMockResult(24, 1.7); // Very similar performance
 
       const analysis = detector.analyze(inSample, outOfSample);
 

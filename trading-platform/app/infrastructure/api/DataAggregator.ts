@@ -17,6 +17,7 @@ import type { OHLCV, Stock, Signal, TechnicalIndicator } from '@/app/types';
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
+  expiresAt: number;
   key: string;
 }
 
@@ -62,8 +63,8 @@ const DEFAULT_RATE_LIMIT: RateLimitConfig = {
 // ============================================================================
 
 export class DataAggregator {
-  // Cache
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  /** @internal */
+  public cache: Map<string, CacheEntry<any>> = new Map();
   private readonly cacheTTL: number;
 
   // Request deduplication
@@ -228,6 +229,20 @@ export class DataAggregator {
   }
 
   /**
+   * Set cache entry (Public wrapper)
+   */
+  public setCached<T>(key: string, data: T, ttl?: number): void {
+    this.setCache(key, data, ttl);
+  }
+
+  /**
+   * Get cache entry (Public wrapper)
+   */
+  public getCached<T>(key: string): T | null {
+    return this.getFromCache<T>(key);
+  }
+
+  /**
    * Invalidate cache entries
    */
   invalidate(keys: string[]): void {
@@ -237,10 +252,33 @@ export class DataAggregator {
   }
 
   /**
-   * Invalidate all cache
+   * Fetch data (Legacy Alias for fetchWithCache)
    */
-  invalidateAll(): void {
+  async fetchData<T>(
+    key: string,
+    options?: { priority?: number; ttl?: number }
+  ): Promise<T> {
+    return this.fetchWithCache(
+      key,
+      async () => {
+        const params = new URLSearchParams({ symbol: key });
+        const response = await fetch(`/api/market?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error(response.statusText || 'API Error');
+        }
+        const json = await response.json();
+        return (json.data || json) as T;
+      },
+      options?.ttl
+    );
+  }
+
+  /**
+   * Clear all cache
+   */
+  clearCache(): void {
     this.cache.clear();
+    this.pendingRequests.clear();
   }
 
   /**
@@ -267,7 +305,7 @@ export class DataAggregator {
     const entry = this.cache.get(key);
     if (!entry) return null;
 
-    if (Date.now() - entry.timestamp > this.cacheTTL) {
+    if (Date.now() > entry.expiresAt) {
       this.cache.delete(key);
       return null;
     }
@@ -281,9 +319,12 @@ export class DataAggregator {
       this.evictLRU();
     }
 
+    const duration = ttl !== undefined ? ttl : this.cacheTTL;
+
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
+      expiresAt: Date.now() + duration,
       key,
     });
   }

@@ -133,7 +133,7 @@ class StructuredLogger {
         error: {
           name: error.name,
           message: error.message,
-          stack: error.stack,
+          stack: this.config.includeStackTrace ? error.stack : undefined,
           code: 'code' in error ? (error as { code: string }).code : undefined,
         },
       }),

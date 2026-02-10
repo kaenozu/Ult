@@ -18,7 +18,8 @@ import {
   BacktestResult,
   Strategy,
   Trade,
-  StrategyContext
+  StrategyContext,
+  StrategyAction
 } from './AdvancedBacktestEngine';
 import { SlippagePredictionService, OrderBook, OrderBookLevel } from '@/app/lib/execution/SlippagePredictionService';
 
@@ -143,7 +144,11 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
     this.volatilityCache.clear();
     this.tradeTimestamps = [];
 
-    // Run base backtest
+    // Store historical data for volatility calculation
+    const data = (this as any).data.get(symbol);
+    (this as any).currentHistoricalData = data || [];
+
+    // Run base backtest (which now calls overridden open/close methods)
     const baseResult = await super.runBacktest(strategy, symbol);
 
     // Calculate enhanced metrics
@@ -157,6 +162,114 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
       transactionCosts,
       executionQuality
     };
+  }
+
+  /**
+   * Override openPosition to apply realistic costs
+   */
+  protected openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction): void {
+    const index = (this as any).currentHistoricalData?.findIndex((d: any) => d.date === data.date) || 0;
+    const historicalData = (this as any).currentHistoricalData || [];
+    
+    const quantity = (this as any).calculatePositionSize(data.close, action.quantity);
+    
+    // Calculate realistic slippage
+    const { slippage, marketImpact, timeOfDayFactor, volatilityFactor } = 
+      this.calculateRealisticSlippage(data.close, quantity, side === 'LONG' ? 'BUY' : 'SELL', data, index, historicalData);
+    
+    // Apply slippage to price
+    const slippageFactor = side === 'LONG' ? (1 + slippage / 100) : (1 - slippage / 100);
+    const executionPrice = data.close * slippageFactor;
+    
+    // Calculate tiered commission
+    const orderValue = executionPrice * quantity;
+    const { rate: commissionRate, tier: commissionTier } = this.calculateTieredCommission(orderValue);
+    const commission = orderValue * (commissionRate / 100);
+
+    // Update state in base class
+    (this as any).currentPosition = side;
+    (this as any).entryPrice = executionPrice;
+    (this as any).entryDate = data.date;
+    (this as any).stopLoss = action.stopLoss || 0;
+    (this as any).takeProfit = action.takeProfit || 0;
+    (this as any).currentQuantity = quantity; // Need to track quantity for closePosition
+    (this as any).currentCommissionTier = commissionTier;
+    (this as any).currentMarketImpact = marketImpact;
+    (this as any).currentSlippage = slippage;
+    (this as any).currentTimeOfDayFactor = timeOfDayFactor;
+    (this as any).currentVolatilityFactor = volatilityFactor;
+    (this as any).currentFees = commission;
+
+    this.emit('position_opened', { side, price: executionPrice, quantity, date: data.date });
+  }
+
+  /**
+   * Override closePosition to apply realistic costs
+   */
+  protected closePosition(data: OHLCV, reason: Trade['exitReason']): void {
+    if (!(this as any).currentPosition) return;
+
+    const side = (this as any).currentPosition;
+    const entryPrice = (this as any).entryPrice;
+    const quantity = (this as any).currentQuantity || (this as any).calculatePositionSize(entryPrice);
+    const index = (this as any).currentHistoricalData?.findIndex((d: any) => d.date === data.date) || 0;
+    const historicalData = (this as any).currentHistoricalData || [];
+
+    // Calculate realistic slippage for exit
+    const { slippage, marketImpact } = 
+      this.calculateRealisticSlippage(data.close, quantity, side === 'LONG' ? 'SELL' : 'BUY', data, index, historicalData);
+    
+    const slippageFactor = side === 'LONG' ? (1 - slippage / 100) : (1 + slippage / 100);
+    const exitPrice = data.close * slippageFactor;
+
+    // Calculate P&L
+    let pnl = 0;
+    if (side === 'LONG') {
+      pnl = (exitPrice - entryPrice) * quantity;
+    } else {
+      pnl = (entryPrice - exitPrice) * quantity;
+    }
+
+    // Apply fees (entry + exit)
+    const exitValue = exitPrice * quantity;
+    const { rate: commissionRate } = this.calculateTieredCommission(exitValue);
+    const exitFees = exitValue * (commissionRate / 100);
+    const totalFees = ((this as any).currentFees || 0) + exitFees;
+    
+    pnl -= totalFees;
+    const pnlPercent = (pnl / (entryPrice * quantity)) * 100;
+
+    // Update equity
+    (this as any).currentEquity += pnl;
+
+    const trade: RealisticTradeMetrics = {
+      id: `trade_${(this as any).trades.length}`,
+      entryDate: (this as any).entryDate,
+      exitDate: data.date,
+      symbol: '',
+      side,
+      entryPrice,
+      exitPrice,
+      quantity,
+      pnl,
+      pnlPercent,
+      fees: totalFees,
+      exitReason: reason,
+      marketImpact: (this as any).currentMarketImpact || marketImpact,
+      effectiveSlippage: (this as any).currentSlippage || slippage,
+      commissionTier: (this as any).currentCommissionTier,
+      timeOfDayFactor: (this as any).currentTimeOfDayFactor,
+      volatilityFactor: (this as any).currentVolatilityFactor
+    };
+
+    (this as any).trades.push(trade);
+    this.emit('position_closed', trade);
+
+    // Reset position
+    (this as any).currentPosition = null;
+    (this as any).entryPrice = 0;
+    (this as any).stopLoss = 0;
+    (this as any).takeProfit = 0;
   }
 
   /**

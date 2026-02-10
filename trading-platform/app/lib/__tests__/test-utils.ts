@@ -122,6 +122,10 @@ export class MockMarketDataGenerator {
   }
 }
 
+export function generateMockOHLCV(startPrice: number, count: number): OHLCV[] {
+  return MockMarketDataGenerator.generateOHLCV({ startPrice, count });
+}
+
 /**
  * Mock API Response Generator
  */
@@ -478,7 +482,8 @@ export class ErrorTestHelpers {
   }
 }
 
-describe('Mock Test Utils Dummy', () => {
+// Dummy Test
+describe('Test Utils Dummy', () => {
   it('should pass', () => {
     expect(true).toBe(true);
   });

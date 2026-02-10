@@ -118,7 +118,14 @@ class MarketDataClient {
           const start = new Date(now);
           start.setDate(start.getDate() - 30);
           
-          const fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}&interval=${interval}&startDate=${start.toISOString().split('T')[0]}`;
+          const params = new URLSearchParams({
+            type: 'history',
+            symbol,
+            market,
+            interval: interval!,
+            startDate: start.toISOString().split('T')[0]
+          });
+          const fetchUrl = `/api/market?${params.toString()}`;
           const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
           if (newData && newData.length > 0) {
             finalData = newData;
@@ -150,22 +157,28 @@ class MarketDataClient {
           const needsUpdate = forceRefresh || !lastDataDate || (timeDiff !== null && timeDiff > (24 * 60 * 60 * 1000)) || missingHistory;
 
           if (needsUpdate) {
-            let fetchUrl = `/api/market?type=history&symbol=${symbol}&market=${market}`;
-            if (interval) fetchUrl += `&interval=${interval}`;
+            const params = new URLSearchParams({
+              type: 'history',
+              symbol,
+              market
+            });
+            if (interval) params.append('interval', interval);
 
             if (missingHistory && startDate) {
-              fetchUrl += `&startDate=${startDate}`;
+              params.append('startDate', startDate);
             } else if (lastDataDate && !forceRefresh) {
               const nextDay = new Date(lastDataDate);
               nextDay.setDate(nextDay.getDate() + 1);
-              fetchUrl += `&startDate=${nextDay.toISOString().split('T')[0]}`;
+              params.append('startDate', nextDay.toISOString().split('T')[0]);
             } else if (startDate) {
-              fetchUrl += `&startDate=${startDate}`;
+              params.append('startDate', startDate);
             } else {
                const defaultStart = new Date();
                defaultStart.setFullYear(defaultStart.getFullYear() - 1);
-               fetchUrl += `&startDate=${defaultStart.toISOString().split('T')[0]}`;
+               params.append('startDate', defaultStart.toISOString().split('T')[0]);
             }
+
+            const fetchUrl = `/api/market?${params.toString()}`;
 
             try {
               const newData = await this.fetchWithRetry<OHLCV[]>(fetchUrl, { signal });
@@ -215,7 +228,11 @@ class MarketDataClient {
     try {
       const results = await Promise.all(chunks.map(async (chunk) => {
         const symbolStr = chunk.join(',');
-        const httpResponse = await fetch(`/api/market?type=quote&symbol=${symbolStr}`, { signal });
+        const params = new URLSearchParams({
+          type: 'quote',
+          symbol: symbolStr
+        });
+        const httpResponse = await fetch(`/api/market?${params.toString()}`, { signal });
         if (httpResponse.status === 429) {
           await new Promise(resolve => setTimeout(resolve, 2000));
           return this.fetchQuotes(chunk, signal);
@@ -301,12 +318,16 @@ class MarketDataClient {
   private fillGaps(sorted: OHLCV[]): OHLCV[] {
     const filled: OHLCV[] = [];
     const MS_PER_DAY = 86400000;
+    const MAX_GAP_DAYS = 365; // Security: Prevent DoS from massive gaps
+    
     for (let i = 0; i < sorted.length; i++) {
       filled.push(sorted[i]);
       if (i >= sorted.length - 1) continue;
       const diffDays = Math.floor((new Date(sorted[i + 1].date).getTime() - new Date(sorted[i].date).getTime()) / MS_PER_DAY);
       if (diffDays <= 1) continue;
-      for (let d = 1; d < diffDays; d++) {
+      
+      const gapsToFill = Math.min(diffDays, MAX_GAP_DAYS);
+      for (let d = 1; d < gapsToFill; d++) {
         const gapDate = new Date(new Date(sorted[i].date).getTime() + d * MS_PER_DAY);
         if (gapDate.getDay() !== 0 && gapDate.getDay() !== 6) {
           filled.push({ date: gapDate.toISOString().split('T')[0], open: 0, high: 0, low: 0, close: 0, volume: 0 });
@@ -338,6 +359,15 @@ class MarketDataClient {
     let curr = idx + dir;
     while (curr >= 0 && curr < data.length && data[curr][field] === 0) curr += dir;
     return curr;
+  }
+
+  /**
+   * Clear all internal caches and pending requests.
+   * Useful for testing and force refreshing data.
+   */
+  clearCache() {
+    this.cache.clear();
+    this.pendingRequests.clear();
   }
 }
 

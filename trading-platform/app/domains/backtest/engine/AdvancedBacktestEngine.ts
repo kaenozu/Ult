@@ -85,12 +85,11 @@ export interface PerformanceMetrics {
   finalCapital?: number; // Optional: used by MonteCarloSimulator
 }
 
-export interface Strategy {
-  name: string;
-  description: string;
-  onData: (data: OHLCV, index: number, context: StrategyContext) => StrategyAction;
-  onInit?: () => void;
-  onEnd?: (result: BacktestResult) => void;
+export interface StrategyAction {
+  action: 'BUY' | 'SELL' | 'HOLD' | 'CLOSE';
+  quantity?: number;
+  stopLoss?: number;
+  takeProfit?: number;
 }
 
 export interface StrategyContext {
@@ -101,11 +100,12 @@ export interface StrategyContext {
   indicators: Map<string, number[]>;
 }
 
-export interface StrategyAction {
-  action: 'BUY' | 'SELL' | 'HOLD' | 'CLOSE';
-  quantity?: number;
-  stopLoss?: number;
-  takeProfit?: number;
+export interface Strategy {
+  name: string;
+  description: string;
+  onData: (data: OHLCV, index: number, context: StrategyContext) => StrategyAction;
+  onInit?: () => void;
+  onEnd?: (result: BacktestResult) => void;
 }
 
 // ============================================================================
@@ -340,7 +340,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     return null;
   }
 
-  private async executeAction(action: StrategyAction, data: OHLCV): Promise<void> {
+  protected async executeAction(action: StrategyAction, data: OHLCV): Promise<void> {
     switch (action.action) {
       case 'BUY':
         if (!this.currentPosition && this.config.allowShort !== false) {
@@ -372,7 +372,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     }
   }
 
-  private openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction): void {
+  protected openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction): void {
     const price = this.applySlippage(data.close, side === 'LONG' ? 'BUY' : 'SELL');
     const quantity = this.calculatePositionSize(price, action.quantity);
 
@@ -385,7 +385,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     this.emit('position_opened', { side, price, quantity, date: data.date });
   }
 
-  private closePosition(data: OHLCV, reason: Trade['exitReason']): void {
+  protected closePosition(data: OHLCV, reason: Trade['exitReason']): void {
     if (!this.currentPosition) return;
 
     const exitPrice = this.applySlippage(data.close, this.currentPosition === 'LONG' ? 'SELL' : 'BUY');

@@ -100,6 +100,10 @@ export {
   ratioToPercentage,
 } from './branded';
 
+// Error Classes
+export { ApiError, ValidationError } from '../lib/errors/AppError';
+export { ApiError as APIError } from '../lib/errors/AppError';
+
 export type {
   EmotionType,
   EmotionScore,

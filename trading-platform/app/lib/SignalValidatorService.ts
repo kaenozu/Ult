@@ -29,9 +29,10 @@ export class SignalValidatorService {
     for (const signal of signals) {
       let signalDate: string;
       try {
-        const d = new Date(signal.predictionDate || 0);
+        const dateValue = (signal as any).predictionDate || signal.timestamp || 0;
+        const d = new Date(dateValue);
         if (isNaN(d.getTime())) {
-          console.warn(`Invalid predictionDate: ${signal.predictionDate}`);
+          console.warn(`Invalid signal date: ${dateValue}`);
           continue;
         }
         signalDate = d.toISOString().split('T')[0];
@@ -42,8 +43,9 @@ export class SignalValidatorService {
       const signalIdx = history.findIndex(h => h.date === signalDate);
 
       if (signalIdx !== -1 && signalIdx + 1 < history.length) {
+        const entryPrice = history[signalIdx].close;
         const nextDay = history[signalIdx + 1];
-        const profit = nextDay.close - (signal.targetPrice || 0);
+        const profit = nextDay.close - entryPrice;
 
         if (signal.type === 'BUY') {
           if (profit > 0) {

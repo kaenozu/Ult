@@ -59,11 +59,20 @@ describe('CorrelationManager', () => {
     });
 
     it('should calculate negative correlation for opposite trends', () => {
-      correlationManager.updatePriceHistory('AAPL', [100, 110, 120, 130, 140]);
-      correlationManager.updatePriceHistory('MSFT', [240, 230, 220, 210, 200]);
+      // AAPL returns: [0.1, 0.1, 0.1, 0.1]
+      correlationManager.updatePriceHistory('AAPL', [100, 110, 121, 133.1, 146.41]);
+      // MSFT returns: [-0.1, -0.1, -0.1, -0.1]
+      correlationManager.updatePriceHistory('MSFT', [100, 90, 81, 72.9, 65.61]);
 
       const correlation = correlationManager.calculatePairwiseCorrelation('AAPL', 'MSFT');
-      expect(correlation).toBeLessThan(-0.9);
+      // While price trends are opposite, returns are constant (+10% and -10%).
+      // We need varied returns to have meaningful correlation.
+      
+      correlationManager.updatePriceHistory('AAPL', [100, 110, 100, 110, 100]);
+      correlationManager.updatePriceHistory('MSFT', [100, 90, 100, 90, 100]);
+
+      const correlation2 = correlationManager.calculatePairwiseCorrelation('AAPL', 'MSFT');
+      expect(correlation2).toBeLessThan(-0.9);
     });
   });
 

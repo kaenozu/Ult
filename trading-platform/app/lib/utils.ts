@@ -189,6 +189,24 @@ export function getPriceLimit(referencePrice: number): number {
   );
 }
 
+/**
+ * 価格配列からリターン（騰落率）の配列を計算する
+ */
+export function calculateReturns(prices: number[]): number[] {
+  if (prices.length < 2) return [];
+  const returns: number[] = [];
+  for (let i = 1; i < prices.length; i++) {
+    const prev = prices[i - 1];
+    const curr = prices[i];
+    if (prev === 0 || isNaN(prev) || isNaN(curr)) {
+      returns.push(0);
+    } else {
+      returns.push((curr - prev) / prev);
+    }
+  }
+  return returns;
+}
+
 // Re-export core technical analysis functions for backward compatibility
 export {
   calculateSMA,

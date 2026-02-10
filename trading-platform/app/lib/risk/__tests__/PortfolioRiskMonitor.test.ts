@@ -21,7 +21,7 @@ describe('PortfolioRiskMonitor', () => {
     riskMonitor = new PortfolioRiskMonitor();
 
     mockPortfolio = {
-      cash: 50000,
+      cash: 10000,
       positions: [
         {
           symbol: 'AAPL',
