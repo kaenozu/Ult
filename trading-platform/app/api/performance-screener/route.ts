@@ -5,11 +5,13 @@
  * GET /api/performance-screener
  *
  * Query Parameters:
+ * - mode: 'performance' | 'ai-signals' (default: 'performance')
  * - market: 'japan' | 'usa' | 'all' (default: 'all')
- * - minWinRate: number (default: 0)
- * - minProfitFactor: number (default: 0)
- * - minTrades: number (default: 5)
- * - maxDrawdown: number (default: 100)
+ * - minWinRate: number (default: 0) [performance mode]
+ * - minProfitFactor: number (default: 0) [performance mode]
+ * - minTrades: number (default: 5) [performance mode]
+ * - maxDrawdown: number (default: 100) [performance mode]
+ * - minConfidence: number (default: 60) [ai-signals mode]
  * - topN: number (default: 20)
  * - lookbackDays: number (default: 90)
  */
@@ -66,52 +68,65 @@ export async function GET(request: NextRequest) {
   const rateLimitResponse = checkRateLimit(request);
   if (rateLimitResponse) return rateLimitResponse;
 
-  try {
-    const searchParams = request.nextUrl.searchParams;
+   try {
+     const searchParams = request.nextUrl.searchParams;
 
-    // パラメータ取得
-    const market = (searchParams.get('market') || 'all') as 'japan' | 'usa' | 'all';
-    const minWinRate = parseFloat(searchParams.get('minWinRate') || '0');
-    const minProfitFactor = parseFloat(searchParams.get('minProfitFactor') || '0');
-    const minTrades = parseInt(searchParams.get('minTrades') || '5', 10);
-    const maxDrawdown = parseFloat(searchParams.get('maxDrawdown') || '100');
-    const topN = parseInt(searchParams.get('topN') || '20', 10);
-    const lookbackDays = parseInt(searchParams.get('lookbackDays') || '90', 10);
+     // モード判定
+     const mode = searchParams.get('mode') || 'performance';
 
-    // キャッシュキー生成
-    const cacheKey = `${market}:${minWinRate}:${minProfitFactor}:${minTrades}:${maxDrawdown}:${topN}:${lookbackDays}`;
-    
-    // キャッシュチェック
-    const cached = cache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
-      console.log('[PerformanceScreenerAPI] Cache hit');
-      return NextResponse.json(cached.data, {
-        headers: {
-          'Cache-Control': 'public, max-age=300', // 5分キャッシュ
-        },
-      });
-    }
+     // 共通パラメータ
+     const market = (searchParams.get('market') || 'all') as 'japan' | 'usa' | 'all';
+     const topN = parseInt(searchParams.get('topN') || '20', 10);
+     const lookbackDays = parseInt(searchParams.get('lookbackDays') || '90', 10);
 
-    // データソース作成
-    const dataSources = createDataSources();
-    console.error('[PerformanceScreenerAPI] Data sources created:', {
-      total: dataSources.length,
-      markets: { japan: dataSources.filter(ds => ds.market === 'japan').length, usa: dataSources.filter(ds => ds.market === 'usa').length },
-      sample: dataSources.slice(0, 3).map(ds => ({ symbol: ds.symbol, name: ds.name, market: ds.market }))
-    });
+     // モード固有パラメータ（デフォルト値を設定）
+     const minWinRate = parseFloat(searchParams.get('minWinRate') || '0');
+     const minProfitFactor = parseFloat(searchParams.get('minProfitFactor') || '0');
+     const minTrades = parseInt(searchParams.get('minTrades') || '5', 10);
+     const maxDrawdown = parseFloat(searchParams.get('maxDrawdown') || '100');
+     const minConfidence = parseFloat(searchParams.get('minConfidence') || '60');
 
-    // スクリーニング実行
-    console.error('[PerformanceScreenerAPI] Starting scan with config:', { market, minWinRate, minProfitFactor, minTrades, maxDrawdown, topN, lookbackDays });
-    const result = await performanceScreenerService.scanMultipleStocks(dataSources, {
-      market,
-      minWinRate,
-      minProfitFactor,
-      minTrades,
-      maxDrawdown,
-      topN,
-      lookbackDays,
-    });
-    console.error('[PerformanceScreenerAPI] Scan completed:', { totalScanned: result.totalScanned, filteredCount: result.filteredCount, resultsCount: result.results.length });
+     // キャッシュキー生成（全パラメータを含める）
+     const cacheKey = mode === 'ai-signals'
+       ? `${mode}:${market}:${topN}:${lookbackDays}:${minConfidence}`
+       : `${mode}:${market}:${minWinRate}:${minProfitFactor}:${minTrades}:${maxDrawdown}:${topN}:${lookbackDays}`;
+     
+     // キャッシュチェック
+     const cached = cache.get(cacheKey);
+     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+       console.log('[PerformanceScreenerAPI] Cache hit');
+       return NextResponse.json(cached.data, {
+         headers: {
+           'Cache-Control': 'public, max-age=300',
+         },
+       });
+     }
+
+     // データソース作成
+     const dataSources = createDataSources();
+
+     let result;
+     if (mode === 'ai-signals') {
+       console.error('[PerformanceScreenerAPI] AI signal scan with config:', { market, topN, lookbackDays, minConfidence });
+       result = await performanceScreenerService.scanMultipleStocksForAISignals(dataSources, {
+         market,
+         topN,
+         lookbackDays,
+         minConfidence,
+       });
+     } else {
+       // パフォーマンスモード（デフォルト）
+       console.error('[PerformanceScreenerAPI] Performance scan with config:', { market, minWinRate, minProfitFactor, minTrades, maxDrawdown, topN, lookbackDays });
+       result = await performanceScreenerService.scanMultipleStocks(dataSources, {
+         market,
+         minWinRate,
+         minProfitFactor,
+         minTrades,
+         maxDrawdown,
+         topN,
+         lookbackDays,
+       });
+     }
 
     // レスポンス
     const response = {

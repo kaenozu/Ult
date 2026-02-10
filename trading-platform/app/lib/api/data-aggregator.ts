@@ -69,6 +69,11 @@ class MarketDataClient {
 
       return parsedResponse.data as T;
     } catch (err) {
+      // Don't retry if request was aborted
+      const signal = options.signal as AbortSignal | undefined;
+      if (signal?.aborted) {
+        throw err;
+      }
       if (retries > 0) {
         // ... retry logic ...
         await new Promise(resolve => setTimeout(resolve, backoff));
@@ -84,7 +89,7 @@ class MarketDataClient {
    * @param startDate - Optional start date (YYYY-MM-DD) to ensure sufficient history
    * @param forceRefresh - If true, skip cache/IDB and fetch fresh data from API
    */
-  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string, startDate?: string, forceRefresh: boolean = false): Promise<FetchResult<OHLCV[]>> {
+  async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string, startDate?: string, forceRefresh: boolean = false): Promise<APIResponse<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}-${interval || '1d'}`;
 
     if (!forceRefresh) {
@@ -221,6 +226,7 @@ class MarketDataClient {
                 console.log(`[DataAggregator] Saved to IDB: ${symbol}, total records: ${finalData.length}`);
               }
             } catch (err) {
+              if (signal?.aborted) throw new Error('Aborted');
               console.error(`[DataAggregator] API fetch error for ${symbol}:`, err);
               if (finalData.length > 0) {
                 logger.warn(`[Aggregator] Failed to update data for ${symbol}, using stale data. Error: ${err instanceof Error ? err.message : String(err)}`);
@@ -293,6 +299,22 @@ class MarketDataClient {
 
       return results.flat();
     } catch (err) {
+      // AbortError is expected when component unmounts - not a real error
+      const errorMessage = err instanceof Error ? err.message.toLowerCase() : '';
+      const errorName = err instanceof Error ? err.name : '';
+      const constructorName = (err as { constructor?: { name?: string } })?.constructor?.name ?? '';
+
+      const isAbortError = signal?.aborted ||
+        errorName === 'AbortError' ||
+        constructorName === 'AbortError' ||
+        constructorName === 'DOMException' ||
+        errorMessage.includes('abort') ||
+        errorMessage.includes('signal is aborted');
+
+      if (isAbortError) {
+        logger.debug('[Aggregator] fetchQuotes aborted - component unmounted');
+        return [];
+      }
       logger.error('Batch fetch failed:', (err as Error) || new Error(String(err)));
       return [];
     }

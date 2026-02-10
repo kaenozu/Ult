@@ -90,12 +90,26 @@ class ConsensusSignalService {
 
   /**
    * RSIからのシグナル生成
+   * 単一の値だけでなく、ボトムアウト（反転上昇）も評価する
    */
   private generateRSISignal(rsi: number[], currentPrice: number): IndicatorSignal {
-    const currentRSI = rsi[rsi.length - 1];
+    const len = rsi.length;
+    const currentRSI = rsi[len - 1];
+    const prevRSI = rsi[len - 2];
 
     if (isNaN(currentRSI)) {
       return { type: 'NEUTRAL', strength: 0, reason: 'RSIデータ不足' };
+    }
+
+    // RSIのボトムアウト（底打ち反転）判定
+    // 前日に売られすぎ水準(<30)にあり、本日急上昇している場合
+    if (prevRSI < RSI_CONFIG.OVERSOLD && currentRSI > prevRSI + 5) {
+      const recoveryStrength = Math.min((currentRSI - prevRSI) / 10, 1.0);
+      return {
+        type: 'BUY',
+        strength: Math.max(recoveryStrength, 0.7), // 強い反発シグナル
+        reason: `RSIの底打ち反転を検知（${prevRSI.toFixed(1)} -> ${currentRSI.toFixed(1)}）`
+      };
     }
 
     // RSIが極端な場合、強いシグナル
@@ -142,33 +156,47 @@ class ConsensusSignalService {
 
   /**
    * MACDからのシグナル生成
+   * ヒストグラムの絶対値だけでなく、変化（縮小・拡大）も評価に含める
    */
   private generateMACDSignal(macd: { macd: number[]; signal: number[]; histogram: number[] }, currentPrice: number): IndicatorSignal {
-    const currentMACD = macd.macd[macd.macd.length - 1];
-    const currentSignal = macd.signal[macd.signal.length - 1];
-    const currentHistogram = macd.histogram[macd.histogram.length - 1];
+    const len = macd.histogram.length;
+    const currentHist = macd.histogram[len - 1];
+    const prevHist = macd.histogram[len - 2];
 
-    if (isNaN(currentMACD) || isNaN(currentSignal) || isNaN(currentHistogram)) {
+    if (isNaN(currentHist) || isNaN(prevHist)) {
       return { type: 'NEUTRAL', strength: 0, reason: 'MACDデータ不足' };
     }
 
-    // ヒストグラムが正で大きい＝強気
-    if (currentHistogram > 0) {
-      const strength = Math.min(Math.abs(currentHistogram) / currentPrice * 100, 1.0);
+    // ヒストグラムが正（強気圏）
+    if (currentHist > 0) {
+      const isExpanding = currentHist > prevHist;
+      const strength = Math.min(Math.abs(currentHist) / currentPrice * 100 * (isExpanding ? 1.5 : 1.0), 1.0);
       return {
         type: 'BUY',
-        strength: Math.max(strength, 0.3), // 最低0.3
-        reason: `MACDが上向き（ヒストグラム: ${currentHistogram.toFixed(4)}）`
+        strength: Math.max(strength, isExpanding ? 0.4 : 0.2),
+        reason: `MACD強気圏（ヒストグラム: ${currentHist.toFixed(4)}${isExpanding ? '・拡大中' : '・縮小中'}）`
       };
     }
 
-    // ヒストグラムが負で大きい＝弱気
-    if (currentHistogram < 0) {
-      const strength = Math.min(Math.abs(currentHistogram) / currentPrice * 100, 1.0);
+    // ヒストグラムが負（弱気圏）
+    if (currentHist < 0) {
+      const isShrinking = currentHist > prevHist; // 負の値が大きくなる（0に近づく）＝縮小
+      
+      if (isShrinking) {
+        // 弱気圏だが底打ちの兆候
+        const strength = Math.min(Math.abs(currentHist) / currentPrice * 50, 0.5);
+        return {
+          type: 'BUY',
+          strength: Math.max(strength, 0.3), // 逆張り的な買い予兆
+          reason: `MACD弱気圏だが底打ち兆候（ヒストグラム縮小: ${currentHist.toFixed(4)}）`
+        };
+      }
+
+      const strength = Math.min(Math.abs(currentHist) / currentPrice * 100, 1.0);
       return {
         type: 'SELL',
-        strength: Math.max(strength, 0.3), // 最低0.3
-        reason: `MACDが下向き（ヒストグラム: ${currentHistogram.toFixed(4)}）`
+        strength: Math.max(strength, 0.4),
+        reason: `MACD弱気圏（ヒストグラム拡大: ${currentHist.toFixed(4)}）`
       };
     }
 
@@ -256,35 +284,51 @@ class ConsensusSignalService {
     const bollingerScore = bollingerSignal.type === 'BUY' ? bollingerSignal.strength : bollingerSignal.type === 'SELL' ? -bollingerSignal.strength : 0;
 
     // 加重平均を計算
-    const weightedScore = (rsiScore * weights.rsi) + (macdScore * weights.macd) + (bollingerScore * weights.bollinger);
+    let weightedScore = (rsiScore * weights.rsi) + (macdScore * weights.macd) + (bollingerScore * weights.bollinger);
 
-    // シグナルタイプを決定 (improved thresholds for better accuracy)
-    let type: 'BUY' | 'SELL' | 'HOLD';
-    const STRONG_SIGNAL_THRESHOLD = 0.25; // Increased from 0.2 for more confident signals
-    const WEAK_SIGNAL_THRESHOLD = 0.15;   // New threshold for weak signals
+    // 【アンサンブル・ロジック】指標間の相関による確信度ブースト
+    let ensembleBonus = 0;
     
-    if (weightedScore > STRONG_SIGNAL_THRESHOLD) {
-      type = 'BUY';
-    } else if (weightedScore < -STRONG_SIGNAL_THRESHOLD) {
-      type = 'SELL';
-    } else if (Math.abs(weightedScore) < WEAK_SIGNAL_THRESHOLD) {
-      // Very weak signal - force HOLD
-      type = 'HOLD';
-    } else if (weightedScore > 0) {
-      // Weak buy signal - consider as HOLD for safety
-      type = 'HOLD';
-    } else {
-      // Weak sell signal - consider as HOLD for safety
-      type = 'HOLD';
+    // 1. 逆張り反転コンボ (RSI底打ち + MACDヒストグラム縮小)
+    if (rsiSignal.type === 'BUY' && rsiSignal.reason.includes('反転') && 
+        macdSignal.type === 'BUY' && macdSignal.reason.includes('底打ち')) {
+      ensembleBonus += 0.15; // 強い反転の兆候
+    }
+    
+    // 2. 乖離からの復帰 (BB下部 + RSI上昇)
+    if (bollingerSignal.type === 'BUY' && rsiSignal.type === 'BUY') {
+      ensembleBonus += 0.10;
     }
 
+    // スコアにボーナスを適用
+    if (weightedScore > 0) weightedScore += ensembleBonus;
+    else if (weightedScore < 0) weightedScore -= ensembleBonus;
+
+    // シグナルタイプを決定 (improved thresholds for better accuracy)
+  let type: 'BUY' | 'SELL' | 'HOLD';
+  const SIGNAL_THRESHOLD = 0.15;   // BUY/SELLの最低閾値
+  
+  if (weightedScore > SIGNAL_THRESHOLD) {
+    type = 'BUY';
+  } else if (weightedScore < -SIGNAL_THRESHOLD) {
+    type = 'SELL';
+  } else {
+    type = 'HOLD';
+  }
     // 確率（0-1）と強さを決定
     const probability = Math.min(Math.abs(weightedScore), 1.0);
     const strength = probability < 0.4 ? 'WEAK' : probability < 0.7 ? 'MODERATE' : 'STRONG';
 
-    // コンフィデンス（0-100）を計算
-    const confidence = Math.min(Math.abs(weightedScore) * 100, 95);
+    // コンフィデンス（0-100）を計算 - アンサンブルを考慮してさらにダイナミックに
+    // 0.45以上の実効スコアで60%を超えるように調整
+    const confidence = Math.min(Math.abs(weightedScore) * 135, 95);
     const finalConfidence = type === 'HOLD' ? Math.max(confidence, 30) : Math.max(confidence, 50);
+
+    // デバッグログ: 各指標の寄与度を詳細に出力 (開発環境のみ)
+    if (process.env.NODE_ENV !== 'production' && Math.abs(weightedScore) > 0.1) {
+      const bonusStr = ensembleBonus > 0 ? ` (+Bonus: ${ensembleBonus.toFixed(2)})` : '';
+      console.log(`[Consensus] ${type} (Score: ${weightedScore.toFixed(3)}${bonusStr}, Conf: ${finalConfidence.toFixed(1)}%) | RSI: ${rsiSignal.type}(${rsiSignal.strength.toFixed(2)}) MACD: ${macdSignal.type}(${macdSignal.strength.toFixed(2)}) BB: ${bollingerSignal.type}(${bollingerSignal.strength.toFixed(2)})`);
+    }
 
     // 理由を生成
     const signals = { rsi: rsiSignal, macd: macdSignal, bollinger: bollingerSignal };
