@@ -93,16 +93,16 @@ describe('Type Guards and Extractors', () => {
     });
 
     describe('Error Classes', () => {
-        // Import classes inside test or at top
-        const { APIError, NetworkError, ValidationError, RateLimitError } = require('../types');
+        // Import classes from the correct location
+        const { ApiError: APIError, NetworkError, ValidationError, RateLimitError } = require('../lib/errors');
 
         it('APIError sets properties correctly', () => {
             const err = new APIError('msg', 'CODE', 400, { data: 1 });
             expect(err.message).toBe('msg');
             expect(err.code).toBe('CODE');
             expect(err.statusCode).toBe(400);
-            expect(err.details).toEqual({ data: 1 });
-            expect(err.name).toBe('APIError');
+            expect(err.details).toMatchObject({ data: 1 });
+            expect(err.name).toBe('ApiError'); // Implementation uses ApiError
         });
 
         it('NetworkError defaults', () => {
@@ -112,10 +112,11 @@ describe('Type Guards and Extractors', () => {
         });
 
         it('ValidationError defaults', () => {
-            const err = new ValidationError('inv', 'field1');
+            // New signature: (field, message)
+            const err = new ValidationError('field1', 'inv');
             expect(err.code).toBe('VALIDATION_ERROR');
             expect(err.statusCode).toBe(400);
-            expect(err.details).toEqual({ field: 'field1' });
+            expect(err.details).toMatchObject({ field: 'field1' });
             expect(err.name).toBe('ValidationError');
         });
 

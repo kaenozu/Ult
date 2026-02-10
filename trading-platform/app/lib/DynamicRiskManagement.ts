@@ -20,6 +20,7 @@ export interface RiskAnalysisResult {
 }
 
 import { OHLCV } from '@/app/types';
+import { getLatestATR } from './riskManagement';
 
 export function calculateRiskMetrics(
     currentPrice: number,
@@ -28,12 +29,10 @@ export function calculateRiskMetrics(
     ohlcv: OHLCV[],
     config: DynamicRiskConfig
 ): RiskAnalysisResult {
-    // Mock implementation for build fix
-    // Real implementation would calculate ATR etc.
-
-    const atr = currentPrice * 0.02; // Mock ATR
+    // Calculate real ATR from OHLCV data
+    const realAtr = getLatestATR(ohlcv) || currentPrice * 0.02;
     const volatilityMultiplier = config.enableVolatilityAdjustment ? config.volatilityMultiplier : 1;
-    const stopDistance = atr * config.trailingStopATRMultiple * volatilityMultiplier;
+    const stopDistance = realAtr * config.trailingStopATRMultiple * volatilityMultiplier;
 
     const stopLossPrice = side === 'BUY'
         ? currentPrice - stopDistance

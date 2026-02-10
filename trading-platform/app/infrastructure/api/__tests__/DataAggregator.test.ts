@@ -5,22 +5,22 @@
  * APIバッチ処理、キャッシング、リクエスト重複排除のテスト
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { DataAggregator } from '../DataAggregator';
 import type { OHLCV } from '@/app/types';
 
 describe('DataAggregator', () => {
   let aggregator: DataAggregator;
-  let fetchMock: ReturnType<typeof vi.fn>;
+  let fetchMock: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
     aggregator = new DataAggregator();
-    fetchMock = vi.fn();
+    fetchMock = jest.fn();
     global.fetch = fetchMock;
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('キャッシュ機能', () => {
@@ -29,8 +29,8 @@ describe('DataAggregator', () => {
         { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
       ];
 
-      aggregator.cache.set('AAPL', mockData);
-      const cached = aggregator.cache.get('AAPL');
+      aggregator.setCached('AAPL', mockData);
+      const cached = aggregator.getCached('AAPL');
 
       expect(cached).toEqual(mockData);
     });
@@ -40,10 +40,11 @@ describe('DataAggregator', () => {
         { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
       ];
 
-      aggregator.cache.set('AAPL', mockData, 1); // 1ms TTL
+      // Use constructor option for TTL if needed, or pass to setCached
+      aggregator.setCached('AAPL', mockData, 1); // 1ms TTL
       // 短い待機時間を追加してTTLを確実に切れるようにする
       return new Promise(resolve => setTimeout(resolve, 10)).then(() => {
-        const cached = aggregator.cache.get('AAPL');
+        const cached = aggregator.getCached('AAPL');
         expect(cached).toBeNull();
       });
     });
@@ -53,9 +54,9 @@ describe('DataAggregator', () => {
         { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
       ];
 
-      aggregator.cache.set('AAPL', mockData);
-      aggregator.cache.clear();
-      const cached = aggregator.cache.get('AAPL');
+      aggregator.setCached('AAPL', mockData);
+      aggregator.clearCache();
+      const cached = aggregator.getCached('AAPL');
 
       expect(cached).toBeNull();
     });
@@ -64,13 +65,16 @@ describe('DataAggregator', () => {
   describe('バッチ処理', () => {
     it('複数のリクエストをバッチで処理できる', async () => {
       const mockData: Record<string, OHLCV[]> = {
-        AAPL: [{ open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' }],
-        GOOGL: [{ open: 150, high: 155, low: 145, close: 152, volume: 2000, date: '2024-01-01', symbol: 'GOOGL' }],
+        AAPL: [{ open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' } as any],
+        GOOGL: [{ open: 150, high: 155, low: 145, close: 152, volume: 2000, date: '2024-01-01', symbol: 'GOOGL' } as any],
       };
 
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockData,
+      fetchMock.mockImplementation((url: string) => {
+        const symbol = new URL(url, 'http://localhost').searchParams.get('symbol');
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ data: mockData[symbol!] }),
+        });
       });
 
       const results = await Promise.all([
@@ -83,15 +87,18 @@ describe('DataAggregator', () => {
     });
 
     it('バッチサイズ制限を尊重する', async () => {
-      const maxBatchSize = 5;
       const symbols = Array.from({ length: 10 }, (_, i) => `SYM${i}`);
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: [] }),
+      });
 
       const results = await Promise.all(
         symbols.map(symbol => aggregator.fetchData(symbol))
       );
 
       expect(results).toHaveLength(10);
-      // バッチ処理が正しく行われたことを確認
       expect(fetchMock).toHaveBeenCalled();
     });
   });

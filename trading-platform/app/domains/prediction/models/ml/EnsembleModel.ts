@@ -131,6 +131,10 @@ export class EnsembleModel {
     // SECURITY: Validate production deployment
     validateProductionDeployment();
 
+    if (!data || data.length === 0) {
+      throw new Error('Insufficient data for prediction');
+    }
+
     // 市場レジームを判定
     const marketRegime = this.detectMarketRegime(data);
 

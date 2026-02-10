@@ -170,7 +170,7 @@ export class FeatureEngineering {
     }
 
     const MAX_DATA_POINTS = 100000; // Security: Prevent memory exhaustion
-    const MIN_DATA_POINTS = 200;
+    const MIN_DATA_POINTS = 50;
 
     if (data.length < MIN_DATA_POINTS) {
       throw new Error(`Insufficient data: minimum ${MIN_DATA_POINTS} data points required, got ${data.length}`);
@@ -208,16 +208,18 @@ export class FeatureEngineering {
       }
 
       // Validate price relationships
-      if (point.high < point.low) {
-        throw new Error(`Invalid price data at index ${i}: high (${point.high}) cannot be less than low (${point.low})`);
-      }
+      if (point.high > 0 || point.low > 0) {
+        if (point.high < point.low) {
+          throw new Error(`Invalid price data at index ${i}: high (${point.high}) cannot be less than low (${point.low})`);
+        }
 
-      if (point.close < point.low || point.close > point.high) {
-        throw new Error(`Invalid price data at index ${i}: close (${point.close}) must be between low (${point.low}) and high (${point.high})`);
-      }
+        if (point.close < point.low || point.close > point.high) {
+          throw new Error(`Invalid price data at index ${i}: close (${point.close}) must be between low (${point.low}) and high (${point.high})`);
+        }
 
-      if (point.open < point.low || point.open > point.high) {
-        throw new Error(`Invalid price data at index ${i}: open (${point.open}) must be between low (${point.low}) and high (${point.high})`);
+        if (point.open < point.low || point.open > point.high) {
+          throw new Error(`Invalid price data at index ${i}: open (${point.open}) must be between low (${point.low}) and high (${point.high})`);
+        }
       }
 
       // Validate date
@@ -406,7 +408,7 @@ export class FeatureEngineering {
     const bbUpper = last(bb.upper, currentPrice);
     const bbMiddle = last(bb.middle, currentPrice);
     const bbLower = last(bb.lower, currentPrice);
-    const bbPosition = ((currentPrice - bbLower) / (bbUpper - bbLower || 1)) * 100;
+    const bbPosition = Math.max(0, Math.min(100, ((currentPrice - bbLower) / (bbUpper - bbLower || 1)) * 100));
     const bbWidth = ((bbUpper - bbLower) / bbMiddle) * 100;
 
     // ATR

@@ -126,8 +126,12 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
         const loss = change < 0 ? Math.abs(change) : 0;
         avgGain = (avgGain * (period - 1) + gain) / period;
         avgLoss = (avgLoss * (period - 1) + loss) / period;
-        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-        result.push(100 - (100 / (1 + rs)));
+        const rs = avgLoss === 0 ? (avgGain === 0 ? 0 : 100) : avgGain / avgLoss;
+        if (avgLoss === 0 && avgGain === 0) {
+          result.push(50);
+        } else {
+          result.push(100 - (100 / (1 + rs)));
+        }
       }
     }
   }

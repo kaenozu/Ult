@@ -114,12 +114,24 @@ export class OverfittingDetector {
       sharpeRatioDrop: 0.15
     };
 
-    const overfittingScore = 
+    const walkForwardPenalty = walkForwardResults 
+      ? (1 - walkForwardConsistency) * weights.walkForwardConsistency
+      : 0;
+
+    const weightsUsed = 
+      weights.performanceDegradation +
+      (parameters ? weights.parameterInstability : 0) +
+      (complexity ? weights.complexityPenalty : 0) +
+      (walkForwardResults ? weights.walkForwardConsistency : 0) +
+      weights.sharpeRatioDrop;
+
+    const overfittingScore = (
       performanceDegradation * weights.performanceDegradation +
       parameterInstability * weights.parameterInstability +
       complexityPenalty * weights.complexityPenalty +
-      (1 - walkForwardConsistency) * weights.walkForwardConsistency +
-      sharpeRatioDrop * weights.sharpeRatioDrop;
+      walkForwardPenalty +
+      sharpeRatioDrop * weights.sharpeRatioDrop
+    ) / weightsUsed;
 
     // Determine if overfitted
     const overfit = overfittingScore > 0.5; // Threshold for overfitting

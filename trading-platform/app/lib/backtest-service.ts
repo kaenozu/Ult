@@ -32,7 +32,7 @@ export interface BacktestProgressCallback {
   (progress: number, currentDataPoint: number, totalDataPoints: number): void;
 }
 
-class BacktestService {
+export class BacktestService {
   /**
    * バックテストを実行
    */

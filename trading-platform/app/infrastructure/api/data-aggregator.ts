@@ -339,6 +339,15 @@ class MarketDataClient {
     while (curr >= 0 && curr < data.length && data[curr][field] === 0) curr += dir;
     return curr;
   }
+
+  /**
+   * Clear all internal caches and pending requests.
+   * Useful for testing and force refreshing data.
+   */
+  clearCache() {
+    this.cache.clear();
+    this.pendingRequests.clear();
+  }
 }
 
 export function handleApiError(error: unknown, context: string): APIError {

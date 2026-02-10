@@ -3,16 +3,16 @@
  * Comprehensive tests for the BacktestService to achieve 80%+ coverage
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
 import { backtestService, BacktestService } from '../backtest-service';
 import type { OHLCV, Stock, Signal } from '@/app/types';
 
 // Mock mlPredictionService
-vi.mock('../mlPrediction', () => ({
+jest.mock('../mlPrediction', () => ({
   mlPredictionService: {
-    calculateIndicators: vi.fn(() => ({ rsi: 50, macd: 0, adx: 25, bbUpper: 110, bbLower: 90, sma: 100 })),
-    predict: vi.fn(() => ({ confidence: 0.7, trend: 'UP' as const })),
-    generateSignal: vi.fn(() => ({
+    calculateIndicators: jest.fn(() => ({ rsi: 50, macd: 0, adx: 25, bbUpper: 110, bbLower: 90, sma: 100 })),
+    predict: jest.fn(() => ({ confidence: 0.7, trend: 'UP' as const })),
+    generateSignal: jest.fn(() => ({
       type: 'BUY' as const,
       confidence: 75,
       symbol: 'AAPL',
@@ -43,7 +43,7 @@ describe('BacktestService', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('runBacktest', () => {
@@ -90,7 +90,7 @@ describe('BacktestService', () => {
     });
 
     it('should call progress callback', async () => {
-      const onProgress = vi.fn();
+      const onProgress = jest.fn();
       
       await service.runBacktest(mockStock, mockData, {
         initialCapital: 100000,
@@ -134,6 +134,14 @@ describe('BacktestService', () => {
     });
 
     it('should handle empty trades scenario gracefully', async () => {
+      const mlService = require('../mlPrediction').mlPredictionService;
+      mlService.generateSignal.mockReturnValue({
+        type: 'HOLD',
+        confidence: 0,
+        symbol: 'AAPL',
+        reason: 'Flat data',
+      });
+
       const flatData = Array.from({ length: 100 }, () => ({
         date: '2024-01-01',
         open: 100,

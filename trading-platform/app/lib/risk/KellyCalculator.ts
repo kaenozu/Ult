@@ -15,15 +15,44 @@ import {
   ConcentrationLimits
 } from '@/app/types/risk';
 
+export const DEFAULT_KELLY_FRACTION = 0.5;
+export const DEFAULT_CONCENTRATION_LIMITS: ConcentrationLimits = {
+  maxSinglePosition: 0.2, // 20%
+  maxSectorExposure: 0.4, // 40%
+  minPositions: 5,
+  maxPositions: 10,
+};
+
 export class KellyCalculator {
   private concentrationLimits: ConcentrationLimits;
+  private kellyFraction: number;
 
-  constructor(limits?: Partial<ConcentrationLimits>) {
+  constructor(kellyFraction: number = DEFAULT_KELLY_FRACTION, limits?: Partial<ConcentrationLimits>) {
+    this.kellyFraction = kellyFraction;
     this.concentrationLimits = {
-      maxSinglePosition: limits?.maxSinglePosition ?? 0.2, // 20%
-      maxSectorExposure: limits?.maxSectorExposure ?? 0.4, // 40%
-      minPositions: limits?.minPositions ?? 5,
-      maxPositions: limits?.maxPositions ?? 10,
+      ...DEFAULT_CONCENTRATION_LIMITS,
+      ...limits,
+    };
+  }
+
+  getConfig() {
+    return {
+      concentrationLimits: this.concentrationLimits,
+      kellyFraction: this.kellyFraction,
+    };
+  }
+
+  setKellyFraction(fraction: number) {
+    if (fraction <= 0 || fraction > 1) {
+      throw new Error('Kelly fraction must be between 0 and 1');
+    }
+    this.kellyFraction = fraction;
+  }
+
+  setConcentrationLimits(limits: Partial<ConcentrationLimits>) {
+    this.concentrationLimits = {
+      ...this.concentrationLimits,
+      ...limits,
     };
   }
 
@@ -31,33 +60,60 @@ export class KellyCalculator {
    * Calculate Kelly percentage
    */
   calculate(params: KellyParams): KellyResult {
-    const { winRate, avgWin, avgLoss, portfolioValue, kellyFraction = 0.5 } = params;
+    const { winRate, avgWin, avgLoss, portfolioValue, kellyFraction = this.kellyFraction } = params;
+    const warnings: string[] = [];
 
+    // Validations
+    if (winRate < 0 || winRate > 1) {
+      warnings.push('Win rate must be between 0 and 1');
+      return { kellyPercentage: 0, recommendedSize: 0, riskLevel: 'HIGH', confidence: 0, warnings };
+    }
+    if (avgWin <= 0) {
+      warnings.push('Average win must be positive');
+      return { kellyPercentage: 0, recommendedSize: 0, riskLevel: 'HIGH', confidence: 0, warnings };
+    }
     if (avgLoss <= 0) {
-      return {
-        kellyPercentage: 0,
-        recommendedSize: 0,
-        riskLevel: 'LOW',
-        confidence: 0,
-        warnings: ['Invalid average loss value'],
-      };
+      warnings.push('Average loss must be positive');
+      return { kellyPercentage: 0, recommendedSize: 0, riskLevel: 'HIGH', confidence: 0, warnings };
+    }
+    if (portfolioValue <= 0) {
+      warnings.push('Portfolio value must be positive');
+      return { kellyPercentage: 0, recommendedSize: 0, riskLevel: 'HIGH', confidence: 0, warnings };
     }
 
     const b = avgWin / avgLoss;
     const kelly = winRate - (1 - winRate) / b;
-    const safeKelly = Math.max(0, kelly * kellyFraction);
+    
+    if (kelly <= 0) {
+      warnings.push('Negative Kelly percentage - expected value is negative, do not trade');
+      return { kellyPercentage: 0, recommendedSize: 0, riskLevel: 'HIGH', confidence: Math.min(1, winRate * 1.2), warnings };
+    }
+
+    let safeKelly = kelly * kellyFraction;
+    
+    // Cap at 20% (Max single position limit)
+    if (safeKelly > 0.20) {
+      safeKelly = 0.20;
+    }
+
     const recommendedSize = portfolioValue * safeKelly;
 
     let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
     if (safeKelly > 0.15) riskLevel = 'HIGH';
     else if (safeKelly > 0.08) riskLevel = 'MEDIUM';
 
+    if (riskLevel === 'HIGH') warnings.push('High risk position size - proceed with caution');
+    if (safeKelly > 0.25) warnings.push('Extremely high risk position size recommended');
+    if (safeKelly < 0.01 && safeKelly > 0) warnings.push('Very small position size - signal may not be strong enough');
+    if (winRate < 0.45) warnings.push('Low win rate - exercise caution');
+    if (b < 1.4) warnings.push('Low win/loss ratio - risk/reward may not be optimal');
+
     return {
       kellyPercentage: safeKelly,
       recommendedSize,
       riskLevel,
-      confidence: Math.min(1, params.winRate * 1.2), // Simplified confidence
-      warnings: safeKelly > 0.25 ? ['Extremely high risk position size recommended'] : [],
+      confidence: Math.min(1, winRate * 1.2),
+      warnings,
     };
   }
 
@@ -65,11 +121,11 @@ export class KellyCalculator {
    * Adjust position size for volatility (ATR)
    */
   adjustForVolatility(baseSize: number, atr: number, targetVolatility: number = 0.02): { adjustedSize: number; adjustment: VolatilityAdjustment } {
-    // ATR percentage of current price
-    // Assume prices are normalized or handled by caller for this example
-    // In real implementation, price is needed to calculate adjustment
-    const actualVolatility = atr; // Simplified
-    const adjustmentFactor = Math.min(1.0, targetVolatility / actualVolatility);
+    const actualVolatility = atr; 
+    let adjustmentFactor = targetVolatility / actualVolatility;
+    
+    // Clamp between 0.5 and 2.0
+    adjustmentFactor = Math.max(0.5, Math.min(2.0, adjustmentFactor));
     
     return {
       adjustedSize: baseSize * adjustmentFactor,

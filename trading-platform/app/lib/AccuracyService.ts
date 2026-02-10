@@ -310,8 +310,8 @@ class AccuracyService {
         directionalAccuracy: number;
         totalTrades: number;
     } | null {
-        if (data.length < 30) {
-            logger.warn('[calculateRealTimeAccuracy] Data insufficient:', { symbol, market, dataLength: data.length, minRequired: 30 });
+        if (data.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
+            logger.warn('[calculateRealTimeAccuracy] Data insufficient:', { symbol, market, dataLength: data.length, minRequired: DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS });
             return null;
         }
 
@@ -375,3 +375,25 @@ class AccuracyService {
 }
 
 export const accuracyService = new AccuracyService();
+
+/**
+ * 過去的中率をリアルタイム計算 (Legacy Standalone Export)
+ */
+export function calculateRealTimeAccuracy(
+    symbol: string,
+    data: OHLCV[],
+    market: 'japan' | 'usa' = 'japan'
+) {
+    return accuracyService.calculateRealTimeAccuracy(symbol, data, market);
+}
+
+/**
+ * AIの的中率と戦績を計算 (Legacy Standalone Export)
+ */
+export function calculateAIHitRate(
+    symbol: string,
+    data: OHLCV[],
+    market: 'japan' | 'usa' = 'japan'
+) {
+    return accuracyService.calculateAIHitRate(symbol, data, market);
+}

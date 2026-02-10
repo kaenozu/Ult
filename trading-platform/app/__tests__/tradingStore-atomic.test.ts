@@ -94,7 +94,7 @@ describe('TradingStore Atomic Order Execution', () => {
 
       // 注文が拒否されたことを確認
       expect(executionResult?.success).toBe(false);
-      expect(executionResult?.error).toContain('Insufficient funds');
+      expect(executionResult?.error).toContain('Insufficient Funds');
 
       // ポジションが追加されていないことを確認
       expect(result.current.portfolio.positions).toHaveLength(0);

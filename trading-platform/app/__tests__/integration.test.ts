@@ -5,9 +5,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { UnifiedTradingPlatform, resetGlobalTradingPlatform } from '../tradingCore/UnifiedTradingPlatform';
-import { MarketDataService } from '../MarketDataService';
-import { AdvancedRiskManager } from '../risk/AdvancedRiskManager';
+import { UnifiedTradingPlatform, resetGlobalTradingPlatform } from '../lib/tradingCore/UnifiedTradingPlatform';
+import { MarketDataService } from '../lib/MarketDataService';
+import { AdvancedRiskManager } from '../lib/risk/AdvancedRiskManager';
 
 describe('Integration Tests', () => {
   let platform: UnifiedTradingPlatform;
@@ -57,7 +57,14 @@ describe('Integration Tests', () => {
         },
       ];
 
-      const signal = platform['generateTradingSignal']?.call(platform, 'TEST', undefined, undefined, testData[testData.length - 1]);
+      const mockPrediction: any = {
+        symbol: 'TEST',
+        prediction: { direction: 'UP', confidence: 0.8, volatilityForecast: 20 },
+        signal: { rationale: ['Test rationale'], timeHorizon: 'medium' },
+        features: { sma20: 100 }
+      };
+
+      const signal = platform['generateTradingSignal']?.call(platform, 'TEST', mockPrediction, undefined, testData[testData.length - 1]);
 
       expect(signal).toBeDefined();
       expect(signal.symbol).toBe('TEST');
@@ -110,13 +117,14 @@ describe('Integration Tests', () => {
 
       platform.createAlert(alertName, symbol, type, operator, value);
 
-      const alerts = platform.getAlertHistory(10);
-      expect(alerts.length).toBeGreaterThan(0);
+      // We check if the alert was created in the system (Map use .size)
+      expect(platform['alertSystem']['conditions'].size).toBeGreaterThan(0);
     });
   });
 
   describe('Data Persistence Integration', () => {
     it('should save and load portfolio data', async () => {
+      await platform.start();
       // Simulate a trade
       await platform.placeOrder('TEST', 'BUY', 10, {
         price: 100,
@@ -136,8 +144,8 @@ describe('Integration Tests', () => {
       const positionCount1 = portfolio1.positions.length;
 
       await platform.stop();
-      const portfolio2 = platform.getPlatform();
-      const positionCount2 = portfolio2?.positions?.length || 0;
+      const portfolio2 = platform.getPortfolio();
+      const positionCount2 = portfolio2.positions.length;
 
       expect(positionCount1).toBe(positionCount2);
     });

@@ -115,6 +115,9 @@ export class AppError extends Error {
   /** 重大度 */
   readonly severity: ErrorSeverity;
   
+  /** ステータスコード (HTTP) */
+  readonly statusCode: number;
+  
   /** タイムスタンプ */
   readonly timestamp: Date;
   
@@ -130,6 +133,13 @@ export class AppError extends Error {
   /** 復旧可能かどうか */
   readonly recoverable: boolean;
 
+  /**
+   * Alias for context (backward compatibility)
+   */
+  get details(): Record<string, unknown> | undefined {
+    return this.context;
+  }
+
   constructor(
     message: string,
     code: ErrorCode | string = ErrorCodes.UNKNOWN_ERROR,
@@ -139,12 +149,14 @@ export class AppError extends Error {
       cause?: Error;
       userMessage?: string;
       recoverable?: boolean;
+      statusCode?: number;
     }
   ) {
     super(message);
     
     this.code = code;
     this.severity = severity;
+    this.statusCode = options?.statusCode ?? 500;
     this.timestamp = new Date();
     this.context = options?.context;
     this.cause = options?.cause;
@@ -169,6 +181,7 @@ export class AppError extends Error {
     return {
       name: this.name,
       code: this.code,
+      statusCode: this.statusCode,
       severity: this.severity,
       message: this.message,
       userMessage: this.userMessage,
@@ -230,6 +243,7 @@ export class NetworkError extends AppError {
         endpoint: options?.endpoint,
         statusCode: options?.statusCode,
       },
+      statusCode: options?.statusCode ?? 503,
       userMessage: 'ネットワークエラーが発生しました。インターネット接続を確認してください。',
       recoverable: true,
     });
@@ -248,37 +262,42 @@ export class NetworkError extends AppError {
  */
 export class ApiError extends AppError {
   readonly endpoint?: string;
-  readonly statusCode?: number;
   readonly response?: unknown;
 
   constructor(
     message: string,
-    options?: {
+    optionsOrCode?: string | {
       endpoint?: string;
       statusCode?: number;
       response?: unknown;
       context?: Record<string, unknown>;
-    }
+    },
+    maybeStatusCode?: number,
+    maybeContext?: Record<string, unknown>
   ) {
-    const code = options?.statusCode === 404 ? ErrorCodes.NOT_FOUND_ERROR :
-      options?.statusCode === 429 ? ErrorCodes.RATE_LIMIT_ERROR :
-      options?.statusCode === 401 || options?.statusCode === 403 ? ErrorCodes.AUTHENTICATION_ERROR :
-      ErrorCodes.API_ERROR;
+    const options: any = typeof optionsOrCode === 'object' ? optionsOrCode : {};
+    let code: string = typeof optionsOrCode === 'string' ? optionsOrCode : (options?.code || ErrorCodes.API_ERROR);
+    const statusCode = maybeStatusCode ?? options?.statusCode ?? 500;
+    const context = maybeContext ?? options?.context ?? {};
+
+    if (statusCode === 404) code = ErrorCodes.NOT_FOUND_ERROR;
+    else if (statusCode === 429) code = ErrorCodes.RATE_LIMIT_ERROR;
+    else if (statusCode === 401 || statusCode === 403) code = ErrorCodes.AUTHENTICATION_ERROR;
     
-    const severity: ErrorSeverity = options?.statusCode && options.statusCode >= 500 ? 'high' : 'medium';
+    const severity: ErrorSeverity = statusCode >= 500 ? 'high' : 'medium';
     
     super(message, code, severity, {
       context: {
-        ...options?.context,
+        ...context,
         endpoint: options?.endpoint,
-        statusCode: options?.statusCode,
+        statusCode,
       },
-      userMessage: ApiError.getUserMessage(options?.statusCode),
-      recoverable: options?.statusCode ? options.statusCode >= 500 || options.statusCode === 429 : false,
+      statusCode,
+      userMessage: ApiError.getUserMessage(statusCode),
+      recoverable: statusCode >= 500 || statusCode === 429,
     });
     
     this.endpoint = options?.endpoint;
-    this.statusCode = options?.statusCode;
     this.response = options?.response;
     this.name = 'ApiError';
     
@@ -306,6 +325,7 @@ export class RateLimitError extends AppError {
   ) {
     super(message, ErrorCodes.RATE_LIMIT_ERROR, 'medium', {
       context: { retryAfter },
+      statusCode: 429,
       userMessage: 'リクエストが多すぎます。しばらく待ってからお試しください。',
       recoverable: true,
     });
@@ -408,6 +428,7 @@ export class ValidationError extends AppError {
       value?: unknown;
       severity?: ErrorSeverity;
       context?: Record<string, unknown>;
+      statusCode?: number;
     }
   ) {
     super(`Validation error for ${field}: ${message}`, ErrorCodes.VALIDATION_ERROR, options?.severity ?? 'low', {
@@ -416,6 +437,7 @@ export class ValidationError extends AppError {
         field,
         value: options?.value,
       },
+      statusCode: options?.statusCode ?? 400,
       userMessage: `${field}の入力内容を確認してください`,
       recoverable: true,
     });
