@@ -33,6 +33,12 @@ export function verifyAuthToken(req: NextRequest): JWTPayload | null {
     const config = getConfig();
     const JWT_SECRET = config.jwt.secret;
 
+    // Security: Ensure JWT secret meets minimum length requirement (256 bits = 32 bytes)
+    if (JWT_SECRET.length < 32) {
+      console.error('Security Error: JWT_SECRET must be at least 32 characters');
+      return null;
+    }
+
     // Verify and decode token
     const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as JWTPayload;
     return decoded;
