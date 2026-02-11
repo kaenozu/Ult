@@ -21,9 +21,9 @@ describe('Authentication Module', () => {
   const validUserId = 'test-user-123';
   const validUsername = 'testuser';
   
-  // Set a test secret for consistent testing
+  // Set a test secret for consistent testing (32+ chars required for security)
   beforeAll(() => {
-    process.env.JWT_SECRET = 'test-secret-key';
+    process.env.JWT_SECRET = 'test-secret-key-that-is-long-enough-for-security-checks-32chars';
     resetConfig(); // Reset config cache before all tests
   });
 
