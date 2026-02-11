@@ -14,15 +14,15 @@ import { OHLCV } from '../../types';
 /**
  * 単純なメモ化関数
  */
-export function memoize<T extends (...args: any[]) => number>(
-  fn: T,
-  keyGenerator?: (...args: any[]) => string
-): T {
-  const cache = new Map<string, number>();
+export function memoize<TArgs extends unknown[], TReturn extends number>(
+  fn: (...args: TArgs) => TReturn,
+  keyGenerator?: (...args: TArgs) => string
+): (...args: TArgs) => TReturn {
+  const cache = new Map<string, TReturn>();
 
-  return ((...args: any[]): number => {
-    const key = keyGenerator ? keyGenerator(...args) : args.join(',');
-    
+  return (...args: TArgs): TReturn => {
+    const key = keyGenerator ? keyGenerator(...args) : args.map(arg => String(arg)).join(',');
+
     if (cache.has(key)) {
       return cache.get(key)!;
     }
@@ -30,7 +30,7 @@ export function memoize<T extends (...args: any[]) => number>(
     const result = fn(...args);
     cache.set(key, result);
     return result;
-  }) as T;
+  };
 }
 
 /**

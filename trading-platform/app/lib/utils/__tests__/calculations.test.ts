@@ -2,7 +2,7 @@
  * Tests for calculation utilities
  */
 
-import {
+import { 
   sum,
   mean,
   variance,
@@ -19,6 +19,7 @@ import {
   calculateCorrelation,
   linearRegression,
   memoize,
+  memoizeArray,
 } from '../calculations';
 
 describe('calculations', () => {
@@ -225,24 +226,125 @@ describe('calculations', () => {
     });
   });
 
-  describe('memoize', () => {
-    it('should memoize function results', () => {
-      let callCount = 0;
-      const fn = (x: number) => {
-        callCount++;
-        return x * 2;
-      };
-      
-      const memoized = memoize(fn);
-      
-      expect(memoized(5)).toBe(10);
-      expect(callCount).toBe(1);
-      
-      expect(memoized(5)).toBe(10);
-      expect(callCount).toBe(1);
-      
-      expect(memoized(10)).toBe(20);
-      expect(callCount).toBe(2);
-    });
+describe('memoize', () => {
+  it('should memoize function results', () => {
+    let callCount = 0;
+    const fn = (x: number) => {
+      callCount++;
+      return x * 2;
+    };
+
+    const memoized = memoize(fn);
+
+    expect(memoized(5)).toBe(10);
+    expect(callCount).toBe(1);
+
+    expect(memoized(5)).toBe(10);
+    expect(callCount).toBe(1);
+
+    expect(memoized(10)).toBe(20);
+    expect(callCount).toBe(2);
   });
+
+  it('should work with custom key generator', () => {
+    let callCount = 0;
+    const fn = (x: number) => {
+      callCount++;
+      return x * 2;
+    };
+    const keyGenerator = (x: number) => `key-${x}`;
+    const memoized = memoize(fn, keyGenerator);
+
+    expect(memoized(5)).toBe(10);
+    expect(callCount).toBe(1);
+
+    // Same key should use cache
+    expect(memoized(5)).toBe(10);
+    expect(callCount).toBe(1);
+
+    // Different key should execute
+    expect(memoized(3)).toBe(6);
+    expect(callCount).toBe(2);
+  });
+
+  it('should handle multiple arguments', () => {
+    let callCount = 0;
+    const fn = (a: number, b: number, c: number) => {
+      callCount++;
+      return a + b + c;
+    };
+    const memoized = memoize(fn);
+
+    memoized(1, 2, 3);
+    memoized(1, 2, 3);
+    memoized(1, 2, 4); // Different third arg
+
+    expect(callCount).toBe(2);
+  });
+});
+
+describe('memoizeArray', () => {
+  it('should cache results for arrays', () => {
+    let callCount = 0;
+    const fn = (arr: number[]) => {
+      callCount++;
+      return arr.reduce((a, b) => a + b, 0);
+    };
+    const memoized = memoizeArray(fn);
+
+    const arr1 = [1, 2, 3];
+    const arr2 = [1, 2, 3];
+
+    expect(memoized(arr1)).toBe(6);
+    expect(callCount).toBe(1);
+
+    // Same content should use cache
+    expect(memoized(arr2)).toBe(6);
+    expect(callCount).toBe(1);
+
+    // Different content should execute
+    expect(memoized([1, 2, 4])).toBe(7);
+    expect(callCount).toBe(2);
+  });
+
+  it('should respect max cache size', () => {
+    let callCount = 0;
+    const fn = (arr: number[]) => {
+      callCount++;
+      return arr.length;
+    };
+    const memoized = memoizeArray(fn, 2);
+
+    // Fill cache
+    memoized([1]);
+    memoized([2]);
+    memoized([3]);
+
+    // Should have evicted oldest entry
+    memoized([1]);
+    expect(callCount).toBe(4);
+  });
+
+  it('should work with Float64Array', () => {
+    let callCount = 0;
+    const fn = (arr: Float64Array) => {
+      callCount++;
+      let sum = 0;
+      for (let i = 0; i < arr.length; i++) {
+        sum += arr[i];
+      }
+      return sum;
+    };
+    const memoized = memoizeArray(fn);
+
+    const arr = new Float64Array([1.5, 2.5, 3.5]);
+
+    expect(memoized(arr)).toBe(7.5);
+    expect(callCount).toBe(1);
+
+    // Same array should use cache
+    expect(memoized(arr)).toBe(7.5);
+    expect(callCount).toBe(1);
+  });
+});
 });

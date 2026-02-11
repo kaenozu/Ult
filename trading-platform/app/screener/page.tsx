@@ -17,11 +17,50 @@ type SortField = 'price' | 'change' | 'changePercent' | 'volume' | 'symbol';
 type SortDirection = 'asc' | 'desc';
 type PresetType = 'oversold' | 'uptrend' | 'overbought' | 'downtrend';
 
+// Custom hook for debounced filter input
+function useDebouncedFilter<T extends Record<string, string>>(
+  initialValue: T,
+  delay: number = 300
+): [T, T, (updater: (prev: T) => T) => void, boolean] {
+  const [displayValue, setDisplayValue] = useState<T>(initialValue);
+  const [debouncedValue, setDebouncedValue] = useState<T>(initialValue);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isDebouncing, setIsDebouncing] = useState(false);
+
+  const updateValue = useCallback((updater: (prev: T) => T) => {
+    setDisplayValue(prev => {
+      const newValue = updater(prev);
+      
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      setIsDebouncing(true);
+      timeoutRef.current = setTimeout(() => {
+        setDebouncedValue(newValue);
+        setIsDebouncing(false);
+      }, delay);
+      
+      return newValue;
+    });
+  }, [delay]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return [displayValue, debouncedValue, updateValue, isDebouncing];
+}
+
 function ScreenerContent() {
   const router = useRouter();
   const { setSelectedStock } = useUIStore();
   const { addToWatchlist } = useWatchlistStore();
-  const [filters, setFilters] = useState({
+const [displayFilters, filters, setDisplayFilters, isFilterDebouncing] = useDebouncedFilter({
     priceMin: '',
     priceMax: '',
     changeMin: '',
@@ -29,8 +68,8 @@ function ScreenerContent() {
     volumeMin: '',
     sector: '',
     market: '',
-    signal: 'ANY',  // 'BUY'から'ANY'に変更して売買両方を表示
-    minConfidence: '60',  // 80%から60%に変更して現実的な基準に
+    signal: 'ANY',
+    minConfidence: '60',
   });
 
   const [techFilters, setTechFilters] = useState<TechFilters>({
@@ -57,8 +96,16 @@ function ScreenerContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Debounce timeout and active preset tracking
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activePreset, setActivePreset] = useState<PresetType | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -106,9 +153,9 @@ function ScreenerContent() {
     setAnalyzing(true);
 
     const candidates = stocks.filter(stock => {
-      if (filters.priceMin && stock.price < parseFloat(filters.priceMin)) return false;
-      if (filters.priceMax && stock.price > parseFloat(filters.priceMax)) return false;
-      if (filters.market && stock.market !== filters.market) return false;
+      if (displayFilters.priceMin && stock.price < parseFloat(displayFilters.priceMin)) return false;
+      if (displayFilters.priceMax && stock.price > parseFloat(displayFilters.priceMax)) return false;
+      if (displayFilters.market && stock.market !== displayFilters.market) return false;
       return true;
     });
 
@@ -160,19 +207,19 @@ function ScreenerContent() {
 
   const filteredStocks = useMemo(() => {
     return stocks.filter(stock => {
-      if (filters.priceMin && stock.price < parseFloat(filters.priceMin)) return false;
-      if (filters.priceMax && stock.price > parseFloat(filters.priceMax)) return false;
-      if (filters.changeMin && stock.changePercent < parseFloat(filters.changeMin)) return false;
-      if (filters.changeMax && stock.changePercent > parseFloat(filters.changeMax)) return false;
-      if (filters.volumeMin && stock.volume < parseFloat(filters.volumeMin)) return false;
-      if (filters.sector && stock.sector !== filters.sector) return false;
-      if (filters.market && stock.market !== filters.market) return false;
+      if (displayFilters.priceMin && stock.price < parseFloat(displayFilters.priceMin)) return false;
+      if (displayFilters.priceMax && stock.price > parseFloat(displayFilters.priceMax)) return false;
+      if (displayFilters.changeMin && stock.changePercent < parseFloat(displayFilters.changeMin)) return false;
+      if (displayFilters.changeMax && stock.changePercent > parseFloat(displayFilters.changeMax)) return false;
+      if (displayFilters.volumeMin && stock.volume < parseFloat(displayFilters.volumeMin)) return false;
+      if (displayFilters.sector && stock.sector !== displayFilters.sector) return false;
+      if (displayFilters.market && stock.market !== displayFilters.market) return false;
 
       if (isTechAnalysisDone) {
         const analysisResult = analyzedStocks.find(as => as.symbol === stock.symbol);
         if (!analysisResult) return false;
-        if (filters.signal !== 'ANY' && analysisResult.signal?.type !== filters.signal) return false;
-        if (filters.minConfidence && (analysisResult.signal?.confidence || 0) < parseFloat(filters.minConfidence)) return false;
+        if (displayFilters.signal !== 'ANY' && analysisResult.signal?.type !== displayFilters.signal) return false;
+        if (displayFilters.minConfidence && (analysisResult.signal?.confidence || 0) < parseFloat(displayFilters.minConfidence)) return false;
       }
 
       return true;
@@ -219,12 +266,13 @@ function ScreenerContent() {
           signalType = 'ANY';
       }
 
-      setFilters({
-        priceMin: '', priceMax: '', changeMin: '', changeMax: '',
-        volumeMin: '', sector: '', market: '',
-        signal: signalType, 
-        minConfidence: '60',
-      });
+setDisplayFilters(prev => ({
+      ...prev,
+      priceMin: '', priceMax: '', changeMin: '', changeMax: '',
+      volumeMin: '', sector: '', market: '',
+      signal: signalType,
+      minConfidence: '60',
+    }));
 
       if (type === 'oversold') {
         setTechFilters({ rsiMax: '30', rsiMin: '', trend: 'all' });
@@ -267,11 +315,11 @@ function ScreenerContent() {
           <div className="p-5 flex flex-col gap-6">
             <div className="flex justify-between items-center">
               <h3 className="text-white text-base font-bold">フィルター</h3>
-              <button onClick={() => {
-                setFilters({ priceMin: '', priceMax: '', changeMin: '', changeMax: '', volumeMin: '', sector: '', market: '', signal: 'ANY', minConfidence: '60' });
-                setTechFilters({ rsiMax: '', rsiMin: '', trend: 'all' });
-                setIsTechAnalysisDone(false);
-              }} className="text-primary text-xs font-medium hover:text-primary/80">リセット</button>
+<button onClick={() => {
+              setDisplayFilters(() => ({ priceMin: '', priceMax: '', changeMin: '', changeMax: '', volumeMin: '', sector: '', market: '', signal: 'ANY', minConfidence: '60' }));
+              setTechFilters({ rsiMax: '', rsiMin: '', trend: 'all' });
+              setIsTechAnalysisDone(false);
+            }} className="text-primary text-xs font-medium hover:text-primary/80">リセット</button>
             </div>
 
             {/* AI Signal Panel */}
@@ -283,16 +331,16 @@ function ScreenerContent() {
                 <label className="text-[10px] text-[#92adc9] font-bold">推奨シグナル</label>
                 <div className="flex bg-[#192633] p-0.5 rounded-md">
                   {['BUY', 'SELL', 'ANY'].map((s) => (
-                    <button key={s} onClick={() => { setFilters(prev => ({ ...prev, signal: s })); }}
-                      className={cn("flex-1 py-1.5 text-[10px] font-bold rounded transition-all", filters.signal === s ? "bg-primary text-white shadow-sm" : "text-[#92adc9] hover:text-white")}>
+                    <button key={s} onClick={() => { setDisplayFilters(prev => ({ ...prev, signal: s })); }}
+                      className={cn("flex-1 py-1.5 text-[10px] font-bold rounded transition-all", displayFilters.signal === s ? "bg-primary text-white shadow-sm" : "text-[#92adc9] hover:text-white")}>
                       {s === 'BUY' ? '買い' : s === 'SELL' ? '売り' : '全て'}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center"><label className="text-[10px] text-[#92adc9] font-bold">最小信頼度 (%)</label><span className="text-[10px] text-primary font-black">{filters.minConfidence}%</span></div>
-                <input id="minConfidence" name="minConfidence" type="range" min="0" max="100" step="5" value={filters.minConfidence} onChange={(e) => { setFilters(prev => ({ ...prev, minConfidence: e.target.value })); }} className="w-full accent-primary h-1.5 bg-[#192633] rounded-lg appearance-none cursor-pointer" />
+                <div className="flex justify-between items-center"><label className="text-[10px] text-[#92adc9] font-bold">最小信頼度 (%)</label><span className="text-[10px] text-primary font-black">{displayFilters.minConfidence}%</span></div>
+                <input id="minConfidence" name="minConfidence" type="range" min="0" max="100" step="5" value={displayFilters.minConfidence} onChange={(e) => { setDisplayFilters(prev => ({ ...prev, minConfidence: e.target.value })); }} className="w-full accent-primary h-1.5 bg-[#192633] rounded-lg appearance-none cursor-pointer" />
               </div>
             </div>
 
@@ -303,7 +351,7 @@ function ScreenerContent() {
               {/* Market */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="marketFilter" className="text-[10px] text-[#92adc9] font-bold">市場</label>
-                <select id="marketFilter" name="marketFilter" aria-label="市場フィルター" value={filters.market} onChange={(e) => setFilters(prev => ({ ...prev, market: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white">
+                <select id="marketFilter" name="marketFilter" aria-label="市場フィルター" value={displayFilters.market} onChange={(e) => setDisplayFilters(prev => ({ ...prev, market: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white">
                   <option value="">全て</option>
                   <option value="japan">日本 (JP)</option>
                   <option value="usa">米国 (US)</option>
@@ -314,8 +362,8 @@ function ScreenerContent() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] text-[#92adc9] font-bold">価格</label>
                 <div className="flex gap-2">
-                  <input id="priceMin" name="priceMin" aria-label="最低価格" placeholder="Min" type="number" value={filters.priceMin} onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
-                  <input id="priceMax" name="priceMax" aria-label="最高価格" placeholder="Max" type="number" value={filters.priceMax} onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                  <input id="priceMin" name="priceMin" aria-label="最低価格" placeholder="Min" type="number" value={displayFilters.priceMin} onChange={(e) => setDisplayFilters(prev => ({ ...prev, priceMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                  <input id="priceMax" name="priceMax" aria-label="最高価格" placeholder="Max" type="number" value={displayFilters.priceMax} onChange={(e) => setDisplayFilters(prev => ({ ...prev, priceMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
                 </div>
               </div>
 
@@ -323,21 +371,21 @@ function ScreenerContent() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] text-[#92adc9] font-bold">騰落率 (%)</label>
                 <div className="flex gap-2">
-                  <input id="changeMin" name="changeMin" aria-label="最小騰落率" placeholder="Min %" type="number" value={filters.changeMin} onChange={(e) => setFilters(prev => ({ ...prev, changeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
-                  <input id="changeMax" name="changeMax" aria-label="最大騰落率" placeholder="Max %" type="number" value={filters.changeMax} onChange={(e) => setFilters(prev => ({ ...prev, changeMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                  <input id="changeMin" name="changeMin" aria-label="最小騰落率" placeholder="Min %" type="number" value={displayFilters.changeMin} onChange={(e) => setDisplayFilters(prev => ({ ...prev, changeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                  <input id="changeMax" name="changeMax" aria-label="最大騰落率" placeholder="Max %" type="number" value={displayFilters.changeMax} onChange={(e) => setDisplayFilters(prev => ({ ...prev, changeMax: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
                 </div>
               </div>
 
               {/* Volume */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="volumeMin" className="text-[10px] text-[#92adc9] font-bold">出来高</label>
-                <input id="volumeMin" name="volumeMin" aria-label="最小出来高" placeholder="Min Volume" type="number" value={filters.volumeMin} onChange={(e) => setFilters(prev => ({ ...prev, volumeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                <input id="volumeMin" name="volumeMin" aria-label="最小出来高" placeholder="Min Volume" type="number" value={displayFilters.volumeMin} onChange={(e) => setDisplayFilters(prev => ({ ...prev, volumeMin: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
               </div>
 
               {/* Sector */}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="sectorFilter" className="text-[10px] text-[#92adc9] font-bold">セクター</label>
-                <input id="sectorFilter" name="sectorFilter" aria-label="セクターフィルター" placeholder="Sector" value={filters.sector} onChange={(e) => setFilters(prev => ({ ...prev, sector: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
+                <input id="sectorFilter" name="sectorFilter" aria-label="セクターフィルター" placeholder="Sector" value={displayFilters.sector} onChange={(e) => setDisplayFilters(prev => ({ ...prev, sector: e.target.value }))} className="w-full bg-[#192633] border border-[#233648] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600" />
               </div>
             </div>
 
