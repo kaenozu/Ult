@@ -108,6 +108,7 @@ export interface DualMatchEntry {
   market: 'japan' | 'usa';
   performance: PerformanceScore;
   aiSignal: AISignalResult;
+  dualScore?: number;
 }
 
 /**
@@ -128,6 +129,8 @@ export interface AIScreenerConfig {
   topN?: number;
   lookbackDays?: number;
   minConfidence?: number;
+  minDualScore?: number;
+  minPredictedChange?: number;
 }
 
 /**
@@ -247,6 +250,8 @@ export class PerformanceScreenerService {
       topN = 20,
       minConfidence = 60,
       minTrades = 3,
+      minDualScore = 30,
+      minPredictedChange = 0,
     } = config;
 
     // 市場フィルタリング
@@ -265,13 +270,27 @@ export class PerformanceScreenerService {
     const dualMatches: DualMatchEntry[] = [];
     const dualMatchSymbols: string[] = [];
 
+    // 診断カウンター
+    let skipDataInsufficient = 0;
+    let skipFetchError = 0;
+    let skipLowTrades = 0;
+    let passedPerf = 0;
+    let passedAI = 0;
+
     for (let i = 0; i < filteredSources.length; i++) {
       const ds = filteredSources[i];
       try {
         // 1回のデータ取得を共有
+        // データ最低50件は必要。lookbackDaysに足りない場合はあるだけ使う
         const data = await ds.fetchData();
-        if (data.length < lookbackDays) continue;
-        const recentData = data.slice(-lookbackDays);
+        const MIN_DATA_REQUIRED = 50;
+        if (data.length < MIN_DATA_REQUIRED) {
+          skipDataInsufficient++;
+          console.log(`[DualDiag] ${ds.symbol}: SKIP (data=${data.length} < min=${MIN_DATA_REQUIRED})`);
+          continue;
+        }
+        const actualLookback = Math.min(data.length, lookbackDays);
+        const recentData = data.slice(-actualLookback);
 
         // 1. パフォーマンス評価
         const backtestResult = await this.runFastBacktest(ds.symbol, recentData, ds.market);
@@ -340,34 +359,44 @@ export class PerformanceScreenerService {
           reason: enhancedReason,
         };
 
-        // 配列へ格納
+        // パフォーマンスタブ用: 取引回数が十分な銘柄のみ
         if (perfScore.totalTrades >= minTrades) {
+          passedPerf++;
           performanceResults.push(perfScore);
-
-          // デュアルマッチ判定: パフォーマンス実績もAI予測も良好な銘柄
-          // 条件: パフォーマンススコア >= 40 AND (AI BUY信頼度 >= 50 OR AIが何らかのシグナルを出しており信頼度 >= 65)
-          const isDualCandidate =
-            (finalType === 'BUY' && finalConfidence >= 50 && pScoreValue >= 40) ||
-            (finalType !== 'HOLD' && finalConfidence >= 65 && pScoreValue >= 50);
-
-
-
-          if (isDualCandidate) {
-            dualMatchSymbols.push(ds.symbol);
-            dualMatches.push({
-              symbol: ds.symbol,
-              name: ds.name,
-              market: ds.market,
-              performance: perfScore,
-              aiSignal: aiResult,
-            });
-          }
+        } else {
+          skipLowTrades++;
         }
 
+        // デュアルマッチ判定: 全銘柄を対象に複合スコアで評価（取引数フィルタとは独立）
+        const buyBonus = finalType === 'BUY' ? 10 : (finalType === 'SELL' ? 5 : 0);
+        const dualScore = (pScoreValue * 0.5) + (finalConfidence * 0.5) + buyBonus;
+
+        const isDualCandidate =
+          dualScore >= minDualScore &&
+          pScoreValue > 0 &&
+          finalType !== 'HOLD' &&
+          (mlSignal.predictedChange || 0) >= minPredictedChange;
+
+        console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}%, dualScore=${dualScore.toFixed(1)}, trades=${perfScore.totalTrades} → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
+
+        if (isDualCandidate) {
+          dualMatchSymbols.push(ds.symbol);
+          dualMatches.push({
+            symbol: ds.symbol,
+            name: ds.name,
+            market: ds.market,
+            performance: perfScore,
+            aiSignal: aiResult,
+            dualScore,
+          });
+        }
+
+        // AIシグナルは取引数フィルタとは独立して収集
         if (finalConfidence >= minConfidence) {
           aiSignalResults.push(aiResult);
         }
       } catch (err) {
+        skipFetchError++;
         console.warn(`[PerformanceScreener] Dual scan failed for ${ds.symbol}:`, err);
       }
 
@@ -381,9 +410,21 @@ export class PerformanceScreenerService {
     // ソートとランキング
     performanceResults.sort((a, b) => b.performanceScore - a.performanceScore).forEach((r, i) => r.rank = i + 1);
     aiSignalResults.sort((a, b) => b.confidence - a.confidence).forEach((r, i) => r.rank = i + 1);
+    dualMatches.sort((a, b) => (b.dualScore || 0) - (a.dualScore || 0));
 
     const scanDuration = performance.now() - startTime;
     const lastUpdated = new Date();
+
+    // 診断サマリー
+    console.error(`[DualDiag] === SCAN SUMMARY ===`);
+    console.error(`[DualDiag] Total sources: ${filteredSources.length}`);
+    console.error(`[DualDiag] Skipped (data insufficient): ${skipDataInsufficient}`);
+    console.error(`[DualDiag] Skipped (low trades < ${minTrades}): ${skipLowTrades}`);
+    console.error(`[DualDiag] Skipped (fetch error): ${skipFetchError}`);
+    console.error(`[DualDiag] Passed performance filter: ${passedPerf}`);
+    console.error(`[DualDiag] AI signals collected: ${aiSignalResults.length}`);
+    console.error(`[DualDiag] Dual matches: ${dualMatches.length}`);
+    console.error(`[DualDiag] Duration: ${scanDuration.toFixed(0)}ms`);
 
     return {
       performance: {
