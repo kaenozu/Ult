@@ -63,7 +63,7 @@ export function memoizeArray<TArgs extends (number | string | boolean)[], TRetur
 
     cache.set(key, result);
     return result;
-  };
+  });
 }
 
 // ============================================================================

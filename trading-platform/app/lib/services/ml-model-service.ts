@@ -48,6 +48,24 @@ export class MLModelService extends DomainMLModelService {
     // TensorFlow.js integration can be added here
     return this.predict(features) as ModelPrediction;
   }
+
+  /**
+   * Check if TensorFlow.js is enabled
+   */
+  isTensorFlowEnabled(): boolean {
+    return this.useTensorFlowModels;
+  }
+
+  /**
+   * Get model metrics
+   */
+  getModelMetrics(): Record<string, unknown> {
+    return {
+      rf: undefined,
+      xgb: undefined,
+      lstm: undefined,
+    };
+  }
 }
 
 /**
