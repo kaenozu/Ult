@@ -239,7 +239,7 @@ describe('Error Handler', () => {
       
       expect(response.status).toBe(429);
       const body = await response.json();
-      expect(body.error).toBe('Too many requests');
+      expect(body.error).toBe('リクエスト回数の上限を超えました');
       expect(body.retryAfter).toBe(60);
     });
   });

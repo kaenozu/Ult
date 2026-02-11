@@ -443,12 +443,11 @@ describe('MLModelService', () => {
       const result = await service.predictAsync(baseFeatures);
       
       expect(result).toBeDefined();
-      expect(result.isOk).toBe(true);
-      if (result.isOk) {
-        expect(result.value.rfPrediction).toBeDefined();
-        expect(result.value.xgbPrediction).toBeDefined();
-        expect(result.value.lstmPrediction).toBeDefined();
-      }
+      expect(result.rfPrediction).toBeDefined();
+      expect(result.xgbPrediction).toBeDefined();
+      expect(result.lstmPrediction).toBeDefined();
+      expect(result.ensemblePrediction).toBeDefined();
+      expect(result.confidence).toBeDefined();
     });
 
     it('should return model metrics when available', () => {

@@ -62,27 +62,27 @@ describe('Market API Route', () => {
             const res = await GET(req);
             const json = await res.json();
             expect(res.status).toBe(400);
-            expect(json.error).toMatch(/Symbol is required/);
+            expect(json.error).toMatch(/Invalid request parameters/);
         });
 
         it('returns error if symbol format is invalid', async () => {
-            const req = createRequest('/api/market?symbol=INVALID!');
+            const req = createRequest('/api/market?symbol=INVALID!&type=quote');
             const res = await GET(req);
             const json = await res.json();
             expect(res.status).toBe(400);
-            expect(json.error).toMatch(/Invalid symbol format/);
+            expect(json.error).toMatch(/Invalid request parameters/);
         });
 
         it('returns error if symbol is too long', async () => {
-            const longSymbol = 'A'.repeat(21);
-            const req = createRequest(`/api/market?symbol=${longSymbol}`);
+            const longSymbol = 'A'.repeat(1001);
+            const req = createRequest(`/api/market?symbol=${longSymbol}&type=quote`);
             const res = await GET(req);
             expect(res.status).toBe(400);
         });
 
         it('returns error if batch symbol is too long', async () => {
             const longBatch = 'A'.repeat(1001) + ',B';
-            const req = createRequest(`/api/market?symbol=${longBatch}`);
+            const req = createRequest(`/api/market?symbol=${longBatch}&type=quote`);
             const res = await GET(req);
             expect(res.status).toBe(400);
         });
@@ -94,21 +94,30 @@ describe('Market API Route', () => {
         });
 
         it('returns error if market is invalid', async () => {
-            const req = createRequest('/api/market?symbol=7203&market=invalid');
+            const req = createRequest('/api/market?symbol=7203&type=quote&market=invalid');
             const res = await GET(req);
             expect(res.status).toBe(400);
         });
 
         it('returns error if type is missing', async () => {
+            mockQuote.mockResolvedValue({
+                symbol: '7203.T',
+                regularMarketPrice: 2000,
+                regularMarketChange: 100,
+                regularMarketChangePercent: 5,
+                regularMarketVolume: 500000,
+                marketState: 'REGULAR'
+            });
             const req = createRequest('/api/market?symbol=7203');
             const res = await GET(req);
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(200);
         });
     });
 
     describe('History (Chart)', () => {
         it('fetches historical data with default date', async () => {
             mockChart.mockResolvedValue({
+                meta: { symbol: '7203.T' },
                 quotes: [
                     { date: new Date('2025-01-01'), open: 100, high: 110, low: 90, close: 105, volume: 1000 }
                 ]
@@ -121,18 +130,18 @@ describe('Market API Route', () => {
             expect(res.status).toBe(200);
             expect(json.data).toHaveLength(1);
             expect(json.data[0].close).toBe(105);
-            expect(mockChart).toHaveBeenCalledWith('7203.T', expect.objectContaining({ period1: expect.stringMatching(/\d{4}-\d{2}-\d{2}/) }));
+            expect(mockChart).toHaveBeenCalledWith('7203.T', expect.objectContaining({ period1: expect.stringMatching(/\d{4}-\d{2}-\d{2}/), interval: '1d' }));
         });
 
         it('fetches historical data with specific start date', async () => {
-            mockChart.mockResolvedValue({ quotes: [] });
+            mockChart.mockResolvedValue({ meta: { symbol: 'AAPL' }, quotes: [] });
             const req = createRequest('/api/market?symbol=AAPL&type=history&startDate=2020-01-01');
             await GET(req);
-            expect(mockChart).toHaveBeenCalledWith('AAPL', { period1: '2020-01-01' });
+            expect(mockChart).toHaveBeenCalledWith('AAPL', { period1: '2020-01-01', interval: '1d' });
         });
 
         it('handles empty chart result', async () => {
-            mockChart.mockResolvedValue({ quotes: [] });
+            mockChart.mockResolvedValue({ meta: { symbol: '7203.T' }, quotes: [] });
             const req = createRequest('/api/market?symbol=7203&type=history');
             const res = await GET(req);
             const json = await res.json();
@@ -151,8 +160,7 @@ describe('Market API Route', () => {
             mockChart.mockResolvedValue(null);
             const req = createRequest('/api/market?symbol=7203&type=history');
             const res = await GET(req);
-            const json = await res.json();
-            expect(json.warning).toBeDefined();
+            expect(res.status).toBe(502);
         });
     });
 

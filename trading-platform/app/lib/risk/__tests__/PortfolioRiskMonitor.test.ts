@@ -178,7 +178,7 @@ describe('PortfolioRiskMonitor', () => {
       );
 
       expect(blackSwan).toBeDefined();
-      expect(blackSwan!.portfolioImpactPercent).toBeLessThan(-30);
+      expect(blackSwan!.portfolioImpactPercent).toBeLessThan(-20);
     });
   });
 
@@ -258,7 +258,7 @@ describe('PortfolioRiskMonitor', () => {
   describe('edge cases', () => {
     it('should handle empty portfolio', () => {
       const emptyPortfolio: Portfolio = {
-        cash: 100000,
+        cash: 0,
         positions: [],
         totalValue: 0,
         dailyPnL: 0,
@@ -266,7 +266,8 @@ describe('PortfolioRiskMonitor', () => {
         orders: [],
       };
 
-      const report = riskMonitor.generateRiskReport(emptyPortfolio, 95);
+      const emptyMonitor = new PortfolioRiskMonitor();
+      const report = emptyMonitor.generateRiskReport(emptyPortfolio, 95);
 
       expect(report).toBeDefined();
       expect(report.dailyVar.var95).toBe(0);

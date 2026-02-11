@@ -153,18 +153,17 @@ describe('PositionTable', () => {
   });
 
   describe('空の状態 (Empty State)', () => {
-    it('renders empty table correctly', () => {
+    it('renders empty state message when no positions', () => {
       render(<PositionTable positions={[]} />);
 
-      expect(screen.getByText('銘柄')).toBeInTheDocument();
-      expect(screen.getByText('資産合計')).toBeInTheDocument();
+      expect(screen.getByText('保有ポジションはありません')).toBeInTheDocument();
+      expect(screen.getByText('銘柄を選択して取引を開始してください')).toBeInTheDocument();
     });
 
-    it('shows zero values for empty positions', () => {
+    it('shows empty state icon and message', () => {
       render(<PositionTable positions={[]} />);
 
-      expect(screen.getByText('資産合計')).toBeInTheDocument();
-      expect(screen.getByText('評価損益合計')).toBeInTheDocument();
+      expect(screen.getByText('保有ポジションはありません')).toBeInTheDocument();
     });
   });
 

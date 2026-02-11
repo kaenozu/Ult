@@ -2,13 +2,22 @@ import { StructuredLogger, createLogger, logger } from '../index';
 
 describe('StructuredLogger', () => {
   let consoleSpy: jest.SpyInstance;
+  let consoleDebugSpy: jest.SpyInstance;
+  let consoleWarnSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(() => {
     consoleSpy = jest.spyOn(console, 'info').mockImplementation();
+    consoleDebugSpy = jest.spyOn(console, 'debug').mockImplementation();
+    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
   });
 
   afterEach(() => {
     consoleSpy.mockRestore();
+    consoleDebugSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 
   describe('log levels', () => {
@@ -89,6 +98,7 @@ describe('StructuredLogger', () => {
 
   describe('performance measurement', () => {
     it('should measure operation duration', () => {
+      jest.useFakeTimers();
       const log = createLogger('test');
       const endTimer = log.startTimer('testOperation');
       
@@ -96,6 +106,7 @@ describe('StructuredLogger', () => {
       jest.advanceTimersByTime(100);
       
       endTimer();
+      jest.useRealTimers();
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.any(String),
         'Operation completed: testOperation',

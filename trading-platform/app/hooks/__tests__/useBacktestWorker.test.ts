@@ -2,25 +2,33 @@ import { renderHook, act } from '@testing-library/react';
 import { useBacktestWorker } from '../useBacktestWorker';
 import { BacktestResult } from '../../types';
 
-// Mock Worker
-let mockWorkerInstance: { onmessage: ((event: unknown) => void) | null; onerror: ((error: unknown) => void) | null; postMessage: jest.Mock; terminate: jest.Mock } | null = null;
+interface MockWorkerInstance {
+  onmessage: ((event: { data: unknown }) => void) | null;
+  onerror: ((error: Error) => void) | null;
+  postMessage: jest.Mock;
+  terminate: jest.Mock;
+}
+
+let mockWorkerInstance: MockWorkerInstance | null = null;
 const mockPostMessage = jest.fn();
 const mockTerminate = jest.fn();
 
 class MockWorker {
-  onmessage: ((event: unknown) => void) | null = null;
-  onerror: ((error: unknown) => void) | null = null;
+  onmessage: ((event: { data: unknown }) => void) | null = null;
+  onerror: ((error: Error) => void) | null = null;
   postMessage = mockPostMessage;
   terminate = mockTerminate;
 
-  constructor(scriptURL: string | URL) {
+  constructor(_scriptURL: string | URL) {
     mockWorkerInstance = this;
   }
 }
 
-global.Worker = MockWorker as unknown;
-
 describe('useBacktestWorker', () => {
+  beforeAll(() => {
+    global.Worker = MockWorker as unknown as typeof Worker;
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockWorkerInstance = null;
@@ -55,23 +63,19 @@ describe('useBacktestWorker', () => {
   it('does not update state after unmount (memory leak prevention)', async () => {
     const { result, unmount } = renderHook(() => useBacktestWorker());
 
-    // Start a backtest
-    const backtestPromise = act(() => 
-      result.current.runBacktest('TEST', [], 'japan')
-    );
+    await act(async () => {
+      result.current.runBacktest('TEST', [], 'japan');
+    });
 
-    // Verify worker received the message
     expect(mockPostMessage).toHaveBeenCalled();
     const requestId = mockPostMessage.mock.calls[0][0].payload.requestId;
 
-    // Unmount the component before the backtest completes
+    const workerRef = mockWorkerInstance;
     unmount();
 
-    // Simulate worker sending completion message after unmount
-    // This should NOT cause a React state update warning
     act(() => {
-      if (mockWorkerInstance && mockWorkerInstance.onmessage) {
-        mockWorkerInstance.onmessage({
+      if (workerRef?.onmessage) {
+        workerRef.onmessage({
           data: {
             type: 'BACKTEST_COMPLETE',
             payload: {
@@ -92,28 +96,24 @@ describe('useBacktestWorker', () => {
       }
     });
 
-    // The test passes if no "Can't perform a React state update on an unmounted component" warning occurs
     expect(mockTerminate).toHaveBeenCalled();
   });
 
   it('does not update progress after unmount', async () => {
     const { result, unmount } = renderHook(() => useBacktestWorker());
 
-    // Start a backtest
-    act(() => {
+    await act(async () => {
       result.current.runBacktest('TEST', [], 'japan');
     });
 
     const requestId = mockPostMessage.mock.calls[0][0].payload.requestId;
+    const workerRef = mockWorkerInstance;
 
-    // Unmount before progress update
     unmount();
 
-    // Simulate worker sending progress update after unmount
-    // This should NOT cause a React state update warning
     act(() => {
-      if (mockWorkerInstance && mockWorkerInstance.onmessage) {
-        mockWorkerInstance.onmessage({
+      if (workerRef?.onmessage) {
+        workerRef.onmessage({
           data: {
             type: 'BACKTEST_PROGRESS',
             payload: {
@@ -126,28 +126,24 @@ describe('useBacktestWorker', () => {
       }
     });
 
-    // The test passes if no warning is thrown
     expect(mockTerminate).toHaveBeenCalled();
   });
 
   it('does not update error state after unmount', async () => {
     const { result, unmount } = renderHook(() => useBacktestWorker());
 
-    // Start a backtest
-    act(() => {
+    await act(async () => {
       result.current.runBacktest('TEST', [], 'japan');
     });
 
     const requestId = mockPostMessage.mock.calls[0][0].payload.requestId;
+    const workerRef = mockWorkerInstance;
 
-    // Unmount before error
     unmount();
 
-    // Simulate worker sending error after unmount
-    // This should NOT cause a React state update warning
     act(() => {
-      if (mockWorkerInstance && mockWorkerInstance.onmessage) {
-        mockWorkerInstance.onmessage({
+      if (workerRef?.onmessage) {
+        workerRef.onmessage({
           data: {
             type: 'BACKTEST_ERROR',
             payload: {
@@ -160,29 +156,23 @@ describe('useBacktestWorker', () => {
       }
     });
 
-    // The test passes if no warning is thrown
     expect(mockTerminate).toHaveBeenCalled();
   });
 
   it('does not update state on worker error after unmount', async () => {
     const { unmount } = renderHook(() => useBacktestWorker());
 
-    // Save reference to worker instance
-    const workerInstance = mockWorkerInstance;
-    expect(workerInstance).not.toBeNull();
+    const workerRef = mockWorkerInstance;
+    expect(workerRef).not.toBeNull();
 
-    // Unmount the component
     unmount();
 
-    // Simulate worker error after unmount
-    // This should NOT cause a React state update warning
     act(() => {
-      if (workerInstance && workerInstance.onerror) {
-        workerInstance.onerror(new Error('Worker crashed'));
+      if (workerRef?.onerror) {
+        workerRef.onerror(new Error('Worker crashed'));
       }
     });
 
-    // The test passes if no warning is thrown
     expect(mockTerminate).toHaveBeenCalled();
   });
 });

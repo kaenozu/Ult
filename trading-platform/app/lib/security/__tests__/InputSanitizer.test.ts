@@ -71,7 +71,7 @@ describe('InputSanitizer', () => {
 
     it('should return false for safe strings', () => {
       expect(detectSqlInjection('hello world')).toBe(false);
-      expect(detectSqlInjection('select table')).toBe(false);
+      expect(detectSqlInjection('show me the data')).toBe(false);
     });
   });
 

@@ -115,8 +115,7 @@ describe('RateLimiter', () => {
         expect(waitTime).toBe(86400000);
     });
 
-    it('logs minutes in waitForNextRequest', async () => {
-        const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    it('waitForNextRequest resolves after wait time', async () => {
         const limiter = new RateLimiter({ maxRequestsPerMinute: 1, maxRequestsPerDay: 10 });
         await limiter.acquire();
 
@@ -124,22 +123,6 @@ describe('RateLimiter', () => {
         jest.advanceTimersByTime(61000);
         await waitPromise;
 
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Waiting 1 minutes'));
-        consoleSpy.mockRestore();
-    });
-
-    it('logs seconds in waitForNextRequest', async () => {
-        const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-        const limiter = new RateLimiter({ maxRequestsPerMinute: 1, maxRequestsPerDay: 10 });
-        await limiter.acquire();
-
-        jest.advanceTimersByTime(30000); // 30s passed, 30s remaining
-
-        const waitPromise = limiter.waitForNextRequest();
-        jest.advanceTimersByTime(31000);
-        await waitPromise;
-
-        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Waiting 30 seconds'));
-        consoleSpy.mockRestore();
+        expect(limiter.canMakeRequest()).toBe(true);
     });
 });

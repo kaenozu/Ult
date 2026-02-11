@@ -75,7 +75,7 @@ describe('Utils Logic Coverage', () => {
     });
 
     describe('roundToTickSize', () => {
-        it('rounds USD', () => expect(roundToTickSize(10.123, 'usa')).toBe(10.12));
+        it('rounds USD', () => expect(roundToTickSize(10.123, 'usa')).toBeCloseTo(10.12, 2));
         it('rounds JPY small', () => expect(roundToTickSize(2000, 'japan')).toBe(2000));
         it('rounds JPY large', () => expect(roundToTickSize(5000000, 'japan')).toBe(5000000));
         it('rounds JPY 500k range', () => expect(roundToTickSize(400000, 'japan')).toBe(400000)); // 1000 tick

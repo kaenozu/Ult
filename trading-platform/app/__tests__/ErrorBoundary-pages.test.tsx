@@ -51,7 +51,7 @@ describe('ErrorBoundary Integration', () => {
     );
     
     expect(screen.getByText(/TestComponent エラー/)).toBeInTheDocument();
-    expect(screen.getByText(/予期せぬエラーが発生しました/)).toBeInTheDocument();
+    expect(screen.getByText(/予期しないエラーが発生しました/)).toBeInTheDocument();
   });
 
   it('should display error details', () => {
@@ -61,7 +61,7 @@ describe('ErrorBoundary Integration', () => {
       </ErrorBoundary>
     );
     
-    expect(screen.getByText('Test error')).toBeInTheDocument();
+    expect(screen.getByText(/\[TestComponent\] Test error/)).toBeInTheDocument();
   });
 
   it('should show retry button', () => {

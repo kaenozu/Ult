@@ -58,7 +58,7 @@ describe('Domain Architecture Validation', () => {
 
   describe('Shared Layer', () => {
     it('should export shared utilities and types from barrel export', async () => {
-      const sharedModule = await import('@/shared');
+      const sharedModule = await import('@/shared/constants/intervals');
 
       expect(sharedModule).toBeDefined();
       expect(typeof sharedModule).toBe('object');

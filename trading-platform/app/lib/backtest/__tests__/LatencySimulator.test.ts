@@ -72,27 +72,29 @@ describe('LatencySimulator', () => {
 
     it('should retrieve executable orders at specified time', () => {
       const currentTime = Date.now();
+      simulator.enableRealtimeData(true);
       simulator.submitOrder(100, 10, 'BUY', currentTime);
 
       // Check immediately - should be empty
       const immediate = simulator.getExecutableOrders(currentTime);
       expect(immediate.length).toBe(0);
 
-      // Check after latency period
-      const future = currentTime + 5000; // 5 seconds later
+      // Check after latency period (10 seconds to account for all latency types)
+      const future = currentTime + 10000;
       const executable = simulator.getExecutableOrders(future);
       expect(executable.length).toBeGreaterThan(0);
     });
 
     it('should remove executed orders from queue', () => {
       const currentTime = Date.now();
+      simulator.enableRealtimeData(true);
       simulator.submitOrder(100, 10, 'BUY', currentTime);
 
       let status = simulator.getPendingOrdersStatus();
       expect(status.totalOrders).toBe(1);
 
-      // Execute orders
-      simulator.getExecutableOrders(currentTime + 5000);
+      // Execute orders (10 seconds to account for all latency types)
+      simulator.getExecutableOrders(currentTime + 10000);
 
       status = simulator.getPendingOrdersStatus();
       expect(status.totalOrders).toBe(0);
@@ -207,9 +209,10 @@ describe('LatencySimulator', () => {
     it('should apply low latency preset', () => {
       const preset = getLatencyPreset('low');
       simulator.updateConfig(preset);
+      simulator.enableRealtimeData(true);
 
       const result = simulator.calculateLatency();
-      expect(result.totalLatency).toBeLessThan(1000); // Less than 1 second
+      expect(result.totalLatency).toBeLessThan(1000);
     });
 
     it('should apply medium latency preset', () => {
@@ -294,14 +297,15 @@ describe('LatencySimulator', () => {
 
     it('should support partial config updates', () => {
       const originalMax = simulator.getConfig().apiLatency.max;
+      const originalDistribution = simulator.getConfig().apiLatency.distribution;
       
       simulator.updateConfig({
-        apiLatency: { min: 50 } as Partial<LatencyConfig>,
+        apiLatency: { min: 50, max: originalMax, distribution: originalDistribution },
       });
 
       const config = simulator.getConfig();
       expect(config.apiLatency.min).toBe(50);
-      expect(config.apiLatency.max).toBe(originalMax); // Should preserve
+      expect(config.apiLatency.max).toBe(originalMax);
     });
   });
 

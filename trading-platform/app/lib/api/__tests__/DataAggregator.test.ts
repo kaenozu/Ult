@@ -24,75 +24,69 @@ describe('DataAggregator', () => {
   });
 
   describe('キャッシュ機能', () => {
-    it('データをキャッシュに保存して取得できる', () => {
+    it('fetchWithCacheでデータをキャッシュできる', async () => {
       const mockData: OHLCV[] = [
         { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
       ];
 
-      aggregator.cache.set('AAPL', mockData);
-      const cached = aggregator.cache.get('AAPL');
+      let fetchCount = 0;
+      const fetcher = () => {
+        fetchCount++;
+        return Promise.resolve(mockData);
+      };
 
-      expect(cached).toEqual(mockData);
+      const result1 = await aggregator.fetchWithCache('AAPL', fetcher);
+      const result2 = await aggregator.fetchWithCache('AAPL', fetcher);
+
+      expect(result1).toEqual(mockData);
+      expect(result2).toEqual(mockData);
+      expect(fetchCount).toBe(1);
     });
 
-    it('TTLが切れたキャッシュはnullを返す', () => {
+    it('TTLを指定してキャッシュできる', async () => {
       const mockData: OHLCV[] = [
         { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
       ];
 
-      aggregator.cache.set('AAPL', mockData, 1); // 1ms TTL
-      // 短い待機時間を追加してTTLを確実に切れるようにする
-      return new Promise(resolve => setTimeout(resolve, 10)).then(() => {
-        const cached = aggregator.cache.get('AAPL');
-        expect(cached).toBeNull();
-      });
+      fetchMock.mockResolvedValueOnce(mockData);
+
+      const result = await aggregator.fetchWithCache('AAPL', () => Promise.resolve(mockData), 1000);
+      expect(result).toEqual(mockData);
     });
 
-    it('キャッシュをクリアできる', () => {
-      const mockData: OHLCV[] = [
-        { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
-      ];
-
-      aggregator.cache.set('AAPL', mockData);
-      aggregator.cache.clear();
-      const cached = aggregator.cache.get('AAPL');
-
-      expect(cached).toBeNull();
+    it('invalidateAllでキャッシュをクリアできる', () => {
+      aggregator.invalidateAll();
+      const stats = aggregator.getStats();
+      expect(stats.cacheSize).toBe(0);
     });
   });
 
   describe('バッチ処理', () => {
-    it('複数のリクエストをバッチで処理できる', async () => {
-      const mockData: Record<string, OHLCV[]> = {
-        AAPL: [{ open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' }],
-        GOOGL: [{ open: 150, high: 155, low: 145, close: 152, volume: 2000, date: '2024-01-01', symbol: 'GOOGL' }],
-      };
-
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockData,
-      });
-
-      const results = await Promise.all([
-        aggregator.fetchData('AAPL'),
-        aggregator.fetchData('GOOGL'),
+    it('fetchBatchで複数のキーをバッチ取得できる', async () => {
+      const mockData = new Map([
+        ['AAPL', [{ open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' }]],
+        ['GOOGL', [{ open: 150, high: 155, low: 145, close: 152, volume: 2000, date: '2024-01-01', symbol: 'GOOGL' }]],
       ]);
 
-      expect(results[0]).toEqual(mockData.AAPL);
-      expect(results[1]).toEqual(mockData.GOOGL);
-    });
-
-    it('バッチサイズ制限を尊重する', async () => {
-      const maxBatchSize = 5;
-      const symbols = Array.from({ length: 10 }, (_, i) => `SYM${i}`);
-
-      const results = await Promise.all(
-        symbols.map(symbol => aggregator.fetchData(symbol))
+      const result = await aggregator.fetchBatch(
+        ['AAPL', 'GOOGL'],
+        (keys) => {
+          const data = new Map();
+          for (const key of keys) {
+            data.set(key, mockData.get(key));
+          }
+          return Promise.resolve(data);
+        }
       );
 
-      expect(results).toHaveLength(10);
-      // バッチ処理が正しく行われたことを確認
-      expect(fetchMock).toHaveBeenCalled();
+      expect(result.size).toBe(2);
+      expect(result.get('AAPL')).toBeDefined();
+      expect(result.get('GOOGL')).toBeDefined();
+    });
+
+    it('空のキー配列で空のMapを返す', async () => {
+      const result = await aggregator.fetchBatch([], () => Promise.resolve(new Map()));
+      expect(result.size).toBe(0);
     });
   });
 
@@ -102,79 +96,71 @@ describe('DataAggregator', () => {
         { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
       ];
 
-      fetchMock.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockData,
-      });
+      let fetchCount = 0;
+      const fetcher = () => {
+        fetchCount++;
+        return Promise.resolve(mockData);
+      };
 
       const [result1, result2] = await Promise.all([
-        aggregator.fetchData('AAPL'),
-        aggregator.fetchData('AAPL'),
+        aggregator.fetchWithCache('AAPL', fetcher),
+        aggregator.fetchWithCache('AAPL', fetcher),
       ]);
 
       expect(result1).toEqual(mockData);
       expect(result2).toEqual(mockData);
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchCount).toBe(1);
     });
   });
 
   describe('エラーハンドリング', () => {
     it('ネットワークエラーを適切に処理する', async () => {
-      fetchMock.mockRejectedValueOnce(new Error('Network error'));
-
-      await expect(aggregator.fetchData('AAPL')).rejects.toThrow('Network error');
+      await expect(
+        aggregator.fetchWithCache('AAPL', () => Promise.reject(new Error('Network error')))
+      ).rejects.toThrow('Network error');
     });
 
     it('APIエラーを適切に処理する', async () => {
-      fetchMock.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-      });
-
-      await expect(aggregator.fetchData('AAPL')).rejects.toThrow();
+      await expect(
+        aggregator.fetchWithCache('AAPL', () => Promise.reject(new Error('Internal Server Error')))
+      ).rejects.toThrow();
     });
   });
 
   describe('レート制限', () => {
-    it('レート制限を尊重する', async () => {
+    it('統計情報を取得できる', async () => {
       const mockData: OHLCV[] = [
         { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
       ];
 
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockData,
-      });
+      await aggregator.fetchWithCache('AAPL', () => Promise.resolve(mockData));
+      const stats = aggregator.getStats();
 
-      // 多数のリクエストを送信
-      const requests = Array.from({ length: 100 }, () => aggregator.fetchData('AAPL'));
-      await Promise.all(requests);
-
-      // レート制限が適用されていることを確認
-      expect(fetchMock).toHaveBeenCalled();
+      expect(stats.totalRequests).toBe(1);
+      expect(stats.cacheMisses).toBe(1);
+      expect(stats.cacheSize).toBe(1);
     });
   });
 
   describe('優先度キュー', () => {
-    it('優先度の高いリクエストを先に処理する', async () => {
+    it('fetchWithPriorityで優先度を指定できる', async () => {
       const mockData: OHLCV[] = [
         { open: 100, high: 105, low: 95, close: 102, volume: 1000, date: '2024-01-01', symbol: 'AAPL' },
       ];
 
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockData,
-      });
+      const result = await aggregator.fetchWithPriority(['AAPL'], 'high', () => Promise.resolve(mockData));
+      expect(result).toBeInstanceOf(Map);
+      expect((result as Map<string, OHLCV>).get('AAPL')).toEqual(mockData[0]);
+    });
+  });
 
-      // 優先度の異なるリクエストを送信
-      const results = await Promise.all([
-        aggregator.fetchData('LOW', { priority: 1 }),
-        aggregator.fetchData('HIGH', { priority: 10 }),
-        aggregator.fetchData('MEDIUM', { priority: 5 }),
-      ]);
-
-      expect(results).toHaveLength(3);
+  describe('統計情報', () => {
+    it('初期状態で統計がゼロである', () => {
+      const stats = aggregator.getStats();
+      expect(stats.cacheHits).toBe(0);
+      expect(stats.cacheMisses).toBe(0);
+      expect(stats.totalRequests).toBe(0);
+      expect(stats.cacheSize).toBe(0);
     });
   });
 });

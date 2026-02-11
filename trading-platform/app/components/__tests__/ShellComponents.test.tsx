@@ -6,7 +6,12 @@ jest.mock('@/app/store/tradingStore', () => ({
     useTradingStore: jest.fn()
 }));
 
+jest.mock('@/app/store/themeStore', () => ({
+    useThemeStore: jest.fn()
+}));
+
 import { useTradingStore } from '@/app/store/tradingStore';
+import { useThemeStore } from '@/app/store/themeStore';
 import { LeftSidebar } from '../LeftSidebar';
 import { RightSidebar } from '../RightSidebar';
 import { BottomPanel } from '../BottomPanel';
@@ -19,6 +24,9 @@ jest.mock('../SignalPanel', () => ({ SignalPanel: () => <div data-testid="Signal
 jest.mock('../OrderPanel', () => ({ OrderPanel: () => <div data-testid="OrderPanel" /> }));
 jest.mock('../PositionTable', () => ({ PositionTable: () => <div data-testid="PositionTable" /> }));
 jest.mock('../HistoryTable', () => ({ HistoryTable: () => <div data-testid="HistoryTable" /> }));
+jest.mock('../AlertPanel', () => ({ AlertPanel: () => <div data-testid="AlertPanel" /> }));
+jest.mock('../DataQualityPanel', () => ({ DataQualityPanel: () => <div data-testid="DataQualityPanel" /> }));
+jest.mock('../DataDelayBadge', () => ({ DataDelayBadge: () => <span data-testid="DataDelayBadge" /> }));
 
 // Mock Lucide icons
 jest.mock('lucide-react', () => ({
@@ -27,7 +35,15 @@ jest.mock('lucide-react', () => ({
     FileText: () => <span data-testid="icon" />,
     Filter: () => <span data-testid="icon" />,
     Moon: () => <span data-testid="icon" />,
-    Sun: () => <span data-testid="icon" />
+    Sun: () => <span data-testid="icon" />,
+    Brain: () => <span data-testid="icon" />,
+    Database: () => <span data-testid="icon" />,
+    TrendingUp: () => <span data-testid="icon" />,
+    BookOpen: () => <span data-testid="icon" />,
+    Target: () => <span data-testid="icon" />,
+    Activity: () => <span data-testid="icon" />,
+    Globe: () => <span data-testid="icon" />,
+    Settings2: () => <span data-testid="icon" />
 }));
 
 jest.mock('next/navigation', () => ({
@@ -75,7 +91,7 @@ describe('Shell Components', () => {
             expect(screen.getByTestId('SignalPanel')).toBeInTheDocument();
             expect(screen.queryByTestId('OrderPanel')).not.toBeInTheDocument();
 
-            fireEvent.click(screen.getByText('注文パネル'));
+            fireEvent.click(screen.getByText('注文'));
             expect(screen.getByTestId('OrderPanel')).toBeInTheDocument();
             expect(screen.queryByTestId('SignalPanel')).not.toBeInTheDocument();
 
@@ -137,29 +153,27 @@ describe('Shell Components', () => {
             showSMA: true,
             setShowSMA: jest.fn(),
             showBollinger: false,
-            setShowBollinger: jest.fn()
+            setShowBollinger: jest.fn(),
+            interval: 'D',
+            setInterval: jest.fn()
         };
 
         it('renders stock info and controls', () => {
             render(<ChartToolbar {...props} />);
             expect(screen.getByText('TEST')).toBeInTheDocument();
             expect(screen.getByText('SMA')).toBeInTheDocument();
-            expect(screen.getByText('BB')).toBeInTheDocument();
         });
 
         it('toggles indicators', () => {
             render(<ChartToolbar {...props} />);
             fireEvent.click(screen.getByText('SMA'));
             expect(props.setShowSMA).toHaveBeenCalledWith(false);
-
-            fireEvent.click(screen.getByText('BB'));
-            expect(props.setShowBollinger).toHaveBeenCalledWith(true);
         });
     });
 
     describe('Navigation', () => {
         beforeEach(() => {
-            (useTradingStore as unknown as jest.Mock).mockReturnValue({
+            (useThemeStore as unknown as jest.Mock).mockReturnValue({
                 theme: 'dark',
                 toggleTheme: jest.fn()
             });

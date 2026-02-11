@@ -339,28 +339,31 @@ describe('PredictiveAnalyticsEngine Integration', () => {
   });
 
   describe('Model Validation', () => {
-    test('should validate prediction after time period', () => {
+    test('should update and retrieve model accuracy', () => {
       const symbol = 'BTCUSD';
       const data = generateOHLCVData(100);
       
-      const prediction = engine.predict(symbol, data);
+      engine.predict(symbol, data);
       
-      // 実際の価格を模擬（予測が正しかったとする）
-      const actualPrice = prediction.signal.type.includes('BUY') 
-        ? prediction.signal.entryPrice * 1.05
-        : prediction.signal.entryPrice * 0.95;
+      const predictedReturn = 0.05;
+      const actualReturn = 0.06;
 
-      // バリデーションを実行
-      const validation = engine.validatePrediction(
-        symbol,
-        prediction.timestamp,
-        actualPrice
-      );
+      engine.updateModelAccuracy(symbol, predictedReturn, actualReturn);
 
-      expect(validation).toBeDefined();
-      expect(validation).toHaveProperty('correct');
-      expect(validation).toHaveProperty('actualReturn');
-      expect(validation).toHaveProperty('predictedReturn');
+      const accuracy = engine.getModelAccuracy(symbol);
+      expect(accuracy).toBeGreaterThanOrEqual(0);
+      expect(accuracy).toBeLessThanOrEqual(1);
+    });
+
+    test('should track accuracy over multiple predictions', () => {
+      const symbol = 'ETHUSD';
+
+      engine.updateModelAccuracy(symbol, 0.05, 0.06);
+      engine.updateModelAccuracy(symbol, 0.03, -0.02);
+      engine.updateModelAccuracy(symbol, -0.02, -0.03);
+
+      const accuracy = engine.getModelAccuracy(symbol);
+      expect(accuracy).toBe(2 / 3);
     });
   });
 

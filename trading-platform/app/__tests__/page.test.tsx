@@ -64,8 +64,8 @@ describe('Workstation Page - Initial State', () => {
     // Mock useStockData returns null selectedStock by default
     render(<Workstation />);
     
-    expect(screen.getByText('page.noStockSelected')).toBeInTheDocument();
-    expect(screen.getByText('page.noStockSelectedDescription')).toBeInTheDocument();
+    expect(screen.getByText('銘柄が未選択です')).toBeInTheDocument();
+    expect(screen.getByText('ウォッチリストから銘柄を選択するか、検索してください。')).toBeInTheDocument();
   });
 
   it('does not show placeholder when a stock is selected', () => {
@@ -87,6 +87,6 @@ describe('Workstation Page - Initial State', () => {
 
     render(<Workstation />);
     
-    expect(screen.queryByText('page.noStockSelected')).not.toBeInTheDocument();
+    expect(screen.queryByText('銘柄が未選択です')).not.toBeInTheDocument();
   });
 });
