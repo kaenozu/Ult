@@ -1,7 +1,7 @@
 import { useUIStore } from '../store/uiStore';
 import { useWatchlistStore } from '../store/watchlistStore';
 import { usePortfolioStore } from '../store/portfolioStore';
-import { Signal, Stock } from '../types';
+import { Stock } from '../types';
 
 describe('tradingStore (split stores)', () => {
   beforeEach(() => {

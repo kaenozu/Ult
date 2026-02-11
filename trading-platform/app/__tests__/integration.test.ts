@@ -37,7 +37,8 @@ describe('Integration Tests', () => {
 
   describe('Market Data to Signals Flow', () => {
     it('should process market data and generate signals', async () => {
-      const marketService = new MarketDataService();
+      // MarketDataService is instantiated for side effects
+      void new MarketDataService();
       const testData = [
         {
           date: '2024-01-01',
@@ -57,7 +58,12 @@ describe('Integration Tests', () => {
         },
       ];
 
-      const mockPrediction: any = {
+      const mockPrediction: {
+        symbol: string;
+        prediction: { direction: string; confidence: number; volatilityForecast: number };
+        signal: { rationale: string[]; timeHorizon: string };
+        features: { sma20: number };
+      } = {
         symbol: 'TEST',
         prediction: { direction: 'UP', confidence: 0.8, volatilityForecast: 20 },
         signal: { rationale: ['Test rationale'], timeHorizon: 'medium' },
@@ -111,8 +117,8 @@ describe('Integration Tests', () => {
     it('should create and trigger alerts', () => {
       const alertName = 'Test Alert';
       const symbol = 'TEST';
-      const type = 'price' as any;
-      const operator = 'above' as any;
+      const type: 'price' | 'volume' | 'change' = 'price';
+      const operator: 'above' | 'below' | 'equals' = 'above';
       const value = 105;
 
       platform.createAlert(alertName, symbol, type, operator, value);

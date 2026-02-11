@@ -1,6 +1,5 @@
 import { render, screen } from '@testing-library/react';
 import Workstation from '../page';
-import { useWatchlistStore } from '../store/watchlistStore';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
