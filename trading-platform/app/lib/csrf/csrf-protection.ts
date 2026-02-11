@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { randomBytes } from 'crypto';
+import { randomBytes, timingSafeEqual } from 'crypto';
 
 /**
  * CSRF Token Manager
@@ -21,15 +21,18 @@ export function generateCSRFToken(): string {
  * Timing-safe string comparison to prevent timing attacks
  */
 function timingSafeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
+  // Enforce expected length (64 hex characters = 32 bytes * 2)
+  const expectedLength = CSRF_TOKEN_LENGTH * 2;
+
+  if (a.length !== expectedLength || b.length !== expectedLength) {
     return false;
   }
-  
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+
+  try {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  } catch {
+    return false;
   }
-  return result === 0;
 }
 
 /**
