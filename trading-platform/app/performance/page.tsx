@@ -81,7 +81,7 @@ function PerformanceDashboardContent() {
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   // AIシグナル用フィルター
-  const [minConfidence, setMinConfidence] = useState(60);
+  const [minConfidence, setMinConfidence] = useState(30);
 
   // ソート
   const [sortField, setSortField] = useState<SortField>('rank');
