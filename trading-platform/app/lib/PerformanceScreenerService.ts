@@ -12,6 +12,13 @@ import { optimizedAccuracyService } from './OptimizedAccuracyService';
 import { consensusSignalService } from './ConsensusSignalService';
 import { mlPredictionService } from './mlPrediction';
 
+// レビュー対応: マジックナンバーを定数化
+const MIN_DATA_REQUIRED = 50;  // 最低必要データ件数
+const DUAL_SCORE_WEIGHT_PERF = 0.5;  // パフォーマンススコア重み
+const DUAL_SCORE_WEIGHT_AI = 0.5;    // AI信頼度重み
+const DUAL_SCORE_BONUS_BUY = 10;     // BUYボーナス
+const DUAL_SCORE_BONUS_SELL = 5;     // SELLボーナス
+
 /**
  * パフォーマンススコアリング結果
  */
@@ -248,7 +255,7 @@ export class PerformanceScreenerService {
       market = 'all',
       lookbackDays = 90,
       topN = 20,
-      minConfidence = 60,
+      minConfidence = 30,  // レビュー対応: UIと一貫性を持たせるため30に変更
       minTrades = 3,
       minDualScore = 30,
       minPredictedChange = 0,
@@ -271,11 +278,11 @@ export class PerformanceScreenerService {
     const dualMatchSymbols: string[] = [];
 
     // 診断カウンター
+    // 診断カウンター（レビュー対応: passedAI未使用のため削除）
     let skipDataInsufficient = 0;
     let skipFetchError = 0;
     let skipLowTrades = 0;
     let passedPerf = 0;
-    let passedAI = 0;
 
     for (let i = 0; i < filteredSources.length; i++) {
       const ds = filteredSources[i];
@@ -283,7 +290,6 @@ export class PerformanceScreenerService {
         // 1回のデータ取得を共有
         // データ最低50件は必要。lookbackDaysに足りない場合はあるだけ使う
         const data = await ds.fetchData();
-        const MIN_DATA_REQUIRED = 50;
         if (data.length < MIN_DATA_REQUIRED) {
           skipDataInsufficient++;
           console.log(`[DualDiag] ${ds.symbol}: SKIP (data=${data.length} < min=${MIN_DATA_REQUIRED})`);
@@ -368,8 +374,9 @@ export class PerformanceScreenerService {
         }
 
         // デュアルマッチ判定: 全銘柄を対象に複合スコアで評価（取引数フィルタとは独立）
-        const buyBonus = finalType === 'BUY' ? 10 : (finalType === 'SELL' ? 5 : 0);
-        const dualScore = (pScoreValue * 0.5) + (finalConfidence * 0.5) + buyBonus;
+        // レビュー対応: マジックナンバーを定数化
+        const buyBonus = finalType === 'BUY' ? DUAL_SCORE_BONUS_BUY : (finalType === 'SELL' ? DUAL_SCORE_BONUS_SELL : 0);
+        const dualScore = (pScoreValue * DUAL_SCORE_WEIGHT_PERF) + (finalConfidence * DUAL_SCORE_WEIGHT_AI) + buyBonus;
 
         const isDualCandidate =
           dualScore >= minDualScore &&
@@ -620,7 +627,7 @@ export class PerformanceScreenerService {
       market = 'all',
       topN = 20,
       lookbackDays = 90,
-      minConfidence = 60,
+      minConfidence = 30,  // レビュー対応: UIと一貫性を持たせるため30に変更
     } = config;
 
     // 市場でフィルタリング
