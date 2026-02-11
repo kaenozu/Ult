@@ -2,6 +2,42 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
+  // Image optimization
+  images: {
+    formats: ['image/webp', 'image/avif'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.yahoo.com',
+      },
+    ],
+  },
+  
+  // Bundle optimization
+  experimental: {
+    // Optimize package imports for common libraries
+    optimizePackageImports: [
+      'lucide-react',
+      'chart.js',
+      'react-chartjs-2',
+    ],
+  },
+  
+  // Webpack optimization
+  webpack: (config, { isServer }) => {
+    // Optimize TensorFlow.js loading
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@tensorflow/tfjs': '@tensorflow/tfjs/dist/tf.min.js',
+      };
+    }
+    return config;
+  },
+  
+  // Compression
+  compress: true,
+
   async headers() {
     return [
       {
