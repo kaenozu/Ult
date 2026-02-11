@@ -115,6 +115,7 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                 onClick={() => setShowSettings(!showSettings)}
                 className="p-1.5 hover:bg-[#233648] rounded transition-colors"
                 title="設定"
+                aria-label="設定"
               >
                 <Settings className="w-4 h-4 text-[#92adc9]" />
               </button>
@@ -122,6 +123,7 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                 onClick={() => setIsOpen(false)}
                 className="p-1.5 hover:bg-[#233648] rounded transition-colors"
                 title="閉じる"
+                aria-label="閉じる"
               >
                 <X className="w-4 h-4 text-[#92adc9]" />
               </button>
@@ -276,6 +278,7 @@ export function NotificationCenter({ onClose }: NotificationCenterProps) {
                 <button
                   key={value}
                   onClick={() => setFilterType(value)}
+                  aria-pressed={filterType === value}
                   className={cn(
                     'px-2.5 py-1 text-xs rounded transition-colors',
                     filterType === value
