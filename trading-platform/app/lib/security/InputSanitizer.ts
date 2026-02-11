@@ -430,7 +430,7 @@ export function sanitizeObject<T extends Record<string, string>>(
 ): Record<keyof T, SanitizationResult> {
   const results: Record<string, SanitizationResult> = {};
   
-  for (const [field, value] of Object.entries(obj) as [keyof T, any]) {
+  for (const [field, value] of Object.entries(obj) as [keyof T, unknown][]) {
     const config = fieldConfig[field];
     if (!config) {
       results[field as string] = sanitizeText(value as string);
