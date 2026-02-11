@@ -4,7 +4,7 @@ import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
 // Mock stores used by StockTable
-const mockWatchlistStore = {
+const mockWatchlistStore: { watchlist: Stock[]; removeFromWatchlist: jest.Mock } = {
   watchlist: [],
   removeFromWatchlist: jest.fn(),
 };
@@ -39,7 +39,7 @@ describe('StockTable Component - Accessibility', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    mockWatchlistStore.watchlist = [...mockStocks] as any;
+    mockWatchlistStore.watchlist = [...mockStocks];
   });
 
   it('allows selecting a stock via keyboard (Enter key)', () => {

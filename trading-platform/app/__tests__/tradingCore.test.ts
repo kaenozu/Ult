@@ -104,12 +104,11 @@ describe('UnifiedTradingPlatform', () => {
       const platform = new UnifiedTradingPlatform();
       await platform.start();
       
-      // Simulate some activity
+// Simulate some activity
       await platform.placeOrder('BTCUSD', 'BUY', 0.1);
-      
-      const initialPositions = platform.getPortfolio().positions.length;
+
       platform.reset();
-      
+
       expect(platform.getPortfolio().positions.length).toBe(0);
       expect(platform.getSignals()).toEqual([]);
     });
