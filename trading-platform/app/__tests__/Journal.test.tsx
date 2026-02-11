@@ -1,16 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import Journal from '../journal/page';
-import { useTradingStore } from '../store/tradingStore';
 import '@testing-library/jest-dom';
 
-interface MockStore {
-    setState: (state: Partial<ReturnType<typeof useTradingStore>>) => void;
-}
-
-// Mock Dependencies
 jest.mock('../components/Navigation', () => ({
     Navigation: () => <div data-testid="navigation">Navigation</div>,
 }));
+
+jest.mock('../store/journalStore', () => ({
+    useJournalStore: jest.fn(),
+}));
+
+import { useJournalStore } from '../store/journalStore';
+import Journal from '../journal/page';
+
+const mockUseJournalStore = useJournalStore as jest.MockedFunction<typeof useJournalStore>;
 
 describe('Journal Page', () => {
     beforeEach(() => {
@@ -18,15 +20,18 @@ describe('Journal Page', () => {
     });
 
     it('renders empty stats and empty state message when journal is empty', () => {
-        (useTradingStore as unknown as MockStore).setState({
+        mockUseJournalStore.mockReturnValue({
             journal: [],
+            addJournalEntry: jest.fn(),
+            updateJournalEntry: jest.fn(),
+            deleteJournalEntry: jest.fn(),
         });
 
         render(<Journal />);
 
-        expect(screen.getByText('トレードジャーナル')).toBeInTheDocument();
+        expect(screen.getAllByText('トレードジャーナル').length).toBeGreaterThan(0);
         expect(screen.getByText('Win Rate')).toBeInTheDocument();
-        expect(screen.getByText('0.0%')).toBeInTheDocument(); // Initial win rate
+        expect(screen.getByText('0.0%')).toBeInTheDocument();
         expect(screen.getByText('No closed trades yet')).toBeInTheDocument();
     });
 
@@ -64,27 +69,28 @@ describe('Journal Page', () => {
             }
         ];
 
-        (useTradingStore as unknown as MockStore).setState({
+        mockUseJournalStore.mockReturnValue({
             journal: mockJournal,
+            addJournalEntry: jest.fn(),
+            updateJournalEntry: jest.fn(),
+            deleteJournalEntry: jest.fn(),
         });
 
         render(<Journal />);
 
-        // Win Rate: 1 win, 1 loss, 1 zero = 33.3%
         expect(screen.getAllByText('33.3%')[0]).toBeInTheDocument();
-
-        // Total Profit: 10000 - 500 = 9500
         expect(screen.getAllByText(/\+.*9,500/)[0]).toBeInTheDocument();
-
-        // Trades Tab should show entries
         expect(screen.getByText('7203')).toBeInTheDocument();
         expect(screen.getByText('AAPL')).toBeInTheDocument();
         expect(screen.getByText('Trades (3)')).toBeInTheDocument();
     });
 
     it('switches between Trades and Analysis tabs', () => {
-        (useTradingStore as unknown as MockStore).setState({
+        mockUseJournalStore.mockReturnValue({
             journal: [],
+            addJournalEntry: jest.fn(),
+            updateJournalEntry: jest.fn(),
+            deleteJournalEntry: jest.fn(),
         });
 
         render(<Journal />);
@@ -102,41 +108,43 @@ describe('Journal Page', () => {
     });
 
     it('calculates Profit Factor correctly (Infinity, zero win, and regular)', () => {
-        // Only wins
-        (useTradingStore as unknown as MockStore).setState({
-            journal: [
-                { id: '1', status: 'CLOSED', profit: 1000 },
-            ],
+        mockUseJournalStore.mockReturnValue({
+            journal: [{ id: '1', status: 'CLOSED', profit: 1000 }],
+            addJournalEntry: jest.fn(),
+            updateJournalEntry: jest.fn(),
+            deleteJournalEntry: jest.fn(),
         });
         const { rerender } = render(<Journal />);
         expect(screen.getByText('∞')).toBeInTheDocument();
 
-        // Zero wins (avoid infinity but check 0.00)
-        (useTradingStore as unknown as MockStore).setState({
-            journal: [
-                { id: '1', status: 'CLOSED', profit: -1000 },
-            ],
+        mockUseJournalStore.mockReturnValue({
+            journal: [{ id: '1', status: 'CLOSED', profit: -1000 }],
+            addJournalEntry: jest.fn(),
+            updateJournalEntry: jest.fn(),
+            deleteJournalEntry: jest.fn(),
         });
         rerender(<Journal />);
         expect(screen.getAllByText('0.00')[0]).toBeInTheDocument();
 
-        // One win, one loss
-        (useTradingStore as unknown as MockStore).setState({
+        mockUseJournalStore.mockReturnValue({
             journal: [
                 { id: '1', status: 'CLOSED', profit: 1000 },
                 { id: '2', status: 'CLOSED', profit: -500 },
             ],
+            addJournalEntry: jest.fn(),
+            updateJournalEntry: jest.fn(),
+            deleteJournalEntry: jest.fn(),
         });
         rerender(<Journal />);
-        // avgWin = 1000, avgLoss = 500, profitFactor = 2.00
         expect(screen.getAllByText('2.00')[0]).toBeInTheDocument();
     });
 
     it('renders net loss correctly', () => {
-        (useTradingStore as unknown as MockStore).setState({
-            journal: [
-                { id: '1', status: 'CLOSED', profit: -5000, symbol: 'LOSS' },
-            ],
+        mockUseJournalStore.mockReturnValue({
+            journal: [{ id: '1', status: 'CLOSED', profit: -5000, symbol: 'LOSS' }],
+            addJournalEntry: jest.fn(),
+            updateJournalEntry: jest.fn(),
+            deleteJournalEntry: jest.fn(),
         });
 
         render(<Journal />);
@@ -144,10 +152,11 @@ describe('Journal Page', () => {
     });
 
     it('handles trades without profit value', () => {
-        (useTradingStore as unknown as MockStore).setState({
-            journal: [
-                { id: '1', status: 'CLOSED', symbol: 'TEST' }, // profit undefined
-            ],
+        mockUseJournalStore.mockReturnValue({
+            journal: [{ id: '1', status: 'CLOSED', symbol: 'TEST' }],
+            addJournalEntry: jest.fn(),
+            updateJournalEntry: jest.fn(),
+            deleteJournalEntry: jest.fn(),
         });
         render(<Journal />);
         expect(screen.getByText('TEST')).toBeInTheDocument();

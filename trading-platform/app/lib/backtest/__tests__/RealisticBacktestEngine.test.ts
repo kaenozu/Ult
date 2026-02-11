@@ -23,6 +23,7 @@ describe('RealisticBacktestEngine', () => {
         useRealisticSlippage: true,
         averageDailyVolume: 1000000,
         marketImpactCoefficient: 0.1,
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -44,12 +45,14 @@ describe('RealisticBacktestEngine', () => {
         initialCapital: 10000,
         useRealisticSlippage: true,
         averageDailyVolume: 1000000,
+        allowShort: true,
       };
 
       const largeOrderConfig: Partial<RealisticBacktestConfig> = {
         initialCapital: 1000000,
         useRealisticSlippage: true,
         averageDailyVolume: 1000000,
+        allowShort: true,
       };
 
       const smallEngine = new RealisticBacktestEngine(smallOrderConfig);
@@ -79,6 +82,7 @@ describe('RealisticBacktestEngine', () => {
         useRealisticSlippage: true,
         useTimeOfDaySlippage: true,
         marketOpenSlippageMultiplier: 1.5,
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -106,6 +110,7 @@ describe('RealisticBacktestEngine', () => {
         useRealisticSlippage: true,
         useTimeOfDaySlippage: true,
         marketCloseSlippageMultiplier: 1.3,
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -128,6 +133,7 @@ describe('RealisticBacktestEngine', () => {
         useVolatilitySlippage: true,
         volatilityWindow: 20,
         volatilitySlippageMultiplier: 2.0,
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -157,6 +163,7 @@ describe('RealisticBacktestEngine', () => {
           { volumeThreshold: 0, rate: 0.1 },
           { volumeThreshold: 100000, rate: 0.05 },
         ],
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -180,6 +187,7 @@ describe('RealisticBacktestEngine', () => {
           { volumeThreshold: 100000, rate: 0.08 },
           { volumeThreshold: 500000, rate: 0.05 },
         ],
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -204,6 +212,7 @@ describe('RealisticBacktestEngine', () => {
         useRealisticSlippage: true,
         useTieredCommissions: true,
         spread: 0.02,
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -223,6 +232,7 @@ describe('RealisticBacktestEngine', () => {
       const config: Partial<RealisticBacktestConfig> = {
         initialCapital: 100000,
         useRealisticSlippage: true,
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -245,6 +255,7 @@ describe('RealisticBacktestEngine', () => {
         initialCapital: 100000,
         useRealisticSlippage: true,
         useVolatilitySlippage: true,
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -282,6 +293,7 @@ describe('RealisticBacktestEngine', () => {
           { volumeThreshold: 100000, rate: 0.08 },
           { volumeThreshold: 500000, rate: 0.05 },
         ],
+        allowShort: true,
       };
 
       engine = new RealisticBacktestEngine(config);
@@ -309,6 +321,7 @@ describe('RealisticBacktestEngine', () => {
         useVolatilitySlippage: true,
         useTieredCommissions: true,
         averageDailyVolume: 500000,
+        allowShort: true,
       };
 
       const basicConfig: Partial<RealisticBacktestConfig> = {
@@ -317,6 +330,7 @@ describe('RealisticBacktestEngine', () => {
         useTimeOfDaySlippage: false,
         useVolatilitySlippage: false,
         useTieredCommissions: false,
+        allowShort: true,
       };
 
       const realisticEngine = new RealisticBacktestEngine(realisticConfig);

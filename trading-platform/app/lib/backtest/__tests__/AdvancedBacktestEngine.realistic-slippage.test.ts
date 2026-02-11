@@ -19,8 +19,9 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
     it('should use basic slippage when realistic model is disabled', async () => {
       const config: Partial<BacktestConfig> = {
         initialCapital: 100000,
-        slippage: 0.1, // 0.1%
+        slippage: 0.1,
         useRealisticSlippage: false,
+        allowShort: true,
       };
 
       engine = new AdvancedBacktestEngine(config);
@@ -37,9 +38,10 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
     it('should apply realistic slippage considering order size', async () => {
       const config: Partial<BacktestConfig> = {
         initialCapital: 100000,
-        slippage: 0.05, // 0.05% base
+        slippage: 0.05,
         useRealisticSlippage: true,
-        averageDailyVolume: 1000000, // 1M shares daily volume
+        averageDailyVolume: 1000000,
+        allowShort: true,
       };
 
       engine = new AdvancedBacktestEngine(config);
@@ -57,8 +59,9 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
       const config: Partial<BacktestConfig> = {
         initialCapital: 100000,
         slippage: 0.05,
-        spread: 0.02, // 0.02% spread
+        spread: 0.02,
         useRealisticSlippage: true,
+        allowShort: true,
       };
 
       engine = new AdvancedBacktestEngine(config);
@@ -78,6 +81,7 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         slippage: 0.05,
         useRealisticSlippage: true,
         useTimeOfDaySlippage: true,
+        allowShort: true,
       };
 
       // Create data with specific times (market open and close)
@@ -100,6 +104,7 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         slippage: 0.05,
         useRealisticSlippage: true,
         useVolatilitySlippage: true,
+        allowShort: true,
       };
 
       // Create data with high volatility periods
@@ -121,8 +126,9 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
     it('should use basic commission when tiered model is disabled', async () => {
       const config: Partial<BacktestConfig> = {
         initialCapital: 100000,
-        commission: 0.1, // 0.1%
+        commission: 0.1,
         useTieredCommissions: false,
+        allowShort: true,
       };
 
       engine = new AdvancedBacktestEngine(config);
@@ -143,8 +149,9 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
     it('should apply tiered commissions based on volume', async () => {
       const config: Partial<BacktestConfig> = {
         initialCapital: 100000,
-        commission: 0.1, // 0.1% base
+        commission: 0.1,
         useTieredCommissions: true,
+        allowShort: true,
       };
 
       engine = new AdvancedBacktestEngine(config);
@@ -165,12 +172,14 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         initialCapital: 10000,
         commission: 0.1,
         useTieredCommissions: true,
+        allowShort: true,
       };
 
       const highVolumeConfig: Partial<BacktestConfig> = {
         initialCapital: 1000000,
         commission: 0.1,
         useTieredCommissions: true,
+        allowShort: true,
       };
 
       const lowVolumeEngine = new AdvancedBacktestEngine(lowVolumeConfig);
@@ -203,6 +212,7 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         useVolatilitySlippage: true,
         useTieredCommissions: true,
         averageDailyVolume: 1000000,
+        allowShort: true,
       };
 
       const realisticEngine = new AdvancedBacktestEngine(realisticConfig);
@@ -223,13 +233,15 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         useTimeOfDaySlippage: true,
         useVolatilitySlippage: true,
         useTieredCommissions: true,
-        averageDailyVolume: 500000, // Lower volume = higher impact
+        averageDailyVolume: 500000,
+        allowShort: true,
       };
 
       const basicConfig: Partial<BacktestConfig> = {
         initialCapital: 100000,
         useRealisticSlippage: false,
         useTieredCommissions: false,
+        allowShort: true,
       };
 
       const realisticEngine = new AdvancedBacktestEngine(realisticConfig);
@@ -269,6 +281,7 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         transactionCostMarketCondition: 'normal',
         transactionCostSettlementType: 'same-day',
         transactionCostDailyVolume: 1000000,
+        allowShort: true,
       };
 
       engine = new AdvancedBacktestEngine(configWithCosts);
@@ -290,6 +303,7 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         transactionCostsEnabled: true,
         transactionCostBroker: 'SBI',
         market: 'japan',
+        allowShort: true,
       };
 
       const configUSA: Partial<BacktestConfig> = {
@@ -297,6 +311,7 @@ describe('AdvancedBacktestEngine - Realistic Slippage', () => {
         transactionCostsEnabled: true,
         transactionCostBroker: 'Rakuten',
         market: 'usa',
+        allowShort: true,
       };
 
       engine = new AdvancedBacktestEngine(configJapan);

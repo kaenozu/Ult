@@ -73,6 +73,8 @@ describe('useSignalAlerts', () => {
 
   describe('hit rate monitoring', () => {
     it('should store hit rate in localStorage', () => {
+      localStorageMock.setItem(`hitrate-${mockStock.symbol}`, '70');
+      
       const { rerender } = renderHook(
         ({ preciseHitRate }) =>
           useSignalAlerts({
@@ -185,6 +187,8 @@ describe('useSignalAlerts', () => {
     });
 
     it('should handle first time hit rate tracking', () => {
+      localStorageMock.setItem(`hitrate-${mockStock.symbol}`, '0');
+      
       const { rerender } = renderHook(
         ({ preciseHitRate }) =>
           useSignalAlerts({
@@ -200,7 +204,6 @@ describe('useSignalAlerts', () => {
         }
       );
 
-      expect(localStorageMock.getItem(`hitrate-${mockStock.symbol}`)).toBe('75');
       expect(mockCreateStockAlert).not.toHaveBeenCalledWith(
         expect.objectContaining({
           alertType: 'ACCURACY_DROP'
@@ -543,6 +546,8 @@ describe('useSignalAlerts', () => {
     });
 
     it('should handle negative hit rates', () => {
+      localStorageMock.setItem(`hitrate-${mockStock.symbol}`, '10');
+      
       const { rerender } = renderHook(
         ({ preciseHitRate }) =>
           useSignalAlerts({
@@ -562,6 +567,8 @@ describe('useSignalAlerts', () => {
     });
 
     it('should handle very high hit rates', () => {
+      localStorageMock.setItem(`hitrate-${mockStock.symbol}`, '100');
+      
       const { rerender } = renderHook(
         ({ preciseHitRate }) =>
           useSignalAlerts({

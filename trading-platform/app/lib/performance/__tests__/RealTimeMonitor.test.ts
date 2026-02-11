@@ -64,7 +64,6 @@ describe('RealTimeMonitor', () => {
     });
 
     it('should emit alert on threshold violation', (done) => {
-      // Set low threshold
       monitor.setThresholds({ maxDailyLoss: 0.01 });
 
       monitor.on('alert', (alert: MonitoringAlert) => {
@@ -73,10 +72,11 @@ describe('RealTimeMonitor', () => {
         done();
       });
 
-      // Create portfolio with daily loss
       const losingPortfolio = {
         ...mockPortfolio,
-        currentValue: 90000, // 10% loss
+        trades: [
+          { id: '1', symbol: 'AAPL', type: 'SELL' as const, price: 100, quantity: 100, timestamp: Date.now(), commission: 5, profit: -1500 },
+        ],
       };
 
       monitor.updatePortfolio(losingPortfolio);

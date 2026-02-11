@@ -1,8 +1,5 @@
 /**
  * @jest-environment node
- * 
- * Note: These tests use a simplified approach since validation.ts returns
- * NextResponse objects for errors rather than throwing traditional Errors.
  */
 
 import {
@@ -24,6 +21,7 @@ import {
   validateRiskLimits,
   buildCleanConfig,
 } from '../validation';
+import { ValidationError } from '../errors/AppError';
 
 describe('Validation Utilities', () => {
   describe('validateRequiredString', () => {
@@ -35,34 +33,24 @@ describe('Validation Utilities', () => {
       expect(validateRequiredString('  test  ', 'field')).toBe('test');
     });
 
-    it('should return Response for empty string', () => {
-      const result = validateRequiredString('', 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for empty string', () => {
+      expect(() => validateRequiredString('', 'field')).toThrow(ValidationError);
     });
 
-    it('should return Response for whitespace only', () => {
-      const result = validateRequiredString('   ', 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for whitespace only', () => {
+      expect(() => validateRequiredString('   ', 'field')).toThrow(ValidationError);
     });
 
-    it('should return Response for null', () => {
-      const result = validateRequiredString(null, 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for null', () => {
+      expect(() => validateRequiredString(null, 'field')).toThrow(ValidationError);
     });
 
-    it('should return Response for undefined', () => {
-      const result = validateRequiredString(undefined, 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for undefined', () => {
+      expect(() => validateRequiredString(undefined, 'field')).toThrow(ValidationError);
     });
 
-    it('should return Response for non-string', () => {
-      const result = validateRequiredString(123, 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for non-string', () => {
+      expect(() => validateRequiredString(123, 'field')).toThrow(ValidationError);
     });
   });
 
@@ -75,22 +63,16 @@ describe('Validation Utilities', () => {
       expect(validateNumber(42, 'field', { positive: true })).toBe(42);
     });
 
-    it('should return Response for non-number', () => {
-      const result = validateNumber('42', 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for non-number', () => {
+      expect(() => validateNumber('42', 'field')).toThrow(ValidationError);
     });
 
-    it('should return Response for zero with positive option', () => {
-      const result = validateNumber(0, 'field', { positive: true });
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for zero with positive option', () => {
+      expect(() => validateNumber(0, 'field', { positive: true })).toThrow(ValidationError);
     });
 
-    it('should return Response for negative with positive option', () => {
-      const result = validateNumber(-1, 'field', { positive: true });
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for negative with positive option', () => {
+      expect(() => validateNumber(-1, 'field', { positive: true })).toThrow(ValidationError);
     });
 
     it('should validate with min and max options', () => {
@@ -107,10 +89,8 @@ describe('Validation Utilities', () => {
       expect(validateBoolean(false, 'field')).toBe(false);
     });
 
-    it('should return Response for non-boolean', () => {
-      const result = validateBoolean('true', 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for non-boolean', () => {
+      expect(() => validateBoolean('true', 'field')).toThrow(ValidationError);
     });
   });
 
@@ -119,10 +99,8 @@ describe('Validation Utilities', () => {
       expect(validateArray([1, 2, 3], 'field')).toEqual([1, 2, 3]);
     });
 
-    it('should return Response for non-array', () => {
-      const result = validateArray('not array', 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for non-array', () => {
+      expect(() => validateArray('not array', 'field')).toThrow(ValidationError);
     });
   });
 
@@ -132,10 +110,8 @@ describe('Validation Utilities', () => {
       expect(validateObject(obj, 'field')).toEqual(obj);
     });
 
-    it('should return Response for null', () => {
-      const result = validateObject(null, 'field');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for null', () => {
+      expect(() => validateObject(null, 'field')).toThrow(ValidationError);
     });
   });
 
@@ -156,16 +132,12 @@ describe('Validation Utilities', () => {
       expect(validateSymbol('AAPL,MSFT,GOOGL')).toBe('AAPL,MSFT,GOOGL');
     });
 
-    it('should return Response for invalid characters', () => {
-      const result = validateSymbol('AAPL!');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid characters', () => {
+      expect(() => validateSymbol('AAPL!')).toThrow(ValidationError);
     });
 
-    it('should return Response for symbol too long', () => {
-      const result = validateSymbol('A'.repeat(25));
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for symbol too long', () => {
+      expect(() => validateSymbol('A'.repeat(25))).toThrow(ValidationError);
     });
   });
 
@@ -178,10 +150,8 @@ describe('Validation Utilities', () => {
       expect(validateOrderSide('SELL')).toBe('SELL');
     });
 
-    it('should return Response for invalid side', () => {
-      const result = validateOrderSide('HOLD');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid side', () => {
+      expect(() => validateOrderSide('HOLD')).toThrow(ValidationError);
     });
   });
 
@@ -194,10 +164,8 @@ describe('Validation Utilities', () => {
       expect(validateOrderType('LIMIT')).toBe('LIMIT');
     });
 
-    it('should return Response for invalid type', () => {
-      const result = validateOrderType('STOP');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid type', () => {
+      expect(() => validateOrderType('STOP')).toThrow(ValidationError);
     });
   });
 
@@ -214,10 +182,8 @@ describe('Validation Utilities', () => {
       expect(validateMarketType('')).toBe('usa');
     });
 
-    it('should return Response for invalid market', () => {
-      const result = validateMarketType('europe');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid market', () => {
+      expect(() => validateMarketType('europe')).toThrow(ValidationError);
     });
   });
 
@@ -230,10 +196,8 @@ describe('Validation Utilities', () => {
       expect(validateTradingAction('place_order')).toBe('place_order');
     });
 
-    it('should return Response for invalid action', () => {
-      const result = validateTradingAction('invalid');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid action', () => {
+      expect(() => validateTradingAction('invalid')).toThrow(ValidationError);
     });
   });
 
@@ -246,10 +210,8 @@ describe('Validation Utilities', () => {
       expect(validateDataType('quote')).toBe('quote');
     });
 
-    it('should return Response for invalid type', () => {
-      const result = validateDataType('invalid');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid type', () => {
+      expect(() => validateDataType('invalid')).toThrow(ValidationError);
     });
   });
 
@@ -266,10 +228,8 @@ describe('Validation Utilities', () => {
       expect(validateInterval('')).toBe('1d');
     });
 
-    it('should return Response for invalid interval', () => {
-      const result = validateInterval('2h');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid interval', () => {
+      expect(() => validateInterval('2h')).toThrow(ValidationError);
     });
   });
 
@@ -278,16 +238,12 @@ describe('Validation Utilities', () => {
       expect(validateDate('2026-01-15')).toBe('2026-01-15');
     });
 
-    it('should return Response for invalid format', () => {
-      const result = validateDate('01-15-2026');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid format', () => {
+      expect(() => validateDate('01-15-2026')).toThrow(ValidationError);
     });
 
-    it('should return Response for invalid date', () => {
-      const result = validateDate('2026-13-45');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid date', () => {
+      expect(() => validateDate('2026-13-45')).toThrow(ValidationError);
     });
   });
 
@@ -300,10 +256,8 @@ describe('Validation Utilities', () => {
       expect(validateOperator('<=')).toBe('<=');
     });
 
-    it('should return Response for invalid operator', () => {
-      const result = validateOperator('!=');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid operator', () => {
+      expect(() => validateOperator('!=')).toThrow(ValidationError);
     });
   });
 
@@ -320,10 +274,8 @@ describe('Validation Utilities', () => {
       expect(validateMode('')).toBe('paper');
     });
 
-    it('should return Response for invalid mode', () => {
-      const result = validateMode('test');
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for invalid mode', () => {
+      expect(() => validateMode('test')).toThrow(ValidationError);
     });
   });
 
@@ -345,10 +297,8 @@ describe('Validation Utilities', () => {
       expect(validateRiskLimits(limits)).toEqual({ maxPositionSize: 10000 });
     });
 
-    it('should return Response for non-positive number', () => {
-      const result = validateRiskLimits({ maxPositionSize: -100 });
-      expect(result).toBeInstanceOf(Response);
-      expect(result.status).toBe(400);
+    it('should throw ValidationError for non-positive number', () => {
+      expect(() => validateRiskLimits({ maxPositionSize: -100 })).toThrow(ValidationError);
     });
   });
 

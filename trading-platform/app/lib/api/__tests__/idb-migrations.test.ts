@@ -193,7 +193,9 @@ describe('IndexedDB Migration System', () => {
     });
 
     it('should throw error for non-existent store', async () => {
-      await expect(client.clearStore('non_existent_store')).rejects.toThrow();
+      await expect(client.clearStore('non_existent_store')).rejects.toEqual(
+        expect.stringContaining('non_existent_store')
+      );
     });
 
     it('should clear all data except migrations', async () => {

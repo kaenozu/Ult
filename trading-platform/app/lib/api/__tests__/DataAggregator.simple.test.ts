@@ -16,6 +16,7 @@ global.fetch = mockFetch;
 describe('MarketDataClient Integration Tests', () => {
   beforeEach(() => {
     mockFetch.mockClear();
+    marketClient.clearCache();
   });
 
   describe('Basic Functionality', () => {
@@ -53,22 +54,21 @@ describe('MarketDataClient Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle network errors', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      mockFetch.mockRejectedValue(new Error('Network error'));
 
-      // The client catches errors and returns a failure result instead of throwing
-      const result = await marketClient.fetchOHLCV('TEST', 1, 'daily');
+      const result = await marketClient.fetchOHLCV('NETWORK_ERROR_TEST_SYMBOL_12345', 1, 'daily');
       expect(result.success).toBe(false);
       expect(result.error).toContain('Network error');
     });
 
     it('should handle API errors', async () => {
-      mockFetch.mockResolvedValueOnce({
+      mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({ error: 'Internal server error' })
       });
 
-      const result = await marketClient.fetchOHLCV('TEST', 1, 'daily');
+      const result = await marketClient.fetchOHLCV('API_ERROR_TEST_SYMBOL_12345', 1, 'daily');
       expect(result.success).toBe(false);
       expect(result.error).toContain('Internal server error');
     });

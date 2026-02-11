@@ -446,7 +446,7 @@ function createMockOrder(overrides: Partial<ManagedOrder> & {
       broker: 'IBKR',
     },
     routingDecision: {
-      venue: venue,
+      primaryVenue: venue,
       strategy: 'SINGLE',
       splits: [],
       estimatedSlippage: 0,

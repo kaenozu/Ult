@@ -78,7 +78,7 @@ describe('MarketRegimeDetector', () => {
       
       const result = marketRegimeDetector.detect(data);
       
-      expect(result.regime).toBe('TRENDING_UP');
+      expect(result.regime).toBe('TRENDING');
       expect(result.adx).toBeGreaterThan(25);
       expect(result.trendDirection).toBe('UP');
     });
@@ -99,7 +99,7 @@ describe('MarketRegimeDetector', () => {
       
       const result = marketRegimeDetector.detect(data);
       
-      expect(result.regime).toBe('TRENDING_DOWN');
+      expect(result.regime).toBe('TRENDING');
       expect(result.adx).toBeGreaterThan(25);
       expect(result.trendDirection).toBe('DOWN');
     });
@@ -181,7 +181,7 @@ describe('MarketRegimeDetector', () => {
       const result1 = marketRegimeDetector.detect(data1);
       
       // Should be initial detection
-      expect(result1.regime).toBe('TRENDING_UP');
+      expect(result1.regime).toBe('TRENDING');
       expect(result1.confidence).toBe('INITIAL');
       
       // Simulate 3 consecutive days of same regime
@@ -194,7 +194,7 @@ describe('MarketRegimeDetector', () => {
       const finalData = generateOHLCVData(50, 'uptrend');
       const finalResult = marketRegimeDetector.detect(finalData);
       
-      expect(finalResult.regime).toBe('TRENDING_UP');
+      expect(finalResult.regime).toBe('TRENDING');
       expect(finalResult.confidence).toBe('CONFIRMED');
     });
 
@@ -202,7 +202,7 @@ describe('MarketRegimeDetector', () => {
       // Start with uptrend
       const uptrendData = generateOHLCVData(50, 'uptrend');
       const result1 = marketRegimeDetector.detect(uptrendData);
-      expect(result1.regime).toBe('TRENDING_UP');
+      expect(result1.regime).toBe('TRENDING');
       
       // Switch to sideways - create data with very low volatility to ensure ADX < 20
       const sidewaysData: OHLCV[] = [];
@@ -236,7 +236,7 @@ describe('MarketRegimeDetector', () => {
 
   describe('getRegimeDescription', () => {
     it('should return description for TRENDING_UP', () => {
-      const result = marketRegimeDetector.getRegimeDescription('TRENDING_UP', 'UP', 'MEDIUM');
+      const result = marketRegimeDetector.getRegimeDescription('TRENDING', 'UP', 'MEDIUM');
       
       expect(result).toContain('トレンド');
       expect(result).toContain('上昇');
@@ -258,7 +258,7 @@ describe('MarketRegimeDetector', () => {
 
   describe('getRecommendedStrategy', () => {
     it('should recommend TrendFollowing for trending market', () => {
-      const result = marketRegimeDetector.getRecommendedStrategy('TRENDING_UP', 'UP', 'MEDIUM');
+      const result = marketRegimeDetector.getRecommendedStrategy('TRENDING', 'UP', 'MEDIUM');
       
       expect(result.primary).toBe('TrendFollowing');
       expect(result.weight).toBeGreaterThan(0.5);
@@ -272,7 +272,7 @@ describe('MarketRegimeDetector', () => {
     });
 
     it('should recommend Breakout for high volatility', () => {
-      const result = marketRegimeDetector.getRecommendedStrategy('TRENDING_UP', 'UP', 'HIGH');
+      const result = marketRegimeDetector.getRecommendedStrategy('TRENDING', 'UP', 'HIGH');
       
       expect(result.secondary).toContain('Breakout');
     });

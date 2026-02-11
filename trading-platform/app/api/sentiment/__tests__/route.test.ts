@@ -6,6 +6,7 @@ import { GET, POST } from '../route';
 // Mock auth and csrf
 jest.mock('@/app/lib/auth', () => ({
   requireAuth: jest.fn(() => null),
+  requireAdmin: jest.fn(() => null),
 }));
 
 jest.mock('@/app/lib/csrf/csrf-protection', () => ({
@@ -146,10 +147,9 @@ describe('/api/sentiment', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.data.success).toBe(false);
-      expect(data.data.message).toContain('Invalid action');
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.message).toContain('Invalid action');
     });
 
     it('should handle errors gracefully', async () => {

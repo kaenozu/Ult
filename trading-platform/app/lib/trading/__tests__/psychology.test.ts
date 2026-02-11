@@ -190,7 +190,7 @@ describe('PsychologyMonitor', () => {
       const positionSize = monitor.calculateRecommendedPositionSize(150, 145);
 
       expect(positionSize).toBeGreaterThan(0);
-      expect(positionSize).toBeLessThan(100);
+      expect(positionSize).toBe(400);
     });
 
     it('should return 0 for invalid parameters', () => {

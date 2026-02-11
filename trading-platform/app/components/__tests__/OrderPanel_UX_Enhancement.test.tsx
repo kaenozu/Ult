@@ -2,15 +2,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
 import { useTradingStore } from '@/app/store/tradingStore';
-import { useExecuteOrder } from '@/app/store/orderExecutionStore';
 
-// Mock stores
 jest.mock('@/app/store/tradingStore');
-jest.mock('@/app/store/orderExecutionStore', () => ({
-    useExecuteOrder: jest.fn()
-}));
 
-// Mock ResizeObserver
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
     observe: jest.fn(),
     unobserve: jest.fn(),
@@ -21,16 +15,16 @@ describe('OrderPanel UX Enhancements', () => {
     const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const, sector: 'Automotive', volume: 1000000 };
     const mockExecuteOrder = jest.fn();
 
-    const mockPortfolioState = {
+    const mockStoreState = {
         portfolio: { cash: 1000000, positions: [] },
+        executeOrder: mockExecuteOrder,
     };
 
     beforeEach(() => {
         jest.clearAllMocks();
         (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
-            return selector ? selector(mockPortfolioState) : mockPortfolioState;
+            return selector ? selector(mockStoreState) : mockStoreState;
         });
-        (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrder);
     });
 
     it('success message should have role="status"', async () => {

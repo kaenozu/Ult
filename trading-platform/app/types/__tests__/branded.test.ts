@@ -3,227 +3,175 @@
  */
 
 import {
-  milliseconds,
-  seconds,
-  minutes,
-  hours,
-  days,
-  percentage,
-  decimalPercentage,
-  ratio,
-  currency,
-  points,
-  count,
-  index,
+  createSymbolId,
+  isSymbolId,
+  createPercentage,
+  createRatio,
+  percentageToRatio,
+  ratioToPercentage,
+  createPrice,
+  createVolume,
+  createTimestampMs,
+  createDateString,
+  createTradeId,
+  createOrderId,
+  type SymbolId,
+  type Percentage,
+  type Ratio,
+  type Price,
+  type Volume,
+  type TimestampMs,
+  type DateString,
+  type TradeId,
+  type OrderId,
 } from '../branded';
 
-describe('Branded Types - Time Conversions', () => {
-  describe('Milliseconds', () => {
-    it('should create milliseconds from number', () => {
-      const ms = milliseconds(1000);
-      expect(ms).toBe(1000);
-    });
+describe('Branded Types - SymbolId', () => {
+  it('should create SymbolId from string', () => {
+    const symbol = createSymbolId('AAPL');
+    expect(symbol).toBe('AAPL');
   });
 
-  describe('Seconds', () => {
-    it('should convert milliseconds to seconds', () => {
-      const ms = milliseconds(5000);
-      const sec = seconds.fromMs(ms);
-      expect(sec).toBe(5);
-    });
-
-    it('should convert seconds to milliseconds', () => {
-      const sec = seconds.create(5);
-      const ms = seconds.toMs(sec);
-      expect(ms).toBe(5000);
-    });
-
-    it('should handle decimal seconds', () => {
-      const ms = milliseconds(1500);
-      const sec = seconds.fromMs(ms);
-      expect(sec).toBe(1.5);
-    });
+  it('should throw for empty string', () => {
+    expect(() => createSymbolId('')).toThrow('Symbol must be a non-empty string');
   });
 
-  describe('Minutes', () => {
-    it('should convert milliseconds to minutes', () => {
-      const ms = milliseconds(300000); // 5 minutes
-      const min = minutes.fromMs(ms);
-      expect(min).toBe(5);
-    });
-
-    it('should convert minutes to milliseconds', () => {
-      const min = minutes.create(5);
-      const ms = minutes.toMs(min);
-      expect(ms).toBe(300000);
-    });
-
-    it('should convert seconds to minutes', () => {
-      const sec = seconds.create(120);
-      const min = minutes.fromSeconds(sec);
-      expect(min).toBe(2);
-    });
-
-    it('should convert minutes to seconds', () => {
-      const min = minutes.create(2);
-      const sec = minutes.toSeconds(min);
-      expect(sec).toBe(120);
-    });
-  });
-
-  describe('Hours', () => {
-    it('should convert milliseconds to hours', () => {
-      const ms = milliseconds(3600000); // 1 hour
-      const hr = hours.fromMs(ms);
-      expect(hr).toBe(1);
-    });
-
-    it('should convert hours to milliseconds', () => {
-      const hr = hours.create(2);
-      const ms = hours.toMs(hr);
-      expect(ms).toBe(7200000);
-    });
-
-    it('should convert minutes to hours', () => {
-      const min = minutes.create(120);
-      const hr = hours.fromMinutes(min);
-      expect(hr).toBe(2);
-    });
-
-    it('should convert hours to minutes', () => {
-      const hr = hours.create(2);
-      const min = hours.toMinutes(hr);
-      expect(min).toBe(120);
-    });
-  });
-
-  describe('Days', () => {
-    it('should convert milliseconds to days', () => {
-      const ms = milliseconds(86400000); // 1 day
-      const d = days.fromMs(ms);
-      expect(d).toBe(1);
-    });
-
-    it('should convert days to milliseconds', () => {
-      const d = days.create(2);
-      const ms = days.toMs(d);
-      expect(ms).toBe(172800000);
-    });
-
-    it('should convert hours to days', () => {
-      const hr = hours.create(48);
-      const d = days.fromHours(hr);
-      expect(d).toBe(2);
-    });
-
-    it('should convert days to hours', () => {
-      const d = days.create(2);
-      const hr = days.toHours(d);
-      expect(hr).toBe(48);
-    });
+  it('should validate SymbolId with type guard', () => {
+    expect(isSymbolId('AAPL')).toBe(true);
+    expect(isSymbolId('')).toBe(false);
+    expect(isSymbolId(123)).toBe(false);
   });
 });
 
-describe('Branded Types - Percentage Conversions', () => {
-  describe('Percentage', () => {
-    it('should create percentage from number', () => {
-      const pct = percentage.create(75);
-      expect(pct).toBe(75);
-    });
-
-    it('should convert percentage to decimal', () => {
-      const pct = percentage.create(75);
-      const dec = percentage.toDecimal(pct);
-      expect(dec).toBe(0.75);
-    });
-
-    it('should convert percentage to ratio', () => {
-      const pct = percentage.create(50);
-      const r = percentage.toRatio(pct);
-      expect(r).toBe(0.5);
-    });
+describe('Branded Types - Percentage', () => {
+  it('should create percentage from number', () => {
+    const pct = createPercentage(75);
+    expect(pct).toBe(75);
   });
 
-  describe('DecimalPercentage', () => {
-    it('should create decimal percentage from number', () => {
-      const dec = decimalPercentage.create(0.75);
-      expect(dec).toBe(0.75);
-    });
-
-    it('should convert decimal to percentage', () => {
-      const dec = decimalPercentage.create(0.75);
-      const pct = decimalPercentage.toPercentage(dec);
-      expect(pct).toBe(75);
-    });
+  it('should throw for out of range values', () => {
+    expect(() => createPercentage(-1)).toThrow('Percentage must be between 0 and 100');
+    expect(() => createPercentage(101)).toThrow('Percentage must be between 0 and 100');
   });
 
-  describe('Ratio', () => {
-    it('should create ratio from number', () => {
-      const r = ratio.create(0.5);
-      expect(r).toBe(0.5);
-    });
-
-    it('should convert ratio to percentage', () => {
-      const r = ratio.create(0.25);
-      const pct = ratio.toPercentage(r);
-      expect(pct).toBe(25);
-    });
+  it('should convert percentage to ratio', () => {
+    const pct = createPercentage(75);
+    const r = percentageToRatio(pct);
+    expect(r).toBe(0.75);
   });
 });
 
-describe('Branded Types - Financial Types', () => {
-  describe('Currency', () => {
-    it('should create currency from number', () => {
-      const curr = currency.create(100.50);
-      expect(curr).toBe(100.50);
-    });
+describe('Branded Types - Ratio', () => {
+  it('should create ratio from number', () => {
+    const r = createRatio(0.5);
+    expect(r).toBe(0.5);
   });
 
-  describe('Points', () => {
-    it('should create points from number', () => {
-      const pts = points.create(1500);
-      expect(pts).toBe(1500);
-    });
+  it('should throw for out of range values', () => {
+    expect(() => createRatio(-0.1)).toThrow('Ratio must be between 0 and 1');
+    expect(() => createRatio(1.1)).toThrow('Ratio must be between 0 and 1');
+  });
+
+  it('should convert ratio to percentage', () => {
+    const r = createRatio(0.25);
+    const pct = ratioToPercentage(r);
+    expect(pct).toBe(25);
   });
 });
 
-describe('Branded Types - Count/Index Types', () => {
-  describe('Count', () => {
-    it('should create count from number', () => {
-      const cnt = count.create(42);
-      expect(cnt).toBe(42);
-    });
+describe('Branded Types - Price', () => {
+  it('should create price from number', () => {
+    const price = createPrice(100.50);
+    expect(price).toBe(100.50);
   });
 
-  describe('Index', () => {
-    it('should create index from number', () => {
-      const idx = index.create(0);
-      expect(idx).toBe(0);
-    });
+  it('should throw for negative values', () => {
+    expect(() => createPrice(-1)).toThrow('Price must be non-negative');
+  });
+});
+
+describe('Branded Types - Volume', () => {
+  it('should create volume from number', () => {
+    const vol = createVolume(1500);
+    expect(vol).toBe(1500);
+  });
+
+  it('should throw for negative values', () => {
+    expect(() => createVolume(-1)).toThrow('Volume must be non-negative');
+  });
+
+  it('should throw for non-integer values', () => {
+    expect(() => createVolume(1.5)).toThrow('Volume must be an integer');
+  });
+});
+
+describe('Branded Types - TimestampMs', () => {
+  it('should create timestamp from number', () => {
+    const ts = createTimestampMs(1704067200000);
+    expect(ts).toBe(1704067200000);
+  });
+
+  it('should throw for negative values', () => {
+    expect(() => createTimestampMs(-1)).toThrow('Timestamp must be non-negative');
+  });
+});
+
+describe('Branded Types - DateString', () => {
+  it('should create DateString from ISO string', () => {
+    const ds = createDateString('2024-01-01');
+    expect(ds).toBe('2024-01-01');
+  });
+
+  it('should create DateString from Date object', () => {
+    const date = new Date('2024-01-01T00:00:00.000Z');
+    const ds = createDateString(date);
+    expect(ds).toBe('2024-01-01T00:00:00.000Z');
+  });
+
+  it('should throw for invalid date string', () => {
+    expect(() => createDateString('invalid')).toThrow('Date string does not represent a valid date');
+  });
+});
+
+describe('Branded Types - TradeId', () => {
+  it('should create TradeId from string', () => {
+    const id = createTradeId('trade-123');
+    expect(id).toBe('trade-123');
+  });
+
+  it('should throw for empty string', () => {
+    expect(() => createTradeId('')).toThrow('Trade ID must be a non-empty string');
+  });
+});
+
+describe('Branded Types - OrderId', () => {
+  it('should create OrderId from string', () => {
+    const id = createOrderId('order-456');
+    expect(id).toBe('order-456');
+  });
+
+  it('should throw for empty string', () => {
+    expect(() => createOrderId('')).toThrow('Order ID must be a non-empty string');
   });
 });
 
 describe('Branded Types - Type Safety', () => {
   it('should maintain type safety at compile time', () => {
-    // This test ensures types are different at compile time
-    // while being compatible at runtime
-    const ms = milliseconds(1000);
-    const sec = seconds.create(1);
+    const symbol: SymbolId = createSymbolId('AAPL');
+    const pct: Percentage = createPercentage(50);
+    const r: Ratio = createRatio(0.5);
     
-    // Both are numbers at runtime
-    expect(typeof ms).toBe('number');
-    expect(typeof sec).toBe('number');
-    
-    // But they're different types at compile time
-    // TypeScript would prevent: const x: Seconds = ms; 
-    // without proper conversion
+    expect(typeof symbol).toBe('string');
+    expect(typeof pct).toBe('number');
+    expect(typeof r).toBe('number');
   });
 
-  it('should allow conversion between compatible units', () => {
-    const ms = milliseconds(60000);
-    const sec = seconds.fromMs(ms);
-    const min = minutes.fromSeconds(sec);
+  it('should allow conversion between percentage and ratio', () => {
+    const pct = createPercentage(50);
+    const r = percentageToRatio(pct);
+    const backToPct = ratioToPercentage(r);
     
-    expect(min).toBe(1);
+    expect(r).toBe(0.5);
+    expect(backToPct).toBe(50);
   });
 });

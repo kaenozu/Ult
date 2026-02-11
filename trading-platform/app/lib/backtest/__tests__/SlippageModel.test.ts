@@ -57,13 +57,13 @@ describe('SlippageModel', () => {
     it('should apply higher slippage during market open', () => {
       const morningData: OHLCV = {
         ...mockOHLCV,
-        date: '2024-01-01T09:30:00Z',
+        date: '2024-01-01T09:30:00+09:00',
       };
 
       const result = model.calculateSlippage(100, 'BUY', 100, morningData);
       const normalResult = model.calculateSlippage(100, 'BUY', 100, {
         ...mockOHLCV,
-        date: '2024-01-01T14:00:00Z',
+        date: '2024-01-01T14:00:00+09:00',
       });
 
       expect(result.slippageRate).toBeGreaterThan(normalResult.slippageRate);
@@ -72,13 +72,13 @@ describe('SlippageModel', () => {
     it('should apply higher slippage during market close', () => {
       const afternoonData: OHLCV = {
         ...mockOHLCV,
-        date: '2024-01-01T15:15:00Z',
+        date: '2024-01-01T15:15:00+09:00',
       };
 
       const result = model.calculateSlippage(100, 'BUY', 100, afternoonData);
       const normalResult = model.calculateSlippage(100, 'BUY', 100, {
         ...mockOHLCV,
-        date: '2024-01-01T14:00:00Z',
+        date: '2024-01-01T14:00:00+09:00',
       });
 
       expect(result.slippageRate).toBeGreaterThan(normalResult.slippageRate);
@@ -118,18 +118,21 @@ describe('SlippageModel', () => {
   });
 
   describe('Order Size Impact', () => {
+    let dataWithVolume: OHLCV;
+
     beforeEach(() => {
       model.updateConfig({
         averageDailyVolume: 1000000,
         useOrderSizeImpact: true,
       });
+      dataWithVolume = { ...mockOHLCV, volume: 1000000 };
     });
 
     it('should apply square root market impact model', () => {
       model.updateConfig({ marketImpactModel: 'square_root' });
 
-      const smallOrder = model.calculateSlippage(100, 'BUY', 100);
-      const largeOrder = model.calculateSlippage(100, 'BUY', 10000);
+      const smallOrder = model.calculateSlippage(100, 'BUY', 100, dataWithVolume);
+      const largeOrder = model.calculateSlippage(100, 'BUY', 10000, dataWithVolume);
 
       expect(largeOrder.slippageRate).toBeGreaterThan(smallOrder.slippageRate);
     });
@@ -137,7 +140,7 @@ describe('SlippageModel', () => {
     it('should apply linear market impact model', () => {
       model.updateConfig({ marketImpactModel: 'linear' });
 
-      const result = model.calculateSlippage(100, 'BUY', 1000);
+      const result = model.calculateSlippage(100, 'BUY', 1000, dataWithVolume);
 
       expect(result.breakdown.orderSize).toBeGreaterThan(0);
     });
@@ -145,7 +148,7 @@ describe('SlippageModel', () => {
     it('should apply almgren-chriss model', () => {
       model.updateConfig({ marketImpactModel: 'almgren_chriss' });
 
-      const result = model.calculateSlippage(100, 'BUY', 1000);
+      const result = model.calculateSlippage(100, 'BUY', 1000, dataWithVolume);
 
       expect(result.breakdown.orderSize).toBeGreaterThan(0);
     });

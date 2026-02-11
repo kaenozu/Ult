@@ -1,12 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { StockTable } from '../StockTable';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useUIStore } from '@/app/store/uiStore';
 import { marketClient } from '@/app/lib/api/data-aggregator';
 
 // Mock dependencies
-jest.mock('@/app/store/tradingStore', () => ({
-    useTradingStore: jest.fn(),
+jest.mock('@/app/store/watchlistStore', () => ({
+    useWatchlistStore: jest.fn(),
+}));
+
+jest.mock('@/app/store/uiStore', () => ({
+    useUIStore: jest.fn(),
 }));
 
 jest.mock('@/app/lib/api/data-aggregator', () => ({
@@ -27,14 +32,13 @@ describe('StockTable', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
-            const state = {
-                setSelectedStock: mockSetSelectedStock,
-                batchUpdateStockData: mockBatchUpdateStockData,
-                removeFromWatchlist: mockRemoveFromWatchlist,
-            };
-            return selector(state);
-        });
+        (useUIStore as unknown as jest.Mock).mockImplementation(() => ({
+            setSelectedStock: mockSetSelectedStock,
+        }));
+        (useWatchlistStore as unknown as jest.Mock).mockImplementation(() => ({
+            batchUpdateStockData: mockBatchUpdateStockData,
+            removeFromWatchlist: mockRemoveFromWatchlist,
+        }));
         (marketClient.fetchQuotes as unknown as jest.Mock).mockResolvedValue([]);
     });
 
@@ -84,7 +88,10 @@ describe('StockTable', () => {
         render(<StockTable stocks={mockStocks as unknown[]} />);
 
         await waitFor(() => {
-            expect(marketClient.fetchQuotes).toHaveBeenCalledWith(['7203', 'AAPL']);
+            expect(marketClient.fetchQuotes).toHaveBeenCalledWith(
+                ['7203', 'AAPL'],
+                expect.any(AbortSignal)
+            );
             expect(mockBatchUpdateStockData).toHaveBeenCalled();
         });
     });

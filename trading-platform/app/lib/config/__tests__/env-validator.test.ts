@@ -66,7 +66,7 @@ describe('Environment Validator', () => {
 
     it('should require DATABASE_URL in production', () => {
       process.env.NODE_ENV = 'production';
-      process.env.JWT_SECRET = 'secure-production-secret';
+      process.env.JWT_SECRET = 'secure-production-secret-key-32-characters!';
       delete process.env.DATABASE_URL;
       
       expect(() => validateEnvironment()).toThrow(EnvironmentValidationError);
@@ -138,7 +138,7 @@ describe('Environment Validator', () => {
 
     it('should default LOG_LEVEL to info in production', () => {
       process.env.NODE_ENV = 'production';
-      process.env.JWT_SECRET = 'secure-secret';
+      process.env.JWT_SECRET = 'secure-production-secret-key-32-characters!';
       process.env.DATABASE_URL = 'postgresql://localhost/db';
       delete process.env.LOG_LEVEL;
       
@@ -185,7 +185,7 @@ describe('Environment Validator', () => {
 
     it('should default ENABLE_ANALYTICS to true in production', () => {
       process.env.NODE_ENV = 'production';
-      process.env.JWT_SECRET = 'secure-secret';
+      process.env.JWT_SECRET = 'secure-production-secret-key-32-characters!';
       process.env.DATABASE_URL = 'postgresql://localhost/db';
       delete process.env.ENABLE_ANALYTICS;
       

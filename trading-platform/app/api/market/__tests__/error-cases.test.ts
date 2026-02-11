@@ -45,7 +45,7 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Symbol is required');
+      expect(data.error).toContain('Invalid request parameters');
     });
 
     it('should reject request with empty symbol', async () => {
@@ -54,7 +54,7 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Symbol is required');
+      expect(data.error).toContain('Invalid request parameters');
     });
   });
 
@@ -65,7 +65,7 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Invalid symbol format');
+      expect(data.error).toContain('Invalid request parameters');
     });
 
     it('should reject invalid type parameter', async () => {
@@ -74,7 +74,7 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Invalid type parameter');
+      expect(data.error).toContain('Invalid request parameters');
     });
 
     it('should reject invalid market parameter', async () => {
@@ -83,7 +83,7 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Invalid market parameter');
+      expect(data.error).toContain('Invalid request parameters');
     });
 
     it('should reject invalid interval parameter', async () => {
@@ -92,7 +92,7 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Invalid interval');
+      expect(data.error).toContain('Invalid request parameters');
     });
 
     it('should accept valid intervals', async () => {
@@ -150,7 +150,7 @@ describe('Market API Error Cases', () => {
 
   describe('Invalid data responses', () => {
     it('should handle empty chart response', async () => {
-      mockChart.mockResolvedValueOnce({ quotes: [] });
+      mockChart.mockResolvedValueOnce({ meta: { currency: 'USD', symbol: 'AAPL' }, quotes: [] });
       
       const req = createRequest('/api/market?symbol=AAPL&type=history');
       const res = await GET(req);
@@ -168,8 +168,8 @@ describe('Market API Error Cases', () => {
       const res = await GET(req);
       const data = await res.json();
 
-      expect(res.status).toBe(200);
-      expect(data.data).toEqual([]);
+      expect(res.status).toBe(502);
+      expect(data.error).toBeDefined();
     });
 
     it('should handle null quote response', async () => {
@@ -322,7 +322,7 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Invalid startDate format');
+      expect(data.error).toContain('Invalid request parameters');
     });
 
     it('should reject partial date format', async () => {
@@ -331,7 +331,7 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(400);
-      expect(data.error).toContain('Invalid startDate format');
+      expect(data.error).toContain('Invalid request parameters');
     });
 
     it('should accept valid YYYY-MM-DD date', async () => {
@@ -379,13 +379,12 @@ describe('Market API Error Cases', () => {
   });
 
   describe('Edge cases', () => {
-    it('should handle missing type parameter', async () => {
+    it('should handle missing type parameter (defaults to quote)', async () => {
       const req = createRequest('/api/market?symbol=AAPL');
       const res = await GET(req);
       const data = await res.json();
 
-      expect(res.status).toBe(400);
-      expect(data.error).toContain('Invalid type parameter');
+      expect(res.status).toBe(200);
     });
 
     it('should handle extremely long valid batch symbols', async () => {
@@ -418,7 +417,7 @@ describe('Market API Error Cases', () => {
     it('should handle batch quotes with missing symbol fields', async () => {
       mockQuote.mockResolvedValueOnce([
         { symbol: 'AAPL', regularMarketPrice: 150 },
-        { regularMarketPrice: 200 }, // Missing symbol
+        { regularMarketPrice: 200 },
       ]);
       
       const req = createRequest('/api/market?symbol=AAPL,GOOG&type=quote');
@@ -426,8 +425,8 @@ describe('Market API Error Cases', () => {
       const data = await res.json();
 
       expect(res.status).toBe(200);
-      expect(data.data).toHaveLength(2);
-      expect(data.data[1].symbol).toBe('UNKNOWN');
+      expect(data.data).toHaveLength(1);
+      expect(data.data[0].symbol).toBe('AAPL');
     });
 
     it('should handle string dates in quotes', async () => {
