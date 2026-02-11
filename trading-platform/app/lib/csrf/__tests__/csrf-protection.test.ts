@@ -107,6 +107,27 @@ describe('CSRF Protection', () => {
 
       expect(validateCSRFToken(request)).toBe(false);
     });
+
+    it('should return false when tokens have different lengths', () => {
+      const token = generateCSRFToken();
+      const mockGet = jest.fn((name) => name === 'csrf-token' ? { value: token } : undefined);
+      const mockGetAll = jest.fn().mockReturnValue([]);
+
+      const request = {
+        headers: new Headers({
+          'x-csrf-token': token.substring(0, 32), // Half length
+        }),
+        cookies: {
+          get: mockGet,
+          getAll: mockGetAll,
+        },
+        nextUrl: new URL('http://localhost:3000'),
+        method: 'GET',
+        url: 'http://localhost:3000',
+      } as unknown as NextRequest;
+
+      expect(validateCSRFToken(request)).toBe(false);
+    });
   });
 
   describe('csrfTokenMiddleware', () => {
