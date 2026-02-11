@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { OHLCV, Signal } from '@/app/types';
 import { FORECAST_CONE } from '@/app/lib/constants';
-import { reduceDataPoints, shouldReduceData, calculateOptimalDataPoints } from '@/app/lib/chart-utils';
+import { reduceDataPoints, shouldReduceData, calculateOptimalDataPoints, findDateIndex } from '@/app/lib/chart-utils';
 
 export const useChartData = (
   data: OHLCV[],
@@ -97,12 +97,27 @@ export const useChartData = (
     return map;
   }, [indexData]);
 
+  // Memoize start date to stabilize search
+  const chartStartDate = optimizedData[0]?.date;
+
+  // Use binary search to find start index efficiently (O(log N)) instead of linear scan (O(N))
+  // This is Memoized based on chartStartDate, so it won't re-run if optimizedData updates but start date is same
+  const indexStartIndex = useMemo(() => {
+    if (!chartStartDate || !indexData || indexData.length === 0) return -1;
+    return findDateIndex(indexData, chartStartDate);
+  }, [indexData, chartStartDate]);
+
   const normalizedIndexData = useMemo(() => {
     if (!indexData || indexData.length < 10 || optimizedData.length === 0) return [];
 
     const stockStartPrice = optimizedData[0].close;
-    const targetDate = optimizedData[0].date;
-    const indexStartPoint = indexData.find(d => d.date >= targetDate) || indexData[0];
+
+    // Use the pre-calculated efficient index
+    let indexStartPoint = indexData[0];
+    if (indexStartIndex !== -1) {
+      indexStartPoint = indexData[indexStartIndex];
+    }
+
     const indexStartPrice = indexStartPoint.close;
 
     const ratio = stockStartPrice / indexStartPrice;
@@ -111,7 +126,7 @@ export const useChartData = (
       const idxClose = indexMap.get(label);
       return idxClose !== undefined ? idxClose * ratio : NaN;
     });
-  }, [optimizedData, indexData, actualData, indexMap]);
+  }, [optimizedData, indexData, actualData, indexMap, indexStartIndex]);
 
      const extendedData = useMemo(() => ({
        labels: forecastExtension.extendedLabels,  // 予測期間を含む拡張ラベルを使用

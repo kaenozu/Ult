@@ -328,3 +328,31 @@ export function calculatePriceRange(data: OHLCV[]): { min: number, max: number }
 
   return { min, max };
 }
+
+/**
+ * Find the index of the first data point with date >= targetDate using binary search.
+ * Assumes data is sorted by date.
+ * Returns -1 if not found (all dates < targetDate).
+ *
+ * @param data - Sorted OHLCV data array
+ * @param targetDate - Target date string
+ * @returns Index of the first matching element or -1
+ */
+export function findDateIndex(data: OHLCV[], targetDate: string): number {
+  if (data.length === 0) return -1;
+
+  let left = 0;
+  let right = data.length - 1;
+  let result = -1;
+
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2);
+    if (data[mid].date >= targetDate) {
+      result = mid;
+      right = mid - 1; // Try to find earlier date
+    } else {
+      left = mid + 1;
+    }
+  }
+  return result;
+}

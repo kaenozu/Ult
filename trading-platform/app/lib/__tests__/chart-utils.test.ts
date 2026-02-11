@@ -1,5 +1,56 @@
-import { calculateChartMinMax } from '../chart-utils';
+import { calculateChartMinMax, findDateIndex } from '../chart-utils';
 import { OHLCV } from '@/app/types';
+
+describe('findDateIndex', () => {
+  const createOHLCV = (date: string): OHLCV => ({
+    symbol: 'TEST',
+    date,
+    open: 100,
+    high: 110,
+    low: 90,
+    close: 105,
+    volume: 1000,
+  });
+
+  it('should return -1 for empty array', () => {
+    expect(findDateIndex([], '2023-01-01')).toBe(-1);
+  });
+
+  it('should find exact match', () => {
+    const data = [
+      createOHLCV('2023-01-01'),
+      createOHLCV('2023-01-02'),
+      createOHLCV('2023-01-03'),
+    ];
+    expect(findDateIndex(data, '2023-01-02')).toBe(1);
+  });
+
+  it('should find next greater date if exact match not found', () => {
+    const data = [
+      createOHLCV('2023-01-01'),
+      createOHLCV('2023-01-03'),
+      createOHLCV('2023-01-05'),
+    ];
+    expect(findDateIndex(data, '2023-01-02')).toBe(1); // Should point to 2023-01-03
+    expect(findDateIndex(data, '2023-01-04')).toBe(2); // Should point to 2023-01-05
+  });
+
+  it('should return 0 if target is smaller than all', () => {
+    const data = [
+      createOHLCV('2023-01-03'),
+      createOHLCV('2023-01-05'),
+    ];
+    expect(findDateIndex(data, '2023-01-01')).toBe(0);
+  });
+
+  it('should return -1 if target is larger than all', () => {
+    const data = [
+      createOHLCV('2023-01-01'),
+      createOHLCV('2023-01-02'),
+    ];
+    expect(findDateIndex(data, '2023-01-03')).toBe(-1);
+  });
+});
 
 describe('calculateChartMinMax', () => {
   const createOHLCV = (close: number, low: number, high: number): OHLCV => ({
