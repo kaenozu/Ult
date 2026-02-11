@@ -5,7 +5,7 @@
  * Optimized for performance and accuracy.
  */
 
-import { OHLCV } from '@/app/types';
+import { OHLCV } from '../../types';
 
 /**
  * Internal helper to validate a price value.
@@ -86,22 +86,19 @@ export function calculateEMA(prices: number[], period: number): number[] {
  */
 export function calculateRSI(prices: number[], period: number = 14): number[] {
   const result: number[] = [];
-  const changes: number[] = [];
-
-  for (let i = 1; i < prices.length; i++) {
-    const valCurrent = _getValidPrice(prices[i]);
-    const valPrev = _getValidPrice(prices[i - 1]);
-    changes.push(!isNaN(valCurrent) && !isNaN(valPrev) ? valCurrent - valPrev : NaN);
-  }
-
   let avgGain = 0;
   let avgLoss = 0;
   let validChangesCount = 0;
 
-  for (let i = 0; i < period && i < changes.length; i++) {
-    if (!isNaN(changes[i])) {
-      if (changes[i] >= 0) avgGain += changes[i];
-      else avgLoss += Math.abs(changes[i]);
+  // Calculate initial average gain/loss
+  for (let i = 1; i <= period && i < prices.length; i++) {
+    const valCurrent = _getValidPrice(prices[i]);
+    const valPrev = _getValidPrice(prices[i - 1]);
+
+    if (!isNaN(valCurrent) && !isNaN(valPrev)) {
+      const change = valCurrent - valPrev;
+      if (change >= 0) avgGain += change;
+      else avgLoss += Math.abs(change);
       validChangesCount++;
     }
   }
@@ -118,14 +115,19 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
       const rs = avgLoss === 0 ? (avgGain === 0 ? 50 : 100) : avgGain / avgLoss;
       result.push(100 - (100 / (1 + rs)));
     } else {
-      const change = changes[i - 1];
-      if (isNaN(change)) {
+      const valCurrent = _getValidPrice(prices[i]);
+      const valPrev = _getValidPrice(prices[i - 1]);
+
+      if (isNaN(valCurrent) || isNaN(valPrev)) {
         result.push(NaN);
       } else {
+        const change = valCurrent - valPrev;
         const gain = change >= 0 ? change : 0;
         const loss = change < 0 ? Math.abs(change) : 0;
+
         avgGain = (avgGain * (period - 1) + gain) / period;
         avgLoss = (avgLoss * (period - 1) + loss) / period;
+
         const rs = avgLoss === 0 ? (avgGain === 0 ? 0 : 100) : avgGain / avgLoss;
         if (avgLoss === 0 && avgGain === 0) {
           result.push(50);
@@ -234,7 +236,6 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
   const result: number[] = [];
   let sum = 0;
   let validCount = 0;
-  const trueRanges: number[] = [];
 
   for (let i = 0; i < highs.length; i++) {
     let tr = NaN;
@@ -247,7 +248,6 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
         Math.abs(lows[i] - closes[i - 1])
       );
     }
-    trueRanges.push(tr);
 
     if (i < period) {
       if (!isNaN(tr)) {
@@ -273,44 +273,42 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
  * Calculate Average Directional Index (ADX)
  */
 export function calculateADX(data: OHLCV[], period: number = 14): number[] {
-  const adx: number[] = [];
-  const dmPlus: number[] = [];
-  const dmMinus: number[] = [];
-  const tr: number[] = [];
+  const adx: number[] = [NaN];
+  let avgTR = 0, avgDMPlus = 0, avgDMMinus = 0;
   
   for (let i = 1; i < data.length; i++) {
     const upMove = data[i].high - data[i - 1].high;
     const downMove = data[i - 1].low - data[i].low;
-    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
-    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
-    tr.push(Math.max(
+
+    const dmPlus = upMove > downMove && upMove > 0 ? upMove : 0;
+    const dmMinus = downMove > upMove && downMove > 0 ? downMove : 0;
+    const tr = Math.max(
       data[i].high - data[i].low,
       Math.abs(data[i].high - data[i - 1].close),
       Math.abs(data[i].low - data[i - 1].close)
-    ));
-  }
-  
-  let avgTR = 0, avgDMPlus = 0, avgDMMinus = 0;
-  for (let i = 0; i < tr.length; i++) {
-    if (i < period) {
-      avgTR += tr[i];
-      avgDMPlus += dmPlus[i];
-      avgDMMinus += dmMinus[i];
+    );
+
+    if (i <= period) {
+      avgTR += tr;
+      avgDMPlus += dmPlus;
+      avgDMMinus += dmMinus;
       adx.push(NaN);
-    } else if (i === period) {
+    } else if (i === period + 1) {
       const diPlus = (avgDMPlus / avgTR) * 100;
       const diMinus = (avgDMMinus / avgTR) * 100;
-      adx.push((Math.abs(diPlus - diMinus) / (diPlus + diMinus)) * 100);
+      const dx = (Math.abs(diPlus - diMinus) / (diPlus + diMinus)) * 100;
+      adx.push(dx);
+      // Note: In original implementation, tr[period] (which corresponds to i=period+1 here)
+      // was skipped from average updates. Preserving this behavior.
     } else {
-      avgTR = avgTR - (avgTR / period) + tr[i];
-      avgDMPlus = avgDMPlus - (avgDMPlus / period) + dmPlus[i];
-      avgDMMinus = avgDMMinus - (avgDMMinus / period) + dmMinus[i];
+      avgTR = avgTR - (avgTR / period) + tr;
+      avgDMPlus = avgDMPlus - (avgDMPlus / period) + dmPlus;
+      avgDMMinus = avgDMMinus - (avgDMMinus / period) + dmMinus;
       const diPlus = (avgDMPlus / avgTR) * 100;
       const diMinus = (avgDMMinus / avgTR) * 100;
       const dx = (Math.abs(diPlus - diMinus) / (diPlus + diMinus)) * 100;
       adx.push((adx[adx.length - 1] * (period - 1) + dx) / period);
     }
   }
-  adx.unshift(NaN);
   return adx;
 }
