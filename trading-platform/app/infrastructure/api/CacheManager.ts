@@ -23,7 +23,7 @@ export class CacheManager<T = unknown> {
   private maxSize: number;
 
   constructor(options: CacheOptions = {}) {
-    this.defaultTTL = options.ttl ?? 300000; // 5 minutes default
+    this.defaultTTL = options.ttl ?? 900000; // 15 minutes default (for yfinance delay)
     this.maxSize = options.maxSize ?? 1000;
   }
 

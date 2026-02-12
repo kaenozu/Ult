@@ -34,10 +34,21 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5分
 
+import YahooFinance from 'yahoo-finance2';
+
+const yf = new YahooFinance();
+
+function formatSymbol(symbol: string, market: 'japan' | 'usa'): string {
+  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
+    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
+  }
+  return symbol;
+}
+
 /**
- * データソースの作成
+ * データソースの作成 (Server-side direct fetch)
  */
-function createDataSources(): StockDataSource[] {
+function createDataSources(lookbackDays: number = 90): StockDataSource[] {
   const allStocks = [
     ...JAPAN_STOCKS.map(s => ({ ...s, market: 'japan' as const })),
     ...USA_STOCKS.map(s => ({ ...s, market: 'usa' as const })),
@@ -49,11 +60,25 @@ function createDataSources(): StockDataSource[] {
     market: stock.market,
     fetchData: async (): Promise<OHLCV[]> => {
       try {
-        // 価格を取得（現在の実装に合わせる）
-        const price = stock.price || 100;
-        return await fetchOHLCV(stock.symbol, stock.market, price);
+        const yahooSymbol = formatSymbol(stock.symbol, stock.market);
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - (lookbackDays + 1000)); // テクニカル指標とトレード数確保のため約3年分確保
+        const period1 = startDate.toISOString().split('T')[0];
+
+        const rawResult = await yf.chart(yahooSymbol, { period1, interval: '1d' });
+
+        if (!rawResult || !rawResult.quotes) return [];
+
+        return rawResult.quotes.map((q: any) => ({
+          date: q.date.toISOString().split('T')[0],
+          open: q.open,
+          high: q.high,
+          low: q.low,
+          close: q.close,
+          volume: q.volume
+        })).filter((q: OHLCV) => q.close !== null && q.close !== undefined);
       } catch (error) {
-        console.error(`Failed to fetch data for ${stock.symbol}:`, error);
+        console.error(`Failed to fetch data via YF for ${stock.symbol}:`, error);
         return [];
       }
     },
@@ -80,11 +105,12 @@ export async function GET(request: NextRequest) {
     const lookbackDays = parseInt(searchParams.get('lookbackDays') || '90', 10);
 
     // モード固有パラメータ（デフォルト値を設定）
-    const minWinRate = parseFloat(searchParams.get('minWinRate') || '0');
-    const minProfitFactor = parseFloat(searchParams.get('minProfitFactor') || '0');
+    const minWinRate = parseFloat(searchParams.get('minWinRate') || '20');
+    const minProfitFactor = parseFloat(searchParams.get('minProfitFactor') || '0.8');
     const minTrades = parseInt(searchParams.get('minTrades') || '5', 10);
     const maxDrawdown = parseFloat(searchParams.get('maxDrawdown') || '100');
     const minConfidence = parseFloat(searchParams.get('minConfidence') || '60');
+    const forceRefresh = searchParams.get('forceRefresh') === 'true';
 
     // キャッシュキー生成（全パラメータを含める）
     let cacheKey = `${mode}:${market}:${topN}:${lookbackDays}`;
@@ -96,19 +122,19 @@ export async function GET(request: NextRequest) {
       cacheKey += `:${minConfidence}:${minWinRate}:${minProfitFactor}:${minTrades}`;
     }
 
-    // キャッシュチェック
-    const cached = cache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
-      console.log('[PerformanceScreenerAPI] Cache hit');
-      return NextResponse.json(cached.data, {
-        headers: {
-          'Cache-Control': 'public, max-age=300',
-        },
-      });
-    }
+    // キャッシュチェック (無効化中)
+    // const cached = cache.get(cacheKey);
+    // if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+    //   console.log('[PerformanceScreenerAPI] Cache hit');
+    //   return NextResponse.json(cached.data, {
+    //     headers: {
+    //       'Cache-Control': 'public, max-age=300',
+    //     },
+    //   });
+    // }
 
     // データソース作成
-    const dataSources = createDataSources();
+    const dataSources = createDataSources(lookbackDays);
 
     let result;
     if (mode === 'dual-scan') {
@@ -121,7 +147,7 @@ export async function GET(request: NextRequest) {
         minWinRate,
         minProfitFactor,
         minTrades,
-      });
+      }, forceRefresh);
     } else if (mode === 'ai-signals') {
       console.error('[PerformanceScreenerAPI] AI signal scan with config:', { market, topN, lookbackDays, minConfidence });
       result = await performanceScreenerService.scanMultipleStocksForAISignals(dataSources, {

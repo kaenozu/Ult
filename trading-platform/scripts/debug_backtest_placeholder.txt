@@ -1,0 +1,42 @@
+const { optimizedAccuracyService } = require('../app/lib/OptimizedAccuracyService');
+const { marketClient } = require('../app/lib/api/data-aggregator');
+
+async function debugBacktest(symbol) {
+  console.log(`fetching data for ${symbol}...`);
+  // Manually fetch data like in route.ts
+  const YahooFinance = require('yahoo-finance2').default;
+  const yahoo = new YahooFinance();
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 1000); // 1000 days buffer
+  const period1 = startDate.toISOString().split('T')[0];
+  
+  const result = await yahoo.chart(symbol, { period1, interval: '1d' });
+  const data = result.quotes.map(q => ({
+    date: q.date.toISOString().split('T')[0],
+    open: q.open,
+    high: q.high,
+    low: q.low,
+    close: q.close,
+    volume: q.volume
+  })).filter(q => q.close);
+
+  console.log(`Data length: ${data.length}`);
+
+  // Run backtest
+  console.log('Running optimized backtest...');
+  // Note: We need to mock technicalIndicatorService or ensure it works in this script context
+  // Use require to load the service
+  // Since we are running in node, likely need ts-node or run via compiled js.
+  // Actually, running ts files via node directly won't work without ts-node.
+  // I should check if I can run this script with ts-node.
+  // Or I can simplify by mocking the logic if possible.
+  
+  // Easier path: Since the project is Next.js/TS, running a standalone script that imports app code is hard.
+  // Better approach: Add a console.log in OptimizedAccuracyService.ts and trigger it via the API.
+  // I already added console.log in PerformanceScreenerService.ts.
+  // I'll add verbose logging to OptimizedAccuracyService.ts to see what's happening inside.
+} 
+
+// self-invoking function not needed as we won't run this file directly due to TS imports.
+// This file is just a placeholder for the idea.
