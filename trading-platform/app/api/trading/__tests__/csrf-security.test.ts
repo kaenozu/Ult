@@ -41,7 +41,7 @@ describe('POST /api/trading CSRF Protection', () => {
   });
 
   it('should accept valid CSRF token', async () => {
-    const token = 'a'.repeat(32); // 32 chars hex token
+    const token = 'a'.repeat(64); // 64 chars hex token (32 bytes * 2)
     const req = new NextRequest('http://localhost:3000/api/trading', {
       method: 'POST',
       body: JSON.stringify({ action: 'start' }),

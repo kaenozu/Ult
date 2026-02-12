@@ -11,7 +11,7 @@ import {
   getVolatilityAssessment,
   getTrendDirection,
   calculateRiskScore,
-} from './calculator';
+} from '../calculator';
 import {
   PredictionCloudConfig,
   DEFAULT_PREDICTION_CLOUD_CONFIG,
