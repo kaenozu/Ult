@@ -93,39 +93,46 @@ class AuditLogger {
   /**
    * 監査イベントを記録
    */
-  log(event: Omit<AuditEvent, 'id' | 'timestamp' | 'hash' | 'previousHash'>): void {
-    const auditEvent: AuditEvent = {
-      ...event,
-      id: this.generateEventId(),
-      timestamp: Date.now(),
-      previousHash: this.lastHash,
-    };
-    
-    // ハッシュを計算（改ざん検知用）
-    auditEvent.hash = this.calculateHash(auditEvent);
-    this.lastHash = auditEvent.hash;
-    
-    // バッファに追加
-    this.eventBuffer.push(auditEvent);
-    
-     // クリティカルイベントは即座に保存
-     if (event.riskLevel === 'CRITICAL') {
-       this.flush().catch(e => logger.error('Flush error:', e));
-     }
-    
-     // バッファサイズチェック
-     if (this.eventBuffer.length >= 100) {
-       this.flush().catch(e => logger.error('Flush error:', e));
-     }
-    
-    // アラートチェック
-    this.checkAlert(auditEvent);
+  async log(event: Omit<AuditEvent, 'id' | 'timestamp' | 'hash' | 'previousHash'>): Promise<void> {
+    // Server-side guard: SafeStorage uses localStorage which is not available on server
+    if (typeof window === 'undefined') return;
+
+    try {
+      const auditEvent: AuditEvent = {
+        ...event,
+        id: this.generateEventId(),
+        timestamp: Date.now(),
+        previousHash: this.lastHash,
+      };
+
+      // ハッシュを計算（改ざん検知用 - SHA-256）
+      auditEvent.hash = await this.calculateHash(auditEvent);
+      this.lastHash = auditEvent.hash;
+
+      // バッファに追加
+      this.eventBuffer.push(auditEvent);
+
+       // クリティカルイベントは即座に保存
+       if (event.riskLevel === 'CRITICAL') {
+         this.flush().catch(e => logger.error('Flush error:', e));
+       }
+
+       // バッファサイズチェック
+       if (this.eventBuffer.length >= 100) {
+         this.flush().catch(e => logger.error('Flush error:', e));
+       }
+
+      // アラートチェック
+      this.checkAlert(auditEvent);
+    } catch (error) {
+      logger.error('Audit logging failed:', error instanceof Error ? error : new Error(String(error)));
+    }
   }
   
   /**
    * 簡易ログ関数
    */
-  logAction(
+  async logAction(
     type: AuditEventType,
     action: string,
     resource: string,
@@ -135,8 +142,8 @@ class AuditLogger {
       details?: Record<string, unknown>;
       riskLevel?: AuditEvent['riskLevel'];
     } = {}
-  ): void {
-    this.log({
+  ): Promise<void> {
+    await this.log({
       type,
       outcome,
       action,
@@ -151,8 +158,8 @@ class AuditLogger {
   // 特定イベントタイプ用ヘルパー
   // ========================================================================
   
-  logAuth(userId: string, success: boolean, details?: Record<string, unknown>): void {
-    this.logAction(
+  async logAuth(userId: string, success: boolean, details?: Record<string, unknown>): Promise<void> {
+    await this.logAction(
       success ? 'AUTH_LOGIN' : 'AUTH_FAILED',
       success ? 'User login' : 'Login attempt failed',
       'authentication',
@@ -161,13 +168,13 @@ class AuditLogger {
     );
   }
   
-  logOrder(
+  async logOrder(
     userId: string,
     orderId: string,
     action: 'CREATE' | 'MODIFY' | 'CANCEL' | 'EXECUTE',
     outcome: AuditEventOutcome,
     details?: Record<string, unknown>
-  ): void {
+  ): Promise<void> {
     const typeMap: Record<string, AuditEventType> = {
       CREATE: 'ORDER_CREATE',
       MODIFY: 'ORDER_MODIFY',
@@ -175,7 +182,7 @@ class AuditLogger {
       EXECUTE: 'ORDER_EXECUTE',
     };
     
-    this.logAction(
+    await this.logAction(
       typeMap[action],
       `Order ${action.toLowerCase()}`,
       `order:${orderId}`,
@@ -184,14 +191,14 @@ class AuditLogger {
     );
   }
   
-  logPosition(
+  async logPosition(
     userId: string,
     symbol: string,
     action: 'OPEN' | 'CLOSE',
     outcome: AuditEventOutcome,
     details?: Record<string, unknown>
-  ): void {
-    this.logAction(
+  ): Promise<void> {
+    await this.logAction(
       action === 'OPEN' ? 'POSITION_OPEN' : 'POSITION_CLOSE',
       `Position ${action.toLowerCase()}`,
       `position:${symbol}`,
@@ -200,13 +207,13 @@ class AuditLogger {
     );
   }
   
-  logConfigChange(
+  async logConfigChange(
     userId: string,
     configKey: string,
     oldValue: unknown,
     newValue: unknown
-  ): void {
-    this.logAction(
+  ): Promise<void> {
+    await this.logAction(
       'CONFIG_CHANGE',
       'Configuration modified',
       `config:${configKey}`,
@@ -219,12 +226,12 @@ class AuditLogger {
     );
   }
   
-  logSuspiciousActivity(
+  async logSuspiciousActivity(
     userId: string | undefined,
     activity: string,
     details?: Record<string, unknown>
-  ): void {
-    this.logAction(
+  ): Promise<void> {
+    await this.logAction(
       'SUSPICIOUS_ACTIVITY',
       activity,
       'security',
@@ -242,6 +249,15 @@ class AuditLogger {
    */
   private async flush(): Promise<void> {
     if (this.flushing || this.eventBuffer.length === 0) return;
+
+    // Server-side guard: SafeStorage uses localStorage which is not available on server
+    if (typeof window === 'undefined') {
+      // On server, we might want to log to file or console instead, but for now we just clear buffer to avoid memory leak
+      // Ideally, server-side audit logs should go to a database or external service.
+      this.eventBuffer = [];
+      return;
+    }
+
     this.flushing = true;
     try {
       const existingLogs = await this.loadLogs();
@@ -274,13 +290,16 @@ class AuditLogger {
    */
   private async loadLogs(): Promise<AuditEvent[]> {
     try {
+      // Server-side guard: SafeStorage uses localStorage which is not available on server
+      if (typeof window === 'undefined') return [];
+
       const stored = SafeStorage.getItem('audit_logs');
       if (!stored) return [];
       const decrypted = this.config.enableEncryption
         ? await this.decrypt(stored)
         : stored;
       const logs: AuditEvent[] = JSON.parse(decrypted);
-      return this.verifyIntegrity(logs);
+      return await this.verifyIntegrity(logs);
     } catch {
       return [];
     }
@@ -337,9 +356,9 @@ class AuditLogger {
   // ========================================================================
   
   /**
-   * ハッシュを計算
+   * ハッシュを計算 (SHA-256)
    */
-  private calculateHash(event: AuditEvent): string {
+  private async calculateHash(event: AuditEvent): Promise<string> {
     const data = JSON.stringify({
       timestamp: event.timestamp,
       type: event.type,
@@ -349,20 +368,16 @@ class AuditLogger {
       previousHash: event.previousHash,
     });
     
-    // 簡易ハッシュ（本番環境ではSHA-256等を使用）
-    let hash = 0;
-    for (let i = 0; i < data.length; i++) {
-      const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return hash.toString(16);
+    const msgBuffer = new TextEncoder().encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
   
   /**
    * ログの整合性を検証
    */
-  private verifyIntegrity(logs: AuditEvent[]): AuditEvent[] {
+  private async verifyIntegrity(logs: AuditEvent[]): Promise<AuditEvent[]> {
     const verified: AuditEvent[] = [];
     let expectedPreviousHash = '0';
     
@@ -379,7 +394,7 @@ class AuditLogger {
       }
       
       // ハッシュを再計算して検証
-      const recalculatedHash = this.calculateHash({ ...log, hash: undefined });
+      const recalculatedHash = await this.calculateHash({ ...log, hash: undefined });
       if (recalculatedHash !== log.hash) {
         logger.warn(`Audit log hash mismatch at event ${log.id}`);
         this.logSuspiciousActivity(
