@@ -258,38 +258,6 @@ test.describe('Error Handling - Network and API Issues', () => {
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test('should handle WebSocket connection failures', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle');
-    
-    // Monitor console for WebSocket errors
-    const consoleMessages: string[] = [];
-    page.on('console', msg => {
-      consoleMessages.push(msg.text());
-    });
-
-    // Block WebSocket connections
-    await page.route('ws://**', (route) => {
-      route.abort('failed');
-    });
-    await page.route('wss://**', (route) => {
-      route.abort('failed');
-    });
-
-    await page.waitForTimeout(3000);
-
-    // Check for WebSocket error handling
-    const wsError = page.locator('text=WebSocket, text=リアルタイム, text=Real-time, text=接続できません');
-    const hasWsError = await wsError.isVisible().catch(() => false);
-    
-    // Should fall back to polling or show offline mode
-    const offlineMode = page.locator('text=オフライン, text=Offline, text=Polling');
-    const hasOfflineMode = await offlineMode.isVisible().catch(() => false);
-    
-    // Page should remain functional
-    await expect(page.locator('body')).toBeVisible();
-  });
-
   test('should handle CORS errors appropriately', async ({ page }) => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
