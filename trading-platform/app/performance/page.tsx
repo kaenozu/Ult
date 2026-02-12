@@ -40,6 +40,7 @@ interface PerformanceScore {
 interface DualMatchResult extends PerformanceScore {
   confidence: number;
   aiSignalType: string;
+  dualScore: number;
 }
 
 
@@ -75,9 +76,9 @@ function PerformanceDashboardContent() {
 
   // フィルター
   const [market, setMarket] = useState<'all' | 'japan' | 'usa'>('all');
-  const [minWinRate, setMinWinRate] = useState(30);
-  const [minProfitFactor, setMinProfitFactor] = useState(0.5);
-  const [lookbackDays, setLookbackDays] = useState(180);
+  const [minWinRate, setMinWinRate] = useState(20);
+  const [minProfitFactor, setMinProfitFactor] = useState(0.8);
+  const [lookbackDays, setLookbackDays] = useState(365);
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   // AIシグナル用フィルター
@@ -159,7 +160,7 @@ function PerformanceDashboardContent() {
   }, []);
 
   // データ取得
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (forceRefresh: boolean = false) => {
     setLoading(true);
     setError(null);
 
@@ -176,6 +177,7 @@ function PerformanceDashboardContent() {
         lookbackDays: lookbackDays.toString(),
         mode: 'dual-scan', // 常にデュアルスキャンして背景でデータを揃える
         debug: 'true',
+        forceRefresh: forceRefresh.toString(),
       });
 
       params.append('minWinRate', minWinRate.toString());
@@ -254,7 +256,8 @@ function PerformanceDashboardContent() {
       ? dualData?.dualMatches.map(m => ({
         ...m.performance,
         confidence: m.aiSignal.confidence,
-        aiSignalType: m.aiSignal.signalType
+        aiSignalType: m.aiSignal.signalType,
+        dualScore: m.dualScore
       }))
       : activeTab === 'performance' ? dualData?.performance.results : dualData?.aiSignals.results;
 
@@ -372,7 +375,7 @@ function PerformanceDashboardContent() {
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={fetchData}
+            onClick={() => fetchData(true)}
             disabled={loading}
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-medium transition-all",
@@ -425,7 +428,8 @@ function PerformanceDashboardContent() {
               </div>
 
               {/* モード別フィルター */}
-              {activeTab === 'performance' ? (
+              {/* モード別フィルター */}
+              {(activeTab === 'performance' || activeTab === 'dual-match') && (
                 <>
                   {/* 最小勝率 */}
                   <div className="flex flex-col gap-2 mb-4">
@@ -461,8 +465,10 @@ function PerformanceDashboardContent() {
                     />
                   </div>
                 </>
-              ) : (
-                // AIシグナルモード: 最小信頼度
+              )}
+
+              {(activeTab === 'ai-signals' || activeTab === 'dual-match') && (
+                // AIシグナルモード・デュアルマッチ: 最小信頼度
                 <div className="flex flex-col gap-2 mb-4">
                   <div className="flex justify-between items-center">
                     <label className="text-xs text-[#92adc9] font-bold">最小信頼度</label>
@@ -492,6 +498,8 @@ function PerformanceDashboardContent() {
                   <option value={60}>2ヶ月</option>
                   <option value={90}>3ヶ月</option>
                   <option value={180}>6ヶ月</option>
+                  <option value={365}>1年</option>
+                  <option value={730}>2年</option>
                 </select>
               </div>
 
@@ -703,7 +711,7 @@ function PerformanceDashboardContent() {
                   <p className="text-red-400 mb-2">エラーが発生しました</p>
                   <p className="text-sm text-[#92adc9]">{error}</p>
                   <button
-                    onClick={fetchData}
+                    onClick={() => fetchData()}
                     className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80"
                   >
                     再試行
@@ -806,15 +814,24 @@ function PerformanceDashboardContent() {
                               </span>
                             </td>
                             <td className="px-3 py-3 text-center">
-                              <span className={cn("font-bold text-lg", getScoreColor(stock.performanceScore || 0))}>
-                                {(stock.performanceScore || 0).toFixed(1)}
+                              <span className={cn(
+                                "font-bold text-lg",
+                                activeTab === 'dual-match'
+                                  ? getScoreColor((stock as any).dualScore || 0)
+                                  : getScoreColor(stock.performanceScore || 0)
+                              )}>
+                                {activeTab === 'dual-match'
+                                  ? ((stock as any).dualScore || 0).toFixed(1)
+                                  : (stock.performanceScore || 0).toFixed(1)}
                               </span>
                             </td>
                             <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(stock.winRate ?? 0))}>
                               {(stock.winRate ?? 0).toFixed(1)}%
                             </td>
-                            <td className={cn("px-3 py-3 text-right font-bold", getScoreColor((stock.profitFactor ?? 0) * 33.3))}>
-                              {(stock.profitFactor ?? 0).toFixed(2)}
+                            <td className={cn("px-3 py-3 text-right font-bold", getScoreColor((stock.profitFactor ?? 1.5) * 33.3))}>
+                              {stock.profitFactor === null || stock.profitFactor === undefined || !isFinite(stock.profitFactor)
+                                ? 'Inf'
+                                : stock.profitFactor.toFixed(2)}
                             </td>
                             <td className={cn(
                               "px-3 py-3 text-right font-bold",
