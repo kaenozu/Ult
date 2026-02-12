@@ -90,11 +90,13 @@ export interface PerformanceMetrics {
   sharpeRatio: number;
   sortinoRatio: number;
   calmarRatio: number;
+  omegaRatio: number;
   informationRatio: number;
   treynorRatio: number;
 
   // Risk Metrics
   maxDrawdown: number;
+  maxDrawdownDuration: number;
   averageDrawdown: number;
   volatility: number;
   downsideDeviation: number;
@@ -105,6 +107,7 @@ export interface PerformanceMetrics {
   profitFactor: number;
   averageWin: number;
   averageLoss: number;
+  averageTrade: number;
   averageWinLossRatio: number;
   largestWin: number;
   largestLoss: number;
