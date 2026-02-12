@@ -172,10 +172,11 @@ class WinningAnalytics {
     // 戦略別勝率
     const winRateByStrategy = new Map<string, { wins: number; total: number }>();
     for (const trade of trades) {
-      const current = winRateByStrategy.get(trade.strategy) || { wins: 0, total: 0 };
+      const strategyKey = trade.strategy ?? 'unknown';
+      const current = winRateByStrategy.get(strategyKey) || { wins: 0, total: 0 };
       current.total++;
       if (trade.pnl > 0) current.wins++;
-      winRateByStrategy.set(trade.strategy, current);
+      winRateByStrategy.set(strategyKey, current);
     }
 
     const winRateByStrategyMap = new Map<string, number>();
@@ -471,6 +472,9 @@ class WinningAnalytics {
 
     const maxDrawdown = Math.max(...this.calculateDrawdownCurve(equityCurve));
 
+    const avgWin = winningTrades.length > 0 ? totalProfit / winningTrades.length : 0;
+    const avgLoss = trades.filter(t => t.pnl <= 0).length > 0 ? totalLoss / trades.filter(t => t.pnl <= 0).length : 0;
+    
     const metrics: PerformanceMetrics = {
       totalReturn,
       annualizedReturn: totalReturn,
@@ -482,8 +486,8 @@ class WinningAnalytics {
       averageDrawdown: 0,
       winRate: winRate / 100, // Convert to decimal
       profitFactor,
-      averageWin: winningTrades.length > 0 ? totalProfit / winningTrades.length : 0,
-      averageLoss: trades.filter(t => t.pnl <= 0).length > 0 ? totalLoss / trades.filter(t => t.pnl <= 0).length : 0,
+      averageWin: avgWin,
+      averageLoss: avgLoss,
       largestWin: winningTrades.length > 0 ? Math.max(...winningTrades.map(t => t.pnl)) : 0,
       largestLoss: trades.filter(t => t.pnl <= 0).length > 0 ? Math.min(...trades.filter(t => t.pnl <= 0).map(t => t.pnl)) : 0,
       averageTrade: trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0,
@@ -496,16 +500,22 @@ class WinningAnalytics {
       informationRatio: 0,
       treynorRatio: 0,
       conditionalValueAtRisk: 0,
-      downsideDeviation: 0
+      downsideDeviation: 0,
+      // Required properties
+      averageWinLossRatio: avgLoss > 0 ? avgWin / avgLoss : 0,
+      averageHoldingPeriod: trades.length > 0 ? trades.reduce((sum, t) => sum + getHoldingPeriods(t), 0) / trades.length : 0,
+      averageRMultiple: 0,
+      expectancy: 0,
+      kellyCriterion: 0,
+      riskOfRuin: 0,
+      SQN: 0,
+      // Extended properties
+      profitToDrawdownRatio: maxDrawdown > 0 ? totalReturn / maxDrawdown : 0,
+      returnToRiskRatio: volatility > 0 ? totalReturn / volatility : 0,
+      skewness: 0,
+      kurtosis: 0,
+      ulcerIndex: 0
     };
-
-    // Add extended properties as optional
-    metrics.avgHoldingPeriod = trades.length > 0 ? trades.reduce((sum, t) => sum + getHoldingPeriods(t), 0) / trades.length : 0;
-    metrics.profitToDrawdownRatio = maxDrawdown > 0 ? totalReturn / maxDrawdown : 0;
-    metrics.returnToRiskRatio = volatility > 0 ? totalReturn / volatility : 0;
-    metrics.skewness = 0;
-    metrics.kurtosis = 0;
-    metrics.ulcerIndex = 0;
 
     return metrics;
   }
@@ -606,7 +616,8 @@ class WinningAnalytics {
     const byStrategy = new Map<string, number>();
     
     for (const trade of trades) {
-      byStrategy.set(trade.strategy, (byStrategy.get(trade.strategy) || 0) + trade.pnl);
+      const strategyKey = trade.strategy ?? 'unknown';
+      byStrategy.set(strategyKey, (byStrategy.get(strategyKey) || 0) + trade.pnl);
     }
 
     return byStrategy;

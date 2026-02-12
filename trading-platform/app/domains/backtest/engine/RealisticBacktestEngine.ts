@@ -82,6 +82,25 @@ export interface RealisticBacktestResult extends BacktestResult {
   };
 }
 
+export interface WalkForwardResult {
+  inSample: RealisticBacktestResult;
+  outOfSample: RealisticBacktestResult;
+  robustnessScore: number; // 0-100
+  parameterStability: number; // 0-100
+}
+
+export interface MonteCarloResult {
+  originalResult: RealisticBacktestResult;
+  simulations: RealisticBacktestResult[];
+  probabilityOfProfit: number; // %
+  probabilityOfDrawdown: number; // %
+  confidenceIntervals: {
+    returns: { lower: number; upper: number };
+    drawdown: { lower: number; upper: number };
+    sharpe: { lower: number; upper: number };
+  };
+}
+
 // ============================================================================
 // Default Configuration
 // ============================================================================

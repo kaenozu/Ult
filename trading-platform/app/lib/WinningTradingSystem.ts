@@ -507,7 +507,7 @@ class WinningTradingSystem {
     if (!session) return null;
 
     // トレードデータを変換
-    const backtestTrades = session.trades.map(t => ({
+    const backtestTrades: RealisticTradeMetrics[] = session.trades.map(t => ({
       id: t.id,
       entryDate: t.entryTime,
       exitDate: t.exitTime,
@@ -519,11 +519,11 @@ class WinningTradingSystem {
       pnl: t.pnl,
       pnlPercent: t.pnlPercent,
       fees: 0,
-      slippage: 0,
       exitReason: t.exitReason as 'target' | 'stop' | 'signal' | 'trailing_stop' | 'time' | 'end_of_data',
       strategy: t.strategy,
-      riskRewardRatio: 0,
       holdingPeriods: 0,
+      marketImpact: 0,
+      effectiveSlippage: 0,
     }));
 
     // エクイティカーブを構築
