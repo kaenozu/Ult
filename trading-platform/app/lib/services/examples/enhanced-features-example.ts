@@ -53,8 +53,8 @@ export function calculateStockFeatures() {
     atr: [15, 16, 17]
   };
 
-  // Calculate enhanced features (51 dimensions)
-  const features = featureCalculationService.calculateEnhancedFeatures(
+  // Calculate features
+  const features = featureCalculationService.calculateFeatures(
     historicalData,
     indicators
   );

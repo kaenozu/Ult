@@ -239,7 +239,10 @@ export function calculateVolatility(
 /**
  * メモ化されたボラティリティ計算
  */
-export const calculateVolatilityMemoized = memoizeArray(calculateVolatility);
+export const calculateVolatilityMemoized = memoizeArray(
+  (prices: number[] | Float64Array, annualize: boolean = true): number => 
+    calculateVolatility(prices, annualize)
+);
 
 /**
  * 最大ドローダウンを計算

@@ -5,8 +5,7 @@
  * Please import directly from @/app/domains/prediction/services in new code.
  */
 
-import { OHLCV } from '@/app/types';
-import { TechnicalIndicatorsWithATR } from '../../../types';
+import { OHLCV, TechnicalIndicatorsWithATR } from '@/app/types';
 // Re-export types from domains
 export type { PredictionFeatures } from '@/app/domains/prediction/types';
 

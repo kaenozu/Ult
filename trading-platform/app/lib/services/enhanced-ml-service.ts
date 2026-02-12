@@ -31,8 +31,6 @@ export class EnhancedMLService extends DomainEnhancedMLService {
    */
   async predict(stock: Stock, historicalData: OHLCV[]): Promise<EnhancedMLPrediction> {
     const features: PredictionFeatures = {
-      symbol: stock.symbol,
-      currentPrice: historicalData[historicalData.length - 1]?.close || 0,
       rsi: 50,
       rsiChange: 0,
       sma5: 0,
@@ -41,8 +39,9 @@ export class EnhancedMLService extends DomainEnhancedMLService {
       volumeRatio: 1,
       priceMomentum: 0,
       macdSignal: 0,
-      bbPosition: 0.5,
+      bollingerPosition: 0.5,
       atrPercent: 0,
+      volatility: 0,
     };
 
     const result = await this.predictEnhanced(features, stock, historicalData);
@@ -64,4 +63,4 @@ export class EnhancedMLService extends DomainEnhancedMLService {
  */
 export const enhancedMLService = new EnhancedMLService();
 
-export { ModelPerformance, DriftMetrics };
+export type { ModelPerformance, DriftMetrics };

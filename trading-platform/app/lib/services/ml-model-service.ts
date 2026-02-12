@@ -27,7 +27,7 @@ export interface MLServiceConfig {
  * Extends the domain service with TensorFlow.js capabilities
  */
 export class MLModelService extends DomainMLModelService {
-  private readonly weights: MLServiceConfig['weights'];
+  private readonly configWeights: MLServiceConfig['weights'];
   private useTensorFlowModels: boolean;
 
   constructor(
@@ -36,7 +36,7 @@ export class MLModelService extends DomainMLModelService {
     config: Partial<MLServiceConfig> = {}
   ) {
     super();
-    this.weights = config.weights || PREDICTION.MODEL_WEIGHTS;
+    this.configWeights = config.weights || PREDICTION.MODEL_WEIGHTS;
     this.useTensorFlowModels = config.useTensorFlowModels || false;
   }
 
