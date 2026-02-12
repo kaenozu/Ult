@@ -15,6 +15,15 @@ export interface JWTPayload {
  * @returns Decoded JWT payload or null if invalid
  */
 export function verifyAuthToken(req: NextRequest): JWTPayload | null {
+  // Get validated configuration
+  const config = getConfig();
+  const JWT_SECRET = config.jwt.secret;
+
+  // Security: Ensure JWT secret meets minimum length requirement (256 bits = 32 bytes)
+  if (JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters');
+  }
+
   try {
     // Get token from Authorization header
     const authHeader = req.headers.get('authorization');
@@ -26,16 +35,6 @@ export function verifyAuthToken(req: NextRequest): JWTPayload | null {
     const token = authHeader.substring(7); // Remove 'Bearer ' prefix
     
     if (!token) {
-      return null;
-    }
-
-    // Get validated configuration
-    const config = getConfig();
-    const JWT_SECRET = config.jwt.secret;
-
-    // Security: Ensure JWT secret meets minimum length requirement (256 bits = 32 bytes)
-    if (JWT_SECRET.length < 32) {
-      console.error('Security Error: JWT_SECRET must be at least 32 characters');
       return null;
     }
 
@@ -64,6 +63,11 @@ export function generateAuthToken(userId: string, username?: string): string {
   const config = getConfig();
   const JWT_SECRET = config.jwt.secret;
   const JWT_EXPIRATION = config.jwt.expiration;
+
+  // Security: Ensure JWT secret meets minimum length requirement (256 bits = 32 bytes)
+  if (JWT_SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 32 characters');
+  }
 
   return jwt.sign(payload, JWT_SECRET, {
     algorithm: 'HS256',
