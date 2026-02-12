@@ -14,11 +14,15 @@
 import { OHLCV, Stock } from '@/app/types';
 import { winningStrategyEngine, StrategyResult, StrategyType } from './strategies';
 import { getGlobalRiskManager, PositionSizingResult } from './risk';
-import WinningBacktestEngine, { BacktestResult } from './backtest/WinningBacktestEngine';
-import type { PerformanceMetrics } from './backtest/WinningBacktestEngine';
+import { RealisticBacktestEngine, RealisticBacktestResult, RealisticTradeMetrics } from './backtest/RealisticBacktestEngine';
+import type { PerformanceMetrics } from '@/app/types/performance';
 import { winningAlertEngine, Alert, AlertConfig } from './alerts';
 import { winningAnalytics, PerformanceReport } from './analytics';
 import { BACKTEST_DEFAULTS } from './constants/backtest-config';
+import { Strategy } from './backtest/AdvancedBacktestEngine';
+
+// Type alias for backward compatibility
+type BacktestResult = RealisticBacktestResult;
 
 // ============================================================================
 // Types
@@ -419,74 +423,69 @@ class WinningTradingSystem {
   /**
    * バックテストを実行
    */
-  runBacktest(
+  async runBacktest(
     symbol: string,
     data: OHLCV[],
     strategy: StrategyType = 'ADAPTIVE'
-  ): BacktestResult {
-    // 戦略シグナルを生成
-    const strategyResults: StrategyResult[] = [];
-    for (let i = 50; i < data.length; i++) {
-      const result = winningStrategyEngine.executeStrategy(
-        strategy,
-        data.slice(0, i + 1),
-        this.config.initialCapital
-      );
-      strategyResults.push(result);
-    }
-
-    // strategyResultsをdataの長さに合わせる（最初の50要素はHOLDで埋める）
-    const alignedResults: StrategyResult[] = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i < 50) {
-        alignedResults.push({
-          signal: 'HOLD',
-          confidence: 0,
-          strategy: 'ADAPTIVE',
-          entryPrice: 0,
-          stopLoss: 0,
-          takeProfit: 0,
-          positionSize: 0,
-          riskRewardRatio: 0,
-          reasoning: 'Insufficient data for analysis',
-          indicators: {
-            rsi: 0,
-            macd: 0,
-            sma20: 0,
-            sma50: 0,
-            bbUpper: 0,
-            bbLower: 0,
-            atr: 0,
-            adx: 0
-          },
-          metadata: {
-            trendStrength: 0,
-            volatility: 0,
-            volumeConfirmation: false
-          }
-        });
-      } else {
-        alignedResults.push(strategyResults[i - 50]);
-      }
-    }
+  ): Promise<BacktestResult> {
+    // Create a strategy wrapper that uses the winningStrategyEngine
+    const strategyWrapper: Strategy = {
+      name: strategy,
+      description: `Strategy wrapper for ${strategy}`,
+      onInit: () => {},
+      onData: (currentData: OHLCV, index: number, context) => {
+        // Execute strategy for current bar
+        const historicalData = data.slice(0, index + 1);
+        if (historicalData.length < 50) {
+          return { action: 'HOLD' };
+        }
+        
+        const result = winningStrategyEngine.executeStrategy(
+          strategy,
+          historicalData,
+          context.equity
+        );
+        
+        return {
+          action: result.signal as 'BUY' | 'SELL' | 'HOLD' | 'CLOSE',
+          quantity: result.positionSize,
+          stopLoss: result.stopLoss,
+          takeProfit: result.takeProfit
+        };
+      },
+      onEnd: () => {}
+    };
 
     // バックテストを実行
-    const backtestEngine = new WinningBacktestEngine();
-    return backtestEngine.runBacktest(alignedResults, data, symbol);
+    const backtestEngine = new RealisticBacktestEngine({
+      initialCapital: this.config.initialCapital,
+      commission: 0.1,
+      slippage: 0.05,
+      spread: 0.01,
+      maxPositionSize: 20,
+      maxDrawdown: this.config.riskLimits.maxDrawdown,
+      allowShort: false,
+      useStopLoss: true,
+      useTakeProfit: true,
+      riskPerTrade: this.config.riskLimits.maxRiskPerTrade
+    });
+    
+    backtestEngine.loadData(symbol, data);
+    return await backtestEngine.runBacktest(strategyWrapper, symbol);
   }
 
   /**
    * 複数戦略を比較
    */
-  compareStrategies(
+  async compareStrategies(
     symbol: string,
     data: OHLCV[],
     strategies: StrategyType[]
-  ): Map<string, BacktestResult> {
+  ): Promise<Map<string, BacktestResult>> {
     const results = new Map<string, BacktestResult>();
 
     for (const strategy of strategies) {
-      const result = this.runBacktest(symbol, data, strategy);
+      const result = await this.runBacktest(symbol, data, strategy);
       results.set(strategy, result);
     }
 
