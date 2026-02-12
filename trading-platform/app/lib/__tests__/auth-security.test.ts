@@ -21,14 +21,26 @@ class MockNextRequest {
 describe('Authentication Security', () => {
   const validUserId = 'test-user-123';
   const validUsername = 'testuser';
+  const secureSecret = 'a-very-long-and-secure-secret-key-that-is-over-32-chars';
 
   beforeAll(() => {
-    process.env.JWT_SECRET = 'test-secret-key';
+    process.env.JWT_SECRET = secureSecret;
     resetConfig();
   });
 
   beforeEach(() => {
+    process.env.JWT_SECRET = secureSecret;
     resetConfig();
+  });
+
+  it('should throw an error if JWT_SECRET is less than 32 characters', () => {
+    process.env.JWT_SECRET = 'too-short';
+    resetConfig();
+    
+    // verifyAuthToken calls getConfig() internally
+    expect(() => {
+      verifyAuthToken(new MockNextRequest('http://localhost:3000/api/test') as any);
+    }).toThrow('JWT_SECRET must be at least 32 characters');
   });
 
   it('should reject tokens signed with a different algorithm (HS384)', () => {
