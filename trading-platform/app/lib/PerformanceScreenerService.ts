@@ -182,7 +182,7 @@ export class PerformanceScreenerService {
     );
 
     // development環境では20銘柄に制限（レートリミット対策）
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const isDev = process.env.NODE_ENV !== 'production';
     if (isDev && filteredSources.length > 20) {
       filteredSources = filteredSources.slice(0, 20);
@@ -643,7 +643,7 @@ export class PerformanceScreenerService {
 
     const allResults: AISignalResult[] = [];
     // Debug stats
-    let debugStats = { total: 0, buy: 0, sell: 0, hold: 0 };
+    const debugStats = { total: 0, buy: 0, sell: 0, hold: 0 };
     let maxBuyConfidence = 0;
     let maxBuySymbol = '';
 
