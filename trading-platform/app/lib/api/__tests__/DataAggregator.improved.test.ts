@@ -326,7 +326,7 @@ describe('Data Aggregator - Improved Data Fetching', () => {
         ok: true,
         json: () => Promise.resolve({ data: mockData1 })
       });
-      (global.fetch as jest).mockResolvedValueOnce({
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({ data: mockData2 })
       });

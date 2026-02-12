@@ -35,6 +35,8 @@ interface TradingStore {
  * Performance-optimized Legacy Trading Store Hook
  * Proxies to specialized stores for backward compatibility with memoization.
  * This ensures existing components continue to work while we transition to specialized stores.
+ *
+ * @deprecated Use `usePortfolioStore`, `useWatchlistStore`, or `useUIStore` instead.
  */
 export function useTradingStore(): TradingStore;
 export function useTradingStore<T>(selector: (state: TradingStore) => T): T;
