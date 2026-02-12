@@ -56,6 +56,7 @@ class AccuracyService {
 
     /**
      * Optimized batch calculation of Simple ATR (O(N))
+     * Reduces memory usage by removing intermediate arrays.
      */
     calculateBatchSimpleATR(data: OHLCV[]): number[] {
         const period = VOLATILITY.DEFAULT_ATR_PERIOD;
@@ -65,51 +66,59 @@ class AccuracyService {
         let currentCount = 0;
         let windowStart = 0;
 
-        const hlArray: number[] = new Array(data.length);
-        const trArray: number[] = new Array(data.length);
-        const validArray: boolean[] = new Array(data.length);
-
         for (let i = 0; i < data.length; i++) {
             const d = data[i];
-            if (!d || d.high === 0 || d.low === 0) {
-                validArray[i] = false;
-                hlArray[i] = 0;
-                trArray[i] = 0;
-                continue;
-            }
-            validArray[i] = true;
-            hlArray[i] = d.high - d.low;
+            const isValid = d && d.high !== 0 && d.low !== 0;
 
-            if (i > 0) {
-                const prev = data[i - 1];
-                if (prev) {
-                    const highClose = Math.abs(d.high - prev.close);
-                    const lowClose = Math.abs(d.low - prev.close);
-                    trArray[i] = Math.max(hlArray[i], highClose, lowClose);
-                } else {
-                    trArray[i] = hlArray[i];
-                }
-            } else {
-                trArray[i] = hlArray[i];
-            }
-        }
-
-        for (let i = 0; i < data.length; i++) {
-            if (validArray[i]) {
+            if (isValid) {
                 currentCount++;
-                if (i === windowStart) currentSum += hlArray[i];
-                else currentSum += trArray[i];
+                const hl = d.high - d.low;
+                let tr = hl;
+
+                if (i > 0) {
+                    const prev = data[i - 1];
+                    if (prev) {
+                        const highClose = Math.abs(d.high - prev.close);
+                        const lowClose = Math.abs(d.low - prev.close);
+                        tr = Math.max(hl, highClose, lowClose);
+                    }
+                }
+
+                if (i === windowStart) currentSum += hl;
+                else currentSum += tr;
             }
 
             if (i - windowStart + 1 > period) {
-                if (validArray[windowStart]) {
+                const startNode = data[windowStart];
+                const startIsValid = startNode && startNode.high !== 0 && startNode.low !== 0;
+
+                if (startIsValid) {
                     currentCount--;
-                    currentSum -= hlArray[windowStart];
+                    currentSum -= (startNode.high - startNode.low);
                 }
+
                 windowStart++;
-                if (windowStart <= i && validArray[windowStart]) {
-                    currentSum -= trArray[windowStart];
-                    currentSum += hlArray[windowStart];
+
+                if (windowStart <= i) {
+                    const newStartNode = data[windowStart];
+                    const newStartIsValid = newStartNode && newStartNode.high !== 0 && newStartNode.low !== 0;
+
+                    if (newStartIsValid) {
+                        // Calculate TR for the new start node to subtract it
+                        const newStartHL = newStartNode.high - newStartNode.low;
+                        let newStartTR = newStartHL;
+
+                        // We know windowStart > 0 here because window slid
+                        const prev = data[windowStart - 1];
+                        if (prev) {
+                            const highClose = Math.abs(newStartNode.high - prev.close);
+                            const lowClose = Math.abs(newStartNode.low - prev.close);
+                            newStartTR = Math.max(newStartHL, highClose, lowClose);
+                        }
+
+                        currentSum -= newStartTR;
+                        currentSum += newStartHL;
+                    }
                 }
             }
             results[i] = currentCount > 0 ? currentSum / currentCount : 0;
