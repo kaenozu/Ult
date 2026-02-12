@@ -232,7 +232,7 @@ const [displayFilters, filters, setDisplayFilters, isFilterDebouncing] = useDebo
       }
       return sortDirection === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
     });
-  }, [filters, sortField, sortDirection, stocks, analyzedStocks, isTechAnalysisDone]);
+  }, [filters, sortField, sortDirection, stocks, analyzedStocks, isTechAnalysisDone, displayFilters]);
 
   const handleStockClick = (stock: Stock) => {
     addToWatchlist(stock);
@@ -286,7 +286,7 @@ setDisplayFilters(prev => ({
       setIsTechAnalysisDone(false);
       setActivePreset(null);
     }, 300); // 300ms debounce
-  }, []);
+  }, [setDisplayFilters, setTechFilters, setIsTechAnalysisDone, setActivePreset]);
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
@@ -395,6 +395,7 @@ setDisplayFilters(prev => ({
                 <button
                   onClick={() => applyPreset('oversold')}
                   disabled={activePreset !== null}
+                  aria-label="売られすぎ銘柄を検索"
                   className={cn(
                     "relative text-xs py-2 px-3 rounded-lg text-left transition-all duration-200",
                     "bg-[#192633] hover:bg-[#233648] border border-green-500/30 text-green-400",
@@ -410,6 +411,7 @@ setDisplayFilters(prev => ({
                 <button
                   onClick={() => applyPreset('uptrend')}
                   disabled={activePreset !== null}
+                  aria-label="上昇トレンド銘柄を検索"
                   className={cn(
                     "relative text-xs py-2 px-3 rounded-lg text-left transition-all duration-200",
                     "bg-[#192633] hover:bg-[#233648] border border-blue-500/30 text-blue-400",
@@ -425,6 +427,7 @@ setDisplayFilters(prev => ({
                 <button
                   onClick={() => applyPreset('overbought')}
                   disabled={activePreset !== null}
+                  aria-label="買われすぎ銘柄を検索"
                   className={cn(
                     "relative text-xs py-2 px-3 rounded-lg text-left transition-all duration-200",
                     "bg-[#192633] hover:bg-[#233648] border border-red-500/30 text-red-400",
@@ -440,6 +443,7 @@ setDisplayFilters(prev => ({
                 <button
                   onClick={() => applyPreset('downtrend')}
                   disabled={activePreset !== null}
+                  aria-label="下降トレンド銘柄を検索"
                   className={cn(
                     "relative text-xs py-2 px-3 rounded-lg text-left transition-all duration-200",
                     "bg-[#192633] hover:bg-[#233648] border border-orange-500/30 text-orange-400",

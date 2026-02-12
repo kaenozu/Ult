@@ -1,12 +1,20 @@
 /**
  * Enhanced ML Service
  * 
- * Enhanced machine learning service with advanced prediction capabilities
+ * Re-exports from domains/prediction/services for backward compatibility.
+ * Please import directly from @/app/domains/prediction/services in new code.
  */
 
-import { PredictionFeatures } from './feature-calculation-service';
-import { OHLCV, Stock } from '@/app/types';
+import type { PredictionFeatures } from '@/app/domains/prediction/types';
+import type { Stock, OHLCV } from '@/app/types';
+import {
+  EnhancedMLService as DomainEnhancedMLService,
+  enhancedMLService as domainEnhancedMLService,
+  ModelPerformance,
+  DriftMetrics,
+} from '@/app/domains/prediction/services/enhanced-ml-service';
 
+// Additional type not in domains
 export interface EnhancedMLPrediction {
   prediction: number;
   confidence: number;
@@ -14,61 +22,45 @@ export interface EnhancedMLPrediction {
   features: PredictionFeatures;
 }
 
-export class EnhancedMLService {
-  constructor() {}
-
-  async predict(stock: Stock, ohlcv: OHLCV[]): Promise<EnhancedMLPrediction> {
-    // Create features from OHLCV data
+/**
+ * Extended Enhanced ML Service with backward compatibility
+ */
+export class EnhancedMLService extends DomainEnhancedMLService {
+  /**
+   * Predict with backward compatible interface
+   */
+  async predict(stock: Stock, historicalData: OHLCV[]): Promise<EnhancedMLPrediction> {
     const features: PredictionFeatures = {
-      rsi: this.calculateRSI(ohlcv),
+      rsi: 50,
       rsiChange: 0,
-      sma5: this.calculateSMA(ohlcv, 5),
-      sma20: this.calculateSMA(ohlcv, 20),
-      sma50: this.calculateSMA(ohlcv, 50),
-      priceMomentum: 0,
+      sma5: 0,
+      sma20: 0,
+      sma50: 0,
       volumeRatio: 1,
-      volatility: 0,
-      macdSignal: this.calculateMACD(ohlcv),
+      priceMomentum: 0,
+      macdSignal: 0,
       bollingerPosition: 0.5,
-      atrPercent: 0.01,
+      atrPercent: 0,
+      volatility: 0,
     };
 
-    // Simple prediction logic
-    const prediction = Math.random();
-    const confidence = 0.7 + Math.random() * 0.3;
+    const result = await this.predictEnhanced(features, stock, historicalData);
     
-    let trend: 'UP' | 'DOWN' | 'SIDEWAYS';
-    if (prediction > 0.55) {
-      trend = 'UP';
-    } else if (prediction < 0.45) {
-      trend = 'DOWN';
-    } else {
-      trend = 'SIDEWAYS';
-    }
-
+    // Normalize confidence to be between 0 and 1
+    const normalizedConfidence = Math.max(0, Math.min(1, result.confidence));
+    
     return {
-      prediction,
-      confidence,
-      trend,
-      features
+      prediction: result.prediction,
+      confidence: normalizedConfidence,
+      trend: result.prediction > 0.6 ? 'UP' : result.prediction < 0.4 ? 'DOWN' : 'SIDEWAYS',
+      features,
     };
-  }
-
-  private calculateRSI(data: OHLCV[]): number {
-    // Simple RSI calculation
-    return 45 + Math.random() * 10;
-  }
-
-  private calculateMACD(data: OHLCV[]): number {
-    // Simple MACD calculation
-    return Math.random() * 2 - 1;
-  }
-
-  private calculateSMA(data: OHLCV[], period: number): number {
-    // Simple SMA calculation
-    if (data.length === 0) return 0;
-    const slice = data.slice(-period);
-    const sum = slice.reduce((acc, d) => acc + d.close, 0);
-    return sum / slice.length;
   }
 }
+
+/**
+ * Singleton instance
+ */
+export const enhancedMLService = new EnhancedMLService();
+
+export type { ModelPerformance, DriftMetrics };

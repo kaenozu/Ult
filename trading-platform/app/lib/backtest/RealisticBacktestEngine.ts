@@ -17,11 +17,12 @@ import {
   Strategy,
   Trade,
   StrategyContext,
-  PerformanceMetrics,
   StrategyAction
 } from './AdvancedBacktestEngine';
+import { PerformanceMetrics } from '@/app/types/performance';
 import { SlippagePredictionService, OrderBook, OrderBookLevel } from '../execution/SlippagePredictionService';
 import { BACKTEST_DEFAULTS, REALISTIC_BACKTEST_DEFAULTS, TIERED_COMMISSIONS } from '../constants/backtest-config';
+import type { StrategyResult } from '../strategies/WinningStrategyEngine';
 
 export interface CommissionTier {
   volumeThreshold: number;
@@ -49,6 +50,10 @@ export interface RealisticTradeMetrics extends Trade {
   commissionTier?: number;
   timeOfDayFactor?: number;
   volatilityFactor?: number;
+  // Extended properties for analytics compatibility
+  strategy?: string;
+  holdingPeriods?: number;
+  riskRewardRatio?: number;
 }
 
 export interface RealisticBacktestResult {
@@ -73,6 +78,25 @@ export interface RealisticBacktestResult {
     worstSlippage: number;
     bestSlippage: number;
     slippageStdDev: number;
+  };
+}
+
+export interface WalkForwardResult {
+  inSample: RealisticBacktestResult;
+  outOfSample: RealisticBacktestResult;
+  robustnessScore: number; // 0-100
+  parameterStability: number; // 0-100
+}
+
+export interface MonteCarloResult {
+  originalResult: RealisticBacktestResult;
+  simulations: RealisticBacktestResult[];
+  probabilityOfProfit: number; // %
+  probabilityOfDrawdown: number; // %
+  confidenceIntervals: {
+    returns: { lower: number; upper: number };
+    drawdown: { lower: number; upper: number };
+    sharpe: { lower: number; upper: number };
   };
 }
 
@@ -139,10 +163,10 @@ export class RealisticBacktestEngine extends EventEmitter {
     this.data.set(symbol, data);
   }
 
-  /**
-   * Run backtest with realistic simulation
-   */
-   async runBacktest(strategy: Strategy, symbol: string): Promise<RealisticBacktestResult> {
+   /**
+    * Run backtest with realistic simulation (Strategy-based)
+    */
+    async runBacktest(strategy: Strategy, symbol: string): Promise<RealisticBacktestResult> {
      const data = this.data.get(symbol);
      if (!data || data.length === 0) {
        throw new Error(`No data loaded for symbol: ${symbol}`);
@@ -641,6 +665,14 @@ export class RealisticBacktestEngine extends EventEmitter {
     return ((peak - this.currentEquity) / peak) * 100;
   }
 
+  private calculateValueAtRisk(returns: number[], confidence: number = 0.95): number {
+    if (returns.length === 0) return 0;
+    const sortedReturns = [...returns].sort((a, b) => a - b);
+    const index = Math.floor((1 - confidence) * sortedReturns.length);
+    // VaR is usually expressed as a positive number (loss amount/percentage)
+    return Math.abs(sortedReturns[index]);
+  }
+
   /**
    * Calculate performance metrics
    */
@@ -655,27 +687,53 @@ export class RealisticBacktestEngine extends EventEmitter {
        i === 0 ? 0 : (eq - equityCurve[i - 1]) / equityCurve[i - 1]
      ).slice(1);
 
-     const winningTrades = trades.filter((t) => t.pnl > 0);
-     const losingTrades = trades.filter((t) => t.pnl <= 0);
+     // Optimized single-pass calculation for trade stats
+     let grossProfit = 0;
+     let grossLoss = 0;
+     let winningTradesCount = 0;
+     let losingTradesCount = 0;
+     let largestWin = 0;
+     let largestLoss = 0;
+     let totalPnl = 0;
+
+     for (const t of trades) {
+       totalPnl += t.pnl;
+       if (t.pnl > 0) {
+         grossProfit += t.pnl;
+         winningTradesCount++;
+         if (t.pnl > largestWin) largestWin = t.pnl;
+       } else {
+         grossLoss += Math.abs(t.pnl);
+         losingTradesCount++;
+         if (t.pnl < largestLoss) largestLoss = t.pnl;
+       }
+     }
 
      const avgReturn = returns.length > 0 ? returns.reduce((a, b) => a + b, 0) / returns.length : 0;
      const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
-     const volatility = Math.sqrt(variance) * Math.sqrt(252) * 100;
+     const volatility = Math.sqrt(variance) * Math.sqrt(252); // Annualized volatility (decimal)
 
      const riskFreeRate = 0.02 / 252;
-     const sharpeRatio = volatility === 0 ? 0 : ((avgReturn - riskFreeRate) / (volatility / 100 / Math.sqrt(252))) * Math.sqrt(252);
+     // Daily Sharpe = (Daily Excess / Daily Vol)
+     // Annualized Sharpe = Daily Sharpe * sqrt(252)
+     const dailyVol = Math.sqrt(variance);
+     const sharpeRatio = dailyVol === 0 ? 0 : ((avgReturn - riskFreeRate) / dailyVol) * Math.sqrt(252);
 
      const downsideReturns = returns.filter((r) => r < 0);
-     const downsideDeviation = downsideReturns.length > 0 
-       ? Math.sqrt(downsideReturns.reduce((sum, r) => sum + r * r, 0) / downsideReturns.length) * Math.sqrt(252)
+     const downsideVariance = downsideReturns.length > 0
+       ? downsideReturns.reduce((sum, r) => sum + r * r, 0) / downsideReturns.length
        : 0;
-     const sortinoRatio = downsideDeviation === 0 ? 0 : ((avgReturn - riskFreeRate) * 252) / (downsideDeviation * Math.sqrt(252));
+     const downsideDeviation = Math.sqrt(downsideVariance) * Math.sqrt(252); // Annualized Downside Vol (decimal)
+     const dailyDownsideDev = Math.sqrt(downsideVariance);
+     const sortinoRatio = dailyDownsideDev === 0 ? 0 : ((avgReturn - riskFreeRate) / dailyDownsideDev) * Math.sqrt(252);
 
-     // Max drawdown
+     // Max drawdown and average drawdown
      let maxDrawdown = 0;
      let maxDrawdownDuration = 0;
      let peak = equityCurve[0];
      let peakIndex = 0;
+     let totalDrawdown = 0;
+     let drawdownCount = 0;
 
      for (let i = 1; i < equityCurve.length; i++) {
        if (equityCurve[i] > peak) {
@@ -683,27 +741,27 @@ export class RealisticBacktestEngine extends EventEmitter {
          peakIndex = i;
        }
        const drawdown = (peak - equityCurve[i]) / peak;
+       if (drawdown > 0) {
+         totalDrawdown += drawdown;
+         drawdownCount++;
+       }
        if (drawdown > maxDrawdown) {
          maxDrawdown = drawdown;
          maxDrawdownDuration = i - peakIndex;
        }
      }
+     const averageDrawdown = drawdownCount > 0 ? (totalDrawdown / drawdownCount) : 0; // Decimal
 
-     const winRate = trades.length > 0 ? (winningTrades.length / trades.length) * 100 : 0;
+     const winRate = trades.length > 0 ? (winningTradesCount / trades.length) : 0; // Decimal
 
-     const grossProfit = winningTrades.reduce((sum, t) => sum + t.pnl, 0);
-     const grossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
      const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
 
-     const averageWin = winningTrades.length > 0 ? grossProfit / winningTrades.length : 0;
-     const averageLoss = losingTrades.length > 0 ? grossLoss / losingTrades.length : 0;
+     const averageWin = winningTradesCount > 0 ? grossProfit / winningTradesCount : 0;
+     const averageLoss = losingTradesCount > 0 ? grossLoss / losingTradesCount : 0;
 
-     const largestWin = winningTrades.length > 0 ? Math.max(...winningTrades.map((t) => t.pnl)) : 0;
-     const largestLoss = losingTrades.length > 0 ? Math.min(...losingTrades.map((t) => t.pnl)) : 0;
+     const averageTrade = trades.length > 0 ? totalPnl / trades.length : 0;
 
-     const averageTrade = trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0;
-
-     const calmarRatio = maxDrawdown === 0 ? 0 : annualizedReturn / (maxDrawdown * 100);
+     const calmarRatio = maxDrawdown === 0 ? 0 : (annualizedReturn / 100) / maxDrawdown; // annualizedReturn passed in is %, convert to decimal
 
      // Omega ratio (simplified)
      const threshold = 0;
@@ -711,33 +769,389 @@ export class RealisticBacktestEngine extends EventEmitter {
      const losses = returns.filter((r) => r < threshold).reduce((sum, r) => sum + threshold - r, 0);
      const omegaRatio = losses === 0 ? gains : gains / losses;
 
+     const valueAtRisk = this.calculateValueAtRisk(returns);
+     // Annualized Information Ratio = Annualized Return / Annualized Risk
+     // Assuming Benchmark Return = 0 (Risk Free Rate handled in Sharpe)
+     const informationRatio = volatility > 0 ? (avgReturn * 252) / volatility : 0;
+
+      // Calculate advanced metrics from WinningBacktestEngine
+      const avgHoldingPeriod = this.calculateAvgHoldingPeriod(trades);
+      const { maxConsecutiveWins, maxConsecutiveLosses } = this.calculateMaxConsecutive(trades);
+      const expectancy = this.calculateExpectancy(winRate, averageWin, averageLoss);
+      const skewness = this.calculateSkewness(returns);
+      const kurtosis = this.calculateKurtosis(returns);
+      const ulcerIndex = this.calculateUlcerIndex(equityCurve);
+      const profitToDrawdownRatio = maxDrawdown > 0 ? (totalReturn / 100) / maxDrawdown : 0;
+      const returnToRiskRatio = volatility > 0 ? (annualizedReturn / 100) / volatility : 0;
+      const kellyCriterion = this.calculateKellyCriterion(winRate, averageWin, averageLoss);
+      const sqn = this.calculateSQN(trades, averageTrade);
+
+      // Build metrics object with all calculated values
+      const metrics: PerformanceMetrics = {
+        totalReturn: parseFloat((totalReturn / 100).toFixed(4)), // Convert % to decimal
+        annualizedReturn: parseFloat((annualizedReturn / 100).toFixed(4)), // Convert % to decimal
+        volatility: parseFloat(volatility.toFixed(4)),
+        sharpeRatio: parseFloat(sharpeRatio.toFixed(4)),
+        sortinoRatio: parseFloat(sortinoRatio.toFixed(4)),
+        maxDrawdown: parseFloat(maxDrawdown.toFixed(4)),
+        maxDrawdownDuration,
+        averageDrawdown: parseFloat(averageDrawdown.toFixed(4)),
+        winRate: parseFloat(winRate.toFixed(4)),
+        profitFactor: parseFloat(profitFactor.toFixed(4)),
+        averageWin: parseFloat(averageWin.toFixed(2)),
+        averageLoss: parseFloat(averageLoss.toFixed(2)),
+        largestWin: parseFloat(largestWin.toFixed(2)),
+        largestLoss: parseFloat(largestLoss.toFixed(2)),
+        averageTrade: parseFloat(averageTrade.toFixed(2)),
+        totalTrades: trades.length,
+        winningTrades: winningTradesCount,
+        losingTrades: losingTradesCount,
+        calmarRatio: parseFloat(calmarRatio.toFixed(4)),
+        omegaRatio: parseFloat(omegaRatio.toFixed(4)),
+        valueAtRisk: parseFloat(valueAtRisk.toFixed(4)),
+        informationRatio: parseFloat(informationRatio.toFixed(4)),
+        treynorRatio: 0,
+        conditionalValueAtRisk: 0,
+        downsideDeviation: parseFloat(downsideDeviation.toFixed(4)),
+        averageWinLossRatio: averageLoss > 0 ? averageWin / averageLoss : 0,
+        averageHoldingPeriod: avgHoldingPeriod,
+        averageRMultiple: 0,
+        expectancy: parseFloat(expectancy.toFixed(4)),
+        kellyCriterion: parseFloat(kellyCriterion.toFixed(4)),
+        riskOfRuin: 0,
+        SQN: parseFloat(sqn.toFixed(4))
+      };
+
+      // Add extended metrics as optional properties
+      metrics.skewness = parseFloat(skewness.toFixed(4));
+      metrics.kurtosis = parseFloat(kurtosis.toFixed(4));
+      metrics.maxConsecutiveWins = maxConsecutiveWins;
+      metrics.maxConsecutiveLosses = maxConsecutiveLosses;
+      metrics.avgHoldingPeriod = avgHoldingPeriod;
+      metrics.profitToDrawdownRatio = parseFloat(profitToDrawdownRatio.toFixed(4));
+      metrics.returnToRiskRatio = parseFloat(returnToRiskRatio.toFixed(4));
+      metrics.ulcerIndex = parseFloat(ulcerIndex.toFixed(4));
+
+      return metrics;
+   }
+
+   // ============================================================================
+   // Advanced Metrics Calculation (from WinningBacktestEngine)
+   // ============================================================================
+
+   private calculateAvgHoldingPeriod(trades: RealisticTradeMetrics[]): number {
+     if (trades.length === 0) return 0;
+     return trades.reduce((sum, t) => sum + (t.holdingPeriods ?? 0), 0) / trades.length;
+   }
+
+   private calculateMaxConsecutive(trades: RealisticTradeMetrics[]): { maxConsecutiveWins: number; maxConsecutiveLosses: number } {
+     let maxWins = 0, maxLosses = 0, currentWins = 0, currentLosses = 0;
+     for (const trade of trades) {
+       if (trade.pnl > 0) {
+         currentWins++;
+         currentLosses = 0;
+         maxWins = Math.max(maxWins, currentWins);
+       } else {
+         currentLosses++;
+         currentWins = 0;
+         maxLosses = Math.max(maxLosses, currentLosses);
+       }
+     }
+     return { maxConsecutiveWins: maxWins, maxConsecutiveLosses: maxLosses };
+   }
+
+   private calculateExpectancy(winRate: number, avgWin: number, avgLoss: number): number {
+     return (winRate * avgWin) - ((1 - winRate) * avgLoss);
+   }
+
+   private calculateSkewness(returns: number[]): number {
+     if (returns.length < 3) return 0;
+     const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+     const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+     const stdDev = Math.sqrt(variance);
+     if (stdDev === 0) return 0;
+     return returns.reduce((sum, r) => sum + Math.pow((r - mean) / stdDev, 3), 0) / returns.length;
+   }
+
+   private calculateKurtosis(returns: number[]): number {
+     if (returns.length < 4) return 0;
+     const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+     const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+     const stdDev = Math.sqrt(variance);
+     if (stdDev === 0) return 0;
+     return returns.reduce((sum, r) => sum + Math.pow((r - mean) / stdDev, 4), 0) / returns.length - 3;
+   }
+
+   private calculateUlcerIndex(equityCurve: number[]): number {
+     const drawdowns = equityCurve.map((equity, i) => {
+       const peak = Math.max(...equityCurve.slice(0, i + 1));
+       return Math.pow((peak - equity) / peak, 2);
+     });
+     return Math.sqrt(drawdowns.reduce((sum, d) => sum + d, 0) / drawdowns.length) * 100;
+   }
+
+   private calculateKellyCriterion(winRate: number, avgWin: number, avgLoss: number): number {
+     if (avgLoss === 0) return 0;
+     const winLossRatio = avgWin / avgLoss;
+     return (winRate - ((1 - winRate) / winLossRatio));
+   }
+
+   private calculateSQN(trades: RealisticTradeMetrics[], averageTrade: number): number {
+     if (trades.length < 2) return 0;
+     const variance = trades.reduce((sum, t) => sum + Math.pow(t.pnl - averageTrade, 2), 0) / trades.length;
+     const stdDev = Math.sqrt(variance);
+     return stdDev === 0 ? 0 : (averageTrade / stdDev) * Math.sqrt(trades.length);
+   }
+
+   // ============================================================================
+   // Advanced Analysis Methods (from WinningBacktestEngine)
+   // ============================================================================
+
+   /**
+    * Run walk-forward analysis
+    */
+   async runWalkForwardAnalysis(
+     strategy: Strategy,
+     symbol: string,
+     trainSize: number = 252, // 1 year
+     testSize: number = 63    // 3 months
+   ): Promise<WalkForwardResult[]> {
+     const data = this.data.get(symbol);
+     if (!data || data.length === 0) {
+       throw new Error(`No data loaded for symbol: ${symbol}`);
+     }
+
+     const results: WalkForwardResult[] = [];
+     let startIndex = 0;
+
+     while (startIndex + trainSize + testSize <= data.length) {
+       // In-Sample period (parameter optimization)
+       const trainData = data.slice(startIndex, startIndex + trainSize);
+       this.data.set(`${symbol}_train`, trainData);
+       const inSampleResult = await this.runBacktest(strategy, `${symbol}_train`);
+
+       // Out-of-Sample period (validation)
+       const testData = data.slice(startIndex + trainSize, startIndex + trainSize + testSize);
+       this.data.set(`${symbol}_test`, testData);
+       const outOfSampleResult = await this.runBacktest(strategy, `${symbol}_test`);
+
+       // Calculate robustness score
+       const robustnessScore = this.calculateRobustnessScore(inSampleResult, outOfSampleResult);
+       const parameterStability = this.calculateParameterStability(inSampleResult, outOfSampleResult);
+
+       results.push({
+         inSample: inSampleResult,
+         outOfSample: outOfSampleResult,
+         robustnessScore,
+         parameterStability
+       });
+
+       startIndex += testSize;
+     }
+
+     return results;
+   }
+
+   /**
+    * Run Monte Carlo simulation
+    */
+   runMonteCarloSimulation(
+     originalResult: RealisticBacktestResult,
+     numSimulations: number = 1000
+   ): MonteCarloResult {
+     const simulations: RealisticBacktestResult[] = [];
+
+     for (let i = 0; i < numSimulations; i++) {
+       // Shuffle trades randomly
+       const shuffledTrades = this.shuffleTrades([...originalResult.trades]);
+
+       // Reconstruct equity curve
+       const simulatedEquity = this.reconstructEquityCurve(shuffledTrades);
+
+       // Create simulation result
+       const days = simulatedEquity.length;
+       const totalReturn = ((simulatedEquity[simulatedEquity.length - 1] - simulatedEquity[0]) / simulatedEquity[0]) * 100;
+       const annualizedReturn = days > 0
+         ? (Math.pow(1 + totalReturn / 100, 365 / days) - 1) * 100
+         : 0;
+
+       const simulatedResult: RealisticBacktestResult = {
+         ...originalResult,
+         trades: shuffledTrades,
+         equityCurve: simulatedEquity,
+         metrics: this.calculateMetricsFromEquity(simulatedEquity, shuffledTrades, totalReturn, days, annualizedReturn)
+       };
+
+       simulations.push(simulatedResult);
+     }
+
+     // Calculate probabilities
+     const profitableSimulations = simulations.filter(s => s.metrics.totalReturn > 0).length;
+     const drawdownSimulations = simulations.filter(
+       s => s.metrics.maxDrawdown > (this.config.maxDrawdown / 100)
+     ).length;
+
+     // Calculate confidence intervals
+     const returns = simulations.map(s => s.metrics.totalReturn).sort((a, b) => a - b);
+     const drawdowns = simulations.map(s => s.metrics.maxDrawdown).sort((a, b) => a - b);
+     const sharpes = simulations.map(s => s.metrics.sharpeRatio).sort((a, b) => a - b);
+
      return {
-       totalReturn: parseFloat(totalReturn.toFixed(2)),
-       annualizedReturn: parseFloat(annualizedReturn.toFixed(2)),
-       volatility: parseFloat(volatility.toFixed(2)),
-       sharpeRatio: parseFloat(sharpeRatio.toFixed(2)),
-       sortinoRatio: parseFloat(sortinoRatio.toFixed(2)),
-       maxDrawdown: parseFloat((maxDrawdown * 100).toFixed(2)),
-       maxDrawdownDuration,
-       winRate: parseFloat(winRate.toFixed(1)),
-       profitFactor: parseFloat(profitFactor.toFixed(2)),
-       averageWin: parseFloat(averageWin.toFixed(2)),
-       averageLoss: parseFloat(averageLoss.toFixed(2)),
-       largestWin: parseFloat(largestWin.toFixed(2)),
-       largestLoss: parseFloat(largestLoss.toFixed(2)),
-       averageTrade: parseFloat(averageTrade.toFixed(2)),
-       totalTrades: trades.length,
-       winningTrades: winningTrades.length,
-       losingTrades: losingTrades.length,
-       calmarRatio: parseFloat(calmarRatio.toFixed(2)),
-       omegaRatio: parseFloat(omegaRatio.toFixed(2)),
+       originalResult,
+       simulations,
+       probabilityOfProfit: (profitableSimulations / numSimulations) * 100,
+       probabilityOfDrawdown: (drawdownSimulations / numSimulations) * 100,
+       confidenceIntervals: {
+         returns: {
+           lower: returns[Math.floor(numSimulations * 0.05)],
+           upper: returns[Math.floor(numSimulations * 0.95)]
+         },
+         drawdown: {
+           lower: drawdowns[Math.floor(numSimulations * 0.05)],
+           upper: drawdowns[Math.floor(numSimulations * 0.95)]
+         },
+         sharpe: {
+           lower: sharpes[Math.floor(numSimulations * 0.05)],
+           upper: sharpes[Math.floor(numSimulations * 0.95)]
+         }
+       }
      };
    }
 
-  /**
-   * Reset state
-   */
-  private resetState(): void {
+   /**
+    * Compare multiple strategies
+    */
+   compareStrategies(results: Map<string, RealisticBacktestResult>): {
+     strategy: string;
+     metrics: PerformanceMetrics;
+     score: number;
+   }[] {
+     return Array.from(results.entries())
+       .map(([strategy, result]) => ({
+         strategy,
+         metrics: result.metrics,
+         score: this.calculateStrategyScore(result.metrics)
+       }))
+       .sort((a, b) => b.score - a.score);
+   }
+
+   // ============================================================================
+   // Private Helper Methods
+   // ============================================================================
+
+   private calculateRobustnessScore(inSample: RealisticBacktestResult, outOfSample: RealisticBacktestResult): number {
+     const returnRatio = outOfSample.metrics.totalReturn / Math.max(inSample.metrics.totalReturn, 0.01);
+     const sharpeRatio = outOfSample.metrics.sharpeRatio / Math.max(inSample.metrics.sharpeRatio, 0.01);
+     const winRateRatio = outOfSample.metrics.winRate / Math.max(inSample.metrics.winRate, 0.01);
+
+     const score = (Math.min(returnRatio, 1) + Math.min(sharpeRatio, 1) + Math.min(winRateRatio, 1)) / 3;
+     return Math.round(score * 100);
+   }
+
+   private calculateParameterStability(inSample: RealisticBacktestResult, outOfSample: RealisticBacktestResult): number {
+     const drawdownDiff = Math.abs(inSample.metrics.maxDrawdown - outOfSample.metrics.maxDrawdown);
+     return Math.max(0, 100 - drawdownDiff * 200); // Scale appropriately
+   }
+
+   private shuffleTrades(trades: RealisticTradeMetrics[]): RealisticTradeMetrics[] {
+     for (let i = trades.length - 1; i > 0; i--) {
+       const j = Math.floor(Math.random() * (i + 1));
+       [trades[i], trades[j]] = [trades[j], trades[i]];
+     }
+     return trades;
+   }
+
+   private reconstructEquityCurve(trades: RealisticTradeMetrics[]): number[] {
+     const equity: number[] = [this.config.initialCapital];
+     let currentEquity = this.config.initialCapital;
+
+     for (const trade of trades) {
+       currentEquity += trade.pnl;
+       equity.push(currentEquity);
+     }
+
+     return equity;
+   }
+
+   private calculateMetricsFromEquity(
+     equity: number[],
+     trades: RealisticTradeMetrics[],
+     totalReturn: number,
+     days: number,
+     annualizedReturn: number
+   ): PerformanceMetrics {
+     const returns = equity.slice(1).map((eq, i) => (eq - equity[i]) / equity[i]);
+     
+     return {
+       totalReturn: parseFloat((totalReturn / 100).toFixed(4)),
+       annualizedReturn: parseFloat((annualizedReturn / 100).toFixed(4)),
+       volatility: this.calculateVolatility(returns),
+       sharpeRatio: 0,
+       sortinoRatio: 0,
+       maxDrawdown: this.calculateMaxDrawdownFromEquity(equity),
+       maxDrawdownDuration: 0,
+       averageDrawdown: 0,
+       winRate: trades.length > 0 ? (trades.filter(t => t.pnl > 0).length / trades.length) : 0,
+       profitFactor: 0,
+       averageWin: 0,
+       averageLoss: 0,
+       largestWin: 0,
+       largestLoss: 0,
+       averageTrade: trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0,
+       totalTrades: trades.length,
+       winningTrades: trades.filter(t => t.pnl > 0).length,
+       losingTrades: trades.filter(t => t.pnl <= 0).length,
+       calmarRatio: 0,
+       omegaRatio: 0,
+       valueAtRisk: 0,
+       informationRatio: 0,
+       treynorRatio: 0,
+       conditionalValueAtRisk: 0,
+       downsideDeviation: 0,
+       averageWinLossRatio: 0,
+       averageHoldingPeriod: 0,
+       averageRMultiple: 0,
+       expectancy: 0,
+       kellyCriterion: 0,
+       riskOfRuin: 0,
+       SQN: 0
+     };
+   }
+
+   private calculateVolatility(returns: number[]): number {
+     if (returns.length < 2) return 0;
+     const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+     const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+     return parseFloat((Math.sqrt(variance) * Math.sqrt(252)).toFixed(4));
+   }
+
+   private calculateMaxDrawdownFromEquity(equity: number[]): number {
+     let maxDrawdown = 0;
+     let peak = equity[0];
+
+     for (const eq of equity) {
+       if (eq > peak) peak = eq;
+       const drawdown = (peak - eq) / peak;
+       if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+     }
+
+     return parseFloat((maxDrawdown).toFixed(4));
+   }
+
+   private calculateStrategyScore(metrics: PerformanceMetrics): number {
+     const sharpeScore = Math.max(0, metrics.sharpeRatio) * 10;
+     const returnScore = Math.max(0, metrics.totalReturn * 100);
+     const drawdownScore = Math.max(0, 100 - metrics.maxDrawdown * 100);
+     const winRateScore = metrics.winRate * 100;
+     const profitFactorScore = Math.min(metrics.profitFactor, 5) * 10;
+
+     return (sharpeScore + returnScore + drawdownScore + winRateScore + profitFactorScore) / 5;
+   }
+
+   /**
+    * Reset state
+    */
+   private resetState(): void {
     this.trades = [];
     this.equityCurve = [this.config.initialCapital];
     this.currentPosition = null;

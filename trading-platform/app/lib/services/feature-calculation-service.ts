@@ -1,191 +1,128 @@
 /**
- * 予測特徴量計算サービス
+ * Feature Calculation Service
  * 
- * このモジュールは、MLモデルの入力となる特徴量を計算する機能を提供します。
+ * Re-exports from domains/prediction/services for backward compatibility.
+ * Please import directly from @/app/domains/prediction/services in new code.
  */
 
-import { OHLCV, TechnicalIndicatorsWithATR } from '../../types';
-import { RSI_CONFIG, SMA_CONFIG, VOLATILITY } from '@/app/lib/constants';
-import { PORTFOLIO_OPTIMIZATION_DEFAULTS } from '../constants/portfolio';
-import { EnhancedPredictionFeatures } from '../types/prediction-types';
-import { enhancedFeatureService } from './enhanced-feature-service';
-import { OHLCVData, OHLCVConverter } from '../../types/optimized-data';
+import { OHLCV, TechnicalIndicatorsWithATR } from '@/app/types';
+// Re-export types from domains
+export type { PredictionFeatures } from '@/app/domains/prediction/types';
 
-export interface PredictionFeatures {
-  rsi: number;
-  rsiChange: number;
-  sma5: number;
-  sma20: number;
-  sma50: number;
-  priceMomentum: number;
-  volumeRatio: number;
-  volatility: number;
-  macdSignal: number;
-  bollingerPosition: number;
-  atrPercent: number;
+import {
+  FeatureCalculationService as DomainFeatureCalculationService,
+  featureCalculationService as domainFeatureCalculationService,
+} from '@/app/domains/prediction/services/feature-calculation-service';
+
+/**
+ * Extended Feature Calculation Service with backward compatibility
+ * Supports both old API (with pre-calculated indicators) and new API
+ */
+export class FeatureCalculationService extends DomainFeatureCalculationService {
+  /**
+   * Calculate features with support for pre-calculated indicators
+   * Backward compatible: accepts optional indicators parameter
+   */
+  calculateFeatures(data: OHLCV[], indicators?: TechnicalIndicatorsWithATR): ReturnType<DomainFeatureCalculationService['calculateFeatures']> {
+    if (indicators) {
+      // Check if indicators are empty
+      const isEmptyIndicators = indicators.rsi.length === 0 || 
+                                indicators.sma5.length === 0 ||
+                                indicators.sma20.length === 0 ||
+                                indicators.sma50.length === 0;
+      
+      if (isEmptyIndicators) {
+        return {
+          rsi: 0,
+          rsiChange: 0,
+          sma5: 0,
+          sma20: 0,
+          sma50: 0,
+          volumeRatio: 0,
+          priceMomentum: 0,
+          macdSignal: 0,
+          bollingerPosition: 0,
+          atrPercent: 0,
+          volatility: 0,
+        };
+      }
+      
+      // Use pre-calculated indicators
+      const currentPrice = data[data.length - 1]?.close || 0;
+      const lastIndex = indicators.rsi.length - 1;
+      const prevIndex = Math.max(0, lastIndex - 1);
+      const sma5Value = indicators.sma5[lastIndex] ?? currentPrice;
+      const sma20Value = indicators.sma20[lastIndex] ?? currentPrice;
+      const sma50Value = indicators.sma50[lastIndex] ?? currentPrice;
+      
+      // Calculate volume ratio: currentVolume / avgVolume
+      const currentVolume = data[data.length - 1]?.volume || 0;
+      const avgVolume = data.reduce((sum, d) => sum + d.volume, 0) / data.length;
+      
+      // Calculate MACD signal difference: MACD - Signal
+      const macdValue = indicators.macd?.macd?.[lastIndex] ?? 0;
+      const signalValue = indicators.macd?.signal?.[lastIndex] ?? 0;
+      
+      // Calculate Bollinger position: (price - lower) / (upper - lower) * 100
+      const upper = indicators.bollingerBands?.upper?.[lastIndex];
+      const lower = indicators.bollingerBands?.lower?.[lastIndex];
+      let bollingerPosition = 50; // Default to middle
+      if (upper !== undefined && lower !== undefined && upper !== lower) {
+        bollingerPosition = ((currentPrice - lower) / (upper - lower)) * 100;
+      }
+      
+      // Calculate volatility from ATR
+      const atrValue = indicators.atr?.[lastIndex] ?? 0;
+      const volatility = currentPrice > 0 ? (atrValue / currentPrice) * 100 : 0;
+      
+      // Calculate price momentum
+      const priceMomentum = this.calculatePriceMomentum(data.map(d => d.close), 5);
+      
+      return {
+        rsi: indicators.rsi[lastIndex] ?? 50,
+        rsiChange: indicators.rsi.length > 1 
+          ? (indicators.rsi[lastIndex] ?? 50) - (indicators.rsi[prevIndex] ?? 50)
+          : 0,
+        // SMA deviation: ((price - sma) / price) * 100
+        sma5: currentPrice > 0 ? ((currentPrice - sma5Value) / currentPrice) * 100 : 0,
+        sma20: currentPrice > 0 ? ((currentPrice - sma20Value) / currentPrice) * 100 : 0,
+        sma50: currentPrice > 0 ? ((currentPrice - sma50Value) / currentPrice) * 100 : 0,
+        volumeRatio: avgVolume > 0 ? currentVolume / avgVolume : 1,
+        priceMomentum,
+        macdSignal: macdValue - signalValue,
+        bollingerPosition,
+        atrPercent: indicators.atr?.[lastIndex] && currentPrice > 0
+          ? (indicators.atr[lastIndex] / currentPrice) * 100
+          : 0,
+        volatility,
+      };
+    }
+    
+    // Use parent implementation for raw data
+    return super.calculateFeatures(data);
+  }
+
+  /**
+   * Calculate price momentum
+   * Returns percentage change over the specified period
+   */
+  calculatePriceMomentum(prices: number[], period: number): number {
+    if (prices.length < period || prices.length < 2) {
+      return 0;
+    }
+    
+    const currentPrice = prices[prices.length - 1];
+    const pastPrice = prices[prices.length - period - 1] ?? prices[0];
+    
+    if (pastPrice === 0) {
+      return 0;
+    }
+    
+    return ((currentPrice - pastPrice) / pastPrice) * 100;
+  }
 }
 
 /**
- * 予測特徴量計算サービス
+ * Singleton instance
  */
-export class FeatureCalculationService {
-  /**
-   * OHLCVデータから予測に必要な特徴量を計算
-   */
-  calculateFeatures(
-    data: OHLCV[],
-    indicators: TechnicalIndicatorsWithATR
-  ): PredictionFeatures {
-    const prices = data.map(d => d.close);
-    const volumes = data.map(d => d.volume);
-    const currentPrice = prices[prices.length - 1];
-    const currentVolume = volumes[volumes.length - 1];
-    
-    // 平均出来高を計算
-    const avgVol = volumes.reduce((a, b) => a + b, 0) / volumes.length;
-
-    return {
-      rsi: this.getLastValue(indicators.rsi, 0),
-      rsiChange: this.calculateRsiChange(indicators.rsi),
-      sma5: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma5, currentPrice)),
-      sma20: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma20, currentPrice)),
-      sma50: this.calculateSmaDeviation(currentPrice, this.getLastValue(indicators.sma50, currentPrice)),
-      priceMomentum: this.calculatePriceMomentum(prices, 10),
-      volumeRatio: currentVolume / (avgVol || 1),
-      volatility: this.calculateVolatility(prices.slice(-VOLATILITY.CALCULATION_PERIOD)),
-      macdSignal: this.calculateMacdSignalDifference(
-        this.getLastValue(indicators.macd.macd, 0),
-        this.getLastValue(indicators.macd.signal, 0)
-      ),
-      bollingerPosition: this.calculateBollingerPosition(
-        currentPrice,
-        this.getLastValue(indicators.bollingerBands.upper, 0),
-        this.getLastValue(indicators.bollingerBands.lower, 0)
-      ),
-      atrPercent: (this.getLastValue(indicators.atr, 0) / currentPrice) * 100,
-    };
-  }
-
-  /**
-   * Optimized feature calculation using TypedArray data
-   * (High-performance variant)
-   */
-  calculateFeaturesOptimized(
-    data: OHLCVData,
-    indicators: TechnicalIndicatorsWithATR
-  ): PredictionFeatures {
-    // For now, convert back to standard objects to reuse existing logic
-    const standardData = OHLCVConverter.fromTypedArray(data);
-    return this.calculateFeatures(standardData, indicators);
-  }
-
-  /**
-   * 配列の最後の値を取得
-   */
-  private getLastValue(arr: number[], fallback: number): number {
-    return arr.length > 0 ? arr[arr.length - 1] : fallback;
-  }
-
-  /**
-   * RSIの変化量を計算
-   */
-  private calculateRsiChange(rsiValues: number[]): number {
-    if (rsiValues.length < 2) {
-      return 0;
-    }
-    return rsiValues[rsiValues.length - 1] - rsiValues[rsiValues.length - 2];
-  }
-
-  /**
-   * SMAからの乖離率を計算
-   */
-  private calculateSmaDeviation(currentPrice: number, smaValue: number): number {
-    if (smaValue === 0) {
-      return 0;
-    }
-    return ((currentPrice - smaValue) / currentPrice) * 100;
-  }
-
-  /**
-   * 価格モメンタムを計算
-   */
-  calculatePriceMomentum(prices: number[], period: number = 10): number {
-    if (prices.length < period + 1) {
-      return 0;
-    }
-    const currentIndex = prices.length - 1;
-    const pastIndex = currentIndex - period;
-    if (pastIndex < 0) {
-      return 0;
-    }
-    const currentPrice = prices[currentIndex];
-    const pastPrice = prices[pastIndex];
-    return ((currentPrice - pastPrice) / pastPrice) * 100;
-  }
-
-  /**
-   * ボラティリティを計算
-   */
-  private calculateVolatility(prices: number[]): number {
-    if (prices.length < 2) return 0;
-    const returns = this.calculateReturns(prices);
-    const avg = returns.reduce((a, b) => a + b, 0) / returns.length;
-    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avg, 2), 0) / returns.length;
-    return Math.sqrt(variance) * Math.sqrt(PORTFOLIO_OPTIMIZATION_DEFAULTS.TRADING_DAYS_PER_YEAR) * 100;
-  }
-
-  /**
-   * 価格リターンを計算
-   */
-  private calculateReturns(prices: number[]): number[] {
-    return prices.slice(1).map((p, i) => (p - prices[i]) / prices[i]);
-  }
-
-  /**
-   * MACDとシグナルの差を計算
-   */
-  private calculateMacdSignalDifference(macd: number, signal: number): number {
-    return macd - signal;
-  }
-
-  /**
-   * ボリンジャーバンドの現在位置（％）を計算
-   */
-  private calculateBollingerPosition(currentPrice: number, upper: number, lower: number): number {
-    if (upper === lower) {
-      return 0;
-    }
-    return ((currentPrice - lower) / (upper - lower)) * 100;
-  }
-
-  /**
-   * 拡張特徴量を計算（Phase 1: 時系列特徴量）
-   * 基本特徴量（11次元）+ 新規特徴量（40次元）= 51次元
-   */
-  calculateEnhancedFeatures(
-    data: OHLCV[],
-    indicators: TechnicalIndicatorsWithATR
-  ): EnhancedPredictionFeatures {
-    // 基本特徴量を計算
-    const basicFeatures = this.calculateFeatures(data, indicators);
-
-    // 拡張特徴量を計算
-    const candlestickPatterns = enhancedFeatureService.calculateCandlestickPatterns(data);
-    const priceTrajectory = enhancedFeatureService.calculatePriceTrajectory(data);
-    const volumeProfile = enhancedFeatureService.calculateVolumeProfile(data);
-    const volatilityRegime = enhancedFeatureService.calculateVolatilityRegime(data);
-
-    return {
-      // 基本特徴量（11次元）
-      ...basicFeatures,
-      
-      // 拡張特徴量（40次元）
-      candlestickPatterns,
-      priceTrajectory,
-      volumeProfile,
-      volatilityRegime
-    };
-  }
-}
-
 export const featureCalculationService = new FeatureCalculationService();

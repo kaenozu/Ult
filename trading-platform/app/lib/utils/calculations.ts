@@ -36,13 +36,13 @@ export function memoize<TArgs extends unknown[], TReturn extends number>(
 /**
  * 配列用メモ化関数
  */
-export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: any[]) => number>(
-  fn: T,
+export function memoizeArray<TArgs extends unknown[], TReturn extends number>(
+  fn: (arr: number[] | Float64Array, ...args: TArgs) => TReturn,
   maxCacheSize: number = 100
-): T {
-  const cache = new Map<string, number>();
+): (arr: number[] | Float64Array, ...args: TArgs) => TReturn {
+  const cache = new Map<string, TReturn>();
 
-  return ((arr: number[] | Float64Array, ...args: any[]): number => {
+  return ((arr: number[] | Float64Array, ...args: TArgs): TReturn => {
     // 配列の内容をハッシュ化（最初の10要素と長さを使用）
     const sample = arr.slice(0, 10).join(',');
     const key = `${sample}|${arr.length}|${args.join(',')}`;
@@ -63,7 +63,7 @@ export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: a
 
     cache.set(key, result);
     return result;
-  }) as T;
+  });
 }
 
 // ============================================================================
@@ -239,7 +239,10 @@ export function calculateVolatility(
 /**
  * メモ化されたボラティリティ計算
  */
-export const calculateVolatilityMemoized = memoizeArray(calculateVolatility);
+export const calculateVolatilityMemoized = memoizeArray(
+  (prices: number[] | Float64Array, annualize: boolean = true): number => 
+    calculateVolatility(prices, annualize)
+);
 
 /**
  * 最大ドローダウンを計算

@@ -74,7 +74,7 @@ export class WinningStrategyEngine {
       result.confidence = Math.round(result.confidence * strengthMultiplier);
     }
     
-    result.strategy = 'ADAPTIVE' as any;
+    result.strategy = 'ADAPTIVE';
     result.reasoning = `[${regime.regime}] ${result.reasoning}`;
     return result;
   }
@@ -122,13 +122,13 @@ export class WinningStrategyEngine {
     const meanRev = this.executeMeanReversionStrategy(data, capital);
     
     const finalSignal = trend.signal === meanRev.signal ? trend.signal : 'HOLD';
-    return { ...trend, signal: finalSignal, strategy: 'COMPOSITE' as any, confidence: 60 };
+    return { ...trend, signal: finalSignal, strategy: 'COMPOSITE', confidence: 60 };
   }
 
   /**
    * Main entry for specific strategy execution
    */
-  executeStrategy(type: any, data: OHLCV[], capital: number = 100000): StrategyResult {
+  executeStrategy(type: StrategyType, data: OHLCV[], capital: number = 100000): StrategyResult {
     switch (type) {
       case 'TREND_FOLLOWING': return this.executeTrendFollowingStrategy(data, undefined, capital);
       case 'MEAN_REVERSION': return this.executeMeanReversionStrategy(data, capital);
@@ -161,7 +161,15 @@ export class WinningStrategyEngine {
     };
   }
 
-  private buildStrategyResult(signal: any, confidence: number, latest: OHLCV, indicators: any, strategy: any, reasoning: string, capital: number): StrategyResult {
+  private buildStrategyResult(
+    signal: 'BUY' | 'SELL' | 'HOLD', 
+    confidence: number, 
+    latest: OHLCV, 
+    indicators: StrategyResult['indicators'], 
+    strategy: StrategyType, 
+    reasoning: string, 
+    capital: number
+  ): StrategyResult {
     const atr = indicators.atr;
     const stopLoss = signal === 'BUY' ? latest.close - atr * 2 : latest.close + atr * 2;
     const takeProfit = signal === 'BUY' ? latest.close + atr * 4 : latest.close - atr * 4;

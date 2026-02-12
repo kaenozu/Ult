@@ -1,0 +1,31 @@
+{
+  "name": "backtest-engine-unification",
+  "description": "Unify duplicate backtest engines by consolidating features into a single engine, eliminating code duplication and maintenance overhead",
+  "version": "1.0.0",
+  "patterns": [
+    "duplicate engine consolidation",
+    "backtest engine refactoring",
+    " WinningBacktestEngine removal",
+    "engine unification",
+    "code deduplication"
+  ],
+  "file_patterns": [
+    "**/backtest/**/*.ts",
+    "**/*BacktestEngine*.ts"
+  ],
+  "keywords": [
+    "backtest",
+    "engine",
+    "unification",
+    "consolidation",
+    "refactor",
+    "duplicate",
+    "WinningBacktestEngine",
+    "RealisticBacktestEngine"
+  ],
+  "related_skills": [
+    "refactor-deprecated-code",
+    "migrate-types",
+    "consolidate-services"
+  ]
+}

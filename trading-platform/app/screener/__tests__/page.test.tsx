@@ -19,6 +19,7 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: jest.fn(),
   }),
+  usePathname: () => '/screener',
 }));
 
 describe('Screener Page', () => {

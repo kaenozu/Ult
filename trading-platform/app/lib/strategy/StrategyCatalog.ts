@@ -25,8 +25,10 @@ import type {
   BreakoutStrategyParams,
   StatArbStrategyParams,
   MarketMakingStrategyParams,
-  MLAlphaStrategyParams
+  MLAlphaStrategyParams,
+  StrategyParameterValue
 } from './types';
+import { isString, isStringArray } from './types';
 
 // ============================================================================
 // Base Strategy Class
@@ -244,7 +246,7 @@ abstract class BaseStrategy implements Strategy {
     return downsideDeviation > 0 ? (annualizedReturn - targetReturn * 252) / downsideDeviation : 0;
   }
 
-  protected abstract randomizeParameters(originalParams: Record<string, any>): Record<string, any>;
+  protected abstract randomizeParameters(originalParams: Record<string, StrategyParameterValue>): Record<string, StrategyParameterValue>;
 
   protected calculateSMA(prices: number[], period: number): number[] {
     const sma: number[] = [];
@@ -443,7 +445,7 @@ export class MomentumStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, any>): Record<string, any> {
+  protected randomizeParameters(originalParams: Record<string, StrategyParameterValue>): Record<string, StrategyParameterValue> {
     return {
       lookbackPeriod: Math.floor(10 + Math.random() * 40), // 10-50
       momentumThreshold: 0.01 + Math.random() * 0.04, // 1%-5%
@@ -564,7 +566,7 @@ export class MeanReversionStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, any>): Record<string, any> {
+  protected randomizeParameters(originalParams: Record<string, StrategyParameterValue>): Record<string, StrategyParameterValue> {
     return {
       bollingerPeriod: Math.floor(15 + Math.random() * 15), // 15-30
       bollingerStdDev: 1.5 + Math.random() * 1, // 1.5-2.5
@@ -679,7 +681,7 @@ export class BreakoutStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, any>): Record<string, any> {
+  protected randomizeParameters(originalParams: Record<string, StrategyParameterValue>): Record<string, StrategyParameterValue> {
     return {
       breakoutPeriod: Math.floor(10 + Math.random() * 30), // 10-40
       volumeConfirmation: Math.random() > 0.3, // 70% true
@@ -798,9 +800,12 @@ export class StatArbStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, any>): Record<string, any> {
+  protected randomizeParameters(originalParams: Record<string, StrategyParameterValue>): Record<string, StrategyParameterValue> {
+    const pairSymbol = isString(originalParams.pairSymbol) 
+      ? originalParams.pairSymbol 
+      : 'SPY';
     return {
-      pairSymbol: originalParams.pairSymbol,
+      pairSymbol,
       lookbackPeriod: Math.floor(20 + Math.random() * 40), // 20-60
       entryZScore: 1.5 + Math.random() * 1.0, // 1.5-2.5
       exitZScore: 0.3 + Math.random() * 0.5, // 0.3-0.8
@@ -906,7 +911,7 @@ export class MarketMakingStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, any>): Record<string, any> {
+  protected randomizeParameters(originalParams: Record<string, StrategyParameterValue>): Record<string, StrategyParameterValue> {
     return {
       spreadBps: 5 + Math.random() * 15, // 5-20 bps
       inventoryLimit: 500 + Math.random() * 1000, // 500-1500
@@ -1028,10 +1033,16 @@ export class MLAlphaStrategy extends BaseStrategy {
     };
   }
 
-  protected randomizeParameters(originalParams: Record<string, any>): Record<string, any> {
+  protected randomizeParameters(originalParams: Record<string, StrategyParameterValue>): Record<string, StrategyParameterValue> {
+    const model = isString(originalParams.model) 
+      ? originalParams.model 
+      : 'gradient_boosting';
+    const features = isStringArray(originalParams.features)
+      ? originalParams.features
+      : ['price_momentum', 'volume_trend', 'volatility', 'rsi', 'macd'];
     return {
-      model: originalParams.model,
-      features: originalParams.features,
+      model,
+      features,
       lookbackPeriod: Math.floor(20 + Math.random() * 30), // 20-50
       retrainFrequency: Math.floor(20 + Math.random() * 40), // 20-60
       predictionThreshold: 0.5 + Math.random() * 0.3 // 0.5-0.8

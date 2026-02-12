@@ -192,7 +192,7 @@ describe('POST /api/trading', () => {
         quantity: 100,
       });
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       expect([200, 400]).toContain(res.status);
     });
@@ -358,7 +358,7 @@ describe('POST /api/trading', () => {
         symbol: '   ',
       });
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       expect([200, 400]).toContain(res.status);
     });
@@ -415,7 +415,7 @@ describe('POST /api/trading', () => {
         value: 150,
       });
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       expect([200, 400]).toContain(res.status);
     });
@@ -430,7 +430,7 @@ describe('POST /api/trading', () => {
         value: 150,
       });
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       expect([200, 400]).toContain(res.status);
     });
@@ -582,7 +582,7 @@ describe('POST /api/trading', () => {
         config: { mode: 'invalid_mode' },
       });
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       // API may accept or reject - just verify it returns a response
       expect([200, 400]).toContain(res.status);
@@ -594,7 +594,7 @@ describe('POST /api/trading', () => {
         config: { initialCapital: -100 },
       });
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       // API may accept or reject - just verify it returns a response
       expect([200, 400]).toContain(res.status);

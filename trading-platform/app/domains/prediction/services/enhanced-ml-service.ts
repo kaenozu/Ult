@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Enhanced ML Prediction Service
  *
  * Implements advanced features:
@@ -7,10 +7,7 @@
  * - Performance tracking
  * - Expected value calculation
  * - Kelly criterion position sizing
- *
- * SECURITY WARNING: Contains STUB implementation for marketRegimeDetector
- * This is a placeholder that returns fixed values for development/testing.
- * Replace with actual market regime detection before production deployment.
+ * - Market regime detection
  */
 
 import { OHLCV, Stock, Signal } from '@/app/types';

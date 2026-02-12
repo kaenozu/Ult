@@ -2,73 +2,6 @@
  * 統一エラーハンドリング - ULT Trading Platform
  * 
  * このモジュールは、アプリケーション全体で統一されたエラーハンドリングを提供します。
- * 
- * ## 使用方法
- * 
- * ### エラークラスの使用
- * ```typescript
- * import { AppError, NetworkError, ValidationError } from '@/app/lib/errors';
- * 
- * // カスタムエラーをスロー
- * throw new NetworkError('API接続に失敗しました', { endpoint: '/api/data' });
- * 
- * // バリデーションエラー
- * throw new ValidationError('email', '無効なメールアドレスです');
- * ```
- * 
- * ### エラーハンドリング
- * ```typescript
- * import { handleError, logError, getUserErrorMessage } from '@/app/lib/errors';
- * 
- * try {
- *   await fetchData();
- * } catch (error) {
- *   const appError = handleError(error, 'fetchData');
- *   logError(appError, 'fetchData');
- *   const userMessage = getUserErrorMessage(appError);
- * }
- * ```
- * 
- * ### APIエラーレスポンス
- * ```typescript
- * import { handleApiError, validationError, notFoundError } from '@/app/lib/errors';
- * 
- * // APIルートで
- * try {
- *   const data = await fetchData();
- *   return NextResponse.json(data);
- * } catch (error) {
- *   return handleApiError(error, 'fetchData');
- * }
- * 
- * // ショートカット関数
- * return validationError('入力値が無効です', 'field');
- * return notFoundError('データが見つかりません');
- * ```
- * 
- * ### Result型の使用
- * ```typescript
- * import { ok, err, tryCatchAsync, type Result } from '@/app/lib/errors';
- * 
- * async function fetchData(): Promise<Result<Data, AppError>> {
- *   try {
- *     const response = await fetch('/api/data');
- *     const data = await response.json();
- *     return ok(data);
- *   } catch (error) {
- *     return err(handleError(error));
- *   }
- * }
- * 
- * const result = await fetchData();
- * if (result.isOk) {
- *   console.log(result.value);
- * } else {
- *   console.error(result.error);
- * }
- * ```
- * 
- * @module lib/errors
  */
 
 // ============================================================================
@@ -81,46 +14,57 @@ export {
   ErrorCodes,
   ErrorType,
   SEVERITY_LEVELS,
+  isAppError,
   type ErrorSeverity,
   type ErrorCode,
-  
-  // Network
+} from './AppError';
+
+export {
+  // Network / API
   NetworkError,
   ApiError,
   RateLimitError,
   TimeoutError,
-  
+  isApiError,
+  isNetworkError,
+} from './ApiError';
+
+export {
   // Authentication
   AuthenticationError,
   AuthorizationError,
-  
+  isAuthenticationError,
+} from './AuthError';
+
+export {
   // Validation
   ValidationError,
   InputError,
-  
+  isValidationError,
+} from './ValidationError';
+
+export {
   // Data
   DataError,
   NotFoundError,
   DataNotAvailableError,
-  
+  isNotFoundError,
+} from './DataError';
+
+export {
   // Trading
+  TradingError,
   OrderError,
   RiskManagementError,
-  
+  isTradingError,
+} from './TradingError';
+
+export {
   // System
   SystemError,
   ConfigurationError,
-  
-  // Type Guards
-  isAppError,
-  isNetworkError,
-  isApiError,
-  isValidationError,
-  isNotFoundError,
-  isAuthenticationError,
-  isTradingError,
   isSystemError,
-} from './AppError';
+} from './SystemError';
 
 // ============================================================================
 // Error Handlers
@@ -195,21 +139,20 @@ export {
 } from './result';
 
 // ============================================================================
-// Legacy Compatibility (from errors.ts)
+// Legacy Compatibility
 // ============================================================================
 
 /**
  * @deprecated Use AppError instead
  */
-export { AppError as TradingError } from './AppError';
+export { AppError as TradingErrorBase } from './AppError';
 
-// Legacy error classes for backward compatibility
-import { AppError as BaseAppError } from './AppError';
+import { AppError } from './AppError';
 
 /**
  * @deprecated Use NetworkError instead
  */
-export class ConnectionError extends BaseAppError {
+export class ConnectionError extends AppError {
   constructor(endpoint: string, message: string) {
     super(`Connection to ${endpoint} failed: ${message}`, 'NETWORK_ERROR', 'high');
     this.name = 'ConnectionError';
@@ -219,7 +162,7 @@ export class ConnectionError extends BaseAppError {
 /**
  * @deprecated Use TradingError instead
  */
-export class StrategyError extends BaseAppError {
+export class StrategyError extends AppError {
   constructor(strategyName: string, message: string) {
     super(`Strategy ${strategyName}: ${message}`, 'TRADING_ERROR', 'high');
     this.name = 'StrategyError';
@@ -229,7 +172,7 @@ export class StrategyError extends BaseAppError {
 /**
  * @deprecated Use TradingError instead
  */
-export class ExecutionError extends BaseAppError {
+export class ExecutionError extends AppError {
   readonly orderId?: string;
   readonly symbol?: string;
   readonly reason?: string;
@@ -248,7 +191,7 @@ export class ExecutionError extends BaseAppError {
 /**
  * @deprecated Use RiskManagementError instead
  */
-export class PositionLimitError extends BaseAppError {
+export class PositionLimitError extends AppError {
   constructor(symbol: string, currentSize: number, limit: number) {
     super(`Position size ${currentSize} exceeds limit ${limit}`, 'RISK_MANAGEMENT_ERROR', 'critical', {
       context: { symbol, currentSize, limit },
@@ -260,7 +203,7 @@ export class PositionLimitError extends BaseAppError {
 /**
  * @deprecated Use RiskManagementError instead
  */
-export class DrawdownLimitError extends BaseAppError {
+export class DrawdownLimitError extends AppError {
   constructor(currentDrawdown: number, limit: number) {
     super(`Drawdown ${currentDrawdown} exceeds limit ${limit}`, 'RISK_MANAGEMENT_ERROR', 'critical', {
       context: { currentDrawdown, limit },
@@ -272,7 +215,7 @@ export class DrawdownLimitError extends BaseAppError {
 /**
  * @deprecated Use RiskManagementError instead
  */
-export class CapitalLimitError extends BaseAppError {
+export class CapitalLimitError extends AppError {
   constructor(availableCapital: number, requiredCapital: number) {
     super(`Available capital ${availableCapital} < required ${requiredCapital}`, 'RISK_MANAGEMENT_ERROR', 'critical', {
       context: { availableCapital, requiredCapital },
@@ -284,7 +227,7 @@ export class CapitalLimitError extends BaseAppError {
 /**
  * @deprecated Use SystemError instead
  */
-export class ResourceLimitError extends BaseAppError {
+export class ResourceLimitError extends AppError {
   constructor(resource: string) {
     super(`${resource} limit reached`, 'SYSTEM_ERROR', 'critical');
     this.name = 'ResourceLimitError';
@@ -294,7 +237,7 @@ export class ResourceLimitError extends BaseAppError {
 /**
  * @deprecated Use NotFoundError instead
  */
-export class SymbolNotFoundError extends BaseAppError {
+export class SymbolNotFoundError extends AppError {
   constructor(symbol: string) {
     super(`銘柄「${symbol}」が見つかりません`, 'NOT_FOUND_ERROR', 'low', {
       context: { symbol },

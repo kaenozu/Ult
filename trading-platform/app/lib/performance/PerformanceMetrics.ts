@@ -35,11 +35,13 @@ export class PerformanceMetricsCalculator {
       sharpeRatio: this.calculateSharpeRatio(returns),
       sortinoRatio: this.calculateSortinoRatio(returns),
       calmarRatio: this.calculateCalmarRatio(portfolio, returns),
+      omegaRatio: this.calculateOmegaRatio(returns, 0),
       informationRatio: this.calculateInformationRatio(returns, this.riskFreeRate),
       treynorRatio: this.calculateTreynorRatio(returns, this.calculateBeta(returns)),
 
       // Risk Metrics
       maxDrawdown: this.calculateMaxDrawdown(portfolio),
+      maxDrawdownDuration: this.calculateMaxDrawdownDuration(portfolio),
       averageDrawdown: this.calculateAverageDrawdown(portfolio),
       volatility: this.calculateVolatility(returns),
       downsideDeviation: this.calculateDownsideDeviation(returns),
@@ -50,6 +52,7 @@ export class PerformanceMetricsCalculator {
       profitFactor: this.calculateProfitFactor(tradePairs),
       averageWin: this.calculateAverageWin(tradePairs),
       averageLoss: this.calculateAverageLoss(tradePairs),
+      averageTrade: this.calculateAverageTrade(tradePairs),
       averageWinLossRatio: this.calculateAverageWinLossRatio(tradePairs),
       largestWin: this.calculateLargestWin(tradePairs),
       largestLoss: this.calculateLargestLoss(tradePairs),
@@ -191,6 +194,16 @@ export class PerformanceMetricsCalculator {
   }
 
   /**
+   * Calculate Omega Ratio
+   */
+  private calculateOmegaRatio(returns: number[], threshold: number): number {
+    const gains = returns.filter(r => r > threshold).reduce((sum, r) => sum + (r - threshold), 0);
+    const losses = Math.abs(returns.filter(r => r < threshold).reduce((sum, r) => sum + (threshold - r), 0));
+
+    return losses > 0 ? gains / losses : gains > 0 ? Infinity : 0;
+  }
+
+  /**
    * Calculate Maximum Drawdown
    */
   private calculateMaxDrawdown(portfolio: Portfolio): number {
@@ -204,6 +217,27 @@ export class PerformanceMetricsCalculator {
     }
 
     return maxDrawdown;
+  }
+
+  /**
+   * Calculate Maximum Drawdown Duration (in days)
+   */
+  private calculateMaxDrawdownDuration(portfolio: Portfolio): number {
+    let maxDuration = 0;
+    let peak = portfolio.initialValue;
+    let peakTime = portfolio.createdAt;
+
+    for (const snapshot of portfolio.history) {
+      if (snapshot.value > peak) {
+        peak = snapshot.value;
+        peakTime = snapshot.timestamp;
+      }
+
+      const duration = (snapshot.timestamp - peakTime) / (1000 * 60 * 60 * 24);
+      maxDuration = Math.max(maxDuration, duration);
+    }
+
+    return maxDuration;
   }
 
   /**
@@ -296,6 +330,15 @@ export class PerformanceMetricsCalculator {
     return losses.length > 0
       ? losses.reduce((sum, t) => sum + t.profit, 0) / losses.length
       : 0;
+  }
+
+  /**
+   * Calculate Average Trade (Expectancy)
+   */
+  private calculateAverageTrade(tradePairs: TradePair[]): number {
+    if (tradePairs.length === 0) return 0;
+    const totalProfit = tradePairs.reduce((sum, t) => sum + t.profit, 0);
+    return totalProfit / tradePairs.length;
   }
 
   /**
