@@ -119,6 +119,16 @@ export interface PerformanceMetrics {
   kellyCriterion: number;
   riskOfRuin: number;
   SQN: number; // System Quality Number
+
+  // Extended Metrics (optional)
+  skewness?: number;
+  kurtosis?: number;
+  maxConsecutiveWins?: number;
+  maxConsecutiveLosses?: number;
+  avgHoldingPeriod?: number;
+  profitToDrawdownRatio?: number;
+  returnToRiskRatio?: number;
+  ulcerIndex?: number;
 }
 
 // ============================================================================

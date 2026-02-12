@@ -435,7 +435,7 @@ class WinningTradingSystem {
       onInit: () => {},
       onData: (currentData: OHLCV, index: number, context) => {
         // Execute strategy for current bar
-        const historicalData = data.slice(0, index + 1);
+        const historicalData = context.data;
         if (historicalData.length < 50) {
           return { action: 'HOLD' };
         }

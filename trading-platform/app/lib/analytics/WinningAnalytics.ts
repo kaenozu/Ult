@@ -21,7 +21,7 @@ type BacktestResult = RealisticBacktestResult;
 
 // Helper function to safely get holding periods from trade
 function getHoldingPeriods(trade: RealisticTradeMetrics): number {
-  return (trade as unknown as { holdingPeriods?: number }).holdingPeriods ?? 0;
+  return trade.holdingPeriods ?? 0;
 }
 
 // ============================================================================
@@ -500,13 +500,12 @@ class WinningAnalytics {
     };
 
     // Add extended properties as optional
-    (metrics as Record<string, number | undefined>).avgHoldingPeriod = trades.length > 0 ? trades.reduce((sum, t) => sum + getHoldingPeriods(t), 0) / trades.length : 0;
-    (metrics as Record<string, number | undefined>).profitToDrawdownRatio = maxDrawdown > 0 ? totalReturn / maxDrawdown : 0;
-    (metrics as Record<string, number | undefined>).returnToRiskRatio = volatility > 0 ? totalReturn / volatility : 0;
-    (metrics as Record<string, number | undefined>).expectancy = 0;
-    (metrics as Record<string, number | undefined>).skewness = 0;
-    (metrics as Record<string, number | undefined>).kurtosis = 0;
-    (metrics as Record<string, number | undefined>).ulcerIndex = 0;
+    metrics.avgHoldingPeriod = trades.length > 0 ? trades.reduce((sum, t) => sum + getHoldingPeriods(t), 0) / trades.length : 0;
+    metrics.profitToDrawdownRatio = maxDrawdown > 0 ? totalReturn / maxDrawdown : 0;
+    metrics.returnToRiskRatio = volatility > 0 ? totalReturn / volatility : 0;
+    metrics.skewness = 0;
+    metrics.kurtosis = 0;
+    metrics.ulcerIndex = 0;
 
     return metrics;
   }

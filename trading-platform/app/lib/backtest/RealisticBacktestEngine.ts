@@ -823,14 +823,14 @@ export class RealisticBacktestEngine extends EventEmitter {
       };
 
       // Add extended metrics as optional properties
-      (metrics as Record<string, number>).skewness = parseFloat(skewness.toFixed(4));
-      (metrics as Record<string, number>).kurtosis = parseFloat(kurtosis.toFixed(4));
-      (metrics as Record<string, number>).maxConsecutiveWins = maxConsecutiveWins;
-      (metrics as Record<string, number>).maxConsecutiveLosses = maxConsecutiveLosses;
-      (metrics as Record<string, number>).avgHoldingPeriod = avgHoldingPeriod;
-      (metrics as Record<string, number>).profitToDrawdownRatio = parseFloat(profitToDrawdownRatio.toFixed(4));
-      (metrics as Record<string, number>).returnToRiskRatio = parseFloat(returnToRiskRatio.toFixed(4));
-      (metrics as Record<string, number>).ulcerIndex = parseFloat(ulcerIndex.toFixed(4));
+      metrics.skewness = parseFloat(skewness.toFixed(4));
+      metrics.kurtosis = parseFloat(kurtosis.toFixed(4));
+      metrics.maxConsecutiveWins = maxConsecutiveWins;
+      metrics.maxConsecutiveLosses = maxConsecutiveLosses;
+      metrics.avgHoldingPeriod = avgHoldingPeriod;
+      metrics.profitToDrawdownRatio = parseFloat(profitToDrawdownRatio.toFixed(4));
+      metrics.returnToRiskRatio = parseFloat(returnToRiskRatio.toFixed(4));
+      metrics.ulcerIndex = parseFloat(ulcerIndex.toFixed(4));
 
       return metrics;
    }
@@ -841,10 +841,7 @@ export class RealisticBacktestEngine extends EventEmitter {
 
    private calculateAvgHoldingPeriod(trades: RealisticTradeMetrics[]): number {
      if (trades.length === 0) return 0;
-     return trades.reduce((sum, t) => {
-       const holdingPeriods = (t as unknown as { holdingPeriods?: number }).holdingPeriods;
-       return sum + (holdingPeriods ?? 0);
-     }, 0) / trades.length;
+     return trades.reduce((sum, t) => sum + (t.holdingPeriods ?? 0), 0) / trades.length;
    }
 
    private calculateMaxConsecutive(trades: RealisticTradeMetrics[]): { maxConsecutiveWins: number; maxConsecutiveLosses: number } {
