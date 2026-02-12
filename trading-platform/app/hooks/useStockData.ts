@@ -32,16 +32,25 @@ export function useStockData() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
 
-  // Cleanup on unmount - prevents memory leaks
+  // Enhanced cleanup on unmount - prevents memory leaks and resource waste
   useEffect(() => {
     isMountedRef.current = true;
 
     return () => {
+      console.debug('[useStockData] Cleaning up resources...');
       isMountedRef.current = false;
+      
+      // Abort any pending requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort('Component unmounted');
         abortControllerRef.current = null;
       }
+      
+      // Clear state to prevent memory leaks
+      setChartData([]);
+      setIndexData([]);
+      setChartSignal(null);
+      setError(null);
     };
   }, []);
 
@@ -163,29 +172,37 @@ export function useStockData() {
         }
       }
 
-      // 5. Background sync for long-term data (keep independent)
-      const syncInBackground = async (
-        sym: string,
-        mkt: 'japan' | 'usa',
-        setter: (data: OHLCV[]) => void,
-        label: string
-      ) => {
-        try {
-          const newData = await fetchOHLCV(sym, mkt, undefined, controller.signal, apiInterval, undefined, true);
-          if (isMountedRef.current && !controller.signal.aborted && newData.length > 0) {
-            setter(newData);
-          }
-        } catch (e) {
-          if (isMountedRef.current && !controller.signal.aborted) {
-            console.warn(`${label} background sync failed:`, e);
-          }
-        }
-      };
+       // 5. Performance-optimized: Background sync with delay to avoid immediate re-fetch
+       const syncInBackground = async (
+         sym: string,
+         mkt: 'japan' | 'usa',
+         setter: (data: OHLCV[]) => void,
+         label: string
+       ) => {
+         // Add delay to avoid immediate background sync
+         await new Promise(resolve => setTimeout(resolve, 2000));
+         
+         try {
+           if (!isMountedRef.current || controller.signal.aborted) return;
+           
+           const newData = await fetchOHLCV(sym, mkt, undefined, controller.signal, apiInterval, undefined, true);
+           if (isMountedRef.current && !controller.signal.aborted && newData.length > 0) {
+             setter(newData);
+           }
+         } catch (e) {
+           if (isMountedRef.current && !controller.signal.aborted) {
+             console.warn(`${label} background sync failed:`, e);
+           }
+         }
+       };
 
-      // Sync stock data
-      syncInBackground(stock.symbol, stock.market, setChartData, 'Stock');
-      // Sync index data
-      syncInBackground(indexSymbol, stock.market, setIndexData, 'Index');
+       // Only start background sync if not unmounted
+       if (isMountedRef.current && !controller.signal.aborted) {
+         // Sync stock data
+         syncInBackground(stock.symbol, stock.market, setChartData, 'Stock');
+         // Sync index data
+         syncInBackground(indexSymbol, stock.market, setIndexData, 'Index');
+       }
 
     } catch (err) {
       if (controller.signal.aborted || !isMountedRef.current) return;
@@ -198,7 +215,7 @@ export function useStockData() {
         setLoading(false);
       }
     }
-  }, [timeFrame]); // Add timeFrame dependency so it refetches when interval changes
+  }, [timeFrame]); // Refetch when interval changes
 
   const handleTimeFrameChange = useCallback((newTimeFrame: string) => {
     setTimeFrame(newTimeFrame);
@@ -238,29 +255,48 @@ export function useStockData() {
     fetchData(stock);
   }, [setSelectedStock, fetchData]);
 
-  // Handle real-time updates from WebSocket
+  // Handle real-time updates from WebSocket with performance optimization
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || !selectedStock) return;
+
+    // Performance-optimized: Debounce real-time updates to prevent excessive re-renders
+    let updateTimeout: NodeJS.Timeout | null = null;
 
     const handleRealtimeUpdate = (event: Event) => {
+      if (!isMountedRef.current) return;
+      
       const customEvent = event as CustomEvent;
       const data = customEvent.detail;
 
-      // Basic data validation
+      // Enhanced data validation
       if (!data || typeof data.symbol !== 'string' || typeof data.price !== 'number') {
         return;
       }
 
-      if (selectedStock && data.symbol.toUpperCase() === selectedStock.symbol.toUpperCase()) {
+      // Performance optimization: Debounce rapid updates
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+
+      updateTimeout = setTimeout(() => {
+        if (!isMountedRef.current || data.symbol.toUpperCase() !== selectedStock.symbol.toUpperCase()) {
+          return;
+        }
+
         setChartData(prevData => {
-          if (prevData.length === 0) return prevData;
+          if (!isMountedRef.current || prevData.length === 0) return prevData;
           
+          // Performance-optimized: Avoid unnecessary array copies
+          const lastIndex = prevData.length - 1;
+          const lastPoint = prevData[lastIndex];
+          
+          // Check if price actually changed to avoid unnecessary updates
+          if (Math.abs(lastPoint.close - data.price) < 0.01) {
+            return prevData; // Skip micro-changes
+          }
+          
+          // Create new array only when necessary
           const newData = [...prevData];
-          const lastIndex = newData.length - 1;
-          const lastPoint = newData[lastIndex];
-          
-          // Update the last data point with real-time price
-          // In a real implementation, we might check timestamps to see if we need a new candle
           newData[lastIndex] = {
             ...lastPoint,
             close: data.price,
@@ -271,11 +307,18 @@ export function useStockData() {
           
           return newData;
         });
-      }
+      }, 100); // 100ms debounce
     };
 
     window.addEventListener('market-data-update', handleRealtimeUpdate);
-    return () => window.removeEventListener('market-data-update', handleRealtimeUpdate);
+    
+    return () => {
+      window.removeEventListener('market-data-update', handleRealtimeUpdate);
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+        updateTimeout = null;
+      }
+    };
   }, [selectedStock]);
 
   return {
