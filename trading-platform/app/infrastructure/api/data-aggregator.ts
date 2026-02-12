@@ -81,6 +81,9 @@ class MarketDataClient {
 
       return parsedResponse.data as T;
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw err;
+      }
       if (retries > 0) {
         await new Promise(resolve => setTimeout(resolve, backoff));
         return this.fetchWithRetry(url, options, retries - 1, backoff * 2);
@@ -98,7 +101,7 @@ class MarketDataClient {
     if (!forceRefresh) {
       const cached = this.getFromCache<OHLCV[]>(cacheKey);
       let cacheValid = !!cached;
-      
+
       if (cached && startDate && cached.length > 0) {
         if (new Date(cached[0].date) > new Date(startDate)) {
           cacheValid = false;
@@ -140,7 +143,7 @@ class MarketDataClient {
           const now = new Date();
           const start = new Date(now);
           start.setDate(start.getDate() - 30);
-          
+
           const params = new URLSearchParams({
             type: 'history',
             symbol,
@@ -159,7 +162,7 @@ class MarketDataClient {
         } else {
           let localData: OHLCV[] = [];
           if (!forceRefresh) {
-             localData = await idbClient.getData(symbol);
+            localData = await idbClient.getData(symbol);
           }
 
           let missingHistory = false;
@@ -196,9 +199,9 @@ class MarketDataClient {
             } else if (startDate) {
               params.append('startDate', startDate);
             } else {
-               const defaultStart = new Date();
-               defaultStart.setFullYear(defaultStart.getFullYear() - 1);
-               params.append('startDate', defaultStart.toISOString().split('T')[0]);
+              const defaultStart = new Date();
+              defaultStart.setFullYear(defaultStart.getFullYear() - 1);
+              params.append('startDate', defaultStart.toISOString().split('T')[0]);
             }
 
             const fetchUrl = `/api/market?${params.toString()}`;
@@ -272,6 +275,10 @@ class MarketDataClient {
       }));
       return results.flat() as QuoteData[];
     } catch (err) {
+      // Ignore AbortError
+      if (err instanceof Error && err.name === 'AbortError') {
+        return [];
+      }
       logger.error('Batch fetch failed:', err instanceof Error ? err : new Error(String(err)));
       return [];
     }
@@ -414,13 +421,13 @@ class MarketDataClient {
     const filled: OHLCV[] = [];
     const MS_PER_DAY = 86400000;
     const MAX_GAP_DAYS = 365; // Security: Prevent DoS from massive gaps
-    
+
     for (let i = 0; i < sorted.length; i++) {
       filled.push(sorted[i]);
       if (i >= sorted.length - 1) continue;
       const diffDays = Math.floor((new Date(sorted[i + 1].date).getTime() - new Date(sorted[i].date).getTime()) / MS_PER_DAY);
       if (diffDays <= 1) continue;
-      
+
       const gapsToFill = Math.min(diffDays, MAX_GAP_DAYS);
       for (let d = 1; d < gapsToFill; d++) {
         const gapDate = new Date(new Date(sorted[i].date).getTime() + d * MS_PER_DAY);

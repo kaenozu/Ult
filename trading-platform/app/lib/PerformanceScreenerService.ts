@@ -19,10 +19,7 @@ const DUAL_SCORE_WEIGHT_AI = 0.5;    // AI信頼度重み
 const DUAL_SCORE_BONUS_BUY = 10;     // BUYボーナス
 const DUAL_SCORE_BONUS_SELL = 5;     // SELLボーナス
 
-/**
- * パフォーマンススコアリング結果
- */
-// import { logger } from '@/app/core/logger'; // Temporarily disabled for debugging
+import { logger } from '@/app/core/logger';
 // const logger = { warn: (...args: any[]) => console.warn('[PerformanceScreener]', ...args) };
 export interface PerformanceScore {
   symbol: string;
@@ -145,6 +142,7 @@ export interface AIScreenerConfig {
  */
 export class PerformanceScreenerService {
   private cache: Map<string, { result: PerformanceScore; timestamp: number }> = new Map();
+  private scanCache: Map<string, { result: DualScanResult; timestamp: number }> = new Map();
   private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5分キャッシュ
 
   /**
@@ -152,6 +150,7 @@ export class PerformanceScreenerService {
    */
   clearCache(): void {
     this.cache.clear();
+    this.scanCache.clear();
   }
 
   /**
@@ -247,17 +246,29 @@ export class PerformanceScreenerService {
    */
   async scanDual(
     dataSources: StockDataSource[],
-    config: ScreenerConfig & AIScreenerConfig = {}
+    config: ScreenerConfig & AIScreenerConfig = {},
+    forceRefresh: boolean = false
   ): Promise<DualScanResult> {
+    // スキャンレベルキャッシュ
+    const cacheKey = `dual-${config.market || 'all'}-${config.lookbackDays || 90}-${config.minWinRate || 20}-${config.minProfitFactor || 0.8}-${config.minConfidence || 30}`;
+    if (!forceRefresh) {
+      const cached = this.scanCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL_MS) {
+        return cached.result;
+      }
+    }
+
     const startTime = performance.now();
 
     const {
       market = 'all',
       lookbackDays = 90,
       topN = 20,
-      minConfidence = 30,  // レビュー対応: UIと一貫性を持たせるため30に変更
-      minTrades = 3,
-      minDualScore = 30,
+      minWinRate = 20,
+      minProfitFactor = 0.8,
+      minConfidence = 30,
+      minTrades = 3, // Revert to 3 (Valid backtest required)
+      minDualScore = 30, // Revert to 30 (Require decent score)
       minPredictedChange = 0,
     } = config;
 
@@ -268,8 +279,8 @@ export class PerformanceScreenerService {
 
     // 開発環境制限（デュアルスキャンでは50銘柄まで許可。母数が少ないとマッチが出にくい）
     const isDev = process.env.NODE_ENV !== 'production';
-    if (isDev && filteredSources.length > 50) {
-      filteredSources = filteredSources.slice(0, 50);
+    if (isDev && filteredSources.length > 60) {
+      filteredSources = filteredSources.slice(0, 60);
     }
 
     const performanceResults: PerformanceScore[] = [];
@@ -278,7 +289,6 @@ export class PerformanceScreenerService {
     const dualMatchSymbols: string[] = [];
 
     // 診断カウンター
-    // 診断カウンター（レビュー対応: passedAI未使用のため削除）
     let skipDataInsufficient = 0;
     let skipFetchError = 0;
     let skipLowTrades = 0;
@@ -288,11 +298,9 @@ export class PerformanceScreenerService {
       const ds = filteredSources[i];
       try {
         // 1回のデータ取得を共有
-        // データ最低50件は必要。lookbackDaysに足りない場合はあるだけ使う
         const data = await ds.fetchData();
         if (data.length < MIN_DATA_REQUIRED) {
           skipDataInsufficient++;
-          console.log(`[DualDiag] ${ds.symbol}: SKIP (data=${data.length} < min=${MIN_DATA_REQUIRED})`);
           continue;
         }
         const actualLookback = Math.min(data.length, lookbackDays);
@@ -344,7 +352,7 @@ export class PerformanceScreenerService {
           finalConfidence = Math.max(mlSignal.confidence * 0.8, 40);
         }
 
-        // AI結果の保存（BUYのみに限定せず、上位抽出用に全て保持）
+        // AI結果の保存
         const targetPrice = (mlSignal.type === finalType) ? mlSignal.targetPrice : currentPrice * 1.05;
         let enhancedReason = consensus.reason;
         if (mlSignal.type === finalType) {
@@ -365,7 +373,7 @@ export class PerformanceScreenerService {
           reason: enhancedReason,
         };
 
-        // パフォーマンスタブ用: 取引回数が十分な銘柄のみ
+        // パフォーマンスタブ用
         if (perfScore.totalTrades >= minTrades) {
           passedPerf++;
           performanceResults.push(perfScore);
@@ -373,16 +381,18 @@ export class PerformanceScreenerService {
           skipLowTrades++;
         }
 
-        // デュアルマッチ判定: 全銘柄を対象に複合スコアで評価（取引数フィルタとは独立）
-        // レビュー対応: マジックナンバーを定数化
+        // デュアルマッチ判定
         const buyBonus = finalType === 'BUY' ? DUAL_SCORE_BONUS_BUY : (finalType === 'SELL' ? DUAL_SCORE_BONUS_SELL : 0);
         const dualScore = (pScoreValue * DUAL_SCORE_WEIGHT_PERF) + (finalConfidence * DUAL_SCORE_WEIGHT_AI) + buyBonus;
 
         const isDualCandidate =
           dualScore >= minDualScore &&
-          pScoreValue > 0 &&
-          finalType !== 'HOLD' &&
-          (mlSignal.predictedChange || 0) >= minPredictedChange;
+          // pScoreValue > 0 &&
+          // finalType !== 'HOLD' && // Allow HOLD if Dual Score is high
+          (mlSignal.predictedChange || 0) >= minPredictedChange &&
+          // ユーザー指定のフィルタを適用
+          perfScore.winRate >= minWinRate &&
+          perfScore.profitFactor >= minProfitFactor;
 
         console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}%, dualScore=${dualScore.toFixed(1)}, trades=${perfScore.totalTrades} → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
 
@@ -422,18 +432,7 @@ export class PerformanceScreenerService {
     const scanDuration = performance.now() - startTime;
     const lastUpdated = new Date();
 
-    // 診断サマリー
-    console.error(`[DualDiag] === SCAN SUMMARY ===`);
-    console.error(`[DualDiag] Total sources: ${filteredSources.length}`);
-    console.error(`[DualDiag] Skipped (data insufficient): ${skipDataInsufficient}`);
-    console.error(`[DualDiag] Skipped (low trades < ${minTrades}): ${skipLowTrades}`);
-    console.error(`[DualDiag] Skipped (fetch error): ${skipFetchError}`);
-    console.error(`[DualDiag] Passed performance filter: ${passedPerf}`);
-    console.error(`[DualDiag] AI signals collected: ${aiSignalResults.length}`);
-    console.error(`[DualDiag] Dual matches: ${dualMatches.length}`);
-    console.error(`[DualDiag] Duration: ${scanDuration.toFixed(0)}ms`);
-
-    return {
+    const result: DualScanResult = {
       performance: {
         results: performanceResults.slice(0, topN),
         totalScanned: filteredSources.length,
@@ -451,6 +450,11 @@ export class PerformanceScreenerService {
       dualMatches,
       dualMatchSymbols,
     };
+
+    // キャッシュに保存
+    this.scanCache.set(cacheKey, { result, timestamp: Date.now() });
+
+    return result;
   }
 
   /**
