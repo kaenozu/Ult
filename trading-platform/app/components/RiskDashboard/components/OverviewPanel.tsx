@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   PieChart,
   DollarSign,
-  BarChart3,
   Activity,
   ChevronDown,
   ChevronUp,

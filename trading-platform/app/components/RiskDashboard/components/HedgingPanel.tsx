@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
-import { Portfolio } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { Shield } from 'lucide-react';
 import {
@@ -9,17 +8,12 @@ import {
 } from '@/app/lib/risk/TailRiskHedging';
 
 interface HedgingPanelProps {
-  portfolio: Portfolio;
   hedgeManager: ReturnType<typeof createTailRiskHedging>;
 }
 
-export function HedgingPanel({ portfolio, hedgeManager }: HedgingPanelProps) {
-  const [recommendations, setRecommendations] = useState<HedgeRecommendation[]>([]);
-
-  useEffect(() => {
-    // Generate recommendations
-    const recs = hedgeManager.generateHedgeRecommendations();
-    setRecommendations(recs);
+export function HedgingPanel({ hedgeManager }: HedgingPanelProps) {
+  const recommendations = useMemo(() => {
+    return hedgeManager.generateHedgeRecommendations();
   }, [hedgeManager]);
 
   return (

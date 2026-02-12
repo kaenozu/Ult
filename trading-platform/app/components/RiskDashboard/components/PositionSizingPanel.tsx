@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
-import { Portfolio } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { Target, AlertTriangle } from 'lucide-react';
 import {
@@ -10,28 +9,44 @@ import {
 } from '@/app/lib/risk/DynamicPositionSizer';
 
 interface PositionSizingPanelProps {
-  portfolio: Portfolio;
   positionSizer: ReturnType<typeof createDynamicPositionSizer>;
 }
 
-export function PositionSizingPanel({ portfolio, positionSizer }: PositionSizingPanelProps) {
+export function PositionSizingPanel({ positionSizer }: PositionSizingPanelProps) {
   const [symbol, setSymbol] = useState('');
   const [entryPrice, setEntryPrice] = useState('');
   const [stopLoss, setStopLoss] = useState('');
   const [confidence, setConfidence] = useState(75);
   const [volatility, setVolatility] = useState(20);
-  const [method, setMethod] = useState<'volatility' | 'kelly' | 'risk_parity' | 'fixed'>('volatility');
+  type SizingMethod = 'volatility' | 'kelly' | 'risk_parity' | 'fixed';
+  const [method, setMethod] = useState<SizingMethod>('volatility');
   const [sizingResult, setSizingResult] = useState<PositionSizingResponse | null>(null);
 
   const calculateSizing = () => {
-    if (!symbol || !entryPrice) return;
+    const parsedPrice = parseFloat(entryPrice);
+    const parsedStopLoss = stopLoss ? parseFloat(stopLoss) : undefined;
+    const parsedVolatility = volatility / 100;
+
+    // Validation
+    if (!symbol || isNaN(parsedPrice) || parsedPrice <= 0) {
+      setSizingResult({
+        recommendedShares: 0,
+        positionValue: 0,
+        positionPercent: 0,
+        riskAmount: 0,
+        riskPercent: 0,
+        reasoning: [],
+        warnings: ['Invalid input values. Please ensure Symbol and Entry Price are correct and positive.'],
+      });
+      return;
+    }
 
     const request: PositionSizingRequest = {
       symbol,
-      entryPrice: parseFloat(entryPrice),
-      stopLoss: stopLoss ? parseFloat(stopLoss) : undefined,
+      entryPrice: parsedPrice,
+      stopLoss: parsedStopLoss,
       confidence,
-      volatility: volatility / 100,
+      volatility: parsedVolatility,
       method,
     };
 
@@ -109,7 +124,7 @@ export function PositionSizingPanel({ portfolio, positionSizer }: PositionSizing
               {['volatility', 'kelly', 'risk_parity', 'fixed'].map((m) => (
                 <button
                   key={m}
-                  onClick={() => setMethod(m as any)}
+                  onClick={() => setMethod(m as SizingMethod)}
                   className={`px-3 py-2 rounded-lg text-sm transition-colors ${
                     method === m
                       ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'

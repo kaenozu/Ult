@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Portfolio } from '@/app/types';
-import { Shield, Activity, BarChart3, Target, PieChart } from 'lucide-react';
+import { Shield, Activity, BarChart3, Target } from 'lucide-react';
 
 import { createPortfolioRiskMonitor, PortfolioRiskReport } from '@/app/lib/risk/PortfolioRiskMonitor';
 import { createDynamicPositionSizer } from '@/app/lib/risk/DynamicPositionSizer';
@@ -98,8 +98,8 @@ export function RiskDashboard({ portfolio, updateInterval = 10000 }: RiskDashboa
       </Card>
 
       {activeTab === 'overview' && <OverviewPanel riskReport={riskReport} expandedSections={expandedSections} toggleSection={toggleSection} />}
-      {activeTab === 'position_sizing' && <PositionSizingPanel portfolio={portfolio} positionSizer={positionSizer} />}
-      {activeTab === 'hedging' && <HedgingPanel portfolio={portfolio} hedgeManager={hedgeManager} />}
+      {activeTab === 'position_sizing' && <PositionSizingPanel positionSizer={positionSizer} />}
+      {activeTab === 'hedging' && <HedgingPanel hedgeManager={hedgeManager} />}
       {activeTab === 'stress_test' && <StressTestPanel riskReport={riskReport} />}
     </div>
   );

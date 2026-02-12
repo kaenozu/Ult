@@ -1,13 +1,24 @@
 import asyncio
 import json
 import sys
+import re
 from datetime import datetime
 from playwright.async_api import async_playwright
+
+def validate_symbol(symbol: str) -> bool:
+    """
+    日本株のシンボル形式（通常は4桁の数字）を検証する
+    """
+    return bool(re.match(r'^[0-9]{4}$', symbol))
 
 async def fetch_japanese_stock_quote(symbol: str):
     """
     Yahoo Finance Japanから株価を取得する
     """
+    if not validate_symbol(symbol):
+        print(json.dumps({"error": f"Invalid symbol format: {symbol}. Only 4-digit numbers are allowed."}))
+        sys.exit(1)
+
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
