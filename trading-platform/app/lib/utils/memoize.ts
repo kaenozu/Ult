@@ -33,7 +33,10 @@ export type KeyGenerator<TArgs extends readonly unknown[]> = (...args: TArgs) =>
  */
  
 const defaultKeyGenerator: KeyGenerator<readonly unknown[]> = (...args: readonly unknown[]): string => {
-  return JSON.stringify(args);
+  return JSON.stringify(args.map(arg => ({
+    type: typeof arg,
+    value: arg
+  })));
 };
 
 /**
@@ -53,7 +56,7 @@ const defaultKeyGenerator: KeyGenerator<readonly unknown[]> = (...args: readonly
  * ```
  */
  
-export function memoize<TArgs extends any[], TResult>(
+export function memoize<TArgs extends unknown[], TResult>(
   fn: (...args: TArgs) => TResult,
   options: MemoizeOptions = {},
   keyGenerator: KeyGenerator<TArgs> = defaultKeyGenerator
@@ -159,7 +162,7 @@ export interface CacheStats {
  * @returns メモ化された関数とstats取得関数
  */
  
-export function memoizeWithStats<TArgs extends any[], TResult>(
+export function memoizeWithStats<TArgs extends unknown[], TResult>(
   fn: (...args: TArgs) => TResult,
   options: MemoizeOptions = {},
   keyGenerator: KeyGenerator<TArgs> = defaultKeyGenerator

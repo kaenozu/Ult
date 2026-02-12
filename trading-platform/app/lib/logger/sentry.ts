@@ -383,18 +383,18 @@ export function captureErrors<T extends (...args: unknown[]) => unknown>(
 }
 
 /**
- * パフォーマンスを計測するデコレータ
+ * パフォーマンスを計測するデコレータ（非同期関数用）
  */
-export function measurePerformance<T extends (...args: any[]) => any>(
-  fn: T,
+export function measureAsyncPerformance<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => Promise<TReturn>,
   operationName?: string
-): T {
+): (...args: TArgs) => Promise<TReturn> {
   const name = operationName || fn.name;
-  
-  return (async (...args: Parameters<T>): Promise<ReturnType<T>> => {
+
+  return async (...args: TArgs): Promise<TReturn> => {
     const transaction = sentry.startTransaction(name, 'function');
     transaction.startChild('execution', `${name} execution`);
-    
+
     try {
       const result = await fn(...args);
       transaction.finishChild();
@@ -405,7 +405,33 @@ export function measurePerformance<T extends (...args: any[]) => any>(
       transaction.finish();
       throw error;
     }
-  }) as T;
+  };
+}
+
+/**
+ * パフォーマンスを計測するデコレータ（同期関数用）
+ */
+export function measurePerformance<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => TReturn,
+  operationName?: string
+): (...args: TArgs) => TReturn {
+  const name = operationName || fn.name;
+
+  return (...args: TArgs): TReturn => {
+    const transaction = sentry.startTransaction(name, 'function');
+    transaction.startChild('execution', `${name} execution`);
+
+    try {
+      const result = fn(...args);
+      transaction.finishChild();
+      transaction.finish();
+      return result;
+    } catch (error) {
+      transaction.finishChild();
+      transaction.finish();
+      throw error;
+    }
+  };
 }
 
 // ============================================================================

@@ -13,8 +13,6 @@ const customJestConfig = {
     // Handle module aliases
     '^@/domains/(.*)$': '<rootDir>/app/domains/$1',
     '^@/infrastructure/(.*)$': '<rootDir>/app/infrastructure/$1',
-    '^@/shared/(.*)$': '<rootDir>/app/shared/$1',
-    '^@/shared$': '<rootDir>/app/shared/index.ts',
     '^@/ui/(.*)$': '<rootDir>/app/ui/$1',
     '^@/(.*)$': '<rootDir>/$1',
   },

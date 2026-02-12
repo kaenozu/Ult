@@ -265,6 +265,7 @@ export class ApiError extends AppError {
   constructor(
     message: string,
     optionsOrCode?: string | {
+      code?: string;
       endpoint?: string;
       statusCode?: number;
       response?: unknown;
@@ -273,7 +274,7 @@ export class ApiError extends AppError {
     maybeStatusCode?: number,
     maybeContext?: Record<string, unknown>
   ) {
-    const options: any = typeof optionsOrCode === 'object' ? optionsOrCode : {};
+    const options = typeof optionsOrCode === 'object' ? optionsOrCode : {};
     let code: string = typeof optionsOrCode === 'string' ? optionsOrCode : (options?.code || ErrorCodes.API_ERROR);
     const statusCode = maybeStatusCode ?? options?.statusCode ?? 500;
     const context = maybeContext ?? options?.context ?? {};

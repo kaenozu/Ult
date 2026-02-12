@@ -57,11 +57,11 @@ describe('Domain Architecture Validation', () => {
   });
 
   describe('Shared Layer', () => {
-    it('should export shared utilities and types from barrel export', async () => {
-      const sharedModule = await import('@/shared/constants/intervals');
+    it('should have shared utilities available in lib', async () => {
+      const utilsModule = await import('@/app/lib/utils/calculations');
 
-      expect(sharedModule).toBeDefined();
-      expect(typeof sharedModule).toBe('object');
+      expect(utilsModule).toBeDefined();
+      expect(typeof utilsModule).toBe('object');
     });
   });
 
@@ -79,9 +79,9 @@ describe('Domain Architecture Validation', () => {
       }).not.toThrow();
     });
 
-    it('should resolve @/shared/* path alias', async () => {
+    it('should resolve @/app/* path alias', async () => {
       expect(async () => {
-        await import('@/shared/constants/intervals');
+        await import('@/app/lib/utils/calculations');
       }).not.toThrow();
     });
   });
