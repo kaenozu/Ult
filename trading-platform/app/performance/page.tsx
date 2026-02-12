@@ -268,8 +268,8 @@ function PerformanceDashboardContent() {
       if ((activeTab === 'performance' || activeTab === 'dual-match') && isPerfA && isPerfB) {
         const aScore = a as PerformanceScore;
         const bScore = b as PerformanceScore;
-        let aVal: any = aScore[sortField as keyof PerformanceScore];
-        let bVal: any = bScore[sortField as keyof PerformanceScore];
+        let aVal: number | string = aScore[sortField as keyof PerformanceScore] as number | string;
+        let bVal: number | string = bScore[sortField as keyof PerformanceScore] as number | string;
 
         if (sortField === 'symbol') {
           aVal = aScore.symbol;
@@ -289,8 +289,8 @@ function PerformanceDashboardContent() {
         const aSig = a as AISignalResult;
         const bSig = b as AISignalResult;
 
-        let aVal: any;
-        let bVal: any;
+        let aVal: number | string | undefined;
+        let bVal: number | string | undefined;
 
         if (sortField === 'symbol') {
           aVal = aSig.symbol;
