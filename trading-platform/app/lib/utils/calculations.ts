@@ -36,7 +36,7 @@ export function memoize<TArgs extends unknown[], TReturn extends number>(
 /**
  * 配列用メモ化関数
  */
-export function memoizeArray<TArgs extends (number | string | boolean)[], TReturn extends number>(
+export function memoizeArray<TArgs extends unknown[], TReturn extends number>(
   fn: (arr: number[] | Float64Array, ...args: TArgs) => TReturn,
   maxCacheSize: number = 100
 ): (arr: number[] | Float64Array, ...args: TArgs) => TReturn {
@@ -63,7 +63,7 @@ export function memoizeArray<TArgs extends (number | string | boolean)[], TRetur
 
     cache.set(key, result);
     return result;
-  };
+  });
 }
 
 // ============================================================================
@@ -239,7 +239,10 @@ export function calculateVolatility(
 /**
  * メモ化されたボラティリティ計算
  */
-export const calculateVolatilityMemoized = memoizeArray(calculateVolatility);
+export const calculateVolatilityMemoized = memoizeArray(
+  (prices: number[] | Float64Array, annualize: boolean = true): number => 
+    calculateVolatility(prices, annualize)
+);
 
 /**
  * 最大ドローダウンを計算

@@ -33,7 +33,10 @@ export type KeyGenerator<TArgs extends readonly unknown[]> = (...args: TArgs) =>
  */
  
 const defaultKeyGenerator: KeyGenerator<readonly unknown[]> = (...args: readonly unknown[]): string => {
-  return JSON.stringify(args);
+  return JSON.stringify(args.map(arg => ({
+    type: typeof arg,
+    value: arg
+  })));
 };
 
 /**

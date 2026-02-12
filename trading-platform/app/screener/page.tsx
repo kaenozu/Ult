@@ -232,7 +232,7 @@ const [displayFilters, filters, setDisplayFilters, isFilterDebouncing] = useDebo
       }
       return sortDirection === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
     });
-  }, [filters, sortField, sortDirection, stocks, analyzedStocks, isTechAnalysisDone]);
+  }, [filters, sortField, sortDirection, stocks, analyzedStocks, isTechAnalysisDone, displayFilters]);
 
   const handleStockClick = (stock: Stock) => {
     addToWatchlist(stock);
@@ -286,7 +286,7 @@ setDisplayFilters(prev => ({
       setIsTechAnalysisDone(false);
       setActivePreset(null);
     }, 300); // 300ms debounce
-  }, []);
+  }, [setDisplayFilters, setTechFilters, setIsTechAnalysisDone, setActivePreset]);
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">

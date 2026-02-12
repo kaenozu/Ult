@@ -27,7 +27,7 @@ export interface MLServiceConfig {
  * Extends the domain service with TensorFlow.js capabilities
  */
 export class MLModelService extends DomainMLModelService {
-  private readonly weights: MLServiceConfig['weights'];
+  private readonly configWeights: MLServiceConfig['weights'];
   private useTensorFlowModels: boolean;
 
   constructor(
@@ -36,7 +36,7 @@ export class MLModelService extends DomainMLModelService {
     config: Partial<MLServiceConfig> = {}
   ) {
     super();
-    this.weights = config.weights || PREDICTION.MODEL_WEIGHTS;
+    this.configWeights = config.weights || PREDICTION.MODEL_WEIGHTS;
     this.useTensorFlowModels = config.useTensorFlowModels || false;
   }
 
@@ -47,6 +47,24 @@ export class MLModelService extends DomainMLModelService {
     // For now, delegate to sync prediction
     // TensorFlow.js integration can be added here
     return this.predict(features) as ModelPrediction;
+  }
+
+  /**
+   * Check if TensorFlow.js is enabled
+   */
+  isTensorFlowEnabled(): boolean {
+    return this.useTensorFlowModels;
+  }
+
+  /**
+   * Get model metrics
+   */
+  getModelMetrics(): Record<string, unknown> {
+    return {
+      rf: undefined,
+      xgb: undefined,
+      lstm: undefined,
+    };
   }
 }
 

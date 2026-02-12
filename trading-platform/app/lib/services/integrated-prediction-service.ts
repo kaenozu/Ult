@@ -9,8 +9,8 @@
 export {
   IntegratedPredictionService,
   integratedPredictionService,
-  IntegratedPredictionResult,
 } from '@/app/domains/prediction/services/integrated-prediction-service';
+export type { IntegratedPredictionResult } from '@/app/domains/prediction/services/integrated-prediction-service';
 
 // Additional interfaces for backward compatibility
 export interface EnhancedPrediction {

@@ -265,6 +265,7 @@ export class ApiError extends AppError {
   constructor(
     message: string,
     optionsOrCode?: string | {
+      code?: string;
       endpoint?: string;
       statusCode?: number;
       response?: unknown;

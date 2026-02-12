@@ -10,9 +10,11 @@ export {
   LSTMModel,
   GRUModel,
   FeedForwardModel,
+  featuresToArray,
+} from '@/app/domains/prediction/services/tensorflow-model-service';
+export type {
   ModelTrainingData,
   ModelMetrics,
-  featuresToArray,
 } from '@/app/domains/prediction/services/tensorflow-model-service';
 
 // Additional types not in domains version
