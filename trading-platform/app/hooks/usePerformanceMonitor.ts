@@ -36,6 +36,7 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
   const slowRenderCount = useRef<number>(0);
   const totalRenderTime = useRef<number>(0);
   const lastInteractionTime = useRef<number>(0);
+  const isMountedRef = useRef<boolean>(true);
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     renderTime: 0,
     renderCount: 0,
@@ -45,9 +46,14 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
     interactionResponsiveness: 0
   });
 
-  // Initialize lastInteractionTime on mount
+  // Initialize lastInteractionTime and isMountedRef on mount
   useEffect(() => {
     lastInteractionTime.current = Date.now();
+    isMountedRef.current = true;
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   // Performance monitoring during render
@@ -77,18 +83,6 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
         }
       }
 
-      // Update metrics
-      const newMetrics: PerformanceMetrics = {
-        renderTime,
-        renderCount: renderCount.current,
-        averageRenderTime: totalRenderTime.current / renderCount.current,
-        slowRenderCount: slowRenderCount.current,
-        lastInteractionTime: lastInteractionTime.current,
-        interactionResponsiveness: metrics.interactionResponsiveness
-      };
-
-      setMetrics(newMetrics);
-
       // Memory tracking (if available)
       if (enableMemoryTracking && 'memory' in performance) {
         const memory = (performance as any).memory;
@@ -96,8 +90,26 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
           console.warn(`⚠️ High memory usage: ${((memory.usedJSHeapSize / 1024 / 1024).toFixed(2))}MB`);
         }
       }
+      
+      // Schedule state update for next tick to avoid updating during cleanup
+      if (isMountedRef.current) {
+        const newMetrics: PerformanceMetrics = {
+          renderTime,
+          renderCount: renderCount.current,
+          averageRenderTime: totalRenderTime.current / renderCount.current,
+          slowRenderCount: slowRenderCount.current,
+          lastInteractionTime: lastInteractionTime.current,
+          interactionResponsiveness: metrics.interactionResponsiveness
+        };
+        
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            setMetrics(newMetrics);
+          }
+        }, 0);
+      }
     };
-  }, [slowRenderThreshold, onSlowRender, enableMemoryTracking, metrics.interactionResponsiveness]);
+  }, [slowRenderThreshold, onSlowRender, enableMemoryTracking, metrics.interactionResponsiveness, isMountedRef]);
 
   // Track user interactions
   const trackInteraction = useCallback(() => {
@@ -165,31 +177,6 @@ export function withPerformanceMonitor<T extends object>(
   options?: PerformanceMonitorOptions
 ) {
   const displayName = WrappedComponent.displayName || WrappedComponent.name || 'Component';
-
-  return function MonitoredComponent(props: T) {
-    const { getPerformanceSummary, trackInteraction } = usePerformanceMonitor({
-      slowRenderThreshold: 50, // More lenient for complex components
-      ...options,
-      onSlowRender: (metrics) => {
-        console.warn(`📊 ${displayName} Performance Issues:`, getPerformanceSummary());
-        options?.onSlowRender?.(metrics);
-      }
-    });
-
-    // Wrap event handlers to track interactions
-    const monitoredProps = { ...props };
-    Object.keys(monitoredProps).forEach(key => {
-      const prop = monitoredProps[key as keyof T];
-      if (typeof prop === 'function' && key.startsWith('on')) {
-        monitoredProps[key as keyof T] = ((...args: unknown[]) => {
-          trackInteraction();
-          return (prop as any)(...args);
-        }) as any;
-      }
-    });
-
-    return createElement(WrappedComponent, { ...monitoredProps });
-  };
 
   const MonitoredComponentFn = function MonitoredComponentInner(props: T) {
     const { getPerformanceSummary, trackInteraction } = usePerformanceMonitor({
