@@ -28,7 +28,7 @@ describe('Integration Tests', () => {
     if (platform) {
       try {
         await platform.stop();
-      } catch (_e) {
+      } catch {
         // Ignore errors during cleanup
       }
     }

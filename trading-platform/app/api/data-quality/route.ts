@@ -28,7 +28,7 @@ export async function GET(request: Request) {
     if (!symbol) {
       const cacheStats = marketDataCache.getStats();
       const avgLatency = 150; // Mock latency for now or track real latency in cache
-      const anomalyCount = 0; // TODO: Implement anomaly detection service
+      // TODO: Implement anomaly detection service (anomalyCount)
 
       return NextResponse.json({
         type: 'global',
