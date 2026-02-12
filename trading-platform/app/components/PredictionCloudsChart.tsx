@@ -17,6 +17,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  TooltipProps,
 } from 'recharts';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -150,28 +151,28 @@ export function PredictionCloudsChart({
             <XAxis
               dataKey="date"
               tick={{ fill: '#94a3b8', fontSize: 12 }}
-              tickFormatter={(value) => format(new Date(value), 'MM/dd', { locale: ja })}
+              tickFormatter={(value: string) => format(new Date(value), 'MM/dd', { locale: ja })}
               stroke="#475569"
             />
-            
+
             <YAxis
               tick={{ fill: '#94a3b8', fontSize: 12 }}
-              tickFormatter={(value) => `¥${value.toLocaleString()}`}
+              tickFormatter={(value: number) => `¥${value.toLocaleString()}`}
               stroke="#475569"
               domain={['auto', 'auto']}
             />
             
             <Tooltip
-              content={({ active, payload, label }) => {
+              content={({ active, payload, label }: TooltipProps<number, string>) => {
                 if (!active || !payload || payload.length === 0) return null;
-                
-                const data = payload[0].payload;
+
+                const data = payload[0].payload as { date: string; timestamp: number; center: number; upper: number; lower: number; confidence: number; isForecast: boolean };
                 const isForecast = data.isForecast;
-                
+
                 return (
                   <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-lg">
                     <p className="text-slate-300 text-sm mb-2">
-                      {format(new Date(label), 'yyyy年MM月dd日', { locale: ja })}
+                      {format(new Date(label as string), 'yyyy年MM月dd日', { locale: ja })}
                       {isForecast && (
                         <span className="ml-2 text-amber-400 text-xs">予測</span>
                       )}

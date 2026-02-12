@@ -4,7 +4,7 @@
  * ATR（平均真波幅）に基づく株価予測の不確実性を視覚化するための型定義
  */
 
-import { OHLCV } from '../types';
+import { OHLCV } from '@/app/types';
 
 /**
  * 予測雲（Prediction Cloud）のデータポイント
