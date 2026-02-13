@@ -52,11 +52,30 @@ export interface StrategyResult {
   };
 }
 
+/**
+ * Strategy parameter value types
+ */
+export type StrategyParameterValue = string | number | boolean | string[] | number[];
+
+/**
+ * Type guard to check if value is a string
+ */
+export function isString(value: StrategyParameterValue): value is string {
+  return typeof value === 'string';
+}
+
+/**
+ * Type guard to check if value is a string array
+ */
+export function isStringArray(value: StrategyParameterValue): value is string[] {
+  return Array.isArray(value) && value.length > 0 && typeof value[0] === 'string';
+}
+
 export interface StrategyConfig {
   name: string;
   type: StrategyType;
   description: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, StrategyParameterValue>;
   enabled: boolean;
   weight?: number; // for portfolio composition (0-1)
 }

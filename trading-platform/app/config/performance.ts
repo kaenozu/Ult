@@ -196,8 +196,8 @@ export const FEATURE_SUPPORT = {
   modern: {
     webp: () => {
       const elem = document.createElement('canvas');
-      // @ts-expect-error - toDataURL may not be recognized but it exists on canvas
-      return elem.getContext && elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+      const canvas = elem as HTMLCanvasElement & { toDataURL(type: string): string };
+      return !!canvas.getContext('2d') && canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
     },
     intersectionObserver: () => 'IntersectionObserver' in window,
     requestIdleCallback: () => 'requestIdleCallback' in window,

@@ -36,13 +36,13 @@ export function memoize<TArgs extends unknown[], TReturn extends number>(
 /**
  * 配列用メモ化関数
  */
-export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: any[]) => number>(
-  fn: T,
+export function memoizeArray<TArgs extends unknown[], TReturn extends number>(
+  fn: (arr: number[] | Float64Array, ...args: TArgs) => TReturn,
   maxCacheSize: number = 100
-): T {
-  const cache = new Map<string, number>();
+): (arr: number[] | Float64Array, ...args: TArgs) => TReturn {
+  const cache = new Map<string, TReturn>();
 
-  return ((arr: number[] | Float64Array, ...args: any[]): number => {
+  return ((arr: number[] | Float64Array, ...args: TArgs): TReturn => {
     // 配列の内容をハッシュ化（最初の10要素と長さを使用）
     const sample = arr.slice(0, 10).join(',');
     const key = `${sample}|${arr.length}|${args.join(',')}`;
@@ -63,7 +63,7 @@ export function memoizeArray<T extends (arr: number[] | Float64Array, ...args: a
 
     cache.set(key, result);
     return result;
-  }) as T;
+  });
 }
 
 // ============================================================================
@@ -131,17 +131,31 @@ export function calculateReturns(prices: number[] | Float64Array): number[] {
 
 /**
  * SMA（単純移動平均）を計算
+ * O(N) complexity using sliding window approach
  */
 export function calculateSMA(prices: number[] | Float64Array, period: number): number[] {
   const sma: number[] = [];
+  
+  if (prices.length < period || period <= 0) {
+    return Array.from({ length: prices.length }, () => NaN);
+  }
+  
+  let windowSum = 0;
+  
   for (let i = 0; i < prices.length; i++) {
+    windowSum += prices[i];
+    
+    if (i >= period) {
+      windowSum -= prices[i - period];
+    }
+    
     if (i < period - 1) {
       sma.push(NaN);
     } else {
-      const sumValue = sum(prices.slice(i - period + 1, i + 1));
-      sma.push(sumValue / period);
+      sma.push(windowSum / period);
     }
   }
+  
   return sma;
 }
 
@@ -239,7 +253,10 @@ export function calculateVolatility(
 /**
  * メモ化されたボラティリティ計算
  */
-export const calculateVolatilityMemoized = memoizeArray(calculateVolatility);
+export const calculateVolatilityMemoized = memoizeArray(
+  (prices: number[] | Float64Array, annualize: boolean = true): number => 
+    calculateVolatility(prices, annualize)
+);
 
 /**
  * 最大ドローダウンを計算
@@ -259,6 +276,62 @@ export function calculateMaxDrawdown(equityCurve: number[]): number {
   }
   
   return maxDrawdown * 100;
+}
+
+/**
+ * 最大ドローダウンを計算（柔軟版）
+ * @param equityCurve 資産曲線の配列
+ * @param asPercentage trueの場合、パーセンテージで返す（デフォルト: true）
+ * @returns 最大ドローダウン
+ */
+export function calculateMaxDrawdownFlexible(equityCurve: number[], asPercentage: boolean = true): number {
+  if (!equityCurve || equityCurve.length === 0) {
+    return 0;
+  }
+
+  let maxDrawdown = 0;
+  let peak = equityCurve[0];
+
+  for (const value of equityCurve) {
+    if (value > peak) {
+      peak = value;
+    }
+    if (peak !== 0) {
+      const dd = (peak - value) / peak;
+      if (dd > maxDrawdown) {
+        maxDrawdown = dd;
+      }
+    }
+  }
+
+  return asPercentage ? maxDrawdown * 100 : maxDrawdown;
+}
+
+/**
+ * リターン配列から最大ドローダウンを計算
+ * @param returns リターンの配列
+ * @param asPercentage trueの場合、パーセンテージで返す（デフォルト: true）
+ * @returns 最大ドローダウン
+ */
+export function calculateMaxDrawdownFromReturns(returns: number[], asPercentage: boolean = true): number {
+  if (!returns || returns.length === 0) {
+    return 0;
+  }
+
+  let peak = 1;
+  let maxDD = 0;
+  let cumulative = 1;
+
+  for (const ret of returns) {
+    cumulative *= (1 + ret);
+    peak = Math.max(peak, cumulative);
+    if (peak !== 0) {
+      const dd = (peak - cumulative) / peak;
+      maxDD = Math.max(maxDD, dd);
+    }
+  }
+
+  return asPercentage ? maxDD * 100 : maxDD;
 }
 
 /**

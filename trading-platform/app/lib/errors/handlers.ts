@@ -14,27 +14,44 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/app/core/logger';
 import {
   AppError,
-  NetworkError,
-  ApiError,
-  RateLimitError,
-  ValidationError,
-  NotFoundError,
-  AuthenticationError,
-  TradingError,
-  SystemError,
-  TimeoutError,
   ErrorCodes,
   ErrorType,
   type ErrorSeverity,
   isAppError,
+} from './AppError';
+import {
+  NetworkError,
+  ApiError,
+  RateLimitError,
+  TimeoutError,
   isNetworkError,
   isApiError,
+} from './ApiError';
+import {
+  ValidationError,
   isValidationError,
+} from './ValidationError';
+import {
+  NotFoundError,
+  DataNotAvailableError,
   isNotFoundError,
+} from './DataError';
+import {
+  AuthenticationError,
+  AuthorizationError,
   isAuthenticationError,
+} from './AuthError';
+import {
+  TradingError,
+  OrderError,
+  RiskManagementError,
   isTradingError,
+} from './TradingError';
+import {
+  SystemError,
+  ConfigurationError,
   isSystemError,
-} from './AppError';
+} from './SystemError';
 
 // ============================================================================
 // Types

@@ -42,34 +42,12 @@ export const useWatchlistStore = create<WatchlistState>()(
       batchUpdateStockData: (updates) => set((state) => {
         const updateMap = new Map(updates.map((u) => [u.symbol, u.data]));
 
-        const newWatchlist = state.watchlist.map((stock) => {
+        // 現在のウォッチリストにある銘柄のみを更新対象とする（全削除後の復活を防ぐため）
+        const updatedWatchlist = state.watchlist.map((stock) => {
           const update = updateMap.get(stock.symbol);
           if (!update) return stock;
           return { ...stock, ...update };
         });
-
-        // 新しい銘柄がある場合は追加
-        const existingSymbols = new Set(newWatchlist.map((s) => s.symbol));
-        const newStocks = updates
-          .filter((u) => !existingSymbols.has(u.symbol))
-          .map((u): Stock => {
-            // 最小限のStockオブジェクトを作成
-            const market: 'japan' | 'usa' = u.data.market === 'japan' ? 'japan' : 'usa';
-            return {
-              symbol: u.symbol,
-              name: u.data.name ?? u.symbol,
-              market,
-              sector: u.data.sector ?? '',
-              price: u.data.price ?? 0,
-              change: u.data.change ?? 0,
-              changePercent: u.data.changePercent ?? 0,
-              volume: u.data.volume ?? 0,
-              high52w: u.data.high52w,
-              low52w: u.data.low52w,
-            };
-          });
-
-        const updatedWatchlist = [...newStocks, ...newWatchlist];
 
         // selectedStockも更新
         let newSelectedStock = state.selectedStock;

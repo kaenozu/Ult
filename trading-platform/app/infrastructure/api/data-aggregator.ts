@@ -32,10 +32,30 @@ const getBaseUrl = () => {
   return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'; // Server-side
 };
 
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+  accessCount: number;
+}
+
 class MarketDataClient {
-  private cache: Map<string, { data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData; timestamp: number }> = new Map();
-  private cacheDuration: number = 5 * 60 * 1000;
+  private cache: Map<string, CacheEntry<OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>> = new Map();
   private pendingRequests: Map<string, Promise<unknown>> = new Map();
+  
+  // Performance-optimized: Smart TTL based on data type
+  private readonly CACHE_TTL = {
+    realtime: 30 * 1000,      // 30秒 - リアルタイムデータ
+    intraday: 5 * 60 * 1000,  // 5分 - 日中データ
+    daily: 24 * 60 * 1000,    // 24時間 - 日足データ
+    weekly: 7 * 24 * 60 * 1000, // 1週間 - 週足データ
+    quote: 60 * 1000,         // 1分 - 株価情報
+    signal: 15 * 60 * 1000,   // 15分 - シグナル
+    indicators: 30 * 60 * 1000 // 30分 - テクニカル指標
+  };
+
+  private readonly MAX_CACHE_SIZE = 500; // Reduced from 1000 for memory efficiency
+  private readonly CACHE_CLEANUP_INTERVAL = 60 * 1000; // 1分ごとにクリーンアップ
 
   private async fetchWithRetry<T>(
     url: string,
@@ -51,10 +71,13 @@ class MarketDataClient {
 
       if (httpResponse && httpResponse.status === 429) {
         const retryAfter = httpResponse.headers.get('Retry-After');
-        const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : backoff * 4;
+        // Performance-optimized: Exponential backoff with jitter and cap
+        const baseWait = retryAfter ? parseInt(retryAfter) * 1000 : backoff * 4;
+        const jitter = Math.random() * 1000; // Add randomness to avoid thundering herd
+        const waitTime = Math.min(baseWait + jitter, 30000); // Cap at 30 seconds
         logger.warn(`Rate limit (429) hit. Waiting ${waitTime}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
-        return this.fetchWithRetry(url, options, retries - 1, backoff * 2);
+        return this.fetchWithRetry(url, options, retries - 1, Math.min(backoff * 2, 5000)); // Cap backoff at 5s
       }
 
       const parsedResponse = await httpResponse.json() as MarketResponse<T>;
@@ -67,6 +90,9 @@ class MarketDataClient {
 
       return parsedResponse.data as T;
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw err;
+      }
       if (retries > 0) {
         await new Promise(resolve => setTimeout(resolve, backoff));
         return this.fetchWithRetry(url, options, retries - 1, backoff * 2);
@@ -76,7 +102,7 @@ class MarketDataClient {
   }
 
   /**
-   * Fetch Historical Data with Smart Persistence
+   * Fetch Historical Data with Smart Persistence and Performance-optimized Caching
    */
   async fetchOHLCV(symbol: string, market: 'japan' | 'usa' = 'japan', _currentPrice?: number, signal?: AbortSignal, interval?: string, startDate?: string, forceRefresh: boolean = false): Promise<FetchResult<OHLCV[]>> {
     const cacheKey = `ohlcv-${symbol}-${interval || '1d'}`;
@@ -209,7 +235,8 @@ class MarketDataClient {
         if (interpolatedData.length === 0) throw new Error('No data available');
 
         if (!isIntraday) {
-          this.setCache(cacheKey, interpolatedData);
+          const ttl = this.getTTLForInterval(interval);
+          this.setCache(cacheKey, interpolatedData, ttl);
         }
         return interpolatedData;
       } finally {
@@ -230,7 +257,9 @@ class MarketDataClient {
 
   async fetchQuotes(symbols: string[], signal?: AbortSignal): Promise<QuoteData[]> {
     if (symbols.length === 0) return [];
-    const CHUNK_SIZE = 50;
+    
+    // Performance-optimized: Dynamic chunk sizing based on symbol count
+    const CHUNK_SIZE = Math.min(20, Math.ceil(symbols.length / 3));
     const chunks: string[][] = [];
     for (let i = 0; i < symbols.length; i += CHUNK_SIZE) chunks.push(symbols.slice(i, i + CHUNK_SIZE));
 
@@ -243,7 +272,10 @@ class MarketDataClient {
         });
         const httpResponse = await fetch(`${getBaseUrl()}/api/market?${params.toString()}`, { signal });
         if (httpResponse.status === 429) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Performance-optimized: Exponential backoff with jitter
+          const baseDelay = 1000;
+          const exponentialBackoff = baseDelay * Math.pow(2, Math.floor(Math.random() * 3)); // 1-8秒
+          await new Promise(resolve => setTimeout(resolve, exponentialBackoff));
           return this.fetchQuotes(chunk, signal);
         }
         const parsedJson = await httpResponse.json();
@@ -252,8 +284,8 @@ class MarketDataClient {
       }));
       return results.flat() as QuoteData[];
     } catch (err) {
+      // Ignore AbortError (navigation cancellation)
       if (err instanceof Error && err.name === 'AbortError') {
-        // 静かに無視（ナビゲーション等による中断）
         return [];
       }
       logger.error('Batch fetch failed:', err instanceof Error ? err : new Error(String(err)));
@@ -267,7 +299,7 @@ class MarketDataClient {
     if (cached) return cached;
     try {
       const data = await this.fetchWithRetry<QuoteData>(`/api/market?type=quote&symbol=${symbol}&market=${market}`);
-      if (data) this.setCache(cacheKey, data);
+      if (data) this.setCache(cacheKey, data, this.CACHE_TTL.quote);
       return data;
     } catch (err) {
       // logger.error(`Fetch Quote failed for ${symbol}:`, err instanceof Error ? err : new Error(String(err)));
@@ -314,12 +346,78 @@ class MarketDataClient {
 
   private getFromCache<T>(key: string): T | null {
     const item = this.cache.get(key);
-    if (!item || Date.now() - item.timestamp > this.cacheDuration) return null;
+    if (!item) return null;
+    
+    const now = Date.now();
+    if (now - item.timestamp > item.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    // Update access count for LRU eviction
+    item.accessCount++;
     return item.data as T;
   }
 
-  private setCache(key: string, data: any) {
-    this.cache.set(key, { data, timestamp: Date.now() });
+  private setCache<T extends OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>(key: string, data: T, ttl?: number) {
+    // Performance-optimized: LRU eviction when cache is full
+    if (this.cache.size >= this.MAX_CACHE_SIZE) {
+      this.evictLeastRecentlyUsed();
+    }
+    
+    const cacheTtl = ttl || this.CACHE_TTL.daily; // Default to 24h
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+      ttl: cacheTtl,
+      accessCount: 1
+    } as CacheEntry<OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>);
+  }
+
+  private evictLeastRecentlyUsed() {
+    let leastUsed: [string, CacheEntry<any>] | null = null;
+    
+    for (const [key, entry] of this.cache.entries()) {
+      if (!leastUsed || entry.accessCount < leastUsed[1].accessCount) {
+        leastUsed = [key, entry];
+      }
+    }
+    
+    if (leastUsed) {
+      this.cache.delete(leastUsed[0]);
+    }
+  }
+
+  private getTTLForInterval(interval?: string): number {
+    if (!interval) return this.CACHE_TTL.daily;
+    
+    if (interval.includes('1m') || interval.includes('5m')) return this.CACHE_TTL.realtime;
+    if (interval.includes('15m') || interval.includes('30m') || interval.includes('1h')) return this.CACHE_TTL.intraday;
+    if (interval.includes('1w')) return this.CACHE_TTL.weekly;
+    
+    return this.CACHE_TTL.daily;
+  }
+
+  /**
+   * Performance optimization: Periodic cache cleanup
+   */
+  private startCacheCleanup() {
+    setInterval(() => {
+      const now = Date.now();
+      const toDelete: string[] = [];
+      
+      for (const [key, entry] of this.cache.entries()) {
+        if (now - entry.timestamp > entry.ttl) {
+          toDelete.push(key);
+        }
+      }
+      
+      toDelete.forEach(key => this.cache.delete(key));
+      
+      if (toDelete.length > 0) {
+        logger.debug(`Cache cleanup: removed ${toDelete.length} expired entries`);
+      }
+    }, this.CACHE_CLEANUP_INTERVAL);
   }
 
   private interpolateOHLCV(data: OHLCV[]): OHLCV[] {
@@ -394,9 +492,15 @@ export function handleApiError(error: unknown, context: string): APIError {
   return new APIError(String(error), { endpoint: context });
 }
 
-export function createErrorResult(error: unknown, source: any, context?: string): APIErrorResult {
+export function createErrorResult(error: unknown, source: 'cache' | 'api' | 'aggregated' | 'idb' | 'error', context?: string): APIErrorResult {
   const apiError = handleApiError(error, context || 'Unknown operation');
   return { success: false, data: null, source, error: apiError.message };
 }
 
 export const marketClient = new MarketDataClient();
+
+// Initialize cache cleanup
+if (typeof window !== 'undefined') {
+  // Only start cleanup in browser environment
+  (marketClient as any).startCacheCleanup();
+}

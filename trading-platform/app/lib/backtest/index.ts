@@ -1,6 +1,7 @@
 export * from './AdvancedPerformanceMetrics';
 export * from './MultiAssetBacktestEngine';
-export * from './WinningBacktestEngine';
+// WinningBacktestEngine is deprecated - use RealisticBacktestEngine instead
+// export * from './WinningBacktestEngine';
 
 // Realistic Backtesting Modules (TRADING-030)
 export * from './SlippageModel';
@@ -18,12 +19,13 @@ export type {
 export {
   DEFAULT_BACKTEST_CONFIG as DEFAULT_ADVANCED_CONFIG
 } from './AdvancedBacktestEngine';
-export type {
-  BacktestConfig as WinningBacktestConfig
-} from './WinningBacktestEngine';
-export {
-  DEFAULT_BACKTEST_CONFIG as DEFAULT_WINNING_CONFIG
-} from './WinningBacktestEngine';
+// WinningBacktestEngine is deprecated - use RealisticBacktestEngine instead
+// export type {
+//   BacktestConfig as WinningBacktestConfig
+// } from './WinningBacktestEngine';
+// export {
+//   DEFAULT_BACKTEST_CONFIG as DEFAULT_WINNING_CONFIG
+// } from './WinningBacktestEngine';
 
 // Enhanced realistic backtesting components
 export {
@@ -36,6 +38,8 @@ export type {
   RealisticBacktestConfig as EngineRealisticBacktestConfig,
   RealisticBacktestResult,
   RealisticTradeMetrics,
+  WalkForwardResult,
+  MonteCarloResult,
 } from './RealisticBacktestEngine';
 // MonteCarloSimulator already exported above, skip duplicate
 export * from './OverfittingDetector';

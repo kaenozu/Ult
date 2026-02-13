@@ -213,17 +213,17 @@ export function calculateBollingerBands(
  * 2. (highs: number[], lows: number[], closes: number[], period?: number)
  */
 export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: number | number[], maybeCloses?: number[], maybePeriod?: number): number[] {
-  let highs: number[];
-  let lows: number[];
-  let closes: number[];
   let period: number;
+  let isObjectArray = false;
+  let data: OHLCV[] = [];
+  let highs: number[] = [];
+  let lows: number[] = [];
+  let closes: number[] = [];
 
   if (Array.isArray(dataOrHighs) && typeof dataOrHighs[0] === 'object') {
     // Signature 1: (data: OHLCV[], period?: number)
-    const data = dataOrHighs as OHLCV[];
-    highs = data.map(d => d.high);
-    lows = data.map(d => d.low);
-    closes = data.map(d => d.close);
+    isObjectArray = true;
+    data = dataOrHighs as OHLCV[];
     period = (periodOrLows as number) ?? 14;
   } else {
     // Signature 2: (highs: number[], lows: number[], closes: number[], period?: number)
@@ -236,16 +236,31 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
   const result: number[] = [];
   let sum = 0;
   let validCount = 0;
+  const length = isObjectArray ? data.length : highs.length;
 
-  for (let i = 0; i < highs.length; i++) {
+  for (let i = 0; i < length; i++) {
+    let currentHigh: number;
+    let currentLow: number;
+    let prevClose: number | undefined;
+
+    if (isObjectArray) {
+      currentHigh = data[i].high;
+      currentLow = data[i].low;
+      prevClose = i > 0 ? data[i - 1].close : undefined;
+    } else {
+      currentHigh = highs[i];
+      currentLow = lows[i];
+      prevClose = i > 0 ? closes[i - 1] : undefined;
+    }
+
     let tr = NaN;
     if (i === 0) {
-      tr = highs[i] - lows[i];
-    } else {
+      tr = currentHigh - currentLow;
+    } else if (prevClose !== undefined) {
       tr = Math.max(
-        highs[i] - lows[i],
-        Math.abs(highs[i] - closes[i - 1]),
-        Math.abs(lows[i] - closes[i - 1])
+        currentHigh - currentLow,
+        Math.abs(currentHigh - prevClose),
+        Math.abs(currentLow - prevClose)
       );
     }
 

@@ -243,6 +243,14 @@ export async function GET(request: NextRequest) {
           }
         });
       } catch (err) {
+        if (err instanceof Error && err.name === 'YahooFinanceError') {
+          // YahooFinanceError specific handling
+          const yahooErr = err as { statusCode?: number; url?: string };
+          const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
+          const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
+          console.error(`[MarketAPI] YahooFinanceError for ${yahooSymbol}: ${statusMessage} ${urlMessage}`);
+          return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/history', yahooErr.statusCode || 502);
+        }
         return handleApiError(err, 'market/history', 502);
       }
     }
@@ -266,6 +274,14 @@ export async function GET(request: NextRequest) {
             marketState: quote.marketState
           });
         } catch (err) {
+          if (err instanceof Error && err.name === 'YahooFinanceError') {
+            // YahooFinanceError specific handling
+            const yahooErr = err as { statusCode?: number; url?: string };
+            const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
+            const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
+            console.error(`[MarketAPI] YahooFinanceError for ${symbols[0]}: ${statusMessage} ${urlMessage}`);
+            return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/quote', yahooErr.statusCode || 404);
+          }
           return handleApiError(err, 'market/quote', 404);
         }
       } else {
@@ -287,6 +303,14 @@ export async function GET(request: NextRequest) {
             }));
           return NextResponse.json({ data });
         } catch (err) {
+          if (err instanceof Error && err.name === 'YahooFinanceError') {
+            // YahooFinanceError specific handling
+            const yahooErr = err as { statusCode?: number; url?: string };
+            const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
+            const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
+            console.error(`[MarketAPI] YahooFinanceError for batch quote: ${statusMessage} ${urlMessage}`);
+            return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/batch-quote', yahooErr.statusCode || 502);
+          }
           return handleApiError(err, 'market/batch-quote', 502);
         }
       }

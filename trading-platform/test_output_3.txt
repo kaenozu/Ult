@@ -1,0 +1,41 @@
+
+> trading-platform@0.1.0 test
+> jest c:/gemini-desktop/Ult/trading-platform/app/lib/__tests__/PerformanceScreenerService.dual.test.ts
+
+  console.log
+    [DualMatch] TEST1: perfScore=85.0, aiType=undefined, aiConf=80.0%, dualScore=82.5, trades=10 竊・笨・MATCH
+
+      at PerformanceScreenerService.log [as scanDual] (app/lib/PerformanceScreenerService.ts:397:17)
+
+  console.log
+    [DualMatch] CACHE_TEST: perfScore=85.0, aiType=undefined, aiConf=80.0%, dualScore=82.5, trades=10 竊・笨・MATCH
+
+      at PerformanceScreenerService.log [as scanDual] (app/lib/PerformanceScreenerService.ts:397:17)
+
+FAIL app/lib/__tests__/PerformanceScreenerService.dual.test.ts
+  Utils Test Utils Dummy
+    竏・should pass (2 ms)
+  PerformanceScreenerService - scanDual
+    竏・should return matches when criteria are met (50 ms)
+    ﾃ・should filter out low confidence stocks
+    竏・should cache results (2 ms)
+
+  笳・PerformanceScreenerService - scanDual 窶ｺ should filter out low confidence stocks
+
+    TypeError: Cannot read properties of undefined (reading 'mockResolvedValueOnce')
+
+      90 |         const dataSource = createMockDataSource('LOW_CONF');
+      91 |         // Override mock for this test
+    > 92 |         require('../ConsensusSignalService').consensusSignalService.getSignal.mockResolvedValueOnce({
+         |                                                                              ^
+      93 |             type: 'BUY',
+      94 |             confidence: 20, // Below default 30
+      95 |             reason: 'Weak',
+
+      at Object.<anonymous> (app/lib/__tests__/PerformanceScreenerService.dual.test.ts:92:78)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 3 passed, 4 total
+Snapshots:   0 total
+Time:        1.377 s
+Ran all test suites matching /c:\\gemini-desktop\\Ult\\trading-platform\\app\\lib\\__tests__\\PerformanceScreenerService.dual.test.ts/i.

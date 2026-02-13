@@ -382,7 +382,7 @@ describe('Market API Error Cases', () => {
     it('should handle missing type parameter (defaults to quote)', async () => {
       const req = createRequest('/api/market?symbol=AAPL');
       const res = await GET(req);
-      const data = await res.json();
+      await res.json();
 
       expect(res.status).toBe(200);
     });

@@ -134,7 +134,12 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
           id={ids.quantity}
           type="number"
           min="1"
+          step="1"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="off"
           value={quantity}
+          onFocus={(e) => e.target.select()}
           onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 0))}
           className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
         />
@@ -147,7 +152,11 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
           <input
             id={ids.limitPrice}
             type="number"
+            step="0.01"
+            inputMode="decimal"
+            autoComplete="off"
             value={limitPrice}
+            onFocus={(e) => e.target.select()}
             onChange={(e) => setLimitPrice(e.target.value)}
             className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
           />
@@ -160,6 +169,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
         className="flex items-center justify-between w-full py-2 text-xs font-bold text-[#92adc9] hover:text-white transition-colors border-t border-[#233648] mt-2"
         aria-expanded={showRiskSettings}
         aria-controls={ids.riskSettings}
+        title={showRiskSettings ? "リスク設定を隠す" : "リスク設定を表示"}
       >
         <span>リスク管理設定</span>
         <svg

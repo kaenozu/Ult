@@ -1,4 +1,4 @@
-// @ts-nocheck - Syntax errors
+// @ts-nocheck - Type definitions need updates
 /**
  * strategy-optimization-example.ts
  * 

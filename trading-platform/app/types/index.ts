@@ -23,6 +23,20 @@ export * from './backtest';
 // Risk Management
 export * from './risk';
 
+// Performance Monitoring
+export {
+  type PerformanceMetrics,
+  type DetailedPortfolio,
+  type TradePair,
+  type PortfolioSnapshot,
+  type PortfolioPosition,
+  type MonitoringAlert,
+  type MonitoringMetrics,
+  type MonitoringThresholds,
+  type AnalysisResult,
+  type PerformanceReport
+} from './performance';
+
 // UI and State
 export * from './ui';
 
@@ -101,8 +115,8 @@ export {
 } from './branded';
 
 // Error Classes
-export { ApiError, ValidationError } from '../lib/errors/AppError';
-export { ApiError as APIError } from '../lib/errors/AppError';
+export { ApiError, ValidationError } from '../lib/errors';
+export { ApiError as APIError } from '../lib/errors';
 
 export type {
   EmotionType,

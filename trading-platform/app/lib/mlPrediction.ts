@@ -140,6 +140,17 @@ class MLPredictionService {
     const currentPrice = prices[prices.length - 1];
     const averageVolume = volumes.reduce((sum, volume) => sum + volume, 0) / volumes.length;
 
+    // 防御ガード: 指標データ不足時はフォールバック
+    if (!indicators.rsi?.length || !indicators.sma20?.length || !indicators.bollingerBands?.lower?.length) {
+      return {
+        rfPrediction: 0,
+        xgbPrediction: 0,
+        lstmPrediction: 0,
+        ensemblePrediction: 0,
+        confidence: 0
+      };
+    }
+
     // フィーチャー抽出
     const features: PredictionFeatures = {
       rsi: this.last(indicators.rsi, SMA_CONFIG.MEDIUM_PERIOD),
@@ -175,6 +186,17 @@ class MLPredictionService {
     const prices = data.map(d => d.close), volumes = data.map(d => d.volume);
     const currentPrice = prices[prices.length - 1];
     const averageVolume = volumes.reduce((sum, volume) => sum + volume, 0) / volumes.length;
+
+    // 防御ガード: 指標データ不足時はフォールバック
+    if (!indicators.rsi?.length || !indicators.sma20?.length || !indicators.bollingerBands?.lower?.length) {
+      return {
+        rfPrediction: 0,
+        xgbPrediction: 0,
+        lstmPrediction: 0,
+        ensemblePrediction: 0,
+        confidence: 0
+      };
+    }
 
     const features: PredictionFeatures = {
       rsi: this.last(indicators.rsi, SMA_CONFIG.MEDIUM_PERIOD),

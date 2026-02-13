@@ -25,8 +25,30 @@ import { rateLimitError, handleApiError } from './error-handler';
  * ```
  */
 export function checkRateLimit(request: Request | NextRequest): NextResponse | null {
-  // Disable rate limiting in development for better debugging
-  if (process.env.NODE_ENV === 'development') {
+  // Security fix: Always enable rate limiting even in development
+  // Use relaxed limits in development to balance security and debugging
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  if (isDevelopment) {
+    // In development, only log warnings but still track for monitoring
+    // This helps identify potential issues without blocking development work
+    const clientIp = getClientIp(request);
+    // Use development-specific stricter window (1 min instead of window)
+    // but still enforce limits to prevent accidental DoS
+    const now = Date.now();
+    const devKey = `dev:${clientIp}`;
+    const devCounter = (global as any).__devRateLimitCounter = (global as any).__devRateLimitCounter || {};
+    
+    if (!devCounter[devKey] || now - devCounter[devKey].time > 60000) {
+      devCounter[devKey] = { time: now, count: 0 };
+    }
+    devCounter[devKey].count++;
+    
+    // Allow up to 200 requests per minute in development
+    if (devCounter[devKey].count > 200) {
+      console.warn(`Rate limit exceeded in development: ${clientIp}`);
+      return rateLimitError();
+    }
     return null;
   }
   

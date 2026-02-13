@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, memo, useState, useMemo } from 'react';
+import { useRef, memo, useState, useMemo, useEffect } from 'react';
+import { usePerformanceMonitor } from '@/app/hooks/usePerformanceMonitor';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler,
 } from 'chart.js';
@@ -47,6 +48,29 @@ export const StockChart = memo(function StockChart({
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
   const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
+  const isMountedRef = useRef(true);
+
+  // Performance monitoring for the chart
+  const { trackInteraction } = usePerformanceMonitor({
+    slowRenderThreshold: 50, // Charts are more complex, allow more time
+    enableMemoryTracking: true,
+    onSlowRender: (metrics) => {
+      console.warn(`📈 StockChart Performance Issues:`, metrics);
+    }
+  });
+
+  // Enhanced cleanup with performance monitoring
+  useEffect(() => {
+    return () => {
+      // Cleanup Chart.js instance
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
+      }
+      
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // 固定高さを使用
   const dynamicHeight = propHeight ?? CHART_DIMENSIONS.DEFAULT_HEIGHT;
@@ -75,8 +99,10 @@ export const StockChart = memo(function StockChart({
     return sma20[hoveredIdx];
   }, [sma20, hoveredIdx, showSMA]);
 
-   // Calculate global min/max for Y-axis scaling
+   // Performance-optimized: Cache price range calculations
    const priceRange = useMemo(() => {
+     if (!data || data.length === 0) return { min: 0, max: 0 };
+     
      const { min, max } = calculateChartMinMax(data, {
        sma: showSMA ? sma20 : undefined,
        upper: showBollinger ? upper : undefined,
@@ -98,85 +124,89 @@ export const StockChart = memo(function StockChart({
     supplyDemandLevels: chartLevels
   });
 
-  // 3. Assemble Chart Data with memoization for performance
-  const chartData = useMemo(() => ({
-    labels: extendedData.labels,
-    datasets: [
-      {
-        label: `${market === 'japan' ? '株価' : 'Stock Price'}`,
-        data: actualData.prices,
-        borderColor: CHART_COLORS.PRICE.LINE,
-        backgroundColor: CHART_COLORS.PRICE.BACKGROUND,
-        borderWidth: 2,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        fill: true,
-        tension: 0.1,
-        yAxisID: 'y',
-      },
-      ...(showSMA && sma20.length > 0 ? [
-        {
-          label: `SMA (${SMA_CONFIG.PERIOD})`,
-          data: sma20,
-          borderColor: CHART_COLORS.INDICATORS.SMA,
-          borderWidth: 1.5,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.1,
-          yAxisID: 'y',
-        }
-      ] : []),
-      ...(showBollinger && upper.length > 0 && lower.length > 0 ? [
-        {
-          label: 'Bollinger Upper',
-          data: upper,
-          borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
-          borderWidth: 1,
-          borderDash: [5, 5],
-          pointRadius: 0,
-          fill: false,
-          yAxisID: 'y',
-        },
-        {
-          label: 'Bollinger Lower',
-          data: lower,
-          borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
-          borderWidth: 1,
-          borderDash: [5, 5],
-          pointRadius: 0,
-          fill: '-1',
-          backgroundColor: CHART_COLORS.INDICATORS.BOLLINGER_FILL,
-          yAxisID: 'y',
-        }
-      ] : []),
+  // 3. Performance-optimized: Split datasets for better rendering
+  const priceDataset = useMemo(() => ({
+    label: `${market === 'japan' ? '株価' : 'Stock Price'}`,
+    data: actualData.prices,
+    borderColor: CHART_COLORS.PRICE.LINE,
+    backgroundColor: CHART_COLORS.PRICE.BACKGROUND,
+    borderWidth: 2,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    fill: true,
+    tension: 0.1,
+    yAxisID: 'y',
+  }), [actualData.prices, market]);
+
+  const smaDataset = useMemo(() => showSMA && sma20.length > 0 ? {
+    label: `SMA (${SMA_CONFIG.PERIOD})`,
+    data: sma20,
+    borderColor: CHART_COLORS.INDICATORS.SMA,
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+    yAxisID: 'y',
+  } : null, [showSMA, sma20]);
+
+  const bollingerDatasets = useMemo(() => showBollinger && upper.length > 0 && lower.length > 0 ? [
+    {
+      label: 'Bollinger Upper',
+      data: upper,
+      borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
+      borderWidth: 1,
+      borderDash: [5, 5],
+      pointRadius: 0,
+      fill: false,
+      yAxisID: 'y',
+    },
+    {
+      label: 'Bollinger Lower',
+      data: lower,
+      borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
+      borderWidth: 1,
+      borderDash: [5, 5],
+      pointRadius: 0,
+      fill: '-1',
+      backgroundColor: CHART_COLORS.INDICATORS.BOLLINGER_FILL,
+      yAxisID: 'y',
+    }
+  ] : [], [showBollinger, upper, lower]);
+
+  const indexDataset = useMemo(() => normalizedIndexData ? {
+    label: market === 'japan' ? '日経平均 (正規化)' : 'S&P 500 (Normalized)',
+    data: normalizedIndexData,
+    borderColor: CHART_COLORS.INDEX.LINE,
+    borderWidth: 1,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+    yAxisID: 'yIndex',
+  } : null, [normalizedIndexData, market]);
+
+  // 4. Assemble Chart Data with optimized memoization
+  const chartData = useMemo(() => {
+    const datasets = [
+      priceDataset,
+      ...(smaDataset ? [smaDataset] : []),
+      ...bollingerDatasets,
       ...forecastDatasets,
       ...ghostForecastDatasets,
-      ...(normalizedIndexData ? [
-        {
-          label: market === 'japan' ? '日経平均 (正規化)' : 'S&P 500 (Normalized)',
-          data: normalizedIndexData,
-          borderColor: CHART_COLORS.INDEX.LINE,
-          borderWidth: 1,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.1,
-          yAxisID: 'yIndex',
-        }
-      ] : []),
-    ],
-  }), [
+      ...(indexDataset ? [indexDataset] : []),
+    ].filter(Boolean);
+
+    return {
+      labels: extendedData.labels,
+      datasets
+    };
+  }, [
     extendedData.labels,
-    normalizedIndexData,
+    priceDataset,
+    smaDataset,
+    bollingerDatasets,
     forecastDatasets,
     ghostForecastDatasets,
-    sma20,
-    upper,
-    lower,
-    showSMA,
-    showBollinger,
-    market,
-    actualData.prices,
-    forecastExtension.forecastPrices.length
+    indexDataset
   ]);
 
   // 4. Loading / Error States
@@ -229,7 +259,14 @@ export const StockChart = memo(function StockChart({
           smaValue={currentSmaValue}
         />
 
-        <Line ref={chartRef} data={chartData} options={options} />
+        <Line 
+          ref={chartRef} 
+          data={chartData} 
+          options={options}
+          onMouseDown={trackInteraction}
+          onMouseMove={trackInteraction}
+          onTouchStart={trackInteraction}
+        />
         {showVolume && (
           <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
             <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />

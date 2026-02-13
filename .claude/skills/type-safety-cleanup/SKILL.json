@@ -1,0 +1,122 @@
+{
+  "name": "type-safety-cleanup",
+  "description": "TypeScript型安全性改善とファイル整理の統括スキル",
+  "version": "1.0.0",
+  "author": "ULT Development Team",
+  "triggers": [
+    "型安全性の改善",
+    "重複ファイルの整理",
+    "any型の削除",
+    "ファイル統合",
+    "コード整理"
+  ],
+  "workflow": {
+    "steps": [
+      {
+        "order": 1,
+        "name": "コード分析",
+        "description": "any型の使用箇所と重複ファイルを特定",
+        "commands": [
+          "grep -r 'any' --include='*.ts' --include='*.tsx' app/lib/ | grep -v '__tests__' | grep -v 'node_modules'",
+          "find app/ -name '*.ts' -type f | xargs -I {} basename {} | sort | uniq -d"
+        ]
+      },
+      {
+        "order": 2,
+        "name": "型定義の作成",
+        "description": "anyを置き換えるための厳密な型定義を作成",
+        "examples": [
+          "StrategyParameterValue: string | number | boolean | string[] | number[]",
+          "PatternFactor: string | number | boolean | Date",
+          "型ガード関数の実装 (isString, isStringArray)"
+        ]
+      },
+      {
+        "order": 3,
+        "name": "型キャストの修正",
+        "description": "無効な型キャストを型ガードまたは正しい型に置き換え",
+        "patterns": [
+          "'as string' → isString() 型ガード",
+          "'as T' → 適切なジェネリック型パラメータ",
+          "'any[]' → 'unknown[]' または具体的な型"
+        ]
+      },
+      {
+        "order": 4,
+        "name": "重複ファイルの統合",
+        "description": "lib/ と domains/ の重複をdomains/に集約し、lib/はre-exportに",
+        "rules": [
+          "domains/ が正統な実装場所",
+          "lib/services/* は domains/prediction/services/* からre-export",
+          "shared/ は削除（lib/と完全重複）"
+        ]
+      },
+      {
+        "order": 5,
+        "name": "不要ファイルの削除",
+        "description": "バックアップ、無効化、exampleファイルを削除",
+        "patterns": [
+          "*.backup",
+          "*.disabled",
+          "*-example.ts"
+        ]
+      },
+      {
+        "order": 6,
+        "name": "検証",
+        "description": "変更後の検証とテスト実行",
+        "commands": [
+          "npm run lint",
+          "npx tsc --noEmit",
+          "npm test"
+        ]
+      }
+    ]
+  },
+  "quality_gates": {
+    "typescript": {
+      "strict": true,
+      "no_implicit_any": true,
+      "strict_null_checks": true
+    },
+    "eslint": {
+      "no_explicit_any": "error"
+    },
+    "metrics": {
+      "target_reduction_lines": 4000,
+      "maintain_test_coverage": true
+    }
+  },
+  "files_modified": {
+    "type_improvements": [
+      "app/lib/strategy/types.ts",
+      "app/lib/strategy/StrategyCatalog.ts",
+      "app/lib/trading/patternRecognition.ts",
+      "app/lib/utils/calculations.ts",
+      "app/lib/utils/memoize.ts",
+      "app/lib/logger/sentry.ts",
+      "app/lib/errors/AppError.ts",
+      "app/lib/security/InputSanitizer.ts"
+    ],
+    "consolidated_services": [
+      "app/lib/services/tensorflow-model-service.ts",
+      "app/lib/services/feature-calculation-service.ts",
+      "app/lib/services/ml-model-service.ts",
+      "app/lib/services/enhanced-ml-service.ts",
+      "app/lib/services/integrated-prediction-service.ts"
+    ],
+    "deleted": [
+      "app/shared/ (entire directory)",
+      "app/lib/*-example.ts",
+      "app/lib/*.backup",
+      "app/lib/*.disabled"
+    ]
+  },
+  "impact": {
+    "lines_deleted": 4534,
+    "lines_added": 248,
+    "net_reduction": 4286,
+    "type_safety_score": "A+",
+    "maintainability_improvement": "大幅改善"
+  }
+}

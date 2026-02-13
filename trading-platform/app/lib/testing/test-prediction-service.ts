@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-nocheck - Type definitions need updates
 /**
  * Test Prediction Service
  * 

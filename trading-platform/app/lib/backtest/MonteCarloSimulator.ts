@@ -8,6 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { BacktestResult, BacktestConfig, PerformanceMetrics, Trade } from './AdvancedBacktestEngine';
+import { calculateMaxDrawdownFlexible } from '@/app/lib/utils/calculations';
 
 // ============================================================================
 // Types
@@ -361,20 +362,11 @@ export class MonteCarloSimulator extends EventEmitter {
     };
   }
 
-  /**
+   /**
    * 最大ドローダウンを計算
    */
   private calculateMaxDrawdown(equityCurve: number[]): number {
-    let maxDrawdown = 0;
-    let peak = equityCurve[0];
-
-    for (const equity of equityCurve) {
-      if (equity > peak) peak = equity;
-      const drawdown = ((peak - equity) / peak) * 100;
-      if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-    }
-
-    return maxDrawdown;
+    return calculateMaxDrawdownFlexible(equityCurve, true);
   }
 
   /**

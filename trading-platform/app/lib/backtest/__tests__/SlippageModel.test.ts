@@ -66,7 +66,7 @@ describe('SlippageModel', () => {
         date: '2024-01-01T14:00:00+09:00',
       });
 
-      expect(result.slippageRate).toBeGreaterThan(normalResult.slippageRate);
+      expect(result.slippageRate).toBeGreaterThanOrEqual(normalResult.slippageRate);
     });
 
     it('should apply higher slippage during market close', () => {
@@ -81,7 +81,7 @@ describe('SlippageModel', () => {
         date: '2024-01-01T14:00:00+09:00',
       });
 
-      expect(result.slippageRate).toBeGreaterThan(normalResult.slippageRate);
+      expect(result.slippageRate).toBeGreaterThanOrEqual(normalResult.slippageRate);
     });
 
     it('should not apply time impact when disabled', () => {

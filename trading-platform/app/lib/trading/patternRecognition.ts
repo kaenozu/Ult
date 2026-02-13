@@ -18,6 +18,11 @@ export interface PatternCondition {
 }
 
 /**
+ * Pattern factor types
+ */
+export type PatternFactor = string | number | boolean | Date;
+
+/**
  * Trade pattern with statistical metrics
  */
 export interface TradePattern {
@@ -31,7 +36,7 @@ export interface TradePattern {
   sampleSize: number;
   totalProfit: number;
   confidence: number;
-  factors: Record<string, any>;
+  factors: Record<string, PatternFactor>;
 }
 
 /**
