@@ -26,6 +26,12 @@ interface MarketResponse<T> {
   debug?: string;
 }
 
+// Helper to determine base URL for server-side requests
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') return ''; // Client-side: relative URL
+  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'; // Server-side
+};
+
 class MarketDataClient {
   private cache: Map<string, { data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData; timestamp: number }> = new Map();
   private cacheDuration: number = 5 * 60 * 1000;
@@ -38,7 +44,10 @@ class MarketDataClient {
     backoff: number = 500
   ): Promise<T> {
     try {
-      const httpResponse = await fetch(url, options);
+      // Ensure URL is absolute on server
+      const finalUrl = url.startsWith('/') ? `${getBaseUrl()}${url}` : url;
+
+      const httpResponse = await fetch(finalUrl, options);
 
       if (httpResponse && httpResponse.status === 429) {
         const retryAfter = httpResponse.headers.get('Retry-After');
@@ -75,7 +84,7 @@ class MarketDataClient {
     if (!forceRefresh) {
       const cached = this.getFromCache<OHLCV[]>(cacheKey);
       let cacheValid = !!cached;
-      
+
       if (cached && startDate && cached.length > 0) {
         if (new Date(cached[0].date) > new Date(startDate)) {
           cacheValid = false;
@@ -117,7 +126,7 @@ class MarketDataClient {
           const now = new Date();
           const start = new Date(now);
           start.setDate(start.getDate() - 30);
-          
+
           const params = new URLSearchParams({
             type: 'history',
             symbol,
@@ -136,7 +145,7 @@ class MarketDataClient {
         } else {
           let localData: OHLCV[] = [];
           if (!forceRefresh) {
-             localData = await idbClient.getData(symbol);
+            localData = await idbClient.getData(symbol);
           }
 
           let missingHistory = false;
@@ -173,9 +182,9 @@ class MarketDataClient {
             } else if (startDate) {
               params.append('startDate', startDate);
             } else {
-               const defaultStart = new Date();
-               defaultStart.setFullYear(defaultStart.getFullYear() - 1);
-               params.append('startDate', defaultStart.toISOString().split('T')[0]);
+              const defaultStart = new Date();
+              defaultStart.setFullYear(defaultStart.getFullYear() - 1);
+              params.append('startDate', defaultStart.toISOString().split('T')[0]);
             }
 
             const fetchUrl = `/api/market?${params.toString()}`;
@@ -232,7 +241,7 @@ class MarketDataClient {
           type: 'quote',
           symbol: symbolStr
         });
-        const httpResponse = await fetch(`/api/market?${params.toString()}`, { signal });
+        const httpResponse = await fetch(`${getBaseUrl()}/api/market?${params.toString()}`, { signal });
         if (httpResponse.status === 429) {
           await new Promise(resolve => setTimeout(resolve, 2000));
           return this.fetchQuotes(chunk, signal);
@@ -243,6 +252,10 @@ class MarketDataClient {
       }));
       return results.flat() as QuoteData[];
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // 静かに無視（ナビゲーション等による中断）
+        return [];
+      }
       logger.error('Batch fetch failed:', err instanceof Error ? err : new Error(String(err)));
       return [];
     }
@@ -257,7 +270,7 @@ class MarketDataClient {
       if (data) this.setCache(cacheKey, data);
       return data;
     } catch (err) {
-      logger.error(`Fetch Quote failed for ${symbol}:`, err instanceof Error ? err : new Error(String(err)));
+      // logger.error(`Fetch Quote failed for ${symbol}:`, err instanceof Error ? err : new Error(String(err)));
       return null;
     }
   }
@@ -319,13 +332,13 @@ class MarketDataClient {
     const filled: OHLCV[] = [];
     const MS_PER_DAY = 86400000;
     const MAX_GAP_DAYS = 365; // Security: Prevent DoS from massive gaps
-    
+
     for (let i = 0; i < sorted.length; i++) {
       filled.push(sorted[i]);
       if (i >= sorted.length - 1) continue;
       const diffDays = Math.floor((new Date(sorted[i + 1].date).getTime() - new Date(sorted[i].date).getTime()) / MS_PER_DAY);
       if (diffDays <= 1) continue;
-      
+
       const gapsToFill = Math.min(diffDays, MAX_GAP_DAYS);
       for (let d = 1; d < gapsToFill; d++) {
         const gapDate = new Date(new Date(sorted[i].date).getTime() + d * MS_PER_DAY);

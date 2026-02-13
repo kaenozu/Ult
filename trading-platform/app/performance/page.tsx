@@ -40,6 +40,7 @@ interface PerformanceScore {
 interface DualMatchResult extends PerformanceScore {
   confidence: number;
   aiSignalType: string;
+  dualScore: number;
 }
 
 
@@ -251,10 +252,13 @@ function PerformanceDashboardContent() {
   // ソート済みデータ
   const sortedResults = (() => {
     const rawResults = activeTab === 'dual-match'
-      ? dualData?.dualMatches.map(m => ({
+      ? dualData?.dualMatches.map((m, index) => ({
         ...m.performance,
+        dualScore: m.dualScore || 0,
         confidence: m.aiSignal.confidence,
-        aiSignalType: m.aiSignal.signalType
+        aiSignalType: m.aiSignal.signalType,
+        // デュアルマッチ用にランクを再割り当て
+        rank: index + 1
       }))
       : activeTab === 'performance' ? dualData?.performance.results : dualData?.aiSignals.results;
 
@@ -806,8 +810,8 @@ function PerformanceDashboardContent() {
                               </span>
                             </td>
                             <td className="px-3 py-3 text-center">
-                              <span className={cn("font-bold text-lg", getScoreColor(stock.performanceScore || 0))}>
-                                {(stock.performanceScore || 0).toFixed(1)}
+                              <span className={cn("font-bold text-lg", getScoreColor(activeTab === 'dual-match' ? (stock as DualMatchResult).dualScore : stock.performanceScore || 0))}>
+                                {(activeTab === 'dual-match' ? (stock as DualMatchResult).dualScore : stock.performanceScore || 0).toFixed(1)}
                               </span>
                             </td>
                             <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(stock.winRate ?? 0))}>
