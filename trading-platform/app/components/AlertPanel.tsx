@@ -127,6 +127,8 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
             onClick={() => setShowSettings(!showSettings)}
             className="p-1.5 hover:bg-[#233648] rounded transition-colors"
             title="設定"
+            aria-label="通知設定"
+            aria-expanded={showSettings}
           >
             <Settings className="w-4 h-4 text-[#92adc9]" />
           </button>
@@ -149,9 +151,12 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                 data-testid="notifications-enabled-toggle"
                 onClick={() => handleUpdateSettings('enabled', !settings.enabled)}
                 className={cn(
-                  'w-14 h-7 rounded-full transition-colors relative',
+                  'w-14 h-7 rounded-full transition-colors relative focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus-visible:outline-none',
                   settings.enabled ? 'bg-green-500' : 'bg-[#233648]'
                 )}
+                role="switch"
+                aria-checked={settings.enabled}
+                aria-label="通知機能を切り替え"
               >
                 <div
                   className={cn(
@@ -182,9 +187,12 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                         [key]: !settings.types[key as keyof typeof settings.types]
                       })}
                       className={cn(
-                        'w-11 h-6 rounded-full transition-colors relative',
+                        'w-11 h-6 rounded-full transition-colors relative focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus-visible:outline-none',
                         settings.types[key as keyof typeof settings.types] ? 'bg-green-500' : 'bg-[#233648]'
                       )}
+                      role="switch"
+                      aria-checked={settings.types[key as keyof typeof settings.types]}
+                      aria-label={`${label}の通知を切り替え`}
                     >
                       <div
                         className={cn(
@@ -215,9 +223,12 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                         [key]: !settings.severities[key as keyof typeof settings.severities]
                       })}
                       className={cn(
-                        'w-11 h-6 rounded-full transition-colors relative',
+                        'w-11 h-6 rounded-full transition-colors relative focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus-visible:outline-none',
                         settings.severities[key as keyof typeof settings.severities] ? `bg-${color}-500` : 'bg-[#233648]'
                       )}
+                      role="switch"
+                      aria-checked={settings.severities[key as keyof typeof settings.severities]}
+                      aria-label={`${label}の通知を切り替え`}
                     >
                       <div
                         className={cn(
@@ -248,9 +259,12 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                         [key]: !settings.notifications[key as keyof typeof settings.notifications]
                       })}
                       className={cn(
-                        'w-11 h-6 rounded-full transition-colors relative',
+                        'w-11 h-6 rounded-full transition-colors relative focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus-visible:outline-none',
                         settings.notifications[key as keyof typeof settings.notifications] ? 'bg-green-500' : 'bg-[#233648]'
                       )}
+                      role="switch"
+                      aria-checked={settings.notifications[key as keyof typeof settings.notifications]}
+                      aria-label={`${label}を切り替え`}
                     >
                       <div
                         className={cn(
@@ -288,6 +302,7 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                       ? 'bg-[#233648] text-white'
                       : 'text-[#92adc9] hover:bg-[#233648]/50'
                   )}
+                  aria-pressed={filterType === value}
                 >
                   {label}
                 </button>
@@ -310,6 +325,7 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                       ? 'bg-[#233648] text-white'
                       : 'text-[#92adc9] hover:bg-[#233648]/50'
                   )}
+                  aria-pressed={filterSeverity === value}
                 >
                   {label}
                 </button>
@@ -416,6 +432,7 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
                     }}
                     className="flex-shrink-0 p-1.5 hover:bg-[#233648] rounded transition-colors"
                     title="既読にする"
+                    aria-label="既読にする"
                   >
                     <Check className="w-4 h-4 text-green-400" />
                   </button>
