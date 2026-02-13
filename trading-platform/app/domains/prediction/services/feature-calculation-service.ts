@@ -6,6 +6,7 @@
 
 import { OHLCV } from '@/app/types';
 import { PredictionFeatures } from '../types';
+import { calculateATR, calculateSMA } from '@/app/lib/utils/technical-analysis';
 
 export class FeatureCalculationService {
   calculateFeatures(data: OHLCV[]): PredictionFeatures {
@@ -17,9 +18,9 @@ export class FeatureCalculationService {
     const rsi = this.calculateRSI(closes, 14);
     const rsiValues = rsi.length > 1 ? rsi : [rsi[0], rsi[0]];
     const rsiChange = rsiValues[rsiValues.length - 1] - rsiValues[rsiValues.length - 2];
-    const sma5 = this.calculateSMA(closes, 5);
-    const sma20 = this.calculateSMA(closes, 20);
-    const sma50 = this.calculateSMA(closes, 50);
+    const sma5 = calculateSMA(closes, 5);
+    const sma20 = calculateSMA(closes, 20);
+    const sma50 = calculateSMA(closes, 50);
     const priceMomentum = this.calculateMomentum(closes, 5);
     const volumeRatio = this.calculateVolumeRatio(volumes, 5);
     const volatility = this.calculateVolatility(closes, 20);
@@ -73,15 +74,6 @@ export class FeatureCalculationService {
     return rsi;
   }
 
-  private calculateSMA(values: number[], period: number): number[] {
-    const sma: number[] = [];
-    for (let i = period - 1; i < values.length; i++) {
-      const sum = values.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-      sma.push(sum / period);
-    }
-    return sma;
-  }
-
   private calculateMomentum(closes: number[], period: number): number {
     if (closes.length < period + 1) return 0;
     const current = closes[closes.length - 1];
@@ -121,7 +113,7 @@ export class FeatureCalculationService {
 
   private calculateBollingerPosition(closes: number[], period: number): number {
     if (closes.length < period) return 0.5;
-    const sma = this.calculateSMA(closes, period);
+    const sma = calculateSMA(closes, period);
     const std = this.calculateVolatility(closes, period);
     const current = closes[closes.length - 1];
     const upper = sma[sma.length - 1] + 2 * std;
@@ -131,15 +123,8 @@ export class FeatureCalculationService {
   }
 
   private calculateATR(highs: number[], lows: number[], closes: number[], period: number): number {
-    if (highs.length < period + 1) return 0;
-    const tr: number[] = [];
-    for (let i = 1; i < highs.length; i++) {
-      const hl = highs[i] - lows[i];
-      const hc = Math.abs(highs[i] - closes[i - 1]);
-      const lc = Math.abs(lows[i] - closes[i - 1]);
-      tr.push(Math.max(hl, hc, lc));
-    }
-    return this.calculateSMA(tr, period)[this.calculateSMA(tr, period).length - 1];
+    const atr = calculateATR(highs, lows, closes, period);
+    return atr[atr.length - 1];
   }
 
   private calculateEMA(values: number[], period: number): number[] {

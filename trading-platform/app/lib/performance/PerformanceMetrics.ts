@@ -11,7 +11,7 @@ import {
   Portfolio,
   PerformanceMetrics,
 } from '@/app/types/performance';
-import { calculateMaxDrawdownFlexible } from '@/app/lib/utils/calculations';
+import { calculateMaxDrawdownFlexible, calculateVolatilityFlexible } from '@/app/lib/utils/calculations';
 
 export class PerformanceMetricsCalculator {
   private riskFreeRate = 0.02; // 2% annual risk-free rate
@@ -257,7 +257,7 @@ export class PerformanceMetricsCalculator {
    * Calculate Volatility (annualized)
    */
   private calculateVolatility(returns: number[]): number {
-    return this.calculateStandardDeviation(returns) * Math.sqrt(252);
+    return calculateVolatilityFlexible(returns, true, false);
   }
 
   /**
