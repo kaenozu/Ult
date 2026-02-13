@@ -6,6 +6,8 @@ import { useUIStore } from '@/app/store/uiStore';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 import { consensusSignalService } from '@/app/lib/ConsensusSignalService';
 
+import { useRealTimeData } from './useRealTimeData';
+
 interface MarketDataMetadata {
   fallbackApplied?: boolean;
   dataDelayMinutes?: number;
@@ -31,6 +33,34 @@ export function useStockData() {
   // AbortController for canceling pending requests on unmount
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
+
+  // Real-time data polling for Japanese stocks
+  const { data: realTimeQuote } = useRealTimeData(
+    selectedStock?.market === 'japan' ? selectedStock.symbol : null,
+    { enabled: !!selectedStock, market: selectedStock?.market }
+  );
+
+  // Update chart data with real-time quote
+  useEffect(() => {
+    if (realTimeQuote && realTimeQuote.price !== null && chartData.length > 0) {
+      const lastIndex = chartData.length - 1;
+      const lastPoint = chartData[lastIndex];
+      
+      // Update only if price is different
+      if (Math.abs(lastPoint.close - realTimeQuote.price) > 0.001) {
+        setChartData(prev => {
+          const newData = [...prev];
+          newData[lastIndex] = {
+            ...lastPoint,
+            close: realTimeQuote.price!,
+            high: Math.max(lastPoint.high, realTimeQuote.price!),
+            low: Math.min(lastPoint.low, realTimeQuote.price!),
+          };
+          return newData;
+        });
+      }
+    }
+  }, [realTimeQuote]);
 
   // Enhanced cleanup on unmount - prevents memory leaks and resource waste
   useEffect(() => {
