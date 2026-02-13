@@ -85,6 +85,21 @@ describe('calculations', () => {
       expect(sma[3]).toBe(3);
       expect(sma[4]).toBe(4);
     });
+
+    it('should calculate SMA in O(N) time complexity', () => {
+      const largeSize = 50000;
+      const prices = Array.from({ length: largeSize }, (_, i) => i + 1);
+      const period = 200;
+      
+      const startTime = performance.now();
+      const sma = calculateSMA(prices, period);
+      const endTime = performance.now();
+      
+      const executionTime = endTime - startTime;
+      
+      expect(sma.length).toBe(largeSize);
+      expect(executionTime).toBeLessThan(500);
+    });
   });
 
   describe('calculateEMA', () => {
