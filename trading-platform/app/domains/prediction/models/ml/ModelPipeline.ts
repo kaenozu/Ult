@@ -38,6 +38,7 @@ export class ModelPipeline {
   private model: tf.LayersModel | null = null;
   private config: ModelConfig | null = null;
   private metadata: ModelMetadata | null = null;
+  private featureColumns: string[] = [];
 
   /**
    * Security: Validate model configuration
@@ -480,16 +481,15 @@ export class ModelPipeline {
     inputData: number[][],
     baselinePrediction: number
   ): Promise<Array<{ feature: string; importance: number }>> {
-    if (!this.model || !this.config?.featureColumns) return [];
+    if (!this.model || this.featureColumns.length === 0) return [];
 
     const importances: Array<{ feature: string; importance: number }> = [];
-    const featureColumns = this.config.featureColumns;
     
     // Calculate baseline
     const baseline = Math.abs(baselinePrediction);
     
     // For each feature column
-    for (let col = 0; col < featureColumns.length; col++) {
+    for (let col = 0; col < this.featureColumns.length; col++) {
       // Create permuted input (shuffle the feature column)
       const permutedData = inputData.map(row => [...row]);
       const columnValues = permutedData.map(row => row[col]);
@@ -514,7 +514,7 @@ export class ModelPipeline {
       const importance = Math.abs(permutedValue - baselinePrediction) / (baseline || 1);
       
       importances.push({
-        feature: featureColumns[col],
+        feature: this.featureColumns[col],
         importance: Math.min(100, importance * 100) // Normalize to 0-100
       });
       

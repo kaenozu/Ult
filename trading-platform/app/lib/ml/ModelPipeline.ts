@@ -11,6 +11,7 @@ import { logger } from '@/app/core/logger';
 export class ModelPipeline {
   private model: tf.LayersModel | null = null;
   private config: ModelConfig | null = null;
+  private featureColumns: string[] = [];
   private metadata: ModelMetadata | null = null;
 
   /**

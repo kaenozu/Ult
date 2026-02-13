@@ -12,13 +12,15 @@ import { OHLCV } from '@/app/types';
  * - Volume anomalies (volume > 5x average)
  * - Missing data gaps
  */
-function detectAnomalies(data: OHLCV[]): Array<{
+interface Anomaly {
   type: 'price_gap' | 'volume_spike' | 'data_gap';
   date: string;
   severity: 'low' | 'medium' | 'high';
   description: string;
-}> {
-  const anomalies = [];
+}
+
+function detectAnomalies(data: OHLCV[]): Anomaly[] {
+  const anomalies: Anomaly[] = [];
   
   if (data.length < 2) return anomalies;
   
