@@ -8,7 +8,12 @@ import { consensusSignalService } from '@/app/lib/ConsensusSignalService';
 
 import { useRealTimeData } from './useRealTimeData';
 
+import { ServiceContainer, TOKENS } from '@/app/lib/di/ServiceContainer';
+import { IMarketDataHub } from '@/app/lib/interfaces/IMarketDataHub';
+
 interface MarketDataMetadata {
+// ... (rest of the interface)
+
   fallbackApplied?: boolean;
   dataDelayMinutes?: number;
 }
@@ -126,13 +131,16 @@ export function useStockData() {
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
       const startDate = twoYearsAgo.toISOString().split('T')[0];
 
-      // 1. Kick off all requests in parallel
-      const stockDataPromise = fetchOHLCV(stock.symbol, stock.market, stock.price, controller.signal, apiInterval, startDate);
+      // 1. Get MarketDataHub from DI container
+      const dataHub = ServiceContainer.resolve<IMarketDataHub>(TOKENS.MarketDataHub);
+
+      // 2. Kick off all requests in parallel
+      // Use Hub for stock data to avoid duplicates
+      const stockDataPromise = dataHub.getData(stock.symbol, stock.market);
       const indexDataPromise = fetchOHLCV(indexSymbol, stock.market, undefined, controller.signal, apiInterval, startDate);
       const signalPromise = fetchSignal(stock, controller.signal, apiInterval);
 
-      // 2. Await Critical Data (OHLCV) first
-      // We use Promise.all for stock and index because the chart needs both to render relative comparison properly
+      // 3. Await Critical Data (OHLCV) first
       const [data, idxData] = await Promise.all([stockDataPromise, indexDataPromise]);
 
       if (controller.signal.aborted || !isMountedRef.current) return;
