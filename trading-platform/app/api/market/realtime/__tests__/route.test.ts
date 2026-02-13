@@ -1,17 +1,35 @@
-import { NextRequest } from 'next/server';
 import { GET } from '../route';
 import { realTimeDataService } from '@/app/lib/services/RealTimeDataService';
+import { requireAuth } from '@/app/lib/auth';
+import { checkRateLimit } from '@/app/lib/api-middleware';
 
-// Mock RealTimeDataService
+// Mock dependencies
 jest.mock('@/app/lib/services/RealTimeDataService', () => ({
   realTimeDataService: {
     fetchQuote: jest.fn(),
   },
 }));
 
+jest.mock('@/app/lib/auth', () => ({
+  requireAuth: jest.fn(),
+}));
+
+jest.mock('@/app/lib/api-middleware', () => ({
+  checkRateLimit: jest.fn(),
+}));
+
 describe('GET /api/market/realtime', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (requireAuth as jest.Mock).mockReturnValue(null); // Default to authenticated
+    (checkRateLimit as jest.Mock).mockReturnValue(null); // Default to not rate limited
+  });
+
+  it('should return 401 if unauthorized', async () => {
+    (requireAuth as jest.Mock).mockReturnValue({ status: 401 });
+    const req = { url: '...', nextUrl: new URL('http://localhost:3000/api/market/realtime') } as any;
+    const res = await GET(req);
+    expect(res.status).toBe(401);
   });
 
   it('should return 400 if symbol is missing', async () => {
@@ -25,10 +43,21 @@ describe('GET /api/market/realtime', () => {
     expect(data.error).toBe('Symbol required');
   });
 
+  it('should return 400 if symbol format is invalid', async () => {
+    const req = {
+      url: 'http://localhost:3000/api/market/realtime?symbol=INVALID',
+      nextUrl: new URL('http://localhost:3000/api/market/realtime?symbol=INVALID'),
+    } as any;
+    const res = await GET(req);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toContain('Invalid symbol format');
+  });
+
   it('should return 400 for non-Japanese markets if requested', async () => {
     const req = {
-      url: 'http://localhost:3000/api/market/realtime?symbol=AAPL&market=usa',
-      nextUrl: new URL('http://localhost:3000/api/market/realtime?symbol=AAPL&market=usa'),
+      url: 'http://localhost:3000/api/market/realtime?symbol=7203&market=usa',
+      nextUrl: new URL('http://localhost:3000/api/market/realtime?symbol=7203&market=usa'),
     } as any;
     const res = await GET(req);
     expect(res.status).toBe(400);
