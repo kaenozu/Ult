@@ -38,6 +38,7 @@ export class ModelPipeline {
   private model: tf.LayersModel | null = null;
   private config: ModelConfig | null = null;
   private metadata: ModelMetadata | null = null;
+  private featureColumns: string[] = [];
 
   /**
    * Security: Validate model configuration
@@ -460,13 +461,71 @@ export class ModelPipeline {
     inputTensor.dispose();
     prediction.dispose();
 
+    // Calculate feature importance using permutation-based approach
+    const contributingFeatures = await this.calculateFeatureImportance(inputData, predictionValue);
+
     return {
       prediction: predictionValue,
       confidence,
       uncertainty,
       predictionInterval: { lower, upper },
-      contributingFeatures: [], // TODO: Implement feature importance
+      contributingFeatures,
     };
+  }
+
+  /**
+   * Calculate feature importance using permutation-based approach
+   * Measures how much the prediction changes when each feature is permuted
+   */
+  private async calculateFeatureImportance(
+    inputData: number[][],
+    baselinePrediction: number
+  ): Promise<Array<{ feature: string; importance: number }>> {
+    if (!this.model || this.featureColumns.length === 0) return [];
+
+    const importances: Array<{ feature: string; importance: number }> = [];
+    
+    // Calculate baseline
+    const baseline = Math.abs(baselinePrediction);
+    
+    // For each feature column
+    for (let col = 0; col < this.featureColumns.length; col++) {
+      // Create permuted input (shuffle the feature column)
+      const permutedData = inputData.map(row => [...row]);
+      const columnValues = permutedData.map(row => row[col]);
+      
+      // Shuffle values
+      for (let i = columnValues.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [columnValues[i], columnValues[j]] = [columnValues[j], columnValues[i]];
+      }
+      
+      // Update permuted data
+      permutedData.forEach((row, i) => {
+        row[col] = columnValues[i];
+      });
+      
+      // Make prediction with permuted data
+      const permutedTensor = tf.tensor3d([permutedData]);
+      const permutedPred = this.model.predict(permutedTensor) as tf.Tensor;
+      const permutedValue = (await permutedPred.data())[0];
+      
+      // Calculate importance as absolute difference from baseline
+      const importance = Math.abs(permutedValue - baselinePrediction) / (baseline || 1);
+      
+      importances.push({
+        feature: this.featureColumns[col],
+        importance: Math.min(100, importance * 100) // Normalize to 0-100
+      });
+      
+      permutedTensor.dispose();
+      permutedPred.dispose();
+    }
+    
+    // Sort by importance and return top 5
+    return importances
+      .sort((a, b) => b.importance - a.importance)
+      .slice(0, 5);
   }
 
   /**
