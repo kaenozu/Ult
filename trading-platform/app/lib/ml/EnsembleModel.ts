@@ -7,6 +7,7 @@
 
 import { AllFeatures, SentimentFeatures, MacroEconomicFeatures } from './FeatureEngineering';
 import { OHLCV } from '../../types/shared';
+import { calculateATR } from '../utils/technical-analysis';
 
 /**
  * モデルタイプ
@@ -675,36 +676,7 @@ export class EnsembleModel {
    * ATRを計算
    */
   private calculateATR(data: OHLCV[], period: number): number[] {
-    const highs = data.map((d) => d.high);
-    const lows = data.map((d) => d.low);
-    const closes = data.map((d) => d.close);
-
-    const trueRanges: number[] = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i === 0) {
-        trueRanges.push(highs[0] - lows[0]);
-      } else {
-        const tr = Math.max(
-          highs[i] - lows[i],
-          Math.abs(highs[i] - closes[i - 1]),
-          Math.abs(lows[i] - closes[i - 1])
-        );
-        trueRanges.push(tr);
-      }
-    }
-
-    // ATRを計算
-    const atr: number[] = [];
-    for (let i = 0; i < trueRanges.length; i++) {
-      if (i < period - 1) {
-        atr.push(0);
-      } else {
-        const sum = trueRanges.slice(i - period + 1, i + 1).reduce((sum, tr) => sum + tr, 0);
-        atr.push(sum / period);
-      }
-    }
-
-    return atr;
+    return calculateATR(data, period);
   }
 
   /**
