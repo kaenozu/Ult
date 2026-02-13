@@ -442,16 +442,14 @@ export function sanitizeObject<T extends Record<string, string>>(
         results[field as string] = sanitizeSymbol(value as string);
         break;
       case 'number':
-        // @ts-expect-error - Type assertion for options
-        results[field as string] = sanitizeNumber(value as string, config.options || {});
+        results[field as string] = sanitizeNumber(value as string, config.options as Parameters<typeof sanitizeNumber>[1] || {});
         break;
       case 'json':
         results[field as string] = sanitizeJson(value as string);
         break;
       case 'text':
       default:
-        // @ts-expect-error - Type assertion for options
-        results[field as string] = sanitizeText(value as string, config.options || {});
+        results[field as string] = sanitizeText(value as string, config.options as Parameters<typeof sanitizeText>[1] || {});
         break;
     }
   }

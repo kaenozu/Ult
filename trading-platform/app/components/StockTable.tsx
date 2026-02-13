@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { Stock } from '@/app/types';
 import { formatCurrency, formatPercent, getChangeColor, cn } from '@/app/lib/utils';
@@ -9,21 +9,23 @@ import { useEffect, memo, useCallback, useMemo, useState, useRef } from 'react';
 import { usePerformanceMonitor } from '@/app/lib/performance';
 
 // Memoized Stock Row
-const StockRow = memo(({
-  stock,
-  isSelected,
-  onSelect,
-  onRemove,
-  showChange,
-  showVolume
-}: {
-  stock: Stock;
-  isSelected: boolean;
-  onSelect: (stock: Stock) => void;
-  onRemove: (symbol: string) => void;
-  showChange: boolean;
-  showVolume: boolean;
-}) => {
+const StockRow = memo((
+  {
+    stock,
+    isSelected,
+    onSelect,
+    onRemove,
+    showChange,
+    showVolume
+  }: {
+    stock: Stock;
+    isSelected: boolean;
+    onSelect: (stock: Stock) => void;
+    onRemove: (symbol: string) => void;
+    showChange: boolean;
+    showVolume: boolean;
+  }
+) => {
   const [isLocalHovered, setIsLocalHovered] = useState(false);
 
   return (
@@ -100,6 +102,24 @@ const StockRow = memo(({
 
 StockRow.displayName = 'StockRow';
 
+const stockRowPropsAreEqual = (
+  prev: { stock: Stock; isSelected: boolean; onSelect: (stock: Stock) => void; onRemove: (symbol: string) => void; showChange: boolean; showVolume: boolean },
+  next: { stock: Stock; isSelected: boolean; onSelect: (stock: Stock) => void; onRemove: (symbol: string) => void; showChange: boolean; showVolume: boolean }
+) => {
+  return (
+    prev.stock.symbol === next.stock.symbol &&
+    prev.stock.price === next.stock.price &&
+    prev.stock.change === next.stock.change &&
+    prev.stock.changePercent === next.stock.changePercent &&
+    prev.isSelected === next.isSelected &&
+    prev.showChange === next.showChange &&
+    prev.showVolume === next.showVolume
+  );
+};
+
+const StockRowMemoized = memo(StockRow, stockRowPropsAreEqual);
+StockRowMemoized.displayName = 'StockRow';
+
 type SortField = 'symbol' | 'price' | 'changePercent' | 'change' | 'volume';
 type SortDirection = 'asc' | 'desc';
 
@@ -118,7 +138,7 @@ interface SortIconProps {
   sortDirection: SortDirection;
 }
 
-const SortIcon = ({ field, sortField, sortDirection }: SortIconProps) => {
+const SortIcon = memo(({ field, sortField, sortDirection }: SortIconProps) => {
   const isActive = sortField === field;
   const direction = sortDirection === 'asc' ? 'up' : 'down';
   
@@ -143,7 +163,9 @@ const SortIcon = ({ field, sortField, sortDirection }: SortIconProps) => {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
     </svg>
   );
-};
+});
+
+SortIcon.displayName = 'SortIcon';
 
 export const StockTable = memo(({ 
   stocks, 
@@ -349,7 +371,7 @@ export const StockTable = memo(({
             </tr>
           ) : (
             sortedStocks.map((stock) => (
-              <StockRow
+              <StockRowMemoized
                 key={stock.symbol}
                 stock={stock}
                 isSelected={selectedSymbol === stock.symbol}
@@ -367,4 +389,13 @@ export const StockTable = memo(({
 });
 
 StockTable.displayName = 'StockTable';
+
+export const StockTableFinal = memo(StockTable, (prev, next) => (
+  prev.selectedSymbol === next.selectedSymbol &&
+  prev.showChange === next.showChange &&
+  prev.showVolume === next.showVolume &&
+  prev.stocks.length === next.stocks.length &&
+  prev.stocks.every((s, i) => s.symbol === next.stocks[i]?.symbol)
+));
+StockTableFinal.displayName = 'StockTable';
 

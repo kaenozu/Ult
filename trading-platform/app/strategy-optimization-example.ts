@@ -1,4 +1,3 @@
-// @ts-nocheck - Syntax errors
 /**
  * strategy-optimization-example.ts
  * 

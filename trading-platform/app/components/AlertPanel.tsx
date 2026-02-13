@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useAlertStore } from '@/app/store/alertStore';
 import { Alert, AlertSeverity, AlertType, AlertSettings } from '@/app/lib/alertTypes';
-import { cn, formatCurrency } from '@/app/lib/utils';
-import { TrendingUp, TrendingDown, Minus, AlertTriangle, Check, X, Filter, Bell, Clock, Target, Zap, Activity, Settings } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
+import { TrendingUp, TrendingDown, AlertTriangle, Check, X, Filter, Bell, Target, Zap, Activity, Settings } from 'lucide-react';
 import {
   getSeverityColor as getSeverityColorBase,
   formatTimestamp,

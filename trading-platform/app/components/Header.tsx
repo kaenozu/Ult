@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, memo, useCallback } from 'react';
-import { Search, Settings, User, Loader2, X, TrendingUp, Star, Plus, Keyboard } from 'lucide-react';
+import { Search, Settings, User, Loader2, X, Star, Plus, Keyboard } from 'lucide-react';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';

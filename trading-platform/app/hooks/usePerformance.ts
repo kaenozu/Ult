@@ -39,11 +39,10 @@ export function useEventCallback<T extends (...args: unknown[]) => unknown>(
   useEffect(() => {
     ref.current = fn;
   }, [fn]);
-  
-  // @ts-expect-error - Type assertion for event callback
-  return useCallback(function(...args: Parameters<T>) {
-    return ref.current(...args);
-  }, []) as T;
+
+  // Use useCallback with empty deps for stable reference
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  return useCallback((...args: unknown[]) => ref.current(...args), []) as T;
 }
 
 // ============================================================================
