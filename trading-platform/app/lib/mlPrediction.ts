@@ -418,59 +418,315 @@ class MLPredictionService {
     return Math.sqrt(variance) * Math.sqrt(252) * 100;
   }
 
+  /**
+   * 強化ルールベース予測 - テクニカル分析
+   * 複合指標を使用した高精度な予測
+   */
   private randomForestPredict(features: PredictionFeatures): number {
-    const RSI_EXTREME_SCORE = 3;
-    const MOMENTUM_STRONG_THRESHOLD = SIGNAL_THRESHOLDS.STRONG_MOMENTUM;
-    const MOMENTUM_SCORE = 2;
-    const SMA_BULL_SCORE = 2;
-    const SMA_BEAR_SCORE = 1;
-    const RF_SCALING = 0.8;
+    let score = 0;
+    const reasons: string[] = [];
 
-    let score = (features.rsi < RSI_CONFIG.EXTREME_OVERSOLD ? RSI_EXTREME_SCORE : features.rsi > RSI_CONFIG.EXTREME_OVERBOUGHT ? -RSI_EXTREME_SCORE : 0);
-    if (features.sma5 > 0) score += SMA_BULL_SCORE;
-    if (features.sma20 > 0) score += SMA_BEAR_SCORE;
-    if (features.priceMomentum > MOMENTUM_STRONG_THRESHOLD) score += MOMENTUM_SCORE;
-    else if (features.priceMomentum < -MOMENTUM_STRONG_THRESHOLD) score -= MOMENTUM_SCORE;
-    return score * RF_SCALING;
+    // RSI分析（極端値を重視）
+    if (features.rsi < RSI_CONFIG.EXTREME_OVERSOLD) {
+      score += 4;
+      reasons.push(`RSI極度売られすぎ(${features.rsi.toFixed(1)})`);
+    } else if (features.rsi < RSI_CONFIG.OVERSOLD) {
+      score += 2;
+      reasons.push(`RSI売られすぎ(${features.rsi.toFixed(1)})`);
+    } else if (features.rsi > RSI_CONFIG.EXTREME_OVERBOUGHT) {
+      score -= 4;
+      reasons.push(`RSI極度買われすぎ(${features.rsi.toFixed(1)})`);
+    } else if (features.rsi > RSI_CONFIG.OVERBOUGHT) {
+      score -= 2;
+      reasons.push(`RSI買われすぎ(${features.rsi.toFixed(1)})`);
+    }
+
+    // RSI変化率（勢い）
+    if (features.rsiChange > 5) {
+      score += 1.5;
+      reasons.push(`RSI上昇加速(${features.rsiChange.toFixed(1)})`);
+    } else if (features.rsiChange < -5) {
+      score -= 1.5;
+      reasons.push(`RSI下降加速(${features.rsiChange.toFixed(1)})`);
+    }
+
+    // 移動平均トレンド
+    if (features.sma5 > 2 && features.sma20 > 1) {
+      score += 3;
+      reasons.push(`強い上昇トレンド(SMA5:+${features.sma5.toFixed(1)}%, SMA20:+${features.sma20.toFixed(1)}%)`);
+    } else if (features.sma5 > 0 && features.sma20 > 0) {
+      score += 1.5;
+      reasons.push(`上昇トレンド(SMA5:+${features.sma5.toFixed(1)}%)`);
+    } else if (features.sma5 < -2 && features.sma20 < -1) {
+      score -= 3;
+      reasons.push(`強い下降トレンド(SMA5:${features.sma5.toFixed(1)}%, SMA20:${features.sma20.toFixed(1)}%)`);
+    } else if (features.sma5 < 0 && features.sma20 < 0) {
+      score -= 1.5;
+      reasons.push(`下降トレンド(SMA5:${features.sma5.toFixed(1)}%)`);
+    }
+
+    // ゴールデン/デッドクロス検出
+    if (features.sma5 > 0 && features.sma5 > features.sma20) {
+      score += 1;
+      reasons.push('短期MAが長期MAを上回る(買いシグナル)');
+    } else if (features.sma5 < 0 && features.sma5 < features.sma20) {
+      score -= 1;
+      reasons.push('短期MAが長期MAを下回る(売りシグナル)');
+    }
+
+    // モメンタム
+    if (features.priceMomentum > 5) {
+      score += 2;
+      reasons.push(`強い上昇モメンタム(${features.priceMomentum.toFixed(1)}%)`);
+    } else if (features.priceMomentum < -5) {
+      score -= 2;
+      reasons.push(`強い下降モメンタム(${features.priceMomentum.toFixed(1)}%)`);
+    }
+
+    // MACDシグナル
+    if (features.macdSignal > 0.5) {
+      score += 1.5;
+      reasons.push('MACD買いシグナル');
+    } else if (features.macdSignal < -0.5) {
+      score -= 1.5;
+      reasons.push('MACD売りシグナル');
+    }
+
+    // ボリンジャーバンド位置
+    if (features.bollingerPosition < 10) {
+      score += 2;
+      reasons.push('ボリンジャーバンド下限付近(反発期待)');
+    } else if (features.bollingerPosition > 90) {
+      score -= 2;
+      reasons.push('ボリンジャーバンド上限付近(調整期待)');
+    }
+
+    // 出来高確認
+    if (features.volumeRatio > 2) {
+      if (score > 0) {
+        score += 1;
+        reasons.push('出来高増加で上昇を確認');
+      } else if (score < 0) {
+        score -= 1;
+        reasons.push('出来高増加で下降を確認');
+      }
+    }
+
+    // ボラティリティ考慮
+    if (features.volatility > 50) {
+      score *= 0.8; // 高ボラティリティ時はスコアを抑制
+      reasons.push('高ボラティリティ(リスク注意)');
+    }
+
+    this._lastPredictionReasons = reasons;
+    return score * 0.9;
   }
 
+  /**
+   * 強化ルールベース予測 - ブースティングアプローチ
+   * 複数の弱い学習器を組み合わせた予測
+   */
   private xgboostPredict(features: PredictionFeatures): number {
-    const RSI_EXTREME_SCORE = 3;
-    const MOMENTUM_DIVISOR = 3;
-    const MOMENTUM_MAX_SCORE = 3;
-    const SMA_DIVISOR = 10;
-    const SMA5_WEIGHT = 0.5;
-    const SMA20_WEIGHT = 0.3;
-    const XGB_SCALING = 0.9;
+    let score = 0;
+    const weakLearners: Array<{ weight: number; prediction: number; reason: string }> = [];
 
-    let score = (features.rsi < RSI_CONFIG.EXTREME_OVERSOLD ? RSI_EXTREME_SCORE : features.rsi > RSI_CONFIG.EXTREME_OVERBOUGHT ? -RSI_EXTREME_SCORE : 0);
-    score += Math.min(features.priceMomentum / MOMENTUM_DIVISOR, MOMENTUM_MAX_SCORE) + (features.sma5 * SMA5_WEIGHT + features.sma20 * SMA20_WEIGHT) / SMA_DIVISOR;
-    return score * XGB_SCALING;
+    // Weak Learner 1: RSIベース
+    const rsiScore = (50 - features.rsi) / 10;
+    weakLearners.push({ weight: 0.3, prediction: rsiScore, reason: `RSIスコア: ${rsiScore.toFixed(2)}` });
+
+    // Weak Learner 2: モメンタム
+    const momentumScore = Math.max(-3, Math.min(3, features.priceMomentum / 3));
+    weakLearners.push({ weight: 0.25, prediction: momentumScore, reason: `モメンタム: ${momentumScore.toFixed(2)}` });
+
+    // Weak Learner 3: 移動平均乖離
+    const smaScore = (features.sma5 * 0.6 + features.sma20 * 0.4) / 5;
+    weakLearners.push({ weight: 0.25, prediction: smaScore, reason: `MA乖離: ${smaScore.toFixed(2)}` });
+
+    // Weak Learner 4: MACD
+    const macdScore = features.macdSignal * 2;
+    weakLearners.push({ weight: 0.2, prediction: macdScore, reason: `MACD: ${macdScore.toFixed(2)}` });
+
+    // 加重平均
+    const totalWeight = weakLearners.reduce((sum, wl) => sum + wl.weight, 0);
+    score = weakLearners.reduce((sum, wl) => sum + wl.weight * wl.prediction, 0) / totalWeight;
+
+    return score * 1.1;
   }
 
+  private _lastPredictionReasons: string[] = [];
+
+  /**
+   * 強化ルールベース予測 - 時系列パターン分析
+   * トレンド、レンジ、ブレイクアウトを検出
+   */
   private lstmPredict(data: OHLCV[]): number {
-    const LSTM_SCALING = 0.6;
-    const prices = data.map(d => d.close).slice(-VOLATILITY.CALCULATION_PERIOD);
-    return (prices[prices.length - 1] - prices[0]) / (prices[0] || 1) * 100 * LSTM_SCALING;
+    const prices = data.map(d => d.close);
+    const volumes = data.map(d => d.volume);
+    const recentPrices = prices.slice(-30);
+    const recentVolumes = volumes.slice(-30);
+    
+    if (recentPrices.length < 10) return 0;
+
+    let score = 0;
+
+    // 1. 線形トレンド分析（最小二乗法）
+    const n = recentPrices.length;
+    const xValues = Array.from({ length: n }, (_, i) => i);
+    const sumX = xValues.reduce((sum, x) => sum + x, 0);
+    const sumY = recentPrices.reduce((sum, y) => sum + y, 0);
+    const sumXY = xValues.reduce((sum, x, i) => sum + x * recentPrices[i], 0);
+    const sumX2 = xValues.reduce((sum, x) => sum + x * x, 0);
+    
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX || 1);
+    const trendStrength = (slope / recentPrices[0]) * 100 * 30; // 30日間の予測
+    
+    // トレンド方向と強さ
+    if (trendStrength > 5) {
+      score += 3;
+    } else if (trendStrength > 2) {
+      score += 1.5;
+    } else if (trendStrength < -5) {
+      score -= 3;
+    } else if (trendStrength < -2) {
+      score -= 1.5;
+    }
+
+    // 2. ボラティリティ収縮/拡張パターン
+    const recentVolatility = this.calculateVolatility(recentPrices.slice(-10));
+    const olderVolatility = this.calculateVolatility(recentPrices.slice(-20, -10));
+    
+    if (olderVolatility > 0 && recentVolatility < olderVolatility * 0.7) {
+      // ボラティリティ収縮後のブレイクアウト期待
+      const lastPrice = recentPrices[recentPrices.length - 1];
+      const avgPrice = recentPrices.slice(-5).reduce((a, b) => a + b, 0) / 5;
+      if (lastPrice > avgPrice * 1.01) {
+        score += 1.5; // 上向きブレイクアウト期待
+      } else if (lastPrice < avgPrice * 0.99) {
+        score -= 1.5; // 下向きブレイクアウト期待
+      }
+    }
+
+    // 3. 出来高確認
+    const recentAvgVolume = recentVolumes.slice(-5).reduce((a, b) => a + b, 0) / 5;
+    const olderAvgVolume = recentVolumes.slice(-10, -5).reduce((a, b) => a + b, 0) / 5;
+    
+    if (olderAvgVolume > 0 && recentAvgVolume > olderAvgVolume * 1.5) {
+      // 出来高増加
+      if (trendStrength > 0) {
+        score += 1; // 上昇トレンド確認
+      } else if (trendStrength < 0) {
+        score -= 1; // 下降トレンド確認
+      }
+    }
+
+    // 4. サポート/レジスタンスレベルからの反発
+    const minPrice = Math.min(...recentPrices);
+    const maxPrice = Math.max(...recentPrices);
+    const currentPrice = recentPrices[recentPrices.length - 1];
+    const priceRange = maxPrice - minPrice;
+    
+    if (priceRange > 0) {
+      const positionInRange = (currentPrice - minPrice) / priceRange;
+      if (positionInRange < 0.1) {
+        score += 1; // サポートレベル付近
+      } else if (positionInRange > 0.9) {
+        score -= 1; // レジスタンスレベル付近
+      }
+    }
+
+    return score * 0.8;
   }
 
+  /**
+   * 信頼度計算 - 強化版
+   * 複合指標の整合性を評価
+   */
   private calculateConfidence(features: PredictionFeatures, prediction: number): number {
-    const RSI_EXTREME_BONUS = 10;
-    const MOMENTUM_BONUS = 8;
-    const PREDICTION_BONUS = 5;
-    const MOMENTUM_THRESHOLD = SIGNAL_THRESHOLDS.STRONG_MOMENTUM;
+    let confidence = 50;
+    let agreementCount = 0;
+    let totalSignals = 0;
 
-    const confidence = 50 +
-      (features.rsi < RSI_CONFIG.EXTREME_OVERSOLD - 5 || features.rsi > RSI_CONFIG.EXTREME_OVERBOUGHT + 5 ? RSI_EXTREME_BONUS : 0) +
-      (Math.abs(features.priceMomentum) > MOMENTUM_THRESHOLD ? MOMENTUM_BONUS : 0) +
-      (Math.abs(prediction) > MOMENTUM_THRESHOLD ? PREDICTION_BONUS : 0);
+    // RSI極端値
+    if (features.rsi < RSI_CONFIG.EXTREME_OVERSOLD || features.rsi > RSI_CONFIG.EXTREME_OVERBOUGHT) {
+      confidence += 12;
+      agreementCount++;
+    }
+    totalSignals++;
+
+    // モメンタム強度
+    if (Math.abs(features.priceMomentum) > SIGNAL_THRESHOLDS.STRONG_MOMENTUM) {
+      confidence += 8;
+      agreementCount++;
+    }
+    totalSignals++;
+
+    // MACDシグナル
+    if (Math.abs(features.macdSignal) > 0.5) {
+      confidence += 6;
+      if ((features.macdSignal > 0 && prediction > 0) || (features.macdSignal < 0 && prediction < 0)) {
+        agreementCount++;
+      }
+    }
+    totalSignals++;
+
+    // 移動平均整合性
+    if (features.sma5 > 0 && features.sma20 > 0 && prediction > 0) {
+      confidence += 8;
+      agreementCount += 2;
+    } else if (features.sma5 < 0 && features.sma20 < 0 && prediction < 0) {
+      confidence += 8;
+      agreementCount += 2;
+    }
+    totalSignals += 2;
+
+    // ボリンジャーバンド極端値
+    if (features.bollingerPosition < 15 || features.bollingerPosition > 85) {
+      confidence += 6;
+      agreementCount++;
+    }
+    totalSignals++;
+
+    // 予測の大きさ
+    if (Math.abs(prediction) > 3) {
+      confidence += 5;
+      agreementCount++;
+    }
+    totalSignals++;
+
+    // シグナル整合性ボーナス
+    const agreementRatio = agreementCount / totalSignals;
+    if (agreementRatio > 0.7) {
+      confidence += 10; // 高整合性
+    } else if (agreementRatio < 0.3) {
+      confidence -= 10; // 低整合性（矛盾）
+    }
+
     return Math.min(Math.max(confidence, PRICE_CALCULATION.MIN_CONFIDENCE), 95);
   }
 
+  /**
+   * 予測理由を生成
+   */
   private generateBaseReason(type: string): string {
-    if (type === 'BUY') return "短期的な上昇トレンドを検出。上昇余地あり。";
-    if (type === 'SELL') return "過熱感があり、反落の可能性が高いシグナル。";
-    return "中立的なシグナル。市場の方向性を様子見することを推奨。";
+    const reasons = this._lastPredictionReasons;
+    
+    if (reasons.length === 0) {
+      if (type === 'BUY') return "複合指標から上昇トレンドを検出。";
+      if (type === 'SELL') return "複合指標から下降トレンドを検出。";
+      return "指標に方向性が見られず、様子見を推奨。";
+    }
+
+    // 上位3つの理由を選択
+    const topReasons = reasons.slice(0, 3);
+    const reasonText = topReasons.join(' ');
+
+    if (type === 'BUY') {
+      return `買いシグナル: ${reasonText}`;
+    } else if (type === 'SELL') {
+      return `売りシグナル: ${reasonText}`;
+    } else {
+      return `中立: ${reasonText}`;
+    }
   }
 
   private last(arr: number[], fallback: number): number {
