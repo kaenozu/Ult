@@ -35,4 +35,5 @@ export const TOKENS = {
   MarketDataService: 'MarketDataService',
   TechnicalIndicatorService: 'TechnicalIndicatorService',
   AnalysisService: 'AnalysisService',
+  MarketDataHub: 'MarketDataHub',
 } as const;
