@@ -6,6 +6,7 @@ import { requireAuth } from '@/app/lib/auth';
 import { handleApiError } from '@/app/lib/error-handler';
 import { requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
 import { AlertType } from '@/app/lib/alerts/AlertSystem';
+import { sanitizeSymbol, sanitizeText } from '@/app/lib/security/InputSanitizer';
 
 // --- Zod Schemas ---
 
@@ -332,16 +333,23 @@ export async function POST(req: NextRequest) {
       case 'place_order':
         // Map side to what the platform expects (if needed)
         const platformSide: 'BUY' | 'SELL' = (data.side === 'BUY' || data.side === 'LONG') ? 'BUY' : 'SELL';
-        await platform.placeOrder(data.symbol, platformSide, data.quantity, data.options);
+        // Sanitize symbol to prevent injection/XSS
+        const safeOrderSymbol = sanitizeSymbol(data.symbol).sanitized;
+        await platform.placeOrder(safeOrderSymbol, platformSide, data.quantity, data.options);
         return NextResponse.json({ success: true });
       
       case 'close_position':
-        await platform.closePosition(data.symbol);
+        // Sanitize symbol
+        const safeCloseSymbol = sanitizeSymbol(data.symbol).sanitized;
+        await platform.closePosition(safeCloseSymbol);
         return NextResponse.json({ success: true });
       
       case 'create_alert':
         const operator = mapToAlertOperator(data.operator);
-        platform.createAlert(data.name, data.symbol, data.type as AlertType, operator, data.value);
+        // Sanitize inputs for alerts
+        const safeAlertSymbol = sanitizeSymbol(data.symbol).sanitized;
+        const safeAlertName = sanitizeText(data.name).sanitized;
+        platform.createAlert(safeAlertName, safeAlertSymbol, data.type as AlertType, operator, data.value);
         return NextResponse.json({ success: true });
       
       case 'update_config':
