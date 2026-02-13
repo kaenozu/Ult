@@ -279,6 +279,62 @@ export function calculateMaxDrawdown(equityCurve: number[]): number {
 }
 
 /**
+ * 最大ドローダウンを計算（柔軟版）
+ * @param equityCurve 資産曲線の配列
+ * @param asPercentage trueの場合、パーセンテージで返す（デフォルト: true）
+ * @returns 最大ドローダウン
+ */
+export function calculateMaxDrawdownFlexible(equityCurve: number[], asPercentage: boolean = true): number {
+  if (!equityCurve || equityCurve.length === 0) {
+    return 0;
+  }
+
+  let maxDrawdown = 0;
+  let peak = equityCurve[0];
+
+  for (const value of equityCurve) {
+    if (value > peak) {
+      peak = value;
+    }
+    if (peak !== 0) {
+      const dd = (peak - value) / peak;
+      if (dd > maxDrawdown) {
+        maxDrawdown = dd;
+      }
+    }
+  }
+
+  return asPercentage ? maxDrawdown * 100 : maxDrawdown;
+}
+
+/**
+ * リターン配列から最大ドローダウンを計算
+ * @param returns リターンの配列
+ * @param asPercentage trueの場合、パーセンテージで返す（デフォルト: true）
+ * @returns 最大ドローダウン
+ */
+export function calculateMaxDrawdownFromReturns(returns: number[], asPercentage: boolean = true): number {
+  if (!returns || returns.length === 0) {
+    return 0;
+  }
+
+  let peak = 1;
+  let maxDD = 0;
+  let cumulative = 1;
+
+  for (const ret of returns) {
+    cumulative *= (1 + ret);
+    peak = Math.max(peak, cumulative);
+    if (peak !== 0) {
+      const dd = (peak - cumulative) / peak;
+      maxDD = Math.max(maxDD, dd);
+    }
+  }
+
+  return asPercentage ? maxDD * 100 : maxDD;
+}
+
+/**
  * シャープレシオを計算
  */
 export function calculateSharpeRatio(
