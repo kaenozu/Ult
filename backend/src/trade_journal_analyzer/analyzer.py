@@ -4,10 +4,14 @@ Trade Journal Analyzer
 Analyzes trading journals to extract patterns and detect biases.
 """
 
+import logging
 from datetime import timedelta
 from typing import List, Dict, Any
 from collections import defaultdict
 from .models import JournalEntry, TradePattern, BiasAlert
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # Constants for bias detection
 OVERTRADING_MIN_ENTRIES = 20
@@ -42,6 +46,7 @@ class TradeJournalAnalyzer:
         Args:
             entry: Journal entry to add
         """
+        logger.debug(f"Adding journal entry: {entry.id}")
         self._entries.append(entry)
         self._entries_version += 1
 
@@ -65,6 +70,7 @@ class TradeJournalAnalyzer:
         Returns:
             List of bias alerts
         """
+        logger.info(f"Analyzing {len(self._entries)} entries for biases")
         alerts = []
 
         # Detect overtrading (too many trades in short period)
@@ -119,7 +125,10 @@ class TradeJournalAnalyzer:
             List of discovered patterns
         """
         if len(self._entries) < min_trades:
+            logger.debug(f"Not enough entries ({len(self._entries)}) for pattern detection")
             return []
+
+        logger.info(f"Extracting patterns from {len(self._entries)} entries")
 
         # Check cache (valid for 60 seconds)
         import time
