@@ -9,12 +9,13 @@
  * - AIシグナルスクリーニングもサポート
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
 import { cn, formatPercent } from '@/app/lib/utils';
 import { useUIStore } from '@/app/store/uiStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { usePerformanceStore } from '@/app/store/performanceStore';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
 import { AISignalResult, DualMatchEntry } from '@/app/lib/PerformanceScreenerService';
@@ -57,32 +58,251 @@ interface ScreenerResult<T> {
 type SortField = 'rank' | 'symbol' | 'winRate' | 'totalReturn' | 'profitFactor' | 'sharpeRatio' | 'performanceScore' | 'confidence' | 'targetPrice';
 type SortDirection = 'asc' | 'desc';
 
+// ヘルパー関数をコンポーネント外に移動（再定義を防ぐため）
+const getScoreColor = (score: number) => {
+  if (score >= 70) return 'text-green-400';
+  if (score >= 50) return 'text-yellow-400';
+  return 'text-red-400';
+};
+
+/**
+ * パフォーマンス/デュアルマッチ用の行コンポーネント (メモ化)
+ */
+const PerformanceTableRow = memo(({
+  stock,
+  isDualMatch,
+  activeTab,
+  onClick
+}: {
+  stock: PerformanceScore,
+  isDualMatch: boolean,
+  activeTab: string,
+  onClick: (s: PerformanceScore) => void
+}) => {
+  return (
+    <tr
+      className={cn(
+        "hover:bg-[#192633] cursor-pointer transition-colors relative",
+        isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
+      )}
+      onClick={() => onClick(stock)}
+    >
+      <td className="px-3 py-3 text-center relative">
+        {isDualMatch && (
+          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
+        )}
+        <span className={cn(
+          "font-bold",
+          stock.rank === 1 ? "text-yellow-400" :
+            stock.rank === 2 ? "text-gray-300" :
+              stock.rank === 3 ? "text-orange-400" :
+                "text-white"
+        )}>
+          {stock.rank}
+        </span>
+      </td>
+      <td className="px-3 py-3 font-bold text-white flex items-center gap-2">
+        {stock.symbol}
+        {isDualMatch && <span className="text-[10px]" title="デュアルマッチ銘柄">🔥</span>}
+      </td>
+      <td className="px-3 py-3 text-[#92adc9] truncate" title={stock.name}>{stock.name}</td>
+      <td className="px-3 py-3">
+        <span className={cn(
+          'text-[10px] px-1.5 py-0.5 rounded font-bold',
+          stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
+        )}>
+          {stock.market === 'japan' ? 'JP' : 'US'}
+        </span>
+      </td>
+      <td className="px-3 py-3 text-center">
+        <span className={cn(
+          "font-bold text-lg",
+          activeTab === 'dual-match'
+            ? getScoreColor((stock as any).dualScore || 0)
+            : getScoreColor(stock.performanceScore || 0)
+        )}>
+          {activeTab === 'dual-match'
+            ? ((stock as any).dualScore || 0).toFixed(1)
+            : (stock.performanceScore || 0).toFixed(1)}
+        </span>
+      </td>
+      <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(stock.winRate ?? 0))}>
+        {(stock.winRate ?? 0).toFixed(1)}%
+      </td>
+      <td className={cn("px-3 py-3 text-right font-bold", getScoreColor((stock.profitFactor ?? 1.5) * 33.3))}>
+        {stock.profitFactor === null || stock.profitFactor === undefined || !isFinite(stock.profitFactor)
+          ? 'Inf'
+          : stock.profitFactor.toFixed(2)}
+      </td>
+      <td className={cn(
+        "px-3 py-3 text-right font-bold",
+        (stock.totalReturn ?? 0) > 0 ? "text-green-400" : "text-red-400"
+      )}>
+        {formatPercent(stock.totalReturn ?? 0)}
+      </td>
+      <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(((stock.sharpeRatio ?? 0) + 1) * 25))}>
+        {(stock.sharpeRatio ?? 0).toFixed(2)}
+      </td>
+      <td className="px-3 py-3 text-center text-[#92adc9]">
+        {stock.totalTrades || 0}
+      </td>
+      {activeTab === 'dual-match' && (
+        <>
+          <td className="px-3 py-3 text-center">
+            <span className={cn(
+              "px-2 py-0.5 rounded text-[10px] font-bold",
+              (stock as DualMatchResult).aiSignalType === 'BUY' ? "bg-green-500/20 text-green-400" :
+                (stock as DualMatchResult).aiSignalType === 'SELL' ? "bg-red-500/20 text-red-400" :
+                  "bg-gray-500/20 text-gray-400"
+            )}>
+              {(stock as DualMatchResult).aiSignalType === 'BUY' ? '買い' : (stock as DualMatchResult).aiSignalType === 'SELL' ? '売り' : '保留'}
+            </span>
+          </td>
+          <td className="px-3 py-3 text-center">
+            <div className="flex items-center justify-center gap-1.5">
+              <div className="w-8 h-1 bg-[#233648] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-primary to-blue-400"
+                  style={{ width: `${(stock as DualMatchResult).confidence}%` }}
+                />
+              </div>
+              <span className="text-white font-medium text-[10px]">{(stock as DualMatchResult).confidence?.toFixed(0)}%</span>
+            </div>
+          </td>
+        </>
+      )}
+    </tr>
+  );
+});
+
+/**
+ * AIシグナル用の行コンポーネント (メモ化)
+ */
+const AISignalTableRow = memo(({
+  stock,
+  isDualMatch,
+  onClick
+}: {
+  stock: AISignalResult,
+  isDualMatch: boolean,
+  onClick: (s: AISignalResult) => void
+}) => {
+  return (
+    <tr
+      className={cn(
+        "hover:bg-[#192633] cursor-pointer transition-colors relative",
+        isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
+      )}
+      onClick={() => onClick(stock)}
+    >
+      <td className="px-3 py-3 text-center relative">
+        {isDualMatch && (
+          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
+        )}
+        <span className={cn(
+          "font-bold",
+          stock.rank === 1 ? "text-yellow-400" :
+            stock.rank === 2 ? "text-gray-300" :
+              stock.rank === 3 ? "text-orange-400" :
+                "text-white"
+        )}>
+          {stock.rank}
+        </span>
+      </td>
+      <td className="px-3 py-3 font-bold text-white flex items-center gap-1">
+        {stock.symbol}
+        {isDualMatch && <span className="text-[10px]">🔥</span>}
+      </td>
+      <td className="px-3 py-3 text-[#92adc9] truncate max-w-[200px]" title={stock.name}>{stock.name}</td>
+      <td className="px-3 py-3">
+        <span className={cn(
+          'text-[10px] px-1.5 py-0.5 rounded font-bold',
+          stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
+        )}>
+          {stock.market === 'japan' ? 'JP' : 'US'}
+        </span>
+      </td>
+      <td className="px-3 py-3">
+        <span className={cn(
+          'text-[10px] px-1.5 py-0.5 rounded font-bold',
+          stock.signalType === 'BUY' ? 'bg-green-500/20 text-green-400' :
+            stock.signalType === 'SELL' ? 'bg-red-500/20 text-red-400' :
+              'bg-gray-500/20 text-gray-400'
+        )}>
+          {stock.signalType}
+        </span>
+      </td>
+      <td className={cn("px-3 py-3 text-right font-bold text-base", (stock.predictedChange ?? 0) > 0 ? "text-green-400" : "text-red-400")}>
+        {stock.predictedChange ? (stock.predictedChange > 0 ? `+${stock.predictedChange}%` : `${stock.predictedChange}%`) : '-'}
+      </td>
+      <td className="px-3 py-3 text-center">
+        <span className={cn(
+          "font-bold",
+          (stock.mlConfidence ?? 0) >= 80 ? "text-green-400" :
+            (stock.mlConfidence ?? 0) >= 60 ? "text-yellow-400" : "text-gray-400"
+        )}>
+          {stock.mlConfidence ? `${stock.mlConfidence}%` : '-'}
+        </span>
+      </td>
+      <td className="px-3 py-3 text-center">
+        <div className="flex flex-col items-center">
+          <span className={cn(
+            "font-bold text-lg leading-tight",
+            stock.confidence >= 80 ? "text-green-400" :
+              stock.confidence >= 60 ? "text-yellow-400" : "text-orange-400"
+          )}>
+            {(stock.confidence ?? 0).toFixed(1)}%
+          </span>
+          <div className="w-full h-1 bg-gray-700 rounded-full mt-1 overflow-hidden">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-500",
+                stock.confidence >= 80 ? "bg-green-400" :
+                  stock.confidence >= 60 ? "bg-yellow-400" : "bg-orange-400"
+              )}
+              style={{ width: `${stock.confidence}%` }}
+            />
+          </div>
+        </div>
+      </td>
+      <td className={cn("px-3 py-3 text-right font-bold", stock.targetPrice > 0 ? "text-green-400" : "text-gray-400")}>
+        {stock.targetPrice > 0 ? (stock.market === 'japan' ? `¥${Math.round(stock.targetPrice).toLocaleString()}` : `$${stock.targetPrice.toFixed(2)}`) : '-'}
+      </td>
+      <td className="px-3 py-3">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 text-xs">
+              {stock.reason?.includes('🚀') ? '🤖' : '📊'}
+            </span>
+            <span className="text-[#92adc9] text-[11px] leading-relaxed line-clamp-2" title={stock.reason}>
+              {stock.reason || '理由を分析中...'}
+            </span>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+});
+
 function PerformanceDashboardContent() {
   const router = useRouter();
   const { setSelectedStock } = useUIStore();
 
+  const {
+    dualData, setDualData,
+    activeTab, setActiveTab,
+    market, setMarket,
+    minWinRate, setMinWinRate,
+    minProfitFactor, setMinProfitFactor,
+    minConfidence, setMinConfidence,
+    lookbackDays, setLookbackDays
+  } = usePerformanceStore();
+
   const [data, setData] = useState<ScreenerResult<PerformanceScore> | ScreenerResult<AISignalResult> | null>(null);
-  const [dualData, setDualData] = useState<{
-    performance: ScreenerResult<PerformanceScore>;
-    aiSignals: ScreenerResult<AISignalResult>;
-    dualMatches: DualMatchEntry[];
-    dualMatchSymbols: string[];
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // タブ
-  const [activeTab, setActiveTab] = useState<'performance' | 'ai-signals' | 'dual-match'>('dual-match');
-
-  // フィルター
-  const [market, setMarket] = useState<'all' | 'japan' | 'usa'>('all');
-  const [minWinRate, setMinWinRate] = useState(20);
-  const [minProfitFactor, setMinProfitFactor] = useState(0.8);
-  const [lookbackDays, setLookbackDays] = useState(365);
   const [autoRefresh, setAutoRefresh] = useState(false);
-
-  // AIシグナル用フィルター
-  const [minConfidence, setMinConfidence] = useState(30);
 
   // ソート
   const [sortField, setSortField] = useState<SortField>('rank');
@@ -224,10 +444,12 @@ function PerformanceDashboardContent() {
     }
   }, [market, minWinRate, minProfitFactor, lookbackDays, activeTab, minConfidence]);
 
-  // 初回ロード
+  // 初回ロード（データがない場合のみ）
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!dualData) {
+      fetchData();
+    }
+  }, [fetchData, dualData]);
 
   // 自動更新
   useEffect(() => {
@@ -251,7 +473,7 @@ function PerformanceDashboardContent() {
   };
 
   // ソート済みデータ
-  const sortedResults = (() => {
+  const sortedResults = useMemo(() => {
     const rawResults = activeTab === 'dual-match'
       ? dualData?.dualMatches.map(m => ({
         ...m.performance,
@@ -323,10 +545,10 @@ function PerformanceDashboardContent() {
 
       return 0;
     });
-  })();
+  }, [dualData, activeTab, sortField, sortDirection]);
 
   // 銘柄クリック処理
-  const handleStockClick = (stock: PerformanceScore | AISignalResult) => {
+  const handleStockClick = useCallback((stock: PerformanceScore | AISignalResult) => {
     // ウォッチリストに追加
     const { addToWatchlist } = useWatchlistStore.getState();
     addToWatchlist({
@@ -352,14 +574,7 @@ function PerformanceDashboardContent() {
       sector: '',
     });
     router.push('/');
-  };
-
-  // パフォーマンススコアの色
-  const getScoreColor = (score: number) => {
-    if (score >= 70) return 'text-green-400';
-    if (score >= 50) return 'text-yellow-400';
-    return 'text-red-400';
-  };
+  }, [router, setSelectedStock]);
 
   return (
     <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
@@ -404,7 +619,15 @@ function PerformanceDashboardContent() {
         <aside className="w-72 bg-[#111a22] border-r border-[#233648] flex flex-col overflow-y-auto shrink-0">
           <div className="p-5 flex flex-col gap-6">
             <div>
-              <h3 className="text-white text-base font-bold mb-4">フィルター設定</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-base font-bold">フィルター設定</h3>
+                <button
+                  onClick={() => usePerformanceStore.getState().resetSettings()}
+                  className="text-[10px] text-[#92adc9] hover:text-white underline transition-colors"
+                >
+                  リセット
+                </button>
+              </div>
 
               {/* 市場選択 */}
               <div className="flex flex-col gap-2 mb-4">
@@ -775,104 +998,15 @@ function PerformanceDashboardContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#233648]/50">
-                      {(sortedResults as PerformanceScore[]).map((stock) => {
-                        const isDualMatch = dualData?.dualMatchSymbols.includes(stock.symbol);
-                        return (
-                          <tr
-                            key={stock.symbol}
-                            className={cn(
-                              "hover:bg-[#192633] cursor-pointer transition-colors relative",
-                              isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
-                            )}
-                            onClick={() => handleStockClick(stock)}
-                          >
-                            <td className="px-3 py-3 text-center relative">
-                              {isDualMatch && (
-                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
-                              )}
-                              <span className={cn(
-                                "font-bold",
-                                stock.rank === 1 ? "text-yellow-400" :
-                                  stock.rank === 2 ? "text-gray-300" :
-                                    stock.rank === 3 ? "text-orange-400" :
-                                      "text-white"
-                              )}>
-                                {stock.rank}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3 font-bold text-white flex items-center gap-2">
-                              {stock.symbol}
-                              {isDualMatch && <span className="text-[10px]" title="デュアルマッチ銘柄">🔥</span>}
-                            </td>
-                            <td className="px-3 py-3 text-[#92adc9] truncate" title={stock.name}>{stock.name}</td>
-                            <td className="px-3 py-3">
-                              <span className={cn(
-                                'text-[10px] px-1.5 py-0.5 rounded font-bold',
-                                stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
-                              )}>
-                                {stock.market === 'japan' ? 'JP' : 'US'}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <span className={cn(
-                                "font-bold text-lg",
-                                activeTab === 'dual-match'
-                                  ? getScoreColor((stock as any).dualScore || 0)
-                                  : getScoreColor(stock.performanceScore || 0)
-                              )}>
-                                {activeTab === 'dual-match'
-                                  ? ((stock as any).dualScore || 0).toFixed(1)
-                                  : (stock.performanceScore || 0).toFixed(1)}
-                              </span>
-                            </td>
-                            <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(stock.winRate ?? 0))}>
-                              {(stock.winRate ?? 0).toFixed(1)}%
-                            </td>
-                            <td className={cn("px-3 py-3 text-right font-bold", getScoreColor((stock.profitFactor ?? 1.5) * 33.3))}>
-                              {stock.profitFactor === null || stock.profitFactor === undefined || !isFinite(stock.profitFactor)
-                                ? 'Inf'
-                                : stock.profitFactor.toFixed(2)}
-                            </td>
-                            <td className={cn(
-                              "px-3 py-3 text-right font-bold",
-                              (stock.totalReturn ?? 0) > 0 ? "text-green-400" : "text-red-400"
-                            )}>
-                              {formatPercent(stock.totalReturn ?? 0)}
-                            </td>
-                            <td className={cn("px-3 py-3 text-right font-bold", getScoreColor(((stock.sharpeRatio ?? 0) + 1) * 25))}>
-                              {(stock.sharpeRatio ?? 0).toFixed(2)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-[#92adc9]">
-                              {stock.totalTrades || 0}
-                            </td>
-                            {activeTab === 'dual-match' && (
-                              <>
-                                <td className="px-3 py-3 text-center">
-                                  <span className={cn(
-                                    "px-2 py-0.5 rounded text-[10px] font-bold",
-                                    (stock as DualMatchResult).aiSignalType === 'BUY' ? "bg-green-500/20 text-green-400" :
-                                      (stock as DualMatchResult).aiSignalType === 'SELL' ? "bg-red-500/20 text-red-400" :
-                                        "bg-gray-500/20 text-gray-400"
-                                  )}>
-                                    {(stock as DualMatchResult).aiSignalType === 'BUY' ? '買い' : (stock as DualMatchResult).aiSignalType === 'SELL' ? '売り' : '保留'}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-3 text-center">
-                                  <div className="flex items-center justify-center gap-1.5">
-                                    <div className="w-8 h-1 bg-[#233648] rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-gradient-to-r from-primary to-blue-400"
-                                        style={{ width: `${(stock as DualMatchResult).confidence}%` }}
-                                      />
-                                    </div>
-                                    <span className="text-white font-medium text-[10px]">{(stock as DualMatchResult).confidence?.toFixed(0)}%</span>
-                                  </div>
-                                </td>
-                              </>
-                            )}
-                          </tr>
-                        )
-                      })}
+                      {(sortedResults as PerformanceScore[]).map((stock) => (
+                        <PerformanceTableRow
+                          key={stock.symbol}
+                          stock={stock}
+                          isDualMatch={dualData?.dualMatchSymbols.includes(stock.symbol) || false}
+                          activeTab={activeTab}
+                          onClick={handleStockClick}
+                        />
+                      ))}
                     </tbody>
                   </table>
                 )}
@@ -907,105 +1041,14 @@ function PerformanceDashboardContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#233648]/50">
-                      {(sortedResults as AISignalResult[]).map((stock) => {
-                        const isDualMatch = dualData?.dualMatchSymbols.includes(stock.symbol);
-                        return (
-                          <tr
-                            key={stock.symbol}
-                            className={cn(
-                              "hover:bg-[#192633] cursor-pointer transition-colors relative",
-                              isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
-                            )}
-                            onClick={() => handleStockClick(stock)}
-                          >
-                            <td className="px-3 py-3 text-center relative">
-                              {isDualMatch && (
-                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
-                              )}
-                              <span className={cn(
-                                "font-bold",
-                                stock.rank === 1 ? "text-yellow-400" :
-                                  stock.rank === 2 ? "text-gray-300" :
-                                    stock.rank === 3 ? "text-orange-400" :
-                                      "text-white"
-                              )}>
-                                {stock.rank}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3 font-bold text-white flex items-center gap-1">
-                              {stock.symbol}
-                              {isDualMatch && <span className="text-[10px]">🔥</span>}
-                            </td>
-                            <td className="px-3 py-3 text-[#92adc9] truncate max-w-[200px]" title={stock.name}>{stock.name}</td>
-                            <td className="px-3 py-3">
-                              <span className={cn(
-                                'text-[10px] px-1.5 py-0.5 rounded font-bold',
-                                stock.market === 'japan' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'
-                              )}>
-                                {stock.market === 'japan' ? 'JP' : 'US'}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3">
-                              <span className={cn(
-                                'text-[10px] px-1.5 py-0.5 rounded font-bold',
-                                stock.signalType === 'BUY' ? 'bg-green-500/20 text-green-400' :
-                                  stock.signalType === 'SELL' ? 'bg-red-500/20 text-red-400' :
-                                    'bg-gray-500/20 text-gray-400'
-                              )}>
-                                {stock.signalType}
-                              </span>
-                            </td>
-                            <td className={cn("px-3 py-3 text-right font-bold text-base", (stock.predictedChange ?? 0) > 0 ? "text-green-400" : "text-red-400")}>
-                              {stock.predictedChange ? (stock.predictedChange > 0 ? `+${stock.predictedChange}%` : `${stock.predictedChange}%`) : '-'}
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <span className={cn(
-                                "font-bold",
-                                (stock.mlConfidence ?? 0) >= 80 ? "text-green-400" :
-                                  (stock.mlConfidence ?? 0) >= 60 ? "text-yellow-400" : "text-gray-400"
-                              )}>
-                                {stock.mlConfidence ? `${stock.mlConfidence}%` : '-'}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <div className="flex flex-col items-center">
-                                <span className={cn(
-                                  "font-bold text-lg leading-tight",
-                                  stock.confidence >= 80 ? "text-green-400" :
-                                    stock.confidence >= 60 ? "text-yellow-400" : "text-orange-400"
-                                )}>
-                                  {(stock.confidence ?? 0).toFixed(1)}%
-                                </span>
-                                <div className="w-full h-1 bg-gray-700 rounded-full mt-1 overflow-hidden">
-                                  <div
-                                    className={cn(
-                                      "h-full rounded-full transition-all duration-500",
-                                      stock.confidence >= 80 ? "bg-green-400" :
-                                        stock.confidence >= 60 ? "bg-yellow-400" : "bg-orange-400"
-                                    )}
-                                    style={{ width: `${stock.confidence}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </td>
-                            <td className={cn("px-3 py-3 text-right font-bold", stock.targetPrice > 0 ? "text-green-400" : "text-gray-400")}>
-                              {stock.targetPrice > 0 ? (stock.market === 'japan' ? `¥${Math.round(stock.targetPrice).toLocaleString()}` : `$${stock.targetPrice.toFixed(2)}`) : '-'}
-                            </td>
-                            <td className="px-3 py-3">
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-start gap-2">
-                                  <span className="mt-0.5 text-xs">
-                                    {stock.reason?.includes('🚀') ? '🤖' : '📊'}
-                                  </span>
-                                  <span className="text-[#92adc9] text-[11px] leading-relaxed line-clamp-2" title={stock.reason}>
-                                    {stock.reason || '理由を分析中...'}
-                                  </span>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
+                      {(sortedResults as AISignalResult[]).map((stock) => (
+                        <AISignalTableRow
+                          key={stock.symbol}
+                          stock={stock}
+                          isDualMatch={dualData?.dualMatchSymbols.includes(stock.symbol) || false}
+                          onClick={handleStockClick}
+                        />
+                      ))}
                     </tbody>
                   </table>
                 )}

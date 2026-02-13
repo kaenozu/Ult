@@ -181,7 +181,7 @@ export class PerformanceScreenerService {
     );
 
     // development環境では20銘柄に制限（レートリミット対策）
-     
+
     const isDev = process.env.NODE_ENV !== 'production';
     if (isDev && filteredSources.length > 20) {
       filteredSources = filteredSources.slice(0, 20);
@@ -353,7 +353,10 @@ export class PerformanceScreenerService {
         }
 
         // AI結果の保存
-        const targetPrice = (mlSignal.type === finalType) ? mlSignal.targetPrice : currentPrice * 1.05;
+        const atr = mlSignal.atr || (currentPrice * 0.03); // ATRがない場合は3%をデフォルトとする
+        const targetPrice = (finalType === 'BUY')
+          ? (mlSignal.type === 'BUY' ? mlSignal.targetPrice : currentPrice + atr * 1.5)
+          : (finalType === 'SELL' ? (mlSignal.type === 'SELL' ? mlSignal.targetPrice : currentPrice - atr * 1.5) : currentPrice);
         let enhancedReason = consensus.reason;
         if (mlSignal.type === finalType) {
           const icon = finalType === 'BUY' ? '🚀' : '📉';
@@ -387,14 +390,11 @@ export class PerformanceScreenerService {
 
         const isDualCandidate =
           dualScore >= minDualScore &&
-          // pScoreValue > 0 &&
-          // finalType !== 'HOLD' && // Allow HOLD if Dual Score is high
+          finalType === 'BUY' && // Only allow BUY signals for Dual Match
           (mlSignal.predictedChange || 0) >= minPredictedChange &&
           // ユーザー指定のフィルタを適用
           perfScore.winRate >= minWinRate &&
           perfScore.profitFactor >= minProfitFactor;
-
-        console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}%, dualScore=${dualScore.toFixed(1)}, trades=${perfScore.totalTrades} → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
 
         if (isDualCandidate) {
           dualMatchSymbols.push(ds.symbol);
@@ -541,10 +541,16 @@ export class PerformanceScreenerService {
    * - ドローダウン: 20%
    */
   private calculatePerformanceScore(result: BacktestResult): number {
-    // トレード数が少ない場合はペナルティ
+    // 1回のデータ取得を共有
+    // トレード数が極端に少ない場合は0点
     if (result.totalTrades < 3) {
       return 0;
     }
+
+    // トレード数による信頼性ペナルティ係数
+    let reliabilityFactor = 1.0;
+    if (result.totalTrades < 5) reliabilityFactor = 0.6;      // 3-4回: 40%減点
+    else if (result.totalTrades < 10) reliabilityFactor = 0.8; // 5-9回: 20%減点
 
     // 各指標を正規化（0-100）
     const winRateScore = Math.min(result.winRate, 100); // 0-100%
@@ -556,11 +562,14 @@ export class PerformanceScreenerService {
     const drawdownScore = Math.max(100 - result.maxDrawdown * 2, 0); // ドローダウン50%で0点
 
     // 重み付け合計
-    const score =
+    const rawScore =
       winRateScore * 0.30 +
       profitFactorScore * 0.30 +
       sharpeScore * 0.20 +
       drawdownScore * 0.20;
+
+    // 信頼性係数を適用
+    const score = rawScore * reliabilityFactor;
 
     return parseFloat(score.toFixed(1));
   }
