@@ -7,7 +7,7 @@
 
 import { Position, Portfolio, OHLCV } from '@/app/types';
 import { RiskMetrics } from '@/app/types/risk';
-import { calculateMaxDrawdownFromReturns } from '@/app/lib/utils/calculations';
+import { calculateMaxDrawdownFromReturns, calculateVolatilityFlexible } from '@/app/lib/utils/calculations';
 
 // ============================================================================
 // Types
@@ -537,13 +537,7 @@ export class EnhancedPortfolioRiskMonitor {
    * ボラティリティを計算
    */
   private calculateVolatility(returns: number[]): number {
-    if (returns.length < 2) return 0;
-    
-    const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-    const squaredDiffs = returns.map(r => Math.pow(r - mean, 2));
-    const variance = squaredDiffs.reduce((sum, d) => sum + d, 0) / (returns.length - 1);
-    
-    return Math.sqrt(variance) * Math.sqrt(252); // Annualized
+    return calculateVolatilityFlexible(returns, true, true);
   }
 
   /**
