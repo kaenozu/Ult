@@ -11,6 +11,8 @@ import {
 } from './data';
 import type { MarketData as QualityMarketData } from '@/app/types/data-quality';
 
+import { IMarketDataService } from './interfaces/IMarketDataService';
+
 /**
  * 市場インデックスの定義
  * @property symbol - 銘柄シンボル（例: ^N225, ^GSPC）
@@ -85,7 +87,7 @@ export type MarketDataResult = {
  * 市場データの取得、キャッシュ管理、相関分析、トレンド計算を担当するサービスクラス。
  * クライアントサイドで動作し、APIからのデータ取得とキャッシュ制御を行う。
  */
-export class MarketDataService {
+export class MarketDataService implements IMarketDataService {
   private marketDataCache = new Map<string, OHLCV[]>();
   private cacheTimeout = 5 * 60 * 1000; // 5 minutes
   private qualityCheckEnabled = true;
