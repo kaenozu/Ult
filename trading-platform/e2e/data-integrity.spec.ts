@@ -48,7 +48,7 @@ test.describe('Data Integrity - Portfolio and P&L Calculations', () => {
     const portfolioLink = page.locator('a:has-text("Portfolio"), a:has-text("ポートフォリオ")').first();
     if (await portfolioLink.isVisible()) {
       await portfolioLink.click();
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
     }
 
     // Check portfolio value calculation
@@ -58,14 +58,12 @@ test.describe('Data Integrity - Portfolio and P&L Calculations', () => {
     // Cash: 1,000,000
     // Total portfolio: 1,470,000
 
-    const portfolioValue = page.locator('text=/¥1,470,000|1470000|1,470,000/');
-    const hasCorrectValue = await portfolioValue.isVisible().catch(() => false);
+    // Use a more flexible regex to handle commas and currency symbols
+    const portfolioValue = page.locator('text=/1,470,000|1470000/');
+    await expect(portfolioValue.first()).toBeVisible({ timeout: 5000 });
     
-    // Or check if total is displayed anywhere
     const totalValue = page.locator('[data-testid="total-value"], .total-value, text=/合計|Total|総額/');
-    const hasTotalValue = await totalValue.isVisible().catch(() => false);
-    
-    expect(hasCorrectValue || hasTotalValue).toBeTruthy();
+    await expect(totalValue.first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should calculate P&L correctly for LONG positions', async ({ page }) => {

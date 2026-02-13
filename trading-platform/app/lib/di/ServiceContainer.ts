@@ -36,4 +36,6 @@ export const TOKENS = {
   TechnicalIndicatorService: 'TechnicalIndicatorService',
   AnalysisService: 'AnalysisService',
   MarketDataHub: 'MarketDataHub',
+  AutoScreener: 'AutoScreener',
+  DriftDetector: 'DriftDetector',
 } as const;

@@ -3,6 +3,8 @@ import { MarketDataService } from '../MarketDataService';
 import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import { analysisService } from '../AnalysisService';
 import { MarketDataHub } from '../data/MarketDataHub';
+import { AutoScreener } from '../universe/AutoScreener';
+import { DriftDetector } from '../ml/DriftDetector';
 
 /**
  * サービスコンテナの初期化
@@ -10,7 +12,12 @@ import { MarketDataHub } from '../data/MarketDataHub';
  */
 export function initializeContainer(): void {
   // Data Pipeline
-  ServiceContainer.register(TOKENS.MarketDataHub, new MarketDataHub());
+  const dataHub = new MarketDataHub();
+  ServiceContainer.register(TOKENS.MarketDataHub, dataHub);
+
+  // Analysis & Intelligence
+  ServiceContainer.register(TOKENS.AutoScreener, new AutoScreener(dataHub));
+  ServiceContainer.register(TOKENS.DriftDetector, new DriftDetector({ threshold: 0.1, minWindowSize: 10 }));
 
   // MarketDataService
   ServiceContainer.register(TOKENS.MarketDataService, new MarketDataService());
