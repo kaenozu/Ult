@@ -131,17 +131,31 @@ export function calculateReturns(prices: number[] | Float64Array): number[] {
 
 /**
  * SMA（単純移動平均）を計算
+ * O(N) complexity using sliding window approach
  */
 export function calculateSMA(prices: number[] | Float64Array, period: number): number[] {
   const sma: number[] = [];
+  
+  if (prices.length < period || period <= 0) {
+    return Array.from({ length: prices.length }, () => NaN);
+  }
+  
+  let windowSum = 0;
+  
   for (let i = 0; i < prices.length; i++) {
+    windowSum += prices[i];
+    
+    if (i >= period) {
+      windowSum -= prices[i - period];
+    }
+    
     if (i < period - 1) {
       sma.push(NaN);
     } else {
-      const sumValue = sum(prices.slice(i - period + 1, i + 1));
-      sma.push(sumValue / period);
+      sma.push(windowSum / period);
     }
   }
+  
   return sma;
 }
 

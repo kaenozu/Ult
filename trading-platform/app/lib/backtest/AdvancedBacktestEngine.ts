@@ -242,10 +242,19 @@ export class AdvancedBacktestEngine extends EventEmitter {
       indicators: this.indicators,
     };
 
+    // O(N) optimization: Pre-populate and grow incrementally
+    const historicalData: OHLCV[] = [];
+    // Pre-populate with initial data (indices 0-49)
+    for (let j = 0; j < 50; j++) {
+      historicalData.push(data[j]);
+    }
+    
     // Run through data
     for (let i = 50; i < data.length; i++) {
       const currentData = data[i];
-      const historicalData = data.slice(0, i + 1);
+      
+      // Grow historical data array instead of slicing each time - O(1) amortized
+      historicalData.push(currentData);
       context.data = historicalData;
       context.currentPosition = this.currentPosition;
       context.entryPrice = this.entryPrice;
