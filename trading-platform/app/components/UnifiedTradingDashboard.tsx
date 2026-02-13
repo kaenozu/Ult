@@ -31,12 +31,10 @@ import {
 
 // Sub-components
 import { PortfolioPanel } from './PortfolioPanel';
-import {
-  LazyRiskPanel,
-  LazyAlertPanel,
-  LazyMarketDataPanel,
-  LazyBacktestPanel
-} from '@/app/components/lazy/LazyComponents';
+import { RiskPanel } from './RiskPanel';
+import { AlertPanel } from './AlertPanel';
+import { MarketDataPanel } from './MarketDataPanel';
+import { LazyBacktestPanel } from '@/app/components/lazy/LazyComponents';
 
 const MARKET_DATA_SYMBOLS = ['BTCUSD', 'ETHUSD', 'SOLUSD', 'ADAUSD'];
 
@@ -343,15 +341,15 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
           </TabsContent>
 
           <TabsContent value="risk">
-            <LazyRiskPanel riskMetrics={riskMetrics} />
+            <RiskPanel riskMetrics={riskMetrics} />
           </TabsContent>
 
           <TabsContent value="alerts">
-            <LazyAlertPanel symbol={selectedSymbol} />
+            <AlertPanel symbol={selectedSymbol} />
           </TabsContent>
 
           <TabsContent value="market">
-            <LazyMarketDataPanel
+            <MarketDataPanel
               symbols={MARKET_DATA_SYMBOLS}
               selectedSymbol={selectedSymbol}
               onSelectSymbol={setSelectedSymbol}
