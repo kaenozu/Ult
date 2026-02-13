@@ -11,6 +11,7 @@ import { OHLCV, BacktestResult, Signal, Stock } from '../types';
 import { optimizedAccuracyService } from './OptimizedAccuracyService';
 import { consensusSignalService } from './ConsensusSignalService';
 import { mlPredictionService } from './mlPrediction';
+import { technicalIndicatorService } from './TechnicalIndicatorService';
 
 // レビュー対応: マジックナンバーを定数化
 const MIN_DATA_REQUIRED = 50;  // 最低必要データ件数
@@ -326,7 +327,7 @@ export class PerformanceScreenerService {
         };
 
         // 2. AIシグナル評価
-        const consensus = consensusSignalService.generateConsensus(recentData);
+        const consensus = await consensusSignalService.generateEnhancedConsensus(recentData);
         const currentPrice = recentData[recentData.length - 1].close;
         const mockStock: Stock = {
           symbol: ds.symbol,
@@ -343,20 +344,32 @@ export class PerformanceScreenerService {
         const mlPred = await mlPredictionService.predictAsync(mockStock, recentData, indicators);
         const mlSignal = mlPredictionService.generateSignal(mockStock, recentData, mlPred, indicators);
 
+        // シグナル統合ロジック (Hybrid Signal)
+        // テクニカル分析とMLが一致する場合に信頼度をブースト
         let finalType = consensus.type;
         let finalConfidence = consensus.confidence;
-        if (mlSignal.type === consensus.type) {
+
+        // HIGH CONFIDENCE ML OVERRIDE
+        // AIの買い確信度が 60%以上 で、かつテクニカルの売り確信度が 50%未満（弱い売り）の場合
+        // AIの判断を優先して「買い」に昇格させる（ただし確信度は少し割り引く）
+        if (mlSignal.type === 'BUY' && mlSignal.confidence >= 60 &&
+          consensus.type === 'SELL' && consensus.confidence < 50) {
+          finalType = 'BUY';
+          finalConfidence = mlSignal.confidence * 0.85; // Slight penalty for conflict
+          consensus.reason = `[AI逆張り] テクニカルは弱気だがAIが強気 (${mlSignal.confidence.toFixed(0)}%)`;
+        }
+        else if (mlSignal.type === consensus.type) {
           finalConfidence = Math.min(finalConfidence + 10, 98);
         } else if (mlSignal.type !== 'HOLD' && consensus.type === 'HOLD') {
           finalType = mlSignal.type;
           finalConfidence = Math.max(mlSignal.confidence * 0.8, 40);
         }
 
-        // AI結果の保存
-        const atr = mlSignal.atr || (currentPrice * 0.03); // ATRがない場合は3%をデフォルトとする
-        const targetPrice = (finalType === 'BUY')
-          ? (mlSignal.type === 'BUY' ? mlSignal.targetPrice : currentPrice + atr * 1.5)
-          : (finalType === 'SELL' ? (mlSignal.type === 'SELL' ? mlSignal.targetPrice : currentPrice - atr * 1.5) : currentPrice);
+        // AI結果の保存（BUYのみに限定せず、上位抽出用に全て保持）
+        // 目標価格の計算: AIの目標価格を優先し、フォールバックとしてATRを使用
+        const atrs = technicalIndicatorService.calculateATR(recentData);
+        const lastAtr = atrs[atrs.length - 1] || currentPrice * 0.02;
+        const targetPrice = (mlSignal.type === finalType) ? mlSignal.targetPrice : (finalType === 'BUY' ? currentPrice + (lastAtr * 2) : currentPrice - (lastAtr * 2));
         let enhancedReason = consensus.reason;
         if (mlSignal.type === finalType) {
           const icon = finalType === 'BUY' ? '🚀' : '📉';
@@ -390,11 +403,13 @@ export class PerformanceScreenerService {
 
         const isDualCandidate =
           dualScore >= minDualScore &&
-          finalType === 'BUY' && // Only allow BUY signals for Dual Match
+          finalType === 'BUY' && // デュアルマッチは「買い」シグナルのみに限定
           (mlSignal.predictedChange || 0) >= minPredictedChange &&
           // ユーザー指定のフィルタを適用
           perfScore.winRate >= minWinRate &&
           perfScore.profitFactor >= minProfitFactor;
+
+        console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}%, dualScore=${dualScore.toFixed(1)}, trades=${perfScore.totalTrades} → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
 
         if (isDualCandidate) {
           dualMatchSymbols.push(ds.symbol);
@@ -541,16 +556,11 @@ export class PerformanceScreenerService {
    * - ドローダウン: 20%
    */
   private calculatePerformanceScore(result: BacktestResult): number {
-    // 1回のデータ取得を共有
-    // トレード数が極端に少ない場合は0点
+    // トレード数が極端に少ない場合は段階的にペナルティ
+    // 3回未満はスコア0（統計的に評価不能）
     if (result.totalTrades < 3) {
       return 0;
     }
-
-    // トレード数による信頼性ペナルティ係数
-    let reliabilityFactor = 1.0;
-    if (result.totalTrades < 5) reliabilityFactor = 0.6;      // 3-4回: 40%減点
-    else if (result.totalTrades < 10) reliabilityFactor = 0.8; // 5-9回: 20%減点
 
     // 各指標を正規化（0-100）
     const winRateScore = Math.min(result.winRate, 100); // 0-100%
@@ -562,14 +572,20 @@ export class PerformanceScreenerService {
     const drawdownScore = Math.max(100 - result.maxDrawdown * 2, 0); // ドローダウン50%で0点
 
     // 重み付け合計
-    const rawScore =
+    let score =
       winRateScore * 0.30 +
       profitFactorScore * 0.30 +
       sharpeScore * 0.20 +
       drawdownScore * 0.20;
 
-    // 信頼性係数を適用
-    const score = rawScore * reliabilityFactor;
+    // 統計的有意性のためのトレード数による段階的ペナルティ
+    if (result.totalTrades < 5) {
+      score *= 0.5; // 3-4回: 50%減（非常に低い信頼性）
+    } else if (result.totalTrades < 10) {
+      score *= 0.7; // 5-9回: 30%減（低信頼性）
+    } else if (result.totalTrades < 15) {
+      score *= 0.9; // 10-14回: 10%減（中信頼性）
+    }
 
     return parseFloat(score.toFixed(1));
   }
@@ -672,7 +688,7 @@ export class PerformanceScreenerService {
         const recentData = data.slice(-lookbackDays);
 
         // コンセンサスシグナル生成
-        const consensus = consensusSignalService.generateConsensus(recentData);
+        const consensus = await consensusSignalService.generateEnhancedConsensus(recentData);
 
         // ML予測を実行 (Phase 1 Integration)
         const currentPrice = recentData[recentData.length - 1].close;

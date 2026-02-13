@@ -26,6 +26,12 @@ interface MarketResponse<T> {
   debug?: string;
 }
 
+// Helper to determine base URL for server-side requests
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') return ''; // Client-side: relative URL
+  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'; // Server-side
+};
+
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
@@ -58,7 +64,10 @@ class MarketDataClient {
     backoff: number = 500
   ): Promise<T> {
     try {
-      const httpResponse = await fetch(url, options);
+      // Ensure URL is absolute on server
+      const finalUrl = url.startsWith('/') ? `${getBaseUrl()}${url}` : url;
+
+      const httpResponse = await fetch(finalUrl, options);
 
       if (httpResponse && httpResponse.status === 429) {
         const retryAfter = httpResponse.headers.get('Retry-After');
@@ -261,7 +270,7 @@ class MarketDataClient {
           type: 'quote',
           symbol: symbolStr
         });
-        const httpResponse = await fetch(`/api/market?${params.toString()}`, { signal });
+        const httpResponse = await fetch(`${getBaseUrl()}/api/market?${params.toString()}`, { signal });
         if (httpResponse.status === 429) {
           // Performance-optimized: Exponential backoff with jitter
           const baseDelay = 1000;
@@ -275,7 +284,7 @@ class MarketDataClient {
       }));
       return results.flat() as QuoteData[];
     } catch (err) {
-      // Ignore AbortError
+      // Ignore AbortError (navigation cancellation)
       if (err instanceof Error && err.name === 'AbortError') {
         return [];
       }
@@ -293,7 +302,7 @@ class MarketDataClient {
       if (data) this.setCache(cacheKey, data, this.CACHE_TTL.quote);
       return data;
     } catch (err) {
-      logger.error(`Fetch Quote failed for ${symbol}:`, err instanceof Error ? err : new Error(String(err)));
+      // logger.error(`Fetch Quote failed for ${symbol}:`, err instanceof Error ? err : new Error(String(err)));
       return null;
     }
   }
