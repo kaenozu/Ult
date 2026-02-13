@@ -5,29 +5,13 @@
  * and signal processing operations.
  */
 
-// ============================================================================
-// Statistical Functions
-// ============================================================================
+import { mean as calcMean, stdDev as calcStdDev, calculateReturns as calcReturns } from '../utils/calculations';
 
-/**
- * Calculate mean of an array
- */
-export function mean(data: number[]): number {
-  if (data.length === 0) return 0;
-  const sum = data.reduce((acc, val) => acc + val, 0);
-  return sum / data.length;
-}
+const mean = calcMean;
+const stdDev = calcStdDev;
+const calculateReturns = calcReturns;
 
-/**
- * Calculate standard deviation
- */
-export function stdDev(data: number[]): number {
-  if (data.length === 0) return 0;
-  const avg = mean(data);
-  const squaredDiffs = data.map(val => Math.pow(val - avg, 2));
-  const variance = mean(squaredDiffs);
-  return Math.sqrt(variance);
-}
+export { mean, stdDev, calculateReturns };
 
 /**
  * Calculate correlation between two arrays
@@ -418,21 +402,6 @@ function linearFit(y: number[], x?: number[]): { slope: number; intercept: numbe
 // ============================================================================
 // Utility Functions
 // ============================================================================
-
-/**
- * Calculate returns from price series
- */
-export function calculateReturns(prices: number[]): number[] {
-  const returns: number[] = [];
-  for (let i = 1; i < prices.length; i++) {
-    if (prices[i - 1] !== 0) {
-      returns.push((prices[i] - prices[i - 1]) / prices[i - 1]);
-    } else {
-      returns.push(0);
-    }
-  }
-  return returns;
-}
 
 /**
  * Calculate log returns
