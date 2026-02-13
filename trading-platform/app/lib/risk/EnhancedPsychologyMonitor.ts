@@ -363,14 +363,34 @@ export class EnhancedPsychologyMonitor {
     const overTradingScore = this.calculateOverTradingScore();
     const emotionalTradingScore = this.calculateEmotionalTradingScore();
     
-    // TODO: Calculate actual win/loss metrics from order P&L data
+    // 損益計算
+    const tradeResults = this.calculateTradeResults();
+    const wins = tradeResults.filter(r => r.pnl > 0);
+    const losses = tradeResults.filter(r => r.pnl < 0);
+    
+    const totalTrades = tradeResults.length;
+    const winRate = totalTrades > 0 ? wins.length / totalTrades : 0;
+    const lossRate = totalTrades > 0 ? losses.length / totalTrades : 0;
+    
+    const avgWinSize = wins.length > 0
+      ? wins.reduce((sum, w) => sum + w.pnl, 0) / wins.length
+      : 0;
+    
+    const avgLossSize = losses.length > 0
+      ? losses.reduce((sum, l) => sum + Math.abs(l.pnl), 0) / losses.length
+      : 0;
+    
+    const totalWinAmount = wins.reduce((sum, w) => sum + w.pnl, 0);
+    const totalLossAmount = losses.reduce((sum, l) => sum + Math.abs(l.pnl), 0);
+    const profitFactor = totalLossAmount > 0 ? totalWinAmount / totalLossAmount : totalWinAmount > 0 ? Infinity : 0;
+    
     return {
-      averageHoldTime: 4, // Placeholder
-      winRate: 0.5,       // Placeholder - should be calculated from actual trades
-      lossRate: 0.5,      // Placeholder - should be calculated from actual trades
-      avgWinSize: 0,      // Placeholder - requires P&L data
-      avgLossSize: 0,     // Placeholder - requires P&L data
-      profitFactor: 1,    // Placeholder - requires P&L data
+      averageHoldTime: 4,
+      winRate,
+      lossRate,
+      avgWinSize,
+      avgLossSize,
+      profitFactor,
       consecutiveWins,
       consecutiveLosses,
       overTradingScore,
@@ -645,9 +665,87 @@ export class EnhancedPsychologyMonitor {
     consecutiveWins: number;
     consecutiveLosses: number;
   } {
-    // TODO: Implement actual consecutive wins/losses calculation
-    // Requires Order type to include realized P&L or outcome field
-    return { consecutiveWins: 0, consecutiveLosses: 0 };
+    const tradeResults = this.calculateTradeResults();
+    let consecutiveWins = 0;
+    let consecutiveLosses = 0;
+    let currentStreak = 0;
+    let isWinStreak = true;
+
+    // 最新の取引から遡って計算
+    for (let i = tradeResults.length - 1; i >= 0; i--) {
+      const isWin = tradeResults[i].pnl > 0;
+
+      if (i === tradeResults.length - 1) {
+        isWinStreak = isWin;
+        currentStreak = 1;
+      } else if ((isWin && isWinStreak) || (!isWin && !isWinStreak)) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+
+    if (isWinStreak) {
+      consecutiveWins = currentStreak;
+    } else {
+      consecutiveLosses = currentStreak;
+    }
+
+    return { consecutiveWins, consecutiveLosses };
+  }
+
+  /**
+   * 取引結果を計算（損益計算）
+   */
+  private calculateTradeResults(): { pnl: number; trade: Order }[] {
+    const results: { pnl: number; trade: Order }[] = [];
+    
+    // 価格情報がない場合は従来のsideベース判定にフォールバック
+    const hasPrice = this.tradingHistory.some(t => t.price && t.price > 0);
+    if (!hasPrice) {
+      return this.tradingHistory
+        .filter(t => t.status === 'FILLED')
+        .map(trade => ({
+          pnl: trade.side === 'SELL' ? 1 : trade.side === 'BUY' ? -1 : 0,
+          trade
+        }));
+    }
+    
+    const positionMap = new Map<string, { quantity: number; avgPrice: number }>();
+
+    for (const trade of this.tradingHistory.filter(t => t.status === 'FILLED')) {
+      const price = trade.price || 0;
+      
+      if (trade.side === 'BUY') {
+        const current = positionMap.get(trade.symbol);
+        if (current) {
+          const totalQuantity = current.quantity + trade.quantity;
+          const totalCost = current.quantity * current.avgPrice + trade.quantity * price;
+          positionMap.set(trade.symbol, {
+            quantity: totalQuantity,
+            avgPrice: totalCost / totalQuantity
+          });
+        } else {
+          positionMap.set(trade.symbol, { quantity: trade.quantity, avgPrice: price });
+        }
+      } else if (trade.side === 'SELL') {
+        const position = positionMap.get(trade.symbol);
+        if (position && position.quantity > 0) {
+          const sellQuantity = Math.min(trade.quantity, position.quantity);
+          const pnl = (price - position.avgPrice) * sellQuantity;
+          results.push({ pnl, trade });
+          
+          const remainingQuantity = position.quantity - sellQuantity;
+          if (remainingQuantity > 0) {
+            positionMap.set(trade.symbol, { ...position, quantity: remainingQuantity });
+          } else {
+            positionMap.delete(trade.symbol);
+          }
+        }
+      }
+    }
+
+    return results;
   }
 
   /**
