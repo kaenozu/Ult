@@ -176,6 +176,8 @@ const PerformanceTableRow = memo(({
   );
 });
 
+PerformanceTableRow.displayName = 'PerformanceTableRow';
+
 /**
  * AIシグナル用の行コンポーネント (メモ化)
  */
@@ -284,6 +286,8 @@ const AISignalTableRow = memo(({
     </tr>
   );
 });
+
+AISignalTableRow.displayName = 'AISignalTableRow';
 
 function PerformanceDashboardContent() {
   const router = useRouter();
