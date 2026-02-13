@@ -164,8 +164,8 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
     this.tradeTimestamps = [];
 
     // Store historical data for volatility calculation
-    const data = (this as any).data.get(symbol);
-    (this as any).currentHistoricalData = data || [];
+    const data = this.data.get(symbol);
+    this.currentHistoricalData = data || [];
 
     // Run base backtest (which now calls overridden open/close methods)
     const baseResult = await super.runBacktest(strategy, symbol);
@@ -187,10 +187,10 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
    * Override openPosition to apply realistic costs
    */
   protected openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction): void {
-    const index = (this as any).currentHistoricalData?.findIndex((d: any) => d.date === data.date) || 0;
-    const historicalData = (this as any).currentHistoricalData || [];
+    const index = this.currentHistoricalData?.findIndex((d) => d.date === data.date) || 0;
+    const historicalData = this.currentHistoricalData || [];
     
-    const quantity = (this as any).calculatePositionSize(data.close, action.quantity);
+    const quantity = this.calculatePositionSize(data.close, action.quantity);
     
     // Calculate realistic slippage
     const { slippage, marketImpact, timeOfDayFactor, volatilityFactor } = 
@@ -206,18 +206,18 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
     const commission = orderValue * (commissionRate / 100);
 
     // Update state in base class
-    (this as any).currentPosition = side;
-    (this as any).entryPrice = executionPrice;
-    (this as any).entryDate = data.date;
-    (this as any).stopLoss = action.stopLoss || 0;
-    (this as any).takeProfit = action.takeProfit || 0;
-    (this as any).currentQuantity = quantity; // Need to track quantity for closePosition
-    (this as any).currentCommissionTier = commissionTier;
-    (this as any).currentMarketImpact = marketImpact;
-    (this as any).currentSlippage = slippage;
-    (this as any).currentTimeOfDayFactor = timeOfDayFactor;
-    (this as any).currentVolatilityFactor = volatilityFactor;
-    (this as any).currentFees = commission;
+    this.currentPosition = side;
+    this.entryPrice = executionPrice;
+    this.entryDate = data.date;
+    this.stopLoss = action.stopLoss || 0;
+    this.takeProfit = action.takeProfit || 0;
+    this.currentQuantity = quantity;
+    this.currentCommissionTier = commissionTier;
+    this.currentMarketImpact = marketImpact;
+    this.currentSlippage = slippage;
+    this.currentTimeOfDayFactor = timeOfDayFactor;
+    this.currentVolatilityFactor = volatilityFactor;
+    this.currentFees = commission;
 
     this.emit('position_opened', { side, price: executionPrice, quantity, date: data.date });
   }
@@ -226,13 +226,13 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
    * Override closePosition to apply realistic costs
    */
   protected closePosition(data: OHLCV, reason: Trade['exitReason']): void {
-    if (!(this as any).currentPosition) return;
+    if (!this.currentPosition) return;
 
-    const side = (this as any).currentPosition;
-    const entryPrice = (this as any).entryPrice;
-    const quantity = (this as any).currentQuantity || (this as any).calculatePositionSize(entryPrice);
-    const index = (this as any).currentHistoricalData?.findIndex((d: any) => d.date === data.date) || 0;
-    const historicalData = (this as any).currentHistoricalData || [];
+    const side = this.currentPosition;
+    const entryPrice = this.entryPrice;
+    const quantity = this.currentQuantity || this.calculatePositionSize(entryPrice);
+    const index = this.currentHistoricalData?.findIndex((d) => d.date === data.date) || 0;
+    const historicalData = this.currentHistoricalData || [];
 
     // Calculate realistic slippage for exit
     const { slippage, marketImpact } = 
@@ -253,17 +253,17 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
     const exitValue = exitPrice * quantity;
     const { rate: commissionRate } = this.calculateTieredCommission(exitValue);
     const exitFees = exitValue * (commissionRate / 100);
-    const totalFees = ((this as any).currentFees || 0) + exitFees;
+    const totalFees = (this.currentFees || 0) + exitFees;
     
     pnl -= totalFees;
     const pnlPercent = (pnl / (entryPrice * quantity)) * 100;
 
     // Update equity
-    (this as any).currentEquity += pnl;
+    this.currentEquity += pnl;
 
     const trade: RealisticTradeMetrics = {
-      id: `trade_${(this as any).trades.length}`,
-      entryDate: (this as any).entryDate,
+      id: `trade_${this.trades.length}`,
+      entryDate: this.entryDate,
       exitDate: data.date,
       symbol: '',
       side,
@@ -274,21 +274,21 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
       pnlPercent,
       fees: totalFees,
       exitReason: reason,
-      marketImpact: (this as any).currentMarketImpact || marketImpact,
-      effectiveSlippage: (this as any).currentSlippage || slippage,
-      commissionTier: (this as any).currentCommissionTier,
-      timeOfDayFactor: (this as any).currentTimeOfDayFactor,
-      volatilityFactor: (this as any).currentVolatilityFactor
+      marketImpact: this.currentMarketImpact || marketImpact,
+      effectiveSlippage: this.currentSlippage || slippage,
+      commissionTier: this.currentCommissionTier,
+      timeOfDayFactor: this.currentTimeOfDayFactor,
+      volatilityFactor: this.currentVolatilityFactor
     };
 
-    (this as any).trades.push(trade);
+    this.trades.push(trade);
     this.emit('position_closed', trade);
 
     // Reset position
-    (this as any).currentPosition = null;
-    (this as any).entryPrice = 0;
-    (this as any).stopLoss = 0;
-    (this as any).takeProfit = 0;
+    this.currentPosition = null;
+    this.entryPrice = 0;
+    this.stopLoss = 0;
+    this.takeProfit = 0;
   }
 
   /**
