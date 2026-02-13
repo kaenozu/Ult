@@ -33,4 +33,19 @@ describe('AutoScreener', () => {
     expect(results[0].symbol).toBe('7203');
     expect(results[0].signals.length).toBeGreaterThan(0);
   });
+
+  it('should limit symbols per scan', async () => {
+    const symbols = Array.from({ length: 150 }, (_, i) => `S${i}`);
+    mockHub.getData.mockResolvedValue([]);
+
+    await screener.scan(symbols);
+    
+    expect(mockHub.getData).toHaveBeenCalledTimes(100); // MAX_SYMBOLS
+  });
+
+  it('should handle invalid symbols gracefully', async () => {
+    const results = await screener.scan(['', 123 as any, null as any]);
+    expect(results).toEqual([]);
+    expect(mockHub.getData).not.toHaveBeenCalled();
+  });
 });
