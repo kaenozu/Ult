@@ -11,6 +11,7 @@ import {
   Portfolio,
   PerformanceMetrics,
 } from '@/app/types/performance';
+import { calculateMaxDrawdownFlexible } from '@/app/lib/utils/calculations';
 
 export class PerformanceMetricsCalculator {
   private riskFreeRate = 0.02; // 2% annual risk-free rate
@@ -207,16 +208,8 @@ export class PerformanceMetricsCalculator {
    * Calculate Maximum Drawdown
    */
   private calculateMaxDrawdown(portfolio: Portfolio): number {
-    let maxDrawdown = 0;
-    let peak = portfolio.initialValue;
-
-    for (const snapshot of portfolio.history) {
-      peak = Math.max(peak, snapshot.value);
-      const drawdown = (peak - snapshot.value) / peak;
-      maxDrawdown = Math.max(maxDrawdown, drawdown);
-    }
-
-    return maxDrawdown;
+    const equityCurve = portfolio.history.map(s => s.value);
+    return calculateMaxDrawdownFlexible(equityCurve, false);
   }
 
   /**

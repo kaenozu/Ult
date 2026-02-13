@@ -7,6 +7,7 @@
 
 import { Position, Portfolio, OHLCV } from '@/app/types';
 import { RiskMetrics } from '@/app/types/risk';
+import { calculateMaxDrawdownFromReturns } from '@/app/lib/utils/calculations';
 
 // ============================================================================
 // Types
@@ -549,20 +550,7 @@ export class EnhancedPortfolioRiskMonitor {
    * 最大ドローダウンを計算
    */
   private calculateMaxDrawdown(returns: number[]): number {
-    if (returns.length === 0) return 0;
-    
-    let peak = 1;
-    let maxDD = 0;
-    let cumulative = 1;
-    
-    for (const ret of returns) {
-      cumulative *= (1 + ret);
-      peak = Math.max(peak, cumulative);
-      const dd = (peak - cumulative) / peak;
-      maxDD = Math.max(maxDD, dd);
-    }
-    
-    return maxDD * 100;
+    return calculateMaxDrawdownFromReturns(returns, true);
   }
 
   /**
