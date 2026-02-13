@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
 
-jest.mock('@/app/store/tradingStore');
+jest.mock('@/app/store/portfolioStore');
 
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
     observe: jest.fn(),
@@ -22,7 +22,7 @@ describe('OrderPanel UX Enhancements', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
+        (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockStoreState) : mockStoreState;
         });
     });

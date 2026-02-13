@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useExecuteOrder } from '@/app/store/orderExecutionStore';
 
 // Mock stores
-jest.mock('@/app/store/tradingStore');
+jest.mock('@/app/store/portfolioStore');
 jest.mock('@/app/store/orderExecutionStore', () => ({
     useExecuteOrder: jest.fn()
 }));
@@ -20,7 +20,7 @@ describe('OrderPanel Accessibility', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
+        (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
         (useExecuteOrder as jest.Mock).mockReturnValue(mockExecuteOrder);
