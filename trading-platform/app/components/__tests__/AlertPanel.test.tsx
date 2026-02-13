@@ -251,4 +251,47 @@ describe('AlertPanel', () => {
       expect(screen.getByText(/\u305f\u3063\u305f\u4eca/)).toBeInTheDocument(); // たった今
     });
   });
+
+  it('implements accessibility requirements', async () => {
+    const alert: Alert = {
+      id: 'a11y-test',
+      type: 'STOCK',
+      severity: 'HIGH',
+      symbol: '4385',
+      title: 'A11Y',
+      message: 'test',
+      timestamp: new Date().toISOString(),
+      acknowledged: false,
+    };
+    useAlertStore.getState().addAlert(alert);
+    render(<AlertPanel symbol={mockStock.symbol} stockPrice={mockStock.price} />);
+
+    // Settings button
+    const settingsButton = screen.getByTitle('設定');
+    expect(settingsButton).toHaveAttribute('aria-label', '通知設定');
+    expect(settingsButton).toHaveAttribute('aria-expanded', 'false');
+
+    // Open settings
+    fireEvent.click(settingsButton);
+    expect(settingsButton).toHaveAttribute('aria-expanded', 'true');
+
+    // Main toggle
+    const mainToggle = screen.getByTestId('notifications-enabled-toggle');
+    expect(mainToggle).toHaveAttribute('role', 'switch');
+    expect(mainToggle).toHaveAttribute('aria-checked', 'true');
+    expect(mainToggle).toHaveAttribute('aria-label', '通知機能を切り替え');
+
+    // Close settings to see filters and alert list
+    fireEvent.click(settingsButton);
+
+    // Filter buttons
+    const stockFilter = screen.getByText('銘柄');
+    // The closest button element
+    const filterButton = stockFilter.closest('button');
+    expect(filterButton).toHaveAttribute('aria-pressed', 'false'); // Initial state is ALL
+
+    // Alert acknowledge button
+    const ackButton = screen.getByTitle('既読にする');
+    expect(ackButton).toHaveAttribute('aria-label', '既読にする');
+  });
 });
