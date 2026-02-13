@@ -20,7 +20,7 @@ import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
 import { AISignalResult, DualMatchEntry } from '@/app/lib/PerformanceScreenerService';
 import { Signal } from '../types';
-import { mlTrainingService, type TrainingMetrics, type ModelState } from '@/app/lib/services/MLTrainingService';
+
 import { fetchOHLCV } from '@/app/data/stocks';
 import { TableVirtuoso } from 'react-virtuoso';
 
@@ -315,74 +315,6 @@ function PerformanceDashboardContent() {
 
   // 進捗状況
   const [progress, setProgress] = useState(0);
-
-  // ML訓練状態
-  const [mlModelState, setMlModelState] = useState<ModelState>({
-    isTrained: false,
-    metrics: null,
-    modelVersion: '0.0.0',
-  });
-  const [trainingProgress, setTrainingProgress] = useState(0);
-  const [isTraining, setIsTraining] = useState(false);
-  const [trainingError, setTrainingError] = useState<string | null>(null);
-  const trainingRef = useRef(false);
-
-  // 保存済みモデルの自動読み込み
-  useEffect(() => {
-    mlTrainingService.loadModel('trader-pro-main').then((loaded) => {
-      if (loaded) {
-        setMlModelState(mlTrainingService.getState());
-      }
-    }).catch(() => { /* IndexedDB未対応環境ではスキップ */ });
-  }, []);
-
-  // モデル訓練ハンドラー
-  const handleTrainModel = useCallback(async () => {
-    if (trainingRef.current) return;
-    trainingRef.current = true;
-    setIsTraining(true);
-    setTrainingProgress(0);
-    setTrainingError(null);
-
-    try {
-      // 訓練用データを取得（トヨタ: 代表的な銘柄で訓練）
-      const trainingSymbols = ['7203.T', 'AAPL', '9984.T', 'MSFT', '6758.T'];
-      let allData: import('@/app/types').OHLCV[] = [];
-
-      for (let i = 0; i < trainingSymbols.length; i++) {
-        setTrainingProgress(Math.round((i / trainingSymbols.length) * 10));
-        try {
-          const sym = trainingSymbols[i];
-          const market = sym.endsWith('.T') ? 'japan' as const : 'usa' as const;
-          const data = await fetchOHLCV(sym, market, 100);
-          if (data.length > 50) {
-            allData = [...allData, ...data];
-          }
-        } catch {
-          // 個別銘柄の取得失敗はスキップ
-        }
-      }
-
-      if (allData.length < 200) {
-        throw new Error(`訓練データ不足: ${allData.length}件（最低200件必要）`);
-      }
-
-      // 訓練実行
-      await mlTrainingService.train(allData, (p) => {
-        setTrainingProgress(10 + Math.round(p * 0.9));
-      });
-
-      // モデル保存
-      await mlTrainingService.saveModel('trader-pro-main');
-      setMlModelState(mlTrainingService.getState());
-      setTrainingProgress(100);
-    } catch (err) {
-      setTrainingError(err instanceof Error ? err.message : '訓練に失敗しました');
-    } finally {
-      setIsTraining(false);
-      trainingRef.current = false;
-    }
-  }, []);
 
   // データ取得
   const fetchData = useCallback(async (forceRefresh: boolean = false) => {
@@ -788,96 +720,6 @@ function PerformanceDashboardContent() {
                 </div>
               </div>
             )}
-
-            {/* AI訓練セクション */}
-            <div className="p-3 bg-[#0d2137] rounded-lg border border-[#1a3a5c]">
-              <h4 className="text-xs font-bold text-primary mb-3 flex items-center gap-1.5">
-                <span>🧠</span> AIモデル訓練
-              </h4>
-
-              {/* モデル状態表示 */}
-              {mlModelState.isTrained ? (
-                <div className="space-y-2 mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                    <span className="text-[11px] text-green-400 font-bold">訓練済みモデル稼働中</span>
-                  </div>
-                  {mlModelState.metrics && (
-                    <div className="space-y-1 text-[11px] text-[#92adc9]">
-                      <div className="flex justify-between">
-                        <span>検証精度:</span>
-                        <span className={cn(
-                          "font-bold",
-                          (mlModelState.metrics.valAccuracy * 100) >= 55 ? "text-green-400" : "text-yellow-400"
-                        )}>
-                          {(mlModelState.metrics.valAccuracy * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>訓練サンプル:</span>
-                        <span className="text-white font-bold">{mlModelState.metrics.trainSamples}件</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>最終訓練:</span>
-                        <span className="text-white font-bold text-[10px]">
-                          {new Date(mlModelState.metrics.trainedAt).toLocaleDateString('ja-JP')}
-                        </span>
-                      </div>
-                      {mlModelState.metrics.walkForwardAccuracy !== undefined && (
-                        <div className="flex justify-between">
-                          <span>Walk-Forward:</span>
-                          <span className={cn(
-                            "font-bold",
-                            (mlModelState.metrics.walkForwardAccuracy * 100) >= 55 ? "text-green-400" : "text-yellow-400"
-                          )}>
-                            {(mlModelState.metrics.walkForwardAccuracy * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 mb-3">
-                  <span className="w-2 h-2 rounded-full bg-gray-500" />
-                  <span className="text-[11px] text-gray-400">モデル未訓練（ルールベース稼働）</span>
-                </div>
-              )}
-
-              {/* 訓練進捗バー */}
-              {isTraining && (
-                <div className="mb-3">
-                  <div className="w-full h-1.5 bg-[#101922] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500 ease-out"
-                      style={{ width: `${trainingProgress}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-[#92adc9] mt-1 text-center">
-                    訓練中... {trainingProgress}%
-                  </p>
-                </div>
-              )}
-
-              {/* エラー表示 */}
-              {trainingError && (
-                <p className="text-[10px] text-red-400 mb-2">{trainingError}</p>
-              )}
-
-              {/* 訓練ボタン */}
-              <button
-                onClick={handleTrainModel}
-                disabled={isTraining}
-                className={cn(
-                  "w-full py-2 rounded-lg text-xs font-bold transition-all",
-                  isTraining
-                    ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-500 hover:to-purple-500 shadow-lg shadow-blue-900/30"
-                )}
-              >
-                {isTraining ? '🔄 訓練中...' : mlModelState.isTrained ? '🔄 再訓練' : '🚀 AIモデルを訓練'}
-              </button>
-            </div>
           </div>
         </aside>
 
