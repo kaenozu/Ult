@@ -11,7 +11,7 @@ import { Navigation } from '@/app/components/Navigation';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
 import { useGuardedOrderExecution } from '@/app/hooks/useGuardedOrderExecution';
 import { useExtendedJournalStore } from '@/app/store/journalStoreExtended';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { OrderRequest } from '@/app/types/order';
 import { JournalEntry } from '@/app/types';
 import { cn } from '@/app/lib/utils';
@@ -19,7 +19,7 @@ import { cn } from '@/app/lib/utils';
 export default function BehavioralWarningDemoPage() {
   const { executeGuardedOrder } = useGuardedOrderExecution();
   const { psychologyState, activeWarnings, recordTradeForPsychology } = useExtendedJournalStore();
-  const portfolio = useTradingStore(state => state.portfolio);
+  const portfolio = usePortfolioStore(state => state.portfolio);
   
   const [quantity, setQuantity] = useState(100);
   const [orderStatus, setOrderStatus] = useState<string>('');

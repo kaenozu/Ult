@@ -6,7 +6,7 @@ import '@testing-library/jest-dom';
 // Use actual store but mock addPosition
 // Use actual store but mock addPosition
 jest.mock('../store/portfolioStore', () => ({
-  ...jest.requireActual('../store/tradingStore'),
+  ...jest.requireActual('../store/portfolioStore'),
   usePortfolioStore: () => ({
     portfolio: { cash: 10000000 },
     addPosition: jest.fn(),

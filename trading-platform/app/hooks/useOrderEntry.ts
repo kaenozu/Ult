@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useId, Dispatch, SetStateAction } from 'react';
 import { Stock, OrderSide, OrderType, OHLCV } from '@/app/types';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 
 interface UseOrderEntryProps {
@@ -53,7 +53,7 @@ interface UseOrderEntryResult {
 }
 
 export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseOrderEntryResult {
-  const { portfolio, executeOrder } = useTradingStore();
+  const { portfolio, executeOrder } = usePortfolioStore();
   
   // Local State
   const [side, setSide] = useState<OrderSide>('BUY');

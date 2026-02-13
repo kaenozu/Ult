@@ -22,15 +22,6 @@ jest.mock('../store/uiStore', () => ({
   useUIStore: () => mockUIStore,
 }));
 
-// Mock legacy tradingStore for completeness if needed by other components, 
-// though StockTable should now use the split stores.
-const mockTradingStore = jest.fn();
-Object.assign(mockTradingStore, { setState: jest.fn() });
-
-jest.mock('../store/tradingStore', () => ({
-  useTradingStore: mockTradingStore,
-}));
-
 const mockStocks: Stock[] = [
   { symbol: '7203', name: 'トヨタ自動車', market: 'japan', sector: '自動車', price: 3000, change: 0, changePercent: 0, volume: 0 },
 ];

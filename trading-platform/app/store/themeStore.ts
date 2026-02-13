@@ -1,8 +1,8 @@
-import { useTradingStore } from './tradingStore';
+import { useUIStore } from './uiStore';
 
 export const useThemeStore = () => {
-    const theme = useTradingStore((state) => state.theme);
-    const toggleTheme = useTradingStore((state) => state.toggleTheme);
+    const theme = useUIStore((state) => state.theme);
+    const toggleTheme = useUIStore((state) => state.toggleTheme);
 
     return {
         theme,

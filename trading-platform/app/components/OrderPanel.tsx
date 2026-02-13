@@ -4,7 +4,7 @@ import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { RiskSettingsPanel } from './RiskSettingsPanel';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
 
 /**
  * OrderPanelコンポーネントのプロパティ
@@ -38,7 +38,7 @@ interface OrderPanelProps {
  * @returns {JSX.Element} 注文パネルUI
  */
 export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps) {
-  const portfolio = useTradingStore((state) => state.portfolio);
+  const portfolio = usePortfolioStore((state) => state.portfolio);
   const {
     side, setSide,
     orderType, setOrderType,

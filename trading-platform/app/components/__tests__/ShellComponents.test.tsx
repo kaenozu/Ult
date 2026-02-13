@@ -2,15 +2,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 // Mock store BEFORE importing components that use it
-jest.mock('@/app/store/tradingStore', () => ({
-    useTradingStore: jest.fn()
-}));
-
 jest.mock('@/app/store/themeStore', () => ({
     useThemeStore: jest.fn()
 }));
 
-import { useTradingStore } from '@/app/store/tradingStore';
 import { useThemeStore } from '@/app/store/themeStore';
 import { LeftSidebar } from '../LeftSidebar';
 import { RightSidebar } from '../RightSidebar';

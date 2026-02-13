@@ -1,9 +1,9 @@
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrderPanel } from '../OrderPanel';
-import { useTradingStore } from '@/app/store/tradingStore';
+import { usePortfolioStore } from '@/app/store/portfolioStore';
 // Mock stores
-jest.mock('@/app/store/tradingStore');
+jest.mock('@/app/store/portfolioStore');
 
 // Mock ResizeObserver for any chart components (if any)
 global.ResizeObserver = class ResizeObserver {
@@ -23,8 +23,8 @@ describe('OrderPanel', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        // Setup useTradingStore mock
-        (useTradingStore as unknown as jest.Mock).mockImplementation((selector) => {
+        // Setup usePortfolioStore mock
+        (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
             return selector ? selector(mockPortfolioState) : mockPortfolioState;
         });
     });
