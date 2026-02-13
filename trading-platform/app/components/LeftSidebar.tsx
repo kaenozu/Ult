@@ -1,10 +1,11 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { StockTable } from '@/app/components/StockTable';
 import { cn } from '@/app/lib/utils';
 import { Stock } from '@/app/types';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
+import ConfirmationModal from '@/app/components/ConfirmationModal';
 
 interface LeftSidebarProps {
   isOpen: boolean;
@@ -26,12 +27,21 @@ export const LeftSidebar = memo(function LeftSidebar({
   // Let's stick to props if they are passed, but StockTable inside uses store actions.
 
   const { clearWatchlist } = useWatchlistStore();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const handleClearWatchlist = () => {
-    if (window.confirm('ウォッチリストの全銘柄を削除しますか？この操作は元に戻せません。')) {
-      clearWatchlist();
-    }
-  };
+  // Memoize handlers to prevent unnecessary re-renders
+  const handleClearWatchlist = useCallback(() => {
+    setIsDeleteModalOpen(true);
+  }, []);
+
+  const confirmDelete = useCallback(() => {
+    clearWatchlist();
+    setIsDeleteModalOpen(false);
+  }, [clearWatchlist]);
+
+  const cancelDelete = useCallback(() => {
+    setIsDeleteModalOpen(false);
+  }, []);
 
   return (
     <aside className={cn(
@@ -80,13 +90,23 @@ export const LeftSidebar = memo(function LeftSidebar({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
             </svg>
           </button>
-         </div>
-       </div>
-       <StockTable
-         stocks={watchlist}
-         onSelect={onSelect}
-         selectedSymbol={selectedSymbol}
-       />
-     </aside>
-   );
+        </div>
+      </div>
+      <StockTable
+        stocks={watchlist}
+        onSelect={onSelect}
+        selectedSymbol={selectedSymbol}
+      />
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+        title="ウォッチリストのクリア"
+        message="ウォッチリストの全銘柄を削除しますか？この操作は元に戻せません。"
+        confirmText="削除する"
+        confirmButtonClass="bg-red-600 hover:bg-red-700 font-bold"
+      />
+    </aside>
+  );
 });

@@ -20,7 +20,7 @@ jest.mock('../OptimizedAccuracyService', () => ({
 jest.mock('../ConsensusSignalService', () => ({
     consensusSignalService: {
         generateConsensus: jest.fn().mockReturnValue({
-            signal: 'BUY',
+            type: 'BUY',
             confidence: 80,
             reason: 'Strong Buy',
             priceTarget: 1200,
