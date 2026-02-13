@@ -13,6 +13,7 @@ import {
   calculateRSI,
   calculateRSIMomentum,
   calculateVolatility,
+  calculateVolatilityFlexible,
   calculateMaxDrawdown,
   calculateSharpeRatio,
   calculateKellyCriterion,
@@ -156,6 +157,31 @@ describe('calculations', () => {
     it('should return 0 for insufficient data', () => {
       expect(calculateVolatility([])).toBe(0);
       expect(calculateVolatility([100])).toBe(0);
+    });
+  });
+
+  describe('calculateVolatilityFlexible', () => {
+    const returns = [0.01, -0.02, 0.03, -0.01, 0.02, -0.03, 0.01, -0.01, 0.02, 0.01];
+
+    it('should calculate population variance volatility by default', () => {
+      const vol = calculateVolatilityFlexible(returns, true, false);
+      expect(vol).toBeGreaterThan(0);
+    });
+
+    it('should calculate sample variance volatility when specified', () => {
+      const vol = calculateVolatilityFlexible(returns, true, true);
+      expect(vol).toBeGreaterThan(0);
+    });
+
+    it('should return non-annualized volatility when specified', () => {
+      const volAnnualized = calculateVolatilityFlexible(returns, true, false);
+      const volNonAnnualized = calculateVolatilityFlexible(returns, false, false);
+      expect(volAnnualized).toBeGreaterThan(volNonAnnualized);
+    });
+
+    it('should return 0 for insufficient data', () => {
+      expect(calculateVolatilityFlexible([], true, false)).toBe(0);
+      expect(calculateVolatilityFlexible([0.01], true, false)).toBe(0);
     });
   });
 

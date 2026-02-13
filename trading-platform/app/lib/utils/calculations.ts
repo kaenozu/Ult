@@ -251,6 +251,35 @@ export function calculateVolatility(
 }
 
 /**
+ * ボラティリティを計算（柔軟版）
+ * @param returns リターンの配列
+ * @param annualize 年率換算するかどうか（デフォルト: true）
+ * @param useSampleVariance 標本分散（n-1）を使うかどうか。falseの場合は母集団分散（n）を使用（デフォルト: false）
+ * @returns ボラティリティ
+ */
+export function calculateVolatilityFlexible(
+  returns: number[],
+  annualize: boolean = true,
+  useSampleVariance: boolean = false
+): number {
+  if (!returns || returns.length < 2) {
+    return 0;
+  }
+
+  const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / 
+    (useSampleVariance ? (returns.length - 1) : returns.length);
+
+  const vol = Math.sqrt(variance);
+
+  if (annualize) {
+    return vol * Math.sqrt(252) * 100;
+  }
+
+  return vol * 100;
+}
+
+/**
  * メモ化されたボラティリティ計算
  */
 export const calculateVolatilityMemoized = memoizeArray(
