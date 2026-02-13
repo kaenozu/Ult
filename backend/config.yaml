@@ -1,0 +1,60 @@
+# Ult Trading Platform Configuration
+# All magic numbers and are defined here
+
+# thresholds Market Correlation Settings
+market_correlation:
+  min_data_points: 5
+  trend_detection_threshold: 0.0005  # 0.05% per step
+  correlation_low_threshold: 0.4
+  correlation_high_threshold: 0.6
+
+# Supply/Demand Analysis Settings
+supply_demand:
+  zone_strength_default: 0.5
+  volume_threshold_multiplier: 0.5  # 50% of average
+  breakout_volume_surge: 1.5  # 50% volume surge
+
+# Trade Journal Settings
+trade_journal:
+  overtrading:
+    min_entries: 20
+    max_time_span_days: 1
+    threshold_trades_per_day: 20
+  loss_sequence:
+    time_window_seconds: 1800  # 30 minutes
+    min_length: 2
+  pattern_analysis:
+    default_min_trades: 3
+    min_win_rate_percent: 50
+    high_win_rate_threshold: 80
+    medium_win_rate_threshold: 60
+    min_confidence: 0.5
+    max_confidence_divisor: 10
+
+# Universe Management
+universe:
+  # Default US stocks (by symbol)
+  us_stocks:
+    - AAPL
+    - MSFT
+    - GOOGL
+    - AMZN
+    - TSLA
+    - META
+    - NVDA
+    - JPM
+    - V
+    - WMT
+  
+  # Default Japanese stocks (by code)
+  jp_stocks:
+    - "7203"  # Toyota
+    - "6758"  # Sony
+    - "9984"  # SoftBank
+    - "8035"  # Tokyo Electron
+    - "4519"  # Shin-Etsu
+    - "6702"  # Konica Minolta
+    - "8604"  # Nomura
+    - "6954"  # Fanuc
+    - "6367"  # Nidec
+    - "6501"  # Hitachi

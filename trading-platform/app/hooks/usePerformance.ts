@@ -41,7 +41,7 @@ export function useEventCallback<T extends (...args: unknown[]) => unknown>(
   }, [fn]);
 
   // Use useCallback with empty deps for stable reference
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+   
   return useCallback((...args: unknown[]) => ref.current(...args), []) as T;
 }
 

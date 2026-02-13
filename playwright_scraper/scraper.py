@@ -657,8 +657,8 @@ Examples:
         "--password",
         "-p",
         type=str,
-        default="",
-        help="Password for login"
+        default=os.environ.get("SCRAPER_PASSWORD", ""),
+        help="Password for login (or set SCRAPER_PASSWORD env var)"
     )
     
     # Browser settings

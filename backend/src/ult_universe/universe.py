@@ -63,7 +63,7 @@ class StockUniverse:
         """
         symbol = symbol.upper().strip()
         if symbol in self._symbols:
-            raise ValueError(f"Symbol '{symbol}' already exists")
+            raise ValueError(f"Symbol '{symbol}' already exists in universe")
         self._symbols.add(symbol)
 
     def remove(self, symbol: str) -> None:
@@ -77,7 +77,7 @@ class StockUniverse:
         """
         symbol = symbol.upper().strip()
         if symbol not in self._symbols:
-            raise ValueError(f"Symbol '{symbol}' not found")
+            raise ValueError(f"Symbol '{symbol}' not found in universe")
         self._symbols.remove(symbol)
 
     def contains(self, symbol: str) -> bool:
