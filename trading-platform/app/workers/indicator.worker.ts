@@ -1,16 +1,18 @@
 import { calculateIndicatorsSync } from './indicator-logic';
 
+const ctx: Worker = self as any;
+
 /**
  * テクニカル指標計算 Web Worker
  */
-self.onmessage = (event: MessageEvent) => {
+ctx.onmessage = (event: MessageEvent) => {
   const { data, requestId } = event.data;
   
   try {
     const results = calculateIndicatorsSync(data);
-    self.postMessage({ requestId, results, success: true });
+    ctx.postMessage({ requestId, results, success: true });
   } catch (error) {
-    self.postMessage({ 
+    ctx.postMessage({ 
       requestId, 
       error: error instanceof Error ? error.message : 'Unknown error', 
       success: false 

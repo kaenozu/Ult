@@ -60,7 +60,7 @@ export function usePsychologyAnalysis() {
     };
 
     if (journal.length > 0) runAnalysis();
-  }, [journal, aiCoach, sentimentAnalyzer, disciplineMonitor]);
+  }, [journal, aiCoach, sentimentAnalyzer, disciplineMonitor, patterns.length]); // Use patterns.length to avoid full dependency if possible, or patterns if needed
 
   return {
     journal,

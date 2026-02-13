@@ -1,13 +1,21 @@
 import { OHLCV } from '@/app/types';
 import { measurePerformance } from '../utils/performance';
 
+interface IndicatorResults {
+  rsi: number[];
+  macd: any;
+  sma20: number[];
+  sma50: number[];
+  bb: any;
+}
+
 /**
  * Worker 連携サービス
  */
 export class IndicatorWorkerService {
   private worker: Worker | null = null;
   private requestId = 0;
-  private pendingRequests = new Map<number, { resolve: Function, reject: Function }>();
+  private pendingRequests = new Map<number, { resolve: (val: IndicatorResults) => void, reject: (err: Error) => void }>();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -21,13 +29,13 @@ export class IndicatorWorkerService {
     const pending = this.pendingRequests.get(requestId);
     
     if (pending) {
-      if (success) pending.resolve(results);
+      if (success) pending.resolve(results as IndicatorResults);
       else pending.reject(new Error(error));
       this.pendingRequests.delete(requestId);
     }
   }
 
-  async calculate(data: OHLCV[]): Promise<any> {
+  async calculate(data: OHLCV[]): Promise<IndicatorResults> {
     if (!this.worker) {
       // Fallback if worker not available
       const { calculateIndicatorsSync } = await import('../../workers/indicator-logic');
@@ -35,7 +43,7 @@ export class IndicatorWorkerService {
     }
 
     return measurePerformance('worker-indicator-calc', () => {
-      return new Promise((resolve, reject) => {
+      return new Promise<IndicatorResults>((resolve, reject) => {
         const id = this.requestId++;
         this.pendingRequests.set(id, { resolve, reject });
         this.worker!.postMessage({ data, requestId: id });
