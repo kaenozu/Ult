@@ -209,6 +209,15 @@ class CacheManager:
                 'kwargs': kwargs
             }
             key_str = json.dumps(key_data, sort_keys=True, default=str)
+            
+            # Security: Limit key size to prevent DoS attacks
+            MAX_KEY_SIZE = 4096  # 4KB max
+            if len(key_str) > MAX_KEY_SIZE:
+                raise ValueError(
+                    f"Cache key too large: {len(key_str)} bytes (max: {MAX_KEY_SIZE}). "
+                    f"Function: {func_name}"
+                )
+            
             key_hash = hashlib.sha256(key_str.encode()).hexdigest()
             
             # Cache the key
