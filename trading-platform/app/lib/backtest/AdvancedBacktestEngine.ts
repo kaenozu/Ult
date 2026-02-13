@@ -165,23 +165,33 @@ export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
 // ============================================================================
 
 export class AdvancedBacktestEngine extends EventEmitter {
-  private config: BacktestConfig;
-  private data: Map<string, OHLCV[]> = new Map();
-  private trades: Trade[] = [];
-  private equityCurve: number[] = [];
-  private currentPosition: 'LONG' | 'SHORT' | null = null;
-  private entryPrice: number = 0;
-  private entryDate: string = '';
-  private currentEquity: number = 0;
-  private stopLoss: number = 0;
-  private takeProfit: number = 0;
-  private indicators: Map<string, number[]> = new Map();
+  protected config: BacktestConfig;
+  protected data: Map<string, OHLCV[]> = new Map();
+  protected trades: Trade[] = [];
+  protected equityCurve: number[] = [];
+  protected currentPosition: 'LONG' | 'SHORT' | null = null;
+  protected entryPrice: number = 0;
+  protected entryDate: string = '';
+  protected currentEquity: number = 0;
+  protected stopLoss: number = 0;
+  protected takeProfit: number = 0;
+  protected indicators: Map<string, number[]> = new Map();
+  protected currentHistoricalData: OHLCV[] = []; // For subclasses
+  
+  // Additional properties for RealisticBacktestEngine
+  protected currentQuantity: number = 0;
+  protected currentCommissionTier: string = '';
+  protected currentMarketImpact: number = 0;
+  protected currentSlippage: number = 0;
+  protected currentTimeOfDayFactor: number = 1;
+  protected currentVolatilityFactor: number = 1;
+  protected currentFees: number = 0;
   
   // Realistic mode components
-  private slippageModel?: SlippageModel;
-  private commissionCalculator?: CommissionCalculator;
-  private partialFillSimulator?: PartialFillSimulator;
-  private latencySimulator?: LatencySimulator;
+  protected slippageModel?: SlippageModel;
+  protected commissionCalculator?: CommissionCalculator;
+  protected partialFillSimulator?: PartialFillSimulator;
+  protected latencySimulator?: LatencySimulator;
 
   constructor(config: Partial<BacktestConfig> = {}) {
     super();
@@ -242,10 +252,19 @@ export class AdvancedBacktestEngine extends EventEmitter {
       indicators: this.indicators,
     };
 
+    // O(N) optimization: Pre-populate and grow incrementally
+    const historicalData: OHLCV[] = [];
+    // Pre-populate with initial data (indices 0-49)
+    for (let j = 0; j < 50; j++) {
+      historicalData.push(data[j]);
+    }
+    
     // Run through data
     for (let i = 50; i < data.length; i++) {
       const currentData = data[i];
-      const historicalData = data.slice(0, i + 1);
+      
+      // Grow historical data array instead of slicing each time - O(1) amortized
+      historicalData.push(currentData);
       context.data = historicalData;
       context.currentPosition = this.currentPosition;
       context.entryPrice = this.entryPrice;
@@ -549,7 +568,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     return side === 'BUY' ? price * slippageFactor : price / slippageFactor;
   }
 
-  private calculatePositionSize(price: number, fixedQuantity?: number): number {
+  protected calculatePositionSize(price: number, fixedQuantity?: number): number {
     if (fixedQuantity) return fixedQuantity;
 
     const maxPositionValue = this.currentEquity * (this.config.maxPositionSize / 100);

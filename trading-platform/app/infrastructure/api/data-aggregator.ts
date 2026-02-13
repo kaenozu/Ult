@@ -350,7 +350,7 @@ class MarketDataClient {
     return item.data as T;
   }
 
-  private setCache(key: string, data: any, ttl?: number) {
+  private setCache<T extends OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>(key: string, data: T, ttl?: number) {
     // Performance-optimized: LRU eviction when cache is full
     if (this.cache.size >= this.MAX_CACHE_SIZE) {
       this.evictLeastRecentlyUsed();
@@ -362,7 +362,7 @@ class MarketDataClient {
       timestamp: Date.now(),
       ttl: cacheTtl,
       accessCount: 1
-    });
+    } as CacheEntry<OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>);
   }
 
   private evictLeastRecentlyUsed() {
@@ -483,7 +483,7 @@ export function handleApiError(error: unknown, context: string): APIError {
   return new APIError(String(error), { endpoint: context });
 }
 
-export function createErrorResult(error: unknown, source: any, context?: string): APIErrorResult {
+export function createErrorResult(error: unknown, source: 'cache' | 'api' | 'aggregated' | 'idb' | 'error', context?: string): APIErrorResult {
   const apiError = handleApiError(error, context || 'Unknown operation');
   return { success: false, data: null, source, error: apiError.message };
 }
