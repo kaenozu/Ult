@@ -32,10 +32,18 @@ export interface CSPConfig {
  * CSP設定を生成
  */
 export function generateCSP(config: Partial<CSPConfig> = {}): string {
+  // NOTE: 'unsafe-inline' should be avoided in production
+  // For better security, use nonces or hashes for inline scripts
   const defaultConfig: CSPConfig = {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", "'unsafe-inline'"],
-    styleSrc: ["'self'", "'unsafe-inline'"],
+    // In production, prefer using nonces: ["'self'", "'nonce-{nonce}'"]
+    // For now, keep 'unsafe-inline' but log warning in development
+    scriptSrc: process.env.NODE_ENV === 'production' 
+      ? ["'self'"] 
+      : ["'self'", "'unsafe-inline'"],
+    styleSrc: process.env.NODE_ENV === 'production' 
+      ? ["'self'", "'unsafe-inline'"]  // Style often needs inline for CSS-in-JS
+      : ["'self'", "'unsafe-inline'"],
     imgSrc: ["'self'", 'data:', 'https:'],
     connectSrc: ["'self'", 'https://api.example.com'],
     fontSrc: ["'self'", 'https://fonts.gstatic.com'],

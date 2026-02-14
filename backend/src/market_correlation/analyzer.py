@@ -7,7 +7,7 @@ Optimized with NumPy for high-performance calculations.
 
 import math
 import statistics
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 from .models import MarketTrend
 
 try:
@@ -30,10 +30,21 @@ class MarketCorrelation:
 
     def calculate_correlation(self, stock_prices: List[float], index_prices: List[float]) -> float:
         """Calculate Pearson correlation coefficient"""
+        # Comprehensive input validation
+        if not isinstance(stock_prices, list) or not isinstance(index_prices, list):
+            raise ValueError("Both arguments must be lists")
         if len(stock_prices) != len(index_prices):
             raise ValueError("Price series must have the same length")
         if len(stock_prices) < 2:
             raise ValueError("at least 2 data points are required for correlation calculation")
+        
+        # Validate all values are finite numbers
+        all_prices = stock_prices + index_prices
+        for i, p in enumerate(all_prices):
+            if not isinstance(p, (int, float)):
+                raise ValueError(f"All prices must be numbers, got {type(p).__name__} at index {i}")
+            if math.isnan(p) or math.isinf(p):
+                raise ValueError(f"All prices must be finite numbers, got {p} at index {i}")
 
         if HAS_NUMPY:
             return float(np.corrcoef(stock_prices, index_prices)[0, 1])

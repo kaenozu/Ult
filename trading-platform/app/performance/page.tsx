@@ -19,7 +19,7 @@ import { usePerformanceStore } from '@/app/store/performanceStore';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
 import { AISignalResult, DualMatchEntry } from '@/app/lib/PerformanceScreenerService';
-import { Signal } from '../types';
+import { Signal } from '@/app/types';
 
 import { fetchOHLCV } from '@/app/data/stocks';
 import { TableVirtuoso } from 'react-virtuoso';

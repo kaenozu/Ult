@@ -268,7 +268,7 @@ export class RiskManagementService {
 
     const avgWin = order.takeProfit ? Math.abs(order.takeProfit - order.price) : riskPerShare * config.minRiskRewardRatio;
     const b = avgWin / riskPerShare;
-    const winRate = 0.5; // TODO: Use actual win rate from history
+    const winRate = this.calculateWinRate(portfolio);
     const kellyFraction = ((winRate * b) - (1 - winRate)) / b;
     const safeKelly = Math.max(0, kellyFraction * config.kellyFraction);
     
@@ -327,6 +327,56 @@ export class RiskManagementService {
       peakBalance: this.peakBalance,
       dailyStartBalance: this.dailyStartBalance
     };
+  }
+
+  /**
+   * ポートフォリオの取引履歴から勝率を計算
+   */
+  private calculateWinRate(portfolio: Portfolio): number {
+    const completedOrders = portfolio.orders?.filter(o => o.status === 'FILLED') || [];
+    if (completedOrders.length === 0) return 0.5; // デフォルト50%
+
+    // 損益計算
+    const positionMap = new Map<string, { quantity: number; avgPrice: number }>();
+    let wins = 0;
+    let losses = 0;
+
+    for (const order of completedOrders) {
+      const price = order.price || 0;
+      
+      if (order.side === 'BUY') {
+        const current = positionMap.get(order.symbol);
+        if (current) {
+          const totalQuantity = current.quantity + order.quantity;
+          const totalCost = current.quantity * current.avgPrice + order.quantity * price;
+          positionMap.set(order.symbol, {
+            quantity: totalQuantity,
+            avgPrice: totalCost / totalQuantity
+          });
+        } else {
+          positionMap.set(order.symbol, { quantity: order.quantity, avgPrice: price });
+        }
+      } else if (order.side === 'SELL') {
+        const position = positionMap.get(order.symbol);
+        if (position && position.quantity > 0) {
+          const sellQuantity = Math.min(order.quantity, position.quantity);
+          const pnl = (price - position.avgPrice) * sellQuantity;
+          
+          if (pnl > 0) wins++;
+          else if (pnl < 0) losses++;
+          
+          const remainingQuantity = position.quantity - sellQuantity;
+          if (remainingQuantity > 0) {
+            positionMap.set(order.symbol, { ...position, quantity: remainingQuantity });
+          } else {
+            positionMap.delete(order.symbol);
+          }
+        }
+      }
+    }
+
+    const totalTrades = wins + losses;
+    return totalTrades > 0 ? wins / totalTrades : 0.5;
   }
 }
 

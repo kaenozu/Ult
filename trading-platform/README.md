@@ -57,7 +57,7 @@ AI予測シグナルとテクニカル分析を活用した、次世代株式取
 ### 📱 モダンUI
 - **レスポンシブデザイン**: デスクトップ・タブレット・モバイル対応
 - **ダークテーマ**: プロフェッショナルな取引インターフェース
-- **リアルタイム更新**: WebSocketによるライブデータ反映
+- **自動更新**: 定期的なデータ取得による最新情報反映
 - **インタラクティブチャート**: Chart.jsによる高品質なグラフ表示
 - **エラーバウンダリ**: グレースフルなエラーハンドリング
 
@@ -112,10 +112,8 @@ JWT_SECRET=your-secure-secret-key-here
 # データベース接続URL（⚠️ 本番環境では必須）
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 
-# WebSocketサーバーURL
-# 開発: ws://localhost:3001
-# 本番: wss://your-domain.com/ws
-NEXT_PUBLIC_WS_URL=ws://localhost:3001
+# その他の設定
+LOG_LEVEL=info
 ```
 
 #### オプション環境変数
@@ -344,7 +342,7 @@ trading-platform/app/
 │       └── index.ts
 ├── infrastructure/            # インフラ層
 │   ├── api/                   # API基盤
-│   ├── websocket/             # WebSocket管理
+│   ├── cache/                 # キャッシュ管理
 │   └── cache/                 # キャッシュ基盤
 ├── ui/                        # UI層
 │   ├── components/            # UIコンポーネント
@@ -521,7 +519,6 @@ import { getConfig } from '@/app/lib/config/env-validator';
 const config = getConfig();
 // config.jwt.secret - 検証済みの JWT シークレット
 // config.database.url - 検証済みのデータベース URL
-// config.websocket.url - 検証済みの WebSocket URL
 ```
 
 ### セキュリティ対策
@@ -695,10 +692,10 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
 ## 🎯 ロードマップ
 
 ### v1.1 (計画中)
-- [ ] ポートフォリオ分析機能
-- [ ] バックテスト機能強化
-- [ ] WebSocketリアルタイム接続
+- [x] バックテスト機能強化
+- [ ] ポートフォリオ分析ダッシュボード
 - [ ] 高度なリスク管理機能
+- [ ] アラート・通知システム
 
 ### v1.2 (将来展望)
 - [ ] モバイルアプリ版

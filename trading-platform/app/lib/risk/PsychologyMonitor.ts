@@ -33,16 +33,32 @@ export class PsychologyMonitor {
       order => order.status === 'FILLED'
     );
 
-    const wins = completedTrades.filter(trade => {
-      // 簡易的な利益判定（実際にはentry/exit価格を比較する必要がある）
-      return trade.side === 'SELL'; // 仮の実装
-    });
+    // 損益計算
+    const tradeResults = this.calculateTradeResults(completedTrades);
+    const wins = tradeResults.filter(result => result.pnl > 0);
+    const losses = tradeResults.filter(result => result.pnl < 0);
 
-    const winRate = completedTrades.length > 0
-      ? wins.length / completedTrades.length
+    const winRate = tradeResults.length > 0
+      ? wins.length / tradeResults.length
       : 0;
 
-    const lossRate = 1 - winRate;
+    const lossRate = tradeResults.length > 0
+      ? losses.length / tradeResults.length
+      : 0;
+
+    // 平均損益計算
+    const avgWinSize = wins.length > 0
+      ? wins.reduce((sum, win) => sum + win.pnl, 0) / wins.length
+      : 0;
+
+    const avgLossSize = losses.length > 0
+      ? losses.reduce((sum, loss) => sum + Math.abs(loss.pnl), 0) / losses.length
+      : 0;
+
+    // プロフィットファクター計算
+    const totalWins = wins.reduce((sum, win) => sum + win.pnl, 0);
+    const totalLosses = losses.reduce((sum, loss) => sum + Math.abs(loss.pnl), 0);
+    const profitFactor = totalLosses > 0 ? totalWins / totalLosses : totalWins > 0 ? Infinity : 0;
 
     // 連続勝ち負けを計算
     const { consecutiveWins, consecutiveLosses } = this.calculateConsecutiveResults();
@@ -60,9 +76,9 @@ export class PsychologyMonitor {
       averageHoldTime,
       winRate,
       lossRate,
-      avgWinSize: 0, // TODO: 実際の損益データから計算
-      avgLossSize: 0, // TODO: 実際の損益データから計算
-      profitFactor: 0, // TODO: 実際の損益データから計算
+      avgWinSize,
+      avgLossSize,
+      profitFactor,
       consecutiveWins,
       consecutiveLosses,
       overTradingScore,
@@ -370,19 +386,16 @@ export class PsychologyMonitor {
     let startedAt = new Date();
     let lastLossAt = new Date();
 
-    // 損失を判定するヘルパー
-    const isLoss = (order: Order) => {
-      // 簡易的な損失判定
-      return order.side === 'BUY' && order.status === 'FILLED';
-    };
-
     // 最新から遡って連続損失をカウント
-    for (let i = history.length - 1; i >= 0; i--) {
-      if (isLoss(history[i])) {
-        if (count === 0) lastLossAt = new Date(history[i].timestamp || Date.now());
+    const tradeResults = this.calculateTradeResults(history.filter(o => o.status === 'FILLED'));
+    
+    for (let i = tradeResults.length - 1; i >= 0; i--) {
+      const result = tradeResults[i];
+      if (result.pnl < 0) {
+        if (count === 0) lastLossAt = new Date(result.trade.timestamp || Date.now());
         count++;
-        totalLoss += 0; // TODO: 実際の損益
-        startedAt = new Date(history[i].timestamp || Date.now());
+        totalLoss += Math.abs(result.pnl);
+        startedAt = new Date(result.trade.timestamp || Date.now());
       } else if (count > 0) {
         break;
       }
@@ -685,11 +698,79 @@ export class PsychologyMonitor {
   }
 
   /**
+   * 取引結果を計算（損益計算）
+   */
+  private calculateTradeResults(trades: Order[]): { pnl: number; trade: Order }[] {
+    const results: { pnl: number; trade: Order }[] = [];
+    
+    // 価格情報がない場合は従来のsideベース判定にフォールバック
+    const hasPrice = trades.some(t => t.price && t.price > 0);
+    if (!hasPrice) {
+      // 後方互換性: priceがない場合はSELL=利益、BUY=損失として扱う
+      return trades.map(trade => ({
+        pnl: trade.side === 'SELL' ? 1 : trade.side === 'BUY' ? -1 : 0,
+        trade
+      }));
+    }
+    
+    const positionMap = new Map<string, { quantity: number; avgPrice: number }>();
+
+    for (const trade of trades) {
+      const price = trade.price || 0;
+      
+      if (trade.side === 'BUY') {
+        // 買いポジションを追加/更新
+        const current = positionMap.get(trade.symbol);
+        if (current) {
+          const totalQuantity = current.quantity + trade.quantity;
+          const totalCost = current.quantity * current.avgPrice + trade.quantity * price;
+          positionMap.set(trade.symbol, {
+            quantity: totalQuantity,
+            avgPrice: totalCost / totalQuantity
+          });
+        } else {
+          positionMap.set(trade.symbol, { quantity: trade.quantity, avgPrice: price });
+        }
+      } else if (trade.side === 'SELL') {
+        // 売りで損益確定
+        const position = positionMap.get(trade.symbol);
+        if (position && position.quantity > 0) {
+          const sellQuantity = Math.min(trade.quantity, position.quantity);
+          const pnl = (price - position.avgPrice) * sellQuantity;
+          results.push({ pnl, trade });
+          
+          // ポジションを減らす
+          const remainingQuantity = position.quantity - sellQuantity;
+          if (remainingQuantity > 0) {
+            positionMap.set(trade.symbol, { ...position, quantity: remainingQuantity });
+          } else {
+            positionMap.delete(trade.symbol);
+          }
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
    * 今日の損失を計算
    */
   private getTodayLoss(): number {
-    // TODO: 実際の損益計算を実装
-    return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTimestamp = today.getTime();
+    
+    const todayTrades = this.tradingHistory.filter(
+      trade => trade.status === 'FILLED' && (trade.timestamp || 0) >= todayTimestamp
+    );
+    
+    const tradeResults = this.calculateTradeResults(todayTrades);
+    const totalLoss = tradeResults
+      .filter(result => result.pnl < 0)
+      .reduce((sum, result) => sum + Math.abs(result.pnl), 0);
+    
+    return totalLoss;
   }
 
   /**

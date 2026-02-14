@@ -85,8 +85,8 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
 
       // Memory tracking (if available)
       if (enableMemoryTracking && 'memory' in performance) {
-        const memory = (performance as any).memory;
-        if (memory.usedJSHeapSize > memory.jsHeapSizeLimit * 0.9) {
+        const memory = (performance as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+        if (memory && memory.usedJSHeapSize > memory.jsHeapSizeLimit * 0.9) {
           console.warn(`⚠️ High memory usage: ${((memory.usedJSHeapSize / 1024 / 1024).toFixed(2))}MB`);
         }
       }
@@ -194,8 +194,8 @@ export function withPerformanceMonitor<T extends object>(
       if (typeof prop === 'function' && key.startsWith('on')) {
         monitoredProps[key as keyof T] = ((...args: unknown[]) => {
           trackInteraction();
-          return (prop as any)(...args);
-        }) as any;
+          return (prop as (...args: unknown[]) => unknown)(...args);
+        }) as T[keyof T];
       }
     });
 
@@ -251,13 +251,14 @@ class GlobalPerformanceMonitor {
     // Monitor memory
     if ('memory' in performance) {
       setInterval(() => {
-        const memory = (performance as any).memory;
-        const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
-        
-        if (usagePercent > 80) {
-          console.error(`🚨 Critical memory usage: ${usagePercent.toFixed(1)}%`);
-        } else if (usagePercent > 60) {
-          console.warn(`⚠️ High memory usage: ${usagePercent.toFixed(1)}%`);
+        const memory = (performance as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+        if (memory) {
+          const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
+          if (usagePercent > 80) {
+            console.error(`🚨 Critical memory usage: ${usagePercent.toFixed(1)}%`);
+          } else if (usagePercent > 60) {
+            console.warn(`⚠️ High memory usage: ${usagePercent.toFixed(1)}%`);
+          }
         }
       }, 30000); // Check every 30 seconds
     }
@@ -297,8 +298,8 @@ class GlobalPerformanceMonitor {
     };
   }
 
-  getGlobalReport() {
-    const report: any = {};
+  getGlobalReport(): Record<string, ReturnType<typeof this.getComponentReport> & {}> {
+    const report: Record<string, ReturnType<typeof this.getComponentReport> & {}> = {};
     for (const [componentName] of this.metrics) {
       const componentReport = this.getComponentReport(componentName);
       if (componentReport) {

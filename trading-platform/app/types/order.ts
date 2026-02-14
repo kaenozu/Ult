@@ -1,7 +1,7 @@
 /**
  * 注文リクエストの型定義
  */
-import { OrderSide, OrderType, MarketType } from './shared';
+import { OrderType, MarketType } from './shared';
 
 export interface RiskConfig {
   enableTrailingStop: boolean;

@@ -7,9 +7,9 @@
 
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useUnifiedTrading } from '@/app/hooks/useUnifiedTrading';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
+import { Card, CardContent } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/Tabs';
@@ -18,14 +18,10 @@ import {
   Play,
   Square,
   RotateCcw,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Activity,
   Wallet,
   BarChart3,
-  Bell,
-  Settings,
   Shield
 } from 'lucide-react';
 
@@ -60,9 +56,7 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
     start,
     stop,
     reset,
-    placeOrder,
     closePosition,
-    updateConfig,
     isLoading,
     error,
   } = useUnifiedTrading(INITIAL_CONFIG);
@@ -83,18 +77,6 @@ export const UnifiedTradingDashboard = React.memo(function UnifiedTradingDashboa
   const formatPercent = useCallback((value: number) => {
     return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   }, []);
-
-  // Memoize portfolio stats
-  const portfolioStats = useMemo(() => {
-    if (!portfolio) return null;
-
-    return {
-      totalValue: portfolio.totalValue,
-      totalPnL: portfolio.totalPnL,
-      totalPnLPercent: portfolio.totalPnLPercent,
-      dailyPnL: portfolio.dailyPnL
-    };
-  }, [portfolio]);
 
   return (
     <div className="min-h-screen bg-[#0a0e14] text-white">

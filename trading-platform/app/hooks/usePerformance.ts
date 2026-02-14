@@ -7,15 +7,6 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { logger } from '@/app/lib/logger';
 
-// 簡易的な深層比較関数
-function isEqual(a: unknown[], b: unknown[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
-  }
-  return true;
-}
-
 // ============================================================================
 // Memoization Helpers
 // ============================================================================
@@ -41,7 +32,7 @@ export function useEventCallback<T extends (...args: unknown[]) => unknown>(
   }, [fn]);
 
   // Use useCallback with empty deps for stable reference
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+   
   return useCallback((...args: unknown[]) => ref.current(...args), []) as T;
 }
 
@@ -129,7 +120,7 @@ export function useDebounce<T>(value: T, delay: number): T {
 /**
  * コールバックのデバウンス
  */
-export function useDebouncedCallback<T extends (...args: any[]) => any>(
+export function useDebouncedCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
   delay: number
 ): (...args: Parameters<T>) => void {
@@ -152,7 +143,7 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
 /**
  * コールバックのスロットル
  */
-export function useThrottledCallback<T extends (...args: any[]) => any>(
+export function useThrottledCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -199,14 +190,14 @@ export function useVirtualList<T>(
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  const { virtualItems, totalHeight, startIndex, endIndex } = useMemo(() => {
+  const { virtualItems, totalHeight } = useMemo(() => {
     const totalHeight = items.length * itemHeight;
-    const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+    const calculatedStartIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
     const visibleCount = Math.ceil(containerHeight / itemHeight);
-    const endIndex = Math.min(items.length, startIndex + visibleCount + overscan * 2);
-    
+    const calculatedEndIndex = Math.min(items.length, calculatedStartIndex + visibleCount + overscan * 2);
+
     const virtualItems = [];
-    for (let i = startIndex; i < endIndex; i++) {
+    for (let i = calculatedStartIndex; i < calculatedEndIndex; i++) {
       virtualItems.push({
         index: i,
         style: {
@@ -219,7 +210,7 @@ export function useVirtualList<T>(
       });
     }
     
-    return { virtualItems, totalHeight, startIndex, endIndex };
+    return { virtualItems, totalHeight };
   }, [items.length, itemHeight, scrollTop, containerHeight, overscan]);
   
   useEffect(() => {

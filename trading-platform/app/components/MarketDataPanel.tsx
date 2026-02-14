@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 
 interface MarketData {
@@ -34,7 +34,7 @@ const generatePseudoRandom = (symbol: string, seed: number): number => {
 };
 
 const generateMarketData = (symbols: string[]): MarketData[] => {
-  return symbols.map((symbol, index) => {
+  return symbols.map((symbol) => {
     const priceSeed = generatePseudoRandom(symbol, 1);
     const changeSeed = generatePseudoRandom(symbol, 2);
     const volumeSeed = generatePseudoRandom(symbol, 3);

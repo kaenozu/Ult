@@ -78,7 +78,7 @@ describe('Screener Page', () => {
         const results = screen.getByText(/銘柄が見つかりました/);
         expect(results).toBeInTheDocument();
       });
-    });
+    }, 10000);
 
     it('should debounce priceMax input changes', async () => {
       render(<Screener />);

@@ -127,6 +127,30 @@ class TestSupplyDemandAnalyzer:
 
         zones = [Zone(price=100.0, volume=5000, zone_type=ZoneType.RESISTANCE, strength=0.8)]
 
+    def test_calculate_volume_by_price_empty(self):
+        """Test volume by price with empty data"""
+        analyzer = SupplyDemandAnalyzer()
+        
+        result = analyzer.calculate_volume_by_price([])
+        assert result == {}
+
+    def test_get_nearest_support_none(self):
+        """Test nearest support when none exist"""
+        analyzer = SupplyDemandAnalyzer()
+        
+        zones = [Zone(price=100.0, volume=5000, zone_type=ZoneType.RESISTANCE, strength=0.8)]
+        result = analyzer.get_nearest_support(zones, 90.0)
+        assert result is None
+
+    def test_get_nearest_resistance_none(self):
+        """Test nearest resistance when none exist"""
+        analyzer = SupplyDemandAnalyzer()
+        
+        # Only support zones exist, no resistance above current price
+        zones = [Zone(price=90.0, volume=5000, zone_type=ZoneType.SUPPORT, strength=0.8)]
+        result = analyzer.get_nearest_resistance(zones, 100.0)
+        assert result is None
+
         # Price still below resistance
         current_price = 99.0
         current_volume = 10000

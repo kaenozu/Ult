@@ -221,3 +221,31 @@ class TestMarketCorrelation:
 
         assert result["recommendation"] == "hold"
         assert result["confidence"] == "medium"
+
+    def test_correlation_with_nan_values(self):
+        """Test correlation raises error for NaN values"""
+        analyzer = MarketCorrelation()
+        
+        with pytest.raises(ValueError, match="finite numbers"):
+            analyzer.calculate_correlation([100, float('nan'), 104], [1000, 1020, 1040])
+
+    def test_correlation_with_inf_values(self):
+        """Test correlation raises error for Inf values"""
+        analyzer = MarketCorrelation()
+        
+        with pytest.raises(ValueError, match="finite numbers"):
+            analyzer.calculate_correlation([100, float('inf'), 104], [1000, 1020, 1040])
+
+    def test_detect_trend_insufficient_data(self):
+        """Test trend detection with insufficient data"""
+        analyzer = MarketCorrelation()
+        
+        result = analyzer.detect_trend([100])
+        assert result == MarketTrend.NEUTRAL
+
+    def test_calculate_beta_insufficient_data(self):
+        """Test beta calculation with insufficient data"""
+        analyzer = MarketCorrelation()
+        
+        result = analyzer.calculate_beta([100], [1000])
+        assert result == 1.0  # Default fallback

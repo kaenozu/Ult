@@ -21,35 +21,25 @@ import {
 } from './AppError';
 import {
   NetworkError,
-  ApiError,
   RateLimitError,
   TimeoutError,
   isNetworkError,
   isApiError,
 } from './ApiError';
 import {
-  ValidationError,
   isValidationError,
 } from './ValidationError';
 import {
-  NotFoundError,
-  DataNotAvailableError,
   isNotFoundError,
 } from './DataError';
 import {
   AuthenticationError,
-  AuthorizationError,
   isAuthenticationError,
 } from './AuthError';
 import {
-  TradingError,
-  OrderError,
-  RiskManagementError,
   isTradingError,
 } from './TradingError';
 import {
-  SystemError,
-  ConfigurationError,
   isSystemError,
 } from './SystemError';
 
@@ -472,8 +462,6 @@ export function getHttpStatusCode(error: unknown): number {
  * エラーからErrorTypeを取得
  */
 export function getErrorType(error: unknown): ErrorType {
-  const appError = isAppError(error) ? error : handleError(error);
-  
   if (isValidationError(error)) return ErrorType.VALIDATION;
   if (isNetworkError(error)) return ErrorType.NETWORK;
   if (isApiError(error)) return ErrorType.API;

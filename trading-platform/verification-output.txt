@@ -1,0 +1,85 @@
+[LOG] 剥 Verifying Dual Match Targets: 7013, 7011
+[LOG] 竢ｳ Running scanDual for target stocks...
+[LOG] [DualDebug] STARTING SCAN DUAL for 2 sources
+[LOG] [Script] fetching data for 7011 (force=true)...
+[LOG] [IndexedDB] Running in server environment, skipping initialization
+[LOG] [IndexedDB] Server environment - returning empty array for 7011
+[LOG] [IndexedDB] Server environment - skipping save for 7011 (245 records)
+[LOG] [Script] 7011: Fetched 262 records.
+[2026-02-13T06:43:04.356Z] [INFO]  [analyzeStock] start { symbol: '7011', market: 'japan', dataLength: 90, context: 'none' }
+[2026-02-13T06:43:04.356Z] [INFO]  [analyzeStock] windowData length: 90
+[2026-02-13T06:43:04.357Z] [INFO] [indexData length: undefined] [marketContext] relatedIndexSymbol: ^N225
+[2026-02-13T06:43:04.357Z] [INFO] [LOOKBACK: 60] [calculateForecastCone] input data length: 90
+[2026-02-13T06:43:04.358Z] [INFO] [currentPrice: 5041] [calculateForecastCone] recentData length: 60
+[2026-02-13T06:43:04.358Z] [INFO]  [calculateForecastCone] success {
+  dataLength: 90,
+  bearishLowerCount: 61,
+  bullishLowerCount: 61,
+  baseCount: 61,
+  confidence: 50
+}
+[2026-02-13T06:43:04.359Z] [INFO]  [analyzeStock] result {
+  symbol: '7011',
+  type: 'HOLD',
+  market: 'japan',
+  accuracy: 0,
+  targetPrice: 5041,
+  stopLoss: 5041,
+  confidence: 45,
+  forecastConeExists: true,
+  forecastConeConfidence: 50,
+  marketContextIndexSymbol: undefined,
+  marketContextCorrelation: undefined
+}
+[LOG] [DualDebug] 7011 Raw Signals:
+[LOG]   Consensus: HOLD (30.0%) - 縲占ｧよ悍縲第欠讓吶′蛻・淵縺励※縺翫ｊ縲∵ｷｷ蜷医す繧ｰ繝翫Ν・育｢ｺ邇・ 1%・・[LOG]   ML: BUY (63.0%) - Pred: 5.95%
+[LOG]   Data Range: 2025-10-13 to 2026-02-13 (n=90)
+[LOG]   Last Close: 5041
+[LOG] [DualMatch] 7011: perfScore=0.0, aiType=BUY, aiConf=50.4%, dualScore=35.2, trades=0 竊・笶・[LOG] [Script] fetching data for 7013 (force=true)...
+[LOG] [IndexedDB] Server environment - returning empty array for 7013
+[LOG] [IndexedDB] Server environment - skipping save for 7013 (245 records)
+[LOG] [Script] 7013: Fetched 262 records.
+[LOG] [Consensus] BUY (Score: 0.179, Conf: 50.0%) | RSI: NEUTRAL(0.00) MACD: BUY(0.96) BB: SELL(0.62)
+[2026-02-13T06:43:05.362Z] [INFO]  [analyzeStock] start { symbol: '7013', market: 'japan', dataLength: 90, context: 'none' }
+[2026-02-13T06:43:05.363Z] [INFO]  [analyzeStock] windowData length: 90
+[2026-02-13T06:43:05.363Z] [INFO] [indexData length: undefined] [marketContext] relatedIndexSymbol: ^N225
+[2026-02-13T06:43:05.363Z] [INFO] [LOOKBACK: 60] [calculateForecastCone] input data length: 90
+[2026-02-13T06:43:05.363Z] [INFO] [currentPrice: 4183] [calculateForecastCone] recentData length: 60
+[2026-02-13T06:43:05.363Z] [INFO]  [calculateForecastCone] success {
+  dataLength: 90,
+  bearishLowerCount: 61,
+  bullishLowerCount: 61,
+  baseCount: 61,
+  confidence: 50
+}
+[2026-02-13T06:43:05.363Z] [INFO]  [analyzeStock] result {
+  symbol: '7013',
+  type: 'HOLD',
+  market: 'japan',
+  accuracy: 0,
+  targetPrice: 4183,
+  stopLoss: 4183,
+  confidence: 45,
+  forecastConeExists: true,
+  forecastConeConfidence: 50,
+  marketContextIndexSymbol: undefined,
+  marketContextCorrelation: undefined
+}
+[LOG] [DualDebug] 7013 Raw Signals:
+[LOG]   Consensus: BUY (50.0%) - 縲占ｲｷ縺・閃ACD繝吶・繧ｹ縺ｮ繧ｷ繧ｰ繝翫Ν・育｢ｺ邇・ 18%・・[LOG]   ML: BUY (63.0%) - Pred: 8.48%
+[LOG]   Data Range: 2025-10-13 to 2026-02-13 (n=90)
+[LOG]   Last Close: 4183
+[LOG] [DualMatch] 7013: perfScore=0.0, aiType=BUY, aiConf=60.0%, dualScore=40.0, trades=0 竊・笶・[LOG] [Script] Scan complete. DualMatches: 0
+[LOG] 
+投 Target Analysis:
+[LOG] No Dual Matches found. Checking individual logs if they were processed but filtered.
+[LOG] Performance Results: 2
+[LOG]  - 7011: Score=0
+[LOG]  - 7013: Score=0
+[LOG] AI Results: 2
+[LOG]  - 7013: BUY 60%
+[LOG]  - 7011: BUY 50.400000000000006%
+[LOG] 
+Debug Logs:
+[LOG] [DualMatch] 7011: perfScore=0.0, aiType=BUY, aiConf=50.4%, dualScore=35.2, trades=0 竊・笶・[LOG] [DualMatch] 7013: perfScore=0.0, aiType=BUY, aiConf=60.0%, dualScore=40.0, trades=0 竊・笶・[LOG] Script finished. Waiting for flush...
+[LOG] Script finished. Waiting for flush...
