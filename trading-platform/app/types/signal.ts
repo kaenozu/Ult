@@ -2,7 +2,7 @@
  * AI Signal and Prediction Type Definitions
  */
 
-import { StrategyType } from '../lib/strategies/WinningStrategyEngine';
+
 
 export interface ModelPrediction {
   rfPrediction: number;
