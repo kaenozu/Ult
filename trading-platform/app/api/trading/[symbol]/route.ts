@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireAuth } from '@/app/lib/auth';
+import { handleApiError } from '@/app/lib/error-handler';
 
 /**
  * @swagger
@@ -75,9 +76,6 @@ export async function GET(
 
     return NextResponse.json({ signal, marketData });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal Server Error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'trading/[symbol]');
   }
 }

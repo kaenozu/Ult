@@ -8,6 +8,7 @@ import { AI_TRADING } from '../lib/constants';
 interface PortfolioState {
   portfolio: Portfolio;
   aiStatus: 'active' | 'stopped';
+  _isProcessingOrder: boolean;
 
   // Actions
   updatePortfolio: (positions: Position[]) => void;
@@ -16,6 +17,8 @@ interface PortfolioState {
   toggleAI: () => void;
   setCash: (amount: number) => void;
 }
+
+let orderLock = false;
 
 /**
  * Calculate aggregate statistics for the portfolio based on current positions.
@@ -71,117 +74,144 @@ export const usePortfolioStore = create<PortfolioState>()(
           cash: AI_TRADING.INITIAL_VIRTUAL_BALANCE,
         },
         aiStatus: 'active',
+        _isProcessingOrder: false,
 
         updatePortfolio: (positions) => syncPortfolio(() => ({ positions })),
 
         executeOrder: (orderRequest) => {
-          let result: OrderResult = { success: false };
-          const { portfolio } = get();
+          if (orderLock) {
+            return { success: false, error: 'Order processing in progress. Please retry.' };
+          }
           
-          let finalQuantity = orderRequest.quantity;
-          let finalStopLoss = orderRequest.stopLoss;
-          let finalTakeProfit = orderRequest.takeProfit;
+          orderLock = true;
+          try {
+            let result: OrderResult = { success: false };
+            const { portfolio } = get();
+            
+            let finalQuantity = orderRequest.quantity;
+            let finalStopLoss = orderRequest.stopLoss;
+            let finalTakeProfit = orderRequest.takeProfit;
 
-          if (!orderRequest.skipRiskManagement) {
-            const riskService = getRiskManagementService();
-            const riskValidation = riskService.validateOrder(orderRequest, portfolio);
+            if (!orderRequest.skipRiskManagement) {
+              const riskService = getRiskManagementService();
+              const riskValidation = riskService.validateOrder(orderRequest, portfolio);
 
-            if (!riskValidation.allowed) {
-              return { success: false, error: `Risk Denied: ${riskValidation.reasons.join('; ')}` };
+              if (!riskValidation.allowed) {
+                return { success: false, error: `Risk Denied: ${riskValidation.reasons.join('; ')}` };
+              }
+              if (riskValidation.adjustedQuantity !== undefined) finalQuantity = riskValidation.adjustedQuantity;
+              if (riskValidation.stopLossPrice !== undefined) finalStopLoss = riskValidation.stopLossPrice;
+              if (riskValidation.takeProfitPrice !== undefined) finalTakeProfit = riskValidation.takeProfitPrice;
             }
-            if (riskValidation.adjustedQuantity !== undefined) finalQuantity = riskValidation.adjustedQuantity;
-            if (riskValidation.stopLossPrice !== undefined) finalStopLoss = riskValidation.stopLossPrice;
-            if (riskValidation.takeProfitPrice !== undefined) finalTakeProfit = riskValidation.takeProfitPrice;
-          }
 
-          const totalCost = finalQuantity * orderRequest.price;
-          if (orderRequest.side === 'LONG' && portfolio.cash < totalCost) {
-            return { success: false, error: 'Insufficient Funds' };
-          }
+            const totalCost = finalQuantity * orderRequest.price;
+            if (orderRequest.side === 'LONG' && portfolio.cash < totalCost) {
+              return { success: false, error: 'Insufficient Funds' };
+            }
 
-          // Atomic execution
-          syncPortfolio((state) => {
-            if (orderRequest.side === 'LONG' && state.portfolio.cash < totalCost) return {};
+            // Atomic execution
+            syncPortfolio((state) => {
+              if (orderRequest.side === 'LONG' && state.portfolio.cash < totalCost) return {};
 
-            const orderId = `at_ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-            const existingIdx = state.portfolio.positions.findIndex(p => p.symbol === orderRequest.symbol && p.side === orderRequest.side);
-            const positions = [...state.portfolio.positions];
+              const orderId = `at_ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+              const existingIdx = state.portfolio.positions.findIndex(p => p.symbol === orderRequest.symbol && p.side === orderRequest.side);
+              const positions = [...state.portfolio.positions];
 
-            if (existingIdx >= 0) {
-              const p = positions[existingIdx];
-              positions[existingIdx] = {
-                ...p,
-                quantity: p.quantity + finalQuantity,
-                avgPrice: (p.avgPrice * p.quantity + orderRequest.price * finalQuantity) / (p.quantity + finalQuantity),
-                currentPrice: orderRequest.price,
-              };
-            } else {
-              positions.push({
+              if (existingIdx >= 0) {
+                const p = positions[existingIdx];
+                positions[existingIdx] = {
+                  ...p,
+                  quantity: p.quantity + finalQuantity,
+                  avgPrice: (p.avgPrice * p.quantity + orderRequest.price * finalQuantity) / (p.quantity + finalQuantity),
+                  currentPrice: orderRequest.price,
+                  stopLoss: finalStopLoss,
+                  takeProfit: finalTakeProfit,
+                };
+              } else {
+                positions.push({
+                  symbol: orderRequest.symbol,
+                  name: orderRequest.name,
+                  market: orderRequest.market,
+                  side: orderRequest.side,
+                  quantity: finalQuantity,
+                  avgPrice: orderRequest.price,
+                  currentPrice: orderRequest.price,
+                  change: 0,
+                  entryDate: new Date().toISOString(),
+                  stopLoss: finalStopLoss,
+                  takeProfit: finalTakeProfit,
+                });
+              }
+
+              const newCash = orderRequest.side === 'LONG' ? state.portfolio.cash - totalCost : state.portfolio.cash + totalCost;
+              const newOrder = {
+                id: orderId,
                 symbol: orderRequest.symbol,
-                name: orderRequest.name,
-                market: orderRequest.market,
-                side: orderRequest.side,
+                side: (orderRequest.side === 'LONG' ? 'BUY' : 'SELL') as 'BUY' | 'SELL',
+                type: orderRequest.orderType,
                 quantity: finalQuantity,
-                avgPrice: orderRequest.price,
-                currentPrice: orderRequest.price,
-                change: 0,
-                entryDate: new Date().toISOString(),
-              });
+                price: orderRequest.price,
+                status: 'FILLED' as const,
+                date: new Date().toISOString(),
+                timestamp: Date.now(),
+                stopLoss: finalStopLoss,
+                takeProfit: finalTakeProfit,
+              };
+
+              const newPos = positions[existingIdx >= 0 ? existingIdx : positions.length - 1];
+              result = { success: true, orderId, remainingCash: newCash, newPosition: { ...newPos } };
+
+              return {
+                cash: newCash,
+                positions,
+                orders: [...state.portfolio.orders, newOrder],
+              };
+            });
+
+            if (result.success) {
+              setTimeout(() => {
+                import('../lib/services/PsychologyService').then(({ psychologyService }) => {
+                  const { portfolio: currentPortfolio } = get();
+                  psychologyService.analyze(currentPortfolio.orders, currentPortfolio.positions);
+                }).catch((err) => {
+                  console.error('[portfolioStore] PsychologyService analysis failed:', err);
+                });
+              }, 10);
             }
 
-            const newCash = orderRequest.side === 'LONG' ? state.portfolio.cash - totalCost : state.portfolio.cash + totalCost;
-            const newOrder = {
-              id: orderId,
-              symbol: orderRequest.symbol,
-              side: (orderRequest.side === 'LONG' ? 'BUY' : 'SELL') as 'BUY' | 'SELL',
-              type: orderRequest.orderType,
-              quantity: finalQuantity,
-              price: orderRequest.price,
-              status: 'FILLED' as const,
-              date: new Date().toISOString(),
-              timestamp: Date.now(),
-            };
-
-            const newPos = positions[existingIdx >= 0 ? existingIdx : positions.length - 1];
-            result = { success: true, orderId, remainingCash: newCash, newPosition: { ...newPos } };
-
-            return {
-              cash: newCash,
-              positions,
-              orders: [...state.portfolio.orders, newOrder],
-            };
-          });
-
-          if (result.success) {
-            setTimeout(() => {
-              import('../lib/services/PsychologyService').then(({ psychologyService }) => {
-                const { portfolio: currentPortfolio } = get();
-                psychologyService.analyze(currentPortfolio.orders, currentPortfolio.positions);
-              });
-            }, 10);
+            return result;
+          } finally {
+            orderLock = false;
           }
-
-          return result;
         },
 
         closePosition: (symbol, exitPrice) => {
-          let result: OrderResult = { success: false };
-          syncPortfolio((state) => {
-            const idx = state.portfolio.positions.findIndex(p => p.symbol === symbol);
-            if (idx < 0) return {};
+          if (orderLock) {
+            return { success: false, error: 'Order processing in progress. Please retry.' };
+          }
+          
+          orderLock = true;
+          try {
+            let result: OrderResult = { success: false };
+            syncPortfolio((state) => {
+              const idx = state.portfolio.positions.findIndex(p => p.symbol === symbol);
+              if (idx < 0) return {};
 
-            const p = state.portfolio.positions[idx];
-            const profit = p.side === 'LONG' ? (exitPrice - p.avgPrice) * p.quantity : (p.avgPrice - exitPrice) * p.quantity;
-            const newPositions = state.portfolio.positions.filter(pos => pos.symbol !== symbol);
-            const newCash = state.portfolio.cash + (p.avgPrice * p.quantity) + profit;
+              const p = state.portfolio.positions[idx];
+              const profit = p.side === 'LONG' ? (exitPrice - p.avgPrice) * p.quantity : (p.avgPrice - exitPrice) * p.quantity;
+              const newPositions = state.portfolio.positions.filter(pos => pos.symbol !== symbol);
+              const newCash = state.portfolio.cash + (p.avgPrice * p.quantity) + profit;
 
-            result = { success: true, remainingCash: newCash };
-            return {
-              positions: newPositions,
-              cash: newCash,
-            };
-          });
-          return result;
+              result = { success: true, remainingCash: newCash };
+              return {
+                positions: newPositions,
+                cash: newCash,
+              };
+            });
+            return result;
+          } finally {
+            orderLock = false;
+          }
         },
 
         toggleAI: () => set((state) => ({ aiStatus: state.aiStatus === 'active' ? 'stopped' : 'active' })),
