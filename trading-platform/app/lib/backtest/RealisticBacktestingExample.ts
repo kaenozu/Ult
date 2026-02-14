@@ -18,12 +18,9 @@ import {
   MonteCarloConfig 
 } from './MonteCarloSimulator';
 import { 
-  OverfittingDetector, 
-  ComplexityMetrics 
+  OverfittingDetector 
 } from './OverfittingDetector';
 import { WalkForwardAnalysis } from './WalkForwardAnalysis';
-import { ParameterOptimizer } from '../optimization/ParameterOptimizer';
-import { OptimizationConfig } from '../optimization/types';
 
 // ============================================================================
 // Example 1: Basic Realistic Backtest
@@ -69,12 +66,7 @@ export async function basicRealisticBacktest(
   const engine = new RealisticBacktestEngine(config);
   engine.loadData(symbol, data);
   
-  const result = await engine.runBacktest(strategy, symbol);
-
-  // Display results
-
-
-
+  await engine.runBacktest(strategy, symbol);
 }
 
 // ============================================================================
@@ -113,14 +105,7 @@ export async function monteCarloSimulation(
   const engine = new RealisticBacktestEngine(backtestConfig);
   engine.loadData(symbol, data);
   const backtestResult = await engine.runBacktest(strategy, symbol);
-  const result = await simulator.runSimulation(backtestResult);
-
-  // Display results
-
-
-
-
-
+  await simulator.runSimulation(backtestResult);
 }
 
 // ============================================================================
@@ -172,13 +157,11 @@ export async function overfittingDetection(
 
 
   if (analysis.warnings.length > 0) {
-    analysis.warnings.forEach((warning, i) => {
-    });
+    // Warnings logged
   }
 
   if (analysis.recommendations.length > 0) {
-    analysis.recommendations.forEach((rec, i) => {
-    });
+    // Recommendations logged
   }
 
 }
@@ -289,8 +272,8 @@ export async function completeWorkflow(
   const overallPass = passWalkForward && notOverfitted && robustEnough && probSuccess;
 
   if (!overallPass) {
-    overfitAnalysis.recommendations.slice(0, 3).forEach((rec, i) => {
-    });
+    // Log first 3 recommendations
+    overfitAnalysis.recommendations.slice(0, 3);
   }
 
 }

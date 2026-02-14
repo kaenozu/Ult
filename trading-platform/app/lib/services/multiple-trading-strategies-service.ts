@@ -4,8 +4,7 @@
  * このモジュールは、複数の取引戦略（ムーメメント、均値回帰、ブレイクアウトなど）を実装する機能を提供します。
  */
 
-import { OHLCV, Stock, Signal } from '@/app/types';
-import { calculateRSI, calculateSMA, calculateBollingerBands, calculateATR } from '@/app/lib/utils';
+import { OHLCV } from '@/app/types';
 
 export interface StrategyInput {
   symbol: string;
@@ -161,7 +160,6 @@ class MultipleTradingStrategiesService {
     const rsi = indicators.rsi[indicators.rsi.length - 1];
     const bb = indicators.bollinger;
     const upperBand = bb.upper[bb.upper.length - 1];
-    const lowerBand = bb.lower[bb.lower.length - 1];
     const middleBand = bb.middle[bb.middle.length - 1];
 
     let signal: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
@@ -240,7 +238,6 @@ class MultipleTradingStrategiesService {
     const bb = indicators.bollinger;
     const upperBand = bb.upper[bb.upper.length - 1];
     const lowerBand = bb.lower[bb.lower.length - 1];
-    const middleBand = bb.middle[bb.middle.length - 1];
 
     // 遽20本の高値と安値を取得
     const recentHighs = priceData.slice(-20).map(c => c.high);
@@ -286,8 +283,7 @@ class MultipleTradingStrategiesService {
     }
 
     // タージェット価格とストップロスを計算
-    const atr = indicators.atr[indicators.atr.length - 1];
-    const targetPrice = signal === 'BUY' 
+    const targetPrice = signal === 'BUY'
       ? latestCandle.close * 1.05 // 5%の利益目標
       : latestCandle.close * 0.95; // 5%の利益目標
     const stopLoss = signal === 'BUY'
@@ -364,11 +360,10 @@ class MultipleTradingStrategiesService {
    */
   executeVolatilityAdaptiveStrategy(input: StrategyInput, config?: StrategyConfig): StrategyOutput {
     const cfg = { ...this.defaultConfig, ...config };
-    const { priceData, indicators } = input;
+    const { priceData } = input;
 
     // ボラティリティを計算
     const volatility = this.calculateVolatility(priceData);
-    const atr = indicators.atr[indicators.atr.length - 1];
 
     // ボラティリティが高ければブレイクアウト戦略を優先、低ければ均値回帰戦略を優先
     if (volatility > 0.025) { // 高ボラティリティ（2.5%以上）

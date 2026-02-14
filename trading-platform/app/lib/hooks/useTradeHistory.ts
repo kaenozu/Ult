@@ -44,8 +44,9 @@ export function useTradeHistory(): UseTradeHistoryReturn {
         await refreshTrades();
         await loadMonthlyPerformance();
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to initialize'));
-        logger.error('Failed to initialize trade history', err);
+        const error = err instanceof Error ? err : new Error('Failed to initialize');
+        setError(error);
+        logger.error('Failed to initialize trade history', error);
       } finally {
         setIsLoading(false);
       }
@@ -61,7 +62,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       setTrades(result.trades);
       setTotalCount(result.totalCount);
     } catch (err) {
-      logger.error('Failed to refresh trades', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to refresh trades', error);
       throw err;
     }
   }, []);
@@ -72,7 +74,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       const performance = await indexedDBService.getAllMonthlyPerformance();
       setMonthlyPerformance(performance);
     } catch (err) {
-      logger.error('Failed to load monthly performance', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to load monthly performance', error);
     }
   }, []);
 
@@ -83,7 +86,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       await refreshTrades();
       logger.info('Trade saved successfully', { symbol: trade.symbol });
     } catch (err) {
-      logger.error('Failed to save trade', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to save trade', error);
       throw err;
     }
   }, [refreshTrades]);
@@ -95,7 +99,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       await refreshTrades();
       logger.info(`${newTrades.length} trades saved`);
     } catch (err) {
-      logger.error('Failed to save trades', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to save trades', error);
       throw err;
     }
   }, [refreshTrades]);
@@ -106,7 +111,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       const result = await indexedDBService.getTrades({ symbol });
       return result.trades;
     } catch (err) {
-      logger.error('Failed to get trades by symbol', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to get trades by symbol', error);
       throw err;
     }
   }, []);
@@ -117,7 +123,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       const result = await indexedDBService.getTrades({ startDate, endDate });
       return result.trades;
     } catch (err) {
-      logger.error('Failed to get trades by date range', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to get trades by date range', error);
       throw err;
     }
   }, []);
@@ -130,7 +137,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       logger.info('Data exported successfully');
       return jsonString;
     } catch (err) {
-      logger.error('Failed to export data', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to export data', error);
       throw err;
     }
   }, []);
@@ -144,7 +152,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       await loadMonthlyPerformance();
       logger.info('Data imported successfully');
     } catch (err) {
-      logger.error('Failed to import data', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to import data', error);
       throw err;
     }
   }, [refreshTrades, loadMonthlyPerformance]);
@@ -158,7 +167,8 @@ export function useTradeHistory(): UseTradeHistoryReturn {
       setMonthlyPerformance([]);
       logger.info('All data cleared');
     } catch (err) {
-      logger.error('Failed to clear data', err);
+      const error = err instanceof Error ? err : new Error(String(err));
+      logger.error('Failed to clear data', error);
       throw err;
     }
   }, []);
