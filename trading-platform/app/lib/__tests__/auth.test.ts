@@ -117,9 +117,9 @@ describe('Authentication Module', () => {
     });
 
     it('should return null for token with wrong secret', () => {
-      // Generate token with different secret
+      // Generate token with different secret (must be 32+ chars)
       const originalSecret = process.env.JWT_SECRET;
-      process.env.JWT_SECRET = 'different-secret';
+      process.env.JWT_SECRET = 'different-secret-key-that-is-32-characters-long';
       resetConfig(); // ensure new secret is picked up
       const token = generateAuthToken(validUserId);
       
