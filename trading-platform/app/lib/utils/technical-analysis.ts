@@ -236,51 +236,106 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
   const result: number[] = [];
   let sum = 0;
   let validCount = 0;
-  const length = isObjectArray ? data.length : highs.length;
 
-  for (let i = 0; i < length; i++) {
-    let currentHigh: number;
-    let currentLow: number;
-    let prevClose: number | undefined;
+  if (isObjectArray) {
+    const length = data.length;
+    // Initial loop
+    for (let i = 0; i < length && i < period; i++) {
+      const currentHigh = data[i].high;
+      const currentLow = data[i].low;
+      let tr = NaN;
 
-    if (isObjectArray) {
-      currentHigh = data[i].high;
-      currentLow = data[i].low;
-      prevClose = i > 0 ? data[i - 1].close : undefined;
-    } else {
-      currentHigh = highs[i];
-      currentLow = lows[i];
-      prevClose = i > 0 ? closes[i - 1] : undefined;
-    }
+      if (i === 0) {
+        tr = currentHigh - currentLow;
+      } else {
+        const prevClose = data[i - 1].close;
+        tr = Math.max(
+          currentHigh - currentLow,
+          Math.abs(currentHigh - prevClose),
+          Math.abs(currentLow - prevClose)
+        );
+      }
 
-    let tr = NaN;
-    if (i === 0) {
-      tr = currentHigh - currentLow;
-    } else if (prevClose !== undefined) {
-      tr = Math.max(
-        currentHigh - currentLow,
-        Math.abs(currentHigh - prevClose),
-        Math.abs(currentLow - prevClose)
-      );
-    }
-
-    if (i < period) {
       if (!isNaN(tr)) {
         sum += tr;
         validCount++;
       }
       result.push(NaN);
+
       if (i === period - 1) {
         result[i] = validCount === period ? sum / period : NaN;
       }
-    } else {
-      if (!isNaN(tr) && !isNaN(result[i - 1])) {
-        result.push((result[i - 1] * (period - 1) + tr) / period);
+    }
+
+    // Remaining loop
+    for (let i = period; i < length; i++) {
+      const currentHigh = data[i].high;
+      const currentLow = data[i].low;
+      const prevClose = data[i - 1].close;
+      const tr = Math.max(
+        currentHigh - currentLow,
+        Math.abs(currentHigh - prevClose),
+        Math.abs(currentLow - prevClose)
+      );
+
+      const prevResult = result[i - 1];
+      if (!isNaN(tr) && !isNaN(prevResult)) {
+        result.push((prevResult * (period - 1) + tr) / period);
+      } else {
+        result.push(NaN);
+      }
+    }
+  } else {
+    const length = highs.length;
+    // Initial loop
+    for (let i = 0; i < length && i < period; i++) {
+      const currentHigh = highs[i];
+      const currentLow = lows[i];
+      let tr = NaN;
+
+      if (i === 0) {
+        tr = currentHigh - currentLow;
+      } else {
+        const prevClose = closes[i - 1];
+        tr = Math.max(
+          currentHigh - currentLow,
+          Math.abs(currentHigh - prevClose),
+          Math.abs(currentLow - prevClose)
+        );
+      }
+
+      if (!isNaN(tr)) {
+        sum += tr;
+        validCount++;
+      }
+      result.push(NaN);
+
+      if (i === period - 1) {
+        result[i] = validCount === period ? sum / period : NaN;
+      }
+    }
+
+    // Remaining loop
+    for (let i = period; i < length; i++) {
+      const currentHigh = highs[i];
+      const currentLow = lows[i];
+      const prevClose = closes[i - 1];
+
+      const tr = Math.max(
+        currentHigh - currentLow,
+        Math.abs(currentHigh - prevClose),
+        Math.abs(currentLow - prevClose)
+      );
+
+      const prevResult = result[i - 1];
+      if (!isNaN(tr) && !isNaN(prevResult)) {
+        result.push((prevResult * (period - 1) + tr) / period);
       } else {
         result.push(NaN);
       }
     }
   }
+
   return result;
 }
 

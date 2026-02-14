@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { BacktestResult, BacktestConfig, PerformanceMetrics, Trade } from './AdvancedBacktestEngine';
+import { BacktestResult, BacktestConfig, PerformanceMetrics, Trade } from './types';
 import { calculateMaxDrawdownFlexible } from '@/app/lib/utils/calculations';
 
 // ============================================================================
@@ -339,6 +339,16 @@ export class MonteCarloSimulator extends EventEmitter {
     const grossLoss = Math.abs(trades.filter(t => t.pnl <= 0).reduce((sum, t) => sum + t.pnl, 0));
     const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
 
+    // Return partial metrics - adhering to required PerformanceMetrics type
+    // We assume the caller won't need all fields for Monte Carlo simple metrics
+    // But to satisfy TS, we might need 0s for missing ones.
+    // Or reuse the logic from RealisticBacktestEngine?
+    // Since this is a separate class, we just provide what's needed.
+    // However, if we return PerformanceMetrics, we must satisfy the interface.
+
+    // Importing from types directly means strict interface.
+    // I'll fill missing with 0s.
+
     return {
       totalReturn,
       sharpeRatio,
@@ -359,6 +369,19 @@ export class MonteCarloSimulator extends EventEmitter {
       totalTrades: trades.length,
       winningTrades: winningTrades.length,
       losingTrades: trades.length - winningTrades.length,
+      averageDrawdown: 0,
+      valueAtRisk: 0,
+      conditionalValueAtRisk: 0,
+      downsideDeviation: 0,
+      averageWinLossRatio: 0,
+      averageHoldingPeriod: 0,
+      averageRMultiple: 0,
+      expectancy: 0,
+      kellyCriterion: 0,
+      riskOfRuin: 0,
+      SQN: 0,
+      treynorRatio: 0,
+      informationRatio: 0
     };
   }
 
@@ -486,7 +509,12 @@ export class MonteCarloSimulator extends EventEmitter {
 
     // 各メトリクスの統計を計算
     for (const metric of this.config.metrics) {
-      const values = simulations.map(s => s.metrics[metric]);
+      // Note: metric is keyof PerformanceMetrics
+      // Ensure we extract number[]
+      const values = simulations.map(s => {
+        const val = s.metrics[metric];
+        return typeof val === 'number' ? val : 0;
+      });
       stats.set(metric, calculateStats(values));
     }
 

@@ -54,7 +54,7 @@ interface UseOrderEntryResult {
 
 export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseOrderEntryResult {
   const { portfolio, executeOrder } = usePortfolioStore();
-  
+
   // Local State
   const [side, setSide] = useState<OrderSide>('BUY');
   const [orderType, setOrderType] = useState<OrderType>('MARKET');
@@ -63,7 +63,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
   const [isConfirming, setIsConfirming] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   // Risk management configuration
   const [riskConfig, setRiskConfig] = useState<DynamicRiskConfig>({
     maxRiskPerTrade: 0.02, // 2%
@@ -75,7 +75,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
     trailingStopATRMultiple: 2.0,
     trailingStopMinPercent: 1.0,
   });
-  
+
   const [showRiskSettings, setShowRiskSettings] = useState(false);
 
   // ID Generation (stable across renders)
@@ -115,6 +115,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
         price: orderType === 'LIMIT' ? price : currentPrice,
         name: stock.name, // Add required fields
         market: stock.market,
+        riskConfig, // Pass risk configuration to the store
       });
 
       if (result.success) {

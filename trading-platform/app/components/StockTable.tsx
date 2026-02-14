@@ -131,6 +131,9 @@ interface StockTableProps {
   showVolume?: boolean;
 }
 
+// Initialize collator outside component for performance
+const symbolCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
 // SortIcon component defined outside the main component to avoid re-creation
 interface SortIconProps {
   field: SortField;
@@ -187,25 +190,25 @@ export const StockTable = memo(({
   // Sort stocks
   const sortedStocks = useMemo(() => {
     const sorted = [...stocks].sort((a, b) => {
+      // Handle symbol sorting with optimized collator
+      if (sortField === 'symbol') {
+        const result = symbolCollator.compare(a.symbol, b.symbol);
+        return sortDirection === 'asc' ? result : -result;
+      }
+
       let aVal: number | string = a[sortField];
       let bVal: number | string = b[sortField];
-
-      // Handle string fields
-      if (sortField === 'symbol') {
-        aVal = a.symbol.toLowerCase();
-        bVal = b.symbol.toLowerCase();
-      }
 
       // Handle numeric comparison
       if (typeof aVal === 'number' && typeof bVal === 'number') {
         return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
       }
 
-      // String comparison
+      // String comparison (fallback for non-symbol string fields)
       if (typeof aVal === 'string' && typeof bVal === 'string') {
-        return sortDirection === 'asc' 
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
+        // Use the optimized collator for any string comparison
+        const result = symbolCollator.compare(aVal as string, bVal as string);
+        return sortDirection === 'asc' ? result : -result;
       }
 
       return 0;
