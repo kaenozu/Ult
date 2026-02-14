@@ -19,9 +19,6 @@ const DUAL_SCORE_WEIGHT_PERF = 0.5;  // パフォーマンススコア重み
 const DUAL_SCORE_WEIGHT_AI = 0.5;    // AI信頼度重み
 const DUAL_SCORE_BONUS_BUY = 10;     // BUYボーナス
 const DUAL_SCORE_BONUS_SELL = 5;     // SELLボーナス
-
-import { logger } from '@/app/core/logger';
-// const logger = { warn: (...args: any[]) => console.warn('[PerformanceScreener]', ...args) };
 export interface PerformanceScore {
   symbol: string;
   name: string;
@@ -167,10 +164,7 @@ export class PerformanceScreenerService {
 
     // デフォルト設定
     const {
-      minWinRate = 0,
-      minProfitFactor = 0,
       minTrades = 5,
-      maxDrawdown = 100,
       market = 'all',
       topN = 20,
       lookbackDays = 90,
@@ -289,19 +283,12 @@ export class PerformanceScreenerService {
     const dualMatches: DualMatchEntry[] = [];
     const dualMatchSymbols: string[] = [];
 
-    // 診断カウンター
-    let skipDataInsufficient = 0;
-    let skipFetchError = 0;
-    let skipLowTrades = 0;
-    let passedPerf = 0;
-
     for (let i = 0; i < filteredSources.length; i++) {
       const ds = filteredSources[i];
       try {
         // 1回のデータ取得を共有
         const data = await ds.fetchData();
         if (data.length < MIN_DATA_REQUIRED) {
-          skipDataInsufficient++;
           continue;
         }
         const actualLookback = Math.min(data.length, lookbackDays);
@@ -391,10 +378,7 @@ export class PerformanceScreenerService {
 
         // パフォーマンスタブ用
         if (perfScore.totalTrades >= minTrades) {
-          passedPerf++;
           performanceResults.push(perfScore);
-        } else {
-          skipLowTrades++;
         }
 
         // デュアルマッチ判定
@@ -428,7 +412,6 @@ export class PerformanceScreenerService {
           aiSignalResults.push(aiResult);
         }
       } catch (err) {
-        skipFetchError++;
         console.warn(`[PerformanceScreener] Dual scan failed for ${ds.symbol}:`, err);
       }
 
