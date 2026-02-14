@@ -215,9 +215,11 @@ export function sanitizeText(
   // XSS検出
   if (detectXss(input)) {
     warnings.push('Potential XSS pattern detected');
-    if (!options.allowHtml) {
-      input = escapeHtml(input);
-    }
+  }
+
+  // HTMLエスケープ (XSS検出に関わらず、allowHtmlがfalseならエスケープ)
+  if (!options.allowHtml) {
+    input = escapeHtml(input);
   }
   
   // SQLインジェクション検出
