@@ -4,9 +4,13 @@ Performance Monitor for Backend
 Provides performance monitoring utilities for measuring function execution time.
 """
 
+import logging
 import time
 from functools import wraps
 from typing import Callable, TypeVar, Any, Dict, List
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
 
@@ -40,7 +44,7 @@ class PerformanceMonitor:
         # Warning: 1 second threshold
         if duration > 1.0:
             warning = f"Performance warning: {name} took {duration:.2f}s"
-            print(warning)
+            logger.warning(warning)
             if name not in self._warnings:
                 self._warnings[name] = []
             self._warnings[name].append(warning)
@@ -143,7 +147,7 @@ def monitor_performance(name: str):
             # Warning: 1 second threshold
             if duration > 1.0:
                 warning = f"Performance warning: {name} took {duration:.2f}s"
-                print(warning)
+                logger.warning(warning)
                 if name not in performance_monitor._warnings:
                     performance_monitor._warnings[name] = []
                 performance_monitor._warnings[name].append(warning)
