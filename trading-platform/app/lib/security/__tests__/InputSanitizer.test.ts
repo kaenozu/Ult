@@ -141,6 +141,11 @@ describe('InputSanitizer', () => {
       expect(result.errors).toContain('Null byte detected');
       expect(result.sanitized).toBe('testtest');
     });
+
+    it('should escape HTML when allowHtml is false, even if no XSS detected', () => {
+      const result = sanitizeText('<b>bold</b>');
+      expect(result.sanitized).toBe('&lt;b&gt;bold&lt;&#x2F;b&gt;');
+    });
   });
 
   describe('sanitizeSymbol', () => {
