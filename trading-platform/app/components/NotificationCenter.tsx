@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAlertStore } from '@/app/store/alertStore';
-import { Alert, AlertSeverity, AlertSettings } from '@/app/lib/alertTypes';
+
 import { cn } from '@/app/lib/utils';
 import { Bell, X, Settings, Trash2, Check, Filter, BellOff } from 'lucide-react';
 import {

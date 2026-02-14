@@ -2,7 +2,7 @@
 
 import { Badge } from '@/app/components/ui/Badge';
 import { cn } from '@/app/lib/utils';
-import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { TrendingUp, AlertTriangle } from 'lucide-react';
 
 // Constants for accuracy calculations
 const PERCENTAGE_MULTIPLIER = 100;
