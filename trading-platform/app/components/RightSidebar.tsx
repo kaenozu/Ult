@@ -39,7 +39,6 @@ export const RightSidebar = ({
     alert: displayStock ? (
       <AlertPanel
         symbol={displayStock.symbol}
-        stockPrice={displayStock.price}
       />
     ) : null,
     order: displayStock ? (

@@ -1,4 +1,4 @@
-import { OHLCV, Signal, Stock } from '../types';
+import { OHLCV, Signal } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
@@ -7,14 +7,11 @@ import {
     RSI_CONFIG,
     SMA_CONFIG,
     OPTIMIZATION,
-    SIGNAL_THRESHOLDS,
-    RISK_MANAGEMENT,
-    PRICE_CALCULATION,
-    VOLATILITY
+    PRICE_CALCULATION
 } from './constants';
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
-import { exitStrategy, ExitType, TrailingStopConfig, TimeBasedExitConfig, CompoundExitConfig } from './ExitStrategy';
+import { exitStrategy } from './ExitStrategy';
 import { mlIntegrationService } from './services/MLIntegrationService';
 
 import { logger } from '@/app/core/logger';

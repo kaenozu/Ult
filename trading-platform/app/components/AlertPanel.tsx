@@ -1,20 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useAlertStore } from '@/app/store/alertStore';
-import { Alert, AlertSeverity, AlertType, AlertSettings } from '@/app/lib/alertTypes';
+import { AlertSeverity, AlertType, AlertSettings } from '@/app/lib/alertTypes';
 import { cn } from '@/app/lib/utils';
-import { TrendingUp, TrendingDown, AlertTriangle, Check, X, Filter, Bell, Target, Zap, Activity, Settings } from 'lucide-react';
+import { Check, Filter, Bell, Target, Zap, Activity, Settings } from 'lucide-react';
 import {
-  getSeverityColor as getSeverityColorBase,
   formatTimestamp,
   useAlertLogic
 } from '@/app/hooks/useAlertLogic';
 
 interface AlertPanelProps {
   symbol?: string;
-  stockPrice?: number;
 }
 
-export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
+export function AlertPanel({ symbol }: AlertPanelProps) {
   const {
     alerts,
     unreadCount,
@@ -30,8 +28,7 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
   
   const {
     getSeverityIconComponent,
-    getTypeIconComponent,
-    getTrendIconComponent
+    getTypeIconComponent
   } = useAlertLogic();
 
   const getSeverityIcon = (severity: AlertSeverity) => {
@@ -66,18 +63,6 @@ export function AlertPanel({ symbol, stockPrice }: AlertPanelProps) {
         return <Icon className="w-4 h-4 text-green-400" />;
       case 'COMPOSITE':
         return <Icon className="w-4 h-4 text-orange-400" />;
-    }
-  };
-
-  const getTrendIcon = (trend: 'UP' | 'DOWN' | 'NEUTRAL') => {
-    const Icon = getTrendIconComponent(trend);
-    switch (trend) {
-      case 'UP':
-        return <Icon className="w-3 h-3 text-green-400" />;
-      case 'DOWN':
-        return <Icon className="w-3 h-3 text-red-400" />;
-      case 'NEUTRAL':
-        return <Icon className="w-3 h-3 text-gray-400" />;
     }
   };
 
