@@ -7,9 +7,8 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
-import { formatCurrency } from '@/app/lib/utils';
-import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
-import { calculateChartMinMax, calculatePriceRange } from '@/app/lib/chart-utils';
+import { SMA_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
+import { calculateChartMinMax } from '@/app/lib/chart-utils';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 import { useChartData } from './hooks/useChartData';
 import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
@@ -71,9 +70,6 @@ export const StockChart = memo(function StockChart({
       isMountedRef.current = false;
     };
   }, []);
-
-  // 固定高さを使用
-  const dynamicHeight = propHeight ?? CHART_DIMENSIONS.DEFAULT_HEIGHT;
 
   // 1. Data Preparation Hooks
   const { actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);

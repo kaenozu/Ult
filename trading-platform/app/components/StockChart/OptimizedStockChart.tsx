@@ -140,7 +140,6 @@ export const OptimizedStockChart = memo(function OptimizedStockChart({
   data,
   width,
   height,
-  _indicators = [],
   visibleRange: propVisibleRange,
   onZoom,
   theme = 'dark',
