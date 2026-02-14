@@ -10,7 +10,7 @@
 import { Navigation } from '@/app/components/Navigation';
 import { PatternAnalysisPanel } from '@/app/components/PatternAnalysisPanel';
 import { PsychologyWarningPanel } from '@/app/components/PsychologyWarningPanel';
-import { useExtendedJournalStore } from '@/app/store/journalStoreExtended';
+import { useExtendedJournalStore } from '@/app/store/journalStore';
 import { cn } from '@/app/lib/utils';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ScreenLabel } from '@/app/components/ScreenLabel';

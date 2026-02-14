@@ -8,7 +8,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useExtendedJournalStore } from '@/app/store/journalStoreExtended';
+import { useExtendedJournalStore } from '@/app/store/journalStore';
 import { TradePattern } from '@/app/lib/trading/patternRecognition';
 import { cn, formatCurrency, formatPercent } from '@/app/lib/utils';
 

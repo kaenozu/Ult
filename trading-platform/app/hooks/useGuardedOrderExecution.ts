@@ -7,7 +7,7 @@
 
 import { useCallback } from 'react';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useExtendedJournalStore } from '@/app/store/journalStoreExtended';
+import { useExtendedJournalStore } from '@/app/store/journalStore';
 import { useBehavioralWarningStore } from '@/app/store/behavioralWarningStore';
 import { OrderRequest, OrderResult } from '@/app/types/order';
 import { getBehavioralBiasGuard } from '@/app/lib/trading/behavioralBiasGuard';

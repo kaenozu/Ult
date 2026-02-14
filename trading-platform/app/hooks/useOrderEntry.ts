@@ -127,7 +127,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
     }
-  }, [executeOrder, stock, orderType, side, quantity, price, currentPrice]);
+  }, [executeOrder, stock, orderType, side, quantity, price, currentPrice, riskConfig]);
 
   // Auto-hide success message after 3 seconds with cleanup
   useEffect(() => {
