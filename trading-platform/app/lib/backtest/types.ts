@@ -1,6 +1,9 @@
 import { OHLCV } from '@/app/types';
 import { PerformanceMetrics } from '@/app/types/performance';
 
+// Re-export PerformanceMetrics for consumers
+export type { PerformanceMetrics };
+
 // Commission Tier Interface (from Realistic)
 export interface CommissionTier {
   volumeThreshold: number;
@@ -117,6 +120,8 @@ export interface BacktestResult {
     slippageStdDev: number;
   };
 }
+
+export type RealisticBacktestResult = BacktestResult;
 
 export interface Strategy {
   name: string;

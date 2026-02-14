@@ -18,15 +18,20 @@ import {
   PerformanceMetrics,
   BacktestResult,
   StrategyAction,
+  RealisticBacktestResult,
 } from './types';
 import { AdvancedBacktestEngine } from './AdvancedBacktestEngine';
 import { BACKTEST_DEFAULTS, REALISTIC_BACKTEST_DEFAULTS, TIERED_COMMISSIONS } from '../constants/backtest-config';
 import { DEFAULT_BACKTEST_CONFIG } from './BaseBacktestEngine';
+import MonteCarloSimulator, { MonteCarloResult, MonteCarloConfig } from './MonteCarloSimulator';
 
-// Import local types to avoid circular dependency issues if any, or just use from types.ts
-// We use types.ts now.
+// Re-export types for backward compatibility
+export type RealisticTradeMetrics = Trade;
+export type RealisticBacktestConfig = BacktestConfig;
+export type { RealisticBacktestResult };
 
-export const DEFAULT_REALISTIC_CONFIG: BacktestConfig = {
+// Renamed to avoid conflict with Orchestrator
+export const DEFAULT_REALISTIC_ENGINE_CONFIG: BacktestConfig = {
   ...DEFAULT_BACKTEST_CONFIG,
   useRealisticSlippage: REALISTIC_BACKTEST_DEFAULTS.USE_REALISTIC_SLIPPAGE,
   averageDailyVolume: REALISTIC_BACKTEST_DEFAULTS.AVERAGE_DAILY_VOLUME,
@@ -38,22 +43,6 @@ export const DEFAULT_REALISTIC_CONFIG: BacktestConfig = {
   commissionTiers: [...TIERED_COMMISSIONS.TIERS],
   realisticMode: true,
 };
-
-export interface RealisticBacktestResult extends BacktestResult {
-    // Already defined in types.ts but we can extend if needed or just use BacktestResult
-}
-
-export interface MonteCarloResult {
-  originalResult: RealisticBacktestResult;
-  simulations: RealisticBacktestResult[];
-  probabilityOfProfit: number; // %
-  probabilityOfDrawdown: number; // %
-  confidenceIntervals: {
-    returns: { lower: number; upper: number };
-    drawdown: { lower: number; upper: number };
-    sharpe: { lower: number; upper: number };
-  };
-}
 
 export class RealisticBacktestEngine extends AdvancedBacktestEngine {
   private cumulativeVolume: number = 0;
@@ -489,174 +478,15 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
    /**
     * Run Monte Carlo simulation
     */
-   runMonteCarloSimulation(
+   async runMonteCarloSimulation(
      originalResult: RealisticBacktestResult,
      numSimulations: number = 1000
-   ): MonteCarloResult {
-     const simulations: RealisticBacktestResult[] = [];
-
-     for (let i = 0; i < numSimulations; i++) {
-       // Shuffle trades randomly
-       const shuffledTrades = this.shuffleTrades([...originalResult.trades]);
-
-       // Reconstruct equity curve
-       const simulatedEquity = this.reconstructEquityCurve(shuffledTrades);
-
-       // Create simulation result
-       const days = simulatedEquity.length;
-       const totalReturn = ((simulatedEquity[simulatedEquity.length - 1] - simulatedEquity[0]) / simulatedEquity[0]) * 100;
-       const annualizedReturn = days > 0
-         ? (Math.pow(1 + totalReturn / 100, 365 / days) - 1) * 100
-         : 0;
-
-       // Create a temporary engine state to calculate metrics?
-       // No, we can just use a helper or instantiate a dummy engine, but instantiation is heavy?
-       // Let's create a helper method calculateMetricsFromEquity which uses the protected logic?
-       // Actually calculateMetrics uses `this.equityCurve` and `this.trades`.
-       // We can temporarily swap them?
-
-       // Optimization: Reuse internal method logic if extracted.
-       // For now, let's just do a simplified calculation or hack:
-
-       // Hack: Create a new instance (lightweight if no data loaded)
-       // Or better, just calculate basic metrics here.
-
-       const metrics = this.calculateMetricsFromEquity(simulatedEquity, shuffledTrades, totalReturn, days, annualizedReturn);
-
-       const simulatedResult: RealisticBacktestResult = {
-         ...originalResult,
-         trades: shuffledTrades,
-         equityCurve: simulatedEquity,
-         metrics
-       };
-
-       simulations.push(simulatedResult);
-     }
-
-     // Calculate probabilities
-     const profitableSimulations = simulations.filter(s => s.metrics.totalReturn > 0).length;
-     const drawdownSimulations = simulations.filter(
-       s => s.metrics.maxDrawdown > (this.config.maxDrawdown / 100)
-     ).length;
-
-     // Calculate confidence intervals
-     const returns = simulations.map(s => s.metrics.totalReturn).sort((a, b) => a - b);
-     const drawdowns = simulations.map(s => s.metrics.maxDrawdown).sort((a, b) => a - b);
-     const sharpes = simulations.map(s => s.metrics.sharpeRatio).sort((a, b) => a - b);
-
-     return {
-       originalResult,
-       simulations,
-       probabilityOfProfit: (profitableSimulations / numSimulations) * 100,
-       probabilityOfDrawdown: (drawdownSimulations / numSimulations) * 100,
-       confidenceIntervals: {
-         returns: {
-           lower: returns[Math.floor(numSimulations * 0.05)] || 0,
-           upper: returns[Math.floor(numSimulations * 0.95)] || 0
-         },
-         drawdown: {
-           lower: drawdowns[Math.floor(numSimulations * 0.05)] || 0,
-           upper: drawdowns[Math.floor(numSimulations * 0.95)] || 0
-         },
-         sharpe: {
-           lower: sharpes[Math.floor(numSimulations * 0.05)] || 0,
-           upper: sharpes[Math.floor(numSimulations * 0.95)] || 0
-         }
-       }
-     };
-   }
-
-   private shuffleTrades(trades: Trade[]): Trade[] {
-     const shuffled = [...trades];
-     for (let i = shuffled.length - 1; i > 0; i--) {
-       const j = Math.floor(Math.random() * (i + 1));
-       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-     }
-     return shuffled;
-   }
-
-   private reconstructEquityCurve(trades: Trade[]): number[] {
-     const equity: number[] = [this.config.initialCapital];
-     let currentEquity = this.config.initialCapital;
-
-     for (const trade of trades) {
-       currentEquity += trade.pnl;
-       equity.push(currentEquity);
-     }
-
-     return equity;
-   }
-
-   private calculateMetricsFromEquity(
-     equity: number[],
-     trades: Trade[],
-     totalReturn: number,
-     days: number,
-     annualizedReturn: number
-   ): PerformanceMetrics {
-     const returns = equity.slice(1).map((eq, i) => (eq - equity[i]) / equity[i]);
+   ): Promise<MonteCarloResult> {
+     const simulator = new MonteCarloSimulator({
+         numSimulations,
+     });
      
-     const avgReturn = returns.length > 0 ? returns.reduce((a, b) => a + b, 0) / returns.length : 0;
-     const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / (returns.length || 1);
-     const volatility = Math.sqrt(variance) * Math.sqrt(252) * 100;
-
-     const riskFreeRate = 0.02 / 252;
-     const sharpeRatio = volatility === 0 ? 0 : ((avgReturn - riskFreeRate) / (volatility / 100 / Math.sqrt(252))) * Math.sqrt(252);
-
-     const winningTrades = trades.filter(t => t.pnl > 0);
-     const losingTrades = trades.filter(t => t.pnl <= 0);
-     const winRate = trades.length > 0 ? (winningTrades.length / trades.length) * 100 : 0;
-
-     const grossProfit = winningTrades.reduce((sum, t) => sum + t.pnl, 0);
-     const grossLoss = Math.abs(losingTrades.reduce((sum, t) => sum + t.pnl, 0));
-     const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
-
-     const averageWin = winningTrades.length > 0 ? grossProfit / winningTrades.length : 0;
-     const averageLoss = losingTrades.length > 0 ? grossLoss / losingTrades.length : 0;
-     const averageTrade = trades.length > 0 ? trades.reduce((sum, t) => sum + t.pnl, 0) / trades.length : 0;
-
-     let maxDrawdown = 0;
-     let peak = equity[0];
-     for (const eq of equity) {
-       if (eq > peak) peak = eq;
-       const dd = (peak - eq) / peak;
-       if (dd > maxDrawdown) maxDrawdown = dd;
-     }
-
-     return {
-       totalReturn,
-       annualizedReturn,
-       volatility,
-       sharpeRatio,
-       sortinoRatio: 0, // Simplified for Monte Carlo
-       maxDrawdown: maxDrawdown * 100,
-       maxDrawdownDuration: 0,
-       averageDrawdown: 0,
-       winRate,
-       profitFactor,
-       averageWin,
-       averageLoss,
-       largestWin: 0,
-       largestLoss: 0,
-       averageTrade,
-       totalTrades: trades.length,
-       winningTrades: winningTrades.length,
-       losingTrades: losingTrades.length,
-       calmarRatio: 0,
-       omegaRatio: 0,
-       valueAtRisk: 0,
-       conditionalValueAtRisk: 0,
-       downsideDeviation: 0,
-       averageWinLossRatio: averageLoss > 0 ? averageWin / averageLoss : 0,
-       averageHoldingPeriod: 0,
-       averageRMultiple: 0,
-       expectancy: 0,
-       kellyCriterion: 0,
-       riskOfRuin: 0,
-       SQN: 0,
-       treynorRatio: 0,
-       informationRatio: 0
-     };
+     return await simulator.runSimulation(originalResult);
    }
 }
 

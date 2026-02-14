@@ -8,7 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
-import { BacktestResult, BacktestConfig, Strategy, StrategyAction, StrategyContext, Trade, PerformanceMetrics } from './AdvancedBacktestEngine';
+import { BacktestResult, BacktestConfig, Strategy, StrategyAction, StrategyContext, Trade, PerformanceMetrics } from './types';
 
 // ============================================================================
 // Types
@@ -478,6 +478,21 @@ export class WalkForwardAnalyzer extends EventEmitter {
       losingTrades: losingTrades.length,
       calmarRatio,
       omegaRatio,
+
+      // New required fields
+      averageDrawdown: 0,
+      downsideDeviation,
+      averageWinLossRatio: averageLoss > 0 ? averageWin / averageLoss : 0,
+      averageHoldingPeriod: 0,
+      averageRMultiple: 0,
+      expectancy: 0,
+      kellyCriterion: 0,
+      riskOfRuin: 0,
+      SQN: 0,
+      treynorRatio: 0,
+      informationRatio: 0,
+      valueAtRisk: 0,
+      conditionalValueAtRisk: 0
     };
   }
 

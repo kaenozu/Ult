@@ -12,9 +12,19 @@ export * from './WalkForwardAnalyzer';
 export * from './MonteCarloSimulator';
 export * from './RealisticBacktestOrchestrator';
 
-// Engines
-export * from './AdvancedBacktestEngine';
-export * from './RealisticBacktestEngine';
+// Engines - Named exports to avoid type conflicts
+export {
+  AdvancedBacktestEngine,
+  getGlobalBacktestEngine,
+  resetGlobalBacktestEngine,
+} from './AdvancedBacktestEngine';
+
+export {
+  RealisticBacktestEngine,
+  getRealisticBacktestEngine,
+  resetRealisticBacktestEngine,
+  DEFAULT_REALISTIC_ENGINE_CONFIG,
+} from './RealisticBacktestEngine';
 
 // Explicit re-exports and aliases for backward compatibility
 export { AdvancedBacktestEngine as BacktestEngine } from './AdvancedBacktestEngine';
@@ -27,9 +37,8 @@ export {
   DEFAULT_BACKTEST_CONFIG as DEFAULT_ADVANCED_CONFIG
 } from './BaseBacktestEngine';
 
-// Enhanced realistic backtesting components aliases
 export {
-  DEFAULT_REALISTIC_CONFIG as DEFAULT_ENGINE_REALISTIC_CONFIG,
+  DEFAULT_REALISTIC_ENGINE_CONFIG as DEFAULT_ENGINE_REALISTIC_CONFIG,
 } from './RealisticBacktestEngine';
 
 export * from './OverfittingDetector';
