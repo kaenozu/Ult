@@ -1,235 +1,72 @@
-# ULT Trading Platform コードレビュー結果
+# ULT Trading Platform コードレビュー報告書 (最新版)
 
-**作成日**: 2026-02-13
-**レビュアー**: AI Code Review System
-**範囲**: trading-platform/
+**日時**: 2026-02-14
+**レビュアー**: Gemini CLI Agent
+**対象**: 全ソースコード (`trading-platform/`, `backend/`)
 
----
+## 📊 エグゼクティブサマリー
 
-## 📊 総合スコア
-
-| カテゴリ | スコア | 評価 |
-|---------|--------|------|
-| **TypeScript型安全性** | 6.5/10 | 要改善 |
-| **セキュリティ** | 8.5/10 | 良好 |
-| **パフォーマンス** | 5.5/10 | 要改善 |
-| **コード品質** | 5.5/10 | 要改善 |
-| **総合** | **6.5/10** | 平均的水準 |
+プロジェクトはNext.js App RouterとPythonバックエンドを組み合わせたモダンな構成で運用されています。`GEMINI.md` の規約には概ね従っていますが、アーキテクチャ移行期特有の「新旧コードの混在」と「技術的負債（Lint警告）」が課題です。
+特に注文機能において、設定変更が反映されない重大なバグが発見されました。
 
 ---
 
-## ✅ 良好点
+## 🚨 クリティカルな不具合 (要修正)
 
-### セキュリティ (8.5/10)
-- JWT + CSRF保護が適切に実装
-- Zodを使用した厳密なスキーマ検証
-- 環境変数によるシークレット管理
-- 統一されたエラーメッセージ
-- XSS保護ライブラリの存在
+### 1. 注文リスク設定の反映漏れ (Stale Closure Bug)
+**ファイル**: `trading-platform/app/hooks/useOrderEntry.ts` (L130付近)
+**重要度**: 🔥 Critical
 
-### チャートコンポーネント
-- 適切なmemo化とuseMemoの使用
-- パフォーマンス監視の統合
-- データセットの最適化
+**問題の詳細**:
+注文処理を行う `handleOrder` 関数内で `riskConfig` を参照していますが、`useCallback` の依存配列に `riskConfig` が含まれていません。
+これにより、**ユーザーがリスク設定を変更しても、関数が更新されず、初期値（または古い設定）のまま注文が送信される**という不具合が発生します。React Compilerもこれを検知し、最適化をスキップしています。
 
----
-
-## ⚠️ 優先度高の問題
-
-### 1. TypeScript: `any` 型の多用
-
-**問題箇所:**
-- `app/domains/backtest/engine/RealisticBacktestEngine.ts:167-290`
-- `app/infrastructure/api/data-aggregator.ts:353,486`
-- `app/hooks/usePerformanceMonitor.ts:301`
-
-**修正:**
+**修正案**:
 ```typescript
-// ❌ 現在のコード
-const data = (this as any).data.get(symbol);
-private setCache(key: string, data: any, ttl?: number) { ... }
+// 修正前
+}, [executeOrder, stock, orderType, side, quantity, price, currentPrice]);
 
-// ✅ 推奨修正
-private data: Map<string, OHLCV[]>;
-private setCache<T>(key: string, data: T, ttl?: number) { ... }
+// 修正後
+}, [executeOrder, stock, orderType, side, quantity, price, currentPrice, riskConfig]);
 ```
 
-**優先度**: 高
+---
+
+## ⚠️ アーキテクチャとコード品質
+
+### 2. 状態管理の重複と混乱
+**ファイル**: `app/store/journalStore.ts` と `app/store/journalStoreExtended.ts`
+**重要度**: High
+
+**問題の詳細**:
+トレード日誌機能に関して、単純なCRUD版とAI機能付きの拡張版が別々のストアとして定義され、両方が `index.ts` からエクスポートされています。これにより以下のリスクがあります：
+- データの分断（片方だけ更新される）。
+- 開発者の混乱（どちらを使うべきか不明）。
+
+**推奨アクション**:
+`journalStore.ts` を削除し、`journalStoreExtended.ts`（またはその機能を統合した単一ストア）に一本化してください。
+
+### 3. Lint警告とコードの汚れ
+**現状**: 685件の警告（主に `no-unused-vars`, `no-explicit-any`）
+**評価**:
+機能には影響しませんが、可読性を下げ、重要な警告（上記のHooks依存など）を埋もれさせています。特にテストファイルや移行途中のファイルに多く見られます。
+
+### 4. E2E検証スクリプト
+**ファイル**: `verification/verify_order_panel.py`
+**評価**:
+Playwrightを使用した検証スクリプトの導入は良い傾向です。ただし、現在は「画面遷移とスクリーンショット」のみで、具体的な値の検証（アサーション）が含まれていません。CI/CDでの信頼性を高めるために、`expect(page.locator(...)).to_contain_text(...)` 等による検証を追加すべきです。
 
 ---
 
-### 2. パフォーマンス: O(N²) 算法
+## ✅ 以前の指摘事項の確認状況
 
-**問題箇所:**
-- `app/lib/backtest/AdvancedBacktestEngine.ts:248`
-- `app/lib/utils/calculations.ts:141`
-
-**問題:**
-```typescript
-// ❌ O(N²) -  кажд раз копируется массив
-for (let i = 0; i < data.length; i++) {
-  const slice = data.slice(0, i + 1); // O(N) × N = O(N²)
-  // ...
-}
-
-// ✅ O(N) -  указатель/индексを使用
-let runningSum = 0;
-for (let i = 0; i < data.length; i++) {
-  runningSum += data[i];
-  // ...
-}
-```
-
-**優先度**: 高
+- **バックテストドメインの重複**: 以前のレポートにあった `app/domains/backtest` の重複ファイルは、現在のコードベースでは確認されませんでした（解消済みと推測されます）。
+- **バックエンド構造**: `backend/src` は機能ごとにモジュール化されており (`market_correlation`, `supply_demand` 等)、Pythonの標準的な構成に従っており良好です。
 
 ---
 
-### 3. コード品質: 949件のESLint警告
+## 📋 推奨アクションプラン
 
-**内訳:**
-- 未使用変数/インポート: 約400件
-- `any`型使用: 約50件
-- React Hook依存配列: 約20件
-
-**修正:**
-```typescript
-// ❌ 未使用インポートを削除
-import { Alert, formatCurrency, TrendingUp } from 'lucide-react'; // 使っていないものが多い
-
-// ✅ 必要なものだけインポート
-import { AlertTriangle } from 'lucide-react';
-```
-
-**優先度**: 高
-
----
-
-## ⚠️ 優先度中の問題
-
-### 4. セキュリティ: 開発環境でレートリミット無効
-
-**問題箇所:** `app/lib/api-middleware.ts:29`
-
-```typescript
-// ❌ 開発環境で無効
-if (process.env.NODE_ENV === 'development') {
-  return next(); // Rate limit bypassed
-}
-
-// ✅ 常に有効、または最小の差異
-const rateLimit = process.env.NODE_ENV === 'development' 
-  ? 1000  // 開発環境は少し緩め
-  : 100;
-```
-
-**優先度**: 中
-
----
-
-### 5. パフォーマンス: spread演算子の滥用
-
-**問題箇所:** `app/lib/chart-utils.ts:151`
-
-```typescript
-// ❌ O(N log N) または O(N²) の都有可能
-const maxPrice = Math.max(...bucket.map(d => d.high));
-
-// ✅ O(N)
-let maxPrice = -Infinity;
-for (const d of bucket) {
-  if (d.high > maxPrice) maxPrice = d.high;
-}
-```
-
-**優先度**: 中
-
----
-
-### 6. コード品質: 重複コード
-
-**問題箇所:**
-- `app/domains/backtest/engine/` と `app/lib/backtest/`
-- `app/domains/` と `app/lib/` に同様の機能
-
-**修正:**
-```
-共通ロジックを utils/ または domain/ に移動し、
-DRY (Don't Repeat Yourself) 原則を適用
-```
-
-**優先度**: 中
-
----
-
-## ⚠️ 優先度低の問題
-
-### 7. TypeScript: ts-expect-error/ts-nocheck
-
-**問題箇所:**
-- `app/hooks/usePerformance.ts:43` - @ts-expect-error
-- `app/lib/testing/test-prediction-service.ts:1` - @ts-nocheck
-
-### 8. セキュリティ: CSRF CookieのHttpOnly
-
-**問題箇所:** `app/api/trading/route.ts:139`
-
-### 9. パフォーマンス: 未使用のReact.memo
-
-**問題箇所:** `StockTable`, `Header` など
-
----
-
-## 📋 推奨修正アクションプラン
-
-### 短期 (1-2週間)
-1. **ESLint警告の30%削減** - 未使用インポート削除
-2. **O(N²)算法の修正** - バックテスト_engineとcalculations.ts
-3. **`any`型の50%削減** - 主要なデータ処理クラス
-
-### 中期 (1-2ヶ月)
-1. **パフォーマンス監視の本番統合**
-2. **コード分割** - 1000行以上のファイル
-3. **重複コードの統合作業**
-
-### 長期 (3-6ヶ月)
-1. **Strict TypeScript完全対応**
-2. ** комплекс мер по обеспечению производительности**
-3. **自動リファクタリングツールの導入**
-
----
-
-## 🔧 修正が必要なファイル一覧
-
-### 高優先度
-| ファイル | 問題 | 推定修正時間 |
-|---------|------|-------------|
-| `AdvancedBacktestEngine.ts` | O(N²) | 2時間 |
-| `calculations.ts` | O(N²) | 1時間 |
-| `RealisticBacktestEngine.ts` | `any` 型 | 3時間 |
-| `data-aggregator.ts` | `any` 型 | 1時間 |
-
-### 中優先度
-| ファイル | 問題 | 推定修正時間 |
-|---------|------|-------------|
-| `api-middleware.ts` | レートリミット | 30分 |
-| `chart-utils.ts` | spread | 30分 |
-| 複数ファイル | ESLint警告 | 4時間 |
-
----
-
-## 📈 改善目標
-
-| 指標 | 現在 | 3ヶ月後 | 6ヶ月後 |
-|------|------|---------|---------|
-| TypeScriptスコア | 6.5 | 7.5 | 8.5 |
-| パフォーマンススコア | 5.5 | 7.0 | 8.5 |
-| コード品質スコア | 5.5 | 7.0 | 8.0 |
-| ESLint警告 | 949 | 500 | 100 |
-
----
-
-## ✅ まとめ
-
-ULT Trading Platformは**商用レベルの基盤**を持っていますが、パフォーマンスとコード品質に**顕著な改善余地**があります。O(N²)算法の修正とESLint警告の削減を最優先とし、段階的に品質を向上させていくことを推奨します。
-
-**総評**: 6.5/10 - 平均的水準。继续的な改善が必要
+1.  **[緊急]** `useOrderEntry.ts` の依存配列バグを修正する。
+2.  **[整理]** `journalStore` の統合方針を決定し、重複を解消する。
+3.  **[品質]** 自動修正 (`eslint --fix`) を適用し、単純な警告を一掃する。

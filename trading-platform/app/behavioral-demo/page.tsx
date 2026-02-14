@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { Navigation } from '@/app/components/Navigation';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
 import { useGuardedOrderExecution } from '@/app/hooks/useGuardedOrderExecution';
-import { useExtendedJournalStore } from '@/app/store/journalStoreExtended';
+import { useExtendedJournalStore } from '@/app/store/journalStore';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { OrderRequest } from '@/app/types/order';
 import { JournalEntry } from '@/app/types';

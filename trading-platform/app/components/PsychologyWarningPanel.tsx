@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useExtendedJournalStore } from '@/app/store/journalStoreExtended';
+import { useExtendedJournalStore } from '@/app/store/journalStore';
 import { PsychologyWarning } from '@/app/lib/trading/psychology';
 import { cn } from '@/app/lib/utils';
 
