@@ -10,7 +10,7 @@
  * - 月次パフォーマンス
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useTradeHistory } from '@/app/lib/hooks/useTradeHistory';
 import { analyzePortfolio, calculateMonthlyPerformance, calculateAssetAllocation } from '@/app/lib/utils/portfolio-analysis';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
@@ -166,7 +166,6 @@ function AssetAllocationChart({
   allocation: Array<{ symbol: string; value: number; percentage: number }> 
 }) {
   const topAssets = allocation.slice(0, 5);
-  const totalTopPercentage = topAssets.reduce((sum, a) => sum + a.percentage, 0);
   
   return (
     <Card className="bg-slate-900 border-slate-800">
@@ -178,7 +177,7 @@ function AssetAllocationChart({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {topAssets.map((asset, index) => (
+          {topAssets.map((asset) => (
             <div key={asset.symbol}>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-white">{asset.symbol}</span>

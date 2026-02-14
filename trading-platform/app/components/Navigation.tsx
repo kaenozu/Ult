@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  BarChart3, Grid3X3, FileText, Filter, Moon, Sun, Brain, Database, TrendingUp,
-  BookOpen, Target, Activity, Globe, Settings2 
+  BarChart3, Grid3X3, Filter, Moon, Sun, Brain, Database, TrendingUp,
+  BookOpen, Activity
 } from 'lucide-react';
 import { useThemeStore } from '@/app/store/themeStore';
 import { cn } from '@/app/lib/utils';

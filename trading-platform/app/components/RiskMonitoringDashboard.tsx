@@ -18,9 +18,7 @@ import {
   Activity,
   Bell,
   AlertCircle,
-  CheckCircle,
   XCircle,
-  Settings,
 } from 'lucide-react';
 import { useRiskMonitoringStore, getRiskLevelColor, getRiskLevelBgColor, getAlertSeverityColor } from '@/app/store/riskMonitoringStore';
 import { Portfolio } from '@/app/types';
@@ -34,7 +32,6 @@ export function RiskMonitoringDashboard({ portfolio, updateInterval = 5000 }: Ri
   const {
     currentRisk,
     positionRisks,
-    alerts,
     unreadAlertCount,
     isMonitoringEnabled,
     blockNewOrders,
@@ -42,7 +39,6 @@ export function RiskMonitoringDashboard({ portfolio, updateInterval = 5000 }: Ri
     updatePositionRisk,
     markAlertsRead,
     getActiveAlerts,
-    getCriticalAlerts,
   } = useRiskMonitoringStore();
 
   // ポートフォリオリスクを定期的に更新
@@ -69,7 +65,6 @@ export function RiskMonitoringDashboard({ portfolio, updateInterval = 5000 }: Ri
   }, [portfolio, isMonitoringEnabled, updateInterval, updateRisk, updatePositionRisk]);
 
   const activeAlerts = useMemo(() => getActiveAlerts(), [getActiveAlerts]);
-  const criticalAlerts = useMemo(() => getCriticalAlerts(), [getCriticalAlerts]);
 
   if (!isMonitoringEnabled) {
     return (
