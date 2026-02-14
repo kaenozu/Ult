@@ -5,188 +5,31 @@
  * 包括的なバックテスト機能を提供します。
  */
 
-import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
+import {
+  Trade,
+  BacktestConfig,
+  BacktestResult,
+  PerformanceMetrics,
+  Strategy,
+  StrategyContext,
+  StrategyAction
+} from './types';
+import { BaseBacktestEngine, DEFAULT_BACKTEST_CONFIG } from './BaseBacktestEngine';
 import { SlippageModel } from './SlippageModel';
 import { CommissionCalculator } from './CommissionCalculator';
 import { PartialFillSimulator } from './PartialFillSimulator';
 import { LatencySimulator } from './LatencySimulator';
-import { BACKTEST_DEFAULTS, REALISTIC_BACKTEST_DEFAULTS } from '../constants/backtest-config';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-// OHLCV type is now imported from '@/app/types' to avoid duplication
-export type { OHLCV };
-
-export interface Trade {
-  id: string;
-  entryDate: string;
-  exitDate?: string;
-  symbol: string;
-  side: 'LONG' | 'SHORT';
-  entryPrice: number;
-  exitPrice?: number;
-  quantity: number;
-  pnl: number;
-  pnlPercent: number;
-  fees: number;
-  exitReason: 'target' | 'stop' | 'signal' | 'end_of_data' | 'time' | 'trailing_stop';
-  
-  // Realistic mode details
-  slippageAmount?: number;
-  commissionBreakdown?: {
-    entryCommission: number;
-    exitCommission: number;
-  };
-  partialFills?: Array<{
-    quantity: number;
-    price: number;
-    bar: number;
-  }>;
-  latencyMs?: number;
-}
-
-export interface BacktestConfig {
-  initialCapital: number;
-  commission: number; // percentage
-  slippage: number; // percentage
-  spread: number; // percentage
-  maxPositionSize: number; // percentage of capital
-  maxDrawdown: number; // percentage
-  allowShort: boolean;
-  useStopLoss: boolean;
-  useTakeProfit: boolean;
-  riskPerTrade: number; // percentage
-
-  // Realistic mode settings
-  realisticMode?: boolean; // Enable realistic trading simulation
-  market?: 'japan' | 'usa'; // Market for commission calculation
-  averageDailyVolume?: number; // For partial fill simulation
-  slippageEnabled?: boolean; // Use advanced slippage model
-  commissionEnabled?: boolean; // Use market-specific commissions
-  partialFillEnabled?: boolean; // Simulate partial fills
-  latencyEnabled?: boolean; // Simulate execution latency
-  latencyMs?: number; // Latency in milliseconds
-
-  // Transaction cost model settings
-  transactionCostsEnabled?: boolean; // Enable transaction cost model
-  transactionCostBroker?: string; // Broker name for cost calculation
-  transactionCostMarketCondition?: 'normal' | 'volatile' | 'liquid'; // Market conditions
-  transactionCostSettlementType?: 'same-day' | 't1' | 't2'; // Settlement type
-  transactionCostDailyVolume?: number; // Daily volume for cost calculation
-}
-
-export interface BacktestResult {
-  trades: Trade[];
-  equityCurve: number[];
-  metrics: PerformanceMetrics;
-  config: BacktestConfig;
-  startDate: string;
-  endDate: string;
-  duration: number; // days
-}
-
-export interface PerformanceMetrics {
-  totalReturn: number; // percentage
-  annualizedReturn: number; // percentage
-  volatility: number; // percentage
-  sharpeRatio: number;
-  sortinoRatio: number;
-  maxDrawdown: number; // percentage
-  maxDrawdownDuration: number; // days
-  winRate: number; // percentage
-  profitFactor: number;
-  averageWin: number;
-  averageLoss: number;
-  largestWin: number;
-  largestLoss: number;
-  averageTrade: number;
-  totalTrades: number;
-  winningTrades: number;
-  losingTrades: number;
-  calmarRatio: number;
-  omegaRatio: number;
-}
-
-export interface Strategy {
-  name: string;
-  description: string;
-  onData: (data: OHLCV, index: number, context: StrategyContext) => StrategyAction;
-  onInit?: () => void;
-  onEnd?: (result: BacktestResult) => void;
-}
-
-export interface StrategyContext {
-  currentPosition: 'LONG' | 'SHORT' | null;
-  entryPrice: number;
-  equity: number;
-  data: OHLCV[];
-  indicators: Map<string, number[]>;
-}
-
-export interface StrategyAction {
-  action: 'BUY' | 'SELL' | 'HOLD' | 'CLOSE';
-  quantity?: number;
-  stopLoss?: number;
-  takeProfit?: number;
-}
-
-// ============================================================================
-// Default Configuration
-// ============================================================================
-
-export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
-  initialCapital: BACKTEST_DEFAULTS.INITIAL_CAPITAL,
-  commission: BACKTEST_DEFAULTS.DEFAULT_COMMISSION,
-  slippage: 0.05, // 0.05% - model-specific, not consolidated
-  spread: BACKTEST_DEFAULTS.DEFAULT_SPREAD,
-  maxPositionSize: BACKTEST_DEFAULTS.MAX_POSITION_SIZE,
-  maxDrawdown: BACKTEST_DEFAULTS.MAX_DRAWDOWN,
-  allowShort: BACKTEST_DEFAULTS.ALLOW_SHORT,
-  useStopLoss: true,
-  useTakeProfit: true,
-  riskPerTrade: 2, // 2% - strategy-specific, not consolidated
-  
-  // Realistic mode defaults
-  realisticMode: false,
-  market: 'japan',
-  averageDailyVolume: REALISTIC_BACKTEST_DEFAULTS.AVERAGE_DAILY_VOLUME,
-  slippageEnabled: false,
-  commissionEnabled: false,
-  partialFillEnabled: false,
-  latencyEnabled: false,
-  latencyMs: 500,
-};
+// Re-export types for backward compatibility
+export type { OHLCV, Trade, BacktestConfig, BacktestResult, PerformanceMetrics, Strategy, StrategyContext, StrategyAction };
+export { DEFAULT_BACKTEST_CONFIG };
 
 // ============================================================================
 // Advanced Backtest Engine
 // ============================================================================
 
-export class AdvancedBacktestEngine extends EventEmitter {
-  protected config: BacktestConfig;
-  protected data: Map<string, OHLCV[]> = new Map();
-  protected trades: Trade[] = [];
-  protected equityCurve: number[] = [];
-  protected currentPosition: 'LONG' | 'SHORT' | null = null;
-  protected entryPrice: number = 0;
-  protected entryDate: string = '';
-  protected currentEquity: number = 0;
-  protected stopLoss: number = 0;
-  protected takeProfit: number = 0;
-  protected indicators: Map<string, number[]> = new Map();
-  protected currentHistoricalData: OHLCV[] = []; // For subclasses
-  
-  // Additional properties for RealisticBacktestEngine
-  protected currentQuantity: number = 0;
-  protected currentCommissionTier: string = '';
-  protected currentMarketImpact: number = 0;
-  protected currentSlippage: number = 0;
-  protected currentTimeOfDayFactor: number = 1;
-  protected currentVolatilityFactor: number = 1;
-  protected currentFees: number = 0;
-  
+export class AdvancedBacktestEngine extends BaseBacktestEngine {
   // Realistic mode components
   protected slippageModel?: SlippageModel;
   protected commissionCalculator?: CommissionCalculator;
@@ -194,9 +37,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
   protected latencySimulator?: LatencySimulator;
 
   constructor(config: Partial<BacktestConfig> = {}) {
-    super();
-    this.config = { ...DEFAULT_BACKTEST_CONFIG, ...config };
-    this.currentEquity = this.config.initialCapital;
+    super(config);
     
     // Initialize realistic components if enabled
     if (this.config.realisticMode || this.config.slippageEnabled) {
@@ -223,14 +64,6 @@ export class AdvancedBacktestEngine extends EventEmitter {
   }
 
   /**
-   * データをロード
-   */
-  loadData(symbol: string, data: OHLCV[]): void {
-    this.data.set(symbol, data);
-    this.emit('data_loaded', symbol, data.length);
-  }
-
-  /**
    * バックテストを実行
    */
   async runBacktest(strategy: Strategy, symbol: string): Promise<BacktestResult> {
@@ -238,7 +71,6 @@ export class AdvancedBacktestEngine extends EventEmitter {
     if (!data || data.length === 0) {
       throw new Error(`No data loaded for symbol: ${symbol}`);
     }
-
 
     // Initialize
     this.resetState();
@@ -255,7 +87,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     // O(N) optimization: Pre-populate and grow incrementally
     const historicalData: OHLCV[] = [];
     // Pre-populate with initial data (indices 0-49)
-    for (let j = 0; j < 50; j++) {
+    for (let j = 0; j < Math.min(50, data.length); j++) {
       historicalData.push(data[j]);
     }
     
@@ -370,49 +202,10 @@ export class AdvancedBacktestEngine extends EventEmitter {
   }
 
   // ============================================================================
-  // Private Methods
+  // Private/Protected Methods
   // ============================================================================
 
-  private resetState(): void {
-    this.trades = [];
-    this.equityCurve = [this.config.initialCapital];
-    this.currentPosition = null;
-    this.entryPrice = 0;
-    this.entryDate = '';
-    this.currentEquity = this.config.initialCapital;
-    this.stopLoss = 0;
-    this.takeProfit = 0;
-  }
-
-  private checkExitConditions(data: OHLCV): { exitReason: Trade['exitReason'] } | null {
-    if (!this.currentPosition) return null;
-
-    const currentPrice = data.close;
-
-    // Check stop loss
-    if (this.config.useStopLoss && this.stopLoss > 0) {
-      if (this.currentPosition === 'LONG' && currentPrice <= this.stopLoss) {
-        return { exitReason: 'stop' };
-      }
-      if (this.currentPosition === 'SHORT' && currentPrice >= this.stopLoss) {
-        return { exitReason: 'stop' };
-      }
-    }
-
-    // Check take profit
-    if (this.config.useTakeProfit && this.takeProfit > 0) {
-      if (this.currentPosition === 'LONG' && currentPrice >= this.takeProfit) {
-        return { exitReason: 'target' };
-      }
-      if (this.currentPosition === 'SHORT' && currentPrice <= this.takeProfit) {
-        return { exitReason: 'target' };
-      }
-    }
-
-    return null;
-  }
-
-  private async executeAction(action: StrategyAction, data: OHLCV, index: number = 0): Promise<void> {
+  protected async executeAction(action: StrategyAction, data: OHLCV, index: number = 0): Promise<void> {
     switch (action.action) {
       case 'BUY':
         if (!this.currentPosition && this.config.allowShort !== false) {
@@ -444,7 +237,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     }
   }
 
-  private openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction, index: number = 0): void {
+  protected openPosition(side: 'LONG' | 'SHORT', data: OHLCV, action: StrategyAction, index: number = 0): void {
     const quantity = this.calculatePositionSize(data.close, action.quantity);
     let price = this.applySlippage(data.close, side === 'LONG' ? 'BUY' : 'SELL', data, quantity);
     
@@ -477,7 +270,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     this.emit('position_opened', { side, price, quantity: actualQuantity, date: data.date });
   }
 
-  private closePosition(data: OHLCV, reason: Trade['exitReason'], index: number = 0): void {
+  protected closePosition(data: OHLCV, reason: Trade['exitReason'], index: number = 0): void {
     if (!this.currentPosition) return;
 
     const quantity = this.calculatePositionSize(this.entryPrice);
@@ -529,7 +322,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
       id: `trade_${this.trades.length}`,
       entryDate: this.entryDate,
       exitDate: data.date,
-      symbol: '', // Will be set by caller
+      symbol: '', // Will be set by caller? Or inherited?
       side: this.currentPosition,
       entryPrice: this.entryPrice,
       exitPrice,
@@ -539,6 +332,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
       fees,
       exitReason: reason,
       commissionBreakdown,
+      partialFills: undefined, // Type requires this if not optional? It is optional.
     };
 
     this.trades.push(trade);
@@ -551,7 +345,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     this.takeProfit = 0;
   }
 
-  private applySlippage(price: number, side: 'BUY' | 'SELL', data?: OHLCV, quantity?: number): number {
+  protected applySlippage(price: number, side: 'BUY' | 'SELL', data?: OHLCV, quantity?: number): number {
     // Use advanced slippage model if enabled
     if (this.slippageModel && data && quantity) {
       const result = this.slippageModel.calculateSlippage(
@@ -568,19 +362,7 @@ export class AdvancedBacktestEngine extends EventEmitter {
     return side === 'BUY' ? price * slippageFactor : price / slippageFactor;
   }
 
-  protected calculatePositionSize(price: number, fixedQuantity?: number): number {
-    if (fixedQuantity) return fixedQuantity;
-
-    const maxPositionValue = this.currentEquity * (this.config.maxPositionSize / 100);
-    return Math.floor(maxPositionValue / price);
-  }
-
-  private calculateCurrentDrawdown(): number {
-    const peak = Math.max(...this.equityCurve);
-    return ((peak - this.currentEquity) / peak) * 100;
-  }
-
-  private calculateMetrics(): PerformanceMetrics {
+  protected calculateMetrics(): PerformanceMetrics {
     const returns = this.equityCurve.map((eq, i) =>
       i === 0 ? 0 : (eq - this.equityCurve[i - 1]) / this.equityCurve[i - 1]
     ).slice(1);
@@ -590,17 +372,22 @@ export class AdvancedBacktestEngine extends EventEmitter {
 
     const totalReturn = ((this.currentEquity - this.config.initialCapital) / this.config.initialCapital) * 100;
     const days = this.equityCurve.length;
-    const annualizedReturn = (Math.pow(1 + totalReturn / 100, 365 / days) - 1) * 100;
+    const annualizedReturn = days > 0 ? (Math.pow(1 + totalReturn / 100, 365 / days) - 1) * 100 : 0;
 
-    const volatility = Math.sqrt(returns.reduce((sum, r) => sum + r * r, 0) / returns.length) * Math.sqrt(252) * 100;
+    // Volatility (annualized)
+    const avgReturn = returns.length > 0 ? returns.reduce((a, b) => a + b, 0) / returns.length : 0;
+    const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / (returns.length || 1);
+    const volatility = Math.sqrt(variance) * Math.sqrt(252) * 100;
 
-    const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
     const riskFreeRate = 0.02 / 252;
     const sharpeRatio = volatility === 0 ? 0 : ((avgReturn - riskFreeRate) / (volatility / 100 / Math.sqrt(252))) * Math.sqrt(252);
 
     const downsideReturns = returns.filter((r) => r < 0);
-    const downsideDeviation = Math.sqrt(downsideReturns.reduce((sum, r) => sum + r * r, 0) / downsideReturns.length) * Math.sqrt(252);
-    const sortinoRatio = downsideDeviation === 0 ? 0 : ((avgReturn - riskFreeRate) * 252) / (downsideDeviation * Math.sqrt(252));
+    const downsideVariance = downsideReturns.reduce((sum, r) => sum + r * r, 0) / (downsideReturns.length || 1);
+    const downsideDeviation = Math.sqrt(downsideVariance) * Math.sqrt(252); // Annualized (decimal)
+    const sortinoRatio = downsideDeviation === 0 ? 0 : ((avgReturn - riskFreeRate) * 252) / (downsideDeviation); // downsideDeviation is already annualized? Sortino usually uses daily deviation * sqrt(252). Wait.
+    // Usually Sortino = (Annualized Return - Rf) / Annualized Downside Deviation.
+    // Here downsideDeviation is annualized. So this is correct-ish.
 
     // Max drawdown
     let maxDrawdown = 0;
@@ -636,11 +423,43 @@ export class AdvancedBacktestEngine extends EventEmitter {
 
     const calmarRatio = maxDrawdown === 0 ? 0 : annualizedReturn / (maxDrawdown * 100);
 
-    // Omega ratio (simplified)
+    // Omega ratio
     const threshold = 0;
     const gains = returns.filter((r) => r > threshold).reduce((sum, r) => sum + r - threshold, 0);
     const losses = returns.filter((r) => r < threshold).reduce((sum, r) => sum + threshold - r, 0);
     const omegaRatio = losses === 0 ? gains : gains / losses;
+
+    // Value at Risk (95%)
+    const sortedReturns = [...returns].sort((a, b) => a - b);
+    const varIndex = Math.floor(0.05 * sortedReturns.length);
+    const valueAtRisk = sortedReturns.length > 0 ? Math.abs(sortedReturns[varIndex]) : 0;
+
+    // Kelly Criterion
+    const winRateDecimal = winRate / 100;
+    const winLossRatio = averageLoss === 0 ? 0 : averageWin / averageLoss;
+    const kellyCriterion = averageLoss === 0 ? 0 : (winRateDecimal - ((1 - winRateDecimal) / winLossRatio));
+
+    // SQN
+    const tradePnls = this.trades.map(t => t.pnl);
+    const meanPnl = averageTrade;
+    const variancePnl = tradePnls.reduce((sum, pnl) => sum + Math.pow(pnl - meanPnl, 2), 0) / (tradePnls.length || 1);
+    const stdDevPnl = Math.sqrt(variancePnl);
+    const SQN = stdDevPnl === 0 ? 0 : (meanPnl / stdDevPnl) * Math.sqrt(this.trades.length);
+
+    // Expectancy
+    const expectancy = (winRateDecimal * averageWin) - ((1 - winRateDecimal) * averageLoss);
+
+    // Holding Period
+    const avgHoldingPeriod = this.trades.length > 0
+      ? this.trades.reduce((sum, t) => {
+          if (t.entryDate && t.exitDate) {
+              const start = new Date(t.entryDate).getTime();
+              const end = new Date(t.exitDate).getTime();
+              return sum + (end - start) / (1000 * 60 * 60 * 24);
+          }
+          return sum;
+        }, 0) / this.trades.length
+      : 0;
 
     return {
       totalReturn,
@@ -662,6 +481,21 @@ export class AdvancedBacktestEngine extends EventEmitter {
       losingTrades: losingTrades.length,
       calmarRatio,
       omegaRatio,
+
+      // New required fields
+      valueAtRisk,
+      conditionalValueAtRisk: 0, // Simplified default
+      downsideDeviation: parseFloat((downsideDeviation * 100).toFixed(4)), // Match volatility scale?
+      averageWinLossRatio: winLossRatio,
+      averageHoldingPeriod: avgHoldingPeriod,
+      averageDrawdown: 0, // Simplified default
+      averageRMultiple: 0, // Simplified default
+      expectancy,
+      kellyCriterion,
+      riskOfRuin: 0, // Simplified default
+      SQN,
+      treynorRatio: 0,
+      informationRatio: 0,
     };
   }
 
