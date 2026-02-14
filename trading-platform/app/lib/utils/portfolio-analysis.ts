@@ -183,7 +183,8 @@ export function calculateBeta(
  */
 export function analyzePortfolio(
   trades: StoredTrade[],
-  initialCapital: number = 100000
+  initialCapital: number = 100000,
+  riskFreeRate: number = 0.02
 ): PortfolioAnalysis {
   if (trades.length === 0) {
     return {
@@ -246,9 +247,10 @@ export function analyzePortfolio(
   const monthlyStdDev = Math.sqrt(monthlyVariance);
   const volatility = monthlyStdDev * Math.sqrt(12); // 年率化
   
-  // シャープレシオ・ソルティノレシオ
-  const sharpeRatio = calculateSharpeRatio(monthlyReturns.map(r => r * 12));
-  const sortinoRatio = calculateSortinoRatio(monthlyReturns.map(r => r * 12));
+  // シャープレシオ・ソルティノレ（月次リターンと月次無リスクレートを使用)
+  const monthlyRiskFreeRate = riskFreeRate / 12;
+  const sharpeRatio = calculateSharpeRatio(monthlyReturns, monthlyRiskFreeRate);
+  const sortinoRatio = calculateSortinoRatio(monthlyReturns, monthlyRiskFreeRate);
   
   return {
     totalReturn,
@@ -308,19 +310,17 @@ export function calculateAssetAllocation(
   value: number;
   percentage: number;
 }> {
-  const allocation: Record<string, number> = {};
+  const allocation = new Map<string, number>();
 
   for (const trade of trades) {
-    if (!allocation[trade.symbol]) {
-      allocation[trade.symbol] = 0;
-    }
-    // 取引数量を資産配分の代わりに使用
-    allocation[trade.symbol] += trade.quantity || 1;
+    const symbol = trade.symbol;
+    const currentValue = allocation.get(symbol) || 0;
+    allocation.set(symbol, currentValue + (trade.quantity || 1));
   }
 
-  const total = Object.values(allocation).reduce((sum, v) => sum + v, 0);
+  const total = Array.from(allocation.values()).reduce((sum, v) => sum + v, 0);
 
-  return Object.entries(allocation)
+  return Array.from(allocation.entries())
     .sort(([, a], [, b]) => b - a)
     .map(([symbol, value]) => ({
       symbol,
