@@ -3,7 +3,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw, Home, Bug, Copy, CheckCircle } from 'lucide-react';
 import {
-  AppError,
   NetworkError,
   ValidationError,
   AuthenticationError,

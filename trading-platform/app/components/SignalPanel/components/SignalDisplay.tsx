@@ -1,6 +1,6 @@
-﻿import { Signal, Stock } from '@/app/types';
+import { Signal, Stock } from '@/app/types';
 import { PositionSizeRecommendation } from '@/app/types/risk';
-import { cn, getConfidenceColor } from '@/app/lib/utils';
+
 import { SignalCard } from '../../SignalCard';
 import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
 import { KellyPositionSizingDisplay } from '@/app/components/KellyPositionSizingDisplay';
@@ -41,9 +41,9 @@ export function SignalDisplay({
         stock={stock}
         isLive={isLive}
         aiHitRate={preciseHitRate?.hitRate || 0}
-        aiTradesCount={preciseHitRate?.trades || 0}
-        calculatingHitRate={calculatingHitRate}
-        error={error}
+        _aiTradesCount={preciseHitRate?.trades || 0}
+        _calculatingHitRate={calculatingHitRate}
+        _error={error}
       />
 
       {/* Kelly Position Sizing Display */}

@@ -35,7 +35,7 @@ export function DataExportImport() {
       URL.revokeObjectURL(url);
 
       setMessage('データをエクスポートしました');
-    } catch (err) {
+    } catch {
       setError('エクスポートに失敗しました');
     } finally {
       setIsExporting(false);
@@ -57,14 +57,14 @@ export function DataExportImport() {
           const content = e.target?.result as string;
           await importData(content);
           setMessage('データをインポートしました');
-        } catch (err) {
+        } catch {
           setError('インポートに失敗しました。ファイル形式を確認してください');
         } finally {
           setIsImporting(false);
         }
       };
       reader.readAsText(file);
-    } catch (err) {
+    } catch {
       setError('ファイルの読み込みに失敗しました');
       setIsImporting(false);
     }
@@ -78,7 +78,7 @@ export function DataExportImport() {
     try {
       await clearAllData();
       setMessage('全てのデータを削除しました');
-    } catch (err) {
+    } catch {
       setError('データの削除に失敗しました');
     }
   };

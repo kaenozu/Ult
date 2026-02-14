@@ -11,7 +11,6 @@ export function AlertConditionManager() {
     alerts,
     channels,
     addCondition,
-    updateCondition,
     removeCondition,
     toggleCondition,
     acknowledgeAlert,

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { OHLCV, Stock } from '@/app/types';
-import { supplyDemandMaster, SupplyDemandLevel } from '@/app/lib/supplyDemandMaster';
+import { supplyDemandMaster } from '@/app/lib/supplyDemandMaster';
 import { formatCurrency } from '@/app/lib/utils';
 import { TrendingUp, TrendingDown, AlertCircle } from 'lucide-react';
 
