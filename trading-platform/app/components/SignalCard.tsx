@@ -11,9 +11,9 @@ interface SignalCardProps {
     stock: Stock;
     isLive?: boolean;
     aiHitRate?: number;
-    aiTradesCount?: number;
-    calculatingHitRate?: boolean;
-    error?: string | null;
+    _aiTradesCount?: number;  // Reserved for future use
+    _calculatingHitRate?: boolean;  // Reserved for future use
+    _error?: string | null;  // Reserved for future use
 }
 
 export function SignalCard({
@@ -21,9 +21,9 @@ export function SignalCard({
     stock,
     isLive = false,
     aiHitRate,
-    aiTradesCount = 0,
-    calculatingHitRate = false,
-    error = null
+    _aiTradesCount,
+    _calculatingHitRate,
+    _error
 }: SignalCardProps) {
     // Get risk management settings
     const { settings: riskSettings } = useRiskManagementStore();

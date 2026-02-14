@@ -1,6 +1,6 @@
-﻿import { Signal, Stock } from '@/app/types';
+import { Signal, Stock } from '@/app/types';
 import { PositionSizeRecommendation } from '@/app/types/risk';
-import { cn, getConfidenceColor } from '@/app/lib/utils';
+
 import { SignalCard } from '../../SignalCard';
 import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
 import { KellyPositionSizingDisplay } from '@/app/components/KellyPositionSizingDisplay';

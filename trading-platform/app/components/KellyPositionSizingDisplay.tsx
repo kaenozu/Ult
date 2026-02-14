@@ -6,10 +6,9 @@
 
 'use client';
 
-import { useMemo } from 'react';
 import { PositionSizeRecommendation } from '@/app/types/risk';
 import { cn } from '@/app/lib/utils';
-import { TrendingUp, AlertTriangle, DollarSign, Target, Activity, Shield } from 'lucide-react';
+import { TrendingUp, AlertTriangle, Target, Activity, Shield } from 'lucide-react';
 
 interface KellyPositionSizingDisplayProps {
   recommendation: PositionSizeRecommendation & { kellyResult?: { confidence: number; warnings: string[] } } | null;

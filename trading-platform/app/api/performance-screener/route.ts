@@ -18,7 +18,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { performanceScreenerService, StockDataSource } from '@/app/lib/PerformanceScreenerService';
-import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';
+import { JAPAN_STOCKS, USA_STOCKS } from '@/app/data/stocks';
 import { OHLCV } from '@/app/types';
 import { handleApiError } from '@/app/lib/error-handler';
 import { requireAuth } from '@/app/lib/auth';

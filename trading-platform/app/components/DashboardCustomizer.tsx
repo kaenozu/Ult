@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useDashboardStore, WidgetType } from '@/app/store/dashboardStore';
-import { Layout, Plus, Settings, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Layout, Plus, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
 
 const WIDGET_TYPES: { type: WidgetType; label: string }[] = [
