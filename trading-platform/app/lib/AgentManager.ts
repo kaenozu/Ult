@@ -5,13 +5,12 @@
  * 並列開発を可能にするためのインフラ
  */
 
-import { spawn, ChildProcess, exec, execFile, execSync } from 'child_process';
+import { spawn, execFile } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 
 import { logger } from '@/app/core/logger';
-const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 const fsPromises = fs.promises;
 
@@ -111,7 +110,7 @@ export class AgentManager {
    * タスクをエージェントに割り当て
    */
   async assignTask(task: Task): Promise<string> {
-    // 適刁E��スキルのエージェントを検索
+    // 適切なスキルのエージェントを検索
     const suitableAgents = Array.from(this.agents.values()).filter(
       (agent) => agent.skill === task.skill && agent.status === 'idle'
     );
@@ -201,7 +200,7 @@ export class AgentManager {
     return templates[agent.skill] || templates.general;
   }
 
-  private generateTypeScriptFixerScript(task: Task): string {
+  private generateTypeScriptFixerScript(_task: Task): string {
     return [
       "import { execSync } from 'child_process';",
       "import * as fs from 'fs';",
@@ -248,7 +247,7 @@ export class AgentManager {
       "",
     ].join('\\n');
   }
-  private generateLinterFixerScript(task: Task): string {
+  private generateLinterFixerScript(_task: Task): string {
     return [
       "import { execSync } from 'child_process';",
       "import * as fs from 'fs';",
@@ -295,7 +294,7 @@ export class AgentManager {
       "",
     ].join('\\n');
   }
-  private generateTestWriterScript(task: Task): string {
+  private generateTestWriterScript(_task: Task): string {
     return [
       "import * as fs from 'fs';",
       "",
@@ -316,7 +315,7 @@ export class AgentManager {
       "",
     ].join('\\n');
   }
-  private generateUIUXDesignerScript(task: Task): string {
+  private generateUIUXDesignerScript(_task: Task): string {
     return [
       "import * as fs from 'fs';",
       "",
@@ -340,7 +339,7 @@ export class AgentManager {
       "",
     ].join('\\n');
   }
-  private generateQuantDeveloperScript(task: Task): string {
+  private generateQuantDeveloperScript(_task: Task): string {
     return [
       "import * as fs from 'fs';",
       "",
@@ -364,7 +363,7 @@ export class AgentManager {
       "",
     ].join('\\n');
   }
-  private generateGeneralScript(task: Task): string {
+  private generateGeneralScript(_task: Task): string {
     return [
       "import * as fs from 'fs';",
       "",
@@ -446,7 +445,6 @@ export class AgentManager {
         logger.info(`[AgentManager] No changes to merge for ${agent.name}`);
       }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`[AgentManager] Merge failed for ${agent.name}:`, error instanceof Error ? error : new Error(String(error)));
     }
   }

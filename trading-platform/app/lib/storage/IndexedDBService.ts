@@ -72,8 +72,9 @@ class IndexedDBService {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        logger.error('IndexedDB initialization failed', request.error);
-        reject(request.error);
+        const error = request.error ?? new Error('IndexedDB initialization failed');
+        logger.error('IndexedDB initialization failed', error);
+        reject(error);
       };
 
       request.onsuccess = () => {
@@ -137,8 +138,9 @@ class IndexedDBService {
       };
 
       request.onerror = () => {
-        logger.error('Failed to save trade', request.error);
-        reject(request.error);
+        const error = request.error ?? new Error('Failed to save trade');
+        logger.error('Failed to save trade', error);
+        reject(error);
       };
     });
   }
@@ -176,7 +178,8 @@ class IndexedDBService {
 
         request.onerror = () => {
           failed++;
-          logger.error('Failed to save trade in batch', request.error);
+          const error = request.error ?? new Error('Failed to save trade in batch');
+          logger.error('Failed to save trade in batch', error);
           if (completed + failed === trades.length) {
             resolve(); // 部分的な失敗でも続行
           }
@@ -245,8 +248,9 @@ class IndexedDBService {
       };
 
       request.onerror = () => {
-        logger.error('Failed to get trades', request.error);
-        reject(request.error);
+        const error = request.error ?? new Error('Failed to get trades');
+        logger.error('Failed to get trades', error);
+        reject(error);
       };
     });
   }
@@ -425,7 +429,7 @@ class IndexedDBService {
   /**
    * ポジションを取得
    */
-  async getPositions(): Promise<Position[]> {
+  async getPositions(): Promise<StoredPosition[]> {
     await this.initialize();
     if (!this.db) throw new Error('Database not initialized');
 
