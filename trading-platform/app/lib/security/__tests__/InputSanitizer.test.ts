@@ -126,7 +126,7 @@ describe('InputSanitizer', () => {
 
     it('should detect XSS and escape', () => {
       const result = sanitizeText('<script>alert(1)</script>');
-      expect(result.warnings).toContain('Potential XSS pattern detected');
+      expect(result.errors).toContain('Potential XSS pattern detected');
       expect(result.sanitized).not.toContain('<script>');
     });
 
