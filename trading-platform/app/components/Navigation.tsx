@@ -45,6 +45,12 @@ export function Navigation() {
       description: '実績分析'
     },
     { 
+      path: '/portfolio-analysis', 
+      label: 'ポートフォリオ分析', 
+      icon: Activity,
+      description: 'リスク・リターン分析'
+    },
+    { 
       path: '/ai-advisor', 
       label: 'AIアドバイザー', 
       icon: Brain,
