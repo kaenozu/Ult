@@ -1,6 +1,0 @@
-{
-  "name": "safe-agent-protector",
-  "description": "エージェント自身(gemini-cli)のプロセスを保護し、Windows環境で安全に開発サーバーを制御・再起動するための防護スキル。",
-  "version": "1.0.0",
-  "priority": "highest"
-}

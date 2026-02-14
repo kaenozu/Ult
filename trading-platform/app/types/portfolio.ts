@@ -12,6 +12,8 @@ export interface Position {
   currentPrice: number;
   change: number;
   entryDate: string;
+  stopLoss?: number;
+  takeProfit?: number;
 }
 
 export interface Order {
@@ -24,6 +26,8 @@ export interface Order {
   status: 'PENDING' | 'FILLED' | 'CANCELLED';
   date: string;
   timestamp?: number;
+  stopLoss?: number;
+  takeProfit?: number;
 }
 
 export interface Portfolio {

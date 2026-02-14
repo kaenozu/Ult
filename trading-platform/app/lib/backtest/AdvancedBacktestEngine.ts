@@ -317,6 +317,7 @@ export class AdvancedBacktestEngine extends BaseBacktestEngine {
 
     // Update equity
     this.currentEquity += pnl;
+    this.peakEquity = Math.max(this.peakEquity, this.currentEquity);
 
     const trade: Trade = {
       id: `trade_${this.trades.length}`,
