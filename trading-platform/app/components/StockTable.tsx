@@ -204,11 +204,11 @@ export const StockTable = memo(({
         return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
       }
 
-      // String comparison
+      // String comparison (fallback for non-symbol string fields)
       if (typeof aVal === 'string' && typeof bVal === 'string') {
-        return sortDirection === 'asc' 
-          ? aVal.localeCompare(bVal)
-          : bVal.localeCompare(aVal);
+        // Use the optimized collator for any string comparison
+        const result = symbolCollator.compare(aVal as string, bVal as string);
+        return sortDirection === 'asc' ? result : -result;
       }
 
       return 0;
