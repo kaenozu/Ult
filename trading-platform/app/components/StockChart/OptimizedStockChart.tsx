@@ -54,7 +54,7 @@ function useChartVirtualization(
   itemHeight: number,
   overscan: number = 5
 ): VirtualizationState {
-  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollTop, _setScrollTop] = useState(0);
 
   const visibleStart = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const visibleEnd = Math.min(
@@ -140,7 +140,7 @@ export const OptimizedStockChart = memo(function OptimizedStockChart({
   data,
   width,
   height,
-  indicators = [],
+  _indicators = [],
   visibleRange: propVisibleRange,
   onZoom,
   theme = 'dark',

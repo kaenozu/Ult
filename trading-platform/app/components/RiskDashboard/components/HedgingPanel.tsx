@@ -4,7 +4,6 @@ import { formatCurrency } from '@/app/lib/utils';
 import { Shield } from 'lucide-react';
 import {
   createTailRiskHedging,
-  HedgeRecommendation,
 } from '@/app/lib/risk/TailRiskHedging';
 
 interface HedgingPanelProps {

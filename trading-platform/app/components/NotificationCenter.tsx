@@ -11,10 +11,10 @@ import {
 } from '@/app/hooks/useAlertLogic';
 
 interface NotificationCenterProps {
-  onClose?: () => void;
+  _onClose?: () => void;  // Reserved for future use
 }
 
-export function NotificationCenter({ onClose }: NotificationCenterProps) {
+export function NotificationCenter({ _onClose }: NotificationCenterProps) {
   const {
     alerts,
     unreadCount,

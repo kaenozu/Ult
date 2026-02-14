@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { Stock, Signal, PaperTrade, OHLCV, Order } from '@/app/types';
 import { useAIStore } from '@/app/store/aiStore';
 import { useJournalStore } from '@/app/store/journalStore';
@@ -10,7 +10,7 @@ import { calculateAIStatusMetrics } from '../aiStatus';
  * Hook to manage signal-related data and performance metrics
  */
 export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[] = []) {
-  const { toggleAI, trades } = useAIStore();
+  const { toggleAI: _toggleAI, trades } = useAIStore();
   const journal = useJournalStore((state) => state.journal);
   const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(stock, ohlcv);
   

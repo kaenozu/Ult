@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { memo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
@@ -30,9 +30,8 @@ export const ChartToolbar = memo(function ChartToolbar({
   setInterval,
   fallbackApplied = false,
   dataDelayMinutes
-}: ChartToolbarProps) {
+  }: ChartToolbarProps) {
   const isJapaneseStock = stock?.market === 'japan';
-  const isIntraday = isIntradayInterval(interval);
   const latestChange =
     latestData && typeof latestData.close === 'number' && typeof latestData.open === 'number'
       ? latestData.close - latestData.open
