@@ -5,7 +5,7 @@
  * 技術指標のクロス、価格レベルの到達、出来高異常、市場マイクロストラクチャーの変化などを検知します。
  */
 
-import { OHLCV, Stock, Signal } from '@/app/types';
+import { OHLCV } from '@/app/types';
 import type { TechnicalIndicators } from '@/app/types';
 import { ProcessedData } from './high-frequency-data-processing-service';
 
@@ -242,7 +242,7 @@ class EnhancedSmartAlertService {
   /**
    * クロスアップをチェック
    */
-  private checkCrossAbove(data: OHLCV | ProcessedData, condition: AlertCondition, symbol: string): boolean {
+  private checkCrossAbove(_data: OHLCV | ProcessedData, _condition: AlertCondition, _symbol: string): boolean {
     // 実際には履歴データが必要だが、ここでは簡略化
     // 通常は過去のデータを保持して比較する
     return false;
@@ -251,7 +251,7 @@ class EnhancedSmartAlertService {
   /**
    * クロスダウンをチェック
    */
-  private checkCrossBelow(data: OHLCV | ProcessedData, condition: AlertCondition, symbol: string): boolean {
+  private checkCrossBelow(_data: OHLCV | ProcessedData, _condition: AlertCondition, _symbol: string): boolean {
     // 実際には履歴データが必要だが、ここでは簡略化
     return false;
   }

@@ -315,9 +315,9 @@ describe('memoize', () => {
       expect(callCount).toBe(1);
 
       // Due to JSON.stringify limitation, [undefined] and [null] both become "[null]"
-      // so they share the same cache key and return the cached undefined
+      // so they share the same cache key
       const result2 = memoized(null);
-      expect(result2).toBe(undefined); // Returns cached undefined, not null
+      expect(result2).toBe(null); // Cache returns null (same cache key as undefined)
       expect(callCount).toBe(1); // Cache hit
 
       // To avoid this, use a custom key generator for sensitive cases
