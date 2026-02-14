@@ -127,6 +127,7 @@ export const useJournalStore = create<JournalStore>()(
 
         try {
           const engine = getPatternRecognitionEngine();
+          engine.clear(); // Clear existing entries to prevent duplication
           engine.addJournalEntries(journal);
           engine.learnFromJournal();
           
@@ -203,6 +204,7 @@ export const useJournalStore = create<JournalStore>()(
         
         // Initialize pattern recognition engine with existing journal
         const engine = getPatternRecognitionEngine();
+        engine.clear(); // Ensure engine is empty before adding entries
         engine.addJournalEntries(journal);
         engine.learnFromJournal();
         
@@ -210,6 +212,7 @@ export const useJournalStore = create<JournalStore>()(
         
         // Initialize psychology monitor with existing closed trades
         const monitor = getPsychologyMonitor();
+        monitor.resetState(); // Reset state before recording trades
         const closedTrades = journal.filter(e => e.status === 'CLOSED');
         
         for (const trade of closedTrades) {
