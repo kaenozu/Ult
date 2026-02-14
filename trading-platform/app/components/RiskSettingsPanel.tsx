@@ -5,6 +5,7 @@ import { OHLCV, Portfolio } from '@/app/types';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 import { cn } from '@/app/lib/utils';
 import { DynamicRiskMetrics } from './DynamicRiskMetrics';
+import { ToggleSwitch } from './ui/ToggleSwitch';
 
 interface RiskSettingsPanelProps {
   id: string;
@@ -32,67 +33,34 @@ export function RiskSettingsPanel({
       {/* Trailing Stop Toggle */}
       <div className="flex items-center justify-between">
         <span id={ids.trailingStop} className="text-[10px] text-[#92adc9]">トレイリングストップ</span>
-        <button
-          onClick={() => setRiskConfig(prev => ({ ...prev, enableTrailingStop: !prev.enableTrailingStop }))}
-          className={cn(
-            "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-            riskConfig.enableTrailingStop ? "bg-green-500" : "bg-[#233648]"
-          )}
-          role="switch"
-          aria-checked={riskConfig.enableTrailingStop}
+        <ToggleSwitch
+          checked={riskConfig.enableTrailingStop}
+          onChange={(checked) => setRiskConfig(prev => ({ ...prev, enableTrailingStop: checked }))}
+          size="sm"
           aria-labelledby={ids.trailingStop}
-        >
-          <span
-            className={cn(
-              "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
-              riskConfig.enableTrailingStop ? "translate-x-5" : "translate-x-1"
-            )}
-          />
-        </button>
+        />
       </div>
 
       {/* Volatility Adjustment Toggle */}
       <div className="flex items-center justify-between">
         <span id={ids.volAdjust} className="text-[10px] text-[#92adc9]">ボラティリティ調整</span>
-        <button
-          onClick={() => setRiskConfig(prev => ({ ...prev, enableVolatilityAdjustment: !prev.enableVolatilityAdjustment }))}
-          className={cn(
-            "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-            riskConfig.enableVolatilityAdjustment ? "bg-green-500" : "bg-[#233648]"
-          )}
-          role="switch"
-          aria-checked={riskConfig.enableVolatilityAdjustment}
+        <ToggleSwitch
+          checked={riskConfig.enableVolatilityAdjustment}
+          onChange={(checked) => setRiskConfig(prev => ({ ...prev, enableVolatilityAdjustment: checked }))}
+          size="sm"
           aria-labelledby={ids.volAdjust}
-        >
-          <span
-            className={cn(
-              "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
-              riskConfig.enableVolatilityAdjustment ? "translate-x-5" : "translate-x-1"
-            )}
-          />
-        </button>
+        />
       </div>
 
       {/* Kelly-based Position Sizing Toggle */}
       <div className="flex items-center justify-between">
         <span id={ids.kelly} className="text-[10px] text-[#92adc9]">ケリー基準ポジションサイジング</span>
-        <button
-          onClick={() => setRiskConfig(prev => ({ ...prev, enableDynamicPositionSizing: !prev.enableDynamicPositionSizing }))}
-          className={cn(
-            "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-            riskConfig.enableDynamicPositionSizing ? "bg-green-500" : "bg-[#233648]"
-          )}
-          role="switch"
-          aria-checked={riskConfig.enableDynamicPositionSizing}
+        <ToggleSwitch
+          checked={riskConfig.enableDynamicPositionSizing}
+          onChange={(checked) => setRiskConfig(prev => ({ ...prev, enableDynamicPositionSizing: checked }))}
+          size="sm"
           aria-labelledby={ids.kelly}
-        >
-          <span
-            className={cn(
-              "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
-              riskConfig.enableDynamicPositionSizing ? "translate-x-5" : "translate-x-1"
-            )}
-          />
-        </button>
+        />
       </div>
 
       {/* Volatility Level Selector */}

@@ -1,14 +1,12 @@
 'use client';
 
 import { cn } from '@/app/lib/utils';
+import * as React from 'react';
 
-export interface ToggleSwitchProps {
+export interface ToggleSwitchProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange' | 'value'> {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
-  'aria-label'?: string;
-  className?: string;
 }
 
 /**
@@ -20,8 +18,8 @@ export function ToggleSwitch({
   onChange,
   disabled = false,
   size = 'md',
-  'aria-label': ariaLabel,
   className,
+  ...props
 }: ToggleSwitchProps) {
   const sizeClasses = {
     sm: {
@@ -54,7 +52,6 @@ export function ToggleSwitch({
       type="button"
       role="switch"
       aria-checked={checked}
-      aria-label={ariaLabel}
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       className={cn(
@@ -65,6 +62,7 @@ export function ToggleSwitch({
         !disabled && 'cursor-pointer',
         className
       )}
+      {...props}
     >
       <div
         className={cn(
