@@ -129,7 +129,34 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
       {/* Quantity */}
       <div className="flex flex-col gap-1">
-        <label htmlFor={ids.quantity} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
+        <div className="flex justify-between items-center">
+          <label htmlFor={ids.quantity} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
+          {side === 'BUY' && (() => {
+            const maxQty = price > 0 ? Math.floor(cash / price) : 0;
+            const canBuy = maxQty >= 1;
+
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!canBuy) {
+                    setErrorMessage("現金が足りません");
+                    return;
+                  }
+                  setQuantity(maxQty);
+                }}
+                className={cn(
+                  "text-[10px] underline decoration-dotted transition-colors",
+                  canBuy ? "text-green-400 hover:text-white" : "text-gray-500 cursor-not-allowed"
+                )}
+                aria-disabled={!canBuy}
+                aria-label={canBuy ? "最大購入可能数量を入力" : "現金が足りません"}
+              >
+                最大 (Max)
+              </button>
+            );
+          })()}
+        </div>
         <input
           id={ids.quantity}
           type="number"
