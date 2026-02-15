@@ -6,6 +6,7 @@
  */
 
 import { JournalEntry } from '@/app/types';
+import { TIME_INTERVALS } from '@/app/lib/constants/common';
 
 /**
  * Psychology state tracking
@@ -51,7 +52,7 @@ export interface TradingMetrics {
 const CONSECUTIVE_LOSSES_WARNING_THRESHOLD = 3;
 const CONSECUTIVE_LOSSES_CRITICAL_THRESHOLD = 5;
 const OVER_TRADING_THRESHOLD = 20;
-const REVENGE_TRADING_TIME_WINDOW = 30 * 60 * 1000; // 30 minutes in milliseconds
+const REVENGE_TRADING_TIME_WINDOW = TIME_INTERVALS.UPDATE_30_MIN;
 const RISK_TOLERANCE_MIN = 0.3;
 const RISK_TOLERANCE_MAX = 1.5;
 const RISK_TOLERANCE_DEFAULT = 1.0;
