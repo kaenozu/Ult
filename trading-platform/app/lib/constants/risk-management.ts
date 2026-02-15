@@ -6,6 +6,16 @@
  */
 
 /**
+ * VaR (Value at Risk) confidence levels and z-scores
+ */
+export const VaR = {
+  CONFIDENCE_95: 0.95,
+  CONFIDENCE_99: 0.99,
+  Z_SCORE_95: 1.645,
+  Z_SCORE_99: 2.326,
+} as const;
+
+/**
  * Comprehensive risk management parameters
  */
 export const RISK_MANAGEMENT = {

@@ -7,6 +7,7 @@
  */
 
 import { Position, Portfolio } from '@/app/types';
+import { VaR } from '@/app/lib/constants/risk-management';
 
 // ============================================================================
 // Types
@@ -269,18 +270,20 @@ export class PortfolioRiskMonitor {
     portfolio: Portfolio,
     confidence: number
   ): { var95: number; var99: number; cvar95: number; cvar99: number } {
-    const totalValue = portfolio.totalValue + portfolio.cash;
+    const { positions } = portfolio;
+    const totalValue = positions.reduce((sum, p) => sum + p.currentPrice * p.quantity, 0);
+    
+    if (totalValue === 0 || positions.length === 0) {
+      return { var95: 0, var99: 0, cvar95: 0, cvar99: 0 };
+    }
 
-    // ポートフォリオボラティリティを計算
-    const volatility = this.calculatePortfolioVolatility(portfolio) / 100;
-
-    // Z-score
-    const z95 = 1.645;
-    const z99 = 2.326;
-
+    const volatility = this.calculatePortfolioVolatility(portfolio);
+    const z95 = VaR.Z_SCORE_95;
+    const z99 = VaR.Z_SCORE_99;
+    
     const var95 = totalValue * volatility * z95;
     const var99 = totalValue * volatility * z99;
-
+    
     // CVaRの近似
     const cvar95 = var95 * (Math.exp(0.5 * z95 * z95) / 0.05) / z95;
     const cvar99 = var99 * (Math.exp(0.5 * z99 * z99) / 0.01) / z99;
