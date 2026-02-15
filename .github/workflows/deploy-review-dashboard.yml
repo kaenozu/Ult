@@ -1,0 +1,190 @@
+name: Deploy Review Dashboard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'  # Every hour
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch Review Data
+        run: |
+          # Fetch open review issues
+          ISSUES=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --search "label:review state:open" \
+            --json number,title,author,createdAt,body \
+            -q '.[]')
+          
+          echo "$ISSUES" > data/reviews.json
+
+      - name: Build Dashboard
+        run: |
+          cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Dashboard - ${{ github.repository }}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #30363d;
+    }
+    .stats {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat {
+      background: #161b22;
+      padding: 20px 30px;
+      border-radius: 8px;
+      border: 1px solid #30363d;
+    }
+    .stat-value { font-size: 32px; font-weight: bold; }
+    .stat-label { color: #8b949e; font-size: 14px; margin-top: 5px; }
+    .unresolved { color: #f0883e; }
+    .resolved { color: #3fb950; }
+    .issue {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .issue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .issue-title {
+      color: #58a6ff;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .issue-title:hover { text-decoration: underline; }
+    .issue-meta {
+      color: #8b949e;
+      font-size: 12px;
+    }
+    .issue-body {
+      color: #c9d1d9;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .label {
+      display: inline-block;
+      background: #388bfd;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: #8b949e;
+    }
+    .updated { text-align: right; color: #8b949e; font-size: 12px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 Review Dashboard</h1>
+    
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value unresolved" id="openCount">-</div>
+        <div class="stat-label">Open Reviews</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="prCount">-</div>
+        <div class="stat-label">Recent PRs (7 days)</div>
+      </div>
+    </div>
+
+    <h2 style="margin-bottom: 16px;">Open Review Issues</h2>
+    <div id="issues"></div>
+    
+    <p class="updated">Updated: ${{ github.event.repository.updated_at }}</p>
+  </div>
+
+  <script>
+    async function loadData() {
+      try {
+        const response = await fetch('data/reviews.json');
+        const issues = await response.json();
+        
+        const openIssues = issues.filter(i => i.state === 'OPEN');
+        document.getElementById('openCount').textContent = openIssues.length;
+        
+        const container = document.getElementById('issues');
+        if (openIssues.length === 0) {
+          container.innerHTML = '<div class="empty">No open review issues</div>';
+        } else {
+          container.innerHTML = openIssues.map(issue => {
+            const title = issue.title.replace('[Review] PR #', '#');
+            const prNum = title.match(/#(\d+)/)?.[1] || '';
+            const body = (issue.body || '').substring(0, 200);
+            const date = issue.createdAt?.split('T')[0] || '';
+            
+            return \`
+              <div class="issue">
+                <div class="issue-header">
+                  <a href="https://github.com/${{ github.repository }}/issues/\${issue.number}" class="issue-title" target="_blank">
+                    \${title}
+                  </a>
+                  <span class="issue-meta">by @\${issue.author?.login || 'unknown'} • \${date}</span>
+                </div>
+                <p class="issue-body">\${body || 'No description'}</p>
+              </div>
+            \`;
+          }).join('');
+        }
+      } catch (e) {
+        console.error(e);
+        document.getElementById('issues').innerHTML = '<div class="empty">Failed to load data</div>';
+      }
+    }
+    loadData();
+  </script>
+</body>
+</html>
+EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

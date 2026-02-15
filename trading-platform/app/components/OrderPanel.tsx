@@ -139,10 +139,14 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
                   const maxQty = Math.floor(cash / price);
                   if (maxQty >= 1) {
                     setQuantity(maxQty);
+                  } else {
+                    setErrorMessage('現金が足りません');
+                    setTimeout(() => setErrorMessage(null), 2000);
                   }
                 }
               }}
-              className="text-[10px] text-green-400 hover:text-white underline decoration-dotted transition-colors"
+              disabled={price <= 0 || cash <= 0 || Math.floor(cash / price) < 1}
+              className="text-[10px] text-green-400 hover:text-white underline decoration-dotted transition-colors disabled:text-gray-500 disabled:no-underline cursor-pointer disabled:cursor-not-allowed"
               aria-label="最大購入可能数量を入力"
             >
               最大 (Max)
