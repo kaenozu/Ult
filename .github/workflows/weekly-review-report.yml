@@ -15,104 +15,39 @@ jobs:
       issues: write
       pull-requests: read
     steps:
-      - name: Get Review Statistics
-        id: stats
+      - name: Generate Report
         run: |
-          # Get all open issues with "[Review]" in title (created by our workflow)
-          REVIEW_ISSUES=$(gh issue list \
-            --repo ${{ github.repository }} \
-            --search "[Review] in:title state:open" \
-            --json number,title,createdAt \
-            -q '.[]' 2>/dev/null || echo "[]")
+          echo "Generating weekly report..."
           
-          OPEN_COUNT=$(echo "$REVIEW_ISSUES" | grep -c '"number"' || echo "0")
+          # Get open review issues
+          OPEN_ISSUES=$(gh issue list --repo ${{ github.repository }} --search "[Review] in:title state:open" --json number,title -q '.[] | "- #\(.number): \(.title)"' 2>/dev/null || echo "None")
+          OPEN_COUNT=$(echo "$OPEN_ISSUES" | grep -c "^\-" || echo "0")
           
-          # Get closed review issues from last 7 days
-          CLOSED_REVIEW=$(gh issue list \
-            --repo ${{ github.repository }} \
-            --search "[Review] in:title state:closed" \
-            --json number \
-            -q 'length' 2>/dev/null || echo "0")
-          
-          # Calculate resolution rate
-          TOTAL=$((OPEN_COUNT + CLOSED_REVIEW))
-          if [ $TOTAL -gt 0 ]; then
-            RESOLUTION_RATE=$(echo "scale=1; ($CLOSED_REVIEW / $TOTAL) * 100" | bc 2>/dev/null || echo "N/A")
-          else
-            RESOLUTION_RATE="N/A"
-          fi
-          
-          echo "open_count=$OPEN_COUNT" >> $GITHUB_OUTPUT
-          echo "closed_count=$CLOSED_REVIEW" >> $GITHUB_OUTPUT
-          echo "resolution_rate=$RESOLUTION_RATE" >> $GITHUB_OUTPUT
-          
-          # Format issues for report
-          ISSUES_LIST=$(echo "$REVIEW_ISSUES" | jq -r '. | "- #\(.number): \(.title) (created: \(.createdAt | split("T")[0]))"' 2>/dev/null || echo "No open review issues")
-          echo "issues_list<<EOF" >> $GITHUB_OUTPUT
-          $ISSUES_LIST
-          EOF
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get Recently Merged PRs
-        id: recent-prs
-        run: |
-          # Get PRs merged in last 7 days
+          # Get recently merged PRs (last 7 days)
           SINCE_DATE=$(date -d '7 days ago' +%Y-%m-%d)
+          MERGED_PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json number,title,mergedAt -q '.[] | select(.mergedAt >= "'$SINCE_DATE'") | "- #\(.number): \(.title)"' 2>/dev/null || echo "None")
+          PR_COUNT=$(echo "$MERGED_PRS" | grep -c "^\-" || echo "0")
           
-          MERGED_PRS=$(gh pr list \
-            --repo ${{ github.repository }} \
-            --state merged \
-            --limit 20 \
-            --json number,title,mergedAt,author,comments \
-            -q '.[] | select(.mergedAt >= "'$SINCE_DATE'") | "- #\(.number): \(.title) by @\(.author.login) (\(.mergedAt | split("T")[0]))"' 2>/dev/null || echo "")
-          
-          PRS_COUNT=$(echo "$MERGED_PRS" | grep -c "^\-" || echo "0")
-          
-          echo "pr_count=$PRS_COUNT" >> $GITHUB_OUTPUT
-          echo "prs_list<<EOF" >> $GITHUB_OUTPUT
-          $MERGED_PRS
-          EOF
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Weekly Report
-        run: |
           TODAY=$(date +%Y-%m-%d)
           
-          REPORT_BODY="## 📊 Weekly Review Report - $TODAY
+          # Create report body
+          REPORT="## 📊 Weekly Review Report - $TODAY
 
 ### Summary
-| Metric | Count |
-|--------|-------|
-| **Open Review Issues** | ${{ steps.stats.outputs.open_count }} |
-| **Closed (Last 7 days)** | ${{ steps.stats.outputs.closed_count }} |
-| **Resolution Rate** | ${{ steps.stats.outputs.resolution_rate }}% |
-| **Recently Merged PRs** | ${{ steps.recent-prs.outputs.pr_count }} |
+- **Open Review Issues**: $OPEN_COUNT
+- **Recently Merged PRs**: $PR_COUNT
+
+### Open Review Issues
+$OPEN_ISSUES
+
+### Recently Merged PRs (Last 7 Days)
+$MERGED_PRS
 
 ---
-
-### 🔍 Open Review Issues
-
-${{ steps.stats.outputs.issues_list }}
-
----
-
-### 📈 Recently Merged PRs (Last 7 Days)
-
-${{ steps.recent-prs.outputs.prs_list }}
-
----
-
-*This report was generated automatically by GitHub Actions*
-"
+*Generated automatically by GitHub Actions*"
           
-          # Always create report, even if empty
-          gh issue create \
-            --repo ${{ github.repository }} \
-            --title "📊 Weekly Review Report - $TODAY" \
-            --body "$REPORT_BODY"
-          
-          echo "✅ Weekly report created successfully"
+          # Create issue
+          echo "$REPORT" | gh issue create --repo ${{ github.repository }} --title "📊 Weekly Review Report - $TODAY" --body-file -
+          echo "✅ Report created successfully"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
