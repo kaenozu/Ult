@@ -9,7 +9,10 @@ import { OHLCV, TechnicalIndicatorsWithATR } from '@/app/types';
 import {
   FeatureCalculationService as DomainFeatureCalculationService,
 } from '@/app/domains/prediction/services/feature-calculation-service';
-import { EnhancedPredictionFeatures } from '@/app/domains/prediction/types';
+import { EnhancedPredictionFeatures, PredictionFeatures } from '@/app/domains/prediction/types';
+
+// Re-export types for backward compatibility
+export type { PredictionFeatures, EnhancedPredictionFeatures };
 
 /**
  * Extended Feature Calculation Service with backward compatibility
