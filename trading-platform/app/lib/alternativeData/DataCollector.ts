@@ -5,6 +5,8 @@
  * Alternative Data Collection Engine - Integrates and manages alternative data from multiple sources.
  */
 
+import { TIME_INTERVALS } from '@/app/lib/constants/common';
+
 // Simple EventEmitter implementation for browser/Node compatibility
 class EventEmitter {
   private events: Map<string, Function[]> = new Map();
@@ -151,7 +153,7 @@ export const DEFAULT_COLLECTOR_CONFIG: CollectorConfig = {
       enabled: true,
       priority: 'high',
       weight: 0.2,
-      refreshInterval: 60 * 60 * 1000, // 1時間
+      refreshInterval: TIME_INTERVALS.UPDATE_1_HOUR,
       rateLimit: { requests: 50, perMilliseconds: 60000 }
     },
     {
@@ -160,12 +162,12 @@ export const DEFAULT_COLLECTOR_CONFIG: CollectorConfig = {
       enabled: true,
       priority: 'medium',
       weight: 0.1,
-      refreshInterval: 30 * 60 * 1000, // 30分
+      refreshInterval: TIME_INTERVALS.UPDATE_30_MIN,
       rateLimit: { requests: 50, perMilliseconds: 60000 }
     }
   ],
   cacheEnabled: true,
-  cacheTTL: 15 * 60 * 1000, // 15分
+  cacheTTL: TIME_INTERVALS.CACHE_15_MIN,
   qualityThreshold: 0.6,
   retryAttempts: 3,
   retryDelay: 2000,

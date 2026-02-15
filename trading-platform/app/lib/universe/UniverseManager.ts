@@ -6,6 +6,7 @@
  */
 
 import { Stock } from '@/app/types';
+import { TIME_INTERVALS } from '@/app/lib/constants/common';
 
 /**
  * Universe stock with metadata
@@ -80,7 +81,7 @@ export class UniverseManager {
   private stocks: Map<string, UniverseStock> = new Map();
   private readonly MAX_STOCKS = 100;
   private lastUpdate: Date | null = null;
-  private updateInterval: number = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+  private updateInterval: number = TIME_INTERVALS.DAY;
 
   /**
    * Initialize universe manager
