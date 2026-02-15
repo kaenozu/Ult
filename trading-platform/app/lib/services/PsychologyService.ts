@@ -2,6 +2,7 @@ import { Order, Position } from '@/app/types';
 import { usePsychologyStore } from '@/app/store/psychologyStore';
 import type { MentalState, EmotionScore, CoachingRecommendation } from '@/app/types/psychology';
 import { logger } from '@/app/core/logger';
+import { TIME_INTERVALS } from '@/app/lib/constants/common';
 
 /**
  * トレーダー心理分析サービス
@@ -84,7 +85,7 @@ export class PsychologyService {
     const firstOrder = orders[0];
     if (lastOrder?.timestamp !== undefined && firstOrder?.timestamp !== undefined) {
       const timeSpan = lastOrder.timestamp - firstOrder.timestamp;
-      if (timeSpan < 30 * 60 * 1000 && orders.length > 5) { // 30分以内に5回以上
+      if (timeSpan < TIME_INTERVALS.UPDATE_30_MIN && orders.length > 5) {
         stress += 20;
       }
     }
