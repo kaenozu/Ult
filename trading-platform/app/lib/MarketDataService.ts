@@ -12,13 +12,7 @@ import {
 import type { MarketData as QualityMarketData } from '@/app/types/data-quality';
 
 import { IMarketDataService } from './interfaces/IMarketDataService';
-
-/**
- * 市場インデックスの定義
- * @property symbol - 銘柄シンボル（例: ^N225, ^GSPC）
- * @property name - 市場名
- * @property market - 市場区分（'japan' | 'usa'）
- */
+import { TIME_INTERVALS } from './constants/common';
 import { logger } from '@/app/core/logger';
 export interface MarketIndex {
   symbol: string;
@@ -89,7 +83,7 @@ export type MarketDataResult = {
  */
 export class MarketDataService implements IMarketDataService {
   private marketDataCache = new Map<string, OHLCV[]>();
-  private cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  private cacheTimeout = TIME_INTERVALS.CACHE_5_MIN;
   private qualityCheckEnabled = true;
   private dataCompletionEnabled = true;
   private latencyMonitoringEnabled = true;
