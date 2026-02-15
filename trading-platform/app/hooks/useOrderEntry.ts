@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useId, Dispatch, SetStateAction } from 'react';
-import { Stock, OrderSide, OrderType, OHLCV } from '@/app/types';
+import { Stock, OrderSide, OrderType } from '@/app/types';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
 
@@ -66,7 +66,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
 
   // Risk management configuration
   const [riskConfig, setRiskConfig] = useState<DynamicRiskConfig>({
-    maxRiskPerTrade: 0.02, // 2%
+    maxRiskPerTrade: 2.0, // 2%
     minRiskRewardRatio: 2.0,
     volatilityMultiplier: 1.0,
     enableTrailingStop: false,

@@ -35,6 +35,7 @@ export abstract class BaseBacktestEngine extends EventEmitter {
   protected entryPrice: number = 0;
   protected entryDate: string = '';
   protected currentEquity: number = 0;
+  protected peakEquity: number = 0;
   protected stopLoss: number = 0;
   protected takeProfit: number = 0;
   protected indicators: Map<string, number[]> = new Map();
@@ -43,6 +44,7 @@ export abstract class BaseBacktestEngine extends EventEmitter {
     super();
     this.config = { ...DEFAULT_BACKTEST_CONFIG, ...config };
     this.currentEquity = this.config.initialCapital;
+    this.peakEquity = this.config.initialCapital;
   }
 
   /**
@@ -68,6 +70,7 @@ export abstract class BaseBacktestEngine extends EventEmitter {
     this.entryPrice = 0;
     this.entryDate = '';
     this.currentEquity = this.config.initialCapital;
+    this.peakEquity = this.config.initialCapital;
     this.stopLoss = 0;
     this.takeProfit = 0;
     this.indicators.clear();
@@ -118,9 +121,7 @@ export abstract class BaseBacktestEngine extends EventEmitter {
    * Calculate current drawdown percentage
    */
   protected calculateCurrentDrawdown(): number {
-    if (this.equityCurve.length === 0) return 0;
-    const peak = Math.max(...this.equityCurve);
-    if (peak === 0) return 0;
-    return ((peak - this.currentEquity) / peak) * 100;
+    if (this.peakEquity === 0) return 0;
+    return ((this.peakEquity - this.currentEquity) / this.peakEquity) * 100;
   }
 }

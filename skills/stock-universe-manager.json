@@ -1,7 +1,0 @@
-{
-  "name": "stock-universe-manager",
-  "description": "100銘柄の高品質リスト維持と、未知の銘柄を即座に登録するオンデマンド拡張を専門とするスキル",
-  "version": "1.0.0",
-  "priority": "high",
-  "auto_activate": true
-}

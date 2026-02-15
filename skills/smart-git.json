@@ -1,7 +1,0 @@
-{
-  "name": "smart-git",
-  "description": "リファクタリングと機能追加の競合を論理的に解決し、ビルドとテストを常にグリーンに保つためのマージ管理スキル",
-  "version": "1.0.0",
-  "priority": "high",
-  "auto_activate": true
-}

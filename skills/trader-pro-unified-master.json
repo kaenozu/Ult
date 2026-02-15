@@ -1,6 +1,0 @@
-{
-  "name": "trader-pro-unified-master",
-  "description": "Trader Proの論理、視覚、データ、安全性のすべてを統括する最上位スキル。不整合の自動検閲と、エージェントの生存保護を保証する。",
-  "version": "2.0.0",
-  "priority": "omega"
-}

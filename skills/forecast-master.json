@@ -1,7 +1,0 @@
-{
-  "name": "forecast-master",
-  "description": "AI価格予測の視覚化、的中率算出、および高速バックテストを専門とするスキル",
-  "version": "1.0.0",
-  "priority": "high",
-  "auto_activate": true
-}

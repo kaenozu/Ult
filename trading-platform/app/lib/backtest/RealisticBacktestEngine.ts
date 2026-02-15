@@ -21,9 +21,9 @@ import {
   RealisticBacktestResult,
 } from './types';
 import { AdvancedBacktestEngine } from './AdvancedBacktestEngine';
-import { BACKTEST_DEFAULTS, REALISTIC_BACKTEST_DEFAULTS, TIERED_COMMISSIONS } from '../constants/backtest-config';
+import { REALISTIC_BACKTEST_DEFAULTS, TIERED_COMMISSIONS } from '../constants/backtest-config';
 import { DEFAULT_BACKTEST_CONFIG } from './BaseBacktestEngine';
-import MonteCarloSimulator, { MonteCarloResult, MonteCarloConfig } from './MonteCarloSimulator';
+import MonteCarloSimulator, { MonteCarloResult } from './MonteCarloSimulator';
 
 // Re-export types for backward compatibility
 export type RealisticTradeMetrics = Trade;
@@ -468,8 +468,10 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
 
    private calculateUlcerIndex(equityCurve: number[]): number {
      if (equityCurve.length === 0) return 0;
-     const drawdowns = equityCurve.map((equity, i) => {
-       const peak = Math.max(...equityCurve.slice(0, i + 1));
+     
+     let peak = -Infinity;
+     const drawdowns = equityCurve.map((equity) => {
+       peak = Math.max(peak, equity);
        return Math.pow((peak - equity) / peak, 2);
      });
      return Math.sqrt(drawdowns.reduce((sum, d) => sum + d, 0) / drawdowns.length) * 100;

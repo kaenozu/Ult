@@ -196,8 +196,8 @@ export const StockTable = memo(({
         return sortDirection === 'asc' ? result : -result;
       }
 
-      let aVal: number | string = a[sortField];
-      let bVal: number | string = b[sortField];
+      const aVal: number | string = a[sortField];
+      const bVal: number | string = b[sortField];
 
       // Handle numeric comparison
       if (typeof aVal === 'number' && typeof bVal === 'number') {

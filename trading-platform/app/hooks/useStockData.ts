@@ -4,6 +4,7 @@ import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
+import { NUMERIC_PRECISION } from '@/app/lib/constants/common';
 import { consensusSignalService } from '@/app/lib/ConsensusSignalService';
 
 import { useRealTimeData } from './useRealTimeData';
@@ -52,7 +53,7 @@ export function useStockData() {
       const lastPoint = chartData[lastIndex];
       
       // Update only if price is different
-      if (Math.abs(lastPoint.close - realTimeQuote.price) > 0.001) {
+      if (Math.abs(lastPoint.close - realTimeQuote.price) > NUMERIC_PRECISION.PRICE_COMPARISON_EPSILON) {
         setChartData(prev => {
           const newData = [...prev];
           newData[lastIndex] = {
@@ -329,7 +330,7 @@ export function useStockData() {
           const lastPoint = prevData[lastIndex];
           
           // Check if price actually changed to avoid unnecessary updates
-          if (Math.abs(lastPoint.close - data.price) < 0.01) {
+          if (Math.abs(lastPoint.close - data.price) < NUMERIC_PRECISION.PRICE_COMPARISON_EPSILON) {
             return prevData; // Skip micro-changes
           }
           

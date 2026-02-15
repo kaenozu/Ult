@@ -58,3 +58,12 @@ export const MULTIPLIERS = {
   SLIPPAGE_FACTOR_HIGH: 0.5,
   SLIPPAGE_FACTOR_MEDIUM: 0.8,
 } as const;
+
+/**
+ * Numeric precision constants
+ */
+export const NUMERIC_PRECISION = {
+  EPSILON: 0.0001,
+  PRICE_COMPARISON_EPSILON: 0.001,
+  VOLUME_COMPARISON_EPSILON: 0.01,
+} as const;

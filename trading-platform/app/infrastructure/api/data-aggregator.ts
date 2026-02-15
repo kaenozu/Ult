@@ -136,7 +136,7 @@ class MarketDataClient {
       try {
         const data = await this.pendingRequests.get(cacheKey) as OHLCV[];
         return { success: true, data, source: 'aggregated' };
-      } catch (err) {
+      } catch (_) {
         // Fallback
       }
     }
@@ -221,11 +221,11 @@ class MarketDataClient {
                 finalData = await idbClient.mergeAndSave(symbol, newData);
                 source = 'api';
               }
-            } catch (err) {
+            } catch (_) {
               if (finalData.length > 0) {
                 logger.warn(`[Aggregator] Failed to update data for ${symbol}, using stale data.`);
               } else {
-                throw err;
+                throw _;
               }
             }
           }
@@ -301,7 +301,7 @@ class MarketDataClient {
       const data = await this.fetchWithRetry<QuoteData>(`/api/market?type=quote&symbol=${symbol}&market=${market}`);
       if (data) this.setCache(cacheKey, data, this.CACHE_TTL.quote);
       return data;
-    } catch (err) {
+    } catch (_) {
       // logger.error(`Fetch Quote failed for ${symbol}:`, err instanceof Error ? err : new Error(String(err)));
       return null;
     }
@@ -329,7 +329,7 @@ class MarketDataClient {
       try {
         const indexResult = await this.fetchMarketIndex(stock.market, signal);
         indexData = indexResult.data;
-      } catch (err) {
+      } catch (_) {
         logger.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol}`);
       }
 
@@ -375,11 +375,11 @@ class MarketDataClient {
   }
 
   private evictLeastRecentlyUsed() {
-    let leastUsed: [string, CacheEntry<any>] | null = null;
+    let leastUsed: [string, CacheEntry<unknown>] | null = null;
     
     for (const [key, entry] of this.cache.entries()) {
-      if (!leastUsed || entry.accessCount < leastUsed[1].accessCount) {
-        leastUsed = [key, entry];
+      if (!leastUsed || entry.accessCount < (leastUsed[1] as CacheEntry<unknown>).accessCount) {
+        leastUsed = [key, entry as CacheEntry<unknown>];
       }
     }
     
@@ -401,7 +401,7 @@ class MarketDataClient {
   /**
    * Performance optimization: Periodic cache cleanup
    */
-  private startCacheCleanup() {
+  public startCacheCleanup() {
     setInterval(() => {
       const now = Date.now();
       const toDelete: string[] = [];
@@ -502,5 +502,5 @@ export const marketClient = new MarketDataClient();
 // Initialize cache cleanup
 if (typeof window !== 'undefined') {
   // Only start cleanup in browser environment
-  (marketClient as any).startCacheCleanup();
+  marketClient.startCacheCleanup();
 }
