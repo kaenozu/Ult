@@ -46,7 +46,17 @@ export interface AggregationResult {
 /**
  * Multi-Source Data Aggregator
  * 
- * Intelligently aggregates data from multiple sources with validation
+ * High-level orchestration service that manages multiple data sources.
+ *
+ * ARCHITECTURE NOTE:
+ * This service is the intended future entry point for all market data access.
+ * It coordinates:
+ * - Source prioritization
+ * - Data fusion and reconciliation
+ * - Quality validation
+ * - Health monitoring
+ *
+ * Legacy code using MarketDataClient directly should be migrated to use this aggregator.
  */
 export class MultiSourceDataAggregator {
   private sources: Map<string, DataSource> = new Map();
