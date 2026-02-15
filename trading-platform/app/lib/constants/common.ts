@@ -6,6 +6,59 @@
  */
 
 /**
+ * Time intervals in milliseconds
+ */
+export const TIME_INTERVALS = {
+  // Milliseconds
+  SECOND: 1000,
+  MINUTE: 60 * 1000,
+  HOUR: 60 * 60 * 1000,
+  DAY: 24 * 60 * 60 * 1000,
+  WEEK: 7 * 24 * 60 * 60 * 1000,
+  
+  // Common intervals
+  UPDATE_5_SEC: 5 * 1000,
+  UPDATE_30_SEC: 30 * 1000,
+  UPDATE_1_MIN: 60 * 1000,
+  UPDATE_5_MIN: 5 * 60 * 1000,
+  UPDATE_10_MIN: 10 * 60 * 1000,
+  UPDATE_15_MIN: 15 * 60 * 1000,
+  UPDATE_30_MIN: 30 * 60 * 1000,
+  UPDATE_1_HOUR: 60 * 60 * 1000,
+  
+  // Cache durations
+  CACHE_1_MIN: 60 * 1000,
+  CACHE_5_MIN: 5 * 60 * 1000,
+  CACHE_30_MIN: 30 * 60 * 1000,
+  CACHE_1_HOUR: 60 * 60 * 1000,
+  
+  // API rate limits
+  RATE_LIMIT_WINDOW: 60 * 1000,
+} as const;
+
+/**
+ * Buffer and limit sizes
+ */
+export const LIMITS = {
+  // Data limits
+  MAX_DATA_POINTS: 1000,
+  MAX_PREDICTIONS: 1000,
+  MAX_HISTORY: 10000,
+  
+  // Buffer sizes
+  DEFAULT_BUFFER_SIZE: 10000,
+  MAX_BUFFER_SIZE: 50000,
+  
+  // Iteration limits
+  MAX_ITERATIONS: 1000,
+  MAX_OPTIMIZER_ITERATIONS: 1000,
+  
+  // UI limits
+  MAX_DISPLAY_ITEMS: 100,
+  MAX_TABLE_ROWS: 500,
+} as const;
+
+/**
  * Optimization parameters
  */
 export const OPTIMIZATION = {
@@ -54,9 +107,22 @@ export const CONFIDENCE_THRESHOLDS = {
  */
 export const MULTIPLIERS = {
   TARGET_MULTIPLIER: 1.5,
-  VOLUME_MULTIPLIER_DEFAULT: 1.2,
-  SLIPPAGE_FACTOR_HIGH: 0.5,
-  SLIPPAGE_FACTOR_MEDIUM: 0.8,
+  STOP_LOSS_MULTIPLIER: 2.0,
+  TAKE_PROFIT_MULTIPLIER: 3.0,
+  VOLATILITY_MULTIPLIER: 2.0,
+} as const;
+
+/**
+ * Percentages (0-100 scale)
+ */
+export const PERCENTAGES = {
+  FULL: 100,
+  HALF: 50,
+  QUARTER: 25,
+  TENTH: 10,
+  DEFAULT_RISK: 2,
+  DEFAULT_COMMISSION: 0.1,
+  DEFAULT_SLIPPAGE: 0.05,
 } as const;
 
 /**

@@ -29,6 +29,7 @@ import type {
   StrategyParameterValue
 } from './types';
 import { isString, isStringArray } from './types';
+import { TRADING_DAYS, RISK_FREE_RATE, BACKTEST } from '../constants/trading';
 
 // ============================================================================
 // Base Strategy Class
@@ -140,10 +141,10 @@ abstract class BaseStrategy implements Strategy {
       
       // Backtest
       const performance = await this.backtest(data, {
-        initialCapital: 100000,
-        commission: 0.001,
-        slippage: 0.0005,
-        maxPositionSize: 0.5
+        initialCapital: BACKTEST.DEFAULT_INITIAL_CAPITAL,
+        commission: BACKTEST.DEFAULT_COMMISSION,
+        slippage: BACKTEST.DEFAULT_SLIPPAGE,
+        maxPositionSize: BACKTEST.DEFAULT_MAX_POSITION
       });
       
       const score = objectiveFunction(performance);
@@ -166,7 +167,7 @@ abstract class BaseStrategy implements Strategy {
   ): StrategyPerformance {
     const totalReturn = ((finalCapital - initialCapital) / initialCapital) * 100;
     const days = data.length;
-    const years = days / 252;
+    const years = days / TRADING_DAYS.PER_YEAR;
     const annualizedReturn = (Math.pow(finalCapital / initialCapital, 1 / years) - 1) * 100;
     const cagr = annualizedReturn;
     
@@ -177,7 +178,7 @@ abstract class BaseStrategy implements Strategy {
     }
     const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
     const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
-    const volatility = Math.sqrt(variance * 252) * 100;
+    const volatility = Math.sqrt(variance * TRADING_DAYS.PER_YEAR) * 100;
     
     // Calculate max drawdown
     let maxDrawdown = 0;
@@ -189,8 +190,8 @@ abstract class BaseStrategy implements Strategy {
     }
     
     // Risk-adjusted returns
-    const sharpeRatio = volatility > 0 ? (annualizedReturn - 2) / volatility : 0; // assuming 2% risk-free rate
-    const sortinoRatio = this.calculateSortinoRatio(returns, 0.02 / 252);
+    const sharpeRatio = volatility > 0 ? (annualizedReturn - RISK_FREE_RATE.ANNUAL * 100) / volatility : 0;
+    const sortinoRatio = this.calculateSortinoRatio(returns, RISK_FREE_RATE.DAILY);
     const calmarRatio = maxDrawdown > 0 ? annualizedReturn / maxDrawdown : 0;
     
     // Trade metrics
@@ -238,12 +239,10 @@ abstract class BaseStrategy implements Strategy {
     if (downside.length === 0) return 0;
     
     const downsideVariance = downside.reduce((sum, r) => sum + Math.pow(r - targetReturn, 2), 0) / downside.length;
-    const downsideDeviation = Math.sqrt(downsideVariance * 252);
-    
+    const downsideDeviation = Math.sqrt(downsideVariance * TRADING_DAYS.PER_YEAR);
     const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-    const annualizedReturn = avgReturn * 252;
-    
-    return downsideDeviation > 0 ? (annualizedReturn - targetReturn * 252) / downsideDeviation : 0;
+    const annualizedReturn = avgReturn * TRADING_DAYS.PER_YEAR;
+    return downsideDeviation > 0 ? (annualizedReturn - targetReturn * TRADING_DAYS.PER_YEAR) / downsideDeviation : 0;
   }
 
   protected abstract randomizeParameters(originalParams: Record<string, StrategyParameterValue>): Record<string, StrategyParameterValue>;

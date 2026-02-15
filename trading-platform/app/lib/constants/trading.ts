@@ -6,6 +6,33 @@
  */
 
 /**
+ * Trading days per year for calculations
+ */
+export const TRADING_DAYS = {
+  PER_YEAR: 252,
+  PER_MONTH: 21,
+  PER_WEEK: 5,
+} as const;
+
+/**
+ * Risk-free rate for Sharpe ratio calculation
+ */
+export const RISK_FREE_RATE = {
+  ANNUAL: 0.02,  // 2%
+  DAILY: 0.02 / 252,
+} as const;
+
+/**
+ * Backtest defaults
+ */
+export const BACKTEST = {
+  DEFAULT_INITIAL_CAPITAL: 100000,
+  DEFAULT_COMMISSION: 0.001,     // 0.1%
+  DEFAULT_SLIPPAGE: 0.0005,       // 0.05%
+  DEFAULT_MAX_POSITION: 0.5,     // 50%
+} as const;
+
+/**
  * Signal generation thresholds
  * 
  * 信頼度しきい値は common.ts の CONFIDENCE_THRESHOLDS と統合
