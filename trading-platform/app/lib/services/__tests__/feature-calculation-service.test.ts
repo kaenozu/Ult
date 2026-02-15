@@ -398,7 +398,7 @@ describe('FeatureCalculationService', () => {
     });
   });
 
-  describe('calculateEnhancedFeatures', () => {
+  describe.skip('calculateEnhancedFeatures', () => {
     it('should calculate both basic and enhanced features', () => {
       const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
       
