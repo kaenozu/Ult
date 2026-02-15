@@ -138,31 +138,29 @@ export function aggregateDataPoints(data: OHLCV[], bucketSize: number): OHLCV[] 
 
   const result: OHLCV[] = [];
   
-  for (let i = 0; i < data.length; i += bucketSize) {
-    const bucket = data.slice(i, Math.min(i + bucketSize, data.length));
+  const length = data.length;
+  for (let i = 0; i < length; i += bucketSize) {
+    const endIndex = Math.min(i + bucketSize, length);
     
-    if (bucket.length === 0) continue;
-
-    // Aggregate OHLCV data
-    // O(N) optimization: Use loops instead of spread operator
+    // Aggregate OHLCV data without slicing array (O(1) space)
     let maxHigh = -Infinity;
     let minLow = Infinity;
     let totalVolume = 0;
     
-    for (let i = 0; i < bucket.length; i++) {
-      const d = bucket[i];
+    for (let j = i; j < endIndex; j++) {
+      const d = data[j];
       if (d.high > maxHigh) maxHigh = d.high;
       if (d.low < minLow) minLow = d.low;
       totalVolume += d.volume;
     }
     
     const aggregated: OHLCV = {
-      symbol: bucket[0].symbol,
-      date: bucket[0].date,
-      open: bucket[0].open,
+      symbol: data[i].symbol,
+      date: data[i].date,
+      open: data[i].open,
       high: maxHigh,
       low: minLow,
-      close: bucket[bucket.length - 1].close,
+      close: data[endIndex - 1].close,
       volume: totalVolume,
     };
 
