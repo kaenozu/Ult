@@ -146,6 +146,21 @@ describe('InputSanitizer', () => {
       const result = sanitizeText('<b>bold</b>');
       expect(result.sanitized).toBe('&lt;b&gt;bold&lt;&#x2F;b&gt;');
     });
+
+    it('should escape XSS even if allowHtml is true', () => {
+      const maliciousInput = '<script>alert("xss")</script>';
+      const result = sanitizeText(maliciousInput, { allowHtml: true });
+      expect(result.errors).toContain('Potential XSS pattern detected');
+      expect(result.sanitized).not.toContain('<script>');
+      expect(result.sanitized).toContain('&lt;script&gt;');
+    });
+
+    it('should allow safe HTML if allowHtml is true', () => {
+      const safeInput = '<b>bold</b>';
+      const result = sanitizeText(safeInput, { allowHtml: true });
+      expect(result.sanitized).toBe('<b>bold</b>');
+      expect(result.isValid).toBe(true);
+    });
   });
 
   describe('sanitizeSymbol', () => {

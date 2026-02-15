@@ -215,10 +215,11 @@ export function sanitizeText(
   // XSS検出
   if (detectXss(input)) {
     errors.push('Potential XSS pattern detected');
-  }
-
-  // HTMLエスケープ (XSS検出に関わらず、allowHtmlがfalseならエスケープ)
-  if (!options.allowHtml) {
+    // FIX: Force HTML escaping if XSS pattern is detected, even if allowHtml is true.
+    // This prevents malicious scripts from being executed if the detector flags them.
+    input = escapeHtml(input);
+  } else if (!options.allowHtml) {
+    // HTMLエスケープ (XSS検出されておらず、かつallowHtmlがfalseならエスケープ)
     input = escapeHtml(input);
   }
 
