@@ -37,6 +37,28 @@ export const TIME_INTERVALS = {
 } as const;
 
 /**
+ * Buffer and limit sizes
+ */
+export const LIMITS = {
+  // Data limits
+  MAX_DATA_POINTS: 1000,
+  MAX_PREDICTIONS: 1000,
+  MAX_HISTORY: 10000,
+  
+  // Buffer sizes
+  DEFAULT_BUFFER_SIZE: 10000,
+  MAX_BUFFER_SIZE: 50000,
+  
+  // Iteration limits
+  MAX_ITERATIONS: 1000,
+  MAX_OPTIMIZER_ITERATIONS: 1000,
+  
+  // UI limits
+  MAX_DISPLAY_ITEMS: 100,
+  MAX_TABLE_ROWS: 500,
+} as const;
+
+/**
  * Optimization parameters
  */
 export const OPTIMIZATION = {
