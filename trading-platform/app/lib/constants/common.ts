@@ -29,6 +29,7 @@ export const TIME_INTERVALS = {
   // Cache durations
   CACHE_1_MIN: 60 * 1000,
   CACHE_5_MIN: 5 * 60 * 1000,
+  CACHE_15_MIN: 15 * 60 * 1000,
   CACHE_30_MIN: 30 * 60 * 1000,
   CACHE_1_HOUR: 60 * 60 * 1000,
   
