@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { OHLCV } from '@/app/types';
-import { supplyDemandMaster, SupplyDemandLevel } from '@/app/lib/supplyDemandMaster';
+import { supplyDemandMaster } from '@/app/lib/supplyDemandMaster';
 
 export const useSupplyDemandAnalysis = (data: OHLCV[]) => {
   const analysis = useMemo(() => {
