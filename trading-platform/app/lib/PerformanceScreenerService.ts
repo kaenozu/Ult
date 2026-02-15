@@ -12,6 +12,7 @@ import { optimizedAccuracyService } from './OptimizedAccuracyService';
 import { consensusSignalService } from './ConsensusSignalService';
 import { mlPredictionService } from './mlPrediction';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
+import { TIME_INTERVALS } from './constants/common';
 import pLimit from 'p-limit';
 
 // レビュー対応: マジックナンバーを定数化
@@ -142,7 +143,7 @@ export interface AIScreenerConfig {
 export class PerformanceScreenerService {
   private cache: Map<string, { result: PerformanceScore; timestamp: number }> = new Map();
   private scanCache: Map<string, { result: DualScanResult; timestamp: number }> = new Map();
-  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5分キャッシュ
+  private readonly CACHE_TTL_MS = TIME_INTERVALS.CACHE_5_MIN;
 
   /**
    * キャッシュのクリア
