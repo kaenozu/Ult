@@ -7,6 +7,8 @@ on:
 
 jobs:
   weekly-report:
+    # Skip if triggered by push
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read

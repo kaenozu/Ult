@@ -7,42 +7,63 @@ on:
 
 jobs:
   process-comments:
+    # Skip if triggered by push (e.g., after merge)
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
       pull-requests: read
     steps:
-      - name: Get Recently Merged PRs with Comments
+      - name: Get Recently Merged PRs
         id: prs
         run: |
+          echo "Fetching merged PRs..."
+          
           # Get PRs merged in last 7 days
           MERGED_PRS=$(gh pr list \
             --repo ${{ github.repository }} \
             --state merged \
             --limit 50 \
-            --json number,title,mergedAt,author \
-            -q '.[] | .number')
+            --json number \
+            -q '.[].number' 2>/dev/null || echo "")
           
-          echo "prs=$MERGED_PRS" >> $GITHUB_OUTPUT
+          if [ -z "$MERGED_PRS" ]; then
+            echo "No merged PRs found"
+            echo "prs=" >> $GITHUB_OUTPUT
+          else
+            echo "Found PRs: $MERGED_PRS"
+            # Convert to space-separated list
+            PR_LIST=$(echo "$MERGED_PRS" | tr '\n' ' ')
+            echo "prs=$PR_LIST" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Process Each PR
         run: |
-          PR_NUMBERS=($(echo '${{ steps.prs.outputs.prs }}' | tr -d '[]' | tr ',' ' '))
+          PR_LIST="${{ steps.prs.outputs.prs }}"
           
-          for pr_num in "${PR_NUMBERS[@]}"; do
-            pr_num=$(echo "$pr_num" | tr -d '"')
+          if [ -z "$PR_LIST" ]; then
+            echo "No PRs to process"
+            exit 0
+          fi
+          
+          for pr_num in $PR_LIST; do
             [ -z "$pr_num" ] && continue
+            
+            echo ""
+            echo "Processing PR #$pr_num..."
             
             # Skip if issue already exists
             EXISTING=$(gh issue list \
               --repo ${{ github.repository }} \
               --search "PR #$pr_num" \
               --json number \
-              -q '.[0].number' 2>/dev/null)
+              -q '.[0].number' 2>/dev/null || echo "")
             
             if [ -n "$EXISTING" ]; then
-              echo "Skipping PR #$pr_num - issue #$EXISTING already exists"
+              echo "  ✓ Issue #$EXISTING already exists for PR #$pr_num"
               continue
             fi
             
@@ -50,16 +71,17 @@ jobs:
             COMMENTS=$(gh pr view $pr_num \
               --repo ${{ github.repository }} \
               --json comments \
-              -q '.comments[] | select(.authorAssociation != "OWNER") | "- **@\(.author.login)**: \(.body | split("\n")[0])"')
+              -q '.comments[] | select(.authorAssociation != "OWNER") | "- **@\(.author.login)**: \(.body | split("\n")[0])"' 2>/dev/null || echo "")
             
             COMMENT_COUNT=$(echo "$COMMENTS" | grep -c "@" || echo "0")
+            echo "  Found $COMMENT_COUNT review comments"
             
             if [ "$COMMENT_COUNT" -gt "0" ]; then
               # Get PR info
               PR_INFO=$(gh pr view $pr_num \
                 --repo ${{ github.repository }} \
-                --json title,user,mergedAt \
-                -q '{title: .title, author: .user.login, mergedAt: .mergedAt}')
+                --json title,author,mergedAt \
+                -q '{title: .title, author: .author.login, mergedAt: .mergedAt}')
               
               PR_TITLE=$(echo "$PR_INFO" | jq -r '.title')
               PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.author')
@@ -67,7 +89,7 @@ jobs:
               
               # Create issue
               ISSUE_BODY="## PR Review Summary
-              
+
 **PR**: #$pr_num - $PR_TITLE
 **Merged**: $PR_MERGED
 **Author**: @$PR_AUTHOR
@@ -85,8 +107,13 @@ $COMMENTS
                 --body "$ISSUE_BODY" \
                 --label "review,automated"
               
-              echo "Created issue for PR #$pr_num"
+              echo "  ✓ Created issue for PR #$pr_num"
+            else
+              echo "  - No review comments to process"
             fi
           done
+          
+          echo ""
+          echo "Processing complete!"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
