@@ -1,0 +1,92 @@
+name: Weekly Review Report
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9 AM
+  workflow_dispatch:
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Get Open Review Issues
+        id: open-issues
+        run: |
+          # Get open issues with "review" label
+          ISSUES=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --search "label:review state:open" \
+            --json number,title,author,createdAt,labels \
+            -q '.[] | "#\(.number): \(.title) - @\(.author.login) (created: \(.createdAt | split("T")[0]))"')
+          
+          OPEN_COUNT=$(echo "$ISSUES" | grep -c "#" || echo "0")
+          echo "open_count=$OPEN_COUNT" >> $GITHUB_OUTPUT
+          
+          ISSUES_ESCAPED=$(echo "$ISSUES" | jq -Rs .)
+          echo "issues=$ISSUES_ESCAPED" >> $GITHUB_OUTPUT
+
+      - name: Get Recently Merged PRs
+        id: recent-prs
+        run: |
+          # Get PRs merged in last 7 days
+          MERGED_PRS=$(gh pr list \
+            --repo ${{ github.repository }} \
+            --state merged \
+            --limit 10 \
+            --json number,title,mergedAt,author \
+            -q '.[] | "#\(.number): \(.title) - @\(.author.login) (merged: \(.mergedAt | split("T")[0]))"')
+          
+          PRS_COUNT=$(echo "$MERGED_PRS" | grep -c "#" || echo "0")
+          echo "pr_count=$PRS_COUNT" >> $GITHUB_OUTPUT
+          
+          PRS_ESCAPED=$(echo "$MERGED_PRS" | jq -Rs .)
+          echo "prs=$PRS_ESCAPED" >> $GITHUB_OUTPUT
+
+      - name: Create Weekly Report Issue
+        if: steps.open-issues.outputs.open_count > '0' || steps.recent-prs.outputs.pr_count > '0'
+        run: |
+          ISSUES_UNESCAPED=$(echo '${{ steps.open-issues.outputs.issues }}' | jq -r .)
+          PRS_UNESCAPED=$(echo '${{ steps.recent-prs.outputs.prs }}' | jq -r .)
+          
+          TODAY=$(date +%Y-%m-%d)
+          
+          REPORT_BODY="## Weekly Review Report - $TODAY
+
+### Summary
+- **Open Review Issues**: ${{ steps.open-issues.outputs.open_count }}
+- **Recently Merged PRs**: ${{ steps.recent-prs.outputs.pr_count }}
+
+---
+
+### Open Review Issues
+
+$ISSUES_UNESCAPED
+
+---
+
+### Recently Merged PRs (Last 10)
+
+$PRS_UNESCAPED
+
+---
+
+*Generated automatically by GitHub Actions*
+"
+          
+          gh issue create \
+            --repo ${{ github.repository }} \
+            --title "📊 Weekly Review Report - $TODAY" \
+            --body "$REPORT_BODY" \
+            --label "weekly-report,automated"
+          
+          echo "Weekly report created"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: No Activity
+        if: steps.open-issues.outputs.open_count == '0' && steps.recent-prs.outputs.pr_count == '0'
+        run: echo "No review activity to report"

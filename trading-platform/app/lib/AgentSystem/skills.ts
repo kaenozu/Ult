@@ -144,6 +144,53 @@ export const SKILLS: Record<string, SkillDefinition> = {
     ],
     estimatedTime: '1-2 hours',
   },
+
+  'issue-resolver': {
+    name: 'Issue Resolver',
+    description: 'Reads GitHub issues, analyzes the problem, implements code fixes, and closes the issue',
+    commands: [
+      'gh issue view',
+      'npx tsc --noEmit',
+      'git commit',
+      'gh issue close',
+    ],
+    requiredTools: ['gh', 'git', 'tsc', 'grep'],
+    outputFiles: [
+      '**/*.{ts,tsx}',
+    ],
+    estimatedTime: '1-3 hours',
+  },
+
+  'auto-code-reviewer': {
+    name: 'Auto Code Reviewer',
+    description: 'Automatically reviews PRs: checks code quality, runs tests, leaves review comments',
+    commands: [
+      'gh pr diff',
+      'npx tsc --noEmit',
+      'npm run lint',
+      'gh pr review',
+    ],
+    requiredTools: ['gh', 'tsc', 'eslint'],
+    outputFiles: [
+      '**/*.{ts,tsx}',
+    ],
+    estimatedTime: '30 min - 1 hour',
+  },
+
+  'review-dashboard': {
+    name: 'Review Dashboard Developer',
+    description: 'Creates UI dashboard to display review comments, PR status, and issue tracking',
+    commands: [
+      'npm run dev',
+      'npx tsc --noEmit',
+    ],
+    requiredTools: ['next', 'react', 'typescript'],
+    outputFiles: [
+      'app/components/review/*.tsx',
+      'app/lib/review/*.ts',
+    ],
+    estimatedTime: '2-4 hours',
+  },
 };
 
 // ============================================================================
@@ -265,6 +312,45 @@ export const ULT_TASKS: TaskTemplate[] = [
       'Actionable feedback is implemented',
       'Type check passes after changes',
       'Response is posted to original PR',
+    ],
+  },
+  {
+    id: 'resolve-review-issues',
+    title: 'Resolve Review Issues',
+    description: 'Read review issues, implement code fixes, test changes, and close issues',
+    skill: 'issue-resolver',
+    priority: 'high',
+    acceptanceCriteria: [
+      'All review-labeled issues are analyzed',
+      'Code fixes are implemented correctly',
+      'Type check passes',
+      'Issues are closed after fix',
+    ],
+  },
+  {
+    id: 'setup-auto-review',
+    title: 'Setup Auto Code Review',
+    description: 'Create workflow to automatically review PRs with code quality checks and leave comments',
+    skill: 'auto-code-reviewer',
+    priority: 'medium',
+    acceptanceCriteria: [
+      'Workflow triggers on PR open/update',
+      'Runs type check and lint',
+      'Posts review comments',
+      'Shows review status',
+    ],
+  },
+  {
+    id: 'create-review-dashboard',
+    title: 'Create Review Dashboard',
+    description: 'Build UI dashboard to visualize review comments, PR status, and issue tracking',
+    skill: 'review-dashboard',
+    priority: 'low',
+    acceptanceCriteria: [
+      'Shows open review issues',
+      'Displays recent PRs and their status',
+      'Lists unresolved comments',
+      'Updates in real-time',
     ],
   },
 ];
