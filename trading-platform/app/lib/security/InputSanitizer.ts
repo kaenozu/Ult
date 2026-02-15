@@ -25,9 +25,10 @@ const SQL_RESERVED_WORDS = [
   'xp_', 'sp_', 'sysobjects', 'syscolumns',
 ];
 
-// JavaScript危険なパターン
+// JavaScript危険なパターン - 正規表現ではなく単純な文字列検索を使用
 const JS_DANGEROUS_PATTERNS = [
-  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i,
+  /<script/i,
+  /<\/script>/i,
   /javascript:/i,
   /on\w+\s*=/i,
   /data:text\/html/i,
@@ -232,7 +233,12 @@ export function sanitizeText(
   // パストラバーサル検出
   if (detectPathTraversal(input)) {
     errors.push('Path traversal attempt detected');
-    input = input.replace(/\.\.[/\\]/g, '');
+    // Apply replacement repeatedly to prevent bypass (e.g., ....// -> ../)
+    let previous;
+    do {
+      previous = input;
+      input = input.replace(/\.\.[\/\\]/g, '');
+    } while (input !== previous);
   }
 
   // 最大長チェック

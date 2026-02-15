@@ -26,12 +26,25 @@ export interface MarketHistoryOptions {
   interval?: string;
 }
 
+// Allowed origins for SSRF protection
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'https://localhost:3000',
+  process.env.NEXT_PUBLIC_API_BASE_URL,
+].filter(Boolean) as string[];
+
 export async function fetchMarketHistory(
   requestUrl: string,
   symbol: string,
   options: MarketHistoryOptions = {}
 ): Promise<MarketHistoryResponse> {
   const origin = new URL(requestUrl).origin;
+  
+  // SSRF Protection: Validate origin against allowlist
+  if (!ALLOWED_ORIGINS.includes(origin)) {
+    logger.error('[MarketDataFetcher] Blocked request to unauthorized origin:', origin);
+    throw new Error('Unauthorized origin');
+  }
   const params = new URLSearchParams({
     type: 'history',
     symbol,
