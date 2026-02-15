@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Navigation } from '@/app/components/Navigation';
+
 import { cn, formatPercent } from '@/app/lib/utils';
 import { useUIStore } from '@/app/store/uiStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
@@ -81,13 +81,7 @@ const PerformanceTableRow = memo(({
   onClick: (s: PerformanceScore) => void
 }) => {
   return (
-    <tr
-      className={cn(
-        "hover:bg-[#192633] cursor-pointer transition-colors relative",
-        isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
-      )}
-      onClick={() => onClick(stock)}
-    >
+    <>
       <td className="px-3 py-3 text-center relative">
         {isDualMatch && (
           <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
@@ -172,7 +166,7 @@ const PerformanceTableRow = memo(({
           </td>
         </>
       )}
-    </tr>
+    </>
   );
 });
 
@@ -191,13 +185,7 @@ const AISignalTableRow = memo(({
   onClick: (s: AISignalResult) => void
 }) => {
   return (
-    <tr
-      className={cn(
-        "hover:bg-[#192633] cursor-pointer transition-colors relative",
-        isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
-      )}
-      onClick={() => onClick(stock)}
-    >
+    <>
       <td className="px-3 py-3 text-center relative">
         {isDualMatch && (
           <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-yellow-400" />
@@ -236,7 +224,7 @@ const AISignalTableRow = memo(({
         </span>
       </td>
       <td className={cn("px-3 py-3 text-right font-bold text-base", (stock.predictedChange ?? 0) > 0 ? "text-green-400" : "text-red-400")}>
-        {stock.predictedChange ? (stock.predictedChange > 0 ? `+${stock.predictedChange}%` : `${stock.predictedChange}%`) : '-'}
+        {stock.predictedChange !== undefined ? (stock.predictedChange > 0 ? `+${stock.predictedChange}%` : `${stock.predictedChange}%`) : '-'}
       </td>
       <td className="px-3 py-3 text-center">
         <span className={cn(
@@ -283,7 +271,7 @@ const AISignalTableRow = memo(({
           </div>
         </div>
       </td>
-    </tr>
+    </>
   );
 });
 
@@ -532,7 +520,7 @@ function PerformanceDashboardContent() {
   // ... (Dashboard component start)
 
   return (
-    <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+    <div className="flex flex-col h-full bg-[#101922] text-white overflow-hidden">
       <ScreenLabel label="パフォーマンススクリーナー / Performance Screener" />
       <header className="flex items-center justify-between border-b border-solid border-[#233648] bg-[#101922] px-6 py-3 shrink-0 z-20">
         <div className="flex items-center gap-3 text-white">
@@ -802,6 +790,29 @@ function PerformanceDashboardContent() {
               <TableVirtuoso
                 style={{ height: '100%', width: '100%' }}
                 data={sortedResults}
+                components={{
+                  TableRow: ({ children, ...props }: any) => {
+                    const index = props['data-item-index'];
+                    const stock = sortedResults[index];
+                    if (!stock) return <tr {...props}>{children}</tr>;
+
+                    // 行スタイルとクリックハンドラをここに集約
+                    const isDualMatch = activeTab === 'dual-match';
+
+                    return (
+                      <tr
+                        {...props}
+                        className={cn(
+                          "hover:bg-[#192633] cursor-pointer transition-colors relative",
+                          isDualMatch && "bg-orange-500/5 hover:bg-orange-500/10"
+                        )}
+                        onClick={() => handleStockClick(stock)}
+                      >
+                        {children}
+                      </tr>
+                    );
+                  }
+                }}
                 fixedHeaderContent={() => (
                   <tr className="bg-[#101922] text-[#92adc9] text-xs font-bold sticky top-0 z-10 shadow-sm border-b border-[#233648]">
                     <th className="px-3 py-3 w-12 text-center cursor-pointer hover:text-white hover:bg-[#192633] transition-colors" onClick={() => handleSort('rank')}>

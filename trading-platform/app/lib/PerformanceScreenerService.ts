@@ -12,6 +12,7 @@ import { optimizedAccuracyService } from './OptimizedAccuracyService';
 import { consensusSignalService } from './ConsensusSignalService';
 import { mlPredictionService } from './mlPrediction';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
+import pLimit from 'p-limit';
 
 // レビュー対応: マジックナンバーを定数化
 const MIN_DATA_REQUIRED = 50;  // 最低必要データ件数
@@ -183,12 +184,12 @@ export class PerformanceScreenerService {
     }
 
 
-    // バックテスト実行（直列処理でレートリミット回避）
+    // 並列処理制限（Yahoo Financeのレートリミット考慮）
+    const limit = pLimit(5);
     const allResults: PerformanceScore[] = [];
 
-    for (let i = 0; i < filteredSources.length; i++) {
-      const ds = filteredSources[i];
-
+    // 並列実行
+    await Promise.all(filteredSources.map(ds => limit(async () => {
       try {
         const result = await this.evaluateStock(ds, lookbackDays);
         if (result) {
@@ -198,16 +199,7 @@ export class PerformanceScreenerService {
         // 個別銘柄の評価失敗はログに記録して継続
         console.warn(`[PerformanceScreener] Failed to evaluate ${ds.symbol}:`, error);
       }
-
-      // 各リクエスト後に遅延（レートリミット対策）
-      // テスト環境では遅延をスキップ
-      if (i < filteredSources.length - 1) {
-        const delayMs = process.env.JEST_WORKER_ID ? 0 : 1500;
-        if (delayMs > 0) {
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-        }
-      }
-    }
+    })));
 
     // 最小トレード数でフィルタリング
     const minTradesFiltered = allResults.filter(r => r.totalTrades >= (minTrades || 0));
@@ -283,13 +275,14 @@ export class PerformanceScreenerService {
     const dualMatches: DualMatchEntry[] = [];
     const dualMatchSymbols: string[] = [];
 
-    for (let i = 0; i < filteredSources.length; i++) {
-      const ds = filteredSources[i];
+    const limit = pLimit(5);
+
+    await Promise.all(filteredSources.map(ds => limit(async () => {
       try {
         // 1回のデータ取得を共有
         const data = await ds.fetchData();
         if (data.length < MIN_DATA_REQUIRED) {
-          continue;
+          return;
         }
         const actualLookback = Math.min(data.length, lookbackDays);
         const recentData = data.slice(-actualLookback);
@@ -337,8 +330,6 @@ export class PerformanceScreenerService {
         let finalConfidence = consensus.confidence;
 
         // HIGH CONFIDENCE ML OVERRIDE
-        // AIの買い確信度が 60%以上 で、かつテクニカルの売り確信度が 50%未満（弱い売り）の場合
-        // AIの判断を優先して「買い」に昇格させる（ただし確信度は少し割り引く）
         if (mlSignal.type === 'BUY' && mlSignal.confidence >= 60 &&
           consensus.type === 'SELL' && consensus.confidence < 50) {
           finalType = 'BUY';
@@ -353,7 +344,6 @@ export class PerformanceScreenerService {
         }
 
         // AI結果の保存（BUYのみに限定せず、上位抽出用に全て保持）
-        // 目標価格の計算: AIの目標価格を優先し、フォールバックとしてATRを使用
         const atrs = technicalIndicatorService.calculateATR(recentData);
         const lastAtr = atrs[atrs.length - 1] || currentPrice * 0.02;
         const targetPrice = (mlSignal.type === finalType) ? mlSignal.targetPrice : (finalType === 'BUY' ? currentPrice + (lastAtr * 2) : currentPrice - (lastAtr * 2));
@@ -396,6 +386,7 @@ export class PerformanceScreenerService {
         console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}%, dualScore=${dualScore.toFixed(1)}, trades=${perfScore.totalTrades} → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
 
         if (isDualCandidate) {
+          // Promise並列実行中のpushは競合しない（JSシングルスレッド）が、念のため
           dualMatchSymbols.push(ds.symbol);
           dualMatches.push({
             symbol: ds.symbol,
@@ -414,13 +405,7 @@ export class PerformanceScreenerService {
       } catch (err) {
         console.warn(`[PerformanceScreener] Dual scan failed for ${ds.symbol}:`, err);
       }
-
-      // レートリミット
-      if (i < filteredSources.length - 1) {
-        const delayMs = process.env.JEST_WORKER_ID ? 0 : 800; // 統合スキャンなので少し短縮
-        if (delayMs > 0) await new Promise(r => setTimeout(r, delayMs));
-      }
-    }
+    })));
 
     // ソートとランキング
     performanceResults.sort((a, b) => b.performanceScore - a.performanceScore).forEach((r, i) => r.rank = i + 1);
@@ -659,14 +644,13 @@ export class PerformanceScreenerService {
     let maxBuyConfidence = 0;
     let maxBuySymbol = '';
 
-    for (let i = 0; i < filteredSources.length; i++) {
-      const ds = filteredSources[i];
-
+    const limitAISignals = pLimit(5);
+    await Promise.all(filteredSources.map(ds => limitAISignals(async () => {
       try {
         // データ取得
         const data = await ds.fetchData();
         if (data.length < lookbackDays) {
-          continue;
+          return;
         }
         const recentData = data.slice(-lookbackDays);
 
@@ -752,15 +736,7 @@ export class PerformanceScreenerService {
       } catch (error) {
         console.warn(`[PerformanceScreener] AI signal failed for ${ds.symbol}:`, error);
       }
-
-      // 遅延
-      if (i < filteredSources.length - 1) {
-        const delayMs = process.env.JEST_WORKER_ID ? 0 : 1500;
-        if (delayMs > 0) {
-          await new Promise(resolve => setTimeout(resolve, delayMs));
-        }
-      }
-    }
+    })));
 
     // Log debug summary
     console.log(`[AISignal Summary] Total scanned: ${debugStats.total}, BUY: ${debugStats.buy}, SELL: ${debugStats.sell}, HOLD: ${debugStats.hold}`);

@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   description: "AI予測シグナルとテクニカル分析を活用した株式取引支援プラットフォーム",
 };
 
+import { Navigation } from "@/app/components/Navigation";
+import { UserExperienceEnhancements } from "@/app/components/UserExperienceEnhancements";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,7 +33,13 @@ export default function RootLayout({
             <MonitoringProvider>
               <BehavioralWarningProvider>
                 <I18nProvider>
-                  {children}
+                  <div className="flex flex-col h-screen overflow-hidden bg-[#101922]">
+                    <div className="flex-1 overflow-hidden relative">
+                      {children}
+                    </div>
+                    <Navigation />
+                    <UserExperienceEnhancements />
+                  </div>
                 </I18nProvider>
               </BehavioralWarningProvider>
             </MonitoringProvider>

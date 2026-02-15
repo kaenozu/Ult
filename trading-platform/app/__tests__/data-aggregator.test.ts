@@ -46,8 +46,8 @@ const TEST_DATA_SIZES = {
 } as const;
 
 const TEST_BATCH = {
-  CHUNK_SIZE: 50,
-  EXPECTED_CHUNKS: 2,
+  CHUNK_SIZE: 20,
+  EXPECTED_CHUNKS: 3, // Math.min(20, Math.ceil(60/3)) = 20; 60/20 = 3
 } as const;
 
 const HTTP_STATUS = {
@@ -79,7 +79,7 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
     // IDBは即座に空を返すようにする
     (idbClient.getData as jest.Mock).mockResolvedValue([]);
     // fetchは未完了のPromiseを返すようにする
-    (global.fetch as jest.Mock).mockReturnValue(new Promise(() => { })); 
+    (global.fetch as jest.Mock).mockReturnValue(new Promise(() => { }));
 
     marketClient.fetchOHLCV('DEDUP');
     marketClient.fetchOHLCV('DEDUP');
@@ -94,7 +94,7 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
   it('performs delta fetching when IDB has old data', async () => {
     jest.useRealTimers();
     const now = new Date();
-    
+
     const oldDate = new Date(now);
     oldDate.setDate(oldDate.getDate() - TEST_TIMINGS.DAYS_AGO);
     const oldData = [{ date: oldDate.toISOString().split('T')[0], close: TEST_PRICES.INITIAL }];

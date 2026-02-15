@@ -102,20 +102,20 @@ describe('WinningTradingSystem', () => {
   });
 
   describe('Backtesting', () => {
-    it('should run backtest successfully', () => {
+    it('should run backtest successfully', async () => {
       const data = generateMockData(200);
-      const result = system.runBacktest('7203', data, 'ADAPTIVE');
+      const result = await system.runBacktest('7203', data, 'ADAPTIVE');
 
       expect(result).toBeDefined();
       expect(result.trades).toBeDefined();
       expect(Array.isArray(result.trades)).toBe(true);
     });
 
-    it('should compare multiple strategies', () => {
+    it('should compare multiple strategies', async () => {
       const data = generateMockData(200);
       const strategies: StrategyType[] = ['TREND_FOLLOWING', 'BREAKOUT', 'MEAN_REVERSION'];
 
-      const results = system.compareStrategies('7203', data, strategies);
+      const results = await system.compareStrategies('7203', data, strategies);
 
       expect(results.size).toBe(3);
       strategies.forEach(strategy => {
@@ -143,9 +143,9 @@ describe('WinningTradingSystem', () => {
   });
 
   describe('Risk Management', () => {
-    it('should validate risk/reward ratio', () => {
+    it('should validate risk/reward ratio', async () => {
       const data = generateMockData(200);
-      const result = system.runBacktest('7203', data);
+      const result = await system.runBacktest('7203', data);
 
       // すべてのトレードがリスク管理に従っていることを確認
       expect(Array.isArray(result.trades)).toBe(true);

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, lazy, Suspense } from 'react';
 import { Header } from '@/app/components/Header';
-import { Navigation } from '@/app/components/Navigation';
+
 import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
@@ -22,7 +22,7 @@ const StockChart = lazy(() => import('@/app/components/StockChart').then(m => ({
 const SimpleRSIChart = lazy(() => import('@/app/components/SimpleRSIChart').then(m => ({ default: m.SimpleRSIChart })));
 const RightSidebar = lazy(() => import('@/app/components/RightSidebar').then(m => ({ default: m.RightSidebar })));
 const BottomPanel = lazy(() => import('@/app/components/BottomPanel').then(m => ({ default: m.BottomPanel })));
-const UserExperienceEnhancements = lazy(() => import('@/app/components/UserExperienceEnhancements').then(m => ({ default: m.UserExperienceEnhancements })));
+
 
 function Workstation() {
   const t = useTranslations();
@@ -84,7 +84,7 @@ function Workstation() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
+    <div className="flex flex-col h-full bg-[#101922] text-white overflow-hidden">
       <ScreenLabel label="メイン取引画面 / Trading Workstation" />
       <div className="flex items-center border-b border-[#233648] bg-[#101922] pr-4">
         <button
@@ -254,12 +254,10 @@ function Workstation() {
         </Suspense>
       </main>
 
-      <Navigation />
+
 
       {/* User Experience Enhancements */}
-      <Suspense fallback={null}>
-        <UserExperienceEnhancements />
-      </Suspense>
+
 
       {/* Disclaimer */}
       <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">

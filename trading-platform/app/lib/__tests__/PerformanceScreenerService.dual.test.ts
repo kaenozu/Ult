@@ -25,6 +25,12 @@ jest.mock('../ConsensusSignalService', () => ({
             reason: 'Strong Buy',
             priceTarget: 1200,
         }),
+        generateEnhancedConsensus: jest.fn().mockResolvedValue({
+            type: 'BUY',
+            confidence: 80,
+            reason: 'Strong Buy',
+            priceTarget: 1200,
+        }),
     },
 }));
 
@@ -90,7 +96,7 @@ describe('PerformanceScreenerService - scanDual', () => {
     it('should filter out low confidence stocks', async () => {
         const dataSource = createMockDataSource('LOW_CONF');
         // Override mock for this test
-        require('../ConsensusSignalService').consensusSignalService.generateConsensus.mockReturnValueOnce({
+        require('../ConsensusSignalService').consensusSignalService.generateEnhancedConsensus.mockResolvedValueOnce({
             type: 'BUY',
             confidence: 20, // Below default 30
             reason: 'Weak',

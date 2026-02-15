@@ -81,7 +81,12 @@ export class FeatureCalculationService {
     return previous === 0 ? 0 : (current - previous) / previous * 100;
   }
 
-  private calculateVolatility(closes: number[], period: number): number {
+  calculateEnhancedFeatures(data: OHLCV[]): PredictionFeatures {
+    // For now, return basic features. Can be extended with more complex patterns.
+    return this.calculateFeatures(data);
+  }
+
+  protected calculateVolatility(closes: number[], period: number): number {
     if (closes.length < period) return 0;
     const recent = closes.slice(-period);
     const mean = recent.reduce((a, b) => a + b, 0) / recent.length;

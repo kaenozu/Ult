@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Screener from '../page';
 import { JAPAN_STOCKS, USA_STOCKS } from '@/app/data/stocks';
@@ -38,12 +38,21 @@ describe('Screener Page', () => {
     );
 
     // Mock stores
-    (useUIStore as unknown as jest.Mock).mockReturnValue({
-      setSelectedStock: jest.fn(),
+    (useUIStore as unknown as jest.Mock).mockImplementation((selector) => {
+      const state = {
+        setSelectedStock: jest.fn(),
+        theme: 'dark',
+        toggleTheme: jest.fn(),
+      };
+      return selector ? selector(state) : state;
     });
 
-    (useWatchlistStore as unknown as jest.Mock).mockReturnValue({
-      addToWatchlist: jest.fn(),
+    (useWatchlistStore as unknown as jest.Mock).mockImplementation((selector) => {
+      const state = {
+        addToWatchlist: jest.fn(),
+        watchlist: [],
+      };
+      return selector ? selector(state) : state;
     });
   });
 
@@ -61,16 +70,16 @@ describe('Screener Page', () => {
 
       const priceMinInput = screen.getByLabelText('最低価格');
 
-      // Type quickly multiple times
-      await userEvent.type(priceMinInput, '1');
-      await userEvent.type(priceMinInput, '2');
-      await userEvent.type(priceMinInput, '3');
+      // Use fireEvent for synchronous interaction with fake timers
+      fireEvent.change(priceMinInput, { target: { value: '123' } });
 
       // Should show immediate value
       expect(priceMinInput).toHaveValue(123);
 
       // Wait for debounce
-      jest.advanceTimersByTime(350);
+      act(() => {
+        jest.advanceTimersByTime(350);
+      });
 
       // After debounce, filtered results should update
       await waitFor(() => {
@@ -85,13 +94,15 @@ describe('Screener Page', () => {
 
       const priceMaxInput = screen.getByLabelText('最高価格');
 
-      await userEvent.type(priceMaxInput, '5000');
+      fireEvent.change(priceMaxInput, { target: { value: '5000' } });
 
       // Should show immediate value
       expect(priceMaxInput).toHaveValue(5000);
 
       // Wait for debounce
-      jest.advanceTimersByTime(350);
+      act(() => {
+        jest.advanceTimersByTime(350);
+      });
 
       // Verify filter applied
       await waitFor(() => {
@@ -105,7 +116,7 @@ describe('Screener Page', () => {
 
       const changeMinInput = screen.getByLabelText('最小騰落率');
 
-      await userEvent.type(changeMinInput, '-5');
+      fireEvent.change(changeMinInput, { target: { value: '-5' } });
 
       expect(changeMinInput).toHaveValue(-5);
 
@@ -122,7 +133,7 @@ describe('Screener Page', () => {
 
       const changeMaxInput = screen.getByLabelText('最大騰落率');
 
-      await userEvent.type(changeMaxInput, '10');
+      fireEvent.change(changeMaxInput, { target: { value: '10' } });
 
       expect(changeMaxInput).toHaveValue(10);
 
@@ -139,7 +150,7 @@ describe('Screener Page', () => {
 
       const volumeMinInput = screen.getByLabelText('最小出来高');
 
-      await userEvent.type(volumeMinInput, '1000000');
+      fireEvent.change(volumeMinInput, { target: { value: '1000000' } });
 
       expect(volumeMinInput).toHaveValue(1000000);
 
@@ -156,7 +167,7 @@ describe('Screener Page', () => {
 
       const sectorInput = screen.getByLabelText('セクターフィルター');
 
-      await userEvent.type(sectorInput, 'Technology');
+      fireEvent.change(sectorInput, { target: { value: 'Technology' } });
 
       expect(sectorInput).toHaveValue('Technology');
 
@@ -174,12 +185,12 @@ describe('Screener Page', () => {
       const priceMinInput = screen.getByLabelText('最低価格');
 
       // Type multiple values rapidly
-      await userEvent.clear(priceMinInput);
-      await userEvent.type(priceMinInput, '1');
+      fireEvent.change(priceMinInput, { target: { value: '' } });
+      fireEvent.change(priceMinInput, { target: { value: '1' } });
       jest.advanceTimersByTime(100);
-      await userEvent.type(priceMinInput, '2');
+      fireEvent.change(priceMinInput, { target: { value: '12' } });
       jest.advanceTimersByTime(100);
-      await userEvent.type(priceMinInput, '3');
+      fireEvent.change(priceMinInput, { target: { value: '123' } });
 
       // Advance full debounce time from last input
       jest.advanceTimersByTime(300);
@@ -195,7 +206,7 @@ describe('Screener Page', () => {
 
       const buyButton = screen.getByText('買い');
 
-      await userEvent.click(buyButton);
+      fireEvent.click(buyButton);
 
       // Signal filter should apply immediately (no debounce)
       await waitFor(() => {
@@ -208,7 +219,7 @@ describe('Screener Page', () => {
 
       const marketSelect = screen.getByLabelText('市場フィルター');
 
-      await userEvent.selectOptions(marketSelect, 'japan');
+      fireEvent.change(marketSelect, { target: { value: 'japan' } });
 
       // Market filter should apply immediately
       await waitFor(() => {
@@ -229,10 +240,10 @@ describe('Screener Page', () => {
     it('should debounce preset button clicks', async () => {
       render(<Screener />);
 
-      const oversoldButton = screen.getByText('🔥 売られすぎ（買い）');
+      const oversoldButton = screen.getByRole('button', { name: /売られすぎ/ });
 
       // Click the button
-      await userEvent.click(oversoldButton);
+      fireEvent.click(oversoldButton);
 
       // Should show loading state immediately
       expect(oversoldButton).toBeDisabled();
@@ -249,10 +260,10 @@ describe('Screener Page', () => {
     it('should disable other preset buttons while one is active', async () => {
       render(<Screener />);
 
-      const oversoldButton = screen.getByText('🔥 売られすぎ（買い）');
-      const uptrendButton = screen.getByText('🚀 上昇トレンド（買い）');
+      const oversoldButton = screen.getByRole('button', { name: /売られすぎ/ });
+      const uptrendButton = screen.getByRole('button', { name: /上昇トレンド/ });
 
-      await userEvent.click(oversoldButton);
+      fireEvent.click(oversoldButton);
 
       // Other buttons should be disabled
       expect(uptrendButton).toBeDisabled();
@@ -281,7 +292,9 @@ describe('Screener Page', () => {
 
       // All inputs should be cleared
       await waitFor(() => {
-        expect(priceMinInput).toHaveValue(null);
+        // Use queryByLabelText to avoid throw if not found, or just check value
+        const priceInputAfterReset = screen.getByLabelText('最低価格');
+        expect(priceInputAfterReset).toHaveValue(null);
       });
     });
   });

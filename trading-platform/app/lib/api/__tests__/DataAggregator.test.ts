@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { DataAggregator } from '../DataAggregator';
+import { DataAggregator } from '../data-aggregator';
 import type { OHLCV } from '@/app/types';
 
 describe('DataAggregator', () => {
