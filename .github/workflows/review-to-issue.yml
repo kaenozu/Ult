@@ -76,7 +76,8 @@ jobs:
           AUTHOR=$(echo "$PR_DATA" | jq -r '.a')
           MERGED=$(echo "$PR_DATA" | jq -r '.m // "N/A"')
           
-          BODY="## PR Review Summary
+          cat > /tmp/issue_body.txt << EOF
+## PR Review Summary
 
 **PR**: #$PR_NUM - $TITLE
 **Merged**: $MERGED
@@ -87,12 +88,12 @@ jobs:
 ### Review Comments
 
 ${{ env.comments }}
-"
+EOF
           
           gh issue create \
             --repo ${{ github.repository }} \
             --title "[Review] PR #$PR_NUM: $TITLE" \
-            --body "$BODY" \
+            --body-file /tmp/issue_body.txt \
             --label "review,automated"
           
           echo "✓ Issue created successfully!"
