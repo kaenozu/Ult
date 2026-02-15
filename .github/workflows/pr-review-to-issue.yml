@@ -12,16 +12,26 @@ jobs:
       issues: write
       pull-requests: read
     steps:
-      - run: echo "PR #${{ github.event.pull_request.number }} closed"
-      - run: echo "Merged=${{ github.event.pull_request.merged }}"
+      - name: Show PR info
+        run: |
+          echo "PR Number: ${{ github.event.pull_request.number }}"
+          echo "Merged: ${{ github.event.pull_request.merged }}"
+      
       - name: Create issue if has comments
         if: github.event.pull_request.merged == true
         run: |
           PR_NUM=${{ github.event.pull_request.number }}
+          echo "Processing PR #$PR_NUM"
+          
           COMMENTS=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json comments -q '.comments[] | select(.authorAssociation != "OWNER") | "- @\(.author.login): \(.body)"' 2>/dev/null || echo "")
+          
           if [ -n "$COMMENTS" ]; then
+            echo "Found comments, creating issue..."
             PR_TITLE=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json title -q '.title')
             gh issue create --repo ${{ github.repository }} --title "[Review] PR #$PR_NUM: $PR_TITLE" --body "$COMMENTS" --label "review"
+            echo "Issue created successfully!"
+          else
+            echo "No comments found, skipping issue creation"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
