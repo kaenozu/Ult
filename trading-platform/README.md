@@ -2,6 +2,8 @@
 
 AI予測シグナルとテクニカル分析を活用した、次世代株式取引支援プラットフォームです。日本市場と米国市場のリアルタイム分析に対応し、プロフェッショナルなトレーディングツールを提供します。
 
+> **🤖 Automated Review System**: このプロジェクトは自動PRレビューシステムを導入しています。
+
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14+-black.svg)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://react.dev/)
