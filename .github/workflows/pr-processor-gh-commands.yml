@@ -1,0 +1,41 @@
+name: PR Processor with GH Commands
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number'
+        required: true
+        type: string
+
+jobs:
+  process:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Get PR Number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "number=${{ github.event.inputs.pr_number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Test GH Commands
+        run: |
+          PR_NUM="${{ steps.pr.outputs.number }}"
+          echo "Processing PR #$PR_NUM"
+          
+          # Test gh pr view
+          gh pr view $PR_NUM --repo ${{ github.repository }} --json number,title || echo "Failed to view PR"
+          
+          echo "Success!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
