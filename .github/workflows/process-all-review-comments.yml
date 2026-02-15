@@ -1,0 +1,92 @@
+name: Process All Review Comments
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # Every 4 hours
+  workflow_dispatch:
+
+jobs:
+  process-comments:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Get Recently Merged PRs with Comments
+        id: prs
+        run: |
+          # Get PRs merged in last 7 days
+          MERGED_PRS=$(gh pr list \
+            --repo ${{ github.repository }} \
+            --state merged \
+            --limit 50 \
+            --json number,title,mergedAt,author \
+            -q '.[] | .number')
+          
+          echo "prs=$MERGED_PRS" >> $GITHUB_OUTPUT
+
+      - name: Process Each PR
+        run: |
+          PR_NUMBERS=($(echo '${{ steps.prs.outputs.prs }}' | tr -d '[]' | tr ',' ' '))
+          
+          for pr_num in "${PR_NUMBERS[@]}"; do
+            pr_num=$(echo "$pr_num" | tr -d '"')
+            [ -z "$pr_num" ] && continue
+            
+            # Skip if issue already exists
+            EXISTING=$(gh issue list \
+              --repo ${{ github.repository }} \
+              --search "PR #$pr_num" \
+              --json number \
+              -q '.[0].number' 2>/dev/null)
+            
+            if [ -n "$EXISTING" ]; then
+              echo "Skipping PR #$pr_num - issue #$EXISTING already exists"
+              continue
+            fi
+            
+            # Get review comments (exclude owner)
+            COMMENTS=$(gh pr view $pr_num \
+              --repo ${{ github.repository }} \
+              --json comments \
+              -q '.comments[] | select(.authorAssociation != "OWNER") | "- **@\(.author.login)**: \(.body | split("\n")[0])"')
+            
+            COMMENT_COUNT=$(echo "$COMMENTS" | grep -c "@" || echo "0")
+            
+            if [ "$COMMENT_COUNT" -gt "0" ]; then
+              # Get PR info
+              PR_INFO=$(gh pr view $pr_num \
+                --repo ${{ github.repository }} \
+                --json title,user,mergedAt \
+                -q '{title: .title, author: .user.login, mergedAt: .mergedAt}')
+              
+              PR_TITLE=$(echo "$PR_INFO" | jq -r '.title')
+              PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.author')
+              PR_MERGED=$(echo "$PR_INFO" | jq -r '.mergedAt // "N/A"')
+              
+              # Create issue
+              ISSUE_BODY="## PR Review Summary
+              
+**PR**: #$pr_num - $PR_TITLE
+**Merged**: $PR_MERGED
+**Author**: @$PR_AUTHOR
+
+---
+
+### Review Comments
+
+$COMMENTS
+"
+              
+              gh issue create \
+                --repo ${{ github.repository }} \
+                --title "[Review] PR #$pr_num: $PR_TITLE" \
+                --body "$ISSUE_BODY" \
+                --label "review,automated"
+              
+              echo "Created issue for PR #$pr_num"
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
