@@ -1,0 +1,12 @@
+name: Simple Test
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "PR closed event triggered"
+      - run: echo "Merged=${{ github.event.pull_request.merged }}"
