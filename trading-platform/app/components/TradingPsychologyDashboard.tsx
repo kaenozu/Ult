@@ -5,5 +5,5 @@
 
 'use client';
 
-export { TradingPsychologyDashboard as default } from './Psychology/TradingPsychologyDashboard/index';
-export { TradingPsychologyDashboard } from './Psychology/TradingPsychologyDashboard/index';
+export { TradingPsychologyDashboard as default } from './psychology/TradingPsychologyDashboard/index';
+export { TradingPsychologyDashboard } from './psychology/TradingPsychologyDashboard/index';
