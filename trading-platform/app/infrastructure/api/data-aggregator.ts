@@ -401,7 +401,7 @@ class MarketDataClient {
   /**
    * Performance optimization: Periodic cache cleanup
    */
-  private startCacheCleanup() {
+  public startCacheCleanup() {
     setInterval(() => {
       const now = Date.now();
       const toDelete: string[] = [];
@@ -479,28 +479,6 @@ class MarketDataClient {
   clearCache() {
     this.cache.clear();
     this.pendingRequests.clear();
-  }
-
-  /**
-   * Performance optimization: Periodic cache cleanup
-   */
-  startCacheCleanup() {
-    setInterval(() => {
-      const now = Date.now();
-      const toDelete: string[] = [];
-      
-      for (const [key, entry] of this.cache.entries()) {
-        if (now - entry.timestamp > entry.ttl) {
-          toDelete.push(key);
-        }
-      }
-      
-      toDelete.forEach(key => this.cache.delete(key));
-      
-      if (toDelete.length > 0) {
-        logger.debug(`Cache cleanup: removed ${toDelete.length} expired entries`);
-      }
-    }, this.CACHE_CLEANUP_INTERVAL);
   }
 }
 
