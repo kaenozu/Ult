@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/app/lib/utils';
 import { TradingPattern, ImprovementSuggestion } from '@/app/lib/psychology/AITradingCoach';
-import { FearGreedIndex, EmotionTradeCorrelation } from '@/app/lib/psychology/SentimentAnalyzer';
+import { FearGreedIndex } from '@/app/lib/psychology/SentimentAnalyzer';
 import { RuleViolation } from '@/app/lib/psychology/DisciplineMonitor';
 
 interface OverviewTabProps {
