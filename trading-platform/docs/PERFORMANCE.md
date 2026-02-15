@@ -4,6 +4,40 @@
 
 このドキュメントでは、ULT Trading Platformのパフォーマンス最適化について説明します。
 
+## 最近の改善 (2026-02-15)
+
+### Next.js設定の最適化
+
+#### 1. ビルド最適化
+- **Image Optimization**: AVIFとWebPフォーマット対応を追加
+- **Experimental Features**: 
+  - `optimizePackageImports`による高速tree-shaking
+  - 対象パッケージ: lucide-react, @tanstack/react-query, date-fns, recharts
+- **圧縮**: gzip圧縮を有効化
+- **セキュリティ**: `X-Powered-By`ヘッダーを削除
+
+#### 2. コード分割
+Webpack設定をカスタマイズして、以下のチャンクに分割:
+- **vendor**: 一般的なnode_modules
+- **tensorflow**: TensorFlow.js（大きなライブラリ）
+- **charts**: chart.jsとrecharts（チャートライブラリ）
+
+#### 3. バンドル分析
+- `@next/bundle-analyzer`を追加
+- `npm run build:analyze`コマンドでバンドルサイズを確認可能
+
+### パフォーマンス予算
+
+| リソース | 目標サイズ | 最大サイズ |
+|---------|-----------|-----------|
+| JavaScript (初期) | 150KB | 200KB |
+| JavaScript (総計) | 1MB | 2MB |
+| CSS | 30KB | 50KB |
+| 画像（ページあたり） | 500KB | 1MB |
+| LCP (Largest Contentful Paint) | < 2.5s | < 4s |
+| FID (First Input Delay) | < 100ms | < 300ms |
+| CLS (Cumulative Layout Shift) | < 0.1 | < 0.25 |
+
 ## 実装済みの最適化
 
 ### 1. React Query (TanStack Query)
