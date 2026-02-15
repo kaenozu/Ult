@@ -6,44 +6,43 @@ on:
 
 jobs:
   create-issue:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
       pull-requests: read
     steps:
-      - name: Debug Info
+      - name: Check if merged
         run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "PR Number: ${{ github.event.pull_request.number }}"
-          echo "PR Merged: ${{ github.event.pull_request.merged }}"
-          echo "Repository: ${{ github.repository }}"
+          if [ "${{ github.event.pull_request.merged }}" != "true" ]; then
+            echo "PR was not merged, skipping"
+            exit 0
+          fi
+          echo "PR was merged, continuing..."
 
       - name: Get PR Comments
-        id: comments
+        if: github.event.pull_request.merged == true
         run: |
           PR_NUM=${{ github.event.pull_request.number }}
           echo "Fetching comments for PR #$PR_NUM"
           
-          # Get comments excluding owner
           COMMENTS=$(gh pr view $PR_NUM \
             --repo ${{ github.repository }} \
             --json comments \
             -q '.comments[] | select(.authorAssociation != "OWNER") | "- @\(.author.login): \(.body | split("\n")[0])"' 2>/dev/null || echo "")
           
-          COUNT=$(echo "$COMMENTS" | grep -c "@" || echo "0")
-          echo "count=$COUNT" >> $GITHUB_OUTPUT
-          echo "comments<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMENTS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "comments<<EOF" >> $GITHUB_ENV
+          echo "$COMMENTS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
           
+          COUNT=$(echo "$COMMENTS" | grep -c "@" || echo "0")
+          echo "count=$COUNT" >> $GITHUB_ENV
           echo "Found $COUNT comments"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check Existing Issue
-        id: check
+        if: github.event.pull_request.merged == true && env.count > 0
         run: |
           PR_NUM=${{ github.event.pull_request.number }}
           EXISTING=$(gh issue list \
@@ -52,21 +51,18 @@ jobs:
             --json number \
             -q '.[0].number' 2>/dev/null || echo "")
           
+          echo "existing=$EXISTING" >> $GITHUB_ENV
           if [ -n "$EXISTING" ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "issue=$EXISTING" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Issue #$EXISTING already exists"
           fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Issue
-        if: steps.comments.outputs.count > 0 && steps.check.outputs.exists == 'false'
+        if: github.event.pull_request.merged == true && env.count > 0 && env.existing == ''
         run: |
           PR_NUM=${{ github.event.pull_request.number }}
           
-          # Get PR info
           PR_DATA=$(gh pr view $PR_NUM \
             --repo ${{ github.repository }} \
             --json title,author,mergedAt \
@@ -86,7 +82,7 @@ jobs:
 
 ### Review Comments
 
-${{ steps.comments.outputs.comments }}
+${{ env.comments }}
 "
           
           gh issue create \
@@ -99,10 +95,10 @@ ${{ steps.comments.outputs.comments }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Skip - No Comments
-        if: steps.comments.outputs.count == 0
-        run: echo "No review comments found"
-
       - name: Skip - Already Exists
-        if: steps.check.outputs.exists == 'true'
-        run: echo "Issue #${{ steps.check.outputs.issue }} already exists"
+        if: github.event.pull_request.merged == true && env.existing != ''
+        run: echo "Issue already exists, skipping"
+
+      - name: Skip - No Comments
+        if: github.event.pull_request.merged == true && env.count == 0
+        run: echo "No review comments found"

@@ -1,0 +1,27 @@
+name: Test PR Close Event
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Always Run
+        run: |
+          echo "This job always runs when PR is closed"
+          echo "Event: ${{ github.event_name }}"
+          echo "Action: ${{ github.event.action }}"
+          echo "PR Merged: ${{ github.event.pull_request.merged }}"
+          echo "PR Number: ${{ github.event.pull_request.number }}"
+
+      - name: Run if merged
+        if: github.event.pull_request.merged == true
+        run: |
+          echo "PR was merged!"
+
+      - name: Run if not merged
+        if: github.event.pull_request.merged != true
+        run: |
+          echo "PR was closed but not merged"
