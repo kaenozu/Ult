@@ -1,0 +1,108 @@
+name: Review Comments to Issue
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  create-issue:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Debug Info
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "PR Number: ${{ github.event.pull_request.number }}"
+          echo "PR Merged: ${{ github.event.pull_request.merged }}"
+          echo "Repository: ${{ github.repository }}"
+
+      - name: Get PR Comments
+        id: comments
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          echo "Fetching comments for PR #$PR_NUM"
+          
+          # Get comments excluding owner
+          COMMENTS=$(gh pr view $PR_NUM \
+            --repo ${{ github.repository }} \
+            --json comments \
+            -q '.comments[] | select(.authorAssociation != "OWNER") | "- @\(.author.login): \(.body | split("\n")[0])"' 2>/dev/null || echo "")
+          
+          COUNT=$(echo "$COMMENTS" | grep -c "@" || echo "0")
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          echo "comments<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMENTS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "Found $COUNT comments"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Existing Issue
+        id: check
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          EXISTING=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --search "PR #$PR_NUM" \
+            --json number \
+            -q '.[0].number' 2>/dev/null || echo "")
+          
+          if [ -n "$EXISTING" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "issue=$EXISTING" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Issue
+        if: steps.comments.outputs.count > 0 && steps.check.outputs.exists == 'false'
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          
+          # Get PR info
+          PR_DATA=$(gh pr view $PR_NUM \
+            --repo ${{ github.repository }} \
+            --json title,author,mergedAt \
+            -q '{t: .title, a: .author.login, m: .mergedAt}')
+          
+          TITLE=$(echo "$PR_DATA" | jq -r '.t')
+          AUTHOR=$(echo "$PR_DATA" | jq -r '.a')
+          MERGED=$(echo "$PR_DATA" | jq -r '.m // "N/A"')
+          
+          BODY="## PR Review Summary
+
+**PR**: #$PR_NUM - $TITLE
+**Merged**: $MERGED
+**Author**: @$AUTHOR
+
+---
+
+### Review Comments
+
+${{ steps.comments.outputs.comments }}
+"
+          
+          gh issue create \
+            --repo ${{ github.repository }} \
+            --title "[Review] PR #$PR_NUM: $TITLE" \
+            --body "$BODY" \
+            --label "review,automated"
+          
+          echo "✓ Issue created!"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip - No Comments
+        if: steps.comments.outputs.count == 0
+        run: echo "No review comments found"
+
+      - name: Skip - Already Exists
+        if: steps.check.outputs.exists == 'true'
+        run: echo "Issue #${{ steps.check.outputs.issue }} already exists"
