@@ -4,7 +4,6 @@ import { memo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { formatCurrency, cn } from '@/app/lib/utils';
 import { DataDelayBadge } from './DataDelayBadge';
-import { isIntradayInterval } from '@/app/lib/constants/intervals';
 
 interface ChartToolbarProps {
   stock: Stock | null;

@@ -7,7 +7,7 @@
  * - Bar width indicates strength of the level
  */
 
-import { Chart, ChartType } from 'chart.js';
+import { Chart } from 'chart.js';
 import { VOLUME_PROFILE } from '@/app/lib/constants';
 
 export interface SupplyDemandWallsOptions {

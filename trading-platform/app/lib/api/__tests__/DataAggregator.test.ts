@@ -6,15 +6,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { DataAggregator } from '../data-aggregator';
+import { MarketDataClient } from '../data-aggregator';
 import type { OHLCV } from '@/app/types';
 
 describe('DataAggregator', () => {
-  let aggregator: DataAggregator;
+  let aggregator: MarketDataClient;
   let fetchMock: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
-    aggregator = new DataAggregator();
+    aggregator = new MarketDataClient();
     fetchMock = jest.fn();
     global.fetch = fetchMock;
   });

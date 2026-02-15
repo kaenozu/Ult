@@ -1,29 +1,10 @@
 import { useMemo } from 'react';
-import { ChartOptions, TooltipItem } from 'chart.js';
+import { ChartOptions } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 import { calculateChartMinMax } from '@/app/lib/chart-utils';
 import { CHART_GRID, CHART_CONFIG } from '@/app/lib/constants';
 import { VolumeProfilePluginOptions } from '../types';
-
-// Type for chartjs-plugin-annotation
-interface AnnotationLineOptions {
-  type: 'line';
-  xMin: number;
-  xMax: number;
-  borderColor: string;
-  borderWidth: number;
-  borderDash: number[];
-  yMin: number;
-  yMax: number;
-  scaleID: string;
-}
-
-interface AnnotationOptions {
-  annotations: {
-    line1: AnnotationLineOptions;
-  };
-}
 
 interface UseChartOptionsProps {
   data: OHLCV[];

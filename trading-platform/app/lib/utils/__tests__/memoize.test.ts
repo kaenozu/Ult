@@ -301,7 +301,7 @@ describe('memoize', () => {
   });
 
   describe('edge cases', () => {
-    it('should differentiate undefined and null (no JSON.stringify collision)', () => {
+    it('should demonstrate JSON.stringify limitation with undefined/null', () => {
       let callCount = 0;
       const fn = (x: any) => {
         callCount++;
@@ -314,10 +314,12 @@ describe('memoize', () => {
       expect(result1).toBe(undefined);
       expect(callCount).toBe(1);
 
-      // Our custom key generator handles this correctly by including the type
+      // String(undefined) = "undefined", String(null) = "null" - different keys
       const result2 = memoized(null);
       expect(result2).toBe(null);
-      expect(callCount).toBe(2); // Cache miss because they are different
+      expect(callCount).toBe(2); // Different cache key, new call
+
+      // To avoid this, use a custom key generator for sensitive cases
     });
 
     it('should handle complex objects', () => {

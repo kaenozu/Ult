@@ -6,22 +6,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { DataAggregator } from '../data-aggregator';
+import { MarketDataClient } from '../data-aggregator';
 import type { OHLCV } from '@/app/types';
 
-jest.mock('@/app/lib/api/idb-migrations', () => ({
-  idbClient: {
-    getData: jest.fn().mockReturnValue(Promise.resolve([])),
-    mergeAndSave: jest.fn().mockImplementation((_symbol, data) => Promise.resolve(data)),
-  },
-}));
-
 describe('DataAggregator', () => {
-  let aggregator: DataAggregator;
+  let aggregator: MarketDataClient;
   let fetchMock: ReturnType<typeof jest.fn>;
 
   beforeEach(() => {
-    aggregator = new DataAggregator();
+    aggregator = new MarketDataClient();
     fetchMock = jest.fn();
     global.fetch = fetchMock;
   });
@@ -134,13 +127,13 @@ describe('DataAggregator', () => {
 
   describe('エラーハンドリング', () => {
     it('ネットワークエラーを適切に処理する', async () => {
-      fetchMock.mockRejectedValue(new Error('Network error'));
+      fetchMock.mockRejectedValueOnce(new Error('Network error'));
 
       await expect(aggregator.fetchData('AAPL')).rejects.toThrow('Network error');
     });
 
     it('APIエラーを適切に処理する', async () => {
-      fetchMock.mockResolvedValue({
+      fetchMock.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
