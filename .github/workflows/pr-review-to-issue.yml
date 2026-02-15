@@ -28,6 +28,8 @@ jobs:
           if [ -n "$COMMENTS" ]; then
             echo "Found comments, creating issue..."
             PR_TITLE=$(gh pr view $PR_NUM --repo ${{ github.repository }} --json title -q '.title')
+            # Create label if it doesn't exist (ignore error if already exists)
+            gh label create "review" --description "PR Review Comments" --color "0366d6" 2>/dev/null || true
             gh issue create --repo ${{ github.repository }} --title "[Review] PR #$PR_NUM: $PR_TITLE" --body "$COMMENTS" --label "review"
             echo "Issue created successfully!"
           else
