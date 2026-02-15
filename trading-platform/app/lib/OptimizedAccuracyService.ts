@@ -18,6 +18,7 @@ import {
     SMA_CONFIG,
     FORECAST_CONE
 } from './constants';
+import { TIME_INTERVALS } from './constants/common';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 
 // 最適化パラメータの型定義
@@ -51,7 +52,7 @@ export class OptimizedAccuracyService {
     // パラメータキャッシュ（LRUキャッシュ）
     private paramCache = new Map<string, CacheEntry>();
     private readonly CACHE_MAX_SIZE = 50;
-    private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5分
+    private readonly CACHE_TTL_MS = TIME_INTERVALS.CACHE_5_MIN;
 
     // 事前計算済み指標のキャッシュ
     private indicatorCache = new Map<string, {
