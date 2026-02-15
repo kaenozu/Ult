@@ -1,6 +1,7 @@
 import { OHLCV } from '../../types';
 import { IMarketDataHub } from '../interfaces/IMarketDataHub';
 import { fetchOHLCV } from '@/app/data/stocks';
+import { TIME_INTERVALS } from '@/app/lib/constants/common';
 
 /**
  * MarketDataHub
@@ -9,7 +10,7 @@ import { fetchOHLCV } from '@/app/data/stocks';
 export class MarketDataHub implements IMarketDataHub {
   private dataCache = new Map<string, OHLCV[]>();
   private pendingRequests = new Map<string, Promise<OHLCV[]>>();
-  private cacheExpiry = 60 * 1000; // 1 minute default
+  private cacheExpiry = TIME_INTERVALS.CACHE_1_MIN;
   private lastFetchTime = new Map<string, number>();
 
   async getData(symbol: string, market: 'japan' | 'usa'): Promise<OHLCV[]> {
