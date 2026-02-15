@@ -3,31 +3,22 @@ name: Convert PR Review Comments to Issue
 on:
   pull_request:
     types: [closed]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: 'PR number to process (for manual testing)'
-        required: true
-        default: '1'
-        type: string
 
 jobs:
   create-issue-from-review:
-    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    # Only run when PR is merged (not just closed)
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
       pull-requests: read
     steps:
-      - name: Determine PR Number
+      - name: Get PR Number
         id: pr-info
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.pr_number }}" ]; then
-            echo "pr_number=${{ inputs.pr_number }}" >> $GITHUB_OUTPUT
-          else
-            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-          fi
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "Processing PR #${{ github.event.pull_request.number }}"
 
       - name: Get PR Review Comments
         id: comments
@@ -42,10 +33,14 @@ jobs:
             -q '.comments[] | select(.authorAssociation != "OWNER" and .authorAssociation != "COLLABORATOR") | "- **@\(.author.login)**: \(.body | split("\n")[0])"' 2>/dev/null || echo "")
           
           COMMENT_COUNT=$(echo "$COMMENTS" | grep -c "@" || echo "0")
+          echo "Found $COMMENT_COUNT review comments"
           echo "comment_count=$COMMENT_COUNT" >> $GITHUB_OUTPUT
+          
           # Escape for JSON
           COMMENTS_ESCAPED=$(echo "$COMMENTS" | jq -Rs .)
           echo "comments=$COMMENTS_ESCAPED" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check for Existing Issue
         id: check-issue
@@ -57,15 +52,19 @@ jobs:
             --repo ${{ github.repository }} \
             --search "PR #$PR_NUM" \
             --limit 1 \
-            --json number,title \
-            -q '.[0] | {number: .number, title: .title}' 2>/dev/null || echo "null")
+            --json number \
+            -q '.[0].number' 2>/dev/null || echo "")
           
-          if [ "$EXISTING" != "null" ] && [ -n "$EXISTING" ]; then
+          if [ -n "$EXISTING" ]; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "existing_issue=$EXISTING" >> $GITHUB_OUTPUT
+            echo "Issue #$EXISTING already exists for this PR"
           else
             echo "exists=false" >> $GITHUB_OUTPUT
+            echo "No existing issue found"
           fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Issue
         if: steps.comments.outputs.comment_count > 0 && steps.check-issue.outputs.exists == 'false'
@@ -75,11 +74,11 @@ jobs:
           COMMENTS_UNESCAPED=$(echo "$COMMENTS" | jq -r .)
           PR_NUM=${{ steps.pr-info.outputs.pr_number }}
           
-          # Get PR info
+          # Get PR info (use mergedAt instead of merged)
           PR_INFO=$(gh pr view $PR_NUM \
             --repo ${{ github.repository }} \
-            --json title,user,mergedAt \
-            -q '{title: .title, author: .user.login, mergedAt: .mergedAt}')
+            --json title,author,mergedAt \
+            -q '{title: .title, author: .author.login, mergedAt: .mergedAt}')
           
           PR_TITLE=$(echo "$PR_INFO" | jq -r '.title')
           PR_AUTHOR=$(echo "$PR_INFO" | jq -r '.author')
@@ -87,7 +86,7 @@ jobs:
           
           # Build issue body
           ISSUE_BODY="## PR Review Summary
-          
+
 **PR**: #$PR_NUM - $PR_TITLE
 **Merged**: $PR_MERGED
 **Author**: @$PR_AUTHOR
@@ -106,14 +105,14 @@ $COMMENTS_UNESCAPED
             --body "$ISSUE_BODY" \
             --label "review,automated"
           
-          echo "Issue created successfully"
+          echo "✓ Issue created successfully"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Issue Already Exists
         if: steps.check-issue.outputs.exists == 'true'
         run: |
-          echo "Issue already exists for this PR, skipping creation"
+          echo "✓ Issue already exists for this PR, skipping creation"
 
       - name: No Comments Found
         if: steps.comments.outputs.comment_count == 0
