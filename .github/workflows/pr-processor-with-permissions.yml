@@ -1,0 +1,16 @@
+name: PR Processor with Permissions
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - run: echo "Testing with permissions"
+      - run: echo "Merged ${{ github.event.pull_request.merged }}"
