@@ -1,0 +1,118 @@
+name: Test PR Review Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to test'
+        required: true
+        default: '832'
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Test 1 - Basic echo
+        run: |
+          echo "Test 1: Basic echo works"
+          echo "PR number: ${{ github.event.inputs.pr_number }}"
+
+      - name: Test 2 - GH CLI available
+        run: |
+          echo "Test 2: Checking gh CLI"
+          gh --version
+
+      - name: Test 3 - GH CLI authentication
+        run: |
+          echo "Test 3: Checking authentication"
+          gh auth status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test 4 - Fetch PR data
+        run: |
+          echo "Test 4: Fetching PR data"
+          PR_NUM="${{ github.event.inputs.pr_number }}"
+          echo "Fetching PR #$PR_NUM"
+          
+          PR_DATA=$(gh pr view $PR_NUM \
+            --repo ${{ github.repository }} \
+            --json number,title,author,merged,mergedAt \
+            2>&1)
+          
+          echo "PR Data:"
+          echo "$PR_DATA"
+          
+          # Check if it contains merged info
+          if echo "$PR_DATA" | grep -q '"merged":'; then
+            echo "✓ Successfully fetched PR data"
+          else
+            echo "✗ Failed to fetch PR data"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test 5 - Fetch PR comments
+        run: |
+          echo "Test 5: Fetching PR comments"
+          PR_NUM="${{ github.event.inputs.pr_number }}"
+          
+          COMMENTS=$(gh pr view $PR_NUM \
+            --repo ${{ github.repository }} \
+            --json comments \
+            -q '.comments[] | "- @\(.author.login): \(.body | split("\n")[0])"' \
+            2>&1 || echo "No comments")
+          
+          echo "Comments:"
+          echo "$COMMENTS"
+          echo "✓ Comment fetch complete"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test 6 - Check for existing issue
+        run: |
+          echo "Test 6: Checking for existing issues"
+          PR_NUM="${{ github.event.inputs.pr_number }}"
+          
+          EXISTING=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --search "PR #$PR_NUM" \
+            --json number \
+            -q '.[0].number' \
+            2>&1 || echo "null")
+          
+          echo "Existing issue: $EXISTING"
+          echo "✓ Issue check complete"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Test 7 - Create test issue
+        run: |
+          echo "Test 7: Creating test issue"
+          PR_NUM="${{ github.event.inputs.pr_number }}"
+          
+          # Only create if doesn't exist
+          EXISTING=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --search "Test Issue for PR #$PR_NUM" \
+            --json number \
+            -q '.[0].number' 2>/dev/null || echo "")
+          
+          if [ -z "$EXISTING" ]; then
+            gh issue create \
+              --repo ${{ github.repository }} \
+              --title "Test Issue for PR #$PR_NUM" \
+              --body "This is a test issue created by workflow" \
+              --label "test,automated"
+            echo "✓ Test issue created"
+          else
+            echo "✓ Test issue already exists (#$EXISTING)"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
