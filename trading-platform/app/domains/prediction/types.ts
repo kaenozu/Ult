@@ -55,6 +55,43 @@ export interface PredictionFeatures {
   atrPercent: number;
 }
 
+export interface CandlestickPatterns {
+  isDoji: number;
+  isHammer: number;
+  isInvertedHammer: number;
+  isBullishEngulfing: number;
+  isBearishEngulfing: number;
+  bodyRatio: number;
+  candleStrength: number;
+}
+
+export interface PriceTrajectory {
+  zigzagTrend: number;
+  trendConsistency: number;
+  isConsolidation: number;
+  supportLevel: number;
+  resistanceLevel: number;
+}
+
+export interface VolumeProfile {
+  volumeTrend: number;
+  volumeSurge: number;
+  priceVolumeCorrelation: number;
+}
+
+export interface VolatilityRegimeFeatures {
+  volatilityRegime: 'LOW' | 'NORMAL' | 'HIGH' | 'EXTREME';
+  historicalVolatility: number;
+  garchVolatility: number;
+}
+
+export interface EnhancedPredictionFeatures extends PredictionFeatures {
+  candlestickPatterns: CandlestickPatterns;
+  priceTrajectory: PriceTrajectory;
+  volumeProfile: VolumeProfile;
+  volatilityRegime: VolatilityRegimeFeatures;
+}
+
 export interface ModelPrediction {
   rfPrediction: number;
   xgbPrediction: number;

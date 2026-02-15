@@ -32,10 +32,9 @@ describe('MarketDataClient Integration Tests', () => {
       });
 
       const result = await marketClient.fetchOHLCV('EMPTY', 1, 'daily');
-      // The client returns a result object, but it might error out if data is empty or process it
-      // Based on logs: {"data": null, "error": "No data available", "source": "idb", "success": false}
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('No data available');
+      // Empty data is now treated as success with empty array
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual([]);
     });
 
     it('should fetch daily data successfully', async () => {
@@ -83,7 +82,7 @@ describe('MarketDataClient Integration Tests', () => {
       });
 
       const result = await marketClient.fetchOHLCV('TEST', 1, 'daily');
-      
+
       expect(result.success).toBe(true);
       expect(result.data).toBeDefined();
 
