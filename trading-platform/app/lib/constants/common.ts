@@ -6,6 +6,37 @@
  */
 
 /**
+ * Time intervals in milliseconds
+ */
+export const TIME_INTERVALS = {
+  // Milliseconds
+  SECOND: 1000,
+  MINUTE: 60 * 1000,
+  HOUR: 60 * 60 * 1000,
+  DAY: 24 * 60 * 60 * 1000,
+  WEEK: 7 * 24 * 60 * 60 * 1000,
+  
+  // Common intervals
+  UPDATE_5_SEC: 5 * 1000,
+  UPDATE_30_SEC: 30 * 1000,
+  UPDATE_1_MIN: 60 * 1000,
+  UPDATE_5_MIN: 5 * 60 * 1000,
+  UPDATE_10_MIN: 10 * 60 * 1000,
+  UPDATE_15_MIN: 15 * 60 * 1000,
+  UPDATE_30_MIN: 30 * 60 * 1000,
+  UPDATE_1_HOUR: 60 * 60 * 1000,
+  
+  // Cache durations
+  CACHE_1_MIN: 60 * 1000,
+  CACHE_5_MIN: 5 * 60 * 1000,
+  CACHE_30_MIN: 30 * 60 * 1000,
+  CACHE_1_HOUR: 60 * 60 * 1000,
+  
+  // API rate limits
+  RATE_LIMIT_WINDOW: 60 * 1000,
+} as const;
+
+/**
  * Optimization parameters
  */
 export const OPTIMIZATION = {
