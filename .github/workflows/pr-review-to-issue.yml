@@ -1,0 +1,89 @@
+name: Convert PR Review Comments to Issue
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  create-issue-from-review:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Get PR Review Comments
+        id: comments
+        run: |
+          # Get review comments (not just PR body comments)
+          # Filter out OWNER and COLLABORATOR (likely the PR author)
+          COMMENTS=$(gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --json comments \
+            -q '.comments[] | select(.authorAssociation != "OWNER" and .authorAssociation != "COLLABORATOR") | "- **@\(.author.login)**: \(.body | split("\n")[0])"' 2>/dev/null || echo "")
+          
+          COMMENT_COUNT=$(echo "$COMMENTS" | grep -c "@" || echo "0")
+          echo "comment_count=$COMMENT_COUNT" >> $GITHUB_OUTPUT
+          # Escape for JSON
+          COMMENTS_ESCAPED=$(echo "$COMMENTS" | jq -Rs .)
+          echo "comments=$COMMENTS_ESCAPED" >> $GITHUB_OUTPUT
+
+      - name: Check for Existing Issue
+        id: check-issue
+        run: |
+          # Search for existing issue with similar title
+          EXISTING=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --search "PR #${{ github.event.pull_request.number }}" \
+            --limit 1 \
+            --json number,title \
+            -q '.[0] | {number: .number, title: .title}' 2>/dev/null || echo "null")
+          
+          if [ "$EXISTING" != "null" ] && [ -n "$EXISTING" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "existing_issue=$EXISTING" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Issue
+        if: steps.comments.outputs.comment_count > 0 && steps.check-issue.outputs.exists == 'false'
+        run: |
+          # Get comments (already escaped)
+          COMMENTS='${{ steps.comments.outputs.comments }}'
+          COMMENTS_UNESCAPED=$(echo "$COMMENTS" | jq -r .)
+          
+          # Build issue body
+          ISSUE_BODY="## PR Review Summary
+          
+**PR**: #${{ github.event.pull_request.number }} - ${{ github.event.pull_request.title }}
+**Merged**: ${{ github.event.pull_request.merged_at }}
+**Author**: @${{ github.event.pull_request.user.login }}
+
+---
+
+### Review Comments
+
+$COMMENTS_UNESCAPED
+"
+          
+          # Create issue
+          gh issue create \
+            --repo ${{ github.repository }} \
+            --title "[Review] PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}" \
+            --body "$ISSUE_BODY" \
+            --label "review,automated"
+          
+          echo "Issue created successfully"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Issue Already Exists
+        if: steps.check-issue.outputs.exists == 'true'
+        run: |
+          echo "Issue already exists for this PR, skipping creation"
+
+      - name: No Comments Found
+        if: steps.comments.outputs.comment_count == 0
+        run: echo "No review comments found, skipping issue creation"

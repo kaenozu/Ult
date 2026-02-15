@@ -113,6 +113,37 @@ export const SKILLS: Record<string, SkillDefinition> = {
     outputFiles: [],
     estimatedTime: '2-4 hours',
   },
+
+  'pr-review-manager': {
+    name: 'PR Review Manager',
+    description: 'Manages PR review comments: fetches comments, analyzes feedback, creates issues for actionable items, responds to reviewers',
+    commands: [
+      'gh pr view',
+      'gh pr comment',
+      'gh issue create',
+    ],
+    requiredTools: ['gh', 'git'],
+    outputFiles: [
+      '.github/workflows/*.yml',
+    ],
+    estimatedTime: '30 min - 1 hour',
+  },
+
+  'code-review-responder': {
+    name: 'Code Review Responder',
+    description: 'Analyzes PR review comments, determines if changes are needed, implements fixes, and responds to reviewers',
+    commands: [
+      'gh pr view --comments',
+      'npx tsc --noEmit',
+      'git commit',
+      'gh pr comment',
+    ],
+    requiredTools: ['gh', 'git', 'tsc'],
+    outputFiles: [
+      '**/*.{ts,tsx}',
+    ],
+    estimatedTime: '1-2 hours',
+  },
 };
 
 // ============================================================================
@@ -208,6 +239,32 @@ export const ULT_TASKS: TaskTemplate[] = [
       'MonteCarloSimulator.ts works correctly',
       'OverfittingDetector.ts validates strategies',
       'Performance reports are comprehensive',
+    ],
+  },
+  {
+    id: 'setup-pr-review-automation',
+    title: 'Setup PR Review to Issue Automation',
+    description: 'Create GitHub Actions workflow to convert merged PR review comments to issues automatically',
+    skill: 'pr-review-manager',
+    priority: 'medium',
+    acceptanceCriteria: [
+      'Workflow file exists at .github/workflows/',
+      'Triggers on PR merge',
+      'Creates issue with review comments',
+      'Skips if similar issue already exists',
+    ],
+  },
+  {
+    id: 'respond-pr-reviews',
+    title: 'Respond to PR Review Comments',
+    description: 'Analyze merged PR review comments, determine if changes are needed, implement fixes, and reply to reviewers',
+    skill: 'code-review-responder',
+    priority: 'high',
+    acceptanceCriteria: [
+      'All review comments are analyzed',
+      'Actionable feedback is implemented',
+      'Type check passes after changes',
+      'Response is posted to original PR',
     ],
   },
 ];
