@@ -4,6 +4,7 @@ import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { idbClient } from '@/app/lib/api/idb-migrations';
 import { isIntradayInterval } from '@/app/lib/constants/intervals';
 import { logger } from '@/app/core/logger';
+import { MARKET_DATA_CACHE_TTL, MARKET_DATA_MAX_CACHE_SIZE, MARKET_DATA_CACHE_CLEANUP_INTERVAL } from '@/app/constants/market';
 
 /**
  * Type alias for backward compatibility
@@ -39,6 +40,17 @@ interface CacheEntry<T> {
   accessCount: number;
 }
 
+/**
+ * MarketDataClient
+ *
+ * Low-level client for fetching market data with caching and persistence.
+ *
+ * ARCHITECTURE NOTE:
+ * This class serves as a concrete implementation of a data source.
+ * In the future (Phase 2+), this should be wrapped as a DataSource and registered
+ * with the MultiSourceDataAggregator (in @/app/domains/market-data), rather than
+ * being used directly by the UI.
+ */
 export class MarketDataClient {
   private cache: Map<string, CacheEntry<OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>> = new Map();
   private pendingRequests: Map<string, Promise<unknown>> = new Map();
@@ -54,19 +66,7 @@ export class MarketDataClient {
     return true;
   }
 
-  // Performance-optimized: Smart TTL based on data type
-  private readonly CACHE_TTL = {
-    realtime: 30 * 1000,      // 30秒 - リアルタイムデータ
-    intraday: 5 * 60 * 1000,  // 5分 - 日中データ
-    daily: 24 * 60 * 1000,    // 24時間 - 日足データ
-    weekly: 7 * 24 * 60 * 1000, // 1週間 - 週足データ
-    quote: 60 * 1000,         // 1分 - 株価情報
-    signal: 15 * 60 * 1000,   // 15分 - シグナル
-    indicators: 30 * 60 * 1000 // 30分 - テクニカル指標
-  };
-
-  private readonly MAX_CACHE_SIZE = 500; // Reduced from 1000 for memory efficiency
-  private readonly CACHE_CLEANUP_INTERVAL = 60 * 1000; // 1分ごとにクリーンアップ
+  // Performance-optimized: Smart TTL based on data type (Moved to @/app/constants/market)
 
   private async fetchWithRetry<T>(
     url: string,
@@ -321,7 +321,7 @@ export class MarketDataClient {
     if (cached) return cached;
     try {
       const data = await this.fetchWithRetry<QuoteData>(`/api/market?type=quote&symbol=${symbol}&market=${market}`);
-      if (data) this.setCache(cacheKey, data, this.CACHE_TTL.quote);
+      if (data) this.setCache(cacheKey, data, MARKET_DATA_CACHE_TTL.quote);
       return data;
     } catch (err) {
       // logger.error(`Fetch Quote failed for ${symbol}:`, err instanceof Error ? err : new Error(String(err)));
@@ -383,11 +383,11 @@ export class MarketDataClient {
 
   private setCache<T extends OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>(key: string, data: T, ttl?: number) {
     // Performance-optimized: LRU eviction when cache is full
-    if (this.cache.size >= this.MAX_CACHE_SIZE) {
+    if (this.cache.size >= MARKET_DATA_MAX_CACHE_SIZE) {
       this.evictLeastRecentlyUsed();
     }
 
-    const cacheTtl = ttl || this.CACHE_TTL.daily; // Default to 24h
+    const cacheTtl = ttl || MARKET_DATA_CACHE_TTL.daily; // Default to 24h
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -411,13 +411,13 @@ export class MarketDataClient {
   }
 
   private getTTLForInterval(interval?: string): number {
-    if (!interval) return this.CACHE_TTL.daily;
+    if (!interval) return MARKET_DATA_CACHE_TTL.daily;
 
-    if (interval.includes('1m') || interval.includes('5m')) return this.CACHE_TTL.realtime;
-    if (interval.includes('15m') || interval.includes('30m') || interval.includes('1h')) return this.CACHE_TTL.intraday;
-    if (interval.includes('1w')) return this.CACHE_TTL.weekly;
+    if (interval.includes('1m') || interval.includes('5m')) return MARKET_DATA_CACHE_TTL.realtime;
+    if (interval.includes('15m') || interval.includes('30m') || interval.includes('1h')) return MARKET_DATA_CACHE_TTL.intraday;
+    if (interval.includes('1w')) return MARKET_DATA_CACHE_TTL.weekly;
 
-    return this.CACHE_TTL.daily;
+    return MARKET_DATA_CACHE_TTL.daily;
   }
 
   /**
@@ -439,7 +439,7 @@ export class MarketDataClient {
       if (toDelete.length > 0) {
         logger.debug(`Cache cleanup: removed ${toDelete.length} expired entries`);
       }
-    }, this.CACHE_CLEANUP_INTERVAL);
+    }, MARKET_DATA_CACHE_CLEANUP_INTERVAL);
   }
 
   private interpolateOHLCV(data: OHLCV[]): OHLCV[] {

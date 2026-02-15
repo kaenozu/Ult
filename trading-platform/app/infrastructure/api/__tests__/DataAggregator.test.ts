@@ -127,7 +127,7 @@ describe('DataAggregator', () => {
 
   describe('エラーハンドリング', () => {
     it('ネットワークエラーを適切に処理する', async () => {
-      fetchMock.mockRejectedValueOnce(new Error('Network error'));
+      fetchMock.mockRejectedValue(new Error('Network error'));
 
       await expect(aggregator.fetchData('AAPL')).rejects.toThrow('Network error');
     });
