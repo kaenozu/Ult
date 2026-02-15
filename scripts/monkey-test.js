@@ -13,6 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 // 設定
 const config = {
@@ -71,7 +72,7 @@ class MonkeyTester {
     }
 
     const randomElement = clickableElements[
-      Math.floor(Math.random() * clickableElements.length)
+      crypto.randomInt(0, clickableElements.length)
     ];
 
     return {
@@ -157,7 +158,7 @@ class MonkeyTester {
 
       try {
         // ランダムにページを選択
-        const randomPage = pages[Math.floor(Math.random() * pages.length)];
+        const randomPage = pages[crypto.randomInt(0, pages.length)];
         await this.navigateTo(randomPage);
 
         // スナップショット取得

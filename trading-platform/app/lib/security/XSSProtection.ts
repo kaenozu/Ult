@@ -175,8 +175,9 @@ export function sanitizeUrl(url: string): string | null {
   try {
     const parsed = new URL(url, window.location.href);
     
-    // JavaScriptプロトコルをブロック
-    if (parsed.protocol === 'javascript:' || parsed.protocol === 'data:') {
+    // 危険なプロトコルをブロック (javascript:, data:, vbscript:)
+    const dangerousProtocols = ['javascript:', 'data:', 'vbscript:'];
+    if (dangerousProtocols.includes(parsed.protocol)) {
       return null;
     }
     
@@ -275,12 +276,16 @@ export const SafeStorage = {
  * ストレージ内のXSSパターン検出
  */
 function detectXssInStorage(value: string): boolean {
-  const xssPatterns = [
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    /javascript:/gi,
-    /on\w+\s*=/gi,
+  // Use simple string matching instead of complex regex for better security
+  const dangerousPatterns = [
+    '<script',
+    '</script>',
+    'javascript:',
+    'vbscript:',
+    'data:text/html',
   ];
-  return xssPatterns.some(pattern => pattern.test(value));
+  const lowerValue = value.toLowerCase();
+  return dangerousPatterns.some(pattern => lowerValue.includes(pattern));
 }
 
 // ============================================================================
