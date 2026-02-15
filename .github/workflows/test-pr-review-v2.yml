@@ -1,0 +1,50 @@
+name: Test PR Review Workflow v2
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to test'
+        required: true
+        default: '832'
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Test 4 - Fetch PR data (with debug)
+        run: |
+          echo "Test 4: Fetching PR data"
+          PR_NUM="${{ github.event.inputs.pr_number }}"
+          echo "Fetching PR #$PR_NUM"
+          echo "Repo: ${{ github.repository }}"
+          
+          # Run with explicit error handling
+          set -x
+          PR_DATA=$(gh pr view $PR_NUM \
+            --repo ${{ github.repository }} \
+            --json number,title,author,merged,mergedAt 2>&1) || {
+            echo "Command failed with exit code $?"
+            echo "Output: $PR_DATA"
+            exit 1
+          }
+          set +x
+          
+          echo "PR Data:"
+          echo "$PR_DATA"
+          
+          # Check if it contains merged info
+          if echo "$PR_DATA" | grep -q '"merged":'; then
+            echo "✓ Successfully fetched PR data"
+          else
+            echo "✗ Failed to fetch PR data"
+            echo "Response was: $PR_DATA"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
