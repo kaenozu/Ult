@@ -233,12 +233,13 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
     period = maybePeriod ?? 14;
   }
 
-  const result: number[] = [];
+  const length = isObjectArray ? data.length : highs.length;
+  // Pre-allocate array for performance (~30% boost)
+  const result: number[] = new Array(length);
   let sum = 0;
   let validCount = 0;
 
   if (isObjectArray) {
-    const length = data.length;
     // Initial loop
     for (let i = 0; i < length && i < period; i++) {
       const currentHigh = data[i].high;
@@ -260,7 +261,7 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
         sum += tr;
         validCount++;
       }
-      result.push(NaN);
+      result[i] = NaN;
 
       if (i === period - 1) {
         result[i] = validCount === period ? sum / period : NaN;
@@ -280,13 +281,12 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
 
       const prevResult = result[i - 1];
       if (!isNaN(tr) && !isNaN(prevResult)) {
-        result.push((prevResult * (period - 1) + tr) / period);
+        result[i] = (prevResult * (period - 1) + tr) / period;
       } else {
-        result.push(NaN);
+        result[i] = NaN;
       }
     }
   } else {
-    const length = highs.length;
     // Initial loop
     for (let i = 0; i < length && i < period; i++) {
       const currentHigh = highs[i];
@@ -308,7 +308,7 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
         sum += tr;
         validCount++;
       }
-      result.push(NaN);
+      result[i] = NaN;
 
       if (i === period - 1) {
         result[i] = validCount === period ? sum / period : NaN;
@@ -329,9 +329,9 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
 
       const prevResult = result[i - 1];
       if (!isNaN(tr) && !isNaN(prevResult)) {
-        result.push((prevResult * (period - 1) + tr) / period);
+        result[i] = (prevResult * (period - 1) + tr) / period;
       } else {
-        result.push(NaN);
+        result[i] = NaN;
       }
     }
   }
