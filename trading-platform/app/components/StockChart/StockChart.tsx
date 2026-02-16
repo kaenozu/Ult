@@ -86,35 +86,38 @@ export const StockChart = memo(function StockChart({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (hoveredIdx === null) return;
 
-      if (e.key === 'ArrowLeft') {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         e.preventDefault();
 
         // Block mouse updates temporarily
         mouseBlockRef.current = true;
-        if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
+        if (mouseBlockTimer.current) {
+          clearTimeout(mouseBlockTimer.current);
+          mouseBlockTimer.current = null;
+        }
         mouseBlockTimer.current = setTimeout(() => {
           mouseBlockRef.current = false;
+          mouseBlockTimer.current = null;
         }, 300);
 
-        setHoveredIndex(prev => (prev !== null && prev > 0) ? prev - 1 : prev);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-
-        // Block mouse updates temporarily
-        mouseBlockRef.current = true;
-        if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
-        mouseBlockTimer.current = setTimeout(() => {
-          mouseBlockRef.current = false;
-        }, 300);
-
-        setHoveredIndex(prev => (prev !== null && prev < data.length - 1) ? prev + 1 : prev);
+        setHoveredIndex(prev => {
+          if (prev === null) return prev;
+          if (e.key === 'ArrowLeft') {
+            return prev > 0 ? prev - 1 : prev;
+          } else {
+            return prev < data.length - 1 ? prev + 1 : prev;
+          }
+        });
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
+      if (mouseBlockTimer.current) {
+        clearTimeout(mouseBlockTimer.current);
+        mouseBlockTimer.current = null;
+      }
     };
   }, [hoveredIdx, data.length]);
 
