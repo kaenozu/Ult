@@ -16,7 +16,7 @@ const StockRow = memo((
     onSelect,
     onRemove,
     showChange,
-    showVolume
+    showVolume: _showVolume
   }: {
     stock: Stock;
     isSelected: boolean;
@@ -32,7 +32,7 @@ const StockRow = memo((
     <tr
       onClick={() => onSelect(stock)}
       role="button"
-      aria-selected={isSelected}
+      aria-pressed={isSelected}
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
@@ -143,7 +143,6 @@ interface SortIconProps {
 
 const SortIcon = memo(({ field, sortField, sortDirection }: SortIconProps) => {
   const isActive = sortField === field;
-  const direction = sortDirection === 'asc' ? 'up' : 'down';
   
   if (!isActive) {
     return (

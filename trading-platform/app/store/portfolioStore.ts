@@ -126,6 +126,7 @@ export const usePortfolioStore = create<PortfolioState>()(
                   currentPrice: orderRequest.price,
                   stopLoss: finalStopLoss,
                   takeProfit: finalTakeProfit,
+                  riskConfig: orderRequest.riskConfig,
                 };
               } else {
                 positions.push({
@@ -140,6 +141,7 @@ export const usePortfolioStore = create<PortfolioState>()(
                   entryDate: new Date().toISOString(),
                   stopLoss: finalStopLoss,
                   takeProfit: finalTakeProfit,
+                  riskConfig: orderRequest.riskConfig,
                 });
               }
 
