@@ -517,9 +517,12 @@ class AuditLogger {
   }
 
   private async deriveKey(): Promise<void> {
-    const secret = (typeof process !== 'undefined' && process.env?.AUDIT_ENCRYPTION_KEY)
-      ? process.env.AUDIT_ENCRYPTION_KEY
-      : 'change-me-in-production';
+    const secret = (typeof process !== 'undefined' && (process.env.NEXT_PUBLIC_AUDIT_ENCRYPTION_KEY || process.env.AUDIT_ENCRYPTION_KEY)) || undefined;
+
+    if (!secret) {
+      throw new Error('Encryption enabled but no AUDIT_ENCRYPTION_KEY provided');
+    }
+
     const keyData = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret));
     this.encryptionKey = await crypto.subtle.importKey(
       'raw',
