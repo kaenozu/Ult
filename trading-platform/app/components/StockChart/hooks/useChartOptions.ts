@@ -13,8 +13,9 @@ interface UseChartOptionsProps {
   hoveredIdx: number | null;
   setHoveredIndex: (idx: number | null) => void;
   signal?: Signal | null;
-  priceRange?: { min: number, max: number } | null;
+  priceRange?: { min: number; max: number } | null;
   supplyDemandLevels?: { price: number; strength: number }[];
+  showVolume?: boolean;
 }
 
 interface ChartContext {
@@ -24,13 +25,14 @@ interface ChartContext {
 
 export const useChartOptions = ({
   data,
-  extendedData,
+  extendedData: _extendedData,
   market,
   hoveredIdx,
   setHoveredIndex,
   signal,
   priceRange: propPriceRange,
-  supplyDemandLevels
+  supplyDemandLevels,
+  showVolume = true
 }: UseChartOptionsProps) => {
   // Y軸の範囲を計算（価格に応じて動的に調整）
   const yAxisRange = useMemo(() => {
@@ -205,6 +207,27 @@ export const useChartOptions = ({
           count: yAxisRange.max - yAxisRange.min > 10000 ? 10 :
             yAxisRange.max - yAxisRange.min > 5000 ? 8 :
               yAxisRange.max - yAxisRange.min > 1000 ? 6 : 4
+        }
+      },
+      yVolume: {
+        display: showVolume !== false,
+        position: 'right' as const,
+        grid: {
+          drawBorder: false,
+          color: 'rgba(146, 173, 201, 0.1)'
+        },
+        ticks: {
+          color: '#92adc9',
+          font: {
+            size: 10,
+            family: 'Inter, sans-serif'
+          },
+          callback: (v: number | string) => {
+            const num = typeof v === 'string' ? parseInt(v) : v;
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(0) + 'K';
+            return num.toString();
+          }
         }
       }
     },

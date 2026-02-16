@@ -170,28 +170,21 @@ export function useStockData() {
         const signalResult = await signalPromise;
         console.log('[useStockData] Signal promise resolved:', signalResult);
         if (!controller.signal.aborted && isMountedRef.current) {
-          if (signalResult.success && signalResult.data) {
-            console.log('[useStockData] Got signal from API:', {
+          // If API returns success but the predicted change is exactly 0, 
+          // it might be a 'flat' signal from backend. Trigger local fallback in this case.
+          const isFlatSignal = signalResult.data && signalResult.data.predictedChange === 0;
+          
+          if (signalResult.success && signalResult.data && !isFlatSignal) {
+            console.log('[useStockData] Got valid signal from API:', {
               type: signalResult.data.type,
-              confidence: signalResult.data.confidence,
-              accuracy: signalResult.data.accuracy,
-              targetPrice: signalResult.data.targetPrice,
-              forecastCone: !!signalResult.data.forecastCone
+              predictedChange: signalResult.data.predictedChange
             });
             setChartSignal(signalResult.data);
           } else {
-            console.warn('[useStockData] Signal fetch returned unsuccessful:', signalResult.error);
+            console.warn(`[useStockData] Signal from API is ${isFlatSignal ? 'flat' : 'unsuccessful'}, using fallback consensus.`);
             // Fallback: generate consensus signal locally using technical analysis
             try {
               const fallbackSignal = consensusSignalService.generateConsensus(data);
-              console.log('[useStockData] Fallback signal generated:', {
-                type: fallbackSignal.type,
-                confidence: fallbackSignal.confidence,
-                probability: fallbackSignal.probability,
-                strength: fallbackSignal.strength,
-                reason: fallbackSignal.reason
-              });
-              // Convert ConsensusSignal to Signal
               const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
               setChartSignal(signal);
             } catch (fallbackErr) {

@@ -54,7 +54,7 @@ function useChartVirtualization(
   itemHeight: number,
   overscan: number = 5
 ): VirtualizationState {
-  const [scrollTop, _setScrollTop] = useState(0);
+  const [scrollTop] = useState(0);
 
   const visibleStart = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const visibleEnd = Math.min(
@@ -165,11 +165,6 @@ export const OptimizedStockChart = memo(function OptimizedStockChart({
   // Extract visible range values for stable dependencies
   const visibleStart = visibleRange[0];
   const visibleEnd = visibleRange[1];
-
-  const chartData = useMemo(() => {
-    if (!data || data.length === 0) return [];
-    return processDataForRendering(data, [visibleStart, visibleEnd]);
-  }, [data, visibleStart, visibleEnd]);
 
   const visibleData = useMemo(() => {
     return data.slice(virtualization.visibleStart, virtualization.visibleEnd);

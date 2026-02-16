@@ -2,7 +2,6 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { StockChart } from '@/app/components/StockChart';
-import { forwardRef, useImperativeHandle } from 'react';
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -29,23 +28,26 @@ const mockChartInstance = {
 jest.mock('react-chartjs-2', () => {
     const { forwardRef, useImperativeHandle } = require('react');
 
+    const MockLine = forwardRef((props: any, ref: any) => {
+        useImperativeHandle(ref, () => mockChartInstance);
+        return (
+            <div
+                data-testid="line-chart"
+                onClick={() => {
+                    // Simulate hover on index 5 (middle of data) to start interaction
+                    if (props.options?.onHover) {
+                        props.options.onHover(null, [{ index: 5, element: {}, datasetIndex: 0 }]);
+                    }
+                }}
+            >
+                Line Chart
+            </div>
+        );
+    });
+    MockLine.displayName = 'MockLine';
+
     return {
-        Line: forwardRef((props: any, ref: any) => {
-            useImperativeHandle(ref, () => mockChartInstance);
-            return (
-                <div
-                    data-testid="line-chart"
-                    onClick={() => {
-                        // Simulate hover on index 5 (middle of data) to start interaction
-                        if (props.options?.onHover) {
-                            props.options.onHover(null, [{ index: 5, element: {}, datasetIndex: 0 }]);
-                        }
-                    }}
-                >
-                    Line Chart
-                </div>
-            );
-        }),
+        Line: MockLine,
         Bar: () => <div data-testid="bar-chart">Bar Chart</div>,
     };
 });
@@ -93,6 +95,7 @@ describe('StockChart Interactions', () => {
         expect(mockChartInstance.setActiveElements).toHaveBeenCalled();
         const lastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
         // Check that at least one element in the call has index 6
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(lastCall.some((el: any) => el.index === 6)).toBe(true);
 
         // 4. Left Arrow: Should move back to index 5
@@ -102,6 +105,7 @@ describe('StockChart Interactions', () => {
         });
 
         const nextLastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(nextLastCall.some((el: any) => el.index === 5)).toBe(true);
     });
 

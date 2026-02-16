@@ -1,8 +1,0 @@
-No tests found, exiting with code 1
-Run with `--passWithNoTests` to exit with code 0
-In C:\gemini-desktop\Ult\trading-platform
-  2118 files checked.
-  testMatch: **/__tests__/**/*.[jt]s?(x), **/?(*.)+(spec|test).[tj]s?(x) - 312 matches
-  testPathIgnorePatterns: \\node_modules\\, \\.next\\, C:\\gemini-desktop\\Ult\\trading-platform\\node_modules\\, C:\\gemini-desktop\\Ult\\trading-platform\\e2e\\, C:\\gemini-desktop\\Ult\\trading-platform\\app\\lib\\services\\__tests__\\mocks\\, C:\\gemini-desktop\\Ult\\trading-platform\\app\\lib\\ml\\integration-tests\\ - 1007 matches
-  testRegex:  - 0 matches
-Pattern: app\\lib\\services\\__tests__\\model-monitor.test.ts - 0 matches

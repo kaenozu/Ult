@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTradeHistory } from '@/app/lib/hooks/useTradeHistory';
 
 export function DataExportImport() {
@@ -15,6 +15,7 @@ export function DataExportImport() {
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = async () => {
     try {
@@ -45,6 +46,9 @@ export function DataExportImport() {
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Reset the input value so the same file can be selected again if needed
+    event.target.value = '';
 
     try {
       setIsImporting(true);
@@ -88,13 +92,13 @@ export function DataExportImport() {
       <h3 className="text-sm font-bold text-white mb-4">データ管理</h3>
 
       {message && (
-        <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
+        <div role="status" className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg animate-fade-in">
           <p className="text-sm text-green-400">{message}</p>
         </div>
       )}
 
       {error && (
-        <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+        <div role="alert" className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg animate-fade-in">
           <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
@@ -105,9 +109,10 @@ export function DataExportImport() {
           <button
             onClick={handleExport}
             disabled={isExporting}
+            aria-busy={isExporting}
             className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 
                        text-white rounded-lg text-sm font-bold transition-colors
-                       flex items-center justify-center gap-2"
+                       flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus-visible:outline-none"
           >
             {isExporting ? (
               <>
@@ -127,25 +132,34 @@ export function DataExportImport() {
 
         {/* インポート */}
         <div>
-          <label className="block w-full px-4 py-3 bg-[#1a3a5c] hover:bg-[#234b73] 
-                          text-white rounded-lg text-sm font-bold transition-colors
-                          cursor-pointer text-center">
+          <input
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            disabled={isImporting}
+            className="hidden"
+            ref={fileInputRef}
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isImporting}
+            aria-busy={isImporting}
+            className="w-full px-4 py-3 bg-[#1a3a5c] hover:bg-[#234b73] disabled:bg-[#1a3a5c]/50 disabled:text-white/50
+                       text-white rounded-lg text-sm font-bold transition-colors
+                       cursor-pointer text-center flex items-center justify-center gap-2
+                       focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+          >
             {isImporting ? (
-              <span className="flex items-center justify-center gap-2">
+              <>
                 <span className="animate-spin">⟳</span>
                 インポート中...
-              </span>
+              </>
             ) : (
               '📤 データをインポート（リストア）'
             )}
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImport}
-              disabled={isImporting}
-              className="hidden"
-            />
-          </label>
+          </button>
           <p className="mt-1 text-xs text-[#5f7a99]">
             以前にエクスポートしたJSONファイルを読み込む
           </p>
@@ -157,7 +171,8 @@ export function DataExportImport() {
             onClick={handleClear}
             className="w-full px-4 py-3 bg-red-600/20 hover:bg-red-600/30 
                        border border-red-500/50 text-red-400 rounded-lg 
-                       text-sm font-bold transition-colors"
+                       text-sm font-bold transition-colors
+                       focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 focus-visible:outline-none"
           >
             🗑️ 全てのデータを削除
           </button>
