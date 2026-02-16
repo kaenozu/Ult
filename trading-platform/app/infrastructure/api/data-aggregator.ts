@@ -1,6 +1,7 @@
 import { Stock, Signal, OHLCV, APIResponse, APIErrorResult, TechnicalIndicator } from '@/app/types';
 import { ApiError as APIError, NetworkError, RateLimitError } from '@/app/lib/errors';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
+import { enhancedPredictionService } from '@/app/lib/services/enhanced-prediction-service';
 import { idbClient } from '@/app/lib/api/idb-migrations';
 import { isIntradayInterval } from '@/app/lib/constants/intervals';
 import { logger } from '@/app/core/logger';
@@ -355,14 +356,39 @@ export class MarketDataClient {
         logger.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol}`);
       }
 
-      const indicators = mlPredictionService.calculateIndicators(result.data);
-      const prediction = mlPredictionService.predict(stock, result.data, indicators);
-      const signalData = mlPredictionService.generateSignal(stock, result.data, prediction, indicators, indexData);
+      // Use enhanced prediction service for better accuracy
+      const enhancedResult = await enhancedPredictionService.calculatePrediction({
+        symbol: stock.symbol,
+        data: result.data,
+        indicators: undefined // Will be calculated internally
+      });
+
+      // Convert enhanced result to Signal format
+      const signalData: Signal = {
+        ...enhancedResult.signal,
+        metadata: {
+          prediction: enhancedResult.expectedReturn,
+          confidence: enhancedResult.confidence,
+          regime: enhancedResult.marketRegime,
+          calculationTime: enhancedResult.calculationTime,
+          ensembleWeights: enhancedResult.ensembleContribution
+        }
+      };
 
       return { success: true, data: signalData, source: result.source };
     } catch (err: unknown) {
       if (signal?.aborted) return { success: false, data: null, source: result?.source ?? 'error', error: 'Aborted' };
-      return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
+      
+      // Fallback to legacy prediction service
+      logger.warn(`[Aggregator] Enhanced prediction failed, falling back to legacy: ${err}`);
+      try {
+        const indicators = mlPredictionService.calculateIndicators(result!.data!);
+        const prediction = mlPredictionService.predict(stock, result!.data!, indicators);
+        const signalData = mlPredictionService.generateSignal(stock, result!.data!, prediction, indicators, []);
+        return { success: true, data: signalData, source: result?.source ?? 'api' };
+      } catch (fallbackErr) {
+        return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
+      }
     }
   }
 
