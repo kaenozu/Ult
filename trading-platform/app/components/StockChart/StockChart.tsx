@@ -72,7 +72,7 @@ export const StockChart = memo(function StockChart({
   }, []);
 
   const mouseBlockRef = useRef(false);
-  const mouseBlockTimer = useRef<NodeJS.Timeout>();
+  const mouseBlockTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Use callback to ensure stable reference for useChartOptions
   const handleMouseHover = (idx: number | null) => {
