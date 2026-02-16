@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Navigation } from '@/app/components/Navigation';
+
 import { useJournalStore } from '@/app/store/journalStore';
 import { cn, formatCurrency, formatPercent } from '@/app/lib/utils';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
@@ -376,7 +376,7 @@ function JournalContent() {
         </main>
       </div>
 
-      <Navigation />
+
 
       {/* Disclaimer */}
       <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">

@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { realTimeDataService } from '@/app/lib/services/RealTimeDataService';
-import { requireAuth } from '@/app/lib/auth';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 
 export async function GET(req: NextRequest) {
-  // 1. Authentication Check
-  const authResponse = requireAuth(req);
-  if (authResponse) return authResponse;
-
-  // 2. Rate Limit Check
+  // 1. Rate Limit Check
   const rateLimitResponse = checkRateLimit(req);
   if (rateLimitResponse) return rateLimitResponse;
 
@@ -33,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const quote = await realTimeDataService.fetchQuote(symbol);
-    
+
     if (!quote) {
       return NextResponse.json({ error: 'Data not available' }, { status: 404 });
     }

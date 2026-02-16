@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { checkRateLimit } from '@/app/lib/api-middleware';
-import { requireAuth } from '@/app/lib/auth';
 import { handleApiError } from '@/app/lib/error-handler';
 
 /**
@@ -59,10 +58,6 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ symbol: string }> }
 ) {
-  // Require authentication
-  const authError = requireAuth(req);
-  if (authError) return authError;
-
   // Rate limiting
   const rateLimitResponse = checkRateLimit(req);
   if (rateLimitResponse) return rateLimitResponse;

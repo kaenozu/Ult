@@ -371,10 +371,13 @@ function PerformanceDashboardContent() {
 
   // 初回ロード（データがない場合のみ）
   useEffect(() => {
+    // ユーザーの要望により、ページを開いたときは常に「デュアルマッチ」をデフォルトにする
+    setActiveTab('dual-match');
+
     if (!dualData) {
       fetchData();
     }
-  }, [fetchData, dualData]);
+  }, [fetchData, dualData, setActiveTab]);
 
   // 自動更新
   useEffect(() => {

@@ -50,11 +50,17 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
   useEffect(() => {
     lastInteractionTime.current = Date.now();
     isMountedRef.current = true;
-    
+
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  // Use ref for onSlowRender to avoid dependency loop if user passes inline function
+  const onSlowRenderRef = useRef(onSlowRender);
+  useEffect(() => {
+    onSlowRenderRef.current = onSlowRender;
+  }, [onSlowRender]);
 
   // Performance monitoring during render
   useEffect(() => {
@@ -70,9 +76,9 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
       if (renderTime > slowRenderThreshold) {
         slowRenderCount.current++;
         console.warn(`🐌 Slow render detected: ${renderTime.toFixed(2)}ms (threshold: ${slowRenderThreshold}ms)`);
-        
-        if (onSlowRender) {
-          onSlowRender({
+
+        if (onSlowRenderRef.current) {
+          onSlowRenderRef.current({
             renderTime,
             renderCount: renderCount.current,
             averageRenderTime: totalRenderTime.current / renderCount.current,
@@ -90,7 +96,7 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
           console.warn(`⚠️ High memory usage: ${((memory.usedJSHeapSize / 1024 / 1024).toFixed(2))}MB`);
         }
       }
-      
+
       // Schedule state update for next tick to avoid updating during cleanup
       if (isMountedRef.current) {
         const newMetrics: PerformanceMetrics = {
@@ -101,7 +107,9 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
           lastInteractionTime: lastInteractionTime.current,
           interactionResponsiveness: metrics.interactionResponsiveness
         };
-        
+
+        // Use functional update or verify if update is needed to reduce re-renders?
+        // Actually, just breaking the dependency on onSlowRender is enough.
         setTimeout(() => {
           if (isMountedRef.current) {
             setMetrics(newMetrics);
@@ -109,12 +117,12 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
         }, 0);
       }
     };
-  }, [slowRenderThreshold, onSlowRender, enableMemoryTracking, metrics.interactionResponsiveness, isMountedRef]);
+  }, [slowRenderThreshold, enableMemoryTracking, metrics.interactionResponsiveness, isMountedRef]);
 
   // Track user interactions
   const trackInteraction = useCallback(() => {
     if (!enableInteractionTracking) return;
-    
+
     const now = Date.now();
     const responsiveness = now - lastInteractionTime.current;
     lastInteractionTime.current = now;
@@ -148,7 +156,7 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
     slowRenderCount.current = 0;
     totalRenderTime.current = 0;
     lastInteractionTime.current = Date.now();
-    
+
     setMetrics({
       renderTime: 0,
       renderCount: 0,
@@ -232,10 +240,10 @@ class GlobalPerformanceMonitor {
 
     // Monitor DOM changes
     this.observer = new MutationObserver((mutations) => {
-      const largeDOMChanges = mutations.filter(m => 
+      const largeDOMChanges = mutations.filter(m =>
         m.addedNodes.length > 10 || m.removedNodes.length > 10
       );
-      
+
       if (largeDOMChanges.length > 0) {
         console.warn('⚠️ Large DOM changes detected:', largeDOMChanges.length);
       }
@@ -268,10 +276,10 @@ class GlobalPerformanceMonitor {
     if (!this.metrics.has(componentName)) {
       this.metrics.set(componentName, []);
     }
-    
+
     const componentMetrics = this.metrics.get(componentName)!;
     componentMetrics.push(metrics);
-    
+
     // Keep only last 100 entries per component
     if (componentMetrics.length > 100) {
       componentMetrics.shift();

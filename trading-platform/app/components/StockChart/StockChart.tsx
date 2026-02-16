@@ -66,9 +66,97 @@ export const StockChart = memo(function StockChart({
         chartRef.current.destroy();
         chartRef.current = null;
       }
-      
+
       isMountedRef.current = false;
     };
+  }, []);
+
+  const mouseBlockRef = useRef(false);
+  const mouseBlockTimer = useRef<NodeJS.Timeout>();
+
+  // Use callback to ensure stable reference for useChartOptions
+  const handleMouseHover = (idx: number | null) => {
+    if (!mouseBlockRef.current) {
+      setHoveredIndex(idx);
+    }
+  };
+
+  // Keyboard navigation for chart
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (hoveredIdx === null) return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+
+        // Block mouse updates temporarily
+        mouseBlockRef.current = true;
+        if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
+        mouseBlockTimer.current = setTimeout(() => {
+          mouseBlockRef.current = false;
+        }, 300);
+
+        setHoveredIndex(prev => (prev !== null && prev > 0) ? prev - 1 : prev);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+
+        // Block mouse updates temporarily
+        mouseBlockRef.current = true;
+        if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
+        mouseBlockTimer.current = setTimeout(() => {
+          mouseBlockRef.current = false;
+        }, 300);
+
+        setHoveredIndex(prev => (prev !== null && prev < data.length - 1) ? prev + 1 : prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
+    };
+  }, [hoveredIdx, data.length]);
+
+  // Sync Chart.js active elements with hoveredIdx to visualy move the points
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || hoveredIdx === null) return;
+
+    // Force sync specifically when keyboard navigation is active (indicated by mouse block)
+    // or just generally to ensure state consistency
+    if (mouseBlockRef.current) {
+      const activeElements: { datasetIndex: number; index: number }[] = [];
+
+      // Find elements for the hovered index across all visible datasets
+      chart.data.datasets.forEach((_, datasetIndex) => {
+        if (chart.isDatasetVisible(datasetIndex)) {
+          activeElements.push({ datasetIndex, index: hoveredIdx });
+        }
+      });
+
+      if (activeElements.length > 0) {
+        chart.setActiveElements(activeElements);
+        chart.update(); // Update to render the active elements
+      }
+    }
+  }, [hoveredIdx]);
+
+  // Release mouse block on intentional mouse movement
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      // If blocked, check for significant movement to release block
+      if (mouseBlockRef.current) {
+        // Using movementX/Y to detect physical movement, filtering out micro-tremors
+        if (Math.abs(e.movementX) > 2 || Math.abs(e.movementY) > 2) {
+          mouseBlockRef.current = false;
+          if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
+        }
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   // 1. Data Preparation Hooks
@@ -95,18 +183,18 @@ export const StockChart = memo(function StockChart({
     return sma20[hoveredIdx];
   }, [sma20, hoveredIdx, showSMA]);
 
-   // Performance-optimized: Cache price range calculations
-   const priceRange = useMemo(() => {
-     if (!data || data.length === 0) return { min: 0, max: 0 };
-     
-     const { min, max } = calculateChartMinMax(data, {
-       sma: showSMA ? sma20 : undefined,
-       upper: showBollinger ? upper : undefined,
-       lower: showBollinger ? lower : undefined,
-     });
+  // Performance-optimized: Cache price range calculations
+  const priceRange = useMemo(() => {
+    if (!data || data.length === 0) return { min: 0, max: 0 };
 
-     return { min, max };
-   }, [data, sma20, upper, lower, showSMA, showBollinger]);
+    const { min, max } = calculateChartMinMax(data, {
+      sma: showSMA ? sma20 : undefined,
+      upper: showBollinger ? upper : undefined,
+      lower: showBollinger ? lower : undefined,
+    });
+
+    return { min, max };
+  }, [data, sma20, upper, lower, showSMA, showBollinger]);
 
   // 2. Chart Options Hook
   const options = useChartOptions({
@@ -114,7 +202,7 @@ export const StockChart = memo(function StockChart({
     extendedData,
     market,
     hoveredIdx,
-    setHoveredIndex,
+    setHoveredIndex: handleMouseHover,
     signal,
     priceRange,
     supplyDemandLevels: chartLevels
@@ -255,9 +343,9 @@ export const StockChart = memo(function StockChart({
           smaValue={currentSmaValue}
         />
 
-        <Line 
-          ref={chartRef} 
-          data={chartData} 
+        <Line
+          ref={chartRef}
+          data={chartData}
           options={options}
           onMouseDown={trackInteraction}
           onMouseMove={trackInteraction}

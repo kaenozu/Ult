@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
@@ -11,9 +11,10 @@ import { useRealTimeData } from './useRealTimeData';
 
 import { ServiceContainer, TOKENS } from '@/app/lib/di/ServiceContainer';
 import { IMarketDataHub } from '@/app/lib/interfaces/IMarketDataHub';
+import { initializeContainer } from '@/app/lib/di/initialize';
 
 interface MarketDataMetadata {
-// ... (rest of the interface)
+  // ... (rest of the interface)
 
   fallbackApplied?: boolean;
   dataDelayMinutes?: number;
@@ -51,7 +52,7 @@ export function useStockData() {
     if (realTimeQuote && realTimeQuote.price !== null && chartData.length > 0) {
       const lastIndex = chartData.length - 1;
       const lastPoint = chartData[lastIndex];
-      
+
       // Update only if price is different
       if (Math.abs(lastPoint.close - realTimeQuote.price) > NUMERIC_PRECISION.PRICE_COMPARISON_EPSILON) {
         setChartData(prev => {
@@ -75,13 +76,13 @@ export function useStockData() {
     return () => {
       console.debug('[useStockData] Cleaning up resources...');
       isMountedRef.current = false;
-      
+
       // Abort any pending requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort('Component unmounted');
         abortControllerRef.current = null;
       }
-      
+
       // Clear state to prevent memory leaks
       setChartData([]);
       setIndexData([]);
@@ -132,8 +133,16 @@ export function useStockData() {
       twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
       const startDate = twoYearsAgo.toISOString().split('T')[0];
 
-      // 1. Get MarketDataHub from DI container
-      const dataHub = ServiceContainer.resolve<IMarketDataHub>(TOKENS.MarketDataHub);
+      // 1. Get MarketDataHub from DI container (with lazy initialization)
+      let dataHub: IMarketDataHub;
+      try {
+        dataHub = ServiceContainer.resolve<IMarketDataHub>(TOKENS.MarketDataHub);
+      } catch {
+        // DI container not yet initialized - initialize now
+        console.warn('[useStockData] DI container not initialized, initializing now...');
+        initializeContainer();
+        dataHub = ServiceContainer.resolve<IMarketDataHub>(TOKENS.MarketDataHub);
+      }
 
       // 2. Kick off all requests in parallel
       // Use Hub for stock data to avoid duplicates
@@ -211,37 +220,37 @@ export function useStockData() {
         }
       }
 
-       // 5. Performance-optimized: Background sync with delay to avoid immediate re-fetch
-       const syncInBackground = async (
-         sym: string,
-         mkt: 'japan' | 'usa',
-         setter: (data: OHLCV[]) => void,
-         label: string
-       ) => {
-         // Add delay to avoid immediate background sync
-         await new Promise(resolve => setTimeout(resolve, 2000));
-         
-         try {
-           if (!isMountedRef.current || controller.signal.aborted) return;
-           
-           const newData = await fetchOHLCV(sym, mkt, undefined, controller.signal, apiInterval, undefined, true);
-           if (isMountedRef.current && !controller.signal.aborted && newData.length > 0) {
-             setter(newData);
-           }
-         } catch (e) {
-           if (isMountedRef.current && !controller.signal.aborted) {
-             console.warn(`${label} background sync failed:`, e);
-           }
-         }
-       };
+      // 5. Performance-optimized: Background sync with delay to avoid immediate re-fetch
+      const syncInBackground = async (
+        sym: string,
+        mkt: 'japan' | 'usa',
+        setter: (data: OHLCV[]) => void,
+        label: string
+      ) => {
+        // Add delay to avoid immediate background sync
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-       // Only start background sync if not unmounted
-       if (isMountedRef.current && !controller.signal.aborted) {
-         // Sync stock data
-         syncInBackground(stock.symbol, stock.market, setChartData, 'Stock');
-         // Sync index data
-         syncInBackground(indexSymbol, stock.market, setIndexData, 'Index');
-       }
+        try {
+          if (!isMountedRef.current || controller.signal.aborted) return;
+
+          const newData = await fetchOHLCV(sym, mkt, undefined, controller.signal, apiInterval, undefined, true);
+          if (isMountedRef.current && !controller.signal.aborted && newData.length > 0) {
+            setter(newData);
+          }
+        } catch (e) {
+          if (isMountedRef.current && !controller.signal.aborted) {
+            console.warn(`${label} background sync failed:`, e);
+          }
+        }
+      };
+
+      // Only start background sync if not unmounted
+      if (isMountedRef.current && !controller.signal.aborted) {
+        // Sync stock data
+        syncInBackground(stock.symbol, stock.market, setChartData, 'Stock');
+        // Sync index data
+        syncInBackground(indexSymbol, stock.market, setIndexData, 'Index');
+      }
 
     } catch (err) {
       if (controller.signal.aborted || !isMountedRef.current) return;
@@ -303,7 +312,7 @@ export function useStockData() {
 
     const handleRealtimeUpdate = (event: Event) => {
       if (!isMountedRef.current) return;
-      
+
       const customEvent = event as CustomEvent;
       const data = customEvent.detail;
 
@@ -324,16 +333,16 @@ export function useStockData() {
 
         setChartData(prevData => {
           if (!isMountedRef.current || prevData.length === 0) return prevData;
-          
+
           // Performance-optimized: Avoid unnecessary array copies
           const lastIndex = prevData.length - 1;
           const lastPoint = prevData[lastIndex];
-          
+
           // Check if price actually changed to avoid unnecessary updates
           if (Math.abs(lastPoint.close - data.price) < NUMERIC_PRECISION.PRICE_COMPARISON_EPSILON) {
             return prevData; // Skip micro-changes
           }
-          
+
           // Create new array only when necessary
           const newData = [...prevData];
           newData[lastIndex] = {
@@ -343,14 +352,14 @@ export function useStockData() {
             low: Math.min(lastPoint.low, data.price),
             volume: typeof data.volume === 'number' ? data.volume : lastPoint.volume,
           };
-          
+
           return newData;
         });
       }, 100); // 100ms debounce
     };
 
     window.addEventListener('market-data-update', handleRealtimeUpdate);
-    
+
     return () => {
       window.removeEventListener('market-data-update', handleRealtimeUpdate);
       if (updateTimeout) {
@@ -360,8 +369,34 @@ export function useStockData() {
     };
   }, [selectedStock]);
 
+  // Derived stock object with real-time price
+  const currentStock = useMemo(() => {
+    if (!selectedStock) return null;
+
+    // 1. Priority: Real-time quote
+    if (realTimeQuote?.price) {
+      return {
+        ...selectedStock,
+        price: realTimeQuote.price,
+        // change: realTimeQuote.change ?? selectedStock.change,
+        // changePercent: realTimeQuote.changePercent ?? selectedStock.changePercent
+      };
+    }
+
+    // 2. Fallback: Latest chart data
+    if (chartData.length > 0) {
+      const lastCandle = chartData[chartData.length - 1];
+      return {
+        ...selectedStock,
+        price: lastCandle.close
+      };
+    }
+
+    return selectedStock;
+  }, [selectedStock, realTimeQuote, chartData]);
+
   return {
-    selectedStock,
+    selectedStock: currentStock,
     chartData,
     indexData,
     chartSignal,

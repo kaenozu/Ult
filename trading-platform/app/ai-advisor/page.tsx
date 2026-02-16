@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Navigation } from '@/app/components/Navigation';
+
 import { PatternAnalysisPanel } from '@/app/components/PatternAnalysisPanel';
 import { PsychologyWarningPanel } from '@/app/components/PsychologyWarningPanel';
 import { useExtendedJournalStore } from '@/app/store/journalStore';
@@ -90,12 +90,12 @@ function AIAdvisorContent() {
                   <span className={cn(
                     'text-sm font-medium',
                     psychologyState.currentStreak === 'winning' ? 'text-green-500' :
-                    psychologyState.currentStreak === 'losing' ? 'text-red-500' :
-                    'text-white'
+                      psychologyState.currentStreak === 'losing' ? 'text-red-500' :
+                        'text-white'
                   )}>
                     {psychologyState.currentStreak === 'winning' ? `${psychologyState.consecutiveWins}連勝` :
-                     psychologyState.currentStreak === 'losing' ? `${psychologyState.consecutiveLosses}連敗` :
-                     'ニュートラル'}
+                      psychologyState.currentStreak === 'losing' ? `${psychologyState.consecutiveLosses}連敗` :
+                        'ニュートラル'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -144,7 +144,7 @@ function AIAdvisorContent() {
       {/* Psychology Warning Panel */}
       <PsychologyWarningPanel />
 
-      <Navigation />
+
 
       {/* Disclaimer */}
       <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">

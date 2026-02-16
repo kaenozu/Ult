@@ -7,7 +7,7 @@
 
 'use client';
 
-import { Navigation } from '@/app/components/Navigation';
+
 import { UniverseManagerPanel } from '@/app/components/UniverseManagerPanel';
 import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ScreenLabel } from '@/app/components/ScreenLabel';
@@ -102,7 +102,7 @@ function UniverseContent() {
         </main>
       </div>
 
-      <Navigation />
+
 
       {/* Disclaimer */}
       <div className="bg-[#192633]/90 border-t border-[#233648] py-1.5 px-4 text-center text-[10px] text-[#92adc9] shrink-0">

@@ -1,81 +1,125 @@
 /**
  * Mock TensorFlow Model for Testing
+ * 
+ * Provides a mock implementation of ITensorFlowModel for unit testing
+ * without requiring actual TensorFlow.js dependencies
  */
 
-export class MockTensorFlowModel {
-  private weights: number[] = [];
-  private bias: number = 0;
-  private isTrained: boolean = false;
-  private metrics: Record<string, number> = {};
-  private savedPath: string | null = null;
+import { ModelMetrics, ModelTrainingData } from '../../tensorflow-model-service';
 
-  async train(features: number[][], labels: number[]): Promise<void> {
-    // Simple mock training - just store some values
-    this.weights = features[0]?.map(() => Math.random()) || [];
-    this.bias = Math.random();
-    this.isTrained = true;
+/**
+ * TensorFlow Model interface for testing
+ */
+export interface ITensorFlowModel {
+  predict(features: number[]): Promise<number>;
+  train(data: ModelTrainingData, epochs?: number): Promise<ModelMetrics>;
+  getMetrics(): ModelMetrics;
+  saveModel(name: string): Promise<void>;
+  loadModel(name: string): Promise<void>;
+  dispose(): void;
+}
+
+/**
+ * Mock TensorFlow model for testing
+ */
+export class MockTensorFlowModel implements ITensorFlowModel {
+  private metrics: ModelMetrics = {
+    accuracy: 75.0,
+    precision: 70.0,
+    recall: 80.0,
+    loss: 0.2
+  };
+
+  private trained = false;
+  private predictValue = 0.5;
+
+  /**
+   * Set value that predict() should return
+   */
+  setPredictValue(value: number): void {
+    this.predictValue = value;
   }
 
-  predict(features: number[]): number {
-    if (!this.isTrained || this.weights.length === 0) {
-      return 0.5;
-    }
-    
-    let sum = this.bias;
-    for (let i = 0; i < Math.min(features.length, this.weights.length); i++) {
-      sum += features[i] * this.weights[i];
-    }
-    
-    // Apply sigmoid to get 0-1 range
-    return 1 / (1 + Math.exp(-sum));
-  }
-
-  async predictBatch(features: number[][]): Promise<number[]> {
-    return features.map(f => this.predict(f));
-  }
-
-  getWeights(): number[] {
-    return [...this.weights];
-  }
-
-  getBias(): number {
-    return this.bias;
-  }
-
-  isModelTrained(): boolean {
-    return this.isTrained;
-  }
-
-  isTrained(): boolean {
-    return this.isTrained;
-  }
-
-  reset(): void {
-    this.weights = [];
-    this.bias = 0;
-    this.isTrained = false;
-    this.metrics = {};
-    this.savedPath = null;
-  }
-
-  setMetrics(metrics: Record<string, number>): void {
+  /**
+   * Set custom metrics
+   */
+  setMetrics(metrics: Partial<ModelMetrics>): void {
     this.metrics = { ...this.metrics, ...metrics };
   }
 
-  getMetrics(): Record<string, number> {
+  /**
+   * Mock prediction (returns configured value)
+   */
+  async predict(_features: number[]): Promise<number> {
+    if (!this.trained) {
+      throw new Error('Model not trained. Call train() first.');
+    }
+    return this.predictValue;
+  }
+
+  /**
+   * Mock training (just sets trained flag)
+   */
+  async train(_data: ModelTrainingData, _epochs?: number): Promise<ModelMetrics> {
+    this.trained = true;
+    return this.metrics;
+  }
+
+  /**
+   * Get mock metrics
+   */
+  getMetrics(): ModelMetrics {
     return { ...this.metrics };
   }
 
-  async saveModel(path: string): Promise<void> {
-    this.savedPath = path;
+  /**
+   * Mock save (no-op)
+   */
+  async saveModel(_name: string): Promise<void> {
+    // No-op for mock
   }
 
-  async loadModel(path: string): Promise<void> {
-    this.savedPath = path;
-    this.isTrained = true;
+  /**
+   * Mock load (sets trained flag)
+   */
+  async loadModel(_name: string): Promise<void> {
+    this.trained = true;
   }
 
-  getSavedPath(): string | null {
-    return this.savedPath;
+  /**
+   * Mock dispose (resets state)
+   */
+  dispose(): void {
+    this.trained = false;
+  }
+
+  /**
+   * Check if model is trained (for testing)
+   */
+  isTrained(): boolean {
+    return this.trained;
   }
 }
+
+describe('MockTensorFlowModel', () => {
+  test('should create mock model', () => {
+    const model = new MockTensorFlowModel();
+    expect(model).toBeDefined();
+    expect(model.isTrained()).toBe(false);
+  });
+
+  test('should train model', async () => {
+    const model = new MockTensorFlowModel();
+    await model.train({ features: [[]], labels: [] });
+    expect(model.isTrained()).toBe(true);
+  });
+
+  test('should predict after training', async () => {
+    const model = new MockTensorFlowModel();
+    model.setPredictValue(0.8);
+    await model.train({ features: [[]], labels: [] });
+    
+    const prediction = await model.predict([1, 2, 3]);
+    expect(prediction).toBe(0.8);
+  });
+});

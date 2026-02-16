@@ -7,7 +7,7 @@ export const JAPAN_STOCKS: Stock[] = [
   { symbol: '6758', name: 'ソニーグループ', market: 'japan', sector: 'テクノロジー', price: 13200, change: 0, changePercent: 0, volume: 0 },
   { symbol: '8035', name: '東京エレクトロン', market: 'japan', sector: '半導体', price: 38500, change: 0, changePercent: 0, volume: 0 },
   { symbol: '9983', name: 'ファーストリテイリング', market: 'japan', sector: '小売', price: 42000, change: 0, changePercent: 0, volume: 0 },
-  { symbol: '6702', name: '信越化学工業', market: 'japan', sector: '化学', price: 6200, change: 0, changePercent: 0, volume: 0 },
+  { symbol: '4063', name: '信越化学工業', market: 'japan', sector: '化学', price: 6200, change: 0, changePercent: 0, volume: 0 },
   { symbol: '6501', name: '日立製作所', market: 'japan', sector: '電機', price: 15000, change: 0, changePercent: 0, volume: 0 },
   { symbol: '6861', name: 'キーエンス', market: 'japan', sector: '電子部品', price: 65000, change: 0, changePercent: 0, volume: 0 },
   { symbol: '7974', name: '任天堂', market: 'japan', sector: 'ゲーム', price: 8500, change: 0, changePercent: 0, volume: 0 },

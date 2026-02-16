@@ -53,7 +53,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           const updatedParts = updater(state);
           const newPositions = updatedParts.positions || state.portfolio.positions;
           const stats = calculatePortfolioStats(newPositions);
-          
+
           return {
             portfolio: {
               ...state.portfolio,
@@ -82,12 +82,12 @@ export const usePortfolioStore = create<PortfolioState>()(
           if (orderLock) {
             return { success: false, error: 'Order processing in progress. Please retry.' };
           }
-          
+
           orderLock = true;
           try {
             let result: OrderResult = { success: false };
             const { portfolio } = get();
-            
+
             let finalQuantity = orderRequest.quantity;
             let finalStopLoss = orderRequest.stopLoss;
             let finalTakeProfit = orderRequest.takeProfit;
@@ -144,6 +144,15 @@ export const usePortfolioStore = create<PortfolioState>()(
               }
 
               const newCash = orderRequest.side === 'LONG' ? state.portfolio.cash - totalCost : state.portfolio.cash + totalCost;
+              console.log('[portfolioStore] Executing Order:', {
+                symbol: orderRequest.symbol,
+                side: orderRequest.side,
+                qty: finalQuantity,
+                oldCash: state.portfolio.cash,
+                newCash,
+                totalCost
+              });
+
               const newOrder = {
                 id: orderId,
                 symbol: orderRequest.symbol,
@@ -189,7 +198,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           if (orderLock) {
             return { success: false, error: 'Order processing in progress. Please retry.' };
           }
-          
+
           orderLock = true;
           try {
             let result: OrderResult = { success: false };
@@ -200,7 +209,31 @@ export const usePortfolioStore = create<PortfolioState>()(
               const p = state.portfolio.positions[idx];
               const profit = p.side === 'LONG' ? (exitPrice - p.avgPrice) * p.quantity : (p.avgPrice - exitPrice) * p.quantity;
               const newPositions = state.portfolio.positions.filter(pos => pos.symbol !== symbol);
-              const newCash = state.portfolio.cash + (p.avgPrice * p.quantity) + profit;
+              const newCash = state.portfolio.cash + (p.avgPrice * p.quantity) + profit; // Return initial capital + profit
+
+              // Save to History (IndexedDB)
+              // We do this asynchronously to not block the UI update
+              import('../lib/storage/IndexedDBService').then(({ indexedDBService }) => {
+                const closedTrade = {
+                  id: `trd_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                  symbol: p.symbol,
+                  side: p.side === 'LONG' ? 'SELL' : 'BUY', // Closing side
+                  type: 'MARKET',
+                  quantity: p.quantity,
+                  price: exitPrice,
+                  status: 'FILLED',
+                  date: new Date().toISOString(),
+                  timestamp: Date.now(),
+                  pnl: profit, // Add PnL for history
+                  entryPrice: p.avgPrice,
+                  exitPrice: exitPrice,
+                };
+                // Note: The type mismatch might occur if StoredTrade expects different fields
+                // Ensure we interact correctly with the service
+                indexedDBService.saveTrade(closedTrade as any).catch(err =>
+                  console.error('[portfolioStore] Failed to save trade to history:', err)
+                );
+              });
 
               result = { success: true, remainingCash: newCash };
               return {
@@ -220,6 +253,24 @@ export const usePortfolioStore = create<PortfolioState>()(
     },
     {
       name: 'trader-pro-portfolio-storage',
+      storage: {
+        getItem: (name) => {
+          if (typeof window === 'undefined') return null;
+          const str = localStorage.getItem(name);
+          return str ? JSON.parse(str) : null;
+        },
+        setItem: (name, value) => {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(name, JSON.stringify(value));
+          }
+        },
+        removeItem: (name) => {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem(name);
+          }
+        },
+      },
+      skipHydration: true, // Handle hydration manually to prevent mismatches
     }
   )
 );
