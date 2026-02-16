@@ -21,8 +21,13 @@ export class RealTimeDataService {
       return cached.data;
     }
 
+    // Force usage of Yahoo Finance library instead of unreliable local scraper
+    // The local scraper (python) often returns 502s or incorrect data (e.g. Recruit 6098 at 1/5th price)
+    return this.fetchFromYahooFinance(symbol);
+
+    /* Scraper disabled
     // Run Python scraper
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       // Use absolute path for robustness
       const python = spawn('python3', [this.scraperPath, symbol]);
       let output = '';
@@ -36,7 +41,7 @@ export class RealTimeDataService {
         error += data.toString();
       });
 
-      python.on('close', (code) => {
+      python.on('close', async (code) => {
         if (code === 0) {
           try {
             const result = JSON.parse(output);
@@ -47,14 +52,59 @@ export class RealTimeDataService {
             });
             resolve(result);
           } catch (e) {
-            reject(new Error(`Failed to parse scraper output: ${output}`));
+            // Fallback if parsing fails
+            console.warn(`[RealTimeDataService] Scraper output parse error: ${e}. Falling back to Yahoo Finance.`);
+            resolve(this.fetchFromYahooFinance(symbol));
           }
         } else {
-          reject(new Error(`Scraper failed: ${error}`));
+          console.warn(`[RealTimeDataService] Scraper failed (code ${code}): ${error}. Falling back to Yahoo Finance.`);
+          resolve(this.fetchFromYahooFinance(symbol));
         }
       });
+
+      // Fallback on timeout
+      setTimeout(() => {
+        if (!python.killed) {
+          python.kill();
+          console.warn(`[RealTimeDataService] Scraper timed out. Falling back.`);
+          resolve(this.fetchFromYahooFinance(symbol));
+        }
+      }, 5000);
     });
+    */
   }
+
+  private async fetchFromYahooFinance(symbol: string): Promise<RealTimeQuote | null> {
+    try {
+      // Dynamic import to avoid build issues if not available in edge
+      // Dynamic import to avoid build issues if not available in edge
+      const { default: YahooFinance } = await import('yahoo-finance2');
+      const yf = new YahooFinance();
+
+      // Yahoo Finance symbol format for Japan
+      const yahooSymbol = symbol.endsWith('.T') ? symbol : `${symbol}.T`;
+      const quote = (await yf.quote(yahooSymbol)) as any;
+
+      console.log(`[RealTimeDataService] Raw Yahoo Finance Quote for ${yahooSymbol}:`, quote);
+
+      if (!quote) return null;
+
+      const result: RealTimeQuote = {
+        symbol,
+        price: quote.regularMarketPrice || null,
+        bid: quote.bid || null,
+        ask: quote.ask || null,
+        timestamp: new Date().toISOString()
+      };
+
+      return result;
+    } catch (err) {
+      console.error('[RealTimeDataService] Fallback failed:', err);
+      return null;
+    }
+  }
+
+
 }
 
 export const realTimeDataService = new RealTimeDataService();

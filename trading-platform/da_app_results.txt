@@ -1,0 +1,30 @@
+
+  console.error
+    [2026-02-14T14:44:30.279Z] [ERROR]  Batch fetch failed: Error: AbortError: Aborted
+      94 |     const formatted = this.formatMessage('error', message, context);
+    > 96 |       console.error(formatted, error?.stack ?? error?.message ?? '');
+      at Logger.error (app/core/logger.ts:96:15)
+      at MarketDataClient.error [as fetchQuotes] (app/infrastructure/api/data-aggregator.ts:313:14)
+  console.error
+    [2026-02-14T14:44:30.357Z] [ERROR]  Batch fetch failed: Error: AbortError: Aborted
+      94 |     const formatted = this.formatMessage('error', message, context);
+    > 96 |       console.error(formatted, error?.stack ?? error?.message ?? '');
+      at Logger.error (app/core/logger.ts:96:15)
+      at MarketDataClient.error [as fetchQuotes] (app/infrastructure/api/data-aggregator.ts:313:14)
+  console.error
+    [2026-02-14T14:44:30.362Z] [ERROR]  Batch fetch failed: Error: AbortError: signal is aborted without reason
+      94 |     const formatted = this.formatMessage('error', message, context);
+    > 96 |       console.error(formatted, error?.stack ?? error?.message ?? '');
+      at Logger.error (app/core/logger.ts:96:15)
+      at MarketDataClient.error [as fetchQuotes] (app/infrastructure/api/data-aggregator.ts:313:14)
+FAIL app/__tests__/data-aggregator.test.ts
+    √ should pass (2 ms)
+    × handles batch fetchQuotes with chunking (2 ms)
+    √ handles fetchMarketIndex failure gracefully (1 ms)
+    √ handles fetchQuotes abort gracefully without error log (79 ms)
+    √ fetchQuotes handles AbortError as Error object (not DOMException) (1 ms)
+    √ fetchQuotes handles abort error with "abort" in message (5 ms)
+  ● MarketDataClient (Data Aggregator) Comprehensive Tests › handles batch fetchQuotes with chunking
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 12 passed, 13 total
+

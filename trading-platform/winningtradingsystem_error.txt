@@ -1,0 +1,77 @@
+FAIL app/lib/__tests__/WinningTradingSystem.test.ts
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  WinningTradingSystem
+    Session Management
+      √ should start a new trading session (3 ms)
+      √ should stop a trading session (1 ms)
+      √ should track current session (1 ms)
+    Trading Logic
+      √ should process market data and generate signals (4 ms)
+      √ should respect max positions limit (1 ms)
+    Backtesting
+      × should run backtest successfully (51 ms)
+      × should compare multiple strategies (204 ms)
+    Performance Report
+      √ should generate performance report (104 ms)
+    Risk Management
+      × should validate risk/reward ratio (186 ms)
+    Configuration
+      √ should update configuration (194 ms)
+      √ should maintain default values for unspecified config (49 ms)
+
+  ● WinningTradingSystem › Backtesting › should run backtest successfully
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      108 |
+      109 |       expect(result).toBeDefined();
+    > 110 |       expect(result.trades).toBeDefined();
+          |                             ^
+      111 |       expect(Array.isArray(result.trades)).toBe(true);
+      112 |     });
+      113 |
+
+      at Object.toBeDefined (app/lib/__tests__/WinningTradingSystem.test.ts:110:29)
+
+  ● WinningTradingSystem › Backtesting › should compare multiple strategies
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 3
+    Received: undefined
+
+      118 |       const results = system.compareStrategies('7203', data, strategies);
+      119 |
+    > 120 |       expect(results.size).toBe(3);
+          |                            ^
+      121 |       strategies.forEach(strategy => {
+      122 |         expect(results.has(strategy)).toBe(true);
+      123 |       });
+
+      at Object.toBe (app/lib/__tests__/WinningTradingSystem.test.ts:120:28)
+
+  ● WinningTradingSystem › Risk Management › should validate risk/reward ratio
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      149 |
+      150 |       // すべてのトレードがリスク管理に従っていることを確認
+    > 151 |       expect(Array.isArray(result.trades)).toBe(true);
+          |                                            ^
+      152 |     });
+      153 |   });
+      154 |
+
+      at Object.toBe (app/lib/__tests__/WinningTradingSystem.test.ts:151:44)
+
+Test Suites: 1 failed, 1 total
+Tests:       3 failed, 9 passed, 12 total
+Snapshots:   0 total
+Time:        3.028 s
+Ran all test suites matching /app\\lib\\__tests__\\WinningTradingSystem.test.ts/i.

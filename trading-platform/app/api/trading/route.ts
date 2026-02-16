@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { checkRateLimit } from '@/app/lib/api-middleware';
-import { requireAuth } from '@/app/lib/auth';
 import { handleApiError } from '@/app/lib/error-handler';
 import { requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
 import { AlertType } from '@/app/lib/alerts/AlertSystem';
@@ -110,10 +109,6 @@ function mapToAlertOperator(op: string): 'above' | 'below' | 'crosses_above' | '
  */
 // GET - Platform status (set CSRF cookie)
 export async function GET(req: NextRequest) {
-  // Require authentication
-  const authError = requireAuth(req);
-  if (authError) return authError;
-
   // Rate limiting
   const rateLimitResponse = checkRateLimit(req);
   if (rateLimitResponse) return rateLimitResponse;
@@ -290,10 +285,6 @@ export async function GET(req: NextRequest) {
  */
 // POST - Control actions
 export async function POST(req: NextRequest) {
-  // Require authentication
-  const authError = requireAuth(req);
-  if (authError) return authError;
-
   // Rate limiting for trading actions
   const rateLimitResponse = checkRateLimit(req);
   if (rateLimitResponse) return rateLimitResponse;
@@ -301,7 +292,7 @@ export async function POST(req: NextRequest) {
   // CSRF Protection
   const csrfError = requireCSRF(req);
   if (csrfError) return csrfError;
-  
+
   try {
     const rawBody = await req.json();
 
@@ -321,15 +312,15 @@ export async function POST(req: NextRequest) {
       case 'start':
         await platform.start();
         return NextResponse.json({ success: true });
-      
+
       case 'stop':
         await platform.stop();
         return NextResponse.json({ success: true });
-      
+
       case 'reset':
         platform.reset();
         return NextResponse.json({ success: true });
-      
+
       case 'place_order':
         // Map side to what the platform expects (if needed)
         const platformSide: 'BUY' | 'SELL' = (data.side === 'BUY' || data.side === 'LONG') ? 'BUY' : 'SELL';
@@ -337,13 +328,13 @@ export async function POST(req: NextRequest) {
         const safeOrderSymbol = sanitizeSymbol(data.symbol).sanitized;
         await platform.placeOrder(safeOrderSymbol, platformSide, data.quantity, data.options);
         return NextResponse.json({ success: true });
-      
+
       case 'close_position':
         // Sanitize symbol
         const safeCloseSymbol = sanitizeSymbol(data.symbol).sanitized;
         await platform.closePosition(safeCloseSymbol);
         return NextResponse.json({ success: true });
-      
+
       case 'create_alert':
         const operator = mapToAlertOperator(data.operator);
         // Sanitize inputs for alerts
@@ -351,11 +342,11 @@ export async function POST(req: NextRequest) {
         const safeAlertName = sanitizeText(data.name).sanitized;
         platform.createAlert(safeAlertName, safeAlertSymbol, data.type as AlertType, operator, data.value);
         return NextResponse.json({ success: true });
-      
+
       case 'update_config':
         platform.updateConfig(data.config);
         return NextResponse.json({ success: true });
-      
+
       default:
         return NextResponse.json(
           { error: 'Unknown action' },

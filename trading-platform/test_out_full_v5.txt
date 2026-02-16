@@ -1,0 +1,304 @@
+npm warn Expanding --ci to --cidr. This will stop working in the next major version of npm.
+
+> trading-platform@0.1.0 test
+> jest DataAggregator.test.ts
+
+PASS app/lib/api/__tests__/DataAggregator.test.ts
+PASS app/domains/market-data/integration/__tests__/MultiSourceDataAggregator.test.ts (5.743 s)
+  ● Console
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source C (priority: 3)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source C (priority: 3)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Unregistered source: A
+
+      at MultiSourceDataAggregator.log [as unregisterSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:93:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source C (priority: 3)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source B (priority: 2)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+    console.log
+      [Aggregator] Registered source: Source A (priority: 1)
+
+      at MultiSourceDataAggregator.log [as registerSource] (app/domains/market-data/integration/MultiSourceDataAggregator.ts:85:13)
+
+FAIL app/infrastructure/api/__tests__/DataAggregator.test.ts (11.72 s)
+  ● Console
+
+    console.warn
+      [2026-02-14T13:56:04.060Z] [WARN]  [Aggregator] Failed to update data for AAPL, using stale data.
+
+      84 |     const formatted = this.formatMessage('warn', message, context);
+      85 |     if (this.config.enableConsole) {
+    > 86 |       console.warn(formatted, data ?? '');
+         |               ^
+      87 |     }
+      88 |     this.addLog({ timestamp: new Date(), level: 'warn', message, context, data });
+      89 |   }
+
+      at Logger.warn (app/core/logger.ts:86:15)
+      at warn (app/infrastructure/api/data-aggregator.ts:241:24)
+
+    console.warn
+      [2026-02-14T13:56:07.606Z] [WARN]  [Aggregator] Failed to update data for AAPL, using stale data.
+
+      84 |     const formatted = this.formatMessage('warn', message, context);
+      85 |     if (this.config.enableConsole) {
+    > 86 |       console.warn(formatted, data ?? '');
+         |               ^
+      87 |     }
+      88 |     this.addLog({ timestamp: new Date(), level: 'warn', message, context, data });
+      89 |   }
+
+      at Logger.warn (app/core/logger.ts:86:15)
+      at warn (app/infrastructure/api/data-aggregator.ts:241:24)
+      at MarketDataClient.fetchOHLCV (app/infrastructure/api/data-aggregator.ts:265:20)
+      at MarketDataClient.fetchData (app/infrastructure/api/data-aggregator.ts:503:20)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:139:7)
+
+    console.warn
+      [2026-02-14T13:56:11.135Z] [WARN]  [Aggregator] Failed to update data for AAPL, using stale data.
+
+      84 |     const formatted = this.formatMessage('warn', message, context);
+      85 |     if (this.config.enableConsole) {
+    > 86 |       console.warn(formatted, data ?? '');
+         |               ^
+      87 |     }
+      88 |     this.addLog({ timestamp: new Date(), level: 'warn', message, context, data });
+      89 |   }
+
+      at Logger.warn (app/core/logger.ts:86:15)
+      at warn (app/infrastructure/api/data-aggregator.ts:241:24)
+      at MarketDataClient.fetchOHLCV (app/infrastructure/api/data-aggregator.ts:265:20)
+      at MarketDataClient.fetchData (app/infrastructure/api/data-aggregator.ts:503:20)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:149:7)
+
+  ● DataAggregator › バッチ処理 › バッチサイズ制限を尊重する
+
+    No data available
+
+      503 |     const result = await this.fetchOHLCV(symbol);
+      504 |     if (result.success && result.data) return result.data;
+    > 505 |     throw new Error(result.error || 'Fetch failed');
+          |           ^
+      506 |   }
+      507 |
+      508 |   /**
+
+      at MarketDataClient.fetchData (app/infrastructure/api/data-aggregator.ts:505:11)
+          at async Promise.all (index 0)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:104:23)
+
+  ● DataAggregator › リクエスト重複排除 › 同じリクエストを重複して送信しない
+
+    expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+    Expected number of calls: 1
+    Received number of calls: 37
+
+      129 |       expect(result1).toEqual(mockData);
+      130 |       expect(result2).toEqual(mockData);
+    > 131 |       expect(fetchMock).toHaveBeenCalledTimes(1);
+          |                         ^
+      132 |     });
+      133 |   });
+      134 |
+
+      at Object.toHaveBeenCalledTimes (app/infrastructure/api/__tests__/DataAggregator.test.ts:131:25)
+
+  ● DataAggregator › エラーハンドリング › ネットワークエラーを適切に処理する
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: [{"close": 102, "date": "2024-01-01", "high": 105, "low": 95, "open": 100, "symbol": "AAPL", "volume": 1000}]
+
+      137 |       fetchMock.mockRejectedValueOnce(new Error('Network error'));
+      138 |
+    > 139 |       await expect(aggregator.fetchData('AAPL')).rejects.toThrow('Network error');
+          |                   ^
+      140 |     });
+      141 |
+      142 |     it('APIエラーを適切に処理する', async () => {
+
+      at expect (node_modules/jest-circus/node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:139:19)
+
+  ● DataAggregator › エラーハンドリング › APIエラーを適切に処理する
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: [{"close": 102, "date": "2024-01-01", "high": 105, "low": 95, "open": 100, "symbol": "AAPL", "volume": 1000}]
+
+      147 |       });
+      148 |
+    > 149 |       await expect(aggregator.fetchData('AAPL')).rejects.toThrow();
+          |                   ^
+      150 |     });
+      151 |   });
+      152 |
+
+      at expect (node_modules/jest-circus/node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:149:19)
+
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       4 failed, 41 passed, 45 total
+Snapshots:   0 total
+Time:        13.242 s
+Ran all test suites matching /DataAggregator.test.ts/i.

@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 
 import { Navigation } from "@/app/components/Navigation";
 import { UserExperienceEnhancements } from "@/app/components/UserExperienceEnhancements";
+import { StoreHydration } from "@/app/components/StoreHydration";
 
 export default function RootLayout({
   children,
@@ -33,6 +34,7 @@ export default function RootLayout({
             <MonitoringProvider>
               <BehavioralWarningProvider>
                 <I18nProvider>
+                  <StoreHydration />
                   <div className="flex flex-col h-screen overflow-hidden bg-[#101922]">
                     <div className="flex-1 overflow-hidden relative">
                       {children}

@@ -1,0 +1,4 @@
+
+      [2026-02-14T15:00:06.847Z] [WARN]  [MEDIUM] [2026-02-14T15:00:06.845Z] [trading/api] AppError: [trading/api] Failed to start
+      [2026-02-14T15:00:06.944Z] [WARN]  [MEDIUM] [2026-02-14T15:00:06.944Z] [trading/api] AppError: [trading/api] Failed to stop
+FAIL app/lib/services/__tests__/feature-calculation-service.test.ts

@@ -45,7 +45,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
     quantity, setQuantity,
     limitPrice, setLimitPrice,
     isConfirming, setIsConfirming,
-    showSuccess, 
+    showSuccess,
     errorMessage, setErrorMessage,
     riskConfig, setRiskConfig,
     showRiskSettings, setShowRiskSettings,
@@ -60,7 +60,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative">
       {showSuccess && (
-        <div 
+        <div
           role="status"
           className="absolute top-4 left-4 right-4 bg-green-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
         >
@@ -68,7 +68,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
         </div>
       )}
       {errorMessage && (
-        <div 
+        <div
           role="alert"
           className="absolute top-4 left-4 right-4 bg-red-600 text-white text-xs font-bold p-3 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-2"
         >
@@ -131,27 +131,45 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       <div className="flex flex-col gap-1">
         <div className="flex justify-between items-center">
           <label htmlFor={ids.quantity} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
-          {side === 'BUY' && (
+          <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => {
-                if (price > 0 && cash > 0) {
-                  const maxQty = Math.floor(cash / price);
-                  if (maxQty >= 1) {
-                    setQuantity(maxQty);
-                  } else {
-                    setErrorMessage('現金が足りません');
-                    setTimeout(() => setErrorMessage(null), 2000);
-                  }
-                }
-              }}
-              disabled={price <= 0 || cash <= 0 || Math.floor(cash / price) < 1}
-              className="text-[10px] text-green-400 hover:text-white underline decoration-dotted transition-colors disabled:text-gray-500 disabled:no-underline cursor-pointer disabled:cursor-not-allowed"
-              aria-label="最大購入可能数量を入力"
+              onClick={() => setQuantity(Math.max(1, quantity + 1))}
+              className="text-[10px] text-[#92adc9] hover:text-white bg-[#233648] px-1.5 rounded transition-colors"
+              aria-label="数量を1増やす"
             >
-              最大 (Max)
+              +1
             </button>
-          )}
+            <button
+              type="button"
+              onClick={() => setQuantity(Math.max(1, quantity + 100))}
+              className="text-[10px] text-[#92adc9] hover:text-white bg-[#233648] px-1.5 rounded transition-colors"
+              aria-label="数量を100増やす"
+            >
+              +100
+            </button>
+            {side === 'BUY' && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (price > 0 && cash > 0) {
+                    const maxQty = Math.floor(cash / price);
+                    if (maxQty >= 1) {
+                      setQuantity(maxQty);
+                    } else {
+                      setErrorMessage('現金が足りません');
+                      setTimeout(() => setErrorMessage(null), 2000);
+                    }
+                  }
+                }}
+                disabled={price <= 0 || cash <= 0 || Math.floor(cash / price) < 1}
+                className="text-[10px] text-green-400 hover:text-white underline decoration-dotted transition-colors disabled:text-gray-500 disabled:no-underline cursor-pointer disabled:cursor-not-allowed ml-1"
+                aria-label="最大購入可能数量を入力"
+              >
+                最大 (Max)
+              </button>
+            )}
+          </div>
         </div>
         <input
           id={ids.quantity}

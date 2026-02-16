@@ -3,8 +3,18 @@
 // import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  BarChart3, Grid3X3, Filter, Moon, Sun, Brain, Database, TrendingUp,
-  BookOpen, Activity
+  LayoutDashboard,
+  List,
+  Brain,
+  Briefcase,
+  Grid3X3,
+  Filter,
+  Moon,
+  Sun,
+  Database,
+  TrendingUp,
+  BookOpen,
+  Activity
 } from 'lucide-react';
 import { useThemeStore } from '@/app/store/themeStore';
 import { cn } from '@/app/lib/utils';
@@ -17,32 +27,45 @@ export function Navigation() {
     {
       path: '/',
       label: 'ワークステーション',
-      icon: BarChart3,
-      description: '取引ダッシュボード'
+      icon: LayoutDashboard,
+      description: 'メイン取引画面'
+    },
+
+    {
+      path: '/portfolio',
+      label: 'ポートフォリオ',
+      icon: Briefcase,
+      description: '保有資産の管理'
     },
     {
-      path: '/heatmap',
-      label: 'ヒートマップ',
-      icon: Grid3X3,
-      description: '市場の熱みを可視化'
-    },
-    {
-      path: '/journal',
-      label: 'ジャーナル',
-      icon: BookOpen,
-      description: '取引記録と分析'
+      path: '/analysis',
+      label: 'AI分析',
+      icon: Brain,
+      description: 'AIによる市場分析'
     },
     {
       path: '/screener',
       label: 'スクリーナー',
       icon: Filter,
-      description: '銘柄選別'
+      description: '銘柄スクリーニング'
     },
     {
       path: '/performance',
       label: 'パフォーマンス',
       icon: TrendingUp,
-      description: '実績分析'
+      description: 'パフォーマンス分析'
+    },
+    {
+      path: '/heatmap',
+      label: 'ヒートマップ',
+      icon: Grid3X3,
+      description: '市場ヒートマップ'
+    },
+    {
+      path: '/journal',
+      label: 'ジャーナル',
+      icon: BookOpen,
+      description: '取引記録ノート'
     },
     {
       path: '/portfolio-analysis',

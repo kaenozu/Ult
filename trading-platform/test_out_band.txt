@@ -1,0 +1,149 @@
+npm warn Expanding --ci to --cidr. This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> trading-platform@0.1.0 test
+> jest app/infrastructure/api/__tests__/DataAggregator.test.ts
+
+  console.warn
+    [2026-02-14T14:00:02.828Z] [WARN]  [Aggregator] Failed to update data for AAPL, using stale data.
+
+    [0m [90m 84 |[39m     [36mconst[39m formatted [33m=[39m [36mthis[39m[33m.[39mformatMessage([32m'warn'[39m[33m,[39m message[33m,[39m context)[33m;[39m
+     [90m 85 |[39m     [36mif[39m ([36mthis[39m[33m.[39mconfig[33m.[39menableConsole) {
+    [31m[1m>[22m[39m[90m 86 |[39m       console[33m.[39mwarn(formatted[33m,[39m data [33m?[39m[33m?[39m [32m''[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 87 |[39m     }
+     [90m 88 |[39m     [36mthis[39m[33m.[39maddLog({ timestamp[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m level[33m:[39m [32m'warn'[39m[33m,[39m message[33m,[39m context[33m,[39m data })[33m;[39m
+     [90m 89 |[39m   }[0m
+
+      at Logger.warn (app/core/logger.ts:86:15)
+      at warn (app/infrastructure/api/data-aggregator.ts:241:24)
+
+  console.warn
+    [2026-02-14T14:00:06.399Z] [WARN]  [Aggregator] Failed to update data for AAPL, using stale data.
+
+    [0m [90m 84 |[39m     [36mconst[39m formatted [33m=[39m [36mthis[39m[33m.[39mformatMessage([32m'warn'[39m[33m,[39m message[33m,[39m context)[33m;[39m
+     [90m 85 |[39m     [36mif[39m ([36mthis[39m[33m.[39mconfig[33m.[39menableConsole) {
+    [31m[1m>[22m[39m[90m 86 |[39m       console[33m.[39mwarn(formatted[33m,[39m data [33m?[39m[33m?[39m [32m''[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 87 |[39m     }
+     [90m 88 |[39m     [36mthis[39m[33m.[39maddLog({ timestamp[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m level[33m:[39m [32m'warn'[39m[33m,[39m message[33m,[39m context[33m,[39m data })[33m;[39m
+     [90m 89 |[39m   }[0m
+
+      at Logger.warn (app/core/logger.ts:86:15)
+      at warn (app/infrastructure/api/data-aggregator.ts:241:24)
+      at MarketDataClient.fetchOHLCV (app/infrastructure/api/data-aggregator.ts:265:20)
+      at MarketDataClient.fetchData (app/infrastructure/api/data-aggregator.ts:503:20)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:139:7)
+
+  console.warn
+    [2026-02-14T14:00:09.926Z] [WARN]  [Aggregator] Failed to update data for AAPL, using stale data.
+
+    [0m [90m 84 |[39m     [36mconst[39m formatted [33m=[39m [36mthis[39m[33m.[39mformatMessage([32m'warn'[39m[33m,[39m message[33m,[39m context)[33m;[39m
+     [90m 85 |[39m     [36mif[39m ([36mthis[39m[33m.[39mconfig[33m.[39menableConsole) {
+    [31m[1m>[22m[39m[90m 86 |[39m       console[33m.[39mwarn(formatted[33m,[39m data [33m?[39m[33m?[39m [32m''[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 87 |[39m     }
+     [90m 88 |[39m     [36mthis[39m[33m.[39maddLog({ timestamp[33m:[39m [36mnew[39m [33mDate[39m()[33m,[39m level[33m:[39m [32m'warn'[39m[33m,[39m message[33m,[39m context[33m,[39m data })[33m;[39m
+     [90m 89 |[39m   }[0m
+
+      at Logger.warn (app/core/logger.ts:86:15)
+      at warn (app/infrastructure/api/data-aggregator.ts:241:24)
+      at MarketDataClient.fetchOHLCV (app/infrastructure/api/data-aggregator.ts:265:20)
+      at MarketDataClient.fetchData (app/infrastructure/api/data-aggregator.ts:503:20)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:149:7)
+
+FAIL app/infrastructure/api/__tests__/DataAggregator.test.ts (11.422 s)
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  DataAggregator
+    キャッシュ機能
+      √ データをキャッシュに保存して取得できる (2 ms)
+      √ TTLが切れたキャッシュはnullを返す (15 ms)
+      √ キャッシュをクリアできる (1 ms)
+    バッチ処理
+      √ 複数のリクエストをバッチで処理できる (8 ms)
+      × バッチサイズ制限を尊重する (1 ms)
+    リクエスト重複排除
+      × 同じリクエストを重複して送信しない (3588 ms)
+    エラーハンドリング
+      × ネットワークエラーを適切に処理する (3526 ms)
+      × APIエラーを適切に処理する (3521 ms)
+    レート制限
+      √ レート制限を尊重する (6 ms)
+    優先度キュー
+      √ 優先度の高いリクエストを先に処理する (2 ms)
+
+  ● DataAggregator › バッチ処理 › バッチサイズ制限を尊重する
+
+    No data available
+
+      503 |     const result = await this.fetchOHLCV(symbol);
+      504 |     if (result.success && result.data) return result.data;
+    > 505 |     throw new Error(result.error || 'Fetch failed');
+          |           ^
+      506 |   }
+      507 |
+      508 |   /**
+
+      at MarketDataClient.fetchData (app/infrastructure/api/data-aggregator.ts:505:11)
+          at async Promise.all (index 0)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:104:23)
+
+  ● DataAggregator › リクエスト重複排除 › 同じリクエストを重複して送信しない
+
+    expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+    Expected number of calls: 1
+    Received number of calls: 37
+
+      129 |       expect(result1).toEqual(mockData);
+      130 |       expect(result2).toEqual(mockData);
+    > 131 |       expect(fetchMock).toHaveBeenCalledTimes(1);
+          |                         ^
+      132 |     });
+      133 |   });
+      134 |
+
+      at Object.toHaveBeenCalledTimes (app/infrastructure/api/__tests__/DataAggregator.test.ts:131:25)
+
+  ● DataAggregator › エラーハンドリング › ネットワークエラーを適切に処理する
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: [{"close": 102, "date": "2024-01-01", "high": 105, "low": 95, "open": 100, "symbol": "AAPL", "volume": 1000}]
+
+      137 |       fetchMock.mockRejectedValueOnce(new Error('Network error'));
+      138 |
+    > 139 |       await expect(aggregator.fetchData('AAPL')).rejects.toThrow('Network error');
+          |                   ^
+      140 |     });
+      141 |
+      142 |     it('APIエラーを適切に処理する', async () => {
+
+      at expect (node_modules/jest-circus/node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:139:19)
+
+  ● DataAggregator › エラーハンドリング › APIエラーを適切に処理する
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: [{"close": 102, "date": "2024-01-01", "high": 105, "low": 95, "open": 100, "symbol": "AAPL", "volume": 1000}]
+
+      147 |       });
+      148 |
+    > 149 |       await expect(aggregator.fetchData('AAPL')).rejects.toThrow();
+          |                   ^
+      150 |     });
+      151 |   });
+      152 |
+
+      at expect (node_modules/jest-circus/node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:149:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 7 passed, 11 total
+Snapshots:   0 total
+Time:        12.23 s
+Ran all test suites matching /app\\infrastructure\\api\\__tests__\\DataAggregator.test.ts/i.

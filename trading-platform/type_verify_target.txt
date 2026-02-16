@@ -1,0 +1,21 @@
+app/domains/prediction/services/feature-calculation-service.ts(7,23): error TS2307: Cannot find module '@/app/types' or its corresponding type declarations.
+app/domains/prediction/services/feature-calculation-service.ts(9,44): error TS2307: Cannot find module '@/app/lib/utils/technical-analysis' or its corresponding type declarations.
+app/domains/prediction/types.ts(7,62): error TS2307: Cannot find module '@/app/lib/MarketRegimeDetector' or its corresponding type declarations.
+app/lib/errors/handlers.ts(14,24): error TS2307: Cannot find module '@/app/core/logger' or its corresponding type declarations.
+app/lib/errors/result.ts(213,24): error TS2339: Property 'value' does not exist on type 'Result<T, E>'.
+  Property 'value' does not exist on type 'Err<T, E>'.
+app/lib/errors/result.ts(263,32): error TS2339: Property 'error' does not exist on type 'Result<T, E>'.
+  Property 'error' does not exist on type 'Ok<T, E>'.
+app/lib/services/feature-calculation-service.ts(8,51): error TS2307: Cannot find module '@/app/types' or its corresponding type declarations.
+app/lib/services/feature-calculation-service.ts(11,8): error TS2307: Cannot find module '@/app/domains/prediction/services/feature-calculation-service' or its corresponding type declarations.
+app/lib/services/feature-calculation-service.ts(12,44): error TS2307: Cannot find module '@/app/domains/prediction/types' or its corresponding type declarations.
+app/lib/services/feature-calculation-service.ts(160,31): error TS2339: Property 'calculateVolatility' does not exist on type 'FeatureCalculationService'.
+app/lib/services/implementations/prediction-calculator.ts(8,10): error TS2305: Module '"../feature-calculation-service"' has no exported member 'PredictionFeatures'.
+app/lib/services/interfaces/ml-model-interfaces.ts(8,10): error TS2305: Module '"../feature-calculation-service"' has no exported member 'PredictionFeatures'.
+app/lib/services/interfaces/ml-model-interfaces.ts(9,33): error TS2307: Cannot find module '@/app/types' or its corresponding type declarations.
+app/lib/services/ml-model-service.ts(11,8): error TS2307: Cannot find module '@/app/domains/prediction/services/ml-model-service' or its corresponding type declarations.
+app/lib/services/ml-model-service.ts(22,41): error TS2307: Cannot find module '@/app/domains/prediction/types' or its corresponding type declarations.
+app/lib/services/ml-model-service.ts(92,12): error TS4112: This member cannot have an 'override' modifier because its containing class 'MLModelService' does not extend another class.
+app/lib/services/tensorflow-model-service.ts(14,8): error TS2307: Cannot find module '@/app/domains/prediction/services/tensorflow-model-service' or its corresponding type declarations.
+app/lib/services/tensorflow-model-service.ts(18,8): error TS2307: Cannot find module '@/app/domains/prediction/services/tensorflow-model-service' or its corresponding type declarations.
+app/lib/services/tensorflow-model-service.ts(29,41): error TS2307: Cannot find module '@/app/domains/prediction/types' or its corresponding type declarations.

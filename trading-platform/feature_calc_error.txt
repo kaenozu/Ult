@@ -1,0 +1,212 @@
+FAIL app/lib/services/__tests__/feature-calculation-service.test.ts
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  FeatureCalculationService
+    calculateFeatures
+      √ should calculate all features correctly (5 ms)
+      √ should return valid numeric values for all features (3 ms)
+      √ should calculate RSI correctly (1 ms)
+      √ should calculate RSI change correctly (1 ms)
+      √ should calculate SMA deviation correctly (1 ms)
+      √ should calculate volume ratio correctly (1 ms)
+      √ should calculate price momentum correctly (1 ms)
+      √ should calculate MACD signal difference correctly (1 ms)
+      √ should calculate Bollinger position correctly (2 ms)
+      √ should calculate ATR percent correctly (1 ms)
+    edge cases
+      √ should handle empty indicator arrays (1 ms)
+      √ should handle single data point (1 ms)
+      √ should handle zero volume (1 ms)
+      √ should handle zero price (1 ms)
+      √ should handle NaN in indicators
+      √ should handle very small prices (4 ms)
+      √ should handle very large prices (1 ms)
+      √ should handle zero SMA value (1 ms)
+      √ should handle missing RSI values for change calculation (1 ms)
+      √ should handle Bollinger bands at same level (1 ms)
+    calculatePriceMomentum
+      √ should calculate momentum for sufficient data
+      √ should return zero for insufficient data (1 ms)
+      √ should handle negative momentum
+      √ should handle zero momentum (1 ms)
+      √ should handle custom period (1 ms)
+    volatility calculation
+      × should calculate volatility from price data (2 ms)
+      × should return zero volatility for constant prices (1 ms)
+    integration scenarios
+      √ should handle typical market data (1 ms)
+      √ should handle bull market scenario (1 ms)
+      √ should handle bear market scenario (1 ms)
+      √ should handle high volume scenario (1 ms)
+    calculateEnhancedFeatures
+      × should calculate both basic and enhanced features (1 ms)
+      × should return valid candlestick pattern features (1 ms)
+      × should return valid price trajectory features (1 ms)
+      × should return valid volume profile features (1 ms)
+      × should return valid volatility regime features
+      × should maintain backward compatibility with basic features
+      × should handle empty data gracefully (37 ms)
+      × should increase feature dimensionality significantly (1 ms)
+    calculateFeaturesOptimized - TODO: implement method
+      ○ skipped should produce same results as original implementation
+      ○ skipped should handle TypedArray data efficiently
+      ○ skipped should calculate momentum with zero-copy slicing
+      ○ skipped should calculate volatility using iterators
+      ○ skipped should calculate volume ratio efficiently
+
+  ● FeatureCalculationService › volatility calculation › should calculate volatility from price data
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 29.9
+    Received:   23.919999999999998
+
+      324 |       const volatileFeatures = service.calculateFeatures(volatileData, mockIndicators);
+      325 |       
+    > 326 |       expect(volatileFeatures.volatility).toBeGreaterThan(stableFeatures.volatility);
+          |                                           ^
+      327 |     });
+      328 |
+      329 |     it('should return zero volatility for constant prices', () => {
+
+      at Object.toBeGreaterThan (app/lib/services/__tests__/feature-calculation-service.test.ts:326:43)
+
+  ● FeatureCalculationService › volatility calculation › should return zero volatility for constant prices
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 29.9
+
+      335 |       const features = service.calculateFeatures(constantData, mockIndicators);
+      336 |       
+    > 337 |       expect(features.volatility).toBe(0);
+          |                                   ^
+      338 |     });
+      339 |   });
+      340 |
+
+      at Object.toBe (app/lib/services/__tests__/feature-calculation-service.test.ts:337:35)
+
+  ● FeatureCalculationService › calculateEnhancedFeatures › should calculate both basic and enhanced features
+
+    TypeError: service.calculateEnhancedFeatures is not a function
+
+      401 |   describe('calculateEnhancedFeatures', () => {
+      402 |     it('should calculate both basic and enhanced features', () => {
+    > 403 |       const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+          |                                ^
+      404 |       
+      405 |       // Check basic features exist
+      406 |       expect(features).toHaveProperty('rsi');
+
+      at Object.calculateEnhancedFeatures (app/lib/services/__tests__/feature-calculation-service.test.ts:403:32)
+
+  ● FeatureCalculationService › calculateEnhancedFeatures › should return valid candlestick pattern features
+
+    TypeError: service.calculateEnhancedFeatures is not a function
+
+      416 |
+      417 |     it('should return valid candlestick pattern features', () => {
+    > 418 |       const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+          |                                ^
+      419 |       
+      420 |       expect(features.candlestickPatterns).toHaveProperty('isDoji');
+      421 |       expect(features.candlestickPatterns).toHaveProperty('isHammer');
+
+      at Object.calculateEnhancedFeatures (app/lib/services/__tests__/feature-calculation-service.test.ts:418:32)
+
+  ● FeatureCalculationService › calculateEnhancedFeatures › should return valid price trajectory features
+
+    TypeError: service.calculateEnhancedFeatures is not a function
+
+      428 |
+      429 |     it('should return valid price trajectory features', () => {
+    > 430 |       const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+          |                                ^
+      431 |       
+      432 |       expect(features.priceTrajectory).toHaveProperty('zigzagTrend');
+      433 |       expect(features.priceTrajectory).toHaveProperty('trendConsistency');
+
+      at Object.calculateEnhancedFeatures (app/lib/services/__tests__/feature-calculation-service.test.ts:430:32)
+
+  ● FeatureCalculationService › calculateEnhancedFeatures › should return valid volume profile features
+
+    TypeError: service.calculateEnhancedFeatures is not a function
+
+      439 |
+      440 |     it('should return valid volume profile features', () => {
+    > 441 |       const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+          |                                ^
+      442 |       
+      443 |       expect(features.volumeProfile).toHaveProperty('volumeTrend');
+      444 |       expect(features.volumeProfile).toHaveProperty('volumeSurge');
+
+      at Object.calculateEnhancedFeatures (app/lib/services/__tests__/feature-calculation-service.test.ts:441:32)
+
+  ● FeatureCalculationService › calculateEnhancedFeatures › should return valid volatility regime features
+
+    TypeError: service.calculateEnhancedFeatures is not a function
+
+      450 |
+      451 |     it('should return valid volatility regime features', () => {
+    > 452 |       const features = service.calculateEnhancedFeatures(mockData, mockIndicators);
+          |                                ^
+      453 |       
+      454 |       expect(features.volatilityRegime).toHaveProperty('volatilityRegime');
+      455 |       expect(features.volatilityRegime).toHaveProperty('historicalVolatility');
+
+      at Object.calculateEnhancedFeatures (app/lib/services/__tests__/feature-calculation-service.test.ts:452:32)
+
+  ● FeatureCalculationService › calculateEnhancedFeatures › should maintain backward compatibility with basic features
+
+    TypeError: service.calculateEnhancedFeatures is not a function
+
+      462 |     it('should maintain backward compatibility with basic features', () => {
+      463 |       const basicFeatures = service.calculateFeatures(mockData, mockIndicators);
+    > 464 |       const enhancedFeatures = service.calculateEnhancedFeatures(mockData, mockIndicators);
+          |                                        ^
+      465 |       
+      466 |       // Basic features should have same values
+      467 |       expect(enhancedFeatures.rsi).toBe(basicFeatures.rsi);
+
+      at Object.calculateEnhancedFeatures (app/lib/services/__tests__/feature-calculation-service.test.ts:464:40)
+
+  ● FeatureCalculationService › calculateEnhancedFeatures › should handle empty data gracefully
+
+    expect(received).not.toThrow()
+
+    Error name:    "TypeError"
+    Error message: "service.calculateEnhancedFeatures is not a function"
+
+          484 |       
+          485 |       expect(() => {
+        > 486 |         service.calculateEnhancedFeatures(emptyData, emptyIndicators);
+              |                 ^
+          487 |       }).not.toThrow();
+          488 |     });
+          489 |
+
+      at calculateEnhancedFeatures (app/lib/services/__tests__/feature-calculation-service.test.ts:486:17)
+      at Object.toThrow (app/lib/services/__tests__/feature-calculation-service.test.ts:487:14)
+      at Object.toThrow (app/lib/services/__tests__/feature-calculation-service.test.ts:487:14)
+
+  ● FeatureCalculationService › calculateEnhancedFeatures › should increase feature dimensionality significantly
+
+    TypeError: service.calculateEnhancedFeatures is not a function
+
+      490 |     it('should increase feature dimensionality significantly', () => {
+      491 |       const basicFeatures = service.calculateFeatures(mockData, mockIndicators);
+    > 492 |       const enhancedFeatures = service.calculateEnhancedFeatures(mockData, mockIndicators);
+          |                                        ^
+      493 |       
+      494 |       // Count basic features (11)
+      495 |       const basicCount = Object.keys(basicFeatures).length;
+
+      at Object.calculateEnhancedFeatures (app/lib/services/__tests__/feature-calculation-service.test.ts:492:40)
+
+Test Suites: 1 failed, 1 total
+Tests:       10 failed, 5 skipped, 30 passed, 45 total
+Snapshots:   0 total
+Time:        2.094 s
+Ran all test suites matching /app\\lib\\services\\__tests__\\feature-calculation-service.test.ts/i.

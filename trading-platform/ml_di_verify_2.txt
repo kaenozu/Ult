@@ -1,0 +1,42 @@
+PASS app/lib/services/__tests__/ml-model-service-di.test.ts
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  MockTensorFlowModel
+    √ should create mock model
+    √ should train model (1 ms)
+    √ should predict after training
+  TestDataFactory
+    √ should create base features
+    √ should create bullish features
+  MLModelService with Dependency Injection
+    constructor and initialization
+      √ should create service with default dependencies (1 ms)
+      √ should accept custom prediction calculator (1 ms)
+      √ should accept custom configuration
+    predict with injected calculator
+      √ should use injected calculator for predictions (1 ms)
+      √ should return bullish prediction for bullish features (1 ms)
+      √ should return bearish prediction for bearish features
+      √ should calculate ensemble as weighted average (1 ms)
+      √ should maintain confidence in valid range
+    predictAsync with fallback
+      √ should fallback to rule-based when TensorFlow not enabled (2 ms)
+      √ should return same result as predict when TensorFlow disabled
+    model training and management
+      √ should initialize TensorFlow models on training (2 ms)
+      √ should return model metrics after training (1 ms)
+      √ should save trained models (1 ms)
+      √ should get model metrics (1 ms)
+    isolation and testability
+      √ should allow testing prediction logic independently
+      √ should allow mocking calculator for service tests (2 ms)
+      √ should allow testing without external dependencies
+    backward compatibility
+      √ should maintain same prediction behavior as before refactoring (1 ms)
+      √ should maintain singleton export behavior
+
+Test Suites: 1 passed, 1 total
+Tests:       25 passed, 25 total
+Snapshots:   0 total
+Time:        2.3 s
+Ran all test suites matching /app\\lib\\services\\__tests__\\ml-model-service-di.test.ts/i.

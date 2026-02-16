@@ -1,0 +1,31 @@
+npm warn Expanding --ci to --cidr. This will stop working in the next major version of npm.
+
+> trading-platform@0.1.0 test
+> jest app/infrastructure/api/__tests__/DataAggregator.test.ts
+
+PASS app/infrastructure/api/__tests__/DataAggregator.test.ts (7.806 s)
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  DataAggregator
+    キャッシュ機能
+      √ データをキャッシュに保存して取得できる (1 ms)
+      √ TTLが切れたキャッシュはnullを返す (26 ms)
+      √ キャッシュをクリアできる (1 ms)
+    バッチ処理
+      √ 複数のリクエストをバッチで処理できる (8 ms)
+      √ バッチサイズ制限を尊重する (2 ms)
+    リクエスト重複排除
+      √ 同じリクエストを重複して送信しない (2 ms)
+    エラーハンドリング
+      √ ネットワークエラーを適切に処理する (3548 ms)
+      √ APIエラーを適切に処理する (3528 ms)
+    レート制限
+      √ レート制限を尊重する (1 ms)
+    優先度キュー
+      √ 優先度の高いリクエストを先に処理する (2 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        8.598 s
+Ran all test suites matching /app\\infrastructure\\api\\__tests__\\DataAggregator.test.ts/i.

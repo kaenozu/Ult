@@ -1,0 +1,648 @@
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 58 |[39m
+     [90m 59 |[39m     it([32m'should debounce priceMin input changes'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 60 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 61 |[39m
+     [90m 62 |[39m       [36mconst[39m priceMinInput [33m=[39m screen[33m.[39mgetByLabelText([32m'最低価格'[39m)[33m;[39m
+     [90m 63 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:60:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 82 |[39m
+     [90m 83 |[39m     it([32m'should debounce priceMax input changes'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 84 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m    |[39m             [31m[1m^[22m[39m
+     [90m 85 |[39m
+     [90m 86 |[39m       [36mconst[39m priceMaxInput [33m=[39m screen[33m.[39mgetByLabelText([32m'最高価格'[39m)[33m;[39m
+     [90m 87 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:84:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 102 |[39m
+     [90m 103 |[39m     it([32m'should debounce changeMin input changes'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 104 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 105 |[39m
+     [90m 106 |[39m       [36mconst[39m changeMinInput [33m=[39m screen[33m.[39mgetByLabelText([32m'最小騰落率'[39m)[33m;[39m
+     [90m 107 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:104:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 119 |[39m
+     [90m 120 |[39m     it([32m'should debounce changeMax input changes'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 121 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 122 |[39m
+     [90m 123 |[39m       [36mconst[39m changeMaxInput [33m=[39m screen[33m.[39mgetByLabelText([32m'最大騰落率'[39m)[33m;[39m
+     [90m 124 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:121:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 136 |[39m
+     [90m 137 |[39m     it([32m'should debounce volumeMin input changes'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 138 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 139 |[39m
+     [90m 140 |[39m       [36mconst[39m volumeMinInput [33m=[39m screen[33m.[39mgetByLabelText([32m'最小出来高'[39m)[33m;[39m
+     [90m 141 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:138:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 153 |[39m
+     [90m 154 |[39m     it([32m'should debounce sector input changes'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 155 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 156 |[39m
+     [90m 157 |[39m       [36mconst[39m sectorInput [33m=[39m screen[33m.[39mgetByLabelText([32m'セクターフィルター'[39m)[33m;[39m
+     [90m 158 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:155:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 170 |[39m
+     [90m 171 |[39m     it([32m'should cancel previous debounce timer on rapid input'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 172 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 173 |[39m
+     [90m 174 |[39m       [36mconst[39m priceMinInput [33m=[39m screen[33m.[39mgetByLabelText([32m'最低価格'[39m)[33m;[39m
+     [90m 175 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:172:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 192 |[39m
+     [90m 193 |[39m     it([32m'should apply filters immediately on signal button click'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 194 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 195 |[39m
+     [90m 196 |[39m       [36mconst[39m buyButton [33m=[39m screen[33m.[39mgetByText([32m'買い'[39m)[33m;[39m
+     [90m 197 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:194:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 205 |[39m
+     [90m 206 |[39m     it([32m'should apply filters immediately on market select change'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 207 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 208 |[39m
+     [90m 209 |[39m       [36mconst[39m marketSelect [33m=[39m screen[33m.[39mgetByLabelText([32m'市場フィルター'[39m)[33m;[39m
+     [90m 210 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:207:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 228 |[39m
+     [90m 229 |[39m     it([32m'should debounce preset button clicks'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 230 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 231 |[39m
+     [90m 232 |[39m       [36mconst[39m oversoldButton [33m=[39m screen[33m.[39mgetByText([32m'🔥 売られすぎ（買い）'[39m)[33m;[39m
+     [90m 233 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:230:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 248 |[39m
+     [90m 249 |[39m     it([32m'should disable other preset buttons while one is active'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 250 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 251 |[39m
+     [90m 252 |[39m       [36mconst[39m oversoldButton [33m=[39m screen[33m.[39mgetByText([32m'🔥 売られすぎ（買い）'[39m)[33m;[39m
+     [90m 253 |[39m       [36mconst[39m uptrendButton [33m=[39m screen[33m.[39mgetByText([32m'🚀 上昇トレンド（買い）'[39m)[33m;[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:250:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 268 |[39m   describe([32m'Filter Reset'[39m[33m,[39m () [33m=>[39m {
+     [90m 269 |[39m     it([32m'should reset all filters when reset button is clicked'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 270 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 271 |[39m
+     [90m 272 |[39m       [90m// Set some filters first[39m
+     [90m 273 |[39m       [36mconst[39m priceMinInput [33m=[39m screen[33m.[39mgetByLabelText([32m'最低価格'[39m)[33m;[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:270:13)
+
+  console.warn
+    A function to advance timers was called but the timers APIs are not replaced with fake timers. Call `jest.useFakeTimers()` in this test file or enable fake timers for all tests by setting 'fakeTimers': {'enableGlobally': true} in Jest configuration file.
+    Stack Trace:
+    
+        [0m [90m 274 |[39m       [36mawait[39m userEvent[33m.[39mtype(priceMinInput[33m,[39m [32m'1000'[39m)[33m;[39m
+         [90m 275 |[39m
+        [31m[1m>[22m[39m[90m 276 |[39m       jest[33m.[39madvanceTimersByTime([35m350[39m)[33m;[39m
+         [90m     |[39m            [31m[1m^[22m[39m
+         [90m 277 |[39m
+         [90m 278 |[39m       [90m// Click reset[39m
+         [90m 279 |[39m       [36mconst[39m resetButton [33m=[39m screen[33m.[39mgetByText([32m'リセット'[39m)[33m;[39m[0m
+    
+          Error: 
+          at FakeTimers._checkFakeTimers (node_modules/jest-environment-jsdom/node_modules/@jest/fake-timers/build/modernFakeTimers.js:158:13)
+          at Object.advanceTimersByTime (app/screener/__tests__/page.test.tsx:276:12)
+
+    [0m [90m 274 |[39m       [36mawait[39m userEvent[33m.[39mtype(priceMinInput[33m,[39m [32m'1000'[39m)[33m;[39m
+     [90m 275 |[39m
+    [31m[1m>[22m[39m[90m 276 |[39m       jest[33m.[39madvanceTimersByTime([35m350[39m)[33m;[39m
+     [90m     |[39m            [31m[1m^[22m[39m
+     [90m 277 |[39m
+     [90m 278 |[39m       [90m// Click reset[39m
+     [90m 279 |[39m       [36mconst[39m resetButton [33m=[39m screen[33m.[39mgetByText([32m'リセット'[39m)[33m;[39m[0m
+
+      at FakeTimers._checkFakeTimers (node_modules/jest-environment-jsdom/node_modules/@jest/fake-timers/build/modernFakeTimers.js:152:28)
+      at Object.advanceTimersByTime (app/screener/__tests__/page.test.tsx:276:12)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 289 |[39m   describe([32m'UI Responsiveness'[39m[33m,[39m () [33m=>[39m {
+     [90m 290 |[39m     it([32m'should show immediate feedback on input'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 291 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 292 |[39m
+     [90m 293 |[39m       [36mconst[39m priceMinInput [33m=[39m screen[33m.[39mgetByLabelText([32m'最低価格'[39m)[33m;[39m
+     [90m 294 |[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:291:13)
+
+  console.error
+    Expected `onClick` listener to be a function, instead got a value of `object` type.
+
+    [0m [90m 301 |[39m
+     [90m 302 |[39m     it([32m'should display stock count'[39m[33m,[39m [36masync[39m () [33m=>[39m {
+    [31m[1m>[22m[39m[90m 303 |[39m       render([33m<[39m[33mScreener[39m [33m/[39m[33m>[39m)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 304 |[39m
+     [90m 305 |[39m       [36mawait[39m waitFor(() [33m=>[39m {
+     [90m 306 |[39m         [36mconst[39m count [33m=[39m screen[33m.[39mgetByText([35m/\d+ 銘柄が見つかりました/[39m)[33m;[39m[0m
+
+      at warnForInvalidEventListener (node_modules/react-dom/cjs/react-dom-client.development.js:19907:19)
+      at setProp (node_modules/react-dom/cjs/react-dom-client.development.js:20141:15)
+      at setInitialProperties (node_modules/react-dom/cjs/react-dom-client.development.js:20753:13)
+      at completeWork (node_modules/react-dom/cjs/react-dom-client.development.js:12662:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at completeUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17777:19)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17658:11)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at Object.<anonymous> (app/screener/__tests__/page.test.tsx:303:13)
+
+FAIL app/screener/__tests__/page.test.tsx (62.557 s)
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  Screener Page
+    Filter Input Debouncing
+      × should debounce priceMin input changes (10019 ms)
+      × should debounce priceMax input changes (5010 ms)
+      × should debounce changeMin input changes (5022 ms)
+      × should debounce changeMax input changes (5015 ms)
+      × should debounce volumeMin input changes (5007 ms)
+      × should debounce sector input changes (5009 ms)
+      × should cancel previous debounce timer on rapid input (5005 ms)
+      × should apply filters immediately on signal button click (5018 ms)
+      × should apply filters immediately on market select change (5009 ms)
+    Preset Button Debouncing
+      × should debounce preset button clicks (5010 ms)
+      × should disable other preset buttons while one is active (5012 ms)
+    Filter Reset
+      √ should reset all filters when reset button is clicked (719 ms)
+    UI Responsiveness
+      √ should show immediate feedback on input (244 ms)
+      √ should display stock count (82 ms)
+
+  ● Screener Page › Filter Input Debouncing › should debounce priceMin input changes
+
+    thrown: "Exceeded timeout of 10000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      57 |     });
+      58 |
+    > 59 |     it('should debounce priceMin input changes', async () => {
+         |     ^
+      60 |       render(<Screener />);
+      61 |
+      62 |       const priceMinInput = screen.getByLabelText('最低価格');
+
+      at it (app/screener/__tests__/page.test.tsx:59:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Filter Input Debouncing › should debounce priceMax input changes
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      81 |     }, 10000);
+      82 |
+    > 83 |     it('should debounce priceMax input changes', async () => {
+         |     ^
+      84 |       render(<Screener />);
+      85 |
+      86 |       const priceMaxInput = screen.getByLabelText('最高価格');
+
+      at it (app/screener/__tests__/page.test.tsx:83:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Filter Input Debouncing › should debounce changeMin input changes
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      101 |     });
+      102 |
+    > 103 |     it('should debounce changeMin input changes', async () => {
+          |     ^
+      104 |       render(<Screener />);
+      105 |
+      106 |       const changeMinInput = screen.getByLabelText('最小騰落率');
+
+      at it (app/screener/__tests__/page.test.tsx:103:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Filter Input Debouncing › should debounce changeMax input changes
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      118 |     });
+      119 |
+    > 120 |     it('should debounce changeMax input changes', async () => {
+          |     ^
+      121 |       render(<Screener />);
+      122 |
+      123 |       const changeMaxInput = screen.getByLabelText('最大騰落率');
+
+      at it (app/screener/__tests__/page.test.tsx:120:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Filter Input Debouncing › should debounce volumeMin input changes
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      135 |     });
+      136 |
+    > 137 |     it('should debounce volumeMin input changes', async () => {
+          |     ^
+      138 |       render(<Screener />);
+      139 |
+      140 |       const volumeMinInput = screen.getByLabelText('最小出来高');
+
+      at it (app/screener/__tests__/page.test.tsx:137:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Filter Input Debouncing › should debounce sector input changes
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      152 |     });
+      153 |
+    > 154 |     it('should debounce sector input changes', async () => {
+          |     ^
+      155 |       render(<Screener />);
+      156 |
+      157 |       const sectorInput = screen.getByLabelText('セクターフィルター');
+
+      at it (app/screener/__tests__/page.test.tsx:154:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Filter Input Debouncing › should cancel previous debounce timer on rapid input
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      169 |     });
+      170 |
+    > 171 |     it('should cancel previous debounce timer on rapid input', async () => {
+          |     ^
+      172 |       render(<Screener />);
+      173 |
+      174 |       const priceMinInput = screen.getByLabelText('最低価格');
+
+      at it (app/screener/__tests__/page.test.tsx:171:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Filter Input Debouncing › should apply filters immediately on signal button click
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      191 |     });
+      192 |
+    > 193 |     it('should apply filters immediately on signal button click', async () => {
+          |     ^
+      194 |       render(<Screener />);
+      195 |
+      196 |       const buyButton = screen.getByText('買い');
+
+      at it (app/screener/__tests__/page.test.tsx:193:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Filter Input Debouncing › should apply filters immediately on market select change
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      204 |     });
+      205 |
+    > 206 |     it('should apply filters immediately on market select change', async () => {
+          |     ^
+      207 |       render(<Screener />);
+      208 |
+      209 |       const marketSelect = screen.getByLabelText('市場フィルター');
+
+      at it (app/screener/__tests__/page.test.tsx:206:5)
+      at describe (app/screener/__tests__/page.test.tsx:50:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Preset Button Debouncing › should debounce preset button clicks
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      227 |     });
+      228 |
+    > 229 |     it('should debounce preset button clicks', async () => {
+          |     ^
+      230 |       render(<Screener />);
+      231 |
+      232 |       const oversoldButton = screen.getByText('🔥 売られすぎ（買い）');
+
+      at it (app/screener/__tests__/page.test.tsx:229:5)
+      at describe (app/screener/__tests__/page.test.tsx:220:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+  ● Screener Page › Preset Button Debouncing › should disable other preset buttons while one is active
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      247 |     });
+      248 |
+    > 249 |     it('should disable other preset buttons while one is active', async () => {
+          |     ^
+      250 |       render(<Screener />);
+      251 |
+      252 |       const oversoldButton = screen.getByText('🔥 売られすぎ（買い）');
+
+      at it (app/screener/__tests__/page.test.tsx:249:5)
+      at describe (app/screener/__tests__/page.test.tsx:220:3)
+      at Object.describe (app/screener/__tests__/page.test.tsx:25:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       11 failed, 4 passed, 15 total
+Snapshots:   0 total
+Time:        63.454 s
+Ran all test suites matching /app\\screener\\__tests__\\page.test.tsx/i.

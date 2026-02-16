@@ -1,0 +1,748 @@
+  console.log
+    Error when getting WebGL context:  TypeError: gl.disable is not a function
+        at getWebGLContext (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\canvas_util.ts:59:6)
+        at isWebGLVersionEnabled (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\webgl_util.ts:565:16)
+        at Object.evaluationFn (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\flags_webgl.ts:35:7)
+        at Environment.Object.<anonymous>.Environment.evaluateFlag (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:148:40)
+        at Environment.Object.<anonymous>.Environment.get (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:101:28)
+        at Environment.Object.<anonymous>.Environment.getNumber (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:113:17)
+        at Object.evaluationFn (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\flags_webgl.ts:31:41)
+        at Environment.Object.<anonymous>.Environment.evaluateFlag (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:148:40)
+        at Environment.Object.<anonymous>.Environment.get (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:101:28)
+        at Environment.Object.<anonymous>.Environment.getBool (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:117:17)
+        at new MathBackendWebGL (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\backend_webgl.ts:146:16)
+        at Object.factory (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\base.ts:25:34)
+        at Engine.Object.<anonymous>.Engine.initializeBackend (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:328:44)
+        at Engine.Object.<anonymous>.Engine.initializeBackendsAndReturnBest (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:414:41)
+        at Engine.get (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:219:38)
+        at Engine.Object.<anonymous>.Engine.makeTensor (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:810:31)
+        at TensorBuffer.Object.<anonymous>.TensorBuffer.toTensor (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\tensor.ts:158:24)
+        at truncatedNormal_ (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\ops\truncated_normal.ts:59:14)
+        at Object.truncatedNormal__op [as truncatedNormal] (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\ops\operation.ts:51:28)
+        at GlorotNormal.truncatedNormal [as apply] (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\initializers.ts:352:14)
+        at Dense.Object.<anonymous>.Layer.addWeight (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:1288:35)
+        at Dense.Object.<anonymous>.Dense.build (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\layers\core.ts:244:26)
+        at C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:981:14
+        at nameScope (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\common.ts:48:20)
+        at Dense.Object.<anonymous>.Layer.apply (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:967:12)
+        at Sequential.Object.<anonymous>.Sequential.add (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\models.ts:491:15)
+        at FeedForwardModel.add [as buildModel] (C:\gemini-desktop\Ult\trading-platform\app\domains\prediction\services\tensorflow-model-service.ts:461:11)
+        at FeedForwardModel.buildModel [as train] (C:\gemini-desktop\Ult\trading-platform\app\domains\prediction\services\tensorflow-model-service.ts:80:27)
+        at MLModelService.train [as trainModels] (C:\gemini-desktop\Ult\trading-platform\app\lib\services\ml-model-service.ts:151:21)
+        at Object.trainModels (C:\gemini-desktop\Ult\trading-platform\app\lib\services\__tests__\ml-model-service-di.test.ts:132:37)
+        at Promise.then.completed (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\utils.js:298:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\utils.js:231:10)
+        at _callCircusTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:316:40)
+        at processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at _runTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:252:3)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:126:9)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:121:9)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:121:9)
+        at run (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:71:3)
+        at runAndTransformResultsToJestFormat (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+        at jestAdapter (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+        at runTestInternal (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-runner\build\runTest.js:444:34)
+
+      at isWebGLVersionEnabled (tfjs-backend-webgl/src/webgl_util.ts:570:13)
+
+  console.log
+    Error when getting WebGL context:  TypeError: gl.disable is not a function
+        at getWebGLContext (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\canvas_util.ts:59:6)
+        at isWebGLVersionEnabled (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\webgl_util.ts:565:16)
+        at Object.evaluationFn (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\flags_webgl.ts:37:14)
+        at Environment.Object.<anonymous>.Environment.evaluateFlag (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:148:40)
+        at Environment.Object.<anonymous>.Environment.get (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:101:28)
+        at Environment.Object.<anonymous>.Environment.getNumber (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:113:17)
+        at Object.evaluationFn (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\flags_webgl.ts:31:41)
+        at Environment.Object.<anonymous>.Environment.evaluateFlag (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:148:40)
+        at Environment.Object.<anonymous>.Environment.get (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:101:28)
+        at Environment.Object.<anonymous>.Environment.getBool (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\environment.ts:117:17)
+        at new MathBackendWebGL (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\backend_webgl.ts:146:16)
+        at Object.factory (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\base.ts:25:34)
+        at Engine.Object.<anonymous>.Engine.initializeBackend (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:328:44)
+        at Engine.Object.<anonymous>.Engine.initializeBackendsAndReturnBest (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:414:41)
+        at Engine.get (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:219:38)
+        at Engine.Object.<anonymous>.Engine.makeTensor (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:810:31)
+        at TensorBuffer.Object.<anonymous>.TensorBuffer.toTensor (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\tensor.ts:158:24)
+        at truncatedNormal_ (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\ops\truncated_normal.ts:59:14)
+        at Object.truncatedNormal__op [as truncatedNormal] (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\ops\operation.ts:51:28)
+        at GlorotNormal.truncatedNormal [as apply] (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\initializers.ts:352:14)
+        at Dense.Object.<anonymous>.Layer.addWeight (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:1288:35)
+        at Dense.Object.<anonymous>.Dense.build (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\layers\core.ts:244:26)
+        at C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:981:14
+        at nameScope (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\common.ts:48:20)
+        at Dense.Object.<anonymous>.Layer.apply (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:967:12)
+        at Sequential.Object.<anonymous>.Sequential.add (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\models.ts:491:15)
+        at FeedForwardModel.add [as buildModel] (C:\gemini-desktop\Ult\trading-platform\app\domains\prediction\services\tensorflow-model-service.ts:461:11)
+        at FeedForwardModel.buildModel [as train] (C:\gemini-desktop\Ult\trading-platform\app\domains\prediction\services\tensorflow-model-service.ts:80:27)
+        at MLModelService.train [as trainModels] (C:\gemini-desktop\Ult\trading-platform\app\lib\services\ml-model-service.ts:151:21)
+        at Object.trainModels (C:\gemini-desktop\Ult\trading-platform\app\lib\services\__tests__\ml-model-service-di.test.ts:132:37)
+        at Promise.then.completed (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\utils.js:298:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\utils.js:231:10)
+        at _callCircusTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:316:40)
+        at processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at _runTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:252:3)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:126:9)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:121:9)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:121:9)
+        at run (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:71:3)
+        at runAndTransformResultsToJestFormat (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+        at jestAdapter (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+        at runTestInternal (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-runner\build\runTest.js:444:34)
+
+      at isWebGLVersionEnabled (tfjs-backend-webgl/src/webgl_util.ts:570:13)
+
+  console.warn
+    Initialization of backend webgl failed
+
+      at warn (tfjs-core/src/log.ts:22:17)
+      at Engine.log.warn [as initializeBackend] (tfjs-core/src/engine.ts:365:7)
+      at Engine.Object.<anonymous>.Engine.initializeBackendsAndReturnBest (tfjs-core/src/engine.ts:414:41)
+      at Engine.get (tfjs-core/src/engine.ts:219:38)
+      at Engine.Object.<anonymous>.Engine.makeTensor (tfjs-core/src/engine.ts:810:31)
+      at TensorBuffer.Object.<anonymous>.TensorBuffer.toTensor (tfjs-core/src/tensor.ts:158:24)
+      at truncatedNormal_ (tfjs-core/src/ops/truncated_normal.ts:59:14)
+      at Object.truncatedNormal__op [as truncatedNormal] (tfjs-core/src/ops/operation.ts:51:28)
+      at GlorotNormal.truncatedNormal [as apply] (tfjs-layers/src/initializers.ts:352:14)
+      at Dense.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at Dense.Object.<anonymous>.Dense.build (tfjs-layers/src/layers/core.ts:244:26)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at Dense.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at FeedForwardModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:461:11)
+      at FeedForwardModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:80:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:151:21)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:132:37)
+
+  console.warn
+    Error: WebGL is not supported on this device
+        at new MathBackendWebGL (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\backend_webgl.ts:147:13)
+        at Object.factory (C:\gemini-desktop\Ult\trading-platform\tfjs-backend-webgl\src\base.ts:25:34)
+        at Engine.Object.<anonymous>.Engine.initializeBackend (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:328:44)
+        at Engine.Object.<anonymous>.Engine.initializeBackendsAndReturnBest (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:414:41)
+        at Engine.get (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:219:38)
+        at Engine.Object.<anonymous>.Engine.makeTensor (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\engine.ts:810:31)
+        at TensorBuffer.Object.<anonymous>.TensorBuffer.toTensor (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\tensor.ts:158:24)
+        at truncatedNormal_ (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\ops\truncated_normal.ts:59:14)
+        at Object.truncatedNormal__op [as truncatedNormal] (C:\gemini-desktop\Ult\trading-platform\tfjs-core\src\ops\operation.ts:51:28)
+        at GlorotNormal.truncatedNormal [as apply] (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\initializers.ts:352:14)
+        at Dense.Object.<anonymous>.Layer.addWeight (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:1288:35)
+        at Dense.Object.<anonymous>.Dense.build (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\layers\core.ts:244:26)
+        at C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:981:14
+        at nameScope (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\common.ts:48:20)
+        at Dense.Object.<anonymous>.Layer.apply (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\engine\topology.ts:967:12)
+        at Sequential.Object.<anonymous>.Sequential.add (C:\gemini-desktop\Ult\trading-platform\tfjs-layers\src\models.ts:491:15)
+        at FeedForwardModel.add [as buildModel] (C:\gemini-desktop\Ult\trading-platform\app\domains\prediction\services\tensorflow-model-service.ts:461:11)
+        at FeedForwardModel.buildModel [as train] (C:\gemini-desktop\Ult\trading-platform\app\domains\prediction\services\tensorflow-model-service.ts:80:27)
+        at MLModelService.train [as trainModels] (C:\gemini-desktop\Ult\trading-platform\app\lib\services\ml-model-service.ts:151:21)
+        at Object.trainModels (C:\gemini-desktop\Ult\trading-platform\app\lib\services\__tests__\ml-model-service-di.test.ts:132:37)
+        at Promise.then.completed (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\utils.js:298:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\utils.js:231:10)
+        at _callCircusTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:316:40)
+        at processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at _runTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:252:3)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:126:9)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:121:9)
+        at _runTestsForDescribeBlock (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:121:9)
+        at run (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\run.js:71:3)
+        at runAndTransformResultsToJestFormat (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+        at jestAdapter (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+        at runTestInternal (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (C:\gemini-desktop\Ult\trading-platform\node_modules\jest-runner\build\runTest.js:444:34)
+
+      at warn (tfjs-core/src/log.ts:22:17)
+      at Engine.log.warn [as initializeBackend] (tfjs-core/src/engine.ts:366:7)
+      at Engine.Object.<anonymous>.Engine.initializeBackendsAndReturnBest (tfjs-core/src/engine.ts:414:41)
+      at Engine.get (tfjs-core/src/engine.ts:219:38)
+      at Engine.Object.<anonymous>.Engine.makeTensor (tfjs-core/src/engine.ts:810:31)
+      at TensorBuffer.Object.<anonymous>.TensorBuffer.toTensor (tfjs-core/src/tensor.ts:158:24)
+      at truncatedNormal_ (tfjs-core/src/ops/truncated_normal.ts:59:14)
+      at Object.truncatedNormal__op [as truncatedNormal] (tfjs-core/src/ops/operation.ts:51:28)
+      at GlorotNormal.truncatedNormal [as apply] (tfjs-layers/src/initializers.ts:352:14)
+      at Dense.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at Dense.Object.<anonymous>.Dense.build (tfjs-layers/src/layers/core.ts:244:26)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at Dense.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at FeedForwardModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:461:11)
+      at FeedForwardModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:80:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:151:21)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:132:37)
+
+  console.warn
+    
+    ============================
+    Hi, looks like you are running TensorFlow.js in Node.js. To speed things up dramatically, install our node backend, visit https://github.com/tensorflow/tfjs-node for more details. 
+    ============================
+
+      at Object.warn (tfjs-core/src/log.ts:22:17)
+      at MathBackendCPU.Object.<anonymous>.MathBackendCPU.write (tfjs-backend-cpu/src/backend_cpu.ts:58:22)
+      at Engine.Object.<anonymous>.Engine.makeTensor (tfjs-core/src/engine.ts:815:28)
+      at TensorBuffer.Object.<anonymous>.TensorBuffer.toTensor (tfjs-core/src/tensor.ts:158:24)
+      at truncatedNormal_ (tfjs-core/src/ops/truncated_normal.ts:59:14)
+      at Object.truncatedNormal__op [as truncatedNormal] (tfjs-core/src/ops/operation.ts:51:28)
+      at GlorotNormal.truncatedNormal [as apply] (tfjs-layers/src/initializers.ts:352:14)
+      at Dense.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at Dense.Object.<anonymous>.Dense.build (tfjs-layers/src/layers/core.ts:244:26)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at Dense.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at FeedForwardModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:461:11)
+      at FeedForwardModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:80:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:151:21)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:132:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (12288) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at GRUCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at GRUCell.Object.<anonymous>.GRUCell.build (tfjs-layers/src/layers/recurrent.ts:1388:33)
+      at GRU.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at GRU.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at GRU.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at GRUModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:339:11)
+      at GRUModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:394:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:152:22)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:132:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (3072) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at GRUCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at GRUCell.Object.<anonymous>.GRUCell.build (tfjs-layers/src/layers/recurrent.ts:1388:33)
+      at GRU.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at GRU.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at GRU.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:538:34)
+      at GRUModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:346:11)
+      at GRUModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:394:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:152:22)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:132:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (16384) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at LSTMCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at LSTMCell.Object.<anonymous>.LSTMCell.build (tfjs-layers/src/layers/recurrent.ts:1706:33)
+      at LSTM.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at LSTM.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at LSTM.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at LSTMModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:212:11)
+      at LSTMModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:268:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:153:23)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:132:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (4096) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at LSTMCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at LSTMCell.Object.<anonymous>.LSTMCell.build (tfjs-layers/src/layers/recurrent.ts:1706:33)
+      at LSTM.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at LSTM.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at LSTM.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:538:34)
+      at LSTMModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:219:11)
+      at LSTMModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:268:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:153:23)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:132:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (12288) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at GRUCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at GRUCell.Object.<anonymous>.GRUCell.build (tfjs-layers/src/layers/recurrent.ts:1388:33)
+      at GRU.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at GRU.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at GRU.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at GRUModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:339:11)
+      at GRUModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:394:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:152:22)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:144:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (3072) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at GRUCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at GRUCell.Object.<anonymous>.GRUCell.build (tfjs-layers/src/layers/recurrent.ts:1388:33)
+      at GRU.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at GRU.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at GRU.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:538:34)
+      at GRUModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:346:11)
+      at GRUModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:394:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:152:22)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:144:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (16384) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at LSTMCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at LSTMCell.Object.<anonymous>.LSTMCell.build (tfjs-layers/src/layers/recurrent.ts:1706:33)
+      at LSTM.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at LSTM.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at LSTM.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at LSTMModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:212:11)
+      at LSTMModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:268:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:153:23)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:144:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (4096) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at LSTMCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at LSTMCell.Object.<anonymous>.LSTMCell.build (tfjs-layers/src/layers/recurrent.ts:1706:33)
+      at LSTM.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at LSTM.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at LSTM.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:538:34)
+      at LSTMModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:219:11)
+      at LSTMModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:268:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:153:23)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:144:37)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (12288) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at GRUCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at GRUCell.Object.<anonymous>.GRUCell.build (tfjs-layers/src/layers/recurrent.ts:1388:33)
+      at GRU.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at GRU.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at GRU.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at GRUModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:339:11)
+      at GRUModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:394:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:152:22)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:155:21)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (3072) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at GRUCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at GRUCell.Object.<anonymous>.GRUCell.build (tfjs-layers/src/layers/recurrent.ts:1388:33)
+      at GRU.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at GRU.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at GRU.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:538:34)
+      at GRUModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:346:11)
+      at GRUModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:394:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:152:22)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:155:21)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (16384) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at LSTMCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at LSTMCell.Object.<anonymous>.LSTMCell.build (tfjs-layers/src/layers/recurrent.ts:1706:33)
+      at LSTM.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at LSTM.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at LSTM.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at LSTMModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:212:11)
+      at LSTMModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:268:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:153:23)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:155:21)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (4096) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at LSTMCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at LSTMCell.Object.<anonymous>.LSTMCell.build (tfjs-layers/src/layers/recurrent.ts:1706:33)
+      at LSTM.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at LSTM.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at LSTM.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:538:34)
+      at LSTMModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:219:11)
+      at LSTMModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:268:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:153:23)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:155:21)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (12288) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at GRUCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at GRUCell.Object.<anonymous>.GRUCell.build (tfjs-layers/src/layers/recurrent.ts:1388:33)
+      at GRU.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at GRU.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at GRU.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at GRUModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:339:11)
+      at GRUModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:394:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:152:22)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:165:21)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (3072) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at GRUCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at GRUCell.Object.<anonymous>.GRUCell.build (tfjs-layers/src/layers/recurrent.ts:1388:33)
+      at GRU.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at GRU.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at GRU.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:538:34)
+      at GRUModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:346:11)
+      at GRUModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:394:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:152:22)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:165:21)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (16384) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at LSTMCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at LSTMCell.Object.<anonymous>.LSTMCell.build (tfjs-layers/src/layers/recurrent.ts:1706:33)
+      at LSTM.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at LSTM.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at LSTM.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:491:15)
+      at LSTMModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:212:11)
+      at LSTMModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:268:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:153:23)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:165:21)
+
+  console.warn
+    Orthogonal initializer is being called on a matrix with more than 2000 (4096) elements: Slowness may result.
+
+      at tfjs-layers/src/initializers.ts:558:17
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at Orthogonal.tidy [as apply] (tfjs-layers/src/initializers.ts:543:12)
+      at LSTMCell.Object.<anonymous>.Layer.addWeight (tfjs-layers/src/engine/topology.ts:1288:35)
+      at LSTMCell.Object.<anonymous>.LSTMCell.build (tfjs-layers/src/layers/recurrent.ts:1706:33)
+      at LSTM.Object.<anonymous>.RNN.build (tfjs-layers/src/layers/recurrent.ts:516:17)
+      at tfjs-layers/src/engine/topology.ts:981:14
+      at nameScope (tfjs-layers/src/common.ts:48:20)
+      at LSTM.Object.<anonymous>.Layer.apply (tfjs-layers/src/engine/topology.ts:967:12)
+      at LSTM.Object.<anonymous>.RNN.apply (tfjs-layers/src/layers/recurrent.ts:697:25)
+      at Sequential.Object.<anonymous>.Sequential.add (tfjs-layers/src/models.ts:538:34)
+      at LSTMModel.add [as buildModel] (app/domains/prediction/services/tensorflow-model-service.ts:219:11)
+      at LSTMModel.buildModel [as train] (app/domains/prediction/services/tensorflow-model-service.ts:268:27)
+      at MLModelService.train [as trainModels] (app/lib/services/ml-model-service.ts:153:23)
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:165:21)
+
+FAIL app/lib/services/__tests__/ml-model-service-di.test.ts (67.696 s)
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  TestDataFactory
+    √ should create base features (2 ms)
+    √ should create bullish features (1 ms)
+  MLModelService with Dependency Injection
+    constructor and initialization
+      √ should create service with default dependencies
+      √ should accept custom prediction calculator (1 ms)
+      √ should accept custom configuration (1 ms)
+    predict with injected calculator
+      √ should use injected calculator for predictions (1 ms)
+      √ should return bullish prediction for bullish features (1 ms)
+      √ should return bearish prediction for bearish features
+      √ should calculate ensemble as weighted average
+      √ should maintain confidence in valid range (1 ms)
+    predictAsync with fallback
+      √ should fallback to rule-based when TensorFlow not enabled (1 ms)
+      √ should return same result as predict when TensorFlow disabled
+    model training and management
+      × should initialize TensorFlow models on training (16218 ms)
+      × should return model metrics after training (16375 ms)
+      × should save trained models (16942 ms)
+      × should get model metrics (17058 ms)
+    isolation and testability
+      √ should allow testing prediction logic independently
+      √ should allow mocking calculator for service tests (1 ms)
+      √ should allow testing without external dependencies (1 ms)
+    backward compatibility
+      √ should maintain same prediction behavior as before refactoring (1 ms)
+      √ should maintain singleton export behavior
+
+  ● MLModelService with Dependency Injection › model training and management › should initialize TensorFlow models on training
+
+    Argument tensors passed to stack must be a `Tensor[]` or `TensorLike[]`
+
+      at convertToTensorArray (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/tensor_util_env.js:111:15)
+      at stack_ (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/ops/stack.js:38:22)
+      at stack__op (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/ops/operation.js:44:28)
+      at Object.value (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/gradients/Unpack_grad.js:24:31)
+      at tfjs-core/src/tape.ts:168:54
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at tfjs-core/src/engine.ts:1138:21
+      at _loop_2 (tfjs-core/src/tape.ts:168:18)
+      at _loop_1 (node_modules/@tensorflow/tfjs-core/dist/tf-core.node.js:3407:13)
+      at backpropagateGradients (node_modules/@tensorflow/tfjs-core/dist/tf-core.node.js:3412:9)
+      at tfjs-core/src/engine.ts:1135:7
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Engine.Object.<anonymous>.Engine.gradients (tfjs-core/src/engine.ts:1130:17)
+      at variableGrads (tfjs-core/src/gradients.ts:308:33)
+      at AdamOptimizer.Object.<anonymous>.Optimizer.computeGradients (tfjs-core/src/optimizers/optimizer.ts:111:12)
+      at AdamOptimizer.Object.<anonymous>.Optimizer.minimize (tfjs-core/src/optimizers/optimizer.ts:61:33)
+      at tfjs-layers/src/engine/training.ts:1378:27
+      at tfjs-layers/src/engine/training.ts:1721:26
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at tfjs-layers/src/engine/training.ts:1709:15
+      at step (node_modules/tslib/tslib.es6.js:102:23)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at step (node_modules/tslib/tslib.es6.js:87:139)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at step (node_modules/tslib/tslib.es6.js:87:139)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at fulfilled (node_modules/tslib/tslib.es6.js:73:58)
+
+  ● MLModelService with Dependency Injection › model training and management › should return model metrics after training
+
+    Argument tensors passed to stack must be a `Tensor[]` or `TensorLike[]`
+
+      at convertToTensorArray (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/tensor_util_env.js:111:15)
+      at stack_ (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/ops/stack.js:38:22)
+      at stack__op (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/ops/operation.js:44:28)
+      at Object.value (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/gradients/Unpack_grad.js:24:31)
+      at tfjs-core/src/tape.ts:168:54
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at tfjs-core/src/engine.ts:1138:21
+      at _loop_2 (tfjs-core/src/tape.ts:168:18)
+      at _loop_1 (node_modules/@tensorflow/tfjs-core/dist/tf-core.node.js:3407:13)
+      at backpropagateGradients (node_modules/@tensorflow/tfjs-core/dist/tf-core.node.js:3412:9)
+      at tfjs-core/src/engine.ts:1135:7
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Engine.Object.<anonymous>.Engine.gradients (tfjs-core/src/engine.ts:1130:17)
+      at variableGrads (tfjs-core/src/gradients.ts:308:33)
+      at AdamOptimizer.Object.<anonymous>.Optimizer.computeGradients (tfjs-core/src/optimizers/optimizer.ts:111:12)
+      at AdamOptimizer.Object.<anonymous>.Optimizer.minimize (tfjs-core/src/optimizers/optimizer.ts:61:33)
+      at tfjs-layers/src/engine/training.ts:1378:27
+      at tfjs-layers/src/engine/training.ts:1721:26
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at tfjs-layers/src/engine/training.ts:1709:15
+      at step (node_modules/tslib/tslib.es6.js:102:23)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at step (node_modules/tslib/tslib.es6.js:87:139)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at step (node_modules/tslib/tslib.es6.js:87:139)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at fulfilled (node_modules/tslib/tslib.es6.js:73:58)
+
+  ● MLModelService with Dependency Injection › model training and management › should save trained models
+
+    Argument tensors passed to stack must be a `Tensor[]` or `TensorLike[]`
+
+      at convertToTensorArray (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/tensor_util_env.js:111:15)
+      at stack_ (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/ops/stack.js:38:22)
+      at stack__op (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/ops/operation.js:44:28)
+      at Object.value (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/gradients/Unpack_grad.js:24:31)
+      at tfjs-core/src/tape.ts:168:54
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at tfjs-core/src/engine.ts:1138:21
+      at _loop_2 (tfjs-core/src/tape.ts:168:18)
+      at _loop_1 (node_modules/@tensorflow/tfjs-core/dist/tf-core.node.js:3407:13)
+      at backpropagateGradients (node_modules/@tensorflow/tfjs-core/dist/tf-core.node.js:3412:9)
+      at tfjs-core/src/engine.ts:1135:7
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Engine.Object.<anonymous>.Engine.gradients (tfjs-core/src/engine.ts:1130:17)
+      at variableGrads (tfjs-core/src/gradients.ts:308:33)
+      at AdamOptimizer.Object.<anonymous>.Optimizer.computeGradients (tfjs-core/src/optimizers/optimizer.ts:111:12)
+      at AdamOptimizer.Object.<anonymous>.Optimizer.minimize (tfjs-core/src/optimizers/optimizer.ts:61:33)
+      at tfjs-layers/src/engine/training.ts:1378:27
+      at tfjs-layers/src/engine/training.ts:1721:26
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at tfjs-layers/src/engine/training.ts:1709:15
+      at step (node_modules/tslib/tslib.es6.js:102:23)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at step (node_modules/tslib/tslib.es6.js:87:139)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at step (node_modules/tslib/tslib.es6.js:87:139)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at fulfilled (node_modules/tslib/tslib.es6.js:73:58)
+
+  ● MLModelService with Dependency Injection › model training and management › should get model metrics
+
+    Argument tensors passed to stack must be a `Tensor[]` or `TensorLike[]`
+
+      at convertToTensorArray (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/tensor_util_env.js:111:15)
+      at stack_ (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/ops/stack.js:38:22)
+      at stack__op (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/ops/operation.js:44:28)
+      at Object.value (node_modules/@tensorflow/tfjs/node_modules/@tensorflow/tfjs-core/dist/gradients/Unpack_grad.js:24:31)
+      at tfjs-core/src/tape.ts:168:54
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at tfjs-core/src/engine.ts:1138:21
+      at _loop_2 (tfjs-core/src/tape.ts:168:18)
+      at _loop_1 (node_modules/@tensorflow/tfjs-core/dist/tf-core.node.js:3407:13)
+      at backpropagateGradients (node_modules/@tensorflow/tfjs-core/dist/tf-core.node.js:3412:9)
+      at tfjs-core/src/engine.ts:1135:7
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Engine.Object.<anonymous>.Engine.gradients (tfjs-core/src/engine.ts:1130:17)
+      at variableGrads (tfjs-core/src/gradients.ts:308:33)
+      at AdamOptimizer.Object.<anonymous>.Optimizer.computeGradients (tfjs-core/src/optimizers/optimizer.ts:111:12)
+      at AdamOptimizer.Object.<anonymous>.Optimizer.minimize (tfjs-core/src/optimizers/optimizer.ts:61:33)
+      at tfjs-layers/src/engine/training.ts:1378:27
+      at tfjs-layers/src/engine/training.ts:1721:26
+      at tfjs-core/src/engine.ts:469:20
+      at Engine.Object.<anonymous>.Engine.scopedRun (tfjs-core/src/engine.ts:480:19)
+      at Engine.Object.<anonymous>.Engine.tidy (tfjs-core/src/engine.ts:467:17)
+      at Object.tidy (tfjs-core/src/globals.ts:192:17)
+      at tfjs-layers/src/engine/training.ts:1709:15
+      at step (node_modules/tslib/tslib.es6.js:102:23)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at step (node_modules/tslib/tslib.es6.js:87:139)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at step (node_modules/tslib/tslib.es6.js:87:139)
+      at Object.next (node_modules/tslib/tslib.es6.js:83:53)
+      at fulfilled (node_modules/tslib/tslib.es6.js:73:58)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 18 passed, 22 total
+Snapshots:   0 total
+Time:        68.731 s
+Ran all test suites matching /app\\lib\\services\\__tests__\\ml-model-service-di.test.ts/i.

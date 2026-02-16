@@ -1,0 +1,112 @@
+FAIL app/lib/services/__tests__/ml-model-service-di.test.ts
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  TestDataFactory
+    √ should create base features (2 ms)
+    √ should create bullish features
+  MLModelService with Dependency Injection
+    constructor and initialization
+      √ should create service with default dependencies (1 ms)
+      √ should accept custom prediction calculator (2 ms)
+      √ should accept custom configuration (1 ms)
+    predict with injected calculator
+      √ should use injected calculator for predictions (1 ms)
+      √ should return bullish prediction for bullish features (1 ms)
+      √ should return bearish prediction for bearish features (1 ms)
+      √ should calculate ensemble as weighted average (1 ms)
+      √ should maintain confidence in valid range
+    predictAsync with fallback
+      √ should fallback to rule-based when TensorFlow not enabled (1 ms)
+      √ should return same result as predict when TensorFlow disabled
+    model training and management
+      × should initialize TensorFlow models on training (1 ms)
+      × should return model metrics after training (1 ms)
+      × should save trained models (1 ms)
+      × should get model metrics (1 ms)
+    isolation and testability
+      √ should allow testing prediction logic independently (1 ms)
+      × should allow mocking calculator for service tests (2 ms)
+      √ should allow testing without external dependencies
+    backward compatibility
+      √ should maintain same prediction behavior as before refactoring
+      √ should maintain singleton export behavior (4 ms)
+
+  ● MLModelService with Dependency Injection › model training and management › should initialize TensorFlow models on training
+
+    TypeError: service.trainModels is not a function
+
+      130 |       expect(service.isTensorFlowEnabled()).toBe(false);
+      131 |       
+    > 132 |       const metrics = await service.trainModels(trainingData, 10);
+          |                                     ^
+      133 |       
+      134 |       expect(metrics.ff).toBeDefined();
+      135 |       expect(metrics.gru).toBeDefined();
+
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:132:37)
+
+  ● MLModelService with Dependency Injection › model training and management › should return model metrics after training
+
+    TypeError: service.trainModels is not a function
+
+      142 |       const trainingData = createTrainingData(50);
+      143 |       
+    > 144 |       const metrics = await service.trainModels(trainingData, 10);
+          |                                     ^
+      145 |       
+      146 |       expect(metrics.ff.mae).toBeDefined();
+      147 |       expect(metrics.ff.rmse).toBeDefined();
+
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:144:37)
+
+  ● MLModelService with Dependency Injection › model training and management › should save trained models
+
+    TypeError: service.trainModels is not a function
+
+      153 |       const trainingData = createTrainingData(50);
+      154 |       
+    > 155 |       await service.trainModels(trainingData, 10);
+          |                     ^
+      156 |       
+      157 |       // Should not throw
+      158 |       await expect(service.saveModels()).resolves.not.toThrow();
+
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:155:21)
+
+  ● MLModelService with Dependency Injection › model training and management › should get model metrics
+
+    TypeError: service.trainModels is not a function
+
+      163 |       const trainingData = createTrainingData(50);
+      164 |       
+    > 165 |       await service.trainModels(trainingData, 10);
+          |                     ^
+      166 |       const metrics = service.getModelMetrics();
+      167 |       
+      168 |       expect(metrics.ff).toBeDefined();
+
+      at Object.trainModels (app/lib/services/__tests__/ml-model-service-di.test.ts:165:21)
+
+  ● MLModelService with Dependency Injection › isolation and testability › should allow mocking calculator for service tests
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: {"atrPercent": 2, "bollingerPosition": 50, "macdSignal": 0, "priceMomentum": 0, "rsi": 50, "rsiChange": 0, "sma20": 0, "sma5": 0, "sma50": 0, "volatility": 0.02, "volumeRatio": 1}
+
+    Number of calls: 0
+
+      202 |       
+      203 |       // Verify mock was called
+    > 204 |       expect(mockCalculator.calculateRandomForest).toHaveBeenCalledWith(features);
+          |                                                    ^
+      205 |       expect(mockCalculator.calculateXGBoost).toHaveBeenCalledWith(features);
+      206 |       expect(mockCalculator.calculateLSTM).toHaveBeenCalledWith(features);
+      207 |       
+
+      at Object.toHaveBeenCalledWith (app/lib/services/__tests__/ml-model-service-di.test.ts:204:52)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 17 passed, 22 total
+Snapshots:   0 total
+Time:        1.922 s
+Ran all test suites matching /app\\lib\\services\\__tests__\\ml-model-service-di.test.ts/i.

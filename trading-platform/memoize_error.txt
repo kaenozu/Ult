@@ -1,0 +1,84 @@
+  console.warn
+    A function to advance timers was called but the timers APIs are not replaced with fake timers. Call `jest.useFakeTimers()` in this test file or enable fake timers for all tests by setting 'fakeTimers': {'enableGlobally': true} in Jest configuration file.
+    Stack Trace:
+    
+        [0m [90m 162 |[39m
+         [90m 163 |[39m       memoized([35m5[39m)[33m;[39m
+        [31m[1m>[22m[39m[90m 164 |[39m       jest[33m.[39madvanceTimersByTime([35m999[39m)[33m;[39m
+         [90m     |[39m            [31m[1m^[22m[39m
+         [90m 165 |[39m       memoized([35m5[39m)[33m;[39m
+         [90m 166 |[39m
+         [90m 167 |[39m       expect(callCount)[33m.[39mtoBe([35m1[39m)[33m;[39m [90m// Still cached[39m[0m
+    
+          Error: 
+          at FakeTimers._checkFakeTimers (node_modules/jest-environment-jsdom/node_modules/@jest/fake-timers/build/modernFakeTimers.js:158:13)
+          at Object.advanceTimersByTime (app/lib/utils/__tests__/memoize.test.ts:164:12)
+
+    [0m [90m 162 |[39m
+     [90m 163 |[39m       memoized([35m5[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 164 |[39m       jest[33m.[39madvanceTimersByTime([35m999[39m)[33m;[39m
+     [90m     |[39m            [31m[1m^[22m[39m
+     [90m 165 |[39m       memoized([35m5[39m)[33m;[39m
+     [90m 166 |[39m
+     [90m 167 |[39m       expect(callCount)[33m.[39mtoBe([35m1[39m)[33m;[39m [90m// Still cached[39m[0m
+
+      at FakeTimers._checkFakeTimers (node_modules/jest-environment-jsdom/node_modules/@jest/fake-timers/build/modernFakeTimers.js:152:28)
+      at Object.advanceTimersByTime (app/lib/utils/__tests__/memoize.test.ts:164:12)
+
+FAIL app/lib/utils/__tests__/memoize.test.ts
+  Utils Test Utils Dummy
+    √ should pass (3 ms)
+  memoize
+    basic memoization
+      √ should cache function results (1 ms)
+      √ should handle different arguments (1 ms)
+      √ should work with single argument (1 ms)
+      √ should work with no arguments (1 ms)
+    cache size management
+      √ should respect maxSize option (1 ms)
+      √ should handle maxSize of 1
+    TTL (time-to-live)
+      √ should expire cache entries after TTL (1 ms)
+      √ should not expire entries before TTL (81 ms)
+    custom key generators
+      √ should use custom key generator (1 ms)
+      √ should work with numericKeyGenerator
+    specialized key generators
+      √ rsiKeyGenerator should round to 2 decimals (1 ms)
+      √ momentumKeyGenerator should combine values
+      √ smaKeyGenerator should combine sma values
+      √ confidenceKeyGenerator should combine all values (1 ms)
+    memoizeWithStats
+      √ should track cache statistics (1 ms)
+      √ should calculate hit rate correctly
+      √ should clear cache and stats (1 ms)
+      √ should handle initial state (1 ms)
+      √ should track TTL expiration as miss (1 ms)
+    edge cases
+      × should demonstrate JSON.stringify limitation with undefined/null (2 ms)
+      √ should handle complex objects
+      √ should differentiate similar but different objects
+      √ should handle array arguments
+
+  ● memoize › edge cases › should demonstrate JSON.stringify limitation with undefined/null
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 2
+
+      319 |       const result2 = memoized(null);
+      320 |       expect(result2).toBe(null); // Cache returns null (same cache key as undefined)
+    > 321 |       expect(callCount).toBe(1); // Cache hit
+          |                         ^
+      322 |
+      323 |       // To avoid this, use a custom key generator for sensitive cases
+      324 |     });
+
+      at Object.toBe (app/lib/utils/__tests__/memoize.test.ts:321:25)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 23 passed, 24 total
+Snapshots:   0 total
+Time:        1.673 s
+Ran all test suites matching /app\\lib\\utils\\__tests__\\memoize.test.ts/i.

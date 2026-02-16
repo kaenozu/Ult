@@ -1,0 +1,66 @@
+npm warn Expanding --ci to --cidr. This will stop working in the next major version of npm.
+
+> trading-platform@0.1.0 test
+> jest app/infrastructure/api/__tests__/DataAggregator.test.ts
+
+FAIL app/infrastructure/api/__tests__/DataAggregator.test.ts (7.916 s)
+  Utils Test Utils Dummy
+    √ should pass (2 ms)
+  DataAggregator
+    キャッシュ機能
+      √ データをキャッシュに保存して取得できる (1 ms)
+      √ TTLが切れたキャッシュはnullを返す (21 ms)
+      √ キャッシュをクリアできる
+    バッチ処理
+      √ 複数のリクエストをバッチで処理できる (9 ms)
+      × バッチサイズ制限を尊重する (2 ms)
+    リクエスト重複排除
+      √ 同じリクエストを重複して送信しない (4 ms)
+    エラーハンドリング
+      × ネットワークエラーを適切に処理する (3545 ms)
+      √ APIエラーを適切に処理する (3526 ms)
+    レート制限
+      √ レート制限を尊重する (1 ms)
+    優先度キュー
+      √ 優先度の高いリクエストを先に処理する (1 ms)
+
+  ● DataAggregator › バッチ処理 › バッチサイズ制限を尊重する
+
+    No data available
+
+      503 |     const result = await this.fetchOHLCV(symbol, 'japan', undefined, undefined, undefined, undefined, true);
+      504 |     if (result.success && result.data) return result.data;
+    > 505 |     throw new Error(result.error || 'Fetch failed');
+          |           ^
+      506 |   }
+      507 |
+      508 |   /**
+
+      at MarketDataClient.fetchData (app/infrastructure/api/data-aggregator.ts:505:11)
+          at async Promise.all (index 0)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:104:23)
+
+  ● DataAggregator › エラーハンドリング › ネットワークエラーを適切に処理する
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected substring: "Network error"
+    Received message:   "Cannot read properties of undefined (reading 'statusText')"
+
+          503 |     const result = await this.fetchOHLCV(symbol, 'japan', undefined, undefined, undefined, undefined, true);
+          504 |     if (result.success && result.data) return result.data;
+        > 505 |     throw new Error(result.error || 'Fetch failed');
+              |           ^
+          506 |   }
+          507 |
+          508 |   /**
+
+      at MarketDataClient.fetchData (app/infrastructure/api/data-aggregator.ts:505:11)
+      at Object.<anonymous> (app/infrastructure/api/__tests__/DataAggregator.test.ts:139:7)
+      at Object.toThrow (app/infrastructure/api/__tests__/DataAggregator.test.ts:139:58)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 9 passed, 11 total
+Snapshots:   0 total
+Time:        8.746 s
+Ran all test suites matching /app\\infrastructure\\api\\__tests__\\DataAggregator.test.ts/i.

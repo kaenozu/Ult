@@ -18,16 +18,16 @@ import { formatCurrency, formatPercent } from '@/app/lib/utils';
 import { TrendingUp, TrendingDown, Activity, PieChart, Calendar, AlertTriangle } from 'lucide-react';
 
 // リスク指標カード
-function MetricCard({ 
-  title, 
-  value, 
+function MetricCard({
+  title,
+  value,
   subtitle,
   icon: Icon,
   trend,
   trendUp,
-}: { 
-  title: string; 
-  value: string; 
+}: {
+  title: string;
+  value: string;
   subtitle?: string;
   icon: React.ElementType;
   trend?: string;
@@ -58,18 +58,18 @@ function MetricCard({
 }
 
 // ドローダウンインジケーター
-function DrawdownIndicator({ 
-  maxDrawdown, 
+function DrawdownIndicator({
+  maxDrawdown,
   maxDrawdownPercent,
-  recoveryDays 
-}: { 
-  maxDrawdown: number; 
+  recoveryDays
+}: {
+  maxDrawdown: number;
   maxDrawdownPercent: number;
   recoveryDays: number;
 }) {
   const severity = maxDrawdownPercent > 0.2 ? 'high' : maxDrawdownPercent > 0.1 ? 'medium' : 'low';
   const colorClass = severity === 'high' ? 'text-red-400' : severity === 'medium' ? 'text-yellow-400' : 'text-green-400';
-  
+
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
@@ -90,13 +90,13 @@ function DrawdownIndicator({
               </span>
             </div>
             <div className="w-full bg-slate-800 rounded-full h-2">
-              <div 
+              <div
                 className={`h-2 rounded-full ${severity === 'high' ? 'bg-red-500' : severity === 'medium' ? 'bg-yellow-500' : 'bg-green-500'}`}
                 style={{ width: `${Math.min(maxDrawdownPercent * 100 * 2, 100)}%` }}
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-800">
             <div>
               <p className="text-xs text-slate-500">ドローダウン額</p>
@@ -116,10 +116,10 @@ function DrawdownIndicator({
 }
 
 // 月次パフォーマンステーブル
-function MonthlyPerformanceTable({ 
-  monthlyData 
-}: { 
-  monthlyData: Array<{ month: string; return: number; trades: number; winRate: number }> 
+function MonthlyPerformanceTable({
+  monthlyData
+}: {
+  monthlyData: Array<{ month: string; return: number; trades: number; winRate: number }>
 }) {
   return (
     <Card className="bg-slate-900 border-slate-800">
@@ -160,13 +160,13 @@ function MonthlyPerformanceTable({
 }
 
 // 資産配分チャート（簡易版）
-function AssetAllocationChart({ 
-  allocation 
-}: { 
-  allocation: Array<{ symbol: string; value: number; percentage: number }> 
+function AssetAllocationChart({
+  allocation
+}: {
+  allocation: Array<{ symbol: string; value: number; percentage: number }>
 }) {
   const topAssets = allocation.slice(0, 5);
-  
+
   return (
     <Card className="bg-slate-900 border-slate-800">
       <CardHeader>
@@ -184,7 +184,7 @@ function AssetAllocationChart({
                 <span className="text-slate-400">{formatCurrency(asset.value)} ({asset.percentage.toFixed(1)}%)</span>
               </div>
               <div className="w-full bg-slate-800 rounded-full h-2">
-                <div 
+                <div
                   className="h-2 rounded-full bg-blue-500"
                   style={{ width: `${Math.abs(asset.percentage)}%` }}
                 />
@@ -205,19 +205,19 @@ function AssetAllocationChart({
 // メインダッシュボード
 export function PortfolioAnalysisDashboard() {
   const { trades, isLoading } = useTradeHistory();
-  
+
   const analysis = useMemo(() => {
     return analyzePortfolio(trades);
   }, [trades]);
-  
+
   const monthlyData = useMemo(() => {
     return calculateMonthlyPerformance(trades);
   }, [trades]);
-  
+
   const allocation = useMemo(() => {
     return calculateAssetAllocation(trades);
   }, [trades]);
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -225,7 +225,7 @@ export function PortfolioAnalysisDashboard() {
       </div>
     );
   }
-  
+
   if (trades.length === 0) {
     return (
       <Card className="bg-slate-900 border-slate-800">
@@ -237,14 +237,23 @@ export function PortfolioAnalysisDashboard() {
       </Card>
     );
   }
-  
+
   return (
     <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">ポートフォリオ分析</h1>
-        <p className="text-slate-400 mt-1">リスク調整後リターンと資産配分の詳細分析</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-white">ポートフォリオ分析</h1>
+          <p className="text-slate-400 mt-1">リスク調整後リターンと資産配分の詳細分析</p>
+        </div>
+        <button
+          onClick={() => window.location.reload()} // Simple reload to refresh data
+          className="bg-[#192633] hover:bg-[#233648] text-[#92adc9] hover:text-white px-3 py-1.5 rounded text-xs font-bold transition-colors border border-[#233648] flex items-center gap-1"
+        >
+          <Activity className="w-3 h-3" />
+          データ更新
+        </button>
       </div>
-      
+
       {/* 主要指標 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
@@ -280,7 +289,7 @@ export function PortfolioAnalysisDashboard() {
           trendUp={analysis.volatility < 0.2}
         />
       </div>
-      
+
       {/* ドローダウンと資産配分 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <DrawdownIndicator
@@ -290,7 +299,7 @@ export function PortfolioAnalysisDashboard() {
         />
         <AssetAllocationChart allocation={allocation} />
       </div>
-      
+
       {/* 月次パフォーマンス */}
       <MonthlyPerformanceTable monthlyData={monthlyData} />
     </div>

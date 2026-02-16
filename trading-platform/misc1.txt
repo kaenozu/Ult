@@ -1,0 +1,58 @@
+
+FAIL app/lib/utils/__tests__/memoize.test.ts
+  ● Console
+            Error: 
+  ● memoize › edge cases › should demonstrate JSON.stringify limitation with undefined/null
+FAIL app/__tests__/domain-architecture.test.ts
+  ● Domain Architecture Validation › Backtest Domain › should export backtest engine from barrel export
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+FAIL app/hooks/__tests__/useStockData.test.ts
+  ● Console
+      [2026-02-14T14:46:47.003Z] [WARN]  [MEDIUM] [2026-02-14T14:46:47.003Z] [useStockData.fetchData] AppError: [useStockData.fetchData] Service not found: MarketDataHub. Make sure it is registered in the container.
+      at warn (app/lib/errors/handlers.ts:285:14)
+      at logError (app/hooks/useStockData.ts:249:7)
+      [2026-02-14T14:46:47.019Z] [WARN]  [MEDIUM] [2026-02-14T14:46:47.019Z] [useStockData.fetchData] AppError: [useStockData.fetchData] Service not found: MarketDataHub. Make sure it is registered in the container.
+      at warn (app/lib/errors/handlers.ts:285:14)
+      at logError (app/hooks/useStockData.ts:249:7)
+    console.error
+      42 |       errorCountRef.current += 1;
+      43 |       const message = err instanceof Error ? err.message : 'Unknown error';
+    > 44 |       setError(message);
+      46 |       if (errorCountRef.current >= maxErrors) {
+      at setError (app/hooks/useRealTimeData.ts:44:7)
+    console.error
+      53 |   }, [symbol, enabled, market, maxErrors, isPollingPaused]);
+      [2026-02-14T14:46:48.041Z] [WARN]  [MEDIUM] [2026-02-14T14:46:48.041Z] [useStockData.fetchData] AppError: [useStockData.fetchData] Service not found: MarketDataHub. Make sure it is registered in the container.
+      at warn (app/lib/errors/handlers.ts:285:14)
+      at logError (app/hooks/useStockData.ts:249:7)
+    console.error
+      248 |       const { logError, getUserErrorMessage } = await import('@/app/lib/errors');
+      249 |       logError(err, 'useStockData.fetchData');
+    > 250 |       setError(getUserErrorMessage(err));
+      at setError (app/hooks/useStockData.ts:250:7)
+      [2026-02-14T14:46:48.041Z] [WARN]  [MEDIUM] [2026-02-14T14:46:48.041Z] [useStockData.fetchData] AppError: [useStockData.fetchData] Service not found: MarketDataHub. Make sure it is registered in the container.
+      at warn (app/lib/errors/handlers.ts:285:14)
+      at logError (app/hooks/useStockData.ts:249:7)
+    console.error
+      248 |       const { logError, getUserErrorMessage } = await import('@/app/lib/errors');
+      249 |       logError(err, 'useStockData.fetchData');
+    > 250 |       setError(getUserErrorMessage(err));
+      at setError (app/hooks/useStockData.ts:250:7)
+    console.error
+      [2026-02-14T14:46:48.047Z] [WARN]  [MEDIUM] [2026-02-14T14:46:48.047Z] [useStockData.fetchData] AppError: [useStockData.fetchData] Service not found: MarketDataHub. Make sure it is registered in the container.
+      at warn (app/lib/errors/handlers.ts:285:14)
+      at logError (app/hooks/useStockData.ts:249:7)
+      [2026-02-14T14:46:48.047Z] [WARN]  [MEDIUM] [2026-02-14T14:46:48.047Z] [useStockData.fetchData] AppError: [useStockData.fetchData] Service not found: MarketDataHub. Make sure it is registered in the container.
+      at warn (app/lib/errors/handlers.ts:285:14)
+      at logError (app/hooks/useStockData.ts:249:7)
+      [2026-02-14T14:46:48.123Z] [WARN]  [MEDIUM] [2026-02-14T14:46:48.123Z] [useStockData.fetchData] AppError: [useStockData.fetchData] Service not found: MarketDataHub. Make sure it is registered in the container.
+      at warn (app/lib/errors/handlers.ts:285:14)
+      at logError (app/hooks/useStockData.ts:249:7)
+      [2026-02-14T14:46:48.123Z] [WARN]  [MEDIUM] [2026-02-14T14:46:48.123Z] [useStockData.fetchData] AppError: [useStockData.fetchData] Service not found: MarketDataHub. Make sure it is registered in the container.
+      at warn (app/lib/errors/handlers.ts:285:14)
+      at logError (app/hooks/useStockData.ts:249:7)
+  ● useStockData › fetches data when stock is selected
+      at runWithExpensiveErrorDiagnosticsDisabled (node_modules/@testing-library/dom/dist/config.js:47:12)
+Test Suites: 3 failed, 3 total
+Tests:       3 failed, 41 passed, 44 total
+

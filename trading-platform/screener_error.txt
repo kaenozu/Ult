@@ -1,0 +1,32 @@
+
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+          Error: 
+  console.error
+  console.error
+FAIL app/screener/__tests__/page.test.tsx (63.367 s)
+    √ should pass (2 ms)
+  ● Screener Page › Filter Input Debouncing › should debounce priceMin input changes
+  ● Screener Page › Filter Input Debouncing › should debounce priceMax input changes
+  ● Screener Page › Filter Input Debouncing › should debounce changeMin input changes
+  ● Screener Page › Filter Input Debouncing › should debounce changeMax input changes
+  ● Screener Page › Filter Input Debouncing › should debounce volumeMin input changes
+  ● Screener Page › Filter Input Debouncing › should debounce sector input changes
+  ● Screener Page › Filter Input Debouncing › should cancel previous debounce timer on rapid input
+  ● Screener Page › Filter Input Debouncing › should apply filters immediately on signal button click
+  ● Screener Page › Filter Input Debouncing › should apply filters immediately on market select change
+  ● Screener Page › Preset Button Debouncing › should debounce preset button clicks
+  ● Screener Page › Preset Button Debouncing › should disable other preset buttons while one is active
+Test Suites: 1 failed, 1 total
+Tests:       11 failed, 4 passed, 15 total
+

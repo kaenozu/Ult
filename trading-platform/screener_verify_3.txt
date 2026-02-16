@@ -1,0 +1,87 @@
+
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+  console.error
+          Error: 
+FAIL app/screener/__tests__/page.test.tsx (5.571 s)
+    √ should pass (2 ms)
+  ● Screener Page › Filter Input Debouncing › should debounce priceMin input changes
+    ReferenceError: act is not defined
+  ● Screener Page › Filter Input Debouncing › should debounce priceMax input changes
+    ReferenceError: act is not defined
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 13 passed, 15 total
+
