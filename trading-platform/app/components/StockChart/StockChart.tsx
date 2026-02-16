@@ -76,39 +76,46 @@ export const StockChart = memo(function StockChart({
 
   // Use callback to ensure stable reference for useChartOptions
   const handleMouseHover = (idx: number | null) => {
-    if (!mouseBlockRef.current) {
-      setHoveredIndex(idx);
+    // If keyboard navigation is active (mouse blocked), ignore all mouse-driven hover updates
+    if (mouseBlockRef.current) {
+      return;
     }
+    setHoveredIndex(idx);
   };
+
+  const lastMousePos = useRef({ x: 0, y: 0 });
 
   // Keyboard navigation for chart
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (hoveredIdx === null) return;
-
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-
-        // Block mouse updates temporarily
-        mouseBlockRef.current = true;
-        if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
-        mouseBlockTimer.current = setTimeout(() => {
-          mouseBlockRef.current = false;
-        }, 300);
-
-        setHoveredIndex(prev => (prev !== null && prev > 0) ? prev - 1 : prev);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-
-        // Block mouse updates temporarily
-        mouseBlockRef.current = true;
-        if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
-        mouseBlockTimer.current = setTimeout(() => {
-          mouseBlockRef.current = false;
-        }, 300);
-
-        setHoveredIndex(prev => (prev !== null && prev < data.length - 1) ? prev + 1 : prev);
+      // Ignore if focus is in an input or textarea
+      if (
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement ||
+        document.activeElement instanceof HTMLSelectElement
+      ) {
+        return;
       }
+
+      const isArrowLeft = e.key === 'ArrowLeft';
+      const isArrowRight = e.key === 'ArrowRight';
+
+      if (!isArrowLeft && !isArrowRight) return;
+
+      // Force block mouse updates
+      mouseBlockRef.current = true;
+      e.preventDefault();
+
+      if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
+      mouseBlockTimer.current = setTimeout(() => {
+        mouseBlockRef.current = false;
+      }, 1500); 
+
+      setHoveredIndex(prev => {
+        const currentIdx = prev === null ? data.length - 1 : prev;
+        if (isArrowLeft) return Math.max(0, currentIdx - 1);
+        return Math.min(data.length - 1, currentIdx + 1);
+      });
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -116,48 +123,66 @@ export const StockChart = memo(function StockChart({
       window.removeEventListener('keydown', handleKeyDown);
       if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
     };
-  }, [hoveredIdx, data.length]);
+  }, [data.length]);
 
-  // Sync Chart.js active elements with hoveredIdx to visualy move the points
+  // Release mouse block on intentional mouse movement
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (mouseBlockRef.current) {
+        const dx = Math.abs(e.clientX - lastMousePos.current.x);
+        const dy = Math.abs(e.clientY - lastMousePos.current.y);
+        
+        // Block only intentional moves (> 10px)
+        if (dx > 10 || dy > 10) {
+          mouseBlockRef.current = false;
+          if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
+        }
+      }
+      lastMousePos.current = { x: e.clientX, y: e.clientY };
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Sync Chart.js active elements with hoveredIdx to visually move the points
   useEffect(() => {
     const chart = chartRef.current;
-    if (!chart || hoveredIdx === null) return;
+    // Basic safety checks
+    if (!chart || hoveredIdx === null || !chart.data || !chart.data.datasets) return;
 
-    // Force sync specifically when keyboard navigation is active (indicated by mouse block)
-    // or just generally to ensure state consistency
-    if (mouseBlockRef.current) {
-      const activeElements: { datasetIndex: number; index: number }[] = [];
+    const activeElements: { datasetIndex: number; index: number }[] = [];
 
+    try {
       // Find elements for the hovered index across all visible datasets
-      chart.data.datasets.forEach((_, datasetIndex) => {
-        if (chart.isDatasetVisible(datasetIndex)) {
+      chart.data.datasets.forEach((dataset, datasetIndex) => {
+        // Ensure:
+        // 1. Dataset is visible
+        // 2. Index is within data bounds
+        // 3. Chart internal metadata for this dataset exists (prevents the 'active' error)
+        if (
+          chart.isDatasetVisible(datasetIndex) && 
+          dataset.data && 
+          hoveredIdx >= 0 &&
+          hoveredIdx < dataset.data.length &&
+          chart.getDatasetMeta(datasetIndex) // Ensure metadata exists
+        ) {
           activeElements.push({ datasetIndex, index: hoveredIdx });
         }
       });
 
       if (activeElements.length > 0) {
         chart.setActiveElements(activeElements);
-        chart.update(); // Update to render the active elements
+        chart.update('none'); 
+      } else {
+        chart.setActiveElements([]);
+        chart.update('none');
       }
+    } catch (err) {
+      // Ignore errors during synchronization to prevent app crash
+      console.warn('[StockChart] Sync failed:', err);
     }
   }, [hoveredIdx]);
-
-  // Release mouse block on intentional mouse movement
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      // If blocked, check for significant movement to release block
-      if (mouseBlockRef.current) {
-        // Using movementX/Y to detect physical movement, filtering out micro-tremors
-        if (Math.abs(e.movementX) > 2 || Math.abs(e.movementY) > 2) {
-          mouseBlockRef.current = false;
-          if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
-        }
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   // 1. Data Preparation Hooks
   const { actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);

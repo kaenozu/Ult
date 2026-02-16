@@ -132,13 +132,19 @@ export const useForecastLayers = ({
     const confidenceUncertainty = 0.4 + ((100 - activeSignal.confidence) / 100) * 0.4;
     const combinedFactor = errorFactor * confidenceUncertainty;
 
-    const momentum = activeSignal.predictedChange ? activeSignal.predictedChange / 100 : 0;
+    // 予測の傾きを強調（視認性向上のため係数を微調整）
+    const momentum = activeSignal.predictedChange ? (activeSignal.predictedChange / 100) * 1.2 : 0;
     const confidenceFactor = (110 - activeSignal.confidence) / 100;
 
     let target = activeSignal.targetPrice, stop = activeSignal.stopLoss;
+    
+    // HOLD判定でも、予測騰落率(predictedChange)がある場合はそれを尊重する
     if (activeSignal.type === 'HOLD') {
-      target = currentPrice + (stockATR * combinedFactor * 2);
-      stop = currentPrice - (stockATR * combinedFactor * 2);
+      const spreadAdjustment = stockATR * combinedFactor * 1.5;
+      // 予測値が0でない限り、センターをずらして傾きを出す
+      const center = activeSignal.predictedChange !== 0 ? (activeSignal.targetPrice || currentPrice) : currentPrice;
+      target = center + spreadAdjustment;
+      stop = center - spreadAdjustment;
     } else {
       const uncertainty = stockATR * FORECAST_CONE.ATR_MULTIPLIER * combinedFactor;
       target += (activeSignal.type === 'BUY' ? 1 : -1) * uncertainty;

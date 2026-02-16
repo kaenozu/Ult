@@ -358,7 +358,7 @@ class ConsensusSignalService {
       signals.bollinger.type === type ? 'ボリンジャーバンド' : null
     ].filter(Boolean);
 
-    const prefix = type === 'BUY' ? '【買い】' : type === 'SELL' ? '【売り】' : '【观望】';
+    const prefix = type === 'BUY' ? '【買い】' : type === 'SELL' ? '【売り】' : '【様子見】';
 
     if (agreements.length >= 2) {
       return `${prefix}${agreements.join('・')}が一致する強いシグナル（確率: ${(Math.abs(weightedScore) * 100).toFixed(0)}%）`;
@@ -415,7 +415,10 @@ class ConsensusSignalService {
       targetPrice = currentPrice * (1 - adjustment);
       stopLoss = currentPrice * (1 + adjustment * 1.5);
     } else {
-      targetPrice = currentPrice;
+      // HOLDの場合でも、加重スコアに基づいた微小な傾きを表示
+      // weightedScore は -0.15 〜 0.15 の範囲（HOLD時）
+      const bias = consensus.probability * (consensus.signals.rsi.type === 'BUY' ? 1 : -1) * 0.01;
+      targetPrice = currentPrice * (1 + bias);
       stopLoss = currentPrice;
     }
     

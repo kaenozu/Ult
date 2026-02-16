@@ -529,13 +529,32 @@ class AnalysisService {
         }
 
         const targetPercent = Math.max(atr / (currentPrice || 1), PRICE_CALCULATION.DEFAULT_ATR_RATIO);
+        const forecastCone = this.calculateForecastCone(windowData);
 
-        let targetPrice = type === 'BUY' ? currentPrice * (1 + targetPercent * 2) : type === 'SELL' ? currentPrice * (1 - targetPercent * 2) : currentPrice;
+        let targetPrice = currentPrice;
+        if (type === 'BUY') {
+            targetPrice = currentPrice * (1 + targetPercent * 2);
+        } else if (type === 'SELL') {
+            targetPrice = currentPrice * (1 - targetPercent * 2);
+        } else {
+            // HOLDの場合でも、forecastConeのベース（トレンド）があればそれを反映させる
+            if (forecastCone && forecastCone.base && forecastCone.base.length > 1) {
+                targetPrice = forecastCone.base[forecastCone.base.length - 1];
+            } else {
+                // フォールバック: SMAとの乖離を埋める方向への微小な動きを予測
+                const gap = lastSMA - currentPrice;
+                targetPrice = currentPrice + (gap * 0.1);
+            }
+        }
+
         let stopLoss = type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice;
 
         // Final safety check for NaN
         if (isNaN(targetPrice)) targetPrice = currentPrice;
         if (isNaN(stopLoss)) stopLoss = currentPrice;
+
+        // 予測騰落率の計算（丸め処理前の生の値を保持）
+        const rawChange = ((targetPrice - currentPrice) / (currentPrice || 1)) * 100;
 
         let confidence = 50 + (type === 'HOLD' ? 0 : Math.min(Math.abs(50 - lastRSI) * 1.5, 45));
 
@@ -561,7 +580,6 @@ class AnalysisService {
             }
         }
 
-        const forecastCone = this.calculateForecastCone(windowData);
         const predictionError = accuracyService.calculatePredictionError(windowData);
         const volumeProfile = volumeAnalysisService.calculateVolumeProfile(windowData);
 
@@ -588,7 +606,7 @@ class AnalysisService {
             targetPrice: parseFloat(targetPrice.toFixed(2)),
             stopLoss: parseFloat(stopLoss.toFixed(2)),
             reason: (finalConfidence >= 80 ? '【強気】' : '') + reason,
-            predictedChange: parseFloat(((targetPrice - currentPrice) / (currentPrice || 1) * 100).toFixed(2)),
+            predictedChange: parseFloat(rawChange.toFixed(2)),
             predictionDate: new Date().toISOString().split('T')[0],
             optimizedParams: { rsiPeriod: opt.rsiPeriod, smaPeriod: opt.smaPeriod },
             predictionError,

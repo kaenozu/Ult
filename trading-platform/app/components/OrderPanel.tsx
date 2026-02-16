@@ -8,22 +8,26 @@ import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useState, useMemo } from 'react';
 
 /**
+ * メッセージ定数
+ */
+const MSG_INSUFFICIENT_FUNDS = '現金が足りません';
+
+/**
  * 最大数量ボタンのプロパティ
  */
 interface MaxQuantityButtonProps {
   price: number;
   cash: number;
   onSetQuantity: (qty: number) => void;
-  onSetError: (error: string | null) => void;
 }
 
 /**
  * 最大購入数量ボタンコンポーネント
  * 
  * - 購入可能な場合：数量を設定
- * - 購入不可能な場合：エラーメッセージを表示（ツールチップ風）
+ * - 購入不可能な場合：ツールチップで理由を表示
  */
-function MaxQuantityButton({ price, cash, onSetQuantity, onSetError }: MaxQuantityButtonProps) {
+function MaxQuantityButton({ price, cash, onSetQuantity }: MaxQuantityButtonProps) {
   const [showTooltip, setShowTooltip] = useState(false);
   
   const { maxQty, canAfford } = useMemo(() => {
@@ -32,38 +36,31 @@ function MaxQuantityButton({ price, cash, onSetQuantity, onSetError }: MaxQuanti
     return { maxQty: qty, canAfford: qty >= 1 };
   }, [price, cash]);
 
-  const handleClick = () => {
-    if (canAfford) {
-      onSetQuantity(maxQty);
-    } else {
-      onSetError('現金が足りません');
-      setTimeout(() => onSetError(null), 2000);
-    }
-  };
-
   return (
-    <div className="relative">
+    <div 
+      className="relative flex items-center"
+      onMouseEnter={() => !canAfford && setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
       <button
         type="button"
-        onClick={handleClick}
-        onMouseEnter={() => !canAfford && setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
+        onClick={() => canAfford && onSetQuantity(maxQty)}
+        disabled={!canAfford}
         className={cn(
           "text-[10px] underline decoration-dotted transition-colors ml-1",
           canAfford 
             ? "text-green-400 hover:text-white cursor-pointer" 
             : "text-gray-500 cursor-not-allowed no-underline"
         )}
-        aria-label={canAfford ? "最大購入可能数量を入力" : "現金が足りません"}
-        aria-disabled={!canAfford}
+        aria-label={canAfford ? "最大購入可能数量を入力" : MSG_INSUFFICIENT_FUNDS}
       >
         最大 (Max)
       </button>
       
       {/* ツールチップ - 購入不可時に表示 */}
       {showTooltip && !canAfford && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-red-600 text-white text-[10px] rounded whitespace-nowrap z-10">
-          現金が足りません
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-red-600 text-white text-[10px] rounded whitespace-nowrap z-10 pointer-events-none">
+          {MSG_INSUFFICIENT_FUNDS}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-600" />
         </div>
       )}
@@ -218,7 +215,6 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
                 price={price}
                 cash={cash}
                 onSetQuantity={setQuantity}
-                onSetError={setErrorMessage}
               />
             )}
           </div>
