@@ -65,3 +65,57 @@ export interface OrderResult {
     entryDate: string;
   };
 }
+
+/**
+ * 取引履歴エクスポート形式
+ */
+export interface TradeHistoryExport {
+  /** エクスポートID */
+  exportId: string;
+  /** 作成日時 */
+  createdAt: string;
+  /** 取引データ */
+  trades: {
+    orderId: string;
+    symbol: string;
+    name: string;
+    market: 'japan' | 'usa';
+    side: 'LONG' | 'SHORT';
+    quantity: number;
+    price: number;
+    orderType: OrderType;
+    stopLoss?: number;
+    takeProfit?: number;
+    executedAt: string;
+    pnl?: number;
+    pnlPercent?: number;
+  }[];
+  /** サマリー */
+  summary: {
+    totalTrades: number;
+    winningTrades: number;
+    losingTrades: number;
+    totalPnL: number;
+    winRate: number;
+    avgProfit: number;
+    avgLoss: number;
+    profitFactor: number;
+    startDate: string;
+    endDate: string;
+  };
+}
+
+/**
+ * エクスポートフォーマット
+ */
+export type ExportFormat = 'json' | 'csv' | 'xlsx';
+
+/**
+ * エクスポートリクエスト
+ */
+export interface ExportTradesRequest {
+  format: ExportFormat;
+  startDate?: string;
+  endDate?: string;
+  symbols?: string[];
+}
