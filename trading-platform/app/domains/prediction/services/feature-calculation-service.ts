@@ -135,9 +135,37 @@ export class FeatureCalculationService {
   private calculateEMA(values: number[], period: number): number[] {
     const ema: number[] = [];
     const k = 2 / (period + 1);
-    ema[0] = values[0];
-    for (let i = 1; i < values.length; i++) {
-      ema[i] = values[i] * k + ema[i - 1] * (1 - k);
+    let initialized = false;
+    let sum = 0;
+    let validCount = 0;
+
+    for (let i = 0; i < values.length; i++) {
+      const val = values[i];
+      if (!initialized) {
+        if (!isNaN(val) && val !== null) {
+          sum += val;
+          validCount++;
+        }
+        if (validCount === period) {
+          ema.push(sum / period);
+          initialized = true;
+        } else {
+          ema.push(NaN);
+        }
+      } else {
+        if (!isNaN(val) && val !== null) {
+          const prevEma = ema[i - 1];
+          // If prevEma is somehow NaN (e.g. gap in data), try to re-initialize or use current
+          if (isNaN(prevEma)) {
+            ema.push(val);
+          } else {
+            ema.push(val * k + prevEma * (1 - k));
+          }
+        } else {
+          // Keep previous EMA if current value is NaN (simple gap filling)
+          ema.push(ema[i - 1]);
+        }
+      }
     }
     return ema;
   }

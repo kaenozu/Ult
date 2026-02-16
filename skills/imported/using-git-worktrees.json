@@ -1,0 +1,7 @@
+{
+    "name": "using-git-worktrees",
+    "description": "Manage git worktrees for isolated feature development. Ensures safe directory selection.",
+    "version": "1.0.0",
+    "priority": "normal",
+    "auto_activate": true
+}

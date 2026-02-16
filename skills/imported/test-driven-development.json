@@ -1,0 +1,7 @@
+{
+    "name": "test-driven-development",
+    "description": "Guide TDD workflow (Red-Green-Refactor). MANDATORY for new features and bug fixes.",
+    "version": "1.0.0",
+    "priority": "high",
+    "auto_activate": true
+}

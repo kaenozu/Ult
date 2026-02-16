@@ -58,7 +58,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
   // Local State
   const [side, setSide] = useState<OrderSide>('BUY');
   const [orderType, setOrderType] = useState<OrderType>('MARKET');
-  const [quantity, setQuantity] = useState<number>(100);
+  const [quantity, setQuantity] = useState<number>(1);
   const [limitPrice, setLimitPrice] = useState<string>(currentPrice.toString());
   const [isConfirming, setIsConfirming] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
