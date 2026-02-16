@@ -1,0 +1,7 @@
+{
+    "name": "web-artifacts-builder",
+    "description": "Create elaborate HTML artifacts with React, Tailwind, and shadcn/ui. Use for complex UI components.",
+    "version": "1.0.0",
+    "priority": "normal",
+    "auto_activate": true
+}

@@ -11,7 +11,7 @@ import { OHLCV } from '../../types';
  * Internal helper to validate a price value.
  */
 export function _getValidPrice(p: number | null | undefined): number {
-  return p != null && typeof p === "number" && !isNaN(p) && p > 0 ? p : NaN;
+  return p != null && typeof p === "number" && !isNaN(p) && p >= 0 ? p : NaN;
 }
 
 /**
@@ -345,7 +345,7 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
 export function calculateADX(data: OHLCV[], period: number = 14): number[] {
   const adx: number[] = [NaN];
   let avgTR = 0, avgDMPlus = 0, avgDMMinus = 0;
-  
+
   for (let i = 1; i < data.length; i++) {
     const upMove = data[i].high - data[i - 1].high;
     const downMove = data[i - 1].low - data[i].low;

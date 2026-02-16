@@ -9,6 +9,9 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testEnvironment: 'jest-environment-jsdom',
+  // transform: {
+  //   '^.+\\.(ts|tsx)$': 'babel-jest',
+  // },
   moduleNameMapper: {
     // Handle module aliases
     '^@/domains/(.*)$': '<rootDir>/app/domains/$1',

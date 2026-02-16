@@ -310,9 +310,15 @@ class MLPredictionService {
       targetPrice = currentPrice - priceMove;
       stopLoss = currentPrice + (priceMove / 2);
     } else {
-      // HOLDの場合はターゲットを現在値に固定し、不必要な予報線の傾きを排除する
-      targetPrice = currentPrice;
-      stopLoss = currentPrice;
+      // HOLDの場合も、小さな予測値があればターゲットに反映させる
+      const priceMove = currentPrice * (Math.abs(prediction.ensemblePrediction) / 100);
+      if (prediction.ensemblePrediction > 0) {
+        targetPrice = currentPrice + priceMove;
+        stopLoss = currentPrice - (priceMove / 2);
+      } else {
+        targetPrice = currentPrice - priceMove;
+        stopLoss = currentPrice + (priceMove / 2);
+      }
     }
 
     let correctionComment = "";
@@ -326,7 +332,8 @@ class MLPredictionService {
     let finalPredictedChange = prediction.ensemblePrediction;
     if (type === 'BUY' && finalPredictedChange < 0) finalPredictedChange = Math.abs(finalPredictedChange);
     if (type === 'SELL' && finalPredictedChange > 0) finalPredictedChange = -Math.abs(finalPredictedChange);
-    if (type === 'HOLD') finalPredictedChange = 0;
+    // HOLDでも予測値をそのまま使用する（ユーザーにトレンドを示すため）
+    // if (type === 'HOLD') finalPredictedChange = 0;
 
     // シグナル理由の生成
     const reason = this.generateBaseReason(type);
@@ -341,7 +348,7 @@ class MLPredictionService {
       accuracy: baseAnalysis.accuracy,
       atr: baseAnalysis.atr,
       targetPrice, stopLoss, reason,
-      predictedChange: parseFloat(finalPredictedChange.toFixed(2)),
+      predictedChange: finalPredictedChange,
       predictionDate: new Date().toISOString().split('T')[0],
       marketContext: marketInfo,
       optimizedParams: baseAnalysis.optimizedParams,
@@ -547,8 +554,17 @@ class MLPredictionService {
     weakLearners.push({ weight: 0.2, prediction: macdScore, reason: `MACD: ${macdScore.toFixed(2)}` });
 
     // 加重平均
-    const totalWeight = weakLearners.reduce((sum, wl) => sum + wl.weight, 0);
-    score = weakLearners.reduce((sum, wl) => sum + wl.weight * wl.prediction, 0) / totalWeight;
+    let totalWeight = 0;
+    let weightedSum = 0;
+
+    for (const wl of weakLearners) {
+      if (!isNaN(wl.prediction)) {
+        totalWeight += wl.weight;
+        weightedSum += wl.weight * wl.prediction;
+      }
+    }
+
+    score = totalWeight > 0 ? weightedSum / totalWeight : 0;
 
     return score * 1.1;
   }
@@ -564,7 +580,7 @@ class MLPredictionService {
     const volumes = data.map(d => d.volume);
     const recentPrices = prices.slice(-30);
     const recentVolumes = volumes.slice(-30);
-    
+
     if (recentPrices.length < 10) return 0;
 
     let score = 0;
@@ -576,10 +592,10 @@ class MLPredictionService {
     const sumY = recentPrices.reduce((sum, y) => sum + y, 0);
     const sumXY = xValues.reduce((sum, x, i) => sum + x * recentPrices[i], 0);
     const sumX2 = xValues.reduce((sum, x) => sum + x * x, 0);
-    
+
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX || 1);
     const trendStrength = (slope / recentPrices[0]) * 100 * 30; // 30日間の予測
-    
+
     // トレンド方向と強さ
     if (trendStrength > 5) {
       score += 3;
@@ -594,7 +610,7 @@ class MLPredictionService {
     // 2. ボラティリティ収縮/拡張パターン
     const recentVolatility = this.calculateVolatility(recentPrices.slice(-10));
     const olderVolatility = this.calculateVolatility(recentPrices.slice(-20, -10));
-    
+
     if (olderVolatility > 0 && recentVolatility < olderVolatility * 0.7) {
       // ボラティリティ収縮後のブレイクアウト期待
       const lastPrice = recentPrices[recentPrices.length - 1];
@@ -609,7 +625,7 @@ class MLPredictionService {
     // 3. 出来高確認
     const recentAvgVolume = recentVolumes.slice(-5).reduce((a, b) => a + b, 0) / 5;
     const olderAvgVolume = recentVolumes.slice(-10, -5).reduce((a, b) => a + b, 0) / 5;
-    
+
     if (olderAvgVolume > 0 && recentAvgVolume > olderAvgVolume * 1.5) {
       // 出来高増加
       if (trendStrength > 0) {
@@ -624,7 +640,7 @@ class MLPredictionService {
     const maxPrice = Math.max(...recentPrices);
     const currentPrice = recentPrices[recentPrices.length - 1];
     const priceRange = maxPrice - minPrice;
-    
+
     if (priceRange > 0) {
       const positionInRange = (currentPrice - minPrice) / priceRange;
       if (positionInRange < 0.1) {
@@ -709,7 +725,7 @@ class MLPredictionService {
    */
   private generateBaseReason(type: string): string {
     const reasons = this._lastPredictionReasons;
-    
+
     if (reasons.length === 0) {
       if (type === 'BUY') return "複合指標から上昇トレンドを検出。";
       if (type === 'SELL') return "複合指標から下降トレンドを検出。";

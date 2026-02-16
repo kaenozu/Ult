@@ -72,7 +72,7 @@ export const StockChart = memo(function StockChart({
   }, []);
 
   const mouseBlockRef = useRef(false);
-  const mouseBlockTimer = useRef<NodeJS.Timeout>();
+  const mouseBlockTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Use callback to ensure stable reference for useChartOptions
   const handleMouseHover = (idx: number | null) => {
@@ -269,11 +269,25 @@ export const StockChart = memo(function StockChart({
   } : null, [normalizedIndexData, market]);
 
   // 4. Assemble Chart Data with optimized memoization
+  const forecastLineDataset = useMemo(() => signal ? {
+    label: 'AI予測',
+    data: [...new Array(actualData.prices.length - 1).fill(NaN), actualData.prices[actualData.prices.length - 1], ...forecastExtension.forecastPrices],
+    borderColor: signal.type === 'BUY' ? '#10b981' : signal.type === 'SELL' ? '#ef4444' : '#92adc9',
+    borderWidth: 3,
+    borderDash: [5, 5],
+    pointRadius: 0,
+    fill: false,
+    tension: 0.1,
+    yAxisID: 'y',
+    order: 0,
+  } : null, [forecastExtension.forecastPrices, signal, actualData.prices]);
+
   const chartData = useMemo(() => {
-    const datasets = [
+    const datasets: any[] = [
       priceDataset,
       ...(smaDataset ? [smaDataset] : []),
       ...bollingerDatasets,
+      forecastLineDataset,
       ...forecastDatasets,
       ...ghostForecastDatasets,
       ...(indexDataset ? [indexDataset] : []),

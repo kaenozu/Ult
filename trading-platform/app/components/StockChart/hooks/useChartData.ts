@@ -74,13 +74,15 @@ export const useChartData = (
       const futureDateStr = future.toISOString().split('T')[0];
       extendedLabels.push(futureDateStr);
 
+      // Use predicted change for the trend slope, regardless of signal type
+      const trend = activeSignal.predictedChange / 100;
+      const progress = i / steps; // 0 to 1 over the forecast period
+
       const seed = seedBase + (i * 1000) + (activeSignal.type === 'BUY' ? 1 : activeSignal.type === 'SELL' ? 2 : 3);
-      const jitter = (Math.sin(seed) + 1) / 2;
-      const forecastPrice = activeSignal.type === 'BUY'
-        ? basePrice * (1.05 + jitter * 0.02)
-        : activeSignal.type === 'SELL'
-          ? basePrice * (0.95 - jitter * 0.02)
-          : basePrice * (1 + (jitter - 0.5) * 0.03);
+      const jitter = (Math.sin(seed) * 0.005); // Small jitter for natural look
+
+      // Calculate forecast price: Base * (1 + Trend * Progress + Jitter)
+      const forecastPrice = basePrice * (1 + (trend * progress) + jitter);
 
       forecastPrices.push(forecastPrice);
     }
@@ -128,15 +130,15 @@ export const useChartData = (
     });
   }, [optimizedData, indexData, actualData, indexMap, indexStartIndex]);
 
-     const extendedData = useMemo(() => ({
-       labels: forecastExtension.extendedLabels,  // 予測期間を含む拡張ラベルを使用
-       prices: [...actualData.prices, ...Array(Math.max(0, forecastExtension.extendedLabels.length - actualData.prices.length)).fill(null)]  // 予測部分はnullで埋めて別途レイヤーで描画
-     }), [forecastExtension, actualData]);
-   return useMemo(() => ({
-     actualData,           // 実際の価格データのみ
-     optimizedData,        // 最適化済みデータ（Forecast用）
-     forecastExtension,    // 予測用の拡張データ
-     normalizedIndexData,
-     extendedData
-   }), [actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData]);
+  const extendedData = useMemo(() => ({
+    labels: forecastExtension.extendedLabels,  // 予測期間を含む拡張ラベルを使用
+    prices: [...actualData.prices, ...Array(Math.max(0, forecastExtension.extendedLabels.length - actualData.prices.length)).fill(null)]  // 予測部分はnullで埋めて別途レイヤーで描画
+  }), [forecastExtension, actualData]);
+  return useMemo(() => ({
+    actualData,           // 実際の価格データのみ
+    optimizedData,        // 最適化済みデータ（Forecast用）
+    forecastExtension,    // 予測用の拡張データ
+    normalizedIndexData,
+    extendedData
+  }), [actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData]);
 };

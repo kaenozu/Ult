@@ -80,7 +80,7 @@ class AnalysisService {
             bearishUpper.push((basePrice - priceVariation * 0.5) * bearishFactor);
             bullishLower.push((basePrice + priceVariation * 0.5) * bullishFactor);
             bullishUpper.push((basePrice + priceVariation * 0.5) * bullishFactor);
-            base.push(basePrice * (1 + meanPriceReturn));
+            base.push(basePrice * Math.pow(1 + meanPriceReturn, i));
         }
 
         const confidence = Math.min(
@@ -530,8 +530,25 @@ class AnalysisService {
 
         const targetPercent = Math.max(atr / (currentPrice || 1), PRICE_CALCULATION.DEFAULT_ATR_RATIO);
 
-        let targetPrice = type === 'BUY' ? currentPrice * (1 + targetPercent * 2) : type === 'SELL' ? currentPrice * (1 - targetPercent * 2) : currentPrice;
-        let stopLoss = type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice;
+        const forecastCone = this.calculateForecastCone(windowData);
+        const meanPriceReturn = forecastCone?.base && forecastCone.base.length > 1
+            ? (forecastCone.base[forecastCone.base.length - 1] - currentPrice) / (currentPrice || 1)
+            : 0;
+
+        let targetPrice: number;
+        let stopLoss: number;
+
+        if (type === 'BUY') {
+            targetPrice = currentPrice * (1 + targetPercent * 2);
+            stopLoss = currentPrice * (1 - targetPercent);
+        } else if (type === 'SELL') {
+            targetPrice = currentPrice * (1 - targetPercent * 2);
+            stopLoss = currentPrice * (1 + targetPercent);
+        } else {
+            // HOLDの場合も、過去の平均リターン（ドリフト）をターゲットに反映させてトレンドを示す
+            targetPrice = currentPrice * (1 + meanPriceReturn);
+            stopLoss = currentPrice; // HOLDの場合はストップロスは現在値か、必要なら同様に設定
+        }
 
         // Final safety check for NaN
         if (isNaN(targetPrice)) targetPrice = currentPrice;
@@ -561,7 +578,7 @@ class AnalysisService {
             }
         }
 
-        const forecastCone = this.calculateForecastCone(windowData);
+
         const predictionError = accuracyService.calculatePredictionError(windowData);
         const volumeProfile = volumeAnalysisService.calculateVolumeProfile(windowData);
 

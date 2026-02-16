@@ -8,6 +8,10 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@types/ws": "8.18.1"
+    "@babel/preset-env": "7.29.0",
+    "@babel/preset-react": "7.28.5",
+    "@babel/preset-typescript": "7.28.5",
+    "@types/ws": "8.18.1",
+    "babel-jest": "30.2.0"
   }
 }

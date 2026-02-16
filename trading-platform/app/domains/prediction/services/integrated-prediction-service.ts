@@ -49,10 +49,10 @@ export class IntegratedPredictionService {
     stock: Stock,
     data: OHLCV[],
     indexData?: OHLCV[]
-): Promise<IntegratedPredictionResult> {
+  ): Promise<IntegratedPredictionResult> {
     // 1. Calculate technical indicators first
     const indicators = mlPredictionService.calculateIndicators(data);
-     
+
     // 2. Calculate features from data (indicators computed internally)
     const features = this.featureService.calculateFeatures(data);
 
@@ -140,6 +140,16 @@ export class IntegratedPredictionService {
       );
       targetPrice = currentPrice - priceMove;
       stopLoss = currentPrice + priceMove * RISK_MANAGEMENT.STOP_LOSS_RATIO;
+    } else {
+      // HOLDの場合も、予測値に基づいたわずかな方向性を反映させる
+      const priceMove = currentPrice * (Math.abs(enhancedPrediction.prediction) / 100);
+      if (enhancedPrediction.prediction > 0) {
+        targetPrice = currentPrice + priceMove;
+        stopLoss = currentPrice - priceMove / 2;
+      } else {
+        targetPrice = currentPrice - priceMove;
+        stopLoss = currentPrice + priceMove / 2;
+      }
     }
 
     // Generate reason with enhanced metrics
@@ -152,10 +162,10 @@ export class IntegratedPredictionService {
     // Build market context
     const marketContext = indexData
       ? {
-          indexSymbol: stock.market === 'japan' ? '日経平均' : 'NASDAQ',
-          correlation: 0,
-          indexTrend: 'NEUTRAL' as 'UP' | 'DOWN' | 'NEUTRAL',
-        }
+        indexSymbol: stock.market === 'japan' ? '日経平均' : 'NASDAQ',
+        correlation: 0,
+        indexTrend: 'NEUTRAL' as 'UP' | 'DOWN' | 'NEUTRAL',
+      }
       : undefined;
 
     return {
@@ -167,7 +177,7 @@ export class IntegratedPredictionService {
       targetPrice,
       stopLoss,
       reason,
-      predictedChange: parseFloat(enhancedPrediction.prediction.toFixed(2)),
+      predictedChange: enhancedPrediction.prediction,
       predictionDate: new Date().toISOString().split('T')[0],
       marketContext,
       optimizedParams: baseAnalysis.optimizedParams,

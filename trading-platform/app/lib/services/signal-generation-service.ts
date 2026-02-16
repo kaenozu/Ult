@@ -112,9 +112,11 @@ export class SignalGenerationService {
 
     // 予測騰落率の符号をシグナルタイプと強制的に一致させるガード
     let finalPredictedChange = prediction.ensemblePrediction;
+
     if (type === 'BUY' && finalPredictedChange < 0) finalPredictedChange = Math.abs(finalPredictedChange);
     if (type === 'SELL' && finalPredictedChange > 0) finalPredictedChange = -Math.abs(finalPredictedChange);
-    if (type === 'HOLD') finalPredictedChange = 0;
+    // HOLDでも予測値をそのまま使用する（ユーザーにトレンドを示すため）
+    // if (type === 'HOLD') finalPredictedChange = 0;
 
     // Final safety check for NaN in target/stop
     if (isNaN(targetPrice)) targetPrice = currentPrice;
