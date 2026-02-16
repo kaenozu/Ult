@@ -14,6 +14,16 @@ export interface Position {
   entryDate: string;
   stopLoss?: number;
   takeProfit?: number;
+  riskConfig?: {
+    enableTrailingStop: boolean;
+    trailingStopATRMultiple: number;
+    trailingStopMinPercent: number;
+    enableVolatilityAdjustment: boolean;
+    volatilityMultiplier: number;
+    enableDynamicPositionSizing: boolean;
+    maxRiskPerTrade: number;
+    minRiskRewardRatio: number;
+  };
 }
 
 export interface Order {

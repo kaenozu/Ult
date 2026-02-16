@@ -28,13 +28,7 @@ const mockChartInstance = {
 jest.mock('react-chartjs-2', () => {
     const { forwardRef, useImperativeHandle } = require('react');
 
-    interface MockLineProps {
-        options?: {
-            onHover?: (event: unknown, elements: unknown[]) => void;
-        };
-    }
-
-    const MockLine = forwardRef((props: MockLineProps, ref: unknown) => {
+    const MockLine = forwardRef((props: any, ref: any) => {
         useImperativeHandle(ref, () => mockChartInstance);
         return (
             <div
