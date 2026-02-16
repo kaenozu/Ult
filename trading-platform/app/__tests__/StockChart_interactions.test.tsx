@@ -28,7 +28,13 @@ const mockChartInstance = {
 jest.mock('react-chartjs-2', () => {
     const { forwardRef, useImperativeHandle } = require('react');
 
-    const MockLine = forwardRef((props: any, ref: any) => {
+    interface MockLineProps {
+        options?: {
+            onHover?: (event: unknown, elements: unknown[]) => void;
+        };
+    }
+
+    const MockLine = forwardRef((props: MockLineProps, ref: unknown) => {
         useImperativeHandle(ref, () => mockChartInstance);
         return (
             <div
@@ -95,6 +101,7 @@ describe('StockChart Interactions', () => {
         expect(mockChartInstance.setActiveElements).toHaveBeenCalled();
         const lastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
         // Check that at least one element in the call has index 6
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(lastCall.some((el: any) => el.index === 6)).toBe(true);
 
         // 4. Left Arrow: Should move back to index 5
@@ -104,6 +111,7 @@ describe('StockChart Interactions', () => {
         });
 
         const nextLastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(nextLastCall.some((el: any) => el.index === 5)).toBe(true);
     });
 
