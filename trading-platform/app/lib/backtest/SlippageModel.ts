@@ -89,9 +89,68 @@ const LUNCH_END_MINUTE = 30;
 
 export class SlippageModel {
   private config: SlippageConfig;
+  private marketTimezone: string;
 
   constructor(config: Partial<SlippageConfig> = {}) {
     this.config = { ...DEFAULT_SLIPPAGE_CONFIG, ...config };
+    this.marketTimezone = 'Asia/Tokyo'; // Default to JST for Japanese stocks
+  }
+
+  /**
+   * Set the market timezone for accurate time-of-day calculations
+   */
+  setMarketTimezone(timezone: string): void {
+    this.marketTimezone = timezone;
+  }
+
+  /**
+   * Get the hour in the market's timezone
+   */
+  private getMarketHour(dateStr: string): number {
+    const date = new Date(dateStr);
+    
+    // If the date string has timezone info, use Intl to get correct hour
+    // Otherwise, assume the input is in market time
+    const str = dateStr;
+    if (str.includes('+') || str.includes('Z') || str.includes('-')) {
+      // Date has timezone - convert to market timezone
+      try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: this.marketTimezone,
+          hour: 'numeric',
+          hour12: false
+        });
+        return parseInt(formatter.format(date));
+      } catch {
+        // Fallback to local time
+        return date.getHours();
+      }
+    }
+    
+    // No timezone info - assume it's already in market time
+    return date.getHours();
+  }
+
+  /**
+   * Get the minute in the market's timezone
+   */
+  private getMarketMinute(dateStr: string): number {
+    const date = new Date(dateStr);
+    
+    const str = dateStr;
+    if (str.includes('+') || str.includes('Z') || str.includes('-')) {
+      try {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: this.marketTimezone,
+          minute: 'numeric'
+        });
+        return parseInt(formatter.format(date));
+      } catch {
+        return date.getMinutes();
+      }
+    }
+    
+    return date.getMinutes();
   }
 
   /**
@@ -157,9 +216,8 @@ export class SlippageModel {
    * 始値・終値近くでスリッページが増加
    */
   private calculateTimeOfDayImpact(dateStr: string): number {
-    const date = new Date(dateStr);
-    const hour = date.getHours();
-    const minute = date.getMinutes();
+    const hour = this.getMarketHour(dateStr);
+    const minute = this.getMarketMinute(dateStr);
     const timeValue = hour + minute / 60;
 
     // 始値（9:00-10:00）：+50%

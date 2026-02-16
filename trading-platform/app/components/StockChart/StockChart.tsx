@@ -72,7 +72,7 @@ export const StockChart = memo(function StockChart({
   }, []);
 
   const mouseBlockRef = useRef(false);
-  const mouseBlockTimer = useRef<NodeJS.Timeout>();
+  const mouseBlockTimer = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Use callback to ensure stable reference for useChartOptions
   const handleMouseHover = (idx: number | null) => {
@@ -187,7 +187,7 @@ export const StockChart = memo(function StockChart({
   }, [hoveredIdx]);
 
   // 1. Data Preparation Hooks
-  const { actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
+  const { actualData, optimizedData, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   const { chartLevels } = useSupplyDemandAnalysis(data);
   // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
@@ -232,7 +232,8 @@ export const StockChart = memo(function StockChart({
     setHoveredIndex: handleMouseHover,
     signal,
     priceRange,
-    supplyDemandLevels: chartLevels
+    supplyDemandLevels: chartLevels,
+    showVolume
   });
 
   // 3. Performance-optimized: Split datasets for better rendering
@@ -254,6 +255,16 @@ export const StockChart = memo(function StockChart({
       borderColor: (ctx: any) => ctx.p0.parsed.x >= actualData.prices.length - 1 ? 'rgba(146, 173, 201, 0.8)' : undefined,
     }
   }), [actualData.prices, forecastExtension.forecastPrices, market]);
+
+  // Volume dataset
+  const volumeDataset = useMemo(() => showVolume && data.length > 0 ? {
+    label: 'Volume',
+    data: data.map(d => d.volume),
+    backgroundColor: data.map(d => d.close >= d.open ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)'),
+    borderWidth: 0,
+    yAxisID: 'yVolume',
+    order: 10,
+  } : null, [showVolume, data]);
 
   const smaDataset = useMemo(() => showSMA && sma20.length > 0 ? {
     label: `SMA (${SMA_CONFIG.PERIOD})`,
@@ -310,6 +321,7 @@ export const StockChart = memo(function StockChart({
       // メインの未来予測(forecastDatasets)を削除し、マウスオーバー時のゴースト予測のみを表示
       ...ghostForecastDatasets,
       ...(indexDataset ? [indexDataset] : []),
+      ...(volumeDataset ? [volumeDataset] : []),
     ].filter(Boolean);
 
     return {
@@ -323,7 +335,8 @@ export const StockChart = memo(function StockChart({
     bollingerDatasets,
     forecastDatasets,
     ghostForecastDatasets,
-    indexDataset
+    indexDataset,
+    volumeDataset
   ]);
 
   // 4. Loading / Error States

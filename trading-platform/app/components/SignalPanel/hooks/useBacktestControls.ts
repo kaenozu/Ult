@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { runBacktest, BacktestResult } from '@/app/lib/backtest';
 import { usePerformanceMonitor } from '@/app/lib/performance';
@@ -7,6 +7,12 @@ export function useBacktestControls(stock: Stock, ohlcv: OHLCV[] = [], activeTab
   const { measure } = usePerformanceMonitor('SignalPanel');
   const [backtestResult, setBacktestResult] = useState<BacktestResult | null>(null);
   const [isBacktesting, setIsBacktesting] = useState(false);
+
+  // Extract last date for stable dependency
+  const lastDataDate = useMemo(() => 
+    ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty',
+    [ohlcv]
+  );
 
   // Reset backtest when stock changes
   useEffect(() => {
@@ -53,7 +59,7 @@ export function useBacktestControls(stock: Stock, ohlcv: OHLCV[] = [], activeTab
         }
       }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv.length, ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty', stock.symbol, stock.market, loading, measure]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv.length, lastDataDate, stock.symbol, stock.market, loading, measure]);
 
   return {
     backtestResult,
