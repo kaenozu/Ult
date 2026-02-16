@@ -58,7 +58,8 @@ export class MarketDataClient {
   private stats = {
     totalRequests: 0,
     cacheHits: 0,
-    cacheMisses: 0
+    cacheMisses: 0,
+    errors: 0
   };
 
   private isValidResponse(httpResponse: Response | undefined, parsedResponse: MarketResponse<any>): boolean {
@@ -385,7 +386,8 @@ export class MarketDataClient {
         const indicators = mlPredictionService.calculateIndicators(result!.data!);
         const prediction = mlPredictionService.predict(stock, result!.data!, indicators);
         const signalData = mlPredictionService.generateSignal(stock, result!.data!, prediction, indicators, []);
-        return { success: true, data: signalData, source: result?.source ?? 'api' };
+        // Use 'api' as source since we're generating signal from API data (not 'error')
+        return { success: true, data: signalData, source: 'api' };
       } catch (fallbackErr) {
         return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
       }
@@ -449,7 +451,7 @@ export class MarketDataClient {
   /**
    * Performance optimization: Periodic cache cleanup
    */
-  private startCacheCleanup() {
+  public startCacheCleanup() {
     setInterval(() => {
       const now = Date.now();
       const toDelete: string[] = [];
@@ -542,14 +544,14 @@ export class MarketDataClient {
    * Compatibility method for old DataAggregator.setCached
    */
   setCached(key: string, data: unknown, ttl?: number): void {
-    this.setCache(key as string, data, ttl);
+    this.setCache(key as string, data as OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData, ttl);
   }
 
   /**
    * Compatibility method for old DataAggregator.getCached
    */
   getCached<T>(key: string): T | undefined {
-    return this.getFromCache<T>(key);
+    return this.getFromCache<T>(key) ?? undefined;
   }
 
   /**
@@ -573,6 +575,9 @@ export class MarketDataClient {
         const data = await fetcher();
         this.setCache(key as any, data as any, ttl);
         return data;
+      } catch (error) {
+        this.stats.errors++;
+        throw error;
       } finally {
         this.pendingRequests.delete(key);
       }

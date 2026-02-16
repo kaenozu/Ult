@@ -5,7 +5,7 @@
  * 重いコンポーネントは必要になった時のみ読み込む
  */
 
-import { lazy } from 'react';
+import React, { lazy } from 'react';
 
 // チャート関連（重いChart.js依存）
 export const LazyStockChart = lazy(() => 
@@ -38,19 +38,9 @@ export const LazyBacktestPanel = lazy(() =>
   import('@/app/components/BacktestPanel').then(m => ({ default: m.BacktestPanel }))
 );
 
-// AIアドバイザー（重いMLモデル）
-export const LazyAIAdvisor = lazy(() => 
-  import('@/app/components/AIAdvisor').then(m => ({ default: m.AIAdvisor }))
-);
-
 // データエクスポート（大きなデータ処理）
 export const LazyDataExport = lazy(() => 
-  import('@/app/components/DataExport').then(m => ({ default: m.DataExport }))
-);
-
-// 設定パネル
-export const LazySettingsPanel = lazy(() => 
-  import('@/app/components/SettingsPanel').then(m => ({ default: m.SettingsPanel }))
+  import('@/app/components/DataExportImport').then(m => ({ default: m.DataExportImport }))
 );
 
 // プレースホルダーコンポーネント（ローディング中表示）
@@ -99,8 +89,6 @@ export const routeComponents = {
   '/ai-advisor': () => import('@/app/ai-advisor/page'),
   '/portfolio': () => import('@/app/portfolio/page'),
   '/journal': () => import('@/app/journal/page'),
-  '/settings': () => import('@/app/settings/page'),
-  '/backtest': () => import('@/app/backtest/page'),
 };
 
 /**

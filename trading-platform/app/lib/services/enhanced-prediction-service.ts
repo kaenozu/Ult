@@ -180,18 +180,17 @@ export class EnhancedPredictionService {
       symbol,
       data,
       indicators: indicators ? {
+        symbol: indicators.symbol,
         rsi: indicators.rsi || [],
         sma5: indicators.sma5 || [],
         sma20: indicators.sma20 || [],
         sma50: indicators.sma50 || [],
-        macd: {
-          macd: indicators.macd?.macd || [],
-          signal: indicators.macd?.signal || []
-        },
+        sma200: indicators.sma200 || [],
+        macd: { macd: indicators.macd?.macd || [], signal: indicators.macd?.signal || [] },
         bb: {
-          upper: indicators.bb?.upper || [],
-          middle: indicators.bb?.middle || [],
-          lower: indicators.bb?.lower || []
+          upper: indicators.bollingerBands?.upper || [],
+          middle: indicators.bollingerBands?.middle || [],
+          lower: indicators.bollingerBands?.lower || []
         },
         atr: indicators.atr || []
       } : undefined
@@ -406,12 +405,13 @@ export class EnhancedPredictionService {
       return {
         symbol,
         type: 'HOLD',
-        entryPrice: lastPrice.close,
-        stopLoss: null,
-        takeProfit: null,
+        targetPrice: lastPrice.close,
+        stopLoss: 0,
+        reason: 'Low confidence',
+        predictedChange: 0,
+        predictionDate: new Date().toISOString(),
         confidence,
-        timestamp: Date.now(),
-        horizon: 5
+        timestamp: Date.now()
       };
     }
 
@@ -425,16 +425,17 @@ export class EnhancedPredictionService {
     return {
       symbol,
       type: isBuy ? 'BUY' : 'SELL',
-      entryPrice: lastPrice.close,
+      targetPrice: isBuy ? 
+        lastPrice.close * (1 + volatility * 3 * kellyFraction) : 
+        lastPrice.close * (1 - volatility * 3 * kellyFraction),
       stopLoss: isBuy ? 
         lastPrice.close * (1 - volatility * 1.5) : 
         lastPrice.close * (1 + volatility * 1.5),
-      takeProfit: isBuy ? 
-        lastPrice.close * (1 + volatility * 3 * kellyFraction) : 
-        lastPrice.close * (1 - volatility * 3 * kellyFraction),
+      reason: isBuy ? 'Buy signal from ensemble model' : 'Sell signal from ensemble model',
+      predictedChange: ensemble,
+      predictionDate: new Date().toISOString(),
       confidence,
-      timestamp: Date.now(),
-      horizon: 5
+      timestamp: Date.now()
     };
   }
 }

@@ -14,7 +14,7 @@ interface ServiceWorkerState {
   offlineReady: boolean;
 }
 
-interface ServiceWorkerRegistration {
+interface ServiceWorkerManager {
   registration: ServiceWorkerRegistration | null;
   update: () => Promise<void>;
   unregister: () => Promise<void>;
@@ -23,7 +23,7 @@ interface ServiceWorkerRegistration {
 /**
  * Service Workerを登録
  */
-export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
+export async function registerServiceWorker(): Promise<ServiceWorkerManager | null> {
   if (!('serviceWorker' in navigator)) {
     console.log('[ServiceWorker] Not supported');
     return null;
@@ -82,7 +82,7 @@ export function useServiceWorker(): ServiceWorkerState & {
     offlineReady: false,
   });
 
-  const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
+  const [registration, setRegistration] = useState<ServiceWorkerManager | null>(null);
 
   useEffect(() => {
     // Service Workerサポート確認
@@ -98,7 +98,7 @@ export function useServiceWorker(): ServiceWorkerState & {
         setState((prev) => ({ ...prev, isRegistered: true }));
 
         // オフライン準備完了を確認
-        if (reg.registration.active) {
+        if (reg.registration?.active) {
           setState((prev) => ({ ...prev, offlineReady: true }));
         }
       }
@@ -139,7 +139,7 @@ export function useServiceWorker(): ServiceWorkerState & {
   }, [registration]);
 
   const skipWaiting = useCallback(() => {
-    if (registration?.registration.waiting) {
+    if (registration?.registration?.waiting) {
       registration.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
     }
   }, [registration]);
@@ -240,7 +240,9 @@ export async function registerBackgroundSync(tag: string): Promise<void> {
 
   const registration = await navigator.serviceWorker.ready;
   try {
-    await registration.sync.register(tag);
+    // Type assertion for Background Sync API
+    const syncRegistration = registration as ServiceWorkerRegistration & { sync: { register: (tag: string) => Promise<void> } };
+    await syncRegistration.sync.register(tag);
     console.log('[ServiceWorker] Background sync registered:', tag);
   } catch (error) {
     console.error('[ServiceWorker] Background sync registration failed:', error);
@@ -263,7 +265,7 @@ export async function subscribeToPushNotifications(
   try {
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
+      applicationServerKey: urlBase64ToUint8Array(publicVapidKey) as BufferSource,
     });
 
     console.log('[ServiceWorker] Push subscription created');

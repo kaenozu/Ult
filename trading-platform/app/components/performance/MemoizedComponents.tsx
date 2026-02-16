@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import type { Stock, OHLCV, Signal } from '@/app/types';
-import { AccuracyBadge } from './AccuracyBadge';
+import { AccuracyBadge } from '@/app/components/AccuracyBadge';
 
 interface MemoizedStockInfoProps {
   stock: Stock;

@@ -38,19 +38,9 @@ export const routeConfigs: Record<string, RouteConfig> = {
   },
   
   // 通常: 必要になったら読み込み
-  '/backtest': {
-    component: () => import('@/app/backtest/page'),
-    priority: 'normal',
-  },
   '/ai-advisor': {
     component: () => import('@/app/ai-advisor/page'),
     priority: 'normal',
-  },
-  
-  // 低: 重い機能
-  '/settings': {
-    component: () => import('@/app/settings/page'),
-    priority: 'low',
   },
 };
 

@@ -48,9 +48,7 @@ export function useStockData() {
       enabled: !!selectedStock, 
       market: selectedStock?.market,
       // Limit polling frequency to reduce re-renders
-      refetchInterval: selectedStock?.market === 'japan' ? 30000 : false, // 30 seconds
-      // Only update if price change is significant
-      structuralSharing: true
+      interval: selectedStock?.market === 'japan' ? 30000 : undefined // 30 seconds
     }
   );
 

@@ -64,7 +64,7 @@ export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[
 
   return {
     displaySignal,
-    preciseHitRate,
+    preciseHitRate: hitRateData,
     calculatingHitRate,
     error,
     aiTrades,
