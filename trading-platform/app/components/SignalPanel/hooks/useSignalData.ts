@@ -10,12 +10,10 @@ import { calculateAIStatusMetrics } from '../aiStatus';
  * Hook to manage signal-related data and performance metrics
  */
 export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[] = []) {
-  const { toggleAI: _toggleAI, trades } = useAIStore();
+  const { trades } = useAIStore();
   const journal = useJournalStore((state) => state.journal);
   const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(stock, ohlcv);
   
-  // Map useSymbolAccuracy result to expected preciseHitRate format
-  const preciseHitRate = accuracy ? { hitRate: accuracy.hitRate, trades: accuracy.totalTrades } : null;
   const calculatingHitRate = accuracyLoading;
   const error: string | null = null; // useSymbolAccuracy doesn't return error
 
@@ -23,9 +21,9 @@ export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[
 
   // Memoized hit rate object to prevent unnecessary re-renders
   const hitRateData = useMemo(() => ({
-    hitRate: preciseHitRate?.hitRate || 0,
-    trades: preciseHitRate?.trades || 0
-  }), [preciseHitRate]);
+    hitRate: accuracy?.hitRate || 0,
+    trades: accuracy?.totalTrades || 0
+  }), [accuracy?.hitRate, accuracy?.totalTrades]);
 
   // Alert Logic Hook
   useSignalAlerts({

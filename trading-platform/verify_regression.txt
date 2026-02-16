@@ -1,6 +1,0 @@
-
-PASS app/__tests__/domain-architecture.test.ts
-PASS app/hooks/__tests__/useStockData.test.ts
-Test Suites: 2 passed, 2 total
-Tests:       20 passed, 20 total
-

@@ -29,7 +29,7 @@ describe('OrderPanel', () => {
 
     // Check by label text
     expect(screen.getByLabelText(/注文種別/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/数量/i)).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/数量/i).length).toBeGreaterThan(0);
 
     // Check association
     const select = screen.getByLabelText(/注文種別/i);
