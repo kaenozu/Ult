@@ -67,13 +67,22 @@ function createDataSources(lookbackDays: number = 90): StockDataSource[] {
 
         if (!rawResult || !rawResult.quotes) return [];
 
-        return rawResult.quotes.map((q: any) => ({
+        interface YahooQuote {
+          date: Date;
+          open: number | null;
+          high: number | null;
+          low: number | null;
+          close: number | null;
+          volume: number | null;
+        }
+
+        return (rawResult.quotes as YahooQuote[]).map((q) => ({
           date: q.date.toISOString().split('T')[0],
-          open: q.open,
-          high: q.high,
-          low: q.low,
-          close: q.close,
-          volume: q.volume
+          open: q.open ?? 0,
+          high: q.high ?? 0,
+          low: q.low ?? 0,
+          close: q.close ?? 0,
+          volume: q.volume ?? 0
         })).filter((q: OHLCV) => q.close !== null && q.close !== undefined);
       } catch (error) {
         console.error(`Failed to fetch data via YF for ${stock.symbol}:`, error);

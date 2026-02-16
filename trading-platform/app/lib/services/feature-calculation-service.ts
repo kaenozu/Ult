@@ -27,7 +27,22 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
 
     // Default empty objects for enhanced features to satisfy property checks
     // We add more fields to reach 50+ dimensions as required by tests
-    const candlestickPatterns: any = {
+    interface CandlestickPatterns {
+      isDoji: number;
+      isHammer: number;
+      isInvertedHammer: number;
+      isBullishEngulfing: number;
+      isBearishEngulfing: number;
+      isMorningStar: number;
+      isEveningStar: number;
+      isShootingStar: number;
+      isHangingMan: number;
+      isMarubozu: number;
+      bodyRatio: number;
+      candleStrength: number;
+    }
+
+    const candlestickPatterns: CandlestickPatterns = {
       isDoji: 0,
       isHammer: 0,
       isInvertedHammer: 0,
@@ -42,7 +57,22 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
       candleStrength: 0
     };
 
-    const priceTrajectory: any = {
+    interface PriceTrajectory {
+      zigzagTrend: number;
+      trendConsistency: number;
+      isConsolidation: number;
+      supportLevel: number;
+      resistanceLevel: number;
+      priceAcceleration: number;
+      regressionSlope: number;
+      rsquared: number;
+      pivotPoint: number;
+      r1: number;
+      s1: number;
+      isBreakout: number;
+    }
+
+    const priceTrajectory: PriceTrajectory = {
       zigzagTrend: 0,
       trendConsistency: 0,
       isConsolidation: 0,
@@ -57,7 +87,22 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
       isBreakout: 0
     };
 
-    const volumeProfile: any = {
+    interface VolumeProfile {
+      volumeTrend: number;
+      volumeSurge: number;
+      priceVolumeCorrelation: number;
+      relativeVolume: number;
+      accumulationDistribution: number;
+      obv: number;
+      mfi: number;
+      vwap: number;
+      forceIndex: number;
+      easeOfMovement: number;
+      chaikinOscillator: number;
+      vwapDeviation: number;
+    }
+
+    const volumeProfile: VolumeProfile = {
       volumeTrend: 0,
       volumeSurge: 0,
       priceVolumeCorrelation: 0,
@@ -72,8 +117,23 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
       vwapDeviation: 0
     };
 
-    const volatilityRegime: any = {
-      volatilityRegime: (basic.volatility > 2 ? 'HIGH' : 'NORMAL') as any,
+    interface VolatilityRegime {
+      volatilityRegime: 'HIGH' | 'NORMAL' | 'LOW';
+      historicalVolatility: number;
+      garchVolatility: number;
+      parkinsonVolatility: number;
+      rogersSatchellVolatility: number;
+      garmanKlassVolatility: number;
+      volatilityCluster: number;
+      atrTrend: number;
+      ivRank: number;
+      ivPercentile: number;
+      skew: number;
+      kurtosis: number;
+    }
+
+    const volatilityRegime: VolatilityRegime = {
+      volatilityRegime: basic.volatility > 2 ? 'HIGH' : 'NORMAL',
       historicalVolatility: basic.volatility,
       garchVolatility: basic.volatility * 0.9,
       parkinsonVolatility: basic.volatility * 0.8,
