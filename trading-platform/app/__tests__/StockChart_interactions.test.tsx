@@ -30,6 +30,7 @@ jest.mock('react-chartjs-2', () => {
     const { forwardRef, useImperativeHandle } = require('react');
 
     return {
+        // eslint-disable-next-line react/display-name
         Line: forwardRef((props: any, ref: any) => {
             useImperativeHandle(ref, () => mockChartInstance);
             return (
