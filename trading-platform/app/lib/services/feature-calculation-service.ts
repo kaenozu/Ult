@@ -9,7 +9,14 @@ import { OHLCV, TechnicalIndicatorsWithATR } from '@/app/types';
 import {
   FeatureCalculationService as DomainFeatureCalculationService,
 } from '@/app/domains/prediction/services/feature-calculation-service';
-import { EnhancedPredictionFeatures, PredictionFeatures } from '@/app/domains/prediction/types';
+import {
+  CandlestickPatternFeatures,
+  PriceTrajectoryFeatures,
+  VolumeProfileFeatures,
+  VolatilityRegimeFeatures,
+  EnhancedPredictionFeatures,
+  PredictionFeatures,
+} from '@/app/lib/types/prediction-types';
 
 // Re-export types for backward compatibility
 export type { PredictionFeatures, EnhancedPredictionFeatures };
@@ -27,7 +34,7 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
 
     // Default empty objects for enhanced features to satisfy property checks
     // We add more fields to reach 50+ dimensions as required by tests
-    const candlestickPatterns: any = {
+    const candlestickPatterns: CandlestickPatternFeatures = {
       isDoji: 0,
       isHammer: 0,
       isInvertedHammer: 0,
@@ -42,7 +49,7 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
       candleStrength: 0
     };
 
-    const priceTrajectory: any = {
+    const priceTrajectory: PriceTrajectoryFeatures = {
       zigzagTrend: 0,
       trendConsistency: 0,
       isConsolidation: 0,
@@ -57,7 +64,7 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
       isBreakout: 0
     };
 
-    const volumeProfile: any = {
+    const volumeProfile: VolumeProfileFeatures = {
       volumeTrend: 0,
       volumeSurge: 0,
       priceVolumeCorrelation: 0,
@@ -72,8 +79,8 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
       vwapDeviation: 0
     };
 
-    const volatilityRegime: any = {
-      volatilityRegime: (basic.volatility > 2 ? 'HIGH' : 'NORMAL') as any,
+    const volatilityRegime: VolatilityRegimeFeatures = {
+      volatilityRegime: (basic.volatility > 2 ? 'HIGH' : 'NORMAL') as 'HIGH' | 'NORMAL',
       historicalVolatility: basic.volatility,
       garchVolatility: basic.volatility * 0.9,
       parkinsonVolatility: basic.volatility * 0.8,
@@ -109,7 +116,7 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
    * Calculate features with support for pre-calculated indicators
    * Backward compatible: accepts optional indicators parameter
    */
-  calculateFeatures(data: OHLCV[], indicators?: TechnicalIndicatorsWithATR): any {
+  calculateFeatures(data: OHLCV[], indicators?: TechnicalIndicatorsWithATR): PredictionFeatures {
     if (indicators) {
       // Check if indicators are empty
       const isEmptyIndicators = indicators.rsi.length === 0 ||
