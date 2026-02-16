@@ -205,7 +205,8 @@ export const StockChart = memo(function StockChart({
     setHoveredIndex: handleMouseHover,
     signal,
     priceRange,
-    supplyDemandLevels: chartLevels
+    supplyDemandLevels: chartLevels,
+    showVolume
   });
 
   // 3. Performance-optimized: Split datasets for better rendering
@@ -221,6 +222,16 @@ export const StockChart = memo(function StockChart({
     tension: 0.1,
     yAxisID: 'y',
   }), [actualData.prices, market]);
+
+  // Volume dataset
+  const volumeDataset = useMemo(() => showVolume && data.length > 0 ? {
+    label: 'Volume',
+    data: data.map(d => d.volume),
+    backgroundColor: data.map(d => d.close >= d.open ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)'),
+    borderWidth: 0,
+    yAxisID: 'yVolume',
+    order: 10,
+  } : null, [showVolume, data]);
 
   const smaDataset = useMemo(() => showSMA && sma20.length > 0 ? {
     label: `SMA (${SMA_CONFIG.PERIOD})`,
@@ -277,6 +288,7 @@ export const StockChart = memo(function StockChart({
       ...forecastDatasets,
       ...ghostForecastDatasets,
       ...(indexDataset ? [indexDataset] : []),
+      ...(volumeDataset ? [volumeDataset] : []),
     ].filter(Boolean);
 
     return {
@@ -290,7 +302,8 @@ export const StockChart = memo(function StockChart({
     bollingerDatasets,
     forecastDatasets,
     ghostForecastDatasets,
-    indexDataset
+    indexDataset,
+    volumeDataset
   ]);
 
   // 4. Loading / Error States
