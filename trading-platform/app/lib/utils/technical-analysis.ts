@@ -166,14 +166,19 @@ export function calculateBollingerBands(
   period: number = 20,
   standardDeviations: number = 2,
 ): { upper: number[]; middle: number[]; lower: number[] } {
-  const upper: number[] = [];
-  const middle: number[] = [];
-  const lower: number[] = [];
+  const length = prices.length;
+  // Pre-allocate arrays for better performance
+  const upper: number[] = new Array(length);
+  const middle: number[] = new Array(length);
+  const lower: number[] = new Array(length);
+
   let sum = 0;
   let sumSq = 0;
   let validCount = 0;
 
-  for (let i = 0; i < prices.length; i++) {
+  // Initial window loop
+  const initialLimit = Math.min(length, period);
+  for (let i = 0; i < initialLimit; i++) {
     const val = _getValidPrice(prices[i]);
     if (!isNaN(val)) {
       sum += val;
@@ -181,28 +186,50 @@ export function calculateBollingerBands(
       validCount++;
     }
 
-    if (i >= period) {
-      const oldVal = _getValidPrice(prices[i - period]);
-      if (!isNaN(oldVal)) {
-        sum -= oldVal;
-        sumSq -= oldVal * oldVal;
-        validCount--;
-      }
-    }
-
-    if (i < period - 1 || validCount !== period) {
-      upper.push(NaN);
-      middle.push(NaN);
-      lower.push(NaN);
-    } else {
+    if (i === period - 1 && validCount === period) {
       const mean = sum / period;
       const variance = Math.max(0, sumSq / period - mean * mean);
       const stdDev = Math.sqrt(variance);
-      middle.push(mean);
-      upper.push(mean + standardDeviations * stdDev);
-      lower.push(mean - standardDeviations * stdDev);
+      middle[i] = mean;
+      upper[i] = mean + standardDeviations * stdDev;
+      lower[i] = mean - standardDeviations * stdDev;
+    } else {
+      middle[i] = NaN;
+      upper[i] = NaN;
+      lower[i] = NaN;
     }
   }
+
+  // Rolling window loop
+  for (let i = period; i < length; i++) {
+    const val = _getValidPrice(prices[i]);
+    if (!isNaN(val)) {
+      sum += val;
+      sumSq += val * val;
+      validCount++;
+    }
+
+    const oldVal = _getValidPrice(prices[i - period]);
+    if (!isNaN(oldVal)) {
+      sum -= oldVal;
+      sumSq -= oldVal * oldVal;
+      validCount--;
+    }
+
+    if (validCount === period) {
+      const mean = sum / period;
+      const variance = Math.max(0, sumSq / period - mean * mean);
+      const stdDev = Math.sqrt(variance);
+      middle[i] = mean;
+      upper[i] = mean + standardDeviations * stdDev;
+      lower[i] = mean - standardDeviations * stdDev;
+    } else {
+      middle[i] = NaN;
+      upper[i] = NaN;
+      lower[i] = NaN;
+    }
+  }
+
   return { upper, middle, lower };
 }
 

@@ -606,7 +606,7 @@ describe('POST /api/trading', () => {
         config: { riskLimits: 'not_an_object' },
       });
       const res = await POST(req);
-      const data = await res.json();
+      await res.json();
 
       // API may accept or reject - just verify it returns a response
       expect([200, 400]).toContain(res.status);
