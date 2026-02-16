@@ -11,14 +11,25 @@ import {
 } from '@/app/domains/prediction/services/ml-model-service';
 import { PredictionCalculator } from './implementations/prediction-calculator';
 import { IPredictionCalculator, ITensorFlowModel } from './interfaces/ml-model-interfaces';
-import {
-  FeedForwardModel,
-  GRUModel,
-  LSTMModel,
-  ModelMetrics,
-  ModelTrainingData,
-  featuresToArray
-} from './tensorflow-model-service';
+// TensorFlow.js models - dynamically imported to reduce bundle size
+let FeedForwardModel: any;
+let GRUModel: any;
+let LSTMModel: any;
+let featuresToArray: any;
+
+// Dynamic import for TensorFlow.js models
+async function loadTensorFlowModels() {
+  if (!FeedForwardModel) {
+    const tf = await import('./tensorflow-model-service');
+    FeedForwardModel = tf.FeedForwardModel;
+    GRUModel = tf.GRUModel;
+    LSTMModel = tf.LSTMModel;
+    featuresToArray = tf.featuresToArray;
+  }
+  return { FeedForwardModel, GRUModel, LSTMModel, featuresToArray };
+}
+
+import type { ModelMetrics, ModelTrainingData } from './tensorflow-model-service';
 import type { PredictionFeatures } from '@/app/domains/prediction/types';
 import type { ModelPrediction } from '../../types';
 

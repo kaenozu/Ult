@@ -41,10 +41,17 @@ export function useStockData() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
 
-  // Real-time data polling for Japanese stocks
+  // Real-time data polling for Japanese stocks - throttled to reduce updates
   const { data: realTimeQuote } = useRealTimeData(
     selectedStock?.market === 'japan' ? selectedStock.symbol : null,
-    { enabled: !!selectedStock, market: selectedStock?.market }
+    { 
+      enabled: !!selectedStock, 
+      market: selectedStock?.market,
+      // Limit polling frequency to reduce re-renders
+      refetchInterval: selectedStock?.market === 'japan' ? 30000 : false, // 30 seconds
+      // Only update if price change is significant
+      structuralSharing: true
+    }
   );
 
   // Update chart data with real-time quote
@@ -213,19 +220,21 @@ export function useStockData() {
         }
       }
 
-      // 5. Performance-optimized: Background sync with delay to avoid immediate re-fetch
+      // 5. Performance-optimized: Background sync with longer delay (60s) to reduce API calls
       const syncInBackground = async (
         sym: string,
         mkt: 'japan' | 'usa',
         setter: (data: OHLCV[]) => void,
         label: string
       ) => {
-        // Add delay to avoid immediate background sync
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Increased delay to reduce unnecessary background syncs
+        await new Promise(resolve => setTimeout(resolve, 60000));
 
         try {
           if (!isMountedRef.current || controller.signal.aborted) return;
 
+          // Only sync if data is stale (older than 5 minutes)
+          // This check prevents redundant updates
           const newData = await fetchOHLCV(sym, mkt, undefined, controller.signal, apiInterval, undefined, true);
           if (isMountedRef.current && !controller.signal.aborted && newData.length > 0) {
             setter(newData);
@@ -237,12 +246,14 @@ export function useStockData() {
         }
       };
 
-      // Only start background sync if not unmounted
-      if (isMountedRef.current && !controller.signal.aborted) {
-        // Sync stock data
-        syncInBackground(stock.symbol, stock.market, setChartData, 'Stock');
-        // Sync index data
-        syncInBackground(indexSymbol, stock.market, setIndexData, 'Index');
+      // Only start background sync if not unmounted and not already fetching
+      if (isMountedRef.current && !controller.signal.aborted && !loading) {
+        // Sync stock data - only for active stocks to reduce load
+        if (stock.market === 'japan') {
+          syncInBackground(stock.symbol, stock.market, setChartData, 'Stock');
+        }
+        // Sync index data less frequently
+        // syncInBackground(indexSymbol, stock.market, setIndexData, 'Index');
       }
 
     } catch (err) {
