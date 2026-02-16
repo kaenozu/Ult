@@ -63,6 +63,10 @@ export class EnhancedPredictionService {
     lastCleanup: Date.now()
   };
 
+  // FNV-1a hash constants
+  private static readonly FNV_OFFSET_BASIS = 2166136261;
+  private static readonly FNV_PRIME = 16777619;
+
   /**
    * データハッシュを生成（キャッシュキー用）
    * 軽量なハッシュ関数で最後の数ローソク足のみを使用
@@ -74,11 +78,11 @@ export class EnhancedPredictionService {
       `${d.close.toFixed(2)}${d.volume.toFixed(0)}`
     ).join('');
     
-    // 簡易ハッシュ（FNV-1a風）
-    let hash = 2166136261;
+    // FNV-1a hash algorithm
+    let hash = EnhancedPredictionService.FNV_OFFSET_BASIS;
     for (let i = 0; i < hashInput.length; i++) {
       hash ^= hashInput.charCodeAt(i);
-      hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+      hash *= EnhancedPredictionService.FNV_PRIME;
     }
     return hash.toString(16);
   }
