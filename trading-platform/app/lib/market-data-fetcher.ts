@@ -42,7 +42,7 @@ export async function fetchMarketHistory(
   
   // SSRF Protection: Validate origin against allowlist
   if (!ALLOWED_ORIGINS.includes(origin)) {
-    logger.error('[MarketDataFetcher] Blocked request to unauthorized origin:', origin);
+    logger.error('[MarketDataFetcher] Blocked request to unauthorized origin', undefined, origin);
     throw new Error('Unauthorized origin');
   }
   const params = new URLSearchParams({

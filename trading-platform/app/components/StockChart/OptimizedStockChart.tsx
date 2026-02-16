@@ -54,7 +54,7 @@ function useChartVirtualization(
   itemHeight: number,
   overscan: number = 5
 ): VirtualizationState {
-  const [scrollTop, _setScrollTop] = useState(0);
+  const [scrollTop] = useState(0);
 
   const visibleStart = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
   const visibleEnd = Math.min(

@@ -10,7 +10,7 @@ import { calculateAIStatusMetrics } from '../aiStatus';
  * Hook to manage signal-related data and performance metrics
  */
 export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[] = []) {
-  const { toggleAI: _toggleAI, trades } = useAIStore();
+  const { trades } = useAIStore();
   const journal = useJournalStore((state) => state.journal);
   const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(stock, ohlcv);
   
