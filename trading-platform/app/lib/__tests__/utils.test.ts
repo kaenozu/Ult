@@ -19,7 +19,6 @@ import {
   generateDateRange,
   cn,
 } from '../utils';
-import type { CurrencyCode } from '../utils';
 
 describe('utils', () => {
   describe('formatCurrency', () => {
