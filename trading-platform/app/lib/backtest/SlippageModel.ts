@@ -158,8 +158,9 @@ export class SlippageModel {
    */
   private calculateTimeOfDayImpact(dateStr: string): number {
     const date = new Date(dateStr);
-    const hour = date.getHours();
-    const minute = date.getMinutes();
+    // Use JST (UTC+9) time regardless of server timezone
+    const hour = (date.getUTCHours() + 9) % 24;
+    const minute = date.getUTCMinutes();
     const timeValue = hour + minute / 60;
 
     // 始値（9:00-10:00）：+50%
