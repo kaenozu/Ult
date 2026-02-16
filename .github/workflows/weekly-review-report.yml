@@ -19,33 +19,26 @@ jobs:
           
           # Get open review issues
           OPEN_ISSUES=$(gh issue list --repo ${{ github.repository }} --search "[Review] in:title state:open" --json number,title -q '.[] | "- #\(.number): \(.title)"' 2>/dev/null || echo "None")
-          OPEN_COUNT=$(echo "$OPEN_ISSUES" | grep -c "^\-" || echo "0")
+          OPEN_COUNT=$(echo "$OPEN_ISSUES" | grep -c "^-" || echo "0")
           
           # Get recently merged PRs (last 7 days)
           SINCE_DATE=$(date -d '7 days ago' +%Y-%m-%d)
-          MERGED_PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json number,title,mergedAt -q '.[] | select(.mergedAt >= "'$SINCE_DATE'") | "- #\(.number): \(.title)"' 2>/dev/null || echo "None")
-          PR_COUNT=$(echo "$MERGED_PRS" | grep -c "^\-" || echo "0")
+          MERGED_PRS=$(gh pr list --repo ${{ github.repository }} --state merged --json number,title,mergedAt -q ".[] | select(.mergedAt >= \"$SINCE_DATE\") | \"- #\(.number): \(.title)\"" 2>/dev/null || echo "None")
+          PR_COUNT=$(echo "$MERGED_PRS" | grep -c "^-" || echo "0")
           
           TODAY=$(date +%Y-%m-%d)
           
-          # Create report body
-          REPORT="## 📊 Weekly Review Report - $TODAY
-
-### Summary
-- **Open Review Issues**: $OPEN_COUNT
-- **Recently Merged PRs**: $PR_COUNT
-
-### Open Review Issues
-$OPEN_ISSUES
-
-### Recently Merged PRs (Last 7 Days)
-$MERGED_PRS
-
----
-*Generated automatically by GitHub Actions*"
+          # Create report using printf
+          printf '## 📊 Weekly Review Report - %s\n\n' "$TODAY" > /tmp/report_body.md
+          printf '### Summary\n' >> /tmp/report_body.md
+          printf '* **Open Review Issues**: %s\n' "$OPEN_COUNT" >> /tmp/report_body.md
+          printf '* **Recently Merged PRs**: %s\n\n' "$PR_COUNT" >> /tmp/report_body.md
+          printf '### Open Review Issues\n%s\n\n' "$OPEN_ISSUES" >> /tmp/report_body.md
+          printf '### Recently Merged PRs (Last 7 Days)\n%s\n\n' "$MERGED_PRS" >> /tmp/report_body.md
+          printf '---\n*Generated automatically by GitHub Actions*\n' >> /tmp/report_body.md
           
           # Create issue
-          echo "$REPORT" | gh issue create --repo ${{ github.repository }} --title "📊 Weekly Review Report - $TODAY" --body-file -
-          echo "✅ Report created successfully"
+          gh issue create --repo ${{ github.repository }} --title "📊 Weekly Review Report - $TODAY" --body-file /tmp/report_body.md || echo "Issue creation failed"
+          echo "✅ Report creation attempted"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
