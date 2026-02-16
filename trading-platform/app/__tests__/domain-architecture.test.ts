@@ -19,15 +19,6 @@ describe('Domain Architecture Validation', () => {
     });
   });
 
-  describe.skip('Backtest Domain', () => {
-    it('should export backtest engine from barrel export', async () => {
-      const backtestModule = await import('@/domains/backtest');
-
-      expect(backtestModule).toBeDefined();
-      expect(typeof backtestModule).toBe('object');
-    });
-  });
-
   describe('Market Data Domain', () => {
     it('should export market data services from barrel export', async () => {
       const marketDataModule = await import('@/domains/market-data');
