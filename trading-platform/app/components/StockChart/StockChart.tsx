@@ -160,7 +160,7 @@ export const StockChart = memo(function StockChart({
   }, []);
 
   // 1. Data Preparation Hooks
-  const { actualData, optimizedData, forecastExtension, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
+  const { actualData, optimizedData, normalizedIndexData, extendedData } = useChartData(data, signal, indexData);
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   const { chartLevels } = useSupplyDemandAnalysis(data);
   // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
