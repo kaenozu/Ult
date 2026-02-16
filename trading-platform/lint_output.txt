@@ -1,299 +1,93 @@
 
-> trading-platform@0.1.0 lint /app/trading-platform
+> trading-platform@0.1.0 lint
 > eslint .
 
 
-/app/trading-platform/app/__tests__/StockTableAccessibility.test.tsx
-  42:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+/app/trading-platform/app/__tests__/StockChart_interactions.test.tsx
+   32:3   warning  Unused eslint-disable directive (no problems were reported from 'react/display-name')
+   33:35  warning  Unexpected any. Specify a different type                                                               @typescript-eslint/no-explicit-any
+   33:45  warning  Unexpected any. Specify a different type                                                               @typescript-eslint/no-explicit-any
+   53:3   warning  Unused eslint-disable directive (no problems were reported from 'react/display-name')
+  158:5   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
 
-/app/trading-platform/app/__tests__/integration.test.ts
-   31:16  warning  '_e' is defined but never used                      @typescript-eslint/no-unused-vars
-   40:13  warning  'marketService' is assigned a value but never used  @typescript-eslint/no-unused-vars
-   60:29  warning  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
-  114:31  warning  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
-  115:35  warning  Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+/app/trading-platform/app/api/market/realtime/__tests__/route.test.ts
+  30:98  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  61:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  81:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  96:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/__tests__/page.test.tsx
-  3:10  warning  'useWatchlistStore' is defined but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/api/performance-screener/route.ts
+  70:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/__tests__/tradingCore.test.ts
-  110:13  warning  'initialPositions' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/__tests__/tradingStore.test.ts
-  4:10  warning  'Signal' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/api/data-quality/route.ts
-  31:13  warning  'anomalyCount' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/api/market/__tests__/error-cases.test.ts
-  385:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/api/sentiment/enhanced/route.ts
-  30:14  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/api/reviews/route.ts
+  16:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/api/trading/__tests__/route.test.ts
-  195:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  361:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  418:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  433:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  585:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  597:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
   609:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/components/AccuracyBadge/AccuracyBadge.tsx
-  5:22  warning  'TrendingDown' is defined but never used  @typescript-eslint/no-unused-vars
-
 /app/trading-platform/app/components/AlertConditionManager.tsx
-   14:5   warning  'updateCondition' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  158:97  warning  Unexpected any. Specify a different type              @typescript-eslint/no-explicit-any
-
-/app/trading-platform/app/components/AlertPanel.tsx
-   3:10  warning  'Alert' is defined but never used                                             @typescript-eslint/no-unused-vars
-   4:14  warning  'formatCurrency' is defined but never used                                    @typescript-eslint/no-unused-vars
-   5:10  warning  'TrendingUp' is defined but never used                                        @typescript-eslint/no-unused-vars
-   5:22  warning  'TrendingDown' is defined but never used                                      @typescript-eslint/no-unused-vars
-   5:36  warning  'Minus' is defined but never used                                             @typescript-eslint/no-unused-vars
-   5:43  warning  'AlertTriangle' is defined but never used                                     @typescript-eslint/no-unused-vars
-   5:65  warning  'X' is defined but never used                                                 @typescript-eslint/no-unused-vars
-   5:82  warning  'Clock' is defined but never used                                             @typescript-eslint/no-unused-vars
-   7:23  warning  'getSeverityColorBase' is defined but never used                              @typescript-eslint/no-unused-vars
-  17:38  warning  'stockPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  72:9   warning  'getTrendIcon' is assigned a value but never used                             @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/ChartToolbar.tsx
-  35:9  warning  'isIntraday' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/DashboardCustomizer.tsx
-  5:24  warning  'Settings' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/ErrorBoundary.tsx
-  6:3  warning  'AppError' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/Header.tsx
-  4:46  warning  'TrendingUp' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/KellyPositionSizingDisplay.tsx
-   9:10  warning  'useMemo' is defined but never used     @typescript-eslint/no-unused-vars
-  12:37  warning  'DollarSign' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/MarketDataPanel.tsx
-   9:38  warning  'useCallback' is defined but never used                                  @typescript-eslint/no-unused-vars
-  37:31  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  157:97  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/components/Navigation.tsx
-  6:23  warning  'FileText' is defined but never used   @typescript-eslint/no-unused-vars
-  7:13  warning  'Target' is defined but never used     @typescript-eslint/no-unused-vars
-  7:21  warning  'Activity' is defined but never used   @typescript-eslint/no-unused-vars
-  7:31  warning  'Globe' is defined but never used      @typescript-eslint/no-unused-vars
-  7:38  warning  'Settings2' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/NotificationCenter.tsx
-   3:10  warning  'Alert' is defined but never used                                          @typescript-eslint/no-unused-vars
-   3:17  warning  'AlertSeverity' is defined but never used                                  @typescript-eslint/no-unused-vars
-   3:32  warning  'AlertSettings' is defined but never used                                  @typescript-eslint/no-unused-vars
-  17:38  warning  'onClose' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/RiskDashboard.tsx
-   18:3   warning  'TrendingDown' is defined but never used                                     @typescript-eslint/no-unused-vars
-   24:3   warning  'Settings' is defined but never used                                         @typescript-eslint/no-unused-vars
-   27:3   warning  'Info' is defined but never used                                             @typescript-eslint/no-unused-vars
-   43:3   warning  'HedgeStrategy' is defined but never used                                    @typescript-eslint/no-unused-vars
-  442:3   warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  544:49  warning  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
-  622:3   warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/RiskMonitoringDashboard.tsx
-  21:3  warning  'CheckCircle' is defined but never used              @typescript-eslint/no-unused-vars
-  23:3  warning  'Settings' is defined but never used                 @typescript-eslint/no-unused-vars
-  37:5  warning  'alerts' is assigned a value but never used          @typescript-eslint/no-unused-vars
-  72:9  warning  'criticalAlerts' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/SignalCard.tsx
-  24:5  warning  'aiTradesCount' is assigned a value but never used. Allowed unused args must match /^_/u       @typescript-eslint/no-unused-vars
-  25:5  warning  'calculatingHitRate' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  26:5  warning  'error' is assigned a value but never used. Allowed unused args must match /^_/u               @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/SignalPanel/SupplyDemandView.tsx
-  3:30  warning  'SupplyDemandLevel' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/SignalPanel/components/SignalDisplay.tsx
-  3:10  warning  'cn' is defined but never used                  @typescript-eslint/no-unused-vars
-  3:14  warning  'getConfidenceColor' is defined but never used  @typescript-eslint/no-unused-vars
+  7:3  warning  'List' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/components/SignalPanel/hooks/useBacktestControls.ts
   56:6   warning  React Hook useEffect has a missing dependency: 'ohlcv'. Either include it or remove the dependency array                                  react-hooks/exhaustive-deps
   56:63  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
 
 /app/trading-platform/app/components/SignalPanel/hooks/useSignalData.ts
-   1:10  warning  'useEffect' is defined but never used                                                                                                                                                                 @typescript-eslint/no-unused-vars
-   1:30  warning  'useCallback' is defined but never used                                                                                                                                                               @typescript-eslint/no-unused-vars
-  13:11  warning  'toggleAI' is assigned a value but never used                                                                                                                                                         @typescript-eslint/no-unused-vars
-  18:9   warning  The 'preciseHitRate' conditional could make the dependencies of useMemo Hook (at line 28) change on every render. To fix this, wrap the initialization of 'preciseHitRate' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  18:9  warning  The 'preciseHitRate' conditional could make the dependencies of useMemo Hook (at line 28) change on every render. To fix this, wrap the initialization of 'preciseHitRate' in its own useMemo() Hook  react-hooks/exhaustive-deps
 
 /app/trading-platform/app/components/StockChart/OptimizedStockChart.tsx
-   57:21  warning  'setScrollTop' is assigned a value but never used                                      @typescript-eslint/no-unused-vars
-  143:3   warning  'indicators' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  170:9   warning  'chartData' is assigned a value but never used                                         @typescript-eslint/no-unused-vars
+  169:9  warning  'chartData' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/components/StockChart/StockChart.tsx
-    9:10  warning  'formatCurrency' is defined but never used                                                                                                     @typescript-eslint/no-unused-vars
-   10:10  warning  'CANDLESTICK' is defined but never used                                                                                                        @typescript-eslint/no-unused-vars
-   10:35  warning  'BOLLINGER_BANDS' is defined but never used                                                                                                    @typescript-eslint/no-unused-vars
-   10:52  warning  'CHART_CONFIG' is defined but never used                                                                                                       @typescript-eslint/no-unused-vars
-   11:32  warning  'calculatePriceRange' is defined but never used                                                                                                @typescript-eslint/no-unused-vars
-   52:9   warning  'dynamicHeight' is assigned a value but never used                                                                                             @typescript-eslint/no-unused-vars
-  167:7   warning  React Hook useMemo has an unnecessary dependency: 'forecastExtension.forecastPrices.length'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+  163:38  warning  'forecastExtension' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/components/StockChart/hooks/useChartOptions.ts
-    2:24  warning  'TooltipItem' is defined but never used                                         @typescript-eslint/no-unused-vars
-   22:11  warning  'AnnotationOptions' is defined but never used                                   @typescript-eslint/no-unused-vars
-   46:3   warning  'extendedData' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  140:12  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
-
-/app/trading-platform/app/components/StockChart/hooks/useSupplyDemandAnalysis.ts
-  3:30  warning  'SupplyDemandLevel' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/StockChart/plugins/supplyDemandWalls.ts
-  10:17  warning  'ChartType' is defined but never used  @typescript-eslint/no-unused-vars
+   27:3   warning  'extendedData' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  121:12  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/components/StockTable.tsx
-   18:3  warning  'showVolume' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-   30:5  warning  The attribute aria-selected is not supported by the role button               jsx-a11y/role-supports-aria-props
-  123:9  warning  'direction' is assigned a value but never used                                @typescript-eslint/no-unused-vars
+   19:5  warning  'showVolume' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   32:5  warning  The attribute aria-selected is not supported by the role button               jsx-a11y/role-supports-aria-props
+  146:9  warning  'direction' is assigned a value but never used                                @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/components/StoreHydration.tsx
+   7:12  warning  'hydrated' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  12:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/app/trading-platform/app/components/StoreHydration.tsx:12:9
+  10 |         // Manually trigger hydration on mount to ensure client-side storage is used
+  11 |         usePortfolioStore.persist.rehydrate();
+> 12 |         setHydrated(true);
+     |         ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  13 |
+  14 |         console.log('[StoreHydration] Portfolio store rehydrated');
+  15 |     }, []);  react-hooks/set-state-in-effect
 
 /app/trading-platform/app/components/UnifiedIntelligenceCard.tsx
   29:102  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/components/UnifiedTradingDashboard.tsx
-  10:27  warning  'useEffect' is defined but never used                @typescript-eslint/no-unused-vars
-  12:29  warning  'CardHeader' is defined but never used               @typescript-eslint/no-unused-vars
-  12:41  warning  'CardTitle' is defined but never used                @typescript-eslint/no-unused-vars
-  21:3   warning  'TrendingUp' is defined but never used               @typescript-eslint/no-unused-vars
-  22:3   warning  'TrendingDown' is defined but never used             @typescript-eslint/no-unused-vars
-  27:3   warning  'Bell' is defined but never used                     @typescript-eslint/no-unused-vars
-  28:3   warning  'Settings' is defined but never used                 @typescript-eslint/no-unused-vars
-  61:5   warning  'placeOrder' is assigned a value but never used      @typescript-eslint/no-unused-vars
-  63:5   warning  'updateConfig' is assigned a value but never used    @typescript-eslint/no-unused-vars
-  86:9   warning  'portfolioStats' is assigned a value but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/components/psychology/TradingPsychologyDashboard/components/OverviewTab.tsx
+  8:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/components/__tests__/OrderPanel_UX_Enhancement.test.tsx
-  1:37  warning  'waitFor' is defined but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/components/psychology/TradingPsychologyDashboard/hooks/usePsychologyAnalysis.ts
+  63:6  warning  React Hook useEffect has a missing dependency: 'patterns'. Either include it or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setSuggestions' needs the current value of 'patterns'  react-hooks/exhaustive-deps
 
-/app/trading-platform/app/components/__tests__/ShellComponents.test.tsx
-  13:10  warning  'useTradingStore' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/components/backtest/BacktestResultsDashboard.tsx
-   16:8   warning  'AdvancedMetrics' is defined but never used            @typescript-eslint/no-unused-vars
-   18:8   warning  'TradeAnalysis' is defined but never used              @typescript-eslint/no-unused-vars
-   27:3   warning  'Calendar' is defined but never used                   @typescript-eslint/no-unused-vars
-   66:9   warning  'tradeAnalysis' is assigned a value but never used     @typescript-eslint/no-unused-vars
-   94:9   warning  'rowCount' is assigned a value but never used          @typescript-eslint/no-unused-vars
-  496:21  warning  'setSortField' is assigned a value but never used      @typescript-eslint/no-unused-vars
-  497:25  warning  'setSortDirection' is assigned a value but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/components/psychology/TradingPsychologyDashboard/index.tsx
+  31:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/components/ui/LoadingStates.tsx
   144:3  warning  'height' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/AdvancedPerformanceMetrics.ts
-  260:5   warning  'equity' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
-  908:68  warning  'isProfit' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/MultiAssetBacktestEngine.ts
-   16:3   warning  'RISK_MANAGEMENT' is defined but never used                              @typescript-eslint/no-unused-vars
-  384:46  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/OverfittingDetector.ts
-  336:7  warning  'factors' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/RealisticBacktestEngine.ts
-   13:10  warning  'EventEmitter' is defined but never used                                @typescript-eslint/no-unused-vars
-   21:3   warning  'StrategyContext' is defined but never used                             @typescript-eslint/no-unused-vars
-  148:27  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  149:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  171:28  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  171:70  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  172:37  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  174:31  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  190:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  191:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  192:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  193:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  194:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  195:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  196:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  197:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  198:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  199:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  200:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  201:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  210:19  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  212:27  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  213:33  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  214:31  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  214:64  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  215:28  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  215:70  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  216:37  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  237:33  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  243:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  246:29  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  247:27  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  258:30  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  259:35  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  260:32  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  261:33  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  262:34  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  265:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  269:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  270:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  271:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  272:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  417:44  warning  'side' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/RealisticBacktestOrchestrator.ts
-  305:5  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
-  466:5  warning  'monteCarloResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  556:5  warning  'monteCarloResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/SlippageModel.ts
-  294:3  warning  'marketCap' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/WalkForwardAnalyzer.ts
-   15:3  warning  'StrategyAction' is defined but never used                              @typescript-eslint/no-unused-vars
-  743:5  warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/WinningBacktestEngine.ts
-   16:10  warning  'PositionSizingResult' is defined but never used                          @typescript-eslint/no-unused-vars
-  481:5   warning  'index' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
-  507:17  warning  'symbol' is assigned a value but never used                               @typescript-eslint/no-unused-vars
-  514:27  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/__tests__/AdvancedBacktestEngine.realistic-slippage.test.ts
-  366:27  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  377:7   warning  'tradeCount' is assigned a value but never used                            @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/__tests__/MonteCarloSimulator.test.ts
-   12:8   warning  'MonteCarloConfig' is defined but never used    @typescript-eslint/no-unused-vars
-  181:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  192:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  203:19  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  249:19  warning  'metric' is assigned a value but never used     @typescript-eslint/no-unused-vars
-  264:19  warning  'metric' is assigned a value but never used     @typescript-eslint/no-unused-vars
-  311:19  warning  'goal' is assigned a value but never used       @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/__tests__/OverfittingDetector.test.ts
-  8:26  warning  'BacktestConfig' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/__tests__/RealisticBacktestEngine.test.ts
-  195:13  warning  'haslowerTier' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/__tests__/SlippageModel.test.ts
-  13:8  warning  'SlippageConfig' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/domains/backtest/engine/__tests__/WalkForwardAnalyzer.test.ts
-  11:8   warning  'WalkForwardConfig' is defined but never used                             @typescript-eslint/no-unused-vars
-  12:8   warning  'WalkForwardReport' is defined but never used                             @typescript-eslint/no-unused-vars
-  79:32  warning  'params' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/market-data/FlashCrashDetector.ts
   363:11  warning  'lastData' is assigned a value but never used  @typescript-eslint/no-unused-vars
@@ -304,7 +98,7 @@
 
 /app/trading-platform/app/domains/market-data/integration/MultiSourceDataAggregator.ts
    14:15  warning  'OHLCV' is defined but never used             @typescript-eslint/no-unused-vars
-  181:11  warning  'latency' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  191:11  warning  'latency' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/market-data/integration/__tests__/MultiSourceDataAggregator.test.ts
    9:8  warning  'AggregationConfig' is defined but never used  @typescript-eslint/no-unused-vars
@@ -345,9 +139,9 @@
   389:5   warning  'assets' is defined but never used. Allowed unused args must match /^_/u                  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/models/ml/EnsembleModel.ts
-  231:11  warning  'highs' is assigned a value but never used   @typescript-eslint/no-unused-vars
-  232:11  warning  'lows' is assigned a value but never used    @typescript-eslint/no-unused-vars
-  669:11  warning  'closes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  232:11  warning  'highs' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  233:11  warning  'lows' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  670:11  warning  'closes' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/models/ml/FeatureEngineering.ts
   924:34  warning  'windowSize' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -359,7 +153,7 @@
   126:11  warning  'overallDriftSeverity' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/models/ml/ModelPipeline.ts
-  185:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  186:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/domains/prediction/models/ml/__tests__/EnsembleModel.test.ts
     7:44  warning  'jest' is defined but never used                     @typescript-eslint/no-unused-vars
@@ -378,13 +172,13 @@
   12:3  warning  'DriftDetectionResult' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/services/enhanced-ml-service.ts
-   16:24  warning  'Signal' is defined but never used                                           @typescript-eslint/no-unused-vars
-   18:10  warning  'FeatureCalculationService' is defined but never used                        @typescript-eslint/no-unused-vars
-  194:28  warning  'features' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
-  393:32  warning  'modelType' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   13:24  warning  'Signal' is defined but never used                                           @typescript-eslint/no-unused-vars
+   15:10  warning  'FeatureCalculationService' is defined but never used                        @typescript-eslint/no-unused-vars
+  191:28  warning  'features' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  390:32  warning  'modelType' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/services/feature-calculation-service.ts
-  111:11  warning  'macdLine' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  108:11  warning  'macdLine' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/services/integrated-prediction-service.ts
    8:32  warning  'TechnicalIndicator' is defined but never used   @typescript-eslint/no-unused-vars
@@ -412,20 +206,11 @@
   551:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
   572:15  warning  'rerender' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/hooks/__tests__/useStockData.test.ts
+  6:28  warning  'TOKENS' is defined but never used  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/hooks/queries/usePortfolio.ts
   191:9  warning  'queryClient' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/hooks/useOrderEntry.ts
-  2:39  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/hooks/usePerformance.ts
-   11:10  warning  'isEqual' is defined but never used              @typescript-eslint/no-unused-vars
-  133:58  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
-  133:68  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
-  156:58  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
-  156:68  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
-  203:38  warning  'startIndex' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  203:50  warning  'endIndex' is assigned a value but never used    @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/hooks/usePsychology.ts
   15:15  warning  'DisciplineScoreProps' is defined but never used  @typescript-eslint/no-unused-vars
@@ -433,24 +218,13 @@
 /app/trading-platform/app/hooks/useSignalAlerts.ts
   26:72  warning  'previousHitRate' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/hooks/useStockData.ts
+  70:6  warning  React Hook useEffect has a missing dependency: 'chartData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
 /app/trading-platform/app/hooks/useSymbolAccuracy.ts
    84:14  warning  'e' is defined but never used                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
   203:6   warning  React Hook useEffect has a missing dependency: 'ohlcv'. Either include it or remove the dependency array. If 'setAccuracy' needs the current value of 'ohlcv', you can also switch to useReducer instead of useState and read 'ohlcv' in the reducer  react-hooks/exhaustive-deps
   203:49  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                              react-hooks/exhaustive-deps
-
-/app/trading-platform/app/infrastructure/api/DataAggregator.ts
-   11:15  warning  'OHLCV' is defined but never used               @typescript-eslint/no-unused-vars
-   11:22  warning  'Stock' is defined but never used               @typescript-eslint/no-unused-vars
-   11:29  warning  'Signal' is defined but never used              @typescript-eslint/no-unused-vars
-   11:37  warning  'TechnicalIndicator' is defined but never used  @typescript-eslint/no-unused-vars
-   67:40  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-   71:48  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-   74:36  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-  289:17  warning  '_' is assigned a value but never used          @typescript-eslint/no-unused-vars
-  453:48  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-  470:25  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-  471:26  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-  474:37  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/infrastructure/api/UnifiedApiClient.ts
   120:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
@@ -463,40 +237,35 @@
   21:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/infrastructure/api/data-aggregator.ts
-  104:16  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
-  287:16  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
-  308:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  384:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-
-/app/trading-platform/app/infrastructure/api/rate-limiter.ts
-  132:15  warning  'minutes' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  134:15  warning  'seconds' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/AgentManager.ts
-    8:17  warning  'ChildProcess' is defined but never used                                @typescript-eslint/no-unused-vars
-    8:47  warning  'execSync' is defined but never used                                    @typescript-eslint/no-unused-vars
-   14:7   warning  'execAsync' is assigned a value but never used                          @typescript-eslint/no-unused-vars
-  204:41  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  251:37  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  298:36  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  319:38  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  343:40  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  367:33  warning  'task' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  449:13  warning  'errorMessage' is assigned a value but never used                       @typescript-eslint/no-unused-vars
+   63:94   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   94:20   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   95:51   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:65   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:110  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:63   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  108:104  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  109:64   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  161:16   warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  326:14   warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  354:16   warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  400:40   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  509:46   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  518:32   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  519:26   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  525:27   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  548:30   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  548:43   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  578:25   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  582:38   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  584:24   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  599:15   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  628:20   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/AgentSystem/skills.ts
-  363:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+  506:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
 
 /app/trading-platform/app/lib/AnalysisService.ts
-   1:25  warning  'Stock' is defined but never used                @typescript-eslint/no-unused-vars
-  10:5   warning  'SIGNAL_THRESHOLDS' is defined but never used    @typescript-eslint/no-unused-vars
-  11:5   warning  'RISK_MANAGEMENT' is defined but never used      @typescript-eslint/no-unused-vars
-  13:5   warning  'VOLATILITY' is defined but never used           @typescript-eslint/no-unused-vars
-  17:10  warning  'exitStrategy' is defined but never used         @typescript-eslint/no-unused-vars
-  17:24  warning  'ExitType' is defined but never used             @typescript-eslint/no-unused-vars
-  17:34  warning  'TrailingStopConfig' is defined but never used   @typescript-eslint/no-unused-vars
-  17:54  warning  'TimeBasedExitConfig' is defined but never used  @typescript-eslint/no-unused-vars
-  17:75  warning  'CompoundExitConfig' is defined but never used   @typescript-eslint/no-unused-vars
+  14:10  warning  'exitStrategy' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/BacktestVisualizationUtils.ts
   8:26  warning  'BacktestTrade' is defined but never used  @typescript-eslint/no-unused-vars
@@ -511,16 +280,9 @@
 /app/trading-platform/app/lib/OptimizedAccuracyService.ts
    10:17  warning  'Signal' is defined but never used                                        @typescript-eslint/no-unused-vars
    15:5   warning  'PRICE_CALCULATION' is defined but never used                             @typescript-eslint/no-unused-vars
-  124:47  warning  'market' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  351:15  warning  'startTime' is assigned a value but never used                            @typescript-eslint/no-unused-vars
-  359:15  warning  'endTime' is assigned a value but never used                              @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/PerformanceScreenerService.ts
-  170:7  warning  'minWinRate' is assigned a value but never used                                                       @typescript-eslint/no-unused-vars
-  171:7  warning  'minProfitFactor' is assigned a value but never used                                                  @typescript-eslint/no-unused-vars
-  173:7  warning  'maxDrawdown' is assigned a value but never used                                                      @typescript-eslint/no-unused-vars
-  185:5  warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-unused-vars')
-  646:9  warning  'debugStats' is never reassigned. Use 'const' instead                                                 prefer-const
+  125:47  warning  'market' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  352:15  warning  'startTime' is assigned a value but never used                            @typescript-eslint/no-unused-vars
+  360:15  warning  'endTime' is assigned a value but never used                              @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/SignalValidatorService.ts
   32:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -581,6 +343,11 @@
 /app/trading-platform/app/lib/__tests__/OptimizedBacktest.perf.test.ts
   100:15  warning  'executionTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/__tests__/PerformanceScreenerService.dual.test.ts
+    2:33  warning  'Signal' is defined but never used              @typescript-eslint/no-unused-vars
+  119:15  warning  'duration1' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  123:15  warning  'duration2' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/lib/__tests__/TechnicalIndicatorService.test.ts
   3:10  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
 
@@ -605,6 +372,9 @@
    5:10  warning  'NextRequest' is defined but never used       @typescript-eslint/no-unused-vars
   44:11  warning  'limited' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/__tests__/auth-security.test.ts
+  42:80  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
 /app/trading-platform/app/lib/__tests__/auth.test.ts
     1:29  warning  'verifyAuthToken' is defined but never used  @typescript-eslint/no-unused-vars
     1:46  warning  'requireAuth' is defined but never used      @typescript-eslint/no-unused-vars
@@ -617,8 +387,8 @@
   218:44  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/__tests__/chart-utils.test.ts
-  49:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  49:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/__tests__/forecastAccuracy.test.ts
     8:32  warning  'beforeEach' is defined but never used    @typescript-eslint/no-unused-vars
@@ -708,7 +478,7 @@
   14:24  warning  'Signal' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/alternativeData/DataCollector.ts
-  451:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  453:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/alternativeData/EnhancedSentimentService.ts
    34:51  warning  'DataSourceType' is defined but never used                                @typescript-eslint/no-unused-vars
@@ -729,13 +499,9 @@
 /app/trading-platform/app/lib/analytics/WinningAnalytics.ts
   14:10  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/api/DataAggregator.ts
-   11:15  warning  'OHLCV' is defined but never used                                      @typescript-eslint/no-unused-vars
-   11:22  warning  'Stock' is defined but never used                                      @typescript-eslint/no-unused-vars
-   11:29  warning  'Signal' is defined but never used                                     @typescript-eslint/no-unused-vars
-   11:37  warning  'TechnicalIndicator' is defined but never used                         @typescript-eslint/no-unused-vars
-  252:17  warning  '_' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
-  279:45  warning  'ttl' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/lib/api-middleware.ts
+  40:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  40:75  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/api/UnifiedApiClient.ts
   128:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
@@ -748,16 +514,16 @@
   18:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/auth.ts
-   45:12  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
-  112:9   warning  'config' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   44:12  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+  116:9   warning  'config' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/backtest-service.ts
   197:5  warning  'capital' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
   198:5  warning  'config' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/backtest/AdvancedBacktestEngine.ts
-  448:9   warning  'partialFills' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
-  461:67  warning  'index' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  260:9   warning  'partialFills' is assigned a value but never used                                 @typescript-eslint/no-unused-vars
+  273:69  warning  'index' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/backtest/AdvancedPerformanceMetrics.ts
   260:5   warning  'equity' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
@@ -779,10 +545,6 @@
   118:11  warning  'barValue' is assigned a value but never used                           @typescript-eslint/no-unused-vars
   282:57  warning  'side' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/backtest/RealisticBacktestEngine.ts
-  324:68  warning  'index' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  527:45  warning  'side' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
-
 /app/trading-platform/app/lib/backtest/RealisticBacktestExample.ts
   285:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
 
@@ -791,21 +553,8 @@
   446:5  warning  'monteCarloResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
   536:5  warning  'monteCarloResult' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/backtest/RealisticBacktestingExample.ts
-   22:3   warning  'ComplexityMetrics' is defined but never used                              @typescript-eslint/no-unused-vars
-   25:10  warning  'ParameterOptimizer' is defined but never used                             @typescript-eslint/no-unused-vars
-   26:10  warning  'OptimizationConfig' is defined but never used                             @typescript-eslint/no-unused-vars
-   72:9   warning  'result' is assigned a value but never used                                @typescript-eslint/no-unused-vars
-  116:9   warning  'result' is assigned a value but never used                                @typescript-eslint/no-unused-vars
-  175:32  warning  'warning' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  175:41  warning  'i' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
-  180:39  warning  'rec' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
-  180:44  warning  'i' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
-  292:58  warning  'rec' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
-  292:63  warning  'i' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
-
 /app/trading-platform/app/lib/backtest/SlippageModel.ts
-  294:3  warning  'marketCap' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  295:3  warning  'marketCap' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/backtest/WalkForwardAnalysis.ts
   10:43  warning  'MLBacktestConfig' is defined but never used          @typescript-eslint/no-unused-vars
@@ -814,14 +563,7 @@
 
 /app/trading-platform/app/lib/backtest/WalkForwardAnalyzer.ts
    11:52  warning  'StrategyAction' is defined but never used                              @typescript-eslint/no-unused-vars
-  680:5   warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/backtest/WinningBacktestEngine.ts
-   17:15  warning  'PositionSizingResult' is defined but never used                          @typescript-eslint/no-unused-vars
-  497:5   warning  'index' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
-  523:17  warning  'symbol' is assigned a value but never used                               @typescript-eslint/no-unused-vars
-  530:27  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  888:22  warning  'result' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  695:5   warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/backtest/__tests__/AdvancedBacktestEngine.realistic-slippage.test.ts
   436:27  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -835,9 +577,6 @@
   257:19  warning  'metric' is assigned a value but never used     @typescript-eslint/no-unused-vars
   272:19  warning  'metric' is assigned a value but never used     @typescript-eslint/no-unused-vars
   319:19  warning  'goal' is assigned a value but never used       @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/backtest/__tests__/OverfittingDetector.test.ts
-  8:26  warning  'BacktestConfig' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/backtest/__tests__/PartialFillSimulator.test.ts
   123:13  warning  'queueResults' is assigned a value but never used  @typescript-eslint/no-unused-vars
@@ -869,6 +608,10 @@
   64:14  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
   92:32  warning  'name' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/data/__tests__/MarketDataHub.test.ts
+  18:61  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  33:85  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
 /app/trading-platform/app/lib/data/__tests__/SmartDataCache.test.ts
   305:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
@@ -880,19 +623,21 @@
 /app/trading-platform/app/lib/data/quality/DataQualityChecker.ts
   31:10  warning  'logger' is defined but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/di/ServiceContainer.ts
+  5:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/app/trading-platform/app/lib/di/initialize.ts
+  3:10  warning  'technicalIndicatorService' is defined but never used  @typescript-eslint/no-unused-vars
+  4:10  warning  'analysisService' is defined but never used            @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/lib/error-handler.ts
   18:3  warning  'AuthenticationError' is defined but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/errors/AppError.ts
-  276:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+/app/trading-platform/app/lib/errors/ApiError.ts
+  1:47  warning  'ErrorCode' is defined but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/errors/handlers.ts
-   18:3  warning  'ApiError' is defined but never used           @typescript-eslint/no-unused-vars
-   20:3  warning  'ValidationError' is defined but never used    @typescript-eslint/no-unused-vars
-   21:3  warning  'NotFoundError' is defined but never used      @typescript-eslint/no-unused-vars
-   23:3  warning  'TradingError' is defined but never used       @typescript-eslint/no-unused-vars
-   24:3  warning  'SystemError' is defined but never used        @typescript-eslint/no-unused-vars
-  458:9  warning  'appError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/lib/errors/__tests__/error-classes.test.ts
+  6:3  warning  'NotFoundError' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/errors/result.ts
   10:20  warning  'ErrorCodes' is defined but never used  @typescript-eslint/no-unused-vars
@@ -943,6 +688,9 @@
   118:8   warning  'd' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
   118:11  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/hooks/useTradeHistory.ts
+  56:6  warning  React Hook useEffect has missing dependencies: 'loadMonthlyPerformance' and 'refreshTrades'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
 /app/trading-platform/app/lib/ip-rate-limit.ts
   112:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
@@ -959,10 +707,6 @@
 /app/trading-platform/app/lib/logger/__tests__/index.test.ts
   1:10  warning  'StructuredLogger' is defined but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/logger/sentry.ts
-  388:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  388:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-
 /app/trading-platform/app/lib/market/FlashCrashDetector.ts
   363:11  warning  'lastData' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
@@ -971,9 +715,9 @@
   471:5   warning  'riskLevel' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/ml/EnsembleModel.ts
-  199:11  warning  'highs' is assigned a value but never used   @typescript-eslint/no-unused-vars
-  200:11  warning  'lows' is assigned a value but never used    @typescript-eslint/no-unused-vars
-  637:11  warning  'closes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  200:11  warning  'highs' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  201:11  warning  'lows' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  638:11  warning  'closes' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/ml/FeatureEngineering.ts
   226:13  warning  'highs' is assigned a value but never used  @typescript-eslint/no-unused-vars
@@ -1008,9 +752,9 @@
   12:3  warning  'DriftDetectionResult' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/mlPrediction.ts
-  261:47  warning  'marketComment' is assigned a value but never used      @typescript-eslint/no-unused-vars
-  264:11  warning  'isStrong' is assigned a value but never used           @typescript-eslint/no-unused-vars
-  298:7   warning  'correctionComment' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  283:47  warning  'marketComment' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  286:11  warning  'isStrong' is assigned a value but never used           @typescript-eslint/no-unused-vars
+  320:7   warning  'correctionComment' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/monitoring/__tests__/monitoring.test.ts
    59:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -1073,14 +817,11 @@
   21:28  warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/performance/PerformanceMetrics.ts
-  112:59  warning  'returns' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  412:25  warning  'returns' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  116:59  warning  'returns' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  448:25  warning  'returns' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/performance/__tests__/PerformanceReporter.test.ts
   138:13  warning  'now' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/performance/decorators.ts
-  82:1  warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
 
 /app/trading-platform/app/lib/portfolio/PortfolioOptimizer.ts
   718:9  warning  'bestPoint' is assigned a value but never used    @typescript-eslint/no-unused-vars
@@ -1112,6 +853,9 @@
   209:11  warning  'n' is assigned a value but never used                                                    @typescript-eslint/no-unused-vars
   337:11  warning  'n' is assigned a value but never used                                                    @typescript-eslint/no-unused-vars
   389:5   warning  'assets' is defined but never used. Allowed unused args must match /^_/u                  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/prediction-clouds/types.ts
+  7:10  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/risk/AdvancedRiskManager.ts
   402:14  warning  'amount' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1145,24 +889,24 @@
 
 /app/trading-platform/app/lib/risk/EnhancedPortfolioRiskMonitor.ts
    8:10  warning  'Position' is defined but never used             @typescript-eslint/no-unused-vars
-  96:11  warning  'totalValue' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  97:11  warning  'totalValue' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/risk/EnhancedPsychologyMonitor.ts
     8:17  warning  'Position' is defined but never used                                          @typescript-eslint/no-unused-vars
-  583:5   warning  'indicators' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  610:11  warning  'indicators' is assigned a value but never used                               @typescript-eslint/no-unused-vars
+  603:5   warning  'indicators' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  630:11  warning  'indicators' is assigned a value but never used                               @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/risk/PortfolioRiskMonitor.ts
     9:10  warning  'Position' is defined but never used                                          @typescript-eslint/no-unused-vars
-  122:11  warning  'totalValue' is assigned a value but never used                               @typescript-eslint/no-unused-vars
-  270:5   warning  'confidence' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  296:5   warning  'confidence' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  300:11  warning  'timeHorizon' is assigned a value but never used                              @typescript-eslint/no-unused-vars
-  303:11  warning  'covarianceMatrix' is assigned a value but never used                         @typescript-eslint/no-unused-vars
-  737:40  warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  123:11  warning  'totalValue' is assigned a value but never used                               @typescript-eslint/no-unused-vars
+  271:5   warning  'confidence' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  299:5   warning  'confidence' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  303:11  warning  'timeHorizon' is assigned a value but never used                              @typescript-eslint/no-unused-vars
+  306:11  warning  'covarianceMatrix' is assigned a value but never used                         @typescript-eslint/no-unused-vars
+  740:40  warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/risk/PsychologyMonitor.ts
-  192:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  208:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/risk/RealTimeRiskCalculator.ts
   368:40  warning  'portfolio' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1207,11 +951,12 @@
   137:7   warning  'methodRiskPercent' is assigned a value but never used  @typescript-eslint/no-unused-vars
   337:9   warning  'maxCorrelation' is assigned a value but never used     @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/security/InputSanitizer.ts
-  433:65  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-
 /app/trading-platform/app/lib/sentiment/SentimentAnalysisEngine.ts
   338:49  warning  'type' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/services/IndicatorWorkerService.ts
+  6:9  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  9:7  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/services/MLIntegrationService.ts
   126:5  warning  'stock' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
@@ -1222,9 +967,13 @@
   178:15  warning  'indicators' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/PsychologyService.ts
-   14:28  warning  'positions' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-   29:11  warning  'emotions' is assigned a value but never used                                @typescript-eslint/no-unused-vars
-  146:91  warning  'tiltRisk' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+   15:28  warning  'positions' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   30:11  warning  'emotions' is assigned a value but never used                                @typescript-eslint/no-unused-vars
+  147:91  warning  'tiltRisk' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/services/RealTimeDataService.ts
+   1:10  warning  'spawn' is defined but never used         @typescript-eslint/no-unused-vars
+  86:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/services/UnifiedIntelligenceService.ts
    11:10  warning  'logger' is defined but never used                                        @typescript-eslint/no-unused-vars
@@ -1235,6 +984,12 @@
   60:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   63:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
+/app/trading-platform/app/lib/services/__tests__/RealTimeDataService.integration.test.ts
+  2:8  warning  'path' is defined but never used  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/services/__tests__/RealTimeDataService.test.ts
+  13:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
 /app/trading-platform/app/lib/services/__tests__/enhanced-feature-service.test.ts
   351:13  warning  'candlestick' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
@@ -1242,8 +997,9 @@
   34:52  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/__tests__/ml-model-service-di.test.ts
-    9:10  warning  'MockTensorFlowModel' is defined but never used  @typescript-eslint/no-unused-vars
-  191:29  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  162:70  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:47  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/services/__tests__/signal-generation-service.test.ts
    10:26  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1273,22 +1029,15 @@
   388:11  warning  'secondAvg' is assigned a value but never used          @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/enhanced-ml-service.ts
-  57:24  warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  62:25  warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/services/enhanced-smart-alert-service.ts
-    8:17  warning  'Stock' is defined but never used                                            @typescript-eslint/no-unused-vars
-    8:24  warning  'Signal' is defined but never used                                           @typescript-eslint/no-unused-vars
-  245:27  warning  'data' is defined but never used. Allowed unused args must match /^_/u       @typescript-eslint/no-unused-vars
-  245:56  warning  'condition' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  245:83  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
-  254:27  warning  'data' is defined but never used. Allowed unused args must match /^_/u       @typescript-eslint/no-unused-vars
-  254:56  warning  'condition' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-  254:83  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
+  12:24  warning  'domainEnhancedMLService' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/feature-calculation-service.ts
-  8:10  warning  'RSI_CONFIG' is defined but never used  @typescript-eslint/no-unused-vars
-  8:22  warning  'SMA_CONFIG' is defined but never used  @typescript-eslint/no-unused-vars
+   30:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   45:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   60:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   75:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   76:71  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  112:78  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/services/high-frequency-data-processing-service.ts
     8:17  warning  'Stock' is defined but never used                                         @typescript-eslint/no-unused-vars
@@ -1297,28 +1046,11 @@
   267:31  warning  'bar' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
   267:43  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/services/multiple-trading-strategies-service.ts
-    7:17  warning  'Stock' is defined but never used                    @typescript-eslint/no-unused-vars
-    7:24  warning  'Signal' is defined but never used                   @typescript-eslint/no-unused-vars
-    8:10  warning  'calculateRSI' is defined but never used             @typescript-eslint/no-unused-vars
-    8:24  warning  'calculateSMA' is defined but never used             @typescript-eslint/no-unused-vars
-    8:38  warning  'calculateBollingerBands' is defined but never used  @typescript-eslint/no-unused-vars
-    8:63  warning  'calculateATR' is defined but never used             @typescript-eslint/no-unused-vars
-  164:11  warning  'lowerBand' is assigned a value but never used       @typescript-eslint/no-unused-vars
-  243:11  warning  'middleBand' is assigned a value but never used      @typescript-eslint/no-unused-vars
-  289:11  warning  'atr' is assigned a value but never used             @typescript-eslint/no-unused-vars
-  371:11  warning  'atr' is assigned a value but never used             @typescript-eslint/no-unused-vars
-
 /app/trading-platform/app/lib/services/portfolio-risk-management-service.ts
   9:10  warning  'calculateATR' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/realtime-data-service.ts
   27:21  warning  'symbols' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/services/tensorflow-model-service.ts
-    8:13  warning  'tf' is defined but never used                           @typescript-eslint/no-unused-vars
-   31:7   warning  'DEFAULT_INPUT_SIZE' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  147:43  warning  Unexpected any. Specify a different type                 @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/services/walk-forward-analysis-service.ts
    10:10   warning  'multipleTradingStrategiesService' is defined but never used              @typescript-eslint/no-unused-vars
@@ -1328,54 +1060,26 @@
   292:80   warning  'config' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
   339:126  warning  'config' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/storage/IndexedDBService.ts
+  155:34  warning  'reject' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/lib/strategies/WinningStrategyEngine.ts
-   77:37   warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
-  125:70   warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
-  131:25   warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
-  164:39   warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
-  164:91   warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
-  164:106  warning  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
-  164:130  warning  'capital' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  171:5  warning  'capital' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/strategies/__tests__/MultiTimeFrameStrategy.test.ts
   8:28  warning  'TimeFrameSignal' is defined but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/strategy-optimization-example.ts
-   26:3   warning  'data' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-   27:20  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-   66:19  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  105:19  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  133:50  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  167:8   warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-
 /app/trading-platform/app/lib/strategy/StrategyCatalog.ts
-   247:73  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   247:95  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   446:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-   446:64  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   446:86  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   567:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-   567:64  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   567:86  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   682:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-   682:64  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   682:86  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   801:64  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   801:86  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   874:11  warning  'skewFactor' is assigned a value but never used                                   @typescript-eslint/no-unused-vars
-   909:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-   909:64  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-   909:86  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-  1031:64  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
-  1031:86  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  447:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  568:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  683:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  878:11  warning  'skewFactor' is assigned a value but never used                                   @typescript-eslint/no-unused-vars
+  913:33  warning  'originalParams' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/strategy/StrategyComposer.ts
    16:3  warning  'Strategy' is defined but never used                                            @typescript-eslint/no-unused-vars
    18:3  warning  'StrategyPerformance' is defined but never used                                 @typescript-eslint/no-unused-vars
   321:5  warning  'targetReturn' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/strategy/types.ts
-  59:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/supplyDemandMaster.ts
    81:13  warning  'volumePerPrice' is assigned a value but never used  @typescript-eslint/no-unused-vars
@@ -1387,9 +1091,6 @@
 
 /app/trading-platform/app/lib/trading/__tests__/psychology.test.ts
   6:48  warning  'PsychologyState' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/trading/patternRecognition.ts
-  34:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/tradingCore/UnifiedTradingPlatform.ts
     9:33  warning  'MarketData' is defined but never used            @typescript-eslint/no-unused-vars
@@ -1405,7 +1106,13 @@
 
 /app/trading-platform/app/lib/universe/UniverseManager.ts
     8:10  warning  'Stock' is defined but never used         @typescript-eslint/no-unused-vars
-  387:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  388:36  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/app/trading-platform/app/lib/universe/__tests__/AutoScreener.test.ts
+  13:10  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  28:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  47:53  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  47:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/universe/__tests__/UniverseManager.test.ts
    6:27  warning  'UniverseStock' is defined but never used    @typescript-eslint/no-unused-vars
@@ -1433,16 +1140,7 @@
   56:112  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/utils/calculations.ts
-   8:10  warning  'OHLCV' is defined but never used         @typescript-eslint/no-unused-vars
-  17:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  19:28  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  23:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  39:80  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  45:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-
-/app/trading-platform/app/lib/utils/memoize.ts
-   56:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  162:48  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  8:10  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/utils/performanceMonitor.ts
   68:11  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
@@ -1459,28 +1157,23 @@
   21:11  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/performance/page.tsx
-   21:10  warning  'Signal' is defined but never used           @typescript-eslint/no-unused-vars
-   22:34  warning  'TrainingMetrics' is defined but never used  @typescript-eslint/no-unused-vars
-  271:19  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
-  272:19  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
-  292:19  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
-  293:19  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   12:44  warning  'useRef' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   22:10  warning  'Signal' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   24:10  warning  'fetchOHLCV' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   76:3   warning  'onClick' is defined but never used. Allowed unused args must match /^_/u                                         @typescript-eslint/no-unused-vars
+  116:39  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  120:26  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  181:3   warning  'onClick' is defined but never used. Allowed unused args must match /^_/u                                         @typescript-eslint/no-unused-vars
+  370:6   warning  React Hook useCallback has a missing dependency: 'setDualData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  797:54  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  874:53  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+
+/app/trading-platform/app/screener/page.tsx
+   63:52  warning  'isFilterDebouncing' is assigned a value but never used                                                        @typescript-eslint/no-unused-vars
+  235:6   warning  React Hook useMemo has an unnecessary dependency: 'filters'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
 
 /app/trading-platform/app/security/AuditLogger.ts
   9:10  warning  'idbClient' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/shared/types/risk.ts
-  7:10  warning  'Position' is defined but never used   @typescript-eslint/no-unused-vars
-  7:20  warning  'Portfolio' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/shared/utils/__tests__/singleton.test.ts
-  6:27  warning  'Singleton' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/shared/utils/performanceMonitor.ts
-  88:23  warning  'values' is assigned a value but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/shared/utils/singleton.ts
-  99:33  warning  'T' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/store/__tests__/tradingStore.test.ts
   3:10  warning  'AI_TRADING' is defined but never used  @typescript-eslint/no-unused-vars
@@ -1499,18 +1192,18 @@
   13:20  warning  'persist' is defined but never used                @typescript-eslint/no-unused-vars
   14:32  warning  'Portfolio' is defined but never used              @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/store/performanceStore.ts
+  3:60  warning  'DualScanResult' is defined but never used   @typescript-eslint/no-unused-vars
+  6:11  warning  'DualMatchResult' is defined but never used  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/store/portfolioStore.ts
-  93:61  warning  'finalStopLoss' is assigned a value but never used    @typescript-eslint/no-unused-vars
-  94:63  warning  'finalTakeProfit' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  233:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/store/psychologyStore.ts
    14:3   warning  'MentalState' is defined but never used                                  @typescript-eslint/no-unused-vars
   211:45  warning  'state' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
   350:86  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
   351:90  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
-
-/app/trading-platform/app/store/tradingStore.ts
-  4:38  warning  'Order' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/store/universeStore.ts
   46:11  warning  'get' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1526,15 +1219,15 @@
 /app/trading-platform/app/types/api.ts
   237:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/types/order.ts
-  4:10  warning  'OrderSide' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/types/signal.ts
-  5:10  warning  'StrategyType' is defined but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/workers/__tests__/indicator.test.ts
+  17:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/workers/backtest.worker.ts
    42:6  warning  'WorkerResponse' is defined but never used             @typescript-eslint/no-unused-vars
   104:9  warning  'optimizationTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/workers/indicator.worker.ts
+  3:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/e2e/authentication.spec.ts
    13:69  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1543,19 +1236,17 @@
   242:75  warning  'page' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
 
 /app/trading-platform/e2e/data-integrity.spec.ts
-  273:11  warning  'hasDecimalPnL' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  271:11  warning  'hasDecimalPnL' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/e2e/error-handling.spec.ts
    48:9   warning  'timeoutOccurred' is assigned a value but never used     @typescript-eslint/no-unused-vars
    75:11  warning  'hasTimeoutError' is assigned a value but never used     @typescript-eslint/no-unused-vars
    79:11  warning  'hasCancelOption' is assigned a value but never used     @typescript-eslint/no-unused-vars
   211:11  warning  'hasDataError' is assigned a value but never used        @typescript-eslint/no-unused-vars
-  283:11  warning  'hasWsError' is assigned a value but never used          @typescript-eslint/no-unused-vars
-  287:11  warning  'hasOfflineMode' is assigned a value but never used      @typescript-eslint/no-unused-vars
-  315:11  warning  'hasError' is assigned a value but never used            @typescript-eslint/no-unused-vars
-  319:11  warning  'hasConnectionError' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  336:14  warning  'error' is defined but never used                        @typescript-eslint/no-unused-vars
-  344:11  warning  'hasQuotaError' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  283:11  warning  'hasError' is assigned a value but never used            @typescript-eslint/no-unused-vars
+  287:11  warning  'hasConnectionError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  304:14  warning  'error' is defined but never used                        @typescript-eslint/no-unused-vars
+  312:11  warning  'hasQuotaError' is assigned a value but never used       @typescript-eslint/no-unused-vars
 
 /app/trading-platform/e2e/main.spec.ts
   10:16  warning  'addStockToWatchlist' is defined but never used                         @typescript-eslint/no-unused-vars
@@ -1565,20 +1256,8 @@
   112:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
   124:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/e2e/order-execution.spec.ts
-   55:13  warning  'orderConfirmation' is assigned a value but never used   @typescript-eslint/no-unused-vars
-  133:13  warning  'hasPartialFill' is assigned a value but never used      @typescript-eslint/no-unused-vars
-  137:13  warning  'hasPendingOrders' is assigned a value but never used    @typescript-eslint/no-unused-vars
-  211:7   warning  'originalPrice' is assigned a value but never used       @typescript-eslint/no-unused-vars
-  229:11  warning  'hasSlippageWarning' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  233:11  warning  'hasExecutedPrice' is assigned a value but never used    @typescript-eslint/no-unused-vars
-  276:15  warning  'isDisabled' is assigned a value but never used          @typescript-eslint/no-unused-vars
-  301:13  warning  'hasError' is assigned a value but never used            @typescript-eslint/no-unused-vars
-  305:13  warning  'hasWarning' is assigned a value but never used          @typescript-eslint/no-unused-vars
-  340:15  warning  'hasOrderType' is assigned a value but never used        @typescript-eslint/no-unused-vars
-  346:15  warning  'hasConfirm' is assigned a value but never used          @typescript-eslint/no-unused-vars
-  347:15  warning  'hasCancel' is assigned a value but never used           @typescript-eslint/no-unused-vars
-  370:11  warning  'hasWarning' is assigned a value but never used          @typescript-eslint/no-unused-vars
+/app/trading-platform/e2e/prediction-clouds.spec.ts
+  107:56  warning  'request' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/e2e/specs/auth.spec.ts
   118:81  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1624,5 +1303,19 @@
 /app/trading-platform/scripts/final-integrity-check.ts
   56:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-✖ 949 problems (0 errors, 949 warnings)
+/app/trading-platform/scripts/verify-direct.ts
+  32:50  warning  Unexpected any. Specify a different type                     @typescript-eslint/no-explicit-any
+  33:36  warning  Unexpected any. Specify a different type                     @typescript-eslint/no-explicit-any
+  63:15  warning  'DUAL_SCORE_WEIGHT_PERF' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  64:15  warning  'DUAL_SCORE_WEIGHT_AI' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  69:15  warning  'dualScore' is assigned a value but never used               @typescript-eslint/no-unused-vars
+
+/app/trading-platform/scripts/verify-dual-details.ts
+  100:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/app/trading-platform/scripts/verify_data.ts
+  22:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  27:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 705 problems (1 error, 704 warnings)
   0 errors and 3 warnings potentially fixable with the `--fix` option.
