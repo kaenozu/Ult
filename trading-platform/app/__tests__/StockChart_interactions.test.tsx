@@ -29,23 +29,26 @@ const mockChartInstance = {
 jest.mock('react-chartjs-2', () => {
     const { forwardRef, useImperativeHandle } = require('react');
 
+    const MockLine = forwardRef((props: any, ref: any) => {
+        useImperativeHandle(ref, () => mockChartInstance);
+        return (
+            <div
+                data-testid="line-chart"
+                onClick={() => {
+                    // Simulate hover on index 5 (middle of data) to start interaction
+                    if (props.options?.onHover) {
+                        props.options.onHover(null, [{ index: 5, element: {}, datasetIndex: 0 }]);
+                    }
+                }}
+            >
+                Line Chart
+            </div>
+        );
+    });
+    MockLine.displayName = 'Line';
+
     return {
-        Line: forwardRef((props: any, ref: any) => {
-            useImperativeHandle(ref, () => mockChartInstance);
-            return (
-                <div
-                    data-testid="line-chart"
-                    onClick={() => {
-                        // Simulate hover on index 5 (middle of data) to start interaction
-                        if (props.options?.onHover) {
-                            props.options.onHover(null, [{ index: 5, element: {}, datasetIndex: 0 }]);
-                        }
-                    }}
-                >
-                    Line Chart
-                </div>
-            );
-        }),
+        Line: MockLine,
         Bar: () => <div data-testid="bar-chart">Bar Chart</div>,
     };
 });
