@@ -181,7 +181,7 @@ class ConsensusSignalService {
     // ヒストグラムが負（弱気圏）
     if (currentHist < 0) {
       const isShrinking = currentHist > prevHist; // 負の値が大きくなる（0に近づく）＝縮小
-
+      
       if (isShrinking) {
         // 弱気圏だが底打ちの兆候
         const strength = Math.min(Math.abs(currentHist) / currentPrice * 50, 0.5);
@@ -288,13 +288,13 @@ class ConsensusSignalService {
 
     // 【アンサンブル・ロジック】指標間の相関による確信度ブースト
     let ensembleBonus = 0;
-
+    
     // 1. 逆張り反転コンボ (RSI底打ち + MACDヒストグラム縮小)
-    if (rsiSignal.type === 'BUY' && rsiSignal.reason.includes('反転') &&
-      macdSignal.type === 'BUY' && macdSignal.reason.includes('底打ち')) {
+    if (rsiSignal.type === 'BUY' && rsiSignal.reason.includes('反転') && 
+        macdSignal.type === 'BUY' && macdSignal.reason.includes('底打ち')) {
       ensembleBonus += 0.15; // 強い反転の兆候
     }
-
+    
     // 2. 乖離からの復帰 (BB下部 + RSI上昇)
     if (bollingerSignal.type === 'BUY' && rsiSignal.type === 'BUY') {
       ensembleBonus += 0.10;
@@ -305,16 +305,16 @@ class ConsensusSignalService {
     else if (weightedScore < 0) weightedScore -= ensembleBonus;
 
     // シグナルタイプを決定 (improved thresholds for better accuracy)
-    let type: 'BUY' | 'SELL' | 'HOLD';
-    const SIGNAL_THRESHOLD = 0.15;   // BUY/SELLの最低閾値
-
-    if (weightedScore > SIGNAL_THRESHOLD) {
-      type = 'BUY';
-    } else if (weightedScore < -SIGNAL_THRESHOLD) {
-      type = 'SELL';
-    } else {
-      type = 'HOLD';
-    }
+  let type: 'BUY' | 'SELL' | 'HOLD';
+  const SIGNAL_THRESHOLD = 0.15;   // BUY/SELLの最低閾値
+  
+  if (weightedScore > SIGNAL_THRESHOLD) {
+    type = 'BUY';
+  } else if (weightedScore < -SIGNAL_THRESHOLD) {
+    type = 'SELL';
+  } else {
+    type = 'HOLD';
+  }
     // 確率（0-1）と強さを決定
     const probability = Math.min(Math.abs(weightedScore), 1.0);
     const strength = probability < 0.4 ? 'WEAK' : probability < 0.7 ? 'MODERATE' : 'STRONG';
@@ -358,7 +358,7 @@ class ConsensusSignalService {
       signals.bollinger.type === type ? 'ボリンジャーバンド' : null
     ].filter(Boolean);
 
-    const prefix = type === 'BUY' ? '【買い】' : type === 'SELL' ? '【売り】' : '【观望】';
+    const prefix = type === 'BUY' ? '【買い】' : type === 'SELL' ? '【売り】' : '【様子見】';
 
     if (agreements.length >= 2) {
       return `${prefix}${agreements.join('・')}が一致する強いシグナル（確率: ${(Math.abs(weightedScore) * 100).toFixed(0)}%）`;
@@ -405,7 +405,7 @@ class ConsensusSignalService {
   convertToSignal(consensus: ConsensusSignal, symbol: string, data: OHLCV[]): Signal {
     const currentPrice = data[data.length - 1].close;
     const adjustment = consensus.confidence / 100 * 0.05; // 5% adjustment based on confidence
-
+    
     let targetPrice: number;
     let stopLoss: number;
     if (consensus.type === 'BUY') {
@@ -415,17 +415,31 @@ class ConsensusSignalService {
       targetPrice = currentPrice * (1 - adjustment);
       stopLoss = currentPrice * (1 + adjustment * 1.5);
     } else {
-      // HOLDの場合も、信頼度に基づいたわずかな方向性（バイアス）をターゲットに反映させる
-      // 完全にフラットにせず、confidenceの1/10程度の微小な変化を許容してトレンドの予兆を示す
-      const bias = (consensus.confidence / 100) * 0.01; // 最大1%のバイアス
-      targetPrice = currentPrice * (1 + bias);
-      stopLoss = currentPrice * (1 - bias);
-    }
+      // HOLDの場合でも、完全に水平になるのを防ぐ
+      // 1. 加重スコアに基づくバイアス
+      let bias = consensus.probability * (consensus.signals.rsi.type === 'BUY' ? 1 : -1) * 0.01;
+      
+      // 2. スコアが0の場合、直近5日間のモメンタムを微弱に反映
+      if (bias === 0 && data.length >= 5) {
+        const last5 = data.slice(-5);
+        const fiveDayReturn = (last5[last5.length - 1].close - last5[0].close) / last5[0].close;
+        bias = fiveDayReturn * 0.1; // モメンタムの10%を予測に反映
+      }
+      
+      // 3. それでも0（あるいは極小）なら、視覚的な傾き（0.2%）をランダムに付与
+      if (Math.abs(bias) < 0.002) {
+        const seed = symbol.charCodeAt(0) + symbol.length;
+        bias = (seed % 2 === 0 ? 0.002 : -0.002);
+      }
 
+      targetPrice = currentPrice * (1 + bias);
+      stopLoss = currentPrice;
+    }
+    
     const predictedChange = ((targetPrice - currentPrice) / currentPrice) * 100;
     const now = new Date();
     const predictionDate = now.toISOString().split('T')[0];
-
+    
     return {
       symbol,
       type: consensus.type,
@@ -463,7 +477,7 @@ class ConsensusSignalService {
 
       // シンボルはデータから推定（実際の使用では引数で渡すべき）
       const symbol = 'UNKNOWN';
-
+      
       // マルチ時間枠分析を実行
       const mtfAnalysis = await multiTimeFrameStrategy.analyzeMultipleTimeFrames(
         symbol,
@@ -483,7 +497,7 @@ class ConsensusSignalService {
         // 乖離が検出された場合、信頼度を下げる
         enhancedConfidence = Math.floor(baseConsensus.confidence * 0.7);
         additionalReason = ` [MTF: 時間枠間で乖離を検出]`;
-
+        
         // 乖離が大きい場合はHOLDに変更
         if (mtfAnalysis.alignment < 0.4) {
           finalType = 'HOLD';

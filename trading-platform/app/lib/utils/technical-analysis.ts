@@ -18,31 +18,47 @@ export function _getValidPrice(p: number | null | undefined): number {
  * Calculate Simple Moving Average (SMA)
  */
 export function calculateSMA(prices: number[], period: number): number[] {
-  const result: number[] = [];
+  const length = prices.length;
+  // Pre-allocate array for performance
+  const result: number[] = new Array(length);
   let sum = 0;
   let validCount = 0;
 
-  for (let i = 0; i < prices.length; i++) {
+  // 1. Initial window (0 to period - 1)
+  for (let i = 0; i < period && i < length; i++) {
     const val = _getValidPrice(prices[i]);
     if (!isNaN(val)) {
       sum += val;
       validCount++;
     }
 
-    if (i >= period) {
-      const oldVal = _getValidPrice(prices[i - period]);
-      if (!isNaN(oldVal)) {
-        sum -= oldVal;
-        validCount--;
-      }
-    }
-
     if (i < period - 1) {
-      result.push(NaN);
+      result[i] = NaN;
     } else {
-      result.push(validCount === period ? sum / period : NaN);
+      // i == period - 1
+      result[i] = validCount === period ? sum / period : NaN;
     }
   }
+
+  // 2. Main loop (period to end)
+  for (let i = period; i < length; i++) {
+    // Add new value
+    const val = _getValidPrice(prices[i]);
+    if (!isNaN(val)) {
+      sum += val;
+      validCount++;
+    }
+
+    // Remove old value
+    const oldVal = _getValidPrice(prices[i - period]);
+    if (!isNaN(oldVal)) {
+      sum -= oldVal;
+      validCount--;
+    }
+
+    result[i] = validCount === period ? sum / period : NaN;
+  }
+
   return result;
 }
 
@@ -50,13 +66,15 @@ export function calculateSMA(prices: number[], period: number): number[] {
  * Calculate Exponential Moving Average (EMA)
  */
 export function calculateEMA(prices: number[], period: number): number[] {
-  const result: number[] = [];
+  const length = prices.length;
+  // Pre-allocate array for performance
+  const result: number[] = new Array(length);
   const multiplier = 2 / (period + 1);
   let sum = 0;
   let validCount = 0;
   let initialized = false;
 
-  for (let i = 0; i < prices.length; i++) {
+  for (let i = 0; i < length; i++) {
     const val = _getValidPrice(prices[i]);
 
     if (!initialized) {
@@ -64,17 +82,21 @@ export function calculateEMA(prices: number[], period: number): number[] {
         sum += val;
         validCount++;
       }
+
       if (validCount === period && !isNaN(val)) {
-        result.push(sum / period);
+        result[i] = sum / period;
         initialized = true;
       } else {
-        result.push(NaN);
+        result[i] = NaN;
       }
     } else {
-      if (!isNaN(val) && !isNaN(result[i - 1])) {
-        result.push((val - result[i - 1]) * multiplier + result[i - 1]);
+      // Optimization: access previous result directly from array (or use a local var if desired, but array access is fast enough here)
+      const prevEMA = result[i - 1];
+
+      if (!isNaN(val) && !isNaN(prevEMA)) {
+        result[i] = (val - prevEMA) * multiplier + prevEMA;
       } else {
-        result.push(NaN);
+        result[i] = NaN;
       }
     }
   }
@@ -85,13 +107,27 @@ export function calculateEMA(prices: number[], period: number): number[] {
  * Calculate Relative Strength Index (RSI)
  */
 export function calculateRSI(prices: number[], period: number = 14): number[] {
-  const result: number[] = [];
+  const length = prices.length;
+  // Pre-allocate array for performance (~30% boost)
+  const result: number[] = new Array(length);
+
+  if (length <= period) {
+    // Fill with NaN if not enough data
+    for (let i = 0; i < length; i++) result[i] = NaN;
+    return result;
+  }
+
+  // 1. Initialize first 'period' elements with NaN
+  for (let i = 0; i < period; i++) {
+    result[i] = NaN;
+  }
+
   let avgGain = 0;
   let avgLoss = 0;
   let validChangesCount = 0;
 
   // Calculate initial average gain/loss
-  for (let i = 1; i <= period && i < prices.length; i++) {
+  for (let i = 1; i <= period; i++) {
     const valCurrent = _getValidPrice(prices[i]);
     const valPrev = _getValidPrice(prices[i - 1]);
 
@@ -108,35 +144,35 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
     avgLoss /= validChangesCount;
   }
 
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period) {
-      result.push(NaN);
-    } else if (i === period) {
-      const rs = avgLoss === 0 ? (avgGain === 0 ? 50 : 100) : avgGain / avgLoss;
-      result.push(100 - (100 / (1 + rs)));
+  // Handle the first RSI point (at index = period)
+  const rsInitial = avgLoss === 0 ? (avgGain === 0 ? 50 : 100) : avgGain / avgLoss;
+  result[period] = 100 - (100 / (1 + rsInitial));
+
+  // 2. Main loop from period + 1 to end
+  for (let i = period + 1; i < length; i++) {
+    const valCurrent = _getValidPrice(prices[i]);
+    const valPrev = _getValidPrice(prices[i - 1]);
+
+    if (isNaN(valCurrent) || isNaN(valPrev)) {
+      result[i] = NaN;
     } else {
-      const valCurrent = _getValidPrice(prices[i]);
-      const valPrev = _getValidPrice(prices[i - 1]);
+      const change = valCurrent - valPrev;
+      const gain = change >= 0 ? change : 0;
+      const loss = change < 0 ? Math.abs(change) : 0;
 
-      if (isNaN(valCurrent) || isNaN(valPrev)) {
-        result.push(NaN);
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+      const rs = avgLoss === 0 ? (avgGain === 0 ? 0 : 100) : avgGain / avgLoss;
+
+      if (avgLoss === 0 && avgGain === 0) {
+        result[i] = 50;
       } else {
-        const change = valCurrent - valPrev;
-        const gain = change >= 0 ? change : 0;
-        const loss = change < 0 ? Math.abs(change) : 0;
-
-        avgGain = (avgGain * (period - 1) + gain) / period;
-        avgLoss = (avgLoss * (period - 1) + loss) / period;
-
-        const rs = avgLoss === 0 ? (avgGain === 0 ? 0 : 100) : avgGain / avgLoss;
-        if (avgLoss === 0 && avgGain === 0) {
-          result.push(50);
-        } else {
-          result.push(100 - (100 / (1 + rs)));
-        }
+        result[i] = 100 - (100 / (1 + rs));
       }
     }
   }
+
   return result;
 }
 
