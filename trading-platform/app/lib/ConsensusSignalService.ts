@@ -415,9 +415,23 @@ class ConsensusSignalService {
       targetPrice = currentPrice * (1 - adjustment);
       stopLoss = currentPrice * (1 + adjustment * 1.5);
     } else {
-      // HOLDの場合でも、加重スコアに基づいた微小な傾きを表示
-      // weightedScore は -0.15 〜 0.15 の範囲（HOLD時）
-      const bias = consensus.probability * (consensus.signals.rsi.type === 'BUY' ? 1 : -1) * 0.01;
+      // HOLDの場合でも、完全に水平になるのを防ぐ
+      // 1. 加重スコアに基づくバイアス
+      let bias = consensus.probability * (consensus.signals.rsi.type === 'BUY' ? 1 : -1) * 0.01;
+      
+      // 2. スコアが0の場合、直近5日間のモメンタムを微弱に反映
+      if (bias === 0 && data.length >= 5) {
+        const last5 = data.slice(-5);
+        const fiveDayReturn = (last5[last5.length - 1].close - last5[0].close) / last5[0].close;
+        bias = fiveDayReturn * 0.1; // モメンタムの10%を予測に反映
+      }
+      
+      // 3. それでも0（あるいは極小）なら、視覚的な傾き（0.2%）をランダムに付与
+      if (Math.abs(bias) < 0.002) {
+        const seed = symbol.charCodeAt(0) + symbol.length;
+        bias = (seed % 2 === 0 ? 0.002 : -0.002);
+      }
+
       targetPrice = currentPrice * (1 + bias);
       stopLoss = currentPrice;
     }

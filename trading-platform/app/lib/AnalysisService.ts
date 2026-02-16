@@ -528,24 +528,25 @@ class AnalysisService {
             atr = currentPrice * PRICE_CALCULATION.DEFAULT_ATR_RATIO;
         }
 
-        const targetPercent = Math.max(atr / (currentPrice || 1), PRICE_CALCULATION.DEFAULT_ATR_RATIO);
+        const atrRatio = Math.min(Math.max(atr / (currentPrice || 1), 0.01), 0.15);
+        const targetPercent = Math.max(atrRatio, PRICE_CALCULATION.DEFAULT_ATR_RATIO);
         const forecastCone = this.calculateForecastCone(windowData);
 
         let targetPrice = currentPrice;
         if (type === 'BUY') {
-            targetPrice = currentPrice * (1 + targetPercent * 2);
+            targetPrice = currentPrice * (1 + targetPercent * 1.5);
         } else if (type === 'SELL') {
-            targetPrice = currentPrice * (1 - targetPercent * 2);
+            targetPrice = currentPrice * (1 - targetPercent * 1.5);
         } else {
-            // HOLDの場合でも、forecastConeのベース（トレンド）があればそれを反映させる
-            if (forecastCone && forecastCone.base && forecastCone.base.length > 1) {
-                targetPrice = forecastCone.base[forecastCone.base.length - 1];
-            } else {
-                // フォールバック: SMAとの乖離を埋める方向への微小な動きを予測
-                const gap = lastSMA - currentPrice;
-                targetPrice = currentPrice + (gap * 0.1);
-            }
+            // HOLDの場合でも、微小なバイアスを反映
+            const gap = lastSMA - currentPrice;
+            const gapRatio = Math.min(Math.max(gap / (currentPrice || 1), -0.05), 0.05);
+            targetPrice = currentPrice * (1 + gapRatio * 0.5); 
         }
+
+        // 異常値ガード
+        const maxDev = currentPrice * 0.3;
+        targetPrice = Math.min(Math.max(targetPrice, currentPrice - maxDev), currentPrice + maxDev);
 
         let stopLoss = type === 'BUY' ? currentPrice * (1 - targetPercent) : type === 'SELL' ? currentPrice * (1 + targetPercent) : currentPrice;
 

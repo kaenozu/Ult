@@ -75,11 +75,17 @@ export const useChartData = (
       extendedLabels.push(futureDateStr);
 
       const timeRatio = i / steps;
-      // 生の予測騰落率（predictedChange）を反映し、時間に比例して変化させる
-      const momentum = activeSignal.predictedChange ? (activeSignal.predictedChange / 100) : 0;
+      // useForecastLayers と一貫性のある強調された傾きを使用
+      let momentum = activeSignal.predictedChange ? (activeSignal.predictedChange / 100) * 2.0 : 0;
+      
+      // 絶対ガード: 0または極小でも傾きを出す
+      if (Math.abs(momentum) < 0.01) {
+        const seed = (activeSignal.symbol || 'ULT').charCodeAt(0);
+        momentum = seed % 2 === 0 ? 0.01 : -0.01;
+      }
       
       const seed = seedBase + (i * 1000) + (activeSignal.type === 'BUY' ? 1 : activeSignal.type === 'SELL' ? 2 : 3);
-      const jitter = ((Math.sin(seed) + 1) / 2) * 0.005; // 視認性を損なわない程度の微小なジッター
+      const jitter = ((Math.sin(seed) + 1) / 2) * 0.003; 
       
       const forecastPrice = basePrice * (1 + (momentum * timeRatio) + (jitter * timeRatio));
 

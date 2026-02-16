@@ -112,9 +112,11 @@ export const StockChart = memo(function StockChart({
       }, 1500); 
 
       setHoveredIndex(prev => {
-        const currentIdx = prev === null ? data.length - 1 : prev;
+        // Use actualData.prices.length (the rendered points) for bounds
+        const maxIdx = actualData.prices.length - 1;
+        const currentIdx = prev === null ? maxIdx : prev;
         if (isArrowLeft) return Math.max(0, currentIdx - 1);
-        return Math.min(data.length - 1, currentIdx + 1);
+        return Math.min(maxIdx, currentIdx + 1);
       });
     };
 
@@ -236,7 +238,8 @@ export const StockChart = memo(function StockChart({
   // 3. Performance-optimized: Split datasets for better rendering
   const priceDataset = useMemo(() => ({
     label: `${market === 'japan' ? '株価' : 'Stock Price'}`,
-    data: actualData.prices,
+    // 実際の価格と未来の予測価格を結合して一本の線にする
+    data: [...actualData.prices, ...forecastExtension.forecastPrices],
     borderColor: CHART_COLORS.PRICE.LINE,
     backgroundColor: CHART_COLORS.PRICE.BACKGROUND,
     borderWidth: 2,
@@ -245,7 +248,12 @@ export const StockChart = memo(function StockChart({
     fill: true,
     tension: 0.1,
     yAxisID: 'y',
-  }), [actualData.prices, market]);
+    // 過去と未来の境界を視覚的に分けるためのセグメント設定（Chart.js機能）
+    segment: {
+      borderDash: (ctx: any) => ctx.p0.parsed.x >= actualData.prices.length - 1 ? [5, 5] : undefined,
+      borderColor: (ctx: any) => ctx.p0.parsed.x >= actualData.prices.length - 1 ? 'rgba(146, 173, 201, 0.8)' : undefined,
+    }
+  }), [actualData.prices, forecastExtension.forecastPrices, market]);
 
   const smaDataset = useMemo(() => showSMA && sma20.length > 0 ? {
     label: `SMA (${SMA_CONFIG.PERIOD})`,
@@ -299,7 +307,7 @@ export const StockChart = memo(function StockChart({
       priceDataset,
       ...(smaDataset ? [smaDataset] : []),
       ...bollingerDatasets,
-      ...forecastDatasets,
+      // メインの未来予測(forecastDatasets)を削除し、マウスオーバー時のゴースト予測のみを表示
       ...ghostForecastDatasets,
       ...(indexDataset ? [indexDataset] : []),
     ].filter(Boolean);
