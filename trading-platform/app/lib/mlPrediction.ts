@@ -287,8 +287,11 @@ class MLPredictionService {
 
     // 2. シグナルタイプの決定
     let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-    if (prediction.ensemblePrediction > 1.0 && finalConfidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) type = 'BUY';
-    else if (prediction.ensemblePrediction < -1.0 && finalConfidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) type = 'SELL';
+    const BUY_THRESHOLD = 0.5; // 1.0 -> 0.5 に緩和
+    const SELL_THRESHOLD = -0.5;
+
+    if (prediction.ensemblePrediction > BUY_THRESHOLD && finalConfidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) type = 'BUY';
+    else if (prediction.ensemblePrediction < SELL_THRESHOLD && finalConfidence >= BACKTEST_CONFIG.MIN_SIGNAL_CONFIDENCE) type = 'SELL';
 
     // 3. 自己矯正 (Self-Correction): 誤差係数による補正と、ターゲット価格の再計算
     const errorFactor = baseAnalysis.predictionError || 1.0;
@@ -310,9 +313,10 @@ class MLPredictionService {
       targetPrice = currentPrice - priceMove;
       stopLoss = currentPrice + (priceMove / 2);
     } else {
-      // HOLDの場合はターゲットを現在値に固定し、不必要な予報線の傾きを排除する
-      targetPrice = currentPrice;
-      stopLoss = currentPrice;
+      // HOLDの場合でも、MLの予測騰落率に基づいたターゲットを表示して「予測の方向性」を示す
+      const predictedMove = currentPrice * (prediction.ensemblePrediction / 100);
+      targetPrice = currentPrice + predictedMove;
+      stopLoss = currentPrice; // HOLD時はストップロスを表示しないか現在値に固定
     }
 
     let correctionComment = "";
@@ -322,11 +326,17 @@ class MLPredictionService {
       stopLoss = type === 'BUY' ? currentPrice - drift : currentPrice + drift;
     }
 
-    // 予測騰落率の符号をシグナルタイプと強制的に一致させるガード
+    // 予測騰落率の符号をシグナルタイプと強制的に一致させるガード（BUY/SELL時のみ）
     let finalPredictedChange = prediction.ensemblePrediction;
     if (type === 'BUY' && finalPredictedChange < 0) finalPredictedChange = Math.abs(finalPredictedChange);
     if (type === 'SELL' && finalPredictedChange > 0) finalPredictedChange = -Math.abs(finalPredictedChange);
-    if (type === 'HOLD') finalPredictedChange = 0;
+    
+    // HOLD時でも生の予測値を表示することで、小幅な動きやトレンドの兆しを可視化する
+    // ただし、非常に低い信頼度の場合は中央（0）に寄せる減衰処理を行う
+    if (type === 'HOLD') {
+      const dampingFactor = Math.max(0, (finalConfidence - 30) / 70); // 信頼度30以下は0、100で1.0
+      finalPredictedChange = prediction.ensemblePrediction * dampingFactor;
+    }
 
     // シグナル理由の生成
     const reason = this.generateBaseReason(type);
@@ -465,6 +475,9 @@ class MLPredictionService {
       reasons.push(`下降トレンド(SMA5:${features.sma5.toFixed(1)}%)`);
     }
 
+    // 連続的なベーススコアの加算（0付近の固着を防ぐ）
+    score += features.sma5 * 0.1;
+
     // ゴールデン/デッドクロス検出
     if (features.sma5 > 0 && features.sma5 > features.sma20) {
       score += 1;
@@ -585,10 +598,14 @@ class MLPredictionService {
       score += 3;
     } else if (trendStrength > 2) {
       score += 1.5;
+    } else if (trendStrength > 0.5) {
+      score += 0.5; // 小幅な上昇トレンドを検出
     } else if (trendStrength < -5) {
       score -= 3;
     } else if (trendStrength < -2) {
       score -= 1.5;
+    } else if (trendStrength < -0.5) {
+      score -= 0.5; // 小幅な下降トレンドを検出
     }
 
     // 2. ボラティリティ収縮/拡張パターン

@@ -5,6 +5,68 @@ import { formatCurrency, cn } from '@/app/lib/utils';
 import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { RiskSettingsPanel } from './RiskSettingsPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
+import { useState, useMemo } from 'react';
+
+/**
+ * メッセージ定数
+ */
+const MSG_INSUFFICIENT_FUNDS = '現金が足りません';
+
+/**
+ * 最大数量ボタンのプロパティ
+ */
+interface MaxQuantityButtonProps {
+  price: number;
+  cash: number;
+  onSetQuantity: (qty: number) => void;
+}
+
+/**
+ * 最大購入数量ボタンコンポーネント
+ * 
+ * - 購入可能な場合：数量を設定
+ * - 購入不可能な場合：ツールチップで理由を表示
+ */
+function MaxQuantityButton({ price, cash, onSetQuantity }: MaxQuantityButtonProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  
+  const { maxQty, canAfford } = useMemo(() => {
+    if (price <= 0 || cash <= 0) return { maxQty: 0, canAfford: false };
+    const qty = Math.floor(cash / price);
+    return { maxQty: qty, canAfford: qty >= 1 };
+  }, [price, cash]);
+
+  return (
+    <div 
+      className="relative flex items-center"
+      onMouseEnter={() => !canAfford && setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <button
+        type="button"
+        onClick={() => canAfford && onSetQuantity(maxQty)}
+        disabled={!canAfford}
+        className={cn(
+          "text-[10px] underline decoration-dotted transition-colors ml-1",
+          canAfford 
+            ? "text-green-400 hover:text-white cursor-pointer" 
+            : "text-gray-500 cursor-not-allowed no-underline"
+        )}
+        aria-label={canAfford ? "最大購入可能数量を入力" : MSG_INSUFFICIENT_FUNDS}
+      >
+        最大 (Max)
+      </button>
+      
+      {/* ツールチップ - 購入不可時に表示 */}
+      {showTooltip && !canAfford && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-red-600 text-white text-[10px] rounded whitespace-nowrap z-10 pointer-events-none">
+          {MSG_INSUFFICIENT_FUNDS}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-600" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * OrderPanelコンポーネントのプロパティ
@@ -149,25 +211,11 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
               +100
             </button>
             {side === 'BUY' && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (price > 0 && cash > 0) {
-                    const maxQty = Math.floor(cash / price);
-                    if (maxQty >= 1) {
-                      setQuantity(maxQty);
-                    } else {
-                      setErrorMessage('現金が足りません');
-                      setTimeout(() => setErrorMessage(null), 2000);
-                    }
-                  }
-                }}
-                disabled={price <= 0 || cash <= 0 || Math.floor(cash / price) < 1}
-                className="text-[10px] text-green-400 hover:text-white underline decoration-dotted transition-colors disabled:text-gray-500 disabled:no-underline cursor-pointer disabled:cursor-not-allowed ml-1"
-                aria-label="最大購入可能数量を入力"
-              >
-                最大 (Max)
-              </button>
+              <MaxQuantityButton
+                price={price}
+                cash={cash}
+                onSetQuantity={setQuantity}
+              />
             )}
           </div>
         </div>

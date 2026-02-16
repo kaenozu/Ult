@@ -3,11 +3,12 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "./client"
 }
 
 datasource db {
-  provider = "postgresql" // Can be changed to "mysql" or "sqlite"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // ============================================================================
@@ -22,7 +23,7 @@ model MarketData {
   high      Float
   low       Float
   close     Float
-  volume    BigInt
+  volume    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -46,8 +47,8 @@ model TradeJournal {
   profitPercent  Float?       @map("profit_percent")
   signalType     String       @map("signal_type")
   indicator      String
-  status         TradeStatus  @default(OPEN)
-  notes          String?      @db.Text
+  status         String       @default("OPEN") // OPEN, CLOSED, CANCELLED
+  notes          String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -55,12 +56,6 @@ model TradeJournal {
   @@index([timestamp])
   @@index([status])
   @@map("trade_journal")
-}
-
-enum TradeStatus {
-  OPEN
-  CLOSED
-  CANCELLED
 }
 
 // ============================================================================
@@ -71,8 +66,8 @@ model SupplyDemandZone {
   id        String   @id @default(cuid())
   symbol    String
   price     Float
-  volume    BigInt
-  zoneType  ZoneType @map("zone_type")
+  volume    Int
+  zoneType  String   @map("zone_type") // SUPPORT, RESISTANCE
   strength  Float    // 0.0 to 1.0
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -82,17 +77,12 @@ model SupplyDemandZone {
   @@map("supply_demand_zones")
 }
 
-enum ZoneType {
-  SUPPORT
-  RESISTANCE
-}
-
 model BreakoutEvent {
   id          String   @id @default(cuid())
   symbol      String
   direction   String   // "bullish" or "bearish"
   price       Float
-  volume      BigInt
+  volume      Int
   isConfirmed Boolean  @map("is_confirmed")
   zoneId      String?  @map("zone_id")
   timestamp   DateTime
@@ -112,7 +102,7 @@ model UserPreference {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
   key       String
-  value     String   @db.Text
+  value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -138,4 +128,45 @@ model CacheMetadata {
   @@index([dataType])
   @@index([expiresAt])
   @@map("cache_metadata")
+}
+
+// ============================================================================
+// AI Agent Skill Bundles Models
+// ============================================================================
+
+model SkillCategory {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  bundles   SkillBundle[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("skill_categories")
+}
+
+model SkillBundle {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  description String?
+  categoryId  String        @map("category_id")
+  category    SkillCategory @relation(fields: [categoryId], references: [id])
+  skills      BundleSkill[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([categoryId])
+  @@map("skill_bundles")
+}
+
+model BundleSkill {
+  id        String      @id @default(cuid())
+  name      String
+  bundleId  String      @map("bundle_id")
+  bundle    SkillBundle @relation(fields: [bundleId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([bundleId])
+  @@unique([name, bundleId])
+  @@map("bundle_skills")
 }

@@ -166,11 +166,6 @@ export const OptimizedStockChart = memo(function OptimizedStockChart({
   const visibleStart = visibleRange[0];
   const visibleEnd = visibleRange[1];
 
-  const chartData = useMemo(() => {
-    if (!data || data.length === 0) return [];
-    return processDataForRendering(data, [visibleStart, visibleEnd]);
-  }, [data, visibleStart, visibleEnd]);
-
   const visibleData = useMemo(() => {
     return data.slice(virtualization.visibleStart, virtualization.visibleEnd);
   }, [data, virtualization.visibleStart, virtualization.visibleEnd]);
