@@ -42,6 +42,90 @@ export interface EnhancedPredictionResult {
 export class EnhancedPredictionService {
   private calculator = new PredictionCalculator();
   private useWorker = typeof window !== 'undefined' && typeof Worker !== 'undefined';
+  
+  // メモ化キャッシュ（パフォーマンス最適化）
+  private predictionCache = new Map<string, {
+    result: EnhancedPredictionResult;
+    timestamp: number;
+    dataHash: string;
+  }>();
+  private readonly CACHE_TTL = 5000; // 5秒間キャッシュ
+  private readonly MAX_CACHE_SIZE = 50; // 最大キャッシュエントリ数
+  
+  // 重複リクエスト防止
+  private pendingRequests = new Map<string, Promise<EnhancedPredictionResult>>();
+
+  // パフォーマンス監視
+  private performanceMetrics = {
+    totalCalculations: 0,
+    cacheHits: 0,
+    averageCalculationTime: 0,
+    lastCleanup: Date.now()
+  };
+
+  /**
+   * データハッシュを生成（キャッシュキー用）
+   * 軽量なハッシュ関数で最後の数ローソク足のみを使用
+   */
+  private generateDataHash(data: OHLCV[]): string {
+    // 最後の10ローソク足のみを使用してハッシュ生成
+    const recentData = data.slice(-10);
+    const hashInput = recentData.map(d => 
+      `${d.close.toFixed(2)}${d.volume.toFixed(0)}`
+    ).join('');
+    
+    // 簡易ハッシュ（FNV-1a風）
+    let hash = 2166136261;
+    for (let i = 0; i < hashInput.length; i++) {
+      hash ^= hashInput.charCodeAt(i);
+      hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+    }
+    return hash.toString(16);
+  }
+
+  /**
+   * キャッシュをクリーンアップ
+   */
+  private cleanupCache(): void {
+    const now = Date.now();
+    
+    // 古いエントリを削除
+    for (const [key, entry] of this.predictionCache.entries()) {
+      if (now - entry.timestamp > this.CACHE_TTL) {
+        this.predictionCache.delete(key);
+      }
+    }
+    
+    // サイズ制限を超えた場合、古いエントリから削除
+    if (this.predictionCache.size > this.MAX_CACHE_SIZE) {
+      const sortedEntries = Array.from(this.predictionCache.entries())
+        .sort((a, b) => a[1].timestamp - b[1].timestamp);
+      
+      const entriesToDelete = sortedEntries.slice(0, sortedEntries.length - this.MAX_CACHE_SIZE);
+      entriesToDelete.forEach(([key]) => this.predictionCache.delete(key));
+    }
+    
+    this.performanceMetrics.lastCleanup = now;
+  }
+
+  /**
+   * パフォーマンスメトリクスを取得
+   */
+  getPerformanceMetrics() {
+    return { ...this.performanceMetrics };
+  }
+
+  /**
+   * メモリ使用量を推定（バイト単位）
+   */
+  estimateMemoryUsage(): number {
+    let cacheSize = 0;
+    for (const [key, entry] of this.predictionCache.entries()) {
+      cacheSize += key.length * 2; // 文字列は2バイト/文字
+      cacheSize += JSON.stringify(entry).length * 2;
+    }
+    return cacheSize + (this.pendingRequests.size * 1000); // ペンディングリクエストの概算
+  }
 
   /**
    * Calculate comprehensive prediction with all optimizations
