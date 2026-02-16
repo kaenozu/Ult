@@ -24,7 +24,7 @@ interface ChartContext {
 
 export const useChartOptions = ({
   data,
-  extendedData,
+  extendedData: _extendedData,
   market,
   hoveredIdx,
   setHoveredIndex,
