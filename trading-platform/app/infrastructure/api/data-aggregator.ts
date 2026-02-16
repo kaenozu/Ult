@@ -506,7 +506,7 @@ export class MarketDataClient {
   /**
    * Compatibility method for old DataAggregator.fetchData
    */
-  async fetchData(symbol: string, _options?: any): Promise<OHLCV[]> {
+  async fetchData(symbol: string, _options?: Record<string, unknown>): Promise<OHLCV[]> {
     const result = await this.fetchOHLCV(symbol, 'japan', undefined, undefined, undefined, undefined, true);
     if (result.success && result.data) return result.data;
     throw new Error(result.error || 'Fetch failed');
@@ -515,15 +515,15 @@ export class MarketDataClient {
   /**
    * Compatibility method for old DataAggregator.setCached
    */
-  setCached(key: string, data: any, ttl?: number): void {
-    this.setCache(key as any, data, ttl);
+  setCached(key: string, data: unknown, ttl?: number): void {
+    this.setCache(key as string, data, ttl);
   }
 
   /**
    * Compatibility method for old DataAggregator.getCached
    */
-  getCached(key: string): any {
-    return this.getFromCache(key);
+  getCached<T>(key: string): T | undefined {
+    return this.getFromCache<T>(key);
   }
 
   /**
@@ -596,7 +596,7 @@ export class MarketDataClient {
   /**
    * Compatibility method for old DataAggregator.getStats
    */
-  getStats(): any {
+  getStats(): { totalRequests: number; cacheHits: number; cacheMisses: number; errors: number; cacheSize: number } {
     return {
       ...this.stats,
       cacheSize: this.cache.size
@@ -625,5 +625,5 @@ export { MarketDataClient as DataAggregator };
 // Initialize cache cleanup
 if (typeof window !== 'undefined') {
   // Only start cleanup in browser environment
-  (marketClient as any).startCacheCleanup();
+  (marketClient as MarketDataClient).startCacheCleanup();
 }

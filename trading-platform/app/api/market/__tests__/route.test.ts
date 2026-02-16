@@ -78,4 +78,34 @@ describe('Market API Security Tests', () => {
 
     expect(res.status).toBe(200);
   });
+
+  it('should reject invalid symbol format', async () => {
+    const req = createRequest(`/api/market?symbol=AAPL@#$&type=quote`);
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+  });
+
+  it('should handle missing required parameters', async () => {
+    const req = createRequest(`/api/market?symbol=AAPL`);
+    const res = await GET(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+  });
+
+  it('should format Japanese stock symbols with .T suffix', async () => {
+    const req = createRequest(`/api/market?symbol=7203&type=quote&market=japan`);
+    const res = await GET(req);
+    
+    expect(res.status).toBe(200);
+  });
+
+  it('should not add .T suffix to indices', async () => {
+    const req = createRequest(`/api/market?symbol=^N225&type=quote&market=japan`);
+    const res = await GET(req);
+    
+    expect(res.status).toBe(200);
+  });
 });

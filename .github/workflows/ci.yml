@@ -329,6 +329,10 @@ jobs:
         run: npm audit fix --dry-run
         continue-on-error: true
 
+      - name: Check for outdated dependencies
+        run: npm outdated || true
+        continue-on-error: true
+
   # ============================================
   # Notification
   # ============================================
