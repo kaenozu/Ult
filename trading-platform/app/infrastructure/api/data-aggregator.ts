@@ -93,22 +93,18 @@ export class MarketDataClient {
       }
 
       // Handle mock response objects in tests that might not have json() method
-      let parsedResponse: MarketResponse<T>;
-      
+      let rawJson: unknown;
       if (httpResponse && typeof httpResponse.json === 'function') {
-        const rawJson = await httpResponse.json();
-        parsedResponse = (rawJson && typeof rawJson === 'object' && ('data' in rawJson || 'error' in rawJson))
-          ? rawJson as MarketResponse<T>
-          : { data: rawJson as T } as MarketResponse<T>;
+        rawJson = await httpResponse.json();
       } else {
         // Fallback for shallow mocks in tests
         parsedResponse = { data: httpResponse as unknown as T };
       }
 
       if (!this.isValidResponse(httpResponse, parsedResponse)) {
-        const debugInfo = parsedResponse.debug ? ` (Debug: ${parsedResponse.debug})` : '';
-        const details = parsedResponse.details ? ` - ${parsedResponse.details}` : '';
-        const errorMsg = parsedResponse.error || (httpResponse ? httpResponse.statusText : 'Unknown Network Error');
+        const debugInfo = parsedResponse?.debug ? ` (Debug: ${parsedResponse.debug})` : '';
+        const details = parsedResponse?.details ? ` - ${parsedResponse.details}` : '';
+        const errorMsg = parsedResponse?.error || (httpResponse ? httpResponse.statusText : 'Unknown Network Error');
         throw new Error(`${errorMsg}${details}${debugInfo}`);
       }
 
@@ -216,8 +212,7 @@ export class MarketDataClient {
 
           const now = new Date();
           const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
-          const timeDiff = lastDataDate ? now.getTime() - lastDataDate.getTime() : null;
-          const needsUpdate = forceRefresh || !lastDataDate || (timeDiff !== null && timeDiff > (24 * 60 * 60 * 1000)) || missingHistory;
+          const needsUpdate = this.shouldUpdateData(forceRefresh, lastDataDate, now, missingHistory);
 
           if (needsUpdate) {
             const params = new URLSearchParams({
@@ -445,6 +440,19 @@ export class MarketDataClient {
   }
 
   /**
+   * Determine if data needs to be updated from API
+   */
+  private shouldUpdateData(forceRefresh: boolean, lastDataDate: Date | null, now: Date, missingHistory: boolean): boolean {
+    if (forceRefresh) return true;
+    if (!lastDataDate) return true;
+    if (missingHistory) return true;
+
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const timeDiff = now.getTime() - lastDataDate.getTime();
+    return timeDiff > ONE_DAY_MS;
+  }
+
+  /**
    * Performance optimization: Periodic cache cleanup
    */
   public startCacheCleanup() {
@@ -577,7 +585,7 @@ export class MarketDataClient {
     const fetchPromise = (async () => {
       try {
         const data = await fetcher();
-        this.setCache(key, data, ttl);
+        this.setCache(key, data as OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData, ttl);
         return data;
       } catch (error) {
         this.stats.errors++;
@@ -606,16 +614,20 @@ export class MarketDataClient {
    */
   async fetchWithPriority<T>(keys: string[], _priority: string, fetcher: () => Promise<T>): Promise<Map<string, T> | T> {
     this.stats.totalRequests += keys.length;
-    const data = await fetcher();
+    const fetchedData = await fetcher();
+    let data: T | unknown = fetchedData;
+
+    // Compatibility: if data is an array but test expects single item when keys.length === 1
+    if (keys.length === 1 && Array.isArray(data)) {
+      data = data[0];
+    }
 
     if (keys.length === 1) {
       const result = new Map<string, T>();
-      // Compatibility: if data is an array but test expects single item when keys.length === 1
-      const singleData = Array.isArray(data) ? data[0] as T : data;
-      result.set(keys[0], singleData);
+      result.set(keys[0], data as T);
       return result;
     }
-    return data;
+    return data as T;
   }
 
   /**

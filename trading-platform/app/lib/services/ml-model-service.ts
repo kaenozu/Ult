@@ -11,19 +11,29 @@ import {
 } from '@/app/domains/prediction/services/ml-model-service';
 import { PredictionCalculator } from './implementations/prediction-calculator';
 import { IPredictionCalculator, ITensorFlowModel } from './interfaces/ml-model-interfaces';
-import type { ModelMetrics, ModelTrainingData } from './tensorflow-model-service';
-import type { PredictionFeatures } from '@/app/domains/prediction/types';
-import type { ModelPrediction } from '../../types';
 
 // TensorFlow.js models - dynamically imported to reduce bundle size
-type TFModelConstructor = new () => ITensorFlowModel;
-let FeedForwardModel: TFModelConstructor;
-let GRUModel: TFModelConstructor;
-let LSTMModel: TFModelConstructor;
-let featuresToArray: (features: PredictionFeatures) => number[];
+// Using any for dynamic imports - these are lazily loaded to avoid bundle bloat
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let FeedForwardModel: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let GRUModel: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let LSTMModel: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let featuresToArray: any;
 
 // Dynamic import for TensorFlow.js models
-export async function loadTensorFlowModels() {
+async function loadTensorFlowModels(): Promise<{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  FeedForwardModel: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  GRUModel: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  LSTMModel: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  featuresToArray: any;
+}> {
   if (!FeedForwardModel) {
     const tf = await import('./tensorflow-model-service');
     FeedForwardModel = tf.FeedForwardModel as unknown as TFModelConstructor;
@@ -92,11 +102,10 @@ export class MLModelService extends DomainMLModelService {
   /**
    * Initialize TensorFlow.js models if not already injected
    */
-  private async initializeTensorFlowModels(): Promise<void> {
-    await loadTensorFlowModels();
-    if (!this.ffModel) this.ffModel = new FeedForwardModel();
-    if (!this.gruModel) this.gruModel = new GRUModel();
-    if (!this.lstmModel) this.lstmModel = new LSTMModel();
+  private initializeTensorFlowModels(): void {
+    if (!this.ffModel && FeedForwardModel) this.ffModel = new FeedForwardModel();
+    if (!this.gruModel && GRUModel) this.gruModel = new GRUModel();
+    if (!this.lstmModel && LSTMModel) this.lstmModel = new LSTMModel();
   }
 
   /**
