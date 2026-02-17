@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Integrated Prediction Service
  * 
  * Combines the enhanced ML service with existing prediction pipeline.
@@ -108,7 +108,7 @@ export class IntegratedPredictionService {
     indexData?: OHLCV[]
   ): Signal {
     const currentPrice = data[data.length - 1].close;
-    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market);
+    const baseAnalysis = analyzeStock({ symbol: stock.symbol, data, market: stock.market, indexDataOverride: indexData });
 
     // Determine signal type
     let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
