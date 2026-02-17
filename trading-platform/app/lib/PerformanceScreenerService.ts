@@ -12,7 +12,7 @@ import { optimizedAccuracyService } from './OptimizedAccuracyService';
 import { consensusSignalService } from './ConsensusSignalService';
 import { mlPredictionService } from './mlPrediction';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
-import { TIME_INTERVALS } from './constants/common';
+import { TIME_INTERVALS } from '@/app/constants/common';
 import pLimit from 'p-limit';
 
 // レビュー対応: マジックナンバーを定数化

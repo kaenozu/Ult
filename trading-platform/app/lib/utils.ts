@@ -58,6 +58,16 @@ export function getChangeColor(change: number): string {
   return "text-gray-400";
 }
 
+export function formatSymbol(symbol: string, market?: string): string {
+  if (symbol.startsWith('^')) {
+    return symbol;
+  }
+  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
+    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
+  }
+  return symbol;
+}
+
 export function getSignalColor(signal: "BUY" | "SELL" | "HOLD"): string {
   switch (signal) {
     case "BUY":

@@ -6,7 +6,7 @@
  */
 
 import { Signal, OHLCV, Stock } from '@/app/types';
-import { ML_MODEL_CONFIG } from '@/app/lib/constants/prediction';
+import { ML_MODEL_CONFIG } from '@/app/constants/prediction';
 
 /**
  * ML Model Status

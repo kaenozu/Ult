@@ -122,6 +122,8 @@ export const RightSidebar = ({
                 : 'text-[#92adc9] hover:text-white hover:bg-[#192633]/30'
             )}
             title={tab.icon ? undefined : ''}
+            aria-selected={rightPanelMode === tab.id}
+            role="tab"
           >
             {tab.icon}
             <span className="hidden sm:inline">{tab.label}</span>

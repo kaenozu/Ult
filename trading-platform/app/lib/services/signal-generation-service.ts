@@ -7,7 +7,7 @@
 import { Stock, OHLCV, Signal, ModelPrediction, TechnicalIndicatorsWithATR, TimeFrame } from '../../types';
 import { EntryTimingRecommendation } from '../../types/shared';
 import { analyzeStock } from '@/app/lib/analysis';
-import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION, RISK_MANAGEMENT } from '@/app/lib/constants';
+import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION, RISK_MANAGEMENT } from '@/app/constants';
 
 import { logger } from '@/app/core/logger';
 interface MarketCorrelationResult {
@@ -35,7 +35,7 @@ export class SignalGenerationService {
     indexData?: OHLCV[]
   ): Signal {
     const currentPrice = data[data.length - 1].close;
-    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market);
+    const baseAnalysis = analyzeStock({ symbol: stock.symbol, data, market: stock.market, indexDataOverride: indexData });
 
     // 1. 市場相関分析 (Market Sync)
     const { marketInfo, confidenceAdj, marketComment } = this.analyzeMarketCorrelation(

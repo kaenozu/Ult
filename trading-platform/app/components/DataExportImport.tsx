@@ -15,6 +15,7 @@ export function DataExportImport() {
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showClearModal, setShowClearModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = async () => {
@@ -75,15 +76,17 @@ export function DataExportImport() {
   };
 
   const handleClear = async () => {
-    if (!confirm('全てのデータを削除しますか？この操作は元に戻せません。')) {
-      return;
-    }
+    setShowClearModal(true);
+  };
 
+  const confirmClear = async () => {
     try {
       await clearAllData();
       setMessage('全てのデータを削除しました');
     } catch {
       setError('データの削除に失敗しました');
+    } finally {
+      setShowClearModal(false);
     }
   };
 
@@ -181,6 +184,32 @@ export function DataExportImport() {
           </p>
         </div>
       </div>
+
+      {/* Clear Confirmation Modal */}
+      {showClearModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowClearModal(false)}>
+          <div className="bg-[#101822] p-6 rounded-xl border border-[#1a3a5c] shadow-xl max-w-md" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-white mb-4">データ削除の確認</h3>
+            <p className="text-[#5f7a99] mb-6">
+              全てのデータを削除しますか？この操作は元に戻せません。
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="px-4 py-2 rounded-lg bg-[#1a3a5c] text-white hover:bg-[#234b73] transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={confirmClear}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors"
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

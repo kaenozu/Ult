@@ -26,8 +26,6 @@ const StockRow = memo((
     showVolume: boolean;
   }
 ) => {
-  const [isLocalHovered, setIsLocalHovered] = useState(false);
-
   return (
     <tr
       onClick={() => onSelect(stock)}
@@ -42,14 +40,11 @@ const StockRow = memo((
           onSelect(stock);
         }
       }}
-      onMouseEnter={() => setIsLocalHovered(true)}
-      onMouseLeave={() => setIsLocalHovered(false)}
       className={cn(
         'transition-all duration-200 group relative focus:outline-none',
         isSelected 
           ? 'bg-primary/10 border-l-2 border-primary' 
-          : 'hover:bg-[#1a2633]/60 border-l-2 border-transparent',
-        isLocalHovered && !isSelected && 'bg-[#1a2633]/40'
+          : 'hover:bg-[#1a2633]/60 border-l-2 border-transparent'
       )}
     >
       <td className="px-3 py-2.5">
@@ -86,9 +81,8 @@ const StockRow = memo((
           aria-label={`${stock.name}をウォッチリストから削除`}
           className={cn(
             "p-1.5 rounded transition-all duration-200",
-            isLocalHovered 
-              ? "text-red-400 bg-red-500/10 opacity-100" 
-              : "text-[#92adc9] opacity-0 group-hover:opacity-100 focus:opacity-100"
+            "text-[#92adc9] opacity-0 group-hover:opacity-100 focus:opacity-100",
+            "group-hover:text-red-400 group-hover:bg-red-500/10"
           )}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

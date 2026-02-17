@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Integrated Prediction Service
  * 
  * Combines the enhanced ML service with existing prediction pipeline.
@@ -11,7 +11,7 @@ import { enhancedMLService } from './enhanced-ml-service';
 import type { EnhancedPrediction } from '../types';
 import { analyzeStock } from '@/app/lib/analysis';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
-import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '@/app/lib/constants';
+import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '@/app/constants';
 
 export interface IntegratedPredictionResult {
   signal: Signal;
@@ -108,7 +108,7 @@ export class IntegratedPredictionService {
     indexData?: OHLCV[]
   ): Signal {
     const currentPrice = data[data.length - 1].close;
-    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market);
+    const baseAnalysis = analyzeStock({ symbol: stock.symbol, data, market: stock.market, indexDataOverride: indexData });
 
     // Determine signal type
     let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';

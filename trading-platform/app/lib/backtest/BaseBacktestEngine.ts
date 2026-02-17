@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
 import { BacktestConfig, Trade, Strategy, BacktestResult } from './types';
-import { BACKTEST_DEFAULTS, REALISTIC_BACKTEST_DEFAULTS } from '../constants/backtest-config';
+import { BACKTEST_DEFAULTS, REALISTIC_BACKTEST_DEFAULTS } from '@/app/constants/backtest-config';
 
 export const DEFAULT_BACKTEST_CONFIG: BacktestConfig = {
   initialCapital: BACKTEST_DEFAULTS.INITIAL_CAPITAL,

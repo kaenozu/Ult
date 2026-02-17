@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { PORTFOLIO_OPTIMIZATION_DEFAULTS, PORTFOLIO_CONSTRAINTS } from '../constants/portfolio';
+import { PORTFOLIO_OPTIMIZATION_DEFAULTS, PORTFOLIO_CONSTRAINTS } from '@/app/constants/portfolio';
 
 // ============================================================================
 // Types
