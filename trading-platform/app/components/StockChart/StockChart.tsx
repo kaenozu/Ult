@@ -58,6 +58,24 @@ export const StockChart = memo(function StockChart({
     }
   });
 
+  // 1. Data Preparation Hooks
+  const { actualData, optimizedData, normalizedIndexData, extendedData, forecastExtension } = useChartData(data, signal, indexData);
+  const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
+  const { chartLevels } = useSupplyDemandAnalysis(data);
+  // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
+  const memoizedAccuracyData = useMemo(() => accuracyData ? {
+    predictionError: accuracyData.predictionError || 1.0
+  } : null, [accuracyData]);
+
+  const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
+    data: optimizedData, // Use optimized/reduced data for correct index alignment
+    extendedData,
+    signal,
+    market,
+    hoveredIdx,
+    accuracyData: memoizedAccuracyData
+  });
+
   // Enhanced cleanup with performance monitoring
   useEffect(() => {
     return () => {
@@ -186,24 +204,6 @@ export const StockChart = memo(function StockChart({
     }
   }, [hoveredIdx]);
 
-  // 1. Data Preparation Hooks
-  const { actualData, optimizedData, normalizedIndexData, extendedData, forecastExtension } = useChartData(data, signal, indexData);
-  const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
-  const { chartLevels } = useSupplyDemandAnalysis(data);
-  // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
-  const memoizedAccuracyData = useMemo(() => accuracyData ? {
-    predictionError: accuracyData.predictionError || 1.0
-  } : null, [accuracyData]);
-
-  const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
-    data: optimizedData, // Use optimized/reduced data for correct index alignment
-    extendedData,
-    signal,
-    market,
-    hoveredIdx,
-    accuracyData: memoizedAccuracyData
-  });
-
   // Get current SMA value for tooltip
   const currentSmaValue = useMemo(() => {
     if (!showSMA || !sma20 || sma20.length === 0 || hoveredIdx === null) return undefined;
@@ -251,8 +251,14 @@ export const StockChart = memo(function StockChart({
     yAxisID: 'y',
     // 過去と未来の境界を視覚的に分けるためのセグメント設定（Chart.js機能）
     segment: {
-      borderDash: (ctx: any) => ctx.p0.parsed.x >= actualData.prices.length - 1 ? [5, 5] : undefined,
-      borderColor: (ctx: any) => ctx.p0.parsed.x >= actualData.prices.length - 1 ? 'rgba(146, 173, 201, 0.8)' : undefined,
+      borderDash: (ctx: any) => {
+        const x = ctx.p0?.parsed?.x;
+        return typeof x === 'number' && x >= actualData.prices.length - 1 ? [5, 5] : undefined;
+      },
+      borderColor: (ctx: any) => {
+        const x = ctx.p0?.parsed?.x;
+        return typeof x === 'number' && x >= actualData.prices.length - 1 ? 'rgba(146, 173, 201, 0.8)' : undefined;
+      }
     }
   }), [actualData.prices, forecastExtension.forecastPrices, market]);
 
@@ -318,7 +324,8 @@ export const StockChart = memo(function StockChart({
       priceDataset,
       ...(smaDataset ? [smaDataset] : []),
       ...bollingerDatasets,
-      // メインの未来予測(forecastDatasets)を削除し、マウスオーバー時のゴースト予測のみを表示
+      // 最新の未来予測(forecastDatasets)とマウスオーバー時のゴースト予測を表示
+      ...forecastDatasets,
       ...ghostForecastDatasets,
       ...(indexDataset ? [indexDataset] : []),
       ...(volumeDataset ? [volumeDataset] : []),

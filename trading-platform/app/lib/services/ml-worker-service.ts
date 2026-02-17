@@ -294,14 +294,13 @@ export function getMLWorkerManager(): MLWorkerManager {
  * React Hook for ML Worker predictions
  */
 export function useMLWorkerPrediction() {
-  const manager = useRef(getMLWorkerManager());
-  const [state, setState] = useState<MLWorkerState>(manager.current.getState());
+  const [state, setState] = useState<MLWorkerState>(() => getMLWorkerManager().getState());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 状態を定期的に更新
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      setState(manager.current.getState());
+      setState(getMLWorkerManager().getState());
     }, 100);
 
     return () => {
@@ -313,13 +312,13 @@ export function useMLWorkerPrediction() {
 
   const predict = useCallback(
     async (modelType: 'LSTM' | 'GRU' | 'FF', features: number[]) => {
-      return manager.current.predict(modelType, features);
+      return getMLWorkerManager().predict(modelType, features);
     },
     []
   );
 
   const getMetrics = useCallback(() => {
-    return manager.current.getMetrics();
+    return getMLWorkerManager().getMetrics();
   }, []);
 
   return {

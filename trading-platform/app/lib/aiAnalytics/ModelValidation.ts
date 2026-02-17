@@ -5,8 +5,6 @@
  * 時系列交差検証、過学習検知、モデル性能評価を提供します。
  */
 
-import { OHLCV } from '../../types/shared';
-
 /**
  * 訓練データセット
  */
@@ -303,7 +301,7 @@ export class ModelValidation {
     let correct = 0;
     let truePositive = 0;
     let falsePositive = 0;
-    let trueNegative = 0;
+    let _trueNegative = 0;
     let falseNegative = 0;
 
     for (let i = 0; i < predictions.length; i++) {
@@ -313,7 +311,7 @@ export class ModelValidation {
       if (predictedUp === actualUp) {
         correct++;
         if (predictedUp) truePositive++;
-        else trueNegative++;
+        else _trueNegative++;
       } else {
         if (predictedUp) falsePositive++;
         else falseNegative++;

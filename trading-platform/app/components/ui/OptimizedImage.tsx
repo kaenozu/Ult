@@ -56,6 +56,8 @@ export const OptimizedImage = memo(function OptimizedImage({
       return;
     }
 
+    if (!imageRef.current) return;
+
     observerRef.current = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {

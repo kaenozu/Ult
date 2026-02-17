@@ -11,6 +11,9 @@ import {
 } from '@/app/domains/prediction/services/ml-model-service';
 import { PredictionCalculator } from './implementations/prediction-calculator';
 import { IPredictionCalculator, ITensorFlowModel } from './interfaces/ml-model-interfaces';
+import type { ModelMetrics, ModelTrainingData } from './tensorflow-model-service';
+import type { PredictionFeatures } from '../mlPrediction';
+import type { ModelPrediction } from '../../types';
 
 // TensorFlow.js models - dynamically imported to reduce bundle size
 // Using any for dynamic imports - these are lazily loaded to avoid bundle bloat
@@ -43,10 +46,6 @@ async function loadTensorFlowModels(): Promise<{
   }
   return { FeedForwardModel, GRUModel, LSTMModel, featuresToArray };
 }
-
-import type { ModelMetrics, ModelTrainingData } from './tensorflow-model-service';
-import type { PredictionFeatures } from '@/app/domains/prediction/types';
-import type { ModelPrediction } from '../../types';
 
 export interface MLServiceConfig {
   weights: {

@@ -4,7 +4,6 @@
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
-  List,
   Brain,
   Briefcase,
   Grid3X3,

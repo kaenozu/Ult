@@ -98,7 +98,7 @@ export class MarketDataClient {
         rawJson = await httpResponse.json();
       } else {
         // Fallback for shallow mocks in tests
-        rawJson = httpResponse;
+        rawJson = httpResponse as unknown;
       }
 
       const parsedResponse = (rawJson && typeof rawJson === 'object' && ('data' in rawJson || 'error' in rawJson))
@@ -110,6 +110,10 @@ export class MarketDataClient {
         const details = parsedResponse?.details ? ` - ${parsedResponse.details}` : '';
         const errorMsg = parsedResponse?.error || (httpResponse ? httpResponse.statusText : 'Unknown Network Error');
         throw new Error(`${errorMsg}${details}${debugInfo}`);
+      }
+
+      if (parsedResponse.data === undefined) {
+        throw new Error('Response data is undefined');
       }
 
       return parsedResponse.data as T;
@@ -150,8 +154,8 @@ export class MarketDataClient {
           if (idbData && idbData.length > 0) {
             // Check if IDB covers start date if needed
           }
-        } catch (err) {
-          logger.warn(`[Aggregator] Failed to read from IDB for ${symbol}:`, err);
+        } catch (_err) {
+          logger.warn(`[Aggregator] Failed to read from IDB for ${symbol}:`, _err);
         }
       }
     }
@@ -160,7 +164,7 @@ export class MarketDataClient {
       try {
         const data = await this.pendingRequests.get(cacheKey) as OHLCV[];
         return { success: true, data, source: 'aggregated' };
-      } catch (err) {
+      } catch (_err) {
         // Fallback
       }
     }
@@ -244,11 +248,11 @@ export class MarketDataClient {
                 finalData = (newData.length > 0) ? await idbClient.mergeAndSave(symbol, newData) : newData;
                 source = 'api';
               }
-            } catch (err) {
+            } catch (_err) {
               if (finalData && finalData.length > 0) {
                 logger.warn(`[Aggregator] Failed to update data for ${symbol}, using stale data.`);
               } else {
-                throw err;
+                throw _err;
               }
             }
           }
@@ -324,7 +328,7 @@ export class MarketDataClient {
       const data = await this.fetchWithRetry<QuoteData>(`/api/market?type=quote&symbol=${symbol}&market=${market}`);
       if (data) this.setCache(cacheKey, data, MARKET_DATA_CACHE_TTL.quote);
       return data;
-    } catch (err) {
+    } catch (_err) {
       // logger.error(`Fetch Quote failed for ${symbol}:`, err instanceof Error ? err : new Error(String(err)));
       return null;
     }
@@ -347,14 +351,6 @@ export class MarketDataClient {
     try {
       result = await this.fetchOHLCV(stock.symbol, stock.market, undefined, signal, interval);
       if (!result.success || !result.data || result.data.length < 20) throw new Error('Insufficient data for ML');
-
-      let indexData: OHLCV[] = [];
-      try {
-        const indexResult = await this.fetchMarketIndex(stock.market, signal);
-        indexData = indexResult.data;
-      } catch (err) {
-        logger.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol}`);
-      }
 
       // Use enhanced prediction service for better accuracy
       const enhancedResult = await enhancedPredictionService.calculatePrediction({
@@ -387,7 +383,7 @@ export class MarketDataClient {
         const signalData = mlPredictionService.generateSignal(stock, result!.data!, prediction, indicators, []);
         // Use 'api' as source since we're generating signal from API data (not 'error')
         return { success: true, data: signalData, source: 'api' };
-      } catch (fallbackErr) {
+      } catch (_fallbackErr) {
         return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
       }
     }
@@ -405,7 +401,7 @@ export class MarketDataClient {
 
     // Update access count for LRU eviction
     item.accessCount++;
-    return item.data as T;
+    return item.data as unknown as T;
   }
 
   private setCache<T extends OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>(key: string, data: T, ttl?: number) {
@@ -420,7 +416,7 @@ export class MarketDataClient {
       timestamp: Date.now(),
       ttl: cacheTtl,
       accessCount: 1
-    } as CacheEntry<OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>);
+    });
   }
 
   private evictLeastRecentlyUsed() {
@@ -515,14 +511,22 @@ export class MarketDataClient {
     const fields: (keyof Pick<OHLCV, 'open' | 'high' | 'low' | 'close'>)[] = ['open', 'high', 'low', 'close'];
     for (const field of fields) {
       for (let i = 0; i < result.length; i++) {
-        if (result[i][field] !== 0) continue;
-        const prev = this.findNearest(result, i, field, -1);
-        const next = this.findNearest(result, i, field, 1);
-        if (prev >= 0 && next < result.length) {
-          const gap = next - prev;
-          result[i][field] = Number((result[prev][field]! + (result[next][field]! - result[prev][field]!) * (i - prev) / gap).toFixed(2));
-        } else if (prev >= 0) result[i][field] = result[prev][field]!;
-        else if (next < result.length) result[i][field] = result[next][field]!;
+        const entry = result[i];
+        if (entry[field] !== 0) continue;
+        
+        const prevIdx = this.findNearest(result, i, field, -1);
+        const nextIdx = this.findNearest(result, i, field, 1);
+        
+        if (prevIdx >= 0 && nextIdx < result.length) {
+          const prevValue = result[prevIdx][field]!;
+          const nextValue = result[nextIdx][field]!;
+          const gap = nextIdx - prevIdx;
+          result[i][field] = Number((prevValue + (nextValue - prevValue) * (i - prevIdx) / gap).toFixed(2));
+        } else if (prevIdx >= 0) {
+          result[i][field] = result[prevIdx][field]!;
+        } else if (nextIdx < result.length) {
+          result[i][field] = result[nextIdx][field]!;
+        }
       }
     }
     return result;
@@ -546,7 +550,7 @@ export class MarketDataClient {
   /**
    * Compatibility method for old DataAggregator.fetchData
    */
-  async fetchData(symbol: string, _options?: Record<string, unknown>): Promise<OHLCV[]> {
+  async fetchData(symbol: string): Promise<OHLCV[]> {
     const result = await this.fetchOHLCV(symbol, 'japan', undefined, undefined, undefined, undefined, true);
     if (result.success && result.data) return result.data;
     throw new Error(result.error || 'Fetch failed');
@@ -555,8 +559,8 @@ export class MarketDataClient {
   /**
    * Compatibility method for old DataAggregator.setCached
    */
-  setCached(key: string, data: unknown, ttl?: number): void {
-    this.setCache(key as string, data as OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData, ttl);
+  setCached(key: string, data: OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData, ttl?: number): void {
+    this.setCache(key, data, ttl);
   }
 
   /**
@@ -569,7 +573,7 @@ export class MarketDataClient {
   /**
    * Compatibility method for old DataAggregator.fetchWithCache
    */
-  async fetchWithCache<T>(key: string, fetcher: () => Promise<T>, ttl?: number): Promise<T> {
+  async fetchWithCache<T extends OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>(key: string, fetcher: () => Promise<T>, ttl?: number): Promise<T> {
     this.stats.totalRequests++;
     const cached = this.getFromCache<T>(key);
     if (cached) {

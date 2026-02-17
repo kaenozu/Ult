@@ -14,6 +14,7 @@ import type { DependencyList } from 'react';
  * @returns メモ化された値
  */
 export function useMemoized<T>(factory: () => T, deps: DependencyList): T {
+  // eslint-disable-next-line react-hooks/use-memo, react-hooks/exhaustive-deps
   return useMemo(factory, deps);
 }
 
@@ -27,6 +28,7 @@ export function useStableCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
   deps: DependencyList
 ): T {
+  // eslint-disable-next-line react-hooks/use-memo, react-hooks/exhaustive-deps
   return useCallback(callback, deps);
 }
 

@@ -120,8 +120,6 @@ export class PortfolioRiskMonitor {
    * 包括的なポートフォリオリスクレポートを生成
    */
   generateRiskReport(portfolio: Portfolio, confidence: number = 95): PortfolioRiskReport {
-    const totalValue = portfolio.totalValue + portfolio.cash;
-
     // VaR計算
     const dailyVar = this.calculateVaR(portfolio, confidence, 1);
     const weeklyVar = this.calculateVaR(portfolio, confidence, 5);
@@ -189,7 +187,7 @@ export class PortfolioRiskMonitor {
    */
   private calculateVaR(
     portfolio: Portfolio,
-    confidence: number,
+    _confidence: number,
     timeHorizon: number
   ): VaRResult {
     const method = this.selectVaRMethod(portfolio);
@@ -199,11 +197,11 @@ export class PortfolioRiskMonitor {
     let cvar99: number;
 
     if (method === 'historical') {
-      ({ var95, var99, cvar95, cvar99 } = this.calculateHistoricalVaR(portfolio, confidence));
+      ({ var95, var99, cvar95, cvar99 } = this.calculateHistoricalVaR(portfolio, _confidence));
     } else if (method === 'parametric') {
-      ({ var95, var99, cvar95, cvar99 } = this.calculateParametricVaR(portfolio, confidence));
+      ({ var95, var99, cvar95, cvar99 } = this.calculateParametricVaR(portfolio, _confidence));
     } else {
-      ({ var95, var99, cvar95, cvar99 } = this.calculateMonteCarloVaR(portfolio, confidence));
+      ({ var95, var99, cvar95, cvar99 } = this.calculateMonteCarloVaR(portfolio, _confidence));
     }
 
     // 時間 horizon で調整 (平方根ルール)
@@ -296,14 +294,13 @@ export class PortfolioRiskMonitor {
    */
   private calculateMonteCarloVaR(
     portfolio: Portfolio,
-    confidence: number
+    _confidence: number
   ): { var95: number; var99: number; cvar95: number; cvar99: number } {
     const totalValue = portfolio.totalValue + portfolio.cash;
     const numSimulations = 10000;
-    const timeHorizon = 1; // 1日
 
     // ポートフォリオの共分散行列を計算
-    const covarianceMatrix = this.calculateCovarianceMatrix(portfolio);
+    const _covarianceMatrix = this.calculateCovarianceMatrix(portfolio);
 
     // モンテカルロシミュレーション
     const simulatedReturns: number[] = [];
