@@ -5,6 +5,7 @@
  * Reactアプリケーション向けの追加保護レイヤー
  */
 
+import DOMPurify from 'dompurify';
 import { escapeHtml } from './InputSanitizer';
 
 // ============================================================================
@@ -118,50 +119,19 @@ export function sanitizeHtml(
   html: string,
   allowedTags: string[] = ['b', 'i', 'em', 'strong', 'p', 'br']
 ): string {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  // Check if we're in a browser environment with a real DOM
+  if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: allowedTags,
+      // Attributes are stripped by default in the original implementation
+      // "許可されたタグは属性を削除してクローン" -> "Allowed tags are cloned with attributes removed"
+      ALLOWED_ATTR: []
+    });
+  }
   
-  const sanitizeNode = (node: Node): Node | null => {
-    if (node.nodeType === Node.TEXT_NODE) {
-      return node.cloneNode(true);
-    }
-    
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const element = node as HTMLElement;
-      const tagName = element.tagName.toLowerCase();
-      
-      if (!allowedTags.includes(tagName)) {
-        // 許可されていないタグは中身のみを返す
-        const fragment = document.createDocumentFragment();
-        element.childNodes.forEach(child => {
-          const sanitized = sanitizeNode(child);
-          if (sanitized) fragment.appendChild(sanitized);
-        });
-        return fragment;
-      }
-      
-      // 許可されたタグは属性を削除してクローン
-      const cleanElement = document.createElement(tagName);
-      element.childNodes.forEach(child => {
-        const sanitized = sanitizeNode(child);
-        if (sanitized) cleanElement.appendChild(sanitized);
-      });
-      
-      return cleanElement;
-    }
-    
-    return null;
-  };
-  
-  const fragment = document.createDocumentFragment();
-  doc.body.childNodes.forEach(child => {
-    const sanitized = sanitizeNode(child);
-    if (sanitized) fragment.appendChild(sanitized);
-  });
-  
-  const container = document.createElement('div');
-  container.appendChild(fragment);
-  return container.innerHTML;
+  // Server-side fallback: basic HTML escaping to prevent XSS
+  // This is safer than the original implementation which would crash with DOMParser error
+  return escapeHtml(html);
 }
 
 // ============================================================================
@@ -242,10 +212,8 @@ export const SafeStorage = {
   getItem(key: string): string | null {
     try {
       const value = localStorage.getItem(key);
-      if (value && detectXssInStorage(value)) {
-        localStorage.removeItem(key);
-        return null;
-      }
+      // NOTE: We do not validate content here as it causes data loss for audit logs.
+      // Validation should happen on output/rendering, not storage.
       return value;
     } catch {
       return null;
@@ -254,9 +222,8 @@ export const SafeStorage = {
   
   setItem(key: string, value: string): void {
     try {
-      if (detectXssInStorage(value)) {
-        throw new Error('XSS pattern detected in storage value');
-      }
+      // NOTE: We do not validate content here as it causes data loss for audit logs.
+      // Validation should happen on output/rendering, not storage.
       localStorage.setItem(key, value);
     } catch {
       // ストレージエラーを無視
@@ -271,22 +238,6 @@ export const SafeStorage = {
     }
   },
 };
-
-/**
- * ストレージ内のXSSパターン検出
- */
-function detectXssInStorage(value: string): boolean {
-  // Use simple string matching instead of complex regex for better security
-  const dangerousPatterns = [
-    '<script',
-    '</script>',
-    'javascript:',
-    'vbscript:',
-    'data:text/html',
-  ];
-  const lowerValue = value.toLowerCase();
-  return dangerousPatterns.some(pattern => lowerValue.includes(pattern));
-}
 
 // ============================================================================
 // コンテンツインジェクション対策
