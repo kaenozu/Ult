@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { usePerformanceMonitor } from '@/app/hooks/usePerformanceMonitor';
 import { globalCache } from '@/app/hooks/useCachedFetch';
 import { enhancedPredictionService } from '@/app/lib/services/enhanced-prediction-service';
+import { INTERVAL } from '@/app/constants/timing';
 
 interface PerformanceMetrics {
   // レンダリング
@@ -84,7 +85,7 @@ export function PerformanceDashboard() {
   useEffect(() => {
     if (!isVisible) return;
     
-    const interval = setInterval(updateMetrics, 2000);
+    const interval = setInterval(updateMetrics, INTERVAL.PERFORMANCE_CHECK);
     return () => clearInterval(interval);
   }, [isVisible, updateMetrics]);
   

@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useId, Dispatch, SetStateAct
 import { Stock, OrderSide, OrderType } from '@/app/types';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { DynamicRiskConfig } from '@/app/lib/DynamicRiskManagement';
+import { TIMEOUT } from '@/app/constants/timing';
 
 interface UseOrderEntryProps {
   stock: Stock;
@@ -133,7 +134,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (showSuccess) {
-      timer = setTimeout(() => setShowSuccess(false), 3000);
+      timer = setTimeout(() => setShowSuccess(false), TIMEOUT.SUCCESS_MESSAGE);
     }
     return () => {
       if (timer) clearTimeout(timer);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { RealTimeQuote } from '@/app/lib/services/RealTimeDataService';
+import { TIMEOUT } from '@/app/constants/timing';
 
 interface UseRealTimeDataOptions {
   enabled?: boolean;
@@ -9,7 +10,7 @@ interface UseRealTimeDataOptions {
 }
 
 export function useRealTimeData(symbol: string | null, options: UseRealTimeDataOptions = {}) {
-  const { enabled = true, market = 'japan', interval = 20000, maxErrors = 3 } = options;
+  const { enabled = true, market = 'japan', interval = TIMEOUT.REAL_TIME_POLLING, maxErrors = 3 } = options;
   const [data, setData] = useState<RealTimeQuote | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

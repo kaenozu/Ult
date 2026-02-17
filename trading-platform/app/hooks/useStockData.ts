@@ -6,6 +6,7 @@ import { useUIStore } from '@/app/store/uiStore';
 import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
 import { NUMERIC_PRECISION } from '@/app/lib/constants/common';
 import { consensusSignalService } from '@/app/lib/ConsensusSignalService';
+import { TIMEOUT } from '@/app/constants/timing';
 
 import { useRealTimeData } from './useRealTimeData';
 
@@ -48,7 +49,7 @@ export function useStockData() {
       enabled: !!selectedStock, 
       market: selectedStock?.market,
       // Limit polling frequency to reduce re-renders
-      interval: selectedStock?.market === 'japan' ? 30000 : undefined // 30 seconds
+      interval: selectedStock?.market === 'japan' ? TIMEOUT.REAL_TIME_POLLING_JAPAN : undefined
     }
   );
 
@@ -226,7 +227,7 @@ export function useStockData() {
         label: string
       ) => {
         // Increased delay to reduce unnecessary background syncs
-        await new Promise(resolve => setTimeout(resolve, 60000));
+        await new Promise(resolve => setTimeout(resolve, TIMEOUT.LONG));
 
         try {
           if (!isMountedRef.current || controller.signal.aborted) return;

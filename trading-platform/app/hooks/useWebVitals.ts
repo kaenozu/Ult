@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { TIMEOUT } from '@/app/constants/timing';
 
 interface WebVitalsMetrics {
   // Largest Contentful Paint
@@ -251,7 +252,7 @@ export function useWebVitals() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     
     // 10秒後にもレポート（早期離脱対策）
-    const timer = setTimeout(reportToAnalytics, 10000);
+    const timer = setTimeout(reportToAnalytics, TIMEOUT.ANALYTICS_REPORT);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
