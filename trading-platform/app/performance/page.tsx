@@ -23,6 +23,7 @@ import { Signal } from '@/app/types';
 
 import { fetchOHLCV } from '@/app/data/stocks';
 import { TableVirtuoso } from 'react-virtuoso';
+import { TIMEOUT } from '@/app/constants/timing';
 
 interface PerformanceScore {
   symbol: string;
@@ -365,7 +366,7 @@ function PerformanceDashboardContent() {
     } finally {
       setLoading(false);
       // しばらくしてから進捗バーを消す
-      setTimeout(() => setProgress(0), 1000);
+      setTimeout(() => setProgress(0), TIMEOUT.SHORT);
     }
   }, [market, minWinRate, minProfitFactor, lookbackDays, activeTab, minConfidence]);
 

@@ -14,10 +14,12 @@ export interface PredictionRequest {
   symbol: string;
   data: OHLCV[];
   indicators?: {
+    symbol: string;
     rsi: number[];
     sma5: number[];
     sma20: number[];
     sma50: number[];
+    sma200?: number[];
     macd: { macd: number[]; signal: number[] };
     bb: { upper: number[]; middle: number[]; lower: number[] };
     atr: number[];
@@ -257,7 +259,20 @@ export class PredictionWorker {
     const featureService = new FeatureCalculationService();
 
     const { symbol, data, indicators } = request;
-    const features = featureService.calculateFeatures(data, indicators);
+    const transformedIndicators = indicators ? {
+      ...indicators,
+      macd: {
+        macd: indicators.macd?.macd || [],
+        signal: indicators.macd?.signal || [],
+        histogram: indicators.macd?.macd.map((v, i) => v - (indicators.macd?.signal[i] || 0)) || []
+      },
+      bollingerBands: {
+        upper: indicators.bb?.upper || [],
+        middle: indicators.bb?.middle || [],
+        lower: indicators.bb?.lower || []
+      }
+    } : undefined;
+    const features = featureService.calculateFeatures(data, transformedIndicators);
     const patternFeatures = patternService.calculatePatternFeatures(data);
     
     // Calculate predictions
@@ -314,12 +329,13 @@ export class PredictionWorker {
       return {
         symbol,
         type: 'HOLD',
-        entryPrice: lastPrice.close,
-        stopLoss: null,
-        takeProfit: null,
+        targetPrice: lastPrice.close,
+        stopLoss: 0,
+        reason: 'Low confidence',
+        predictedChange: 0,
+        predictionDate: new Date().toISOString(),
         confidence,
-        timestamp: Date.now(),
-        horizon: 5
+        timestamp: Date.now()
       };
     }
     
@@ -329,12 +345,13 @@ export class PredictionWorker {
     return {
       symbol,
       type: isBuy ? 'BUY' : 'SELL',
-      entryPrice: lastPrice.close,
+      targetPrice: isBuy ? lastPrice.close * (1 + atr * 2) : lastPrice.close * (1 - atr * 2),
       stopLoss: isBuy ? lastPrice.close * (1 - atr) : lastPrice.close * (1 + atr),
-      takeProfit: isBuy ? lastPrice.close * (1 + atr * 2) : lastPrice.close * (1 - atr * 2),
+      reason: isBuy ? 'Buy signal from ensemble' : 'Sell signal from ensemble',
+      predictedChange: ensemble,
+      predictionDate: new Date().toISOString(),
       confidence,
-      timestamp: Date.now(),
-      horizon: 5
+      timestamp: Date.now()
     };
   }
 

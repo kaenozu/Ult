@@ -130,4 +130,19 @@ export interface Signal {
     recommendedATR: number;
     exitReasons: string[];
   };
+  /**
+   * Enhanced prediction metadata from new prediction system
+   */
+  metadata?: {
+    prediction: number;
+    confidence: number;
+    regime: string;
+    calculationTime: number;
+    ensembleWeights: {
+      rf: number;
+      xgb: number;
+      lstm: number;
+      pattern: number;
+    };
+  };
 }

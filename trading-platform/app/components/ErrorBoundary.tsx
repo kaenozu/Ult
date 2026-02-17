@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw, Home, Bug, Copy, CheckCircle } from 'lucide-react';
+import { ANIMATION } from '@/app/constants/timing';
 import {
   NetworkError,
   ValidationError,
@@ -242,7 +243,7 @@ ${errorInfo?.componentStack || 'N/A'}
     try {
       await navigator.clipboard.writeText(errorInfoText);
       this.setState({ copied: true });
-      setTimeout(() => this.setState({ copied: false }), 2000);
+      setTimeout(() => this.setState({ copied: false }), ANIMATION.SLOW);
     } catch (err) {
       console.error('Failed to copy error info:', err);
     }

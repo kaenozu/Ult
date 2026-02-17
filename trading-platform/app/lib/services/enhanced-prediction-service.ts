@@ -42,6 +42,94 @@ export interface EnhancedPredictionResult {
 export class EnhancedPredictionService {
   private calculator = new PredictionCalculator();
   private useWorker = typeof window !== 'undefined' && typeof Worker !== 'undefined';
+  
+  // メモ化キャッシュ（パフォーマンス最適化）
+  private predictionCache = new Map<string, {
+    result: EnhancedPredictionResult;
+    timestamp: number;
+    dataHash: string;
+  }>();
+  private readonly CACHE_TTL = 5000; // 5秒間キャッシュ
+  private readonly MAX_CACHE_SIZE = 50; // 最大キャッシュエントリ数
+  
+  // 重複リクエスト防止
+  private pendingRequests = new Map<string, Promise<EnhancedPredictionResult>>();
+
+  // パフォーマンス監視
+  private performanceMetrics = {
+    totalCalculations: 0,
+    cacheHits: 0,
+    averageCalculationTime: 0,
+    lastCleanup: Date.now()
+  };
+
+  // FNV-1a hash constants
+  private static readonly FNV_OFFSET_BASIS = 2166136261;
+  private static readonly FNV_PRIME = 16777619;
+
+  /**
+   * データハッシュを生成（キャッシュキー用）
+   * 軽量なハッシュ関数で最後の数ローソク足のみを使用
+   */
+  private generateDataHash(data: OHLCV[]): string {
+    // 最後の10ローソク足のみを使用してハッシュ生成
+    const recentData = data.slice(-10);
+    const hashInput = recentData.map(d => 
+      `${d.close.toFixed(2)}${d.volume.toFixed(0)}`
+    ).join('');
+    
+    // FNV-1a hash algorithm
+    let hash = EnhancedPredictionService.FNV_OFFSET_BASIS;
+    for (let i = 0; i < hashInput.length; i++) {
+      hash ^= hashInput.charCodeAt(i);
+      hash *= EnhancedPredictionService.FNV_PRIME;
+    }
+    return hash.toString(16);
+  }
+
+  /**
+   * キャッシュをクリーンアップ
+   */
+  private cleanupCache(): void {
+    const now = Date.now();
+    
+    // 古いエントリを削除
+    for (const [key, entry] of this.predictionCache.entries()) {
+      if (now - entry.timestamp > this.CACHE_TTL) {
+        this.predictionCache.delete(key);
+      }
+    }
+    
+    // サイズ制限を超えた場合、古いエントリから削除
+    if (this.predictionCache.size > this.MAX_CACHE_SIZE) {
+      const sortedEntries = Array.from(this.predictionCache.entries())
+        .sort((a, b) => a[1].timestamp - b[1].timestamp);
+      
+      const entriesToDelete = sortedEntries.slice(0, sortedEntries.length - this.MAX_CACHE_SIZE);
+      entriesToDelete.forEach(([key]) => this.predictionCache.delete(key));
+    }
+    
+    this.performanceMetrics.lastCleanup = now;
+  }
+
+  /**
+   * パフォーマンスメトリクスを取得
+   */
+  getPerformanceMetrics() {
+    return { ...this.performanceMetrics };
+  }
+
+  /**
+   * メモリ使用量を推定（バイト単位）
+   */
+  estimateMemoryUsage(): number {
+    let cacheSize = 0;
+    for (const [key, entry] of this.predictionCache.entries()) {
+      cacheSize += key.length * 2; // 文字列は2バイト/文字
+      cacheSize += JSON.stringify(entry).length * 2;
+    }
+    return cacheSize + (this.pendingRequests.size * 1000); // ペンディングリクエストの概算
+  }
 
   /**
    * Calculate comprehensive prediction with all optimizations
@@ -96,18 +184,17 @@ export class EnhancedPredictionService {
       symbol,
       data,
       indicators: indicators ? {
+        symbol: indicators.symbol,
         rsi: indicators.rsi || [],
         sma5: indicators.sma5 || [],
         sma20: indicators.sma20 || [],
         sma50: indicators.sma50 || [],
-        macd: {
-          macd: indicators.macd?.macd || [],
-          signal: indicators.macd?.signal || []
-        },
+        sma200: indicators.sma200 || [],
+        macd: { macd: indicators.macd?.macd || [], signal: indicators.macd?.signal || [] },
         bb: {
-          upper: indicators.bb?.upper || [],
-          middle: indicators.bb?.middle || [],
-          lower: indicators.bb?.lower || []
+          upper: indicators.bollingerBands?.upper || [],
+          middle: indicators.bollingerBands?.middle || [],
+          lower: indicators.bollingerBands?.lower || []
         },
         atr: indicators.atr || []
       } : undefined
@@ -322,12 +409,13 @@ export class EnhancedPredictionService {
       return {
         symbol,
         type: 'HOLD',
-        entryPrice: lastPrice.close,
-        stopLoss: null,
-        takeProfit: null,
+        targetPrice: lastPrice.close,
+        stopLoss: 0,
+        reason: 'Low confidence',
+        predictedChange: 0,
+        predictionDate: new Date().toISOString(),
         confidence,
-        timestamp: Date.now(),
-        horizon: 5
+        timestamp: Date.now()
       };
     }
 
@@ -341,16 +429,17 @@ export class EnhancedPredictionService {
     return {
       symbol,
       type: isBuy ? 'BUY' : 'SELL',
-      entryPrice: lastPrice.close,
+      targetPrice: isBuy ? 
+        lastPrice.close * (1 + volatility * 3 * kellyFraction) : 
+        lastPrice.close * (1 - volatility * 3 * kellyFraction),
       stopLoss: isBuy ? 
         lastPrice.close * (1 - volatility * 1.5) : 
         lastPrice.close * (1 + volatility * 1.5),
-      takeProfit: isBuy ? 
-        lastPrice.close * (1 + volatility * 3 * kellyFraction) : 
-        lastPrice.close * (1 - volatility * 3 * kellyFraction),
+      reason: isBuy ? 'Buy signal from ensemble model' : 'Sell signal from ensemble model',
+      predictedChange: ensemble,
+      predictionDate: new Date().toISOString(),
       confidence,
-      timestamp: Date.now(),
-      horizon: 5
+      timestamp: Date.now()
     };
   }
 }

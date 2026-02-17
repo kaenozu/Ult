@@ -15,12 +15,25 @@ const nextConfig: NextConfig = {
   
   // Bundle optimization
   experimental: {
-    // Optimize package imports for common libraries
+    // Optimize package imports for common libraries - expanded for better tree-shaking
     optimizePackageImports: [
       'lucide-react',
       'chart.js',
       'react-chartjs-2',
+      '@tensorflow/tfjs',
+      'date-fns',
+      'lodash-es',
+      '@tanstack/react-query',
     ],
+    // Turbopack for faster builds
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
   
   // Webpack optimization
@@ -30,6 +43,41 @@ const nextConfig: NextConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         '@tensorflow/tfjs': '@tensorflow/tfjs/dist/tf.min.js',
+      };
+      
+      // Enhanced code splitting for better caching
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          // Vendor libraries
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+          },
+          // TensorFlow.js separate chunk
+          tensorflow: {
+            test: /[\\/]node_modules[\\/]@tensorflow[\\/]/,
+            name: 'tensorflow',
+            chunks: 'all',
+            priority: 20,
+          },
+          // Chart.js separate chunk
+          charts: {
+            test: /[\\/]node_modules[\\/](chart\.js|react-chartjs-2)[\\/]/,
+            name: 'charts',
+            chunks: 'async',
+            priority: 15,
+          },
+          // Common UI components
+          ui: {
+            test: /[\\/]components[\\/]ui[\\/]/,
+            name: 'ui-components',
+            chunks: 'all',
+            priority: 5,
+          },
+        },
       };
     }
     return config;
@@ -72,6 +120,26 @@ const nextConfig: NextConfig = {
             value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' ws: wss: https://*.ingest.sentry.io;"
           }
         ],
+      },
+      // API route caching for market data
+      {
+        source: '/api/market/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=60, stale-while-revalidate=300'
+          }
+        ]
+      },
+      // Static assets caching
+      {
+        source: '/:all*(svg|jpg|png|woff|woff2)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
       },
     ];
   },

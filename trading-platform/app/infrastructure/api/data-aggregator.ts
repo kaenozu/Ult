@@ -1,6 +1,7 @@
 import { Stock, Signal, OHLCV, APIResponse, APIErrorResult, TechnicalIndicator } from '@/app/types';
 import { ApiError as APIError, NetworkError, RateLimitError } from '@/app/lib/errors';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
+import { enhancedPredictionService } from '@/app/lib/services/enhanced-prediction-service';
 import { idbClient } from '@/app/lib/api/idb-migrations';
 import { isIntradayInterval } from '@/app/lib/constants/intervals';
 import { logger } from '@/app/core/logger';
@@ -57,7 +58,8 @@ export class MarketDataClient {
   private stats = {
     totalRequests: 0,
     cacheHits: 0,
-    cacheMisses: 0
+    cacheMisses: 0,
+    errors: 0
   };
 
   private isValidResponse(httpResponse: Response | undefined, parsedResponse: MarketResponse<any>): boolean {
@@ -355,14 +357,40 @@ export class MarketDataClient {
         logger.warn(`[Aggregator] Macro data fetch skipped for ${stock.symbol}`);
       }
 
-      const indicators = mlPredictionService.calculateIndicators(result.data);
-      const prediction = mlPredictionService.predict(stock, result.data, indicators);
-      const signalData = mlPredictionService.generateSignal(stock, result.data, prediction, indicators, indexData);
+      // Use enhanced prediction service for better accuracy
+      const enhancedResult = await enhancedPredictionService.calculatePrediction({
+        symbol: stock.symbol,
+        data: result.data,
+        indicators: undefined // Will be calculated internally
+      });
+
+      // Convert enhanced result to Signal format
+      const signalData: Signal = {
+        ...enhancedResult.signal,
+        metadata: {
+          prediction: enhancedResult.expectedReturn,
+          confidence: enhancedResult.confidence,
+          regime: enhancedResult.marketRegime,
+          calculationTime: enhancedResult.calculationTime,
+          ensembleWeights: enhancedResult.ensembleContribution
+        }
+      };
 
       return { success: true, data: signalData, source: result.source };
     } catch (err: unknown) {
       if (signal?.aborted) return { success: false, data: null, source: result?.source ?? 'error', error: 'Aborted' };
-      return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
+      
+      // Fallback to legacy prediction service
+      logger.warn(`[Aggregator] Enhanced prediction failed, falling back to legacy: ${err}`);
+      try {
+        const indicators = mlPredictionService.calculateIndicators(result!.data!);
+        const prediction = mlPredictionService.predict(stock, result!.data!, indicators);
+        const signalData = mlPredictionService.generateSignal(stock, result!.data!, prediction, indicators, []);
+        // Use 'api' as source since we're generating signal from API data (not 'error')
+        return { success: true, data: signalData, source: 'api' };
+      } catch (fallbackErr) {
+        return createErrorResult(err, result?.source ?? 'error', `fetchSignal(${stock.symbol})`);
+      }
     }
   }
 
@@ -423,7 +451,7 @@ export class MarketDataClient {
   /**
    * Performance optimization: Periodic cache cleanup
    */
-  private startCacheCleanup() {
+  public startCacheCleanup() {
     setInterval(() => {
       const now = Date.now();
       const toDelete: string[] = [];
@@ -516,14 +544,14 @@ export class MarketDataClient {
    * Compatibility method for old DataAggregator.setCached
    */
   setCached(key: string, data: unknown, ttl?: number): void {
-    this.setCache(key as string, data, ttl);
+    this.setCache(key as string, data as OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData, ttl);
   }
 
   /**
    * Compatibility method for old DataAggregator.getCached
    */
   getCached<T>(key: string): T | undefined {
-    return this.getFromCache<T>(key);
+    return this.getFromCache<T>(key) ?? undefined;
   }
 
   /**
@@ -547,6 +575,9 @@ export class MarketDataClient {
         const data = await fetcher();
         this.setCache(key as any, data as any, ttl);
         return data;
+      } catch (error) {
+        this.stats.errors++;
+        throw error;
       } finally {
         this.pendingRequests.delete(key);
       }

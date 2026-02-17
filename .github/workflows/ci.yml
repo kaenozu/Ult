@@ -25,9 +25,24 @@ env:
 
 jobs:
   # ============================================
+  # Workflow Validation (Prevent YAML errors)
+  # ============================================
+  validate-workflows:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Workflow Files
+        run: |
+          chmod +x .github/scripts/validate-workflows.sh
+          .github/scripts/validate-workflows.sh
+
+  # ============================================
   # Lint & Type Check (Fast feedback)
   # ============================================
   lint:
+    needs: validate-workflows
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
@@ -52,6 +67,7 @@ jobs:
         run: npm run lint
 
   typecheck:
+    needs: validate-workflows
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
@@ -81,7 +97,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, typecheck]
+    needs: [validate-workflows, lint, typecheck]
     
     defaults:
       run:
@@ -137,9 +153,9 @@ jobs:
   # E2E Tests
   # ============================================
   e2e:
+    needs: validate-workflows
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [lint, typecheck]
     
     defaults:
       run:
@@ -213,9 +229,9 @@ jobs:
   # Build
   # ============================================
   build:
+    needs: [validate-workflows, lint, typecheck]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint, typecheck]
     
     defaults:
       run:
@@ -256,6 +272,7 @@ jobs:
   # Backend Tests
   # ============================================
   backend-test:
+    needs: validate-workflows
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -301,6 +318,7 @@ jobs:
   # Security Audit
   # ============================================
   security:
+    needs: validate-workflows
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
@@ -339,7 +357,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [lint, typecheck, test, e2e, build, backend-test, security]
+    needs: [validate-workflows, lint, typecheck, test, e2e, build, backend-test, security]
     if: always()
     
     steps:
