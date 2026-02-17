@@ -9,9 +9,7 @@ export function StoreHydration() {
     useEffect(() => {
         // Manually trigger hydration on mount to ensure client-side storage is used
         usePortfolioStore.persist.rehydrate();
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setHydrated(true);
-        console.log('[StoreHydration] Portfolio store rehydrated');
     }, []);
 
     if (!hydrated) return null;

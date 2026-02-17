@@ -39,9 +39,7 @@ export const MemoizedStockInfo = memo(function MemoizedStockInfo({
   }, [stock.change]);
 
   const handleClick = useCallback(() => {
-    // 株情報クリック時の処理
-    console.log('Stock clicked:', stock.symbol);
-  }, [stock.symbol]);
+  }, []);
 
   return (
     <div 
