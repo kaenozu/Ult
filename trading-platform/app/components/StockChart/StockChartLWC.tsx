@@ -16,7 +16,7 @@ import {
   HistogramSeries,
 } from 'lightweight-charts';
 import { OHLCV, Signal } from '@/app/types';
-import { SMA_CONFIG, GHOST_FORECAST, FORECAST_CONE } from '@/app/lib/constants';
+import { SMA_CONFIG, GHOST_FORECAST, FORECAST_CONE } from '@/app/constants';
 
 export interface StockChartProps {
   data: OHLCV[];

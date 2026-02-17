@@ -62,7 +62,7 @@ export const StockChart = memo(function StockChart({
 
   // 1. Data Preparation Hooks
   const { actualData, optimizedData, normalizedIndexData, extendedData, forecastExtension } = useChartData(data, signal, indexData);
-  const { sma20, upper, lower, preCalculated } = useTechnicalIndicators(data, extendedData.prices);
+  const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   
   // Performance Optimization: Debounce the heavy forecast layer calculation
   // Increased debounce interval to 100ms for better performance
@@ -98,7 +98,6 @@ export const StockChart = memo(function StockChart({
     market,
     hoveredIdx: settledIdx, // Use debounced/settled index for heavy calculations!
     accuracyData: memoizedAccuracyData,
-    preCalculatedIndicators: preCalculated // Use worker data!
   });
 
   // Enhanced cleanup with performance monitoring

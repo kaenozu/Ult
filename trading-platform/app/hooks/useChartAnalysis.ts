@@ -81,7 +81,7 @@ export function useChartAnalysis({
         if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) return [];
 
         // Create a stable slice analysis to avoid frequent re-calculation
-        const pastSignal = analyzeStock({ symbol: data[0].symbol || '', data: data.slice(0, hoveredIdx + 1), market });
+        const pastSignal = analyzeStock(data[0].symbol || '', data.slice(0, hoveredIdx + 1), market);
         if (!pastSignal) return [];
 
         const targetArr = new Array(extendedData.labels.length).fill(NaN);
