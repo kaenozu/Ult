@@ -8,7 +8,7 @@ import {
     SMA_CONFIG,
     OPTIMIZATION,
     PRICE_CALCULATION
-} from './constants';
+} from '@/app/constants';
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
 import { exitStrategy } from './ExitStrategy';

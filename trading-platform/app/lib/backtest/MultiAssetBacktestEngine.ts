@@ -14,7 +14,7 @@ import {
   SMA_CONFIG, 
   BACKTEST_CONFIG,
   RISK_MANAGEMENT 
-} from '../constants';
+} from '@/app/constants';
 
 // ============================================================================
 // Types

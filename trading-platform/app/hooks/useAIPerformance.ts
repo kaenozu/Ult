@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Stock, OHLCV } from '@/app/types';
 import { calculateAIHitRate } from '@/app/lib/analysis';
-import { DATA_REQUIREMENTS } from '@/app/lib/constants';
+import { DATA_REQUIREMENTS } from '@/app/constants';
 import { logger } from '@/app/core/logger';
 
 export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {

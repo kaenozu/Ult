@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { OHLCV } from '@/app/types';
 import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
 import { accuracyService } from '@/app/lib/AccuracyService';
-import { RSI_CONFIG, SMA_CONFIG } from '@/app/lib/constants';
+import { RSI_CONFIG, SMA_CONFIG } from '@/app/constants';
 
 interface PreCalculatedIndicators {
   rsi: Map<number, number[]>;

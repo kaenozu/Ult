@@ -5,7 +5,7 @@
  * Alternative Data Collection Engine - Integrates and manages alternative data from multiple sources.
  */
 
-import { TIME_INTERVALS } from '@/app/lib/constants/common';
+import { TIME_INTERVALS } from '@/app/constants/common';
 
 // Simple EventEmitter implementation for browser/Node compatibility
 class EventEmitter {

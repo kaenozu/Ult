@@ -7,7 +7,7 @@ import {
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
-import { SMA_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/lib/constants';
+import { SMA_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/constants';
 import { calculateChartMinMax } from '@/app/lib/chart-utils';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 import { useChartData } from './hooks/useChartData';

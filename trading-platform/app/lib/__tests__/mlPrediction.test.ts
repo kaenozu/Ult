@@ -4,10 +4,10 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { mlPredictionService } from '../mlPrediction';
 import { Stock, OHLCV } from '../../types';
-import { ENSEMBLE_WEIGHTS } from '../constants';
+import { ENSEMBLE_WEIGHTS } from '@/app/constants';
 
 // Mock constants
-jest.mock('../constants', () => ({
+jest.mock('@/app/constants', () => ({
   RSI_CONFIG: {
     DEFAULT_PERIOD: 14,
     EXTREME_OVERSOLD: 30,

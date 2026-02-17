@@ -1,6 +1,6 @@
 import { Stock, OHLCV } from '@/app/types';
 import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
-import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from '@/app/lib/constants';
+import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from '@/app/constants';
 
 export interface TechFilters {
   rsiMax?: string;

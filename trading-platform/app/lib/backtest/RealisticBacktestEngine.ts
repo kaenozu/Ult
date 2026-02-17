@@ -21,7 +21,7 @@ import {
   RealisticBacktestResult,
 } from './types';
 import { AdvancedBacktestEngine } from './AdvancedBacktestEngine';
-import { REALISTIC_BACKTEST_DEFAULTS, TIERED_COMMISSIONS } from '../constants/backtest-config';
+import { REALISTIC_BACKTEST_DEFAULTS, TIERED_COMMISSIONS } from '@/app/constants/backtest-config';
 import { DEFAULT_BACKTEST_CONFIG } from './BaseBacktestEngine';
 import MonteCarloSimulator, { MonteCarloResult } from './MonteCarloSimulator';
 

@@ -2,7 +2,7 @@ import { Order, Position } from '@/app/types';
 import { usePsychologyStore } from '@/app/store/psychologyStore';
 import type { MentalState, EmotionScore, CoachingRecommendation } from '@/app/types/psychology';
 import { logger } from '@/app/core/logger';
-import { TIME_INTERVALS } from '@/app/lib/constants/common';
+import { TIME_INTERVALS } from '@/app/constants/common';
 
 /**
  * トレーダー心理分析サービス

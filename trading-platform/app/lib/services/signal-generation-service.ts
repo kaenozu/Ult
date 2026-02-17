@@ -7,7 +7,7 @@
 import { Stock, OHLCV, Signal, ModelPrediction, TechnicalIndicatorsWithATR, TimeFrame } from '../../types';
 import { EntryTimingRecommendation } from '../../types/shared';
 import { analyzeStock } from '@/app/lib/analysis';
-import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION, RISK_MANAGEMENT } from '@/app/lib/constants';
+import { PRICE_CALCULATION, BACKTEST_CONFIG, SIGNAL_THRESHOLDS, MARKET_CORRELATION, RISK_MANAGEMENT } from '@/app/constants';
 
 import { logger } from '@/app/core/logger';
 interface MarketCorrelationResult {

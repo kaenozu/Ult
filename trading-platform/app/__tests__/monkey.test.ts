@@ -1,7 +1,7 @@
 import { analyzeStock } from '../lib/analysis';
 // import { mlPredictionService } from '../lib/mlPrediction';
 import { OHLCV, Stock } from '../types';
-import { OPTIMIZATION } from '../lib/constants';
+import { OPTIMIZATION } from '@/app/constants';
 
 describe('Logic Monkey Test - Robustness under extreme conditions', () => {
   const generateRandomData = (count: number, startPrice: number, volatility: number): OHLCV[] => {

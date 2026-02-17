@@ -6,7 +6,7 @@
  */
 
 import { OHLCV } from '@/app/types';
-import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from './constants';
+import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from '@/app/constants';
 
 export type MarketRegime = 'TRENDING' | 'RANGING' | 'UNKNOWN';
 export type VolatilityRegime = 'HIGH' | 'MEDIUM' | 'LOW';

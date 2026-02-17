@@ -1,5 +1,5 @@
 import { Chart } from 'chart.js';
-import { VOLUME_PROFILE } from '@/app/lib/constants';
+import { VOLUME_PROFILE } from '@/app/constants';
 import { VolumeProfilePluginOptions } from '../types';
 
 export const volumeProfilePlugin = {

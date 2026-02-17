@@ -9,7 +9,7 @@
 
 import { OHLCV, Signal, TimeFrame } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
-import { RSI_CONFIG, BOLLINGER_BANDS } from './constants';
+import { RSI_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
 
 /**
  * 各指標からのシグナル

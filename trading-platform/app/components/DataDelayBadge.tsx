@@ -3,7 +3,7 @@
 import { memo } from 'react';
 import { Clock } from 'lucide-react';
 import { cn } from '@/app/lib/utils';
-import { JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
+import { JAPANESE_MARKET_DELAY_MINUTES } from '@/app/constants/intervals';
 
 interface DataDelayBadgeProps {
   /** Market type */

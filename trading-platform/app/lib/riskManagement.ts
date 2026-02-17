@@ -1,5 +1,5 @@
 import { OHLCV, Position, PositionSizingMethod, StopLossType, RiskManagementSettings, RiskCalculationResult } from '../types';
-import { RISK_MANAGEMENT, TECHNICAL_INDICATORS } from './constants';
+import { RISK_MANAGEMENT, TECHNICAL_INDICATORS } from '@/app/constants';
 
 /**
  * ATR（Average True Range）を計算
