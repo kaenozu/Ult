@@ -134,7 +134,7 @@ export const StockChart = memo(function StockChart({
       window.removeEventListener('keydown', handleKeyDown);
       if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
     };
-  }, [data.length, actualData.prices.length]);
+  }, [actualData.prices.length]);
 
   // Release mouse block on intentional mouse movement
   useEffect(() => {
