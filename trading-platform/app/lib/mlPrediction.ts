@@ -137,11 +137,10 @@ class MLPredictionService {
    */
   predict(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): ModelPrediction {
     const prices = data.map(d => d.close), volumes = data.map(d => d.volume);
-    const currentPrice = prices[prices.length - 1];
-    const averageVolume = volumes.reduce((sum, volume) => sum + volume, 0) / volumes.length;
 
-    // 防御ガード: 指標データ不足時はフォールバック
-    if (!indicators.rsi?.length || !indicators.sma20?.length || !indicators.bollingerBands?.lower?.length) {
+    const features = this.extractFeatures(prices, volumes, indicators);
+
+    if (!features) {
       return {
         rfPrediction: 0,
         xgbPrediction: 0,
@@ -150,21 +149,6 @@ class MLPredictionService {
         confidence: 0
       };
     }
-
-    // フィーチャー抽出
-    const features: PredictionFeatures = {
-      rsi: this.last(indicators.rsi, SMA_CONFIG.MEDIUM_PERIOD),
-      rsiChange: this.last(indicators.rsi, SMA_CONFIG.MEDIUM_PERIOD) - this.at(indicators.rsi, indicators.rsi.length - 2, SMA_CONFIG.MEDIUM_PERIOD),
-      sma5: (currentPrice - this.last(indicators.sma5, currentPrice)) / currentPrice * 100,
-      sma20: (currentPrice - this.last(indicators.sma20, currentPrice)) / currentPrice * 100,
-      sma50: (currentPrice - this.last(indicators.sma50, currentPrice)) / currentPrice * 100,
-      priceMomentum: ((currentPrice - this.at(prices, prices.length - 10, currentPrice)) / this.at(prices, prices.length - 10, currentPrice)) * 100,
-      volumeRatio: this.last(volumes, 0) / (averageVolume || 1),
-      volatility: this.calculateVolatility(prices.slice(-VOLATILITY.CALCULATION_PERIOD)),
-      macdSignal: this.last(indicators.macd.macd, 0) - this.last(indicators.macd.signal, 0),
-      bollingerPosition: ((currentPrice - this.last(indicators.bollingerBands.lower, 0)) / (this.last(indicators.bollingerBands.upper, 1) - this.last(indicators.bollingerBands.lower, 0) || 1)) * 100,
-      atrPercent: (this.last(indicators.atr, 0) / currentPrice) * 100,
-    };
 
     // 訓練済みモデルが利用可能か確認
     const modelState = mlTrainingService.getState();
@@ -179,26 +163,23 @@ class MLPredictionService {
   }
 
   /**
-   * 訓練済みモデルによる非同期予測
-   * スクリーナーなど非同期処理が可能な場所で使う
+   * 予測用のフィーチャー抽出
+   * predict() と predictAsync() で共通使用
    */
-  async predictAsync(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): Promise<ModelPrediction> {
-    const prices = data.map(d => d.close), volumes = data.map(d => d.volume);
+  private extractFeatures(
+    prices: number[],
+    volumes: number[],
+    indicators: TechnicalIndicator & { atr: number[] }
+  ): PredictionFeatures | null {
     const currentPrice = prices[prices.length - 1];
     const averageVolume = volumes.reduce((sum, volume) => sum + volume, 0) / volumes.length;
 
-    // 防御ガード: 指標データ不足時はフォールバック
+    // 防御ガード: 指標データ不足時はnullを返す
     if (!indicators.rsi?.length || !indicators.sma20?.length || !indicators.bollingerBands?.lower?.length) {
-      return {
-        rfPrediction: 0,
-        xgbPrediction: 0,
-        lstmPrediction: 0,
-        ensemblePrediction: 0,
-        confidence: 0
-      };
+      return null;
     }
 
-    const features: PredictionFeatures = {
+    return {
       rsi: this.last(indicators.rsi, SMA_CONFIG.MEDIUM_PERIOD),
       rsiChange: this.last(indicators.rsi, SMA_CONFIG.MEDIUM_PERIOD) - this.at(indicators.rsi, indicators.rsi.length - 2, SMA_CONFIG.MEDIUM_PERIOD),
       sma5: (currentPrice - this.last(indicators.sma5, currentPrice)) / currentPrice * 100,
@@ -211,6 +192,26 @@ class MLPredictionService {
       bollingerPosition: ((currentPrice - this.last(indicators.bollingerBands.lower, 0)) / (this.last(indicators.bollingerBands.upper, 1) - this.last(indicators.bollingerBands.lower, 0) || 1)) * 100,
       atrPercent: (this.last(indicators.atr, 0) / currentPrice) * 100,
     };
+  }
+
+  /**
+   * 訓練済みモデルによる非同期予測
+   * スクリーナーなど非同期処理が可能な場所で使う
+   */
+  async predictAsync(stock: Stock, data: OHLCV[], indicators: TechnicalIndicator & { atr: number[] }): Promise<ModelPrediction> {
+    const prices = data.map(d => d.close), volumes = data.map(d => d.volume);
+
+    const features = this.extractFeatures(prices, volumes, indicators);
+
+    if (!features) {
+      return {
+        rfPrediction: 0,
+        xgbPrediction: 0,
+        lstmPrediction: 0,
+        ensemblePrediction: 0,
+        confidence: 0
+      };
+    }
 
     const modelState = mlTrainingService.getState();
     if (modelState.isTrained) {

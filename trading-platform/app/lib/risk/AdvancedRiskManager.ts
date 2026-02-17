@@ -647,23 +647,13 @@ export class AdvancedRiskManager extends EventEmitter {
    * 注文を検証してリスク制限に違反していないかチェック
    */
   validateOrder(order: OrderRequest): OrderValidationResult {
-    const violations: RiskAlert[] = [];
-    const reasons: string[] = [];
-    
     // Check if trading is halted
-    if (this.isTradingHalted) {
-      violations.push({
-        type: 'daily_loss',
-        severity: 'critical',
-        message: 'Trading is halted due to risk limit violation',
-        currentValue: 0,
-        limitValue: 0,
-        timestamp: Date.now(),
-      });
+    const haltedViolation = this.checkTradingHalted();
+    if (haltedViolation) {
       return {
         allowed: false,
         reasons: ['Trading is halted'],
-        violations,
+        violations: [haltedViolation],
         action: 'halt',
       };
     }
@@ -671,127 +661,10 @@ export class AdvancedRiskManager extends EventEmitter {
     // Reset daily P&L if needed
     this.checkAndResetDailyPnL();
 
-    // Check daily loss limit
-    const dailyLoss = this.getDailyLoss();
-    const dailyLossPercent = (dailyLoss / this.portfolio.totalValue) * 100;
-    if (dailyLossPercent >= this.limits.maxDailyLoss && order.side === 'BUY') {
-      violations.push({
-        type: 'daily_loss',
-        severity: 'critical',
-        message: `Daily loss limit reached: ${dailyLossPercent.toFixed(2)}%`,
-        currentValue: dailyLossPercent,
-        limitValue: this.limits.maxDailyLoss,
-        timestamp: Date.now(),
-      });
-      this.haltTrading();
-      return {
-        allowed: false,
-        reasons: [`Daily loss limit reached: ${dailyLossPercent.toFixed(2)}%`],
-        violations,
-        action: 'halt',
-      };
-    }
-
-    // Check position size limit
-    const orderValue = order.quantity * order.price;
-    const positionWeight = orderValue / this.portfolio.totalValue;
-    
-    if (order.side === 'BUY') {
-      // Check if this would exceed max position size
-      const existingPosition = this.portfolio.positions.find((p) => p.symbol === order.symbol);
-      const currentPositionValue = existingPosition 
-        ? existingPosition.currentPrice * existingPosition.quantity 
-        : 0;
-      const totalPositionValue = currentPositionValue + orderValue;
-      const totalPositionWeight = totalPositionValue / this.portfolio.totalValue;
-
-      if (totalPositionWeight > this.limits.maxPositionSize / 100) {
-        violations.push({
-          type: 'position_limit',
-          severity: 'high',
-          message: `Position size limit would be exceeded for ${order.symbol}`,
-          symbol: order.symbol,
-          currentValue: totalPositionWeight,
-          limitValue: this.limits.maxPositionSize / 100,
-          timestamp: Date.now(),
-        });
-        reasons.push(`Position size limit: ${(totalPositionWeight * 100).toFixed(2)}% > ${this.limits.maxPositionSize}%`);
-      }
-    }
-
-    // Check single trade risk limit
-    if (order.stopLoss) {
-      const riskPerShare = Math.abs(order.price - order.stopLoss);
-      const tradeRisk = (riskPerShare * order.quantity) / this.portfolio.totalValue * 100;
-      
-      if (tradeRisk > this.limits.maxSingleTradeRisk) {
-        violations.push({
-          type: 'position_limit',
-          severity: 'high',
-          message: `Single trade risk limit exceeded: ${tradeRisk.toFixed(2)}%`,
-          symbol: order.symbol,
-          currentValue: tradeRisk,
-          limitValue: this.limits.maxSingleTradeRisk,
-          timestamp: Date.now(),
-        });
-        reasons.push(`Trade risk: ${tradeRisk.toFixed(2)}% > ${this.limits.maxSingleTradeRisk}%`);
-      }
-    }
-
-    // Check leverage limit
-    if (order.side === 'BUY') {
-      const totalPositionsValue = this.portfolio.positions.reduce(
-        (sum, pos) => sum + pos.currentPrice * pos.quantity,
-        0
-      );
-      const newLeverage = (totalPositionsValue + orderValue) / this.portfolio.totalValue;
-      
-      if (newLeverage > this.limits.maxLeverage) {
-        violations.push({
-          type: 'margin',
-          severity: 'high',
-          message: `Leverage limit would be exceeded: ${newLeverage.toFixed(2)}x`,
-          currentValue: newLeverage,
-          limitValue: this.limits.maxLeverage,
-          timestamp: Date.now(),
-        });
-        reasons.push(`Leverage: ${newLeverage.toFixed(2)}x > ${this.limits.maxLeverage}x`);
-      }
-    }
-
-    // Check cash reserve
-    if (order.side === 'BUY') {
-      const remainingCash = this.portfolio.cash - orderValue;
-      const cashReservePercent = (remainingCash / this.portfolio.totalValue) * 100;
-      
-      if (cashReservePercent < this.limits.minCashReserve) {
-        violations.push({
-          type: 'margin',
-          severity: 'medium',
-          message: `Minimum cash reserve would not be maintained: ${cashReservePercent.toFixed(2)}%`,
-          currentValue: cashReservePercent,
-          limitValue: this.limits.minCashReserve,
-          timestamp: Date.now(),
-        });
-        reasons.push(`Cash reserve: ${cashReservePercent.toFixed(2)}% < ${this.limits.minCashReserve}%`);
-      }
-    }
-
-    // Determine action based on violations
-    let action: 'allow' | 'alert' | 'reject' | 'halt' = 'allow';
-    
-    if (violations.length > 0) {
-      const criticalViolations = violations.filter((v) => v.severity === 'critical');
-      const highViolations = violations.filter((v) => v.severity === 'high');
-      
-      if (criticalViolations.length > 0) {
-        action = 'halt';
-      } else if (highViolations.length > 0) {
-        action = 'reject';
-      } else {
-        action = 'alert';
-      }
-    }
+    // Validate all risk limits
+    const violations = this.validateAllRiskLimits(order);
+    const reasons = this.generateViolationReasons(violations);
+    const action = this.determineViolationAction(violations);
 
     // Add alerts for violations
     violations.forEach((violation) => this.addAlert(violation));
@@ -802,6 +675,195 @@ export class AdvancedRiskManager extends EventEmitter {
       violations,
       action,
     };
+  }
+
+  private checkTradingHalted(): RiskAlert | null {
+    if (!this.isTradingHalted) return null;
+
+    return {
+      type: 'daily_loss',
+      severity: 'critical',
+      message: 'Trading is halted due to risk limit violation',
+      currentValue: 0,
+      limitValue: 0,
+      timestamp: Date.now(),
+    };
+  }
+
+  private validateAllRiskLimits(order: OrderRequest): RiskAlert[] {
+    const violations: RiskAlert[] = [];
+
+    // Check daily loss limit
+    const dailyLossViolation = this.validateDailyLossLimit(order);
+    if (dailyLossViolation) {
+      this.haltTrading();
+      return [dailyLossViolation];
+    }
+
+    // Check position size limit
+    violations.push(...this.validatePositionSizeLimit(order));
+
+    // Check single trade risk limit
+    violations.push(...this.validateSingleTradeRisk(order));
+
+    // Check leverage limit
+    violations.push(...this.validateLeverageLimit(order));
+
+    // Check cash reserve
+    violations.push(...this.validateCashReserve(order));
+
+    return violations;
+  }
+
+  private validateDailyLossLimit(order: OrderRequest): RiskAlert | null {
+    if (order.side !== 'BUY') return null;
+
+    const dailyLoss = this.getDailyLoss();
+    const dailyLossPercent = (dailyLoss / this.portfolio.totalValue) * 100;
+
+    if (dailyLossPercent >= this.limits.maxDailyLoss) {
+      return {
+        type: 'daily_loss',
+        severity: 'critical',
+        message: `Daily loss limit reached: ${dailyLossPercent.toFixed(2)}%`,
+        currentValue: dailyLossPercent,
+        limitValue: this.limits.maxDailyLoss,
+        timestamp: Date.now(),
+      };
+    }
+
+    return null;
+  }
+
+  private validatePositionSizeLimit(order: OrderRequest): RiskAlert[] {
+    const violations: RiskAlert[] = [];
+
+    if (order.side !== 'BUY') return violations;
+
+    const orderValue = order.quantity * order.price;
+    const existingPosition = this.portfolio.positions.find((p) => p.symbol === order.symbol);
+    const currentPositionValue = existingPosition
+      ? existingPosition.currentPrice * existingPosition.quantity
+      : 0;
+    const totalPositionValue = currentPositionValue + orderValue;
+    const totalPositionWeight = totalPositionValue / this.portfolio.totalValue;
+
+    if (totalPositionWeight > this.limits.maxPositionSize / 100) {
+      violations.push({
+        type: 'position_limit',
+        severity: 'high',
+        message: `Position size limit would be exceeded for ${order.symbol}`,
+        symbol: order.symbol,
+        currentValue: totalPositionWeight,
+        limitValue: this.limits.maxPositionSize / 100,
+        timestamp: Date.now(),
+      });
+    }
+
+    return violations;
+  }
+
+  private validateSingleTradeRisk(order: OrderRequest): RiskAlert[] {
+    const violations: RiskAlert[] = [];
+
+    if (!order.stopLoss) return violations;
+
+    const riskPerShare = Math.abs(order.price - order.stopLoss);
+    const tradeRisk = (riskPerShare * order.quantity) / this.portfolio.totalValue * 100;
+
+    if (tradeRisk > this.limits.maxSingleTradeRisk) {
+      violations.push({
+        type: 'position_limit',
+        severity: 'high',
+        message: `Single trade risk limit exceeded: ${tradeRisk.toFixed(2)}%`,
+        symbol: order.symbol,
+        currentValue: tradeRisk,
+        limitValue: this.limits.maxSingleTradeRisk,
+        timestamp: Date.now(),
+      });
+    }
+
+    return violations;
+  }
+
+  private validateLeverageLimit(order: OrderRequest): RiskAlert[] {
+    const violations: RiskAlert[] = [];
+
+    if (order.side !== 'BUY') return violations;
+
+    const orderValue = order.quantity * order.price;
+    const totalPositionsValue = this.portfolio.positions.reduce(
+      (sum, pos) => sum + pos.currentPrice * pos.quantity,
+      0
+    );
+    const newLeverage = (totalPositionsValue + orderValue) / this.portfolio.totalValue;
+
+    if (newLeverage > this.limits.maxLeverage) {
+      violations.push({
+        type: 'margin',
+        severity: 'high',
+        message: `Leverage limit would be exceeded: ${newLeverage.toFixed(2)}x`,
+        currentValue: newLeverage,
+        limitValue: this.limits.maxLeverage,
+        timestamp: Date.now(),
+      });
+    }
+
+    return violations;
+  }
+
+  private validateCashReserve(order: OrderRequest): RiskAlert[] {
+    const violations: RiskAlert[] = [];
+
+    if (order.side !== 'BUY') return violations;
+
+    const orderValue = order.quantity * order.price;
+    const remainingCash = this.portfolio.cash - orderValue;
+    const cashReservePercent = (remainingCash / this.portfolio.totalValue) * 100;
+
+    if (cashReservePercent < this.limits.minCashReserve) {
+      violations.push({
+        type: 'margin',
+        severity: 'medium',
+        message: `Minimum cash reserve would not be maintained: ${cashReservePercent.toFixed(2)}%`,
+        currentValue: cashReservePercent,
+        limitValue: this.limits.minCashReserve,
+        timestamp: Date.now(),
+      });
+    }
+
+    return violations;
+  }
+
+  private generateViolationReasons(violations: RiskAlert[]): string[] {
+    const reasons: string[] = [];
+
+    for (const violation of violations) {
+      if (violation.type === 'daily_loss') {
+        reasons.push(violation.message);
+      } else if (violation.type === 'position_limit') {
+        reasons.push(`Position size limit: ${(violation.currentValue * 100).toFixed(2)}% > ${violation.limitValue * 100}%`);
+      } else if (violation.type === 'margin') {
+        if (violation.message.includes('Leverage')) {
+          reasons.push(`Leverage: ${violation.currentValue.toFixed(2)}x > ${violation.limitValue}x`);
+        } else {
+          reasons.push(`Cash reserve: ${violation.currentValue.toFixed(2)}% < ${violation.limitValue}%`);
+        }
+      }
+    }
+
+    return reasons;
+  }
+
+  private determineViolationAction(violations: RiskAlert[]): 'allow' | 'alert' | 'reject' | 'halt' {
+    if (violations.length === 0) return 'allow';
+
+    const criticalViolations = violations.filter((v) => v.severity === 'critical');
+    const highViolations = violations.filter((v) => v.severity === 'high');
+
+    if (criticalViolations.length > 0) return 'halt';
+    if (highViolations.length > 0) return 'reject';
+    return 'alert';
   }
 
   /**

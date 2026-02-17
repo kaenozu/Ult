@@ -212,8 +212,7 @@ export class MarketDataClient {
 
           const now = new Date();
           const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
-          const timeDiff = lastDataDate ? now.getTime() - lastDataDate.getTime() : null;
-          const needsUpdate = forceRefresh || !lastDataDate || (timeDiff !== null && timeDiff > (24 * 60 * 60 * 1000)) || missingHistory;
+          const needsUpdate = this.shouldUpdateData(forceRefresh, lastDataDate, now, missingHistory);
 
           if (needsUpdate) {
             const params = new URLSearchParams({
@@ -446,6 +445,19 @@ export class MarketDataClient {
     if (interval.includes('1w')) return MARKET_DATA_CACHE_TTL.weekly;
 
     return MARKET_DATA_CACHE_TTL.daily;
+  }
+
+  /**
+   * Determine if data needs to be updated from API
+   */
+  private shouldUpdateData(forceRefresh: boolean, lastDataDate: Date | null, now: Date, missingHistory: boolean): boolean {
+    if (forceRefresh) return true;
+    if (!lastDataDate) return true;
+    if (missingHistory) return true;
+
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const timeDiff = now.getTime() - lastDataDate.getTime();
+    return timeDiff > ONE_DAY_MS;
   }
 
   /**
