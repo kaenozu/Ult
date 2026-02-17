@@ -52,6 +52,9 @@ describe('OrderPanel', () => {
 
         render(<OrderPanel stock={mockStock} currentPrice={2000} />);
 
+        // Set quantity to 100
+        fireEvent.change(screen.getByLabelText('数量'), { target: { value: '100' } });
+
         // Open modal
         fireEvent.click(screen.getByText('買い注文を発注'));
 

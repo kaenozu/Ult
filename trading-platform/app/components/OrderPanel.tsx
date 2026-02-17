@@ -29,6 +29,7 @@ interface MaxQuantityButtonProps {
  */
 function MaxQuantityButton({ price, cash, onSetQuantity }: MaxQuantityButtonProps) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const tooltipId = 'max-qty-tooltip';
   
   const { maxQty, canAfford } = useMemo(() => {
     if (price <= 0 || cash <= 0) return { maxQty: 0, canAfford: false };
@@ -44,22 +45,35 @@ function MaxQuantityButton({ price, cash, onSetQuantity }: MaxQuantityButtonProp
     >
       <button
         type="button"
-        onClick={() => canAfford && onSetQuantity(maxQty)}
-        disabled={!canAfford}
+        onClick={() => {
+          if (canAfford) {
+            onSetQuantity(maxQty);
+          } else {
+            setShowTooltip(true);
+          }
+        }}
+        onFocus={() => !canAfford && setShowTooltip(true)}
+        onBlur={() => setShowTooltip(false)}
+        aria-disabled={!canAfford}
+        aria-describedby={!canAfford ? tooltipId : undefined}
         className={cn(
-          "text-[10px] underline decoration-dotted transition-colors ml-1",
+          "text-[10px] underline decoration-dotted transition-colors ml-1 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-sm",
           canAfford 
             ? "text-green-400 hover:text-white cursor-pointer" 
             : "text-gray-500 cursor-not-allowed no-underline"
         )}
-        aria-label={canAfford ? "最大購入可能数量を入力" : MSG_INSUFFICIENT_FUNDS}
+        aria-label={canAfford ? "最大購入可能数量を入力" : undefined}
       >
         最大 (Max)
       </button>
       
       {/* ツールチップ - 購入不可時に表示 */}
       {showTooltip && !canAfford && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-red-600 text-white text-[10px] rounded whitespace-nowrap z-10 pointer-events-none">
+        <div
+          id={tooltipId}
+          role="tooltip"
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-red-600 text-white text-[10px] rounded whitespace-nowrap z-10 pointer-events-none animate-in fade-in zoom-in-95 duration-200"
+        >
           {MSG_INSUFFICIENT_FUNDS}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-red-600" />
         </div>
