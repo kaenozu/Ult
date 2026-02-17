@@ -48,13 +48,12 @@ export const useForecastLayers = ({
 
     // Note: analyzeStock might be expensive, so it's good this is memoized
     // Optimized: Pass full data with endIndex and pre-calculated indicators to avoid slice & re-calc
-    const pastSignal = analyzeStock(
-      data[0].symbol || '',
+    const pastSignal = analyzeStock({
+      symbol: data[0].symbol || '',
       data,
       market,
-      undefined,
-      { endIndex: hoveredIdx, preCalculatedIndicators }
-    );
+      context: { endIndex: hoveredIdx, preCalculatedIndicators }
+    });
     if (!pastSignal) return [];
 
     const targetArr = new Array(data.length).fill(NaN);

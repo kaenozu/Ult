@@ -240,19 +240,20 @@ export const useChartOptions = ({
         tension: CHART_CONFIG.TENSION,
         borderWidth: 2
       }
-    },
-    animation: {
-      duration: 300,
-      easing: 'easeOutQuart'
-    }
-  }), [
+      },
+      animation: {
+        duration: 300,
+        easing: 'easeOutQuart'
+      }
+    }), [
     market,
     hoveredIdx,
     yAxisRange,
     setHoveredIndex,
     signal,
     data,
-    supplyDemandLevels
+    supplyDemandLevels,
+    showVolume
   ]);
 
   return options;

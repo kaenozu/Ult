@@ -521,6 +521,7 @@ export class OrderManagementSystem extends EventEmitter {
 
     // Disconnect all brokers
     for (const broker of this.brokers.values()) {
+      // Ignore errors during shutdown - broker cleanup is best-effort
       broker.disconnect().catch(() => {});
     }
 

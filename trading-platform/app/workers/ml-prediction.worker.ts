@@ -31,7 +31,10 @@ interface WorkerResponse {
 }
 
 // Web Worker内でのTensorFlow動作
+// TensorFlow.js types are complex, using any for dynamic imports
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let tf: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let models: Map<string, any> = new Map();
 
 /**
@@ -60,12 +63,13 @@ async function loadTensorFlow(): Promise<any> {
  */
 async function getOrCreateModel(modelType: string, inputShape: number[]): Promise<any> {
   const cacheKey = `${modelType}_${inputShape.join('_')}`;
-  
+
   if (models.has(cacheKey)) {
     return models.get(cacheKey);
   }
 
   const tensorflow = await loadTensorFlow();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let model: any;
 
   switch (modelType) {

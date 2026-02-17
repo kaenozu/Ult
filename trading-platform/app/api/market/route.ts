@@ -11,11 +11,11 @@ import {
   YahooChartResultSchema,
   YahooSingleQuoteSchema
 } from '@/app/lib/schemas/market';
+import { formatSymbol } from '@/app/lib/utils';
 
 export const yf = new YahooFinance();
 
 // --- Zod Schemas for Request ---
-
 const MarketRequestSchema = z.object({
   type: z.enum(['history', 'quote']).default('quote'),
   symbol: z.string().min(1).max(1000).regex(/^[A-Z0-9^.,]+$/i, 'Invalid symbol format').transform(s => s.toUpperCase()),
@@ -24,119 +24,6 @@ const MarketRequestSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
-function formatSymbol(symbol: string, market?: string): string {
-  // Never add suffix to indices (starting with ^)
-  if (symbol.startsWith('^')) {
-    return symbol;
-  }
-
-  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
-    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
-  }
-  return symbol;
-}
-
-/**
- * @swagger
- * /api/market:
- *   get:
- *     summary: Get market data
- *     description: Fetch historical price data or real-time quotes for stocks and indices
- *     tags:
- *       - Market Data
- *     parameters:
- *       - in: query
- *         name: type
- *         required: true
- *         schema:
- *           type: string
- *           enum: [history, quote]
- *         description: Type of data to retrieve (history for historical data, quote for current price)
- *       - in: query
- *         name: symbol
- *         required: true
- *         schema:
- *           type: string
- *         description: Stock symbol (e.g., ^N225 for Nikkei 225, AAPL for Apple, 7203 for Toyota)
- *         example: ^N225
- *       - in: query
- *         name: market
- *         schema:
- *           type: string
- *           enum: [japan, usa]
- *         description: Market type for symbol formatting
- *       - in: query
- *         name: interval
- *         schema:
- *           type: string
- *           enum: [1m, 5m, 15m, 1h, 4h, 1d, 1wk, 1mo]
- *         description: Data interval (only for history type). Note - Intraday intervals (1m, 5m, 15m, 1h, 4h) not available for Japanese stocks
- *       - in: query
- *         name: startDate
- *         schema:
- *           type: string
- *           format: date
- *         description: Start date for historical data in YYYY-MM-DD format (only for history type)
- *         example: 2021-01-01
- *     responses:
- *       200:
- *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               oneOf:
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/OHLCV'
- *                     warning:
- *                       type: string
- *                       description: Warning message if applicable
- *                   description: Historical data response
- *                 - $ref: '#/components/schemas/Quote'
- *                   description: Quote data response
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/Quote'
- *                   description: Batch quotes response
- *       400:
- *         description: Bad request - Invalid parameters
- *         content:
- *           application/json:
- *             schema:
- *               oneOf:
- *                 - $ref: '#/components/schemas/Error'
- *                 - $ref: '#/components/schemas/ValidationError'
- *       404:
- *         description: Symbol not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       429:
- *         description: Rate limit exceeded
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       502:
- *         description: Bad gateway - External API error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting

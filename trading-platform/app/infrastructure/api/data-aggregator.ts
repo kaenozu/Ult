@@ -62,7 +62,7 @@ export class MarketDataClient {
     errors: 0
   };
 
-  private isValidResponse(httpResponse: Response | undefined, parsedResponse: MarketResponse<any>): boolean {
+  private isValidResponse<T>(httpResponse: Response | undefined, parsedResponse: MarketResponse<T>): boolean {
     if (!httpResponse || !httpResponse.ok) return false;
     if (parsedResponse && parsedResponse.error) return false;
     return true;
@@ -93,8 +93,8 @@ export class MarketDataClient {
       }
 
       // Handle mock response objects in tests that might not have json() method
-      let rawJson: any;
-      if (httpResponse && typeof (httpResponse as any).json === 'function') {
+      let rawJson: unknown;
+      if (httpResponse && typeof httpResponse.json === 'function') {
         rawJson = await httpResponse.json();
       } else {
         // Fallback for shallow mocks in tests
@@ -106,9 +106,9 @@ export class MarketDataClient {
         : { data: rawJson as T } as MarketResponse<T>;
 
       if (!this.isValidResponse(httpResponse, parsedResponse)) {
-        const debugInfo = (parsedResponse && (parsedResponse as any).debug) ? ` (Debug: ${(parsedResponse as any).debug})` : '';
-        const details = (parsedResponse && (parsedResponse as any).details) ? ` - ${(parsedResponse as any).details}` : '';
-        const errorMsg = (parsedResponse && (parsedResponse as any).error) || (httpResponse ? httpResponse.statusText : 'Unknown Network Error');
+        const debugInfo = parsedResponse?.debug ? ` (Debug: ${parsedResponse.debug})` : '';
+        const details = parsedResponse?.details ? ` - ${parsedResponse.details}` : '';
+        const errorMsg = parsedResponse?.error || (httpResponse ? httpResponse.statusText : 'Unknown Network Error');
         throw new Error(`${errorMsg}${details}${debugInfo}`);
       }
 
@@ -212,8 +212,7 @@ export class MarketDataClient {
 
           const now = new Date();
           const lastDataDate = localData.length > 0 ? new Date(localData[localData.length - 1].date) : null;
-          const timeDiff = lastDataDate ? now.getTime() - lastDataDate.getTime() : null;
-          const needsUpdate = forceRefresh || !lastDataDate || (timeDiff !== null && timeDiff > (24 * 60 * 60 * 1000)) || missingHistory;
+          const needsUpdate = this.shouldUpdateData(forceRefresh, lastDataDate, now, missingHistory);
 
           if (needsUpdate) {
             const params = new URLSearchParams({
@@ -425,7 +424,7 @@ export class MarketDataClient {
   }
 
   private evictLeastRecentlyUsed() {
-    let leastUsed: [string, CacheEntry<any>] | null = null;
+    let leastUsed: [string, CacheEntry<OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData>] | null = null;
 
     for (const [key, entry] of this.cache.entries()) {
       if (!leastUsed || entry.accessCount < leastUsed[1].accessCount) {
@@ -446,6 +445,19 @@ export class MarketDataClient {
     if (interval.includes('1w')) return MARKET_DATA_CACHE_TTL.weekly;
 
     return MARKET_DATA_CACHE_TTL.daily;
+  }
+
+  /**
+   * Determine if data needs to be updated from API
+   */
+  private shouldUpdateData(forceRefresh: boolean, lastDataDate: Date | null, now: Date, missingHistory: boolean): boolean {
+    if (forceRefresh) return true;
+    if (!lastDataDate) return true;
+    if (missingHistory) return true;
+
+    const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+    const timeDiff = now.getTime() - lastDataDate.getTime();
+    return timeDiff > ONE_DAY_MS;
   }
 
   /**
@@ -573,7 +585,7 @@ export class MarketDataClient {
     const fetchPromise = (async () => {
       try {
         const data = await fetcher();
-        this.setCache(key as any, data as any, ttl);
+        this.setCache(key, data as OHLCV | OHLCV[] | Signal | TechnicalIndicator | QuoteData, ttl);
         return data;
       } catch (error) {
         this.stats.errors++;
@@ -602,19 +614,20 @@ export class MarketDataClient {
    */
   async fetchWithPriority<T>(keys: string[], _priority: string, fetcher: () => Promise<T>): Promise<Map<string, T> | T> {
     this.stats.totalRequests += keys.length;
-    let data = await fetcher();
+    const fetchedData = await fetcher();
+    let data: T | unknown = fetchedData;
 
     // Compatibility: if data is an array but test expects single item when keys.length === 1
     if (keys.length === 1 && Array.isArray(data)) {
-      data = data[0] as any;
+      data = data[0];
     }
 
     if (keys.length === 1) {
-      const result = new Map<string, any>();
-      result.set(keys[0], data);
-      return result as any;
+      const result = new Map<string, T>();
+      result.set(keys[0], data as T);
+      return result;
     }
-    return data;
+    return data as T;
   }
 
   /**

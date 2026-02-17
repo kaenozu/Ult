@@ -26,32 +26,53 @@ class AccuracyService {
      */
     simulateTrade(data: OHLCV[], startIndex: number, type: 'BUY' | 'SELL', targetMove: number): { won: boolean; directionalHit: boolean } {
         const entryPrice = data[startIndex].close;
+        const maxIndex = Math.min(startIndex + FORECAST_CONE.STEPS, data.length - 1);
+
+        const { tradeWon, tradeLost } = this.executeTradeSimulation(data, startIndex, maxIndex, type, entryPrice, targetMove);
+        const directionalHit = this.calculateDirectionalHit(data, maxIndex, entryPrice, type);
+
+        return { won: tradeWon && !tradeLost, directionalHit };
+    }
+
+    private executeTradeSimulation(
+        data: OHLCV[],
+        startIndex: number,
+        maxIndex: number,
+        type: 'BUY' | 'SELL',
+        entryPrice: number,
+        targetMove: number
+    ): { tradeWon: boolean; tradeLost: boolean } {
         const targetPrice = type === 'BUY' ? entryPrice + targetMove : entryPrice - targetMove;
         const stopLoss = type === 'BUY' ? entryPrice - targetMove : entryPrice + targetMove;
 
-        let tradeWon = false;
-        let tradeLost = false;
-        const maxIndex = Math.min(startIndex + FORECAST_CONE.STEPS, data.length - 1);
+        const checkBuyTrade = (day: OHLCV): boolean | null => {
+            if (day.low <= stopLoss) return false;
+            if (day.high >= targetPrice) return true;
+            return null;
+        };
+
+        const checkSellTrade = (day: OHLCV): boolean | null => {
+            if (day.high >= stopLoss) return false;
+            if (day.low <= targetPrice) return true;
+            return null;
+        };
+
+        const checkTrade = type === 'BUY' ? checkBuyTrade : checkSellTrade;
 
         for (let j = startIndex + 1; j <= maxIndex; j++) {
             const day = data[j];
             if (!day || day.high === 0 || day.low === 0) break;
 
-            if (type === 'BUY') {
-                if (day.low <= stopLoss) { tradeLost = true; break; }
-                if (day.high >= targetPrice) { tradeWon = true; break; }
-            } else {
-                if (day.high >= stopLoss) { tradeLost = true; break; }
-                if (day.low <= targetPrice) { tradeWon = true; break; }
-            }
-
-            if (tradeWon && !tradeLost) break;
+            const result = checkTrade(day);
+            if (result !== null) return { tradeWon: result, tradeLost: !result };
         }
 
-        const forecastDaysLater = data[maxIndex]?.close || entryPrice;
-        const directionalHit = type === 'BUY' ? forecastDaysLater > entryPrice : forecastDaysLater < entryPrice;
+        return { tradeWon: false, tradeLost: false };
+    }
 
-        return { won: tradeWon && !tradeLost, directionalHit };
+    private calculateDirectionalHit(data: OHLCV[], maxIndex: number, entryPrice: number, type: 'BUY' | 'SELL'): boolean {
+        const forecastDaysLater = data[maxIndex]?.close || entryPrice;
+        return type === 'BUY' ? forecastDaysLater > entryPrice : forecastDaysLater < entryPrice;
     }
 
     /**
@@ -262,7 +283,7 @@ class AccuracyService {
                     lastOptimizationIndex = i;
                 } else context.forcedParams = cachedParams;
 
-                const signal = analysisService.analyzeStock(symbol, data, market, undefined, context);
+                const signal = analysisService.analyzeStock({ symbol, data, market, indexDataOverride: undefined, context });
                 if (!context.forcedParams) {
                     cachedParams = { rsiPeriod: signal.optimizedParams?.rsiPeriod || RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: signal.optimizedParams?.smaPeriod || SMA_CONFIG.MEDIUM_PERIOD, accuracy: signal.accuracy || 0 };
                     wfaMetrics.outOfSample.push(cachedParams.accuracy);
@@ -332,7 +353,7 @@ class AccuracyService {
         const startIndex = Math.min(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, data.length - windowSize - 1);
 
         for (let i = startIndex; i < data.length - windowSize; i += 1) {
-            const signal = analysisService.analyzeStock(symbol, data, market, undefined, { endIndex: i, preCalculatedIndicators });
+            const signal = analysisService.analyzeStock({ symbol, data, market, context: { endIndex: i, preCalculatedIndicators } });
             if (signal.type === 'HOLD') continue;
             const future = data[i + windowSize];
             const priceChange = (future.close - data[i].close) / (data[i].close || 1);
@@ -364,7 +385,7 @@ class AccuracyService {
         const preCalculatedIndicators = this.preCalculateIndicators(data);
         const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, 10);
         for (let i = startIndex; i < data.length - 10; i += 1) {
-            const signal = analysisService.analyzeStock(symbol, data, market, undefined, { endIndex: i, preCalculatedIndicators });
+            const signal = analysisService.analyzeStock({ symbol, data, market, context: { endIndex: i, preCalculatedIndicators } });
             if (signal.type === 'HOLD') continue;
             total++;
             const atr = preCalculatedIndicators?.atr ? preCalculatedIndicators.atr[i] : this.calculateSimpleATR(data, i);
