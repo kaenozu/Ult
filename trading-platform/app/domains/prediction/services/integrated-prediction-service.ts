@@ -108,7 +108,7 @@ export class IntegratedPredictionService {
     indexData?: OHLCV[]
   ): Signal {
     const currentPrice = data[data.length - 1].close;
-    const baseAnalysis = analyzeStock({ symbol: stock.symbol, data, market: stock.market, indexDataOverride: indexData });
+    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market, indexData);
 
     // Determine signal type
     let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';

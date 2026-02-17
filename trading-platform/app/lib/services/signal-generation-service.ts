@@ -35,7 +35,7 @@ export class SignalGenerationService {
     indexData?: OHLCV[]
   ): Signal {
     const currentPrice = data[data.length - 1].close;
-    const baseAnalysis = analyzeStock({ symbol: stock.symbol, data, market: stock.market, indexDataOverride: indexData });
+    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market, indexData);
 
     // 1. 市場相関分析 (Market Sync)
     const { marketInfo, confidenceAdj, marketComment } = this.analyzeMarketCorrelation(

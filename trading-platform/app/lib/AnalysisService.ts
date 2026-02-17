@@ -18,6 +18,7 @@ import { logger } from '@/app/core/logger';
 export interface AnalysisContext {
     startIndex?: number;
     endIndex?: number;
+    minimal?: boolean; // New flag for performance optimization
     preCalculatedIndicators?: {
         rsi: Map<number, number[]>;
         sma: Map<number, number[]>;
@@ -38,7 +39,7 @@ class AnalysisService {
      * 予測コーン（Forecast Cone）の計算
      */
     calculateForecastCone(data: OHLCV[]): Signal['forecastCone'] | undefined {
-        logger.info('[calculateForecastCone] input data length:', data.length, `LOOKBACK: ${FORECAST_CONE.LOOKBACK_DAYS}`);
+        logger.debug('[calculateForecastCone] input data length:', data.length, `LOOKBACK: ${FORECAST_CONE.LOOKBACK_DAYS}`);
         if (data.length < FORECAST_CONE.LOOKBACK_DAYS) {
             logger.warn('[calculateForecastCone] Insufficient data, returning undefined');
             return undefined;
@@ -47,7 +48,7 @@ class AnalysisService {
         const recentData = data.slice(-FORECAST_CONE.LOOKBACK_DAYS);
         const closes = recentData.map(d => d.close);
         const currentPrice = closes[closes.length - 1];
-        logger.info('[calculateForecastCone] recentData length:', recentData.length, `currentPrice: ${currentPrice}`);
+        logger.debug('[calculateForecastCone] recentData length:', recentData.length, `currentPrice: ${currentPrice}`);
 
         const priceReturns = [];
         for (let index = 1; index < closes.length; index++) {
@@ -94,7 +95,7 @@ class AnalysisService {
             base,
             confidence: parseFloat(confidence.toFixed(1))
         };
-        logger.info('[calculateForecastCone] success', {
+        logger.debug('[calculateForecastCone] success', {
             dataLength: data.length,
             bearishLowerCount: bearishLower.length,
             bullishLowerCount: bullishLower.length,
@@ -172,8 +173,8 @@ class AnalysisService {
                     smaP,
                     closes,
                     atrArray,
-                    rsiCache.get(rsiP),
-                    smaCache.get(smaP),
+                    rsiCache.get(rsiP)!,
+                    smaCache.get(smaP)!,
                     useValidation ? trainEndIndex : effectiveEndIndex,
                     effectiveStartIndex
                 );
@@ -187,8 +188,8 @@ class AnalysisService {
                         smaP,
                         closes,
                         atrArray,
-                        rsiCache.get(rsiP),
-                        rsiCache.get(smaP),
+                        rsiCache.get(rsiP)!,
+                        smaCache.get(smaP)!,
                         effectiveEndIndex,
                         validationStartIndex
                     );
@@ -214,40 +215,38 @@ class AnalysisService {
         smaP: number,
         closes: number[],
         atrArray: number[],
-        preCalcRsi?: number[],
-        preCalcSma?: number[],
+        preCalcRsi: number[],
+        preCalcSma: number[],
         endIndex?: number,
         startIndex?: number
     ): { hitRate: number; total: number } {
         let hits = 0;
         let total = 0;
-        const warmup = 50; // Reduced from 100 to allow more evaluation periods
+        const warmup = 50; 
         const step = 1;
-        // FIX: Prevent look-ahead bias by ensuring we only simulate trades that FINISH before endIndex
-        // simulateTrade looks ahead FORECAST_CONE.STEPS (60) days
         const limit = (endIndex !== undefined ? endIndex : data.length) - FORECAST_CONE.STEPS;
         const start = (startIndex || 0) + warmup;
 
-        const rsi = preCalcRsi || technicalIndicatorService.calculateRSI(closes, rsiP);
-        const sma = preCalcSma || technicalIndicatorService.calculateSMA(closes, smaP);
+        // Ensure we have pre-calculated data
+        if (!preCalcRsi || !preCalcSma) return { hitRate: 0, total: 0 };
 
         for (let i = start; i < limit; i += step) {
-            if (isNaN(rsi[i]) || isNaN(sma[i])) continue;
+            const currentRsi = preCalcRsi[i];
+            const currentSma = preCalcSma[i];
+            const currentPrice = closes[i];
+
+            if (isNaN(currentRsi) || isNaN(currentSma)) continue;
 
             let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-            if (closes[i] > sma[i] && rsi[i] < (RSI_CONFIG.OVERSOLD + 10)) type = 'BUY';
-            else if (closes[i] < sma[i] && rsi[i] > RSI_CONFIG.OVERBOUGHT) type = 'SELL';
+            if (currentPrice > currentSma && currentRsi < (RSI_CONFIG.OVERSOLD + 10)) type = 'BUY';
+            else if (currentPrice < currentSma && currentRsi > RSI_CONFIG.OVERBOUGHT) type = 'SELL';
 
             if (type === 'HOLD') continue;
 
             total++;
-            // Use pre-calculated ATR (O(1) lookup)
             const atr = atrArray[i];
-            // Match AnalysisService target calculation:
-            // targetPercent = max(atr / currentPrice, DEFAULT_ATR_RATIO)
-            // targetMove = currentPrice * targetPercent * 2 = max(atr * 2, currentPrice * DEFAULT_ATR_RATIO * 2)
-            const defaultTargetRatio = PRICE_CALCULATION.DEFAULT_ATR_RATIO * 2; // 0.04 = 4%
-            const targetMove = Math.max(atr * 2, closes[i] * defaultTargetRatio);
+            const defaultTargetRatio = PRICE_CALCULATION.DEFAULT_ATR_RATIO * 2; 
+            const targetMove = Math.max(atr * 2, currentPrice * defaultTargetRatio);
 
             const result = accuracyService.simulateTrade(data, i, type, targetMove);
             if (result.won) hits++;
@@ -262,18 +261,64 @@ class AnalysisService {
     private determineSignalType(price: number, sma: number, rsi: number, params: {
         rsiPeriod: number;
         smaPeriod: number;
-    }): {
+    }, regime?: RegimeDetectionResult): {
         type: 'BUY' | 'SELL' | 'HOLD';
         reason: string;
     } {
-        if (price > sma && rsi < (RSI_CONFIG.OVERSOLD + 10)) {
-            return { type: 'BUY', reason: `上昇トレンド中の押し目。RSI(${params.rsiPeriod})とSMA(${params.smaPeriod})による最適化予測。` };
+        const isBullishRegime = regime?.regime === 'TRENDING' && regime?.trendDirection === 'UP';
+        const isBearishRegime = regime?.regime === 'TRENDING' && regime?.trendDirection === 'DOWN';
+        
+        // プライスアクションによる簡易トレンド判定
+        const isPriceAboveSMA = price > sma;
+        const isPriceBelowSMA = price < sma;
+
+        // 1. 強気トレンド（またはその兆候）の判定
+        if (isPriceAboveSMA) {
+            // 押し目買い: RSIが低い
+            if (rsi < 45) {
+                return { type: 'BUY', reason: `上昇トレンド中の押し目。RSI(${params.rsiPeriod})とSMA(${params.smaPeriod})による最適化予測。` };
+            }
+            // トレンド追随: トレンドが確定しているか、RSIが中立圏で上昇中
+            if ((isBullishRegime || rsi < 75) && rsi > 45) {
+                return { type: 'BUY', reason: '強力な上昇トレンドの継続を確認。順張り買い。' };
+            }
+            // 過熱警戒
+            if (rsi > 85) {
+                return { type: 'HOLD', reason: '強気相場だがRSIが極端に高いため、押し目を待つ。' };
+            }
         }
-        if (price < sma && rsi > RSI_CONFIG.OVERBOUGHT) {
-            return { type: 'SELL', reason: `下落トレンド中の戻り売り。RSI(${params.rsiPeriod})とSMA(${params.smaPeriod})による最適化予測。` };
+
+        // 2. 弱気トレンド（またはその兆候）の判定
+        if (isPriceBelowSMA) {
+            // 戻り売り: 下落トレンド中でRSIが一時的に回復
+            if (rsi > 55) {
+                return { type: 'SELL', reason: `下落トレンド中の戻り売り。RSI(${params.rsiPeriod})とSMA(${params.smaPeriod})による最適化予測。` };
+            }
+            // トレンド追随: トレンドが確定しているか、RSIが中立圏以下で推移
+            if ((isBearishRegime || rsi > 25) && rsi < 55) {
+                return { type: 'SELL', reason: '強力な下落トレンドの継続を確認。順張り売り。' };
+            }
+            // 底打ち警戒 / 追撃禁止
+            if (rsi < 20) {
+                return { type: 'HOLD', reason: '弱気相場だがRSIが極端に低いため、安易な売りを控え、反発を警戒。' };
+            }
         }
-        if (rsi < RSI_CONFIG.OVERSOLD) return { type: 'BUY', reason: '売られすぎ水準からの自律反発。' };
-        if (rsi > RSI_CONFIG.OVERBOUGHT) return { type: 'SELL', reason: '買われすぎ水準からの反落。' };
+
+        // 3. レンジ相場での逆張り（トレンドが明確でない場合、またはレンジ相場確定時）
+        const isRangingRegime = regime?.regime === 'RANGING';
+        
+        // レンジ相場、もしくはトレンド方向への逆行でない場合のみ逆張りを許可
+        if (rsi < RSI_CONFIG.OVERSOLD) {
+            if (isRangingRegime || !isPriceBelowSMA) {
+                return { type: 'BUY', reason: isRangingRegime ? 'レンジ相場における逆張り買い。' : '売られすぎ水準からの反発期待。' };
+            }
+        }
+        if (rsi > RSI_CONFIG.OVERBOUGHT) {
+            if (isRangingRegime || !isPriceAboveSMA) {
+                return { type: 'SELL', reason: isRangingRegime ? 'レンジ相場における逆張り売り。' : '買われすぎ水準からの反落期待。' };
+            }
+        }
+
         return { type: 'HOLD', reason: '明確な優位性なし。' };
     }
 
@@ -417,35 +462,46 @@ class AnalysisService {
      * 銘柄の総合分析を実行
      * ML予測が利用可能な場合は優先的に使用し、そうでない場合はルールベースにフォールバック
      */
-    analyzeStock(params: {
-        symbol: string;
-        data: OHLCV[];
-        market: 'japan' | 'usa';
-        indexDataOverride?: OHLCV[];
-        context?: AnalysisContext;
-    }): Signal {
-        const { symbol, data, market, indexDataOverride, context } = params;
-        logger.info('[analyzeStock] start', { symbol, market, dataLength: data.length, context: context ? { endIndex: context.endIndex, startIndex: context.startIndex } : 'none' });
+    analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
+        logger.debug('[analyzeStock] start', { symbol, market, dataLength: data.length, context: context ? { endIndex: context.endIndex, startIndex: context.startIndex } : 'none' });
 
         // Handle window data for legacy components
         let windowData = data;
         if (context?.endIndex !== undefined) {
             windowData = data.slice(context.startIndex || 0, context.endIndex + 1);
         }
-        logger.info('[analyzeStock] windowData length:', windowData.length);
+        logger.debug('[analyzeStock] windowData length:', windowData.length);
 
-        // Detect market regime first (even for insufficient data)
-        const regimeResult = marketRegimeDetector.detect(windowData);
-        const strategyRec = marketRegimeDetector.getRecommendedStrategy(
+        // Detect market regime (Skip if minimal mode for performance)
+        let regimeResult: RegimeDetectionResult;
+        if (context?.minimal) {
+            // Simplified fallback for minimal mode
+            regimeResult = {
+                regime: 'RANGING',
+                trendDirection: 'NEUTRAL',
+                volatility: 'LOW',
+                adx: 20,
+                atr: 0,
+                atrRatio: 1,
+                confidence: 'INITIAL',
+                daysInRegime: 0,
+                timestamp: new Date().toISOString()
+            };
+        } else {
+            regimeResult = marketRegimeDetector.detect(windowData);
+        }
+
+        const strategyRec = !context?.minimal ? marketRegimeDetector.getRecommendedStrategy(
             regimeResult.regime,
             regimeResult.trendDirection,
             regimeResult.volatility
-        );
-        const regimeDescription = marketRegimeDetector.getRegimeDescription(
+        ) : { primary: 'SMA_RSI', weight: 1, positionSizeAdjustment: 1 };
+
+        const regimeDescription = !context?.minimal ? marketRegimeDetector.getRegimeDescription(
             regimeResult.regime,
             regimeResult.trendDirection,
             regimeResult.volatility
-        );
+        ) : '軽量分析モード';
 
         if (windowData.length < OPTIMIZATION.MIN_DATA_PERIOD) {
             return {
@@ -494,6 +550,8 @@ class AnalysisService {
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
         if (context?.forcedParams) {
             opt = context.forcedParams;
+        } else if (context?.minimal) {
+            opt = { rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, accuracy: 0 };
         } else {
             opt = this.optimizeParameters(data, market, context);
         }
@@ -519,7 +577,7 @@ class AnalysisService {
 
         const currentPrice = closes[effectiveEndIndex];
 
-        const { type, reason } = this.determineSignalType(currentPrice, lastSMA, lastRSI, opt);
+        const { type, reason } = this.determineSignalType(currentPrice, lastSMA, lastRSI, opt, regimeResult);
 
         const recentCloses = windowData.map(d => d.close)
             .slice(-RSI_CONFIG.DEFAULT_PERIOD)
@@ -539,11 +597,20 @@ class AnalysisService {
         const targetPercent = Math.max(atrRatio, PRICE_CALCULATION.DEFAULT_ATR_RATIO);
         const forecastCone = this.calculateForecastCone(windowData);
 
+        // トレンドの強さに応じてターゲット倍率を調整
+        let targetMultiplier = 1.5;
+        if (regimeResult.regime === 'TRENDING') {
+            if ((type === 'BUY' && regimeResult.trendDirection === 'UP') ||
+                (type === 'SELL' && regimeResult.trendDirection === 'DOWN')) {
+                targetMultiplier = 2.5; // 強力なトレンド時は目標を拡大
+            }
+        }
+
         let targetPrice = currentPrice;
         if (type === 'BUY') {
-            targetPrice = currentPrice * (1 + targetPercent * 1.5);
+            targetPrice = currentPrice * (1 + targetPercent * targetMultiplier);
         } else if (type === 'SELL') {
-            targetPrice = currentPrice * (1 - targetPercent * 1.5);
+            targetPrice = currentPrice * (1 - targetPercent * targetMultiplier);
         } else {
             // HOLDの場合でも、微小なバイアスを反映
             const gap = lastSMA - currentPrice;
@@ -571,7 +638,7 @@ class AnalysisService {
         let marketContext: Signal['marketContext'];
 
         const indexData = indexDataOverride || marketDataService.getCachedMarketData(relatedIndexSymbol);
-        logger.info('[marketContext] relatedIndexSymbol:', relatedIndexSymbol, `indexData length: ${indexData?.length}`);
+        logger.debug('[marketContext] relatedIndexSymbol:', relatedIndexSymbol, `indexData length: ${indexData?.length}`);
         if (indexData && indexData.length >= 50) {
             const correlation = marketDataService.calculateCorrelation(windowData, indexData);
             const indexTrend = marketDataService.calculateTrend(indexData);
@@ -581,15 +648,12 @@ class AnalysisService {
                 correlation: parseFloat(correlation.toFixed(2)),
                 indexTrend,
             };
-            logger.info('[marketContext] set', { indexSymbol: relatedIndexSymbol, correlation: marketContext.correlation, indexTrend });
+            logger.debug('[marketContext] set', { indexSymbol: relatedIndexSymbol, correlation: marketContext.correlation, indexTrend });
 
             if (type === 'BUY' && indexTrend === 'DOWN' && correlation < -0.5) {
                 confidence -= Math.abs(correlation) * 30;
             }
         }
-
-        const predictionError = accuracyService.calculatePredictionError(windowData);
-        const volumeProfile = volumeAnalysisService.calculateVolumeProfile(windowData);
 
         let finalConfidence = forecastCone
             ? (confidence + forecastCone.confidence) / 2
@@ -602,8 +666,12 @@ class AnalysisService {
             finalConfidence = finalConfidence * (1 - Math.abs(marketContext.correlation) * 0.1);
         }
 
+        // Optimization: Skip very heavy calculations in minimal mode
+        const predictionError = !context?.minimal ? accuracyService.calculatePredictionError(windowData) : 1.0;
+        const volumeProfile = !context?.minimal ? volumeAnalysisService.calculateVolumeProfile(windowData) : undefined;
+
         // Calculate exit strategy for BUY/SELL signals
-        const exitStrategy = this.calculateExitStrategies(type, currentPrice, atr, regimeResult);
+        const exitStrategy = !context?.minimal ? this.calculateExitStrategies(type, currentPrice, atr, regimeResult) : undefined;
 
         const result: Signal = {
             symbol,
@@ -637,7 +705,7 @@ class AnalysisService {
             positionSizeAdjustment: strategyRec.positionSizeAdjustment,
             exitStrategy,
         };
-        logger.info('[analyzeStock] result', {
+        logger.debug('[analyzeStock] result', {
             symbol, type, market,
             accuracy: result.accuracy,
             targetPrice: result.targetPrice,

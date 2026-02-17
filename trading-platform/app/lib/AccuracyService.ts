@@ -283,7 +283,7 @@ class AccuracyService {
                     lastOptimizationIndex = i;
                 } else context.forcedParams = cachedParams;
 
-                const signal = analysisService.analyzeStock({ symbol, data, market, indexDataOverride: undefined, context });
+                const signal = analysisService.analyzeStock(symbol, data, market, undefined, context);
                 if (!context.forcedParams) {
                     cachedParams = { rsiPeriod: signal.optimizedParams?.rsiPeriod || RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: signal.optimizedParams?.smaPeriod || SMA_CONFIG.MEDIUM_PERIOD, accuracy: signal.accuracy || 0 };
                     wfaMetrics.outOfSample.push(cachedParams.accuracy);
@@ -353,7 +353,7 @@ class AccuracyService {
         const startIndex = Math.min(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, data.length - windowSize - 1);
 
         for (let i = startIndex; i < data.length - windowSize; i += 1) {
-            const signal = analysisService.analyzeStock({ symbol, data, market, context: { endIndex: i, preCalculatedIndicators } });
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, { endIndex: i, preCalculatedIndicators });
             if (signal.type === 'HOLD') continue;
             const future = data[i + windowSize];
             const priceChange = (future.close - data[i].close) / (data[i].close || 1);
@@ -385,7 +385,7 @@ class AccuracyService {
         const preCalculatedIndicators = this.preCalculateIndicators(data);
         const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, 10);
         for (let i = startIndex; i < data.length - 10; i += 1) {
-            const signal = analysisService.analyzeStock({ symbol, data, market, context: { endIndex: i, preCalculatedIndicators } });
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, { endIndex: i, preCalculatedIndicators });
             if (signal.type === 'HOLD') continue;
             total++;
             const atr = preCalculatedIndicators?.atr ? preCalculatedIndicators.atr[i] : this.calculateSimpleATR(data, i);

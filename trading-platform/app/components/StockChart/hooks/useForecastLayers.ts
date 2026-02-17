@@ -1,8 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { OHLCV, Signal } from '@/app/types';
-import { analyzeStock } from '@/app/lib/analysis';
 import { GHOST_FORECAST, FORECAST_CONE, OPTIMIZATION } from '@/app/constants';
-import { usePreCalculatedIndicators } from './usePreCalculatedIndicators';
 
 interface UseForecastLayersProps {
   data: OHLCV[];
@@ -13,22 +11,33 @@ interface UseForecastLayersProps {
   accuracyData?: {
     predictionError: number;
   } | null;
+  preCalculatedIndicators?: {
+    rsi: Map<number, number[]>;
+    sma: Map<number, number[]>;
+    atr: number[];
+  };
 }
 
+// Cache for ghost forecast calculations to avoid redundant analyzeStock calls
+interface GhostForecastCache {
+  idx: number;
+  result: {
+    targetArr: number[];
+    stopArr: number[];
+    color: string;
+  } | null;
+  dataLength: number;
+  dataHash: string;
+}
+
+// Quantization step for hover index to reduce calculation frequency
+const HOVER_QUANTIZATION_STEP = 25;
+
+// Maximum cache size to prevent memory leaks
+const MAX_CACHE_SIZE = 30;
+
 /**
- * 予測レイヤーフック
- *
- * このフックは2種類の予測データを生成します:
- *
- * 1. ゴースト予測（ghostForecastDatasets）:
- *    - チャート上でマウスオーバーした際に表示される過去の予測再現
- *    - ホバー位置までのデータのみを使用してシグナルを再計算
- *    - 「あの時点でどう予測されていたか」をタイムトラベルして確認する機能
- *
- * 2. 予測コーン（forecastDatasets）:
- *    - 常にチャート上に表示される最新の予測
- *    - 最新の全データを使用したシグナルに基づく予測
- *    - 未来の価格変動を予測するコーンを表示
+ * 	Forecast layer hook
  */
 export const useForecastLayers = ({
   data,
@@ -36,12 +45,11 @@ export const useForecastLayers = ({
   signal,
   market,
   hoveredIdx,
-  accuracyData = null
+  accuracyData = null,
+  preCalculatedIndicators
 }: UseForecastLayersProps) => {
-  // Optimized: Pre-calculate indicators once to avoid re-calculation on every hover
-  const preCalculatedIndicators = usePreCalculatedIndicators(data);
 
-  // 1. AI Forecast Cone (最新の予測表示)
+  // 1. AI Forecast Cone (latest prediction display)
   const forecastDatasets = useMemo(() => {
     if (!signal || !signal.targetPrice || data.length === 0) return [];
 
@@ -49,11 +57,11 @@ export const useForecastLayers = ({
     const targetArr = new Array(extendedData.labels.length).fill(NaN);
     const stopArr = new Array(extendedData.labels.length).fill(NaN);
 
-    // 現時点から未来に向かってコーンを形成
+    // Form a cone from the current point into the future
     const currentPrice = data[lastIdx].close;
     const predictionError = accuracyData?.predictionError || 1.0;
     
-    // シグナルの信頼度と過去の誤差に基づき幅を調整
+    // Adjust width based on signal confidence and past errors
     const spreadMultiplier = (1.5 - (signal.confidence / 100)) * predictionError;
     const stockATR = signal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
 
@@ -77,7 +85,7 @@ export const useForecastLayers = ({
     
     return [
       {
-        label: '予測範囲(上)',
+        label: 'Forecast Range (Upper)',
         data: targetArr,
         borderColor: `rgba(${color}, 0.3)`,
         backgroundColor: `rgba(${color}, 0.1)`,
@@ -88,7 +96,7 @@ export const useForecastLayers = ({
         order: -1
       },
       {
-        label: '予測範囲(下)',
+        label: 'Forecast Range (Lower)',
         data: stopArr,
         borderColor: `rgba(${color}, 0.3)`,
         borderWidth: 1,
@@ -99,45 +107,124 @@ export const useForecastLayers = ({
     ];
   }, [signal, data, extendedData.labels, accuracyData]);
 
-  // 2. AI Time Travel: Ghost Cloud (過去の予測再現)
-  const ghostForecastDatasets = useMemo(() => {
-    if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) return [];
+  // Cache for ghost forecast calculations
+  const ghostCacheRef = useRef<Map<number, GhostForecastCache>>(new Map());
+  const lastQuantizedIdxRef = useRef<number | null>(null);
 
-    // Note: analyzeStock might be expensive, so it's good this is memoized
-    // Optimized: Pass full data with endIndex and pre-calculated indicators to avoid slice & re-calc
-    const pastSignal = analyzeStock({
-      symbol: data[0].symbol || '',
-      data,
-      market,
-      context: { endIndex: hoveredIdx, preCalculatedIndicators }
-    });
-    if (!pastSignal) return [];
+  // 2. AI Time Travel: Ghost Cloud (past prediction reproduction)
+  // Performance Optimization: Quantize hover index and cache results
+  const ghostForecastDatasets = useMemo(() => {
+    if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) {
+      return [];
+    }
+
+    // Quantize the hover index to reduce calculation frequency
+    // Only recalculate when the quantized index changes
+    const quantizedIdx = Math.floor(hoveredIdx / HOVER_QUANTIZATION_STEP) * HOVER_QUANTIZATION_STEP;
+    
+    // Create a simple hash based on data content for cache validation
+    const dataHash = `${data.length}-${data[0]?.symbol}-${quantizedIdx}`;
+    
+    // Check cache first
+    const cache = ghostCacheRef.current;
+    const cachedEntry = cache.get(quantizedIdx);
+    
+    if (cachedEntry && 
+        cachedEntry.dataLength === data.length && 
+        cachedEntry.dataHash === dataHash &&
+        cachedEntry.result) {
+      // Cache hit - return cached result
+      lastQuantizedIdxRef.current = quantizedIdx;
+      const { targetArr, stopArr, color } = cachedEntry.result;
+      
+      return [
+        {
+          label: 'Past Forecast (Upper)',
+          data: targetArr,
+          borderColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_ALPHA})`,
+          backgroundColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_FILL_ALPHA})`,
+          borderWidth: 1,
+          borderDash: [3, 3],
+          pointRadius: 0,
+          fill: '+1',
+          order: -2
+        },
+        {
+          label: 'Past Forecast (Lower)',
+          data: stopArr,
+          borderColor: `rgba(${color}, ${GHOST_FORECAST.STOP_ALPHA})`,
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+          order: -2
+        }
+      ];
+    }
+
+    // Cache miss - perform lightweight calculation (skip heavy analyzeStock)
+    const currentPrice = data[quantizedIdx].close;
+    
+    // Use pre-calculated indicators if available, otherwise use simple defaults
+    let lastRSI = 50;
+    let lastSMA = currentPrice;
+    
+    if (preCalculatedIndicators) {
+      const rsiArr = preCalculatedIndicators.rsi.get(14) || [];
+      const smaArr = preCalculatedIndicators.sma.get(20) || [];
+      lastRSI = rsiArr[quantizedIdx] || 50;
+      lastSMA = smaArr[quantizedIdx] || currentPrice;
+    }
+    
+    // Simple signal determination without full analysis
+    let signalType: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
+    if (currentPrice > lastSMA && lastRSI < 45) signalType = 'BUY';
+    else if (currentPrice < lastSMA && lastRSI > 55) signalType = 'SELL';
+    else if (currentPrice > lastSMA) signalType = 'BUY';
+    else if (currentPrice < lastSMA) signalType = 'SELL';
 
     const targetArr = new Array(extendedData.labels.length).fill(NaN);
     const stopArr = new Array(extendedData.labels.length).fill(NaN);
 
-    const currentPrice = data[hoveredIdx].close;
-    const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-    const confidenceFactor = (110 - pastSignal.confidence) / 100;
-    const momentum = pastSignal.predictedChange ? pastSignal.predictedChange / 100 : 0;
+    const stockATR = preCalculatedIndicators?.atr?.[quantizedIdx] || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
+    const confidenceFactor = 0.5;
+    const momentum = signalType === 'BUY' ? 0.02 : signalType === 'SELL' ? -0.02 : 0;
 
-    targetArr[hoveredIdx] = currentPrice;
-    stopArr[hoveredIdx] = currentPrice;
+    targetArr[quantizedIdx] = currentPrice;
+    stopArr[quantizedIdx] = currentPrice;
 
     for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
-      if (hoveredIdx + i < extendedData.labels.length) {
+      if (quantizedIdx + i < extendedData.labels.length) {
         const timeRatio = i / FORECAST_CONE.STEPS;
         const centerPrice = currentPrice * (1 + (momentum * timeRatio));
         const spread = (stockATR * timeRatio) * confidenceFactor;
-        targetArr[hoveredIdx + i] = centerPrice + spread;
-        stopArr[hoveredIdx + i] = centerPrice - spread;
+        targetArr[quantizedIdx + i] = centerPrice + spread;
+        stopArr[quantizedIdx + i] = centerPrice - spread;
       }
     }
 
-    const color = pastSignal.type === 'BUY' ? '34, 197, 94' : pastSignal.type === 'SELL' ? '239, 68, 68' : '100, 116, 139';
+    const color = signalType === 'BUY' ? '34, 197, 94' : signalType === 'SELL' ? '239, 68, 68' : '100, 116, 139';
+    
+    // Store in cache with LRU eviction
+    if (cache.size >= MAX_CACHE_SIZE) {
+      // Remove oldest entry (first key)
+      const firstKey = cache.keys().next().value;
+      if (firstKey !== undefined) {
+        cache.delete(firstKey);
+      }
+    }
+    
+    cache.set(quantizedIdx, {
+      idx: quantizedIdx,
+      result: { targetArr, stopArr, color },
+      dataLength: data.length,
+      dataHash
+    });
+    
+    lastQuantizedIdxRef.current = quantizedIdx;
+
     return [
       {
-        label: '過去予測(上)',
+        label: 'Past Forecast (Upper)',
         data: targetArr,
         borderColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_ALPHA})`,
         backgroundColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_FILL_ALPHA})`,
@@ -148,7 +235,7 @@ export const useForecastLayers = ({
         order: -2
       },
       {
-        label: '過去予測(下)',
+        label: 'Past Forecast (Lower)',
         data: stopArr,
         borderColor: `rgba(${color}, ${GHOST_FORECAST.STOP_ALPHA})`,
         borderWidth: 1,
@@ -157,7 +244,7 @@ export const useForecastLayers = ({
         order: -2
       }
     ];
-  }, [hoveredIdx, data, market, extendedData.labels, preCalculatedIndicators]);
+  }, [hoveredIdx, data, market, extendedData.labels.length, preCalculatedIndicators, signal]);
 
   return { ghostForecastDatasets, forecastDatasets };
 };
