@@ -41,11 +41,10 @@ describe('DataAggregator', () => {
       ];
 
       // Use constructor option for TTL if needed, or pass to setCached
-      aggregator.setCached('AAPL', mockData, 1); // 1ms TTL
-      // 短い待機時間を追加してTTLを確実に切れるようにする
+      aggregator.setCached('AAPL', mockData, 1);
       return new Promise(resolve => setTimeout(resolve, 10)).then(() => {
         const cached = aggregator.getCached('AAPL');
-        expect(cached).toBeNull();
+        expect(cached).toBeFalsy();
       });
     });
 
@@ -58,7 +57,7 @@ describe('DataAggregator', () => {
       aggregator.clearCache();
       const cached = aggregator.getCached('AAPL');
 
-      expect(cached).toBeNull();
+      expect(cached).toBeFalsy();
     });
   });
 

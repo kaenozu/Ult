@@ -88,7 +88,7 @@ describe('Market API Security Tests', () => {
   });
 
   it('should handle missing required parameters', async () => {
-    const req = createRequest(`/api/market?symbol=AAPL`);
+    const req = createRequest(`/api/market?type=quote`);
     const res = await GET(req);
     const json = await res.json();
 
