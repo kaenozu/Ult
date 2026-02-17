@@ -9,7 +9,7 @@ import {
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
-import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS } from '@/app/lib/constants';
+import { CANDLESTICK, SMA_CONFIG, BOLLINGER_BANDS, CHART_CONFIG, CHART_COLORS, CHART_DIMENSIONS } from '@/app/constants';
 import { volumeProfilePlugin } from './plugins/volumeProfile';
 export { volumeProfilePlugin };
 import { useChartData } from './hooks/useChartData';

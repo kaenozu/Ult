@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Portfolio, Position } from '../types';
 import { OrderRequest, OrderResult } from '../types/order';
 import { getRiskManagementService } from '../lib/services/RiskManagementService';
-import { AI_TRADING } from '../lib/constants';
+import { AI_TRADING } from '@/app/constants';
 
 interface PortfolioState {
   portfolio: Portfolio;
