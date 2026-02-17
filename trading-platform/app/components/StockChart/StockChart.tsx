@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, memo, useState, useMemo, useEffect } from 'react';
+import { useRef, memo, useState, useMemo, useEffect, useCallback } from 'react';
 import { usePerformanceMonitor } from '@/app/hooks/usePerformanceMonitor';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler,
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, Decimation,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
@@ -21,7 +21,7 @@ import { AccuracyBadge } from '@/app/components/AccuracyBadge';
 export { volumeProfilePlugin };
 
 // Register ChartJS components and custom plugin
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, volumeProfilePlugin);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, Decimation, volumeProfilePlugin);
 
 export interface StockChartProps {
   data: OHLCV[];
@@ -47,7 +47,9 @@ export const StockChart = memo(function StockChart({
 }: StockChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
   const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
+  const [settledIdx, setSettledIdx] = useState<number | null>(null); // For heavy layers
   const isMountedRef = useRef(true);
+  const settledTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Performance monitoring for the chart
   const { trackInteraction } = usePerformanceMonitor({
@@ -60,7 +62,29 @@ export const StockChart = memo(function StockChart({
 
   // 1. Data Preparation Hooks
   const { actualData, optimizedData, normalizedIndexData, extendedData, forecastExtension } = useChartData(data, signal, indexData);
-  const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
+  const { sma20, upper, lower, preCalculated } = useTechnicalIndicators(data, extendedData.prices);
+  
+  // Performance Optimization: Debounce the heavy forecast layer calculation
+  // Increased debounce interval to 100ms for better performance
+  useEffect(() => {
+    if (settledTimerRef.current) clearTimeout(settledTimerRef.current);
+    
+    if (hoveredIdx === null) {
+      setSettledIdx(null);
+      return;
+    }
+
+    // Update the heavy layer only if mouse settles for 150ms
+    // This significantly reduces calculation frequency during fast mouse movements
+    settledTimerRef.current = setTimeout(() => {
+      setSettledIdx(hoveredIdx);
+    }, 150);
+
+    return () => {
+      if (settledTimerRef.current) clearTimeout(settledTimerRef.current);
+    };
+  }, [hoveredIdx]);
+
   const { chartLevels } = useSupplyDemandAnalysis(data);
   // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
   const memoizedAccuracyData = useMemo(() => accuracyData ? {
@@ -72,8 +96,9 @@ export const StockChart = memo(function StockChart({
     extendedData,
     signal,
     market,
-    hoveredIdx,
-    accuracyData: memoizedAccuracyData
+    hoveredIdx: settledIdx, // Use debounced/settled index for heavy calculations!
+    accuracyData: memoizedAccuracyData,
+    preCalculatedIndicators: preCalculated // Use worker data!
   });
 
   // Enhanced cleanup with performance monitoring
@@ -91,17 +116,31 @@ export const StockChart = memo(function StockChart({
 
   const mouseBlockRef = useRef(false);
   const mouseBlockTimer = useRef<NodeJS.Timeout | undefined>(undefined);
+  const lastUpdateRef = useRef<number>(0);
 
   // Use callback to ensure stable reference for useChartOptions
-  const handleMouseHover = (idx: number | null) => {
-    // If keyboard navigation is active (mouse blocked), ignore all mouse-driven hover updates
-    if (mouseBlockRef.current) {
+  const handleMouseHover = useCallback((idx: number | null) => {
+    // If keyboard navigation is active (mouse blocked), ignore small mouse-driven hover updates
+    if (mouseBlockRef.current && idx !== null) {
       return;
     }
+
+    // Performance Optimization: Throttle updates to ~60fps (16ms)
+    const now = Date.now();
+    if (idx !== null && now - lastUpdateRef.current < 16) {
+      return;
+    }
+    
+    lastUpdateRef.current = now;
     setHoveredIndex(idx);
-  };
+  }, []);
 
   const lastMousePos = useRef({ x: 0, y: 0 });
+
+  const actualDataRef = useRef(actualData);
+  useEffect(() => {
+    actualDataRef.current = actualData;
+  }, [actualData]);
 
   // Keyboard navigation for chart
   useEffect(() => {
@@ -130,11 +169,21 @@ export const StockChart = memo(function StockChart({
       }, 1500); 
 
       setHoveredIndex(prev => {
-        // Use actualData.prices.length (the rendered points) for bounds
-        const maxIdx = actualData.prices.length - 1;
+        const maxIdx = actualDataRef.current.prices.length - 1;
         const currentIdx = prev === null ? maxIdx : prev;
-        if (isArrowLeft) return Math.max(0, currentIdx - 1);
-        return Math.min(maxIdx, currentIdx + 1);
+        
+        let nextIdx = currentIdx;
+        if (isArrowLeft) nextIdx = Math.max(0, currentIdx - 1);
+        if (isArrowRight) nextIdx = Math.min(maxIdx, currentIdx + 1);
+        
+        // Performance: For keyboard navigation, we can update settledIdx faster
+        // because it's a deliberate step action
+        if (nextIdx !== currentIdx) {
+          if (settledTimerRef.current) clearTimeout(settledTimerRef.current);
+          setSettledIdx(nextIdx);
+        }
+        
+        return nextIdx;
       });
     };
 
@@ -143,7 +192,7 @@ export const StockChart = memo(function StockChart({
       window.removeEventListener('keydown', handleKeyDown);
       if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
     };
-  }, [data.length, actualData.prices.length]);
+  }, []); // Static dependency array
 
   // Release mouse block on intentional mouse movement
   useEffect(() => {
@@ -165,48 +214,73 @@ export const StockChart = memo(function StockChart({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  // Ref for requestAnimationFrame to cancel pending frames
+  const rafRef = useRef<number | null>(null);
+
   // Sync Chart.js active elements with hoveredIdx to visually move the points
   useEffect(() => {
-    const chart = chartRef.current;
-    // Basic safety checks
-    if (!chart || hoveredIdx === null || !chart.data || !chart.data.datasets) return;
-
-    const activeElements: { datasetIndex: number; index: number }[] = [];
-
-    try {
-      // Find elements for the hovered index across all visible datasets
-      chart.data.datasets.forEach((dataset, datasetIndex) => {
-        // Ensure:
-        // 1. Dataset is visible
-        // 2. Index is within data bounds
-        // 3. Chart internal metadata for this dataset exists (prevents the 'active' error)
-        if (
-          chart.isDatasetVisible(datasetIndex) && 
-          dataset.data && 
-          hoveredIdx >= 0 &&
-          hoveredIdx < dataset.data.length &&
-          chart.getDatasetMeta(datasetIndex) // Ensure metadata exists
-        ) {
-          activeElements.push({ datasetIndex, index: hoveredIdx });
-        }
-      });
-
-      if (activeElements.length > 0) {
-        chart.setActiveElements(activeElements);
-        chart.update('none'); 
-      } else {
-        chart.setActiveElements([]);
-        chart.update('none');
-      }
-    } catch (err) {
-      // Ignore errors during synchronization to prevent app crash
-      console.warn('[StockChart] Sync failed:', err);
+    // Cancel any pending animation frame
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
     }
+
+    // Schedule the update for the next animation frame
+    rafRef.current = requestAnimationFrame(() => {
+      const chart = chartRef.current;
+      // Basic safety checks
+      if (!chart || hoveredIdx === null || !chart.data || !chart.data.datasets) return;
+
+      const activeElements: { datasetIndex: number; index: number }[] = [];
+
+      try {
+        // Find elements for the hovered index across all visible datasets
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
+          // Validation: dataset must exist and have data
+          if (!dataset || !dataset.data) return;
+
+          const dataLength = dataset.data.length;
+          
+          // Ensure:
+          // 1. Dataset is visible
+          // 2. Index is within data bounds
+          // 3. Chart internal metadata for this dataset exists
+          if (
+            chart.isDatasetVisible(datasetIndex) && 
+            hoveredIdx >= 0 &&
+            hoveredIdx < dataLength &&
+            chart.getDatasetMeta(datasetIndex)
+          ) {
+            activeElements.push({ datasetIndex, index: hoveredIdx });
+          }
+        });
+
+        if (activeElements.length > 0) {
+          chart.setActiveElements(activeElements);
+          chart.update('none'); 
+        } else {
+          chart.setActiveElements([]);
+          chart.update('none');
+        }
+      } catch (err) {
+        // Ignore errors during synchronization to prevent app crash
+        console.warn('[StockChart] Sync failed:', err);
+      }
+    });
+
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
   }, [hoveredIdx]);
 
   // Get current SMA value for tooltip
   const currentSmaValue = useMemo(() => {
     if (!showSMA || !sma20 || sma20.length === 0 || hoveredIdx === null) return undefined;
+    
+    // Boundary check for async data
+    if (hoveredIdx < 0 || hoveredIdx >= sma20.length) return undefined;
+    
     return sma20[hoveredIdx];
   }, [sma20, hoveredIdx, showSMA]);
 
@@ -324,7 +398,6 @@ export const StockChart = memo(function StockChart({
       priceDataset,
       ...(smaDataset ? [smaDataset] : []),
       ...bollingerDatasets,
-      // 最新の未来予測(forecastDatasets)とマウスオーバー時のゴースト予測を表示
       ...forecastDatasets,
       ...ghostForecastDatasets,
       ...(indexDataset ? [indexDataset] : []),
