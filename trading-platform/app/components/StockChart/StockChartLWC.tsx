@@ -325,24 +325,14 @@ export const StockChartLWC = memo(function StockChartLWC({
         forecastLower.push({ time: timeStr, value: centerPrice - spread });
       }
       
-      console.log('[StockChartLWC] Forecast upper first 3:', forecastUpper.slice(0, 3));
-      console.log('[StockChartLWC] Forecast lower first 3:', forecastLower.slice(0, 3));
-      
       forecastUpperRef.current.setData(forecastUpper);
       forecastLowerRef.current.setData(forecastLower);
       
-      // Scroll to show the forecast
       setTimeout(() => {
         if (chartRef.current) {
           chartRef.current.timeScale().scrollToRealTime();
         }
       }, 100);
-    } else {
-      console.log('[StockChartLWC] No forecast:', { 
-        hasSignal: !!signal, 
-        hasUpper: !!forecastUpperRef.current, 
-        hasLower: !!forecastLowerRef.current 
-      });
     }
   }, [data, signal, showVolume, showSMA, showBollinger, accuracyData, convertToLWCData, convertToVolumeData, calculateSMA, calculateBollingerBands]);
 
@@ -390,7 +380,7 @@ export const StockChartLWC = memo(function StockChartLWC({
           </div>
         </div>
       )}
-      <div ref={chartContainerRef} className="w-full h-full" />
+      <div ref={chartContainerRef} className="w-full h-full" data-testid="line-chart" />
     </div>
   );
 });

@@ -29,7 +29,7 @@ import {
   MACD_CONFIG,
   BOLLINGER_BANDS,
   VOLATILITY,
-} from '@/app/constants/technical-indicators';
+} from '@/app/constants/technical';
 
 import {
   API_ENDPOINTS,

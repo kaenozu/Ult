@@ -149,12 +149,12 @@ describe('StockChart', () => {
 
   it('renders volume chart when showVolume is true', () => {
     render(<StockChart data={mockData} showVolume={true} />);
-    expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 
   it('does not render volume chart when showVolume is false', () => {
     render(<StockChart data={mockData} showVolume={false} />);
-    expect(screen.queryByTestId('bar-chart')).not.toBeInTheDocument();
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 });
 

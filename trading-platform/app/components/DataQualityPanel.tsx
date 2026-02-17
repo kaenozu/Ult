@@ -297,7 +297,6 @@ export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
 
   // リフレッシュハンドラー
   const handleRefresh = useCallback(() => {
-    console.log('Refreshing data quality metrics...');
   }, []);
 
   // コンパクトモード
