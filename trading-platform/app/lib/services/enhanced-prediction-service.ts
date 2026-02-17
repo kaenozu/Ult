@@ -1,17 +1,8 @@
-/**
- * Enhanced Prediction Service v2.0
- * 
- * High-accuracy prediction service with:
- * - Optimized ensemble weights
- * - Candlestick pattern recognition
- * - Web Worker support for non-blocking calculations
- * - Adaptive confidence scoring
- */
-
 import { OHLCV, Signal, TechnicalIndicatorsWithATR } from '@/app/types';
 import { PredictionCalculator } from './implementations/prediction-calculator';
 import { candlestickPatternService, PatternFeatures } from './candlestick-pattern-service';
 import { predictionWorker, PredictionRequest } from './prediction-worker';
+import { featureCalculationService, PredictionFeatures } from './feature-calculation-service';
 import { OPTIMIZED_REGIME_WEIGHTS, RSI_THRESHOLDS, SIGNAL_THRESHOLDS } from '@/app/lib/config/prediction-config';
 
 export interface PredictionInput {
@@ -32,7 +23,7 @@ export interface EnhancedPredictionResult {
     pattern: number;
   };
   features: {
-    technical: any;
+    technical: PredictionFeatures;
     pattern: PatternFeatures;
   };
   marketRegime: string;
@@ -142,33 +133,83 @@ export class EnhancedPredictionService {
       throw new Error('Insufficient data for prediction (minimum 20 candles required)');
     }
 
-    // Detect market regime
-    const regime = this.detectMarketRegime(data);
+    // キャッシュチェック
+    const dataHash = this.generateDataHash(data);
+    const cacheKey = `${symbol}_${dataHash}`;
+    const cached = this.predictionCache.get(cacheKey);
     
-    // Get optimized weights for regime
-    const weights = OPTIMIZED_REGIME_WEIGHTS[regime];
-
-    // Try to use web worker first
-    if (this.useWorker) {
-      try {
-        const result = await this.predictWithWorker(symbol, data, indicators);
-        return {
-          ...result,
-          marketRegime: regime,
-          calculationTime: performance.now() - startTime
-        };
-      } catch (error) {
-        console.warn('Worker prediction failed, falling back to main thread:', error);
-      }
+    if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+      this.performanceMetrics.cacheHits++;
+      return cached.result;
     }
 
-    // Fallback to main thread calculation
-    const result = await this.predictOnMainThread(symbol, data, indicators, weights);
-    return {
-      ...result,
-      marketRegime: regime,
-      calculationTime: performance.now() - startTime
-    };
+    // 重複リクエスト防止
+    if (this.pendingRequests.has(cacheKey)) {
+      return this.pendingRequests.get(cacheKey)!;
+    }
+
+    const predictionPromise = (async () => {
+      // Detect market regime
+      const regime = this.detectMarketRegime(data);
+      
+      // Get optimized weights for regime
+      const weights = OPTIMIZED_REGIME_WEIGHTS[regime];
+
+      let result: Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>;
+
+      // Try to use web worker first
+      if (this.useWorker) {
+        try {
+          result = await this.predictWithWorker(symbol, data, indicators);
+        } catch (error) {
+          console.warn('Worker prediction failed, falling back to main thread:', error);
+          result = await this.predictOnMainThread(symbol, data, indicators, weights);
+        }
+      } else {
+        result = await this.predictOnMainThread(symbol, data, indicators, weights);
+      }
+
+      const finalResult: EnhancedPredictionResult = {
+        ...result,
+        marketRegime: regime,
+        calculationTime: performance.now() - startTime
+      };
+
+      // メトリクス更新
+      this.performanceMetrics.totalCalculations++;
+      const currentAvg = this.performanceMetrics.averageCalculationTime;
+      this.performanceMetrics.averageCalculationTime = 
+        (currentAvg * (this.performanceMetrics.totalCalculations - 1) + finalResult.calculationTime) / 
+        this.performanceMetrics.totalCalculations;
+
+      // キャッシュ保存
+      this.setCache(cacheKey, finalResult, dataHash);
+      
+      return finalResult;
+    })();
+
+    this.pendingRequests.set(cacheKey, predictionPromise);
+    
+    try {
+      return await predictionPromise;
+    } finally {
+      this.pendingRequests.delete(cacheKey);
+      if (Date.now() - this.performanceMetrics.lastCleanup > 60000) {
+        this.cleanupCache();
+      }
+    }
+  }
+
+  private setCache(key: string, result: EnhancedPredictionResult, dataHash: string): void {
+    this.predictionCache.set(key, {
+      result,
+      timestamp: Date.now(),
+      dataHash
+    });
+
+    if (this.predictionCache.size > this.MAX_CACHE_SIZE) {
+      this.cleanupCache();
+    }
   }
 
   /**
@@ -236,7 +277,7 @@ export class EnhancedPredictionService {
   ): Promise<Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>> {
     
     // Calculate features
-    const features = this.calculateFeatures(data, indicators);
+    const features = featureCalculationService.calculateFeatures(data, indicators) as PredictionFeatures;
     const patternFeatures = candlestickPatternService.calculatePatternFeatures(data);
 
     // Calculate model predictions
@@ -291,31 +332,6 @@ export class EnhancedPredictionService {
   }
 
   /**
-   * Calculate technical features
-   */
-  private calculateFeatures(data: OHLCV[], indicators?: TechnicalIndicatorsWithATR): any {
-    const last = data[data.length - 1];
-    const prev = data[data.length - 2] || last;
-    const prev5 = data[Math.max(0, data.length - 6)];
-    
-    return {
-      rsi: indicators?.rsi?.[indicators.rsi.length - 1] || 50,
-      rsiChange: (indicators?.rsi?.[indicators.rsi.length - 1] || 50) - 
-                 (indicators?.rsi?.[indicators.rsi.length - 2] || 50),
-      sma5: indicators?.sma5?.[indicators.sma5.length - 1] || 0,
-      sma20: indicators?.sma20?.[indicators.sma20.length - 1] || 0,
-      sma50: indicators?.sma50?.[indicators.sma50.length - 1] || 0,
-      priceMomentum: ((last.close - prev5.close) / prev5.close) * 100,
-      volumeRatio: last.volume / (prev.volume || 1),
-      volatility: indicators?.atr?.[indicators.atr.length - 1] || 2,
-      macdSignal: (indicators?.macd?.macd?.[indicators.macd.macd.length - 1] || 0) - 
-                  (indicators?.macd?.signal?.[indicators.macd.signal.length - 1] || 0),
-      bollingerPosition: 0.5,
-      atrPercent: ((indicators?.atr?.[indicators.atr.length - 1] || 2) / last.close) * 100
-    };
-  }
-
-  /**
    * Detect market regime based on price action
    */
   private detectMarketRegime(data: OHLCV[]): 'TRENDING' | 'RANGING' | 'VOLATILE' | 'UNKNOWN' {
@@ -349,7 +365,7 @@ export class EnhancedPredictionService {
    * Calculate enhanced confidence score
    */
   private calculateEnhancedConfidence(
-    features: any,
+    features: PredictionFeatures,
     patternFeatures: PatternFeatures,
     ensemble: number,
     rf: number,

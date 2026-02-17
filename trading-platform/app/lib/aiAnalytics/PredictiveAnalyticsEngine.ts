@@ -756,8 +756,8 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
    * トレーディングシグナルを生成（レガシーメソッド - 互換性のため残す）
    * @deprecated Use generateSignalFromComposite instead
    */
-  private generateSignal(features: TechnicalFeatures, prediction: ModelPrediction, currentPrice: number): TradingSignal {
-    const { ensemblePrediction, confidence, direction, volatilityForecast } = prediction;
+  private generateSignal(_features: TechnicalFeatures, prediction: ModelPrediction, currentPrice: number): TradingSignal {
+    const { confidence, direction, volatilityForecast } = prediction;
 
     // Determine signal type
     let type: TradingSignal['type'] = 'HOLD';
@@ -772,28 +772,28 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
     // Calculate price targets
     const atrMultiplier = 2;
     const targetDistance = (volatilityForecast / 100) * currentPrice * (confidence + 0.5);
-    const stopDistance = (features.atrPercent / 100) * currentPrice * atrMultiplier;
+    const stopDistance = (_features.atrPercent / 100) * currentPrice * atrMultiplier;
 
     const targetPrice = direction === 'UP' ? currentPrice + targetDistance : currentPrice - targetDistance;
     const stopLoss = direction === 'UP' ? currentPrice - stopDistance : currentPrice + stopDistance;
 
     // Determine time horizon
     let timeHorizon: TradingSignal['timeHorizon'] = 'medium';
-    if (Math.abs(features.priceMomentum) > 5) {
+    if (Math.abs(_features.priceMomentum) > 5) {
       timeHorizon = 'short';
-    } else if (features.sma200 !== undefined && Math.abs(features.sma200) < 2) {
+    } else if (_features.sma200 !== undefined && Math.abs(_features.sma200) < 2) {
       timeHorizon = 'long';
     }
 
     // Generate rationale
     const rationale: string[] = [];
-    if (features.rsi < 30) rationale.push('RSIが過売り水準を示唆');
-    if (features.rsi > 70) rationale.push('RSIが過買い水準を示唆');
-    if (features.macdSignal > 1) rationale.push('MACDが強い買いシグナル');
-    if (features.macdSignal < -1) rationale.push('MACDが強い売りシグナル');
-    if (features.bollingerPosition < 10) rationale.push('ボリンジャーバンド下限付近');
-    if (features.bollingerPosition > 90) rationale.push('ボリンジャーバンド上限付近');
-    if (features.volumeRatio > 2) rationale.push('出来高が平均を大きく上回る');
+    if (_features.rsi < 30) rationale.push('RSIが過売り水準を示唆');
+    if (_features.rsi > 70) rationale.push('RSIが過買い水準を示唆');
+    if (_features.macdSignal > 1) rationale.push('MACDが強い買いシグナル');
+    if (_features.macdSignal < -1) rationale.push('MACDが強い売りシグナル');
+    if (_features.bollingerPosition < 10) rationale.push('ボリンジャーバンド下限付近');
+    if (_features.bollingerPosition > 90) rationale.push('ボリンジャーバンド上限付近');
+    if (_features.volumeRatio > 2) rationale.push('出来高が平均を大きく上回る');
     if (confidence > 0.8) rationale.push('モデル間の予測が高い一致度');
 
     return {
@@ -1011,7 +1011,6 @@ export class PredictiveAnalyticsEngine extends EventEmitter {
     for (let i = 60; i < data.length - 1; i++) {
       const slice = data.slice(0, i + 1);
       const prediction = this.predict('backtest', slice);
-      const nextPrice = data[i + 1].close;
       const currentPrice = data[i].close;
 
       if (!position && prediction.prediction.confidence > threshold) {

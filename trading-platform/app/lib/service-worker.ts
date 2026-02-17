@@ -74,22 +74,18 @@ export function useServiceWorker(): ServiceWorkerState & {
   update: () => Promise<void>;
   skipWaiting: () => void;
 } {
-  const [state, setState] = useState<ServiceWorkerState>({
-    isSupported: false,
+  const [state, setState] = useState<ServiceWorkerState>(() => ({
+    isSupported: typeof navigator !== 'undefined' && 'serviceWorker' in navigator,
     isRegistered: false,
     isUpdating: false,
     updateAvailable: false,
     offlineReady: false,
-  });
+  }));
 
   const [registration, setRegistration] = useState<ServiceWorkerManager | null>(null);
 
   useEffect(() => {
-    // Service Workerサポート確認
-    const isSupported = 'serviceWorker' in navigator;
-    setState((prev) => ({ ...prev, isSupported }));
-
-    if (!isSupported) return;
+    if (!state.isSupported) return;
 
     // 登録
     registerServiceWorker().then((reg) => {

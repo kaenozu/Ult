@@ -103,9 +103,6 @@ export class FeatureCalculationService {
 
   private calculateMACD(closes: number[]): number {
     if (closes.length < 26) return 0;
-    const ema12 = this.calculateEMA(closes, 12);
-    const ema26 = this.calculateEMA(closes, 26);
-    const macdLine = ema12[ema12.length - 1] - ema26[ema26.length - 1];
     const macdHistory = closes.map((_, i) => {
       if (i < 26) return 0;
       const e12 = this.calculateEMA(closes.slice(0, i + 1), 12);

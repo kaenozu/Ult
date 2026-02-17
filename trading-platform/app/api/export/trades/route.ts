@@ -4,7 +4,7 @@ import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { handleApiError } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
-import { ExportFormat, TradeHistoryExport, ExportTradesRequest } from '@/app/types/order';
+import { TradeHistoryExport } from '@/app/types/order';
 
 // --- Zod Schema ---
 const ExportRequestSchema = z.object({

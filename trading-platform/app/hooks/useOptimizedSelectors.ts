@@ -143,6 +143,7 @@ export function usePositionMetrics(symbol: string) {
       unrealizedPnL,
       unrealizedPnLPercent,
       daysHeld: Math.floor(
+        // eslint-disable-next-line react-hooks/purity
         (Date.now() - new Date(position.entryDate).getTime()) / (1000 * 60 * 60 * 24)
       )
     };
@@ -208,14 +209,17 @@ export function useFilteredOrders(
  */
 export function useStoreRenderCount(storeName: string) {
   const renderCount = React.useRef(0);
-  renderCount.current++;
   
+  // Update ref in effect instead of render to stay pure
   React.useEffect(() => {
+    renderCount.current++;
     if (renderCount.current > 50) {
       console.warn(`${storeName} has rendered ${renderCount.current} times`);
     }
   });
   
+  // Return the count from the last render cycle for debugging
+  // eslint-disable-next-line react-hooks/refs
   return renderCount.current;
 }
 

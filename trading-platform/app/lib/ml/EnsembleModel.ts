@@ -197,8 +197,6 @@ export class EnsembleModel {
    */
   private detectMarketRegime(data: OHLCV[]): MarketRegime {
     const prices = data.map(d => d.close);
-    const highs = data.map(d => d.high);
-    const lows = data.map(d => d.low);
 
     // ADX（Average Directional Index）を計算してトレンド強度を判定
     const adx = this.calculateADX(data, 14);
@@ -635,7 +633,6 @@ export class EnsembleModel {
 
     const highs = data.map((d) => d.high);
     const lows = data.map((d) => d.low);
-    const closes = data.map((d) => d.close);
 
     // +DMと-DMを計算
     const plusDM: number[] = [];

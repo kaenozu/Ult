@@ -14,6 +14,7 @@ import type { DependencyList } from 'react';
  * @returns メモ化された値
  */
 export function useMemoized<T>(factory: () => T, deps: DependencyList): T {
+  // eslint-disable-next-line react-hooks/use-memo, react-hooks/exhaustive-deps
   return useMemo(factory, deps);
 }
 
@@ -23,10 +24,11 @@ export function useMemoized<T>(factory: () => T, deps: DependencyList): T {
  * @param deps 依存配列
  * @returns メモ化されたコールバック
  */
-export function useStableCallback<T extends (...args: any[]) => any>(
+export function useStableCallback<T extends (...args: unknown[]) => unknown>(
   callback: T,
   deps: DependencyList
 ): T {
+  // eslint-disable-next-line react-hooks/use-memo, react-hooks/exhaustive-deps
   return useCallback(callback, deps);
 }
 
@@ -34,7 +36,8 @@ export function useStableCallback<T extends (...args: any[]) => any>(
  * オブジェクトを浅く比較してメモ化
  * 子コンポーネントへのpropsとして使うオブジェクトに最適
  */
-export function useShallowMemo<T extends Record<string, any>>(obj: T): T {
+export function useShallowMemo<T extends Record<string, unknown>>(obj: T): T {
+  // eslint-disable-next-line react-hooks/use-memo, react-hooks/exhaustive-deps
   return useMemo(() => obj, Object.values(obj));
 }
 
@@ -72,7 +75,7 @@ export function createBatchedProcessor<T>(
  * スロットリング関数
  * 高頻度なイベント（スクロール、リサイズなど）の処理を最適化
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -91,7 +94,7 @@ export function throttle<T extends (...args: any[]) => any>(
  * デバウンス関数
  * 入力イベントなどの処理を遅延させ、最後のイベントのみを処理
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -107,7 +110,7 @@ export function debounce<T extends (...args: any[]) => any>(
  * メモ化されたコンポーネントprops比較関数
  * 特定のpropsのみを比較対象とする場合に使用
  */
-export function createPropsComparator<P extends Record<string, any>>(
+export function createPropsComparator<P extends Record<string, unknown>>(
   keys: (keyof P)[]
 ) {
   return (prevProps: P, nextProps: P): boolean => {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { TIMEOUT } from '@/app/constants/timing';
 
 interface WebVitalsMetrics {
@@ -61,15 +61,6 @@ export function useWebVitals() {
     fcp: null,
     ttfb: null,
     inp: null,
-  });
-
-  const [ratings, setRatings] = useState<WebVitalsRating>({
-    lcp: 'good',
-    fid: 'good',
-    cls: 'good',
-    fcp: 'good',
-    ttfb: 'good',
-    inp: 'good',
   });
 
   // LCP測定
@@ -167,15 +158,22 @@ export function useWebVitals() {
 
   // TTFB測定
   useEffect(() => {
+    // performance.getEntriesByType can be called outside of effect but for stability we keep it here
     const navigation = performance.getEntriesByType(
       'navigation'
     )[0] as PerformanceNavigationTiming;
     
     if (navigation) {
-      setMetrics((prev) => ({
-        ...prev,
-        ttfb: navigation.responseStart - navigation.startTime,
-      }));
+      // Use setMetrics asynchronously to avoid cascading renders error
+      Promise.resolve().then(() => {
+        setMetrics((prev) => {
+          if (prev.ttfb === navigation.responseStart - navigation.startTime) return prev;
+          return {
+            ...prev,
+            ttfb: navigation.responseStart - navigation.startTime,
+          };
+        });
+      });
     }
   }, []);
 
@@ -209,19 +207,15 @@ export function useWebVitals() {
     return () => observer.disconnect();
   }, []);
 
-  // レーティング計算
-  useEffect(() => {
-    const newRatings: WebVitalsRating = {
-      lcp: getRating(metrics.lcp, THRESHOLDS.lcp),
-      fid: getRating(metrics.fid, THRESHOLDS.fid),
-      cls: getRating(metrics.cls, THRESHOLDS.cls),
-      fcp: getRating(metrics.fcp, THRESHOLDS.fcp),
-      ttfb: getRating(metrics.ttfb, THRESHOLDS.ttfb),
-      inp: getRating(metrics.inp, THRESHOLDS.inp),
-    };
-    
-    setRatings(newRatings);
-  }, [metrics]);
+  // レーティング計算 (Use useMemo instead of useEffect + useState)
+  const ratings = useMemo<WebVitalsRating>(() => ({
+    lcp: getRating(metrics.lcp, THRESHOLDS.lcp),
+    fid: getRating(metrics.fid, THRESHOLDS.fid),
+    cls: getRating(metrics.cls, THRESHOLDS.cls),
+    fcp: getRating(metrics.fcp, THRESHOLDS.fcp),
+    ttfb: getRating(metrics.ttfb, THRESHOLDS.ttfb),
+    inp: getRating(metrics.inp, THRESHOLDS.inp),
+  }), [metrics]);
 
   // レポート送信
   const reportToAnalytics = useCallback(() => {

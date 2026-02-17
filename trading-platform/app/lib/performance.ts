@@ -61,27 +61,27 @@ export function measurePerformance<T>(name: string, fn: () => T): T {
   const start = performance.now();
   
   // Create start mark before execution
-  if (typeof window !== 'undefined' && window.performance) {
-    try {
-      performance.mark(`${name}-start`);
-    } catch (e) {
-      // Performance API may not be available in all contexts
-    }
-  }
-  
-  try {
-    const result = fn();
-    const duration = performance.now() - start;
-    
-    // Create end mark and measure after execution
     if (typeof window !== 'undefined' && window.performance) {
       try {
-        performance.mark(`${name}-end`);
-        performance.measure(name, `${name}-start`, `${name}-end`);
-      } catch (e) {
+        performance.mark(`${name}-start`);
+      } catch (_e) {
         // Performance API may not be available in all contexts
       }
     }
+    
+    try {
+      const result = fn();
+      const duration = performance.now() - start;
+      
+      // Create end mark and measure after execution
+      if (typeof window !== 'undefined' && window.performance) {
+        try {
+          performance.mark(`${name}-end`);
+          performance.measure(name, `${name}-start`, `${name}-end`);
+        } catch (_e) {
+          // Performance API may not be available in all contexts
+        }
+      }
     
     
     // Record to global monitor if available
@@ -197,12 +197,15 @@ export function usePerformanceMonitor(
       mountTimeRef.current = performance.now();
     }
 
+    // Refの値をローカル変数にコピーしてクリーンアップで使用
+    const currentRenderCount = renderCountRef.current;
+
     return () => {
       if (trackUnmount && mountTimeRef.current) {
         const lifeTime = performance.now() - mountTimeRef.current;
         logger.info(
           `[Lifecycle] ${componentName} unmounted after ${lifeTime.toFixed(2)}ms ` +
-          `(${renderCountRef.current} renders)`
+          `(${currentRenderCount} renders)`
         );
       }
     };
@@ -213,20 +216,21 @@ export function usePerformanceMonitor(
     if (trackRender) {
       renderCountRef.current++;
       const now = performance.now();
+      const currentCount = renderCountRef.current;
 
       if (lastRenderTimeRef.current) {
         const timeSinceLastRender = now - lastRenderTimeRef.current;
         logger.info(
-          `[Render] ${componentName} #${renderCountRef.current} ` +
+          `[Render] ${componentName} #${currentCount} ` +
           `(${timeSinceLastRender.toFixed(2)}ms since last render)`
         );
       } else {
-        logger.info(`[Render] ${componentName} #${renderCountRef.current} (first render)`);
+        logger.info(`[Render] ${componentName} #${currentCount} (first render)`);
       }
 
       lastRenderTimeRef.current = now;
     }
-  }, [trackRender]);
+  }, [componentName, trackRender]);
 
   // 計測用のヘルパー関数
   const measure = useCallback(<T,>(operationName: string, fn: () => T): T => {
@@ -255,7 +259,7 @@ export function usePerformanceMonitor(
  * @param name - ベンチマーク名
  * @returns ベンチマーク関数
  */
-export function usePerformanceBenchmark(name: string) {
+export function usePerformanceBenchmark(_name: string) {
   const resultsRef = useRef<Map<string, number[]>>(new Map());
 
   const benchmark = useCallback(<T,>(label: string, fn: () => T): T => {
@@ -269,7 +273,7 @@ export function usePerformanceBenchmark(name: string) {
     resultsRef.current.get(label)!.push(duration);
 
     return result;
-  }, [name]);
+  }, []);
 
   const getResults = useCallback(() => {
     const results: Record<string, PerformanceMetric> = {};

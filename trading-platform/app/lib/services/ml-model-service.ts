@@ -11,27 +11,28 @@ import {
 } from '@/app/domains/prediction/services/ml-model-service';
 import { PredictionCalculator } from './implementations/prediction-calculator';
 import { IPredictionCalculator, ITensorFlowModel } from './interfaces/ml-model-interfaces';
+import type { ModelMetrics, ModelTrainingData } from './tensorflow-model-service';
+import type { PredictionFeatures } from '@/app/domains/prediction/types';
+import type { ModelPrediction } from '../../types';
+
 // TensorFlow.js models - dynamically imported to reduce bundle size
-let FeedForwardModel: any;
-let GRUModel: any;
-let LSTMModel: any;
-let featuresToArray: any;
+type TFModelConstructor = new () => ITensorFlowModel;
+let FeedForwardModel: TFModelConstructor;
+let GRUModel: TFModelConstructor;
+let LSTMModel: TFModelConstructor;
+let featuresToArray: (features: PredictionFeatures) => number[];
 
 // Dynamic import for TensorFlow.js models
-async function loadTensorFlowModels() {
+export async function loadTensorFlowModels() {
   if (!FeedForwardModel) {
     const tf = await import('./tensorflow-model-service');
-    FeedForwardModel = tf.FeedForwardModel;
-    GRUModel = tf.GRUModel;
-    LSTMModel = tf.LSTMModel;
+    FeedForwardModel = tf.FeedForwardModel as unknown as TFModelConstructor;
+    GRUModel = tf.GRUModel as unknown as TFModelConstructor;
+    LSTMModel = tf.LSTMModel as unknown as TFModelConstructor;
     featuresToArray = tf.featuresToArray;
   }
   return { FeedForwardModel, GRUModel, LSTMModel, featuresToArray };
 }
-
-import type { ModelMetrics, ModelTrainingData } from './tensorflow-model-service';
-import type { PredictionFeatures } from '@/app/domains/prediction/types';
-import type { ModelPrediction } from '../../types';
 
 export interface MLServiceConfig {
   weights: {
@@ -91,7 +92,8 @@ export class MLModelService extends DomainMLModelService {
   /**
    * Initialize TensorFlow.js models if not already injected
    */
-  private initializeTensorFlowModels(): void {
+  private async initializeTensorFlowModels(): Promise<void> {
+    await loadTensorFlowModels();
     if (!this.ffModel) this.ffModel = new FeedForwardModel();
     if (!this.gruModel) this.gruModel = new GRUModel();
     if (!this.lstmModel) this.lstmModel = new LSTMModel();

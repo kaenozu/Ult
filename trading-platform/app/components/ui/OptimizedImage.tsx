@@ -50,10 +50,17 @@ export const OptimizedImage = memo(function OptimizedImage({
 
   // Intersection Observerで遅延読み込み
   useEffect(() => {
-    if (priority || !imageRef.current) {
-      setIsInView(true);
+    // priority=trueの場合は既にisInView=trueなので何もしない
+    // またIntersectionObserverがサポートされていない場合も即座に表示
+    if (priority || typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      if (!isInView) {
+        // 非同期に更新してカスケードレンダリングを防ぐ
+        Promise.resolve().then(() => setIsInView(true));
+      }
       return;
     }
+
+    if (!imageRef.current) return;
 
     observerRef.current = new IntersectionObserver(
       ([entry]) => {

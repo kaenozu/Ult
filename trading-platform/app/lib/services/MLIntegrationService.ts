@@ -123,9 +123,9 @@ export class MLIntegrationService {
    * Get ML-enhanced prediction (with fallback to rule-based)
    */
   public async predictWithML(
-    stock: Stock,
-    ohlcvData: OHLCV[],
-    indexData?: OHLCV[]
+    _stock: Stock,
+    _ohlcvData: OHLCV[],
+    _indexData?: OHLCV[]
   ): Promise<Signal | null> {
     // Ensure initialization
     if (!this.modelStatus.initialized) {
