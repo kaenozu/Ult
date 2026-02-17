@@ -1,6 +1,6 @@
 import { OHLCV } from '../types/shared';
 import * as ta from './utils/technical-analysis';
-import { TECHNICAL_INDICATORS } from './constants';
+import { TECHNICAL_INDICATORS } from '@/app/constants';
 
 /**
  * テクニカル指標計算サービス

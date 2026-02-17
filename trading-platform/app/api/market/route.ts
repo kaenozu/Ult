@@ -5,7 +5,7 @@ import {
   handleApiError,
 } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
-import { isIntradayInterval } from '@/app/lib/constants/intervals';
+import { isIntradayInterval } from '@/app/constants/intervals';
 import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
 import {
   YahooChartResultSchema,

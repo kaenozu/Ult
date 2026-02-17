@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { OHLCV, Signal } from '@/app/types';
-import { FORECAST_CONE } from '@/app/lib/constants';
+import { FORECAST_CONE } from '@/app/constants';
 import { reduceDataPoints, shouldReduceData, calculateOptimalDataPoints, findDateIndex } from '@/app/lib/chart-utils';
 
 export const useChartData = (

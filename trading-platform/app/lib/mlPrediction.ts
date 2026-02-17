@@ -10,7 +10,7 @@ import {
   MARKET_CORRELATION,
   ENSEMBLE_WEIGHTS,
   SIGNAL_THRESHOLDS,
-} from '@/app/lib/constants';
+} from '@/app/constants';
 import { mlTrainingService, type TrainingMetrics, type ModelState } from './services/MLTrainingService';
 import { type PredictionFeatures } from './services/feature-calculation-service';
 

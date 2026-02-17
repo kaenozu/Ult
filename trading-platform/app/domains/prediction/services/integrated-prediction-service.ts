@@ -11,7 +11,7 @@ import { enhancedMLService } from './enhanced-ml-service';
 import type { EnhancedPrediction } from '../types';
 import { analyzeStock } from '@/app/lib/analysis';
 import { mlPredictionService } from '@/app/lib/mlPrediction';
-import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '@/app/lib/constants';
+import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '@/app/constants';
 
 export interface IntegratedPredictionResult {
   signal: Signal;

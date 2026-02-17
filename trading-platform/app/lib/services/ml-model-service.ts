@@ -5,7 +5,7 @@
  * Please import directly from @/app/domains/prediction/services in new code.
  */
 
-import { PREDICTION } from '../constants';
+import { PREDICTION } from '@/app/constants';
 import {
   MLModelService as DomainMLModelService,
 } from '@/app/domains/prediction/services/ml-model-service';

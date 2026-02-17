@@ -20,7 +20,7 @@ import type { OHLCV } from '../../types';
 import { logger } from '@/app/core/logger';
 import { TOKENS } from '../di/tokens';
 import { container } from '../di/container';
-import { BACKTEST_DEFAULTS } from '../constants/backtest-config';
+import { BACKTEST_DEFAULTS } from '@/app/constants/backtest-config';
 export type { OHLCV };
 
 // ============================================================================

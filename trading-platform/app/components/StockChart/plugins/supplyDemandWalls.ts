@@ -8,7 +8,7 @@
  */
 
 import { Chart } from 'chart.js';
-import { VOLUME_PROFILE } from '@/app/lib/constants';
+import { VOLUME_PROFILE } from '@/app/constants';
 
 export interface SupplyDemandWallsOptions {
   enabled: boolean;

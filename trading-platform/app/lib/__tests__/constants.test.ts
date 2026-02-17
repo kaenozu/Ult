@@ -13,14 +13,14 @@ import {
   DATA_REQUIREMENTS,
   CONFIDENCE_THRESHOLDS,
   MULTIPLIERS,
-} from '../constants/common';
+} from '@/app/constants/common';
 
 import {
   SIGNAL_THRESHOLDS,
   MARKET_CORRELATION,
   AI_TRADING,
   ORDER,
-} from '../constants/trading';
+} from '@/app/constants/trading';
 
 import {
   TECHNICAL_INDICATORS,
@@ -29,23 +29,23 @@ import {
   MACD_CONFIG,
   BOLLINGER_BANDS,
   VOLATILITY,
-} from '../constants/technical-indicators';
+} from '@/app/constants/technical-indicators';
 
 import {
   API_ENDPOINTS,
   CACHE_CONFIG,
   RATE_LIMIT,
   DATA_QUALITY,
-} from '../constants/api';
+} from '@/app/constants/api';
 
 import {
   CHART_COLORS,
   CHART_CONFIG,
-} from '../constants/chart';
+} from '@/app/constants/chart';
 
 import {
   RISK_MANAGEMENT,
-} from '../constants/risk-management';
+} from '@/app/constants/risk-management';
 
 describe('Constants', () => {
   describe('OPTIMIZATION', () => {

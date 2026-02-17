@@ -80,7 +80,7 @@ export const GRID_PADDING = {
 /**
  * Animation styles
  */
-export const ANIMATION = {
+export const ANIMATION_STYLES = {
   SPINNER_BORDER_WIDTH: 'border-t-2 border-b-2',
   SPINNER_SIZE: 'h-12 w-12',
 } as const;

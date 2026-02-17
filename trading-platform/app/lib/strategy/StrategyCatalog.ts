@@ -29,7 +29,7 @@ import type {
   StrategyParameterValue
 } from './types';
 import { isString, isStringArray } from './types';
-import { TRADING_DAYS, RISK_FREE_RATE, BACKTEST } from '../constants/trading';
+import { TRADING_DAYS, RISK_FREE_RATE, BACKTEST } from '@/app/constants/trading';
 
 // ============================================================================
 // Base Strategy Class

@@ -1,6 +1,6 @@
 import { Signal, AIStatus, PaperTrade } from '../types';
-import { RISK_MANAGEMENT } from './constants/risk-management';
-import { MARKET_CORRELATION } from './constants/trading';
+import { RISK_MANAGEMENT } from '@/app/constants/risk-management';
+import { MARKET_CORRELATION } from '@/app/constants/trading';
 
 /**
  * Service to handle AI trading logic.

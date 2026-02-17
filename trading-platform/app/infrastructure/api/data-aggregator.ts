@@ -3,7 +3,7 @@ import { ApiError as APIError, NetworkError, RateLimitError } from '@/app/lib/er
 import { mlPredictionService } from '@/app/lib/mlPrediction';
 import { enhancedPredictionService } from '@/app/lib/services/enhanced-prediction-service';
 import { idbClient } from '@/app/lib/api/idb-migrations';
-import { isIntradayInterval } from '@/app/lib/constants/intervals';
+import { isIntradayInterval } from '@/app/constants/intervals';
 import { logger } from '@/app/core/logger';
 import { MARKET_DATA_CACHE_TTL, MARKET_DATA_MAX_CACHE_SIZE, MARKET_DATA_CACHE_CLEANUP_INTERVAL } from '@/app/constants/market';
 

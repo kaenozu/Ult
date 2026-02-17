@@ -17,8 +17,8 @@ import {
     RSI_CONFIG,
     SMA_CONFIG,
     FORECAST_CONE
-} from './constants';
-import { TIME_INTERVALS } from './constants/common';
+} from '@/app/constants';
+import { TIME_INTERVALS } from '@/app/constants/common';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 
 // 最適化パラメータの型定義

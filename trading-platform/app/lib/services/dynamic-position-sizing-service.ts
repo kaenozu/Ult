@@ -6,8 +6,8 @@
 
 import { RiskManagementSettings, RiskCalculationResult } from '@/app/types';
 import { calculateATR } from '@/app/lib/utils';
-import { RISK_MANAGEMENT } from '@/app/lib/constants';
-import { BACKTEST_DEFAULTS } from '../constants/backtest-config';
+import { RISK_MANAGEMENT } from '@/app/constants';
+import { BACKTEST_DEFAULTS } from '@/app/constants/backtest-config';
 
 export interface PositionSizingInput {
   entryPrice: number;

@@ -7,7 +7,7 @@
  */
 
 import { Position, Portfolio } from '@/app/types';
-import { VaR } from '@/app/lib/constants/risk-management';
+import { VaR } from '@/app/constants/risk-management';
 
 // ============================================================================
 // Types

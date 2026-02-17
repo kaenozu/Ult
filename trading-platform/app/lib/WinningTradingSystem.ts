@@ -18,7 +18,7 @@ import { RealisticBacktestEngine, RealisticBacktestResult, RealisticTradeMetrics
 import type { PerformanceMetrics } from '@/app/types/performance';
 import { winningAlertEngine, Alert, AlertConfig } from './alerts';
 import { winningAnalytics, PerformanceReport } from './analytics';
-import { BACKTEST_DEFAULTS } from './constants/backtest-config';
+import { BACKTEST_DEFAULTS } from '@/app/constants/backtest-config';
 import { Strategy } from './backtest/AdvancedBacktestEngine';
 
 // Type alias for backward compatibility

@@ -14,7 +14,7 @@ import {
   EnhancedPredictionFeatures,
   ExtendedTechnicalIndicator
 } from '../types/prediction-types';
-import { PORTFOLIO_OPTIMIZATION_DEFAULTS } from '../constants/portfolio';
+import { PORTFOLIO_OPTIMIZATION_DEFAULTS } from '@/app/constants/portfolio';
 
 /**
  * 拡張特徴量計算サービス

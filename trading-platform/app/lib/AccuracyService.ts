@@ -10,7 +10,7 @@ import {
     FORECAST_CONE,
     DATA_REQUIREMENTS,
     PREDICTION_ERROR_WEIGHTS
-} from './constants';
+} from '@/app/constants';
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { measurePerformance } from './performance-utils';

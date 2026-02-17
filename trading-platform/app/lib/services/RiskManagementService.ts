@@ -18,7 +18,7 @@ import {
   calculateStopLossPrice,
   getLatestATR
 } from '../riskManagement';
-import { RISK_MANAGEMENT } from '../constants/risk-management';
+import { RISK_MANAGEMENT } from '@/app/constants/risk-management';
 import { logger } from '@/app/core/logger';
 
 // ============================================================================
