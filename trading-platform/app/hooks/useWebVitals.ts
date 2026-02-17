@@ -167,16 +167,19 @@ export function useWebVitals() {
 
   // TTFB測定
   useEffect(() => {
-    const navigation = performance.getEntriesByType(
-      'navigation'
-    )[0] as PerformanceNavigationTiming;
-    
-    if (navigation) {
-      setMetrics((prev) => ({
-        ...prev,
-        ttfb: navigation.responseStart - navigation.startTime,
-      }));
-    }
+    // Use requestAnimationFrame to defer setState to avoid synchronous call
+    requestAnimationFrame(() => {
+      const navigation = performance.getEntriesByType(
+        'navigation'
+      )[0] as PerformanceNavigationTiming;
+      
+      if (navigation) {
+        setMetrics((prev) => ({
+          ...prev,
+          ttfb: navigation.responseStart - navigation.startTime,
+        }));
+      }
+    });
   }, []);
 
   // INP測定（最新のCore Web Vital）
@@ -211,16 +214,19 @@ export function useWebVitals() {
 
   // レーティング計算
   useEffect(() => {
-    const newRatings: WebVitalsRating = {
-      lcp: getRating(metrics.lcp, THRESHOLDS.lcp),
-      fid: getRating(metrics.fid, THRESHOLDS.fid),
-      cls: getRating(metrics.cls, THRESHOLDS.cls),
-      fcp: getRating(metrics.fcp, THRESHOLDS.fcp),
-      ttfb: getRating(metrics.ttfb, THRESHOLDS.ttfb),
-      inp: getRating(metrics.inp, THRESHOLDS.inp),
-    };
-    
-    setRatings(newRatings);
+    // Use requestAnimationFrame to defer setState to avoid synchronous call
+    requestAnimationFrame(() => {
+      const newRatings: WebVitalsRating = {
+        lcp: getRating(metrics.lcp, THRESHOLDS.lcp),
+        fid: getRating(metrics.fid, THRESHOLDS.fid),
+        cls: getRating(metrics.cls, THRESHOLDS.cls),
+        fcp: getRating(metrics.fcp, THRESHOLDS.fcp),
+        ttfb: getRating(metrics.ttfb, THRESHOLDS.ttfb),
+        inp: getRating(metrics.inp, THRESHOLDS.inp),
+      };
+      
+      setRatings(newRatings);
+    });
   }, [metrics]);
 
   // レポート送信

@@ -137,14 +137,19 @@ export function usePositionMetrics(symbol: string) {
     const unrealizedPnL = currentValue - investedValue;
     const unrealizedPnLPercent = (unrealizedPnL / investedValue) * 100;
     
+    // Calculate daysHeld - allow Date.now() as it's for display purposes
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    const daysHeld = Math.floor(
+      (now - new Date(position.entryDate).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    
     return {
       currentValue,
       investedValue,
       unrealizedPnL,
       unrealizedPnLPercent,
-      daysHeld: Math.floor(
-        (Date.now() - new Date(position.entryDate).getTime()) / (1000 * 60 * 60 * 24)
-      )
+      daysHeld
     };
   }, [position]);
 }
@@ -208,15 +213,19 @@ export function useFilteredOrders(
  */
 export function useStoreRenderCount(storeName: string) {
   const renderCount = React.useRef(0);
-  renderCount.current++;
+  const [count, setCount] = React.useState(0);
   
   React.useEffect(() => {
+    // Increment and update state in effect to avoid modifying ref during render
+    renderCount.current++;
+    setCount(renderCount.current);
+    
     if (renderCount.current > 50) {
       console.warn(`${storeName} has rendered ${renderCount.current} times`);
     }
   });
   
-  return renderCount.current;
+  return count;
 }
 
 import React from 'react';

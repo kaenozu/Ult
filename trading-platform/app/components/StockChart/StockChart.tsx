@@ -85,7 +85,16 @@ export const StockChart = memo(function StockChart({
 
   const lastMousePos = useRef({ x: 0, y: 0 });
 
-  // Keyboard navigation for chart
+  // 1. Data Preparation Hooks (moved before effects that use the data)
+  const { actualData, optimizedData, normalizedIndexData, extendedData, forecastExtension } = useChartData(data, signal, indexData);
+  const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
+  const { chartLevels } = useSupplyDemandAnalysis(data);
+  // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
+  const memoizedAccuracyData = useMemo(() => accuracyData ? {
+    predictionError: accuracyData.predictionError || 1.0
+  } : null, [accuracyData]);
+
+  // Keyboard navigation for chart (moved after actualData is declared)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if focus is in an input or textarea
@@ -125,7 +134,7 @@ export const StockChart = memo(function StockChart({
       window.removeEventListener('keydown', handleKeyDown);
       if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
     };
-  }, [data.length]);
+  }, [data.length, actualData.prices.length]);
 
   // Release mouse block on intentional mouse movement
   useEffect(() => {
@@ -185,15 +194,6 @@ export const StockChart = memo(function StockChart({
       console.warn('[StockChart] Sync failed:', err);
     }
   }, [hoveredIdx]);
-
-  // 1. Data Preparation Hooks
-  const { actualData, optimizedData, normalizedIndexData, extendedData, forecastExtension } = useChartData(data, signal, indexData);
-  const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
-  const { chartLevels } = useSupplyDemandAnalysis(data);
-  // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
-  const memoizedAccuracyData = useMemo(() => accuracyData ? {
-    predictionError: accuracyData.predictionError || 1.0
-  } : null, [accuracyData]);
 
   const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
     data: optimizedData, // Use optimized/reduced data for correct index alignment

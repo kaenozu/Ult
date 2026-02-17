@@ -294,14 +294,30 @@ export function getMLWorkerManager(): MLWorkerManager {
  * React Hook for ML Worker predictions
  */
 export function useMLWorkerPrediction() {
-  const manager = useRef(getMLWorkerManager());
-  const [state, setState] = useState<MLWorkerState>(manager.current.getState());
+  // Use lazy initialization to avoid accessing ref during render
+  const managerRef = useRef<MLWorkerManager | null>(null);
+  
+  // Get manager using lazy initialization function
+  const getManager = useCallback(() => {
+    if (!managerRef.current) {
+      managerRef.current = getMLWorkerManager();
+    }
+    return managerRef.current;
+  }, []);
+  
+  const [state, setState] = useState<MLWorkerState>({ isReady: false, workers: [] });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 状態を定期的に更新
+  // Initialize state and start polling
   useEffect(() => {
+    const manager = getManager();
+    
+    // Set initial state
+    setState(manager.getState());
+    
+    // 状態を定期的に更新
     intervalRef.current = setInterval(() => {
-      setState(manager.current.getState());
+      setState(manager.getState());
     }, 100);
 
     return () => {
@@ -309,18 +325,20 @@ export function useMLWorkerPrediction() {
         clearInterval(intervalRef.current);
       }
     };
-  }, []);
+  }, [getManager]);
 
   const predict = useCallback(
     async (modelType: 'LSTM' | 'GRU' | 'FF', features: number[]) => {
-      return manager.current.predict(modelType, features);
+      const manager = getManager();
+      return manager.predict(modelType, features);
     },
-    []
+    [getManager]
   );
 
   const getMetrics = useCallback(() => {
-    return manager.current.getMetrics();
-  }, []);
+    const manager = getManager();
+    return manager.getMetrics();
+  }, [getManager]);
 
   return {
     predict,

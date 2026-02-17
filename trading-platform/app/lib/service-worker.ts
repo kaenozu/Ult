@@ -87,7 +87,11 @@ export function useServiceWorker(): ServiceWorkerState & {
   useEffect(() => {
     // Service Workerサポート確認
     const isSupported = 'serviceWorker' in navigator;
-    setState((prev) => ({ ...prev, isSupported }));
+    
+    // Use requestAnimationFrame to defer setState to avoid synchronous call
+    requestAnimationFrame(() => {
+      setState((prev) => ({ ...prev, isSupported }));
+    });
 
     if (!isSupported) return;
 
