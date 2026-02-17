@@ -36,8 +36,7 @@ export default [
       "react-hooks/purity": "warn",
       "react-hooks/refs": "warn",
       "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/use-memo": "warn",
-      "react-hooks/use-memo-one-arg": "warn"
+      "react-hooks/use-memo": "warn"
     }
   },
 ];
