@@ -32,7 +32,7 @@ interface WorkerResponse {
 
 // Web Worker内でのTensorFlow動作
 let tf: any = null;
-let models: Map<string, any> = new Map();
+const models: Map<string, any> = new Map();
 
 /**
  * TensorFlow.jsを動的にロード

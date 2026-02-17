@@ -305,7 +305,7 @@ export function useMLWorkerPrediction() {
     return managerRef.current;
   }, []);
   
-  const [state, setState] = useState<MLWorkerState>({ isReady: false, workers: [] });
+  const [state, setState] = useState<MLWorkerState>({ isReady: false, isProcessing: false, queueSize: 0 });
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize state and start polling
