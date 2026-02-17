@@ -11,6 +11,9 @@ import {
 } from '@/app/domains/prediction/services/ml-model-service';
 import { PredictionCalculator } from './implementations/prediction-calculator';
 import { IPredictionCalculator, ITensorFlowModel } from './interfaces/ml-model-interfaces';
+import type { ModelMetrics, ModelTrainingData } from './tensorflow-model-service';
+import type { PredictionFeatures } from '../mlPrediction';
+import type { ModelPrediction } from '../../types';
 
 // TensorFlow.js models - dynamically imported to reduce bundle size
 // Using any for dynamic imports - these are lazily loaded to avoid bundle bloat
@@ -36,9 +39,9 @@ async function loadTensorFlowModels(): Promise<{
 }> {
   if (!FeedForwardModel) {
     const tf = await import('./tensorflow-model-service');
-    FeedForwardModel = tf.FeedForwardModel as unknown as TFModelConstructor;
-    GRUModel = tf.GRUModel as unknown as TFModelConstructor;
-    LSTMModel = tf.LSTMModel as unknown as TFModelConstructor;
+    FeedForwardModel = tf.FeedForwardModel;
+    GRUModel = tf.GRUModel;
+    LSTMModel = tf.LSTMModel;
     featuresToArray = tf.featuresToArray;
   }
   return { FeedForwardModel, GRUModel, LSTMModel, featuresToArray };

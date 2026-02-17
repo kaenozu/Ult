@@ -98,8 +98,12 @@ export class MarketDataClient {
         rawJson = await httpResponse.json();
       } else {
         // Fallback for shallow mocks in tests
-        parsedResponse = { data: httpResponse as unknown as T };
+        rawJson = httpResponse as unknown;
       }
+
+      const parsedResponse = (rawJson && typeof rawJson === 'object' && ('data' in rawJson || 'error' in rawJson))
+        ? rawJson as MarketResponse<T>
+        : { data: rawJson as T } as MarketResponse<T>;
 
       if (!this.isValidResponse(httpResponse, parsedResponse)) {
         const debugInfo = parsedResponse?.debug ? ` (Debug: ${parsedResponse.debug})` : '';
@@ -112,7 +116,7 @@ export class MarketDataClient {
         throw new Error('Response data is undefined');
       }
 
-      return parsedResponse.data;
+      return parsedResponse.data as T;
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         throw err;
