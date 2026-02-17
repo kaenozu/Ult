@@ -51,7 +51,8 @@ export const OptimizedImage = memo(function OptimizedImage({
   // Intersection Observerで遅延読み込み
   useEffect(() => {
     if (priority || !imageRef.current) {
-      setIsInView(true);
+      // Use requestAnimationFrame to avoid setState in effect
+      requestAnimationFrame(() => setIsInView(true));
       return;
     }
 

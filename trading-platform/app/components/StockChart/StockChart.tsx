@@ -112,8 +112,8 @@ export const StockChart = memo(function StockChart({
       }, 1500); 
 
       setHoveredIndex(prev => {
-        // Use actualData.prices.length (the rendered points) for bounds
-        const maxIdx = actualData.prices.length - 1;
+        // Use data.length for bounds (will be validated by actualData later)
+        const maxIdx = data.length - 1;
         const currentIdx = prev === null ? maxIdx : prev;
         if (isArrowLeft) return Math.max(0, currentIdx - 1);
         return Math.min(maxIdx, currentIdx + 1);
@@ -125,7 +125,7 @@ export const StockChart = memo(function StockChart({
       window.removeEventListener('keydown', handleKeyDown);
       if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
     };
-  }, [data.length]);
+  }, [data]);
 
   // Release mouse block on intentional mouse movement
   useEffect(() => {
