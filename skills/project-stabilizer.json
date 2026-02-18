@@ -1,0 +1,16 @@
+{
+  "name": "project-stabilizer",
+  "description": "大規模マージ後の不整合解決、テスト安定化、およびモダンな技術スタック（TanStack Query, Zod, React 19）への移行を専門とするスキル。",
+  "version": "1.0.0",
+  "auto_activate": true,
+  "triggers": [
+    "merge conflicts",
+    "test failures after merge",
+    "refactoring",
+    "modernization",
+    "TanStack Query",
+    "React Query",
+    "Zod",
+    "React 19"
+  ]
+}
