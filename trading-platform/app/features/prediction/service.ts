@@ -1,6 +1,6 @@
-import { Stock, OHLCV, Signal, TechnicalIndicator } from '../types';
-import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from './utils';
-import { analyzeStock } from './analysis';
+import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
+import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from '@/app/lib/utils/technical-analysis';
+import { analyzeStock } from '@/app/lib/analysis';
 import {
   RSI_CONFIG,
   SMA_CONFIG,
@@ -11,8 +11,8 @@ import {
   ENSEMBLE_WEIGHTS,
   SIGNAL_THRESHOLDS,
 } from '@/app/constants';
-import { mlTrainingService, type TrainingMetrics, type ModelState } from './services/MLTrainingService';
-import { type PredictionFeatures } from './services/feature-calculation-service';
+import { mlTrainingService, type TrainingMetrics, type ModelState } from '@/app/lib/services/MLTrainingService';
+import { type PredictionFeatures } from '@/app/lib/services/feature-calculation-service';
 
 // PredictionFeatures は feature-calculation-service から再エクスポート
 export type { PredictionFeatures };

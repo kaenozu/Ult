@@ -12,8 +12,8 @@ const envSchema = z.object({
   ALPHA_VANTAGE_API_KEY: z.string().optional(),
 
   // Feature Flags
-  ENABLE_REAL_TRADING: z.enum(['true', 'false']).transform(val => val === 'true').default('false'),
-  ENABLE_ML_TRAINING: z.enum(['true', 'false']).transform(val => val === 'true').default('false'),
+  ENABLE_REAL_TRADING: z.enum(['true', 'false']).transform(val => val === 'true').default(false),
+  ENABLE_ML_TRAINING: z.enum(['true', 'false']).transform(val => val === 'true').default(false),
 
   // System Config
   NEXT_PUBLIC_API_URL: z.string().url().default('http://localhost:3000'),
