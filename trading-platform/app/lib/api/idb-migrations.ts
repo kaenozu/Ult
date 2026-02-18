@@ -5,6 +5,11 @@
  * Follows the same principles as SQL migrations but adapted for IndexedDB.
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 import { OHLCV } from '@/app/types';
 
 import { logger } from '@/app/core/logger';
@@ -97,7 +102,7 @@ export class IndexedDBClient {
 
     // Server-side check: IndexedDB is not available in Node.js
     if (typeof indexedDB === 'undefined') {
-      console.log('[IndexedDB] Running in server environment, skipping initialization');
+      devLog('[IndexedDB] Running in server environment, skipping initialization');
       this.initPromise = Promise.resolve();
       return this.initPromise;
     }
@@ -226,7 +231,7 @@ export class IndexedDBClient {
     
     // Server-side: return empty array if DB is not available
     if (!this.db) {
-      console.log(`[IndexedDB] Server environment - returning empty array for ${symbol}`);
+      devLog(`[IndexedDB] Server environment - returning empty array for ${symbol}`);
       return [];
     }
     
@@ -248,7 +253,7 @@ export class IndexedDBClient {
     
     // Server-side: cannot save to IndexedDB, just resolve
     if (!this.db) {
-      console.log(`[IndexedDB] Server environment - skipping save for ${symbol} (${data.length} records)`);
+      devLog(`[IndexedDB] Server environment - skipping save for ${symbol} (${data.length} records)`);
       return;
     }
     

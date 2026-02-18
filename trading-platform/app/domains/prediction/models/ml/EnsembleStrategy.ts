@@ -9,6 +9,10 @@ import * as tf from '@tensorflow/tfjs';
 import { ModelPipeline } from './ModelPipeline';
 import { EnsemblePrediction, TrainingData, ModelConfig, ModelPredictionResult } from './types';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 export class EnsembleStrategy {
   private lstmPipeline: ModelPipeline;
   private transformerPipeline: ModelPipeline;
@@ -30,7 +34,7 @@ export class EnsembleStrategy {
    * Train all base models
    */
   async trainAllModels(trainingData: TrainingData): Promise<void> {
-    console.log('Training ensemble models...');
+    devLog('Training ensemble models...');
 
     const inputFeatures = this.countFeatures(trainingData.features[0]);
 
@@ -68,16 +72,16 @@ export class EnsembleStrategy {
     };
 
     // Train LSTM
-    console.log('Training LSTM model...');
+    devLog('Training LSTM model...');
     await this.lstmPipeline.trainLSTMModel(trainingData, lstmConfig);
     await this.lstmPipeline.saveModel('lstm-v1');
 
     // Train Transformer
-    console.log('Training Transformer model...');
+    devLog('Training Transformer model...');
     await this.transformerPipeline.trainTransformerModel(trainingData, transformerConfig);
     await this.transformerPipeline.saveModel('transformer-v1');
 
-    console.log('All models trained successfully');
+    devLog('All models trained successfully');
   }
 
   /**
@@ -87,9 +91,9 @@ export class EnsembleStrategy {
     try {
       await this.lstmPipeline.loadModel('lstm-v1');
       await this.transformerPipeline.loadModel('transformer-v1');
-      console.log('All models loaded successfully');
+      devLog('All models loaded successfully');
     } catch (error) {
-      console.error('Error loading models:', error);
+      devError('Error loading models:', error);
       throw new Error('Failed to load ensemble models');
     }
   }

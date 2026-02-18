@@ -7,8 +7,12 @@
 
 import { OHLCV } from '@/app/types';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 const DB_NAME = 'TraderProDB';
-const DB_VERSION = 2; // Increment when schema changes
+const DB_VERSION = 2;
 const MIGRATIONS_STORE = '_migrations';
 
 /**
@@ -121,7 +125,7 @@ export class IndexedDBClient {
               });
             }
           } catch (error) {
-            console.error('[IndexedDB] Failed to record migrations:', error);
+            devError('[IndexedDB] Failed to record migrations:', error);
           }
         }
         pendingMigrations = [];
@@ -134,23 +138,23 @@ export class IndexedDBClient {
         const oldVersion = event.oldVersion;
         const newVersion = event.newVersion || DB_VERSION;
 
-        console.log(`[IndexedDB] Upgrade: v${oldVersion} → v${newVersion}`);
+        devLog(`[IndexedDB] Upgrade: v${oldVersion} → v${newVersion}`);
 
         // Apply migrations sequentially
         for (const migration of migrations) {
           if (migration.version > oldVersion && migration.version <= newVersion) {
-            console.log(`[IndexedDB] Applying migration: ${migration.name} (v${migration.version})`);
+            devLog(`[IndexedDB] Applying migration: ${migration.name} (v${migration.version})`);
             try {
               migration.up(db, transaction);
               pendingMigrations.push({ version: migration.version, name: migration.name });
             } catch (error) {
-              console.error(`[IndexedDB] Migration failed: ${migration.name}`, error);
+              devError(`[IndexedDB] Migration failed: ${migration.name}`, error);
               throw error;
             }
           }
         }
 
-        console.log(`[IndexedDB] Upgrade complete: v${newVersion}`);
+        devLog(`[IndexedDB] Upgrade complete: v${newVersion}`);
       };
     });
 
@@ -203,7 +207,7 @@ export class IndexedDBClient {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
-        console.log(`[IndexedDB] Store '${storeName}' cleared`);
+        devLog(`[IndexedDB] Store '${storeName}' cleared`);
         resolve();
       };
     });
@@ -223,7 +227,7 @@ export class IndexedDBClient {
     for (const storeName of storeNames) {
       await this.clearStore(storeName);
     }
-    console.log('[IndexedDB] All data cleared');
+    devLog('[IndexedDB] All data cleared');
   }
 
   /**

@@ -13,6 +13,10 @@ import { DataLatencyMonitor } from '@/app/lib/data/latency/DataLatencyMonitor';
 import type { MarketData } from '@/app/types/data-quality';
 import type { OHLCV } from '@/app/types/shared';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 export interface DataSource {
   id: string;
   name: string;
@@ -92,7 +96,7 @@ export class MultiSourceDataAggregator {
       healthScore: source.healthScore || 100,
     });
     
-    console.log(`[Aggregator] Registered source: ${source.name} (priority: ${source.priority})`);
+    devLog(`[Aggregator] Registered source: ${source.name} (priority: ${source.priority})`);
   }
   
   /**
@@ -100,7 +104,7 @@ export class MultiSourceDataAggregator {
    */
   unregisterSource(sourceId: string): void {
     this.sources.delete(sourceId);
-    console.log(`[Aggregator] Unregistered source: ${sourceId}`);
+    devLog(`[Aggregator] Unregistered source: ${sourceId}`);
   }
   
   /**
@@ -324,7 +328,7 @@ export class MultiSourceDataAggregator {
       // Re-enable sources that have recovered
       if (!source.enabled && source.healthScore > 50) {
         source.enabled = true;
-        console.log(`[Aggregator] Re-enabled source: ${source.name}`);
+        devLog(`[Aggregator] Re-enabled source: ${source.name}`);
       }
       
       // Decay health score for inactive sources

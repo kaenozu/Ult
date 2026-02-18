@@ -21,6 +21,11 @@ import {
   RateLimitError,
 } from '../types/result';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 /**
  * エラーログレベル
  */
@@ -74,11 +79,11 @@ export class ConsoleErrorLogger implements ErrorLogger {
         console.info(logMessage, context || '');
         break;
       case 'warn':
-        console.warn(logMessage, error?.message || '', context || '');
+        devWarn(logMessage, error?.message || '', context || '');
         break;
       case 'error':
       case 'fatal':
-        console.error(logMessage, error?.message || '', context || '', error?.stack || '');
+        devError(logMessage, error?.message || '', context || '', error?.stack || '');
         break;
     }
   }
