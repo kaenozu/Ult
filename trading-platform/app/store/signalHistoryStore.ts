@@ -14,12 +14,12 @@ export const useSignalHistoryStore = create<SignalHistoryState>()(
     (set) => ({
       signals: [],
       addSignal: (signal) => set((state) => ({
-    signals: [{ ...signal, timestamp: signal.timestamp || Date.now() }, ...state.signals].slice(0, 100)
+        signals: [{ ...signal, timestamp: signal.timestamp || Date.now() }, ...state.signals].slice(0, 100)
       })),
-  updateSignalResult: (symbol, timestamp, result) => set((state) => ({
+      updateSignalResult: (symbol, timestamp, result) => set((state) => ({
         signals: state.signals.map(s => 
-      s.symbol === symbol && s.timestamp === timestamp
-        ? { ...s, result } as unknown as Signal
+          s.symbol === symbol && s.timestamp === timestamp
+            ? { ...s, result } as unknown as Signal
             : s
         )
       })),
