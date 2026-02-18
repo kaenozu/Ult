@@ -215,6 +215,8 @@ function Workstation() {
                     indexData={indexData}
                     loading={loading}
                     error={error}
+                    showSMA={showSMA}
+                    showBollinger={showBollinger}
                     market={selectedStock?.market}
                     signal={chartSignal}
                     accuracyData={accuracy ? {
