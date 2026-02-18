@@ -183,13 +183,7 @@ npm run test:e2e:ui
 npm run test:e2e -- order-execution.spec.ts
 ```
 
-### 📚 API Documentation
-
-This platform provides comprehensive OpenAPI (Swagger) documentation for all API endpoints.
-
-**Access the API Documentation:**
-- Local: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
-- OpenAPI JSON: [http://localhost:3000/api/openapi.json](http://localhost:3000/api/openapi.json)
+### 📚 API Endpoints
 
 **Available API Endpoints:**
 
@@ -206,13 +200,6 @@ This platform provides comprehensive OpenAPI (Swagger) documentation for all API
 #### Symbol-Specific Data (`/api/trading/{symbol}`)
 - **GET** - Get trading signal and market data for a specific symbol
 - Requires JWT authentication
-
-The API documentation provides:
-- Complete request/response schemas
-- Parameter validation rules
-- Example values
-- Error responses
-- Try-it-out functionality
 ```
 
 ### 🧪 テスト戦略
