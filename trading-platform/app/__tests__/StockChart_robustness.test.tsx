@@ -4,10 +4,27 @@ import { StockChart } from '../components/StockChart';
 import { OHLCV } from '../types';
 import '@testing-library/jest-dom';
 
-// Mock Chart.js to avoid canvas errors in Node environment
-jest.mock('react-chartjs-2', () => ({
-  Line: () => <div data-testid="mock-line-chart" />,
-  Bar: () => <div data-testid="mock-bar-chart" />,
+// Mock Lightweight Charts to avoid canvas/WebGL errors in Node environment
+jest.mock('lightweight-charts', () => ({
+  createChart: jest.fn(() => ({
+    addSeries: jest.fn(() => ({
+      setData: jest.fn(),
+    })),
+    applyOptions: jest.fn(),
+    timeScale: jest.fn(() => ({
+      scrollToRealTime: jest.fn(),
+    })),
+    priceScale: jest.fn(() => ({
+      applyOptions: jest.fn(),
+    })),
+    subscribeCrosshairMove: jest.fn(),
+    remove: jest.fn(),
+  })),
+  CandlestickSeries: 'Candlestick',
+  LineSeries: 'Line',
+  HistogramSeries: 'Histogram',
+  ColorType: { Solid: 'Solid' },
+  CrosshairMode: { Normal: 0 },
 }));
 
 describe('StockChart Edge Case Tests', () => {
@@ -29,7 +46,8 @@ describe('StockChart Edge Case Tests', () => {
 
   it('should render chart when data is provided', () => {
     render(<StockChart data={normalData} loading={false} />);
-    expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
+    // Lightweight Charts renders with testid "line-chart"
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 
   it('should handle extreme price values gracefully', () => {
@@ -38,6 +56,7 @@ describe('StockChart Edge Case Tests', () => {
     ];
     const { container } = render(<StockChart data={extremeData} market="japan" />);
     expect(container).toBeDefined();
-    expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
+    // Lightweight Charts renders with testid "line-chart"
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 });

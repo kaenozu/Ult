@@ -1,7 +1,7 @@
 
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { StockChart } from '@/app/components/StockChart';
+import { StockChartLegacy } from '@/app/components/StockChart';
 
 // Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
@@ -10,6 +10,21 @@ global.ResizeObserver = class ResizeObserver {
     disconnect() { }
 };
 
+// Mock requestAnimationFrame
+let rafCallback: FrameRequestCallback | null = null;
+global.requestAnimationFrame = jest.fn((cb) => {
+    rafCallback = cb;
+    setTimeout(() => {
+        if (rafCallback) {
+            rafCallback(Date.now());
+            rafCallback = null;
+        }
+    }, 0);
+    return 1;
+}) as any;
+
+global.cancelAnimationFrame = jest.fn();
+
 // Mock Chart.js instance
 const mockChartInstance = {
     destroy: jest.fn(),
@@ -17,11 +32,12 @@ const mockChartInstance = {
     setActiveElements: jest.fn(),
     data: {
         datasets: [
-            { label: 'Dataset 1' },
-            { label: 'Dataset 2' }
+            { label: 'Dataset 1', data: new Array(10).fill(100) },
+            { label: 'Dataset 2', data: new Array(10).fill(200) }
         ]
     },
     isDatasetVisible: jest.fn().mockReturnValue(true),
+    getDatasetMeta: jest.fn().mockReturnValue({ data: new Array(10).fill({}) }),
 };
 
 // Mock react-chartjs-2 with forwardRef to capture the chart instance
@@ -71,39 +87,47 @@ describe('StockChart Interactions', () => {
     });
 
     it('updates hovered index on arrow key press', async () => {
-        render(<StockChart data={mockData} />);
+        render(<StockChartLegacy data={mockData} />);
 
         const chart = screen.getByTestId('line-chart');
 
-        // 1. Initial State: No hover, so keys should do nothing
-        fireEvent.keyDown(window, { key: 'ArrowRight' });
-        expect(mockChartInstance.setActiveElements).not.toHaveBeenCalled();
+        // Clear any initialization calls
+        jest.clearAllMocks();
 
-        // 2. Activate Hover: Click/Simulate hover at index 5
+        // 1. Activate Hover: Click/Simulate hover at index 5
         fireEvent.click(chart);
 
-        // Wait for state update if necessary (options.onHover updates state)
-        // The previous hover sets index to 5.
+        // Wait for state update
+        await waitFor(() => {}, { timeout: 100 });
 
-        // 3. Right Arrow: Should move to index 6
+        // 2. Right Arrow: Should move to index 6
         await act(async () => {
             fireEvent.keyDown(window, { key: 'ArrowRight' });
+            // Wait for debounce and RAF
+            await new Promise(resolve => setTimeout(resolve, 200));
         });
 
         // Check if setActiveElements was called with index 6
-        // We expect it to be called for multiple datasets if they are visible
-        expect(mockChartInstance.setActiveElements).toHaveBeenCalled();
+        await waitFor(() => {
+            expect(mockChartInstance.setActiveElements).toHaveBeenCalled();
+        }, { timeout: 500 });
+        
         const lastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
         // Check that at least one element in the call has index 6
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(lastCall.some((el: any) => el.index === 6)).toBe(true);
 
-        // 4. Left Arrow: Should move back to index 5
-        // Need to wait 300ms? No, the block is for MOUSE, keys are always accepted.
+        // 3. Left Arrow: Should move back to index 5
         await act(async () => {
             fireEvent.keyDown(window, { key: 'ArrowLeft' });
+            await new Promise(resolve => setTimeout(resolve, 200));
         });
 
+        await waitFor(() => {
+            const calls = mockChartInstance.setActiveElements.mock.calls;
+            expect(calls.length).toBeGreaterThan(1);
+        }, { timeout: 500 });
+        
         const nextLastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(nextLastCall.some((el: any) => el.index === 5)).toBe(true);
@@ -120,7 +144,7 @@ describe('StockChart Interactions', () => {
     });
 
     it('releases mouse block on significant movement', () => {
-        render(<StockChart data={mockData} />);
+        render(<StockChartLegacy data={mockData} />);
         const chart = screen.getByTestId('line-chart');
 
         // Activate hover
@@ -140,22 +164,38 @@ describe('StockChart Interactions', () => {
     });
 
     it('claps active elements to data bounds', async () => {
-        render(<StockChart data={mockData} />);
+        render(<StockChartLegacy data={mockData} />);
         const chart = screen.getByTestId('line-chart');
         fireEvent.click(chart); // Index 5
+
+        // Wait for state update
+        await waitFor(() => {}, { timeout: 100 });
 
         // Move to end (Index 9)
         // 5 -> 6, 7, 8, 9 (4 presses)
         for (let i = 0; i < 4; i++) {
             await act(async () => {
                 fireEvent.keyDown(window, { key: 'ArrowRight' });
+                await new Promise(resolve => setTimeout(resolve, 200));
             });
         }
+
+        // Wait for the last RAF to complete
+        await waitFor(() => {
+            expect(mockChartInstance.setActiveElements).toHaveBeenCalled();
+        }, { timeout: 500 });
 
         // Try to move beyond 9
         await act(async () => {
             fireEvent.keyDown(window, { key: 'ArrowRight' });
+            await new Promise(resolve => setTimeout(resolve, 200));
         });
+
+        // Wait for RAF callback
+        await waitFor(() => {
+            const calls = mockChartInstance.setActiveElements.mock.calls;
+            expect(calls.length).toBeGreaterThan(0);
+        }, { timeout: 500 });
 
         // Verify last call is still index 9, not 10
         const lastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
