@@ -143,4 +143,33 @@ describe('StockTable', () => {
         expect(priceTh).toHaveAttribute('aria-sort', 'ascending');
         expect(th).toHaveAttribute('aria-sort', 'none');
     });
+
+    it('uses CSS-only hover effects without React state', () => {
+        const { container } = render(<StockTable stocks={mockStocks as unknown[]} />);
+        
+        // Find a stock row
+        const toyotaRow = screen.getByText('Toyota').closest('tr');
+        expect(toyotaRow).toBeInTheDocument();
+        
+        // Verify the row has 'group' class for Tailwind group-hover
+        expect(toyotaRow).toHaveClass('group');
+        
+        // Find the delete button
+        const deleteButton = toyotaRow?.querySelector('button[aria-label*="削除"]');
+        expect(deleteButton).toBeInTheDocument();
+        
+        // Verify button uses group-hover classes (CSS-only, no JS handlers)
+        if (deleteButton) {
+            const classes = deleteButton.className;
+            expect(classes).toContain('group-hover:opacity-100');
+            expect(classes).toContain('group-hover:text-red-400');
+            expect(classes).toContain('opacity-0');
+        }
+        
+        // Verify no onMouseEnter or onMouseLeave handlers on row
+        // (these would indicate React state-based hover)
+        // Note: These should be null or undefined, meaning no JS hover handlers
+        expect(toyotaRow?.onmouseenter).toBeFalsy();
+        expect(toyotaRow?.onmouseleave).toBeFalsy();
+    });
 });
