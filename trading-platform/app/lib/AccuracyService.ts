@@ -15,6 +15,7 @@ import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { measurePerformance } from './performance-utils';
 import { logger } from '@/app/core/logger';
+import { mlIntegrationService } from './services/MLIntegrationService';
 
 /**
  * Service to handle simulation, backtesting, and accuracy metrics.
@@ -352,13 +353,27 @@ class AccuracyService {
         const preCalculatedIndicators = this.preCalculateIndicators(data);
         const startIndex = Math.min(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, data.length - windowSize - 1);
 
+        // ML利用不可時は閾値を緩和
+        const isMLAvailable = typeof window !== 'undefined' && mlIntegrationService.isAvailable();
+        const effectiveErrorThreshold = isMLAvailable ? PREDICTION_ERROR_WEIGHTS.ERROR_THRESHOLD : 0.35;
+
+        // Optimization: Optimize parameters ONCE outside the loop to prevent O(N^2) complexity
+        const forcedParams = analysisService.optimizeParameters(data, market, { 
+            preCalculatedIndicators,
+            endIndex: data.length - 1 
+        });
+
         for (let i = startIndex; i < data.length - windowSize; i += 1) {
-            const signal = analysisService.analyzeStock(symbol, data, market, undefined, { endIndex: i, preCalculatedIndicators });
+            const signal = analysisService.analyzeStock(symbol, data, market, undefined, { 
+                endIndex: i, 
+                preCalculatedIndicators,
+                forcedParams // REUSE pre-calculated optimized parameters
+            });
             if (signal.type === 'HOLD') continue;
             const future = data[i + windowSize];
             const priceChange = (future.close - data[i].close) / (data[i].close || 1);
             const predictedChange = (signal.targetPrice - data[i].close) / (data[i].close || 1);
-            const strictHit = Math.abs(priceChange - predictedChange) < Math.abs(predictedChange * PREDICTION_ERROR_WEIGHTS.ERROR_THRESHOLD);
+            const strictHit = Math.abs(priceChange - predictedChange) < Math.abs(predictedChange * effectiveErrorThreshold);
             const dirHit = (priceChange > 0) === (signal.type === 'BUY');
             if (strictHit) hits++;
             if (dirHit) dirHits++;

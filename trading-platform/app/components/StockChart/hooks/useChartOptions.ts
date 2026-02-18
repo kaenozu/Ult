@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { ChartOptions } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
@@ -23,6 +23,9 @@ interface ChartContext {
   tick?: { value?: number };
 }
 
+// Throttle interval for hover updates (ms)
+const HOVER_THROTTLE_MS = 16; // ~60fps
+
 export const useChartOptions = ({
   data,
   extendedData: _extendedData,
@@ -34,12 +37,19 @@ export const useChartOptions = ({
   supplyDemandLevels,
   showVolume = true
 }: UseChartOptionsProps) => {
-  // Y軸の範囲を計算（価格に応じて動的に調整）
+  // Ref for throttling hover updates
+  const lastHoverUpdateRef = useRef<number>(0);
+  const currentHoveredIdxRef = useRef<number | null>(null);
+
+  // Keep ref in sync with state
+  currentHoveredIdxRef.current = hoveredIdx;
+
+  // Y-axis range calculation (static - doesn't depend on hoveredIdx)
   const yAxisRange = useMemo(() => {
-    // 外部から範囲が指定されている場合はそれを使用
+    // Use external range if provided
     if (propPriceRange) {
       const range = propPriceRange.max - propPriceRange.min;
-      // 余裕を持たせる (5%)
+      // Add margin (5%)
       const margin = range * 0.05;
       return {
         min: propPriceRange.min - margin,
@@ -53,7 +63,7 @@ export const useChartOptions = ({
     const { min: minPrice, max: maxPrice } = calculateChartMinMax(data);
     const priceRange = maxPrice - minPrice;
 
-    // 価格範囲に基づいて動的にマージンを設定（10%, 15%, 20%）
+    // Dynamically set margin based on price range (10%, 15%, 20%)
     const marginPercentage = priceRange > 1000 ? 0.05 : priceRange > 5000 ? 0.03 : 0.02;
     const margin = priceRange * marginPercentage;
 
@@ -63,7 +73,25 @@ export const useChartOptions = ({
     };
   }, [data, propPriceRange]);
 
-  const options: ChartOptions<'line'> = useMemo(() => ({
+  // Stable onHover callback with throttling
+  const handleHover = useCallback((_event: unknown, elements: { index: number }[]) => {
+    const now = Date.now();
+    const newIdx = elements.length > 0 ? elements[0].index : null;
+    
+    // Throttle updates to prevent excessive re-renders
+    if (now - lastHoverUpdateRef.current < HOVER_THROTTLE_MS) {
+      return;
+    }
+    
+    // Only update if index actually changed
+    if (newIdx !== currentHoveredIdxRef.current) {
+      lastHoverUpdateRef.current = now;
+      setHoveredIndex(newIdx);
+    }
+  }, [setHoveredIndex]);
+
+  // Static chart options (don't depend on hoveredIdx)
+  const staticOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     layout: {
@@ -75,17 +103,18 @@ export const useChartOptions = ({
       }
     },
     interaction: {
-      mode: 'index',
+      mode: 'index' as const,
       intersect: false
     },
-    onHover: (_, elements) => {
-      setHoveredIndex(elements.length > 0 ? elements[0].index : null);
-    },
     plugins: {
+      decimation: {
+        enabled: true,
+        algorithm: 'min-max' as const,
+      },
       legend: {
         display: true,
-        position: 'top',
-        align: 'end',
+        position: 'top' as const,
+        align: 'end' as const,
         labels: {
           color: '#92adc9',
           font: {
@@ -105,22 +134,6 @@ export const useChartOptions = ({
       tooltip: {
         enabled: false // Using custom tooltip
       },
-      // Custom plugin for crosshair
-      annotation: {
-        annotations: {
-          line1: {
-            type: 'line',
-            xMin: hoveredIdx ?? 0,
-            xMax: hoveredIdx ?? 0,
-            borderColor: 'rgba(59, 130, 246, 0.6)',
-            borderWidth: 1,
-            borderDash: [4, 4],
-            yMin: 0,
-            yMax: 1,
-            scaleID: 'x'
-          }
-        }
-      } as any,
       volumeProfile: {
         enabled: true,
         data: signal?.volumeResistance || supplyDemandLevels,
@@ -130,32 +143,10 @@ export const useChartOptions = ({
     scales: {
       x: {
         grid: {
-          color: (ctx: ChartContext) => {
-            // Highlight vertical grid line at hovered position
-            if (ctx.index === hoveredIdx) {
-              return 'rgba(59, 130, 246, 0.9)';
-            }
-            return ctx.index >= data.length
-              ? CHART_GRID.FUTURE_AREA_COLOR
-              : CHART_GRID.MAIN_COLOR;
-          },
-          lineWidth: (ctx: ChartContext) => {
-            if (ctx.index === hoveredIdx) {
-              return CHART_GRID.HOVER_LINE_WIDTH;
-            }
-            return ctx.index === data.length - 1
-              ? CHART_GRID.CURRENT_PRICE_LINE_WIDTH
-              : 0.5;
-          },
+          // These will be overridden by dynamic options
           drawBorder: false
         },
         ticks: {
-          color: (ctx: ChartContext) => {
-            if (ctx.index === hoveredIdx) {
-              return '#fff';
-            }
-            return ctx.index >= data.length ? '#3b82f6' : '#92adc9';
-          },
           maxTicksLimit: 15,
           font: {
             size: CHART_GRID.LABEL_FONT_SIZE,
@@ -168,42 +159,17 @@ export const useChartOptions = ({
         min: yAxisRange.min,
         max: yAxisRange.max,
         grid: {
-          color: (ctx: ChartContext) => {
-            // Highlight horizontal grid at hovered Y position
-            if (ctx.tick?.value && hoveredIdx !== null && data[hoveredIdx]) {
-              const price = data[hoveredIdx].close;
-              // Check if this tick is approximately the current price
-              const tickValue = ctx.tick?.value as number;
-              const priceDiff = Math.abs(tickValue - price);
-              const priceRange = yAxisRange.max - yAxisRange.min;
-              if (priceDiff / priceRange < 0.02) {
-                return 'rgba(59, 130, 246, 0.8)';
-              }
-            }
-            return CHART_GRID.MAIN_COLOR;
-          },
-          lineWidth: (ctx: ChartContext) => {
-            if (ctx.tick?.value && hoveredIdx !== null && data[hoveredIdx]) {
-              const price = data[hoveredIdx].close;
-              const tickValue = ctx.tick?.value as number;
-              const priceRange = yAxisRange.max - yAxisRange.min;
-              if (Math.abs(tickValue - price) / priceRange < 0.02) {
-                return CHART_GRID.HOVER_LINE_WIDTH;
-              }
-            }
-            return 0.5;
-          },
           drawBorder: false
         },
         ticks: {
           color: '#92adc9',
-          callback: (v) => formatCurrency(Number(v), market === 'japan' ? 'JPY' : 'USD'),
+          callback: (v: string | number) => formatCurrency(Number(v), market === 'japan' ? 'JPY' : 'USD'),
           font: {
             size: CHART_GRID.LABEL_FONT_SIZE,
             family: 'Inter, sans-serif'
           },
           padding: 12,
-          // 動的目盛り数：価格範囲に応じて調整
+          // Dynamic tick count based on price range
           count: yAxisRange.max - yAxisRange.min > 10000 ? 10 :
             yAxisRange.max - yAxisRange.min > 5000 ? 8 :
               yAxisRange.max - yAxisRange.min > 1000 ? 6 : 4
@@ -240,21 +206,124 @@ export const useChartOptions = ({
         tension: CHART_CONFIG.TENSION,
         borderWidth: 2
       }
+    },
+    animation: {
+      duration: 300,
+      easing: 'easeOutQuart' as const
+    }
+  }), [yAxisRange, market, showVolume, signal, data, supplyDemandLevels]);
+
+  // Dynamic options that depend on hoveredIdx (separate for performance)
+  const dynamicGridOptions = useMemo(() => ({
+    x: {
+      grid: {
+        color: (ctx: ChartContext) => {
+          // Highlight vertical grid line at hovered position
+          if (ctx.index === hoveredIdx) {
+            return 'rgba(59, 130, 246, 0.9)';
+          }
+          return ctx.index >= data.length
+            ? CHART_GRID.FUTURE_AREA_COLOR
+            : CHART_GRID.MAIN_COLOR;
+        },
+        lineWidth: (ctx: ChartContext) => {
+          if (ctx.index === hoveredIdx) {
+            return CHART_GRID.HOVER_LINE_WIDTH;
+          }
+          return ctx.index === data.length - 1
+            ? CHART_GRID.CURRENT_PRICE_LINE_WIDTH
+            : 0.5;
+        },
       },
-      animation: {
-        duration: 300,
-        easing: 'easeOutQuart'
+      ticks: {
+        color: (ctx: ChartContext) => {
+          if (ctx.index === hoveredIdx) {
+            return '#fff';
+          }
+          return ctx.index >= data.length ? '#3b82f6' : '#92adc9';
+        },
       }
-    }), [
-    market,
-    hoveredIdx,
-    yAxisRange,
-    setHoveredIndex,
-    signal,
-    data,
-    supplyDemandLevels,
-    showVolume
-  ]);
+    },
+    y: {
+      grid: {
+        color: (ctx: ChartContext) => {
+          // Highlight horizontal grid at hovered Y position
+          if (ctx.tick?.value && hoveredIdx !== null && data[hoveredIdx]) {
+            const price = data[hoveredIdx].close;
+            // Check if this tick is approximately the current price
+            const tickValue = ctx.tick?.value as number;
+            const priceDiff = Math.abs(tickValue - price);
+            const priceRange = yAxisRange.max - yAxisRange.min;
+            if (priceDiff / priceRange < 0.02) {
+              return 'rgba(59, 130, 246, 0.8)';
+            }
+          }
+          return CHART_GRID.MAIN_COLOR;
+        },
+        lineWidth: (ctx: ChartContext) => {
+          if (ctx.tick?.value && hoveredIdx !== null && data[hoveredIdx]) {
+            const price = data[hoveredIdx].close;
+            const tickValue = ctx.tick?.value as number;
+            const priceRange = yAxisRange.max - yAxisRange.min;
+            if (Math.abs(tickValue - price) / priceRange < 0.02) {
+              return CHART_GRID.HOVER_LINE_WIDTH;
+            }
+          }
+          return 0.5;
+        },
+      }
+    }
+  }), [hoveredIdx, data, yAxisRange]);
+
+  // Annotation options (depend on hoveredIdx)
+  const annotationOptions = useMemo(() => ({
+    annotation: {
+      annotations: {
+        line1: {
+          type: 'line',
+          xMin: hoveredIdx ?? 0,
+          xMax: hoveredIdx ?? 0,
+          borderColor: 'rgba(59, 130, 246, 0.6)',
+          borderWidth: 1,
+          borderDash: [4, 4],
+          yMin: 0,
+          yMax: 1,
+          scaleID: 'x'
+        }
+      }
+    } as any
+  }), [hoveredIdx]);
+
+  // Merge all options
+  const options: ChartOptions<'line'> = useMemo(() => ({
+    ...staticOptions,
+    onHover: handleHover,
+    plugins: {
+      ...staticOptions.plugins,
+      ...annotationOptions,
+    },
+    scales: {
+      ...staticOptions.scales,
+      x: {
+        ...staticOptions.scales.x,
+        grid: {
+          ...staticOptions.scales.x.grid,
+          ...dynamicGridOptions.x.grid,
+        },
+        ticks: {
+          ...staticOptions.scales.x.ticks,
+          color: dynamicGridOptions.x.ticks.color,
+        }
+      },
+      y: {
+        ...staticOptions.scales.y,
+        grid: {
+          ...staticOptions.scales.y.grid,
+          ...dynamicGridOptions.y.grid,
+        },
+      },
+    }
+  }), [staticOptions, handleHover, annotationOptions, dynamicGridOptions]);
 
   return options;
 };

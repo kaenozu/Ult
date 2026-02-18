@@ -9,7 +9,7 @@ interface SignalDisplayProps {
   signal: Signal;
   stock: Stock;
   isLive: boolean;
-  preciseHitRate: { hitRate: number; trades: number } | null;
+  preciseHitRate: { hitRate: number; directionalAccuracy?: number; trades: number } | null;
   calculatingHitRate: boolean;
   error: string | null;
   kellyRecommendation: (PositionSizeRecommendation & { kellyResult?: { confidence: number; warnings: string[] } }) | null;
@@ -41,6 +41,7 @@ export function SignalDisplay({
         stock={stock}
         isLive={isLive}
         aiHitRate={preciseHitRate?.hitRate || 0}
+        directionalAccuracy={preciseHitRate?.directionalAccuracy}
         _aiTradesCount={preciseHitRate?.trades || 0}
         _calculatingHitRate={calculatingHitRate}
         _error={error}

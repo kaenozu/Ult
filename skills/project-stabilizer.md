@@ -20,7 +20,7 @@
 - **Zod バリデーション**: APIレスポンスに対し、TypeScript の型定義だけでなく実行時のスキーマ検証を行い、不正なデータによるサイレントなクラッシュを防ぐ。
 
 ### 3. React 19 最適化
-- **Side Effect のクリーンアップ**: Effect 内での同期的な `setState`（Cascading Renders）を排除し、`setTimeout(0)` や `useMemo`、または `useQuery` の状態移行を活用する。
+- **Side Effect のクリーンアップ**: Effect 内での同期的な `setState`（Cascading Renders）を排除し、`useTransition` や `useMemo`、または `useQuery` の状態移行を活用する。
 - **Ref アクセスの適正化**: レンダリング中の `ref.current` へのアクセスを禁止し、Effect またはイベントハンドラ内でのみ処理する。
 
 ### 4. アーキテクチャの進化 (DDD)
@@ -30,7 +30,7 @@
 
 1.  **診断 (Diagnosis)**: `npm test` と `npm run lint` を実行し、マージ後の「真の失敗数」を把握する。
 2.  **基盤修復 (Base Fix)**: 認証や環境変数など、システムの根幹に関わる不整合を `AuthStore` や `env.ts` の導入により最優先で修正する。
-3.  **UI/ロジックの安定化**: 壊れたコンポーネントのテストを、最新のライブラリ（LWC等）のパスに合わせて修正する。
+3.  **UI/ロジックの安定化**: 壊れたコンポーネントのテストを、最新のライブラリ（RTL等）のパスに合わせて修正する。
 4.  **モダン化 (Modernization)**: 修正した箇所を順次 TanStack Query や Zod を用いたベストプラクティスコードに昇華させる。
 5.  **一括統合 (Orchestration)**: 複数のPRや競合ブランチを、依存関係を考慮しながら順次 `main` へ統合し、最終的な健全性を全件テストで証明する。
 

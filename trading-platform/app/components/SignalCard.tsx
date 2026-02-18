@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { Signal, Stock } from '@/app/types';
 import { getConfidenceColor, cn, formatCurrency } from '@/app/lib/utils';
 import { sanitizeString } from '@/app/lib/sanitize';
@@ -11,16 +11,18 @@ interface SignalCardProps {
     stock: Stock;
     isLive?: boolean;
     aiHitRate?: number;
-    _aiTradesCount?: number;  // Reserved for future use
-    _calculatingHitRate?: boolean;  // Reserved for future use
-    _error?: string | null;  // Reserved for future use
+    directionalAccuracy?: number;
+    _aiTradesCount?: number;
+    _calculatingHitRate?: boolean;
+    _error?: string | null;
 }
 
-export function SignalCard({
+export const SignalCard = memo(function SignalCard({
     signal,
     stock,
     isLive = false,
     aiHitRate,
+    directionalAccuracy,
     _aiTradesCount,
     _calculatingHitRate,
     _error
@@ -93,6 +95,11 @@ export function SignalCard({
                             🌟 高的中率 ({aiHitRate}%)
                         </div>
                     )}
+                    {directionalAccuracy !== undefined && directionalAccuracy >= 55 && (
+                        <div className="px-2 py-1 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
+                            🎯 方向的中 ({directionalAccuracy}%)
+                        </div>
+                    )}
                 </div>
                 <div className="text-right pr-2">
                     <div className="text-[10px] text-[#92adc9] font-bold uppercase tracking-wider">予測信頼度</div>
@@ -116,6 +123,33 @@ export function SignalCard({
                     <span className="text-[10px] font-bold text-[#92adc9] mt-1 ml-1 uppercase">推奨アクション</span>
                 </div>
             </div>
+
+            {/* Market Regime */}
+            {signal.regimeInfo && (
+                <div className="mt-2 flex justify-center">
+                    <div className={cn(
+                        "px-4 py-1.5 rounded-lg border flex flex-col items-center gap-0.5 min-w-[160px]",
+                        signal.regimeInfo.regime === 'TRENDING' ? "bg-blue-500/10 border-blue-500/30" : "bg-purple-500/10 border-purple-500/30"
+                    )}>
+                        <div className="text-[9px] font-bold text-[#92adc9] uppercase tracking-widest">市場環境レジーム</div>
+                        <div className={cn(
+                            "text-sm font-black",
+                            signal.regimeInfo.regime === 'TRENDING' ? "text-blue-400" : "text-purple-400"
+                        )}>
+                            {signal.regimeInfo.regime === 'TRENDING' ? (
+                                <span>📈 トレンド相場 ({signal.regimeInfo.trendDirection === 'UP' ? '上昇' : '下落'})</span>
+                            ) : (
+                                <span>↔️ レンジ相場</span>
+                            )}
+                        </div>
+                        {signal.regimeDescription && (
+                            <div className="text-[8px] text-[#92adc9]/70 text-center leading-tight">
+                                {sanitizeString(signal.regimeDescription)}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Market Context */}
             {signal.marketContext && (
@@ -310,4 +344,4 @@ export function SignalCard({
             </div>
         </div>
     );
-}
+});

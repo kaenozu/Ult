@@ -293,21 +293,36 @@ export class MarketDataClient {
     try {
       const results = await Promise.all(chunks.map(async (chunk) => {
         const symbolStr = chunk.join(',');
-        const params = new URLSearchParams({
-          type: 'quote',
-          symbol: symbolStr
-        });
-        const httpResponse = await fetch(`${getBaseUrl()}/api/market?${params.toString()}`, { signal });
-        if (httpResponse.status === 429) {
-          // Performance-optimized: Exponential backoff with jitter
-          const baseDelay = 1000;
-          const exponentialBackoff = baseDelay * Math.pow(2, Math.floor(Math.random() * 3)); // 1-8秒
-          await new Promise(resolve => setTimeout(resolve, exponentialBackoff));
-          return this.fetchQuotes(chunk, signal);
+        const cacheKey = `quotes-${symbolStr}`;
+
+        if (this.pendingRequests.has(cacheKey)) {
+          return this.pendingRequests.get(cacheKey) as Promise<QuoteData[]>;
         }
-        const parsedJson = await httpResponse.json();
-        if (!httpResponse.ok) throw new Error(parsedJson.error);
-        return Array.isArray(parsedJson.data) ? parsedJson.data : (parsedJson.symbol ? [parsedJson] : []);
+
+        const fetchPromise = (async () => {
+          try {
+            const params = new URLSearchParams({
+              type: 'quote',
+              symbol: symbolStr
+            });
+            const httpResponse = await fetch(`${getBaseUrl()}/api/market?${params.toString()}`, { signal });
+            if (httpResponse.status === 429) {
+              // Performance-optimized: Exponential backoff with jitter
+              const baseDelay = 1000;
+              const exponentialBackoff = baseDelay * Math.pow(2, Math.floor(Math.random() * 3)); // 1-8秒
+              await new Promise(resolve => setTimeout(resolve, exponentialBackoff));
+              return this.fetchQuotes(chunk, signal);
+            }
+            const parsedJson = await httpResponse.json();
+            if (!httpResponse.ok) throw new Error(parsedJson.error);
+            return Array.isArray(parsedJson.data) ? parsedJson.data : (parsedJson.symbol ? [parsedJson] : []);
+          } finally {
+            this.pendingRequests.delete(cacheKey);
+          }
+        })();
+
+        this.pendingRequests.set(cacheKey, fetchPromise);
+        return fetchPromise;
       }));
       return results.flat() as QuoteData[];
     } catch (err) {

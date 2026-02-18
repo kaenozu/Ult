@@ -1,25 +1,44 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { StockTable } from '../components/StockTable';
 import { Stock } from '../types';
 import '@testing-library/jest-dom';
 
 // Mock stores used by StockTable
-const mockWatchlistStore: { watchlist: Stock[]; removeFromWatchlist: jest.Mock } = {
-  watchlist: [],
-  removeFromWatchlist: jest.fn(),
-};
-
-const mockUIStore = {
-  selectedStock: null,
-  setSelectedStock: jest.fn(),
-};
+const mockRemoveFromWatchlist = jest.fn();
+const mockSetSelectedStock = jest.fn();
+const mockBatchUpdateStockData = jest.fn();
 
 jest.mock('../store/watchlistStore', () => ({
-  useWatchlistStore: () => mockWatchlistStore,
+  useWatchlistStore: (selector: (state: unknown) => unknown) => {
+    const state = {
+      watchlist: [],
+      removeFromWatchlist: mockRemoveFromWatchlist,
+      batchUpdateStockData: mockBatchUpdateStockData,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 jest.mock('../store/uiStore', () => ({
-  useUIStore: () => mockUIStore,
+  useUIStore: (selector: (state: unknown) => unknown) => {
+    const state = {
+      selectedStock: null,
+      setSelectedStock: mockSetSelectedStock,
+    };
+    return selector ? selector(state) : state;
+  },
+}));
+
+jest.mock('../lib/api/data-aggregator', () => ({
+  marketClient: {
+    fetchQuotes: jest.fn().mockResolvedValue([]),
+  },
+}));
+
+jest.mock('../lib/performance', () => ({
+  usePerformanceMonitor: () => ({
+    measureAsync: (_name: string, fn: () => Promise<void>) => fn(),
+  }),
 }));
 
 const mockStocks: Stock[] = [
@@ -28,9 +47,7 @@ const mockStocks: Stock[] = [
 
 describe('StockTable Component - Accessibility', () => {
   beforeEach(() => {
-    // Reset mocks
     jest.clearAllMocks();
-    mockWatchlistStore.watchlist = [...mockStocks];
   });
 
   it('allows selecting a stock via keyboard (Enter key)', () => {
