@@ -40,8 +40,8 @@ export default function MLPerformanceDashboard() {
   const getMetrics = useCallback(() => {
     try {
       return integratedPredictionService.getPerformanceMetrics();
-    } catch (error) {
-      console.error('Error fetching performance data:', error);
+    } catch {
+      // Service not initialized yet - return null to show loading state
       return null;
     }
   }, []);
@@ -77,8 +77,7 @@ export default function MLPerformanceDashboard() {
       }
       setShowRetrainModal(false);
       setRetrainStatus({ type: 'success', message: 'モデルの再トレーニングが完了しました' });
-    } catch (error) {
-      console.error('Error retraining models:', error);
+    } catch {
       setRetrainStatus({ type: 'error', message: '再トレーニング中にエラーが発生しました' });
     }
   };

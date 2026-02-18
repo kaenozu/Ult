@@ -97,4 +97,63 @@ describe('sanitizeHtml', () => {
     const clean = sanitizeHtml(html, ['b']);
     expect(clean).toBe('<b>Bold</b>');
   });
+
+  it('should handle multiple XSS attack vectors', () => {
+    const vectors = [
+      '<img src=x onerror=alert(1)>',
+      '<svg onload=alert(1)>',
+      '<iframe src="javascript:alert(1)">',
+      '<a href="javascript:alert(1)">click</a>',
+      '<div onclick="alert(1)">click</div>',
+    ];
+
+    vectors.forEach(vector => {
+      const clean = sanitizeHtml(vector, ['img', 'svg', 'iframe', 'a', 'div']);
+      // Should remove all dangerous content but potentially keep safe structure
+      expect(clean).not.toContain('alert');
+      expect(clean).not.toContain('javascript:');
+      expect(clean).not.toContain('onerror');
+      expect(clean).not.toContain('onload');
+      expect(clean).not.toContain('onclick');
+    });
+  });
+});
+
+describe('SafeStorage + sanitizeHtml integration', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  it('should safely store and display audit logs with malicious content', () => {
+    // Scenario: An attacker tries XSS via login form
+    const auditLog = {
+      event: 'AUTH_FAILED',
+      timestamp: Date.now(),
+      username: '<script>alert("XSS")</script>',
+      ipAddress: '192.168.1.1',
+      userAgent: '<img src=x onerror=alert(1)>'
+    };
+
+    // Step 1: Store the audit log without filtering (prevents DoS)
+    const serialized = JSON.stringify(auditLog);
+    SafeStorage.setItem('audit_logs', serialized);
+    
+    // Verify raw data is stored exactly as-is
+    const stored = SafeStorage.getItem('audit_logs');
+    expect(stored).toBe(serialized);
+    expect(stored).toContain('<script>');
+    expect(stored).toContain('<img src=x onerror=alert(1)>');
+
+    // Step 2: When displaying, sanitize the output
+    const retrieved = JSON.parse(stored!);
+    const safeUsername = sanitizeHtml(retrieved.username, []);
+    const safeUserAgent = sanitizeHtml(retrieved.userAgent, []);
+
+    // Verify XSS is removed at render time
+    expect(safeUsername).not.toContain('<script>');
+    expect(safeUsername).not.toContain('alert');
+    expect(safeUserAgent).not.toContain('onerror');
+    expect(safeUserAgent).not.toContain('alert');
+  });
 });

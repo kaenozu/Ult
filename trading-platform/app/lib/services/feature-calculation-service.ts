@@ -11,6 +11,20 @@ import {
 } from '@/app/domains/prediction/services/feature-calculation-service';
 import { EnhancedPredictionFeatures, PredictionFeatures } from '@/app/domains/prediction/types';
 
+export interface CalculatedFeatures {
+  rsi: number;
+  rsiChange: number;
+  sma5: number;
+  sma20: number;
+  sma50: number;
+  volumeRatio: number;
+  priceMomentum: number;
+  macdSignal: number;
+  bollingerPosition: number;
+  atrPercent: number;
+  volatility: number;
+}
+
 // Re-export types for backward compatibility
 export type { PredictionFeatures, EnhancedPredictionFeatures };
 
@@ -169,7 +183,7 @@ export class FeatureCalculationService extends DomainFeatureCalculationService {
    * Calculate features with support for pre-calculated indicators
    * Backward compatible: accepts optional indicators parameter
    */
-  calculateFeatures(data: OHLCV[], indicators?: TechnicalIndicatorsWithATR): any {
+  calculateFeatures(data: OHLCV[], indicators?: TechnicalIndicatorsWithATR): CalculatedFeatures {
     if (indicators) {
       // Check if indicators are empty
       const isEmptyIndicators = indicators.rsi.length === 0 ||

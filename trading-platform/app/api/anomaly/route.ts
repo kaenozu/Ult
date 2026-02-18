@@ -202,7 +202,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         );
     }
   } catch (error) {
-    console.error('Anomaly detection API error:', error);
     return handleApiError(error, 'Anomaly detection failed');
   }
 }

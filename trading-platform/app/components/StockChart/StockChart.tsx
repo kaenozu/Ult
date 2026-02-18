@@ -47,7 +47,7 @@ interface TooltipData {
   sma?: number;
 }
 
-export const StockChartLWC = memo(function StockChartLWC({
+export const StockChart = memo(function StockChart({
   data,
   indexData = [],
   height = 400,
@@ -94,6 +94,8 @@ export const StockChartLWC = memo(function StockChartLWC({
 
   const calculateSMA = useCallback((data: OHLCV[], period: number): LineData<Time>[] => {
     const result: LineData<Time>[] = [];
+    if (data.length < period) return [];
+    
     for (let i = period - 1; i < data.length; i++) {
       let sum = 0;
       for (let j = 0; j < period; j++) {
@@ -114,6 +116,7 @@ export const StockChartLWC = memo(function StockChartLWC({
   ): { upper: LineData<Time>[]; lower: LineData<Time>[] } => {
     const upper: LineData<Time>[] = [];
     const lower: LineData<Time>[] = [];
+    if (data.length < period) return { upper: [], lower: [] };
     
     for (let i = period - 1; i < data.length; i++) {
       let sum = 0;
@@ -222,7 +225,7 @@ export const StockChartLWC = memo(function StockChartLWC({
       lowerBandRef.current = lowerBand as unknown as ISeriesApi<'Line'>;
     }
 
-    // Forecast cone series (always create, will be empty if no signal)
+    // Forecast cone series
     const forecastUpper = chart.addSeries(LineSeries, {
       color: 'rgba(59, 130, 246, 0.8)',
       lineWidth: 2,
@@ -288,7 +291,7 @@ export const StockChartLWC = memo(function StockChartLWC({
     }
 
     if (smaSeriesRef.current && showSMA) {
-      const smaData = calculateSMA(data, SMA_CONFIG.MEDIUM_PERIOD);
+      const smaData = calculateSMA(data, SMA_CONFIG.MEDIUM_PERIOD || 20);
       smaSeriesRef.current.setData(smaData);
     }
 
@@ -300,16 +303,14 @@ export const StockChartLWC = memo(function StockChartLWC({
 
     if (signal && forecastUpperRef.current && forecastLowerRef.current) {
       const lastData = data[data.length - 1];
-      const forecastSteps = Math.min(FORECAST_CONE.STEPS, 30);
-      const atr = signal.atr || lastData.close * GHOST_FORECAST.DEFAULT_ATR_RATIO;
+      const forecastSteps = Math.min(FORECAST_CONE.STEPS || 30, 30);
+      const atr = signal.atr || lastData.close * (GHOST_FORECAST.DEFAULT_ATR_RATIO || 0.02);
       const spreadMultiplier = 3.0 * (accuracyData?.predictionError || 1.0);
       
-      const forecastUpper: LineData<Time>[] = [];
-      const forecastLower: LineData<Time>[] = [];
+      const forecastUpperData: LineData<Time>[] = [];
+      const forecastLowerData: LineData<Time>[] = [];
       
-      const baseDate = typeof lastData.date === 'string' 
-        ? new Date(lastData.date) 
-        : lastData.date;
+      const baseDate = new Date(lastData.date);
       
       for (let i = 0; i <= forecastSteps; i++) {
         const timeRatio = i / forecastSteps;
@@ -321,18 +322,16 @@ export const StockChartLWC = memo(function StockChartLWC({
         futureDate.setDate(futureDate.getDate() + i);
         const timeStr = futureDate.toISOString().split('T')[0] as Time;
         
-        forecastUpper.push({ time: timeStr, value: centerPrice + spread });
-        forecastLower.push({ time: timeStr, value: centerPrice - spread });
+        forecastUpperData.push({ time: timeStr, value: centerPrice + spread });
+        forecastLowerData.push({ time: timeStr, value: centerPrice - spread });
       }
       
-      forecastUpperRef.current.setData(forecastUpper);
-      forecastLowerRef.current.setData(forecastLower);
+      forecastUpperRef.current.setData(forecastUpperData);
+      forecastLowerRef.current.setData(forecastLowerData);
       
-      setTimeout(() => {
-        if (chartRef.current) {
-          chartRef.current.timeScale().scrollToRealTime();
-        }
-      }, 100);
+      if (chartRef.current) {
+        chartRef.current.timeScale().scrollToRealTime();
+      }
     }
   }, [data, signal, showVolume, showSMA, showBollinger, accuracyData, convertToLWCData, convertToVolumeData, calculateSMA, calculateBollingerBands]);
 

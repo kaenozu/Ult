@@ -178,12 +178,13 @@ export class ErrorBoundary extends Component<Props, State> {
     // 統一エラーシステムでログ出力
     const appError = isAppError(error) ? error : handleError(error, name || 'ErrorBoundary');
     
-    // コンソールログ
-    console.error(`ErrorBoundary caught an error in ${name || 'component'}:`, {
-      error: appError.toJSON(),
-      componentStack: errorInfo.componentStack,
-      errorId: this.state.errorId,
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`ErrorBoundary caught an error in ${name || 'component'}:`, {
+        error: appError.toJSON(),
+        componentStack: errorInfo.componentStack,
+        errorId: this.state.errorId,
+      });
+    }
     
     // カスタムエラーハンドラを呼び出し
     if (onError) {
@@ -244,8 +245,8 @@ ${errorInfo?.componentStack || 'N/A'}
       await navigator.clipboard.writeText(errorInfoText);
       this.setState({ copied: true });
       setTimeout(() => this.setState({ copied: false }), ANIMATION.SLOW);
-    } catch (err) {
-      console.error('Failed to copy error info:', err);
+    } catch {
+      // Clipboard access denied
     }
   };
 

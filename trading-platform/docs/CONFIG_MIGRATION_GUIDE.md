@@ -17,7 +17,7 @@ import {
   RISK_MANAGEMENT, 
   CACHE_CONFIG, 
   SIGNAL_THRESHOLDS 
-} from '@/app/lib/constants';
+} from '@/app/constants';
 
 // All configs are validated and type-safe
 const stopLoss = RISK_MANAGEMENT.DEFAULT_STOP_LOSS_PERCENT; // Type: number

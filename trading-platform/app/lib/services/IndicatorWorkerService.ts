@@ -1,12 +1,24 @@
 import { OHLCV } from '@/app/types';
 import { measurePerformance } from '../utils/performance';
 
+interface MACDResult {
+  macd: number[];
+  signal: number[];
+  histogram: number[];
+}
+
+interface BollingerBandsResult {
+  upper: number[];
+  middle: number[];
+  lower: number[];
+}
+
 interface IndicatorResults {
   rsi: number[];
-  macd: any;
+  macd: MACDResult;
   sma20: number[];
   sma50: number[];
-  bb: any;
+  bb: BollingerBandsResult;
 }
 
 /**

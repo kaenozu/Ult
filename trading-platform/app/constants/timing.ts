@@ -29,19 +29,26 @@ export const INTERVAL = {
   CACHE_TTL_MEDIUM: 300000,          // 5 minutes - medium TTL
 };
 
-// Market data specific timing constants
+/**
+ * Market data specific timing constants
+ * 
+ * キャッシュの生存時間（TTL）、最大サイズ、クリーンアップ間隔を定義
+ */
 export const MARKET_DATA = {
+  /** キャッシュの生存時間（TTL）設定 */
   CACHE_TTL: {
-    realtime: 30 * 1000,            // 30 seconds - Realtime data
-    intraday: 5 * 60 * 1000,        // 5 minutes - Intraday data
-    daily: 24 * 60 * 60 * 1000,    // 24 hours - Daily data
-    weekly: 7 * 24 * 60 * 60 * 1000, // 1 week - Weekly data
-    quote: 60 * 1000,                // 1 minute - Quote data
-    signal: 15 * 60 * 1000,          // 15 minutes - Signal
-    indicators: 30 * 60 * 1000,      // 30 minutes - Technical indicators
+    realtime: 30 * 1000,            // 30 seconds - リアルタイムデータ: 30秒でリフレッシュ
+    intraday: 5 * 60 * 1000,        // 5 minutes - イントラデイ: 5分間隔
+    daily: 24 * 60 * 60 * 1000,    // 24 hours - 日次データ: 24時間保持
+    weekly: 7 * 24 * 60 * 60 * 1000, // 1 week - 週次データ: 1週間保持
+    quote: 60 * 1000,                // 1 minute - 価格情報: 1分間保持
+    signal: 15 * 60 * 1000,          // 15 minutes - シグナル: 15分間保持
+    indicators: 30 * 60 * 1000,      // 30 minutes - テクニカル指標: 30分間保持
   },
+  /** 最大500エントリまでキャッシュ */
   MAX_CACHE_SIZE: 500,
-  CACHE_CLEANUP_INTERVAL: 60 * 1000, // 1 minute
+  /** 1分ごとにクリーンアップ */
+  CACHE_CLEANUP_INTERVAL: 60 * 1000,
 };
 
 // Animation durations (in milliseconds)

@@ -72,7 +72,7 @@ class MLPredictionIntegration {
 
 **Purpose**: Calculate technical features and provide compatibility layer
 **Status**: ✅ Active with new compatibility methods
-**Dependencies**: `@/app/lib/utils`, `@/app/lib/constants`
+**Dependencies**: `@/app/lib/utils`, `@/app/constants`
 
 #### Feature Categories
 
@@ -383,7 +383,7 @@ import {
   SMA_CONFIG,
   MACD_CONFIG,
   BOLLINGER_BANDS
-} from '@/app/lib/constants/technical-indicators';
+} from '@/app/constants/technical';
 ```
 
 ---
