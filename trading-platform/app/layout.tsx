@@ -43,6 +43,7 @@ export const metadata: Metadata = {
 import { Navigation } from "@/app/components/Navigation";
 import { UserExperienceEnhancements } from "@/app/components/UserExperienceEnhancements";
 import { StoreHydration } from "@/app/components/StoreHydration";
+import { Providers } from "@/app/providers";
 
 export default function RootLayout({
   children,
@@ -78,24 +79,26 @@ export default function RootLayout({
         <link rel="preload" href="/favicon.ico" as="image" type="image/x-icon" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
-        <ThemeProvider>
-          <MLProvider>
-            <MonitoringProvider>
-              <BehavioralWarningProvider>
-                <I18nProvider>
-                  <StoreHydration />
-                  <div className="flex flex-col h-screen overflow-hidden bg-[#101922]">
-                    <div className="flex-1 overflow-hidden relative">
-                      {children}
+        <Providers>
+          <ThemeProvider>
+            <MLProvider>
+              <MonitoringProvider>
+                <BehavioralWarningProvider>
+                  <I18nProvider>
+                    <StoreHydration />
+                    <div className="flex flex-col h-screen overflow-hidden bg-[#101922]">
+                      <div className="flex-1 overflow-hidden relative">
+                        {children}
+                      </div>
+                      <Navigation />
+                      <UserExperienceEnhancements />
                     </div>
-                    <Navigation />
-                    <UserExperienceEnhancements />
-                  </div>
-                </I18nProvider>
-              </BehavioralWarningProvider>
-            </MonitoringProvider>
-          </MLProvider>
-        </ThemeProvider>
+                  </I18nProvider>
+                </BehavioralWarningProvider>
+              </MonitoringProvider>
+            </MLProvider>
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   );

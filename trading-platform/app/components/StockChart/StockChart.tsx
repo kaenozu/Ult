@@ -1,27 +1,22 @@
 'use client';
 
-import { useRef, memo, useState, useMemo, useEffect, useCallback } from 'react';
-import { usePerformanceMonitor } from '@/app/hooks/usePerformanceMonitor';
+import { useRef, useEffect, useState, useCallback, memo } from 'react';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, Decimation, ScriptableContext,
-} from 'chart.js';
-import { Line, Bar } from 'react-chartjs-2';
+  createChart,
+  IChartApi,
+  ISeriesApi,
+  CandlestickData,
+  LineData,
+  HistogramData,
+  ColorType,
+  CrosshairMode,
+  Time,
+  CandlestickSeries,
+  LineSeries,
+  HistogramSeries,
+} from 'lightweight-charts';
 import { OHLCV, Signal } from '@/app/types';
-import { SMA_CONFIG, CHART_COLORS, CHART_DIMENSIONS, CHART_THEME } from '@/app/constants';
-import { calculateChartMinMax } from '@/app/lib/chart-utils';
-import { volumeProfilePlugin } from './plugins/volumeProfile';
-import { useChartData } from './hooks/useChartData';
-import { useTechnicalIndicators } from './hooks/useTechnicalIndicators';
-import { useForecastLayers } from './hooks/useForecastLayers';
-import { useChartOptions } from './hooks/useChartOptions';
-import { useSupplyDemandAnalysis } from './hooks/useSupplyDemandAnalysis';
-import { ChartTooltip } from './ChartTooltip';
-import { AccuracyBadge } from '@/app/components/AccuracyBadge';
-
-export { volumeProfilePlugin };
-
-// Register ChartJS components and custom plugin
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, Decimation, volumeProfilePlugin);
+import { SMA_CONFIG, GHOST_FORECAST, FORECAST_CONE } from '@/app/constants';
 
 export interface StockChartProps {
   data: OHLCV[];
@@ -42,395 +37,319 @@ export interface StockChartProps {
   } | null;
 }
 
+interface TooltipData {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  sma?: number;
+}
+
 export const StockChart = memo(function StockChart({
-  data, indexData = [], height: propHeight, showVolume = true, showSMA = true, showBollinger = false, loading = false, error = null, market = 'usa', signal = null, accuracyData = null,
+  data,
+  indexData = [],
+  height = 400,
+  showVolume = true,
+  showSMA = true,
+  showBollinger = false,
+  loading = false,
+  error = null,
+  market = 'usa',
+  signal = null,
+  accuracyData = null,
 }: StockChartProps) {
-  const chartRef = useRef<ChartJS<'line'>>(null);
-  const [hoveredIdx, setHoveredIndex] = useState<number | null>(null);
-  const [settledIdx, setSettledIdx] = useState<number | null>(null); // For heavy layers
-  const isMountedRef = useRef(true);
-  const settledTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<IChartApi | null>(null);
+  const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+  const smaSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const upperBandRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const lowerBandRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const forecastUpperRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const forecastLowerRef = useRef<ISeriesApi<'Line'> | null>(null);
 
-  // Performance monitoring for the chart
-  const { trackInteraction } = usePerformanceMonitor({
-    slowRenderThreshold: 50, // Charts are more complex, allow more time
-    enableMemoryTracking: true,
-    onSlowRender: (metrics) => {
-      console.warn(`📈 StockChart Performance Issues:`, metrics);
-    }
-  });
+  const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
-  // 1. Data Preparation Hooks
-  const { actualData, optimizedData, normalizedIndexData, extendedData, forecastExtension } = useChartData(data, signal, indexData);
-  const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
-  
-  // Performance Optimization: Debounce the heavy forecast layer calculation
-  // React 19 Compliance: Avoid synchronous setState in effect to prevent cascading renders
-  useEffect(() => {
-    if (settledTimerRef.current) clearTimeout(settledTimerRef.current);
+  const convertToLWCData = useCallback((ohlcv: OHLCV[]): CandlestickData<Time>[] => {
+    return ohlcv.map((d) => ({
+      time: d.date as Time,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }));
+  }, []);
+
+  const convertToVolumeData = useCallback((ohlcv: OHLCV[]): HistogramData<Time>[] => {
+    return ohlcv.map((d) => ({
+      time: d.date as Time,
+      value: d.volume,
+      color: d.close >= d.open ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)',
+    }));
+  }, []);
+
+  const calculateSMA = useCallback((data: OHLCV[], period: number): LineData<Time>[] => {
+    const result: LineData<Time>[] = [];
+    if (data.length < period) return [];
     
-    // Schedule the update (either null or the hovered index) to avoid cascading renders
-    settledTimerRef.current = setTimeout(() => {
-      setSettledIdx(hoveredIdx);
-    }, hoveredIdx === null ? 0 : 150);
-
-    return () => {
-      if (settledTimerRef.current) clearTimeout(settledTimerRef.current);
-    };
-  }, [hoveredIdx]);
-
-  const { chartLevels } = useSupplyDemandAnalysis(data);
-  // Memoize accuracyData object to prevent unnecessary re-renders in useForecastLayers
-  const memoizedAccuracyData = useMemo(() => accuracyData ? {
-    predictionError: accuracyData.predictionError || 1.0
-  } : null, [accuracyData]);
-
-  const { ghostForecastDatasets, forecastDatasets } = useForecastLayers({
-    data: optimizedData, // Use optimized/reduced data for correct index alignment
-    extendedData,
-    signal,
-    market,
-    hoveredIdx: settledIdx, // Use debounced/settled index for heavy calculations!
-    accuracyData: memoizedAccuracyData,
-  });
-
-  // Enhanced cleanup with performance monitoring
-  useEffect(() => {
-    return () => {
-      // Cleanup Chart.js instance
-      if (chartRef.current) {
-        chartRef.current.destroy();
-        chartRef.current = null;
+    for (let i = period - 1; i < data.length; i++) {
+      let sum = 0;
+      for (let j = 0; j < period; j++) {
+        sum += data[i - j].close;
       }
-
-      isMountedRef.current = false;
-    };
+      result.push({
+        time: data[i].date as Time,
+        value: sum / period,
+      });
+    }
+    return result;
   }, []);
 
-  const mouseBlockRef = useRef(false);
-  const mouseBlockTimer = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastUpdateRef = useRef<number>(0);
-
-  // Use callback to ensure stable reference for useChartOptions
-  const handleMouseHover = useCallback((idx: number | null) => {
-    // If keyboard navigation is active (mouse blocked), ignore small mouse-driven hover updates
-    if (mouseBlockRef.current && idx !== null) {
-      return;
-    }
-
-    // Performance Optimization: Throttle updates to ~60fps (16ms)
-    const now = Date.now();
-    if (idx !== null && now - lastUpdateRef.current < 16) {
-      return;
-    }
+  const calculateBollingerBands = useCallback((
+    data: OHLCV[],
+    period: number,
+    stdDev: number
+  ): { upper: LineData<Time>[]; lower: LineData<Time>[] } => {
+    const upper: LineData<Time>[] = [];
+    const lower: LineData<Time>[] = [];
+    if (data.length < period) return { upper: [], lower: [] };
     
-    lastUpdateRef.current = now;
-    setHoveredIndex(idx);
+    for (let i = period - 1; i < data.length; i++) {
+      let sum = 0;
+      const prices: number[] = [];
+      for (let j = 0; j < period; j++) {
+        sum += data[i - j].close;
+        prices.push(data[i - j].close);
+      }
+      const sma = sum / period;
+      const variance = prices.reduce((acc, p) => acc + Math.pow(p - sma, 2), 0) / period;
+      const std = Math.sqrt(variance);
+      
+      upper.push({
+        time: data[i].date as Time,
+        value: sma + std * stdDev,
+      });
+      lower.push({
+        time: data[i].date as Time,
+        value: sma - std * stdDev,
+      });
+    }
+    return { upper, lower };
   }, []);
 
-  const lastMousePos = useRef({ x: 0, y: 0 });
-
-  const actualDataRef = useRef(actualData);
   useEffect(() => {
-    actualDataRef.current = actualData;
-  }, [actualData]);
+    if (!chartContainerRef.current || data.length === 0) return;
 
-  // Keyboard navigation for chart
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if focus is in an input or textarea
-      if (
-        document.activeElement instanceof HTMLInputElement ||
-        document.activeElement instanceof HTMLTextAreaElement ||
-        document.activeElement instanceof HTMLSelectElement
-      ) {
+    const chart = createChart(chartContainerRef.current, {
+      layout: {
+        background: { type: ColorType.Solid, color: '#131b23' },
+        textColor: '#92adc9',
+      },
+      grid: {
+        vertLines: { color: '#1f2937' },
+        horzLines: { color: '#1f2937' },
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
+        vertLine: {
+          color: '#6B7280',
+          width: 1,
+          style: 2,
+          labelBackgroundColor: '#1a2632',
+        },
+        horzLine: {
+          color: '#6B7280',
+          width: 1,
+          style: 2,
+          labelBackgroundColor: '#1a2632',
+        },
+      },
+      rightPriceScale: {
+        borderColor: '#233648',
+      },
+      timeScale: {
+        borderColor: '#233648',
+        timeVisible: true,
+      },
+      width: chartContainerRef.current.clientWidth,
+      height: height,
+    });
+
+    chartRef.current = chart;
+
+    const candleSeries = chart.addSeries(CandlestickSeries, {
+      upColor: '#22c55e',
+      downColor: '#ef4444',
+      borderDownColor: '#ef4444',
+      borderUpColor: '#22c55e',
+      wickDownColor: '#ef4444',
+      wickUpColor: '#22c55e',
+    });
+    candleSeriesRef.current = candleSeries as unknown as ISeriesApi<'Candlestick'>;
+
+    if (showVolume) {
+      const volumeSeries = chart.addSeries(HistogramSeries, {
+        priceFormat: { type: 'volume' },
+        priceScaleId: 'volume',
+      });
+      chart.priceScale('volume').applyOptions({
+        scaleMargins: { top: 0.8, bottom: 0 },
+      });
+      volumeSeriesRef.current = volumeSeries as unknown as ISeriesApi<'Histogram'>;
+    }
+
+    if (showSMA) {
+      const smaSeries = chart.addSeries(LineSeries, {
+        color: '#f59e0b',
+        lineWidth: 1,
+      });
+      smaSeriesRef.current = smaSeries as unknown as ISeriesApi<'Line'>;
+    }
+
+    if (showBollinger) {
+      const upperBand = chart.addSeries(LineSeries, {
+        color: 'rgba(147, 51, 234, 0.5)',
+        lineWidth: 1,
+        lineStyle: 2,
+      });
+      const lowerBand = chart.addSeries(LineSeries, {
+        color: 'rgba(147, 51, 234, 0.5)',
+        lineWidth: 1,
+        lineStyle: 2,
+      });
+      upperBandRef.current = upperBand as unknown as ISeriesApi<'Line'>;
+      lowerBandRef.current = lowerBand as unknown as ISeriesApi<'Line'>;
+    }
+
+    // Forecast cone series
+    const forecastUpper = chart.addSeries(LineSeries, {
+      color: 'rgba(59, 130, 246, 0.8)',
+      lineWidth: 2,
+      lineStyle: 2,
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+    const forecastLower = chart.addSeries(LineSeries, {
+      color: 'rgba(59, 130, 246, 0.8)',
+      lineWidth: 2,
+      lineStyle: 2,
+      lastValueVisible: false,
+      priceLineVisible: false,
+    });
+    forecastUpperRef.current = forecastUpper as unknown as ISeriesApi<'Line'>;
+    forecastLowerRef.current = forecastLower as unknown as ISeriesApi<'Line'>;
+
+    const handleResize = () => {
+      if (chartContainerRef.current) {
+        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
+    chart.subscribeCrosshairMove((param) => {
+      if (!param.time || !param.point) {
+        setTooltipVisible(false);
         return;
       }
 
-      const isArrowLeft = e.key === 'ArrowLeft';
-      const isArrowRight = e.key === 'ArrowRight';
-
-      if (!isArrowLeft && !isArrowRight) return;
-
-      // Force block mouse updates
-      mouseBlockRef.current = true;
-      e.preventDefault();
-
-      if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
-      mouseBlockTimer.current = setTimeout(() => {
-        mouseBlockRef.current = false;
-      }, 1500); 
-
-      setHoveredIndex(prev => {
-        const maxIdx = actualDataRef.current.prices.length - 1;
-        const currentIdx = prev === null ? maxIdx : prev;
-        
-        let nextIdx = currentIdx;
-        if (isArrowLeft) nextIdx = Math.max(0, currentIdx - 1);
-        if (isArrowRight) nextIdx = Math.min(maxIdx, currentIdx + 1);
-        
-        // Performance: For keyboard navigation, we can update settledIdx faster
-        // because it's a deliberate step action
-        if (nextIdx !== currentIdx) {
-          if (settledTimerRef.current) clearTimeout(settledTimerRef.current);
-          setSettledIdx(nextIdx);
-        }
-        
-        return nextIdx;
-      });
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
-    };
-  }, []); // Static dependency array
-
-  // Release mouse block on intentional mouse movement
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (mouseBlockRef.current) {
-        const dx = Math.abs(e.clientX - lastMousePos.current.x);
-        const dy = Math.abs(e.clientY - lastMousePos.current.y);
-        
-        // Block only intentional moves (> 10px)
-        if (dx > 10 || dy > 10) {
-          mouseBlockRef.current = false;
-          if (mouseBlockTimer.current) clearTimeout(mouseBlockTimer.current);
-        }
-      }
-      lastMousePos.current = { x: e.clientX, y: e.clientY };
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  // Ref for requestAnimationFrame to cancel pending frames
-  const rafRef = useRef<number | null>(null);
-
-  // Sync Chart.js active elements with hoveredIdx to visually move the points
-  useEffect(() => {
-    // Cancel any pending animation frame
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-    }
-
-    // Schedule the update for the next animation frame
-    rafRef.current = requestAnimationFrame(() => {
-      const chart = chartRef.current;
-      // Basic safety checks
-      if (!chart || hoveredIdx === null || !chart.data || !chart.data.datasets) return;
-
-      const activeElements: { datasetIndex: number; index: number }[] = [];
-
-      try {
-        // Find elements for the hovered index across all visible datasets
-        chart.data.datasets.forEach((dataset, datasetIndex) => {
-          // Validation: dataset must exist and have data
-          if (!dataset || !dataset.data) return;
-
-          const dataLength = dataset.data.length;
-          
-          // Ensure:
-          // 1. Dataset is visible
-          // 2. Index is within data bounds
-          // 3. Chart internal metadata for this dataset exists
-          if (
-            chart.isDatasetVisible(datasetIndex) && 
-            hoveredIdx >= 0 &&
-            hoveredIdx < dataLength &&
-            chart.getDatasetMeta(datasetIndex)
-          ) {
-            activeElements.push({ datasetIndex, index: hoveredIdx });
-          }
+      const candleData = param.seriesData.get(candleSeries) as CandlestickData;
+      if (candleData) {
+        const dateStr = String(param.time);
+        setTooltipData({
+          time: dateStr,
+          open: candleData.open,
+          high: candleData.high,
+          low: candleData.low,
+          close: candleData.close,
+          volume: 0,
         });
-
-        if (activeElements.length > 0) {
-          chart.setActiveElements(activeElements);
-          chart.update('none'); 
-        } else {
-          chart.setActiveElements([]);
-          chart.update('none');
-        }
-      } catch (err) {
-        // Ignore errors during synchronization to prevent app crash
-        console.warn('[StockChart] Sync failed:', err);
+        setTooltipPos({ x: param.point.x, y: param.point.y });
+        setTooltipVisible(true);
       }
     });
 
     return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+      chartRef.current = null;
     };
-  }, [hoveredIdx]);
+  }, [data.length, height, showVolume, showSMA, showBollinger]);
 
-  // Get current SMA value for tooltip
-  const currentSmaValue = useMemo(() => {
-    if (!showSMA || !sma20 || sma20.length === 0 || hoveredIdx === null) return undefined;
+  useEffect(() => {
+    if (!candleSeriesRef.current || data.length === 0) return;
     
-    // Boundary check for async data
-    if (hoveredIdx < 0 || hoveredIdx >= sma20.length) return undefined;
-    
-    return sma20[hoveredIdx];
-  }, [sma20, hoveredIdx, showSMA]);
+    const lwcData = convertToLWCData(data);
+    candleSeriesRef.current.setData(lwcData);
 
-  // Performance-optimized: Cache price range calculations
-  const priceRange = useMemo(() => {
-    if (!data || data.length === 0) return { min: 0, max: 0 };
+    if (volumeSeriesRef.current && showVolume) {
+      const volumeData = convertToVolumeData(data);
+      volumeSeriesRef.current.setData(volumeData);
+    }
 
-    const { min, max } = calculateChartMinMax(data, {
-      sma: showSMA ? sma20 : undefined,
-      upper: showBollinger ? upper : undefined,
-      lower: showBollinger ? lower : undefined,
-    });
+    if (smaSeriesRef.current && showSMA) {
+      const smaData = calculateSMA(data, SMA_CONFIG.MEDIUM_PERIOD || 20);
+      smaSeriesRef.current.setData(smaData);
+    }
 
-    return { min, max };
-  }, [data, sma20, upper, lower, showSMA, showBollinger]);
+    if (upperBandRef.current && lowerBandRef.current && showBollinger) {
+      const { upper, lower } = calculateBollingerBands(data, 20, 2);
+      upperBandRef.current.setData(upper);
+      lowerBandRef.current.setData(lower);
+    }
 
-  // 2. Chart Options Hook
-  const options = useChartOptions({
-    data,
-    extendedData,
-    market,
-    hoveredIdx,
-    setHoveredIndex: handleMouseHover,
-    signal,
-    priceRange,
-    supplyDemandLevels: chartLevels,
-    showVolume
-  });
-
-  // 3. Performance-optimized: Split datasets for better rendering
-  const priceDataset = useMemo(() => ({
-    label: `${market === 'japan' ? '株価' : 'Stock Price'}`,
-    // 実際の価格と未来の予測価格を結合して一本の線にする
-    data: [...actualData.prices, ...forecastExtension.forecastPrices],
-    borderColor: CHART_COLORS.PRICE.LINE,
-    backgroundColor: CHART_COLORS.PRICE.BACKGROUND,
-    borderWidth: 2,
-    pointRadius: 0,
-    pointHoverRadius: 4,
-    fill: true,
-    tension: 0.1,
-    yAxisID: 'y',
-    // 過去と未来の境界を視覚的に分けるためのセグメント設定（Chart.js機能）
-    segment: {
-      borderDash: (ctx: { p0?: { parsed?: { x: unknown } } }) => {
-        const x = ctx.p0?.parsed?.x;
-        return typeof x === 'number' && x >= actualData.prices.length - 1 ? [5, 5] : undefined;
-      },
-      borderColor: (ctx: { p0?: { parsed?: { x: unknown } } }) => {
-        const x = ctx.p0?.parsed?.x;
-        return typeof x === 'number' && x >= actualData.prices.length - 1 ? 'rgba(146, 173, 201, 0.8)' : undefined;
+    if (signal && forecastUpperRef.current && forecastLowerRef.current) {
+      const lastData = data[data.length - 1];
+      const forecastSteps = Math.min(FORECAST_CONE.STEPS || 30, 30);
+      const atr = signal.atr || lastData.close * (GHOST_FORECAST.DEFAULT_ATR_RATIO || 0.02);
+      const spreadMultiplier = 3.0 * (accuracyData?.predictionError || 1.0);
+      
+      const forecastUpperData: LineData<Time>[] = [];
+      const forecastLowerData: LineData<Time>[] = [];
+      
+      const baseDate = new Date(lastData.date);
+      
+      for (let i = 0; i <= forecastSteps; i++) {
+        const timeRatio = i / forecastSteps;
+        const momentum = signal.predictedChange ? signal.predictedChange / 100 : 0;
+        const centerPrice = lastData.close * (1 + momentum * timeRatio);
+        const spread = atr * timeRatio * spreadMultiplier;
+        
+        const futureDate = new Date(baseDate);
+        futureDate.setDate(futureDate.getDate() + i);
+        const timeStr = futureDate.toISOString().split('T')[0] as Time;
+        
+        forecastUpperData.push({ time: timeStr, value: centerPrice + spread });
+        forecastLowerData.push({ time: timeStr, value: centerPrice - spread });
+      }
+      
+      forecastUpperRef.current.setData(forecastUpperData);
+      forecastLowerRef.current.setData(forecastLowerData);
+      
+      if (chartRef.current) {
+        chartRef.current.timeScale().scrollToRealTime();
       }
     }
-  }), [actualData.prices, forecastExtension.forecastPrices, market]);
+  }, [data, signal, showVolume, showSMA, showBollinger, accuracyData, convertToLWCData, convertToVolumeData, calculateSMA, calculateBollingerBands]);
 
-  // Volume dataset
-  const volumeDataset = useMemo(() => showVolume && data.length > 0 ? {
-    label: 'Volume',
-    data: data.map(d => d.volume),
-    backgroundColor: data.map(d => d.close >= d.open ? 'rgba(34, 197, 94, 0.5)' : 'rgba(239, 68, 68, 0.5)'),
-    borderWidth: 0,
-    yAxisID: 'yVolume',
-    order: 10,
-  } : null, [showVolume, data]);
-
-  const smaDataset = useMemo(() => showSMA && sma20.length > 0 ? {
-    label: `SMA (${SMA_CONFIG.PERIOD})`,
-    data: sma20,
-    borderColor: CHART_COLORS.INDICATORS.SMA,
-    borderWidth: 1.5,
-    pointRadius: 0,
-    fill: false,
-    tension: 0.1,
-    yAxisID: 'y',
-  } : null, [showSMA, sma20]);
-
-  const bollingerDatasets = useMemo(() => showBollinger && upper.length > 0 && lower.length > 0 ? [
-    {
-      label: 'Bollinger Upper',
-      data: upper,
-      borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
-      borderWidth: 1,
-      borderDash: [5, 5],
-      pointRadius: 0,
-      fill: false,
-      yAxisID: 'y',
-    },
-    {
-      label: 'Bollinger Lower',
-      data: lower,
-      borderColor: CHART_COLORS.INDICATORS.BOLLINGER,
-      borderWidth: 1,
-      borderDash: [5, 5],
-      pointRadius: 0,
-      fill: '-1',
-      backgroundColor: CHART_COLORS.INDICATORS.BOLLINGER_FILL,
-      yAxisID: 'y',
-    }
-  ] : [], [showBollinger, upper, lower]);
-
-  const indexDataset = useMemo(() => normalizedIndexData ? {
-    label: market === 'japan' ? '日経平均 (正規化)' : 'S&P 500 (Normalized)',
-    data: normalizedIndexData,
-    borderColor: CHART_COLORS.INDEX.LINE,
-    borderWidth: 1,
-    pointRadius: 0,
-    fill: false,
-    tension: 0.1,
-    yAxisID: 'yIndex',
-  } : null, [normalizedIndexData, market]);
-
-  // 4. Assemble Chart Data with optimized memoization
-  const chartData = useMemo(() => {
-    const datasets = [
-      priceDataset,
-      ...(smaDataset ? [smaDataset] : []),
-      ...bollingerDatasets,
-      ...forecastDatasets,
-      ...ghostForecastDatasets,
-      ...(indexDataset ? [indexDataset] : []),
-      ...(volumeDataset ? [volumeDataset] : []),
-    ].filter(Boolean);
-
-    return {
-      labels: extendedData.labels,
-      datasets
-    };
-  }, [
-    extendedData.labels,
-    priceDataset,
-    smaDataset,
-    bollingerDatasets,
-    forecastDatasets,
-    ghostForecastDatasets,
-    indexDataset,
-    volumeDataset
-  ]);
-
-  // 4. Loading / Error States
   if (error) {
     return (
-      <div className={`relative w-full flex items-center justify-center ${CHART_THEME.ERROR.BACKGROUND} border ${CHART_THEME.ERROR.BORDER} rounded`} style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT }}>
+      <div className="w-full flex items-center justify-center bg-red-900/20 border border-red-500/30 rounded" style={{ height }}>
         <div className="text-center p-4">
-          <p className={`${CHART_THEME.ERROR.TEXT_TITLE} font-bold`}>データの取得に失敗しました</p>
-          <p className={`${CHART_THEME.ERROR.TEXT_DESC} text-sm mt-1`}>{error}</p>
+          <p className="text-red-400 font-bold">データの取得に失敗しました</p>
+          <p className="text-red-300 text-sm mt-1">{error}</p>
         </div>
       </div>
     );
   }
+
   if (loading || data.length === 0) {
     return (
-      <div className="relative w-full bg-[#131b23] border border-[#233648] rounded overflow-hidden" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT }}>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="relative w-12 h-12 mb-4">
-            <div className="absolute inset-0 border-2 border-primary/30 rounded-full"></div>
-            <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          </div>
+      <div className="w-full bg-[#131b23] border border-[#233648] rounded overflow-hidden" style={{ height }}>
+        <div className="flex items-center justify-center h-full">
           <p className="text-sm text-[#92adc9] animate-pulse">チャートデータを読み込み中...</p>
         </div>
       </div>
@@ -438,44 +357,29 @@ export const StockChart = memo(function StockChart({
   }
 
   return (
-    <div className="flex flex-col w-full h-full" style={{ height: propHeight || CHART_DIMENSIONS.DEFAULT_HEIGHT, minHeight: '300px', maxHeight: '600px' }}>
-      {/* Header Toolbar */}
-      <div className="flex items-center justify-end px-4 py-2 border-b border-[#233648] bg-[#1a2632]">
-        <AccuracyBadge
-          hitRate={accuracyData?.hitRate || 0}
-          totalTrades={accuracyData?.totalTrades || 0}
-          predictionError={accuracyData?.predictionError}
-          loading={accuracyData?.loading}
-        />
-      </div>
-
-      {/* Main Chart Area */}
-      <div className="relative flex-1 w-full overflow-hidden">
-        {/* Custom Tooltip */}
-        <ChartTooltip
-          hoveredIdx={hoveredIdx}
-          data={data}
-          labels={extendedData.labels}
-          market={market}
-          signal={signal}
-          showSMA={showSMA}
-          smaValue={currentSmaValue}
-        />
-
-        <Line
-          ref={chartRef}
-          data={chartData}
-          options={options}
-          onMouseDown={trackInteraction}
-          onMouseMove={trackInteraction}
-          onTouchStart={trackInteraction}
-        />
-        {showVolume && (
-          <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none">
-            <Bar data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }} />
+    <div className="relative w-full" style={{ height }}>
+      {tooltipVisible && tooltipData && (
+        <div
+          className="absolute z-50 bg-[#1a2632] border border-[#233648] rounded-lg p-3 shadow-lg pointer-events-none"
+          style={{
+            left: Math.min(tooltipPos.x + 10, (chartContainerRef.current?.clientWidth || 300) - 150),
+            top: Math.max(tooltipPos.y - 100, 10),
+          }}
+        >
+          <div className="text-xs text-[#92adc9] mb-1">{tooltipData.time}</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <span className="text-gray-400">始:</span>
+            <span className="text-white">¥{tooltipData.open.toLocaleString()}</span>
+            <span className="text-gray-400">高:</span>
+            <span className="text-green-400">¥{tooltipData.high.toLocaleString()}</span>
+            <span className="text-gray-400">安:</span>
+            <span className="text-red-400">¥{tooltipData.low.toLocaleString()}</span>
+            <span className="text-gray-400">終:</span>
+            <span className="text-white">¥{tooltipData.close.toLocaleString()}</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+      <div ref={chartContainerRef} className="w-full h-full" data-testid="line-chart" />
     </div>
   );
 });

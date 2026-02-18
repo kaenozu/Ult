@@ -1,52 +1,30 @@
-import { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
 import { Stock, OHLCV } from '@/app/types';
 import { calculateAIHitRate } from '@/app/lib/analysis';
 import { DATA_REQUIREMENTS } from '@/app/constants';
 import { logger } from '@/app/core/logger';
 
+// Zod Schema for API Response
+const HistoryResponseSchema = z.object({
+  data: z.array(z.any()).optional(), // Loose typing for now to match OHLCV structure later
+});
+
 export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
-  const [calculatingHitRate, setCalculatingHitRate] = useState(true);
-  const [preciseHitRate, setPreciseHitRate] = useState<{ hitRate: number, trades: number }>({ hitRate: 0, trades: 0 });
-  const [error, setError] = useState<string | null>(null);
-  const stockPrice = stock.price;
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const currentSymbol = stock.symbol;
+  const currentMarket = stock.market;
 
-  useEffect(() => {
-    let isMounted = true;
-    const currentSymbol = stock.symbol;
-    const currentMarket = stock.market;
-
-    // Cancel any in-flight request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    const calculateFullPerformance = async () => {
-      if (isMounted) {
-        setCalculatingHitRate(true);
-        setError(null);
-      }
-
-      if (!currentSymbol) {
-        if (isMounted) {
-          setCalculatingHitRate(false);
-        }
-        return;
-      }
+  const { data: preciseHitRate, isLoading, error } = useQuery({
+    queryKey: ['aiPerformance', currentSymbol, currentMarket],
+    queryFn: async () => {
+      // Simulate small network delay if needed, but better to remove artificial delays
+      
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      const startDate = oneYearAgo.toISOString().split('T')[0];
 
       try {
-        const delay = Math.random() * 200 + 100;
-        await new Promise(resolve => setTimeout(resolve, delay));
-
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-        const startDate = oneYearAgo.toISOString().split('T')[0];
-
-        const response = await fetch(`/api/market?type=history&symbol=${currentSymbol}&market=${currentMarket}&startDate=${startDate}`, {
-          signal: abortController.signal
-        });
+        const response = await fetch(`/api/market?type=history&symbol=${currentSymbol}&market=${currentMarket}&startDate=${startDate}`);
 
         if (!response.ok) {
           if (response.status === 429) {
@@ -55,90 +33,58 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
           throw new Error(`Failed to fetch history: ${response.statusText}`);
         }
 
-        const resultData = await response.json();
+        const rawData = await response.json();
+        const result = HistoryResponseSchema.safeParse(rawData);
 
-        if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket && !abortController.signal.aborted) {
-          if (resultData.data && resultData.data.length >= DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
-            const result = calculateAIHitRate(currentSymbol, resultData.data, currentMarket);
-            setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
-          } else {
-            logger.warn(
-              `Insufficient data for ${currentSymbol}: got ${resultData.data?.length || 0} records, using provided OHLCV (${ohlcv.length} records)`,
-              undefined,
-              'useAIPerformance'
-            );
+        if (!result.success) {
+          throw new Error('Invalid API response format');
+        }
 
-            let enhancedOHLCV = ohlcv;
-            if (ohlcv.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
-              const today = new Date();
-              const basePrice = ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].close : stockPrice || 100;
+        const resultData = result.data;
+        let targetData = resultData.data || [];
 
-              enhancedOHLCV = [...ohlcv];
-
-              for (let i = 1; i <= DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS; i++) {
-                const date = new Date(today);
-                date.setDate(today.getDate() - (DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS - i));
-
-                const randomVariation = (Math.random() - 0.5) * 0.1;
-                const price = basePrice * (1 + randomVariation);
-
-                enhancedOHLCV.push({
-                  date: date.toISOString().split('T')[0],
-                  open: price * (0.98 + Math.random() * 0.04),
-                  high: price * (1 + Math.random() * 0.03),
-                  low: price * (0.97 + Math.random() * 0.03),
-                  close: price,
-                  volume: Math.floor(Math.random() * 1000000) + 500000,
-                });
-              }
-
-              logger.info(
-                `Enhanced OHLCV data from ${ohlcv.length} to ${enhancedOHLCV.length} records for ${currentSymbol}`,
-                undefined,
-                'useAIPerformance'
-              );
-            }
-
-            const result = calculateAIHitRate(currentSymbol, enhancedOHLCV, currentMarket);
-            setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
+        // Data sufficiency check
+        if (targetData.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
+          logger.warn(
+            `Insufficient data for ${currentSymbol}: got ${targetData.length} records, falling back to local OHLCV`,
+            undefined,
+            'useAIPerformance'
+          );
+          
+          // Fallback logic
+          // Ideally, we should fetch more data or handle this gracefully.
+          // For now, use the passed OHLCV if it has more data, or just use what we have.
+          if (ohlcv.length > targetData.length) {
+            targetData = ohlcv;
           }
+          
+          // Artificial enhancement logic removed for better reliability
         }
-      } catch (e) {
-        if (e instanceof Error && e.name === 'AbortError') {
-          return;
-        }
+
+        const calcResult = calculateAIHitRate(currentSymbol, targetData as OHLCV[], currentMarket);
+        return { hitRate: calcResult.hitRate, trades: calcResult.totalTrades };
+
+      } catch (err) {
+        logger.error('Precise hit rate fetch failed', err instanceof Error ? err : new Error(String(err)), 'useAIPerformance');
         
-        logger.error(
-          'Precise hit rate fetch failed:',
-          e instanceof Error ? e : new Error(String(e)),
-          'useAIPerformance'
-        );
-
-        if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
-          try {
-             const result = calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
-             setPreciseHitRate({ hitRate: result.hitRate, trades: result.totalTrades });
-             setError(null);
-          } catch {
-             setError('的中率の計算に失敗しました');
-          }
-        }
-      } finally {
-        if (isMounted && stock.symbol === currentSymbol && stock.market === currentMarket) {
-          setCalculatingHitRate(false);
+        // Fallback calculation on error
+        try {
+          const calcResult = calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
+          return { hitRate: calcResult.hitRate, trades: calcResult.totalTrades };
+        } catch {
+          throw new Error('的中率の計算に失敗しました');
         }
       }
-    };
+    },
+    enabled: !!currentSymbol,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+    // Initial data from basic calculation if available?
+    // initialData: ... (Could add if ohlcv is sufficient)
+  });
 
-    calculateFullPerformance();
-
-    return () => {
-      isMounted = false;
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [stock.symbol, stock.market, stockPrice, ohlcv]);
-
-  return { preciseHitRate, calculatingHitRate, error };
+  return {
+    preciseHitRate: preciseHitRate || { hitRate: 0, trades: 0 },
+    calculatingHitRate: isLoading,
+    error: error instanceof Error ? error.message : (error ? String(error) : null),
+  };
 }

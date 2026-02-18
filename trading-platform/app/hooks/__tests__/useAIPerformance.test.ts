@@ -1,7 +1,8 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useAIPerformance } from '../useAIPerformance';
 import { Stock, OHLCV } from '@/app/types';
 import * as analysis from '@/app/lib/analysis';
+import { createWrapper } from '@/app/__tests__/utils/query-wrapper';
 
 // Mock dependencies
 jest.mock('@/app/lib/analysis');
@@ -39,27 +40,45 @@ describe('useAIPerformance', () => {
   });
 
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
     (analysis.calculateAIHitRate as unknown as jest.Mock).mockReturnValue({
       hitRate: 65.5,
       totalTrades: 10
     });
-  });
-
-  it('initializes with default values', () => {
-    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV));
-    expect(result.current.calculatingHitRate).toBe(true);
-    expect(result.current.preciseHitRate).toEqual({ hitRate: 0, trades: 0 });
-    expect(result.current.error).toBeNull();
-  });
-
-  it('fetches and calculates hit rate successfully', async () => {
-    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
+    // Default fetch mock
+    (global.fetch as unknown as jest.Mock).mockResolvedValue({
       ok: true,
       json: async () => ({ data: mockHistoryData })
     });
+  });
 
-    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV));
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('initializes with default values', async () => {
+    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV), {
+      wrapper: createWrapper(),
+    });
+    // With React Query, loading starts immediately, but data is undefined initially
+    expect(result.current.calculatingHitRate).toBe(true);
+    expect(result.current.preciseHitRate).toEqual({ hitRate: 0, trades: 0 });
+    expect(result.current.error).toBeNull();
+    
+    await act(async () => {
+      jest.runAllTimers();
+    });
+  });
+
+  it('fetches and calculates hit rate successfully', async () => {
+    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      jest.runAllTimers();
+    });
 
     await waitFor(() => {
       expect(result.current.calculatingHitRate).toBe(false);
@@ -77,16 +96,23 @@ describe('useAIPerformance', () => {
       json: async () => ({ data: shortData })
     });
 
-    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV));
+    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      jest.runAllTimers();
+    });
 
     await waitFor(() => {
       expect(result.current.calculatingHitRate).toBe(false);
     });
 
     expect(analysis.calculateAIHitRate).toHaveBeenCalledWith('7203', expect.any(Array), 'japan');
+    // We expect it to use API data if OHLCV is smaller, or OHLCV if larger.
+    // Here mockOHLCV has 1 record, API has 50. So it uses API (50).
     const callArgs = (analysis.calculateAIHitRate as jest.Mock).mock.calls[0];
-    // Combined API data (50) + fallback OHLCV data should exceed 50
-    expect(callArgs[1].length).toBeGreaterThanOrEqual(50);
+    expect(callArgs[1].length).toBe(50); 
   });
 
   it('handles API errors gracefully', async () => {
@@ -95,7 +121,13 @@ describe('useAIPerformance', () => {
       statusText: 'Internal Server Error'
     });
 
-    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV));
+    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      jest.runAllTimers();
+    });
 
     await waitFor(() => {
       expect(result.current.calculatingHitRate).toBe(false);
@@ -105,50 +137,9 @@ describe('useAIPerformance', () => {
     expect(analysis.calculateAIHitRate).toHaveBeenCalledWith('7203', mockOHLCV, 'japan');
   });
 
-  it.skip('prevents race condition when symbol changes during fetch', async () => {
-    let resolveFirstFetch: (value: { ok: boolean; json: () => Promise<{ data: unknown[] }> }) => void;
-    const firstFetchPromise = new Promise(resolve => {
-      resolveFirstFetch = resolve;
-    });
-
-    (global.fetch as unknown as jest.Mock).mockImplementationOnce(() => firstFetchPromise);
-
-    const { result, rerender } = renderHook(
-      ({ stock, ohlcv }) => useAIPerformance(stock, ohlcv),
-      {
-        initialProps: { stock: mockStock, ohlcv: mockOHLCV }
-      }
-    );
-
-    expect(result.current.calculatingHitRate).toBe(true);
-
-    const newStock: Stock = { ...mockStock, symbol: 'AAPL', market: 'usa' };
-    
-    (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ data: mockHistoryData })
-    });
-
-    rerender({ stock: newStock, ohlcv: mockOHLCV });
-
-    await waitFor(() => {
-      expect(result.current.calculatingHitRate).toBe(false);
-    }, { timeout: 5000 });
-
-    resolveFirstFetch!({
-      ok: true,
-      json: async () => ({ data: mockHistoryData })
-    });
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    const calls = (analysis.calculateAIHitRate as jest.Mock).mock.calls;
-    const lastCall = calls[calls.length - 1];
-    expect(lastCall[0]).toBe('AAPL');
-    expect(lastCall[2]).toBe('usa');
-  }, 10000);
-
   it('does not update state after unmount', async () => {
+    // React Query handles unmounting gracefully, so this test is less relevant but good for regression
+    // We can simulate a long delay
     (global.fetch as unknown as jest.Mock).mockImplementation(() =>
       new Promise(resolve => {
         setTimeout(() => {
@@ -160,17 +151,19 @@ describe('useAIPerformance', () => {
       })
     );
 
-    const { result, unmount } = renderHook(() => useAIPerformance(mockStock, mockOHLCV));
+    const { result, unmount } = renderHook(() => useAIPerformance(mockStock, mockOHLCV), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.calculatingHitRate).toBe(true);
 
-    // Unmount before fetch completes
     unmount();
 
-    // Wait for fetch to complete
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await act(async () => {
+      jest.runAllTimers();
+    });
 
-    // No state update should occur (no error thrown)
+    // React Query prevents updates on unmounted components
     expect(true).toBe(true);
   });
 
@@ -184,7 +177,13 @@ describe('useAIPerformance', () => {
       throw new Error('Calculation failed');
     });
 
-    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV));
+    const { result } = renderHook(() => useAIPerformance(mockStock, mockOHLCV), {
+      wrapper: createWrapper(),
+    });
+
+    await act(async () => {
+      jest.runAllTimers();
+    });
 
     await waitFor(() => {
       expect(result.current.calculatingHitRate).toBe(false);
@@ -194,6 +193,9 @@ describe('useAIPerformance', () => {
   });
 
   it('resets error state on new fetch', async () => {
+    // Note: React Query caching might affect this test if keys are same.
+    // We used 'retry: false' in wrapper, so error state persists until refetch.
+    
     // First fetch fails
     (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: false,
@@ -206,15 +208,20 @@ describe('useAIPerformance', () => {
     const { result, rerender } = renderHook(
       ({ stock, ohlcv }) => useAIPerformance(stock, ohlcv),
       {
-        initialProps: { stock: mockStock, ohlcv: mockOHLCV }
+        initialProps: { stock: mockStock, ohlcv: mockOHLCV },
+        wrapper: createWrapper(),
       }
     );
+
+    await act(async () => {
+      jest.runAllTimers();
+    });
 
     await waitFor(() => {
       expect(result.current.error).toBe('的中率の計算に失敗しました');
     });
     
-    // Second fetch succeeds
+    // Second fetch succeeds (Change stock to trigger new query key)
     (global.fetch as unknown as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ data: mockHistoryData })
@@ -226,6 +233,10 @@ describe('useAIPerformance', () => {
 
     const newStock: Stock = { ...mockStock, symbol: 'AAPL' };
     rerender({ stock: newStock, ohlcv: mockOHLCV });
+
+    await act(async () => {
+      jest.runAllTimers();
+    });
 
     await waitFor(() => {
       expect(result.current.error).toBeNull();
