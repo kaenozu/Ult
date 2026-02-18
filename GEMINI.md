@@ -89,6 +89,7 @@ The project utilizes several specialized skills located in `skills/`. Gemini age
 - `supply-demand-master.md`: Volume profile and supply/demand zone analysis.
 - `stock-universe-manager.md`: Managing the 100-stock universe with TDD.
 - `safe-process-manager.md`: Safe process management for development servers.
+- `project-stabilizer.md`: Post-merge stabilization, test fixes, and modern tech stack adoption (TanStack Query, Zod).
 
 ---
 
