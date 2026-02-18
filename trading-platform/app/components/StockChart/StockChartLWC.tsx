@@ -73,6 +73,28 @@ export const StockChartLWC = memo(function StockChartLWC({
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [chartWidth, setChartWidth] = useState(300); // Store chart width in state for React 19 compliance
+
+  // React 19 Compliance: Update chart width in effect instead of accessing ref during render
+  useEffect(() => {
+    const updateChartWidth = () => {
+      if (chartContainerRef.current) {
+        setChartWidth(chartContainerRef.current.clientWidth);
+      }
+    };
+    
+    updateChartWidth();
+    
+    // Update on resize
+    const resizeObserver = new ResizeObserver(updateChartWidth);
+    if (chartContainerRef.current) {
+      resizeObserver.observe(chartContainerRef.current);
+    }
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   const convertToLWCData = useCallback((ohlcv: OHLCV[]): CandlestickData<Time>[] => {
     return ohlcv.map((d) => ({
@@ -363,7 +385,7 @@ export const StockChartLWC = memo(function StockChartLWC({
         <div
           className="absolute z-50 bg-[#1a2632] border border-[#233648] rounded-lg p-3 shadow-lg pointer-events-none"
           style={{
-            left: Math.min(tooltipPos.x + 10, (chartContainerRef.current?.clientWidth || 300) - 150),
+            left: Math.min(tooltipPos.x + 10, chartWidth - 150),
             top: Math.max(tooltipPos.y - 100, 10),
           }}
         >

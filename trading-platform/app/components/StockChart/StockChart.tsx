@@ -65,20 +65,14 @@ export const StockChart = memo(function StockChart({
   const { sma20, upper, lower } = useTechnicalIndicators(extendedData.prices);
   
   // Performance Optimization: Debounce the heavy forecast layer calculation
-  // Increased debounce interval to 100ms for better performance
+  // React 19 Compliance: Avoid synchronous setState in effect to prevent cascading renders
   useEffect(() => {
     if (settledTimerRef.current) clearTimeout(settledTimerRef.current);
     
-    if (hoveredIdx === null) {
-      setSettledIdx(null);
-      return;
-    }
-
-    // Update the heavy layer only if mouse settles for 150ms
-    // This significantly reduces calculation frequency during fast mouse movements
+    // Schedule the update (either null or the hovered index) to avoid cascading renders
     settledTimerRef.current = setTimeout(() => {
       setSettledIdx(hoveredIdx);
-    }, 150);
+    }, hoveredIdx === null ? 0 : 150);
 
     return () => {
       if (settledTimerRef.current) clearTimeout(settledTimerRef.current);
