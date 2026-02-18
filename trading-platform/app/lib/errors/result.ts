@@ -31,9 +31,9 @@ import { handleError } from './handlers';
  * 
  * const result = divide(10, 2);
  * if (result.isOk) {
- *   console.log('Result:', result.value);
+ *   devLog('Result:', result.value);
  * } else {
- *   console.error('Error:', result.error);
+ *   devError('Error:', result.error);
  * }
  * ```
  */

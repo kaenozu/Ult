@@ -5,6 +5,11 @@
  * メインスレッドをブロックせずに重い計算を実行
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 interface MLPredictionRequest {
@@ -144,7 +149,7 @@ export class MLWorkerManager {
    * Workerエラーを処理
    */
   private handleError(error: ErrorEvent): void {
-    console.error('[MLWorkerManager] Worker error:', error);
+    devError('[MLWorkerManager] Worker error:', error);
     this.metrics.workerErrors++;
 
     // 保留中の全リクエストを拒否
@@ -339,7 +344,7 @@ export async function predictWithFallback(
     const manager = getMLWorkerManager();
     return await manager.predict(modelType, features);
   } catch (error) {
-    console.warn('[MLWorker] Falling back to main thread:', error);
+    devWarn('[MLWorker] Falling back to main thread:', error);
 
     // フォールバック: 簡易的な予測
     // 実際の実装では、メインスレッドでもTensorFlowを読み込む

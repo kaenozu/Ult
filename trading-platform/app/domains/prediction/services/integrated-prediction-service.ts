@@ -5,6 +5,11 @@
  * This service orchestrates feature calculation, prediction, and signal generation.
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
 import { FeatureCalculationService } from './feature-calculation-service';
 import { enhancedMLService } from './enhanced-ml-service';
@@ -291,7 +296,7 @@ export class IntegratedPredictionService {
     // Check if retraining is needed
     const stats = enhancedMLService.getModelStats();
     if (stats.drift.driftDetected) {
-      console.log(`Drift detected for ${symbol}. Consider retraining models.`);
+      devLog(`Drift detected for ${symbol}. Consider retraining models.`);
       // In production, this could trigger automatic retraining
     }
   }
@@ -340,7 +345,7 @@ export class IntegratedPredictionService {
    */
   async retrainModels(): Promise<void> {
     await enhancedMLService.triggerRetrain();
-    console.log('Models retrained successfully');
+    devLog('Models retrained successfully');
   }
 }
 

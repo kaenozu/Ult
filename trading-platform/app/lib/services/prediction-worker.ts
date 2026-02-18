@@ -5,6 +5,11 @@
  * for better UI responsiveness
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { OHLCV, Signal } from '@/app/types';
 import { PredictionFeatures } from './feature-calculation-service';
 import { PatternFeatures } from './candlestick-pattern-service';
@@ -194,10 +199,10 @@ export class PredictionWorker {
       };
 
       this.worker.onerror = (error) => {
-        console.error('Prediction worker error:', error);
+        devError('Prediction worker error:', error);
       };
     } catch (error) {
-      console.error('Failed to initialize prediction worker:', error);
+      devError('Failed to initialize prediction worker:', error);
     }
   }
 

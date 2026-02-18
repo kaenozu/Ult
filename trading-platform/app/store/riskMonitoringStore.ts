@@ -5,6 +5,11 @@
  * リアルタイムリスク計算結果と設定を管理します
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
@@ -141,7 +146,7 @@ export const useRiskMonitoringStore = create<RiskMonitoringState>()(
           if (state.autoReducePositions && 
               riskMetrics.currentDrawdown >= config.maxDrawdownPercent * 0.9) {
             // ポジション縮小シグナル（実際の縮小は外部で処理）
-            console.warn('[RiskMonitoring] Position reduction recommended');
+            devWarn('[RiskMonitoring] Position reduction recommended');
           }
         }
         

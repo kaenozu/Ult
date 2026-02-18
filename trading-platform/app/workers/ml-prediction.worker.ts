@@ -5,6 +5,11 @@
  * UIの応答性を維持しながら重い計算を実行
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import type * as tf from '@tensorflow/tfjs';
 
 type TensorFlowModule = typeof tf;
@@ -238,4 +243,4 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
 };
 
 // Worker初期化完了を通知
-console.log('[MLWorker] Web Worker initialized');
+devLog('[MLWorker] Web Worker initialized');
