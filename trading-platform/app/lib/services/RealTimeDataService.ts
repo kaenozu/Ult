@@ -1,6 +1,10 @@
 import { spawn } from 'child_process';
 import path from 'path';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 export interface RealTimeQuote {
   symbol: string;
   price: number | null;
@@ -53,11 +57,11 @@ export class RealTimeDataService {
             resolve(result);
           } catch (e) {
             // Fallback if parsing fails
-            console.warn(`[RealTimeDataService] Scraper output parse error: ${e}. Falling back to Yahoo Finance.`);
+            devWarn(`[RealTimeDataService] Scraper output parse error: ${e}. Falling back to Yahoo Finance.`);
             resolve(this.fetchFromYahooFinance(symbol));
           }
         } else {
-          console.warn(`[RealTimeDataService] Scraper failed (code ${code}): ${error}. Falling back to Yahoo Finance.`);
+          devWarn(`[RealTimeDataService] Scraper failed (code ${code}): ${error}. Falling back to Yahoo Finance.`);
           resolve(this.fetchFromYahooFinance(symbol));
         }
       });
@@ -66,7 +70,7 @@ export class RealTimeDataService {
       setTimeout(() => {
         if (!python.killed) {
           python.kill();
-          console.warn(`[RealTimeDataService] Scraper timed out. Falling back.`);
+          devWarn(`[RealTimeDataService] Scraper timed out. Falling back.`);
           resolve(this.fetchFromYahooFinance(symbol));
         }
       }, 5000);
@@ -85,7 +89,7 @@ export class RealTimeDataService {
       const yahooSymbol = symbol.endsWith('.T') ? symbol : `${symbol}.T`;
       const quote = (await yf.quote(yahooSymbol)) as any;
 
-      console.log(`[RealTimeDataService] Raw Yahoo Finance Quote for ${yahooSymbol}:`, quote);
+      devLog(`[RealTimeDataService] Raw Yahoo Finance Quote for ${yahooSymbol}:`, quote);
 
       if (!quote) return null;
 
@@ -99,7 +103,7 @@ export class RealTimeDataService {
 
       return result;
     } catch (err) {
-      console.error('[RealTimeDataService] Fallback failed:', err);
+      devError('[RealTimeDataService] Fallback failed:', err);
       return null;
     }
   }

@@ -15,6 +15,10 @@ import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { TIME_INTERVALS } from '@/app/constants/common';
 import pLimit from 'p-limit';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+
 // レビュー対応: マジックナンバーを定数化
 const MIN_DATA_REQUIRED = 50;  // 最低必要データ件数
 const DUAL_SCORE_WEIGHT_PERF = 0.5;  // パフォーマンススコア重み
@@ -198,7 +202,7 @@ export class PerformanceScreenerService {
         }
       } catch (error) {
         // 個別銘柄の評価失敗はログに記録して継続
-        console.warn(`[PerformanceScreener] Failed to evaluate ${ds.symbol}:`, error);
+        devWarn(`[PerformanceScreener] Failed to evaluate ${ds.symbol}:`, error);
       }
     })));
 
@@ -384,7 +388,7 @@ export class PerformanceScreenerService {
           perfScore.winRate >= minWinRate &&
           perfScore.profitFactor >= minProfitFactor;
 
-        console.log(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}%, dualScore=${dualScore.toFixed(1)}, trades=${perfScore.totalTrades} → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
+        devLog(`[DualMatch] ${ds.symbol}: perfScore=${pScoreValue.toFixed(1)}, aiType=${finalType}, aiConf=${finalConfidence.toFixed(1)}%, dualScore=${dualScore.toFixed(1)}, trades=${perfScore.totalTrades} → ${isDualCandidate ? '✅ MATCH' : '❌'}`);
 
         if (isDualCandidate) {
           // Promise並列実行中のpushは競合しない（JSシングルスレッド）が、念のため
@@ -404,7 +408,7 @@ export class PerformanceScreenerService {
           aiSignalResults.push(aiResult);
         }
       } catch (err) {
-        console.warn(`[PerformanceScreener] Dual scan failed for ${ds.symbol}:`, err);
+        devWarn(`[PerformanceScreener] Dual scan failed for ${ds.symbol}:`, err);
       }
     })));
 
@@ -456,17 +460,17 @@ export class PerformanceScreenerService {
     const cacheKey = `${symbol}:${lookbackDays}`;
     const cached = this.cache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL_MS) {
-      console.log(`[PerformanceScreener] Cache hit for ${symbol}`);
+      devLog(`[PerformanceScreener] Cache hit for ${symbol}`);
       return cached.result;
     }
 
     // データ取得
-    console.log(`[PerformanceScreener] Fetching data for ${symbol} (market: ${market}, lookbackDays: ${lookbackDays})`);
+    devLog(`[PerformanceScreener] Fetching data for ${symbol} (market: ${market}, lookbackDays: ${lookbackDays})`);
     const data = await fetchData();
-    console.log(`[PerformanceScreener] Data fetched for ${symbol}: ${data.length} records (need ${lookbackDays})`);
+    devLog(`[PerformanceScreener] Data fetched for ${symbol}: ${data.length} records (need ${lookbackDays})`);
 
     if (data.length < lookbackDays) {
-      console.warn(`[PerformanceScreener] Insufficient data for ${symbol}: ${data.length} < ${lookbackDays}`);
+      devWarn(`[PerformanceScreener] Insufficient data for ${symbol}: ${data.length} < ${lookbackDays}`);
       return null;
     }
 
@@ -690,7 +694,7 @@ export class PerformanceScreenerService {
         }
 
         // Debug logging for each stock
-        console.log(`[AISignal] ${ds.symbol}: Tech=${consensus.type}(${consensus.confidence.toFixed(0)}%), ML=${mlSignal.type}(${mlSignal.confidence.toFixed(0)}%), Change=${mlSignal.predictedChange}%`);
+        devLog(`[AISignal] ${ds.symbol}: Tech=${consensus.type}(${consensus.confidence.toFixed(0)}%), ML=${mlSignal.type}(${mlSignal.confidence.toFixed(0)}%), Change=${mlSignal.predictedChange}%`);
 
         // Update debug stats
         debugStats.total++;
@@ -735,14 +739,14 @@ export class PerformanceScreenerService {
           allResults.push(aiResult);
         }
       } catch (error) {
-        console.warn(`[PerformanceScreener] AI signal failed for ${ds.symbol}:`, error);
+        devWarn(`[PerformanceScreener] AI signal failed for ${ds.symbol}:`, error);
       }
     })));
 
     // Log debug summary
-    console.log(`[AISignal Summary] Total scanned: ${debugStats.total}, BUY: ${debugStats.buy}, SELL: ${debugStats.sell}, HOLD: ${debugStats.hold}`);
+    devLog(`[AISignal Summary] Total scanned: ${debugStats.total}, BUY: ${debugStats.buy}, SELL: ${debugStats.sell}, HOLD: ${debugStats.hold}`);
     if (maxBuyConfidence > 0) {
-      console.log(`[AISignal Max Confidence BUY] Symbol: ${maxBuySymbol}, Confidence: ${maxBuyConfidence.toFixed(1)}%`);
+      devLog(`[AISignal Max Confidence BUY] Symbol: ${maxBuySymbol}, Confidence: ${maxBuyConfidence.toFixed(1)}%`);
     }
 
     // 信頼度でソート（降順）

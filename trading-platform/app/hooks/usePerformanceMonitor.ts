@@ -7,6 +7,10 @@
 
 import { useEffect, useRef, useCallback, useState, createElement } from 'react';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 interface PerformanceMetrics {
   renderTime: number;
   renderCount: number;
@@ -75,7 +79,7 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
       // Check for slow renders
       if (renderTime > slowRenderThreshold) {
         slowRenderCount.current++;
-        console.warn(`🐌 Slow render detected: ${renderTime.toFixed(2)}ms (threshold: ${slowRenderThreshold}ms)`);
+        devWarn(`🐌 Slow render detected: ${renderTime.toFixed(2)}ms (threshold: ${slowRenderThreshold}ms)`);
 
         if (onSlowRenderRef.current) {
           onSlowRenderRef.current({
@@ -93,7 +97,7 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
       if (enableMemoryTracking && 'memory' in performance) {
         const memory = (performance as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
         if (memory && memory.usedJSHeapSize > memory.jsHeapSizeLimit * 0.9) {
-          console.warn(`⚠️ High memory usage: ${((memory.usedJSHeapSize / 1024 / 1024).toFixed(2))}MB`);
+          devWarn(`⚠️ High memory usage: ${((memory.usedJSHeapSize / 1024 / 1024).toFixed(2))}MB`);
         }
       }
 
@@ -135,7 +139,7 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
 
     // Log slow interactions
     if (responsiveness > 300) { // 300ms threshold for user interactions
-      console.warn(`🐌 Slow interaction detected: ${responsiveness}ms`);
+      devWarn(`🐌 Slow interaction detected: ${responsiveness}ms`);
     }
   }, [enableInteractionTracking]);
 
@@ -191,7 +195,7 @@ export function withPerformanceMonitor<T extends object>(
       slowRenderThreshold: 50,
       ...options,
       onSlowRender: (metrics) => {
-        console.warn(`📊 ${displayName} Performance Issues:`, getPerformanceSummary());
+        devWarn(`📊 ${displayName} Performance Issues:`, getPerformanceSummary());
         options?.onSlowRender?.(metrics);
       }
     });
@@ -245,7 +249,7 @@ class GlobalPerformanceMonitor {
       );
 
       if (largeDOMChanges.length > 0) {
-        console.warn('⚠️ Large DOM changes detected:', largeDOMChanges.length);
+        devWarn('⚠️ Large DOM changes detected:', largeDOMChanges.length);
       }
     });
 
@@ -263,9 +267,9 @@ class GlobalPerformanceMonitor {
         if (memory) {
           const usagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
           if (usagePercent > 80) {
-            console.error(`🚨 Critical memory usage: ${usagePercent.toFixed(1)}%`);
+            devError(`🚨 Critical memory usage: ${usagePercent.toFixed(1)}%`);
           } else if (usagePercent > 60) {
-            console.warn(`⚠️ High memory usage: ${usagePercent.toFixed(1)}%`);
+            devWarn(`⚠️ High memory usage: ${usagePercent.toFixed(1)}%`);
           }
         }
       }, 30000); // Check every 30 seconds

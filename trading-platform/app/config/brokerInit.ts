@@ -13,6 +13,10 @@ import {
   isBrokerConfigured,
 } from '../lib/brokers';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 let initialized = false;
 
 /**
@@ -20,12 +24,12 @@ let initialized = false;
  */
 export async function initializeBrokerSystem(): Promise<void> {
   if (initialized) {
-    console.log('Broker system already initialized');
+    devLog('Broker system already initialized');
     return;
   }
 
   try {
-    console.log('Initializing broker system...');
+    devLog('Initializing broker system...');
 
     // Load configuration from environment
     const config = loadBrokerConfigFromEnv();
@@ -33,7 +37,7 @@ export async function initializeBrokerSystem(): Promise<void> {
     // Validate configuration
     const errors = validateBrokerConfig(config);
     if (errors.length > 0) {
-      console.error('Broker configuration errors:', errors);
+      devError('Broker configuration errors:', errors);
       throw new Error(`Broker configuration invalid: ${errors.join(', ')}`);
     }
 
@@ -47,12 +51,12 @@ export async function initializeBrokerSystem(): Promise<void> {
       return `  - ${name} ${mode}`;
     });
 
-    console.log('Configured brokers:');
-    console.log(configuredBrokers.join('\n'));
-    console.log(`Default broker: ${getBrokerDisplayName(config.defaultBroker)}`);
+    devLog('Configured brokers:');
+    devLog(configuredBrokers.join('\n'));
+    devLog(`Default broker: ${getBrokerDisplayName(config.defaultBroker)}`);
 
     // Connect to all brokers
-    console.log('Connecting to brokers...');
+    devLog('Connecting to brokers...');
     await executor.connectAll();
 
     // Verify connections
@@ -64,12 +68,12 @@ export async function initializeBrokerSystem(): Promise<void> {
       throw new Error('Failed to connect to any broker');
     }
 
-    console.log('Connected brokers:', connectedBrokers.join(', '));
+    devLog('Connected brokers:', connectedBrokers.join(', '));
 
     initialized = true;
-    console.log('✓ Broker system initialized successfully');
+    devLog('✓ Broker system initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize broker system:', error);
+    devError('Failed to initialize broker system:', error);
     throw error;
   }
 }
@@ -113,7 +117,7 @@ if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
   // Only initialize in browser, not during SSR
   if (process.env.NEXT_PUBLIC_AUTO_INIT_BROKER !== 'false') {
     initializeBrokerSystem().catch(error => {
-      console.error('Auto-initialization failed:', error);
+      devError('Auto-initialization failed:', error);
     });
   }
 }
