@@ -14,8 +14,8 @@ import type { MarketData } from '@/app/types/data-quality';
 import type { OHLCV } from '@/app/types/shared';
 
 const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 export interface DataSource {
   id: string;

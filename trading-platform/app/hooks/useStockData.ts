@@ -15,10 +15,10 @@ import { IMarketDataHub } from '@/app/lib/interfaces/IMarketDataHub';
 import { initializeContainer } from '@/app/lib/di/initialize';
 
 const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
-const devDebug = (...args: unknown[]) => { if (isDev) devDebug(...args); };
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+const devDebug = (...args: unknown[]) => { if (isDev) console.debug(...args); };
 
 interface MarketDataMetadata {
   // ... (rest of the interface)

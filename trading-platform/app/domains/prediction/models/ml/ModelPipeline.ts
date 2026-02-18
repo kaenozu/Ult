@@ -13,9 +13,9 @@ import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 
 const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 // Security: Define validation constants
 const VALIDATION_LIMITS = {

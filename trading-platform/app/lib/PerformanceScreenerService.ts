@@ -16,8 +16,8 @@ import { TIME_INTERVALS } from '@/app/constants/common';
 import pLimit from 'p-limit';
 
 const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
 
 // レビュー対応: マジックナンバーを定数化
 const MIN_DATA_REQUIRED = 50;  // 最低必要データ件数
