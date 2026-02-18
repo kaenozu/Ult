@@ -404,6 +404,3 @@ export async function quickStartExample(): Promise<void> {
   await basicTrainingExample(marketData);
   
 }
-
-// Uncomment to run:
-// quickStartExample().catch(console.error);
