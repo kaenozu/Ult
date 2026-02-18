@@ -66,8 +66,9 @@ export function PerformanceDashboard() {
     // 予測サービス情報
     const predMetrics = enhancedPredictionService.getPerformanceMetrics();
     
-    setMetrics({
-      renderCount: metrics.renderCount, // これは実際のモニタリングから取得
+    setMetrics(prevMetrics => ({
+      ...prevMetrics,
+      renderCount: prevMetrics.renderCount, // これは実際のモニタリングから取得
       averageRenderTime: 0,
       slowRenders: 0,
       usedJSHeapSize: memory?.usedJSHeapSize || 0,
@@ -75,11 +76,8 @@ export function PerformanceDashboard() {
       cacheHitRate: predMetrics.cacheHits / Math.max(predMetrics.totalCalculations, 1),
       cacheSize: cacheStats.size,
       predictionMetrics: predMetrics,
-      lcp: metrics.lcp,
-      fid: metrics.fid,
-      cls: metrics.cls
-    });
-  }, [metrics]);
+    }));
+  }, []);
   
   // 定期的なメトリクス更新
   useEffect(() => {

@@ -18,7 +18,6 @@ const IMAGE_CACHE = `ult-images-${CACHE_VERSION}`;
 // プリキャッシュする静的アセット
 const PRECACHE_ASSETS = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/favicon.ico',
   // 主要なJS/CSSチャンクはビルド時に自動的に追加される

@@ -33,11 +33,12 @@ for file in .github/workflows/*.yml; do
   
   # Basic syntax check using Python if available
   if command -v python3 &> /dev/null; then
-    python3 -c "
+    FILE_PATH="$file" python3 -c "
 import sys
+import os
 try:
     import yaml
-    with open('$file', 'r') as f:
+    with open(os.environ['FILE_PATH'], 'r') as f:
         yaml.safe_load(f)
     print('  ✅ YAML syntax valid')
 except Exception as e:

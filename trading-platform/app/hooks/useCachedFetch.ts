@@ -351,6 +351,3 @@ export function usePolling<T>(
   
   return data;
 }
-
-// useReducerをインポート
-import { useReducer } from 'react';
