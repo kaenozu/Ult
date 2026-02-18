@@ -10,6 +10,21 @@ import { sanitizeSymbol, sanitizeText } from '@/app/lib/security/InputSanitizer'
 
 // --- Zod Schemas ---
 
+const ConfigUpdateSchema = z.object({
+  mode: z.enum(['live', 'paper', 'backtest']).optional(),
+  initialCapital: z.number().positive().optional(),
+  riskLimits: z.object({
+    maxPositionSize: z.number().positive().optional(),
+    maxDailyLoss: z.number().positive().optional(),
+    maxDrawdown: z.number().positive().max(100).optional(),
+  }).optional(),
+  aiEnabled: z.boolean().optional(),
+  sentimentEnabled: z.boolean().optional(),
+  autoTrading: z.boolean().optional(),
+  exchanges: z.array(z.string()).optional(),
+  symbols: z.array(z.string()).optional(),
+});
+
 const TradingActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('start') }),
   z.object({ action: z.literal('stop') }),
@@ -35,7 +50,7 @@ const TradingActionSchema = z.discriminatedUnion('action', [
   }),
   z.object({
     action: z.literal('update_config'),
-    config: z.record(z.string(), z.unknown()),
+    config: ConfigUpdateSchema,
   }),
 ]);
 
