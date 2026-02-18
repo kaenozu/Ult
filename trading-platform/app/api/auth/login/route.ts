@@ -4,18 +4,7 @@ import { handleApiError } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
-// Demo users (shared with register route)
-interface User {
-  id: string;
-  email: string;
-  passwordHash: string;
-  name: string;
-  createdAt: string;
-  role: 'user' | 'admin';
-}
-
-const users: Map<string, User> = new Map();
+import { authStore } from '@/app/lib/auth-store';
 
 // JWT secret
 const JWT_SECRET = process.env.JWT_SECRET || 'demo-secret-change-in-production';
@@ -79,7 +68,7 @@ export async function POST(request: NextRequest) {
     const { email, password } = result.data;
 
     // Find user
-    const user = users.get(email.toLowerCase());
+    const user = authStore.getUser(email);
     
     if (!user) {
       // Don't reveal whether email exists

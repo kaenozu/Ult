@@ -169,23 +169,26 @@ describe('MLPredictionService', () => {
     });
 
     it('should generate BUY signal for positive prediction', () => {
-      // Create rising prices for positive prediction
-      const risingOHLCV = Array.from({ length: 50 }, (_, i) => ({
-        symbol: 'AAPL',
-        date: `2024-01-${String(i + 1).padStart(2, '0')}`,
-        open: 100 + i,
-        high: 102 + i,
-        low: 98 + i,
-        close: 101 + i,
-        volume: 1000000,
-      }));
+      // Create V-shaped recovery prices (starts low, then rises) to ensure low RSI + positive momentum
+      const risingOHLCV = Array.from({ length: 50 }, (_, i) => {
+        const price = i < 40 ? 100 - i * 0.1 : 96 + (i - 40) * 0.5;
+        return {
+          symbol: 'AAPL',
+          date: `2024-01-${String(i + 1).padStart(2, '0')}`,
+          open: price - 0.5,
+          high: price + 0.5,
+          low: price - 1,
+          close: price,
+          volume: 1000000,
+        };
+      });
 
       const indicators = mlPredictionService.calculateIndicators(risingOHLCV);
       const prediction = mlPredictionService.predict(mockStock, risingOHLCV, indicators);
       const signal = mlPredictionService.generateSignal(mockStock, risingOHLCV, prediction, indicators);
 
-      // With strong momentum, signal should be BUY
-      expect(['BUY', 'HOLD']).toContain(signal.type);
+      // With moderate positive momentum, signal should be BUY or HOLD (not SELL)
+      expect(signal.type).not.toBe('SELL');
     });
 
     it('should generate SELL signal for negative prediction', () => {
@@ -204,8 +207,8 @@ describe('MLPredictionService', () => {
       const prediction = mlPredictionService.predict(mockStock, fallingOHLCV, indicators);
       const signal = mlPredictionService.generateSignal(mockStock, fallingOHLCV, prediction, indicators);
 
-      // With negative momentum, signal should be SELL
-      expect(['SELL', 'HOLD']).toContain(signal.type);
+      // With negative momentum, signal should be SELL or HOLD (not BUY)
+      expect(signal.type).not.toBe('BUY');
     });
 
     it('should set targetPrice > entryPrice for BUY signal', () => {
