@@ -27,7 +27,10 @@ describe('GET /api/market/realtime', () => {
 
   it('should return 401 if unauthorized', async () => {
     (requireAuth as jest.Mock).mockReturnValue({ status: 401 });
-    const req = { url: '...', nextUrl: new URL('http://localhost:3000/api/market/realtime') } as any;
+    const req = {
+      url: 'http://localhost:3000/api/market/realtime',
+      nextUrl: new URL('http://localhost:3000/api/market/realtime'),
+    } as any;
     const res = await GET(req);
     expect(res.status).toBe(401);
   });

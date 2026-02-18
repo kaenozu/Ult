@@ -85,8 +85,8 @@ describe('useAIPerformance', () => {
 
     expect(analysis.calculateAIHitRate).toHaveBeenCalledWith('7203', expect.any(Array), 'japan');
     const callArgs = (analysis.calculateAIHitRate as jest.Mock).mock.calls[0];
-    // Combined API data (50) + fallback OHLCV data should exceed 50
-    expect(callArgs[1].length).toBeGreaterThanOrEqual(50);
+    // Fallback generates LOOKBACK_PERIOD_DAYS (60) records from the provided OHLCV
+    expect(callArgs[1].length).toBeGreaterThanOrEqual(60);
   });
 
   it('handles API errors gracefully', async () => {
