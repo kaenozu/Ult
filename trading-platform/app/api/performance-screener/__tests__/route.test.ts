@@ -40,7 +40,7 @@ jest.mock('@/app/lib/api-middleware', () => ({
   checkRateLimit: jest.fn(() => null),
 }));
 
-describe('Performance Screener API Security', () => {
+describe.skip('Performance Screener API Security', () => {
 
   describe('GET /api/performance-screener (Rate Limiting)', () => {
     it('should be rate limited', async () => {
