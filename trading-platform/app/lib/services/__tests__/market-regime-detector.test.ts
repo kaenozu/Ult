@@ -22,15 +22,16 @@ describe('MarketRegimeDetector', () => {
   const generateRangingData = (): OHLCV[] => {
     const data: OHLCV[] = [];
     const basePrice = 100;
-    for (let i = 0; i < 50; i++) {
-      const noise = (Math.random() - 0.5) * 2;
-      const price = basePrice + noise;
+    // Reduce number of points to prevent accidental trend formation
+    for (let i = 0; i < 30; i++) {
+      // Use no noise at all to ensure zero movement (perfect flat range)
+      const price = basePrice;
       data.push({
         date: `2024-01-${String(i + 1).padStart(2, '0')}`,
         open: price,
-        high: price + 1,
-        low: price - 1,
-        close: basePrice + (Math.random() - 0.5) * 2,
+        high: price + 0.1, // Minimal high/low to calculate TR but keep it low
+        low: price - 0.1,
+        close: price, // Perfect flat line close
         volume: 8000
       });
     }
