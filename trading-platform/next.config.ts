@@ -8,7 +8,18 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '**.yahoo.com',
+        hostname: 'query1.finance.yahoo.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'query2.finance.yahoo.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 's.yimg.com',
+        pathname: '/**',
       },
     ],
   },

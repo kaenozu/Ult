@@ -185,14 +185,33 @@ export function useStockData() {
               type: signalResult.data.type,
               predictedChange: signalResult.data.predictedChange
             });
-            setChartSignal(signalResult.data);
+            
+            // Optimization: Only update if content changed to prevent redundant re-renders
+            setChartSignal(prev => {
+              if (prev && 
+                  prev.type === signalResult.data!.type && 
+                  prev.targetPrice === signalResult.data!.targetPrice &&
+                  prev.confidence === signalResult.data!.confidence) {
+                return prev;
+              }
+              return signalResult.data!;
+            });
           } else {
             console.warn(`[useStockData] Signal from API is ${isFlatSignal ? 'flat' : 'unsuccessful'}, using fallback consensus.`);
             // Fallback: generate consensus signal locally using technical analysis
             try {
               const fallbackSignal = consensusSignalService.generateConsensus(data);
               const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
-              setChartSignal(signal);
+              
+              setChartSignal(prev => {
+                if (prev && 
+                    prev.type === signal.type && 
+                    prev.targetPrice === signal.targetPrice &&
+                    prev.confidence === signal.confidence) {
+                  return prev;
+                }
+                return signal;
+              });
             } catch (fallbackErr) {
               console.error('[useStockData] Fallback signal generation failed:', fallbackErr);
             }
@@ -211,7 +230,15 @@ export function useStockData() {
           });
           const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
           if (!controller.signal.aborted && isMountedRef.current) {
-            setChartSignal(signal);
+            setChartSignal(prev => {
+              if (prev && 
+                  prev.type === signal.type && 
+                  prev.targetPrice === signal.targetPrice &&
+                  prev.confidence === signal.confidence) {
+                return prev;
+              }
+              return signal;
+            });
           }
         } catch (fallbackErr) {
           console.error('[useStockData] Fallback also failed:', fallbackErr);

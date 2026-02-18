@@ -203,17 +203,19 @@ export function VirtualList<T>({
   );
 }
 
+import Image from 'next/image';
+
 /**
  * 最適化された画像コンポーネント
- * 遅延読み込みとサイズ最適化
+ * Next.jsのImageコンポーネントを使用
  */
 interface OptimizedImageProps {
   src: string;
   alt: string;
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
   className?: string;
-  placeholder?: string;
+  priority?: boolean;
 }
 
 export const OptimizedImage = memo(function OptimizedImage({
@@ -222,57 +224,19 @@ export const OptimizedImage = memo(function OptimizedImage({
   width,
   height,
   className,
-  placeholder
+  priority = false
 }: OptimizedImageProps) {
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [isInView, setIsInView] = React.useState(false);
-  const imgRef = React.useRef<HTMLImageElement>(null);
-  
-  React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: '50px', threshold: 0.01 }
-    );
-    
-    if (imgRef.current) {
-      observer.observe(imgRef.current);
-    }
-    
-    return () => observer.disconnect();
-  }, []);
-  
   return (
-    <div 
-      ref={imgRef}
-      className={`relative overflow-hidden ${className}`}
-      style={{ width, height }}
-    >
-      {!isLoaded && placeholder && (
-        <div 
-          className="absolute inset-0 bg-gray-200 animate-pulse"
-          style={{ 
-            backgroundImage: `url(${placeholder})`,
-            backgroundSize: 'cover',
-            filter: 'blur(10px)'
-          }}
-        />
-      )}
-      {isInView && (
-        <img
-          src={src}
-          alt={alt}
-          width={width}
-          height={height}
-          className={`transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-          onLoad={() => setIsLoaded(true)}
-          loading="lazy"
-        />
-      )}
+    <div className={`relative ${className}`} style={{ width, height }}>
+      <Image
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        className="object-cover"
+        priority={priority}
+        loading={priority ? 'eager' : 'lazy'}
+      />
     </div>
   );
 });

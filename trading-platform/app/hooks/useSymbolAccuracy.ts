@@ -157,7 +157,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
 
         const predError = calculatePredictionError(historicalData);
         const accuracyData: AccuracyData = {
-          hitRate: accuracyResult.hitRate,
+          hitRate: accuracyResult.precisionAccuracy ?? accuracyResult.hitRate,
           directionalAccuracy: accuracyResult.directionalAccuracy,
           totalTrades: accuracyResult.totalTrades,
           predictionError: predError
@@ -200,7 +200,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       controller.abort();
     };
-  }, [stock.symbol, stock.market, ohlcv.length, ohlcv.length > 0 ? ohlcv[ohlcv.length - 1].date : 'empty']);
+  }, [stock.symbol, stock.market]); // Remove ohlcv dependencies that cause frequent re-renders
 
   return { accuracy, loading, error };
 }

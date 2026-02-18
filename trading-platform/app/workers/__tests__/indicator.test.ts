@@ -19,6 +19,7 @@ describe('Indicator Worker Logic', () => {
     expect(result).toHaveProperty('rsi');
     expect(result).toHaveProperty('macd');
     expect(result).toHaveProperty('sma20');
-    expect(result.rsi.length).toBeGreaterThan(0);
+    expect(result.rsi).toBeInstanceOf(Map);
+    expect(result.rsi.size).toBeGreaterThan(0);
   });
 });

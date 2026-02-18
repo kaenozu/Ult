@@ -13,7 +13,7 @@ interface SignalDetailsProps {
   ohlcv: OHLCV[];
   backtestResult: BacktestResult | null;
   isBacktesting: boolean;
-  preciseHitRate: { hitRate: number; trades: number } | null;
+  preciseHitRate: { hitRate: number; directionalAccuracy?: number; trades: number } | null;
   calculatingHitRate: boolean;
   error: string | null;
   aiTrades: PaperTrade[];
