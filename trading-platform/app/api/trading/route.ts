@@ -14,9 +14,9 @@ const ConfigUpdateSchema = z.object({
   mode: z.enum(['live', 'paper', 'backtest']).optional(),
   initialCapital: z.number().positive().optional(),
   riskLimits: z.object({
-    maxPositionSize: z.number().positive().optional(),
-    maxDailyLoss: z.number().positive().optional(),
-    maxDrawdown: z.number().positive().max(100).optional(),
+    maxPositionSize: z.number().positive(),
+    maxDailyLoss: z.number().positive(),
+    maxDrawdown: z.number().positive().max(100),
   }).optional(),
   aiEnabled: z.boolean().optional(),
   sentimentEnabled: z.boolean().optional(),

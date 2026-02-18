@@ -65,7 +65,9 @@ describe('POST /api/trading - Config Validation Security Test', () => {
       config: {
         initialCapital: -1000,
         riskLimits: {
-            maxPositionSize: -500
+            maxPositionSize: -500,
+            maxDailyLoss: 100,
+            maxDrawdown: 10
         }
       },
     });
