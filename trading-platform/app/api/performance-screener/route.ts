@@ -23,6 +23,7 @@ import { OHLCV } from '@/app/types';
 import { handleApiError } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireCSRF } from '@/app/lib/csrf/csrf-protection';
+import { formatSymbol } from '@/app/lib/utils';
 
 // キャッシュ管理
 interface CacheEntry {
@@ -35,13 +36,6 @@ const cache = new Map<string, CacheEntry>();
 import YahooFinance from 'yahoo-finance2';
 
 const yf = new YahooFinance();
-
-function formatSymbol(symbol: string, market: 'japan' | 'usa'): string {
-  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
-    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
-  }
-  return symbol;
-}
 
 /**
  * データソースの作成 (Server-side direct fetch)
@@ -84,8 +78,7 @@ function createDataSources(lookbackDays: number = 90): StockDataSource[] {
           close: q.close ?? 0,
           volume: q.volume ?? 0
         })).filter((q: OHLCV) => q.close !== null && q.close !== undefined);
-      } catch (error) {
-        console.error(`Failed to fetch data via YF for ${stock.symbol}:`, error);
+      } catch {
         return [];
       }
     },
@@ -145,7 +138,6 @@ export async function GET(request: NextRequest) {
 
     let result;
     if (mode === 'dual-scan') {
-      console.error('[PerformanceScreenerAPI] Dual scan with config:', { market, topN, lookbackDays, minConfidence, minWinRate });
       result = await performanceScreenerService.scanDual(dataSources, {
         market,
         topN,
@@ -156,7 +148,6 @@ export async function GET(request: NextRequest) {
         minTrades,
       }, forceRefresh);
     } else if (mode === 'ai-signals') {
-      console.error('[PerformanceScreenerAPI] AI signal scan with config:', { market, topN, lookbackDays, minConfidence });
       result = await performanceScreenerService.scanMultipleStocksForAISignals(dataSources, {
         market,
         topN,
@@ -164,8 +155,6 @@ export async function GET(request: NextRequest) {
         minConfidence,
       });
     } else {
-      // パフォーマンスモード（デフォルト）
-      console.error('[PerformanceScreenerAPI] Performance scan with config:', { market, minWinRate, minProfitFactor, minTrades, maxDrawdown, topN, lookbackDays });
       result = await performanceScreenerService.scanMultipleStocks(dataSources, {
         market,
         minWinRate,

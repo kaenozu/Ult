@@ -4,21 +4,13 @@ import { handleApiError } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { authStore } from '@/app/lib/auth-store';
 
-// Demo users (shared with register route)
-interface User {
-  id: string;
-  email: string;
-  passwordHash: string;
-  name: string;
-  createdAt: string;
-  role: 'user' | 'admin';
+const envSecret = process.env.JWT_SECRET;
+if (!envSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production');
 }
-
-const users: Map<string, User> = new Map();
-
-// JWT secret
-const JWT_SECRET = process.env.JWT_SECRET || 'demo-secret-change-in-production';
+const ACTIVE_SECRET = envSecret || 'demo-secret-dev-only';
 
 // --- Zod Schema ---
 const LoginSchema = z.object({
@@ -79,7 +71,7 @@ export async function POST(request: NextRequest) {
     const { email, password } = result.data;
 
     // Find user
-    const user = users.get(email.toLowerCase());
+    const user = authStore.getUser(email);
     
     if (!user) {
       // Don't reveal whether email exists
@@ -102,7 +94,7 @@ export async function POST(request: NextRequest) {
     // Generate JWT
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
+      ACTIVE_SECRET,
       { expiresIn: '7d' }
     );
 

@@ -9,7 +9,7 @@
 
 import { OHLCV, Signal, TimeFrame } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
-import { RSI_CONFIG, BOLLINGER_BANDS } from './constants';
+import { RSI_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
 
 /**
  * 各指標からのシグナル
@@ -440,6 +440,9 @@ class ConsensusSignalService {
     const now = new Date();
     const predictionDate = now.toISOString().split('T')[0];
     
+    const lastData = data[data.length - 1];
+    const atr = lastData.high - lastData.low;
+    
     return {
       symbol,
       type: consensus.type,
@@ -449,7 +452,7 @@ class ConsensusSignalService {
       reason: consensus.reason,
       predictedChange,
       predictionDate,
-      // optional fields omitted
+      atr
     };
   }
 

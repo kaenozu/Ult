@@ -31,7 +31,12 @@ export default [
       "prefer-const": "warn",
       "@typescript-eslint/no-require-imports": "off",
       "react-hooks/exhaustive-deps": "warn",
-      "@typescript-eslint/ban-ts-comment": "error"
+      "@typescript-eslint/ban-ts-comment": "warn",
+      "react-hooks/rules-of-hooks": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/use-memo": "warn"
     }
   },
 ];

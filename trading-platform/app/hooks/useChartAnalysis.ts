@@ -8,7 +8,7 @@ import {
     SMA_CONFIG,
     BOLLINGER_BANDS,
     OPTIMIZATION,
-} from '@/app/lib/constants';
+} from '@/app/constants';
 
 interface UseChartAnalysisProps {
     data: OHLCV[];

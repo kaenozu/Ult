@@ -154,6 +154,7 @@ export const ChartToolbar = memo(function ChartToolbar({
               type="button" 
               className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#233648]"
               title="インジケーターを追加"
+              aria-label="インジケーターを追加"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
@@ -164,6 +165,7 @@ export const ChartToolbar = memo(function ChartToolbar({
               type="button" 
               className="flex items-center gap-1.5 cursor-pointer hover:text-white transition-colors px-2 py-1 rounded hover:bg-[#233648]"
               title="描画ツール"
+              aria-label="描画ツール"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />

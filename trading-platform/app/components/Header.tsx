@@ -125,11 +125,9 @@ export const Header = memo(function Header() {
           const newStock = await fetchStockMetadata(query);
           if (newStock) {
             handleStockSelect(newStock);
-          } else {
-            console.warn('Symbol not found:', query);
           }
-        } catch (err) {
-          console.error('On-demand fetch error:', err);
+        } catch {
+          // Silently ignore - stock not found or API unavailable
         } finally {
           setIsSearchingAPI(false);
         }
@@ -331,20 +329,20 @@ export const Header = memo(function Header() {
 
         {/* Settings */}
         <button
-          onClick={() => alert('設定機能は現在開発中です')}
-          className="hidden sm:flex p-1.5 sm:p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 shrink-0"
-          aria-label="設定"
-          title="設定"
+          disabled
+          className="hidden sm:flex p-1.5 sm:p-2 text-[#92adc9]/50 cursor-not-allowed rounded-lg shrink-0"
+          aria-label="設定（開発中）"
+          title="設定（開発中）"
         >
           <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
 
         {/* User Profile */}
         <button
-          onClick={() => alert('ユーザープロフィール機能は現在開発中です')}
-          className="hidden sm:flex p-1.5 sm:p-2 text-[#92adc9] hover:text-white rounded-lg hover:bg-[#192633] transition-all focus:outline-none focus:ring-2 focus:ring-primary/50 shrink-0"
-          aria-label="ユーザープロフィール"
-          title="ユーザープロフィール"
+          disabled
+          className="hidden sm:flex p-1.5 sm:p-2 text-[#92adc9]/50 cursor-not-allowed rounded-lg shrink-0"
+          aria-label="ユーザープロフィール（開発中）"
+          title="ユーザープロフィール（開発中）"
         >
           <User className="w-4 h-4 sm:w-5 sm:h-5" />
         </button>

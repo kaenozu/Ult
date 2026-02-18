@@ -1,14 +1,8 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { StockChart } from '../components/StockChart';
+import { StockChart } from '../components/StockChart/StockChart';
 import { OHLCV } from '../types';
 import '@testing-library/jest-dom';
-
-// Mock Chart.js to avoid canvas errors in Node environment
-jest.mock('react-chartjs-2', () => ({
-  Line: () => <div data-testid="mock-line-chart" />,
-  Bar: () => <div data-testid="mock-bar-chart" />,
-}));
 
 describe('StockChart Edge Case Tests', () => {
   const emptyData: OHLCV[] = [];
@@ -29,7 +23,7 @@ describe('StockChart Edge Case Tests', () => {
 
   it('should render chart when data is provided', () => {
     render(<StockChart data={normalData} loading={false} />);
-    expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 
   it('should handle extreme price values gracefully', () => {
@@ -38,6 +32,6 @@ describe('StockChart Edge Case Tests', () => {
     ];
     const { container } = render(<StockChart data={extremeData} market="japan" />);
     expect(container).toBeDefined();
-    expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 });

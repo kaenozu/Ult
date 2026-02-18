@@ -4,22 +4,13 @@ import { handleApiError } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { authStore, User } from '@/app/lib/auth-store';
 
-// Simple in-memory user store (in production, use database)
-interface User {
-  id: string;
-  email: string;
-  passwordHash: string;
-  name: string;
-  createdAt: string;
-  role: 'user' | 'admin';
+const envSecret = process.env.JWT_SECRET;
+if (!envSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production');
 }
-
-// Demo users (in production, use proper database)
-const users: Map<string, User> = new Map();
-
-// JWT secret (in production, use environment variable)
-const JWT_SECRET = process.env.JWT_SECRET || 'demo-secret-change-in-production';
+const ACTIVE_SECRET = envSecret || 'demo-secret-dev-only';
 
 // --- Zod Schemas ---
 const RegisterSchema = z.object({
@@ -85,7 +76,7 @@ export async function POST(request: NextRequest) {
     const { email, password, name } = result.data;
 
     // Check if user already exists
-    if (users.has(email.toLowerCase())) {
+    if (authStore.getUser(email)) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 409 }
@@ -105,12 +96,12 @@ export async function POST(request: NextRequest) {
       role: 'user',
     };
 
-    users.set(email.toLowerCase(), user);
+    authStore.addUser(user);
 
     // Generate JWT
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
+      ACTIVE_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -135,7 +126,7 @@ export async function POST(request: NextRequest) {
  */
 export function verifyToken(token: string): { userId: string; email: string; role: string } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
+    return jwt.verify(token, ACTIVE_SECRET) as { userId: string; email: string; role: string };
   } catch {
     return null;
   }
@@ -145,12 +136,7 @@ export function verifyToken(token: string): { userId: string; email: string; rol
  * Get user by ID
  */
 export function getUserById(userId: string): User | undefined {
-  for (const user of users.values()) {
-    if (user.id === userId) {
-      return user;
-    }
-  }
-  return undefined;
+  return authStore.getUserById(userId);
 }
 
 /**

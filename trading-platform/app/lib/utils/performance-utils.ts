@@ -37,7 +37,6 @@ export function useStableCallback<T extends (...args: unknown[]) => unknown>(
  * 子コンポーネントへのpropsとして使うオブジェクトに最適
  */
 export function useShallowMemo<T extends Record<string, unknown>>(obj: T): T {
-  // eslint-disable-next-line react-hooks/use-memo, react-hooks/exhaustive-deps
   return useMemo(() => obj, Object.values(obj));
 }
 
@@ -75,12 +74,12 @@ export function createBatchedProcessor<T>(
  * スロットリング関数
  * 高頻度なイベント（スクロール、リサイズなど）の処理を最適化
  */
-export function throttle<T extends (...args: unknown[]) => unknown>(
+export function throttle<T extends (...args: unknown[]) => void>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle = false;
-  
+
   return function(...args: Parameters<T>) {
     if (!inThrottle) {
       func(...args);
@@ -94,12 +93,12 @@ export function throttle<T extends (...args: unknown[]) => unknown>(
  * デバウンス関数
  * 入力イベントなどの処理を遅延させ、最後のイベントのみを処理
  */
-export function debounce<T extends (...args: unknown[]) => unknown>(
+export function debounce<T extends (...args: unknown[]) => void>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
-  
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+
   return function(...args: Parameters<T>) {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);

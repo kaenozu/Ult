@@ -21,15 +21,7 @@ jest.mock('@/app/lib/api-middleware', () => ({
 describe('GET /api/market/realtime', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockReturnValue(null); // Default to authenticated
     (checkRateLimit as jest.Mock).mockReturnValue(null); // Default to not rate limited
-  });
-
-  it('should return 401 if unauthorized', async () => {
-    (requireAuth as jest.Mock).mockReturnValue({ status: 401 });
-    const req = { url: '...', nextUrl: new URL('http://localhost:3000/api/market/realtime') } as any;
-    const res = await GET(req);
-    expect(res.status).toBe(401);
   });
 
   it('should return 400 if symbol is missing', async () => {

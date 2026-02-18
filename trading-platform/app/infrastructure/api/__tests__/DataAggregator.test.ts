@@ -45,7 +45,7 @@ describe('DataAggregator', () => {
       // 短い待機時間を追加してTTLを確実に切れるようにする
       return new Promise(resolve => setTimeout(resolve, 10)).then(() => {
         const cached = aggregator.getCached('AAPL');
-        expect(cached).toBeNull();
+        expect(cached).toBeUndefined();
       });
     });
 
@@ -58,7 +58,7 @@ describe('DataAggregator', () => {
       aggregator.clearCache();
       const cached = aggregator.getCached('AAPL');
 
-      expect(cached).toBeNull();
+      expect(cached).toBeUndefined();
     });
   });
 

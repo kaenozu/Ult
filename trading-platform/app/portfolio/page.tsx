@@ -1,17 +1,32 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { formatCurrency } from '@/app/lib/utils';
 import { Header } from '@/app/components/Header';
 import { Navigation } from '@/app/components/Navigation';
 
+interface PositionToClose {
+    symbol: string;
+    quantity: number;
+    marketValue: number;
+    currentPrice: number;
+}
+
 export default function PortfolioPage() {
     const { portfolio, closePosition } = usePortfolioStore();
+    const [positionToClose, setPositionToClose] = useState<PositionToClose | null>(null);
 
     const totalValue = portfolio.cash + portfolio.positions.reduce((acc, pos) => {
         return acc + (pos.quantity * pos.currentPrice);
     }, 0);
+
+    const handleClosePosition = () => {
+        if (positionToClose) {
+            closePosition(positionToClose.symbol, positionToClose.currentPrice);
+            setPositionToClose(null);
+        }
+    };
 
     return (
         <div className="flex flex-col h-screen bg-[#101922] text-white overflow-hidden">
@@ -91,11 +106,12 @@ export default function PortfolioPage() {
                                                     </td>
                                                     <td className="p-4 text-center">
                                                         <button
-                                                            onClick={() => {
-                                                                if (confirm(`${pos.symbol} (${pos.quantity}株) を売却しますか？\n評価額: ${formatCurrency(marketValue)}`)) {
-                                                                    closePosition(pos.symbol, pos.currentPrice);
-                                                                }
-                                                            }}
+                                                            onClick={() => setPositionToClose({
+                                                                symbol: pos.symbol,
+                                                                quantity: pos.quantity,
+                                                                marketValue,
+                                                                currentPrice: pos.currentPrice
+                                                            })}
                                                             className="bg-[#ef4444]/10 hover:bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/30 px-3 py-1.5 rounded text-sm font-medium transition-colors"
                                                         >
                                                             売却
@@ -112,6 +128,36 @@ export default function PortfolioPage() {
 
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            {positionToClose && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPositionToClose(null)}>
+                    <div className="bg-[#1e293b] p-6 rounded-xl border border-[#334155] shadow-xl max-w-md" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-white mb-4">ポジション売却確認</h3>
+                        <p className="text-[#94a3b8] mb-2">
+                            {positionToClose.symbol} ({positionToClose.quantity}株) を売却しますか？
+                        </p>
+                        <p className="text-white font-bold mb-6">
+                            評価額: {formatCurrency(positionToClose.marketValue)}
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setPositionToClose(null)}
+                                className="px-4 py-2 rounded-lg bg-[#334155] text-white hover:bg-[#475569] transition-colors"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={handleClosePosition}
+                                className="px-4 py-2 rounded-lg bg-[#ef4444] text-white hover:bg-[#dc2626] transition-colors"
+                            >
+                                売却する
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <Navigation />
         </div>
     );

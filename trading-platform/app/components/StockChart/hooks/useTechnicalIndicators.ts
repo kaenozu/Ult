@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
-import { SMA_CONFIG, BOLLINGER_BANDS } from '@/app/lib/constants';
+import { SMA_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
 
 export const useTechnicalIndicators = (prices: number[]) => {
   const sma20 = useMemo(() => technicalIndicatorService.calculateSMA(prices, SMA_CONFIG.SHORT_PERIOD), [prices]);

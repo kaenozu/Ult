@@ -6,7 +6,7 @@
  */
 
 import { JournalEntry } from '@/app/types';
-import { TIME_INTERVALS } from '@/app/lib/constants/common';
+import { TIME_INTERVALS } from '@/app/constants/common';
 
 /**
  * Psychology state tracking

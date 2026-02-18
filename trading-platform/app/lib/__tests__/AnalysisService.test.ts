@@ -8,7 +8,7 @@ import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import { accuracyService } from '../AccuracyService';
 import { marketDataService } from '../MarketDataService';
 import { volumeAnalysisService } from '../VolumeAnalysis';
-import { FORECAST_CONE } from '../constants';
+import { FORECAST_CONE } from '@/app/constants';
 
 // Mock dependencies properly
 jest.mock('../TechnicalIndicatorService', () => ({

@@ -39,6 +39,9 @@ const customJestConfig = {
     '<rootDir>/app/lib/services/__tests__/mocks/',
     '<rootDir>/app/lib/ml/integration-tests/'
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(lightweight-charts)/)',
+  ],
   coverageReporters: ['text', 'lcov', 'html'],
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect, useRef } from 'react';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
@@ -208,10 +208,10 @@ export function useFilteredOrders(
  * デバッグや最適化の検証に使用
  */
 export function useStoreRenderCount(storeName: string) {
-  const renderCount = React.useRef(0);
+  const renderCount = useRef(0);
   
   // Update ref in effect instead of render to stay pure
-  React.useEffect(() => {
+  useEffect(() => {
     renderCount.current++;
     if (renderCount.current > 50) {
       console.warn(`${storeName} has rendered ${renderCount.current} times`);
@@ -222,5 +222,3 @@ export function useStoreRenderCount(storeName: string) {
   // eslint-disable-next-line react-hooks/refs
   return renderCount.current;
 }
-
-import React from 'react';

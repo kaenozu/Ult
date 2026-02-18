@@ -12,7 +12,7 @@ import { EventEmitter } from 'events';
 // ============================================================================
 
 import { logger } from '@/app/core/logger';
-import { BACKTEST_DEFAULTS } from '../constants/backtest-config';
+import { BACKTEST_DEFAULTS } from '@/app/constants/backtest-config';
 export interface PaperPosition {
   id: string;
   symbol: string;

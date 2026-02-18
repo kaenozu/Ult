@@ -97,6 +97,8 @@ describe('MLPredictionService Tests', () => {
     const signal = mlPredictionService.generateSignal(mockStock, data, mockPred, ind);
 
     expect(signal.type).toBe('HOLD');
-    expect(signal.predictedChange).toBe(0);
+    // With MIN_CONFIDENCE at 50, the damping factor is (50-30)/70 = 0.285.
+    // So prediction 2.0 becomes ~0.57, not 0.
+    expect(signal.predictedChange).toBeCloseTo(0.57, 2);
   });
 });

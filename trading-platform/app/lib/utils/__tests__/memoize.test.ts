@@ -124,7 +124,9 @@ describe('memoize', () => {
   });
 
   describe('TTL (time-to-live)', () => {
-    jest.useFakeTimers();
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
 
     afterEach(() => {
       jest.useRealTimers();
@@ -143,12 +145,12 @@ describe('memoize', () => {
       expect(callCount).toBe(1);
 
       memoized(5);
-      expect(callCount).toBe(1); // Cached
+      expect(callCount).toBe(1);
 
       jest.advanceTimersByTime(1001);
 
       memoized(5);
-      expect(callCount).toBe(2); // Expired and recalculated
+      expect(callCount).toBe(2);
     });
 
     it('should not expire entries before TTL', () => {

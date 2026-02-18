@@ -58,6 +58,28 @@ export function getChangeColor(change: number): string {
   return "text-gray-400";
 }
 
+/**
+ * シンボルをマーケットに応じてフォーマットする
+ * 
+ * @param symbol - 株式シンボル（例: "7203", "AAPL", "^N225"）
+ * @param market - マーケット指定 ("japan" | "usa" | undefined)
+ * @returns フォーマット済みのシンボル
+ * 
+ * @example
+ * formatSymbol("7203", "japan")  // "7203.T"
+ * formatSymbol("AAPL", "usa")    // "AAPL"
+ * formatSymbol("^N225")          // "^N225"
+ */
+export function formatSymbol(symbol: string, market?: string): string {
+  if (symbol.startsWith('^')) {
+    return symbol;
+  }
+  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
+    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
+  }
+  return symbol;
+}
+
 export function getSignalColor(signal: "BUY" | "SELL" | "HOLD"): string {
   switch (signal) {
     case "BUY":

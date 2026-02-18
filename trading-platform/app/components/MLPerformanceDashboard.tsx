@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ML Performance Monitoring Dashboard
  * 
  * Displays real-time ML model performance metrics including:
@@ -34,13 +34,14 @@ export default function MLPerformanceDashboard() {
   const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showRetrainModal, setShowRetrainModal] = useState(false);
+  const [retrainStatus, setRetrainStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Fetch metrics from service - returns data without setting state
   const getMetrics = useCallback(() => {
     try {
       return integratedPredictionService.getPerformanceMetrics();
-    } catch (error) {
-      console.error('Error fetching performance data:', error);
+    } catch {
+      // Service not initialized yet - return null to show loading state
       return null;
     }
   }, []);
@@ -75,11 +76,9 @@ export default function MLPerformanceDashboard() {
         setPerformanceData(metrics);
       }
       setShowRetrainModal(false);
-      // Show success message (could be replaced with toast notification)
-      alert('モデルの再トレーニングが完了しました');
-    } catch (error) {
-      console.error('Error retraining models:', error);
-      alert('再トレーニング中にエラーが発生しました');
+      setRetrainStatus({ type: 'success', message: 'モデルの再トレーニングが完了しました' });
+    } catch {
+      setRetrainStatus({ type: 'error', message: '再トレーニング中にエラーが発生しました' });
     }
   };
 
@@ -114,6 +113,16 @@ export default function MLPerformanceDashboard() {
 
   return (
     <div className="bg-[#1a2332] border border-cyan-500/30 rounded-lg p-6 space-y-6">
+      {/* Status Notification */}
+      {retrainStatus && (
+        <div className={`p-3 rounded-lg ${retrainStatus.type === 'success' ? 'bg-green-500/20 border border-green-500/50 text-green-400' : 'bg-red-500/20 border border-red-500/50 text-red-400'}`}>
+          <div className="flex justify-between items-center">
+            <span>{retrainStatus.message}</span>
+            <button onClick={() => setRetrainStatus(null)} className="ml-2 hover:opacity-70">×</button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold text-cyan-400">

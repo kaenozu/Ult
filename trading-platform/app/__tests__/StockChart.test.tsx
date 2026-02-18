@@ -148,13 +148,59 @@ describe('StockChart', () => {
   });
 
   it('renders volume chart when showVolume is true', () => {
+    const { createChart } = require('lightweight-charts');
+    const mockAddSeries = jest.fn(() => ({
+      setData: jest.fn(),
+      applyOptions: jest.fn(),
+    }));
+    const mockChart = {
+      addSeries: mockAddSeries,
+      remove: jest.fn(),
+      applyOptions: jest.fn(),
+      priceScale: jest.fn(() => ({
+        applyOptions: jest.fn(),
+      })),
+      subscribeCrosshairMove: jest.fn(),
+      timeScale: jest.fn(() => ({
+        scrollToRealTime: jest.fn(),
+      })),
+    };
+    createChart.mockReturnValue(mockChart);
+
     render(<StockChart data={mockData} showVolume={true} />);
-    expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
+    
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+    // Verify volume histogram series was added (CandlestickSeries + HistogramSeries + forecast series)
+    const histogramCalls = mockAddSeries.mock.calls.filter(call => call[0] === 'Histogram');
+    expect(histogramCalls.length).toBeGreaterThan(0);
   });
 
   it('does not render volume chart when showVolume is false', () => {
+    const { createChart } = require('lightweight-charts');
+    const mockAddSeries = jest.fn(() => ({
+      setData: jest.fn(),
+      applyOptions: jest.fn(),
+    }));
+    const mockChart = {
+      addSeries: mockAddSeries,
+      remove: jest.fn(),
+      applyOptions: jest.fn(),
+      priceScale: jest.fn(() => ({
+        applyOptions: jest.fn(),
+      })),
+      subscribeCrosshairMove: jest.fn(),
+      timeScale: jest.fn(() => ({
+        scrollToRealTime: jest.fn(),
+      })),
+    };
+    createChart.mockReturnValue(mockChart);
+
     render(<StockChart data={mockData} showVolume={false} />);
-    expect(screen.queryByTestId('bar-chart')).not.toBeInTheDocument();
+    
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+    // Verify volume histogram series was NOT added (only CandlestickSeries + forecast series, no HistogramSeries)
+    const histogramCalls = mockAddSeries.mock.calls.filter(call => call[0] === 'Histogram');
+    expect(histogramCalls.length).toBe(0);
   });
 });
 

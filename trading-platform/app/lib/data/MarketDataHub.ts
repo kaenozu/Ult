@@ -1,7 +1,7 @@
 import { OHLCV } from '../../types';
 import { IMarketDataHub } from '../interfaces/IMarketDataHub';
 import { fetchOHLCV } from '@/app/data/stocks';
-import { TIME_INTERVALS } from '@/app/lib/constants/common';
+import { TIME_INTERVALS } from '@/app/constants/common';
 
 /**
  * MarketDataHub

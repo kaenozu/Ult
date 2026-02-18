@@ -3,8 +3,8 @@ import { Stock, OHLCV, Signal } from '@/app/types';
 import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
 import { useUIStore } from '@/app/store/uiStore';
-import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/lib/constants/intervals';
-import { NUMERIC_PRECISION } from '@/app/lib/constants/common';
+import { isIntradayInterval, JAPANESE_MARKET_DELAY_MINUTES } from '@/app/constants/intervals';
+import { NUMERIC_PRECISION } from '@/app/constants/common';
 import { consensusSignalService } from '@/app/lib/ConsensusSignalService';
 import { TIMEOUT } from '@/app/constants/timing';
 

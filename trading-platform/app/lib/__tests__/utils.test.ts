@@ -18,6 +18,7 @@ import {
   truncate,
   generateDateRange,
   cn,
+  formatSymbol,
 } from '../utils';
 
 describe('utils', () => {
@@ -250,6 +251,42 @@ describe('utils', () => {
 
     it('重複するクラス名をマージする', () => {
       expect(cn('px-2', 'px-4')).toBe('px-4');
+    });
+  });
+
+  describe('formatSymbol', () => {
+    it('日本市場のシンボルに.Tサフィックスを追加する', () => {
+      expect(formatSymbol('7203', 'japan')).toBe('7203.T');
+      expect(formatSymbol('9984', 'japan')).toBe('9984.T');
+    });
+
+    it('既に.Tサフィックスがある場合は追加しない', () => {
+      expect(formatSymbol('7203.T', 'japan')).toBe('7203.T');
+      expect(formatSymbol('9984.T', 'japan')).toBe('9984.T');
+    });
+
+    it('インデックスシンボル（^で始まる）はそのまま返す', () => {
+      expect(formatSymbol('^N225')).toBe('^N225');
+      expect(formatSymbol('^DJI')).toBe('^DJI');
+      expect(formatSymbol('^GSPC')).toBe('^GSPC');
+    });
+
+    it('米国市場のシンボルはそのまま返す', () => {
+      expect(formatSymbol('AAPL', 'usa')).toBe('AAPL');
+      expect(formatSymbol('GOOGL', 'usa')).toBe('GOOGL');
+      expect(formatSymbol('MSFT', 'usa')).toBe('MSFT');
+    });
+
+    it('4桁の数字のみのシンボルはマーケット指定なしで.Tを追加する', () => {
+      expect(formatSymbol('7203')).toBe('7203.T');
+      expect(formatSymbol('9984')).toBe('9984.T');
+    });
+
+    it('4桁以外のシンボルはマーケット指定なしでそのまま返す', () => {
+      expect(formatSymbol('AAPL')).toBe('AAPL');
+      expect(formatSymbol('GOOGL')).toBe('GOOGL');
+      expect(formatSymbol('123')).toBe('123');
+      expect(formatSymbol('12345')).toBe('12345');
     });
   });
 

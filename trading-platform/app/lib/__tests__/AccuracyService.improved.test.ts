@@ -7,7 +7,7 @@ import { calculateAIHitRate, calculateRealTimeAccuracy } from '@/app/lib/Accurac
 import { generateMockOHLCV } from '@/app/lib/__tests__/test-utils';
 
 // Mock constants
-jest.mock('@/app/lib/constants/common', () => ({
+jest.mock('@/app/constants/common', () => ({
   DATA_REQUIREMENTS: {
     MIN_DATA_POINTS: 20,
     MIN_DATA_PERIOD: 50,

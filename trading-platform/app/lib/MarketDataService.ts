@@ -12,7 +12,7 @@ import {
 import type { MarketData as QualityMarketData } from '@/app/types/data-quality';
 
 import { IMarketDataService } from './interfaces/IMarketDataService';
-import { TIME_INTERVALS } from './constants/common';
+import { TIME_INTERVALS } from '@/app/constants/common';
 import { logger } from '@/app/core/logger';
 export interface MarketIndex {
   symbol: string;

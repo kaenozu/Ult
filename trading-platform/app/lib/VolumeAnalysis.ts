@@ -1,5 +1,5 @@
 import { OHLCV } from '../types';
-import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from './constants';
+import { TECHNICAL_INDICATORS, DATA_REQUIREMENTS } from '@/app/constants';
 
 export interface VolumeProfile {
   price: number;

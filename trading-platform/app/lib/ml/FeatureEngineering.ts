@@ -8,7 +8,7 @@
 import { OHLCV } from '../../types/shared';
 import type { MLFeatures } from './types';
 import { calculateSMA, calculateEMA, calculateRSI, calculateMACD, calculateBollingerBands, calculateATR } from '../utils';
-import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '../constants';
+import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
 
 /**
  * テクニカル指標の拡張特徴量

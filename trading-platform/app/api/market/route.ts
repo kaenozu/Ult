@@ -5,17 +5,17 @@ import {
   handleApiError,
 } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
-import { isIntradayInterval } from '@/app/lib/constants/intervals';
+import { isIntradayInterval } from '@/app/constants/intervals';
 import { DataSourceProvider } from '@/app/domains/market-data/types/data-source';
 import {
   YahooChartResultSchema,
   YahooSingleQuoteSchema
 } from '@/app/lib/schemas/market';
+import { formatSymbol } from '@/app/lib/utils';
 
 export const yf = new YahooFinance();
 
 // --- Zod Schemas for Request ---
-
 const MarketRequestSchema = z.object({
   type: z.enum(['history', 'quote']).default('quote'),
   symbol: z.string().min(1).max(1000).regex(/^[A-Z0-9^.,]+$/i, 'Invalid symbol format').transform(s => s.toUpperCase()),
@@ -24,119 +24,6 @@ const MarketRequestSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
-function formatSymbol(symbol: string, market?: string): string {
-  // Never add suffix to indices (starting with ^)
-  if (symbol.startsWith('^')) {
-    return symbol;
-  }
-
-  if (market === 'japan' || (symbol.match(/^\d{4}$/) && !symbol.endsWith('.T'))) {
-    return symbol.endsWith('.T') ? symbol : `${symbol}.T`;
-  }
-  return symbol;
-}
-
-/**
- * @swagger
- * /api/market:
- *   get:
- *     summary: Get market data
- *     description: Fetch historical price data or real-time quotes for stocks and indices
- *     tags:
- *       - Market Data
- *     parameters:
- *       - in: query
- *         name: type
- *         required: true
- *         schema:
- *           type: string
- *           enum: [history, quote]
- *         description: Type of data to retrieve (history for historical data, quote for current price)
- *       - in: query
- *         name: symbol
- *         required: true
- *         schema:
- *           type: string
- *         description: Stock symbol (e.g., ^N225 for Nikkei 225, AAPL for Apple, 7203 for Toyota)
- *         example: ^N225
- *       - in: query
- *         name: market
- *         schema:
- *           type: string
- *           enum: [japan, usa]
- *         description: Market type for symbol formatting
- *       - in: query
- *         name: interval
- *         schema:
- *           type: string
- *           enum: [1m, 5m, 15m, 1h, 4h, 1d, 1wk, 1mo]
- *         description: Data interval (only for history type). Note - Intraday intervals (1m, 5m, 15m, 1h, 4h) not available for Japanese stocks
- *       - in: query
- *         name: startDate
- *         schema:
- *           type: string
- *           format: date
- *         description: Start date for historical data in YYYY-MM-DD format (only for history type)
- *         example: 2021-01-01
- *     responses:
- *       200:
- *         description: Successful response
- *         content:
- *           application/json:
- *             schema:
- *               oneOf:
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/OHLCV'
- *                     warning:
- *                       type: string
- *                       description: Warning message if applicable
- *                   description: Historical data response
- *                 - $ref: '#/components/schemas/Quote'
- *                   description: Quote data response
- *                 - type: object
- *                   properties:
- *                     data:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/Quote'
- *                   description: Batch quotes response
- *       400:
- *         description: Bad request - Invalid parameters
- *         content:
- *           application/json:
- *             schema:
- *               oneOf:
- *                 - $ref: '#/components/schemas/Error'
- *                 - $ref: '#/components/schemas/ValidationError'
- *       404:
- *         description: Symbol not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       429:
- *         description: Rate limit exceeded
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       500:
- *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       502:
- *         description: Bad gateway - External API error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting
@@ -184,17 +71,13 @@ export async function GET(request: NextRequest) {
         const parseResult = YahooChartResultSchema.safeParse(rawResult);
 
         if (!parseResult.success) {
-          console.error('[MarketAPI] Schema parse error:', parseResult.error);
           return handleApiError(new Error('Upstream API data schema mismatch'), 'market/history', 502);
         }
 
         const data = parseResult.data;
         if (!data || !data.quotes || data.quotes.length === 0) {
-          console.warn(`[MarketAPI] No data for ${yahooSymbol}:`, { hasData: !!data, hasQuotes: !!data?.quotes, quotesLength: data?.quotes?.length });
           return NextResponse.json({ data: [], warning: 'No historical data found' });
         }
-        
-        console.log(`[MarketAPI] Successfully fetched ${data.quotes.length} records for ${yahooSymbol}`);
 
         const warnings: string[] = [];
         if (isJapaneseStock && isIntraday) {
@@ -244,11 +127,7 @@ export async function GET(request: NextRequest) {
         });
       } catch (err) {
         if (err instanceof Error && err.name === 'YahooFinanceError') {
-          // YahooFinanceError specific handling
           const yahooErr = err as { statusCode?: number; url?: string };
-          const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
-          const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
-          console.error(`[MarketAPI] YahooFinanceError for ${yahooSymbol}: ${statusMessage} ${urlMessage}`);
           return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/history', yahooErr.statusCode || 502);
         }
         return handleApiError(err, 'market/history', 502);
@@ -275,11 +154,7 @@ export async function GET(request: NextRequest) {
           });
         } catch (err) {
           if (err instanceof Error && err.name === 'YahooFinanceError') {
-            // YahooFinanceError specific handling
-            const yahooErr = err as { statusCode?: number; url?: string };
-            const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
-            const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
-            console.error(`[MarketAPI] YahooFinanceError for ${symbols[0]}: ${statusMessage} ${urlMessage}`);
+            const yahooErr = err as { statusCode?: number };
             return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/quote', yahooErr.statusCode || 404);
           }
           return handleApiError(err, 'market/quote', 404);
@@ -304,11 +179,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ data });
         } catch (err) {
           if (err instanceof Error && err.name === 'YahooFinanceError') {
-            // YahooFinanceError specific handling
-            const yahooErr = err as { statusCode?: number; url?: string };
-            const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
-            const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
-            console.error(`[MarketAPI] YahooFinanceError for batch quote: ${statusMessage} ${urlMessage}`);
+            const yahooErr = err as { statusCode?: number };
             return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/batch-quote', yahooErr.statusCode || 502);
           }
           return handleApiError(err, 'market/batch-quote', 502);

@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react';
 import { usePreCalculatedIndicators } from '../usePreCalculatedIndicators';
 import { OHLCV } from '@/app/types';
-import { RSI_CONFIG, SMA_CONFIG } from '@/app/lib/constants';
+import { RSI_CONFIG, SMA_CONFIG } from '@/app/constants';
 
 // Mock data
 const mockData: OHLCV[] = Array.from({ length: 100 }, (_, i) => ({

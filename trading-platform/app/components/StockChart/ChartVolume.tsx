@@ -2,7 +2,7 @@
 
 import { Bar } from 'react-chartjs-2';
 import { OHLCV } from '@/app/types';
-import { CANDLESTICK } from '@/app/lib/constants';
+import { CANDLESTICK } from '@/app/constants';
 
 export interface ChartVolumeProps {
   data: OHLCV[];

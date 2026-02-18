@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getGlobalTradingPlatform } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { checkRateLimit } from '@/app/lib/api-middleware';
+import { requireAuth } from '@/app/lib/auth';
 import { handleApiError } from '@/app/lib/error-handler';
 import { requireCSRF, generateCSRFToken } from '@/app/lib/csrf/csrf-protection';
 import { AlertType } from '@/app/lib/alerts/AlertSystem';
@@ -112,6 +113,10 @@ export async function GET(req: NextRequest) {
   // Rate limiting
   const rateLimitResponse = checkRateLimit(req);
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Authentication check
+  const authResponse = requireAuth(req);
+  if (authResponse) return authResponse;
 
   try {
     const platform = getGlobalTradingPlatform();
@@ -288,6 +293,10 @@ export async function POST(req: NextRequest) {
   // Rate limiting for trading actions
   const rateLimitResponse = checkRateLimit(req);
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Authentication check
+  const authResponse = requireAuth(req);
+  if (authResponse) return authResponse;
 
   // CSRF Protection
   const csrfError = requireCSRF(req);

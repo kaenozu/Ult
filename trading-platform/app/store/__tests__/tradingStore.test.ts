@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react';
 import { usePortfolioStore } from '../portfolioStore';
-import { AI_TRADING } from '@/app/lib/constants';
+import { AI_TRADING } from '@/app/constants';
 import type { Order } from '@/app/types';
 
 // Mock RiskManagementService to prevent order modification

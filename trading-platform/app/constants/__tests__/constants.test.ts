@@ -30,7 +30,7 @@ describe('Constants', () => {
 
   describe('TECHNICAL_INDICATORS', () => {
     it('should have default RSI settings', () => {
-      expect(TECHNICAL_INDICATORS.RSI.DEFAULT_PERIOD).toBe(14);
+      expect(TECHNICAL_INDICATORS.RSI_PERIOD).toBe(14);
     });
   });
 });

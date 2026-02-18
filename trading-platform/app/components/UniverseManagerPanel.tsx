@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import { useUniverseStore } from '@/app/store/universeStore';
 import { UniverseStock, UniverseStats, SymbolValidationResult } from '@/app/lib/universe/UniverseManager';
 import { cn, formatCurrency } from '@/app/lib/utils';
+import { DeleteConfirmModal } from './modals/DeleteConfirmModal';
 
 export function UniverseManagerPanel() {
   const {
@@ -33,6 +34,7 @@ export function UniverseManagerPanel() {
   const [validationResult, setValidationResult] = useState<SymbolValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deleteConfirmSymbol, setDeleteConfirmSymbol] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -72,8 +74,13 @@ export function UniverseManagerPanel() {
   };
 
   const handleRemoveStock = async (symbol: string) => {
-    if (confirm(`${symbol} をユニバースから削除しますか？`)) {
-      removeStock(symbol);
+    setDeleteConfirmSymbol(symbol);
+  };
+
+  const confirmRemoveStock = async () => {
+    if (deleteConfirmSymbol) {
+      removeStock(deleteConfirmSymbol);
+      setDeleteConfirmSymbol(null);
     }
   };
 
@@ -210,6 +217,15 @@ export function UniverseManagerPanel() {
           onSymbolChange={setNewSymbol}
           isValidating={isValidating}
           validationResult={validationResult}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmSymbol && (
+        <DeleteConfirmModal
+          symbol={deleteConfirmSymbol}
+          onConfirm={confirmRemoveStock}
+          onCancel={() => setDeleteConfirmSymbol(null)}
         />
       )}
     </div>
@@ -416,3 +432,5 @@ function AddStockModal({ onClose, onAdd, symbol, onSymbolChange, isValidating, v
     </div>
   );
 }
+
+

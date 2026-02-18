@@ -1,6 +1,6 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { OHLCV, Signal } from '@/app/types';
-import { GHOST_FORECAST, FORECAST_CONE, OPTIMIZATION } from '@/app/lib/constants';
+import { GHOST_FORECAST, FORECAST_CONE, OPTIMIZATION } from '@/app/constants';
 
 interface UseForecastLayersProps {
   data: OHLCV[];
@@ -107,19 +107,30 @@ export const useForecastLayers = ({
     ];
   }, [signal, data, extendedData.labels, accuracyData]);
 
-  // Cache for ghost forecast calculations
+  // Cache for ghost forecast calculations - kept in state to avoid ref access during render
   const ghostCacheRef = useRef<Map<number, GhostForecastCache>>(new Map());
-  const lastQuantizedIdxRef = useRef<number | null>(null);
+  const [ghostForecastDatasets, setGhostForecastDatasets] = useState<Array<{
+    label: string;
+    data: number[];
+    borderColor: string;
+    backgroundColor?: string;
+    borderWidth: number;
+    borderDash?: number[];
+    pointRadius: number;
+    fill: boolean | string;
+    order: number;
+  }>>([]);
 
   // 2. AI Time Travel: Ghost Cloud (past prediction reproduction)
   // Performance Optimization: Quantize hover index and cache results
-  const ghostForecastDatasets = useMemo(() => {
+  // React 19 Compliance: Moved cache operations to useEffect to avoid ref access during render
+  useEffect(() => {
     if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) {
-      return [];
+      setGhostForecastDatasets([]);
+      return;
     }
 
     // Quantize the hover index to reduce calculation frequency
-    // Only recalculate when the quantized index changes
     const quantizedIdx = Math.floor(hoveredIdx / HOVER_QUANTIZATION_STEP) * HOVER_QUANTIZATION_STEP;
     
     // Create a simple hash based on data content for cache validation
@@ -134,10 +145,9 @@ export const useForecastLayers = ({
         cachedEntry.dataHash === dataHash &&
         cachedEntry.result) {
       // Cache hit - return cached result
-      lastQuantizedIdxRef.current = quantizedIdx;
       const { targetArr, stopArr, color } = cachedEntry.result;
       
-      return [
+      setGhostForecastDatasets([
         {
           label: 'Past Forecast (Upper)',
           data: targetArr,
@@ -158,10 +168,11 @@ export const useForecastLayers = ({
           fill: false,
           order: -2
         }
-      ];
+      ]);
+      return;
     }
 
-    // Cache miss - perform lightweight calculation (skip heavy analyzeStock)
+    // Cache miss - perform lightweight calculation
     const currentPrice = data[quantizedIdx].close;
     
     // Use pre-calculated indicators if available, otherwise use simple defaults
@@ -206,7 +217,6 @@ export const useForecastLayers = ({
     
     // Store in cache with LRU eviction
     if (cache.size >= MAX_CACHE_SIZE) {
-      // Remove oldest entry (first key)
       const firstKey = cache.keys().next().value;
       if (firstKey !== undefined) {
         cache.delete(firstKey);
@@ -219,10 +229,8 @@ export const useForecastLayers = ({
       dataLength: data.length,
       dataHash
     });
-    
-    lastQuantizedIdxRef.current = quantizedIdx;
 
-    return [
+    setGhostForecastDatasets([
       {
         label: 'Past Forecast (Upper)',
         data: targetArr,
@@ -243,8 +251,8 @@ export const useForecastLayers = ({
         fill: false,
         order: -2
       }
-    ];
-  }, [hoveredIdx, data, market, extendedData.labels.length, preCalculatedIndicators, signal]);
+    ]);
+  }, [hoveredIdx, data, extendedData.labels.length, preCalculatedIndicators]);
 
   return { ghostForecastDatasets, forecastDatasets };
 };

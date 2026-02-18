@@ -42,19 +42,22 @@
 
 #### タスク
 
-- [ ] **1.1 定数ファイル構造の作成**
-  - [ ] `app/constants/index.ts` - メインエクスポート
-  - [ ] `app/constants/trading.ts` - 取引関連定数
-  - [ ] `app/constants/chart.ts` - チャート関連定数
-  - [ ] `app/constants/technical.ts` - テクニカル指標定数
-  - [ ] `app/constants/api.ts` - API関連定数
-  - [ ] `app/constants/ui.ts` - UI関連定数
+- [x] **1.1 定数ファイル構造の作成**
+  - [x] `app/constants/index.ts` - メインエクスポート
+  - [x] `app/constants/trading.ts` - 取引関連定数
+  - [x] `app/constants/chart.ts` - チャート関連定数
+  - [x] `app/constants/technical.ts` - テクニカル指標定数
+  - [x] `app/constants/api.ts` - API関連定数
+  - [x] `app/constants/ui.ts` - UI関連定数
 
-- [ ] **1.2 ハードコードされた値の移行**
-  - [ ] チャート設定（期間、色、サイズ等）
-  - [ ] テクニカル指標パラメータ（SMA期間、RSI閾値等）
-  - [ ] API設定（タイムアウト、リトライ回数等）
-  - [ ] UIコンポーネント設定
+- [x] **1.2 ハードコードされた値の移行**
+  - [x] チャート設定（期間、色、サイズ等）
+  - [x] テクニカル指標パラメータ（SMA期間、RSI閾値等）
+  - [x] API設定（タイムアウト、リトライ回数等）
+  - [x] UIコンポーネント設定
+  - [x] すべてのインポートパスを更新（70+ファイル）
+  - [x] ドキュメント内の古い参照を更新
+  - Note: `app/lib/constants` を `app/constants` に統合しました。
 
 - [ ] **1.3 環境変数の型安全な管理**
   - [ ] `app/config/env.ts` - 環境変数型定義
@@ -361,7 +364,7 @@
 
 | Issue | タイトル | Phase | 進捗 | 状態 |
 |-------|---------|-------|------|------|
-| #522 | 定数・設定の一元管理 | 1 | 0% | ⚪ |
+| #522 | 定数・設定の一元管理 | 1 | 80% | 🟡 |
 | #523 | 型安全性の向上 | 1 | 0% | ⚪ |
 | #528 | エラーハンドリングの統一 | 1 | 0% | ⚪ |
 | #525 | サービス層の責務分離 | 2 | 0% | ⚪ |

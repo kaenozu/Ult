@@ -13,7 +13,7 @@ import * as tf from '@tensorflow/tfjs';
 import { OHLCV, TechnicalIndicatorsWithATR } from '../../types';
 import { featureCalculationService, PredictionFeatures } from './feature-calculation-service';
 import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from '../utils';
-import { RSI_CONFIG, SMA_CONFIG } from '@/app/lib/constants';
+import { RSI_CONFIG, SMA_CONFIG } from '@/app/constants';
 
 /** 訓練設定 */
 export interface TrainingConfig {
