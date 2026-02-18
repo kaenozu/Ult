@@ -11,24 +11,12 @@ import { mlIntegrationService } from '@/app/lib/services/MLIntegrationService';
  */
 export function MLProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    // Initialize ML service in the background
     mlIntegrationService
       .initialize()
-      .then(() => {
-        const status = mlIntegrationService.getStatus();
-        
-        if (status.available) {
-          console.info('[ML Provider] ML models loaded successfully');
-        } else {
-          console.info('[ML Provider] Using rule-based predictions (ML models not available)');
-        }
-      })
-      .catch((err) => {
-        console.error('[ML Provider] Initialization failed:', err);
+      .catch(() => {
         // Continue anyway - app works fine without ML models
       });
   }, []);
 
-  // Don't block rendering - the app works fine without ML models
   return <>{children}</>;
 }

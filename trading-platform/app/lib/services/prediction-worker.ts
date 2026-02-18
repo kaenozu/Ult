@@ -154,7 +154,8 @@ function generateSignal(symbol, ensemble, confidence, lastPrice) {
     reason: type === 'HOLD' ? 'Low confidence' : 'AI prediction ensemble (' + ensemble.toFixed(2) + ')',
     predictedChange: ensemble,
     predictionDate: new Date().toISOString(),
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    atr
   };
 }
 `;

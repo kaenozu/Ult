@@ -6,8 +6,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authStore } from '@/app/lib/auth-store';
 
-// JWT secret
-const JWT_SECRET = process.env.JWT_SECRET || 'demo-secret-change-in-production';
+const envSecret = process.env.JWT_SECRET;
+if (!envSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production');
+}
+const ACTIVE_SECRET = envSecret || 'demo-secret-dev-only';
 
 // --- Zod Schema ---
 const LoginSchema = z.object({
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
     // Generate JWT
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
+      ACTIVE_SECRET,
       { expiresIn: '7d' }
     );
 

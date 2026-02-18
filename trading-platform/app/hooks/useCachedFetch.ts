@@ -49,8 +49,8 @@ function fetchReducer<T>(state: FetchState<T>, action: FetchAction<T>): FetchSta
  * コンポーネント間でキャッシュを共有
  */
 class GlobalCache {
-  private cache = new Map<string, CacheEntry<any>>();
-  private subscribers = new Map<string, Set<(data: any) => void>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private subscribers = new Map<string, Set<(data: unknown) => void>>();
   
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
@@ -61,13 +61,12 @@ class GlobalCache {
       return null;
     }
     
-    return entry.data;
+    return entry.data as T;
   }
   
   set<T>(key: string, data: T, ttl: number): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl });
     
-    // サブスクライバーに通知
     const subs = this.subscribers.get(key);
     if (subs) {
       subs.forEach(callback => callback(data));
@@ -78,10 +77,10 @@ class GlobalCache {
     if (!this.subscribers.has(key)) {
       this.subscribers.set(key, new Set());
     }
-    this.subscribers.get(key)!.add(callback);
+    this.subscribers.get(key)!.add(callback as (data: unknown) => void);
     
     return () => {
-      this.subscribers.get(key)?.delete(callback);
+      this.subscribers.get(key)?.delete(callback as (data: unknown) => void);
     };
   }
   
