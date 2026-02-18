@@ -25,10 +25,10 @@ export function TradingPsychologyDashboard({ className }: { className?: string }
       </div>
 
       <div className="flex gap-2 border-b border-gray-700 pb-2">
-        {['overview', 'patterns', 'sentiment', 'discipline'].map((tab) => (
+        {(['overview', 'patterns', 'sentiment', 'discipline'] as const).map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as any)}
+            onClick={() => setActiveTab(tab)}
             className={cn('px-4 py-2 rounded-lg transition-colors', activeTab === tab ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400')}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}

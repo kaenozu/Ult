@@ -3,7 +3,7 @@
 import { useRef, memo, useState, useMemo, useEffect, useCallback } from 'react';
 import { usePerformanceMonitor } from '@/app/hooks/usePerformanceMonitor';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, Decimation,
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler, Decimation, ScriptableContext,
 } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 import { OHLCV, Signal } from '@/app/types';
@@ -318,11 +318,11 @@ export const StockChart = memo(function StockChart({
     yAxisID: 'y',
     // 過去と未来の境界を視覚的に分けるためのセグメント設定（Chart.js機能）
     segment: {
-      borderDash: (ctx: any) => {
+      borderDash: (ctx: { p0?: { parsed?: { x: unknown } } }) => {
         const x = ctx.p0?.parsed?.x;
         return typeof x === 'number' && x >= actualData.prices.length - 1 ? [5, 5] : undefined;
       },
-      borderColor: (ctx: any) => {
+      borderColor: (ctx: { p0?: { parsed?: { x: unknown } } }) => {
         const x = ctx.p0?.parsed?.x;
         return typeof x === 'number' && x >= actualData.prices.length - 1 ? 'rgba(146, 173, 201, 0.8)' : undefined;
       }

@@ -455,7 +455,8 @@ export class EnhancedPredictionService {
       predictedChange: ensemble,
       predictionDate: new Date().toISOString(),
       confidence,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      atr
     };
   }
 }

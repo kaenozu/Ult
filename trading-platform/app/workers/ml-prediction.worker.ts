@@ -5,6 +5,11 @@
  * UIの応答性を維持しながら重い計算を実行
  */
 
+import type * as tf from '@tensorflow/tfjs';
+
+type TensorFlowModule = typeof tf;
+type LayersModel = tf.LayersModel;
+
 // Web Worker内での型定義
 interface WorkerRequest {
   id: string;
@@ -30,47 +35,33 @@ interface WorkerResponse {
   };
 }
 
-// Web Worker内でのTensorFlow動作
-// TensorFlow.js types are complex, using any for dynamic imports
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let tf: any = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let models: Map<string, any> = new Map();
+let tfInstance: TensorFlowModule | null = null;
+let models: Map<string, LayersModel> = new Map();
 
-/**
- * TensorFlow.jsを動的にロード
- */
-async function loadTensorFlow(): Promise<any> {
-  if (tf) return tf;
+async function loadTensorFlow(): Promise<TensorFlowModule> {
+  if (tfInstance) return tfInstance;
   
   try {
-    // Web Worker内ではdynamic importを使用
-    const tensorflow = await import('@tensorflow/tfjs');
-    tf = tensorflow;
+    const tensorflow = await import('@tensorflow/tfjs') as TensorFlowModule;
+    tfInstance = tensorflow;
     
-    // CPUバックエンドを設定（Web WorkerではWebGLが使えない場合がある）
-    await tf.setBackend('cpu');
+    await tfInstance.setBackend('cpu');
     
-    return tf;
+    return tfInstance;
   } catch (error) {
-    console.error('[MLWorker] Failed to load TensorFlow:', error);
     throw error;
   }
 }
 
-/**
- * モデルを作成または取得
- */
-async function getOrCreateModel(modelType: string, inputShape: number[]): Promise<any> {
+async function getOrCreateModel(modelType: string, inputShape: number[]): Promise<LayersModel> {
   const cacheKey = `${modelType}_${inputShape.join('_')}`;
 
   if (models.has(cacheKey)) {
-    return models.get(cacheKey);
+    return models.get(cacheKey)!;
   }
 
   const tensorflow = await loadTensorFlow();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let model: any;
+  let model: LayersModel;
 
   switch (modelType) {
     case 'LSTM':
@@ -84,7 +75,7 @@ async function getOrCreateModel(modelType: string, inputShape: number[]): Promis
           tensorflow.layers.dense({ units: 25, activation: 'relu' }),
           tensorflow.layers.dense({ units: 1, activation: 'linear' }),
         ],
-      });
+      }) as LayersModel;
       break;
 
     case 'GRU':
@@ -98,7 +89,7 @@ async function getOrCreateModel(modelType: string, inputShape: number[]): Promis
           tensorflow.layers.dense({ units: 25, activation: 'relu' }),
           tensorflow.layers.dense({ units: 1, activation: 'linear' }),
         ],
-      });
+      }) as LayersModel;
       break;
 
     case 'FF':
@@ -114,7 +105,7 @@ async function getOrCreateModel(modelType: string, inputShape: number[]): Promis
           tensorflow.layers.dense({ units: 32, activation: 'relu' }),
           tensorflow.layers.dense({ units: 1, activation: 'linear' }),
         ],
-      });
+      }) as LayersModel;
       break;
   }
 
@@ -138,14 +129,11 @@ async function predict(
   const tensorflow = await loadTensorFlow();
   const model = await getOrCreateModel(modelType, [features.length]);
 
-  // 入力データをテンソルに変換
   const input = tensorflow.tensor2d([features]);
 
-  // 予測実行
-  const prediction = model.predict(input);
+  const prediction = model.predict(input) as tf.Tensor;
   const result = await prediction.data();
 
-  // メモリ解放
   input.dispose();
   prediction.dispose();
 
@@ -180,12 +168,14 @@ async function train(
     verbose: 0,
   });
 
-  const loss = history.history.loss[history.history.loss.length - 1];
-  const accuracy = history.history.mse
+  const lossValue = history.history.loss[history.history.loss.length - 1];
+  const mseValue = history.history.mse
     ? history.history.mse[history.history.mse.length - 1]
     : 0;
 
-  // メモリ解放
+  const loss = typeof lossValue === 'number' ? lossValue : 0;
+  const accuracy = typeof mseValue === 'number' ? mseValue : 0;
+
   xs.dispose();
   ys.dispose();
 

@@ -15,36 +15,35 @@ import type { ModelMetrics, ModelTrainingData } from './tensorflow-model-service
 import type { PredictionFeatures } from '../mlPrediction';
 import type { ModelPrediction } from '../../types';
 
-// TensorFlow.js models - dynamically imported to reduce bundle size
-// Using any for dynamic imports - these are lazily loaded to avoid bundle bloat
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let FeedForwardModel: any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let GRUModel: any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let LSTMModel: any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let featuresToArray: any;
+type TensorFlowModelType = new () => ITensorFlowModel;
+type FeaturesToArrayFn = (features: PredictionFeatures) => number[];
 
-// Dynamic import for TensorFlow.js models
-async function loadTensorFlowModels(): Promise<{
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  FeedForwardModel: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  GRUModel: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  LSTMModel: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  featuresToArray: any;
-}> {
+let FeedForwardModel: TensorFlowModelType | null = null;
+let GRUModel: TensorFlowModelType | null = null;
+let LSTMModel: TensorFlowModelType | null = null;
+let featuresToArray: FeaturesToArrayFn | null = null;
+
+interface TensorFlowModels {
+  FeedForwardModel: TensorFlowModelType;
+  GRUModel: TensorFlowModelType;
+  LSTMModel: TensorFlowModelType;
+  featuresToArray: FeaturesToArrayFn;
+}
+
+async function loadTensorFlowModels(): Promise<TensorFlowModels> {
   if (!FeedForwardModel) {
     const tf = await import('./tensorflow-model-service');
-    FeedForwardModel = tf.FeedForwardModel;
-    GRUModel = tf.GRUModel;
-    LSTMModel = tf.LSTMModel;
-    featuresToArray = tf.featuresToArray;
+    FeedForwardModel = tf.FeedForwardModel as TensorFlowModelType;
+    GRUModel = tf.GRUModel as TensorFlowModelType;
+    LSTMModel = tf.LSTMModel as TensorFlowModelType;
+    featuresToArray = tf.featuresToArray as FeaturesToArrayFn;
   }
-  return { FeedForwardModel, GRUModel, LSTMModel, featuresToArray };
+  return { 
+    FeedForwardModel: FeedForwardModel!, 
+    GRUModel: GRUModel!, 
+    LSTMModel: LSTMModel!, 
+    featuresToArray: featuresToArray! 
+  };
 }
 
 export interface MLServiceConfig {
@@ -143,6 +142,10 @@ export class MLModelService extends DomainMLModelService {
    */
   async predictAsync(features: PredictionFeatures): Promise<ModelPrediction> {
     if (!this.isTensorFlowEnabled()) {
+      return this.predict(features);
+    }
+
+    if (!featuresToArray) {
       return this.predict(features);
     }
 

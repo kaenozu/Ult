@@ -4,8 +4,17 @@ import { TradingPattern, ImprovementSuggestion } from '@/app/lib/psychology/AITr
 import { FearGreedIndex } from '@/app/lib/psychology/SentimentAnalyzer';
 import { RuleViolation } from '@/app/lib/psychology/DisciplineMonitor';
 
+interface DisciplineMetricsDisplay {
+  overall: number;
+  planAdherence: number;
+  emotionalControl: number;
+  lossManagement: number;
+  journalConsistency: number;
+  coolingOffCompliance: number;
+}
+
 interface OverviewTabProps {
-  disciplineMetrics: any;
+  disciplineMetrics: DisciplineMetricsDisplay;
   fearGreedIndex: FearGreedIndex | null;
   patterns: TradingPattern[];
   suggestions: ImprovementSuggestion[];

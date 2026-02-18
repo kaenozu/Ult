@@ -71,17 +71,13 @@ export async function GET(request: NextRequest) {
         const parseResult = YahooChartResultSchema.safeParse(rawResult);
 
         if (!parseResult.success) {
-          console.error('[MarketAPI] Schema parse error:', parseResult.error);
           return handleApiError(new Error('Upstream API data schema mismatch'), 'market/history', 502);
         }
 
         const data = parseResult.data;
         if (!data || !data.quotes || data.quotes.length === 0) {
-          console.warn(`[MarketAPI] No data for ${yahooSymbol}:`, { hasData: !!data, hasQuotes: !!data?.quotes, quotesLength: data?.quotes?.length });
           return NextResponse.json({ data: [], warning: 'No historical data found' });
         }
-        
-        console.log(`[MarketAPI] Successfully fetched ${data.quotes.length} records for ${yahooSymbol}`);
 
         const warnings: string[] = [];
         if (isJapaneseStock && isIntraday) {
@@ -131,11 +127,7 @@ export async function GET(request: NextRequest) {
         });
       } catch (err) {
         if (err instanceof Error && err.name === 'YahooFinanceError') {
-          // YahooFinanceError specific handling
           const yahooErr = err as { statusCode?: number; url?: string };
-          const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
-          const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
-          console.error(`[MarketAPI] YahooFinanceError for ${yahooSymbol}: ${statusMessage} ${urlMessage}`);
           return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/history', yahooErr.statusCode || 502);
         }
         return handleApiError(err, 'market/history', 502);
@@ -162,11 +154,7 @@ export async function GET(request: NextRequest) {
           });
         } catch (err) {
           if (err instanceof Error && err.name === 'YahooFinanceError') {
-            // YahooFinanceError specific handling
-            const yahooErr = err as { statusCode?: number; url?: string };
-            const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
-            const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
-            console.error(`[MarketAPI] YahooFinanceError for ${symbols[0]}: ${statusMessage} ${urlMessage}`);
+            const yahooErr = err as { statusCode?: number };
             return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/quote', yahooErr.statusCode || 404);
           }
           return handleApiError(err, 'market/quote', 404);
@@ -191,11 +179,7 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ data });
         } catch (err) {
           if (err instanceof Error && err.name === 'YahooFinanceError') {
-            // YahooFinanceError specific handling
-            const yahooErr = err as { statusCode?: number; url?: string };
-            const statusMessage = yahooErr.statusCode ? `Status: ${yahooErr.statusCode}` : '';
-            const urlMessage = yahooErr.url ? `URL: ${yahooErr.url}` : '';
-            console.error(`[MarketAPI] YahooFinanceError for batch quote: ${statusMessage} ${urlMessage}`);
+            const yahooErr = err as { statusCode?: number };
             return handleApiError(new Error(`Yahoo Finance API Error: ${err.message}`), 'market/batch-quote', yahooErr.statusCode || 502);
           }
           return handleApiError(err, 'market/batch-quote', 502);

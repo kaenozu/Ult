@@ -125,11 +125,9 @@ export const Header = memo(function Header() {
           const newStock = await fetchStockMetadata(query);
           if (newStock) {
             handleStockSelect(newStock);
-          } else {
-            console.warn('Symbol not found:', query);
           }
-        } catch (err) {
-          console.error('On-demand fetch error:', err);
+        } catch {
+          // Silently ignore - stock not found or API unavailable
         } finally {
           setIsSearchingAPI(false);
         }
