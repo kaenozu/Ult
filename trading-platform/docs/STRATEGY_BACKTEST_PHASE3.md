@@ -263,32 +263,49 @@ console.log('Consistency:', wfResult.consistency);
 
 ## 統合例
 
-包括的な使用例は `app/lib/strategy-optimization-example.ts` を参照してください。
+包括的な使用例は、以下を参照してください：
+- `lib/optimization/__tests__/` - テストファイル内の使用例
+- `lib/validation/__tests__/` - 検証ロジックの例
+- 各機能のインラインドキュメント
 
 ### 例1: 単一戦略の最適化
 
 ```typescript
-import { optimizeMomentumStrategy } from '@/app/lib/strategy-optimization-example';
+import { ParameterOptimizer } from '@/app/lib/optimization';
+import { MomentumStrategy } from '@/app/lib/strategy';
 
-await optimizeMomentumStrategy(data, backtestConfig);
+// 最適化設定
+const optimizer = new ParameterOptimizer({
+  method: 'bayesian',
+  parameters: [
+    { name: 'lookbackPeriod', type: 'discrete', min: 10, max: 50 },
+    { name: 'threshold', type: 'continuous', min: 0.01, max: 0.05 }
+  ]
+});
+
+// 最適化実行
+const result = await optimizer.optimize(objectiveFunction);
 // 出力: 最適パラメータ、スコア、過剰適合警告等
 ```
 
 ### 例2: 複数戦略の比較
 
 ```typescript
-import { compareStrategies } from '@/app/lib/strategy-optimization-example';
+import { OverfittingDetector } from '@/app/lib/validation';
 
-await compareStrategies(data, backtestConfig);
+// 戦略のパフォーマンスを比較
+const detector = new OverfittingDetector();
+const analysis = detector.compareStrategies(strategies, trainResults, testResults);
 // 出力: 戦略比較テーブル、統計的優位性
 ```
 
 ### 例3: 過剰適合の検出
 
 ```typescript
-import { detectOverfitting } from '@/app/lib/strategy-optimization-example';
+import { OverfittingDetector } from '@/app/lib/validation';
 
-await detectOverfitting(data, backtestConfig);
+const detector = new OverfittingDetector();
+const result = detector.detectOverfitting(trainPerf, testPerf);
 // 出力: 過剰適合分析結果、警告、推奨事項
 ```
 

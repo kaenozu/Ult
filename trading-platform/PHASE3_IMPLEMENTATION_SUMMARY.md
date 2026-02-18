@@ -168,10 +168,9 @@ Features:
 
 - `components/strategy/StrategyDashboard.tsx` - Complete dashboard
 
-### Documentation & Examples (2 files)
+### Documentation (1 file)
 
-- `strategy-optimization-example.ts` - Complete workflow example
-- `PHASE3_STRATEGY_BACKTEST.md` - Comprehensive documentation
+- `PHASE3_STRATEGY_BACKTEST.md` - Comprehensive documentation with usage examples
 
 ---
 
@@ -238,12 +237,12 @@ import { StrategyDashboard } from '@/app/components/strategy/StrategyDashboard';
 />
 ```
 
-### Run Complete Example
+### Example Usage
 
-```bash
-cd trading-platform
-npx tsx app/strategy-optimization-example.ts
-```
+For complete workflow examples, refer to:
+- Test files in `lib/optimization/__tests__/` and `lib/validation/__tests__/`
+- Inline code documentation
+- `PHASE3_STRATEGY_BACKTEST.md` for usage patterns
 
 ---
 
