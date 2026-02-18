@@ -43,7 +43,7 @@ export const SignalHistoryPanel = memo(function SignalHistoryPanel({
       <div className="p-2 space-y-1">
         {filteredSignals.map((signal, index) => (
           <div 
-            key={`${signal.symbol}-${signal.generatedAt || index}`}
+            key={`${signal.symbol}-${signal.predictionDate || index}`}
             className="flex items-center gap-2 px-2 py-1.5 rounded bg-[#1a2633]/50 hover:bg-[#1a2633] transition-colors"
           >
             <div className={cn(
@@ -69,17 +69,6 @@ export const SignalHistoryPanel = memo(function SignalHistoryPanel({
                 信頼度 {Math.round(signal.confidence * 100)}%
               </span>
             </div>
-            
-            {signal.result && (
-              <span className={cn(
-                "text-[10px] px-1 py-0.5 rounded",
-                signal.result === 'HIT' && "bg-green-500/20 text-green-400",
-                signal.result === 'MISS' && "bg-red-500/20 text-red-400",
-                signal.result === 'PENDING' && "bg-gray-500/20 text-gray-400"
-              )}>
-                {signal.result === 'HIT' ? '的中' : signal.result === 'MISS' ? '不的中' : '待機中'}
-              </span>
-            )}
           </div>
         ))}
       </div>
