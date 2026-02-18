@@ -4,6 +4,11 @@
  * Example usage of the Reinforcement Learning Trading Agent
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { OHLCV } from '../../../types/shared';
 import {
   TradingAgent,
