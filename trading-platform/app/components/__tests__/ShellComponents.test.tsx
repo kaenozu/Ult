@@ -25,6 +25,8 @@ jest.mock('../DataDelayBadge', () => ({ DataDelayBadge: () => <span data-testid=
 
 // Mock Lucide icons
 jest.mock('lucide-react', () => ({
+    LayoutDashboard: () => <span data-testid="icon" />,
+    Briefcase: () => <span data-testid="icon" />,
     BarChart3: () => <span data-testid="icon" />,
     Grid3X3: () => <span data-testid="icon" />,
     FileText: () => <span data-testid="icon" />,

@@ -35,7 +35,7 @@ interface WorkerResponse {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let tf: any = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let models: Map<string, any> = new Map();
+const models: Map<string, any> = new Map();
 
 /**
  * TensorFlow.jsを動的にロード

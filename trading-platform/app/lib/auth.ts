@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { getConfig } from './config/env-validator';
+import { env } from './env';
 
 export interface JWTPayload {
   userId: string;
@@ -15,14 +15,7 @@ export interface JWTPayload {
  * @returns Decoded JWT payload or null if invalid
  */
 export function verifyAuthToken(req: NextRequest): JWTPayload | null {
-  // Get validated configuration
-  const config = getConfig();
-  const JWT_SECRET = config.jwt.secret;
-
-  // Security: Ensure JWT secret meets minimum length requirement (256 bits = 32 bytes)
-  if (JWT_SECRET.length < 32) {
-    throw new Error('JWT_SECRET must be at least 32 characters');
-  }
+  const JWT_SECRET = env.JWT_SECRET;
 
   try {
     // Get token from Authorization header
@@ -59,19 +52,12 @@ export function generateAuthToken(userId: string, username?: string): string {
     username,
   };
 
-  // Get validated configuration
-  const config = getConfig();
-  const JWT_SECRET = config.jwt.secret;
-  const JWT_EXPIRATION = config.jwt.expiration;
-
-  // Security: Ensure JWT secret meets minimum length requirement (256 bits = 32 bytes)
-  if (JWT_SECRET.length < 32) {
-    throw new Error('JWT_SECRET must be at least 32 characters');
-  }
+  const JWT_SECRET = env.JWT_SECRET;
+  const JWT_EXPIRATION = '7d'; // Default expiration
 
   return jwt.sign(payload, JWT_SECRET, {
     algorithm: 'HS256',
-    expiresIn: JWT_EXPIRATION as jwt.SignOptions['expiresIn'],
+    expiresIn: JWT_EXPIRATION,
   });
 }
 
@@ -113,7 +99,6 @@ export function requireAdmin(req: NextRequest): NextResponse | null {
     return requireAuth(req);
   }
 
-  const config = getConfig();
   const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
   const adminNames = (process.env.ADMIN_USERNAMES || '').split(',').map(s => s.trim()).filter(Boolean);
 
