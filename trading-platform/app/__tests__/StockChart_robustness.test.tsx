@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { StockChart } from '../components/StockChart';
+import { StockChart } from '../components/StockChart/StockChart';
 import { OHLCV } from '../types';
 import '@testing-library/jest-dom';
 
