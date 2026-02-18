@@ -48,7 +48,6 @@ describe('optimizeParameters', () => {
     expect(result.smaPeriod).toBeGreaterThanOrEqual(10);
     expect(result.smaPeriod).toBeLessThanOrEqual(200);
     
-<<<<<<< HEAD
     // Accuracy should be reasonable (not 100% due to noise)
     // With noisy random data, accuracy can be 0 in edge cases
     expect(result.accuracy).toBeGreaterThanOrEqual(0);
