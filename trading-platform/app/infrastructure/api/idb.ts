@@ -7,6 +7,11 @@
  * @deprecated Use IndexedDBClient from './idb-migrations' instead
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { OHLCV } from '@/app/types';
 
 const DB_NAME = 'TraderProDB';
@@ -41,7 +46,7 @@ export class IndexedDBClient {
         const db = (event.target as IDBOpenDBRequest).result;
         const oldVersion = event.oldVersion;
         
-        console.log(`IndexedDB Upgrade: ${oldVersion} -> ${DB_VERSION}`);
+        devLog(`IndexedDB Upgrade: ${oldVersion} -> ${DB_VERSION}`);
 
         if (oldVersion < 1) {
           if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -66,7 +71,7 @@ export class IndexedDBClient {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
-        console.log('IndexedDB: All data cleared.');
+        devLog('IndexedDB: All data cleared.');
         resolve();
       };
     });
