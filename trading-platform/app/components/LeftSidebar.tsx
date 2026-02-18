@@ -22,11 +22,8 @@ export const LeftSidebar = memo(function LeftSidebar({
   onSelect,
   selectedSymbol
 }: LeftSidebarProps) {
-  // We can use the store directly or props. StockTable uses store internally now too.
-  // But LeftSidebar receives watchlist as prop in page.tsx likely.
-  // Let's stick to props if they are passed, but StockTable inside uses store actions.
-
-  const { clearWatchlist } = useWatchlistStore();
+  // Use selector to only subscribe to necessary action
+  const clearWatchlist = useWatchlistStore(state => state.clearWatchlist);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Memoize handlers to prevent unnecessary re-renders

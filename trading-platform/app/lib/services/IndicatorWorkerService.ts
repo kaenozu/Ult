@@ -14,7 +14,9 @@ interface BollingerBandsResult {
 }
 
 interface IndicatorResults {
-  rsi: number[];
+  rsi: Map<number, number[]>;
+  sma: Map<number, number[]>;
+  atr: number[];
   macd: MACDResult;
   sma20: number[];
   sma50: number[];

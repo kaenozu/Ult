@@ -1,11 +1,11 @@
 import { logger } from '@/app/core/logger';
-﻿/**
+/**
  * ULT Trading Platform - Agent System Entry Point
  *
  * Usage: npx tsx app/lib/agent-system/index.ts
  */
 
-import { main } from '../AgentSystem/launcher';
+import { main } from './launcher';
 
 // Execute the launcher
 main().catch((error: unknown) => {
