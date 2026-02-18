@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Header } from '@/app/components/Header';
 
 import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
+import { AIRecommendationPanel } from '@/app/components/AIRecommendationPanel';
+import { SignalHistoryPanel } from '@/app/components/SignalHistoryPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useSignalHistoryStore } from '@/app/store/signalHistoryStore';
 import { useStockData } from '@/app/hooks/useStockData';
 import { useSymbolAccuracy } from '@/app/hooks/useSymbolAccuracy';
 import { Button } from '@/app/components/ui/Button';
@@ -36,6 +39,7 @@ function Workstation() {
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
   const { watchlist } = useWatchlistStore();
+  const { signals: signalHistory, addSignal } = useSignalHistoryStore();
   const {
     selectedStock,
     chartData,
@@ -54,6 +58,18 @@ function Workstation() {
   const [showBollinger, setShowBollinger] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+
+  // Add signal to history when chartSignal changes
+  React.useEffect(() => {
+    if (chartSignal && selectedStock) {
+      addSignal(chartSignal);
+    }
+  }, [chartSignal, selectedStock, addSignal]);
+
+  // Get high confidence signals for AI recommendation
+  const highConfidenceSignals = useMemo(() => {
+    return signalHistory.filter(s => s.confidence > 0.7);
+  }, [signalHistory]);
 
   // Fetch accuracy data for the selected stock
   const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(
@@ -193,6 +209,28 @@ function Workstation() {
             </div>
           ) : (
             <>
+              {/* AI Recommendation Panel */}
+              {highConfidenceSignals.length > 0 && (
+                <div className="px-4 pt-4">
+                  <AIRecommendationPanel
+                    signals={highConfidenceSignals}
+                    onSelectSignal={(signal) => {
+                      handleStockSelect({
+                        symbol: signal.symbol,
+                        name: signal.symbol,
+                        market: 'japan',
+                        sector: '',
+                        price: signal.targetPrice,
+                        change: 0,
+                        changePercent: 0,
+                        volume: 0,
+                      });
+                    }}
+                    maxItems={3}
+                  />
+                </div>
+              )}
+
               {/* Chart Header/Toolbar */}
               <ChartToolbar
                 stock={displayStock}
@@ -230,6 +268,16 @@ function Workstation() {
                 <div className="h-40 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
                   <SimpleRSIChart data={chartData} />
                 </div>
+
+                {/* Signal History Panel */}
+                {signalHistory.length > 0 && (
+                  <div className="mt-1 border border-[#233648] rounded bg-[#131b23]">
+                    <SignalHistoryPanel 
+                      signals={signalHistory} 
+                      currentSymbol={displayStock?.symbol}
+                    />
+                  </div>
+                )}
               </div>
             </>
           )}
