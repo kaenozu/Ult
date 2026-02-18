@@ -1,5 +1,10 @@
 'use client';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
@@ -164,7 +169,7 @@ const [displayFilters, filters, setDisplayFilters, isFilterDebouncing] = useDebo
     await Promise.all(
       Array.from(marketsToFetch).map(market => 
         marketClient.fetchMarketIndex(market).catch(() => {
-          console.warn(`Failed to pre-fetch ${market} index`);
+          devWarn(`Failed to pre-fetch ${market} index`);
         })
       )
     );
@@ -195,7 +200,7 @@ const [displayFilters, filters, setDisplayFilters, isFilterDebouncing] = useDebo
           }
         } catch (error) {
           // Log error for debugging/monitoring but don't stop the whole process
-          console.error('Failed to analyze', error);
+          devError('Failed to analyze', error);
         }
       }));
     }

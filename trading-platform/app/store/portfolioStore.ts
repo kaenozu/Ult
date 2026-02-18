@@ -5,6 +5,11 @@ import { OrderRequest, OrderResult } from '../types/order';
 import { getRiskManagementService } from '../lib/services/RiskManagementService';
 import { AI_TRADING } from '@/app/constants';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 interface PortfolioState {
   portfolio: Portfolio;
   aiStatus: 'active' | 'stopped';
@@ -146,7 +151,7 @@ export const usePortfolioStore = create<PortfolioState>()(
               }
 
               const newCash = orderRequest.side === 'LONG' ? state.portfolio.cash - totalCost : state.portfolio.cash + totalCost;
-              console.log('[portfolioStore] Executing Order:', {
+              devLog('[portfolioStore] Executing Order:', {
                 symbol: orderRequest.symbol,
                 side: orderRequest.side,
                 qty: finalQuantity,
@@ -185,7 +190,7 @@ export const usePortfolioStore = create<PortfolioState>()(
                   const { portfolio: currentPortfolio } = get();
                   psychologyService.analyze(currentPortfolio.orders, currentPortfolio.positions);
                 }).catch((err) => {
-                  console.error('[portfolioStore] PsychologyService analysis failed:', err);
+                  devError('[portfolioStore] PsychologyService analysis failed:', err);
                 });
               }, 10);
             }
@@ -233,7 +238,7 @@ export const usePortfolioStore = create<PortfolioState>()(
                 // Note: The type mismatch might occur if StoredTrade expects different fields
                 // Ensure we interact correctly with the service
                 indexedDBService.saveTrade(closedTrade as any).catch(err =>
-                  console.error('[portfolioStore] Failed to save trade to history:', err)
+                  devError('[portfolioStore] Failed to save trade to history:', err)
                 );
               });
 

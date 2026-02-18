@@ -5,6 +5,11 @@
  * Tracks all important user actions and system events.
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 import { AuditEvent, AuditEventType, AuditEventOutcome } from '../types/shared';
 import { idbClient } from '../lib/api/idb-migrations';
 
@@ -60,7 +65,7 @@ export class AuditLogger {
       // idbClient doesn't have a specific audit table yet, using generic store if available
       // For now, initializing with existing events in memory
     } catch (err) {
-      console.warn('Failed to load audit logs from storage', err);
+      devWarn('Failed to load audit logs from storage', err);
     }
   }
 
@@ -91,10 +96,10 @@ export class AuditLogger {
       // Future: Implement dedicated audit log store in idb-migrations
       // For now, logging to console in dev mode
       if (process.env.NODE_ENV === 'development') {
-        console.log(`[AUDIT] ${event.type}: ${JSON.stringify(event.details)}`);
+        devLog(`[AUDIT] ${event.type}: ${JSON.stringify(event.details)}`);
       }
     } catch (err) {
-      console.error('Failed to persist audit event', err);
+      devError('Failed to persist audit event', err);
     }
   }
 
