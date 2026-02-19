@@ -14,6 +14,9 @@ import { devLog } from '@/app/lib/utils/dev-logger';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { RSI_CONFIG, BOLLINGER_BANDS, CONSENSUS_SIGNAL_CONFIG } from '@/app/constants';
 import { MarketRegimeDetector, MarketRegime } from './services/market-regime-detector';
+import { MLModelService } from '@/app/domains/prediction/services/ml-model-service';
+import { PredictionFeatures } from '@/app/domains/prediction/types';
+import { AdaptiveWeightCalculator } from './services/adaptive-weight-calculator';
 
 /**
  * 各指標からのシグナル
@@ -59,13 +62,17 @@ const DEFAULT_WEIGHTS: ConsensusWeights = {
 
 class ConsensusSignalService {
   private regimeDetector: MarketRegimeDetector;
+  private mlService: MLModelService;
+  private weightCalculator: AdaptiveWeightCalculator;
 
-  constructor(regimeDetector?: MarketRegimeDetector) {
+  constructor(regimeDetector?: MarketRegimeDetector, mlService?: MLModelService) {
     this.regimeDetector = regimeDetector || new MarketRegimeDetector();
+    this.mlService = mlService || new MLModelService();
+    this.weightCalculator = new AdaptiveWeightCalculator();
   }
 
   /**
-   * メインメソッド：コンセンサスシグナルを生成
+   * メインメソッド：コンセンサスシグナルを生成（Phase 2: ML統合）
    */
   generateConsensus(data: OHLCV[], customWeights?: Partial<ConsensusWeights>): ConsensusSignal {
     if (data.length < 50) {
@@ -73,6 +80,7 @@ class ConsensusSignalService {
     }
 
     const closes = data.map(d => d.close);
+    const volumes = data.map(d => d.volume);
 
     // 各指標を計算
     const rsi = technicalIndicatorService.calculateRSI(closes, RSI_CONFIG.DEFAULT_PERIOD);
@@ -83,6 +91,8 @@ class ConsensusSignalService {
       BOLLINGER_BANDS.STD_DEVIATION
     );
     const sma20 = technicalIndicatorService.calculateSMA(closes, 20);
+    const sma5 = technicalIndicatorService.calculateSMA(closes, 5);
+    const sma50 = technicalIndicatorService.calculateSMA(closes, 50);
 
     // 市場レジームを判定
     let regime: MarketRegime;
@@ -104,7 +114,13 @@ class ConsensusSignalService {
     const macdSignal = this.generateMACDSignal(macd, currentPrice);
     const bollingerSignal = this.generateBollingerSignal(bollinger, currentPrice);
 
-    // 重みを取得
+    // Phase 2: ML予測を実行
+    const mlFeatures = this.extractMLFeatures(data, rsi, macd, bollinger, sma5, sma20, sma50);
+    const mlPrediction = this.mlService.predict(mlFeatures);
+    const mlSignal = this.convertMLPredictionToSignal(mlPrediction);
+
+    // 重みを取得（AdaptiveWeightCalculatorで動的調整）
+    const adaptiveWeights = this.weightCalculator.calculate(regime);
     const weights = { ...DEFAULT_WEIGHTS, ...customWeights };
 
     // コンセンサスを計算
@@ -119,7 +135,91 @@ class ConsensusSignalService {
       currentRSI
     );
 
+    // Phase 2: ML予測とテクニカル予測の一致判定
+    const technicalSignal = consensus.type;
+    const mlConsensusSignal = mlSignal.type;
+    
+    // 両方が一致する場合のみシグナルを発行、一致しない場合はHOLD
+    if (technicalSignal !== 'HOLD' && mlConsensusSignal !== 'HOLD' && technicalSignal === mlConsensusSignal) {
+      // 一致した場合、信頼度をブースト
+      const boostedConfidence = Math.min(consensus.confidence + 10, 95);
+      return {
+        ...consensus,
+        confidence: boostedConfidence,
+        reason: consensus.reason + ` [ML: モデル一致(${mlSignal.confidence.toFixed(0)}%)]`
+      };
+    } else if (technicalSignal !== 'HOLD' && mlConsensusSignal !== 'HOLD' && technicalSignal !== mlConsensusSignal) {
+      // 不一致の場合はHOLD（シグナルを抑制）
+      logger.info(`Signal suppressed due to ML/Technical mismatch: Technical=${technicalSignal}, ML=${mlConsensusSignal}`);
+      return this.createHoldSignal(`シグナル不一致のため抑制 (Technical: ${technicalSignal}, ML: ${mlConsensusSignal})`);
+    }
+
     return consensus;
+  }
+
+  /**
+   * ML用の特徴量を抽出
+   */
+  private extractMLFeatures(
+    data: OHLCV[],
+    rsi: number[],
+    macd: { macd: number[]; signal: number[]; histogram: number[] },
+    bollinger: { upper: number[]; middle: number[]; lower: number[] },
+    sma5: number[],
+    sma20: number[],
+    sma50: number[]
+  ): PredictionFeatures {
+    const len = data.length;
+    const currentPrice = data[len - 1].close;
+    const prevPrice = data[len - 2].close;
+    const priceMomentum = ((currentPrice - prevPrice) / prevPrice) * 100;
+    
+    // ボリューム比率（直近5日平均 / 直近20日平均）
+    const recentVolume = data.slice(-5).reduce((sum, d) => sum + d.volume, 0) / 5;
+    const longVolume = data.slice(-20).reduce((sum, d) => sum + d.volume, 0) / 20;
+    const volumeRatio = longVolume > 0 ? recentVolume / longVolume : 1;
+    
+    // ATR計算（簡易版）
+    const atr = data.slice(-14).reduce((sum, d) => sum + (d.high - d.low), 0) / 14;
+    const atrPercent = (atr / currentPrice) * 100;
+    
+    // MACDシグナル
+    const macdSignal = macd.histogram[macd.histogram.length - 1];
+    
+    // ボリンジャーバンド位置
+    const bbUpper = bollinger.upper[bollinger.upper.length - 1];
+    const bbLower = bollinger.lower[bollinger.lower.length - 1];
+    const bbPosition = bbUpper !== bbLower ? 
+      (currentPrice - bbLower) / (bbUpper - bbLower) : 0.5;
+
+    return {
+      rsi: rsi[rsi.length - 1],
+      rsiChange: rsi[rsi.length - 1] - rsi[rsi.length - 2],
+      sma5: sma5[len - 1] > 0 ? ((currentPrice - sma5[len - 1]) / sma5[len - 1]) * 100 : 0,
+      sma20: sma20[len - 1] > 0 ? ((currentPrice - sma20[len - 1]) / sma20[len - 1]) * 100 : 0,
+      sma50: sma50[len - 1] > 0 ? ((currentPrice - sma50[len - 1]) / sma50[len - 1]) * 100 : 0,
+      priceMomentum,
+      volumeRatio,
+      volatility: atrPercent,
+      macdSignal,
+      bollingerPosition: bbPosition,
+      atrPercent
+    };
+  }
+
+  /**
+   * ML予測結果をシグナルに変換
+   */
+  private convertMLPredictionToSignal(mlPrediction: { ensemblePrediction: number; confidence: number }): { type: 'BUY' | 'SELL' | 'HOLD'; confidence: number } {
+    const threshold = 0.5;
+    
+    if (mlPrediction.ensemblePrediction > threshold) {
+      return { type: 'BUY', confidence: mlPrediction.confidence };
+    } else if (mlPrediction.ensemblePrediction < -threshold) {
+      return { type: 'SELL', confidence: mlPrediction.confidence };
+    }
+    
+    return { type: 'HOLD', confidence: mlPrediction.confidence };
   }
 
   // ... (generateRSISignal, generateMACDSignal, generateBollingerSignal methods remain unchanged) ...
