@@ -1,3 +1,9 @@
+/**
+ * データソース行コンポーネント
+ *
+ * @module DataQualityPanel/components/DataSourceRow
+ */
+
 import React from 'react';
 import {
   AlertTriangle,
@@ -8,11 +14,36 @@ import { cn } from '@/app/lib/utils';
 import { formatLatency } from '../utils';
 import { DataSourceHealth } from '../types';
 
+/**
+ * DataSourceRowコンポーネントのプロパティ
+ */
 export interface DataSourceRowProps {
+  /** データソース名 */
   name: string;
+  /** データソースの健全性情報 */
   health: DataSourceHealth;
 }
 
+/**
+ * データソースの状態を表示する行コンポーネント
+ *
+ * ステータスアイコン、品質スコア、レイテンシを視覚的に表示します。
+ *
+ * @param props - コンポーネントのプロパティ
+ * @returns データソース行UI
+ *
+ * @example
+ * <DataSourceRow
+ *   name="Yahoo Finance"
+ *   health={{
+ *     source: "Yahoo Finance",
+ *     status: "healthy",
+ *     latency: 150,
+ *     lastUpdate: Date.now(),
+ *     qualityScore: 95
+ *   }}
+ * />
+ */
 export const DataSourceRow: React.FC<DataSourceRowProps> = ({ name, health }) => {
   // Render status icon directly to avoid creating components during render
   const renderStatusIcon = () => {
