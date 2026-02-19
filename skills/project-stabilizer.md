@@ -1,7 +1,7 @@
 ---
 name: project-stabilizer
 description: Post-merge recovery and test stabilization specialist. Resolves inconsistencies after large merges and migrates to modern tech stack (TanStack Query, Zod, React 19).
-version: 1.1.0
+version: 1.2.0
 priority: high
 auto_activate: true
 ---
