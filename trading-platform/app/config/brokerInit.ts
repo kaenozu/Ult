@@ -5,19 +5,17 @@
  * This file should be imported early in the application lifecycle.
  */
 
-<<<<<<< HEAD
-=======
-import { devLog, devError } from '@/app/lib/utils/dev-logger';
->>>>>>> origin/main
 import { 
   initializeOrderExecutor, 
   loadBrokerConfigFromEnv,
-} from '@/app/lib/broker/BrokerFactory';
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger'; 
   validateBrokerConfig,
   getBrokerDisplayName,
   isBrokerConfigured,
 } from '../lib/brokers';
+
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 let initialized = false;
 

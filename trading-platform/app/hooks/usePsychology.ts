@@ -5,14 +5,10 @@
  * 心理監視、クーリングオフ、規律スコアの計算を簡単に使えるようにする
  */
 
-<<<<<<< HEAD
-import { useEffect, useMemo, useRef } from 'react';
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
 
 import { useEffect, useMemo, useRef } from 'react';
 import { devError } from '@/app/lib/utils/dev-logger';
->>>>>>> origin/main
+
 import { usePsychologyStore } from '@/app/store/psychologyStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { PsychologyMonitor } from '@/app/lib/risk/PsychologyMonitor';

@@ -5,11 +5,8 @@ import { candlestickPatternService, PatternFeatures } from './candlestick-patter
 import { predictionWorker, PredictionRequest } from './prediction-worker';
 import { featureCalculationService, PredictionFeatures } from './feature-calculation-service';
 import { OPTIMIZED_REGIME_WEIGHTS, RSI_THRESHOLDS, SIGNAL_THRESHOLDS } from '@/app/lib/config/prediction-config';
-<<<<<<< HEAD
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
 
->>>>>>> origin/main
+
 
 export interface PredictionInput {
   symbol: string;

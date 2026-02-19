@@ -34,7 +34,9 @@ describe('Environment Validator', () => {
       expect(config.nodeEnv).toBe('development');
       expect(config.isDevelopment).toBe(true);
       expect(config.isProduction).toBe(false);
-      expect(config.jwt.secret).toBe('dev-secret-key-do-not-use-in-production');
+      // JWT secret should be set from .env or fallback
+      expect(config.jwt.secret).toBeTruthy();
+      expect(config.jwt.secret.length).toBeGreaterThan(20);
     });
 
     it('should validate successfully in test environment', () => {

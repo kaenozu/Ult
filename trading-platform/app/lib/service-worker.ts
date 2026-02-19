@@ -5,12 +5,9 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-<<<<<<< HEAD
-import { devLog, devError } from '@/app/lib/utils/logger';
-=======
 import { devLog, devError } from '@/app/lib/utils/dev-logger';
 
->>>>>>> origin/main
+
 
 interface ServiceWorkerState {
   isSupported: boolean;

@@ -15,13 +15,10 @@ import { mlPredictionService } from './mlPrediction';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { TIME_INTERVALS } from '@/app/constants/common';
 import pLimit from 'p-limit';
-<<<<<<< HEAD
-import { devLog, devWarn } from '@/app/lib/utils/logger';
-=======
 
 const isDev = process.env.NODE_ENV !== 'production';
 
->>>>>>> origin/main
+
 
 // レビュー対応: マジックナンバーを定数化
 const MIN_DATA_REQUIRED = 50;  // 最低必要データ件数

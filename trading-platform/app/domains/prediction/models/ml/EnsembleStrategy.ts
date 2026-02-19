@@ -5,14 +5,10 @@
  * using intelligent weighting and meta-learning.
  */
 
-<<<<<<< HEAD
-import * as tf from '@tensorflow/tfjs';
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
 
 import * as tf from '@tensorflow/tfjs';
 import { devLog, devError } from '@/app/lib/utils/dev-logger';
->>>>>>> origin/main
+
 import { ModelPipeline } from './ModelPipeline';
 import { EnsemblePrediction, TrainingData, ModelConfig, ModelPredictionResult } from './types';
 

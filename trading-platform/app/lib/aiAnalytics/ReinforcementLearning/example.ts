@@ -4,10 +4,8 @@
  * Example usage of the Reinforcement Learning Trading Agent
  */
 
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
+
 import { OHLCV } from '../../../types/shared';
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 import {
