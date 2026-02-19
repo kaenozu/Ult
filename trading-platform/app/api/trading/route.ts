@@ -10,6 +10,20 @@ import { sanitizeSymbol, sanitizeText } from '@/app/lib/security/InputSanitizer'
 
 // --- Zod Schemas ---
 
+/**
+ * Configuration update schema with strict validation for security.
+ * 
+ * Security Features:
+ * - Validates all field types to prevent type confusion attacks
+ * - Enforces positive numbers for financial values (capital, risk limits)
+ * - Restricts mode to known enum values
+ * - Automatically strips unknown keys (default Zod behavior) to prevent:
+ *   - Configuration pollution attacks
+ *   - Prototype pollution attacks
+ *   - Bypassing security controls via unexpected properties
+ * 
+ * @see config-validation.test.ts for security test cases
+ */
 const ConfigUpdateSchema = z.object({
   mode: z.enum(['live', 'paper', 'backtest']).optional(),
   initialCapital: z.number().positive().optional(),
