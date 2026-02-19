@@ -17,6 +17,7 @@ import { MarketRegimeDetector, MarketRegime } from './services/market-regime-det
 import { MLModelService } from '@/app/domains/prediction/services/ml-model-service';
 import { PredictionFeatures } from '@/app/domains/prediction/types';
 import { AdaptiveWeightCalculator } from './services/adaptive-weight-calculator';
+import { useSignalHistoryStore } from '@/app/store/signalHistoryStore';
 
 /**
  * 各指標からのシグナル
@@ -405,6 +406,69 @@ class ConsensusSignalService {
   }
 
   /**
+   * 動的閾値を計算（Phase 3: 市場状況に応じた調整）
+   */
+  private calculateDynamicThreshold(regime: MarketRegime, baseThreshold: number): number {
+    // ボラティリティに応じた調整
+    if (regime.volatilityLevel === 'HIGH' || regime.volatilityLevel === 'EXTREME') {
+      return baseThreshold * 1.3; // 高ボラティリティ時は閾値を上げて厳格化
+    } else if (regime.volatilityLevel === 'LOW') {
+      return baseThreshold * 0.9; // 低ボラティリティ時は閾値を下げて緩和
+    }
+    return baseThreshold;
+  }
+
+  /**
+   * 過去実績に基づく信頼度調整（Phase 3: フィードバックループ）
+   */
+  private adjustConfidenceByHistory(baseConfidence: number, signalType: 'BUY' | 'SELL' | 'HOLD'): number {
+    try {
+      const stats = useSignalHistoryStore.getState().getStatsByConfidence();
+      
+      if (stats.totalSignals < 20) {
+        // データが不足している場合は調整なし
+        return baseConfidence;
+      }
+
+      const historicalHitRate = stats.hitRate / 100;
+      
+      // 過去の的中率に基づいて信頼度を調整
+      if (historicalHitRate > 0.65) {
+        // 高い的中率の場合、信頼度をブースト
+        return Math.min(baseConfidence * 1.1, 95);
+      } else if (historicalHitRate < 0.45) {
+        // 低い的中率の場合、信頼度を下げる
+        return baseConfidence * 0.85;
+      }
+      
+      return baseConfidence;
+    } catch (e) {
+      // ストアが利用できない場合は調整なし
+      return baseConfidence;
+    }
+  }
+
+  /**
+   * ATRベース動的ストップロスを計算（Phase 3）
+   */
+  calculateDynamicStopLoss(
+    entryPrice: number,
+    signalType: 'BUY' | 'SELL',
+    atr: number,
+    multiplier: number = 2.0
+  ): number {
+    const stopDistance = atr * multiplier;
+    
+    if (signalType === 'BUY') {
+      return entryPrice - stopDistance;
+    } else if (signalType === 'SELL') {
+      return entryPrice + stopDistance;
+    }
+    
+    return entryPrice;
+  }
+
+  /**
    * コンセンサスを計算（加重平均）
    */
   private calculateConsensus(
@@ -466,13 +530,16 @@ class ConsensusSignalService {
       else if (weightedScore < 0) weightedScore -= ensembleBonus;
     }
 
-    // シグナルタイプを決定 (improved thresholds for better accuracy)
-    let type: 'BUY' | 'SELL' | 'HOLD';
-    const SIGNAL_THRESHOLD = CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.SIGNAL_MIN;   // BUY/SELLの最低閾値
+    // Phase 3: 動的閾値を適用（市場状況に応じた調整）
+    const baseThreshold = CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.SIGNAL_MIN;
+    const dynamicThreshold = this.calculateDynamicThreshold(regime, baseThreshold);
     
-    if (weightedScore > SIGNAL_THRESHOLD) {
+    // シグナルタイプを決定
+    let type: 'BUY' | 'SELL' | 'HOLD';
+    
+    if (weightedScore > dynamicThreshold) {
       type = 'BUY';
-    } else if (weightedScore < -SIGNAL_THRESHOLD) {
+    } else if (weightedScore < -dynamicThreshold) {
       type = 'SELL';
     } else {
       type = 'HOLD';
@@ -484,14 +551,16 @@ class ConsensusSignalService {
                      probability < CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.PROBABILITY_MODERATE ? 'MODERATE' : 'STRONG';
 
     // コンフィデンス（0-100）を計算 - アンサンブルを考慮してさらにダイナミックに
-    // 0.45以上の実効スコアで60%を超えるように調整
     let confidence = Math.min(Math.abs(weightedScore) * CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.CONFIDENCE_SCALING, 
                      CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.CONFIDENCE_MAX);
     
-    // トレンド順張り戦略が適用された場合は確信度を下限70%に引き上げ（条件合致時）
+    // トレンド順張り戦略が適用された場合は確信度を下限70%に引き上げ
     if (strategyReason.includes('Trend:')) {
       confidence = Math.max(confidence, CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.MIN_CONFIDENCE_BOOST);
     }
+
+    // Phase 3: 過去実績に基づく信頼度調整（フィードバックループ）
+    confidence = this.adjustConfidenceByHistory(confidence, type);
 
     const finalConfidence = type === 'HOLD' ? 
       Math.max(confidence, CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.HOLD_CONFIDENCE_MIN) : 
