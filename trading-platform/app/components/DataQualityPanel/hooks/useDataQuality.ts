@@ -1,7 +1,35 @@
+/**
+ * データ品質フックのカスタムReact Hook
+ *
+ * @module DataQualityPanel/hooks/useDataQuality
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 import type { CacheStats } from '@/app/lib/data/cache/SmartDataCache';
 import { QualityMetrics, DataSourceHealth } from '../types';
 
+/**
+ * データ品質メトリクスを定期的にフェッチし、状態を管理するカスタムフック
+ *
+ * このフックは以下を提供します：
+ * - データ品質メトリクスの自動取得と更新
+ * - キャッシュ統計情報
+ * - データソースの健全性
+ * - 検出された異常
+ * - 手動更新機能
+ *
+ * @param updateInterval - 更新間隔（ミリ秒）、デフォルトは1000ms
+ * @returns データ品質の状態と更新関数
+ *
+ * @example
+ * const { qualityMetrics, dataSources, refresh } = useDataQuality(5000);
+ *
+ * // 品質スコアの表示
+ * console.log(qualityMetrics.overallScore);
+ *
+ * // 手動更新
+ * refresh();
+ */
 export const useDataQuality = (updateInterval: number = 1000) => {
   const [qualityMetrics, setQualityMetrics] = useState<QualityMetrics>({
     overallScore: 0,
