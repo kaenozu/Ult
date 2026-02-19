@@ -46,16 +46,28 @@ export class Cache<T> {
     
     if (!entry) return undefined;
     
-    if (Date.now() - entry.timestamp > entry.ttl) {
+    if (this.isExpired(entry)) {
       this.store.delete(key);
       return undefined;
     }
+
+    // LRU: Move accessed entry to the end
+    this.store.delete(key);
+    this.store.set(key, entry);
     
     return entry.value;
   }
 
   has(key: string): boolean {
-    return this.get(key) !== undefined;
+    const entry = this.store.get(key);
+    if (!entry) return false;
+    
+    if (this.isExpired(entry)) {
+      this.store.delete(key);
+      return false;
+    }
+    
+    return true;
   }
 
   delete(key: string): boolean {
@@ -67,11 +79,27 @@ export class Cache<T> {
   }
 
   keys(): string[] {
-    return Array.from(this.store.keys()).filter(key => this.has(key));
+    // Collect keys and prune expired ones if necessary, but don't re-insert them (no LRU refresh in keys())
+    const result: string[] = [];
+    const now = Date.now();
+    for (const [key, entry] of this.store.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.store.delete(key);
+      } else {
+        result.push(key);
+      }
+    }
+    return result;
   }
 
   size(): number {
-    return this.keys().length;
+    // Fast size check - might include expired items until next prune or access
+    // This is more efficient than calling keys().length
+    return this.store.size;
+  }
+
+  private isExpired(entry: CacheEntry<T>): boolean {
+    return Date.now() - entry.timestamp > entry.ttl;
   }
 
   // LRUポリシーで古いエントリを削除

@@ -29,7 +29,7 @@ export function fillGaps(sorted: OHLCV[]): OHLCV[] {
     const gapsToFill = Math.min(diffDays, MAX_GAP_DAYS);
     for (let d = 1; d < gapsToFill; d++) {
       const gapDate = new Date(new Date(sorted[i].date).getTime() + d * MS_PER_DAY);
-      if (gapDate.getDay() !== 0 && gapDate.getDay() !== 6) {
+      if (gapDate.getUTCDay() !== 0 && gapDate.getUTCDay() !== 6) {
         filled.push({ date: gapDate.toISOString().split('T')[0], open: 0, high: 0, low: 0, close: 0, volume: 0 });
       }
     }
