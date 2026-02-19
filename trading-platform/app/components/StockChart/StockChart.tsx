@@ -74,6 +74,7 @@ export const StockChart = memo(function StockChart({
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [containerWidth, setContainerWidth] = useState(300);
 
   const convertToLWCData = useCallback((ohlcv: OHLCV[]): CandlestickData<Time>[] => {
     return ohlcv.map((d) => ({
@@ -283,6 +284,28 @@ export const StockChart = memo(function StockChart({
     };
   }, [data.length, height, showVolume, showSMA, showBollinger]);
 
+  // Track container width to avoid accessing ref during render
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+    
+    const updateWidth = () => {
+      if (chartContainerRef.current) {
+        setContainerWidth(chartContainerRef.current.clientWidth);
+      }
+    };
+    
+    // Set initial width
+    updateWidth();
+    
+    // Update width on resize
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(chartContainerRef.current);
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     if (!candleSeriesRef.current || data.length === 0) return;
     
@@ -366,7 +389,7 @@ export const StockChart = memo(function StockChart({
         <div
           className="absolute z-50 bg-[#1a2632] border border-[#233648] rounded-lg p-3 shadow-lg pointer-events-none"
           style={{
-            left: Math.min(tooltipPos.x + 10, (chartContainerRef.current?.clientWidth || 300) - 150),
+            left: Math.min(tooltipPos.x + 10, containerWidth - 150),
             top: Math.max(tooltipPos.y - 100, 10),
           }}
         >
