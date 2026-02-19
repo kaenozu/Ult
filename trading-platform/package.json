@@ -99,6 +99,7 @@
     ]
   },
   "optionalDependencies": {
-    "@tailwindcss/oxide-wasm32-wasi": "4.1.18"
+    "@tailwindcss/oxide-wasm32-wasi": "4.1.18",
+    "tree-sitter": "0.21.1"
   }
 }

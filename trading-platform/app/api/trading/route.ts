@@ -382,7 +382,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
 
       case 'update_config':
-        platform.updateConfig(data.config);
+        // Sanitize string arrays in config to prevent XSS/Injection
+        const config = data.config;
+        const safeConfig = {
+          ...config,
+          ...(config.symbols && { symbols: config.symbols.map(s => sanitizeSymbol(s).sanitized) }),
+          ...(config.exchanges && { exchanges: config.exchanges.map(e => sanitizeText(e).sanitized) }),
+        };
+
+        platform.updateConfig(safeConfig);
         return NextResponse.json({ success: true });
 
       default:
