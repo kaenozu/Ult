@@ -526,6 +526,15 @@ docker run -p 3000:3000 \
 4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
 5. プルリクエストを作成
 
+詳細な貢献ガイドラインは [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+
+### ⚠️ コードレビューについて
+
+**現在の状況**: chatgpt-codex-connectorのAIコードレビュー機能は、使用制限に達しているため一時停止中です。
+
+- 人間によるピアレビューとCI/CDチェック（ESLint、TypeScript、Quality Gates）は継続して動作しています
+- 管理者向けの詳細情報: [`trading-platform/REVIEW_REPORT.md`](trading-platform/REVIEW_REPORT.md#コードレビューボット使用制限について)
+
 ### 開発環境のセットアップ
 
 ```bash
