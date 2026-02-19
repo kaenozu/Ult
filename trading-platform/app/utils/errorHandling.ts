@@ -7,10 +7,7 @@
  * ログ記録、エラー変換、リカバリー処理などのユーティリティが含まれます。
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 
 import { 
   Result, 

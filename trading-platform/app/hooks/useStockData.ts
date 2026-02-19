@@ -13,11 +13,8 @@ import { useRealTimeData } from './useRealTimeData';
 import { ServiceContainer, TOKENS } from '@/app/lib/di/ServiceContainer';
 import { IMarketDataHub } from '@/app/lib/interfaces/IMarketDataHub';
 import { initializeContainer } from '@/app/lib/di/initialize';
+import { devLog, devWarn, devError, isDev } from '@/app/lib/utils/logger';
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 const devDebug = (...args: unknown[]) => { if (isDev) console.debug(...args); };
 
 interface MarketDataMetadata {

@@ -5,10 +5,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+import { devLog, devError } from '@/app/lib/utils/logger';
 
 interface ServiceWorkerState {
   isSupported: boolean;

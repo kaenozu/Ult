@@ -5,12 +5,8 @@
  * Replaces scattered EventEmitter instances throughout the codebase.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
-
 import { EventMap } from '../types/shared';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 
 type EventKey = keyof EventMap;
 

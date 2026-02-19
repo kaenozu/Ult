@@ -4,10 +4,7 @@
  * パフォーマンス最適化のためのメモリ監視とリーク検出
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 
 interface MemorySnapshot {
   timestamp: number;

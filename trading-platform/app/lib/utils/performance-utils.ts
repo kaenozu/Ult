@@ -1,10 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { DependencyList } from 'react';
-
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 
 /**
  * パフォーマンス最適化ユーティリティ
