@@ -5,10 +5,7 @@
  * Manages service lifecycle and provides singleton access to services.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+import { devWarn } from '@/app/lib/utils/dev-logger';
 
 type Constructor<T> = new (...args: unknown[]) => T;
 

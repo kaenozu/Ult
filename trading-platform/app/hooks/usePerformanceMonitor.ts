@@ -5,12 +5,9 @@
  * including render time, memory usage, and user interaction responsiveness.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 import { useEffect, useRef, useCallback, useState, createElement } from 'react';
+import { devWarn, devError } from '@/app/lib/utils/dev-logger';
 
 interface PerformanceMetrics {
   renderTime: number;

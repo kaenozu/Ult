@@ -5,12 +5,9 @@
  * reactive UI updates and persistence.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 import { create } from 'zustand';
+import { devError } from '@/app/lib/utils/dev-logger';
 import { persist } from 'zustand/middleware';
 import { getUniverseManager, UniverseStock, UniverseStats, SymbolValidationResult } from '@/app/lib/universe/UniverseManager';
 

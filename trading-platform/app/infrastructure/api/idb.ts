@@ -7,12 +7,9 @@
  * @deprecated Use IndexedDBClient from './idb-migrations' instead
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 import { OHLCV } from '@/app/types';
+import { devLog } from '@/app/lib/utils/dev-logger';
 
 const DB_NAME = 'TraderProDB';
 const STORE_NAME = 'ohlcv_data';

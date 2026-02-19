@@ -5,12 +5,9 @@
  * UIの応答性を維持しながら重い計算を実行
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 import type * as tf from '@tensorflow/tfjs';
+import { devLog } from '@/app/lib/utils/dev-logger';
 
 type TensorFlowModule = typeof tf;
 type LayersModel = tf.LayersModel;

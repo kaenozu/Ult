@@ -8,14 +8,11 @@
  * エラーハンドリングを強制的に行うよう設計されています。
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 /**
  * 成功結果を表す型
  */
+import { devLog, devError } from '@/app/lib/utils/dev-logger';
 export interface SuccessResult<T> {
   readonly success: true;
   readonly data: T;

@@ -5,12 +5,9 @@
  * Follows the same principles as SQL migrations but adapted for IndexedDB.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 import { OHLCV } from '@/app/types';
+import { devLog, devError } from '@/app/lib/utils/dev-logger';
 
 const DB_NAME = 'TraderProDB';
 const DB_VERSION = 2; // Increment when schema changes

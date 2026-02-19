@@ -5,12 +5,9 @@
  * with the basic journal functionality.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 import { create } from 'zustand';
+import { devError } from '@/app/lib/utils/dev-logger';
 import { persist } from 'zustand/middleware';
 import { JournalEntry } from '@/app/types';
 import { getPatternRecognitionEngine, PatternReport } from '@/app/lib/trading/patternRecognition';

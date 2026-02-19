@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { devError, devWarn } from '@/app/lib/utils/dev-logger';
 
 /**
  * Environment variable schema definition

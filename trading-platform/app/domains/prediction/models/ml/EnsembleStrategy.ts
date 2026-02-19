@@ -5,12 +5,9 @@
  * using intelligent weighting and meta-learning.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 import * as tf from '@tensorflow/tfjs';
+import { devLog, devError } from '@/app/lib/utils/dev-logger';
 import { ModelPipeline } from './ModelPipeline';
 import { EnsemblePrediction, TrainingData, ModelConfig, ModelPredictionResult } from './types';
 

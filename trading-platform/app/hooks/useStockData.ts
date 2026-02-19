@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { devLog, devWarn, devError, devDebug } from '@/app/lib/utils/dev-logger';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
@@ -13,12 +14,6 @@ import { useRealTimeData } from './useRealTimeData';
 import { ServiceContainer, TOKENS } from '@/app/lib/di/ServiceContainer';
 import { IMarketDataHub } from '@/app/lib/interfaces/IMarketDataHub';
 import { initializeContainer } from '@/app/lib/di/initialize';
-
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
-const devDebug = (...args: unknown[]) => { if (isDev) console.debug(...args); };
 
 interface MarketDataMetadata {
   // ... (rest of the interface)

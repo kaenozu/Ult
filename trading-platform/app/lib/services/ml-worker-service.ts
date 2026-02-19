@@ -5,12 +5,9 @@
  * メインスレッドをブロックせずに重い計算を実行
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { devWarn, devError } from '@/app/lib/utils/dev-logger';
 
 interface MLPredictionRequest {
   id: string;

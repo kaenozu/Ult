@@ -1,9 +1,5 @@
 'use client';
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 /**
  * Performance Screener Dashboard
@@ -15,6 +11,7 @@ const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
+import { devError } from '@/app/lib/utils/dev-logger';
 import { useRouter } from 'next/navigation';
 
 import { cn, formatPercent } from '@/app/lib/utils';
