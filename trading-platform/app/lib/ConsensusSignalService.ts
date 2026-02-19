@@ -13,6 +13,7 @@ import { devLog } from '@/app/lib/utils/dev-logger';
 
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { RSI_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
+import { MarketRegimeDetector, MarketRegime } from './services/market-regime-detector';
 
 /**
  * 各指標からのシグナル
@@ -57,6 +58,12 @@ const DEFAULT_WEIGHTS: ConsensusWeights = {
 };
 
 class ConsensusSignalService {
+  private regimeDetector: MarketRegimeDetector;
+
+  constructor(regimeDetector?: MarketRegimeDetector) {
+    this.regimeDetector = regimeDetector || new MarketRegimeDetector();
+  }
+
   /**
    * メインメソッド：コンセンサスシグナルを生成
    */
@@ -75,9 +82,22 @@ class ConsensusSignalService {
       BOLLINGER_BANDS.PERIOD,
       BOLLINGER_BANDS.STD_DEVIATION
     );
+    const sma20 = technicalIndicatorService.calculateSMA(closes, 20);
+
+    // 市場レジームを判定
+    let regime: MarketRegime;
+    try {
+      regime = this.regimeDetector.detect(data);
+    } catch (e) {
+      // フォールバック
+      regime = { type: 'RANGING', volatilityLevel: 'NORMAL', trendStrength: 0, momentumQuality: 0 };
+    }
 
     // 各指標からシグナルを生成
     const currentPrice = closes[closes.length - 1];
+    const currentRSI = rsi[rsi.length - 1];
+    const currentSMA = sma20[sma20.length - 1];
+
     const rsiSignal = this.generateRSISignal(rsi, currentPrice);
     const macdSignal = this.generateMACDSignal(macd, currentPrice);
     const bollingerSignal = this.generateBollingerSignal(bollinger, currentPrice);
@@ -86,11 +106,21 @@ class ConsensusSignalService {
     const weights = { ...DEFAULT_WEIGHTS, ...customWeights };
 
     // コンセンサスを計算
-    const consensus = this.calculateConsensus(rsiSignal, macdSignal, bollingerSignal, weights);
+    const consensus = this.calculateConsensus(
+      rsiSignal, 
+      macdSignal, 
+      bollingerSignal, 
+      weights,
+      regime,
+      currentPrice,
+      currentSMA,
+      currentRSI
+    );
 
     return consensus;
   }
 
+  // ... (generateRSISignal, generateMACDSignal, generateBollingerSignal methods remain unchanged) ...
   /**
    * RSIからのシグナル生成
    * 単一の値だけでなく、ボトムアウト（反転上昇）も評価する
@@ -279,7 +309,11 @@ class ConsensusSignalService {
     rsiSignal: IndicatorSignal,
     macdSignal: IndicatorSignal,
     bollingerSignal: IndicatorSignal,
-    weights: ConsensusWeights
+    weights: ConsensusWeights,
+    regime: MarketRegime,
+    currentPrice: number,
+    currentSMA: number,
+    currentRSI: number
   ): ConsensusSignal {
     // 買いシグナルのスコアを計算（BUY=+1, SELL=-1, NEUTRAL=0）
     const rsiScore = rsiSignal.type === 'BUY' ? rsiSignal.strength : rsiSignal.type === 'SELL' ? -rsiSignal.strength : 0;
@@ -291,51 +325,85 @@ class ConsensusSignalService {
 
     // 【アンサンブル・ロジック】指標間の相関による確信度ブースト
     let ensembleBonus = 0;
+    let strategyReason = '';
     
-    // 1. 逆張り反転コンボ (RSI底打ち + MACDヒストグラム縮小)
-    if (rsiSignal.type === 'BUY' && rsiSignal.reason.includes('反転') && 
-        macdSignal.type === 'BUY' && macdSignal.reason.includes('底打ち')) {
-      ensembleBonus += 0.15; // 強い反転の兆候
-    }
-    
-    // 2. 乖離からの復帰 (BB下部 + RSI上昇)
-    if (bollingerSignal.type === 'BUY' && rsiSignal.type === 'BUY') {
-      ensembleBonus += 0.10;
+    // Phase 1: トレンド重視戦略の適用
+    // レンジ相場またはボラティリティが高い場合はシグナルを抑制（強制HOLD）
+    if (regime.type === 'RANGING' || regime.type === 'VOLATILE') {
+      weightedScore = 0;
+      strategyReason = ` [Filter: ${regime.type}相場のため除外]`;
+    } else if (regime.type === 'TRENDING_UP') {
+      // 上昇トレンド条件: 価格 > SMA20 かつ RSI中立(40-60)
+      if (currentPrice > currentSMA && currentRSI >= 40 && currentRSI <= 60) {
+        weightedScore += 0.4; // 強力なブースト
+        strategyReason = ` [Trend: 上昇トレンド順張り (Price>SMA, RSI=${currentRSI.toFixed(1)})]`;
+      }
+    } else if (regime.type === 'TRENDING_DOWN') {
+      // 下降トレンド条件: 価格 < SMA20 かつ RSI中立(40-60)
+      if (currentPrice < currentSMA && currentRSI >= 40 && currentRSI <= 60) {
+        weightedScore -= 0.4; // 強力なペナルティ（売り方向）
+        strategyReason = ` [Trend: 下降トレンド順張り (Price<SMA, RSI=${currentRSI.toFixed(1)})]`;
+      }
     }
 
-    // スコアにボーナスを適用
-    if (weightedScore > 0) weightedScore += ensembleBonus;
-    else if (weightedScore < 0) weightedScore -= ensembleBonus;
+    // 従来のボーナス（トレンド条件が合致しない場合などの補助）
+    if (!strategyReason) {
+      // 1. 逆張り反転コンボ (RSI底打ち + MACDヒストグラム縮小)
+      if (rsiSignal.type === 'BUY' && rsiSignal.reason.includes('反転') && 
+          macdSignal.type === 'BUY' && macdSignal.reason.includes('底打ち')) {
+        ensembleBonus += 0.15; // 強い反転の兆候
+      }
+      
+      // 2. 乖離からの復帰 (BB下部 + RSI上昇)
+      if (bollingerSignal.type === 'BUY' && rsiSignal.type === 'BUY') {
+        ensembleBonus += 0.10;
+      }
+
+      // スコアにボーナスを適用
+      if (weightedScore > 0) weightedScore += ensembleBonus;
+      else if (weightedScore < 0) weightedScore -= ensembleBonus;
+    }
 
     // シグナルタイプを決定 (improved thresholds for better accuracy)
-  let type: 'BUY' | 'SELL' | 'HOLD';
-  const SIGNAL_THRESHOLD = 0.15;   // BUY/SELLの最低閾値
-  
-  if (weightedScore > SIGNAL_THRESHOLD) {
-    type = 'BUY';
-  } else if (weightedScore < -SIGNAL_THRESHOLD) {
-    type = 'SELL';
-  } else {
-    type = 'HOLD';
-  }
+    let type: 'BUY' | 'SELL' | 'HOLD';
+    const SIGNAL_THRESHOLD = 0.15;   // BUY/SELLの最低閾値
+    
+    if (weightedScore > SIGNAL_THRESHOLD) {
+      type = 'BUY';
+    } else if (weightedScore < -SIGNAL_THRESHOLD) {
+      type = 'SELL';
+    } else {
+      type = 'HOLD';
+    }
+
     // 確率（0-1）と強さを決定
     const probability = Math.min(Math.abs(weightedScore), 1.0);
     const strength = probability < 0.4 ? 'WEAK' : probability < 0.7 ? 'MODERATE' : 'STRONG';
 
     // コンフィデンス（0-100）を計算 - アンサンブルを考慮してさらにダイナミックに
     // 0.45以上の実効スコアで60%を超えるように調整
-    const confidence = Math.min(Math.abs(weightedScore) * 135, 95);
+    let confidence = Math.min(Math.abs(weightedScore) * 135, 95);
+    
+    // トレンド順張り戦略が適用された場合は確信度を下限70%に引き上げ（条件合致時）
+    if (strategyReason.includes('Trend:')) {
+      confidence = Math.max(confidence, 70);
+    }
+
     const finalConfidence = type === 'HOLD' ? Math.max(confidence, 30) : Math.max(confidence, 50);
 
     // デバッグログ: 各指標の寄与度を詳細に出力 (開発環境のみ)
     if (process.env.NODE_ENV !== 'production' && Math.abs(weightedScore) > 0.1) {
       const bonusStr = ensembleBonus > 0 ? ` (+Bonus: ${ensembleBonus.toFixed(2)})` : '';
-      devLog(`[Consensus] ${type} (Score: ${weightedScore.toFixed(3)}${bonusStr}, Conf: ${finalConfidence.toFixed(1)}%) | RSI: ${rsiSignal.type}(${rsiSignal.strength.toFixed(2)}) MACD: ${macdSignal.type}(${macdSignal.strength.toFixed(2)}) BB: ${bollingerSignal.type}(${bollingerSignal.strength.toFixed(2)})`);
+      devLog(`[Consensus] ${type} (Score: ${weightedScore.toFixed(3)}${bonusStr}, Conf: ${finalConfidence.toFixed(1)}%) | Regime: ${regime.type} | RSI: ${rsiSignal.type}(${rsiSignal.strength.toFixed(2)}) MACD: ${macdSignal.type}(${macdSignal.strength.toFixed(2)}) BB: ${bollingerSignal.type}(${bollingerSignal.strength.toFixed(2)})`);
     }
 
     // 理由を生成
     const signals = { rsi: rsiSignal, macd: macdSignal, bollinger: bollingerSignal };
-    const reason = this.generateConsensusReason(type, signals, weightedScore);
+    let reason = this.generateConsensusReason(type, signals, weightedScore);
+    
+    if (strategyReason) {
+      reason += strategyReason;
+    }
 
     return {
       type,

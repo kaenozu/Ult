@@ -7,6 +7,7 @@
 
 import { marketClient } from '../lib/api/data-aggregator';
 import { idbClient } from '../lib/api/idb-migrations';
+import { interpolateOHLCV } from '../lib/utils/time-series';
 
 jest.mock('../lib/api/idb-migrations', () => ({
   idbClient: {
@@ -147,7 +148,7 @@ describe('MarketDataClient (Data Aggregator) Comprehensive Tests', () => {
       { date: '2026-01-07', open: TEST_PRICES.HIGH, high: TEST_PRICES.HIGH, low: TEST_PRICES.HIGH, close: TEST_PRICES.HIGH, volume: TEST_VOLUMES.LARGE }
     ];
 
-    const result = (marketClient as { interpolateOHLCV: (data: unknown[]) => unknown[] }).interpolateOHLCV(data);
+    const result = interpolateOHLCV(data as any);
     expect(result.length).toBeGreaterThan(2);
     const gapDay = result.find((d: { date: string }) => d.date === '2026-01-06');
     expect(gapDay).toBeDefined();
