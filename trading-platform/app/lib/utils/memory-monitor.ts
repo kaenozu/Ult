@@ -4,6 +4,11 @@
  * パフォーマンス最適化のためのメモリ監視とリーク検出
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 interface MemorySnapshot {
   timestamp: number;
   usedJSHeapSize: number;
@@ -150,7 +155,7 @@ class MemoryMonitor {
     
     // 開発環境ではコンソールにも出力
     if (process.env.NODE_ENV === 'development') {
-      console.warn('[MemoryMonitor]', warning);
+      devWarn('[MemoryMonitor]', warning);
     }
   }
 
@@ -194,7 +199,7 @@ class MemoryMonitor {
   suggestGarbageCollection(): void {
     if ('gc' in window && process.env.NODE_ENV === 'development') {
       (window as any).gc();
-      console.log('[MemoryMonitor] Garbage collection suggested');
+      devLog('[MemoryMonitor] Garbage collection suggested');
     }
   }
 
@@ -242,7 +247,7 @@ export function useMemorySnapshot(componentName: string) {
       if (before && after) {
         const diff = (after.used - before.used) / 1024 / 1024;
         if (diff > 10) {
-          console.warn(
+          devWarn(
             `[MemorySnapshot] ${componentName} が ${diff.toFixed(1)}MB のメモリを使用`
           );
         }

@@ -1,6 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import type { DependencyList } from 'react';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 /**
  * パフォーマンス最適化ユーティリティ
  * 
@@ -127,7 +132,7 @@ export function useRenderLimit(maxRenders: number = 10) {
   return function shouldRender(): boolean {
     renderCount++;
     if (renderCount > maxRenders) {
-      console.warn(`Component rendered ${renderCount} times, exceeding limit of ${maxRenders}`);
+      devWarn(`Component rendered ${renderCount} times, exceeding limit of ${maxRenders}`);
       return false;
     }
     return true;
@@ -192,7 +197,7 @@ export function createCleanupManager() {
         try {
           cleanup();
         } catch (e) {
-          console.error('Cleanup error:', e);
+          devError('Cleanup error:', e);
         }
       });
       cleanups.length = 0;
