@@ -10,6 +10,11 @@
  * - Market regime detection
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { OHLCV, Stock, Signal } from '@/app/types';
 import { PredictionFeatures, EnhancedPrediction } from '../types';
 import { FeatureCalculationService } from './feature-calculation-service';
@@ -418,7 +423,7 @@ export class EnhancedMLService {
    * Trigger model retraining
    */
   async triggerRetrain(): Promise<void> {
-    console.log('Triggering model retraining...');
+    devLog('Triggering model retraining...');
     
     // Reset drift metrics
     this.driftMetrics.lastRetrainDate = new Date();
@@ -431,7 +436,7 @@ export class EnhancedMLService {
     this.initializePerformanceTracking();
     
     // In production, this would trigger actual model retraining
-    console.log('Model retraining completed');
+    devLog('Model retraining completed');
   }
 
   /**

@@ -7,6 +7,11 @@
  * - 売買の強さを0-1の確率として表現
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { OHLCV, Signal, TimeFrame } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { RSI_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
@@ -327,7 +332,7 @@ class ConsensusSignalService {
     // デバッグログ: 各指標の寄与度を詳細に出力 (開発環境のみ)
     if (process.env.NODE_ENV !== 'production' && Math.abs(weightedScore) > 0.1) {
       const bonusStr = ensembleBonus > 0 ? ` (+Bonus: ${ensembleBonus.toFixed(2)})` : '';
-      console.log(`[Consensus] ${type} (Score: ${weightedScore.toFixed(3)}${bonusStr}, Conf: ${finalConfidence.toFixed(1)}%) | RSI: ${rsiSignal.type}(${rsiSignal.strength.toFixed(2)}) MACD: ${macdSignal.type}(${macdSignal.strength.toFixed(2)}) BB: ${bollingerSignal.type}(${bollingerSignal.strength.toFixed(2)})`);
+      devLog(`[Consensus] ${type} (Score: ${weightedScore.toFixed(3)}${bonusStr}, Conf: ${finalConfidence.toFixed(1)}%) | RSI: ${rsiSignal.type}(${rsiSignal.strength.toFixed(2)}) MACD: ${macdSignal.type}(${macdSignal.strength.toFixed(2)}) BB: ${bollingerSignal.type}(${bollingerSignal.strength.toFixed(2)})`);
     }
 
     // 理由を生成

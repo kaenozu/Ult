@@ -8,6 +8,11 @@
  * エラーハンドリングを強制的に行うよう設計されています。
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 /**
  * 成功結果を表す型
  */
@@ -41,9 +46,9 @@ export interface FailureResult<E = Error> {
  * 
  * const result = divide(10, 2);
  * if (result.success) {
- *   console.log(result.data); // 5
+ *   devLog(result.data); // 5
  * } else {
- *   console.error(result.error.message);
+ *   devError(result.error.message);
  * }
  * ```
  */

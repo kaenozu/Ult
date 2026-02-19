@@ -113,9 +113,9 @@ export const loadEnv = (): z.infer<typeof EnvSchema> => {
     return env;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('❌ Invalid environment variables:');
+      devError('❌ Invalid environment variables:');
       error.issues.forEach((err) => {
-        console.error(`  - ${err.path.join('.')}: ${err.message}`);
+        devError(`  - ${err.path.join('.')}: ${err.message}`);
       });
       throw new Error('Environment validation failed');
     }
