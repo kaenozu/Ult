@@ -12,10 +12,7 @@ import {
   getBrokerDisplayName,
   isBrokerConfigured,
 } from '../lib/brokers';
-
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+import { devLog, devError } from '../lib/utils/dev-logger';
 
 let initialized = false;
 
