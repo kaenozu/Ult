@@ -8,6 +8,18 @@
  *
  * 既存のデータ品質システム（DataQualityValidator, DataLatencyMonitor, SmartDataCache）
  * を統合した可視化を提供します。
+ *
+ * @example
+ * // Full mode
+ * <DataQualityPanel />
+ *
+ * @example
+ * // Compact mode
+ * <DataQualityPanel compact />
+ *
+ * @example
+ * // Custom update interval
+ * <DataQualityPanel updateInterval={5000} />
  */
 
 import React from 'react';
@@ -27,6 +39,15 @@ import { MetricCard } from './components/MetricCard';
 import { QualityProgressBar } from './components/QualityProgressBar';
 import { DataSourceRow } from './components/DataSourceRow';
 
+/**
+ * データ品質ダッシュボードコンポーネント
+ *
+ * 市場データの品質、キャッシュパフォーマンス、データソースの健全性を
+ * リアルタイムで監視および表示します。
+ *
+ * @param props - コンポーネントのプロパティ
+ * @returns データ品質ダッシュボードUI
+ */
 export const DataQualityPanel: React.FC<DataQualityPanelProps> = ({
   compact = false,
   updateInterval = 1000,

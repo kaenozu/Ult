@@ -1,16 +1,52 @@
+/**
+ * メトリクスカードコンポーネント
+ *
+ * @module DataQualityPanel/components/MetricCard
+ */
+
 import React from 'react';
 import { cn } from '@/app/lib/utils';
 
+/**
+ * MetricCardコンポーネントのプロパティ
+ */
 export interface MetricCardProps {
+  /** カードタイトル */
   title: string;
+  /** 表示する値 */
   value: string | number;
+  /** 値の単位（オプション） */
   unit?: string;
+  /** ステータス（色分けに使用） */
   status: 'excellent' | 'good' | 'fair' | 'poor';
+  /** アイコンコンポーネント（オプション） */
   icon?: React.ElementType;
+  /** トレンド値（%、オプション） */
   trend?: number;
+  /** 説明文（オプション） */
   description?: string;
 }
 
+/**
+ * メトリクスを表示する汎用カードコンポーネント
+ *
+ * ステータスに応じて色分けされ、アイコン、トレンド、説明文を
+ * オプションで表示できます。
+ *
+ * @param props - コンポーネントのプロパティ
+ * @returns メトリクスカードUI
+ *
+ * @example
+ * <MetricCard
+ *   title="キャッシュヒット率"
+ *   value={85}
+ *   unit="%"
+ *   status="good"
+ *   icon={Database}
+ *   trend={5}
+ *   description="前回比+5%"
+ * />
+ */
 export const MetricCard: React.FC<MetricCardProps> = ({
   title,
   value,
