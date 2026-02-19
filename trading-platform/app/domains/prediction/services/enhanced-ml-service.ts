@@ -11,7 +11,6 @@
  */
 
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 import { OHLCV, Stock, Signal } from '@/app/types';
 import { PredictionFeatures, EnhancedPrediction } from '../types';

@@ -13,9 +13,7 @@ import { useRealTimeData } from './useRealTimeData';
 import { ServiceContainer, TOKENS } from '@/app/lib/di/ServiceContainer';
 import { IMarketDataHub } from '@/app/lib/interfaces/IMarketDataHub';
 import { initializeContainer } from '@/app/lib/di/initialize';
-import { devLog, devWarn, devError, isDev } from '@/app/lib/utils/logger';
-
-const devDebug = (...args: unknown[]) => { if (isDev) console.debug(...args); };
+import { devLog, devWarn, devError, devDebug } from '@/app/lib/utils/logger';
 
 interface MarketDataMetadata {
   // ... (rest of the interface)

@@ -36,3 +36,13 @@ export const devError = (...args: unknown[]): void => {
     console.error(...args);
   }
 };
+
+/**
+ * Development-only debug
+ * 開発環境でのみconsole.debugを出力
+ */
+export const devDebug = (...args: unknown[]): void => {
+  if (isDev) {
+    console.debug(...args);
+  }
+};
