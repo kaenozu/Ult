@@ -33,58 +33,59 @@ jobs:
         if: steps.check-issues.outputs.existing_issue == ''
         run: |
           TODAY=$(date +%Y-%m-%d)
+          REPO="${{ github.repository }}"
           
           # Create a reminder to check credit status
-          cat > /tmp/credit_reminder.md << 'EOF'
-## 📊 Weekly Code Review Credit Status Check
-
-**Date**: $TODAY
-
-### Action Items
-
-- [ ] Check `chatgpt-codex-connector` credit balance
-- [ ] Verify low-credit alerts are configured
-- [ ] Review last week's credit consumption
-- [ ] Confirm automated reviews are functioning
-
-### Quick Check Steps
-
-1. **Access Settings**
-   - Go to [Repository Settings](https://github.com/${{ github.repository }}/settings)
-   - Navigate to: Code security and analysis → Third-party apps
-
-2. **Review Credit Status**
-   - Current balance: _____ credits
-   - Last week's usage: _____ credits
-   - Projected end date: _____
-
-3. **Verify Alerts**
-   - Low credit warnings enabled: [ ]
-   - Alert threshold set to 20%: [ ]
-   - Notification emails configured: [ ]
-
-### Recommended Actions
-
-If credits are below 100:
-1. Add more credits immediately
-2. See [CODE_REVIEW_SETUP.md](.github/CODE_REVIEW_SETUP.md)
-3. Consider implementing credit optimization strategies
-
-If credits are healthy:
-- ✅ No action needed
-- Close this issue
-
-### Resources
-
-- [Code Review Setup Guide](.github/CODE_REVIEW_SETUP.md)
-- [Admin Action Guide](.github/ADMIN_ACTION_REQUIRED.md)
-- [Previous Credit Issue](https://github.com/${{ github.repository }}/issues?q=is%3Aissue+label%3Acode-review-credits)
-
----
-
-*This is an automated weekly reminder. Close this issue after reviewing.*
-*To disable these reminders, disable the `credit-monitor.yml` workflow.*
-EOF
+          {
+            echo "## 📊 Weekly Code Review Credit Status Check"
+            echo ""
+            echo "**Date**: $TODAY"
+            echo ""
+            echo "### Action Items"
+            echo ""
+            echo "- [ ] Check \`chatgpt-codex-connector\` credit balance"
+            echo "- [ ] Verify low-credit alerts are configured"
+            echo "- [ ] Review last week's credit consumption"
+            echo "- [ ] Confirm automated reviews are functioning"
+            echo ""
+            echo "### Quick Check Steps"
+            echo ""
+            echo "1. **Access Settings**"
+            echo "   - Go to [Repository Settings](https://github.com/$REPO/settings)"
+            echo "   - Navigate to: Code security and analysis → Third-party apps"
+            echo ""
+            echo "2. **Review Credit Status**"
+            echo "   - Current balance: _____ credits"
+            echo "   - Last week's usage: _____ credits"
+            echo "   - Projected end date: _____"
+            echo ""
+            echo "3. **Verify Alerts**"
+            echo "   - Low credit warnings enabled: [ ]"
+            echo "   - Alert threshold set to 20%: [ ]"
+            echo "   - Notification emails configured: [ ]"
+            echo ""
+            echo "### Recommended Actions"
+            echo ""
+            echo "If credits are below 100:"
+            echo "1. Add more credits immediately"
+            echo "2. See [CODE_REVIEW_SETUP.md](.github/CODE_REVIEW_SETUP.md)"
+            echo "3. Consider implementing credit optimization strategies"
+            echo ""
+            echo "If credits are healthy:"
+            echo "- ✅ No action needed"
+            echo "- Close this issue"
+            echo ""
+            echo "### Resources"
+            echo ""
+            echo "- [Code Review Setup Guide](.github/CODE_REVIEW_SETUP.md)"
+            echo "- [Admin Action Guide](.github/ADMIN_ACTION_REQUIRED.md)"
+            echo "- [Previous Credit Issue](https://github.com/$REPO/issues?q=is%3Aissue+label%3Acode-review-credits)"
+            echo ""
+            echo "---"
+            echo ""
+            echo "*This is an automated weekly reminder. Close this issue after reviewing.*"
+            echo "*To disable these reminders, disable the \`credit-monitor.yml\` workflow.*"
+          } > /tmp/credit_reminder.md
           
           # Create the issue
           gh issue create \
