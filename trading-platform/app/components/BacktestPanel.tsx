@@ -9,7 +9,7 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
-import { AlertTriangle, BarChart3, Play } from 'lucide-react';
+import { AlertTriangle, BarChart3, Play, Loader2 } from 'lucide-react';
 import BacktestResultsDashboard from '@/app/components/backtest/BacktestResultsDashboard';
 import type { BacktestResult } from '@/app/types';
 
@@ -117,11 +117,12 @@ export function BacktestPanel() {
             Backtest Runner
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4" aria-busy={isRunning}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Symbol</label>
+              <label htmlFor="symbol-input" className="text-xs text-gray-400">Symbol</label>
               <input
+                id="symbol-input"
                 value={symbol}
                 onChange={(event) => setSymbol(event.target.value)}
                 className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
@@ -129,8 +130,9 @@ export function BacktestPanel() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Market</label>
+              <label htmlFor="market-select" className="text-xs text-gray-400">Market</label>
               <select
+                id="market-select"
                 value={market}
                 onChange={(event) => setMarket(event.target.value as Market)}
                 className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
@@ -140,8 +142,9 @@ export function BacktestPanel() {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Strategy</label>
+              <label htmlFor="strategy-select" className="text-xs text-gray-400">Strategy</label>
               <select
+                id="strategy-select"
                 value={strategy}
                 onChange={(event) => setStrategy(event.target.value as StrategyId)}
                 className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
@@ -152,8 +155,9 @@ export function BacktestPanel() {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Timeframe</label>
+              <label htmlFor="timeframe-select" className="text-xs text-gray-400">Timeframe</label>
               <select
+                id="timeframe-select"
                 value={timeframe}
                 onChange={(event) => setTimeframe(event.target.value as TimeframeId)}
                 className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
@@ -171,9 +175,13 @@ export function BacktestPanel() {
             <Button
               onClick={runBacktest}
               disabled={isRunning}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 transition-all"
             >
-              <Play className="w-4 h-4 mr-2" />
+              {isRunning ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 mr-2" />
+              )}
               {isRunning ? 'Running...' : 'Run Backtest'}
             </Button>
             <div className="text-xs text-gray-400">
@@ -182,7 +190,7 @@ export function BacktestPanel() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-sm text-red-400">
+            <div className="flex items-center gap-2 text-sm text-red-400" role="alert">
               <AlertTriangle className="w-4 h-4" />
               <span>{error}</span>
             </div>
