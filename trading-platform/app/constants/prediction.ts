@@ -178,5 +178,37 @@ export const GHOST_FORECAST = {
   DASH_PATTERN: [3, 3] as const,
 } as const;
 
+/**
+ * Consensus Signal calculation constants
+ * Phase 1: AI Prediction Improvement
+ */
+export const CONSENSUS_SIGNAL_CONFIG = {
+  // Trend following boost parameters
+  TREND_FOLLOWING: {
+    BOOST_AMOUNT: 0.4,           // Strong boost for trend following
+    PENALTY_AMOUNT: 0.4,         // Strong penalty for counter-trend
+    RSI_LOWER_BOUND: 40,         // Lower bound for neutral RSI range
+    RSI_UPPER_BOUND: 60,         // Upper bound for neutral RSI range
+    MIN_CONFIDENCE_BOOST: 70,    // Minimum confidence when trend boost applied
+  },
+  
+  // Signal thresholds
+  THRESHOLDS: {
+    SIGNAL_MIN: 0.15,            // Minimum threshold for BUY/SELL signal
+    PROBABILITY_WEAK: 0.4,       // Probability threshold for WEAK strength
+    PROBABILITY_MODERATE: 0.7,   // Probability threshold for MODERATE strength
+    CONFIDENCE_SCALING: 135,     // Scaling factor for confidence calculation
+    CONFIDENCE_MAX: 95,          // Maximum confidence cap
+    HOLD_CONFIDENCE_MIN: 30,     // Minimum confidence for HOLD signal
+    TRADE_CONFIDENCE_MIN: 50,    // Minimum confidence for BUY/SELL signal
+  },
+  
+  // Ensemble bonus parameters
+  ENSEMBLE: {
+    REVERSAL_COMBO_BONUS: 0.15,  // Bonus for RSI bottom + MACD convergence
+    BB_RSI_ALIGNMENT_BONUS: 0.10, // Bonus for BB lower + RSI rising
+  },
+} as const;
+
 // Legacy export compatibility
 export const PREDICTION = PREDICTION_CONFIG;

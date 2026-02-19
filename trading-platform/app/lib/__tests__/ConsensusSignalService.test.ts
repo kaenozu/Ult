@@ -5,11 +5,52 @@
  * 複数のテクニカル指標を組み合わせたシグナル生成のテスト
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { consensusSignalService } from '../ConsensusSignalService';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import type { OHLCV } from '@/app/types';
+import type { ConsensusSignalService as ConsensusSignalServiceType } from '../ConsensusSignalService';
+import type { MarketRegimeDetector } from '../services/market-regime-detector';
 
 describe('ConsensusSignalService', () => {
+  let consensusSignalService: ConsensusSignalServiceType;
+  let mockDetect: jest.Mock;
+
+  beforeEach(() => {
+    jest.resetModules();
+    mockDetect = jest.fn();
+
+    // Set up mock for this test run
+    jest.doMock('../services/market-regime-detector', () => {
+      return {
+        MarketRegimeDetector: jest.fn().mockImplementation(() => {
+          return { detect: mockDetect };
+        }),
+      };
+    });
+
+    // Import service after mocking
+    const { ConsensusSignalService } = require('../ConsensusSignalService');
+    
+    // Create mock detector instance for constructor injection (optional if doMock works)
+    // But since we modified the class to accept it, let's use it for robustness.
+    // However, since we are using require(), we need to cast or rely on doMock.
+    // Let's rely on doMock for internal instantiation if any, but better yet:
+    // Pass the mock explicitly.
+    
+    const mockRegimeDetector = {
+        detect: mockDetect
+    } as unknown as MarketRegimeDetector;
+    
+    consensusSignalService = new ConsensusSignalService(mockRegimeDetector);
+
+    // Default mock behavior
+    mockDetect.mockReturnValue({
+      type: 'TRENDING_UP',
+      volatilityLevel: 'NORMAL',
+      trendStrength: 50,
+      momentumQuality: 50
+    });
+  });
+
   const mockData: OHLCV[] = Array.from({ length: 50 }, (_, i) => ({
     open: 100 + i * 0.5,
     high: 105 + i * 0.5,
@@ -89,6 +130,75 @@ describe('ConsensusSignalService', () => {
 
       expect(signal.type).toBe('HOLD');
       expect(signal.probability).toBeLessThan(0.6);
+    });
+
+    it('Phase 1: 上昇トレンド順張りロジックが機能する', () => {
+      // 強制的に上昇トレンドと判定させる
+      mockDetect.mockReturnValue({
+        type: 'TRENDING_UP',
+        volatilityLevel: 'NORMAL',
+        trendStrength: 80,
+        momentumQuality: 80
+      });
+
+      // Price > SMA かつ RSI 40-60 を満たすデータを生成
+      // 緩やかなジグザグ上昇 (Gain:Loss = 2.5:2.0 -> RSI ~55.5)
+      // データ長を長くしてRSIを安定させる
+      const trendData: OHLCV[] = [];
+      let price = 100;
+      const baseDate = new Date(2024, 0, 1);
+      
+      for (let i = 0; i < 200; i++) {
+        // ジグザグ上昇: 偶数日は上昇、奇数日は下降（ただし上昇幅が大きい）
+        price += (i % 2 === 0) ? 2.5 : -2.0;
+        
+        // 正しい日付生成
+        const d = new Date(baseDate);
+        d.setDate(d.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
+
+        trendData.push({
+          open: price,
+          high: price + 2,
+          low: price - 2,
+          close: price,
+          volume: 1000,
+          date: dateStr,
+          symbol: 'AAPL',
+        });
+      }
+
+      const signal = consensusSignalService.generateConsensus(trendData);
+
+      expect(signal.type).toBe('BUY');
+      expect(signal.reason).toContain('上昇トレンド順張り');
+      expect(signal.confidence).toBeGreaterThanOrEqual(70);
+    });
+
+    it('Phase 1: レンジ相場フィルタが機能する', () => {
+      // 強制的にレンジ相場と判定させる
+      mockDetect.mockReturnValue({
+        type: 'RANGING',
+        volatilityLevel: 'LOW',
+        trendStrength: 0,
+        momentumQuality: 0
+      });
+
+      // データ自体は上昇トレンドでも、フィルタでHOLDになるはず
+      const trendData: OHLCV[] = Array.from({ length: 50 }, (_, i) => ({
+        open: 100 + i,
+        high: 105 + i,
+        low: 95 + i,
+        close: 102 + i,
+        volume: 1000,
+        date: `2024-01-${(i + 1).toString().padStart(2, '0')}`,
+        symbol: 'AAPL',
+      }));
+
+      const signal = consensusSignalService.generateConsensus(trendData);
+
+      expect(signal.type).toBe('HOLD');
+      expect(signal.reason).toContain('相場のため除外');
     });
   });
 
