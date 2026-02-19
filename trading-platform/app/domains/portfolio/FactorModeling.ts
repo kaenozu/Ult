@@ -14,7 +14,6 @@ import type {
   FactorExtractionResult,
   FactorModel,
   RiskAttributionResult,
-  FactorRiskDecomposition,
 } from './types';
 
 export class FactorModeling {
@@ -358,7 +357,6 @@ export class FactorModeling {
     factorModels: Map<string, FactorModel>,
     factors: Factor[]
   ): RiskAttributionResult {
-    const n = portfolio.weights.length;
     const k = factors.length;
 
     // Calculate factor exposures for the portfolio

@@ -360,7 +360,6 @@ export class FlashCrashDetector extends EventEmitter {
     maxDrop: number,
     volumeSpikeRatio: number
   ): FlashCrashAlert | null {
-    const lastData = session.data[session.data.length - 1];
     const avgVolume = session.totalVolume / session.data.length;
 
     // 深刻なフラッシュクラッシュ（10%以上下落）

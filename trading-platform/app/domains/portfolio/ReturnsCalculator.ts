@@ -74,7 +74,6 @@ export class ReturnsCalculator {
     // Simplified CAPM: requires market returns
     // For now, use historical with adjustment
     return assets.map(a => {
-      const historicalReturn = this.historicalMeanReturn(a.returns);
       const volatility = this.calculateVolatility(a.returns);
       
       // Apply risk adjustment (simplified)

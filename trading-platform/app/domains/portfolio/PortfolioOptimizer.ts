@@ -708,13 +708,11 @@ export class PortfolioOptimizer extends EventEmitter {
     const frontier = this.generateEfficientFrontier(assets, 50);
 
     let bestSharpe = -Infinity;
-    let bestPoint = frontier[0];
     const weights = new Map<string, number>();
 
     for (const point of frontier) {
       if (point.sharpeRatio > bestSharpe) {
         bestSharpe = point.sharpeRatio;
-        bestPoint = point;
         // 重み付けを更新
         point.weights.forEach((w, s) => weights.set(s, w));
       }
@@ -747,13 +745,11 @@ export class PortfolioOptimizer extends EventEmitter {
 
     // 最小分散点を見つける
     let minVol = Infinity;
-    let bestPoint = frontier[0];
     const weights = new Map<string, number>();
 
     for (const point of frontier) {
       if (point.volatility < minVol) {
         minVol = point.volatility;
-        bestPoint = point;
         point.weights.forEach((w, s) => weights.set(s, w));
       }
     }
@@ -941,14 +937,12 @@ export class PortfolioOptimizer extends EventEmitter {
     constraints: OptimizationConstraints
   ): Map<string, number> {
     const result = new Map<string, number>();
-    let totalWeight = 0;
 
     // 最小/最大ウェイトを適用
     for (const asset of assets) {
       const currentWeight = weights.get(asset.symbol) || 0;
       const newWeight = Math.max(constraints.minWeight, Math.min(constraints.maxWeight, currentWeight));
       result.set(asset.symbol, newWeight);
-      totalWeight += newWeight;
     }
 
     // 部門別制限を適用

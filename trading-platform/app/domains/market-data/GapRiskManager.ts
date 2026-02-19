@@ -439,8 +439,6 @@ export class GapRiskManager extends EventEmitter {
     gapPercent: number,
     riskLevel: GapRiskAssessment['riskLevel']
   ): GapRiskAssessment['recommendedAction'] {
-    const absGap = Math.abs(gapPercent);
-    
     // 大きなギャップダウンはポジション_CLOSE
     if (gapPercent <= -this.config.highGapPercent) {
       return 'CLOSE';
@@ -468,7 +466,7 @@ export class GapRiskManager extends EventEmitter {
    */
   private calculatePositionSizeAdjustment(
     gapPercent: number,
-    riskLevel: GapRiskAssessment['riskLevel']
+    _riskLevel: GapRiskAssessment['riskLevel']
   ): number {
     const absGap = Math.abs(gapPercent);
     

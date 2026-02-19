@@ -176,7 +176,6 @@ export class BlackLitterman {
     views: ProcessedViews,
     assets: Asset[]
   ): number[] {
-    const n = assets.length;
     const tau = this.tau;
     
     // Get covariance matrix Σ
@@ -233,8 +232,6 @@ export class BlackLitterman {
     adjustedReturns: number[],
     covarianceMatrix: number[][]
   ): Portfolio {
-    const n = adjustedReturns.length;
-    
     // Simple mean-variance optimization
     // Maximize Sharpe ratio
     const weights = this.optimizeWeights(adjustedReturns, covarianceMatrix);

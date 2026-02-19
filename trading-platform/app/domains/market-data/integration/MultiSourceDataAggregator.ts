@@ -12,7 +12,6 @@ import { DataQualityValidator, type CrossSourceValidation } from '@/app/lib/data
 import { devLog, devWarn } from '@/app/lib/utils/dev-logger';
 import { DataLatencyMonitor } from '@/app/lib/data/latency/DataLatencyMonitor';
 import type { MarketData } from '@/app/types/data-quality';
-import type { OHLCV } from '@/app/types/shared';
 
 export interface DataSource {
   id: string;
@@ -189,7 +188,6 @@ export class MultiSourceDataAggregator {
     const primaryData = primaryResult.data;
     
     // Record latency
-    const latency = Date.now() - startTime;
     this.latencyMonitor.recordLatency(
       symbol,
       primaryData.timestamp,

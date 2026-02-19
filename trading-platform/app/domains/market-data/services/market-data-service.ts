@@ -5,7 +5,7 @@
  */
 
 import { OHLCV } from '@/app/types';
-import { MarketData, HistoricalDataRequest, RealtimeQuote } from '../types';
+import { MarketData, HistoricalDataRequest } from '../types';
 
 export class MarketDataService {
   private cache = new Map<string, { data: OHLCV[]; timestamp: number }>();

@@ -8,7 +8,7 @@
  * - Target return optimization
  */
 
-import type { OptimizerConfig, OptimizationConstraints, OptimizationResult } from './types';
+import type { OptimizerConfig, OptimizationConstraints } from './types';
 
 export class QuadraticOptimizer {
   private config: Required<OptimizerConfig>;
@@ -81,13 +81,10 @@ export class QuadraticOptimizer {
     let converged = false;
 
     while (iteration < this.config.maxIterations && !converged) {
-      const portfolioReturn = this.calculatePortfolioReturn(weights, expectedReturns);
       const portfolioVolatility = this.calculatePortfolioVolatility(weights, covMatrix);
       
       if (portfolioVolatility === 0) break;
 
-      const sharpeRatio = (portfolioReturn - riskFreeRate) / portfolioVolatility;
-      
       // Gradient of -Sharpe ratio
       const gradient = this.calculateSharpeGradient(
         weights,
@@ -139,7 +136,6 @@ export class QuadraticOptimizer {
     while (iteration < this.config.maxIterations && !converged) {
       // Calculate gradients
       const varianceGrad = this.calculateVarianceGradient(weights, covMatrix);
-      const portfolioReturn = this.calculatePortfolioReturn(weights, expectedReturns);
       
       // Update weights with constraint
       const newWeights = Array(n);

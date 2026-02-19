@@ -6,8 +6,6 @@ import {
   MultiSourceDataAggregator,
   createMultiSourceDataAggregator,
   type DataSource,
-  type AggregationConfig,
-  type AggregationResult,
 } from '../MultiSourceDataAggregator';
 import type { MarketData } from '@/app/types/data-quality';
 

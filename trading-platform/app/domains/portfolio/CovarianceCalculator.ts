@@ -70,7 +70,6 @@ export class CovarianceCalculator {
   private ledoitWolfCovariance(returns: number[][]): number[][] {
     const sampleCov = this.sampleCovariance(returns);
     const n = returns.length;
-    const T = returns[0].length;
 
     // Calculate shrinkage target (constant correlation)
     const target = this.calculateShrinkageTarget(sampleCov);
