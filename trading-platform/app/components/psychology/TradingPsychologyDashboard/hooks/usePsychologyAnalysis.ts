@@ -44,8 +44,9 @@ export function usePsychologyAnalysis() {
     const runAnalysis = () => {
       setIsAnalyzing(true);
       try {
-        setPatterns(aiCoach.analyzeTradingPatterns(journal));
-        setSuggestions(aiCoach.generateSuggestions(journal, patterns));
+        const detectedPatterns = aiCoach.analyzeTradingPatterns(journal);
+        setPatterns(detectedPatterns);
+        setSuggestions(aiCoach.generateSuggestions(journal, detectedPatterns));
         setFearGreedIndex(sentimentAnalyzer.calculateFearGreedIndex(journal));
         setCorrelations(sentimentAnalyzer.analyzeEmotionTradeCorrelation(journal));
         
@@ -60,7 +61,7 @@ export function usePsychologyAnalysis() {
     };
 
     if (journal.length > 0) runAnalysis();
-  }, [journal, aiCoach, sentimentAnalyzer, disciplineMonitor, patterns.length]); // Use patterns.length to avoid full dependency if possible, or patterns if needed
+  }, [journal, aiCoach, sentimentAnalyzer, disciplineMonitor]);
 
   return {
     journal,

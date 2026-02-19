@@ -48,7 +48,7 @@ export const useTechnicalIndicators = (data: OHLCV[], prices: number[]) => {
     return () => {
       mounted = false;
     };
-  }, [data]); // Trigger on data change
+  }, [data, prices]); // Trigger on data change
 
   return indicators;
 };
