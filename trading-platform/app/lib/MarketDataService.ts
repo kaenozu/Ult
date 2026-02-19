@@ -241,12 +241,17 @@ export class MarketDataService implements IMarketDataService {
    */
   private applyEnhancedQualityChecks(symbol: string, ohlcv: OHLCV[]): OHLCV[] {
     const validatedData: OHLCV[] = [];
+    const len = ohlcv.length;
     
-    for (let i = 0; i < ohlcv.length; i++) {
+    for (let i = 0; i < len; i++) {
       const item = ohlcv[i];
+      const timestamp = new Date(item.date).getTime();
+      
+      // Pass only necessary data instead of full object if possible, 
+      // or reuse object to reduce GC pressure
       const marketData: QualityMarketData = {
         symbol,
-        timestamp: new Date(item.date).getTime(),
+        timestamp,
         ohlcv: item,
         previousClose: i > 0 ? ohlcv[i - 1].close : undefined,
         previousVolume: i > 0 ? ohlcv[i - 1].volume : undefined,

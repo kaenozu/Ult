@@ -1,13 +1,17 @@
 'use client';
 
-import { useState, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { Header } from '@/app/components/Header';
 
 import { ChartToolbar } from '@/app/components/ChartToolbar';
 import { LeftSidebar } from '@/app/components/LeftSidebar';
+import { AIRecommendationPanel } from '@/app/components/AIRecommendationPanel';
+import { SignalHistoryPanel } from '@/app/components/SignalHistoryPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
+import { useSignalHistoryStore } from '@/app/store/signalHistoryStore';
 import { useStockData } from '@/app/hooks/useStockData';
 import { useSymbolAccuracy } from '@/app/hooks/useSymbolAccuracy';
 import { Button } from '@/app/components/ui/Button';
@@ -17,11 +21,17 @@ import { ErrorBoundary } from '@/app/components/ErrorBoundary';
 import { ChartLoading } from '@/app/components/StockChart/ChartLoading';
 
 
-// Lazy load heavy components with chart.js dependencies
-const StockChart = lazy(() => import('@/app/components/StockChart').then(m => ({ default: m.StockChart })));
-const SimpleRSIChart = lazy(() => import('@/app/components/SimpleRSIChart').then(m => ({ default: m.SimpleRSIChart })));
-const RightSidebar = lazy(() => import('@/app/components/RightSidebar').then(m => ({ default: m.RightSidebar })));
-const BottomPanel = lazy(() => import('@/app/components/BottomPanel').then(m => ({ default: m.BottomPanel })));
+// Use next/dynamic with ssr: false for components with browser-only dependencies (Canvas, Chart.js)
+const StockChart = dynamic(() => import('@/app/components/StockChart').then(m => m.StockChart), { 
+  ssr: false,
+  loading: () => <ChartLoading height={400} />
+});
+const SimpleRSIChart = dynamic(() => import('@/app/components/SimpleRSIChart').then(m => m.SimpleRSIChart), { 
+  ssr: false,
+  loading: () => <ChartLoading height={160} showVolume={false} />
+});
+const RightSidebar = dynamic(() => import('@/app/components/RightSidebar').then(m => m.RightSidebar), { ssr: false });
+const BottomPanel = dynamic(() => import('@/app/components/BottomPanel').then(m => m.BottomPanel), { ssr: false });
 
 
 function Workstation() {
@@ -29,6 +39,7 @@ function Workstation() {
   const { portfolio, closePosition } = usePortfolioStore();
   const { journal } = useJournalStore();
   const { watchlist } = useWatchlistStore();
+  const { signals: signalHistory, addSignal } = useSignalHistoryStore();
   const {
     selectedStock,
     chartData,
@@ -47,6 +58,18 @@ function Workstation() {
   const [showBollinger, setShowBollinger] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+
+  // Add signal to history when chartSignal changes
+  React.useEffect(() => {
+    if (chartSignal && selectedStock) {
+      addSignal(chartSignal);
+    }
+  }, [chartSignal, selectedStock, addSignal]);
+
+  // Get high confidence signals for AI recommendation
+  const highConfidenceSignals = useMemo(() => {
+    return signalHistory.filter(s => s.confidence > 0.7);
+  }, [signalHistory]);
 
   // Fetch accuracy data for the selected stock
   const { accuracy, loading: accuracyLoading } = useSymbolAccuracy(
@@ -186,6 +209,28 @@ function Workstation() {
             </div>
           ) : (
             <>
+              {/* AI Recommendation Panel */}
+              {highConfidenceSignals.length > 0 && (
+                <div className="px-4 pt-4">
+                  <AIRecommendationPanel
+                    signals={highConfidenceSignals}
+                    onSelectSignal={(signal) => {
+                      handleStockSelect({
+                        symbol: signal.symbol,
+                        name: signal.symbol,
+                        market: 'japan',
+                        sector: '',
+                        price: signal.targetPrice,
+                        change: 0,
+                        changePercent: 0,
+                        volume: 0,
+                      });
+                    }}
+                    maxItems={3}
+                  />
+                </div>
+              )}
+
               {/* Chart Header/Toolbar */}
               <ChartToolbar
                 stock={displayStock}
@@ -203,55 +248,59 @@ function Workstation() {
               {/* Main Chart Visualization */}
               <div className="flex-1 relative flex flex-col">
                 <div className="flex-1 relative w-full border border-[#233648] rounded bg-[#131b23] overflow-hidden">
-                  <Suspense fallback={<ChartLoading height={400} />}>
-                    <StockChart
-                      data={chartData}
-                      indexData={indexData}
-                      loading={loading}
-                      error={error}
-                      market={selectedStock?.market}
-                      signal={chartSignal}
-                      accuracyData={accuracy ? {
-                        hitRate: accuracy.hitRate,
-                        totalTrades: accuracy.totalTrades,
-                        predictionError: accuracy.predictionError,
-                        loading: accuracyLoading
-                      } : null}
-                    />
-                  </Suspense>
+                  <StockChart
+                    data={chartData}
+                    indexData={indexData}
+                    loading={loading}
+                    error={error}
+                    showSMA={showSMA}
+                    showBollinger={showBollinger}
+                    market={selectedStock?.market}
+                    signal={chartSignal}
+                    accuracyData={accuracy ? {
+                      hitRate: accuracy.hitRate,
+                      totalTrades: accuracy.totalTrades,
+                      predictionError: accuracy.predictionError,
+                      loading: accuracyLoading
+                    } : null}
+                  />
                 </div>
 
                 {/* RSI Sub-chart */}
                 <div className="h-40 mt-1 border border-[#233648] rounded bg-[#131b23] relative">
-                  <Suspense fallback={<ChartLoading height={160} showVolume={false} />}>
-                    <SimpleRSIChart data={chartData} />
-                  </Suspense>
+                  <SimpleRSIChart data={chartData} />
                 </div>
+
+                {/* Signal History Panel */}
+                {signalHistory.length > 0 && (
+                  <div className="mt-1 border border-[#233648] rounded bg-[#131b23]">
+                    <SignalHistoryPanel 
+                      signals={signalHistory} 
+                      currentSymbol={displayStock?.symbol}
+                    />
+                  </div>
+                )}
               </div>
             </>
           )}
 
           {/* Bottom Panel: Positions & Orders */}
-          <Suspense fallback={<div className="h-48 bg-[#131b23] border-t border-[#233648]" />}>
-            <BottomPanel
-              portfolio={portfolio}
-              journal={journal}
-              onClosePosition={handleClosePosition}
-            />
-          </Suspense>
+          <BottomPanel
+            portfolio={portfolio}
+            journal={journal}
+            onClosePosition={handleClosePosition}
+          />
         </section>
 
         {/* Right Sidebar: Level 2 & Signal Panel */}
-        <Suspense fallback={<div className="w-80 bg-[#131b23] border-l border-[#233648]" />}>
-          <RightSidebar
-            isOpen={isRightSidebarOpen}
-            onClose={() => setIsRightSidebarOpen(false)}
-            displayStock={displayStock}
-            chartSignal={chartSignal}
-            ohlcv={chartData}
-            loading={loading}
-          />
-        </Suspense>
+        <RightSidebar
+          isOpen={isRightSidebarOpen}
+          onClose={() => setIsRightSidebarOpen(false)}
+          displayStock={displayStock}
+          chartSignal={chartSignal}
+          ohlcv={chartData}
+          loading={loading}
+        />
       </main>
 
 

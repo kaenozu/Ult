@@ -5,6 +5,11 @@
  * 心理監視、クーリングオフ、規律スコアの計算を簡単に使えるようにする
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 import { useEffect, useMemo, useRef } from 'react';
 import { usePsychologyStore } from '@/app/store/psychologyStore';
 import { useJournalStore } from '@/app/store/journalStore';
@@ -48,7 +53,7 @@ export function usePsychology() {
 
     // Security: Validate order object to prevent injection
     if (!order || typeof order !== 'object') {
-      console.error('Invalid order: must be a valid Order object');
+      devError('Invalid order: must be a valid Order object');
       return;
     }
 
@@ -93,7 +98,7 @@ export function usePsychology() {
 
     // Security: Validate order object
     if (!order || typeof order !== 'object') {
-      console.error('Invalid order: must be a valid Order object');
+      devError('Invalid order: must be a valid Order object');
       return null;
     }
 
@@ -171,7 +176,7 @@ export function usePsychology() {
 
     // Security: Validate minutes parameter to prevent abuse
     if (!Number.isFinite(minutes) || minutes < 1 || minutes > 1440) { // Max 24 hours
-      console.error('Invalid cooldown duration: must be between 1 and 1440 minutes');
+      devError('Invalid cooldown duration: must be between 1 and 1440 minutes');
       return;
     }
 

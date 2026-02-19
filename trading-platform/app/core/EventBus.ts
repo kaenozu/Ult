@@ -5,6 +5,11 @@
  * Replaces scattered EventEmitter instances throughout the codebase.
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 import { EventMap } from '../types/shared';
 
 type EventKey = keyof EventMap;
@@ -77,11 +82,11 @@ class EventBus {
           const result = handler(data);
           if (result instanceof Promise) {
             result.catch((error) => {
-              console.error(`Error in event handler for ${event}:`, error);
+              devError(`Error in event handler for ${event}:`, error);
             });
           }
         } catch (error) {
-          console.error(`Error in event handler for ${event}:`, error);
+          devError(`Error in event handler for ${event}:`, error);
         }
       });
     }
@@ -91,7 +96,7 @@ class EventBus {
       try {
         handler(event, data);
       } catch (error) {
-        console.error('Error in wildcard event handler:', error);
+        devError('Error in wildcard event handler:', error);
       }
     });
   }

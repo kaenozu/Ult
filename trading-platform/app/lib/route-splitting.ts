@@ -4,6 +4,11 @@
  * ルートごとに最適なコード分割とプリフェッチ戦略を定義
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { lazy, ComponentType } from 'react';
 
 // ルート優先度定義
@@ -48,7 +53,7 @@ export const routeConfigs: Record<string, RouteConfig> = {
 export function createLazyRoute(path: string) {
   const config = routeConfigs[path];
   if (!config) {
-    console.warn(`No route config found for: ${path}`);
+    devWarn(`No route config found for: ${path}`);
     return null;
   }
   

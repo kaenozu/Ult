@@ -26,7 +26,12 @@ jest.mock('@/app/constants/common', () => ({
 // Mock analysis service
 jest.mock('@/app/lib/AnalysisService', () => ({
   analysisService: {
-    analyzeStock: jest.fn()
+    analyzeStock: jest.fn(),
+    optimizeParameters: jest.fn().mockReturnValue({
+      rsiPeriod: 14,
+      smaPeriod: 20,
+      accuracy: 0.5
+    })
   }
 }));
 

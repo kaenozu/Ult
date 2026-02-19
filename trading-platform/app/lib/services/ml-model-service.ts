@@ -5,6 +5,11 @@
  * Please import directly from @/app/domains/prediction/services in new code.
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 import { PREDICTION } from '@/app/constants';
 import {
   MLModelService as DomainMLModelService,
@@ -175,7 +180,7 @@ export class MLModelService extends DomainMLModelService {
         confidence
       };
     } catch (error) {
-      console.warn('TensorFlow prediction failed, falling back to rule-based:', error);
+      devWarn('TensorFlow prediction failed, falling back to rule-based:', error);
       return this.predict(features);
     }
   }
@@ -229,7 +234,7 @@ export class MLModelService extends DomainMLModelService {
         this.lstmModel!.loadModel(n.lstm)
       ]);
     } catch (error) {
-      console.warn('Failed to load some models from storage, will use newly initialized ones:', error);
+      devWarn('Failed to load some models from storage, will use newly initialized ones:', error);
     }
   }
 

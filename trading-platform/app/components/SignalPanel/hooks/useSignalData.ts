@@ -22,8 +22,9 @@ export function useSignalData(stock: Stock, signal: Signal | null, ohlcv: OHLCV[
   // Memoized hit rate object to prevent unnecessary re-renders
   const hitRateData = useMemo(() => ({
     hitRate: accuracy?.hitRate || 0,
+    directionalAccuracy: accuracy?.directionalAccuracy || 0,
     trades: accuracy?.totalTrades || 0
-  }), [accuracy?.hitRate, accuracy?.totalTrades]);
+  }), [accuracy?.hitRate, accuracy?.directionalAccuracy, accuracy?.totalTrades]);
 
   // Alert Logic Hook
   useSignalAlerts({

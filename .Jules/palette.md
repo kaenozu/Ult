@@ -7,3 +7,7 @@
 ## 2026-02-09 - Accessible Filters
 **Learning:** Filter buttons that act as "select one" but are implemented as `<button>` elements (not radios) benefit significantly from `aria-pressed`. It provides the missing state information that visual styling (background color) communicates to sighted users.
 **Action:** When implementing filter sets as buttons, ensure `aria-pressed` reflects the active state.
+
+## 2026-02-18 - Semantic Structures in Modals
+**Learning:** Complex components like `AlertConditionManager` often use `div`s for layout (e.g., tabs, modals) without semantic roles. This makes navigation impossible for screen readers. Explicitly adding `role="dialog"`, `aria-modal="true"`, and `role="tablist"` transforms a confusing "soup of divs" into a navigable application structure.
+**Action:** When creating or reviewing modal interfaces with tabs, always ensure the container has `role="dialog"` and the tab controls use the `tablist`/`tab` pattern.

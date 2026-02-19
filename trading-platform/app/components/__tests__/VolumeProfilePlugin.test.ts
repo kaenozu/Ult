@@ -1,4 +1,4 @@
-import { volumeProfilePlugin } from '../StockChart';
+import { volumeProfilePlugin } from '../StockChart/plugins/volumeProfile';
 
 describe('volumeProfilePlugin', () => {
     let mockChart: {

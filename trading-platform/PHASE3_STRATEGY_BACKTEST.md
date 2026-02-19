@@ -207,7 +207,7 @@ import { StrategyDashboard } from '@/app/components/strategy/StrategyDashboard';
 
 ## Complete Workflow Example
 
-See `app/strategy-optimization-example.ts` for a comprehensive example demonstrating:
+For comprehensive examples demonstrating the complete workflow:
 
 1. Strategy parameter optimization on training data
 2. Validation on hold-out set
@@ -216,11 +216,10 @@ See `app/strategy-optimization-example.ts` for a comprehensive example demonstra
 5. Benchmark comparison
 6. Portfolio composition
 
-Run the example:
-```bash
-cd trading-platform
-npx tsx app/strategy-optimization-example.ts
-```
+Please refer to:
+- Inline code documentation in `lib/optimization/` and `lib/validation/`
+- Test files in `lib/optimization/__tests__/` and `lib/validation/__tests__/`
+- Usage examples throughout this documentation
 
 ## Architecture
 
@@ -243,7 +242,6 @@ trading-platform/app/
 ├── components/
 │   └── strategy/
 │       └── StrategyDashboard.tsx       # Visualization dashboard
-└── strategy-optimization-example.ts     # Complete workflow example
 ```
 
 ## Testing
@@ -348,9 +346,9 @@ Potential improvements for Phase 4:
 ## Support
 
 For questions or issues:
-1. Check the example file: `strategy-optimization-example.ts`
-2. Review test files for usage patterns
-3. Consult the inline documentation in source files
+1. Review test files in `lib/optimization/__tests__/` for usage patterns
+2. Consult the inline documentation in source files
+3. Refer to the examples in this documentation
 4. Refer to the main project README
 
 ---

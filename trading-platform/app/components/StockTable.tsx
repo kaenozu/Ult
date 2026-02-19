@@ -171,8 +171,9 @@ export const StockTable = memo(({
   showVolume = true 
 }: StockTableProps) => {
   const { measureAsync } = usePerformanceMonitor('StockTable');
-  const { setSelectedStock } = useUIStore();
-  const { batchUpdateStockData, removeFromWatchlist } = useWatchlistStore();
+  const setSelectedStock = useUIStore(state => state.setSelectedStock);
+  const batchUpdateStockData = useWatchlistStore(state => state.batchUpdateStockData);
+  const removeFromWatchlist = useWatchlistStore(state => state.removeFromWatchlist);
   const [pollingInterval, setPollingInterval] = useState(60000);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -251,6 +252,9 @@ export const StockTable = memo(({
     const controller = new AbortController();
 
     const fetchQuotes = async () => {
+      // Don't fetch if document is hidden to save resources
+      if (typeof document !== 'undefined' && document.hidden) return;
+
       await measureAsync('fetchQuotes', async () => {
         const symbols = symbolKey.split(',').filter(Boolean);
         if (symbols.length === 0) return;
