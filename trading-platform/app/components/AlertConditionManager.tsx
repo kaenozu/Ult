@@ -330,6 +330,7 @@ export function AlertConditionManager() {
                   <button
                     onClick={() => toggleChannel(type, !channel.enabled)}
                     className="p-2 hover:bg-gray-700 rounded"
+                    aria-label={`${channel.enabled ? 'Disable' : 'Enable'} ${type} channel`}
                   >
                     {channel.enabled ? (
                       <ToggleRight className="w-5 h-5 text-green-500" />
