@@ -1,11 +1,16 @@
 /**
  * Development Logger Utility
  * 
+ * @deprecated This file is deprecated. Import from '@/app/lib/utils/logger' instead.
+ * This file re-exports from the centralized logger for backward compatibility.
+ * 
  * Simple helper functions for development-only logging.
  * These functions only log in development mode (NODE_ENV !== 'production').
  * 
  * Usage:
  * ```typescript
+ * import { devLog, devWarn, devError } from '@/app/lib/utils/logger'; // Preferred
+ * // OR (deprecated, but still works)
  * import { devLog, devWarn, devError } from '@/app/lib/utils/dev-logger';
  * 
  * devLog('Debug message', data);
@@ -14,49 +19,15 @@
  * ```
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-
-/**
- * Log a debug message in development mode
- */
-export const devLog = (...args: unknown[]): void => {
-  if (isDev) {
-    console.log(...args);
-  }
-};
-
-/**
- * Log a warning message in development mode
- */
-export const devWarn = (...args: unknown[]): void => {
-  if (isDev) {
-    console.warn(...args);
-  }
-};
-
-/**
- * Log an error message in development mode
- */
-export const devError = (...args: unknown[]): void => {
-  if (isDev) {
-    console.error(...args);
-  }
-};
+// Re-export from centralized logger to maintain backward compatibility
+export { isDev, devLog, devWarn, devError, devDebug } from './logger';
 
 /**
  * Log an info message in development mode
+ * @deprecated Use devLog instead for consistency with the centralized logger
  */
 export const devInfo = (...args: unknown[]): void => {
-  if (isDev) {
+  if (process.env.NODE_ENV !== 'production') {
     console.info(...args);
-  }
-};
-
-/**
- * Log a debug message in development mode
- */
-export const devDebug = (...args: unknown[]): void => {
-  if (isDev) {
-    console.debug(...args);
   }
 };

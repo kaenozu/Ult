@@ -12,7 +12,7 @@ import {
   getBrokerDisplayName,
   isBrokerConfigured,
 } from '../lib/brokers';
-import { devLog, devError } from '../lib/utils/dev-logger';
+import { devLog, devError } from '../lib/utils/logger';
 
 let initialized = false;
 
