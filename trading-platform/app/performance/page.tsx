@@ -1,5 +1,10 @@
 'use client';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 /**
  * Performance Screener Dashboard
  * 
@@ -361,7 +366,7 @@ function PerformanceDashboardContent() {
         throw new Error(result.error || 'Unknown error');
       }
     } catch (err) {
-      console.error('Error fetching performance data:', err);
+      devError('Error fetching performance data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       setLoading(false);

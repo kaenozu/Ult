@@ -46,7 +46,7 @@ export function checkRateLimit(request: Request | NextRequest): NextResponse | n
     
     // Allow up to 200 requests per minute in development
     if (devCounter[devKey].count > 200) {
-      console.warn(`Rate limit exceeded in development: ${clientIp}`);
+      devWarn(`Rate limit exceeded in development: ${clientIp}`);
       return rateLimitError();
     }
     return null;

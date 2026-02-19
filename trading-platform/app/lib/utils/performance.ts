@@ -2,6 +2,11 @@
  * パフォーマンス監視ユーティリティ
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 interface PerformanceStat {
   count: number;
   totalTime: number;
@@ -37,7 +42,7 @@ export function measurePerformance<T>(name: string, fn: () => T | Promise<T>): T
     
     // 開発環境では遅い処理（例: 100ms超）をログ出力
     if (process.env.NODE_ENV === 'development' && duration > 100) {
-      console.warn(`[Performance] Slow execution detected in "${name}": ${duration.toFixed(2)}ms`);
+      devWarn(`[Performance] Slow execution detected in "${name}": ${duration.toFixed(2)}ms`);
     }
   };
 

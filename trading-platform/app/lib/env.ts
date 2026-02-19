@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 const envSchema = z.object({
   // Node Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -35,7 +40,7 @@ const processEnv = {
 const parsed = envSchema.safeParse(processEnv);
 
 if (!parsed.success) {
-  console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
+  devError('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
   // In production, we might want to throw error. In dev/test, we might allow defaults or partial failures.
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Invalid environment variables');

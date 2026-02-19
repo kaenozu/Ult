@@ -5,6 +5,11 @@
  * reactive UI updates and persistence.
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getUniverseManager, UniverseStock, UniverseStats, SymbolValidationResult } from '@/app/lib/universe/UniverseManager';
@@ -71,7 +76,7 @@ export const useUniverseStore = create<UniverseStore>()(
             isInitialized: true,
           });
         } catch (error) {
-          console.error('Failed to initialize universe:', error);
+          devError('Failed to initialize universe:', error);
           set({
             error: error instanceof Error ? error.message : 'Failed to initialize universe',
             isLoading: false,
@@ -212,7 +217,7 @@ export const useUniverseStore = create<UniverseStore>()(
             isLoading: false,
           });
         } catch (error) {
-          console.error('Failed to update universe:', error);
+          devError('Failed to update universe:', error);
           set({
             error: error instanceof Error ? error.message : 'Failed to update universe',
             isLoading: false,

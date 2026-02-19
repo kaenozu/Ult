@@ -7,6 +7,11 @@
  * ログ記録、エラー変換、リカバリー処理などのユーティリティが含まれます。
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 import { 
   Result, 
   success, 
@@ -68,17 +73,17 @@ export class ConsoleErrorLogger implements ErrorLogger {
     
     switch (level) {
       case 'debug':
-        console.debug(logMessage, context || '');
+        devLog(logMessage, context || '');
         break;
       case 'info':
-        console.info(logMessage, context || '');
+        devLog(logMessage, context || '');
         break;
       case 'warn':
-        console.warn(logMessage, error?.message || '', context || '');
+        devWarn(logMessage, error?.message || '', context || '');
         break;
       case 'error':
       case 'fatal':
-        console.error(logMessage, error?.message || '', context || '', error?.stack || '');
+        devError(logMessage, error?.message || '', context || '', error?.stack || '');
         break;
     }
   }
