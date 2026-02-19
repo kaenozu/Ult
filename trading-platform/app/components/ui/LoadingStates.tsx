@@ -141,7 +141,7 @@ export const TableSkeleton = memo(function TableSkeleton({
  * Card skeleton loader
  */
 export const CardSkeleton = memo(function CardSkeleton({
-  height = 150,
+  _height = 150,
 }: {
   height?: number;
 }) {

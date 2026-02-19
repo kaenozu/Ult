@@ -157,7 +157,7 @@ describe('StockTable', () => {
     });
 
     it('uses CSS-only hover effects without React state', () => {
-        const { container } = render(<StockTable stocks={mockStocks as unknown[]} />);
+        render(<StockTable stocks={mockStocks as unknown[]} />);
         
         // Find a stock row
         const toyotaRow = screen.getByText('Toyota').closest('tr');

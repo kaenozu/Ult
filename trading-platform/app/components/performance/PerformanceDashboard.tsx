@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { usePerformanceMonitor } from '@/app/hooks/usePerformanceMonitor';
 import { globalCache } from '@/app/hooks/useCachedFetch';
 import { enhancedPredictionService } from '@/app/lib/services/enhanced-prediction-service';
 import { INTERVAL } from '@/app/constants/timing';

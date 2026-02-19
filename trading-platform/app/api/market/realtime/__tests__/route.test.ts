@@ -1,6 +1,5 @@
 import { GET } from '../route';
 import { realTimeDataService } from '@/app/lib/services/RealTimeDataService';
-import { requireAuth } from '@/app/lib/auth';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 
 // Mock dependencies
@@ -8,10 +7,6 @@ jest.mock('@/app/lib/services/RealTimeDataService', () => ({
   realTimeDataService: {
     fetchQuote: jest.fn(),
   },
-}));
-
-jest.mock('@/app/lib/auth', () => ({
-  requireAuth: jest.fn(),
 }));
 
 jest.mock('@/app/lib/api-middleware', () => ({
