@@ -391,6 +391,18 @@ git add .gitattributes
 - 通常: 1-3 営業日
 - 緊急: 当日（事前に連絡してください）
 
+### ⚠️ AI コードレビューについて
+
+**現在の状況**: chatgpt-codex-connectorの使用制限に達しています。
+
+- **自動AIレビュー**: ❌ 一時停止中（クレジット制限に到達）
+- **代替レビュー方法**:
+  - ✅ 人間によるピアレビュー（継続中）
+  - ✅ 自動CI/CDチェック（ESLint、TypeScript、テスト）
+  - ✅ Quality Gatesワークフロー
+
+**管理者の方へ**: AIコードレビュー機能を再開するには、chatgpt-codex-connectorのクレジットを追加してください。詳細は [`trading-platform/REVIEW_REPORT.md`](trading-platform/REVIEW_REPORT.md#コードレビューボット使用制限について) をご参照ください。
+
 ---
 
 ## コミットメッセージ
