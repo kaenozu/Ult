@@ -60,7 +60,7 @@ export class BacktestVisualizationUtils {
 
   /**
    * 取引結果のヒストグラムデータを生成
-   * Optimized: Single pass for min/max calculation
+   * Optimized: Single pass for min/max calculation and binning (O(N) complexity)
    */
   static calculateTradeDistribution(result: BacktestResult, binCount: number = 20): TradeDistribution {
     const profits = result.trades.map(t => t.profitPercent || 0);
@@ -68,26 +68,54 @@ export class BacktestVisualizationUtils {
       return { bins: [], avg: 0, median: 0, stdDev: 0 };
     }
 
-    // Single pass for min/max
+    // Single pass for min/max - optimized loop
     let min = Infinity;
     let max = -Infinity;
-    for (const p of profits) {
+    const length = profits.length;
+    for (let i = 0; i < length; i++) {
+      const p = profits[i];
       if (p < min) min = p;
       if (p > max) max = p;
     }
     
     const binWidth = (max - min) / binCount;
 
-    // Calculate bins
-    const bins = Array.from({ length: binCount }, (_, i) => {
+    // Create bins initialized to 0
+    const bins = new Array(binCount);
+    for (let i = 0; i < binCount; i++) {
       const binMin = min + i * binWidth;
       const binMax = binMin + binWidth;
-      const count = profits.filter(p => p >= binMin && (i === binCount - 1 ? p <= binMax : p < binMax)).length;
-      return {
+      bins[i] = {
         range: `${binMin.toFixed(1)}% - ${binMax.toFixed(1)}%`,
-        count,
+        count: 0,
       };
-    });
+    }
+
+    // Single pass binning
+    if (binWidth === 0) {
+      // If min === max, all items fall into the last bin (matching original behavior where p <= binMax is true)
+      bins[binCount - 1].count = length;
+    } else {
+      const binWidthInv = 1 / binWidth;
+      // Optimized loop with multiplication instead of division
+      for (let i = 0; i < length; i++) {
+        const p = profits[i];
+        // Calculate bin index
+        let idx = Math.floor((p - min) * binWidthInv);
+
+        // Handle max value falling exactly on the upper boundary of the last bin
+        if (idx >= binCount) {
+          idx = binCount - 1;
+        }
+
+        // Safety check
+        if (idx < 0) {
+          idx = 0;
+        }
+
+        bins[idx].count++;
+      }
+    }
 
     // Calculate statistics
     const avg = profits.reduce((sum, p) => sum + p, 0) / profits.length;
@@ -186,6 +214,7 @@ export class BacktestVisualizationUtils {
 
   /**
    * 勝率と損益の推移を計算
+   * Optimized: Sliding window approach (O(N) complexity)
    */
   static calculateRollingPerformance(result: BacktestResult, windowSize: number = 10): {
     index: number;
@@ -193,16 +222,69 @@ export class BacktestVisualizationUtils {
     avgReturn: number;
   }[] {
     const rolling: { index: number; winRate: number; avgReturn: number }[] = [];
+    const trades = result.trades;
+    const length = trades.length;
 
-    for (let i = windowSize; i < result.trades.length; i++) {
-      const windowTrades = result.trades.slice(i - windowSize, i);
-      const wins = windowTrades.filter(t => (t.profitPercent || 0) > 0).length;
-      const avgReturn = windowTrades.reduce((sum, t) => sum + (t.profitPercent || 0), 0) / windowSize;
+    // Matches original behavior: if length <= windowSize, returns empty array.
+    if (length <= windowSize) {
+      return rolling;
+    }
+
+    let currentWins = 0;
+    let currentReturnSum = 0;
+
+    // Initialize first window (indices 0 to windowSize - 1)
+    // Corresponds to the window ending at index `windowSize - 1` (inclusive)
+    // This window is NOT emitted by the original loop, but used as base for sliding.
+    for (let i = 0; i < windowSize; i++) {
+      const p = trades[i].profitPercent || 0;
+      if (p > 0) currentWins++;
+      currentReturnSum += p;
+    }
+
+    // Original loop starts at i = windowSize.
+    // At i = windowSize, it computes stats for slice(0, windowSize) -> indices [0, windowSize-1].
+    // So we need to push the initial window result here.
+
+    rolling.push({
+      index: windowSize,
+      winRate: parseFloat(((currentWins / windowSize) * 100).toFixed(1)),
+      avgReturn: parseFloat((currentReturnSum / windowSize).toFixed(2)),
+    });
+
+    // Iterate for remaining windows
+    // Original loop: for (let i = windowSize; i < length; i++)
+    // At step i, computes window [i - windowSize, i - 1].
+    // Note: slice(start, end) excludes end. So window includes indices up to i-1.
+
+    // We already handled i=windowSize. We need loop for i=windowSize+1 ... length-1.
+    // However, original loop condition is `i < length`. So `i` goes up to `length - 1`.
+    // Yes, the loop should run as long as `i < length`.
+
+    for (let i = windowSize + 1; i < length; i++) {
+      // Transition from window ending at i-2 to window ending at i-1.
+      // Current window indices: [i - windowSize, i - 1]
+      // Previous window indices: [i - 1 - windowSize, i - 2]
+
+      // Element leaving: trades[i - 1 - windowSize]
+      // Element entering: trades[i - 1]
+
+      const leavingIdx = i - 1 - windowSize;
+      const enteringIdx = i - 1;
+
+      const leavingProfit = trades[leavingIdx].profitPercent || 0;
+      const enteringProfit = trades[enteringIdx].profitPercent || 0;
+
+      if (leavingProfit > 0) currentWins--;
+      currentReturnSum -= leavingProfit;
+
+      if (enteringProfit > 0) currentWins++;
+      currentReturnSum += enteringProfit;
 
       rolling.push({
         index: i,
-        winRate: parseFloat((wins / windowSize * 100).toFixed(1)),
-        avgReturn: parseFloat(avgReturn.toFixed(2)),
+        winRate: parseFloat(((currentWins / windowSize) * 100).toFixed(1)),
+        avgReturn: parseFloat((currentReturnSum / windowSize).toFixed(2)),
       });
     }
 

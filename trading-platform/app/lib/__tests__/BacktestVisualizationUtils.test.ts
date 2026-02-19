@@ -395,4 +395,50 @@ describe('BacktestVisualizationUtils', () => {
       expect(totalDistCount).toBe(trades.length);
     });
   });
+
+  describe('calculateRollingPerformance', () => {
+    it('should return empty array if trades length <= windowSize', () => {
+      const trades = [createMockTrade(), createMockTrade()];
+      const result = createMockBacktestResult(trades);
+      const rolling = BacktestVisualizationUtils.calculateRollingPerformance(result, 5);
+      expect(rolling).toEqual([]);
+    });
+
+    it('should calculate rolling win rate and average return correctly', () => {
+      // 15 trades, window size 10
+      const trades = Array.from({ length: 15 }, (_, i) => 
+        createMockTrade({ profitPercent: i % 2 === 0 ? 2 : -1 }) // 2, -1, 2, -1, 2, -1, 2, -1, 2, -1, 2, -1, 2, -1, 2
+      );
+      // Window 0 (indices 0-9): 5 wins (2, 2, 2, 2, 2), 5 losses (-1, -1, -1, -1, -1)
+      // Win Rate: 50%, Avg Return: (5*2 + 5*-1)/10 = 0.5
+      
+      const result = createMockBacktestResult(trades);
+      const rolling = BacktestVisualizationUtils.calculateRollingPerformance(result, 10);
+
+      expect(rolling).toHaveLength(5); // 15 - 10 = 5 windows
+      
+      // First window (index 10 in output)
+      expect(rolling[0].index).toBe(10);
+      expect(rolling[0].winRate).toBe(50);
+      expect(rolling[0].avgReturn).toBe(0.5);
+
+      // Second window (indices 1-10): 5 wins (0, 2, 4, 6, 8, 10) -> wait, indices 1 to 10
+      // Indices: 1(-1), 2(2), 3(-1), 4(2), 5(-1), 6(2), 7(-1), 8(2), 9(-1), 10(2)
+      // Wins at 2, 4, 6, 8, 10 (5 wins)
+      // Avg: (5*2 + 5*-1)/10 = 0.5
+      expect(rolling[1].index).toBe(11);
+      expect(rolling[1].winRate).toBe(50);
+      expect(rolling[1].avgReturn).toBe(0.5);
+    });
+
+    it('should handle trades with zero profit', () => {
+      const trades = Array.from({ length: 11 }, () => createMockTrade({ profitPercent: 0 }));
+      const result = createMockBacktestResult(trades);
+      const rolling = BacktestVisualizationUtils.calculateRollingPerformance(result, 10);
+
+      expect(rolling).toHaveLength(1);
+      expect(rolling[0].winRate).toBe(0);
+      expect(rolling[0].avgReturn).toBe(0);
+    });
+  });
 });

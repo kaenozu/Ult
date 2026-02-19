@@ -471,12 +471,11 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
      
      let peak = -Infinity;
      const drawdowns = equityCurve.map((equity) => {
-       peak = Math.max(peak, equity);
-       return Math.pow((peak - equity) / peak, 2);
-     });
-     return Math.sqrt(drawdowns.reduce((sum, d) => sum + d, 0) / drawdowns.length) * 100;
-   }
-
+           peak = Math.max(peak, equity);
+           return Math.pow((peak - equity) / peak, 2);
+         });
+         return Math.sqrt(drawdowns.reduce((sum, d) => sum + d, 0) / drawdowns.length) * 100;
+       }
    /**
     * Run Monte Carlo simulation
     */
