@@ -5,14 +5,10 @@
  * performance measurement utilities.
  */
 
-<<<<<<< HEAD
-import { measurePerformance, measurePerformanceAsync } from './performance-utils';
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
 
 import { measurePerformance, measurePerformanceAsync } from './performance-utils';
 import { devLog } from '@/app/lib/utils/dev-logger';
->>>>>>> origin/main
+
 
 // Example 1: Using functional wrappers
 class ExampleService {

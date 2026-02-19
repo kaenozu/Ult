@@ -1,11 +1,8 @@
 import { spawn } from 'child_process';
 import { devLog, devWarn, devError } from '@/app/lib/utils/dev-logger';
 import path from 'path';
-<<<<<<< HEAD
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
 
->>>>>>> origin/main
+
 
 export interface RealTimeQuote {
   symbol: string;

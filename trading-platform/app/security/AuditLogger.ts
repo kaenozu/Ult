@@ -5,14 +5,10 @@
  * Tracks all important user actions and system events.
  */
 
-<<<<<<< HEAD
-import { AuditEvent, AuditEventType, AuditEventOutcome } from '../types/shared';
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
 
 import { AuditEvent, AuditEventType, AuditEventOutcome } from '../types/shared';
 import { devLog, devWarn, devError } from '@/app/lib/utils/dev-logger';
->>>>>>> origin/main
+
 import { idbClient } from '../lib/api/idb-migrations';
 
 interface AuditQuery {

@@ -7,12 +7,8 @@
  * ログ記録、エラー変換、リカバリー処理などのユーティリティが含まれます。
  */
 
-<<<<<<< HEAD
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-
-=======
 import { devLog, devWarn, devError } from '@/app/lib/utils/dev-logger';
->>>>>>> origin/main
+
 import { 
   Result, 
   success, 

@@ -1,9 +1,6 @@
 'use client';
 
-<<<<<<< HEAD
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
->>>>>>> origin/main
+
 
 /**
  * Performance Screener Dashboard

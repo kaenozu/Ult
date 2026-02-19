@@ -5,14 +5,10 @@
  * メインスレッドをブロックせずに重い計算を実行
  */
 
-<<<<<<< HEAD
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { devWarn, devError } from '@/app/lib/utils/dev-logger';
->>>>>>> origin/main
+
 
 interface MLPredictionRequest {
   id: string;

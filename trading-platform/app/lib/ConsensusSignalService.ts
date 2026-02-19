@@ -7,14 +7,10 @@
  * - 売買の強さを0-1の確率として表現
  */
 
-<<<<<<< HEAD
-import { OHLCV, Signal, TimeFrame } from '../types';
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
 
 import { OHLCV, Signal, TimeFrame } from '../types';
 import { devLog } from '@/app/lib/utils/dev-logger';
->>>>>>> origin/main
+
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { RSI_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
 

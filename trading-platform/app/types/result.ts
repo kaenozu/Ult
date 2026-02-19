@@ -8,10 +8,7 @@
  * エラーハンドリングを強制的に行うよう設計されています。
  */
 
-<<<<<<< HEAD
-import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
-=======
->>>>>>> origin/main
+
 
 /**
  * 成功結果を表す型
