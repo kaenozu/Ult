@@ -50,14 +50,14 @@ interface TooltipData {
 
 export const StockChart = memo(function StockChart({
   data,
-  indexData = [],
+  indexData: _indexData = [],
   height = 400,
   showVolume = true,
   showSMA = true,
   showBollinger = false,
   loading = false,
   error = null,
-  market = 'usa',
+  market: _market = 'usa',
   signal = null,
   accuracyData = null,
 }: StockChartProps) {
@@ -74,6 +74,7 @@ export const StockChart = memo(function StockChart({
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [containerWidth, setContainerWidth] = useState(300);
 
   const convertToLWCData = useCallback((ohlcv: OHLCV[]): CandlestickData<Time>[] => {
     return ohlcv.map((d) => ({
@@ -144,6 +145,13 @@ export const StockChart = memo(function StockChart({
 
     return { upper: upperData, lower: lowerData };
   }, []);
+
+  // Track container width to avoid accessing ref during render
+  useEffect(() => {
+    if (chartContainerRef.current) {
+      setContainerWidth(chartContainerRef.current.clientWidth);
+    }
+  }, [data.length]);
 
   useEffect(() => {
     if (!chartContainerRef.current || data.length === 0) return;
@@ -366,7 +374,7 @@ export const StockChart = memo(function StockChart({
         <div
           className="absolute z-50 bg-[#1a2632] border border-[#233648] rounded-lg p-3 shadow-lg pointer-events-none"
           style={{
-            left: Math.min(tooltipPos.x + 10, (chartContainerRef.current?.clientWidth || 300) - 150),
+            left: Math.min(tooltipPos.x + 10, containerWidth - 150),
             top: Math.max(tooltipPos.y - 100, 10),
           }}
         >

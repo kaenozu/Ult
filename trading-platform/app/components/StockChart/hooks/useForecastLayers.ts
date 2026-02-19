@@ -43,7 +43,7 @@ export const useForecastLayers = ({
   data,
   extendedData,
   signal,
-  market,
+  market: _market,
   hoveredIdx,
   accuracyData = null,
   preCalculatedIndicators
@@ -124,6 +124,8 @@ export const useForecastLayers = ({
   // 2. AI Time Travel: Ghost Cloud (past prediction reproduction)
   // Performance Optimization: Quantize hover index and cache results
   // React 19 Compliance: Moved cache operations to useEffect to avoid ref access during render
+  // Intentional: Computing derived forecast data based on hover position requires async state update
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) {
       setGhostForecastDatasets([]);

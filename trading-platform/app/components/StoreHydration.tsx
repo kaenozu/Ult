@@ -9,7 +9,11 @@ export function StoreHydration() {
     useEffect(() => {
         // Manually trigger hydration on mount to ensure client-side storage is used
         usePortfolioStore.persist.rehydrate();
-        setHydrated(true);
+        // Use setTimeout to avoid synchronous setState in effect
+        const timer = setTimeout(() => {
+            setHydrated(true);
+        }, 0);
+        return () => clearTimeout(timer);
     }, []);
 
     if (!hydrated) return null;

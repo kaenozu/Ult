@@ -88,9 +88,17 @@ export const useDataQuality = (updateInterval: number = 1000) => {
   }, []);
 
   useEffect(() => {
-    fetchMetrics();
+    // Initial fetch - wrapped in setTimeout to avoid synchronous setState in effect
+    const timer = setTimeout(() => {
+      fetchMetrics();
+    }, 0);
+    
     const interval = setInterval(fetchMetrics, updateInterval);
-    return () => clearInterval(interval);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, [fetchMetrics, updateInterval]);
 
   const refresh = useCallback(() => {
