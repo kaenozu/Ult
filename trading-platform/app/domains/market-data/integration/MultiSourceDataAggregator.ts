@@ -8,12 +8,9 @@
  * - Automatic source health monitoring
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 import { DataQualityValidator, type CrossSourceValidation } from '@/app/lib/data/quality/DataQualityValidator';
+import { devLog, devWarn } from '@/app/lib/utils/dev-logger';
 import { DataLatencyMonitor } from '@/app/lib/data/latency/DataLatencyMonitor';
 import type { MarketData } from '@/app/types/data-quality';
 import type { OHLCV } from '@/app/types/shared';

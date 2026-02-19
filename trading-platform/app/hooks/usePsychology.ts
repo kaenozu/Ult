@@ -5,12 +5,9 @@
  * 心理監視、クーリングオフ、規律スコアの計算を簡単に使えるようにする
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 import { useEffect, useMemo, useRef } from 'react';
+import { devError } from '@/app/lib/utils/dev-logger';
 import { usePsychologyStore } from '@/app/store/psychologyStore';
 import { useJournalStore } from '@/app/store/journalStore';
 import { PsychologyMonitor } from '@/app/lib/risk/PsychologyMonitor';

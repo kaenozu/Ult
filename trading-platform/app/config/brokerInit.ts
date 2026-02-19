@@ -5,11 +5,7 @@
  * This file should be imported early in the application lifecycle.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
-
+import { devLog, devError } from '@/app/lib/utils/dev-logger';
 import { 
   initializeOrderExecutor, 
   loadBrokerConfigFromEnv, 

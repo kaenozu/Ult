@@ -4,14 +4,11 @@
  * メインスレッドをブロックせずに重い計算（ML推論、パラメータ最適化）を実行します。
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 // Worker内では通常のモジュールインポートに制限があるため、
 // ロジックをメッセージハンドラとして定義します。
 
+import { devError } from '@/app/lib/utils/dev-logger';
 self.onmessage = async (e: MessageEvent) => {
   const { type, data } = e.data;
 

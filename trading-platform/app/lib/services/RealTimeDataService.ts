@@ -1,10 +1,7 @@
 import { spawn } from 'child_process';
+import { devLog, devWarn, devError } from '@/app/lib/utils/dev-logger';
 import path from 'path';
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
 
 export interface RealTimeQuote {
   symbol: string;

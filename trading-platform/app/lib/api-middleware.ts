@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ipRateLimiter, getClientIp } from './ip-rate-limit';
 import { rateLimitError, handleApiError } from './error-handler';
+import { devWarn } from '@/app/lib/utils/dev-logger';
 
 /**
  * Rate limiting middleware

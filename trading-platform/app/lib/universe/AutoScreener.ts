@@ -1,11 +1,8 @@
 import { IMarketDataHub } from '../interfaces/IMarketDataHub';
+import { devError } from '@/app/lib/utils/dev-logger';
 import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import { OHLCV } from '../../types';
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 export interface ScanResult {
   symbol: string;
