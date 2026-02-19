@@ -1950,34 +1950,186 @@ git checkout -b hotfix/integration-issues
 # scripts/integration-health.sh
 
 #!/bin/bash
+set -e  # エラーで停止
+
 echo "=== Integration Health Check ==="
+echo "Started: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
 
+FAILED=0
+
+# 1. Dependencies
 echo "📦 Dependencies"
-npm list --depth=0 2>&1 | grep -E "UNMET|missing" && echo "❌ FAIL" || echo "✅ PASS"
+if npm list --depth=0 2>&1 | grep -E "UNMET|missing" > /dev/null; then
+  echo "❌ FAIL - Missing dependencies detected"
+  npm list --depth=0 2>&1 | grep -E "UNMET|missing"
+  FAILED=$((FAILED + 1))
+else
+  TOTAL=$(npm list --depth=0 2>&1 | grep -c "├──\|└──" || echo "0")
+  echo "✅ PASS - All $TOTAL dependencies resolved"
+fi
 echo ""
 
+# 2. TypeScript
 echo "🔍 TypeScript"
-npx tsc --noEmit >/dev/null 2>&1 && echo "✅ PASS (0 errors)" || echo "❌ FAIL"
+TS_OUTPUT=$(npx tsc --noEmit 2>&1)
+if [ $? -eq 0 ]; then
+  echo "✅ PASS - 0 errors found"
+else
+  ERROR_COUNT=$(echo "$TS_OUTPUT" | grep -c "error TS" || echo "0")
+  echo "❌ FAIL - $ERROR_COUNT errors found"
+  echo "$TS_OUTPUT" | head -20  # 最初の20行を表示
+  FAILED=$((FAILED + 1))
+fi
 echo ""
 
+# 3. ESLint
 echo "📏 ESLint"
-npm run lint >/dev/null 2>&1 && echo "✅ PASS" || echo "❌ FAIL"
+LINT_OUTPUT=$(npm run lint 2>&1)
+if [ $? -eq 0 ]; then
+  echo "✅ PASS - No linting errors"
+else
+  ERROR_COUNT=$(echo "$LINT_OUTPUT" | grep -oP "\d+ error" | grep -oP "\d+" || echo "0")
+  WARN_COUNT=$(echo "$LINT_OUTPUT" | grep -oP "\d+ warning" | grep -oP "\d+" || echo "0")
+  echo "❌ FAIL - $ERROR_COUNT errors, $WARN_COUNT warnings"
+  echo "$LINT_OUTPUT" | grep "error\|warning" | head -10
+  FAILED=$((FAILED + 1))
+fi
 echo ""
 
-echo "🧪 Tests"
-npm test -- --passWithNoTests --silent >/dev/null 2>&1 && echo "✅ PASS" || echo "❌ FAIL"
+# 4. Unit Tests
+echo "🧪 Unit Tests"
+TEST_OUTPUT=$(npm test -- --passWithNoTests --silent --coverage 2>&1)
+if [ $? -eq 0 ]; then
+  PASSED=$(echo "$TEST_OUTPUT" | grep -oP "\d+ passed" | grep -oP "\d+" || echo "0")
+  COVERAGE=$(echo "$TEST_OUTPUT" | grep "All files" | awk '{print $10}' || echo "N/A")
+  echo "✅ PASS - $PASSED tests passed, Coverage: $COVERAGE"
+else
+  FAILED_TESTS=$(echo "$TEST_OUTPUT" | grep -oP "\d+ failed" | grep -oP "\d+" || echo "0")
+  echo "❌ FAIL - $FAILED_TESTS tests failed"
+  echo "$TEST_OUTPUT" | grep "FAIL" | head -5
+  FAILED=$((FAILED + 1))
+fi
 echo ""
 
+# 5. Build
 echo "🏗️ Build"
-npm run build >/dev/null 2>&1 && echo "✅ PASS" || echo "❌ FAIL"
+BUILD_START=$(date +%s)
+if npm run build > /dev/null 2>&1; then
+  BUILD_END=$(date +%s)
+  BUILD_TIME=$((BUILD_END - BUILD_START))
+  BUILD_SIZE=$(du -sh .next 2>/dev/null | cut -f1 || echo "N/A")
+  echo "✅ PASS - Built in ${BUILD_TIME}s, Size: $BUILD_SIZE"
+else
+  echo "❌ FAIL - Build failed"
+  npm run build 2>&1 | tail -20
+  FAILED=$((FAILED + 1))
+fi
 echo ""
 
-echo "🎯 E2E"
-npm run test:e2e >/dev/null 2>&1 && echo "✅ PASS" || echo "❌ FAIL"
-echo ""
+# 6. E2E Tests (optional)
+if command -v playwright &> /dev/null; then
+  echo "🎯 E2E Tests"
+  if npm run test:e2e > /dev/null 2>&1; then
+    E2E_PASSED=$(npm run test:e2e 2>&1 | grep -oP "\d+ passed" | grep -oP "\d+" || echo "0")
+    echo "✅ PASS - $E2E_PASSED E2E tests passed"
+  else
+    echo "❌ FAIL - E2E tests failed"
+    FAILED=$((FAILED + 1))
+  fi
+  echo ""
+fi
 
-# Exit with error if any check failed
+# Summary
+echo "==================================="
+echo "Completed: $(date '+%Y-%m-%d %H:%M:%S')"
+if [ $FAILED -eq 0 ]; then
+  echo "🎉 All checks passed!"
+  exit 0
+else
+  echo "⚠️  $FAILED check(s) failed"
+  exit 1
+fi
+```
+
+**期待される出力 (成功時):**
+```
+=== Integration Health Check ===
+Started: 2024-01-15 14:30:00
+
+📦 Dependencies
+✅ PASS - All 127 dependencies resolved
+
+🔍 TypeScript
+✅ PASS - 0 errors found
+
+📏 ESLint
+✅ PASS - No linting errors
+
+🧪 Unit Tests
+✅ PASS - 247 tests passed, Coverage: 82.5%
+
+🏗️ Build
+✅ PASS - Built in 45s, Size: 192M
+
+🎯 E2E Tests
+✅ PASS - 18 E2E tests passed
+
+===================================
+Completed: 2024-01-15 14:32:15
+🎉 All checks passed!
+```
+
+**期待される出力 (失敗時):**
+```
+=== Integration Health Check ===
+Started: 2024-01-15 14:30:00
+
+📦 Dependencies
+✅ PASS - All 127 dependencies resolved
+
+🔍 TypeScript
+❌ FAIL - 15 errors found
+app/lib/MarketDataService.ts(42,15): error TS2339: Property 'userId' does not exist
+app/components/Dashboard.tsx(28,3): error TS2322: Type 'string | undefined' is not assignable
+app/lib/auth/AuthStore.ts(55,10): error TS2304: Cannot find name 'UserData'
+...
+
+📏 ESLint
+❌ FAIL - 23 errors, 47 warnings
+app/components/StockCard.tsx:12:5 - error - Unexpected any @typescript-eslint/no-explicit-any
+app/lib/utils.ts:45:3 - warning - React Hook useEffect has a missing dependency
+...
+
+🧪 Unit Tests
+❌ FAIL - 49 tests failed
+FAIL app/lib/__tests__/AuthService.test.ts
+FAIL app/components/__tests__/Login.test.tsx
+FAIL app/lib/__tests__/MarketData.test.ts
+...
+
+🏗️ Build
+❌ FAIL - Build failed
+Error: app/lib/MarketDataService.ts(42,15): error TS2339
+Build failed. Fix errors and try again.
+
+===================================
+Completed: 2024-01-15 14:31:45
+⚠️  4 check(s) failed
+```
+
+**使用方法:**
+```bash
+# スクリプトを実行可能にする
+$ chmod +x scripts/integration-health.sh
+
+# 実行
+$ ./scripts/integration-health.sh
+
+# CI/CDパイプラインに組み込む
+# .github/workflows/integration.yml:
+# - name: Run Integration Health Check
+#   run: ./scripts/integration-health.sh
 ```
 
 **Integration Checklist:**
@@ -2501,6 +2653,320 @@ npm test -- --detectOpenHandles
 
 # タイムアウトを設定して強制終了
 npm test -- --testTimeout=5000
+```
+
+#### 無限ループの高度なデバッグ手法 (Advanced Infinite Loop Debugging)
+
+**方法 1: React DevTools Profiler で原因を特定**
+
+```bash
+# 1. 開発サーバーを起動
+$ npm run dev
+
+# 2. ブラウザで React DevTools を開く
+# Chrome DevTools → Components/Profiler タブ
+
+# 3. Profiler で「Record」を開始
+# 4. 問題のコンポーネントを操作
+# 5. 数秒後に「Stop」
+```
+
+**期待される出力:**
+```
+Profiler Results:
+- StockDashboard: 47 renders in 2s (❌ 異常に多い)
+- useEffect fired: 47 times
+- Reason: props.config changed 47 times
+```
+
+**解決策:**
+```typescript
+// Before: config オブジェクトが毎回新しい参照
+<StockDashboard config={{ symbol: 'AAPL', interval: '1D' }} />
+
+// After: useMemo で参照を安定化
+const config = useMemo(
+  () => ({ symbol: 'AAPL', interval: '1D' }),
+  [] // 依存なし = 初回のみ作成
+);
+<StockDashboard config={config} />
+```
+
+---
+
+**方法 2: Console.log で再レンダリングを追跡**
+
+```typescript
+// デバッグ用コンポーネント
+export function StockDashboard({ symbol }: { symbol: string }) {
+  const renderCount = useRef(0);
+  
+  useEffect(() => {
+    renderCount.current += 1;
+    console.log(`🔄 Render #${renderCount.current}`, {
+      symbol,
+      timestamp: new Date().toISOString(),
+      stack: new Error().stack, // 呼び出し元を追跡
+    });
+  });
+  
+  // 通常のロジック
+  const { data } = useStockData({ symbol });
+  // ...
+}
+```
+
+**期待される出力 (正常):**
+```
+🔄 Render #1 { symbol: 'AAPL', timestamp: '2024-01-01T12:00:00.000Z' }
+🔄 Render #2 { symbol: 'AAPL', timestamp: '2024-01-01T12:00:01.500Z' } // データ取得完了
+```
+
+**異常な出力 (無限ループ):**
+```
+🔄 Render #1 { symbol: 'AAPL', timestamp: '2024-01-01T12:00:00.000Z' }
+🔄 Render #2 { symbol: 'AAPL', timestamp: '2024-01-01T12:00:00.050Z' }
+🔄 Render #3 { symbol: 'AAPL', timestamp: '2024-01-01T12:00:00.100Z' }
+🔄 Render #4 { symbol: 'AAPL', timestamp: '2024-01-01T12:00:00.150Z' }
+... (continues)
+```
+
+---
+
+**方法 3: Why-Did-You-Render ライブラリを使用**
+
+```bash
+# インストール
+$ npm install --save-dev @welldone-software/why-did-you-render
+```
+
+```typescript
+// app/lib/wdyr.ts (開発環境のみ)
+if (process.env.NODE_ENV === 'development') {
+  const React = require('react');
+  const whyDidYouRender = require('@welldone-software/why-did-you-render');
+  
+  whyDidYouRender(React, {
+    trackAllPureComponents: true,
+    logOnDifferentValues: true,
+    collapseGroups: true,
+  });
+}
+
+// app/layout.tsx (最上部)
+import './lib/wdyr'; // デバッグ時のみインポート
+```
+
+```typescript
+// デバッグ対象のコンポーネント
+export function StockDashboard({ symbol }: { symbol: string }) {
+  // ...
+}
+
+// Why-Did-You-Render を有効化
+StockDashboard.whyDidYouRender = true;
+```
+
+**期待される出力:**
+```
+[why-did-you-render] StockDashboard
+  Re-rendered because of props changes:
+    config: { symbol: 'AAPL', interval: '1D' } → { symbol: 'AAPL', interval: '1D' }
+    (same values, different references) ❌
+```
+
+---
+
+**方法 4: TanStack Query Devtools で状態を監視**
+
+```typescript
+// app/layout.tsx
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
+}
+```
+
+**DevTools で確認する項目:**
+- **Fetches**: データ取得の頻度（1秒に何回も取得していないか）
+- **Query Status**: `fetching` → `success` のサイクルが正常か
+- **Refetch Interval**: 自動リフレッシュの設定が適切か
+
+**正常な状態:**
+```
+Query: ['stock', 'AAPL']
+Status: success
+Data Age: 15s
+Refetch Interval: 60s
+Last Fetched: 12:00:00
+```
+
+**異常な状態 (無限ループ):**
+```
+Query: ['stock', 'AAPL']
+Status: fetching (constantly)
+Data Age: 0s
+Refetch Interval: 0s ❌ (should be > 0)
+Fetch Count: 247 in 5s ❌
+```
+
+**修正:**
+```typescript
+// Before: refetchInterval が 0 または undefined
+const { data } = useQuery({
+  queryKey: ['stock', symbol],
+  queryFn: fetchStockData,
+  refetchInterval: 0, // ❌ 無限ループの原因
+});
+
+// After: 適切な間隔を設定
+const { data } = useQuery({
+  queryKey: ['stock', symbol],
+  queryFn: fetchStockData,
+  refetchInterval: 60000, // ✅ 1分ごと
+  staleTime: 30000, // 30秒間はキャッシュを使用
+});
+```
+
+---
+
+**方法 5: Node.js の --inspect でテストをデバッグ**
+
+```bash
+# Chrome DevTools でテストをデバッグ
+$ node --inspect-brk ./node_modules/.bin/jest --runInBand
+
+# 別のターミナルで
+$ node --inspect ./node_modules/.bin/jest --runInBand
+
+# Chrome で chrome://inspect を開く
+# "Inspect" をクリックして DevTools を起動
+```
+
+**DevToolsでの手順:**
+1. **Sources** タブを開く
+2. 問題のテストファイルにブレークポイントを設定
+3. useEffect の中にブレークポイント
+4. **Step Over (F10)** で1行ずつ実行
+5. **Watch** で依存配列の値を監視
+
+**監視する変数:**
+```javascript
+// Watch expressions in Chrome DevTools
+config                  // オブジェクトの参照が変わっているか
+JSON.stringify(config)  // 値は同じか
+renderCount.current     // 何回レンダリングされたか
+```
+
+---
+
+**方法 6: Performance API でボトルネックを特定**
+
+```typescript
+// app/hooks/useStockData.ts
+import { useQuery } from '@tanstack/react-query';
+
+export function useStockData({ symbol }: { symbol: string }) {
+  const startTime = performance.now();
+  
+  const result = useQuery({
+    queryKey: ['stock', symbol],
+    queryFn: async () => {
+      const fetchStart = performance.now();
+      const data = await fetchStockData(symbol);
+      const fetchEnd = performance.now();
+      
+      console.log(`📊 Fetch time: ${(fetchEnd - fetchStart).toFixed(2)}ms`);
+      return data;
+    },
+  });
+  
+  useEffect(() => {
+    const endTime = performance.now();
+    console.log(`⏱️ Hook execution: ${(endTime - startTime).toFixed(2)}ms`);
+  }, [result.dataUpdatedAt]);
+  
+  return result;
+}
+```
+
+**期待される出力 (正常):**
+```
+📊 Fetch time: 125.45ms
+⏱️ Hook execution: 128.30ms
+(1回のみ出力、その後60秒間隔)
+```
+
+**異常な出力 (無限ループ):**
+```
+📊 Fetch time: 125.45ms
+⏱️ Hook execution: 128.30ms
+📊 Fetch time: 126.12ms
+⏱️ Hook execution: 129.01ms
+📊 Fetch time: 124.89ms
+⏱️ Hook execution: 127.78ms
+... (continues every 100-200ms)
+```
+
+---
+
+**クイックチェックリスト (無限ループ診断):**
+
+```bash
+#!/bin/bash
+# scripts/diagnose-infinite-loop.sh
+
+echo "🔍 Infinite Loop Diagnostic Tool"
+echo "================================="
+
+# 1. useEffect の依存配列をチェック
+echo "1. Checking useEffect dependencies..."
+grep -rn "useEffect" app/components/ --include="*.tsx" | \
+  grep -E "\[.*\{.*\}\]" && \
+  echo "❌ Found object in dependency array" || \
+  echo "✅ No objects in dependency arrays"
+
+# 2. TanStack Query の設定をチェック
+echo "2. Checking TanStack Query config..."
+grep -rn "refetchInterval.*0" app/ --include="*.ts" --include="*.tsx" && \
+  echo "❌ Found refetchInterval: 0" || \
+  echo "✅ No invalid refetchInterval"
+
+# 3. 無限再レンダリングの兆候をチェック
+echo "3. Checking for render loops..."
+npm test -- --testTimeout=3000 --silent 2>&1 | \
+  grep -i "timeout\|exceeded" && \
+  echo "❌ Test timeout detected (possible infinite loop)" || \
+  echo "✅ No test timeouts"
+
+# 4. CPU使用率をモニタリング
+echo "4. Monitoring CPU usage during dev server..."
+npm run dev &
+DEV_PID=$!
+sleep 5
+CPU=$(ps -p $DEV_PID -o %cpu | tail -n 1)
+kill $DEV_PID
+
+if (( $(echo "$CPU > 80" | bc -l) )); then
+  echo "❌ High CPU usage: ${CPU}% (possible infinite loop)"
+else
+  echo "✅ Normal CPU usage: ${CPU}%"
+fi
+
+echo "================================="
+echo "Diagnostic complete. Review output above."
+```
+
+```bash
+# 実行
+$ chmod +x scripts/diagnose-infinite-loop.sh
+$ ./scripts/diagnose-infinite-loop.sh
 ```
 
 ---
