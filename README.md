@@ -14,6 +14,8 @@
 
 **ULT (Ultimate Trading Platform)** は、AI予測とテクニカル分析を組み合わせた次世代の株式取引支援プラットフォームです。日本市場と米国市場に対応し、機械学習による価格予測、リアルタイムチャート分析、リスク管理機能を提供します。
 
+> ⚠️ **重要なお知らせ**: Codex使用制限に達しました。自動コードレビューが一時的に利用できません。詳細は[Codex利用制限ガイド](./CODEX_USAGE_LIMITS_GUIDE.md)を参照してください。（2026-02-19）
+
 ---
 
 ## 🎯 プロジェクト概要
@@ -560,6 +562,7 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
 - [技術的負債ロードマップ](./REMAINING_TECH_DEBT_ROADMAP.md)
 - [リポジトリクリーンアップガイド](./REPOSITORY_CLEANUP_GUIDE.md) - リポジトリサイズ管理
 - [リポジトリサイズ管理](./scripts/README_REPO_SIZE.md) - サイズ監視とベストプラクティス
+- [Codex利用制限ガイド](./CODEX_USAGE_LIMITS_GUIDE.md) - AI コードレビュー制限への対応 ⚠️
 
 ### お問い合わせ
 
