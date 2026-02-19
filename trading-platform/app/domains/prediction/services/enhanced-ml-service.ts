@@ -10,9 +10,7 @@
  * - Market regime detection
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
 
 import { OHLCV, Stock, Signal } from '@/app/types';

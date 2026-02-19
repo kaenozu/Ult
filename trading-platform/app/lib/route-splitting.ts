@@ -4,12 +4,8 @@
  * ルートごとに最適なコード分割とプリフェッチ戦略を定義
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
-
 import { lazy, ComponentType } from 'react';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 
 // ルート優先度定義
 type RoutePriority = 'critical' | 'important' | 'normal' | 'low';

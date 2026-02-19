@@ -5,12 +5,8 @@
  * This service orchestrates feature calculation, prediction, and signal generation.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
-
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 import { FeatureCalculationService } from './feature-calculation-service';
 import { enhancedMLService } from './enhanced-ml-service';
 import type { EnhancedPrediction } from '../types';

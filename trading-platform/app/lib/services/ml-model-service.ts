@@ -5,12 +5,8 @@
  * Please import directly from @/app/domains/prediction/services in new code.
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
-
 import { PREDICTION } from '@/app/constants';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 import {
   MLModelService as DomainMLModelService,
 } from '@/app/domains/prediction/services/ml-model-service';

@@ -7,12 +7,8 @@
  * - 売買の強さを0-1の確率として表現
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
-
 import { OHLCV, Signal, TimeFrame } from '../types';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { RSI_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
 

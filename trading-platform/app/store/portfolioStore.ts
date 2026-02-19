@@ -4,11 +4,7 @@ import { Portfolio, Position } from '../types';
 import { OrderRequest, OrderResult } from '../types/order';
 import { getRiskManagementService } from '../lib/services/RiskManagementService';
 import { AI_TRADING } from '@/app/constants';
-
-const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
 
 interface PortfolioState {
   portfolio: Portfolio;
