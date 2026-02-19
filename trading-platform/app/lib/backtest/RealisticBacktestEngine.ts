@@ -474,7 +474,8 @@ export class RealisticBacktestEngine extends AdvancedBacktestEngine {
        peak = Math.max(peak, equity);
        return Math.pow((peak - equity) / peak, 2);
      });
-     return Math.sqrt(drawdowns.reduce((sum, d) => sum + d, 0) / drawdowns.length) * 100;
+     // Return as decimal (e.g. 0.05 for 5%) to match other metrics like maxDrawdown
+     return Math.sqrt(drawdowns.reduce((sum, d) => sum + d, 0) / drawdowns.length);
    }
 
    /**
