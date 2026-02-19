@@ -22,6 +22,7 @@ concurrency:
 env:
   NODE_VERSION: '20'
   PYTHON_VERSION: '3.10'
+  JWT_SECRET: 'dummy_secret_for_ci_build_process_1234567890'
 
 jobs:
   # ============================================
