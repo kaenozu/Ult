@@ -64,42 +64,62 @@ export function calculateSMA(prices: number[], period: number): number[] {
 
 /**
  * Calculate Exponential Moving Average (EMA)
+ * Optimized: Loop splitting to avoid conditional checks in hot loop
  */
 export function calculateEMA(prices: number[], period: number): number[] {
   const length = prices.length;
   // Pre-allocate array for performance
   const result: number[] = new Array(length);
   const multiplier = 2 / (period + 1);
+
+  let i = 0;
   let sum = 0;
   let validCount = 0;
-  let initialized = false;
 
-  for (let i = 0; i < length; i++) {
+  // 1. Initialization Phase
+  // Find the first 'period' valid values to calculate the initial SMA
+  // This phase handles the initial NaN padding until we have enough data
+  for (; i < length; i++) {
     const val = _getValidPrice(prices[i]);
 
-    if (!initialized) {
-      if (!isNaN(val)) {
-        sum += val;
-        validCount++;
-      }
+    if (!isNaN(val)) {
+      sum += val;
+      validCount++;
+    }
 
-      if (validCount === period && !isNaN(val)) {
-        result[i] = sum / period;
-        initialized = true;
-      } else {
-        result[i] = NaN;
-      }
+    if (validCount === period) {
+      // We found enough points for the initial SMA
+      result[i] = sum / period;
+      i++; // Move to next index for the main loop
+      break;
     } else {
-      // Optimization: access previous result directly from array (or use a local var if desired, but array access is fast enough here)
-      const prevEMA = result[i - 1];
+      result[i] = NaN;
+    }
+  }
+
+  // 2. Main Loop
+  // Calculate EMA using the previous EMA value
+  // Using a local variable for prevEMA avoids repeated array access in the loop
+  if (i < length) {
+    let prevEMA = result[i - 1];
+
+    for (; i < length; i++) {
+      const val = _getValidPrice(prices[i]);
+
+      // If we encounter a NaN after initialization, the EMA chain breaks and becomes NaN
+      // until re-initialization (which this simple implementation doesn't support, mirroring original behavior)
 
       if (!isNaN(val) && !isNaN(prevEMA)) {
-        result[i] = (val - prevEMA) * multiplier + prevEMA;
+         const currentEMA = (val - prevEMA) * multiplier + prevEMA;
+         result[i] = currentEMA;
+         prevEMA = currentEMA;
       } else {
-        result[i] = NaN;
+         result[i] = NaN;
+         prevEMA = NaN;
       }
     }
   }
+
   return result;
 }
 
