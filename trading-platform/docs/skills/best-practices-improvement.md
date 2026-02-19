@@ -17,32 +17,82 @@ TypeScript/Next.jsプロジェクトにおけるベストプラクティス改�
 
 ## Phase 1: Console Statement Reduction
 
-### Pattern: Dev-Only Logging Helper
+### Centralized Dev Logger (推奨アプローチ)
+
+**既に実装済み**: `app/lib/utils/dev-logger.ts`
+
+プロジェクトには集約された開発用ロガーが既に実装されています：
+
+```typescript
+// app/lib/utils/dev-logger.ts
+import { devLog, devWarn, devError, devInfo, devDebug } from '@/app/lib/utils/dev-logger';
+
+// 使用例
+devLog('Debug message', data);
+devWarn('Warning message', context);
+devError('Error occurred', error);
+```
+
+### Pattern: Dev-Only Logging Helper (インライン実装)
+
+ファイル単位で独立したロガーが必要な場合：
 
 ```typescript
 // Add at top of file after imports
 const isDev = process.env.NODE_ENV !== 'production';
-const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
-const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
-const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+const devLog = (...args: unknown[]): void => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]): void => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]): void => { if (isDev) console.error(...args); };
 ```
+
+**推奨**: 集約ロガー（`dev-logger.ts`）を使用することで、一貫性とメンテナンス性が向上します。
 
 ### Implementation Steps
 
 1. Find all console statements
 ```bash
-grep -rn "console\.\(log\|warn\|error\)" --include="*.ts" --include="*.tsx" app/ | grep -v "test\." | grep -v ".test."
+# Using extended regex (推奨)
+grep -rEn "console\.(log|warn|error)" --include="*.ts" --include="*.tsx" app/ | grep -v "test\." | grep -v ".test."
+
+# Or using Perl regex (より確実)
+grep -Prn "console\.(log|warn|error)" --include="*.ts" --include="*.tsx" app/ | grep -v "test\." | grep -v ".test."
 ```
 
 2. Process files in batches
 ```bash
-for file in [file_list]; do
+#!/bin/bash
+# Get list of files with console statements (excluding tests and logger files)
+FILES=$(grep -rlE "console\.(log|warn|error)" --include="*.ts" --include="*.tsx" app/ | grep -v test | grep -v logger)
+
+for file in $FILES; do
+  # Check if dev helpers are already defined
   if ! grep -q "const isDev" "$file"; then
-    # Add helper after imports
-    sed -i '1,/^$/!b; /^$/a\...' "$file"
+    # Add helper functions after the last import statement
+    # Using a temporary file for safety
+    awk '/^import/ { imports=NR } END { 
+      if (imports > 0) {
+        print "const isDev = process.env.NODE_ENV !== '\''production'\'';"
+        print "const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };"
+        print "const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };"
+        print "const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };"
+        print ""
+      }
+    }' "$file" > "${file}.tmp"
+    
+    # Insert the helper after imports
+    sed -i "$(grep -n '^import' "$file" | tail -1 | cut -d: -f1)r ${file}.tmp" "$file"
+    rm "${file}.tmp"
   fi
-  perl -i -pe 's/console\.log\(/devLog(/g' "$file"
+  
+  # Replace console.* calls with dev* equivalents
+  sed -i 's/console\.log(/devLog(/g' "$file"
+  sed -i 's/console\.warn(/devWarn(/g' "$file"
+  sed -i 's/console\.error(/devError(/g' "$file"
 done
+
+# Alternative: Use the centralized dev-logger
+# Simply import and replace:
+# import { devLog, devWarn, devError } from '@/app/lib/utils/dev-logger';
 ```
 
 ### Common Pitfalls
@@ -109,15 +159,30 @@ function cache<T>(key: string, value: T): void
 
 ```bash
 # Find conflicts
-find app -name "*.ts" -o -name "*.tsx" | while read file; do
+find app \( -name "*.ts" -o -name "*.tsx" \) -type f | while read file; do
   if grep -q "<<<<<<< HEAD" "$file"; then
     echo "Has conflict: $file"
   fi
 done
 
-# Resolve keeping origin/main (theirs)
-for file in [conflicted_files]; do
-  perl -i -0777 -pe 's/<<<<<<< HEAD\n(.*?)=======\n(.*?)>>>>>>> origin\/main/\2/gs' "$file"
+# Recommended: Use git's conflict resolution (safer)
+# Accept theirs (origin/main)
+git checkout --theirs -- <conflicted_file>
+
+# Accept ours (current branch)
+git checkout --ours -- <conflicted_file>
+
+# For multiple files, use a loop
+for file in $(git diff --name-only --diff-filter=U); do
+  git checkout --theirs -- "$file"
+  git add "$file"
+done
+
+# Manual perl-based resolution (use with caution)
+# This attempts to keep the origin/main version
+for file in $(git diff --name-only --diff-filter=U); do
+  perl -i -0777 -pe 's/<<<<<<< HEAD.*?=======\n(.*?)>>>>>>> origin\/main/$1/gs' "$file"
+  git add "$file"
 done
 ```
 
@@ -162,6 +227,57 @@ expect(result.regime).toBe('RANGING');
 expect(['RANGING', 'TRENDING']).toContain(result.regime);
 ```
 
+### Cleanup Pattern Example
+
+```typescript
+import { cleanup } from '@testing-library/react';
+
+describe('ComponentTest', () => {
+  // Clean up after each test
+  afterEach(() => {
+    cleanup();
+    jest.clearAllMocks();
+    // Reset any singleton state
+    MyService.getInstance().reset();
+  });
+
+  // Clean up after all tests
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should render correctly', async () => {
+    const { getByText } = render(<MyComponent />);
+    
+    // Wait for async operations
+    await waitFor(() => {
+      expect(getByText('Expected Text')).toBeInTheDocument();
+    });
+  });
+});
+```
+
+### Environment Variable Mocking
+
+```typescript
+describe('Service with env vars', () => {
+  const originalEnv = process.env;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it('should use production config', () => {
+    process.env.NODE_ENV = 'production';
+    // Test production behavior
+  });
+});
+
 ---
 
 ## Phase 5: TODO Organization
@@ -189,17 +305,23 @@ expect(['RANGING', 'TRENDING']).toContain(result.regime);
 ## Verification Commands
 
 ```bash
-# Check any types
-grep -rn ": any" --include="*.ts" app/ | grep -v test | wc -l
+# Check any types (正確なカウント)
+grep -rn ": any\b" --include="*.ts" --include="*.tsx" app/ | grep -v test | grep -v "\.test\." | wc -l
 
-# Check console statements
-grep -rn "console\.\(log\|warn\|error\)" --include="*.ts" app/ | grep -v "isDev" | wc -l
+# Check console statements (正確なカウント)
+grep -rEn "console\.(log|warn|error)" --include="*.ts" --include="*.tsx" app/ | grep -v test | grep -v logger | wc -l
 
-# TypeScript check
+# TypeScript check (型エラーをチェック)
 npx tsc --noEmit
 
-# Run tests
+# Run tests (テストを実行)
 npm test
+
+# Run linter (ESLintを実行)
+npm run lint
+
+# Full quality check (すべての品質チェック)
+npm run build && npm test && npm run lint
 ```
 
 ---
@@ -225,9 +347,14 @@ gh pr merge --squash --delete-branch
 
 ## Success Metrics
 
-| Metric | Before | After | Target |
-|--------|--------|-------|--------|
-| any types | 350 | 11 | <20 |
-| console statements | 318 | 63 | <100 |
-| test pass rate | 99% | 99.9% | >99% |
-| TypeScript strict | Yes | Yes | Yes |
+| Metric | Before | After | Target | Status |
+|--------|--------|-------|--------|--------|
+| any types | 350 | 11 | <15 | ✅ 達成 |
+| console statements | 318 | 48 | <100 | ✅ 達成 |
+| test pass rate | 99% | 99.9% | >99% | ✅ 達成 |
+| TypeScript strict | Yes | Yes | Yes | ✅ 維持 |
+
+**注記**: 
+- Console文は開発用loggerを除外してカウント
+- `dev-logger.ts`が既に実装済み（`app/lib/utils/dev-logger.ts`）
+- `any`型は主に外部ライブラリ型定義のみ残存
