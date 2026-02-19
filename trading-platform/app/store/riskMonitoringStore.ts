@@ -5,9 +5,14 @@
  * リアルタイムリスク計算結果と設定を管理します
  */
 
+<<<<<<< HEAD
+import { create } from 'zustand';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
 import { create } from 'zustand';
 import { devWarn } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 import { persist } from 'zustand/middleware';
 import {
   RealTimeRiskCalculator,

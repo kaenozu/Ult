@@ -5,9 +5,14 @@
  * This service orchestrates feature calculation, prediction, and signal generation.
  */
 
+<<<<<<< HEAD
+import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
 import { devLog } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 import { FeatureCalculationService } from './feature-calculation-service';
 import { enhancedMLService } from './enhanced-ml-service';
 import type { EnhancedPrediction } from '../types';

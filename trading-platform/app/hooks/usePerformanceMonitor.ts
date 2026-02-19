@@ -5,9 +5,14 @@
  * including render time, memory usage, and user interaction responsiveness.
  */
 
+<<<<<<< HEAD
+import { useEffect, useRef, useCallback, useState, createElement } from 'react';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
 import { useEffect, useRef, useCallback, useState, createElement } from 'react';
 import { devWarn, devError } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 
 interface PerformanceMetrics {
   renderTime: number;

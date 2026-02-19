@@ -4,6 +4,10 @@
  * メインスレッドをブロックせずに重い計算（ML推論、パラメータ最適化）を実行します。
  */
 
+<<<<<<< HEAD
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 // Worker内では通常のモジュールインポートに制限があるため、
 // ロジックをメッセージハンドラとして定義します。

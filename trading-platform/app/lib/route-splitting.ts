@@ -4,9 +4,14 @@
  * ルートごとに最適なコード分割とプリフェッチ戦略を定義
  */
 
+<<<<<<< HEAD
+import { lazy, ComponentType } from 'react';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
 import { lazy, ComponentType } from 'react';
 import { devWarn } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 
 // ルート優先度定義
 type RoutePriority = 'critical' | 'important' | 'normal' | 'low';

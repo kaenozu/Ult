@@ -1,8 +1,13 @@
 'use client';
 
+<<<<<<< HEAD
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { devWarn, devError } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 import { useRouter } from 'next/navigation';
 import { Navigation } from '@/app/components/Navigation';
 import { JAPAN_STOCKS, USA_STOCKS, fetchOHLCV } from '@/app/data/stocks';

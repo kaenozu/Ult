@@ -1,6 +1,10 @@
 import { OHLCV, Signal } from '@/app/types';
+<<<<<<< HEAD
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 import { devWarn } from '@/app/lib/utils/dev-logger';
 
+>>>>>>> origin/main
 
 export interface ValidationResult {
   hitRate: number;

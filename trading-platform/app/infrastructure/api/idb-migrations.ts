@@ -5,9 +5,14 @@
  * Follows the same principles as SQL migrations but adapted for IndexedDB.
  */
 
+<<<<<<< HEAD
+import { OHLCV } from '@/app/types';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
 import { OHLCV } from '@/app/types';
 import { devLog, devError } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 
 const DB_NAME = 'TraderProDB';
 const DB_VERSION = 2; // Increment when schema changes

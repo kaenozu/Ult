@@ -2,7 +2,11 @@ import { IMarketDataHub } from '../interfaces/IMarketDataHub';
 import { devError } from '@/app/lib/utils/dev-logger';
 import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import { OHLCV } from '../../types';
+<<<<<<< HEAD
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
+>>>>>>> origin/main
 
 export interface ScanResult {
   symbol: string;

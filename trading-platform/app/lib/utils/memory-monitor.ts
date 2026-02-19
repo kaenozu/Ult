@@ -4,6 +4,10 @@
  * パフォーマンス最適化のためのメモリ監視とリーク検出
  */
 
+<<<<<<< HEAD
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 interface MemorySnapshot {
   timestamp: number;

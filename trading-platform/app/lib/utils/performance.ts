@@ -2,6 +2,10 @@
  * パフォーマンス監視ユーティリティ
  */
 
+<<<<<<< HEAD
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 import { devWarn } from '@/app/lib/utils/dev-logger';
 interface PerformanceStat {

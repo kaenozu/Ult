@@ -5,9 +5,14 @@
  * with the basic journal functionality.
  */
 
+<<<<<<< HEAD
+import { create } from 'zustand';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
 import { create } from 'zustand';
 import { devError } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 import { persist } from 'zustand/middleware';
 import { JournalEntry } from '@/app/types';
 import { getPatternRecognitionEngine, PatternReport } from '@/app/lib/trading/patternRecognition';

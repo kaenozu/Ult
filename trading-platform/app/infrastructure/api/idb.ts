@@ -7,9 +7,14 @@
  * @deprecated Use IndexedDBClient from './idb-migrations' instead
  */
 
+<<<<<<< HEAD
+import { OHLCV } from '@/app/types';
+import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
 
 import { OHLCV } from '@/app/types';
 import { devLog } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 
 const DB_NAME = 'TraderProDB';
 const STORE_NAME = 'ohlcv_data';
