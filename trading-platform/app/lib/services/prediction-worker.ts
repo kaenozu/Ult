@@ -5,8 +5,14 @@
  * for better UI responsiveness
  */
 
+<<<<<<< HEAD
 import { OHLCV, Signal } from '@/app/types';
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+
+import { OHLCV, Signal } from '@/app/types';
+import { devError } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 import { PredictionFeatures } from './feature-calculation-service';
 import { PatternFeatures } from './candlestick-pattern-service';
 

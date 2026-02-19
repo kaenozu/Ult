@@ -5,7 +5,12 @@
  * Follows the same principles as SQL migrations but adapted for IndexedDB.
  */
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 import { OHLCV } from '@/app/types';
+import { devLog } from '@/app/lib/utils/dev-logger';
 
 import { logger } from '@/app/core/logger';
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';

@@ -5,8 +5,14 @@
  * UIの応答性を維持しながら重い計算を実行
  */
 
+<<<<<<< HEAD
 import type * as tf from '@tensorflow/tfjs';
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+
+import type * as tf from '@tensorflow/tfjs';
+import { devLog } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 
 type TensorFlowModule = typeof tf;
 type LayersModel = tf.LayersModel;

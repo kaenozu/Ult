@@ -5,6 +5,10 @@
  * This file should be imported early in the application lifecycle.
  */
 
+<<<<<<< HEAD
+=======
+import { devLog, devError } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 import { 
   initializeOrderExecutor, 
   loadBrokerConfigFromEnv,

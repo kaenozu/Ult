@@ -1,6 +1,11 @@
 import { useCallback, useMemo } from 'react';
+import { devWarn, devError } from '@/app/lib/utils/dev-logger';
 import type { DependencyList } from 'react';
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+
+>>>>>>> origin/main
 
 /**
  * パフォーマンス最適化ユーティリティ

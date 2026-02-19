@@ -12,7 +12,11 @@ describe('AlertConditionManager Accessibility', () => {
   const mockStore = {
     conditions: [],
     alerts: [],
-    channels: new Map(),
+    channels: new Map([
+      ['email', { enabled: true }],
+      ['sms', { enabled: false }],
+      ['push', { enabled: true }],
+    ]),
     initialize: jest.fn(),
     addCondition: jest.fn(),
     removeCondition: jest.fn(),
@@ -86,5 +90,30 @@ describe('AlertConditionManager Accessibility', () => {
     expect(tabs[2]).toHaveAttribute('aria-selected', 'true');
     const channelsPanel = screen.getByRole('tabpanel');
     expect(channelsPanel).toHaveAttribute('id', 'panel-channels');
+  });
+
+  it('has accessible channel toggle buttons', () => {
+    render(<AlertConditionManager />);
+
+    // Open the modal
+    const openButton = screen.getByRole('button');
+    fireEvent.click(openButton);
+
+    // Navigate to Channels tab
+    const tabs = screen.getAllByRole('tab');
+    fireEvent.click(tabs[2]); // Channels tab
+
+    // Check that channel toggle buttons have aria-labels
+    const emailToggle = screen.getByLabelText(/email channel/i);
+    expect(emailToggle).toBeInTheDocument();
+    expect(emailToggle).toHaveAttribute('aria-label', 'Disable email channel');
+
+    const smsToggle = screen.getByLabelText(/sms channel/i);
+    expect(smsToggle).toBeInTheDocument();
+    expect(smsToggle).toHaveAttribute('aria-label', 'Enable sms channel');
+
+    const pushToggle = screen.getByLabelText(/push channel/i);
+    expect(pushToggle).toBeInTheDocument();
+    expect(pushToggle).toHaveAttribute('aria-label', 'Disable push channel');
   });
 });

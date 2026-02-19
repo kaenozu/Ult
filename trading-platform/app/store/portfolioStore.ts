@@ -1,10 +1,15 @@
 import { create } from 'zustand';
+import { devLog, devError } from '@/app/lib/utils/dev-logger';
 import { persist } from 'zustand/middleware';
 import { Portfolio, Position } from '../types';
 import { OrderRequest, OrderResult } from '../types/order';
 import { getRiskManagementService } from '../lib/services/RiskManagementService';
 import { AI_TRADING } from '@/app/constants';
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+
+>>>>>>> origin/main
 
 interface PortfolioState {
   portfolio: Portfolio;

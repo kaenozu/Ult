@@ -5,8 +5,14 @@
  * Replaces scattered EventEmitter instances throughout the codebase.
  */
 
+<<<<<<< HEAD
 import { EventMap } from '../types/shared';
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+
+import { EventMap } from '../types/shared';
+import { devError } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 
 type EventKey = keyof EventMap;
 

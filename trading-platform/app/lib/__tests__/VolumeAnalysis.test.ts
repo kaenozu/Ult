@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { VolumeAnalysisService } from '../VolumeAnalysis';
-import { MockMarketDataGenerator, TestDataValidators } from './mocks/test-utils';
+import { MockMarketDataGenerator } from './mocks/test-utils';
 import type { OHLCV } from '@/app/types';
 
 describe('VolumeAnalysisService', () => {
@@ -283,7 +283,9 @@ describe('VolumeAnalysisService', () => {
 
   describe('Error Handling', () => {
     it('should handle null or undefined data gracefully', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() => service.calculateVolumeProfile(null as any)).toThrow();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       expect(() => service.calculateVolumeProfile(undefined as any)).toThrow();
     });
 

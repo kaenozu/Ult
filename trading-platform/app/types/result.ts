@@ -8,11 +8,15 @@
  * エラーハンドリングを強制的に行うよう設計されています。
  */
 
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 /**
  * 成功結果を表す型
  */
+import { devLog, devError } from '@/app/lib/utils/dev-logger';
 export interface SuccessResult<T> {
   readonly success: true;
   readonly data: T;

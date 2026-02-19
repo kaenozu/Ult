@@ -9,9 +9,13 @@
  * - Type confusion vulnerabilities
  */
 
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 import * as tf from '@tensorflow/tfjs';
+import { devLog, devWarn, devError } from '@/app/lib/utils/dev-logger';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 
 // Security: Define validation constants

@@ -5,7 +5,11 @@
  * Manages service lifecycle and provides singleton access to services.
  */
 
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+import { devWarn } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 
 type Constructor<T> = new (...args: unknown[]) => T;
 

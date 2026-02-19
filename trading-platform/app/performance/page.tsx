@@ -1,6 +1,9 @@
 'use client';
 
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 /**
  * Performance Screener Dashboard
@@ -12,6 +15,7 @@ import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
+import { devError } from '@/app/lib/utils/dev-logger';
 import { useRouter } from 'next/navigation';
 
 import { cn, formatPercent } from '@/app/lib/utils';

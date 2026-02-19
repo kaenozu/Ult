@@ -5,8 +5,14 @@
  * reactive UI updates and persistence.
  */
 
+<<<<<<< HEAD
 import { create } from 'zustand';
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+
+import { create } from 'zustand';
+import { devError } from '@/app/lib/utils/dev-logger';
+>>>>>>> origin/main
 import { persist } from 'zustand/middleware';
 import { getUniverseManager, UniverseStock, UniverseStats, SymbolValidationResult } from '@/app/lib/universe/UniverseManager';
 

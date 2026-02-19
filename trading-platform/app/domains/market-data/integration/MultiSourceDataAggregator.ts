@@ -8,9 +8,13 @@
  * - Automatic source health monitoring
  */
 
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 import { DataQualityValidator, type CrossSourceValidation } from '@/app/lib/data/quality/DataQualityValidator';
+import { devLog, devWarn } from '@/app/lib/utils/dev-logger';
 import { DataLatencyMonitor } from '@/app/lib/data/latency/DataLatencyMonitor';
 import type { MarketData } from '@/app/types/data-quality';
 import type { OHLCV } from '@/app/types/shared';

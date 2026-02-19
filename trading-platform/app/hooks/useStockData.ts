@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { devLog, devWarn, devError, devDebug } from '@/app/lib/utils/dev-logger';
 import { Stock, OHLCV, Signal } from '@/app/types';
 import { fetchOHLCV, fetchSignal } from '@/app/data/stocks';
 import { useWatchlistStore } from '@/app/store/watchlistStore';
@@ -13,7 +14,10 @@ import { useRealTimeData } from './useRealTimeData';
 import { ServiceContainer, TOKENS } from '@/app/lib/di/ServiceContainer';
 import { IMarketDataHub } from '@/app/lib/interfaces/IMarketDataHub';
 import { initializeContainer } from '@/app/lib/di/initialize';
+<<<<<<< HEAD
 import { devLog, devWarn, devError, devDebug } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 interface MarketDataMetadata {
   // ... (rest of the interface)

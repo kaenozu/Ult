@@ -1,11 +1,16 @@
 import { ServiceContainer, TOKENS } from './ServiceContainer';
+import { devLog } from '@/app/lib/utils/dev-logger';
 import { MarketDataService } from '../MarketDataService';
 import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import { analysisService } from '../AnalysisService';
 import { MarketDataHub } from '../data/MarketDataHub';
 import { AutoScreener } from '../universe/AutoScreener';
 import { DriftDetector } from '../ml/DriftDetector';
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+
+>>>>>>> origin/main
 
 /**
  * サービスコンテナの初期化

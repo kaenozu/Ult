@@ -10,9 +10,13 @@
  * - Market regime detection
  */
 
+<<<<<<< HEAD
 import { devLog, devWarn, devError } from '@/app/lib/utils/logger';
+=======
+>>>>>>> origin/main
 
 import { OHLCV, Stock, Signal } from '@/app/types';
+import { devLog } from '@/app/lib/utils/dev-logger';
 import { PredictionFeatures, EnhancedPrediction } from '../types';
 import { FeatureCalculationService } from './feature-calculation-service';
 import { MLModelService } from './ml-model-service';

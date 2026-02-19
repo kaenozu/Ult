@@ -8,13 +8,20 @@
  */
 
 import { OHLCV, BacktestResult, Signal, Stock } from '../types';
+import { devLog, devWarn } from '@/app/lib/utils/dev-logger';
 import { optimizedAccuracyService } from './OptimizedAccuracyService';
 import { consensusSignalService } from './ConsensusSignalService';
 import { mlPredictionService } from './mlPrediction';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { TIME_INTERVALS } from '@/app/constants/common';
 import pLimit from 'p-limit';
+<<<<<<< HEAD
 import { devLog, devWarn } from '@/app/lib/utils/logger';
+=======
+
+const isDev = process.env.NODE_ENV !== 'production';
+
+>>>>>>> origin/main
 
 // レビュー対応: マジックナンバーを定数化
 const MIN_DATA_REQUIRED = 50;  // 最低必要データ件数
@@ -180,8 +187,7 @@ export class PerformanceScreenerService {
 
     // development環境では20銘柄に制限（レートリミット対策）
 
-    const isDev = process.env.NODE_ENV !== 'production';
-    if (isDev && filteredSources.length > 20) {
+        if (isDev && filteredSources.length > 20) {
       filteredSources = filteredSources.slice(0, 20);
     }
 
@@ -267,8 +273,7 @@ export class PerformanceScreenerService {
     );
 
     // 開発環境制限（デュアルスキャンでは50銘柄まで許可。母数が少ないとマッチが出にくい）
-    const isDev = process.env.NODE_ENV !== 'production';
-    if (isDev && filteredSources.length > 60) {
+        if (isDev && filteredSources.length > 60) {
       filteredSources = filteredSources.slice(0, 60);
     }
 
@@ -635,8 +640,7 @@ export class PerformanceScreenerService {
     );
 
     // development環境では50銘柄に制限
-    const isDev = process.env.NODE_ENV !== 'production';
-    if (isDev && filteredSources.length > 50) {
+        if (isDev && filteredSources.length > 50) {
       filteredSources = filteredSources.slice(0, 50);
     }
 
