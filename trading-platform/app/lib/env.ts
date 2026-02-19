@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { devError } from '@/app/lib/utils/dev-logger';
 
-
+const DEFAULT_JWT_SECRET = 'demo-secret-must-be-at-least-32-chars-long';
 
 const envSchema = z.object({
   // Node Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 
   // Authentication
-  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters').default('demo-secret-must-be-at-least-32-chars-long'),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters').default(DEFAULT_JWT_SECRET),
   
   // API Keys (Optional in demo/test mode)
   YAHOO_FINANCE_API_KEY: z.string().optional(),
@@ -42,6 +42,11 @@ if (!parsed.success) {
   // In production, we might want to throw error. In dev/test, we might allow defaults or partial failures.
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Invalid environment variables');
+  }
+} else {
+  // Security Check: Ensure production uses a secure secret
+  if (parsed.data.NODE_ENV === 'production' && parsed.data.JWT_SECRET === DEFAULT_JWT_SECRET) {
+    throw new Error('CRITICAL SECURITY ERROR: You are running in production with the default JWT_SECRET. Please set a secure JWT_SECRET environment variable.');
   }
 }
 
