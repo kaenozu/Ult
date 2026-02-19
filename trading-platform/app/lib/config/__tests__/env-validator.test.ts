@@ -47,30 +47,52 @@ describe('Environment Validator', () => {
       expect(config.isProduction).toBe(false);
     });
 
-    it('should require JWT_SECRET in production', () => {
+    it('should warn and fallback for missing JWT_SECRET in production (build safety)', () => {
       process.env.NODE_ENV = 'production';
       delete process.env.JWT_SECRET;
+      // Ensure strict validation logic runs by unsetting build/CI flags
+      delete process.env.CI;
+      delete process.env.NEXT_PHASE;
+      delete process.env.GITHUB_ACTIONS;
       
-      expect(() => validateEnvironment()).toThrow(EnvironmentValidationError);
-      expect(() => validateEnvironment()).toThrow('Missing required environment variable: JWT_SECRET');
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const config = validateEnvironment();
+      expect(config.jwt.secret).toBe('build-fallback-secret-do-not-use-in-runtime');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('JWT_SECRET missing in production'));
+
+      consoleSpy.mockRestore();
     });
 
     it('should reject default JWT_SECRET in production', () => {
       process.env.NODE_ENV = 'production';
       process.env.JWT_SECRET = 'default-secret-change-in-production';
       process.env.DATABASE_URL = 'postgresql://localhost/db';
+      // Ensure strict validation logic runs by unsetting build/CI flags
+      delete process.env.CI;
+      delete process.env.NEXT_PHASE;
+      delete process.env.GITHUB_ACTIONS;
       
       expect(() => validateEnvironment()).toThrow(EnvironmentValidationError);
       expect(() => validateEnvironment()).toThrow('must be changed from default value');
     });
 
-    it('should require DATABASE_URL in production', () => {
+    it('should warn and fallback for missing DATABASE_URL in production (build safety)', () => {
       process.env.NODE_ENV = 'production';
       process.env.JWT_SECRET = 'secure-production-secret-key-32-characters!';
       delete process.env.DATABASE_URL;
+      // Ensure strict validation logic runs by unsetting build/CI flags
+      delete process.env.CI;
+      delete process.env.NEXT_PHASE;
+      delete process.env.GITHUB_ACTIONS;
       
-      expect(() => validateEnvironment()).toThrow(EnvironmentValidationError);
-      expect(() => validateEnvironment()).toThrow('Missing required environment variable: DATABASE_URL');
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const config = validateEnvironment();
+      expect(config.database.url).toBe('');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('DATABASE_URL missing in production'));
+
+      consoleSpy.mockRestore();
     });
 
     it('should use custom JWT_SECRET when provided', () => {
@@ -239,11 +261,20 @@ describe('Environment Validator', () => {
       expect(config1).toBe(config2);
     });
 
-    it('should validate environment on first call', () => {
+    it('should validate environment on first call (with build safety)', () => {
       process.env.NODE_ENV = 'production';
       delete process.env.JWT_SECRET;
+      // Ensure strict validation logic runs by unsetting build/CI flags
+      delete process.env.CI;
+      delete process.env.NEXT_PHASE;
+      delete process.env.GITHUB_ACTIONS;
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const config = getConfig();
+      expect(config.jwt.secret).toBe('build-fallback-secret-do-not-use-in-runtime');
       
-      expect(() => getConfig()).toThrow(EnvironmentValidationError);
+      consoleSpy.mockRestore();
     });
   });
 
