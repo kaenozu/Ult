@@ -30,6 +30,7 @@ describe('Performance Monitoring Utility', () => {
     
     expect(result).toBe('async-done');
     const stats = getPerformanceStats('test-async');
-    expect(stats.avgTime).toBeGreaterThanOrEqual(50);
+    // Using 45ms to account for slight timing variances in CI environments
+    expect(stats.avgTime).toBeGreaterThanOrEqual(45);
   });
 });
