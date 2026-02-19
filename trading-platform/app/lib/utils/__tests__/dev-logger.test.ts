@@ -52,6 +52,20 @@ describe('dev-logger', () => {
       devLog('arg1', 'arg2', 'arg3', { nested: { value: 123 } });
       expect(consoleLogSpy).toHaveBeenCalledWith('arg1', 'arg2', 'arg3', { nested: { value: 123 } });
     });
+
+    it('should not cause stack overflow (no recursion)', () => {
+      process.env.NODE_ENV = 'development';
+      const { devLog } = require('../dev-logger');
+      
+      // This should not throw a stack overflow error
+      expect(() => {
+        for (let i = 0; i < 100; i++) {
+          devLog(`iteration ${i}`);
+        }
+      }).not.toThrow();
+      
+      expect(consoleLogSpy).toHaveBeenCalledTimes(100);
+    });
   });
 
   describe('devWarn', () => {
@@ -120,6 +134,33 @@ describe('dev-logger', () => {
   });
 
   describe('edge cases', () => {
+    it('should handle undefined arguments', () => {
+      process.env.NODE_ENV = 'development';
+      const { devLog } = require('../dev-logger');
+      
+      devLog(undefined);
+      
+      expect(consoleLogSpy).toHaveBeenCalledWith(undefined);
+    });
+
+    it('should handle null arguments', () => {
+      process.env.NODE_ENV = 'development';
+      const { devLog } = require('../dev-logger');
+      
+      devLog(null);
+      
+      expect(consoleLogSpy).toHaveBeenCalledWith(null);
+    });
+
+    it('should handle empty arguments', () => {
+      process.env.NODE_ENV = 'development';
+      const { devLog } = require('../dev-logger');
+      
+      devLog();
+      
+      expect(consoleLogSpy).toHaveBeenCalledWith();
+    });
+
     it('should handle circular references without crashing', () => {
       process.env.NODE_ENV = 'development';
       const { devLog } = require('../dev-logger');

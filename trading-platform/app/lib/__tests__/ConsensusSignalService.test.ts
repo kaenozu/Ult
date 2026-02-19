@@ -144,19 +144,20 @@ describe('ConsensusSignalService', () => {
       // Price > SMA かつ RSI 40-60 を満たすデータを生成
       // 緩やかなジグザグ上昇 (Gain:Loss = 2.5:2.0 -> RSI ~55.5)
       // データ長を長くしてRSIを安定させる
-      const trendData: OHLCV[] = Array.from({ length: 200 }, (_, i) => {
-        let price = 100;
-        // 常にジグザグ上昇させる
-        for (let j = 0; j < i; j++) {
-          price += (j % 2 === 0) ? 2.5 : -2.0;
-        }
+      const trendData: OHLCV[] = [];
+      let price = 100;
+      const baseDate = new Date(2024, 0, 1);
+      
+      for (let i = 0; i < 200; i++) {
+        // ジグザグ上昇: 偶数日は上昇、奇数日は下降（ただし上昇幅が大きい）
+        price += (i % 2 === 0) ? 2.5 : -2.0;
         
         // 正しい日付生成
-        const d = new Date(2024, 0, 1);
+        const d = new Date(baseDate);
         d.setDate(d.getDate() + i);
         const dateStr = d.toISOString().split('T')[0];
 
-        return {
+        trendData.push({
           open: price,
           high: price + 2,
           low: price - 2,
@@ -164,8 +165,8 @@ describe('ConsensusSignalService', () => {
           volume: 1000,
           date: dateStr,
           symbol: 'AAPL',
-        };
-      });
+        });
+      }
 
       const signal = consensusSignalService.generateConsensus(trendData);
 

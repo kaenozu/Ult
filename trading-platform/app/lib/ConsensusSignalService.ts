@@ -12,7 +12,7 @@ import { OHLCV, Signal, TimeFrame } from '../types';
 import { devLog } from '@/app/lib/utils/dev-logger';
 
 import { technicalIndicatorService } from './TechnicalIndicatorService';
-import { RSI_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
+import { RSI_CONFIG, BOLLINGER_BANDS, CONSENSUS_SIGNAL_CONFIG } from '@/app/constants';
 import { MarketRegimeDetector, MarketRegime } from './services/market-regime-detector';
 
 /**
@@ -89,6 +89,8 @@ class ConsensusSignalService {
     try {
       regime = this.regimeDetector.detect(data);
     } catch (e) {
+      // エラーログ出力
+      logger.error('MarketRegimeDetector failed to detect regime:', e);
       // フォールバック
       regime = { type: 'RANGING', volatilityLevel: 'NORMAL', trendStrength: 0, momentumQuality: 0 };
     }
@@ -334,14 +336,14 @@ class ConsensusSignalService {
       strategyReason = ` [Filter: ${regime.type}相場のため除外]`;
     } else if (regime.type === 'TRENDING_UP') {
       // 上昇トレンド条件: 価格 > SMA20 かつ RSI中立(40-60)
-      if (currentPrice > currentSMA && currentRSI >= 40 && currentRSI <= 60) {
-        weightedScore += 0.4; // 強力なブースト
+      if (currentPrice > currentSMA && currentRSI >= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.RSI_LOWER_BOUND && currentRSI <= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.RSI_UPPER_BOUND) {
+        weightedScore += CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.BOOST_AMOUNT; // 強力なブースト
         strategyReason = ` [Trend: 上昇トレンド順張り (Price>SMA, RSI=${currentRSI.toFixed(1)})]`;
       }
     } else if (regime.type === 'TRENDING_DOWN') {
       // 下降トレンド条件: 価格 < SMA20 かつ RSI中立(40-60)
-      if (currentPrice < currentSMA && currentRSI >= 40 && currentRSI <= 60) {
-        weightedScore -= 0.4; // 強力なペナルティ（売り方向）
+      if (currentPrice < currentSMA && currentRSI >= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.RSI_LOWER_BOUND && currentRSI <= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.RSI_UPPER_BOUND) {
+        weightedScore -= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.PENALTY_AMOUNT; // 強力なペナルティ（売り方向）
         strategyReason = ` [Trend: 下降トレンド順張り (Price<SMA, RSI=${currentRSI.toFixed(1)})]`;
       }
     }
@@ -351,12 +353,12 @@ class ConsensusSignalService {
       // 1. 逆張り反転コンボ (RSI底打ち + MACDヒストグラム縮小)
       if (rsiSignal.type === 'BUY' && rsiSignal.reason.includes('反転') && 
           macdSignal.type === 'BUY' && macdSignal.reason.includes('底打ち')) {
-        ensembleBonus += 0.15; // 強い反転の兆候
+        ensembleBonus += CONSENSUS_SIGNAL_CONFIG.ENSEMBLE.REVERSAL_COMBO_BONUS; // 強い反転の兆候
       }
       
       // 2. 乖離からの復帰 (BB下部 + RSI上昇)
       if (bollingerSignal.type === 'BUY' && rsiSignal.type === 'BUY') {
-        ensembleBonus += 0.10;
+        ensembleBonus += CONSENSUS_SIGNAL_CONFIG.ENSEMBLE.BB_RSI_ALIGNMENT_BONUS;
       }
 
       // スコアにボーナスを適用
@@ -366,7 +368,7 @@ class ConsensusSignalService {
 
     // シグナルタイプを決定 (improved thresholds for better accuracy)
     let type: 'BUY' | 'SELL' | 'HOLD';
-    const SIGNAL_THRESHOLD = 0.15;   // BUY/SELLの最低閾値
+    const SIGNAL_THRESHOLD = CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.SIGNAL_MIN;   // BUY/SELLの最低閾値
     
     if (weightedScore > SIGNAL_THRESHOLD) {
       type = 'BUY';
@@ -378,18 +380,22 @@ class ConsensusSignalService {
 
     // 確率（0-1）と強さを決定
     const probability = Math.min(Math.abs(weightedScore), 1.0);
-    const strength = probability < 0.4 ? 'WEAK' : probability < 0.7 ? 'MODERATE' : 'STRONG';
+    const strength = probability < CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.PROBABILITY_WEAK ? 'WEAK' : 
+                     probability < CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.PROBABILITY_MODERATE ? 'MODERATE' : 'STRONG';
 
     // コンフィデンス（0-100）を計算 - アンサンブルを考慮してさらにダイナミックに
     // 0.45以上の実効スコアで60%を超えるように調整
-    let confidence = Math.min(Math.abs(weightedScore) * 135, 95);
+    let confidence = Math.min(Math.abs(weightedScore) * CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.CONFIDENCE_SCALING, 
+                     CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.CONFIDENCE_MAX);
     
     // トレンド順張り戦略が適用された場合は確信度を下限70%に引き上げ（条件合致時）
     if (strategyReason.includes('Trend:')) {
-      confidence = Math.max(confidence, 70);
+      confidence = Math.max(confidence, CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.MIN_CONFIDENCE_BOOST);
     }
 
-    const finalConfidence = type === 'HOLD' ? Math.max(confidence, 30) : Math.max(confidence, 50);
+    const finalConfidence = type === 'HOLD' ? 
+      Math.max(confidence, CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.HOLD_CONFIDENCE_MIN) : 
+      Math.max(confidence, CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.TRADE_CONFIDENCE_MIN);
 
     // デバッグログ: 各指標の寄与度を詳細に出力 (開発環境のみ)
     if (process.env.NODE_ENV !== 'production' && Math.abs(weightedScore) > 0.1) {
