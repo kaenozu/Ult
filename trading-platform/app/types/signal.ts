@@ -24,6 +24,10 @@ export interface Signal {
   predictedChange: number;
   predictionDate: string;
   timestamp?: number; // Unix timestamp of signal generation (milliseconds)
+  generatedAt?: string; // ISO timestamp when signal was generated
+  result?: 'HIT' | 'MISS' | 'PENDING'; // Signal evaluation result
+  actualReturn?: number; // Actual return percentage
+  evaluatedAt?: string; // ISO timestamp when signal was evaluated
   price?: number;     // Current price when signal was generated
   optimizedParams?: {
     rsiPeriod: number;

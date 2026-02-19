@@ -13,8 +13,6 @@ export default [
       "**/fixtures.ts",
       "**/mock-*.ts",
       "**/test-*.ts",
-      "app/strategy-optimization-example.ts",
-      "app/performance-examples.ts",
       "app/performance-quickstart.ts",
       "app/WinningTradingSystem.ts",
       "coverage/**",

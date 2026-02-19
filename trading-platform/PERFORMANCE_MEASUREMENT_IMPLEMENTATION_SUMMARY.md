@@ -119,20 +119,12 @@ const summary = PerformanceMonitor.getSummary();
 
 1. **PERFORMANCE_README.md** - Complete guide
    - API reference
-   - Usage examples
+   - Usage examples (inline documentation)
    - Best practices
    - Migration guide
    - Troubleshooting
 
-2. **performance-examples.ts** - 10 usage patterns
-   - Basic decorators
-   - Custom thresholds
-   - Functional wrappers
-   - Performance reporting
-   - Real-time monitoring
-   - Testing with assertions
-
-3. **performance-quickstart.ts** - Quick start example
+2. **performance-quickstart.ts** - Quick start example
    - Simple, runnable examples
    - Demonstrates basic usage
 
@@ -258,8 +250,7 @@ The measurement system itself is lightweight:
 - `trading-platform/app/lib/utils/__tests__/performanceMonitor.test.ts` (310 lines)
 
 ### Documentation
-- `trading-platform/app/lib/PERFORMANCE_README.md` (11,249 characters)
-- `trading-platform/app/lib/performance-examples.ts` (7,000 characters)
+- `trading-platform/app/lib/PERFORMANCE_README.md` (11,249 characters, includes usage examples)
 - `trading-platform/app/lib/performance-quickstart.ts` (2,782 characters)
 
 ### Configuration

@@ -9,6 +9,11 @@
  * - Type confusion vulnerabilities
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 import * as tf from '@tensorflow/tfjs';
 import { ModelConfig, ModelMetadata, TrainingData, ModelPredictionResult } from './types';
 
@@ -226,7 +231,7 @@ export class ModelPipeline {
           if (this.isTrainingLogs(logs)) {
             const loss = logs.loss;
             const valLoss = logs.val_loss ?? logs.valLoss ?? 0;
-            console.log(
+            devLog(
               `Epoch ${epoch + 1}: loss = ${loss.toFixed(4)}, val_loss = ${valLoss.toFixed(4)}`
             );
           }
@@ -329,7 +334,7 @@ export class ModelPipeline {
           if (this.isTrainingLogs(logs)) {
             const loss = logs.loss;
             const valLoss = logs.val_loss ?? logs.valLoss ?? 0;
-            console.log(
+            devLog(
               `Epoch ${epoch + 1}: loss = ${loss.toFixed(4)}, val_loss = ${valLoss.toFixed(4)}`
             );
           }
@@ -649,7 +654,7 @@ export class ModelPipeline {
     const sanitizedId = this.sanitizeModelId(modelId);
 
     await this.model.save(`indexeddb://${sanitizedId}`);
-    console.log(`Model saved with ID: ${sanitizedId}`);
+    devLog(`Model saved with ID: ${sanitizedId}`);
   }
 
   /**
@@ -661,9 +666,9 @@ export class ModelPipeline {
 
     try {
       this.model = await tf.loadLayersModel(`indexeddb://${sanitizedId}`);
-      console.log(`Model loaded: ${sanitizedId}`);
+      devLog(`Model loaded: ${sanitizedId}`);
     } catch (error) {
-      console.error('Error loading model:', error);
+      devError('Error loading model:', error);
       throw new Error(`Failed to load model: ${sanitizedId}`);
     }
   }
@@ -676,7 +681,7 @@ export class ModelPipeline {
     const sanitizedId = this.sanitizeModelId(modelId);
 
     await tf.io.removeModel(`indexeddb://${sanitizedId}`);
-    console.log(`Model deleted: ${sanitizedId}`);
+    devLog(`Model deleted: ${sanitizedId}`);
   }
 
   /**
@@ -729,7 +734,7 @@ export class ModelPipeline {
     const combinations = this.generateCombinations(paramGrid);
 
     for (const params of combinations) {
-      console.log('Testing params:', params);
+      devLog('Testing params:', params);
 
       const config: ModelConfig = {
         modelType: 'LSTM',
@@ -756,7 +761,7 @@ export class ModelPipeline {
         // Dispose model
         model.dispose();
       } catch (error) {
-        console.error('Error during hyperparameter optimization:', error);
+        devError('Error during hyperparameter optimization:', error);
       }
     }
 
@@ -814,7 +819,7 @@ export class ModelPipeline {
         this.model.dispose();
       } catch (e) {
         // Ignore disposal errors (likely already disposed)
-        console.warn('Model disposal warning:', e);
+        devWarn('Model disposal warning:', e);
       }
       this.model = null;
     }

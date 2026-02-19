@@ -6,6 +6,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 interface ServiceWorkerState {
   isSupported: boolean;
   isRegistered: boolean;
@@ -25,7 +29,7 @@ interface ServiceWorkerManager {
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerManager | null> {
   if (!('serviceWorker' in navigator)) {
-    console.log('[ServiceWorker] Not supported');
+    devLog('[ServiceWorker] Not supported');
     return null;
   }
 
@@ -35,17 +39,17 @@ export async function registerServiceWorker(): Promise<ServiceWorkerManager | nu
       updateViaCache: 'imports',
     });
 
-    console.log('[ServiceWorker] Registered:', registration.scope);
+    devLog('[ServiceWorker] Registered:', registration.scope);
 
     // 更新チェック
     registration.addEventListener('updatefound', () => {
       const newWorker = registration.installing;
       if (newWorker) {
-        console.log('[ServiceWorker] Update found');
+        devLog('[ServiceWorker] Update found');
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             // 新しいバージョンが利用可能
-            console.log('[ServiceWorker] New version available');
+            devLog('[ServiceWorker] New version available');
             window.dispatchEvent(new CustomEvent('sw-update-available'));
           }
         });
@@ -62,7 +66,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerManager | nu
       },
     };
   } catch (error) {
-    console.error('[ServiceWorker] Registration failed:', error);
+    devError('[ServiceWorker] Registration failed:', error);
     return null;
   }
 }
@@ -109,11 +113,11 @@ export function useServiceWorker(): ServiceWorkerState & {
 
     // オンライン/オフライン状態の監視
     const handleOnline = () => {
-      console.log('[ServiceWorker] App is online');
+      devLog('[ServiceWorker] App is online');
     };
 
     const handleOffline = () => {
-      console.log('[ServiceWorker] App is offline');
+      devLog('[ServiceWorker] App is offline');
     };
 
     window.addEventListener('online', handleOnline);
@@ -155,7 +159,7 @@ export async function clearServiceWorkerCache(): Promise<void> {
 
   const cacheNames = await caches.keys();
   await Promise.all(cacheNames.map((name) => caches.delete(name)));
-  console.log('[ServiceWorker] Cache cleared');
+  devLog('[ServiceWorker] Cache cleared');
 }
 
 /**
@@ -171,7 +175,7 @@ export async function invalidateCache(url: string): Promise<void> {
       await cache.delete(url);
     })
   );
-  console.log('[ServiceWorker] Cache invalidated for:', url);
+  devLog('[ServiceWorker] Cache invalidated for:', url);
 }
 
 /**
@@ -230,7 +234,7 @@ export async function sendMessageToSW(message: object): Promise<any> {
  */
 export async function registerBackgroundSync(tag: string): Promise<void> {
   if (!('serviceWorker' in navigator) || !('SyncManager' in window)) {
-    console.log('[ServiceWorker] Background sync not supported');
+    devLog('[ServiceWorker] Background sync not supported');
     return;
   }
 
@@ -239,9 +243,9 @@ export async function registerBackgroundSync(tag: string): Promise<void> {
     // Type assertion for Background Sync API
     const syncRegistration = registration as ServiceWorkerRegistration & { sync: { register: (tag: string) => Promise<void> } };
     await syncRegistration.sync.register(tag);
-    console.log('[ServiceWorker] Background sync registered:', tag);
+    devLog('[ServiceWorker] Background sync registered:', tag);
   } catch (error) {
-    console.error('[ServiceWorker] Background sync registration failed:', error);
+    devError('[ServiceWorker] Background sync registration failed:', error);
   }
 }
 
@@ -252,7 +256,7 @@ export async function subscribeToPushNotifications(
   publicVapidKey: string
 ): Promise<PushSubscription | null> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.log('[ServiceWorker] Push notifications not supported');
+    devLog('[ServiceWorker] Push notifications not supported');
     return null;
   }
 
@@ -264,10 +268,10 @@ export async function subscribeToPushNotifications(
       applicationServerKey: urlBase64ToUint8Array(publicVapidKey) as BufferSource,
     });
 
-    console.log('[ServiceWorker] Push subscription created');
+    devLog('[ServiceWorker] Push subscription created');
     return subscription;
   } catch (error) {
-    console.error('[ServiceWorker] Push subscription failed:', error);
+    devError('[ServiceWorker] Push subscription failed:', error);
     return null;
   }
 }

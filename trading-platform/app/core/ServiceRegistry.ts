@@ -5,6 +5,11 @@
  * Manages service lifecycle and provides singleton access to services.
  */
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+
 type Constructor<T> = new (...args: unknown[]) => T;
 
 interface ServiceMetadata {
@@ -27,7 +32,7 @@ class ServiceRegistry {
     options?: { singleton?: boolean }
   ): void {
     if (this.services.has(name)) {
-      console.warn(`Service '${name}' is already registered. Overwriting.`);
+      devWarn(`Service '${name}' is already registered. Overwriting.`);
     }
 
     this.services.set(name, {
@@ -42,7 +47,7 @@ class ServiceRegistry {
    */
   registerInstance<T>(name: string, instance: T): void {
     if (this.services.has(name)) {
-      console.warn(`Service '${name}' is already registered. Overwriting.`);
+      devWarn(`Service '${name}' is already registered. Overwriting.`);
     }
 
     this.services.set(name, {
@@ -57,7 +62,7 @@ class ServiceRegistry {
    */
   registerFactory<T>(name: string, factory: () => T, options?: { singleton?: boolean }): void {
     if (this.services.has(name)) {
-      console.warn(`Service '${name}' is already registered. Overwriting.`);
+      devWarn(`Service '${name}' is already registered. Overwriting.`);
     }
 
     this.services.set(name, {

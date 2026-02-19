@@ -1,5 +1,10 @@
 import { OHLCV, Signal } from '@/app/types';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 export interface ValidationResult {
   hitRate: number;
   totalSignals: number;
@@ -32,7 +37,7 @@ export class SignalValidatorService {
         const dateValue = (signal as any).predictionDate || signal.timestamp || 0;
         const d = new Date(dateValue);
         if (isNaN(d.getTime())) {
-          console.warn(`Invalid signal date: ${dateValue}`);
+          devWarn(`Invalid signal date: ${dateValue}`);
           continue;
         }
         signalDate = d.toISOString().split('T')[0];

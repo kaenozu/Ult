@@ -6,6 +6,11 @@ import { MarketDataHub } from '../data/MarketDataHub';
 import { AutoScreener } from '../universe/AutoScreener';
 import { DriftDetector } from '../ml/DriftDetector';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 /**
  * サービスコンテナの初期化
  * すべての主要サービスを登録します。
@@ -26,5 +31,5 @@ export function initializeContainer(): void {
   // ServiceContainer.register(TOKENS.TechnicalIndicatorService, technicalIndicatorService);
   // ServiceContainer.register(TOKENS.AnalysisService, analysisService);
   
-  console.log('[DI] ServiceContainer initialized');
+  devLog('[DI] ServiceContainer initialized');
 }

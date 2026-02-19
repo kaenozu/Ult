@@ -5,6 +5,11 @@ import { predictionWorker, PredictionRequest } from './prediction-worker';
 import { featureCalculationService, PredictionFeatures } from './feature-calculation-service';
 import { OPTIMIZED_REGIME_WEIGHTS, RSI_THRESHOLDS, SIGNAL_THRESHOLDS } from '@/app/lib/config/prediction-config';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) devLog(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) devWarn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) devError(...args); };
+
 export interface PredictionInput {
   symbol: string;
   data: OHLCV[];
@@ -162,7 +167,7 @@ export class EnhancedPredictionService {
         try {
           result = await this.predictWithWorker(symbol, data, indicators);
         } catch (error) {
-          console.warn('Worker prediction failed, falling back to main thread:', error);
+          devWarn('Worker prediction failed, falling back to main thread:', error);
           result = await this.predictOnMainThread(symbol, data, indicators, weights);
         }
       } else {
