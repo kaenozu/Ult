@@ -2014,21 +2014,108 @@ cd trading-platform
   npm list --depth=0 2>&1 | grep -E "UNMET|missing"
   ```
   **Expected:** 出力なし（すべての依存関係が解決済み）
-  **If fails:** `npm install` を再実行。それでも失敗なら `package-lock.json` を削除して `npm install`
+  
+  **If fails:**
+  ```bash
+  # Step 1: 再インストールを試行
+  $ npm install
+  
+  # Step 2: それでも失敗する場合、キャッシュをクリア
+  $ rm -rf node_modules package-lock.json
+  $ npm cache clean --force
+  $ npm install
+  
+  # Step 3: 特定のパッケージが見つからない場合
+  $ npm install <missing-package> --save
+  # または
+  $ npm install <missing-package> --save-dev
+  
+  # Step 4: バージョン競合がある場合
+  $ npm ls <package-name>  # 依存関係ツリーを確認
+  $ npm update <package-name>  # 最新の互換バージョンに更新
+  
+  # Step 5: それでも解決しない場合、package.json を確認
+  $ cat package.json | jq '.dependencies, .devDependencies'
+  # 不要なパッケージを削除して再インストール
+  ```
 
 - [ ] **TypeScript 型チェック**
   ```bash
   npx tsc --noEmit
   ```
   **Expected:** `Found 0 errors.`
-  **If fails:** エラー箇所を修正。`any` 型は絶対に使わない
+  
+  **If fails:**
+  ```bash
+  # Step 1: エラーの数と箇所を確認
+  $ npx tsc --noEmit | grep "error TS" | wc -l
+  # 例: 15 errors found
+  
+  # Step 2: エラーをファイルごとにグループ化
+  $ npx tsc --noEmit 2>&1 | grep "error TS" | cut -d':' -f1 | sort | uniq -c
+  # 例:
+  #   8 app/lib/MarketDataService.ts
+  #   5 app/components/Dashboard.tsx
+  #   2 app/types/index.ts
+  
+  # Step 3: 最も多くのエラーがあるファイルから修正
+  $ npx tsc --noEmit | grep "MarketDataService.ts"
+  
+  # Step 4: 一般的なエラーパターンと修正方法
+  # - "Property 'X' does not exist" → 型定義を確認
+  # - "Type 'X' is not assignable" → 型アサーションまたは型ガード
+  # - "Cannot find module" → パスエイリアス設定を確認
+  
+  # Step 5: 段階的に検証
+  $ npx tsc --noEmit --incremental  # インクリメンタルビルド
+  
+  # Step 6: tsconfig.json の設定を一時的に緩和（最終手段）
+  # "skipLibCheck": true を追加（推奨しない）
+  ```
 
 - [ ] **ESLint チェック**
   ```bash
   npm run lint
   ```
   **Expected:** `✓ No ESLint errors or warnings`
-  **If fails:** `npm run lint:fix` で自動修正可能なものを修正。残りは手動修正
+  
+  **If fails:**
+  ```bash
+  # Step 1: 自動修正を試行
+  $ npm run lint:fix
+  ✔ Fixed 17 problems
+  
+  # Step 2: 残りのエラーを確認
+  $ npm run lint
+  ✖ 30 problems (6 errors, 24 warnings)
+  
+  # Step 3: エラーをルール別に集計
+  $ npm run lint -- --format json | jq '.[].messages[].ruleId' | sort | uniq -c
+  # 例:
+  #  12 @typescript-eslint/no-explicit-any
+  #   8 react-hooks/exhaustive-deps
+  #   6 no-unused-vars
+  #   4 @typescript-eslint/no-non-null-assertion
+  
+  # Step 4: 最も多いルール違反から修正
+  # a) no-explicit-any の修正
+  $ grep -rn ": any" app/ --include="*.ts" --include="*.tsx"
+  # 各箇所で any → unknown または具体的な型に変更
+  
+  # b) react-hooks/exhaustive-deps の修正
+  $ grep -A 3 "useEffect" app/components/ --include="*.tsx" | grep "\[\]"
+  # 依存配列に必要な変数を追加
+  
+  # c) no-unused-vars の修正
+  $ npm run lint -- --format compact | grep "no-unused-vars"
+  # 未使用の変数を削除
+  
+  # Step 5: 特定のファイルのみをチェック
+  $ npx eslint app/components/Dashboard.tsx
+  
+  # Step 6: 一時的に特定のルールを無効化（非推奨）
+  # /* eslint-disable-next-line rule-name */ をコメントで追加
+  ```
 
 - [ ] **ユニットテストの実行**
   ```bash
@@ -2037,14 +2124,82 @@ cd trading-platform
   **Expected:** 
   - `Tests: X passed, 0 failed`
   - `Coverage: ≥ 80% statements, branches, functions, lines`
-  **If fails:** 失敗したテストを修正。新しいコードには必ずテストを追加
+  
+  **If fails:**
+  ```bash
+  # Step 1: 失敗したテストを特定
+  $ npm test 2>&1 | grep "FAIL"
+  # 例: FAIL app/lib/__tests__/AuthService.test.ts
+  
+  # Step 2: 特定のテストファイルを実行
+  $ npm test -- AuthService.test.ts
+  
+  # Step 3: デバッグモードで実行
+  $ npm test -- --verbose --no-coverage AuthService.test.ts
+  
+  # Step 4: 失敗の種類別の対処
+  # a) "Timeout" エラー
+  $ npm test -- --testTimeout=10000 AuthService.test.ts
+  
+  # b) "Cannot find element" エラー
+  # テストコードに screen.debug() を追加してDOMを確認
+  
+  # c) "expect(received).toBe(expected)" エラー
+  # 実際の値をログ出力
+  console.log('Received:', received);
+  
+  # Step 5: カバレッジが不足している場合
+  $ npm test -- --coverage --collectCoverageFrom="app/lib/**/*.ts"
+  $ open coverage/lcov-report/index.html  # カバレッジレポートを開く
+  
+  # カバレッジが低いファイルを特定
+  $ grep -A 1 "Lines.*:" coverage/lcov-report/index.html | grep -E "[0-9]+\.[0-9]+%" | sort -n
+  
+  # 80%未満のファイルにテストを追加
+  $ touch app/lib/__tests__/UncoveredService.test.ts
+  
+  # Step 6: スナップショットの更新が必要な場合
+  $ npm test -- -u  # スナップショットを更新
+  ```
 
 - [ ] **ビルドの成功**
   ```bash
   npm run build
   ```
   **Expected:** `Build completed successfully`
-  **If fails:** ビルドエラーを修正。通常は型エラーかインポート問題
+  
+  **If fails:**
+  ```bash
+  # Step 1: エラーメッセージを確認
+  $ npm run build 2>&1 | tee build-error.log
+  
+  # Step 2: 一般的なビルドエラーと対処
+  # a) "Module not found" エラー
+  $ grep "Module not found" build-error.log
+  # → インポートパスを修正（大文字小文字の区別に注意）
+  
+  # b) "Type error" エラー
+  $ npm run build 2>&1 | grep "Type error"
+  # → npx tsc --noEmit で型エラーを先に修正
+  
+  # c) "Out of memory" エラー
+  $ NODE_OPTIONS="--max-old-space-size=4096" npm run build
+  
+  # d) "ENOSPC: System limit for number of file watchers reached"
+  $ echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf
+  $ sudo sysctl -p
+  
+  # Step 3: クリーンビルドを試行
+  $ rm -rf .next
+  $ npm run build
+  
+  # Step 4: 段階的にビルド
+  $ npm run build -- --profile  # プロファイル情報を出力
+  $ npm run build -- --debug     # デバッグモード
+  
+  # Step 5: 特定のページのみをビルド（Next.js）
+  # next.config.js に experimental.outputFileTracingIncludes を設定
+  ```
 
 ### Phase 2: マージ後の品質チェック (Post-Merge Quality)
 
@@ -2426,6 +2581,432 @@ node -e "const schema = require('./app/lib/schemas/stock').StockDataSchema; \
 ```
 
 ---
+
+#### Zod バリデーション包括テストガイド (Comprehensive Zod Testing Guide)
+
+Zodスキーマの品質を保証するため、以下のテストパターンを必ず実装してください。
+
+**テストファイル構成:**
+```bash
+app/lib/schemas/
+├── stock.ts                    # スキーマ定義
+├── __tests__/
+│   ├── stock.test.ts           # スキーマのユニットテスト
+│   └── stock.integration.test.ts # APIとの統合テスト
+```
+
+---
+
+**パターン 1: 基本的なバリデーションテスト**
+
+```typescript
+// app/lib/schemas/__tests__/stock.test.ts
+import { describe, test, expect } from '@jest/globals';
+import { StockDataSchema } from '../stock';
+
+describe('StockDataSchema', () => {
+  test('accepts valid stock data', () => {
+    const validData = {
+      symbol: 'AAPL',
+      price: 150.00,
+      change: 2.50,
+      changePercent: 1.69,
+      volume: 50000000,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    const result = StockDataSchema.parse(validData);
+    expect(result).toEqual(validData);
+  });
+  
+  test('rejects data with missing required fields', () => {
+    const invalidData = {
+      symbol: 'AAPL',
+      // price が欠落
+      change: 2.50,
+    };
+    
+    expect(() => StockDataSchema.parse(invalidData)).toThrow();
+  });
+  
+  test('rejects negative price', () => {
+    const invalidData = {
+      symbol: 'AAPL',
+      price: -150.00, // ❌ 負の価格
+      change: 0,
+      changePercent: 0,
+      volume: 0,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    expect(() => StockDataSchema.parse(invalidData)).toThrow('positive');
+  });
+  
+  test('rejects negative volume', () => {
+    const invalidData = {
+      symbol: 'AAPL',
+      price: 150.00,
+      change: 0,
+      changePercent: 0,
+      volume: -1000, // ❌ 負の出来高
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    expect(() => StockDataSchema.parse(invalidData)).toThrow('nonnegative');
+  });
+  
+  test('rejects invalid datetime format', () => {
+    const invalidData = {
+      symbol: 'AAPL',
+      price: 150.00,
+      change: 0,
+      changePercent: 0,
+      volume: 0,
+      lastUpdated: 'not-a-datetime', // ❌ 不正な日時
+    };
+    
+    expect(() => StockDataSchema.parse(invalidData)).toThrow('datetime');
+  });
+  
+  test('rejects symbol with special characters', () => {
+    const invalidData = {
+      symbol: 'A@PL', // ❌ 特殊文字
+      price: 150.00,
+      change: 0,
+      changePercent: 0,
+      volume: 0,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    // シンボルに英数字のみを許可する場合
+    expect(() => StockDataSchema.parse(invalidData)).toThrow();
+  });
+});
+```
+
+---
+
+**パターン 2: 変換と正規化のテスト**
+
+```typescript
+// app/lib/schemas/stock.ts (変換を含むスキーマ)
+import { z } from 'zod';
+
+export const StockDataSchema = z.object({
+  symbol: z.string().min(1).max(10).transform(s => s.toUpperCase()),
+  price: z.union([z.number(), z.string()]).transform(val => 
+    typeof val === 'string' ? parseFloat(val) : val
+  ),
+  volume: z.union([z.number(), z.string()]).transform(val => {
+    const num = typeof val === 'string' ? parseInt(val, 10) : val;
+    return isNaN(num) ? 0 : num;
+  }),
+  lastUpdated: z.string().datetime().transform(s => new Date(s)),
+});
+
+// app/lib/schemas/__tests__/stock.test.ts (変換のテスト)
+describe('StockDataSchema with transformations', () => {
+  test('transforms symbol to uppercase', () => {
+    const data = {
+      symbol: 'aapl', // 小文字
+      price: 150.00,
+      volume: 1000,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    const result = StockDataSchema.parse(data);
+    expect(result.symbol).toBe('AAPL'); // 大文字に変換
+  });
+  
+  test('converts string price to number', () => {
+    const data = {
+      symbol: 'AAPL',
+      price: '150.00', // 文字列
+      volume: 1000,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    const result = StockDataSchema.parse(data);
+    expect(result.price).toBe(150.00);
+    expect(typeof result.price).toBe('number');
+  });
+  
+  test('converts datetime string to Date object', () => {
+    const data = {
+      symbol: 'AAPL',
+      price: 150.00,
+      volume: 1000,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    const result = StockDataSchema.parse(data);
+    expect(result.lastUpdated).toBeInstanceOf(Date);
+    expect(result.lastUpdated.getFullYear()).toBe(2024);
+  });
+  
+  test('handles edge case of invalid string to number conversion', () => {
+    const data = {
+      symbol: 'AAPL',
+      price: 'not-a-number', // ❌ 数値に変換できない
+      volume: 1000,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    expect(() => StockDataSchema.parse(data)).toThrow();
+  });
+});
+```
+
+---
+
+**パターン 3: APIレスポンスとの統合テスト**
+
+```typescript
+// app/lib/schemas/__tests__/stock.integration.test.ts
+import { describe, test, expect, jest } from '@jest/globals';
+import { fetchStockData } from '@/lib/api/stockClient';
+import { StockDataSchema } from '../stock';
+
+// 実際のAPIレスポンスのサンプル
+const mockAPIResponse = {
+  '01. symbol': 'AAPL',
+  '05. price': '150.00',
+  '06. volume': '50000000',
+  '09. change': '2.50',
+  '10. change percent': '1.69%',
+  'lastRefreshed': '2024-01-01 12:00:00',
+};
+
+describe('Stock API integration with Zod', () => {
+  test('parses real API response format', () => {
+    // API形式を内部形式に変換
+    const transformedData = {
+      symbol: mockAPIResponse['01. symbol'],
+      price: parseFloat(mockAPIResponse['05. price']),
+      volume: parseInt(mockAPIResponse['06. volume'], 10),
+      change: parseFloat(mockAPIResponse['09. change']),
+      changePercent: parseFloat(mockAPIResponse['10. change percent'].replace('%', '')),
+      lastUpdated: new Date(mockAPIResponse.lastRefreshed).toISOString(),
+    };
+    
+    // Zodでバリデーション
+    expect(() => StockDataSchema.parse(transformedData)).not.toThrow();
+  });
+  
+  test('catches API format changes', () => {
+    const unexpectedFormat = {
+      ticker: 'AAPL', // ❌ 'symbol' ではなく 'ticker'
+      price: 150.00,
+      volume: 1000,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    // スキーマが変更を検出
+    expect(() => StockDataSchema.parse(unexpectedFormat)).toThrow();
+  });
+  
+  test('validates multiple API responses in batch', () => {
+    const batchData = [
+      { symbol: 'AAPL', price: 150, volume: 1000, lastUpdated: '2024-01-01T12:00:00Z' },
+      { symbol: 'GOOGL', price: 2800, volume: 2000, lastUpdated: '2024-01-01T12:00:00Z' },
+      { symbol: 'MSFT', price: 350, volume: 3000, lastUpdated: '2024-01-01T12:00:00Z' },
+    ];
+    
+    // すべてのデータが有効であることを確認
+    batchData.forEach(data => {
+      expect(() => StockDataSchema.parse(data)).not.toThrow();
+    });
+  });
+});
+```
+
+---
+
+**パターン 4: エラーメッセージのカスタマイズとテスト**
+
+```typescript
+// app/lib/schemas/stock.ts (カスタムエラーメッセージ)
+export const StockDataSchema = z.object({
+  symbol: z.string({
+    required_error: "シンボルは必須です",
+    invalid_type_error: "シンボルは文字列である必要があります",
+  }).min(1, "シンボルは1文字以上である必要があります")
+    .max(10, "シンボルは10文字以内である必要があります"),
+  
+  price: z.number({
+    required_error: "価格は必須です",
+    invalid_type_error: "価格は数値である必要があります",
+  }).positive("価格は正の数である必要があります"),
+  
+  volume: z.number({
+    required_error: "出来高は必須です",
+    invalid_type_error: "出来高は数値である必要があります",
+  }).int("出来高は整数である必要があります")
+    .nonnegative("出来高は0以上である必要があります"),
+});
+
+// app/lib/schemas/__tests__/stock.test.ts (エラーメッセージのテスト)
+describe('StockDataSchema error messages', () => {
+  test('provides custom error message for missing symbol', () => {
+    const data = {
+      price: 150,
+      volume: 1000,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    try {
+      StockDataSchema.parse(data);
+      fail('Should have thrown an error');
+    } catch (error) {
+      expect(error.errors[0].message).toBe('シンボルは必須です');
+    }
+  });
+  
+  test('provides custom error message for negative price', () => {
+    const data = {
+      symbol: 'AAPL',
+      price: -150, // ❌ 負の価格
+      volume: 1000,
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    try {
+      StockDataSchema.parse(data);
+      fail('Should have thrown an error');
+    } catch (error) {
+      expect(error.errors[0].message).toBe('価格は正の数である必要があります');
+    }
+  });
+  
+  test('provides custom error message for non-integer volume', () => {
+    const data = {
+      symbol: 'AAPL',
+      price: 150,
+      volume: 1000.5, // ❌ 小数
+      lastUpdated: '2024-01-01T12:00:00Z',
+    };
+    
+    try {
+      StockDataSchema.parse(data);
+      fail('Should have thrown an error');
+    } catch (error) {
+      expect(error.errors[0].message).toBe('出来高は整数である必要があります');
+    }
+  });
+});
+```
+
+---
+
+**パターン 5: 本番環境のエラー監視**
+
+```typescript
+// app/lib/api/stockClient.ts (本番環境用エラーハンドリング)
+import { StockDataSchema, type StockData } from '@/lib/schemas/stock';
+import * as Sentry from '@sentry/nextjs'; // エラー追跡ツール
+
+export async function fetchStockData(symbol: string): Promise<StockData> {
+  const response = await fetch(`/api/stocks?symbol=${encodeURIComponent(symbol)}`);
+  
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  
+  const json = await response.json();
+  
+  try {
+    return StockDataSchema.parse(json);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      // 本番環境でバリデーションエラーを記録
+      const validationError = {
+        symbol,
+        errors: error.errors,
+        receivedData: json,
+        timestamp: new Date().toISOString(),
+      };
+      
+      // エラートラッキングサービスに送信
+      Sentry.captureException(error, {
+        extra: validationError,
+        tags: { type: 'zod_validation_error' },
+      });
+      
+      // 開発環境では詳細をログ出力
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Zod Validation Error:');
+        console.error('Symbol:', symbol);
+        console.error('Errors:', error.errors);
+        console.error('Received:', JSON.stringify(json, null, 2));
+      }
+      
+      throw new Error(`API response validation failed: ${error.errors[0].message}`);
+    }
+    throw error;
+  }
+}
+```
+
+**本番エラー監視のテスト:**
+```typescript
+// app/lib/api/__tests__/stockClient.production.test.ts
+import { fetchStockData } from '../stockClient';
+import * as Sentry from '@sentry/nextjs';
+
+jest.mock('@sentry/nextjs');
+
+describe('Production error monitoring', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+  
+  test('sends Zod validation errors to Sentry', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ price: 'invalid' }), // ❌ 不正なデータ
+    });
+    
+    await expect(fetchStockData('AAPL')).rejects.toThrow();
+    
+    // Sentryにエラーが送信されたことを確認
+    expect(Sentry.captureException).toHaveBeenCalled();
+    expect(Sentry.captureException).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({
+        tags: { type: 'zod_validation_error' },
+      })
+    );
+  });
+});
+```
+
+---
+
+**検証チェックリスト:**
+```bash
+# 1. すべてのスキーマテストを実行
+$ npm test -- schemas/
+
+# 2. カバレッジを確認
+$ npm test -- schemas/ --coverage
+# 期待: 100% カバレッジ（スキーマは小さいので完全カバレッジを目指す）
+
+# 3. 実際のAPIレスポンスでテスト
+$ curl https://api.example.com/stocks/AAPL > test-response.json
+$ node -e "
+  const schema = require('./app/lib/schemas/stock').StockDataSchema;
+  const data = require('./test-response.json');
+  try {
+    const result = schema.parse(data);
+    console.log('✅ Validation passed:', result);
+  } catch (error) {
+    console.error('❌ Validation failed:', error.errors);
+  }
+"
+
+# 4. 本番環境のエラーログを確認（デプロイ後）
+# Sentry または CloudWatch Logs で 'zod_validation_error' を検索
+```
 
 ### Issue 3: `'use client'` を追加してもエラーが解決しない
 **症状:**
