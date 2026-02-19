@@ -46,7 +46,7 @@ if (!parsed.success) {
 } else {
   // Security Check: Ensure production uses a secure secret
   if (parsed.data.NODE_ENV === 'production' && parsed.data.JWT_SECRET === DEFAULT_JWT_SECRET) {
-    throw new Error('❌ Critical Security Error: You are running in production with the default JWT_SECRET. Please set a secure JWT_SECRET environment variable.');
+    throw new Error('CRITICAL SECURITY ERROR: You are running in production with the default JWT_SECRET. Please set a secure JWT_SECRET environment variable.');
   }
 }
 

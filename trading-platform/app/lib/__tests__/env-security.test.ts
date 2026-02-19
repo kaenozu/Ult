@@ -17,7 +17,7 @@ describe('Environment Security', () => {
 
     expect(() => {
       jest.requireActual('../env');
-    }).toThrow('Critical Security Error');
+    }).toThrow('You are running in production with the default JWT_SECRET');
   });
 
   it('should NOT throw an error in production if JWT_SECRET is secure', () => {
