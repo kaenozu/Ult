@@ -200,7 +200,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       controller.abort();
     };
-  }, [stock.symbol, stock.market]); // Remove ohlcv dependencies that cause frequent re-renders
+  }, [stock.symbol, stock.market, ohlcv.length]); // Track ohlcv.length to detect data changes without frequent re-renders
 
   return { accuracy, loading, error };
 }

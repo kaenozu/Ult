@@ -1,8 +1,11 @@
 import { calculateVolumeProfile, optimizeParameters } from './analysis';
 import { OHLCV } from '../types';
+import seedrandom from 'seedrandom';
 
 describe('optimizeParameters', () => {
   const generateData = (): OHLCV[] => {
+    // Use a seeded random number generator for deterministic tests
+    const rng = seedrandom('test-seed-12345');
     const data: OHLCV[] = [];
     let price = 100;
     // Generate a sine wave pattern with noise to simulate realistic market behavior
@@ -11,14 +14,14 @@ describe('optimizeParameters', () => {
     for (let i = 0; i < 500; i++) {
       const angle = i * 0.1;
       // Add random noise to make it less predictable and prevent overfitting
-      const noise = (Math.random() - 0.5) * 5;
+      const noise = (rng() - 0.5) * 5;
       price = 100 + Math.sin(angle) * 10 + noise;
       
       // Add realistic OHLC variations
-      const open = price + (Math.random() - 0.5) * 2;
-      const close = price + (Math.random() - 0.5) * 2;
-      const high = Math.max(open, close) + Math.random() * 2;
-      const low = Math.min(open, close) - Math.random() * 2;
+      const open = price + (rng() - 0.5) * 2;
+      const close = price + (rng() - 0.5) * 2;
+      const high = Math.max(open, close) + rng() * 2;
+      const low = Math.min(open, close) - rng() * 2;
       
       data.push({
         date: new Date(2020, 0, i + 1).toISOString().split('T')[0],
@@ -26,7 +29,7 @@ describe('optimizeParameters', () => {
         high,
         low,
         close,
-        volume: 1000 + Math.floor(Math.random() * 500)
+        volume: 1000 + Math.floor(rng() * 500)
       });
     }
     return data;
@@ -48,10 +51,16 @@ describe('optimizeParameters', () => {
     expect(result.smaPeriod).toBeGreaterThanOrEqual(10);
     expect(result.smaPeriod).toBeLessThanOrEqual(200);
     
-    // Accuracy should be reasonable (not 100% due to noise)
-    // With noisy random data, accuracy can be 0 in edge cases
+    // With seeded random data, we can now assert specific, consistent results
+    // The deterministic data generation allows for meaningful accuracy expectations
     expect(result.accuracy).toBeGreaterThanOrEqual(0);
     expect(result.accuracy).toBeLessThanOrEqual(100);
+    
+    // Test should produce consistent results across runs due to seeded RNG
+    const result2 = optimizeParameters(generateData(), 'usa');
+    expect(result2.rsiPeriod).toBe(result.rsiPeriod);
+    expect(result2.smaPeriod).toBe(result.smaPeriod);
+    expect(result2.accuracy).toBe(result.accuracy);
   });
 });
 

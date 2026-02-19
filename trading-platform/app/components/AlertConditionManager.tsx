@@ -61,6 +61,7 @@ export function AlertConditionManager() {
         <Button
           onClick={() => setIsOpen(true)}
           className="relative rounded-full p-3 bg-primary hover:bg-primary/90"
+          aria-label="Open Alert Manager"
         >
           <Bell className="w-6 h-6" />
           {unacknowledgedCount > 0 && (
@@ -74,12 +75,17 @@ export function AlertConditionManager() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="alert-manager-title"
+    >
       <div className="bg-[#1a2332] rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold flex items-center gap-2">
+            <h2 id="alert-manager-title" className="text-xl font-bold flex items-center gap-2">
               <Bell className="w-6 h-6" />
               Alert Management
             </h2>
@@ -87,15 +93,19 @@ export function AlertConditionManager() {
               onClick={() => setIsOpen(false)}
               variant="ghost"
               className="text-gray-400 hover:text-white"
+              aria-label="Close alert manager"
             >
               ✕
             </Button>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4" role="tablist">
             <button
               onClick={() => setActiveTab('conditions')}
+              role="tab"
+              aria-selected={activeTab === 'conditions'}
+              aria-controls="panel-conditions"
               className={`px-4 py-2 rounded ${
                 activeTab === 'conditions'
                   ? 'bg-primary text-white'
@@ -106,6 +116,9 @@ export function AlertConditionManager() {
             </button>
             <button
               onClick={() => setActiveTab('alerts')}
+              role="tab"
+              aria-selected={activeTab === 'alerts'}
+              aria-controls="panel-alerts"
               className={`px-4 py-2 rounded ${
                 activeTab === 'alerts'
                   ? 'bg-primary text-white'
@@ -116,6 +129,9 @@ export function AlertConditionManager() {
             </button>
             <button
               onClick={() => setActiveTab('channels')}
+              role="tab"
+              aria-selected={activeTab === 'channels'}
+              aria-controls="panel-channels"
               className={`px-4 py-2 rounded ${
                 activeTab === 'channels'
                   ? 'bg-primary text-white'
@@ -131,7 +147,7 @@ export function AlertConditionManager() {
         <div className="flex-1 overflow-y-auto p-4">
           {/* Conditions Tab */}
           {activeTab === 'conditions' && (
-            <div className="space-y-4">
+            <div role="tabpanel" id="panel-conditions" className="space-y-4">
               {!showAddForm && (
                 <Button
                   onClick={() => setShowAddForm(true)}
@@ -148,12 +164,14 @@ export function AlertConditionManager() {
                   <input
                     type="text"
                     placeholder="Condition Name"
+                    aria-label="Condition Name"
                     value={newCondition.name}
                     onChange={(e) => setNewCondition({ ...newCondition, name: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-700 rounded text-white"
                   />
                   <select
                     value={newCondition.type}
+                    aria-label="Condition Type"
                     onChange={(e) => setNewCondition({ ...newCondition, type: e.target.value as any })}
                     className="w-full px-3 py-2 bg-gray-700 rounded text-white"
                   >
@@ -165,6 +183,7 @@ export function AlertConditionManager() {
                   <input
                     type="text"
                     placeholder="Symbol (optional)"
+                    aria-label="Symbol"
                     value={newCondition.symbol}
                     onChange={(e) => setNewCondition({ ...newCondition, symbol: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-700 rounded text-white"
@@ -172,6 +191,7 @@ export function AlertConditionManager() {
                   <input
                     type="text"
                     placeholder="Condition (e.g., price > 150)"
+                    aria-label="Condition Logic"
                     value={newCondition.condition}
                     onChange={(e) => setNewCondition({ ...newCondition, condition: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-700 rounded text-white"
@@ -179,6 +199,7 @@ export function AlertConditionManager() {
                   <input
                     type="number"
                     placeholder="Threshold"
+                    aria-label="Threshold Value"
                     value={newCondition.threshold}
                     onChange={(e) => setNewCondition({ ...newCondition, threshold: parseFloat(e.target.value) })}
                     className="w-full px-3 py-2 bg-gray-700 rounded text-white"
@@ -214,6 +235,7 @@ export function AlertConditionManager() {
                         <button
                           onClick={() => toggleCondition(condition.id, !condition.enabled)}
                           className="p-2 hover:bg-gray-700 rounded"
+                          aria-label={condition.enabled ? "Disable condition" : "Enable condition"}
                         >
                           {condition.enabled ? (
                             <ToggleRight className="w-5 h-5 text-green-500" />
@@ -224,6 +246,7 @@ export function AlertConditionManager() {
                         <button
                           onClick={() => removeCondition(condition.id)}
                           className="p-2 hover:bg-gray-700 rounded text-red-400"
+                          aria-label={`Remove condition: ${condition.name}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -237,7 +260,7 @@ export function AlertConditionManager() {
 
           {/* Alerts Tab */}
           {activeTab === 'alerts' && (
-            <div className="space-y-4">
+            <div role="tabpanel" id="panel-alerts" className="space-y-4">
               {alerts.length > 0 && (
                 <Button
                   onClick={clearAcknowledgedAlerts}
@@ -294,7 +317,7 @@ export function AlertConditionManager() {
 
           {/* Channels Tab */}
           {activeTab === 'channels' && (
-            <div className="space-y-2">
+            <div role="tabpanel" id="panel-channels" className="space-y-2">
               {Array.from(channels.entries()).map(([type, channel]) => (
                 <div
                   key={type}

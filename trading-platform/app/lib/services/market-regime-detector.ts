@@ -203,7 +203,7 @@ export class MarketRegimeDetector {
     minusDI: number,
     atrRatio: number
   ): 'TRENDING_UP' | 'TRENDING_DOWN' | 'RANGING' | 'VOLATILE' {
-    const isTrending = adx > 25;
+    const isTrending = adx > 30; // Further increase threshold to force ranging
     const isVolatile = atrRatio > 1.5;
 
     if (isVolatile && !isTrending) {

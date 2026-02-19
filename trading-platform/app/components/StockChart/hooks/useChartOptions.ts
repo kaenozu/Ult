@@ -23,6 +23,25 @@ interface ChartContext {
   tick?: { value?: number };
 }
 
+// Type-safe annotation configuration
+interface AnnotationLine {
+  type: 'line';
+  xMin: number;
+  xMax: number;
+  borderColor: string;
+  borderWidth: number;
+  borderDash: number[];
+  yMin: number;
+  yMax: number;
+  scaleID: string;
+}
+
+interface AnnotationPluginOptions {
+  annotation: {
+    annotations: Record<string, AnnotationLine>;
+  };
+}
+
 // Throttle interval for hover updates (ms)
 const HOVER_THROTTLE_MS = 16; // ~60fps
 
@@ -276,7 +295,7 @@ export const useChartOptions = ({
   }), [hoveredIdx, data, yAxisRange]);
 
   // Annotation options (depend on hoveredIdx)
-  const annotationOptions = useMemo(() => ({
+  const annotationOptions = useMemo((): AnnotationPluginOptions => ({
     annotation: {
       annotations: {
         line1: {
@@ -291,7 +310,7 @@ export const useChartOptions = ({
           scaleID: 'x'
         }
       }
-    } as any
+    }
   }), [hoveredIdx]);
 
   // Merge all options

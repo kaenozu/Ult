@@ -29,7 +29,7 @@
 |----------|-----|------|
 | `app/lib/services/candlestick-pattern-service.ts` | 259 | isPiercingLine |
 | `app/lib/services/candlestick-pattern-service.ts` | 260 | isDarkCloudCover |
-| `app/lib/services/candlestick-pattern.ts` | 261 | isBullishHarami |
+| `app/lib/services/candlestick-pattern-service.ts` | 261 | isBullishHarami |
 | `app/lib/services/candlestick-pattern-service.ts` | 262 | isBearishHarami |
 
 ---
@@ -87,8 +87,8 @@
 
 1. **IndexedDBService**
    ```typescript
-   // maxDrawdown計算
-   const maxDrawdown = Math.min(...cumulativeReturns) / initialInvestment;
+   // maxDrawdown計算 (app/lib/utils/portfolio-analysis.ts の calculateMaxDrawdown を使用)
+   const { maxDrawdownPercent } = calculateMaxDrawdown(equityCurve);
    
    // sharpeRatio計算
    const sharpeRatio = (avgReturn - riskFreeRate) / stdDev;

@@ -17,6 +17,7 @@ import {
 } from 'lightweight-charts';
 import { OHLCV, Signal } from '@/app/types';
 import { SMA_CONFIG, GHOST_FORECAST, FORECAST_CONE } from '@/app/constants';
+import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
 
 export interface StockChartProps {
   data: OHLCV[];
@@ -114,31 +115,34 @@ export const StockChart = memo(function StockChart({
     period: number,
     stdDev: number
   ): { upper: LineData<Time>[]; lower: LineData<Time>[] } => {
-    const upper: LineData<Time>[] = [];
-    const lower: LineData<Time>[] = [];
+    // Optimized implementation using technicalIndicatorService (O(N) instead of O(N*P))
     if (data.length < period) return { upper: [], lower: [] };
-    
-    for (let i = period - 1; i < data.length; i++) {
-      let sum = 0;
-      const prices: number[] = [];
-      for (let j = 0; j < period; j++) {
-        sum += data[i - j].close;
-        prices.push(data[i - j].close);
-      }
-      const sma = sum / period;
-      const variance = prices.reduce((acc, p) => acc + Math.pow(p - sma, 2), 0) / period;
-      const std = Math.sqrt(variance);
-      
-      upper.push({
-        time: data[i].date as Time,
-        value: sma + std * stdDev,
-      });
-      lower.push({
-        time: data[i].date as Time,
-        value: sma - std * stdDev,
-      });
+
+    // Convert to simple price array for the service (minimizing overhead)
+    const len = data.length;
+    const prices = new Array(len);
+    for (let i = 0; i < len; i++) {
+      prices[i] = data[i].close;
     }
-    return { upper, lower };
+
+    const { upper, lower } = technicalIndicatorService.calculateBollingerBands(prices, period, stdDev);
+    
+    // Map back to LineData format, filtering out invalid values (NaN)
+    const upperData: LineData<Time>[] = [];
+    const lowerData: LineData<Time>[] = [];
+
+    for (let i = 0; i < len; i++) {
+      const u = upper[i];
+      const l = lower[i];
+      // Only push if valid. The service returns NaN for the first `period-1` points.
+      if (!isNaN(u)) {
+        const time = data[i].date as Time;
+        upperData.push({ time, value: u });
+        lowerData.push({ time, value: l });
+      }
+    }
+
+    return { upper: upperData, lower: lowerData };
   }, []);
 
   useEffect(() => {

@@ -29,15 +29,20 @@ export class VolumeAnalysisService {
   calculateVolumeProfile(data: OHLCV[]): VolumeProfile[] {
     if (data.length === 0) return [];
 
-    const recentData = data.slice(-this.MIN_PROFILE_DAYS);
-    const totalVolume = recentData.reduce((sum, d) => sum + d.volume, 0);
+    const startIndex = Math.max(0, data.length - this.MIN_PROFILE_DAYS);
+    let totalVolume = 0;
+    let min = Infinity;
+    let max = -Infinity;
+
+    // First pass: calculate stats
+    for (let i = startIndex; i < data.length; i++) {
+      const d = data[i];
+      totalVolume += d.volume;
+      if (d.close < min) min = d.close;
+      if (d.close > max) max = d.close;
+    }
 
     if (totalVolume === 0) return [];
-
-    const prices = recentData.map(d => d.close);
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-
     if (max === min) return [];
 
     const step = (max - min) / this.PROFILE_BINS;
@@ -47,16 +52,21 @@ export class VolumeAnalysisService {
       strength: 0,
     }));
 
-    recentData.forEach(d => {
+    // Second pass: fill bins
+    for (let i = startIndex; i < data.length; i++) {
+      const d = data[i];
       if (d.close >= min && d.close < max) {
         const binIndex = Math.min(Math.floor((d.close - min) / step), this.PROFILE_BINS - 1);
         if (binIndex >= 0 && binIndex < this.PROFILE_BINS) {
           profile[binIndex].volume += d.volume;
         }
       }
-    });
+    }
 
-    const maxVol = Math.max(...profile.map(p => p.volume));
+    let maxVol = 0;
+    for (let i = 0; i < profile.length; i++) {
+      if (profile[i].volume > maxVol) maxVol = profile[i].volume;
+    }
     if (maxVol > 0) {
       profile.forEach(p => {
         p.strength = maxVol > 0 ? p.volume / maxVol : 0;
@@ -66,10 +76,10 @@ export class VolumeAnalysisService {
     return profile.filter(p => p.volume > 0);
   }
 
-  calculateResistanceLevels(data: OHLCV[]): ResistanceLevel[] {
+  calculateResistanceLevels(data: OHLCV[], providedProfile?: VolumeProfile[]): ResistanceLevel[] {
     if (data.length < this.MIN_PROFILE_DAYS) return [];
 
-    const profile = this.calculateVolumeProfile(data);
+    const profile = providedProfile || this.calculateVolumeProfile(data);
 
     if (profile.length < 3) return [];
 
@@ -113,8 +123,8 @@ export class VolumeAnalysisService {
     });
   }
 
-  calculateSupportLevels(data: OHLCV[]): ResistanceLevel[] {
-    const levels = this.calculateResistanceLevels(data);
+  calculateSupportLevels(data: OHLCV[], resistanceLevels?: ResistanceLevel[]): ResistanceLevel[] {
+    const levels = resistanceLevels || this.calculateResistanceLevels(data);
     return levels.filter(l => l.type === 'support');
   }
 
@@ -151,8 +161,8 @@ export class VolumeAnalysisService {
 
   analyzeVolumeProfile(data: OHLCV[]): VolumeAnalysisResult {
     const profile = this.calculateVolumeProfile(data);
-    const resistanceLevels = this.calculateResistanceLevels(data);
-    const supportLevels = this.calculateSupportLevels(data);
+    const resistanceLevels = this.calculateResistanceLevels(data, profile);
+    const supportLevels = this.calculateSupportLevels(data, resistanceLevels);
 
     const totalProfileStrength = profile.reduce((sum, p) => sum + p.strength, 0) / profile.length;
 
