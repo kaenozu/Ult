@@ -33,21 +33,21 @@ describe('BacktestPanel Accessibility and UX', () => {
   it('renders form elements with accessible labels', () => {
     render(<BacktestPanel />);
 
-    // Verify inputs are accessible via labels
-    expect(screen.getByLabelText('Symbol')).toBeInTheDocument();
-    expect(screen.getByLabelText('Market')).toBeInTheDocument();
-    expect(screen.getByLabelText('Strategy')).toBeInTheDocument();
-    expect(screen.getByLabelText('Timeframe')).toBeInTheDocument();
+    // Verify inputs are accessible via labels (Japanese)
+    expect(screen.getByLabelText('銘柄')).toBeInTheDocument();
+    expect(screen.getByLabelText('市場')).toBeInTheDocument();
+    expect(screen.getByLabelText('戦略')).toBeInTheDocument();
+    expect(screen.getByLabelText('期間')).toBeInTheDocument();
 
     // Verify default values
-    expect(screen.getByLabelText('Symbol')).toHaveValue('AAPL');
-    expect(screen.getByLabelText('Market')).toHaveValue('usa');
+    expect(screen.getByLabelText('銘柄')).toHaveValue('AAPL');
+    expect(screen.getByLabelText('市場')).toHaveValue('usa');
   });
 
   it('shows loading state when running backtest', async () => {
     render(<BacktestPanel />);
 
-    const runButton = screen.getByRole('button', { name: /run backtest/i });
+    const runButton = screen.getByRole('button', { name: /バックテスト実行/i });
     expect(runButton).toBeInTheDocument();
     expect(screen.getByTestId('icon-play')).toBeInTheDocument();
 
@@ -56,27 +56,19 @@ describe('BacktestPanel Accessibility and UX', () => {
 
     // Check loading state
     expect(screen.getByRole('button')).toBeDisabled();
-    expect(screen.getByText('Running...')).toBeInTheDocument();
+    expect(screen.getByText('実行中...')).toBeInTheDocument();
     expect(screen.getByTestId('icon-loader')).toBeInTheDocument();
 
-    // Check aria-busy
-    // We look for the CardContent which should have aria-busy="true"
-    // Since CardContent renders a div, we can look for it by role or just querySelector if needed,
-    // but aria-busy is not a role.
-    // Let's find the container that has aria-busy.
-    // The structure is Card > CardHeader ... CardContent (aria-busy) ...
-    // We can just query by attribute.
-    // Note: getByRole('status') or similar might not work unless we gave it a role.
-    // But testing-library doesn't have getByAriaBusy.
-    // We can check if *any* element has aria-busy="true".
-    const busyElement = document.querySelector('[aria-busy="true"]');
-    expect(busyElement).toBeInTheDocument();
+    // Check aria-busy (Improved robustness based on review)
+    const contentContainer = screen.getByText('銘柄').closest('[aria-busy]');
+    expect(contentContainer).toHaveAttribute('aria-busy', 'true');
 
     // Wait for finish
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /run backtest/i })).toBeEnabled();
+      expect(screen.getByRole('button', { name: /バックテスト実行/i })).toBeEnabled();
     });
 
+    expect(contentContainer).toHaveAttribute('aria-busy', 'false');
     expect(screen.queryByTestId('icon-loader')).not.toBeInTheDocument();
     expect(screen.getByTestId('icon-play')).toBeInTheDocument();
   });
