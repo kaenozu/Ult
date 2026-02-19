@@ -202,6 +202,12 @@ export class FeatureEngineering {
    * テクニカル指標の拡張特徴量を計算
    */
 
+  /**
+   * テクニカル指標の拡張特徴量を計算（O(N) 最適化版）
+   * 
+   * 以前のO(N²)実装では、各ウィンドウごとにすべての指標を再計算していました。
+   * この最適化版では、全データに対して一度だけ指標を計算し、結果を再利用します。
+   */
   extractFeatures(data: OHLCV[], lookback: number): MLFeatures[] {
     if (data.length <= lookback) {
       return [];
@@ -217,20 +223,77 @@ export class FeatureEngineering {
       return Math.sqrt(variance);
     };
 
+    // O(N) optimization: Calculate indicators once for the entire dataset
+    const prices = data.map(d => d.close);
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const volumes = data.map(d => d.volume);
+
+    // Pre-calculate all technical indicators (O(N) operations)
+    const rsiValues = calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD);
+    const sma5Values = calculateSMA(prices, 5);
+    const sma20Values = calculateSMA(prices, SMA_CONFIG.SHORT_PERIOD);
+    const sma50Values = calculateSMA(prices, SMA_CONFIG.MEDIUM_PERIOD);
+    const sma200Values = calculateSMA(prices, SMA_CONFIG.LONG_PERIOD);
+    const ema12Values = calculateEMA(prices, MACD_CONFIG.FAST_PERIOD);
+    const ema26Values = calculateEMA(prices, MACD_CONFIG.SLOW_PERIOD);
+    const macdResult = calculateMACD(prices, MACD_CONFIG.FAST_PERIOD, MACD_CONFIG.SLOW_PERIOD, MACD_CONFIG.SIGNAL_PERIOD);
+    const bbResult = calculateBollingerBands(prices, BOLLINGER_BANDS.PERIOD, BOLLINGER_BANDS.STD_DEVIATION);
+    const atrValues = calculateATR(highs, lows, prices, RSI_CONFIG.DEFAULT_PERIOD);
+
+    // Now iterate once through the data, using pre-calculated values
     for (let i = startIndex; i <= data.length; i++) {
       const window = data.slice(i - lookback, i);
       const current = window[window.length - 1];
-      const technical = this.calculateTechnicalFeatures(window);
-      const timeSeries = this.calculateTimeSeriesFeatures(window);
-      const prices = window.map(d => d.close);
-      const highs = window.map(d => d.high);
-      const lows = window.map(d => d.low);
-      const volumes = window.map(d => d.volume);
+      const currentIdx = i - 1;
 
-      const volumeAvg = volumes.length > 0 ? volumes.reduce((sum, v) => sum + v, 0) / volumes.length : 0;
-      const volumeStd = calcStd(volumes);
+      // Extract pre-calculated values at current index
+      const rsi = rsiValues[currentIdx] || 50;
+      const rsiPrev = rsiValues[currentIdx - 1] || 50;
+      const rsiChange = rsi - rsiPrev;
+      const currentPrice = prices[currentIdx];
+      
+      // Calculate deviations using pre-calculated SMAs
+      const sma5 = sma5Values[currentIdx] || currentPrice;
+      const sma20 = sma20Values[currentIdx] || currentPrice;
+      const sma50 = sma50Values[currentIdx] || currentPrice;
+      const sma200 = sma200Values[currentIdx] || currentPrice;
+      const ema12 = ema12Values[currentIdx] || currentPrice;
+      const ema26 = ema26Values[currentIdx] || currentPrice;
 
-      const returns = prices.slice(1).map((price, idx) => (price - prices[idx]) / (prices[idx] || 1));
+      const sma5Dev = ((currentPrice - sma5) / currentPrice) * 100;
+      const sma20Dev = ((currentPrice - sma20) / currentPrice) * 100;
+      const sma50Dev = ((currentPrice - sma50) / currentPrice) * 100;
+      const sma200Dev = ((currentPrice - sma200) / currentPrice) * 100;
+      const ema12Dev = ((currentPrice - ema12) / currentPrice) * 100;
+      const ema26Dev = ((currentPrice - ema26) / currentPrice) * 100;
+
+      // MACD values
+      const macd = macdResult.macd[currentIdx] || 0;
+      const macdSignal = macdResult.signal[currentIdx] || 0;
+      const macdHistogram = macdResult.histogram[currentIdx] || 0;
+
+      // Bollinger Bands
+      const bbUpper = bbResult.upper[currentIdx] || currentPrice;
+      const bbMiddle = bbResult.middle[currentIdx] || currentPrice;
+      const bbLower = bbResult.lower[currentIdx] || currentPrice;
+      const bbPosition = bbUpper !== bbLower ? ((currentPrice - bbLower) / (bbUpper - bbLower)) * 100 : 50;
+
+      // ATR
+      const atr = atrValues[currentIdx] || currentPrice * 0.02;
+      const atrPercent = (atr / currentPrice) * 100;
+
+      // Window-based calculations (still O(N) overall as each point is visited once)
+      const windowPrices = window.map(d => d.close);
+      const windowHighs = window.map(d => d.high);
+      const windowLows = window.map(d => d.low);
+      const windowVolumes = window.map(d => d.volume);
+
+      const volumeAvg = windowVolumes.length > 0 ? windowVolumes.reduce((sum, v) => sum + v, 0) / windowVolumes.length : 0;
+      const volumeStd = calcStd(windowVolumes);
+      const volumeRatio = current.volume / (volumeAvg || 1);
+
+      const returns = windowPrices.slice(1).map((price, idx) => (price - windowPrices[idx]) / (windowPrices[idx] || 1));
       const historicalVolatility = calcStd(returns) * Math.sqrt(252) * 100;
 
       const parkinsonVolatility = (() => {
@@ -260,20 +323,29 @@ export class FeatureEngineering {
       }, 0);
 
       const vwap = (() => {
-        const totalVolume = volumes.reduce((sum, v) => sum + v, 0);
+        const totalVolume = windowVolumes.reduce((sum, v) => sum + v, 0);
         if (totalVolume === 0) return current.close;
         const totalValue = window.reduce((sum, d) => sum + d.close * d.volume, 0);
         return totalValue / totalVolume;
       })();
 
-      const supportLevel = Math.min(...prices);
-      const resistanceLevel = Math.max(...prices);
+      const supportLevel = Math.min(...windowPrices);
+      const resistanceLevel = Math.max(...windowPrices);
 
-      const momentum5 = this.calculateMomentum(prices, 5);
-      const momentum10 = this.calculateMomentum(prices, 10);
-      const momentum20 = this.calculateMomentum(prices, 20);
+      const momentum5 = this.calculateMomentum(windowPrices, 5);
+      const momentum10 = this.calculateMomentum(windowPrices, 10);
+      const momentum20 = this.calculateMomentum(windowPrices, 20);
+      const roc = this.calculateROC(windowPrices, 12);
 
-      const volumeTrend = technical.volumeTrend === 'INCREASING' ? 1 : technical.volumeTrend === 'DECREASING' ? -1 : 0;
+      // Stochastic
+      const stoch = this.calculateStochastic(windowHighs, windowLows, windowPrices, 14);
+      const williamsR = this.calculateWilliamsR(windowHighs, windowLows, windowPrices, 14);
+      const cci = this.calculateCCI(windowHighs, windowLows, windowPrices, 20);
+
+      const volumeTrendValue = this.classifyVolumeTrend(windowVolumes.slice(-5));
+      const volumeTrend = volumeTrendValue === 'INCREASING' ? 1 : volumeTrendValue === 'DECREASING' ? -1 : 0;
+      
+      const timeSeries = this.calculateTimeSeriesFeatures(window);
       const weekOfMonth = Math.floor(new Date(current.date).getDate() / 7);
 
       features.push({
@@ -281,27 +353,27 @@ export class FeatureEngineering {
         open: current.open,
         high: current.high,
         low: current.low,
-        rsi: technical.rsi,
-        rsiChange: technical.rsiChange,
-        sma5: technical.sma5,
-        sma20: technical.sma20,
-        sma50: technical.sma50,
-        sma200: technical.sma200,
-        ema12: technical.ema12,
-        ema26: technical.ema26,
-        priceMomentum: technical.momentum10,
-        volumeRatio: technical.volumeRatio,
-        volatility: technical.atrPercent,
-        macdSignal: technical.macdSignal,
-        macdHistogram: technical.macdHistogram,
-        bollingerPosition: technical.bbPosition,
-        atrPercent: technical.atrPercent,
-        stochasticK: technical.stochasticK,
-        stochasticD: technical.stochasticD,
-        williamsR: technical.williamsR,
+        rsi,
+        rsiChange,
+        sma5: sma5Dev,
+        sma20: sma20Dev,
+        sma50: sma50Dev,
+        sma200: sma200Dev,
+        ema12: ema12Dev,
+        ema26: ema26Dev,
+        priceMomentum: momentum10,
+        volumeRatio,
+        volatility: atrPercent,
+        macdSignal,
+        macdHistogram,
+        bollingerPosition: bbPosition,
+        atrPercent,
+        stochasticK: stoch.k,
+        stochasticD: stoch.d,
+        williamsR,
         adx: 0,
-        cci: technical.cci,
-        roc: technical.rateOfChange12,
+        cci,
+        roc,
         obv,
         vwap,
         bidAskSpread: 0,

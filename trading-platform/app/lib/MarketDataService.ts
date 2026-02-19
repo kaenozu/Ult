@@ -345,10 +345,17 @@ export class MarketDataService implements IMarketDataService {
   async getAllMarketData(): Promise<Map<string, OHLCV[]>> {
     const dataMap = new Map<string, OHLCV[]>();
 
-    for (const index of MARKET_INDICES) {
-      const result = await this.fetchMarketData(index.symbol);
+    // Parallel fetching for better performance
+    const fetchPromises = MARKET_INDICES.map(index => 
+      this.fetchMarketData(index.symbol)
+        .then(result => ({ symbol: index.symbol, result }))
+    );
+
+    const results = await Promise.all(fetchPromises);
+
+    for (const { symbol, result } of results) {
       if (result.success) {
-        dataMap.set(index.symbol, result.data);
+        dataMap.set(symbol, result.data);
       }
     }
 
