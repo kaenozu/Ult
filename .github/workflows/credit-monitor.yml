@@ -1,0 +1,107 @@
+name: Code Review Credit Monitor
+
+on:
+  schedule:
+    # Run every Monday at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  credit-status:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    
+    steps:
+      - name: Check for Low Credit Issues
+        id: check-issues
+        run: |
+          # Check if there's already an open issue about credits
+          EXISTING_ISSUE=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --state open \
+            --search "code review credit in:title" \
+            --json number \
+            --jq '.[0].number' || echo "")
+          
+          echo "existing_issue=$EXISTING_ISSUE" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Weekly Credit Reminder
+        if: steps.check-issues.outputs.existing_issue == ''
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          REPO="${{ github.repository }}"
+          
+          # Create a reminder to check credit status
+          {
+            echo "## 📊 Weekly Code Review Credit Status Check"
+            echo ""
+            echo "**Date**: $TODAY"
+            echo ""
+            echo "### Action Items"
+            echo ""
+            echo "- [ ] Check \`chatgpt-codex-connector\` credit balance"
+            echo "- [ ] Verify low-credit alerts are configured"
+            echo "- [ ] Review last week's credit consumption"
+            echo "- [ ] Confirm automated reviews are functioning"
+            echo ""
+            echo "### Quick Check Steps"
+            echo ""
+            echo "1. **Access Settings**"
+            echo "   - Go to [Repository Settings](https://github.com/$REPO/settings)"
+            echo "   - Navigate to: Code security and analysis → Third-party apps"
+            echo ""
+            echo "2. **Review Credit Status**"
+            echo "   - Current balance: _____ credits"
+            echo "   - Last week's usage: _____ credits"
+            echo "   - Projected end date: _____"
+            echo ""
+            echo "3. **Verify Alerts**"
+            echo "   - Low credit warnings enabled: [ ]"
+            echo "   - Alert threshold set to 20%: [ ]"
+            echo "   - Notification emails configured: [ ]"
+            echo ""
+            echo "### Recommended Actions"
+            echo ""
+            echo "If credits are below 100:"
+            echo "1. Add more credits immediately"
+            echo "2. See [CODE_REVIEW_SETUP.md](.github/CODE_REVIEW_SETUP.md)"
+            echo "3. Consider implementing credit optimization strategies"
+            echo ""
+            echo "If credits are healthy:"
+            echo "- ✅ No action needed"
+            echo "- Close this issue"
+            echo ""
+            echo "### Resources"
+            echo ""
+            echo "- [Code Review Setup Guide](.github/CODE_REVIEW_SETUP.md)"
+            echo "- [Admin Action Guide](.github/ADMIN_ACTION_REQUIRED.md)"
+            echo "- [Previous Credit Issue](https://github.com/$REPO/issues?q=is%3Aissue+label%3Acode-review-credits)"
+            echo ""
+            echo "---"
+            echo ""
+            echo "*This is an automated weekly reminder. Close this issue after reviewing.*"
+            echo "*To disable these reminders, disable the \`credit-monitor.yml\` workflow.*"
+          } > /tmp/credit_reminder.md
+          
+          # Create the issue
+          gh issue create \
+            --repo ${{ github.repository }} \
+            --title "📊 Weekly Code Review Credit Status Check - $TODAY" \
+            --body-file /tmp/credit_reminder.md \
+            --label "code-review-credits,admin" \
+            || echo "Failed to create reminder issue"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Report Status
+        run: |
+          echo "✅ Credit monitoring check completed"
+          if [ -n "${{ steps.check-issues.outputs.existing_issue }}" ]; then
+            echo "ℹ️  Existing credit issue #${{ steps.check-issues.outputs.existing_issue }} is still open"
+          else
+            echo "📊 New weekly reminder created"
+          fi
