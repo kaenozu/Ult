@@ -12,8 +12,17 @@ export interface CacheEntry<T> {
 
 export class Cache<T> {
   private store = new Map<string, CacheEntry<T>>();
+  private maxSize: number;
+  private pruneInterval: NodeJS.Timeout | null = null;
 
-  constructor(private defaultTTL = 300000) {} // デフォルト5分
+  constructor(private defaultTTL = 300000, maxSize = 1000) {
+    this.maxSize = maxSize;
+    
+    // Auto-prune expired entries every minute
+    this.pruneInterval = setInterval(() => {
+      this.pruneExpired();
+    }, 60000);
+  }
 
   set(key: string, value: T, ttl?: number): void {
     this.store.set(key, {
@@ -21,6 +30,11 @@ export class Cache<T> {
       timestamp: Date.now(),
       ttl: ttl || this.defaultTTL,
     });
+
+    // Auto-prune if size exceeds limit
+    if (this.store.size > this.maxSize) {
+      this.prune(this.maxSize);
+    }
   }
 
   get(key: string): T | undefined {
@@ -65,6 +79,25 @@ export class Cache<T> {
 
     const toDelete = entries.slice(0, entries.length - maxSize);
     toDelete.forEach(([key]) => this.store.delete(key));
+  }
+
+  // TTL期限切れエントリを削除
+  private pruneExpired(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.store.entries()) {
+      if (now - entry.timestamp > entry.ttl) {
+        this.store.delete(key);
+      }
+    }
+  }
+
+  // Clean up interval on destroy
+  destroy(): void {
+    if (this.pruneInterval) {
+      clearInterval(this.pruneInterval);
+      this.pruneInterval = null;
+    }
+    this.clear();
   }
 }
 

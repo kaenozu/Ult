@@ -7,8 +7,12 @@ import jwt from 'jsonwebtoken';
 import { authStore, User } from '@/app/lib/auth-store';
 
 const envSecret = process.env.JWT_SECRET;
-if (!envSecret && process.env.NODE_ENV === 'production') {
-  throw new Error('JWT_SECRET environment variable is required in production');
+if (!envSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+  // In development/test, log a warning but allow operation
+  console.warn('⚠️  JWT_SECRET not set. Using insecure fallback for development only.');
 }
 const ACTIVE_SECRET = envSecret || 'demo-secret-dev-only';
 
@@ -86,9 +90,9 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user with cryptographically secure ID
     const user: User = {
-      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: `user_${crypto.randomUUID()}`,
       email: email.toLowerCase(),
       passwordHash,
       name,
@@ -105,7 +109,8 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' }
     );
 
-    return NextResponse.json({
+    // Create response with httpOnly cookie
+    const response = NextResponse.json({
       success: true,
       message: 'User registered successfully',
       user: {
@@ -114,8 +119,19 @@ export async function POST(request: NextRequest) {
         name: user.name,
         role: user.role,
       },
-      token,
+      // Token is NOT included in response body for security
     }, { status: 201 });
+
+    // Set secure httpOnly cookie
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     return handleApiError(error, 'auth/register', 500);
   }
@@ -141,18 +157,27 @@ export function getUserById(userId: string): User | undefined {
 
 /**
  * Middleware to require authentication
+ * Checks for token in httpOnly cookie first, then Authorization header (for backward compatibility)
  */
 export function requireAuth(request: NextRequest): { user: User } | NextResponse {
-  const authHeader = request.headers.get('authorization');
+  // Try to get token from httpOnly cookie first (preferred method)
+  let token = request.cookies.get('auth-token')?.value;
   
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  // Fallback to Authorization header for backward compatibility
+  if (!token) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
+  
+  if (!token) {
     return NextResponse.json(
       { error: 'Authentication required' },
       { status: 401 }
     );
   }
 
-  const token = authHeader.substring(7);
   const payload = verifyToken(token);
 
   if (!payload) {

@@ -20,31 +20,49 @@ export class ApiClient {
 
   async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${this.config.baseURL}${endpoint}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
+    let lastError: Error | null = null;
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...this.config.headers,
-          ...options?.headers,
-        },
-        signal: controller.signal,
-      });
+    // Implement retry logic with exponential backoff
+    for (let attempt = 0; attempt <= this.config.retries; attempt++) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
-      clearTimeout(timeoutId);
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            'Content-Type': 'application/json',
+            ...this.config.headers,
+            ...options?.headers,
+          },
+          signal: controller.signal,
+        });
 
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
+
+        return response.json();
+      } catch (error) {
+        clearTimeout(timeoutId);
+        lastError = error as Error;
+
+        // Don't retry on last attempt
+        if (attempt < this.config.retries) {
+          // Exponential backoff: 1s, 2s, 4s, etc.
+          const delay = Math.min(1000 * Math.pow(2, attempt), 10000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        throw lastError;
       }
-
-      return response.json();
-    } catch (error) {
-      clearTimeout(timeoutId);
-      throw error;
     }
+
+    // This should never be reached due to throw above, but TypeScript needs it
+    throw lastError || new Error('Request failed after all retries');
   }
 
   async get<T>(endpoint: string): Promise<T> {

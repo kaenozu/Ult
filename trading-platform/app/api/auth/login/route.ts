@@ -7,8 +7,12 @@ import jwt from 'jsonwebtoken';
 import { authStore } from '@/app/lib/auth-store';
 
 const envSecret = process.env.JWT_SECRET;
-if (!envSecret && process.env.NODE_ENV === 'production') {
-  throw new Error('JWT_SECRET environment variable is required in production');
+if (!envSecret) {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET environment variable is required in production');
+  }
+  // In development/test, log a warning but allow operation
+  console.warn('⚠️  JWT_SECRET not set. Using insecure fallback for development only.');
 }
 const ACTIVE_SECRET = envSecret || 'demo-secret-dev-only';
 
@@ -98,7 +102,8 @@ export async function POST(request: NextRequest) {
       { expiresIn: '7d' }
     );
 
-    return NextResponse.json({
+    // Create response with httpOnly cookie
+    const response = NextResponse.json({
       success: true,
       message: 'Login successful',
       user: {
@@ -107,8 +112,19 @@ export async function POST(request: NextRequest) {
         name: user.name,
         role: user.role,
       },
-      token,
+      // Token is NOT included in response body for security
     });
+
+    // Set secure httpOnly cookie
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return response;
   } catch (error) {
     return handleApiError(error, 'auth/login', 500);
   }
