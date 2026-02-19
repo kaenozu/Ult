@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useRef } from 'react';
+import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { ChartOptions } from 'chart.js';
 import { OHLCV, Signal } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
@@ -60,8 +60,10 @@ export const useChartOptions = ({
   const lastHoverUpdateRef = useRef<number>(0);
   const currentHoveredIdxRef = useRef<number | null>(null);
 
-  // Keep ref in sync with state
-  currentHoveredIdxRef.current = hoveredIdx;
+  // Keep ref in sync with state (using useEffect to avoid updating during render)
+  useEffect(() => {
+    currentHoveredIdxRef.current = hoveredIdx;
+  }, [hoveredIdx]);
 
   // Y-axis range calculation (static - doesn't depend on hoveredIdx)
   const yAxisRange = useMemo(() => {

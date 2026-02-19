@@ -81,7 +81,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     let cacheKey: string;
     try {
       cacheKey = sanitizeCacheKey(currentSymbol, currentMarket);
-    } catch (e) {
+    } catch {
       setError('Invalid symbol or market');
       setLoading(false);
       return;
@@ -200,6 +200,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
     return () => {
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stock.symbol, stock.market, ohlcv.length]); // Track ohlcv.length to detect data changes without frequent re-renders
 
   return { accuracy, loading, error };
