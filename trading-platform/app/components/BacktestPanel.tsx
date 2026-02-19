@@ -9,7 +9,7 @@
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
 import { Button } from '@/app/components/ui/Button';
-import { AlertTriangle, BarChart3, Play } from 'lucide-react';
+import { AlertTriangle, BarChart3, Play, Loader2 } from 'lucide-react';
 import BacktestResultsDashboard from '@/app/components/backtest/BacktestResultsDashboard';
 import type { BacktestResult } from '@/app/types';
 
@@ -114,14 +114,15 @@ export function BacktestPanel() {
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-blue-400" />
-            Backtest Runner
+            バックテスト実行
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4" aria-busy={isRunning}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Symbol</label>
+              <label htmlFor="symbol-input" className="text-xs text-gray-400">銘柄</label>
               <input
+                id="symbol-input"
                 value={symbol}
                 onChange={(event) => setSymbol(event.target.value)}
                 className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
@@ -129,38 +130,41 @@ export function BacktestPanel() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Market</label>
+              <label htmlFor="market-select" className="text-xs text-gray-400">市場</label>
               <select
+                id="market-select"
                 value={market}
                 onChange={(event) => setMarket(event.target.value as Market)}
                 className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
               >
-                <option value="usa">USA</option>
-                <option value="japan">Japan</option>
+                <option value="usa">米国市場</option>
+                <option value="japan">日本市場</option>
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Strategy</label>
+              <label htmlFor="strategy-select" className="text-xs text-gray-400">戦略</label>
               <select
+                id="strategy-select"
                 value={strategy}
                 onChange={(event) => setStrategy(event.target.value as StrategyId)}
                 className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
               >
-                <option value="sma">SMA Crossover</option>
-                <option value="rsi">RSI Reversion</option>
-                <option value="buy_hold">Buy & Hold</option>
+                <option value="sma">SMAクロスオーバー</option>
+                <option value="rsi">RSI逆張り</option>
+                <option value="buy_hold">バイ・アンド・ホールド</option>
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Timeframe</label>
+              <label htmlFor="timeframe-select" className="text-xs text-gray-400">期間</label>
               <select
+                id="timeframe-select"
                 value={timeframe}
                 onChange={(event) => setTimeframe(event.target.value as TimeframeId)}
                 className="w-full px-3 py-2 rounded bg-[#0f172a] border border-[#334155] text-white text-sm"
               >
                 {TIMEFRAME_OPTIONS.map((option) => (
                   <option key={option.id} value={option.id}>
-                    {option.label}
+                    {option.label === 'Daily' ? '日足' : option.label === 'Hourly' ? '1時間足' : option.label}
                   </option>
                 ))}
               </select>
@@ -171,18 +175,22 @@ export function BacktestPanel() {
             <Button
               onClick={runBacktest}
               disabled={isRunning}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 transition-all"
             >
-              <Play className="w-4 h-4 mr-2" />
-              {isRunning ? 'Running...' : 'Run Backtest'}
+              {isRunning ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 mr-2" />
+              )}
+              {isRunning ? '実行中...' : 'バックテスト実行'}
             </Button>
             <div className="text-xs text-gray-400">
-              Start date: {startDate}
+              開始日: {startDate}
             </div>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-sm text-red-400">
+            <div className="flex items-center gap-2 text-sm text-red-400" role="alert">
               <AlertTriangle className="w-4 h-4" />
               <span>{error}</span>
             </div>
