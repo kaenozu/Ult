@@ -425,11 +425,10 @@ if (stats.count === 0) {
 
 ## Examples
 
-See `performance-examples.ts` for comprehensive usage examples.
+Comprehensive usage examples can be found in the documentation above and in the test files.
 
 ## Support
 
 For issues or questions about the performance measurement system, please refer to:
 - Technical documentation: `/trading-platform/app/lib/performance-utils.ts`
 - Test examples: `/trading-platform/app/lib/__tests__/performance-utils.test.ts`
-- Usage examples: `/trading-platform/app/lib/performance-examples.ts`

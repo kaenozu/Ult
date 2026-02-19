@@ -14,6 +14,12 @@ import { ServiceContainer, TOKENS } from '@/app/lib/di/ServiceContainer';
 import { IMarketDataHub } from '@/app/lib/interfaces/IMarketDataHub';
 import { initializeContainer } from '@/app/lib/di/initialize';
 
+const isDev = process.env.NODE_ENV !== 'production';
+const devLog = (...args: unknown[]) => { if (isDev) console.log(...args); };
+const devWarn = (...args: unknown[]) => { if (isDev) console.warn(...args); };
+const devError = (...args: unknown[]) => { if (isDev) console.error(...args); };
+const devDebug = (...args: unknown[]) => { if (isDev) console.debug(...args); };
+
 interface MarketDataMetadata {
   // ... (rest of the interface)
 
@@ -80,7 +86,7 @@ export function useStockData() {
     isMountedRef.current = true;
 
     return () => {
-      console.debug('[useStockData] Cleaning up resources...');
+      devDebug('[useStockData] Cleaning up resources...');
       isMountedRef.current = false;
 
       // Abort any pending requests
@@ -145,7 +151,7 @@ export function useStockData() {
         dataHub = ServiceContainer.resolve<IMarketDataHub>(TOKENS.MarketDataHub);
       } catch {
         // DI container not yet initialized - initialize now
-        console.warn('[useStockData] DI container not initialized, initializing now...');
+        devWarn('[useStockData] DI container not initialized, initializing now...');
         initializeContainer();
         dataHub = ServiceContainer.resolve<IMarketDataHub>(TOKENS.MarketDataHub);
       }
@@ -171,38 +177,57 @@ export function useStockData() {
       setIndexData(idxData);
       setLoading(false); // Stop spinner here!
 
-      console.log('[useStockData] Starting signal fetch...');
+      devLog('[useStockData] Starting signal fetch...');
       try {
         const signalResult = await signalPromise;
-        console.log('[useStockData] Signal promise resolved:', signalResult);
+        devLog('[useStockData] Signal promise resolved:', signalResult);
         if (!controller.signal.aborted && isMountedRef.current) {
           // If API returns success but the predicted change is exactly 0, 
           // it might be a 'flat' signal from backend. Trigger local fallback in this case.
           const isFlatSignal = signalResult.data && signalResult.data.predictedChange === 0;
           
           if (signalResult.success && signalResult.data && !isFlatSignal) {
-            console.log('[useStockData] Got valid signal from API:', {
+            devLog('[useStockData] Got valid signal from API:', {
               type: signalResult.data.type,
               predictedChange: signalResult.data.predictedChange
             });
-            setChartSignal(signalResult.data);
+            
+            // Optimization: Only update if content changed to prevent redundant re-renders
+            setChartSignal(prev => {
+              if (prev && 
+                  prev.type === signalResult.data!.type && 
+                  prev.targetPrice === signalResult.data!.targetPrice &&
+                  prev.confidence === signalResult.data!.confidence) {
+                return prev;
+              }
+              return signalResult.data!;
+            });
           } else {
-            console.warn(`[useStockData] Signal from API is ${isFlatSignal ? 'flat' : 'unsuccessful'}, using fallback consensus.`);
+            devWarn(`[useStockData] Signal from API is ${isFlatSignal ? 'flat' : 'unsuccessful'}, using fallback consensus.`);
             // Fallback: generate consensus signal locally using technical analysis
             try {
               const fallbackSignal = consensusSignalService.generateConsensus(data);
               const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
-              setChartSignal(signal);
+              
+              setChartSignal(prev => {
+                if (prev && 
+                    prev.type === signal.type && 
+                    prev.targetPrice === signal.targetPrice &&
+                    prev.confidence === signal.confidence) {
+                  return prev;
+                }
+                return signal;
+              });
             } catch (fallbackErr) {
-              console.error('[useStockData] Fallback signal generation failed:', fallbackErr);
+              devError('[useStockData] Fallback signal generation failed:', fallbackErr);
             }
           }
         }
       } catch (signalErr) {
-        console.warn('[useStockData] Signal fetch threw error, using fallback consensus:', signalErr);
+        devWarn('[useStockData] Signal fetch threw error, using fallback consensus:', signalErr);
         try {
           const fallbackSignal = consensusSignalService.generateConsensus(data);
-          console.log('[useStockData] Fallback signal generated after error:', {
+          devLog('[useStockData] Fallback signal generated after error:', {
             type: fallbackSignal.type,
             confidence: fallbackSignal.confidence,
             probability: fallbackSignal.probability,
@@ -211,10 +236,18 @@ export function useStockData() {
           });
           const signal = consensusSignalService.convertToSignal(fallbackSignal, stock.symbol, data);
           if (!controller.signal.aborted && isMountedRef.current) {
-            setChartSignal(signal);
+            setChartSignal(prev => {
+              if (prev && 
+                  prev.type === signal.type && 
+                  prev.targetPrice === signal.targetPrice &&
+                  prev.confidence === signal.confidence) {
+                return prev;
+              }
+              return signal;
+            });
           }
         } catch (fallbackErr) {
-          console.error('[useStockData] Fallback also failed:', fallbackErr);
+          devError('[useStockData] Fallback also failed:', fallbackErr);
           // Keep chartSignal as null if fallback fails
         }
       }
@@ -240,7 +273,7 @@ export function useStockData() {
           }
         } catch (e) {
           if (isMountedRef.current && !controller.signal.aborted) {
-            console.warn(`${label} background sync failed:`, e);
+            devWarn(`${label} background sync failed:`, e);
           }
         }
       };

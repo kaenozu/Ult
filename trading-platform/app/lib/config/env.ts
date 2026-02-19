@@ -63,10 +63,10 @@ function parseEnv(): Env {
     return envSchema.parse(process.env);
   } catch (error) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('❌ Invalid environment variables:', error);
+      devError('❌ Invalid environment variables:', error);
       throw new Error('Invalid environment variables');
     }
-    console.warn('⚠️ Environment validation warning:', error);
+    devWarn('⚠️ Environment validation warning:', error);
     // Return parsed with defaults for development
     return envSchema.parse({
       ...process.env,
