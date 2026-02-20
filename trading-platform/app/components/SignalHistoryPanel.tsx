@@ -43,7 +43,7 @@ export const SignalHistoryPanel = memo(function SignalHistoryPanel({
       <div className="p-2 space-y-1">
         {filteredSignals.map((signal, index) => (
           <div 
-            key={`${signal.symbol}-${signal.predictionDate || index}`}
+            key={`signal-${index}-${signal.symbol}-${signal.predictionDate || ''}`}
             className="flex items-center gap-2 px-2 py-1.5 rounded bg-[#1a2633]/50 hover:bg-[#1a2633] transition-colors"
           >
             <div className={cn(
