@@ -6,6 +6,13 @@
 
 import { PredictionFeatures, ModelPrediction } from '../types';
 
+const RSI_LOWER_BOUND = 25;
+const RSI_UPPER_BOUND = 75;
+const RSI_SCORE = 2;
+const MOMENTUM_THRESHOLD = 1.5;
+const MOMENTUM_SCORE = 1.5;
+const LSTM_SCALING = 0.7;
+
 export class MLModelService {
   private readonly weights = {
     RF: 0.35,
@@ -16,7 +23,7 @@ export class MLModelService {
   predict(features: PredictionFeatures): ModelPrediction {
     const rf = this.randomForestPredict(features);
     const xgb = this.xgboostPredict(features);
-    const lstm = this.lstmPredict(features);
+    const lstm = this.calculateLstmScore(features);
 
     const ensemblePrediction = rf * this.weights.RF + xgb * this.weights.XGB + lstm * this.weights.LSTM;
     const confidence = this.calculateConfidence(features, ensemblePrediction);
@@ -83,21 +90,39 @@ export class MLModelService {
     return score * XGB_SCALING;
   }
 
-  private lstmPredict(f: PredictionFeatures): number {
-    const LSTM_SCALING = 0.6;
-    return f.priceMomentum * LSTM_SCALING;
+  private calculateLstmScore(f: PredictionFeatures): number {
+    let score = 0;
+    
+    if (f.rsi < RSI_LOWER_BOUND) {
+      score += RSI_SCORE;
+    } else if (f.rsi > RSI_UPPER_BOUND) {
+      score -= RSI_SCORE;
+    }
+    
+    if (f.priceMomentum > MOMENTUM_THRESHOLD) {
+      score += MOMENTUM_SCORE;
+    } else if (f.priceMomentum < -MOMENTUM_THRESHOLD) {
+      score -= MOMENTUM_SCORE;
+    }
+    
+    return score * LSTM_SCALING;
   }
 
   private calculateConfidence(f: PredictionFeatures, prediction: number): number {
-    const RSI_EXTREME_BONUS = 10;
-    const MOMENTUM_BONUS = 8;
-    const PREDICTION_BONUS = 5;
-    const MOMENTUM_THRESHOLD = 2.0;
+    const RSI_EXTREME_BONUS = 15;
+    const RSI_STRONG_BONUS = 10;
+    const MOMENTUM_BONUS = 12;
+    const PREDICTION_BONUS = 8;
+    const RSI_EXTREME = 20;
+    const RSI_STRONG = 30;
+    const MOMENTUM_THRESHOLD = 1.5;
 
     let confidence = 50;
 
-    if (f.rsi < 15 || f.rsi > 85) {
+    if (f.rsi < RSI_EXTREME || f.rsi > 100 - RSI_EXTREME) {
       confidence += RSI_EXTREME_BONUS;
+    } else if (f.rsi < RSI_STRONG || f.rsi > 100 - RSI_STRONG) {
+      confidence += RSI_STRONG_BONUS;
     }
 
     if (Math.abs(f.priceMomentum) > MOMENTUM_THRESHOLD) {

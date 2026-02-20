@@ -56,9 +56,9 @@ interface ConsensusWeights {
 }
 
 const DEFAULT_WEIGHTS: ConsensusWeights = {
-  rsi: 0.40,      // Increased from 0.35 - RSI is more reliable
-  macd: 0.35,     // Kept same
-  bollinger: 0.25, // Decreased from 0.30
+  rsi: 0.30,      // トレンド性の強いデータではRSIの信頼性が低い
+  macd: 0.50,     // MACDを重視（トレンド追従）
+  bollinger: 0.20, // ボリンジャーバンドの重みを減らす
 };
 
 class ConsensusSignalService {
@@ -101,7 +101,7 @@ class ConsensusSignalService {
       regime = this.regimeDetector.detect(data);
     } catch (e) {
       // エラーログ出力
-      logger.error('MarketRegimeDetector failed to detect regime:', e);
+      logger.error('MarketRegimeDetector failed to detect regime:', e instanceof Error ? e : new Error(String(e)));
       // フォールバック
       regime = { type: 'RANGING', volatilityLevel: 'NORMAL', trendStrength: 0, momentumQuality: 0 };
     }
@@ -136,13 +136,13 @@ class ConsensusSignalService {
       currentRSI
     );
 
-    // Phase 2: ML予測とテクニカル予測の一致判定
+    // Phase 2: ML予測とテクニカル予測の一致判定（改善版）
     const technicalSignal = consensus.type;
     const mlConsensusSignal = mlSignal.type;
     
-    // 両方が一致する場合のみシグナルを発行、一致しない場合はHOLD
+    
+    // 両方が一致する場合: 信頼度をブースト
     if (technicalSignal !== 'HOLD' && mlConsensusSignal !== 'HOLD' && technicalSignal === mlConsensusSignal) {
-      // 一致した場合、信頼度をブースト
       const boostedConfidence = Math.min(consensus.confidence + 10, 95);
       return {
         ...consensus,
@@ -150,9 +150,12 @@ class ConsensusSignalService {
         reason: consensus.reason + ` [ML: モデル一致(${mlSignal.confidence.toFixed(0)}%)]`
       };
     } else if (technicalSignal !== 'HOLD' && mlConsensusSignal !== 'HOLD' && technicalSignal !== mlConsensusSignal) {
-      // 不一致の場合はHOLD（シグナルを抑制）
-      logger.info(`Signal suppressed due to ML/Technical mismatch: Technical=${technicalSignal}, ML=${mlConsensusSignal}`);
-      return this.createHoldSignal(`シグナル不一致のため抑制 (Technical: ${technicalSignal}, ML: ${mlConsensusSignal})`);
+      // 不一致の場合: テクニカルシグナルを優先（MLを無視）
+      logger.info(`ML/Technical mismatch detected: Technical=${technicalSignal}, ML=${mlConsensusSignal}, using technical signal`);
+      return {
+        ...consensus,
+        reason: consensus.reason + ` [ML: 無視(${mlSignal.type})]`
+      };
     }
 
     return consensus;
