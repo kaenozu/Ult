@@ -6,6 +6,13 @@
 
 import { PredictionFeatures, ModelPrediction } from '../types';
 
+const RSI_LOWER_BOUND = 25;
+const RSI_UPPER_BOUND = 75;
+const RSI_SCORE = 2;
+const MOMENTUM_THRESHOLD = 1.5;
+const MOMENTUM_SCORE = 1.5;
+const LSTM_SCALING = 0.7;
+
 export class MLModelService {
   private readonly weights = {
     RF: 0.35,
@@ -16,7 +23,7 @@ export class MLModelService {
   predict(features: PredictionFeatures): ModelPrediction {
     const rf = this.randomForestPredict(features);
     const xgb = this.xgboostPredict(features);
-    const lstm = this.lstmPredict(features);
+    const lstm = this.calculateLstmScore(features);
 
     const ensemblePrediction = rf * this.weights.RF + xgb * this.weights.XGB + lstm * this.weights.LSTM;
     const confidence = this.calculateConfidence(features, ensemblePrediction);
@@ -83,24 +90,18 @@ export class MLModelService {
     return score * XGB_SCALING;
   }
 
-  private lstmPredict(f: PredictionFeatures): number {
-    const LSTM_SCALING = 0.7;
-    const RSI_SCORE = 2;
-    const MOMENTUM_SCORE = 1.5;
-    
+  private calculateLstmScore(f: PredictionFeatures): number {
     let score = 0;
     
-    // RSIによる判定
-    if (f.rsi < 25) {
+    if (f.rsi < RSI_LOWER_BOUND) {
       score += RSI_SCORE;
-    } else if (f.rsi > 75) {
+    } else if (f.rsi > RSI_UPPER_BOUND) {
       score -= RSI_SCORE;
     }
     
-    // モメンタムによる判定
-    if (f.priceMomentum > 1.5) {
+    if (f.priceMomentum > MOMENTUM_THRESHOLD) {
       score += MOMENTUM_SCORE;
-    } else if (f.priceMomentum < -1.5) {
+    } else if (f.priceMomentum < -MOMENTUM_THRESHOLD) {
       score -= MOMENTUM_SCORE;
     }
     

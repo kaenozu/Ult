@@ -101,7 +101,7 @@ class ConsensusSignalService {
       regime = this.regimeDetector.detect(data);
     } catch (e) {
       // エラーログ出力
-      logger.error('MarketRegimeDetector failed to detect regime:', e);
+      logger.error('MarketRegimeDetector failed to detect regime:', e instanceof Error ? e : new Error(String(e)));
       // フォールバック
       regime = { type: 'RANGING', volatilityLevel: 'NORMAL', trendStrength: 0, momentumQuality: 0 };
     }
@@ -140,8 +140,6 @@ class ConsensusSignalService {
     const technicalSignal = consensus.type;
     const mlConsensusSignal = mlSignal.type;
     
-    // 一時的にML統合を無効化（テクニカル指標のみで動作）
-    // return consensus;
     
     // 両方が一致する場合: 信頼度をブースト
     if (technicalSignal !== 'HOLD' && mlConsensusSignal !== 'HOLD' && technicalSignal === mlConsensusSignal) {
