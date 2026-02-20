@@ -84,20 +84,44 @@ export class MLModelService {
   }
 
   private lstmPredict(f: PredictionFeatures): number {
-    const LSTM_SCALING = 0.6;
-    return f.priceMomentum * LSTM_SCALING;
+    const LSTM_SCALING = 0.7;
+    const RSI_SCORE = 2;
+    const MOMENTUM_SCORE = 1.5;
+    
+    let score = 0;
+    
+    // RSIによる判定
+    if (f.rsi < 25) {
+      score += RSI_SCORE;
+    } else if (f.rsi > 75) {
+      score -= RSI_SCORE;
+    }
+    
+    // モメンタムによる判定
+    if (f.priceMomentum > 1.5) {
+      score += MOMENTUM_SCORE;
+    } else if (f.priceMomentum < -1.5) {
+      score -= MOMENTUM_SCORE;
+    }
+    
+    return score * LSTM_SCALING;
   }
 
   private calculateConfidence(f: PredictionFeatures, prediction: number): number {
-    const RSI_EXTREME_BONUS = 10;
-    const MOMENTUM_BONUS = 8;
-    const PREDICTION_BONUS = 5;
-    const MOMENTUM_THRESHOLD = 2.0;
+    const RSI_EXTREME_BONUS = 15;
+    const RSI_STRONG_BONUS = 10;
+    const MOMENTUM_BONUS = 12;
+    const PREDICTION_BONUS = 8;
+    const RSI_EXTREME = 20;
+    const RSI_STRONG = 30;
+    const MOMENTUM_THRESHOLD = 1.5;
 
     let confidence = 50;
 
-    if (f.rsi < 15 || f.rsi > 85) {
+    if (f.rsi < RSI_EXTREME || f.rsi > 100 - RSI_EXTREME) {
       confidence += RSI_EXTREME_BONUS;
+    } else if (f.rsi < RSI_STRONG || f.rsi > 100 - RSI_STRONG) {
+      confidence += RSI_STRONG_BONUS;
     }
 
     if (Math.abs(f.priceMomentum) > MOMENTUM_THRESHOLD) {

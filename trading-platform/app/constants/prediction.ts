@@ -194,7 +194,7 @@ export const CONSENSUS_SIGNAL_CONFIG = {
   
   // Signal thresholds
   THRESHOLDS: {
-    SIGNAL_MIN: 0.15,            // Minimum threshold for BUY/SELL signal
+    SIGNAL_MIN: 0.10,            // Minimum threshold for BUY/SELL signal
     PROBABILITY_WEAK: 0.4,       // Probability threshold for WEAK strength
     PROBABILITY_MODERATE: 0.7,   // Probability threshold for MODERATE strength
     CONFIDENCE_SCALING: 135,     // Scaling factor for confidence calculation
