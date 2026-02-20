@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState, useCallback, useReducer } from 'react';
+'use client';
 
-interface CacheEntry<T> {
-  data: T;
-  timestamp: number;
-  ttl: number;
-}
+import { useEffect, useRef, useState, useCallback, useReducer } from 'react';
+import { globalCache as infraCache } from '@/app/infrastructure/cache';
 
 interface FetchConfig {
   ttl?: number; // キャッシュ有効期間（ミリ秒）
@@ -47,68 +44,38 @@ function fetchReducer<T>(state: FetchState<T>, action: FetchAction<T>): FetchSta
 /**
  * グローバルキャッシュストア
  * コンポーネント間でキャッシュを共有
+ * Wrapper around infrastructure cache for backward compatibility
  */
-class GlobalCache {
-  private cache = new Map<string, CacheEntry<unknown>>();
-  private subscribers = new Map<string, Set<(data: unknown) => void>>();
+export const globalCache = {
+  get: <T>(key: string): T | null => {
+    const val = infraCache.get(key);
+    return val === undefined ? null : (val as T);
+  },
   
-  get<T>(key: string): T | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-    
-    if (Date.now() - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return entry.data as T;
-  }
+  set: <T>(key: string, data: T, ttl: number): void => {
+    infraCache.set(key, data, ttl);
+  },
   
-  set<T>(key: string, data: T, ttl: number): void {
-    this.cache.set(key, { data, timestamp: Date.now(), ttl });
-    
-    const subs = this.subscribers.get(key);
-    if (subs) {
-      subs.forEach(callback => callback(data));
-    }
-  }
+  subscribe: <T>(key: string, callback: (data: T) => void): () => void => {
+    return infraCache.subscribe(key, (data) => callback(data as T));
+  },
   
-  subscribe<T>(key: string, callback: (data: T) => void): () => void {
-    if (!this.subscribers.has(key)) {
-      this.subscribers.set(key, new Set());
-    }
-    this.subscribers.get(key)!.add(callback as (data: unknown) => void);
-    
-    return () => {
-      this.subscribers.get(key)?.delete(callback as (data: unknown) => void);
-    };
-  }
+  invalidate: (key: string): void => {
+    infraCache.invalidate(key);
+  },
   
-  invalidate(key: string): void {
-    this.cache.delete(key);
-  }
+  invalidatePattern: (pattern: RegExp): void => {
+    infraCache.invalidatePattern(pattern);
+  },
   
-  invalidatePattern(pattern: RegExp): void {
-    for (const key of this.cache.keys()) {
-      if (pattern.test(key)) {
-        this.cache.delete(key);
-      }
-    }
-  }
+  clear: (): void => {
+    infraCache.clear();
+  },
   
-  clear(): void {
-    this.cache.clear();
+  getStats: () => {
+    return infraCache.getStats();
   }
-  
-  getStats() {
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys())
-    };
-  }
-}
-
-export const globalCache = new GlobalCache();
+};
 
 /**
  * キャッシュ付きデータフェッチフック
@@ -267,7 +234,7 @@ export function useInfiniteScroll<T>(
   fetcher: (page: number) => Promise<{ data: T[]; hasMore: boolean }>,
   config: { pageSize?: number; threshold?: number } = {}
 ) {
-  const { pageSize = 20, threshold = 100 } = config;
+  const { pageSize: _pageSize = 20, threshold: _threshold = 100 } = config;
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);

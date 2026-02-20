@@ -395,7 +395,15 @@ export const StockTableFinal = memo(StockTable, (prev, next) => (
   prev.showChange === next.showChange &&
   prev.showVolume === next.showVolume &&
   prev.stocks.length === next.stocks.length &&
-  prev.stocks.every((s, i) => s.symbol === next.stocks[i]?.symbol)
+  prev.stocks.every((s, i) => {
+    const n = next.stocks[i];
+    return n &&
+      s.symbol === n.symbol &&
+      s.price === n.price &&
+      s.change === n.change &&
+      s.changePercent === n.changePercent &&
+      s.volume === n.volume;
+  })
 ));
 StockTableFinal.displayName = 'StockTable';
 
