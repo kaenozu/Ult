@@ -34,14 +34,6 @@ export function SignalFilters({ activeTab, setActiveTab, displaySignal }: Signal
         <button {...getTabProps('supplyDemand', '需給')} />
       </div>
 
-      {activeTab === 'signal' && displaySignal && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-[#92adc9]">信頼度:</span>
-          <span className={cn('font-bold', getConfidenceColor(displaySignal.confidence))}>
-            {displaySignal.confidence}%
-          </span>
-        </div>
-      )}
     </div>
   );
 }
