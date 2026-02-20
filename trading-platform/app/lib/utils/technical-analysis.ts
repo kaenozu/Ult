@@ -198,6 +198,8 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
 
 /**
  * Calculate Moving Average Convergence Divergence (MACD)
+ * Optimized: Uses single loop to avoid intermediate array allocations and redundant iterations.
+ * Also fixes a bug where negative MACD values caused Signal line to be NaN due to strict price validation in calculateEMA.
  */
 export function calculateMACD(
   prices: number[],
@@ -205,13 +207,124 @@ export function calculateMACD(
   slowPeriod: number = 26,
   signalPeriod: number = 9,
 ): { macd: number[]; signal: number[]; histogram: number[] } {
-  const fastEMA = calculateEMA(prices, fastPeriod);
-  const slowEMA = calculateEMA(prices, slowPeriod);
-  const macdLine = fastEMA.map((f, i) => (isNaN(f) || isNaN(slowEMA[i]) ? NaN : f - slowEMA[i]));
-  const signalLine = calculateEMA(macdLine, signalPeriod);
-  const histogram = macdLine.map((m, i) => (isNaN(m) || isNaN(signalLine[i]) ? NaN : m - signalLine[i]));
+  const length = prices.length;
+  // Pre-allocate arrays for better performance
+  const macd: number[] = new Array(length);
+  const signal: number[] = new Array(length);
+  const histogram: number[] = new Array(length);
 
-  return { macd: macdLine, signal: signalLine, histogram };
+  // EMA State Variables
+  // Fast EMA
+  const fastAlpha = 2 / (fastPeriod + 1);
+  let fastSum = 0;
+  let fastValidCount = 0;
+  let fastPrev = NaN;
+  let fastReady = false;
+
+  // Slow EMA
+  const slowAlpha = 2 / (slowPeriod + 1);
+  let slowSum = 0;
+  let slowValidCount = 0;
+  let slowPrev = NaN;
+  let slowReady = false;
+
+  // Signal EMA (EMA of MACD)
+  const signalAlpha = 2 / (signalPeriod + 1);
+  let signalSum = 0;
+  let signalValidCount = 0;
+  let signalPrev = NaN;
+  let signalReady = false;
+
+  for (let i = 0; i < length; i++) {
+    const val = _getValidPrice(prices[i]);
+
+    // --- Fast EMA Calculation ---
+    let currentFast = NaN;
+    if (!fastReady) {
+      if (!isNaN(val)) {
+        fastSum += val;
+        fastValidCount++;
+      }
+      if (fastValidCount === fastPeriod) {
+        currentFast = fastSum / fastPeriod;
+        fastPrev = currentFast;
+        fastReady = true;
+      }
+    } else {
+      if (!isNaN(val) && !isNaN(fastPrev)) {
+        currentFast = (val - fastPrev) * fastAlpha + fastPrev;
+        fastPrev = currentFast;
+      } else {
+        currentFast = NaN;
+        fastPrev = NaN; // Break chain on NaN
+      }
+    }
+
+    // --- Slow EMA Calculation ---
+    let currentSlow = NaN;
+    if (!slowReady) {
+      if (!isNaN(val)) {
+        slowSum += val;
+        slowValidCount++;
+      }
+      if (slowValidCount === slowPeriod) {
+        currentSlow = slowSum / slowPeriod;
+        slowPrev = currentSlow;
+        slowReady = true;
+      }
+    } else {
+      if (!isNaN(val) && !isNaN(slowPrev)) {
+        currentSlow = (val - slowPrev) * slowAlpha + slowPrev;
+        slowPrev = currentSlow;
+      } else {
+        currentSlow = NaN;
+        slowPrev = NaN; // Break chain on NaN
+      }
+    }
+
+    // --- MACD Calculation ---
+    let currentMACD = NaN;
+    if (!isNaN(currentFast) && !isNaN(currentSlow)) {
+      currentMACD = currentFast - currentSlow;
+    }
+    macd[i] = currentMACD;
+
+    // --- Signal Line Calculation ---
+    // Note: MACD can be negative, so we explicitly check for number type rather than using _getValidPrice (which enforces >= 0)
+    let currentSignal = NaN;
+    const macdVal = currentMACD;
+    const isValidMACD = macdVal != null && typeof macdVal === "number" && !isNaN(macdVal);
+
+    if (!signalReady) {
+      if (isValidMACD) {
+        signalSum += macdVal;
+        signalValidCount++;
+      }
+      if (signalValidCount === signalPeriod) {
+        currentSignal = signalSum / signalPeriod;
+        signalPrev = currentSignal;
+        signalReady = true;
+      }
+    } else {
+      if (isValidMACD && !isNaN(signalPrev)) {
+        currentSignal = (macdVal - signalPrev) * signalAlpha + signalPrev;
+        signalPrev = currentSignal;
+      } else {
+        currentSignal = NaN;
+        signalPrev = NaN; // Break chain on NaN
+      }
+    }
+    signal[i] = currentSignal;
+
+    // --- Histogram Calculation ---
+    if (!isNaN(currentMACD) && !isNaN(currentSignal)) {
+      histogram[i] = currentMACD - currentSignal;
+    } else {
+      histogram[i] = NaN;
+    }
+  }
+
+  return { macd, signal, histogram };
 }
 
 /**
