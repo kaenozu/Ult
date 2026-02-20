@@ -14,15 +14,23 @@ export function AIRecommendationPanel({ signals, onSelectSignal, maxItems = 5 }:
   const scorer = useMemo(() => new ConfidenceScorer(), []);
   
   const rankedSignals = useMemo(() => {
-    return signals
+    const scored = signals
       .map(s => ({
         ...s,
         score: scorer.score(s, { trendStrength: s.regimeInfo?.adx || 50 }),
         level: scorer.getConfidenceLevel(scorer.score(s, { trendStrength: s.regimeInfo?.adx || 50 })),
       }))
       .filter(s => s.level === 'HIGH')
-      .sort((a, b) => b.score - a.score)
-      .slice(0, maxItems);
+      .sort((a, b) => b.score - a.score);
+    
+    const uniqueBySymbol = new Map<string, typeof scored[0]>();
+    for (const s of scored) {
+      if (!uniqueBySymbol.has(s.symbol)) {
+        uniqueBySymbol.set(s.symbol, s);
+      }
+    }
+    
+    return Array.from(uniqueBySymbol.values()).slice(0, maxItems);
   }, [signals, scorer, maxItems]);
   
   if (rankedSignals.length === 0) {

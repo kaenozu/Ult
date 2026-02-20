@@ -6,7 +6,9 @@ interface RegimeInfo {
 
 export class ConfidenceScorer {
   score(signal: Signal, regimeInfo: RegimeInfo): number {
-    let confidence = signal.confidence * 100;
+    let confidence = signal.confidence <= 1 
+      ? signal.confidence * 100 
+      : signal.confidence;
     
     if (signal.accuracy && signal.accuracy > 50) {
       confidence += (signal.accuracy - 50) * 0.2;
