@@ -197,10 +197,11 @@ export const CONSENSUS_SIGNAL_CONFIG = {
     SIGNAL_MIN: 0.10,            // Minimum threshold for BUY/SELL signal
     PROBABILITY_WEAK: 0.4,       // Probability threshold for WEAK strength
     PROBABILITY_MODERATE: 0.7,   // Probability threshold for MODERATE strength
-    CONFIDENCE_SCALING: 135,     // Scaling factor for confidence calculation
+    CONFIDENCE_SCALING: 100,     // Scaling factor for confidence calculation (base range 0-100)
     CONFIDENCE_MAX: 95,          // Maximum confidence cap
     HOLD_CONFIDENCE_MIN: 30,     // Minimum confidence for HOLD signal
-    TRADE_CONFIDENCE_MIN: 50,    // Minimum confidence for BUY/SELL signal
+    TRADE_CONFIDENCE_MIN: 65,    // Minimum confidence for BUY/SELL signal (raised from 50)
+    TRADE_CONFIDENCE_MAX: 95,    // Maximum confidence for BUY/SELL signal
   },
   
   // Ensemble bonus parameters

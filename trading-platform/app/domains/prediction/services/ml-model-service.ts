@@ -112,12 +112,13 @@ export class MLModelService {
     const RSI_EXTREME_BONUS = 15;
     const RSI_STRONG_BONUS = 10;
     const MOMENTUM_BONUS = 12;
-    const PREDICTION_BONUS = 8;
+    const PREDICTION_BONUS = 10;
     const RSI_EXTREME = 20;
     const RSI_STRONG = 30;
     const MOMENTUM_THRESHOLD = 1.5;
 
-    let confidence = 50;
+    const hasSignal = Math.abs(prediction) > 0.5;
+    let confidence = hasSignal ? 65 : 45;
 
     if (f.rsi < RSI_EXTREME || f.rsi > 100 - RSI_EXTREME) {
       confidence += RSI_EXTREME_BONUS;
@@ -133,7 +134,10 @@ export class MLModelService {
       confidence += PREDICTION_BONUS;
     }
 
-    return Math.min(Math.max(confidence, 50), 95);
+    if (hasSignal) {
+      return Math.min(Math.max(confidence, 65), 95);
+    }
+    return Math.min(Math.max(confidence, 30), 50);
   }
 }
 
