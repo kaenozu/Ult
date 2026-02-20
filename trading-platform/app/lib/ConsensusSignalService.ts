@@ -497,11 +497,16 @@ class ConsensusSignalService {
     let strategyReason = '';
     
     // Phase 1: トレンド重視戦略の適用
-    // レンジ相場またはボラティリティが高い場合はシグナルを抑制（強制HOLD）
-    if (regime.type === 'RANGING' || regime.type === 'VOLATILE') {
-      weightedScore = 0;
-      strategyReason = ` [Filter: ${regime.type}相場のため除外]`;
-    } else if (regime.type === 'TRENDING_UP') {
+    // レンジ相場またはボラティリティが高い場合はシグナルを抑制（閾値を上げる）
+    if (regime.type === 'RANGING') {
+      weightedScore *= 0.5;
+      strategyReason = ` [Filter: ${regime.type}相場のため信頼度低下]`;
+    } else if (regime.type === 'VOLATILE') {
+      weightedScore *= 0.3;
+      strategyReason = ` [Filter: ${regime.type}相場のため信頼度大幅低下]`;
+    }
+    
+    if (regime.type === 'TRENDING_UP') {
       // 上昇トレンド条件: 価格 > SMA20 かつ RSI中立(40-60)
       if (currentPrice > currentSMA && currentRSI >= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.RSI_LOWER_BOUND && currentRSI <= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.RSI_UPPER_BOUND) {
         weightedScore += CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.BOOST_AMOUNT; // 強力なブースト

@@ -20,7 +20,7 @@ export function AIRecommendationPanel({ signals, onSelectSignal, maxItems = 5 }:
         score: scorer.score(s, { trendStrength: s.regimeInfo?.adx || 50 }),
         level: scorer.getConfidenceLevel(scorer.score(s, { trendStrength: s.regimeInfo?.adx || 50 })),
       }))
-      .filter(s => s.level === 'HIGH')
+      .filter(s => s.level === 'HIGH' || s.level === 'MEDIUM')
       .sort((a, b) => b.score - a.score);
     
     const uniqueBySymbol = new Map<string, typeof scored[0]>();
