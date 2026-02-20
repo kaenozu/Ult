@@ -5,7 +5,7 @@ import { formatCurrency, cn } from '@/app/lib/utils';
 import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { RiskSettingsPanel } from './RiskSettingsPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 
 /**
  * メッセージ定数
@@ -132,6 +132,26 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
     handleOrder,
     ids
   } = useOrderEntry({ stock, currentPrice });
+
+  const confirmBtnRef = useRef<HTMLButtonElement>(null);
+  const triggerBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isConfirming) {
+      confirmBtnRef.current?.focus();
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setIsConfirming(false);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        triggerBtnRef.current?.focus();
+      };
+    }
+  }, [isConfirming, setIsConfirming]);
 
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative">
@@ -312,6 +332,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
       {/* Action Button */}
       <button
+        ref={triggerBtnRef}
         onClick={() => setIsConfirming(true)}
         disabled={side === 'BUY' && !canAfford}
         className={cn(
@@ -345,6 +366,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
                 キャンセル
               </button>
               <button
+                ref={confirmBtnRef}
                 onClick={handleOrder}
                 className={cn(
                   "flex-1 py-2 text-white rounded font-bold",
