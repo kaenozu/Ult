@@ -196,8 +196,53 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   return result;
 }
 
+// Helper class for single-pass EMA calculation (internal use)
+class EMAState {
+  sum: number = 0;
+  validCount: number = 0;
+  period: number;
+  value: number = NaN;
+  ready: boolean = false;
+  multiplier: number;
+
+  constructor(period: number) {
+    this.period = period;
+    this.multiplier = 2 / (period + 1);
+  }
+
+  update(price: number): number {
+    // If state is ready (initialized with SMA), calculate EMA
+    if (this.ready) {
+      // Note: This logic intentionally mirrors the legacy behavior where a single NaN
+      // after initialization permanently breaks the EMA chain.
+      if (!isNaN(price) && !isNaN(this.value)) {
+        this.value = (price - this.value) * this.multiplier + this.value;
+      } else {
+        this.value = NaN; // Break chain if input is invalid
+      }
+      return this.value;
+    }
+
+    // Initialization phase: Calculate SMA
+    if (!isNaN(price)) {
+      this.sum += price;
+      this.validCount++;
+
+      if (this.validCount === this.period) {
+        this.value = this.sum / this.period;
+        this.ready = true;
+        return this.value;
+      }
+    }
+
+    return NaN;
+  }
+}
+
 /**
  * Calculate Moving Average Convergence Divergence (MACD)
+ * Optimized: Single-pass calculation (O(N)) with reduced memory allocation.
+ * Also fixes issue where negative MACD values caused NaN signals.
  */
 export function calculateMACD(
   prices: number[],
@@ -205,11 +250,40 @@ export function calculateMACD(
   slowPeriod: number = 26,
   signalPeriod: number = 9,
 ): { macd: number[]; signal: number[]; histogram: number[] } {
-  const fastEMA = calculateEMA(prices, fastPeriod);
-  const slowEMA = calculateEMA(prices, slowPeriod);
-  const macdLine = fastEMA.map((f, i) => (isNaN(f) || isNaN(slowEMA[i]) ? NaN : f - slowEMA[i]));
-  const signalLine = calculateEMA(macdLine, signalPeriod);
-  const histogram = macdLine.map((m, i) => (isNaN(m) || isNaN(signalLine[i]) ? NaN : m - signalLine[i]));
+  const length = prices.length;
+  // Pre-allocate arrays
+  const macdLine = new Array(length);
+  const signalLine = new Array(length);
+  const histogram = new Array(length);
+
+  const fastEMA = new EMAState(fastPeriod);
+  const slowEMA = new EMAState(slowPeriod);
+  const signalEMA = new EMAState(signalPeriod);
+
+  for (let i = 0; i < length; i++) {
+    // Standard price validation for Fast/Slow EMAs (must be non-negative)
+    const price = _getValidPrice(prices[i]);
+
+    const fast = fastEMA.update(price);
+    const slow = slowEMA.update(price);
+
+    let macd = NaN;
+    if (!isNaN(fast) && !isNaN(slow)) {
+      macd = fast - slow;
+    }
+    macdLine[i] = macd;
+
+    // Signal EMA update: input is MACD (can be negative)
+    // We allow negative numbers for MACD -> Signal calculation
+    const signal = signalEMA.update(macd);
+    signalLine[i] = signal;
+
+    if (!isNaN(macd) && !isNaN(signal)) {
+      histogram[i] = macd - signal;
+    } else {
+      histogram[i] = NaN;
+    }
+  }
 
   return { macd: macdLine, signal: signalLine, histogram };
 }
