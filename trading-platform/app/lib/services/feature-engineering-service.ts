@@ -8,6 +8,7 @@
 import { OHLCV } from '@/app/types';
 import { MLFeatures } from '../ml/types';
 import { PredictionFeatures } from '@/app/domains/prediction/types';
+export type { PredictionFeatures }; // Re-export for compatibility
 import {
   calculateSMA,
   calculateEMA,
@@ -911,6 +912,35 @@ export class FeatureEngineeringService {
 
   // Method to extract raw ML Features (for compatibility with extractFeatures from ML domain)
   // The ML domain had `extractFeatures(data, lookback)` which returned `MLFeatures[]`
+  /**
+   * Normalize features for ML models
+   */
+  public normalizeFeatures(features: MLFeatures[]): { normalized: MLFeatures[]; scalers: Record<string, { min: number; max: number }> } {
+    if (features.length === 0) return { normalized: [], scalers: {} };
+
+    const keys = Object.keys(features[0]) as Array<keyof MLFeatures>;
+    const scalers: Record<string, { min: number; max: number }> = {};
+    const normalized = features.map(f => ({ ...f })); // Shallow copy
+
+    for (const key of keys) {
+      // Skip non-numeric fields if any (though MLFeatures assumes numbers)
+      const values = features.map(f => f[key] as number).filter(v => typeof v === 'number' && !isNaN(v));
+      if (values.length === 0) continue;
+
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      scalers[key] = { min, max };
+
+      if (max === min) {
+        normalized.forEach(f => (f as any)[key] = 0.5); // Avoid division by zero
+      } else {
+        normalized.forEach(f => (f as any)[key] = ((f as any)[key] - min) / (max - min));
+      }
+    }
+
+    return { normalized, scalers };
+  }
+
   public extractFeatures(data: OHLCV[], lookback: number): MLFeatures[] {
     // This replicates the `extractFeatures` logic from app/lib/ml/FeatureEngineering.ts
     // We can reuse calculateTechnicalFeatures but need to wrap it in a loop

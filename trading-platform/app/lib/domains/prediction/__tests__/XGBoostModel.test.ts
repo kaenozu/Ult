@@ -3,7 +3,7 @@
  */
 
 import { XGBoostModel } from '../XGBoostModel';
-import { PredictionFeatures } from '../../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../../lib/services/feature-engineering-service';
 
 describe('XGBoostModel', () => {
   let model: XGBoostModel;

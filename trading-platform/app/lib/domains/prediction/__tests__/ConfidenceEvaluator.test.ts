@@ -3,7 +3,7 @@
  */
 
 import { ConfidenceEvaluator } from '../ConfidenceEvaluator';
-import { PredictionFeatures } from '../../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../../lib/services/feature-engineering-service';
 import { ModelPrediction } from '../interfaces';
 
 describe('ConfidenceEvaluator', () => {

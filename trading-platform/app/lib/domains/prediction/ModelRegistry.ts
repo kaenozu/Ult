@@ -4,7 +4,7 @@
  * Manages multiple prediction models and coordinates their predictions
  */
 
-import { PredictionFeatures } from '../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../lib/services/feature-engineering-service';
 import { IModel, IModelRegistry, ModelPrediction } from './interfaces';
 
 export class ModelRegistry implements IModelRegistry {

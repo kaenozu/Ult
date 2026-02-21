@@ -12,9 +12,9 @@ import {
   SIGNAL_THRESHOLDS,
 } from '@/app/constants';
 import { mlTrainingService, type TrainingMetrics, type ModelState } from './services/MLTrainingService';
-import { type PredictionFeatures } from './services/feature-calculation-service';
+import { type PredictionFeatures } from './services/feature-engineering-service';
 
-// PredictionFeatures は feature-calculation-service から再エクスポート
+// PredictionFeatures は feature-engineering-service から再エクスポート
 export type { PredictionFeatures };
 
 

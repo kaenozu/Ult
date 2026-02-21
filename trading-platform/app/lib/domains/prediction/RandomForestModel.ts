@@ -4,7 +4,7 @@
  * Rule-based implementation following Random Forest algorithm patterns
  */
 
-import { PredictionFeatures } from '../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../lib/services/feature-engineering-service';
 import { IModel } from './interfaces';
 
 export class RandomForestModel implements IModel {

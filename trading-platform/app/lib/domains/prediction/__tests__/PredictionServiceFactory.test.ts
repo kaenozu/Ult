@@ -4,7 +4,7 @@
 
 import { PredictionServiceFactory } from '../PredictionServiceFactory';
 import { IModel } from '../interfaces';
-import { PredictionFeatures } from '../../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../../lib/services/feature-engineering-service';
 
 describe('PredictionServiceFactory', () => {
   let baseFeatures: PredictionFeatures;

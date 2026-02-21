@@ -3,7 +3,7 @@
  */
 
 import { LSTMModel } from '../LSTMModel';
-import { PredictionFeatures } from '../../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../../lib/services/feature-engineering-service';
 
 describe('LSTMModel', () => {
   let model: LSTMModel;

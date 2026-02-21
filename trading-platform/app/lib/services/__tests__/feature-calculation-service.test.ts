@@ -2,7 +2,7 @@
  * Tests for FeatureCalculationService
  */
 
-import { FeatureCalculationService } from '../feature-calculation-service';
+import { FeatureCalculationService } from '../feature-engineering-service';
 import { OHLCV, TechnicalIndicatorsWithATR } from '../../../types';
 
 describe('FeatureCalculationService', () => {

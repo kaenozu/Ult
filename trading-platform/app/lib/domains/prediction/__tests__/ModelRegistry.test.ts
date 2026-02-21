@@ -6,7 +6,7 @@ import { ModelRegistry } from '../ModelRegistry';
 import { RandomForestModel } from '../RandomForestModel';
 import { XGBoostModel } from '../XGBoostModel';
 import { LSTMModel } from '../LSTMModel';
-import { PredictionFeatures } from '../../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../../lib/services/feature-engineering-service';
 
 describe('ModelRegistry', () => {
   let registry: ModelRegistry;

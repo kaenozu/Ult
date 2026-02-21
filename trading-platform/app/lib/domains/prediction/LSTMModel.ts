@@ -4,7 +4,7 @@
  * Rule-based simplified implementation for LSTM patterns
  */
 
-import { PredictionFeatures } from '../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../lib/services/feature-engineering-service';
 import { IModel } from './interfaces';
 
 export class LSTMModel implements IModel {
