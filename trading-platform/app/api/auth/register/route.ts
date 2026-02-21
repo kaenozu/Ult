@@ -5,12 +5,7 @@ import { checkRateLimit } from '@/app/lib/api-middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authStore, User } from '@/app/lib/auth-store';
-
-const envSecret = process.env.JWT_SECRET;
-if (!envSecret && process.env.NODE_ENV === 'production') {
-  throw new Error('JWT_SECRET environment variable is required in production');
-}
-const ACTIVE_SECRET = envSecret || 'demo-secret-dev-only';
+import { env } from '@/app/lib/env';
 
 // --- Zod Schemas ---
 const RegisterSchema = z.object({
@@ -101,7 +96,7 @@ export async function POST(request: NextRequest) {
     // Generate JWT
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      ACTIVE_SECRET,
+      env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -119,76 +114,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return handleApiError(error, 'auth/register', 500);
   }
-}
-
-/**
- * Verify JWT token
- */
-export function verifyToken(token: string): { userId: string; email: string; role: string } | null {
-  try {
-    return jwt.verify(token, ACTIVE_SECRET) as { userId: string; email: string; role: string };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Get user by ID
- */
-export function getUserById(userId: string): User | undefined {
-  return authStore.getUserById(userId);
-}
-
-/**
- * Middleware to require authentication
- */
-export function requireAuth(request: NextRequest): { user: User } | NextResponse {
-  const authHeader = request.headers.get('authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return NextResponse.json(
-      { error: 'Authentication required' },
-      { status: 401 }
-    );
-  }
-
-  const token = authHeader.substring(7);
-  const payload = verifyToken(token);
-
-  if (!payload) {
-    return NextResponse.json(
-      { error: 'Invalid or expired token' },
-      { status: 401 }
-    );
-  }
-
-  const user = getUserById(payload.userId);
-  if (!user) {
-    return NextResponse.json(
-      { error: 'User not found' },
-      { status: 401 }
-    );
-  }
-
-  return { user };
-}
-
-/**
- * Middleware to require admin role
- */
-export function requireAdmin(request: NextRequest): { user: User } | NextResponse {
-  const authResult = requireAuth(request);
-  
-  if (authResult instanceof NextResponse) {
-    return authResult;
-  }
-
-  if (authResult.user.role !== 'admin') {
-    return NextResponse.json(
-      { error: 'Admin access required' },
-      { status: 403 }
-    );
-  }
-
-  return authResult;
 }

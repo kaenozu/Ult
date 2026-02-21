@@ -5,12 +5,7 @@ import { checkRateLimit } from '@/app/lib/api-middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authStore } from '@/app/lib/auth-store';
-
-const envSecret = process.env.JWT_SECRET;
-if (!envSecret && process.env.NODE_ENV === 'production') {
-  throw new Error('JWT_SECRET environment variable is required in production');
-}
-const ACTIVE_SECRET = envSecret || 'demo-secret-dev-only';
+import { env } from '@/app/lib/env';
 
 // --- Zod Schema ---
 const LoginSchema = z.object({
@@ -94,7 +89,7 @@ export async function POST(request: NextRequest) {
     // Generate JWT
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      ACTIVE_SECRET,
+      env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
