@@ -2,7 +2,7 @@
  * Tests for FeatureEngineering
  */
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { FeatureEngineering } from '../FeatureEngineering';
+import { FeatureEngineeringService as FeatureEngineering } from '../../services/feature-engineering-service';
 import { OHLCV } from '../../../types/shared';
 
 describe('FeatureEngineering', () => {

@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { EnsembleModel } from '../EnsembleModel';
-import { ExtendedTechnicalFeatures } from '../FeatureEngineering';
+import { ExtendedTechnicalFeatures } from '../../services/feature-engineering-service';
 import { OHLCV } from '../../../types/shared';
 
 describe('EnsembleModel', () => {

@@ -7,7 +7,7 @@
  */
 
 import { OHLCV } from '../../types/shared';
-import { ExtendedTechnicalFeatures } from './FeatureEngineering';
+import { ExtendedTechnicalFeatures } from '../services/feature-engineering-service';
 
 /**
  * ベースモデル予測結果
