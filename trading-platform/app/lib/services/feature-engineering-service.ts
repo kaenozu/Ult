@@ -181,7 +181,7 @@ export interface ExtendedTechnicalFeatures {
   volatilityRegime: 'LOW' | 'NORMAL' | 'HIGH';
   macroIndicators?: MacroIndicators;
   sentiment?: NewsSentimentData;
-  timeSeriesFeatures?: TimeSeriesFeatures;
+  timeSeriesFeatures?: Partial<TimeSeriesFeatures>;
 }
 
 export interface FeatureImportance {
