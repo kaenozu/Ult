@@ -276,7 +276,7 @@ export const StockChart = memo(function StockChart({
          });
       }
     }
-    candleSeries.setMarkers(markers);
+    (candleSeries as any).setMarkers(markers);
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -396,7 +396,7 @@ export const StockChart = memo(function StockChart({
          });
       }
     }
-    candleSeriesRef.current.setMarkers(markers);
+    (candleSeriesRef.current as any).setMarkers(markers);
 
   }, [data, signal, showVolume, showSMA, showBollinger, accuracyData, convertToLWCData, convertToVolumeData, calculateSMA, calculateBollingerBands]);
 
