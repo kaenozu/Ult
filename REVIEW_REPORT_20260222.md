@@ -33,12 +33,13 @@ This review covers the `trading-platform` and `playwright_scraper` codebases. Wh
 ## 3. Major Findings (Performance & Architecture)
 
 ### 3.1 "Split Brain" Architecture (Triple Duplication)
-The codebase has three nearly identical implementations of Feature Engineering:
-1.  `app/lib/ml/FeatureEngineering.ts` (Legacy, contains inefficient batch logic)
-2.  `app/domains/prediction/models/ml/FeatureEngineering.ts` (Domain-driven)
-3.  `app/lib/aiAnalytics/FeatureEngineering.ts` (New duplicate?)
-
-**Impact**: Bug fixes in one file (e.g., the O(N^2) fix) are not propagated to others. This explains the test failure in `EnhancedPredictionService` which likely uses a different version than the one being tested/fixed.
+The codebase suffers from a pervasive "Split Brain" problem across both logic and configuration:
+1.  **Feature Engineering Duplication**: Three nearly identical implementations exist in `app/lib/ml`, `app/domains/prediction`, and `app/lib/aiAnalytics`.
+2.  **Environment Configuration Duplication**: Two `env.ts` files exist with conflicting schemas:
+    - `app/lib/env.ts`: Focuses on auth secrets and zod-based validation.
+    - `app/lib/config/env.ts`: Focuses on API keys and service endpoints.
+    
+**Impact**: Bug fixes and configuration updates are inconsistent. A new API key added to one file might not be visible to services using the other, leading to silent failures or fallback to development defaults in production.
 
 ### 3.2 Algorithmic Complexity (O(N²))
 - **File**: `app/lib/ml/FeatureEngineering.ts`
