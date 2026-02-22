@@ -36,6 +36,7 @@ const mockChartInstance = {
 jest.mock('react-chartjs-2', () => {
     const { forwardRef, useImperativeHandle } = require('react');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const MockLine = forwardRef((props: any, ref: any) => {
         useImperativeHandle(ref, () => mockChartInstance);
         return (
@@ -95,6 +96,7 @@ describe.skip('StockChart Interactions', () => {
         
         expect(mockChartInstance.setActiveElements).toHaveBeenCalled();
         const initialCall = mockChartInstance.setActiveElements.mock.calls[0][0];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(initialCall.some((el: any) => el.index === 9)).toBe(true);
 
         // 2. Set Hover to index 5 via click (our mock click simulates hover at 5)
@@ -109,6 +111,7 @@ describe.skip('StockChart Interactions', () => {
         });
 
         const lastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         expect(lastCall.some((el: any) => el.index === 6)).toBe(true);
 
         // 4. Left Arrow: Should move back to index 5

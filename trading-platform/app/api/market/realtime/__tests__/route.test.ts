@@ -1,6 +1,6 @@
 import { GET } from '../route';
 import { realTimeDataService } from '@/app/lib/services/RealTimeDataService';
-import { requireAuth } from '@/app/lib/auth';
+// import { requireAuth } from '@/app/lib/auth';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 
 // Mock dependencies
@@ -28,6 +28,7 @@ describe('GET /api/market/realtime', () => {
     const req = {
       url: 'http://localhost:3000/api/market/realtime',
       nextUrl: new URL('http://localhost:3000/api/market/realtime'),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
     const res = await GET(req);
     expect(res.status).toBe(400);

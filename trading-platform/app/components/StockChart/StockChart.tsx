@@ -276,7 +276,8 @@ export const StockChart = memo(function StockChart({
          });
       }
     }
-    candleSeries.setMarkers(markers);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (candleSeries as any).setMarkers(markers);
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -396,7 +397,8 @@ export const StockChart = memo(function StockChart({
          });
       }
     }
-    candleSeriesRef.current.setMarkers(markers);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (candleSeriesRef.current as any).setMarkers(markers);
 
   }, [data, signal, showVolume, showSMA, showBollinger, accuracyData, convertToLWCData, convertToVolumeData, calculateSMA, calculateBollingerBands]);
 
