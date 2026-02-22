@@ -5,7 +5,7 @@ import { formatCurrency, cn } from '@/app/lib/utils';
 import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { RiskSettingsPanel } from './RiskSettingsPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 /**
  * メッセージ定数
@@ -135,17 +135,17 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleConfirmOrder = async () => {
+  const handleConfirmOrder = useCallback(async () => {
     if (isProcessing) return;
     setIsProcessing(true);
     try {
-      // UX: Artificial delay to show processing state and prevent double-clicks
-      await new Promise(resolve => setTimeout(resolve, 500));
       await handleOrder();
+    } catch (error) {
+      console.error('Order execution failed:', error);
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [isProcessing, handleOrder]);
 
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative">
