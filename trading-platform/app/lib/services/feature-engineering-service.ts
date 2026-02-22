@@ -342,6 +342,10 @@ export class FeatureEngineeringService {
     // MACD
     const macd = calculateMACD(prices, MACD_CONFIG.FAST_PERIOD, MACD_CONFIG.SLOW_PERIOD, MACD_CONFIG.SIGNAL_PERIOD);
 
+    // Helpers
+    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
+    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
+
     // Bollinger Bands
     const bb = calculateBollingerBands(prices, BOLLINGER_BANDS.PERIOD, BOLLINGER_BANDS.STD_DEVIATION);
 
@@ -352,10 +356,6 @@ export class FeatureEngineeringService {
     // Current Values
     const currentPrice = prices[prices.length - 1];
     const currentVolume = volumes[volumes.length - 1];
-
-    // Helpers
-    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
-    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
 
     // Derived Values
     const rsiValue = last(rsi, 50);
