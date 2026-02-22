@@ -2,6 +2,86 @@ import { describe, it, expect } from '@jest/globals';
 import { EnsembleModel, MarketRegime } from '../EnsembleModel';
 import { OPTIMIZED_ENSEMBLE_WEIGHTS } from '../../config/prediction-config';
 
+describe('EnsembleModel - RSI Thresholds', () => {
+  it('should give bullish signal when RSI is extremely oversold (< 15)', () => {
+    const model = new EnsembleModel();
+    const features = createMockFeatures();
+    features.technical.rsi = 12;
+    
+    const prediction = model.predict(createTrendingData(), features);
+    const rfPrediction = prediction.modelPredictions.find(p => p.modelType === 'RF');
+    
+    expect(rfPrediction).toBeDefined();
+    expect(rfPrediction!.prediction).toBeGreaterThan(0);
+    expect(rfPrediction!.confidence).toBeGreaterThan(50);
+  });
+
+  it('should give bearish signal when RSI is extremely overbought (> 85)', () => {
+    const model = new EnsembleModel();
+    const features = createMockFeatures();
+    features.technical.rsi = 88;
+    
+    const prediction = model.predict(createTrendingData(), features);
+    const rfPrediction = prediction.modelPredictions.find(p => p.modelType === 'RF');
+    
+    expect(rfPrediction).toBeDefined();
+    expect(rfPrediction!.prediction).toBeLessThan(0);
+    expect(rfPrediction!.confidence).toBeGreaterThan(50);
+  });
+
+  it('should give moderate bullish signal when RSI is moderately oversold (15-30)', () => {
+    const model = new EnsembleModel();
+    const features = createMockFeatures();
+    features.technical.rsi = 25;
+    
+    const prediction = model.predict(createTrendingData(), features);
+    const rfPrediction = prediction.modelPredictions.find(p => p.modelType === 'RF');
+    
+    expect(rfPrediction).toBeDefined();
+    expect(rfPrediction!.prediction).toBeGreaterThan(0);
+  });
+
+  it('should give moderate bearish signal when RSI is moderately overbought (70-85)', () => {
+    const model = new EnsembleModel();
+    const features = createMockFeatures();
+    features.technical.rsi = 75;
+    
+    const prediction = model.predict(createTrendingData(), features);
+    const rfPrediction = prediction.modelPredictions.find(p => p.modelType === 'RF');
+    
+    expect(rfPrediction).toBeDefined();
+    expect(rfPrediction!.prediction).toBeLessThan(0);
+  });
+
+  it('should give neutral signal when RSI is in normal range (30-70)', () => {
+    const model = new EnsembleModel();
+    const features = createMockFeatures();
+    features.technical.rsi = 50;
+    
+    const prediction = model.predict(createTrendingData(), features);
+    const rfPrediction = prediction.modelPredictions.find(p => p.modelType === 'RF');
+    
+    expect(rfPrediction).toBeDefined();
+    expect(rfPrediction!.prediction).toBe(0);
+  });
+
+  it('should give stronger signal for extreme oversold vs moderate oversold', () => {
+    const model = new EnsembleModel();
+    
+    const extremeFeatures = createMockFeatures();
+    extremeFeatures.technical.rsi = 10;
+    const extremePrediction = model.predict(createTrendingData(), extremeFeatures);
+    const extremeRf = extremePrediction.modelPredictions.find(p => p.modelType === 'RF');
+    
+    const moderateFeatures = createMockFeatures();
+    moderateFeatures.technical.rsi = 25;
+    const moderatePrediction = model.predict(createTrendingData(), moderateFeatures);
+    const moderateRf = moderatePrediction.modelPredictions.find(p => p.modelType === 'RF');
+    
+    expect(Math.abs(extremeRf!.prediction)).toBeGreaterThan(Math.abs(moderateRf!.prediction));
+  });
+});
+
 describe('EnsembleModel - Optimized Weights Integration', () => {
   it('should have OPTIMIZED_ENSEMBLE_WEIGHTS defined for all regimes', () => {
     const regimes: Array<keyof typeof OPTIMIZED_ENSEMBLE_WEIGHTS> = ['TRENDING', 'RANGING', 'VOLATILE', 'QUIET'];

@@ -16,7 +16,8 @@ export function _getValidPrice(p: number | null | undefined): number {
 
 /**
  * Calculate Simple Moving Average (SMA)
- * Optimized with Float64Array and sliding window
+ * Optimized with Float64Array and sliding window.
+ * Robust against NaN: if any value in the window is NaN, result is NaN.
  */
 export function calculateSMA(prices: number[], period: number): number[] {
   const length = prices.length;
@@ -24,22 +25,44 @@ export function calculateSMA(prices: number[], period: number): number[] {
   if (length < period) return result;
 
   const floatPrices = new Float64Array(prices);
+  
+  // Use a simple loop for each window to ensure NaN correctness
+  // O(N*P) is actually fine for small periods, but let's try to keep it optimized
+  // if no NaNs are present.
+  
   let sum = 0;
+  let nanCount = 0;
 
   // Initial window
   for (let i = 0; i < period; i++) {
     const val = floatPrices[i];
-    if (!isNaN(val)) sum += val;
+    if (isNaN(val)) {
+      nanCount++;
+    } else {
+      sum += val;
+    }
   }
-  result[period - 1] = sum / period;
+  
+  if (nanCount === 0) {
+    result[period - 1] = sum / period;
+  }
 
   // Sliding window
   for (let i = period; i < length; i++) {
     const newVal = floatPrices[i];
     const oldVal = floatPrices[i - period];
-    if (!isNaN(newVal)) sum += newVal;
-    if (!isNaN(oldVal)) sum -= oldVal;
-    result[i] = sum / period;
+    
+    if (isNaN(newVal)) nanCount++;
+    else sum += newVal;
+    
+    if (isNaN(oldVal)) nanCount--;
+    else sum -= oldVal;
+    
+    if (nanCount === 0) {
+      result[i] = sum / period;
+    } else {
+      result[i] = NaN;
+    }
   }
 
   return result;
@@ -96,8 +119,12 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   avgGain /= period;
   avgLoss /= period;
 
-  const rsInitial = avgLoss === 0 ? 100 : avgGain / avgLoss;
-  result[period] = 100 - (100 / (1 + rsInitial));
+  if (avgGain === 0 && avgLoss === 0) {
+    result[period] = 50;
+  } else {
+    const rsInitial = avgLoss === 0 ? 100 : avgGain / avgLoss;
+    result[period] = 100 - (100 / (1 + rsInitial));
+  }
 
   // Wilder's smoothing
   for (let i = period + 1; i < length; i++) {
@@ -108,8 +135,12 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
     avgGain = (avgGain * (period - 1) + gain) / period;
     avgLoss = (avgLoss * (period - 1) + loss) / period;
 
-    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-    result[i] = 100 - (100 / (1 + rs));
+    if (avgGain === 0 && avgLoss === 0) {
+      result[i] = 50;
+    } else {
+      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+      result[i] = 100 - (100 / (1 + rs));
+    }
   }
 
   return result;

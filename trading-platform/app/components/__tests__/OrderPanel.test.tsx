@@ -14,7 +14,7 @@ global.ResizeObserver = class ResizeObserver {
 
 describe('OrderPanel', () => {
     const mockStock = { symbol: '7203', name: 'Toyota', price: 2000, change: 0, changePercent: 0, market: 'japan' as const, sector: 'Automotive', volume: 1000000 };
-    const mockExecuteOrder = jest.fn().mockReturnValue({ success: true });
+    const mockExecuteOrder = jest.fn().mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ success: true }), 100)));
 
     const mockPortfolioState = {
         portfolio: { cash: 1000000, positions: [] },
@@ -59,26 +59,25 @@ describe('OrderPanel', () => {
         fireEvent.click(screen.getByText('買い注文を発注'));
 
         // Confirm
-        fireEvent.click(screen.getByText('注文を確定'));
+        const confirmButton = screen.getByText('注文を確定');
+        await act(async () => {
+            fireEvent.click(confirmButton);
+        });
 
         // Advance timers by 500ms to cover the UX delay
         await act(async () => {
             jest.advanceTimersByTime(500);
         });
 
-        // Check if executeOrder (from store) was called
-        await waitFor(() => {
-            expect(mockPortfolioState.executeOrder).toHaveBeenCalledWith(expect.objectContaining({
-                symbol: '7203',
-                quantity: 100,
-                side: 'LONG'
-            }));
-        });
+        // Success message - should appear after processing
+        expect(await screen.findByText('注文を送信しました')).toBeInTheDocument();
 
-        // Success message
-        await waitFor(() => {
-            expect(screen.getByText('注文を送信しました')).toBeInTheDocument();
-        });
+        // Check if executeOrder (from store) was called
+        expect(mockExecuteOrder).toHaveBeenCalledWith(expect.objectContaining({
+            symbol: '7203',
+            quantity: 100,
+            side: 'LONG'
+        }));
 
         // Fast forward timer
         act(() => {
@@ -101,10 +100,12 @@ describe('OrderPanel', () => {
 
         // Click confirm
         const confirmButton = screen.getByText('注文を確定');
-        fireEvent.click(confirmButton);
+        await act(async () => {
+            fireEvent.click(confirmButton);
+        });
 
         // Should show loading text and be disabled immediately
-        expect(screen.getByText('処理中...')).toBeInTheDocument();
+        expect(await screen.findByText(/処理中/)).toBeInTheDocument();
         expect(confirmButton).toBeDisabled();
 
         // Advance timers to complete processing

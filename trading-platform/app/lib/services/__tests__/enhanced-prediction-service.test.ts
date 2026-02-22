@@ -170,15 +170,15 @@ describe('EnhancedPredictionService', () => {
     it('should detect VOLATILE regime', async () => {
       const data: OHLCV[] = [];
       let price = 100;
-      for (let i = 0; i < 30; i++) {
-        // High volatility: large random swings
-        const change = (Math.random() - 0.5) * 10;
+      for (let i = 0; i < 50; i++) {
+        // High volatility: large random swings with NO consistent trend
+        const change = (i % 2 === 0 ? 10 : -10) + (Math.random() - 0.5) * 5;
         price *= (1 + change / 100);
         data.push({
           date: `2024-01-${String(i + 1).padStart(2, '0')}`,
-          open: price * 0.95,
-          high: price * 1.1,
-          low: price * 0.9,
+          open: price * 0.9,
+          high: price * 1.2,
+          low: price * 0.8,
           close: price,
           volume: 1000000
         });

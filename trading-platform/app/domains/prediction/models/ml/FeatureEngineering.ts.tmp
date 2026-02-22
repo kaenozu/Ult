@@ -1,0 +1,134 @@
+  /**
+   * テクニカル指標の拡張特徴量を計算
+   */
+  calculateTechnicalFeatures(data: OHLCV[]): TechnicalFeatures {
+    const prices = data.map(d => d.close);
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const volumes = data.map(d => d.volume);
+
+    // 現在値
+    const currentPrice = prices[prices.length - 1];
+    const currentVolume = volumes[volumes.length - 1];
+
+    // 値取得ヘルパー
+    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
+    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
+
+    // 基本指標
+    const rsi = calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD);
+    const sma5 = calculateSMA(prices, 5);
+    const sma10 = calculateSMA(prices, 10);
+    const sma20 = calculateSMA(prices, SMA_CONFIG.SHORT_PERIOD);
+    const sma50 = calculateSMA(prices, SMA_CONFIG.MEDIUM_PERIOD);
+    const sma200 = calculateSMA(prices, SMA_CONFIG.LONG_PERIOD);
+    const ema12 = calculateEMA(prices, MACD_CONFIG.FAST_PERIOD);
+    const ema26 = calculateEMA(prices, MACD_CONFIG.SLOW_PERIOD);
+
+    // MACD
+    const macd = calculateMACD(prices, MACD_CONFIG.FAST_PERIOD, MACD_CONFIG.SLOW_PERIOD, MACD_CONFIG.SIGNAL_PERIOD);
+
+    // ボリンジャーバンド
+    const bb = calculateBollingerBands(prices, BOLLINGER_BANDS.PERIOD, BOLLINGER_BANDS.STD_DEVIATION);
+
+    // ATR
+    const atr = calculateATR(highs, lows, prices, RSI_CONFIG.DEFAULT_PERIOD);
+
+    // 基本指標値
+    const rsiValue = last(rsi, 50);
+    const rsiChange = rsiValue - prev(rsi, rsi.length - 2, 50);
+
+    // 移動平均乖離率
+    const sma5Dev = (currentPrice - last(sma5, currentPrice)) / currentPrice * 100;
+    const sma10Dev = (currentPrice - last(sma10, currentPrice)) / currentPrice * 100;
+    const sma20Dev = (currentPrice - last(sma20, currentPrice)) / currentPrice * 100;
+    const sma50Dev = (currentPrice - last(sma50, currentPrice)) / currentPrice * 100;
+    const sma200Dev = (currentPrice - last(sma200, currentPrice)) / currentPrice * 100;
+    const ema12Dev = (currentPrice - last(ema12, currentPrice)) / currentPrice * 100;
+    const ema26Dev = (currentPrice - last(ema26, currentPrice)) / currentPrice * 100;
+
+    // MACD
+    const macdValue = last(macd.macd, 0);
+    const macdSignalValue = last(macd.signal, 0);
+    const macdHistogramValue = last(macd.histogram, 0);
+
+    // ボリンジャーバンド
+    const bbUpper = last(bb.upper, currentPrice);
+    const bbMiddle = last(bb.middle, currentPrice);
+    const bbLower = last(bb.lower, currentPrice);
+    const bbPosition = Math.max(0, Math.min(100, ((currentPrice - bbLower) / (bbUpper - bbLower || 1)) * 100));
+    const bbWidth = ((bbUpper - bbLower) / bbMiddle) * 100;
+
+    // ATR
+    const atrValue = last(atr, currentPrice * 0.02);
+    const atrPercent = (atrValue / currentPrice) * 100;
+    const atrArray = atr.filter(v => !isNaN(v));
+    const atrAvg = atrArray.reduce((sum, v) => sum + v, 0) / (atrArray.length || 1);
+    const atrRatio = atrValue / (atrAvg || 1);
+
+    // モメンタム
+    const momentum10 = this.calculateMomentum(prices, 10);
+    const momentum20 = this.calculateMomentum(prices, 20);
+
+    // 変化率
+    const roc12 = this.calculateROC(prices, 12);
+    const roc25 = this.calculateROC(prices, 25);
+
+    // ストキャスティクス
+    const stoch = this.calculateStochastic(highs, lows, prices, 14);
+
+    // ウィリアムズ%R
+    const williamsR = this.calculateWilliamsR(highs, lows, prices, 14);
+
+    // CCI
+    const cci = this.calculateCCI(highs, lows, prices, 20);
+
+    // ボリューム関連
+    const volSMA5 = last(calculateSMA(volumes, 5), currentVolume);
+    const volSMA20 = last(calculateSMA(volumes, 20), currentVolume);
+    const volumeRatio = currentVolume / (volSMA20 || 1);
+    const volumeTrend = volSMA5 > volSMA20 ? 'INCREASING' : 'DECREASING';
+
+    // 価格加速度・速度
+    const priceVelocity = momentum10 / 10;
+    const prevMomentum10 = this.calculateMomentum(prices.slice(0, -1), 10);
+    const priceAcceleration = (momentum10 - prevMomentum10);
+
+    return {
+      rsi: rsiValue,
+      rsiChange,
+      sma5: sma5Dev,
+      sma10: sma10Dev,
+      sma20: sma20Dev,
+      sma50: sma5Dev,
+      sma200: sma200Dev,
+      ema12: ema12Dev,
+      ema26: ema26Dev,
+      macd: macdValue,
+      macdSignal: macdSignalValue,
+      macdHistogram: macdHistogramValue,
+      bbUpper,
+      bbMiddle,
+      bbLower,
+      bbPosition,
+      bbWidth,
+      atr: atrValue,
+      atrPercent,
+      atrRatio,
+      momentum10,
+      momentum20,
+      rateOfChange12: roc12,
+      rateOfChange25: roc25,
+      stochasticK: stoch.k,
+      stochasticD: stoch.d,
+      williamsR,
+      cci,
+      volumeRatio,
+      volumeTrend,
+      volumeMA5: volSMA5,
+      volumeMA20: volSMA20,
+      pricePosition: bbPosition, // 重複
+      priceVelocity,
+      priceAcceleration,
+    };
+  }

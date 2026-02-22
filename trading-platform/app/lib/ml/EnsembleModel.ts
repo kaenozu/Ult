@@ -344,9 +344,11 @@ export class EnsembleModel {
     // RFは木ベースのモデルなので、しきい値ベースのルールを使用
     let score = 0;
 
-    // RSI
-    if (t.rsi < 30) score += 3;
-    else if (t.rsi > 70) score -= 3;
+    // RSI - using optimized thresholds from config
+    if (t.rsi < RSI_THRESHOLDS.EXTREME_OVERSOLD) score += 4;
+    else if (t.rsi < RSI_THRESHOLDS.MODERATE_OVERSOLD) score += 2;
+    else if (t.rsi > RSI_THRESHOLDS.EXTREME_OVERBOUGHT) score -= 4;
+    else if (t.rsi > RSI_THRESHOLDS.MODERATE_OVERBOUGHT) score -= 2;
 
     // モメンタム
     if (t.momentum10 > 3) score += 2;

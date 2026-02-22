@@ -169,9 +169,9 @@ describe('MLPredictionService', () => {
     });
 
     it('should generate BUY signal for positive prediction', () => {
-      // Create V-shaped recovery prices (starts low, then rises) to ensure low RSI + positive momentum
+      // Create sharper recovery prices to ensure BUY signal in rule-based engine
       const risingOHLCV = Array.from({ length: 50 }, (_, i) => {
-        const price = i < 40 ? 100 - i * 0.1 : 96 + (i - 40) * 0.5;
+        const price = i < 30 ? 100 - i * 0.2 : 94 + (i - 30) * 1.5;
         return {
           symbol: 'AAPL',
           date: `2024-01-${String(i + 1).padStart(2, '0')}`,
@@ -192,16 +192,20 @@ describe('MLPredictionService', () => {
     });
 
     it('should generate SELL signal for negative prediction', () => {
-      // Create falling prices for negative prediction
-      const fallingOHLCV = Array.from({ length: 50 }, (_, i) => ({
-        symbol: 'AAPL',
-        date: `2024-01-${String(i + 1).padStart(2, '0')}`,
-        open: 200 - i,
-        high: 202 - i,
-        low: 198 - i,
-        close: 199 - i,
-        volume: 1000000,
-      }));
+      // Create a sharp downward trend (1.5% drop per bar) to ensure momentum signals are negative.
+      // A consistent sharp drop ensures SMA deviation is > 2%, triggering SELL/HOLD logic.
+      const fallingOHLCV = Array.from({ length: 60 }, (_, i) => {
+        const price = 200 * Math.pow(0.985, i);
+        return {
+          symbol: 'AAPL',
+          date: `2024-01-${String(Math.floor(i / 20) + 1).padStart(2, '0')}-${String((i % 20) + 1).padStart(2, '0')}`,
+          open: price * 1.01,
+          high: price * 1.02,
+          low: price * 0.98,
+          close: price,
+          volume: 1000000,
+        };
+      });
 
       const indicators = mlPredictionService.calculateIndicators(fallingOHLCV);
       const prediction = mlPredictionService.predict(mockStock, fallingOHLCV, indicators);
