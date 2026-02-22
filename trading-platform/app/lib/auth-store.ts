@@ -17,13 +17,13 @@ class AuthStore {
   private users: Map<string, User> = new Map();
 
   private constructor() {
-    // Add a default admin user for testing (DEV/TEST ONLY)
-    // SECURITY: Do not create this user in production environments
-    if (env.NODE_ENV !== 'production') {
-      const adminPasswordHash = bcrypt.hashSync('admin123', 10);
-      this.users.set('admin@example.com', {
+    // Add a default admin user if enabled via environment (typically for DEV/STAGING)
+    // SECURITY: This is now explicitly controlled via ENABLE_DEFAULT_ADMIN
+    if (env.ENABLE_DEFAULT_ADMIN) {
+      const adminPasswordHash = bcrypt.hashSync(env.DEFAULT_ADMIN_PASSWORD, 10);
+      this.users.set(env.DEFAULT_ADMIN_EMAIL.toLowerCase(), {
         id: 'user_admin',
-        email: 'admin@example.com',
+        email: env.DEFAULT_ADMIN_EMAIL,
         passwordHash: adminPasswordHash,
         name: 'System Admin',
         createdAt: new Date().toISOString(),
