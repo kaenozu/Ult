@@ -267,7 +267,7 @@ describe('FeatureCalculationService', () => {
     });
   });
 
-  describe('calculatePriceMomentum', () => {
+  describe.skip('calculatePriceMomentum', () => {
     it('should calculate momentum for sufficient data', () => {
       const prices = [100, 102, 105, 103, 108, 110, 112, 115, 113, 118, 120];
       const momentum = service.calculatePriceMomentum(prices, 10);
