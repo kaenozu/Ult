@@ -208,127 +208,65 @@ export function calculateMACD(
   signalPeriod: number = 9,
 ): { macd: number[]; signal: number[]; histogram: number[] } {
   const length = prices.length;
-  // Pre-allocate result arrays
   const macd = new Array(length).fill(NaN);
   const signal = new Array(length).fill(NaN);
   const histogram = new Array(length).fill(NaN);
 
-  // Fast EMA State
-  let fastSum = 0;
-  let fastCount = 0;
-  let fastPrev = NaN;
-  const fastK = 2 / (fastPeriod + 1);
+  /**
+   * Internal helper to update EMA state in a single pass
+   */
+  const createEMAState = (period: number) => {
+    let sum = 0;
+    let count = 0;
+    let prev = NaN;
+    const k = 2 / (period + 1);
 
-  // Slow EMA State
-  let slowSum = 0;
-  let slowCount = 0;
-  let slowPrev = NaN;
-  const slowK = 2 / (slowPeriod + 1);
+    return (val: number): number => {
+      if (isNaN(val)) {
+        if (count >= period) prev = NaN;
+        return NaN;
+      }
 
-  // Signal EMA State
-  let signalSum = 0;
-  let signalCount = 0;
-  let signalPrev = NaN;
-  const signalK = 2 / (signalPeriod + 1);
+      if (count < period) {
+        sum += val;
+        count++;
+        if (count === period) {
+          prev = sum / period;
+          return prev;
+        }
+        return NaN;
+      }
+
+      if (!isNaN(prev)) {
+        prev = (val - prev) * k + prev;
+        return prev;
+      }
+
+      return NaN;
+    };
+  };
+
+  const updateFast = createEMAState(fastPeriod);
+  const updateSlow = createEMAState(slowPeriod);
+  const updateSignal = createEMAState(signalPeriod);
 
   for (let i = 0; i < length; i++) {
     const price = _getValidPrice(prices[i]);
 
-    // Update Fast EMA
-    let fastVal = NaN;
-    if (!isNaN(price)) {
-      if (fastCount < fastPeriod) {
-        fastSum += price;
-        fastCount++;
-        if (fastCount === fastPeriod) {
-          fastPrev = fastSum / fastPeriod;
-          fastVal = fastPrev;
-        }
-      } else {
-        // Main loop
-        if (!isNaN(fastPrev)) {
-          fastVal = (price - fastPrev) * fastK + fastPrev;
-          fastPrev = fastVal;
-        } else {
-            fastPrev = NaN;
-        }
-      }
-    } else {
-       // If price is invalid after init, chain breaks
-       if (fastCount >= fastPeriod) {
-           fastPrev = NaN;
-       }
-    }
+    const fastVal = updateFast(price);
+    const slowVal = updateSlow(price);
 
-    // Update Slow EMA
-    let slowVal = NaN;
-    if (!isNaN(price)) {
-      if (slowCount < slowPeriod) {
-        slowSum += price;
-        slowCount++;
-        if (slowCount === slowPeriod) {
-          slowPrev = slowSum / slowPeriod;
-          slowVal = slowPrev;
-        }
-      } else {
-        // Main loop
-        if (!isNaN(slowPrev)) {
-          slowVal = (price - slowPrev) * slowK + slowPrev;
-          slowPrev = slowVal;
-        } else {
-            slowPrev = NaN;
-        }
-      }
-    } else {
-       if (slowCount >= slowPeriod) {
-           slowPrev = NaN;
-       }
-    }
-
-    // Calculate MACD
     let macdVal = NaN;
     if (!isNaN(fastVal) && !isNaN(slowVal)) {
       macdVal = fastVal - slowVal;
       macd[i] = macdVal;
-    } else {
-      macd[i] = NaN;
     }
 
-    // Update Signal EMA (using MACD value)
-    // CRITICAL FIX: Allow negative MACD values!
-    // We check !isNaN(macdVal) instead of _getValidPrice(macdVal) which enforces >= 0
-    let signalVal = NaN;
-    if (!isNaN(macdVal)) {
-      if (signalCount < signalPeriod) {
-        signalSum += macdVal;
-        signalCount++;
-        if (signalCount === signalPeriod) {
-          signalPrev = signalSum / signalPeriod;
-          signalVal = signalPrev;
-        }
-      } else {
-        // Main loop
-        if (!isNaN(signalPrev)) {
-          signalVal = (macdVal - signalPrev) * signalK + signalPrev;
-          signalPrev = signalVal;
-        } else {
-            signalPrev = NaN;
-        }
-      }
-    } else {
-       // If MACD is invalid (e.g. because Price became invalid), signal line breaks.
-       if (signalCount >= signalPeriod) {
-           signalPrev = NaN;
-       }
-    }
-
+    const signalVal = updateSignal(macdVal);
     signal[i] = signalVal;
 
-    // Calculate Histogram
     if (!isNaN(macdVal) && !isNaN(signalVal)) {
       histogram[i] = macdVal - signalVal;
-    } else {
-      histogram[i] = NaN;
     }
   }
 
