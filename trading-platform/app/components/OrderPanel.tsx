@@ -5,7 +5,7 @@ import { formatCurrency, cn } from '@/app/lib/utils';
 import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { RiskSettingsPanel } from './RiskSettingsPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 /**
  * メッセージ定数
@@ -134,6 +134,25 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   } = useOrderEntry({ stock, currentPrice });
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const confirmBtnRef = useRef<HTMLButtonElement>(null);
+  const triggerBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isConfirming) {
+      confirmBtnRef.current?.focus();
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setIsConfirming(false);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        triggerBtnRef.current?.focus();
+      };
+    }
+  }, [isConfirming, setIsConfirming]);
 
   const handleConfirmOrder = useCallback(async () => {
     if (isProcessing) return;
@@ -326,6 +345,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
 
       {/* Action Button */}
       <button
+        ref={triggerBtnRef}
         onClick={() => setIsConfirming(true)}
         disabled={side === 'BUY' && !canAfford}
         className={cn(
@@ -360,6 +380,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
                 キャンセル
               </button>
               <button
+                ref={confirmBtnRef}
                 onClick={handleConfirmOrder}
                 disabled={isProcessing}
                 className={cn(
