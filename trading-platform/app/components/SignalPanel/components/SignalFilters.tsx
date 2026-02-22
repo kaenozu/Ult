@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { cn, getConfidenceColor } from '@/app/lib/utils';
 import { Signal } from '@/app/types';
 
