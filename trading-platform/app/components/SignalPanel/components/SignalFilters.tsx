@@ -7,6 +7,7 @@ interface SignalFiltersProps {
   displaySignal: Signal | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function SignalFilters({ activeTab, setActiveTab, displaySignal }: SignalFiltersProps) {
   // Helper for tab props to ensure accessibility and DRY
   const getTabProps = (tabName: 'signal' | 'backtest' | 'ai' | 'forecast' | 'supplyDemand', label: string) => ({
