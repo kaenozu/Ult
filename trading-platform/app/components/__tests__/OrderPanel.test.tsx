@@ -61,12 +61,19 @@ describe('OrderPanel', () => {
         // Confirm
         fireEvent.click(screen.getByText('注文を確定'));
 
+        // Advance timers by 500ms to cover the UX delay
+        await act(async () => {
+            jest.advanceTimersByTime(500);
+        });
+
         // Check if executeOrder (from store) was called
-        expect(mockPortfolioState.executeOrder).toHaveBeenCalledWith(expect.objectContaining({
-            symbol: '7203',
-            quantity: 100,
-            side: 'LONG'
-        }));
+        await waitFor(() => {
+            expect(mockPortfolioState.executeOrder).toHaveBeenCalledWith(expect.objectContaining({
+                symbol: '7203',
+                quantity: 100,
+                side: 'LONG'
+            }));
+        });
 
         // Success message
         await waitFor(() => {
@@ -80,6 +87,29 @@ describe('OrderPanel', () => {
 
         await waitFor(() => {
              expect(screen.queryByText('注文を送信しました')).not.toBeInTheDocument();
+        });
+
+        jest.useRealTimers();
+    });
+
+    it('shows loading state during order processing', async () => {
+        jest.useFakeTimers();
+        render(<OrderPanel stock={mockStock} currentPrice={2000} />);
+
+        // Open modal
+        fireEvent.click(screen.getByText('買い注文を発注'));
+
+        // Click confirm
+        const confirmButton = screen.getByText('注文を確定');
+        fireEvent.click(confirmButton);
+
+        // Should show loading text and be disabled immediately
+        expect(screen.getByText('処理中...')).toBeInTheDocument();
+        expect(confirmButton).toBeDisabled();
+
+        // Advance timers to complete processing
+        await act(async () => {
+            jest.advanceTimersByTime(500);
         });
 
         jest.useRealTimers();
