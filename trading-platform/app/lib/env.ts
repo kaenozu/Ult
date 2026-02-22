@@ -17,6 +17,11 @@ const envSchema = z.object({
   // Feature Flags
   ENABLE_REAL_TRADING: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
   ENABLE_ML_TRAINING: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
+  ENABLE_DEFAULT_ADMIN: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
+
+  // Initial Admin Config (Only if enabled)
+  DEFAULT_ADMIN_EMAIL: z.string().email().default('admin@example.com'),
+  DEFAULT_ADMIN_PASSWORD: z.string().min(8).default('admin123'),
 
   // System Config
   NEXT_PUBLIC_API_URL: z.string().url().default('http://localhost:3000'),
@@ -30,6 +35,9 @@ const processEnv = {
   ALPHA_VANTAGE_API_KEY: process.env.ALPHA_VANTAGE_API_KEY,
   ENABLE_REAL_TRADING: process.env.ENABLE_REAL_TRADING,
   ENABLE_ML_TRAINING: process.env.ENABLE_ML_TRAINING,
+  ENABLE_DEFAULT_ADMIN: process.env.ENABLE_DEFAULT_ADMIN,
+  DEFAULT_ADMIN_EMAIL: process.env.DEFAULT_ADMIN_EMAIL,
+  DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   LOG_LEVEL: process.env.LOG_LEVEL,
 };

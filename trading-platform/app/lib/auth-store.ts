@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import { env } from './env';
 
 export interface User {
   id: string;
@@ -16,16 +17,19 @@ class AuthStore {
   private users: Map<string, User> = new Map();
 
   private constructor() {
-    // Add a default admin user for testing
-    const adminPasswordHash = bcrypt.hashSync('admin123', 10);
-    this.users.set('admin@example.com', {
-      id: 'user_admin',
-      email: 'admin@example.com',
-      passwordHash: adminPasswordHash,
-      name: 'System Admin',
-      createdAt: new Date().toISOString(),
-      role: 'admin',
-    });
+    // Add a default admin user if enabled via environment (typically for DEV/STAGING)
+    // SECURITY: This is now explicitly controlled via ENABLE_DEFAULT_ADMIN
+    if (env.ENABLE_DEFAULT_ADMIN) {
+      const adminPasswordHash = bcrypt.hashSync(env.DEFAULT_ADMIN_PASSWORD, 10);
+      this.users.set(env.DEFAULT_ADMIN_EMAIL.toLowerCase(), {
+        id: 'user_admin',
+        email: env.DEFAULT_ADMIN_EMAIL,
+        passwordHash: adminPasswordHash,
+        name: 'System Admin',
+        createdAt: new Date().toISOString(),
+        role: 'admin',
+      });
+    }
   }
 
   public static getInstance(): AuthStore {
