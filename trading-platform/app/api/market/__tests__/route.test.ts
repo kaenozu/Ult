@@ -89,6 +89,7 @@ describe('Market API Security Tests', () => {
 
   it('should handle missing required parameters', async () => {
     const req = createRequest(`/api/market?type=quote`); // symbol is missing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await GET(req as any);
 
     expect(res.status).toBe(400);
