@@ -7,7 +7,7 @@
  */
 
 import { OHLCV } from '../../types/shared';
-import { ExtendedTechnicalFeatures } from './FeatureEngineering';
+import { ExtendedTechnicalFeatures } from '../services/feature-engineering-service';
 
 /**
  * ベースモデル予測結果
@@ -501,8 +501,12 @@ export class EnsembleModel {
 
     // 時系列特徴の寄与（利用可能な場合）
     if (features.timeSeriesFeatures) {
-      featureContributions['momentum_change'] = features.timeSeriesFeatures.momentumChange / 5;
-      featureContributions['price_acceleration'] = features.timeSeriesFeatures.priceAcceleration / 10;
+      if (features.timeSeriesFeatures.momentumChange !== undefined) {
+        featureContributions['momentum_change'] = features.timeSeriesFeatures.momentumChange / 5;
+      }
+      if (features.timeSeriesFeatures.priceAcceleration !== undefined) {
+        featureContributions['price_acceleration'] = features.timeSeriesFeatures.priceAcceleration / 10;
+      }
     }
 
     // 総寄与度を計算

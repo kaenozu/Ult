@@ -4,7 +4,7 @@
  * Encapsulates TensorFlow-based prediction logic with dependency injection
  */
 
-import { PredictionFeatures } from '../feature-calculation-service';
+import { PredictionFeatures } from '../feature-engineering-service';
 import { ModelPrediction } from '@/app/types';
 import {
   ITensorFlowModel,

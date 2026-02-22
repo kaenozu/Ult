@@ -4,7 +4,7 @@
  * Coordinates prediction workflow using dependency injection
  */
 
-import { PredictionFeatures } from '../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../lib/services/feature-engineering-service';
 import { ModelPrediction as LegacyModelPrediction } from '../../../types';
 import {
   IModelRegistry,

@@ -1,5 +1,5 @@
 ﻿import { PredictionServiceFactory } from '../index';
-import type { PredictionFeatures } from '../../../services/feature-calculation-service';
+import type { PredictionFeatures } from '../../../../lib/services/feature-engineering-service';
 import { logger } from '@/app/core/logger';
 
 async function runExamples() {

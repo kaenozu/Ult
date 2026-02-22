@@ -5,7 +5,7 @@
  * モデルが新しいデータで継続的に学習し、適応します。
  */
 
-import { ExtendedTechnicalFeatures } from './FeatureEngineering';
+import { ExtendedTechnicalFeatures } from '../services/feature-engineering-service';
 
 /**
  * 学習サンプル

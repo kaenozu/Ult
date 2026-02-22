@@ -9,7 +9,7 @@ import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
 import { TrainingData, WalkForwardResult, MLBacktestConfig } from '../ml/types';
 import { EnsembleStrategy } from '../ml/EnsembleStrategy';
-import { FeatureEngineering } from '../ml/FeatureEngineering';
+import { FeatureEngineeringService, featureEngineeringService } from '../services/feature-engineering-service';
 
 import { logger } from '@/app/core/logger';
 export interface WalkForwardConfig {
@@ -21,12 +21,12 @@ export interface WalkForwardConfig {
 }
 
 export class WalkForwardAnalysis extends EventEmitter {
-  private featureService: FeatureEngineering;
+  private featureService: FeatureEngineeringService;
   private ensembleStrategy: EnsembleStrategy;
 
   constructor() {
     super();
-    this.featureService = new FeatureEngineering();
+    this.featureService = featureEngineeringService;
     this.ensembleStrategy = new EnsembleStrategy();
   }
 

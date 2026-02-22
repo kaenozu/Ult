@@ -5,7 +5,7 @@
  * of the ML Model Service components.
  */
 
-import { PredictionFeatures } from '../feature-calculation-service';
+import { PredictionFeatures } from '../feature-engineering-service';
 import { ModelPrediction } from '@/app/types';
 import { ModelMetrics, ModelTrainingData } from '../tensorflow-model-service';
 

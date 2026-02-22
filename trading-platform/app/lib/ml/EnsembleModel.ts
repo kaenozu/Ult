@@ -5,7 +5,7 @@
  * 複数モデルのパフォーマンスに基づく重み調整、市場状態に応じたモデル選択を提供します。
  */
 
-import { AllFeatures, SentimentFeatures, MacroEconomicFeatures } from './FeatureEngineering';
+import { AllFeatures, SentimentFeatures, MacroEconomicFeatures } from '../services/feature-engineering-service';
 import { OHLCV } from '../../types/shared';
 import { calculateATR } from '../utils/technical-analysis';
 

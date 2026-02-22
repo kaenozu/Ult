@@ -19,7 +19,7 @@ describe('TestDataFactory', () => {
   });
 });
 
-import { PredictionFeatures } from '../../feature-calculation-service';
+import { PredictionFeatures } from '../../feature-engineering-service';
 import { ModelTrainingData } from '../../tensorflow-model-service';
 
 /**

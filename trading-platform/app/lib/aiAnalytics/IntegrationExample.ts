@@ -5,7 +5,7 @@
  */
 
 import { OHLCV } from '../../types/shared';
-import { featureEngineering, ExtendedTechnicalFeatures } from './FeatureEngineering';
+import { featureEngineeringService as featureEngineering, ExtendedTechnicalFeatures } from '../services/feature-engineering-service';
 import { ensembleModel } from './EnsembleModel';
 import { modelValidation, TrainingData } from './ModelValidation';
 import { modelMonitor } from './ModelMonitor';

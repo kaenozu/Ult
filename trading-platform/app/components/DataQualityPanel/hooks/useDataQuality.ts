@@ -69,11 +69,17 @@ export const useDataQuality = (updateInterval: number = 1000) => {
         }
 
         const overallScore = data.overallScore || 0;
+        const cacheHitRate = stats.hitRate || 0;
+
+        // Determine freshness based on cache state and data availability
+        const dataFreshness = stats.size > 0
+          ? (overallScore >= 90 ? 'excellent' : overallScore >= 75 ? 'good' : overallScore >= 60 ? 'fair' : 'poor')
+          : 'fair';
 
         setQualityMetrics({
           overallScore,
-          dataFreshness: overallScore >= 90 ? 'excellent' : overallScore >= 75 ? 'good' : overallScore >= 60 ? 'fair' : 'poor',
-          cachePerformance: stats.hitRate >= 0.9 ? 'excellent' : stats.hitRate >= 0.7 ? 'good' : stats.hitRate >= 0.5 ? 'fair' : 'poor',
+          dataFreshness,
+          cachePerformance: cacheHitRate >= 0.9 ? 'excellent' : cacheHitRate >= 0.7 ? 'good' : cacheHitRate >= 0.5 ? 'fair' : 'poor',
           anomalyCount: data.anomalies?.length || 0,
           validationPassRate: overallScore,
         });

@@ -4,7 +4,7 @@
  * Evaluates the confidence of predictions based on features and model agreement
  */
 
-import { PredictionFeatures } from '../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../lib/services/feature-engineering-service';
 import { IConfidenceEvaluator, ModelPrediction } from './interfaces';
 
 export class ConfidenceEvaluator implements IConfidenceEvaluator {

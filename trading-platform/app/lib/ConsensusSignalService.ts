@@ -497,11 +497,16 @@ class ConsensusSignalService {
     let strategyReason = '';
     
     // Phase 1: トレンド重視戦略の適用
-    // レンジ相場またはボラティリティが高い場合はシグナルを抑制（強制HOLD）
-    if (regime.type === 'RANGING' || regime.type === 'VOLATILE') {
-      weightedScore = 0;
-      strategyReason = ` [Filter: ${regime.type}相場のため除外]`;
-    } else if (regime.type === 'TRENDING_UP') {
+    // レンジ相場またはボラティリティが高い場合はシグナルを抑制（閾値を上げる）
+    if (regime.type === 'RANGING') {
+      weightedScore *= 0.5;
+      strategyReason = ` [Filter: ${regime.type}相場のため信頼度低下]`;
+    } else if (regime.type === 'VOLATILE') {
+      weightedScore *= 0.3;
+      strategyReason = ` [Filter: ${regime.type}相場のため信頼度大幅低下]`;
+    }
+    
+    if (regime.type === 'TRENDING_UP') {
       // 上昇トレンド条件: 価格 > SMA20 かつ RSI中立(40-60)
       if (currentPrice > currentSMA && currentRSI >= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.RSI_LOWER_BOUND && currentRSI <= CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.RSI_UPPER_BOUND) {
         weightedScore += CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.BOOST_AMOUNT; // 強力なブースト
@@ -553,21 +558,35 @@ class ConsensusSignalService {
     const strength = probability < CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.PROBABILITY_WEAK ? 'WEAK' : 
                      probability < CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.PROBABILITY_MODERATE ? 'MODERATE' : 'STRONG';
 
-    // コンフィデンス（0-100）を計算 - アンサンブルを考慮してさらにダイナミックに
-    let confidence = Math.min(Math.abs(weightedScore) * CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.CONFIDENCE_SCALING, 
-                     CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.CONFIDENCE_MAX);
+    // コンフィデンス（0-100）を計算 - 改善版: 動的範囲マッピング
+    let confidence: number;
     
-    // トレンド順張り戦略が適用された場合は確信度を下限70%に引き上げ
+    if (type === 'HOLD') {
+      confidence = this.mapRange(
+        Math.abs(weightedScore),
+        0, CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.SIGNAL_MIN,
+        CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.HOLD_CONFIDENCE_MIN, 50
+      );
+    } else {
+      const absScore = Math.abs(weightedScore);
+      if (absScore < 0.3) {
+        confidence = this.mapRange(absScore, CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.SIGNAL_MIN, 0.3, 65, 75);
+      } else if (absScore < 0.6) {
+        confidence = this.mapRange(absScore, 0.3, 0.6, 75, 85);
+      } else {
+        confidence = this.mapRange(absScore, 0.6, 1.0, 85, CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.CONFIDENCE_MAX);
+      }
+    }
+    
     if (strategyReason.includes('Trend:')) {
       confidence = Math.max(confidence, CONSENSUS_SIGNAL_CONFIG.TREND_FOLLOWING.MIN_CONFIDENCE_BOOST);
     }
 
-    // Phase 3: 過去実績に基づく信頼度調整（フィードバックループ）
     confidence = this.adjustConfidenceByHistory(confidence, type);
 
-    const finalConfidence = type === 'HOLD' ? 
-      Math.max(confidence, CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.HOLD_CONFIDENCE_MIN) : 
-      Math.max(confidence, CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.TRADE_CONFIDENCE_MIN);
+    const finalConfidence = Math.min(Math.max(confidence, 
+      type === 'HOLD' ? CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.HOLD_CONFIDENCE_MIN : CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.TRADE_CONFIDENCE_MIN
+    ), CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.CONFIDENCE_MAX);
 
     // デバッグログ: 各指標の寄与度を詳細に出力 (開発環境のみ)
     if (process.env.NODE_ENV !== 'production' && Math.abs(weightedScore) > 0.1) {

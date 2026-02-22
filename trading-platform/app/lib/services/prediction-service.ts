@@ -5,7 +5,7 @@
  * (#525: サービス層責務分離 - 予測オーケストレーション責務の分離)
  */
 
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures } from './feature-engineering-service';
 import { ModelPrediction } from '../../types';
 import { ModelRegistry, ModelType, modelRegistry } from './model-registry';
 import { ConfidenceEvaluator, confidenceEvaluator } from './confidence-evaluator';

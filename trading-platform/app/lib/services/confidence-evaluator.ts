@@ -5,7 +5,7 @@
  * (#525: サービス層責務分離 - 信頼度計算責務の分離)
  */
 
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures } from './feature-engineering-service';
 
 /**
  * 信頼度評価ルール

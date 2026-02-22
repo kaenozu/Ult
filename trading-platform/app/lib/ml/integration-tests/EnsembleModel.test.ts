@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { ensembleModel, EnsembleModel, ModelType, EnsemblePrediction } from '../EnsembleModel';
-import { featureEngineering, AllFeatures } from '../FeatureEngineering';
+import { featureEngineeringService as featureEngineering, AllFeatures } from '../../services/feature-engineering-service';
 import { OHLCV } from '../../../types/shared';
 
 describe('EnsembleModel', () => {

@@ -9,7 +9,7 @@
 import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
 import { devLog } from '@/app/lib/utils/dev-logger';
 
-import { FeatureCalculationService } from './feature-calculation-service';
+import { featureEngineeringService } from '@/app/lib/services/feature-engineering-service';
 import { enhancedMLService } from './enhanced-ml-service';
 import type { EnhancedPrediction } from '../types';
 import { analyzeStock } from '@/app/lib/analysis';
@@ -39,10 +39,8 @@ export interface IntegratedPredictionResult {
 }
 
 export class IntegratedPredictionService {
-  private featureService: FeatureCalculationService;
 
   constructor() {
-    this.featureService = new FeatureCalculationService();
   }
 
   /**
@@ -57,7 +55,7 @@ export class IntegratedPredictionService {
     const indicators = mlPredictionService.calculateIndicators(data);
 
     // 2. Calculate features from data (indicators computed internally)
-    const features = this.featureService.calculateFeatures(data);
+    const features = featureEngineeringService.calculateBasicFeatures(data);
 
     // 3. Get enhanced prediction
     const enhancedPrediction = await enhancedMLService.predictEnhanced(

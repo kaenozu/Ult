@@ -8,7 +8,7 @@ import {
   FeedForwardModel,
   featuresToArray
 } from '../tensorflow-model-service';
-import { PredictionFeatures } from '../feature-calculation-service';
+import { PredictionFeatures } from '../feature-engineering-service';
 
 describe('TensorFlow.js Model Service', () => {
   describe('FeedForwardModel', () => {

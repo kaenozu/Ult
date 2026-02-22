@@ -198,6 +198,8 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
 
 /**
  * Calculate Moving Average Convergence Divergence (MACD)
+ * Optimized: Single-pass calculation to avoid intermediate array allocations.
+ * Fix: Supports negative MACD values for Signal line calculation.
  */
 export function calculateMACD(
   prices: number[],
@@ -205,13 +207,70 @@ export function calculateMACD(
   slowPeriod: number = 26,
   signalPeriod: number = 9,
 ): { macd: number[]; signal: number[]; histogram: number[] } {
-  const fastEMA = calculateEMA(prices, fastPeriod);
-  const slowEMA = calculateEMA(prices, slowPeriod);
-  const macdLine = fastEMA.map((f, i) => (isNaN(f) || isNaN(slowEMA[i]) ? NaN : f - slowEMA[i]));
-  const signalLine = calculateEMA(macdLine, signalPeriod);
-  const histogram = macdLine.map((m, i) => (isNaN(m) || isNaN(signalLine[i]) ? NaN : m - signalLine[i]));
+  const length = prices.length;
+  const macd = new Array(length).fill(NaN);
+  const signal = new Array(length).fill(NaN);
+  const histogram = new Array(length).fill(NaN);
 
-  return { macd: macdLine, signal: signalLine, histogram };
+  /**
+   * Internal helper to update EMA state in a single pass
+   */
+  const createEMAState = (period: number) => {
+    let sum = 0;
+    let count = 0;
+    let prev = NaN;
+    const k = 2 / (period + 1);
+
+    return (val: number): number => {
+      if (isNaN(val)) {
+        if (count >= period) prev = NaN;
+        return NaN;
+      }
+
+      if (count < period) {
+        sum += val;
+        count++;
+        if (count === period) {
+          prev = sum / period;
+          return prev;
+        }
+        return NaN;
+      }
+
+      if (!isNaN(prev)) {
+        prev = (val - prev) * k + prev;
+        return prev;
+      }
+
+      return NaN;
+    };
+  };
+
+  const updateFast = createEMAState(fastPeriod);
+  const updateSlow = createEMAState(slowPeriod);
+  const updateSignal = createEMAState(signalPeriod);
+
+  for (let i = 0; i < length; i++) {
+    const price = _getValidPrice(prices[i]);
+
+    const fastVal = updateFast(price);
+    const slowVal = updateSlow(price);
+
+    let macdVal = NaN;
+    if (!isNaN(fastVal) && !isNaN(slowVal)) {
+      macdVal = fastVal - slowVal;
+      macd[i] = macdVal;
+    }
+
+    const signalVal = updateSignal(macdVal);
+    signal[i] = signalVal;
+
+    if (!isNaN(macdVal) && !isNaN(signalVal)) {
+      histogram[i] = macdVal - signalVal;
+    }
+  }
+
+  return { macd, signal, histogram };
 }
 
 /**

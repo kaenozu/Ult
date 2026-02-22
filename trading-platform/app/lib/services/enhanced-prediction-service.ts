@@ -3,7 +3,7 @@ import { devWarn } from '@/app/lib/utils/dev-logger';
 import { PredictionCalculator } from './implementations/prediction-calculator';
 import { candlestickPatternService, PatternFeatures } from './candlestick-pattern-service';
 import { predictionWorker, PredictionRequest } from './prediction-worker';
-import { featureCalculationService, PredictionFeatures } from './feature-calculation-service';
+import { featureEngineeringService, PredictionFeatures } from './feature-engineering-service';
 import { OPTIMIZED_REGIME_WEIGHTS, RSI_THRESHOLDS, SIGNAL_THRESHOLDS } from '@/app/lib/config/prediction-config';
 
 
@@ -280,7 +280,7 @@ export class EnhancedPredictionService {
   ): Promise<Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>> {
     
     // Calculate features
-    const features = featureCalculationService.calculateFeatures(data, indicators) as PredictionFeatures;
+    const features = featureEngineeringService.calculateBasicFeatures(data);
     const patternFeatures = candlestickPatternService.calculatePatternFeatures(data);
 
     // Calculate model predictions

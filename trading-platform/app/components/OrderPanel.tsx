@@ -5,7 +5,7 @@ import { formatCurrency, cn } from '@/app/lib/utils';
 import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { RiskSettingsPanel } from './RiskSettingsPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 /**
  * メッセージ定数
@@ -133,6 +133,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
     ids
   } = useOrderEntry({ stock, currentPrice });
 
+  const [isProcessing, setIsProcessing] = useState(false);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
   const triggerBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -152,6 +153,18 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       };
     }
   }, [isConfirming, setIsConfirming]);
+
+  const handleConfirmOrder = useCallback(async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      await handleOrder();
+    } catch (error) {
+      console.error('Order execution failed:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [isProcessing, handleOrder]);
 
   return (
     <div className="bg-[#141e27] p-4 flex flex-col gap-4 border-l border-[#233648] h-full relative">
@@ -361,19 +374,28 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
             <div className="flex gap-2">
               <button
                 onClick={() => setIsConfirming(false)}
-                className="flex-1 py-2 bg-[#233648] text-white rounded hover:bg-[#324d67]"
+                disabled={isProcessing}
+                className="flex-1 py-2 bg-[#233648] text-white rounded hover:bg-[#324d67] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 キャンセル
               </button>
               <button
                 ref={confirmBtnRef}
-                onClick={handleOrder}
+                onClick={handleConfirmOrder}
+                disabled={isProcessing}
                 className={cn(
-                  "flex-1 py-2 text-white rounded font-bold",
-                  side === 'BUY' ? "bg-green-600 hover:bg-green-500" : "bg-red-600 hover:bg-red-500"
+                  "flex-1 py-2 text-white rounded font-bold flex items-center justify-center gap-2",
+                  side === 'BUY' ? "bg-green-600 hover:bg-green-500" : "bg-red-600 hover:bg-red-500",
+                  isProcessing && "opacity-70 cursor-wait"
                 )}
               >
-                注文を確定
+                {isProcessing && (
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                )}
+                {isProcessing ? '処理中...' : '注文を確定'}
               </button>
             </div>
           </div>
