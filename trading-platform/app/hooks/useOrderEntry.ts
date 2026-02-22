@@ -108,7 +108,7 @@ export function useOrderEntry({ stock, currentPrice }: UseOrderEntryProps): UseO
 
   const handleOrder = useCallback(async () => {
     try {
-      const result = executeOrder({
+      const result = await executeOrder({
         symbol: stock.symbol,
         orderType, // Mapped from local state 'orderType' to OrderRequest 'orderType'
         side: side === 'BUY' ? 'LONG' : 'SHORT', // Map 'BUY'/'SELL' to 'LONG'/'SHORT' expected by store

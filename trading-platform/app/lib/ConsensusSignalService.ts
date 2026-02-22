@@ -45,7 +45,6 @@ export interface ConsensusSignal {
 
 /**
  * コンセンサスシグナルの重み付け設定
- * Optimized weights for better signal accuracy
  */
 interface ConsensusWeights {
   rsi: number;
@@ -54,9 +53,9 @@ interface ConsensusWeights {
 }
 
 const DEFAULT_WEIGHTS: ConsensusWeights = {
-  rsi: 0.30,      // トレンド性の強いデータではRSIの信頼性が低い
-  macd: 0.50,     // MACDを重視（トレンド追従）
-  bollinger: 0.20, // ボリンジャーバンドの重みを減らす
+  rsi: 0.30,
+  macd: 0.50,
+  bollinger: 0.20,
 };
 
 class ConsensusSignalService {
@@ -71,7 +70,7 @@ class ConsensusSignalService {
   /**
    * メインメソッド：コンセンサスシグナルを生成
    */
-  generateConsensus(data: OHLCV[], customWeights?: Partial<ConsensusWeights>): ConsensusSignal {
+  generateConsensus(data: OHLCV[], customWeights?: Partial<ConsensusWeights>, context?: string): ConsensusSignal {
     if (data.length < 50) {
       return this.createHoldSignal('データ不足のためシグナルを生成できません');
     }
@@ -106,8 +105,6 @@ class ConsensusSignalService {
     const macdSignal = this.generateMACDSignal(macd, currentPrice);
     const bollingerSignal = this.generateBollingerSignal(bollinger, currentPrice);
 
-    // Optimized: In modern flow, ML results are handled by IntegratedPredictionService via Web Worker
-    // This service now focuses on pure technical consensus as a component of that pipeline.
     const weights = { ...DEFAULT_WEIGHTS, ...customWeights };
 
     // コンセンサスを計算
@@ -119,7 +116,8 @@ class ConsensusSignalService {
       regime,
       currentPrice,
       currentSMA,
-      currentRSI
+      currentRSI,
+      context
     );
 
     return consensus;
@@ -137,30 +135,13 @@ class ConsensusSignalService {
       return { type: 'NEUTRAL', strength: 0, reason: 'RSIデータ不足' };
     }
 
-    if (prevRSI < RSI_CONFIG.OVERSOLD && currentRSI > prevRSI + 5) {
-      const recoveryStrength = Math.min((currentRSI - prevRSI) / 10, 1.0);
-      return {
-        type: 'BUY',
-        strength: Math.max(recoveryStrength, 0.7),
-        reason: `RSIの底打ち反転を検知（${prevRSI.toFixed(1)} -> ${currentRSI.toFixed(1)}）`
-      };
+    if (prevRSI < 30 && currentRSI > prevRSI + 5) {
+      return { type: 'BUY', strength: 0.8, reason: `RSIの底打ち反転を検知（${prevRSI.toFixed(1)} -> ${currentRSI.toFixed(1)}）` };
     }
 
-    if (currentRSI < RSI_CONFIG.EXTREME_OVERSOLD) {
-      return {
-        type: 'BUY',
-        strength: this.mapRange(currentRSI, 0, RSI_CONFIG.EXTREME_OVERSOLD, 0.8, 1.0),
-        reason: `RSI(${currentRSI.toFixed(1)})が売られすぎ水準`
-      };
-    }
-
-    if (currentRSI > RSI_CONFIG.EXTREME_OVERBOUGHT) {
-      return {
-        type: 'SELL',
-        strength: this.mapRange(currentRSI, RSI_CONFIG.EXTREME_OVERBOUGHT, 100, 0.8, 1.0),
-        reason: `RSI(${currentRSI.toFixed(1)})が買われすぎ水準`
-      };
-    }
+    if (currentRSI > 85) return { type: 'SELL', strength: 0.9, reason: `RSI(${currentRSI.toFixed(1)})が買われすぎ水準` };
+    if (currentRSI < 25) return { type: 'BUY', strength: 0.4, reason: `RSI(${currentRSI.toFixed(1)})が低水準` };
+    if (currentRSI > 75) return { type: 'SELL', strength: 0.6, reason: `RSI(${currentRSI.toFixed(1)})が高水準` };
 
     return { type: 'NEUTRAL', strength: 0, reason: `RSI(${currentRSI.toFixed(1)})は中立圏内` };
   }
@@ -173,29 +154,27 @@ class ConsensusSignalService {
     const currentHist = macd.histogram[len - 1];
     const prevHist = macd.histogram[len - 2];
 
-    if (isNaN(currentHist) || isNaN(prevHist)) {
-      return { type: 'NEUTRAL', strength: 0, reason: 'MACDデータ不足' };
+    if (isNaN(currentHist)) return { type: 'NEUTRAL', strength: 0, reason: 'MACDデータ不足' };
+
+    if (currentHist === 0) {
+      return { type: 'NEUTRAL', strength: 0, reason: 'MACD方向感なし' };
     }
 
     if (currentHist > 0) {
       const isExpanding = currentHist > prevHist;
       return {
         type: 'BUY',
-        strength: isExpanding ? 0.6 : 0.3,
+        strength: isExpanding ? 0.7 : 0.4,
         reason: `MACD強気圏（ヒストグラム: ${currentHist.toFixed(4)}）`
       };
-    }
-
-    if (currentHist < 0) {
+    } else {
       const isShrinking = currentHist > prevHist;
       return {
         type: isShrinking ? 'BUY' : 'SELL',
-        strength: isShrinking ? 0.3 : 0.6,
+        strength: isShrinking ? 0.4 : 0.7,
         reason: `MACD弱気圏（ヒストグラム: ${currentHist.toFixed(4)}）`
       };
     }
-
-    return { type: 'NEUTRAL', strength: 0, reason: 'MACD方向感なし' };
   }
 
   /**
@@ -213,17 +192,14 @@ class ConsensusSignalService {
     }
 
     const bandWidth = upper - lower;
+    if (bandWidth <= 0) return { type: 'NEUTRAL', strength: 0, reason: 'ボリンジャーバンド収束' };
+    
     const positionInBand = (currentPrice - lower) / (bandWidth || 1);
 
-    if (positionInBand < 0.2) {
-      return { type: 'BUY', strength: 0.8, reason: 'ボリンジャーバンド下部付近' };
-    }
+    if (positionInBand < 0.2) return { type: 'BUY', strength: 0.8, reason: '価格がボリンジャーバンド下部付近' };
+    if (positionInBand > 0.8) return { type: 'SELL', strength: 0.8, reason: '価格がボリンジャーバンド上部付近' };
 
-    if (positionInBand > 0.8) {
-      return { type: 'SELL', strength: 0.8, reason: 'ボリンジャーバンド上部付近' };
-    }
-
-    return { type: 'NEUTRAL', strength: 0, reason: 'ボリンジャーバンド中央付近' };
+    return { type: 'NEUTRAL', strength: 0, reason: '価格がボリンジャーバンド中央付近' };
   }
 
   /**
@@ -237,13 +213,29 @@ class ConsensusSignalService {
     regime: MarketRegime,
     currentPrice: number,
     currentSMA: number,
-    currentRSI: number
+    currentRSI: number,
+    context?: string
   ): ConsensusSignal {
     const rsiScore = rsiSignal.type === 'BUY' ? rsiSignal.strength : rsiSignal.type === 'SELL' ? -rsiSignal.strength : 0;
     const macdScore = macdSignal.type === 'BUY' ? macdSignal.strength : macdSignal.type === 'SELL' ? -macdSignal.strength : 0;
     const bollingerScore = bollingerSignal.type === 'BUY' ? bollingerSignal.strength : bollingerSignal.type === 'SELL' ? -bollingerSignal.strength : 0;
 
     let weightedScore = (rsiScore * weights.rsi) + (macdScore * weights.macd) + (bollingerScore * weights.bollinger);
+
+    let strategyReason = '';
+    
+    // Phase 1: トレンド重視戦略の適用
+    if (regime.type === 'RANGING') {
+      weightedScore *= 0.2;
+      strategyReason = ` [Filter: RANGING相場のため除外]`;
+    }
+    
+    if (regime.type === 'TRENDING_UP' || regime.type === 'BULLISH') {
+      if (currentPrice > currentSMA && currentRSI >= 40) {
+        weightedScore += 0.6;
+        strategyReason = ` [Trend: 上昇トレンド順張り]`;
+      }
+    }
 
     const baseThreshold = CONSENSUS_SIGNAL_CONFIG.THRESHOLDS.SIGNAL_MIN;
     
@@ -256,7 +248,8 @@ class ConsensusSignalService {
     const confidence = Math.min(probability * 100 + 50, 95);
 
     const signals = { rsi: rsiSignal, macd: macdSignal, bollinger: bollingerSignal };
-    const reason = `${type === 'BUY' ? '買い' : type === 'SELL' ? '売り' : '様子見'}判定。複合指標によるコンセンサス分析。`;
+    let reason = `${type === 'BUY' ? '買い' : type === 'SELL' ? '売り' : '様子見'}判定。複合指標によるコンセンサス分析。`;
+    if (strategyReason) reason += strategyReason;
 
     return {
       type,

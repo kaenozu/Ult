@@ -147,3 +147,35 @@ if (!global.performance) {
     (global as any).performance.getEntriesByType = jest.fn(() => []);
   }
 }
+
+// Mock lightweight-charts
+jest.mock('lightweight-charts', () => ({
+  createChart: jest.fn().mockReturnValue({
+    addSeries: jest.fn().mockReturnValue({
+      setData: jest.fn(),
+      setMarkers: jest.fn(),
+      applyOptions: jest.fn(),
+      priceScale: jest.fn().mockReturnValue({
+        applyOptions: jest.fn(),
+      }),
+    }),
+    remove: jest.fn(),
+    subscribeCrosshairMove: jest.fn(),
+    unsubscribeCrosshairMove: jest.fn(),
+    applyOptions: jest.fn(),
+    timeScale: jest.fn().mockReturnValue({
+      fitContent: jest.fn(),
+      scrollToRealTime: jest.fn(),
+    }),
+    priceScale: jest.fn().mockReturnValue({
+      applyOptions: jest.fn(),
+    }),
+  }),
+  ColorType: { Solid: 'solid' },
+  CrosshairMode: { Normal: 0 },
+  LineStyle: { Solid: 0, Dotted: 1, Dashed: 2, LargeDashed: 3, SparseDotted: 4 },
+  PriceScaleMode: { Normal: 0, Logarithmic: 1, Percentage: 2, IndexedTo100: 3 },
+  CandlestickSeries: 'Candlestick',
+  LineSeries: 'Line',
+  HistogramSeries: 'Histogram',
+}));

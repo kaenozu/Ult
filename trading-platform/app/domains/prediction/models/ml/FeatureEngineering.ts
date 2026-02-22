@@ -311,6 +311,13 @@ export class FeatureEngineering {
   private readonly CACHE_TTL = 60000; // 1 minute cache for features
 
   /**
+   * キャッシュをクリア
+   */
+  public clearCache(): void {
+    this.memoCache.clear();
+  }
+
+  /**
    * すべての特徴量を計算
    */
   calculateAllFeatures(
@@ -368,7 +375,6 @@ export class FeatureEngineering {
 
     return result;
   }
-  }
 
   /**
    * テクニカル指標の拡張特徴量を計算
@@ -378,6 +384,14 @@ export class FeatureEngineering {
     const highs = data.map(d => d.high);
     const lows = data.map(d => d.low);
     const volumes = data.map(d => d.volume);
+
+    // 現在値
+    const currentPrice = prices[prices.length - 1];
+    const currentVolume = volumes[volumes.length - 1];
+
+    // 値取得ヘルパー
+    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
+    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
 
     // 基本指標
     const rsi = calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD);
@@ -397,14 +411,6 @@ export class FeatureEngineering {
 
     // ATR
     const atr = calculateATR(highs, lows, prices, RSI_CONFIG.DEFAULT_PERIOD);
-
-    // 現在値
-    const currentPrice = prices[prices.length - 1];
-    const currentVolume = volumes[volumes.length - 1];
-
-    // 値取得ヘルパー
-    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
-    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
 
     // 基本指標値
     const rsiValue = last(rsi, 50);

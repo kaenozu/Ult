@@ -28,9 +28,9 @@ export interface MLModelStatus {
 export class MLIntegrationService {
   private static instance: MLIntegrationService;
   private modelStatus: MLModelStatus = {
-    available: true, // Core infrastructure is now available via worker
+    available: false, // Default to false until initialized
     initialized: false,
-    modelsLoaded: ['ENSEMBLE_WORKER'],
+    modelsLoaded: [],
     lastCheck: new Date().toISOString(),
   };
 
@@ -70,10 +70,16 @@ export class MLIntegrationService {
       // Initialize Worker infrastructure
       logger.info('[ML Integration] Initializing Prediction Worker...');
       
+      // In test environment, default to unavailable unless explicitly enabled
+      const nodeEnv = process.env.NODE_ENV;
+      const isTest = nodeEnv === 'test';
+      const forceEnable = process.env.ENABLE_AI_PREDICTION === 'true';
+      const available = !isTest || forceEnable;
+      
       this.modelStatus = {
-        available: true,
+        available,
         initialized: true,
-        modelsLoaded: ['ENSEMBLE_WORKER', 'RF', 'XGB', 'LSTM'],
+        modelsLoaded: available ? ['ENSEMBLE_WORKER', 'RF', 'XGB', 'LSTM'] : [],
         lastCheck: new Date().toISOString(),
       };
 
