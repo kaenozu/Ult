@@ -1,6 +1,6 @@
 import { GET } from '../route';
 import { realTimeDataService } from '@/app/lib/services/RealTimeDataService';
-import { requireAuth } from '@/app/lib/auth';
+// import { requireAuth } from '@/app/lib/auth';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 
 // Mock dependencies
