@@ -14,7 +14,7 @@ import {
   calculateBollingerBands,
   calculateATR,
   calculateADX,
-} from '../../utils/technical-analysis';
+} from '../../../utils/technical-analysis';
 import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
 
 export class TechnicalCalculator {

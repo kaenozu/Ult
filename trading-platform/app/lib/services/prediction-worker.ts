@@ -5,9 +5,55 @@
  * for better UI responsiveness
  */
 
-
 import { OHLCV, Signal } from '@/app/types';
 import { devError } from '@/app/lib/utils/dev-logger';
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+class PredictionCache {
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private readonly TTL = 5000;
+  private readonly MAX_SIZE = 50;
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > this.TTL) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.data as T;
+  }
+
+  set<T>(key: string, data: T): void {
+    if (this.cache.size >= this.MAX_SIZE) {
+      this.cleanup();
+    }
+    this.cache.set(key, { data, timestamp: Date.now() });
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > this.TTL) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
+}
+
+export const predictionCache = new PredictionCache();
 
 import { PredictionFeatures } from './feature-engineering-service';
 import { PatternFeatures } from './candlestick-pattern-service';

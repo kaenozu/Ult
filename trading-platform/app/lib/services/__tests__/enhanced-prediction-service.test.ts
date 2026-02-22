@@ -269,4 +269,46 @@ describe('EnhancedPredictionService', () => {
       expect(result.confidence).toBeLessThan(0.9);
     });
   });
+
+  describe('Caching', () => {
+    it('should cache repeated requests', async () => {
+      const data = generateTestData(30, 'up');
+      
+      const result1 = await service.calculatePrediction({
+        symbol: 'TEST',
+        data
+      });
+      
+      const result2 = await service.calculatePrediction({
+        symbol: 'TEST',
+        data
+      });
+      
+      expect(result1.cacheHit).toBe(false);
+      expect(result2.cacheHit).toBe(true);
+    });
+
+    it('should complete within 100ms', async () => {
+      const data = generateTestData(30);
+      const start = performance.now();
+      
+      await service.calculatePrediction({
+        symbol: 'TEST',
+        data
+      });
+      
+      expect(performance.now() - start).toBeLessThan(100);
+    });
+
+    it('should track performance metrics', async () => {
+      const data = generateTestData(30);
+      
+      await service.calculatePrediction({ symbol: 'TEST', data });
+      await service.calculatePrediction({ symbol: 'TEST', data });
+      
+      const metrics = service.getPerformanceMetrics();
+      expect(metrics.totalCalculations).toBeGreaterThan(0);
+      expect(metrics.cacheHits).toBeGreaterThan(0);
+    });
+  });
 });

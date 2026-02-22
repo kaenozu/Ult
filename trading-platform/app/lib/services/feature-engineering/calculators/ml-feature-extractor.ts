@@ -5,11 +5,11 @@
  */
 
 import { OHLCV } from '@/app/types';
-import { MLFeatures } from '../../ml/types';
+import { MLFeatures } from '../../../ml/types';
 import { TechnicalCalculator } from './technical-calculator';
 import { TimeSeriesCalculator } from './time-series-calculator';
-import { calculateADX } from '../../utils/technical-analysis';
-import { candlestickPatternService } from '../candlestick-pattern-service';
+import { calculateADX } from '../../../utils/technical-analysis';
+import { candlestickPatternService } from '../../candlestick-pattern-service';
 
 export class MLFeatureExtractor {
   private technicalCalc = new TechnicalCalculator();

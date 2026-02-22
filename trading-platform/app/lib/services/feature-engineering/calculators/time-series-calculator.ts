@@ -6,7 +6,7 @@
 
 import { OHLCV } from '@/app/types';
 import { TimeSeriesFeatures } from '../feature-types';
-import { calculateSMA } from '../../utils/technical-analysis';
+import { calculateSMA } from '../../../utils/technical-analysis';
 
 export class TimeSeriesCalculator {
   public calculate(data: OHLCV[]): TimeSeriesFeatures {
