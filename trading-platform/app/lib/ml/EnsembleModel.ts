@@ -8,6 +8,7 @@
 import { AllFeatures, SentimentFeatures, MacroEconomicFeatures } from '../services/feature-engineering-service';
 import { OHLCV } from '../../types/shared';
 import { calculateATR } from '../utils/technical-analysis';
+import { RSI_THRESHOLDS, OPTIMIZED_ENSEMBLE_WEIGHTS, PREDICTION_CONFIG, MarketRegimeType } from '../config/prediction-config';
 
 /**
  * モデルタイプ
@@ -273,43 +274,16 @@ export class EnsembleModel {
    * 市場レジームに基づいて重みを調整
    */
   private adjustWeightsForRegime(regime: MarketRegime): EnsembleWeights {
-    const adjustedWeights = { ...this.currentWeights };
+    const baseWeights = OPTIMIZED_ENSEMBLE_WEIGHTS[regime.regime];
+    
+    const adjustedWeights: EnsembleWeights = {
+      RF: Math.max(this.MIN_WEIGHT, Math.min(this.MAX_WEIGHT, baseWeights.RF)),
+      XGB: Math.max(this.MIN_WEIGHT, Math.min(this.MAX_WEIGHT, baseWeights.XGB)),
+      LSTM: Math.max(this.MIN_WEIGHT, Math.min(this.MAX_WEIGHT, baseWeights.LSTM)),
+      TECHNICAL: Math.max(this.MIN_WEIGHT, Math.min(this.MAX_WEIGHT, baseWeights.TECHNICAL)),
+      ENSEMBLE: 0,
+    };
 
-    switch (regime.regime) {
-      case 'TRENDING':
-        // トレンド市場ではLSTMとXGBを重視
-        adjustedWeights.LSTM = Math.min(this.MAX_WEIGHT, this.currentWeights.LSTM * 1.3);
-        adjustedWeights.XGB = Math.min(this.MAX_WEIGHT, this.currentWeights.XGB * 1.2);
-        adjustedWeights.RF = this.currentWeights.RF * 0.9;
-        adjustedWeights.TECHNICAL = this.currentWeights.TECHNICAL * 0.8;
-        break;
-
-      case 'RANGING':
-        // レンジ相場ではTechnical Analysisを重視
-        adjustedWeights.TECHNICAL = Math.min(this.MAX_WEIGHT, this.currentWeights.TECHNICAL * 1.5);
-        adjustedWeights.RF = this.currentWeights.RF * 1.1;
-        adjustedWeights.LSTM = this.currentWeights.LSTM * 0.8;
-        adjustedWeights.XGB = this.currentWeights.XGB * 0.9;
-        break;
-
-      case 'VOLATILE':
-        // ボラティルな市場ではRFとXGBを重視
-        adjustedWeights.RF = Math.min(this.MAX_WEIGHT, this.currentWeights.RF * 1.3);
-        adjustedWeights.XGB = Math.min(this.MAX_WEIGHT, this.currentWeights.XGB * 1.2);
-        adjustedWeights.LSTM = this.currentWeights.LSTM * 0.7;
-        adjustedWeights.TECHNICAL = this.currentWeights.TECHNICAL * 0.9;
-        break;
-
-      case 'QUIET':
-        // 静かな市場では全モデルを均等に
-        adjustedWeights.RF = 0.25;
-        adjustedWeights.XGB = 0.25;
-        adjustedWeights.LSTM = 0.25;
-        adjustedWeights.TECHNICAL = 0.25;
-        break;
-    }
-
-    // 重みを正規化
     return this.normalizeWeights(adjustedWeights);
   }
 
