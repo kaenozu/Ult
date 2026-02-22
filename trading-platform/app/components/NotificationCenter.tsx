@@ -29,6 +29,22 @@ export function NotificationCenter({ _onClose }: NotificationCenterProps) {
   const [filterType, setFilterType] = useState<'ALL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
   const [showSettings, setShowSettings] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        setShowSettings(false);
+        buttonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,6 +84,7 @@ export function NotificationCenter({ _onClose }: NotificationCenterProps) {
     <div className="relative" ref={dropdownRef}>
       {/* Notification Bell Icon */}
       <button
+        ref={buttonRef}
         onClick={handleToggleNotifications}
         className="relative p-2 hover:bg-[#233648] rounded-lg transition-colors"
         title="通知センター"

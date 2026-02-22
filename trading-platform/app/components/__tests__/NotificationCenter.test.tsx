@@ -337,4 +337,29 @@ describe('NotificationCenter', () => {
       expect(listItems).toHaveLength(1);
     });
   });
+
+  it('closes dropdown and returns focus when Escape key is pressed', async () => {
+    render(<NotificationCenter />);
+
+    const bellIcon = screen.getByTitle('通知センター');
+    fireEvent.click(bellIcon);
+
+    // Verify dropdown is open
+    await waitFor(() => {
+      const dropdown = screen.getByText('通知センター');
+      expect(dropdown).toBeInTheDocument();
+    });
+
+    // Press Escape
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    // Verify dropdown is closed
+    await waitFor(() => {
+      const dropdown = screen.queryByText('通知センター');
+      expect(dropdown).not.toBeInTheDocument();
+    });
+
+    // Verify focus returned to bell icon
+    expect(bellIcon).toHaveFocus();
+  });
 });
