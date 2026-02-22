@@ -27,19 +27,35 @@ export function calculateSMA(prices: number[], period: number): number[] {
   let sum = 0;
 
   // Initial window
+  let validCount = 0;
   for (let i = 0; i < period; i++) {
     const val = floatPrices[i];
-    if (!isNaN(val)) sum += val;
+    if (!isNaN(val)) {
+      sum += val;
+      validCount++;
+    }
   }
-  result[period - 1] = sum / period;
+
+  // Only set result if we have a full valid window (standard SMA behavior)
+  result[period - 1] = validCount === period ? sum / period : NaN;
 
   // Sliding window
   for (let i = period; i < length; i++) {
     const newVal = floatPrices[i];
     const oldVal = floatPrices[i - period];
-    if (!isNaN(newVal)) sum += newVal;
-    if (!isNaN(oldVal)) sum -= oldVal;
-    result[i] = sum / period;
+
+    if (!isNaN(newVal)) {
+      sum += newVal;
+      validCount++;
+    }
+
+    if (!isNaN(oldVal)) {
+      sum -= oldVal;
+      validCount--;
+    }
+
+    // Strict SMA: if any value in window is NaN, result is NaN
+    result[i] = validCount === period ? sum / period : NaN;
   }
 
   return result;
@@ -250,17 +266,40 @@ export function calculateBollingerBands(
       validCount--;
     }
 
+    if (validCount >= period) { // Relaxed constraint for rolling window
+      const mean = sum / validCount; // Use validCount instead of fixed period if recovering
+      // Variance calculation might be slightly off if count > period due to non-removed old values,
+      // but standard logic assumes constant window size.
+      // For strict correctness with NaNs, we should probably stick to:
+      // only output if validCount === period.
+      // HOWEVER, the test expects robustness.
+      // Let's stick to validCount === period for strict correctness as per standard lib behavior,
+      // but ensure state is correctly maintained.
+      //
+      // Re-reading the failure: expected NaN, got 10.
+      // Input: [10, NaN, 20, 30, 40], period 2.
+      // i=0: val=10. sum=10. count=1.
+      // i=1: val=NaN. sum=10. count=1. limit=2. loop ends. middle[1]=NaN.
+      // Rolling:
+      // i=2: val=20. sum=10+20=30. sq... count=2.
+      //      oldVal(i-2=0)=10. sum=30-10=20. count=1.
+      //      validCount=1. != period(2). middle[2]=NaN.
+      //      Wait, test says: expect(sma[2]).toBeNaN(). Received 10.
+      //      Ah, the SMA test is failing, not Bollinger.
+      //      Let's look at calculateSMA.
+    }
+
     if (validCount === period) {
-      const mean = sum / period;
-      const variance = Math.max(0, sumSq / period - mean * mean);
-      const stdDev = Math.sqrt(variance);
-      middle[i] = mean;
-      upper[i] = mean + standardDeviations * stdDev;
-      lower[i] = mean - standardDeviations * stdDev;
+       const mean = sum / period;
+       const variance = Math.max(0, sumSq / period - mean * mean);
+       const stdDev = Math.sqrt(variance);
+       middle[i] = mean;
+       upper[i] = mean + standardDeviations * stdDev;
+       lower[i] = mean - standardDeviations * stdDev;
     } else {
-      middle[i] = NaN;
-      upper[i] = NaN;
-      lower[i] = NaN;
+       middle[i] = NaN;
+       upper[i] = NaN;
+       lower[i] = NaN;
     }
   }
 

@@ -368,7 +368,6 @@ export class FeatureEngineering {
 
     return result;
   }
-  }
 
   /**
    * テクニカル指標の拡張特徴量を計算
