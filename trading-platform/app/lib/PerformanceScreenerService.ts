@@ -311,7 +311,7 @@ export class PerformanceScreenerService {
         };
 
         // 2. AIシグナル評価
-        const consensus = await consensusSignalService.generateEnhancedConsensus(recentData);
+        const consensus = await consensusSignalService.generateConsensus(recentData);
         const currentPrice = recentData[recentData.length - 1].close;
         const mockStock: Stock = {
           symbol: ds.symbol,
@@ -658,7 +658,7 @@ export class PerformanceScreenerService {
         const recentData = data.slice(-lookbackDays);
 
         // コンセンサスシグナル生成
-        const consensus = await consensusSignalService.generateEnhancedConsensus(recentData);
+        const consensus = await consensusSignalService.generateConsensus(recentData);
 
         // ML予測を実行 (Phase 1 Integration)
         const currentPrice = recentData[recentData.length - 1].close;

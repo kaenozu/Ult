@@ -152,6 +152,7 @@ describe('StockChart', () => {
     const mockAddSeries = jest.fn(() => ({
       setData: jest.fn(),
       applyOptions: jest.fn(),
+      setMarkers: jest.fn(),
     }));
     const mockChart = {
       addSeries: mockAddSeries,
@@ -180,6 +181,7 @@ describe('StockChart', () => {
     const mockAddSeries = jest.fn(() => ({
       setData: jest.fn(),
       applyOptions: jest.fn(),
+      setMarkers: jest.fn(),
     }));
     const mockChart = {
       addSeries: mockAddSeries,

@@ -1,4 +1,4 @@
-import { OHLCV, Signal } from '../types';
+import { OHLCV, Signal, Stock } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
@@ -531,18 +531,18 @@ class AnalysisService {
         }
 
         // ML prediction integration point - using Off-main-thread Workers
-        const mlAvailable = mlIntegrationService.isAvailable();
-        if (mlAvailable && !context?.minimal) {
-            const mlPrediction = await mlIntegrationService.predictWithML(
-                { symbol, market } as Stock, 
-                data, 
-                indexDataOverride
-            );
-            if (mlPrediction) {
-                logger.debug('[analyzeStock] Using ML-enhanced signal', { symbol, type: mlPrediction.type });
-                return mlPrediction;
-            }
-        }
+        // const mlAvailable = mlIntegrationService.isAvailable();
+        // if (mlAvailable && !context?.minimal) {
+        //     const mlPrediction = await mlIntegrationService.predictWithML(
+        //         { symbol, market } as Stock,
+        //         data,
+        //         indexDataOverride
+        //     );
+        //     if (mlPrediction) {
+        //         logger.debug('[analyzeStock] Using ML-enhanced signal', { symbol, type: mlPrediction.type });
+        //         return mlPrediction;
+        //     }
+        // }
         // If ML not available or prediction fails, continue with rule-based approach below
 
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
