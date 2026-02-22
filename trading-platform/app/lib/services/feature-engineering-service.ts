@@ -16,8 +16,10 @@ import {
   calculateMACD,
   calculateBollingerBands,
   calculateATR,
+  calculateADX,
 } from '../utils/technical-analysis';
 import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
+import { candlestickPatternService } from './candlestick-pattern-service';
 
 // --- Interfaces from ML Domain ---
 
@@ -49,6 +51,7 @@ export interface TechnicalFeatures {
   atr: number;
   atrPercent: number;
   atrRatio: number;
+  adx: number;
 
   // Momentum
   momentum10: number;
@@ -61,6 +64,8 @@ export interface TechnicalFeatures {
   stochasticD: number;
   williamsR: number;
   cci: number;
+  aroonUp: number;
+  aroonDown: number;
 
   // Volume
   volumeRatio: number;
@@ -248,6 +253,10 @@ export class FeatureEngineeringService {
     const momentum = this.calculateMomentum(data.map(d => d.close), 10);
     const rateOfChange = this.calculateROC(data.map(d => d.close), 12);
 
+    const prices = data.map(d => d.close);
+    const rsiArray = calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD);
+    const stochasticRSI = this.calculateStochasticRSI(rsiArray, 14);
+
     // Map to ExtendedTechnicalFeatures structure
     const features: ExtendedTechnicalFeatures = {
       rsi: technical.rsi,
@@ -263,11 +272,11 @@ export class FeatureEngineeringService {
       atrPercent: technical.atrPercent,
       momentum: momentum,
       rateOfChange: rateOfChange,
-      stochasticRSI: 50, // Simplified for now or implement full calculation if needed
+      stochasticRSI: stochasticRSI,
       williamsR: technical.williamsR,
       cci: technical.cci,
       atrRatio: technical.atrRatio,
-      volumeProfile: 1, // Placeholder or implement logic
+      volumeProfile: 1, // Still a placeholder, but improving others
       pricePosition: technical.pricePosition,
       momentumTrend: this.classifyMomentumTrend(momentum, rateOfChange),
       volatilityRegime: this.classifyVolatilityRegime(volatility),
@@ -336,8 +345,9 @@ export class FeatureEngineeringService {
     // Bollinger Bands
     const bb = calculateBollingerBands(prices, BOLLINGER_BANDS.PERIOD, BOLLINGER_BANDS.STD_DEVIATION);
 
-    // ATR
-    const atr = calculateATR(highs, lows, prices, RSI_CONFIG.DEFAULT_PERIOD);
+    // ADX
+    const adxArray = calculateADX(data, 14);
+    const adxValue = last(adxArray, 20);
 
     // Current Values
     const currentPrice = prices[prices.length - 1];
@@ -375,10 +385,11 @@ export class FeatureEngineeringService {
     const bbWidth = ((bbUpper - bbLower) / bbMiddle) * 100;
 
     // ATR
+    const atr = calculateATR(highs, lows, prices, RSI_CONFIG.DEFAULT_PERIOD);
     const atrValue = last(atr, currentPrice * 0.02);
     const atrPercent = (atrValue / currentPrice) * 100;
     const atrArray = atr.filter(v => !isNaN(v));
-    const atrAvg = atrArray.reduce((sum, v) => sum + v, 0) / atrArray.length;
+    const atrAvg = atrArray.length > 0 ? atrArray.reduce((sum, v) => sum + v, 0) / atrArray.length : atrValue;
     const atrRatio = atrValue / (atrAvg || 1);
 
     // Momentum & ROC
@@ -396,6 +407,9 @@ export class FeatureEngineeringService {
     // CCI
     const cci = this.calculateCCI(highs, lows, prices, 20);
 
+    // Aroon
+    const aroon = this.calculateAroon(highs, lows, 14);
+
     // Volume
     const volumeMA5 = this.calculateSMA_Internal(volumes, 5);
     const volumeMA20 = this.calculateSMA_Internal(volumes, 20);
@@ -410,24 +424,25 @@ export class FeatureEngineeringService {
     return {
       rsi: rsiValue,
       rsiChange,
-      sma5: sma5Dev,
-      sma10: sma10Dev,
-      sma20: sma20Dev,
-      sma50: sma50Dev,
-      sma200: sma200Dev,
-      ema12: ema12Dev,
-      ema26: ema26Dev,
+      sma5: isNaN(sma5Dev) ? 0 : sma5Dev,
+      sma10: isNaN(sma10Dev) ? 0 : sma10Dev,
+      sma20: isNaN(sma20Dev) ? 0 : sma20Dev,
+      sma50: isNaN(sma50Dev) ? 0 : sma50Dev,
+      sma200: isNaN(sma200Dev) ? 0 : sma200Dev,
+      ema12: isNaN(ema12Dev) ? 0 : ema12Dev,
+      ema26: isNaN(ema26Dev) ? 0 : ema26Dev,
       macd: macdValue,
       macdSignal: macdSignalValue,
       macdHistogram: macdHistogramValue,
       bbUpper,
       bbMiddle,
       bbLower,
-      bbPosition,
-      bbWidth,
+      bbPosition: isNaN(bbPosition) ? 50 : bbPosition,
+      bbWidth: isNaN(bbWidth) ? 0 : bbWidth,
       atr: atrValue,
-      atrPercent,
-      atrRatio,
+      atrPercent: isNaN(atrPercent) ? 0 : atrPercent,
+      atrRatio: isNaN(atrRatio) ? 1 : atrRatio,
+      adx: adxValue,
       momentum10,
       momentum20,
       rateOfChange12: roc12,
@@ -436,7 +451,9 @@ export class FeatureEngineeringService {
       stochasticD: stoch.d,
       williamsR,
       cci,
-      volumeRatio,
+      aroonUp: aroon.up,
+      aroonDown: aroon.down,
+      volumeRatio: isNaN(volumeRatio) ? 1 : volumeRatio,
       volumeMA5: last(volumeMA5, currentVolume),
       volumeMA20: last(volumeMA20, currentVolume),
       volumeTrend,
@@ -444,6 +461,48 @@ export class FeatureEngineeringService {
       priceVelocity,
       priceAcceleration,
     };
+  }
+
+  private calculateAroon(highs: number[], lows: number[], period: number): { up: number; down: number } {
+    if (highs.length < period + 1) return { up: 50, down: 50 };
+    const recentHighs = highs.slice(-(period + 1));
+    const recentLows = lows.slice(-(period + 1));
+    
+    let daysSinceMax = 0;
+    let maxVal = -Infinity;
+    for (let i = 0; i <= period; i++) {
+      if (recentHighs[i] >= maxVal) {
+        maxVal = recentHighs[i];
+        daysSinceMax = period - i;
+      }
+    }
+    
+    let daysSinceMin = 0;
+    let minVal = Infinity;
+    for (let i = 0; i <= period; i++) {
+      if (recentLows[i] <= minVal) {
+        minVal = recentLows[i];
+        daysSinceMin = period - i;
+      }
+    }
+    
+    return {
+      up: ((period - daysSinceMax) / period) * 100,
+      down: ((period - daysSinceMin) / period) * 100
+    };
+  }
+
+  private calculateStochasticRSI(rsiValues: number[], period: number): number {
+    if (rsiValues.length < period) return 50;
+    const slice = rsiValues.slice(-period).filter(v => !isNaN(v));
+    if (slice.length < 2) return 50;
+    
+    const minRSI = Math.min(...slice);
+    const maxRSI = Math.max(...slice);
+    const currentRSI = rsiValues[rsiValues.length - 1];
+    
+    if (maxRSI === minRSI) return 50;
+    return ((currentRSI - minRSI) / (maxRSI - minRSI)) * 100;
   }
 
   // --- Helpers ---
@@ -1005,6 +1064,18 @@ export class FeatureEngineeringService {
         return Math.sqrt(Math.max(mean, 0)) * Math.sqrt(252) * 100;
       })();
 
+      const adxHistory = calculateADX(window, 14);
+      const adx = adxHistory[adxHistory.length - 1] || 20;
+      const prevADX = adxHistory[adxHistory.length - 2] || adx;
+      const adxTrend = adx - prevADX;
+
+      const aroon = this.calculateAroon(window.map(d => d.high), window.map(d => d.low), 14);
+      const candlePatternFeatures = candlestickPatternService.calculatePatternFeatures(window);
+      const candlePattern = candlestickPatternService.getPatternSignal(candlePatternFeatures);
+
+      const currentDate = new Date(current.date);
+      const weekOfMonth = Math.floor((currentDate.getDate() - 1) / 7) + 1;
+
       // Construct MLFeatures object
       features.push({
         close: current.close,
@@ -1029,7 +1100,7 @@ export class FeatureEngineeringService {
         stochasticK: technical.stochasticK,
         stochasticD: technical.stochasticD,
         williamsR: technical.williamsR,
-        adx: 0, // Not implemented in base yet
+        adx,
         cci: technical.cci,
         roc: technical.rateOfChange12,
         obv,
@@ -1042,19 +1113,19 @@ export class FeatureEngineeringService {
         historicalVolatility,
         parkinsonVolatility,
         garmanKlassVolatility,
-        adxTrend: 0,
-        aroonUp: 0,
-        aroonDown: 0,
+        adxTrend,
+        aroonUp: aroon.up,
+        aroonDown: aroon.down,
         volumeSMA: technical.volumeMA5,
         volumeStd,
         volumeTrend: technical.volumeTrend === 'INCREASING' ? 1 : -1,
-        candlePattern: 0,
+        candlePattern,
         supportLevel,
         resistanceLevel,
         marketCorrelation: 0,
         sectorCorrelation: 0,
         dayOfWeek: timeSeries.dayOfWeek,
-        weekOfMonth: 0,
+        weekOfMonth,
         monthOfYear: timeSeries.monthOfYear,
         timestamp: data.length > 1 ? (i - 1) / (data.length - 1) : 0,
       });
