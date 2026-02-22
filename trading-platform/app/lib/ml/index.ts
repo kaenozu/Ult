@@ -5,14 +5,14 @@
  */
 
 // Feature Engineering
-export { featureEngineering, FeatureEngineering } from './FeatureEngineering';
+export { featureEngineeringService as featureEngineering, FeatureEngineeringService as FeatureEngineering } from '../services/feature-engineering-service';
 export type {
   TechnicalFeatures,
   MacroEconomicFeatures,
   SentimentFeatures,
   TimeSeriesFeatures,
   AllFeatures,
-} from './FeatureEngineering';
+} from '../services/feature-engineering-service';
 
 // Ensemble Model
 export { ensembleModel, EnsembleModel } from './EnsembleModel';

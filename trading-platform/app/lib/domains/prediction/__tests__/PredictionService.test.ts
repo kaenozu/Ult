@@ -9,7 +9,7 @@ import { XGBoostModel } from '../XGBoostModel';
 import { LSTMModel } from '../LSTMModel';
 import { WeightedAverageStrategy } from '../WeightedAverageStrategy';
 import { ConfidenceEvaluator } from '../ConfidenceEvaluator';
-import { PredictionFeatures } from '../../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../../lib/services/feature-engineering-service';
 
 describe('PredictionService', () => {
   let service: PredictionService;

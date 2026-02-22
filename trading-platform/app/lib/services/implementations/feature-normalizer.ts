@@ -4,7 +4,7 @@
  * Converts PredictionFeatures to normalized arrays for TensorFlow models
  */
 
-import { PredictionFeatures } from '../feature-calculation-service';
+import { PredictionFeatures } from '../feature-engineering-service';
 import { IFeatureNormalizer } from '../interfaces/ml-model-interfaces';
 
 /**

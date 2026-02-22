@@ -5,7 +5,7 @@
  * Extracted from MLModelService for better testability.
  */
 
-import { PredictionFeatures } from '../feature-calculation-service';
+import { PredictionFeatures } from '../feature-engineering-service';
 import { IPredictionCalculator } from '../interfaces/ml-model-interfaces';
 
 /**

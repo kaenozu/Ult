@@ -2,7 +2,7 @@
  * Core interfaces for the prediction domain
  */
 
-import { PredictionFeatures } from '../../services/feature-calculation-service';
+import { PredictionFeatures } from '../../../lib/services/feature-engineering-service';
 
 /**
  * Individual model prediction result

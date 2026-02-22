@@ -11,7 +11,7 @@
 
 import * as tf from '@tensorflow/tfjs';
 import { OHLCV, TechnicalIndicatorsWithATR } from '../../types';
-import { featureCalculationService, PredictionFeatures } from './feature-calculation-service';
+import { featureEngineeringService, PredictionFeatures } from './feature-engineering-service';
 import { calculateRSI, calculateSMA, calculateMACD, calculateBollingerBands, calculateATR } from '../utils';
 import { RSI_CONFIG, SMA_CONFIG } from '@/app/constants';
 
@@ -189,7 +189,7 @@ export class MLTrainingService {
             const sliceIndicators = calculateIndicators(slice);
 
             try {
-                const feat = featureCalculationService.calculateFeatures(slice, sliceIndicators);
+                const feat = featureEngineeringService.calculateBasicFeatures(slice);
                 const featureArray = sanitizeArray(featuresToArray(feat));
 
                 // ラベル: predictionDays日後の騰落

@@ -9,7 +9,7 @@
 import { OHLCV, Signal } from '@/app/types';
 import { devError } from '@/app/lib/utils/dev-logger';
 
-import { PredictionFeatures } from './feature-calculation-service';
+import { PredictionFeatures } from './feature-engineering-service';
 import { PatternFeatures } from './candlestick-pattern-service';
 
 // Worker message types
@@ -227,10 +227,10 @@ export class PredictionWorker {
     // Import services dynamically to avoid circular dependencies
     const { PredictionCalculator } = await import('./implementations/prediction-calculator');
     const { candlestickPatternService } = await import('./candlestick-pattern-service');
-    const { featureCalculationService } = await import('./feature-calculation-service');
+    const { featureEngineeringService } = await import('./feature-engineering-service');
     
     const calculator = new PredictionCalculator();
-    const featureService = featureCalculationService;
+    const featureService = featureEngineeringService;
 
     const { symbol, data, indicators } = request;
     const transformedIndicators = indicators ? {
@@ -246,7 +246,7 @@ export class PredictionWorker {
         lower: indicators.bb?.lower || []
       }
     } : undefined;
-    const features = featureService.calculateFeatures(data, transformedIndicators) as PredictionFeatures;
+    const features = featureService.calculateBasicFeatures(data);
     const patternFeatures = candlestickPatternService.calculatePatternFeatures(data);
     
     // Calculate predictions

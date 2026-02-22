@@ -6,7 +6,7 @@
  */
 
 import { OHLCV } from '../../types/shared';
-import { featureEngineering, AllFeatures } from './FeatureEngineering';
+import { featureEngineeringService as featureEngineering, AllFeatures } from '../services/feature-engineering-service';
 import { ensembleModel, EnsemblePrediction } from './EnsembleModel';
 import { modelDriftDetector, DriftDetectionResult } from './ModelDriftDetector';
 

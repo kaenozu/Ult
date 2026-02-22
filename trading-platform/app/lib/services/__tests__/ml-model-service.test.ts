@@ -3,7 +3,7 @@
  */
 
 import { MLModelService } from '../ml-model-service';
-import { PredictionFeatures } from '../feature-calculation-service';
+import { PredictionFeatures } from '../feature-engineering-service';
 
 describe('MLModelService', () => {
   let service: MLModelService;
