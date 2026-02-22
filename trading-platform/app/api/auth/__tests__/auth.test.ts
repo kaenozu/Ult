@@ -4,9 +4,10 @@
 import { POST as registerHandler } from '../register/route';
 import { POST as loginHandler } from '../login/route';
 
-process.env.JWT_SECRET = 'test-secret';
+// Set env var before other code runs (though imports might have already read it)
+process.env.JWT_SECRET = 'test-secret-must-be-at-least-32-chars-long';
 
-describe.skip('Authentication API', () => {
+describe('Authentication API', () => {
   describe('POST /api/auth/register', () => {
     it('should register a new user successfully', async () => {
       const request = new Request('http://localhost:3000/api/auth/register', {
