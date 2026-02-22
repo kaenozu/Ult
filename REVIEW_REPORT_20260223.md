@@ -44,7 +44,8 @@ A comprehensive review of the `trading-platform` and `playwright_scraper` codeba
         - `app/lib/config/env.ts`: Focuses on API keys and external services.
     - **Impact:** Inconsistent configuration source of truth.
 - **Authentication Logic Duplication:**
-    - `app/lib/auth.ts` vs `app/api/auth/register/route.ts`. The API routes often bypass the centralized `env.ts` validation and implement their own checks.
+    - `app/lib/auth.ts` vs `app/api/auth/register/route.ts`. 
+    - **Security Impact:** The API routes often bypass the centralized `env.ts` validation (which enforces 32-character secrets) and implement their own checks with weak fallbacks. This creates a "shadow" authentication path that is significantly less secure than the intended central logic.
 - **Positive Note:** `app/lib/utils/technical-analysis.ts` is highly optimized (O(N) complexity, loop splitting, array pre-allocation).
 
 ### 3.2 Frontend (Next.js)
@@ -62,7 +63,10 @@ A comprehensive review of the `trading-platform` and `playwright_scraper` codeba
 1.  **Immediate Fixes:**
     - Add `import os` to `playwright_scraper/scraper.py`.
     - Remove hardcoded credentials from `auth-store.ts`.
-    - Fix the OOM in tests (likely by splitting test runs or increasing Node memory).
+    - **Fix Test OOM:** 
+        - Option A: Set `--max-old-space-size=4096` in `npm test` script.
+        - Option B: Use Jest's `--runInBand` flag to reduce parallel memory usage.
+        - Option C: Split tests into multiple suites and run them sequentially in CI.
 
 2.  **Architectural Refactoring:**
     - **Consolidate ML Logic:** Choose **one** home for ML logic (likely `app/domains/prediction`) and delete `app/lib/ml` and `app/lib/aiAnalytics`.
