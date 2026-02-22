@@ -50,14 +50,14 @@ interface TooltipData {
 
 export const StockChart = memo(function StockChart({
   data,
-  indexData = [],
+  indexData: _indexData = [],
   height = 400,
   showVolume = true,
   showSMA = true,
   showBollinger = false,
   loading = false,
   error = null,
-  market = 'usa',
+  market: _market = 'usa',
   signal = null,
   accuracyData = null,
 }: StockChartProps) {
@@ -247,6 +247,37 @@ export const StockChart = memo(function StockChart({
     forecastUpperRef.current = forecastUpper as unknown as ISeriesApi<'Line'>;
     forecastLowerRef.current = forecastLower as unknown as ISeriesApi<'Line'>;
 
+    // AI Confidence Markers (Beginner Friendly Visuals)
+    const markers: any[] = [];
+    if (signal && signal.confidence >= 60) {
+      const time = data[data.length - 1].date as Time;
+      const isBuy = signal.type === 'BUY';
+      
+      markers.push({
+        time: time,
+        position: isBuy ? 'belowBar' : 'aboveBar',
+        color: isBuy ? '#22c55e' : '#ef4444',
+        shape: isBuy ? 'arrowUp' : 'arrowDown',
+        text: `AI確信度: ${signal.confidence}%`,
+        size: 2, // Larger size for visibility
+      });
+      
+      // Add a second marker for "Reasoning" if available
+      if (signal.reason) {
+         // Simplified reason for chart
+         const simpleReason = signal.reason.split('。')[0];
+         markers.push({
+            time: time,
+            position: isBuy ? 'belowBar' : 'aboveBar',
+            color: '#fbbf24', // Yellow for info
+            shape: 'circle',
+            text: simpleReason.length > 10 ? simpleReason.substring(0, 10) + '...' : simpleReason,
+            size: 0, // Hidden shape, just text label
+         });
+      }
+    }
+    candleSeries.setMarkers(markers);
+
     const handleResize = () => {
       if (chartContainerRef.current) {
         chart.applyOptions({ width: chartContainerRef.current.clientWidth });
@@ -337,6 +368,36 @@ export const StockChart = memo(function StockChart({
         chartRef.current.timeScale().scrollToRealTime();
       }
     }
+
+    // AI Confidence Markers
+    const markers: any[] = [];
+    if (signal && signal.confidence >= 60) {
+      const time = data[data.length - 1].date as Time;
+      const isBuy = signal.type === 'BUY';
+      
+      markers.push({
+        time: time,
+        position: isBuy ? 'belowBar' : 'aboveBar',
+        color: isBuy ? '#22c55e' : '#ef4444',
+        shape: isBuy ? 'arrowUp' : 'arrowDown',
+        text: `AI確信度: ${signal.confidence}%`,
+        size: 2,
+      });
+      
+      if (signal.reason) {
+         const simpleReason = signal.reason.split('。')[0];
+         markers.push({
+            time: time,
+            position: isBuy ? 'belowBar' : 'aboveBar',
+            color: '#fbbf24',
+            shape: 'circle',
+            text: simpleReason.length > 10 ? simpleReason.substring(0, 10) + '...' : simpleReason,
+            size: 0,
+         });
+      }
+    }
+    candleSeriesRef.current.setMarkers(markers);
+
   }, [data, signal, showVolume, showSMA, showBollinger, accuracyData, convertToLWCData, convertToVolumeData, calculateSMA, calculateBollingerBands]);
 
   if (error) {

@@ -60,8 +60,8 @@ export class MLService {
       await this.initialize();
     }
 
-    // 特徴量を計算
-    const features = featureEngineering.calculateAllFeatures(data, macroData, sentimentData);
+    // 特徴量を計算（symbolを渡してメモ化を有効化）
+    const features = featureEngineering.calculateAllFeatures(data, macroData, sentimentData, symbol);
 
     // アンサンブル予測を実行
     const prediction = ensembleModel.predict(

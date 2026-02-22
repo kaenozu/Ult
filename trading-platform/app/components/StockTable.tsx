@@ -222,76 +222,83 @@ export const StockTable = memo(({
 
   const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
 
-  // Calculate polling interval based on market volatility
-  const calculatedInterval = useMemo(() => {
+  // Adaptive polling interval based on market volatility
+  const getAdaptiveInterval = useCallback(() => {
     if (stocks.length === 0) return 60000;
-
-    const avgVolatility = stocks.reduce((sum, s) => 
-      sum + Math.abs(s.changePercent || 0), 0) / stocks.length;
     
-    // 高ボラティリティ時は短い間隔、低ボラティリティ時は長い間隔
-    return avgVolatility > 2 ? 30000 : 
-           avgVolatility > 1 ? 45000 : 60000;
-  }, [stocks]);
-
-  // Update polling interval when calculated value changes
-  const prevIntervalRef = useRef(pollingInterval);
-  useEffect(() => {
-    if (calculatedInterval !== prevIntervalRef.current) {
-      // Use setTimeout to defer state update
-      const timeoutId = setTimeout(() => {
-        setPollingInterval(calculatedInterval);
-        prevIntervalRef.current = calculatedInterval;
-      }, 0);
-      return () => clearTimeout(timeoutId);
+    // Calculate average volatility
+    let totalVol = 0;
+    for (let i = 0; i < stocks.length; i++) {
+      totalVol += Math.abs(stocks[i].changePercent || 0);
     }
-  }, [calculatedInterval]);
+    const avgVol = totalVol / stocks.length;
+    
+    // Higher volatility -> Faster polling
+    // > 2% avg move -> 15s
+    // > 1% avg move -> 30s
+    // < 1% avg move -> 60s
+    if (avgVol > 2) return 15000;
+    if (avgVol > 1) return 30000;
+    return 60000;
+  }, [stocks]);
 
   useEffect(() => {
     let mounted = true;
     const controller = new AbortController();
+    let timeoutId: NodeJS.Timeout;
 
     const fetchQuotes = async () => {
       // Don't fetch if document is hidden to save resources
-      if (typeof document !== 'undefined' && document.hidden) return;
+      if (typeof document !== 'undefined' && document.hidden) {
+        // Check again in 5s if hidden
+        timeoutId = setTimeout(fetchQuotes, 5000);
+        return;
+      }
 
       await measureAsync('fetchQuotes', async () => {
         const symbols = symbolKey.split(',').filter(Boolean);
         if (symbols.length === 0) return;
 
-        const quotes = await marketClient.fetchQuotes(symbols, controller.signal);
+        try {
+          const quotes = await marketClient.fetchQuotes(symbols, controller.signal);
 
-        if (mounted && quotes.length > 0) {
-          const updates = quotes
-            .filter(q => q && q.symbol)
-            .map(q => ({
-              symbol: q.symbol,
-              data: {
-                price: q.price,
-                change: q.change,
-                changePercent: q.changePercent,
-                volume: q.volume,
-              }
-            }));
+          if (mounted && quotes.length > 0) {
+            const updates = quotes
+              .filter(q => q && q.symbol)
+              .map(q => ({
+                symbol: q.symbol,
+                data: {
+                  price: q.price,
+                  change: q.change,
+                  changePercent: q.changePercent,
+                  volume: q.volume,
+                }
+              }));
 
-          if (updates.length > 0) {
-            batchUpdateStockData(updates);
+            if (updates.length > 0) {
+              batchUpdateStockData(updates);
+            }
           }
+        } catch (error) {
+          // Silent error handling for polling
         }
       });
+      
+      // Schedule next poll adaptively
+      if (mounted) {
+        timeoutId = setTimeout(fetchQuotes, getAdaptiveInterval());
+      }
     };
 
+    // Initial fetch
     fetchQuotes();
-    intervalRef.current = setInterval(fetchQuotes, pollingInterval);
 
     return () => {
       mounted = false;
       controller.abort();
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      clearTimeout(timeoutId);
     };
-  }, [symbolKey, batchUpdateStockData, pollingInterval, measureAsync]);
+  }, [symbolKey, batchUpdateStockData, getAdaptiveInterval, measureAsync]);
 
   const handleSelect = useCallback((stock: Stock) => {
     setSelectedStock(stock);

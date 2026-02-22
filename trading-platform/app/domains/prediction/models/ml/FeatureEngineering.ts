@@ -307,14 +307,26 @@ export class FeatureEngineering {
     }
   }
 
+  private memoCache: Map<string, { timestamp: number; features: AllFeatures }> = new Map();
+  private readonly CACHE_TTL = 60000; // 1 minute cache for features
+
   /**
    * すべての特徴量を計算
    */
   calculateAllFeatures(
     data: OHLCV[],
     macroData?: MacroEconomicFeatures,
-    sentimentData?: SentimentFeatures
+    sentimentData?: SentimentFeatures,
+    symbol?: string
   ): AllFeatures {
+    // Check cache for performance
+    if (symbol && this.memoCache.has(symbol)) {
+      const cached = this.memoCache.get(symbol)!;
+      if (Date.now() - cached.timestamp < this.CACHE_TTL) {
+        return cached.features;
+      }
+    }
+
     // Security: Validate input data
     this.validateOHLCVData(data);
 
@@ -339,7 +351,7 @@ export class FeatureEngineering {
     // 特徴量の総数を計算
     const featureCount = this.countFeatures(technical, macro, sentiment, timeSeries);
 
-    return {
+    const result: AllFeatures = {
       technical,
       macro,
       sentiment,
@@ -348,6 +360,14 @@ export class FeatureEngineering {
       lastUpdate: new Date().toISOString(),
       dataQuality,
     };
+
+    // Update cache
+    if (symbol) {
+      this.memoCache.set(symbol, { timestamp: Date.now(), features: result });
+    }
+
+    return result;
+  }
   }
 
   /**

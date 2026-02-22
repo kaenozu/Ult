@@ -6,15 +6,13 @@
  */
 
 
-import { Stock, OHLCV, Signal, TechnicalIndicator } from '@/app/types';
-import { devLog } from '@/app/lib/utils/dev-logger';
-
+import { Stock, OHLCV, Signal } from '@/app/types';
 import { featureEngineeringService } from '@/app/lib/services/feature-engineering-service';
 import { enhancedMLService } from './enhanced-ml-service';
 import type { EnhancedPrediction } from '../types';
 import { analyzeStock } from '@/app/lib/analysis';
-import { mlPredictionService } from '@/app/lib/mlPrediction';
-import { BACKTEST_CONFIG, PRICE_CALCULATION, RISK_MANAGEMENT } from '@/app/constants';
+import { PRICE_CALCULATION, RISK_MANAGEMENT } from '@/app/constants';
+import { roundToTickSize } from '@/app/lib/utils';
 
 export interface IntegratedPredictionResult {
   signal: Signal;
@@ -23,7 +21,7 @@ export interface IntegratedPredictionResult {
     kellyFraction: number;
     recommendedPositionSize: number;
     driftRisk: 'LOW' | 'MEDIUM' | 'HIGH';
-    marketRegime: unknown; // Matches EnhancedPrediction.marketRegime
+    marketRegime: unknown; 
     volatility: unknown;
   };
   modelStats: {
@@ -51,23 +49,21 @@ export class IntegratedPredictionService {
     data: OHLCV[],
     indexData?: OHLCV[]
   ): Promise<IntegratedPredictionResult> {
-    // 1. Calculate technical indicators first
-    const indicators = mlPredictionService.calculateIndicators(data);
-
-    // 2. Calculate features from data (indicators computed internally)
+    // 1. Core Feature Calculation (Optimized & Cached)
+    // This now serves as the single pass for technical indicators used by the ML models
     const features = featureEngineeringService.calculateBasicFeatures(data);
 
-    // 3. Get enhanced prediction
+    // 2. Get enhanced prediction using the calculated features
     const enhancedPrediction = await enhancedMLService.predictEnhanced(
       features,
       stock,
       data
     );
 
-    // 4. Check if signal meets quality threshold
+    // 3. Determine if signal meets quality threshold for trading
     const shouldTrade = enhancedMLService.shouldTakeSignal(enhancedPrediction);
 
-    // 5. Generate signal
+    // 4. Generate the final signal (BUY/SELL/HOLD with target prices)
     const signal = this.generateSignal(
       stock,
       data,
@@ -76,7 +72,7 @@ export class IntegratedPredictionService {
       indexData
     );
 
-    // 6. Get model statistics
+    // 5. Get model statistics for transparency
     const modelStats = enhancedMLService.getModelStats();
 
     return {
@@ -109,66 +105,48 @@ export class IntegratedPredictionService {
     indexData?: OHLCV[]
   ): Signal {
     const currentPrice = data[data.length - 1].close;
-    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market, indexData);
+    
+    // Leverage existing analysis logic for secondary validation and metadata
+    // Using minimal mode if possible to save resources
+    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market, indexData, { minimal: true });
 
-    // Determine signal type
+    // Determine signal type based on ML prediction and quality gate
     let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';
-    if (shouldTrade && enhancedPrediction.prediction > 1.0) {
-      type = 'BUY';
-    } else if (shouldTrade && enhancedPrediction.prediction < -1.0) {
-      type = 'SELL';
+    if (shouldTrade) {
+      if (enhancedPrediction.prediction > 1.0) type = 'BUY';
+      else if (enhancedPrediction.prediction < -1.0) type = 'SELL';
     }
 
-    // Calculate target and stop loss based on prediction and Kelly criterion
+    // Dynamic Target/Stop based on ATR and Kelly confidence
     const atr = baseAnalysis.atr || currentPrice * PRICE_CALCULATION.DEFAULT_ATR_RATIO;
     let targetPrice = currentPrice;
     let stopLoss = currentPrice;
 
-    if (type === 'BUY') {
-      // Use Kelly fraction to adjust target/stop distance
+    if (type !== 'HOLD') {
+      const isBuy = type === 'BUY';
       const kellyMultiplier = 1 + enhancedPrediction.kellyFraction;
+      const movePercent = Math.abs(enhancedPrediction.prediction) / 100;
+      
       const priceMove = Math.max(
-        currentPrice * (Math.abs(enhancedPrediction.prediction) / 100),
+        currentPrice * movePercent,
         atr * RISK_MANAGEMENT.DEFAULT_ATR_MULTIPLIER * kellyMultiplier
       );
-      targetPrice = currentPrice + priceMove;
-      stopLoss = currentPrice - priceMove * RISK_MANAGEMENT.STOP_LOSS_RATIO;
-    } else if (type === 'SELL') {
-      const kellyMultiplier = 1 + enhancedPrediction.kellyFraction;
-      const priceMove = Math.max(
-        currentPrice * (Math.abs(enhancedPrediction.prediction) / 100),
-        atr * RISK_MANAGEMENT.DEFAULT_ATR_MULTIPLIER * kellyMultiplier
-      );
-      targetPrice = currentPrice - priceMove;
-      stopLoss = currentPrice + priceMove * RISK_MANAGEMENT.STOP_LOSS_RATIO;
+      
+      targetPrice = isBuy ? currentPrice + priceMove : currentPrice - priceMove;
+      stopLoss = isBuy ? currentPrice - priceMove * RISK_MANAGEMENT.STOP_LOSS_RATIO : currentPrice + priceMove * RISK_MANAGEMENT.STOP_LOSS_RATIO;
     } else {
-      // HOLDの場合も、予測値に基づいたわずかな方向性を反映させる
-      const priceMove = currentPrice * (Math.abs(enhancedPrediction.prediction) / 100);
-      if (enhancedPrediction.prediction > 0) {
-        targetPrice = currentPrice + priceMove;
-        stopLoss = currentPrice - priceMove / 2;
-      } else {
-        targetPrice = currentPrice - priceMove;
-        stopLoss = currentPrice + priceMove / 2;
-      }
+      // HOLD fallback targets
+      const predictedMove = currentPrice * (enhancedPrediction.prediction / 100);
+      targetPrice = currentPrice + predictedMove;
     }
 
-    // Generate reason with enhanced metrics
-    const reason = this.generateReason(
-      type,
-      enhancedPrediction,
-      baseAnalysis.optimizedParams
-    );
+    // Professional touch: Round to valid tick sizes for Japanese stocks
+    if (stock.market === 'japan') {
+      targetPrice = roundToTickSize(targetPrice, 'japan');
+      stopLoss = roundToTickSize(stopLoss, 'japan');
+    }
 
-    // Build market context
-    const marketContext = indexData
-      ? {
-        indexSymbol: stock.market === 'japan' ? '日経平均' : 'NASDAQ',
-        correlation: 0,
-        indexTrend: 'NEUTRAL' as 'UP' | 'DOWN' | 'NEUTRAL',
-      }
-      : undefined;
-
+    // Build the final signal object
     return {
       symbol: stock.symbol,
       type,
@@ -177,13 +155,17 @@ export class IntegratedPredictionService {
       atr: baseAnalysis.atr,
       targetPrice,
       stopLoss,
-      reason,
+      reason: this.generateReason(type, enhancedPrediction, baseAnalysis.optimizedParams),
       predictedChange: enhancedPrediction.prediction,
       predictionDate: new Date().toISOString().split('T')[0],
-      marketContext,
+      marketContext: baseAnalysis.marketContext,
       optimizedParams: baseAnalysis.optimizedParams,
       predictionError: baseAnalysis.predictionError,
       volumeResistance: baseAnalysis.volumeResistance,
+      expectedValue: enhancedPrediction.expectedValue,
+      driftRisk: enhancedPrediction.driftRisk,
+      indicatorCount: (enhancedPrediction as any).indicatorCount,
+      agreeingIndicators: (enhancedPrediction as any).agreeingIndicators,
     };
   }
 
@@ -292,8 +274,7 @@ export class IntegratedPredictionService {
     // Check if retraining is needed
     const stats = enhancedMLService.getModelStats();
     if (stats.drift.driftDetected) {
-      devLog(`Drift detected for ${symbol}. Consider retraining models.`);
-      // In production, this could trigger automatic retraining
+      // devLog(`Drift detected for ${symbol}. Consider retraining models.`);
     }
   }
 
@@ -341,7 +322,6 @@ export class IntegratedPredictionService {
    */
   async retrainModels(): Promise<void> {
     await enhancedMLService.triggerRetrain();
-    devLog('Models retrained successfully');
   }
 }
 

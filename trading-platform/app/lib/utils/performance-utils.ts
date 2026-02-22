@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { devWarn, devError } from '@/app/lib/utils/dev-logger';
 import type { DependencyList } from 'react';
 
@@ -36,11 +36,38 @@ export function useStableCallback<T extends (...args: unknown[]) => unknown>(
 }
 
 /**
+ * Shallow comparison for objects helper
+ */
+function shallowEqual(objA: any, objB: any) {
+  if (Object.is(objA, objB)) return true;
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) return false;
+  
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  
+  if (keysA.length !== keysB.length) return false;
+  
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(objB, key) || !Object.is(objA[key], objB[key])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * オブジェクトを浅く比較してメモ化
  * 子コンポーネントへのpropsとして使うオブジェクトに最適
+ * Uses useRef to avoid linter errors with dynamic dependencies
  */
-export function useShallowMemo<T extends Record<string, unknown>>(obj: T): T {
-  return useMemo(() => obj, Object.values(obj));
+export function useShallowMemo<T>(value: T): T {
+  const ref = useRef<T>(value);
+  
+  if (!shallowEqual(ref.current, value)) {
+    ref.current = value;
+  }
+  
+  return ref.current;
 }
 
 /**
