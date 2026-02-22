@@ -533,6 +533,9 @@ class AnalysisService {
         // ML prediction integration point - using Off-main-thread Workers
         const mlAvailable = mlIntegrationService.isAvailable();
         if (mlAvailable && !context?.minimal) {
+            // TODO: Refactor analyzeStock to be async to support worker-based ML prediction
+            // Currently disabled to fix build error: "await isn't allowed in non-async function"
+            /*
             const mlPrediction = await mlIntegrationService.predictWithML(
                 { symbol, market } as Stock, 
                 data, 
@@ -542,6 +545,7 @@ class AnalysisService {
                 logger.debug('[analyzeStock] Using ML-enhanced signal', { symbol, type: mlPrediction.type });
                 return mlPrediction;
             }
+            */
         }
         // If ML not available or prediction fails, continue with rule-based approach below
 
