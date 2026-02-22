@@ -129,10 +129,11 @@ export class EnhancedMLService {
       regimeResult.volatility
     );
     
-    // 8. Calculate Kelly criterion position sizing
-    const kellyFraction = this.calculateKellyFraction(
+    // 8. Calculate Adaptive Kelly criterion position sizing
+    const kellyFraction = this.calculateAdaptiveKelly(
       confidence,
-      historicalData
+      historicalData,
+      regimeResult
     );
     
     // 9. Calculate recommended position size
@@ -262,33 +263,39 @@ export class EnhancedMLService {
   }
 
   /**
-   * Calculate Kelly criterion fraction for position sizing
+   * Core Upgrade: Adaptive Kelly calculation based on Market Regime
    */
-  private calculateKellyFraction(
+  private calculateAdaptiveKelly(
     confidence: number,
-    historicalData: OHLCV[]
+    historicalData: OHLCV[],
+    regime: RegimeDetectionResult
   ): number {
-    // Kelly criterion: f = (bp - q) / b
-    // where:
-    // f = fraction of capital to bet
-    // b = odds received on the bet (win/loss ratio)
-    // p = probability of winning
-    // q = probability of losing (1 - p)
-    
-    const p = confidence / 100; // Win probability
-    const q = 1 - p; // Loss probability
-    
-    // Estimate win/loss ratio from historical data
+    const p = confidence / 100;
+    const q = 1 - p;
     const b = this.estimateWinLossRatio(historicalData);
     
-    // Kelly formula
+    // Base Kelly formula: f = (bp - q) / b
     let kelly = (b * p - q) / b;
+    if (kelly <= 0) return 0;
+
+    // Regime-based multipliers
+    let regimeMultiplier = 1.0;
+    if (regime.regime === 'TRENDING') {
+      regimeMultiplier = 1.2; // Be more aggressive in trends
+    } else if (regime.regime === 'RANGING') {
+      regimeMultiplier = 0.8; // More conservative in ranges
+    }
+
+    // Volatility Haircut
+    if (regime.volatility === 'HIGH') regimeMultiplier *= 0.6;
+    else if (regime.volatility === 'LOW') regimeMultiplier *= 1.1;
+
+    // Apply multiplier and safety constraints
+    kelly = kelly * regimeMultiplier;
     
-    // Apply safety constraints
-    kelly = Math.max(0, Math.min(kelly, this.MAX_KELLY_FRACTION));
-    
-    // Use fractional Kelly for safety
-    return kelly * this.DEFAULT_KELLY_FRACTION / this.MAX_KELLY_FRACTION;
+    // Final safety: Fractional Kelly for ruin prevention
+    const safetyFraction = 0.4; 
+    return Math.min(kelly * safetyFraction, this.MAX_KELLY_FRACTION);
   }
 
   /**

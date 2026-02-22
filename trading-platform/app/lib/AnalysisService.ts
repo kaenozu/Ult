@@ -530,20 +530,18 @@ class AnalysisService {
             };
         }
 
-        // ML prediction integration point - infrastructure ready for trained models
-        // The check below demonstrates the integration pattern that will be activated
-        // when models are trained and ML_MODEL_CONFIG.MODELS_TRAINED is set to true.
-        // Currently, mlAvailable will always be false, so this code path is not executed.
-        // Keeping this structure in place makes it clear where ML predictions will be integrated.
+        // ML prediction integration point - using Off-main-thread Workers
         const mlAvailable = mlIntegrationService.isAvailable();
-        if (mlAvailable) {
-            // TODO: When models are trained, uncomment this:
-            // const mlPrediction = await mlIntegrationService.predictWithML(
-            //     { symbol } as Stock, 
-            //     data, 
-            //     indexDataOverride
-            // );
-            // if (mlPrediction) return mlPrediction;
+        if (mlAvailable && !context?.minimal) {
+            const mlPrediction = await mlIntegrationService.predictWithML(
+                { symbol, market } as Stock, 
+                data, 
+                indexDataOverride
+            );
+            if (mlPrediction) {
+                logger.debug('[analyzeStock] Using ML-enhanced signal', { symbol, type: mlPrediction.type });
+                return mlPrediction;
+            }
         }
         // If ML not available or prediction fails, continue with rule-based approach below
 

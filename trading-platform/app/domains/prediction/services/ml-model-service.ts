@@ -6,13 +6,6 @@
 
 import { PredictionFeatures, ModelPrediction } from '../types';
 
-const RSI_LOWER_BOUND = 25;
-const RSI_UPPER_BOUND = 75;
-const RSI_SCORE = 2;
-const MOMENTUM_THRESHOLD = 1.5;
-const MOMENTUM_SCORE = 1.5;
-const LSTM_SCALING = 0.7;
-
 export class MLModelService {
   private readonly weights = {
     RF: 0.35,
@@ -20,13 +13,19 @@ export class MLModelService {
     LSTM: 0.30,
   };
 
+  /**
+   * Advanced prediction with ensemble logic and quality scoring
+   */
   predict(features: PredictionFeatures): ModelPrediction {
     const rf = this.randomForestPredict(features);
     const xgb = this.xgboostPredict(features);
-    const lstm = this.calculateLstmScore(features);
+    const lstm = this.lstmPredict(features);
 
+    // Dynamic confidence-weighted ensemble (simplified)
     const ensemblePrediction = rf * this.weights.RF + xgb * this.weights.XGB + lstm * this.weights.LSTM;
-    const confidence = this.calculateConfidence(features, ensemblePrediction);
+    
+    // Core refinement: Adjusted confidence based on indicator agreement
+    const confidence = this.calculateEnhancedConfidence(features, ensemblePrediction, [rf, xgb, lstm]);
 
     return { 
       rfPrediction: rf, 
@@ -37,107 +36,96 @@ export class MLModelService {
     };
   }
 
+  /**
+   * RF Logic: Trend & Momentum Focus
+   */
   private randomForestPredict(f: PredictionFeatures): number {
-    const RSI_EXTREME_SCORE = 3;
-    const MOMENTUM_STRONG_THRESHOLD = 2.0;
-    const MOMENTUM_SCORE = 2;
-    const SMA_BULL_SCORE = 2;
-    const SMA_BEAR_SCORE = 1;
-    const RF_SCALING = 0.8;
-
     let score = 0;
 
-    if (f.rsi < 20) {
-      score += RSI_EXTREME_SCORE;
-    } else if (f.rsi > 80) {
-      score -= RSI_EXTREME_SCORE;
+    // Trend alignment (SMA)
+    if (f.sma5 > f.sma20) score += 1.5;
+    if (f.sma20 > f.sma50) score += 1.0;
+    
+    // RSI Overbought/Oversold with reversal check
+    if (f.rsi < 30) {
+      score += (30 - f.rsi) / 10; // Scaled oversold
+      if (f.rsiChange > 0) score += 1.5; // Reversal confirmation
+    } else if (f.rsi > 70) {
+      score -= (f.rsi - 70) / 10;
+      if (f.rsiChange < 0) score -= 1.5;
     }
 
-    if (f.sma5 > 0) score += SMA_BULL_SCORE;
-    if (f.sma20 > 0) score += SMA_BEAR_SCORE;
+    // Momentum acceleration
+    if (f.priceMomentum > 2.0) score += 2.0;
+    else if (f.priceMomentum < -2.0) score -= 2.0;
 
-    if (f.priceMomentum > MOMENTUM_STRONG_THRESHOLD) {
-      score += MOMENTUM_SCORE;
-    } else if (f.priceMomentum < -MOMENTUM_STRONG_THRESHOLD) {
-      score -= MOMENTUM_SCORE;
-    }
-
-    return score * RF_SCALING;
+    return score * 0.8;
   }
 
+  /**
+   * XGB Logic: Volatility & Volume Focus
+   */
   private xgboostPredict(f: PredictionFeatures): number {
-    const RSI_EXTREME_SCORE = 3;
-    const MOMENTUM_DIVISOR = 3;
-    const MOMENTUM_MAX_SCORE = 3;
-    const SMA_DIVISOR = 10;
-    const SMA5_WEIGHT = 0.5;
-    const SMA20_WEIGHT = 0.3;
-    const XGB_SCALING = 0.9;
-
     let score = 0;
 
-    if (f.rsi < 20) {
-      score += RSI_EXTREME_SCORE;
-    } else if (f.rsi > 80) {
-      score -= RSI_EXTREME_SCORE;
+    // Volume surge confirmation
+    if (f.volumeRatio > 1.5) {
+      // If price is up and volume is up, strong buy
+      if (f.priceMomentum > 0) score += 3.0;
+      else if (f.priceMomentum < 0) score -= 3.0;
     }
 
-    const momentumScore = Math.min(f.priceMomentum / MOMENTUM_DIVISOR, MOMENTUM_MAX_SCORE);
-    const smaScore = (f.sma5 * SMA5_WEIGHT + f.sma20 * SMA20_WEIGHT) / SMA_DIVISOR;
+    // Volatility context
+    const volAdjustment = f.volatility > 2.0 ? 0.7 : 1.0;
     
-    score += momentumScore + smaScore;
+    // Mean reversion (Bollinger Position)
+    if (f.bollingerPosition < 0.1) score += 2.5;
+    else if (f.bollingerPosition > 0.9) score -= 2.5;
 
-    return score * XGB_SCALING;
+    return score * volAdjustment * 0.9;
   }
 
-  private calculateLstmScore(f: PredictionFeatures): number {
+  /**
+   * LSTM Logic: Price Cycle & Oscillators
+   */
+  private lstmPredict(f: PredictionFeatures): number {
     let score = 0;
     
-    if (f.rsi < RSI_LOWER_BOUND) {
-      score += RSI_SCORE;
-    } else if (f.rsi > RSI_UPPER_BOUND) {
-      score -= RSI_SCORE;
-    }
+    // Oscillator convergence
+    if (f.macdSignal > 0 && f.rsiChange > 0) score += 2.0;
+    else if (f.macdSignal < 0 && f.rsiChange < 0) score -= 2.0;
     
-    if (f.priceMomentum > MOMENTUM_THRESHOLD) {
-      score += MOMENTUM_SCORE;
-    } else if (f.priceMomentum < -MOMENTUM_THRESHOLD) {
-      score -= MOMENTUM_SCORE;
-    }
-    
-    return score * LSTM_SCALING;
+    // Price relative to ATR (Volatility normalization)
+    const normalizedPrice = f.priceMomentum / (f.atrPercent || 1);
+    score += normalizedPrice;
+
+    return score * 0.7;
   }
 
-  private calculateConfidence(f: PredictionFeatures, prediction: number): number {
-    const RSI_EXTREME_BONUS = 15;
-    const RSI_STRONG_BONUS = 10;
-    const MOMENTUM_BONUS = 12;
-    const PREDICTION_BONUS = 10;
-    const RSI_EXTREME = 20;
-    const RSI_STRONG = 30;
-    const MOMENTUM_THRESHOLD = 1.5;
+  /**
+   * Core Upgrade: Enhanced Confidence Calculation
+   * Checks for model agreement and volatility stability.
+   */
+  private calculateEnhancedConfidence(f: PredictionFeatures, prediction: number, models: number[]): number {
+    let confidence = 55; // Base confidence for beginners
 
-    const hasSignal = Math.abs(prediction) > 0.5;
-    let confidence = hasSignal ? 65 : 45;
+    // 1. Model Agreement Bonus
+    const allAgree = (models[0] > 0 && models[1] > 0 && models[2] > 0) || 
+                     (models[0] < 0 && models[1] < 0 && models[2] < 0);
+    if (allAgree) confidence += 15;
 
-    if (f.rsi < RSI_EXTREME || f.rsi > 100 - RSI_EXTREME) {
-      confidence += RSI_EXTREME_BONUS;
-    } else if (f.rsi < RSI_STRONG || f.rsi > 100 - RSI_STRONG) {
-      confidence += RSI_STRONG_BONUS;
-    }
+    // 2. Volatility Penalty
+    if (f.atrPercent > 5.0) confidence -= 10; // Too much risk decreases confidence
+    
+    // 3. Indicator Confirmation (RSI + Momentum)
+    const indicatorAgree = (f.rsi > 50 && f.priceMomentum > 0) || (f.rsi < 50 && f.priceMomentum < 0);
+    if (indicatorAgree) confidence += 10;
 
-    if (Math.abs(f.priceMomentum) > MOMENTUM_THRESHOLD) {
-      confidence += MOMENTUM_BONUS;
-    }
+    // 4. Momentum Strength Bonus
+    if (Math.abs(f.priceMomentum) > 3.0) confidence += 10;
 
-    if (Math.abs(prediction) > MOMENTUM_THRESHOLD) {
-      confidence += PREDICTION_BONUS;
-    }
-
-    if (hasSignal) {
-      return Math.min(Math.max(confidence, 65), 95);
-    }
-    return Math.min(Math.max(confidence, 30), 50);
+    // Cap confidence to avoid over-trading
+    return Math.min(Math.max(confidence, 40), 98);
   }
 }
 

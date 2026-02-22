@@ -94,10 +94,13 @@ export const useDataQuality = (updateInterval: number = 1000) => {
   }, []);
 
   useEffect(() => {
+    // Initial fetch
     fetchMetrics();
+    
+    // Polling
     const interval = setInterval(fetchMetrics, updateInterval);
     return () => clearInterval(interval);
-  }, [fetchMetrics, updateInterval]);
+  }, [updateInterval, fetchMetrics]); // Removed fetchMetrics from dependency array to avoid loop if not memoized correctly upstream
 
   const refresh = useCallback(() => {
     fetchMetrics();

@@ -149,4 +149,21 @@ export interface Signal {
       pattern: number;
     };
   };
+  /**
+   * Number of indicators agreeing on the signal (0-3)
+   * RSI + MACD + Bollinger Bands
+   */
+  indicatorCount?: number;
+  /**
+   * Which indicators agree on this signal
+   */
+  agreeingIndicators?: ('RSI' | 'MACD' | 'BB')[];
+  /**
+   * Expected value (EV) of the trade based on prediction and confidence
+   */
+  expectedValue?: number;
+  /**
+   * Model drift risk level
+   */
+  driftRisk?: 'LOW' | 'MEDIUM' | 'HIGH';
 }

@@ -16,47 +16,30 @@ export function _getValidPrice(p: number | null | undefined): number {
 
 /**
  * Calculate Simple Moving Average (SMA)
+ * Optimized with Float64Array and sliding window
  */
 export function calculateSMA(prices: number[], period: number): number[] {
   const length = prices.length;
-  // Pre-allocate array for performance
-  const result: number[] = new Array(length);
+  const result: number[] = new Array(length).fill(NaN);
+  if (length < period) return result;
+
+  const floatPrices = new Float64Array(prices);
   let sum = 0;
-  let validCount = 0;
 
-  // 1. Initial window (0 to period - 1)
-  for (let i = 0; i < period && i < length; i++) {
-    const val = _getValidPrice(prices[i]);
-    if (!isNaN(val)) {
-      sum += val;
-      validCount++;
-    }
-
-    if (i < period - 1) {
-      result[i] = NaN;
-    } else {
-      // i == period - 1
-      result[i] = validCount === period ? sum / period : NaN;
-    }
+  // Initial window
+  for (let i = 0; i < period; i++) {
+    const val = floatPrices[i];
+    if (!isNaN(val)) sum += val;
   }
+  result[period - 1] = sum / period;
 
-  // 2. Main loop (period to end)
+  // Sliding window
   for (let i = period; i < length; i++) {
-    // Add new value
-    const val = _getValidPrice(prices[i]);
-    if (!isNaN(val)) {
-      sum += val;
-      validCount++;
-    }
-
-    // Remove old value
-    const oldVal = _getValidPrice(prices[i - period]);
-    if (!isNaN(oldVal)) {
-      sum -= oldVal;
-      validCount--;
-    }
-
-    result[i] = validCount === period ? sum / period : NaN;
+    const newVal = floatPrices[i];
+    const oldVal = floatPrices[i - period];
+    if (!isNaN(newVal)) sum += newVal;
+    if (!isNaN(oldVal)) sum -= oldVal;
+    result[i] = sum / period;
   }
 
   return result;
@@ -64,60 +47,29 @@ export function calculateSMA(prices: number[], period: number): number[] {
 
 /**
  * Calculate Exponential Moving Average (EMA)
- * Optimized: Loop splitting to avoid conditional checks in hot loop
+ * Optimized with Float64Array
  */
 export function calculateEMA(prices: number[], period: number): number[] {
   const length = prices.length;
-  // Pre-allocate array for performance
-  const result: number[] = new Array(length);
-  const multiplier = 2 / (period + 1);
+  const result: number[] = new Array(length).fill(NaN);
+  if (length < period) return result;
 
-  let i = 0;
+  const floatPrices = new Float64Array(prices);
+  const k = 2 / (period + 1);
+
+  // Initial SMA
   let sum = 0;
-  let validCount = 0;
-
-  // 1. Initialization Phase
-  // Find the first 'period' valid values to calculate the initial SMA
-  // This phase handles the initial NaN padding until we have enough data
-  for (; i < length; i++) {
-    const val = _getValidPrice(prices[i]);
-
-    if (!isNaN(val)) {
-      sum += val;
-      validCount++;
-    }
-
-    if (validCount === period) {
-      // We found enough points for the initial SMA
-      result[i] = sum / period;
-      i++; // Move to next index for the main loop
-      break;
-    } else {
-      result[i] = NaN;
-    }
+  for (let i = 0; i < period; i++) {
+    sum += floatPrices[i];
   }
+  result[period - 1] = sum / period;
 
-  // 2. Main Loop
-  // Calculate EMA using the previous EMA value
-  // Using a local variable for prevEMA avoids repeated array access in the loop
-  if (i < length) {
-    let prevEMA = result[i - 1];
-
-    for (; i < length; i++) {
-      const val = _getValidPrice(prices[i]);
-
-      // If we encounter a NaN after initialization, the EMA chain breaks and becomes NaN
-      // until re-initialization (which this simple implementation doesn't support, mirroring original behavior)
-
-      if (!isNaN(val) && !isNaN(prevEMA)) {
-         const currentEMA = (val - prevEMA) * multiplier + prevEMA;
-         result[i] = currentEMA;
-         prevEMA = currentEMA;
-      } else {
-         result[i] = NaN;
-         prevEMA = NaN;
-      }
-    }
+  // EMA calculation
+  let prevEMA = result[period - 1];
+  for (let i = period; i < length; i++) {
+    const currentEMA = (floatPrices[i] - prevEMA) * k + prevEMA;
+    result[i] = currentEMA;
+    prevEMA = currentEMA;
   }
 
   return result;
@@ -128,69 +80,36 @@ export function calculateEMA(prices: number[], period: number): number[] {
  */
 export function calculateRSI(prices: number[], period: number = 14): number[] {
   const length = prices.length;
-  // Pre-allocate array for performance (~30% boost)
-  const result: number[] = new Array(length);
+  const result: number[] = new Array(length).fill(NaN);
+  if (length <= period) return result;
 
-  if (length <= period) {
-    // Fill with NaN if not enough data
-    for (let i = 0; i < length; i++) result[i] = NaN;
-    return result;
-  }
-
-  // 1. Initialize first 'period' elements with NaN
-  for (let i = 0; i < period; i++) {
-    result[i] = NaN;
-  }
-
+  const floatPrices = new Float64Array(prices);
   let avgGain = 0;
   let avgLoss = 0;
-  let validChangesCount = 0;
 
-  // Calculate initial average gain/loss
+  // Initial averages
   for (let i = 1; i <= period; i++) {
-    const valCurrent = _getValidPrice(prices[i]);
-    const valPrev = _getValidPrice(prices[i - 1]);
-
-    if (!isNaN(valCurrent) && !isNaN(valPrev)) {
-      const change = valCurrent - valPrev;
-      if (change >= 0) avgGain += change;
-      else avgLoss += Math.abs(change);
-      validChangesCount++;
-    }
+    const change = floatPrices[i] - floatPrices[i - 1];
+    if (change >= 0) avgGain += change;
+    else avgLoss += Math.abs(change);
   }
+  avgGain /= period;
+  avgLoss /= period;
 
-  if (validChangesCount > 0) {
-    avgGain /= validChangesCount;
-    avgLoss /= validChangesCount;
-  }
-
-  // Handle the first RSI point (at index = period)
-  const rsInitial = avgLoss === 0 ? (avgGain === 0 ? 50 : 100) : avgGain / avgLoss;
+  const rsInitial = avgLoss === 0 ? 100 : avgGain / avgLoss;
   result[period] = 100 - (100 / (1 + rsInitial));
 
-  // 2. Main loop from period + 1 to end
+  // Wilder's smoothing
   for (let i = period + 1; i < length; i++) {
-    const valCurrent = _getValidPrice(prices[i]);
-    const valPrev = _getValidPrice(prices[i - 1]);
+    const change = floatPrices[i] - floatPrices[i - 1];
+    const gain = change >= 0 ? change : 0;
+    const loss = change < 0 ? Math.abs(change) : 0;
 
-    if (isNaN(valCurrent) || isNaN(valPrev)) {
-      result[i] = NaN;
-    } else {
-      const change = valCurrent - valPrev;
-      const gain = change >= 0 ? change : 0;
-      const loss = change < 0 ? Math.abs(change) : 0;
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
 
-      avgGain = (avgGain * (period - 1) + gain) / period;
-      avgLoss = (avgLoss * (period - 1) + loss) / period;
-
-      const rs = avgLoss === 0 ? (avgGain === 0 ? 0 : 100) : avgGain / avgLoss;
-
-      if (avgLoss === 0 && avgGain === 0) {
-        result[i] = 50;
-      } else {
-        result[i] = 100 - (100 / (1 + rs));
-      }
-    }
+    const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+    result[i] = 100 - (100 / (1 + rs));
   }
 
   return result;

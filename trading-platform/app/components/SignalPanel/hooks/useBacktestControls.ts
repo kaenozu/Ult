@@ -59,7 +59,7 @@ export function useBacktestControls(stock: Stock, ohlcv: OHLCV[] = [], activeTab
         }
       }, 50);
     }
-  }, [activeTab, backtestResult, isBacktesting, ohlcv.length, lastDataDate, stock.symbol, stock.market, loading, measure]);
+  }, [activeTab, backtestResult, isBacktesting, ohlcv, lastDataDate, stock.symbol, stock.market, loading, measure]);
 
   return {
     backtestResult,

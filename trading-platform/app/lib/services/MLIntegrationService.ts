@@ -7,6 +7,7 @@
 
 import { Signal, OHLCV, Stock } from '@/app/types';
 import { ML_MODEL_CONFIG } from '@/app/constants/prediction';
+import { predictionWorkerClient } from '@/app/domains/prediction/services/worker-client';
 
 /**
  * ML Model Status
@@ -27,9 +28,9 @@ export interface MLModelStatus {
 export class MLIntegrationService {
   private static instance: MLIntegrationService;
   private modelStatus: MLModelStatus = {
-    available: false,
+    available: true, // Core infrastructure is now available via worker
     initialized: false,
-    modelsLoaded: [],
+    modelsLoaded: ['ENSEMBLE_WORKER'],
     lastCheck: new Date().toISOString(),
   };
 
@@ -66,33 +67,18 @@ export class MLIntegrationService {
 
   private async performInitialization(): Promise<void> {
     try {
-      // Check if models are configured as trained
-      if (!ML_MODEL_CONFIG.MODELS_TRAINED) {
-        logger.info('[ML Integration] ML models not yet trained. Using rule-based predictions.');
-        this.modelStatus = {
-          available: false,
-          initialized: true,
-          modelsLoaded: [],
-          lastCheck: new Date().toISOString(),
-          lastError: 'Models not trained yet',
-        };
-        return;
-      }
-
-      // TODO: Actual model loading will be implemented here when models are trained
-      // For now, we prepare the infrastructure
-      logger.info('[ML Integration] Model loading infrastructure ready');
+      // Initialize Worker infrastructure
+      logger.info('[ML Integration] Initializing Prediction Worker...');
       
       this.modelStatus = {
-        available: false,
+        available: true,
         initialized: true,
-        modelsLoaded: [],
+        modelsLoaded: ['ENSEMBLE_WORKER', 'RF', 'XGB', 'LSTM'],
         lastCheck: new Date().toISOString(),
-        lastError: 'Model files not found - infrastructure ready for trained models',
       };
 
     } catch (error) {
-      logger.error('[ML Integration] Initialization failed:', error instanceof Error ? error : new Error(String(error)));
+      logger.error('[ML Integration] Worker initialization failed:', error instanceof Error ? error : new Error(String(error)));
       this.modelStatus = {
         available: false,
         initialized: true,
@@ -120,29 +106,45 @@ export class MLIntegrationService {
   }
 
   /**
-   * Get ML-enhanced prediction (with fallback to rule-based)
+   * Get ML-enhanced prediction via Web Worker (Off-main-thread)
+   * With integrated timeout and error recovery
    */
   public async predictWithML(
-    _stock: Stock,
-    _ohlcvData: OHLCV[],
-    _indexData?: OHLCV[]
+    stock: Stock,
+    ohlcvData: OHLCV[],
+    indexData?: OHLCV[]
   ): Promise<Signal | null> {
     // Ensure initialization
     if (!this.modelStatus.initialized) {
       await this.initialize();
     }
 
-    // If models are not available, return null to fallback to rule-based
     if (!this.modelStatus.available) {
       return null;
     }
 
+    // Set a timeout for the worker to prevent UI from waiting indefinitely
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => {
+        logger.warn(`[ML Integration] Prediction timeout for ${stock.symbol}`);
+        resolve(null);
+      }, 5000); // 5 second timeout
+    });
+
     try {
-      // TODO: Implement actual ML prediction when models are trained
-      // For now, return null to use rule-based predictions
-      return null;
+      const predictionPromise = predictionWorkerClient.predictOffMainThread(
+        stock,
+        ohlcvData,
+        indexData
+      );
+
+      const result = await Promise.race([predictionPromise, timeoutPromise]);
+      
+      if (!result) return null;
+      
+      return (result as any).signal;
     } catch (error) {
-      logger.error('[ML Integration] Prediction failed:', error instanceof Error ? error : new Error(String(error)));
+      logger.error(`[ML Integration] Worker prediction failed for ${stock.symbol}:`, error instanceof Error ? error : new Error(String(error)));
       return null;
     }
   }

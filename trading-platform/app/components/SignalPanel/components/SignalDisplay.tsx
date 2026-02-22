@@ -4,6 +4,10 @@ import { PositionSizeRecommendation } from '@/app/types/risk';
 import { SignalCard } from '../../SignalCard';
 import { LowAccuracyWarning } from '@/app/components/LowAccuracyWarning';
 import { KellyPositionSizingDisplay } from '@/app/components/KellyPositionSizingDisplay';
+import { BeginnerSignalCard } from '@/app/components/signal/BeginnerSignalCard';
+import { useUIStore } from '@/app/store/uiStore';
+import { useRiskManagementStore } from '@/app/store/riskManagementStore';
+import { filterForBeginner } from '@/app/lib/services/beginner-signal-filter';
 
 interface SignalDisplayProps {
   signal: Signal;
@@ -24,6 +28,25 @@ export function SignalDisplay({
   error,
   kellyRecommendation
 }: SignalDisplayProps) {
+  const { beginnerMode } = useUIStore();
+  const { settings: riskSettings } = useRiskManagementStore();
+  const beginnerSignal = filterForBeginner(signal, stock.price || 0, beginnerMode, riskSettings);
+
+  if (beginnerMode.enabled) {
+    return (
+      <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+        <BeginnerSignalCard
+          signal={beginnerSignal}
+          currentPrice={stock.price}
+          onExecute={() => {
+            console.log('Beginner executed signal:', beginnerSignal);
+            // In a real app, this would trigger an order confirmation or execute the order
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
       {/* Low Accuracy Warning - only show with 5+ trades for statistical significance */}
