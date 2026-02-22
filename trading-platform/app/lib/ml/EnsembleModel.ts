@@ -9,11 +9,12 @@ import { AllFeatures, SentimentFeatures, MacroEconomicFeatures } from '../servic
 import { OHLCV } from '../../types/shared';
 import { calculateATR } from '../utils/technical-analysis';
 import { RSI_THRESHOLDS, OPTIMIZED_ENSEMBLE_WEIGHTS, PREDICTION_CONFIG, MarketRegimeType } from '../config/prediction-config';
+import { candlestickPatternService } from '../services/candlestick-pattern-service';
 
 /**
  * モデルタイプ
  */
-export type ModelType = 'RF' | 'XGB' | 'LSTM' | 'TECHNICAL' | 'ENSEMBLE';
+export type ModelType = 'RF' | 'XGB' | 'LSTM' | 'TECHNICAL' | 'PATTERN' | 'ENSEMBLE';
 type AdjustableModelType = Exclude<ModelType, 'ENSEMBLE'>;
 
 /**
@@ -76,6 +77,7 @@ interface EnsembleWeights {
   XGB: number;
   LSTM: number;
   TECHNICAL: number;
+  PATTERN: number;
   ENSEMBLE: number;
 }
 
@@ -84,8 +86,8 @@ interface EnsembleWeights {
  */
 export class EnsembleModel {
   private performanceHistory: Map<ModelType, ModelPerformance[]> = new Map();
-  private currentWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15, ENSEMBLE: 0 };
-  private baseWeights: EnsembleWeights = { RF: 0.25, XGB: 0.35, LSTM: 0.25, TECHNICAL: 0.15, ENSEMBLE: 0 };
+  private currentWeights: EnsembleWeights = { RF: 0.23, XGB: 0.32, LSTM: 0.32, TECHNICAL: 0.05, PATTERN: 0.08, ENSEMBLE: 0 };
+  private baseWeights: EnsembleWeights = { RF: 0.23, XGB: 0.32, LSTM: 0.32, TECHNICAL: 0.05, PATTERN: 0.08, ENSEMBLE: 0 };
   private lastRegimeUpdate: string = new Date().toISOString();
   private currentRegime: MarketRegime | null = null;
 
@@ -117,6 +119,7 @@ export class EnsembleModel {
       this.predictXGBoost(features),
       this.predictLSTM(data, features),
       this.predictTechnical(features),
+      this.predictPattern(data),
     ];
 
     // マクロ経済・センチメントの調整
@@ -281,6 +284,7 @@ export class EnsembleModel {
       XGB: Math.max(this.MIN_WEIGHT, Math.min(this.MAX_WEIGHT, baseWeights.XGB)),
       LSTM: Math.max(this.MIN_WEIGHT, Math.min(this.MAX_WEIGHT, baseWeights.LSTM)),
       TECHNICAL: Math.max(this.MIN_WEIGHT, Math.min(this.MAX_WEIGHT, baseWeights.TECHNICAL)),
+      PATTERN: Math.max(this.MIN_WEIGHT, Math.min(this.MAX_WEIGHT, baseWeights.PATTERN)),
       ENSEMBLE: 0,
     };
 
@@ -291,7 +295,7 @@ export class EnsembleModel {
    * 重みをパフォーマンスに基づいて更新
    */
   private updateWeightsBasedOnPerformance(): void {
-    const modelTypes: AdjustableModelType[] = ['RF', 'XGB', 'LSTM', 'TECHNICAL'];
+    const modelTypes: AdjustableModelType[] = ['RF', 'XGB', 'LSTM', 'TECHNICAL', 'PATTERN'];
 
     for (const modelType of modelTypes) {
       const history = this.performanceHistory.get(modelType);
@@ -322,7 +326,7 @@ export class EnsembleModel {
    * 重みを正規化（合計が1になるように）
    */
   private normalizeWeights(weights: EnsembleWeights): EnsembleWeights {
-    const total = weights.RF + weights.XGB + weights.LSTM + weights.TECHNICAL;
+    const total = weights.RF + weights.XGB + weights.LSTM + weights.TECHNICAL + weights.PATTERN;
     if (total === 0) {
       return { ...weights };
     }
@@ -331,6 +335,7 @@ export class EnsembleModel {
       XGB: weights.XGB / total,
       LSTM: weights.LSTM / total,
       TECHNICAL: weights.TECHNICAL / total,
+      PATTERN: weights.PATTERN / total,
       ENSEMBLE: weights.ENSEMBLE,
     };
   }
@@ -483,6 +488,24 @@ export class EnsembleModel {
   }
 
   /**
+   * ローソク足パターンで予測
+   */
+  private predictPattern(data: OHLCV[]): ModelPrediction {
+    const features = candlestickPatternService.calculatePatternFeatures(data);
+    const signal = candlestickPatternService.getPatternSignal(features);
+
+    const prediction = signal * 3;
+    const confidence = Math.min(95, 50 + Math.abs(signal) * 30);
+
+    return {
+      modelType: 'PATTERN',
+      prediction,
+      confidence,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
    * マクロ経済・センチメントによる調整を適用
    */
   private applyMacroSentimentAdjustment(
@@ -533,7 +556,8 @@ export class EnsembleModel {
       predictions.find((p) => p.modelType === 'RF')!.prediction * weights.RF +
       predictions.find((p) => p.modelType === 'XGB')!.prediction * weights.XGB +
       predictions.find((p) => p.modelType === 'LSTM')!.prediction * weights.LSTM +
-      predictions.find((p) => p.modelType === 'TECHNICAL')!.prediction * weights.TECHNICAL
+      predictions.find((p) => p.modelType === 'TECHNICAL')!.prediction * weights.TECHNICAL +
+      predictions.find((p) => p.modelType === 'PATTERN')!.prediction * weights.PATTERN
     );
   }
 
@@ -550,7 +574,8 @@ export class EnsembleModel {
       predictions.find((p) => p.modelType === 'RF')!.confidence * weights.RF +
       predictions.find((p) => p.modelType === 'XGB')!.confidence * weights.XGB +
       predictions.find((p) => p.modelType === 'LSTM')!.confidence * weights.LSTM +
-      predictions.find((p) => p.modelType === 'TECHNICAL')!.confidence * weights.TECHNICAL;
+      predictions.find((p) => p.modelType === 'TECHNICAL')!.confidence * weights.TECHNICAL +
+      predictions.find((p) => p.modelType === 'PATTERN')!.confidence * weights.PATTERN;
 
     // 予測のばらつきを考慮
     const variance =

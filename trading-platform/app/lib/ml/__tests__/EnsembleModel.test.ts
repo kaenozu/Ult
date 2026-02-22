@@ -89,7 +89,7 @@ describe('EnsembleModel - Optimized Weights Integration', () => {
     for (const regime of regimes) {
       expect(OPTIMIZED_ENSEMBLE_WEIGHTS[regime]).toBeDefined();
       const weights = OPTIMIZED_ENSEMBLE_WEIGHTS[regime];
-      const total = weights.RF + weights.XGB + weights.LSTM + weights.TECHNICAL;
+      const total = weights.RF + weights.XGB + weights.LSTM + weights.TECHNICAL + weights.PATTERN;
       expect(total).toBeCloseTo(1.0, 2);
     }
   });
@@ -104,6 +104,7 @@ describe('EnsembleModel - Optimized Weights Integration', () => {
       expect(prediction.weights.XGB).toBeCloseTo(OPTIMIZED_ENSEMBLE_WEIGHTS.TRENDING.XGB, 2);
       expect(prediction.weights.LSTM).toBeCloseTo(OPTIMIZED_ENSEMBLE_WEIGHTS.TRENDING.LSTM, 2);
       expect(prediction.weights.TECHNICAL).toBeCloseTo(OPTIMIZED_ENSEMBLE_WEIGHTS.TRENDING.TECHNICAL, 2);
+      expect(prediction.weights.PATTERN).toBeCloseTo(OPTIMIZED_ENSEMBLE_WEIGHTS.TRENDING.PATTERN, 2);
     }
   });
 
@@ -112,7 +113,7 @@ describe('EnsembleModel - Optimized Weights Integration', () => {
     const data = createTrendingData();
     const prediction = model.predict(data, createMockFeatures());
     
-    const total = prediction.weights.RF + prediction.weights.XGB + prediction.weights.LSTM + prediction.weights.TECHNICAL;
+    const total = prediction.weights.RF + prediction.weights.XGB + prediction.weights.LSTM + prediction.weights.TECHNICAL + prediction.weights.PATTERN;
     expect(total).toBeCloseTo(1.0, 2);
   });
 
@@ -121,6 +122,39 @@ describe('EnsembleModel - Optimized Weights Integration', () => {
     const prediction = model.predict(createTrendingData(), createMockFeatures());
     
     expect(prediction.weights.ENSEMBLE).toBe(0);
+  });
+});
+
+describe('EnsembleModel - PATTERN Model', () => {
+  it('should include PATTERN model in predictions', () => {
+    const model = new EnsembleModel();
+    const data = createTrendingData();
+    const features = createMockFeatures();
+    
+    const prediction = model.predict(data, features);
+    expect(prediction.modelPredictions.find(p => p.modelType === 'PATTERN')).toBeDefined();
+  });
+
+  it('should have PATTERN weight in all market regimes', () => {
+    const regimes: Array<keyof typeof OPTIMIZED_ENSEMBLE_WEIGHTS> = ['TRENDING', 'RANGING', 'VOLATILE', 'QUIET'];
+    
+    for (const regime of regimes) {
+      expect(OPTIMIZED_ENSEMBLE_WEIGHTS[regime].PATTERN).toBeDefined();
+      expect(OPTIMIZED_ENSEMBLE_WEIGHTS[regime].PATTERN).toBeGreaterThan(0);
+    }
+  });
+
+  it('should have PATTERN prediction with valid confidence', () => {
+    const model = new EnsembleModel();
+    const data = createTrendingData();
+    const features = createMockFeatures();
+    
+    const prediction = model.predict(data, features);
+    const patternPrediction = prediction.modelPredictions.find(p => p.modelType === 'PATTERN');
+    
+    expect(patternPrediction).toBeDefined();
+    expect(patternPrediction!.confidence).toBeGreaterThanOrEqual(50);
+    expect(patternPrediction!.confidence).toBeLessThanOrEqual(95);
   });
 });
 
