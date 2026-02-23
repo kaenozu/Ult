@@ -20,6 +20,7 @@ export default function DemoPage() {
     change: 45,
     changePercent: 1.83,
     market: 'japan',
+    sector: '自動車',
     volume: 12500000,
   };
 

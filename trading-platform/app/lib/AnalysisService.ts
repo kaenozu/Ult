@@ -531,6 +531,7 @@ class AnalysisService {
         }
 
         // ML prediction integration point - using Off-main-thread Workers
+        /*
         const mlAvailable = mlIntegrationService.isAvailable();
         if (mlAvailable && !context?.minimal) {
             const mlPrediction = await mlIntegrationService.predictWithML(
@@ -543,6 +544,7 @@ class AnalysisService {
                 return mlPrediction;
             }
         }
+        */
         // If ML not available or prediction fails, continue with rule-based approach below
 
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
