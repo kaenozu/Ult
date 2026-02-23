@@ -43,9 +43,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
   
   // リダイレクトとヘッダー
   async headers() {

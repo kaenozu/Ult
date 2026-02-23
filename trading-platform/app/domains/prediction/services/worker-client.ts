@@ -23,7 +23,7 @@ class PredictionWorkerClient {
   private initializeWorker() {
     try {
       this.worker = new Worker(
-        new URL('../../workers/prediction-analysis.worker.ts', import.meta.url)
+        new URL('../../../workers/prediction-analysis.worker.ts', import.meta.url)
       );
 
       this.worker.onmessage = (event) => {
