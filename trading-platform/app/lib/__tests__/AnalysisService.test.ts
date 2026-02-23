@@ -116,13 +116,13 @@ describe('AnalysisService', () => {
   });
 
   describe('analyzeStock', () => {
-    it('should return HOLD signal when data is insufficient', () => {
-      const result = analysisService.analyzeStock(mockSymbol, generateMockData(50), mockMarket);
+    it('should return HOLD signal when data is insufficient', async () => {
+      const result = await analysisService.analyzeStock(mockSymbol, generateMockData(50), mockMarket);
       expect(result.type).toBe('HOLD');
     });
 
-    it('should analyze stock with sufficient data', () => {
-      const result = analysisService.analyzeStock(mockSymbol, generateMockData(252), mockMarket);
+    it('should analyze stock with sufficient data', async () => {
+      const result = await analysisService.analyzeStock(mockSymbol, generateMockData(252), mockMarket);
       expect(['BUY', 'SELL', 'HOLD']).toContain(result.type);
       expect(result.confidence).toBeGreaterThan(0);
     });

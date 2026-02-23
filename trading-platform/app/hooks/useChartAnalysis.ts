@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { OHLCV, Signal } from '@/app/types';
 import { technicalIndicatorService } from '@/app/lib/TechnicalIndicatorService';
 import { analyzeStock } from '@/app/lib/analysis';
@@ -77,55 +77,78 @@ export function useChartAnalysis({
     );
 
     // 4. Ghost Forecast (Past Prediction Simulation)
-    const ghostForecastDatasets = useMemo(() => {
-        if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) return [];
+    const [ghostForecastDatasets, setGhostForecastDatasets] = useState<any[]>([]);
 
-        // Create a stable slice analysis to avoid frequent re-calculation
-        const pastSignal = analyzeStock(data[0].symbol || '', data.slice(0, hoveredIdx + 1), market);
-        if (!pastSignal) return [];
-
-        const targetArr = new Array(extendedData.labels.length).fill(NaN);
-        const stopArr = new Array(extendedData.labels.length).fill(NaN);
-        const currentPrice = data[hoveredIdx].close;
-        targetArr[hoveredIdx] = stopArr[hoveredIdx] = currentPrice;
-
-        const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
-        const confidenceFactor = (110 - pastSignal.confidence) / 100;
-        const momentum = pastSignal.predictedChange / 100;
-
-        for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
-            if (hoveredIdx + i < extendedData.labels.length) {
-                const timeRatio = i / FORECAST_CONE.STEPS;
-                const centerPrice = currentPrice * (1 + (momentum * timeRatio));
-                const spread = (stockATR * timeRatio) * confidenceFactor;
-                targetArr[hoveredIdx + i] = centerPrice + spread;
-                stopArr[hoveredIdx + i] = centerPrice - spread;
+    useEffect(() => {
+        let isMounted = true;
+        const calculateGhost = async () => {
+            if (hoveredIdx === null || hoveredIdx >= data.length || data.length < OPTIMIZATION.MIN_DATA_PERIOD) {
+                if (isMounted) setGhostForecastDatasets([]);
+                return;
             }
-        }
 
-        const color = pastSignal.type === 'BUY' ? '34, 197, 94' : pastSignal.type === 'SELL' ? '239, 68, 68' : '100, 116, 139';
-        return [
-            {
-                label: '過去予測(上)',
-                data: targetArr,
-                borderColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_ALPHA})`,
-                backgroundColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_FILL_ALPHA})`,
-                borderWidth: 1,
-                borderDash: [3, 3],
-                pointRadius: 0,
-                fill: '+1',
-                order: -2
-            },
-            {
-                label: '過去予測(下)',
-                data: stopArr,
-                borderColor: `rgba(${color}, ${GHOST_FORECAST.STOP_ALPHA})`,
-                borderWidth: 1,
-                pointRadius: 0,
-                fill: false,
-                order: -2
+            try {
+                // Create a stable slice analysis to avoid frequent re-calculation
+                const pastSignal = await analyzeStock(data[0].symbol || '', data.slice(0, hoveredIdx + 1), market);
+                if (!isMounted) return;
+
+                if (!pastSignal) {
+                    setGhostForecastDatasets([]);
+                    return;
+                }
+
+                const targetArr = new Array(extendedData.labels.length).fill(NaN);
+                const stopArr = new Array(extendedData.labels.length).fill(NaN);
+                const currentPrice = data[hoveredIdx].close;
+                targetArr[hoveredIdx] = stopArr[hoveredIdx] = currentPrice;
+
+                const stockATR = pastSignal.atr || (currentPrice * GHOST_FORECAST.DEFAULT_ATR_RATIO);
+                const confidenceFactor = (110 - pastSignal.confidence) / 100;
+                const momentum = pastSignal.predictedChange / 100;
+
+                for (let i = 1; i <= FORECAST_CONE.STEPS; i++) {
+                    if (hoveredIdx + i < extendedData.labels.length) {
+                        const timeRatio = i / FORECAST_CONE.STEPS;
+                        const centerPrice = currentPrice * (1 + (momentum * timeRatio));
+                        const spread = (stockATR * timeRatio) * confidenceFactor;
+                        targetArr[hoveredIdx + i] = centerPrice + spread;
+                        stopArr[hoveredIdx + i] = centerPrice - spread;
+                    }
+                }
+
+                const color = pastSignal.type === 'BUY' ? '34, 197, 94' : pastSignal.type === 'SELL' ? '239, 68, 68' : '100, 116, 139';
+                const datasets = [
+                    {
+                        label: '過去予測(上)',
+                        data: targetArr,
+                        borderColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_ALPHA})`,
+                        backgroundColor: `rgba(${color}, ${GHOST_FORECAST.TARGET_FILL_ALPHA})`,
+                        borderWidth: 1,
+                        borderDash: [3, 3],
+                        pointRadius: 0,
+                        fill: '+1',
+                        order: -2
+                    },
+                    {
+                        label: '過去予測(下)',
+                        data: stopArr,
+                        borderColor: `rgba(${color}, ${GHOST_FORECAST.STOP_ALPHA})`,
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        fill: false,
+                        order: -2
+                    }
+                ];
+                setGhostForecastDatasets(datasets);
+            } catch (error) {
+                console.error("Failed to calculate ghost forecast:", error);
+                if (isMounted) setGhostForecastDatasets([]);
             }
-        ];
+        };
+
+        calculateGhost();
+
+        return () => { isMounted = false; };
     }, [hoveredIdx, data, market, extendedData.labels.length]);
 
     // 5. Future Forecast Cone

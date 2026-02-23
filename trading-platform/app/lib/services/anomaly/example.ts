@@ -6,8 +6,10 @@
  * with existing market data services.
  */
 
-import { AnomalyDetector, EventPredictor, AlertManager } from '@/app/lib/aiAnalytics/AnomalyDetection';
-import { MarketData } from '@/app/lib/aiAnalytics/AnomalyDetection/types';
+import { AnomalyDetector } from './AnomalyDetector';
+import { EventPredictor } from './EventPredictor';
+import { AlertManager } from './AlertManager';
+import { MarketData } from './types';
 import { OHLCV } from '@/app/types/shared';
 
 /**

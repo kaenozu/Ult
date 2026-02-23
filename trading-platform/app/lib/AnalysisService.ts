@@ -1,4 +1,4 @@
-import { OHLCV, Signal } from '../types';
+import { OHLCV, Signal, Stock } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
@@ -462,7 +462,7 @@ class AnalysisService {
      * 銘柄の総合分析を実行
      * ML予測が利用可能な場合は優先的に使用し、そうでない場合はルールベースにフォールバック
      */
-    analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Signal {
+    async analyzeStock(symbol: string, data: OHLCV[], market: 'japan' | 'usa', indexDataOverride?: OHLCV[], context?: AnalysisContext): Promise<Signal> {
         logger.debug('[analyzeStock] start', { symbol, market, dataLength: data.length, context: context ? { endIndex: context.endIndex, startIndex: context.startIndex } : 'none' });
 
         // Handle window data for legacy components

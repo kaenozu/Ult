@@ -27,15 +27,15 @@ export class SignalGenerationService {
   /**
    * 最終的なシグナルを生成（市場相関と自己矯正を含む）
    */
-  generateSignal(
+  async generateSignal(
     stock: Stock,
     data: OHLCV[],
     prediction: ModelPrediction,
     indicators: TechnicalIndicatorsWithATR, // TechnicalIndicator & { atr: number[] }
     indexData?: OHLCV[]
-  ): Signal {
+  ): Promise<Signal> {
     const currentPrice = data[data.length - 1].close;
-    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market, indexData);
+    const baseAnalysis = await analyzeStock(stock.symbol, data, stock.market, indexData);
 
     // 1. 市場相関分析 (Market Sync)
     const { marketInfo, confidenceAdj, marketComment } = this.analyzeMarketCorrelation(
@@ -265,7 +265,7 @@ export class SignalGenerationService {
     indexData?: OHLCV[]
   ): Promise<Signal> {
     // まず基本シグナルを生成
-    const baseSignal = this.generateSignal(stock, data, prediction, indicators, indexData);
+    const baseSignal = await this.generateSignal(stock, data, prediction, indicators, indexData);
 
     // マルチ時間枠データがない場合は基本シグナルを返す
     if (!dataByTimeFrame || dataByTimeFrame.size === 0) {

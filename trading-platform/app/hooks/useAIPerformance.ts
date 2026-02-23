@@ -61,7 +61,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
           // Artificial enhancement logic removed for better reliability
         }
 
-        const calcResult = calculateAIHitRate(currentSymbol, targetData as OHLCV[], currentMarket);
+        const calcResult = await calculateAIHitRate(currentSymbol, targetData as OHLCV[], currentMarket);
         return { hitRate: calcResult.hitRate, trades: calcResult.totalTrades };
 
       } catch (err) {
@@ -69,7 +69,7 @@ export function useAIPerformance(stock: Stock, ohlcv: OHLCV[] = []) {
         
         // Fallback calculation on error
         try {
-          const calcResult = calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
+          const calcResult = await calculateAIHitRate(currentSymbol, ohlcv, currentMarket);
           return { hitRate: calcResult.hitRate, trades: calcResult.totalTrades };
         } catch {
           throw new Error('的中率の計算に失敗しました');

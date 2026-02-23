@@ -46,11 +46,12 @@ export function useBacktestControls(stock: Stock, ohlcv: OHLCV[] = [], activeTab
 
       setIsBacktesting(true);
       // Use setTimeout to unblock the main thread for UI updates (e.g. tab switch)
-      setTimeout(() => {
+      setTimeout(async () => {
         try {
-          const result = measure('runBacktest', () =>
+          const resultPromise = measure('runBacktest', () =>
             runBacktest(stock.symbol, ohlcv, stock.market)
           );
+          const result = await resultPromise;
           setBacktestResult(result);
         } catch (e) {
           console.error("Backtest failed", e);

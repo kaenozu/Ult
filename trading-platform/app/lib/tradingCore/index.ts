@@ -11,7 +11,6 @@ export {
   resetGlobalTradingPlatform,
   type PlatformConfig,
   type PlatformStatus,
-  type TradingSignal,
   type TradeDecision,
 } from './UnifiedTradingPlatform';
 
@@ -25,19 +24,6 @@ export {
   type ConnectionStatus,
 } from '../marketDataFeed/MultiExchangeDataFeed';
 
-// AI Analytics
-export {
-  PredictiveAnalyticsEngine,
-  getGlobalAnalyticsEngine,
-  resetGlobalAnalyticsEngine,
-  type TechnicalFeatures,
-  type ModelPrediction,
-  type PredictionResult,
-  type TradingSignal as AITradingSignal,
-  type PriceForecast,
-  type ModelConfig,
-  DEFAULT_MODEL_CONFIG,
-} from '../aiAnalytics/PredictiveAnalyticsEngine';
 
 // Sentiment Analysis
 export {

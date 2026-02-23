@@ -5,9 +5,6 @@ import { technicalIndicatorService } from '../TechnicalIndicatorService';
 import { analysisService } from '../AnalysisService';
 import { MarketDataHub } from '../data/MarketDataHub';
 import { AutoScreener } from '../universe/AutoScreener';
-import { DriftDetector } from '../ml/DriftDetector';
-
-
 
 /**
  * サービスコンテナの初期化
@@ -20,7 +17,6 @@ export function initializeContainer(): void {
 
   // Analysis & Intelligence
   ServiceContainer.register(TOKENS.AutoScreener, new AutoScreener(dataHub));
-  ServiceContainer.register(TOKENS.DriftDetector, new DriftDetector({ threshold: 0.1, minWindowSize: 10 }));
 
   // MarketDataService
   ServiceContainer.register(TOKENS.MarketDataService, new MarketDataService());

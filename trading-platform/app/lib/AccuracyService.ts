@@ -13,7 +13,7 @@ import {
 } from '@/app/constants';
 import { analysisService, AnalysisContext } from './AnalysisService';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
-import { measurePerformance } from './performance-utils';
+import { measurePerformance, measurePerformanceAsync } from './performance-utils';
 import { logger } from '@/app/core/logger';
 import { mlIntegrationService } from './services/MLIntegrationService';
 
@@ -259,8 +259,8 @@ class AccuracyService {
     /**
      * 本格的なバックテスト実行
      */
-    runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): BacktestResult {
-        return measurePerformance(`backtest.${symbol}`, (): BacktestResult => {
+    async runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): Promise<BacktestResult> {
+        return measurePerformanceAsync(`backtest.${symbol}`, async (): Promise<BacktestResult> => {
             const trades: BacktestTrade[] = [];
             let currentPosition: { type: 'BUY' | 'SELL', price: number, date: string } | null = null;
             const minPeriod = OPTIMIZATION.MIN_DATA_PERIOD;
@@ -284,7 +284,7 @@ class AccuracyService {
                     lastOptimizationIndex = i;
                 } else context.forcedParams = cachedParams;
 
-                const signal = analysisService.analyzeStock(symbol, data, market, undefined, context);
+                const signal = await analysisService.analyzeStock(symbol, data, market, undefined, context);
                 if (!context.forcedParams) {
                     cachedParams = { rsiPeriod: signal.optimizedParams?.rsiPeriod || RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: signal.optimizedParams?.smaPeriod || SMA_CONFIG.MEDIUM_PERIOD, accuracy: signal.accuracy || 0 };
                     wfaMetrics.outOfSample.push(cachedParams.accuracy);
@@ -329,18 +329,18 @@ class AccuracyService {
                 result.walkForwardMetrics = { inSampleAccuracy: avgOOS, outOfSampleAccuracy: avgOOS, overfitScore: 1.0, parameterStability: 0.5 };
             }
             return result as BacktestResult;
-        }) as BacktestResult;
+        });
     }
 
     /**
      * 過去的中率をリアルタイム計算
      */
-    calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): {
+    async calculateRealTimeAccuracy(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan'): Promise<{
         hitRate: number;
         precisionAccuracy: number;
         directionalAccuracy: number;
         totalTrades: number;
-    } | null {
+    } | null> {
         if (data.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
             logger.warn('[calculateRealTimeAccuracy] Data insufficient:', { symbol, market, dataLength: data.length, minRequired: DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS });
             return null;
@@ -364,7 +364,7 @@ class AccuracyService {
         });
 
         for (let i = startIndex; i < data.length - windowSize; i += 1) {
-            const signal = analysisService.analyzeStock(symbol, data, market, undefined, { 
+            const signal = await analysisService.analyzeStock(symbol, data, market, undefined, {
                 endIndex: i, 
                 preCalculatedIndicators,
                 forcedParams // REUSE pre-calculated optimized parameters
@@ -394,13 +394,13 @@ class AccuracyService {
     /**
      * AIの的中率と戦績を計算
      */
-    calculateAIHitRate(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan') {
+    async calculateAIHitRate(symbol: string, data: OHLCV[], market: 'japan' | 'usa' = 'japan') {
         if (data.length < DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) return { hitRate: 0, directionalAccuracy: 0, totalTrades: 0, averageProfit: 0 };
         let hits = 0, dirHits = 0, total = 0;
         const preCalculatedIndicators = this.preCalculateIndicators(data);
         const startIndex = Math.max(DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS, 10);
         for (let i = startIndex; i < data.length - 10; i += 1) {
-            const signal = analysisService.analyzeStock(symbol, data, market, undefined, { endIndex: i, preCalculatedIndicators });
+            const signal = await analysisService.analyzeStock(symbol, data, market, undefined, { endIndex: i, preCalculatedIndicators });
             if (signal.type === 'HOLD') continue;
             total++;
             const atr = preCalculatedIndicators?.atr ? preCalculatedIndicators.atr[i] : this.calculateSimpleATR(data, i);
@@ -424,7 +424,7 @@ export const accuracyService = new AccuracyService();
 /**
  * 過去的中率をリアルタイム計算 (Legacy Standalone Export)
  */
-export function calculateRealTimeAccuracy(
+export async function calculateRealTimeAccuracy(
     symbol: string,
     data: OHLCV[],
     market: 'japan' | 'usa' = 'japan'
@@ -435,7 +435,7 @@ export function calculateRealTimeAccuracy(
 /**
  * AIの的中率と戦績を計算 (Legacy Standalone Export)
  */
-export function calculateAIHitRate(
+export async function calculateAIHitRate(
     symbol: string,
     data: OHLCV[],
     market: 'japan' | 'usa' = 'japan'

@@ -64,7 +64,7 @@ export class IntegratedPredictionService {
     const shouldTrade = enhancedMLService.shouldTakeSignal(enhancedPrediction);
 
     // 4. Generate the final signal (BUY/SELL/HOLD with target prices)
-    const signal = this.generateSignal(
+    const signal = await this.generateSignal(
       stock,
       data,
       enhancedPrediction,
@@ -97,18 +97,18 @@ export class IntegratedPredictionService {
   /**
    * Generate trading signal from enhanced prediction
    */
-  private generateSignal(
+  private async generateSignal(
     stock: Stock,
     data: OHLCV[],
     enhancedPrediction: EnhancedPrediction,
     shouldTrade: boolean,
     indexData?: OHLCV[]
-  ): Signal {
+  ): Promise<Signal> {
     const currentPrice = data[data.length - 1].close;
     
     // Leverage existing analysis logic for secondary validation and metadata
     // Using minimal mode if possible to save resources
-    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market, indexData, { minimal: true });
+    const baseAnalysis = await analyzeStock(stock.symbol, data, stock.market, indexData);
 
     // Determine signal type based on ML prediction and quality gate
     let type: 'BUY' | 'SELL' | 'HOLD' = 'HOLD';

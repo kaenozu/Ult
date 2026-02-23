@@ -396,7 +396,7 @@ export class MarketDataClient {
       try {
         const indicators = mlPredictionService.calculateIndicators(result!.data!);
         const prediction = mlPredictionService.predict(stock, result!.data!, indicators);
-        const signalData = mlPredictionService.generateSignal(stock, result!.data!, prediction, indicators, []);
+        const signalData = await mlPredictionService.generateSignal(stock, result!.data!, prediction, indicators, []);
         // Use 'api' as source since we're generating signal from API data (not 'error')
         return { success: true, data: signalData, source: 'api' };
       } catch (_fallbackErr) {
