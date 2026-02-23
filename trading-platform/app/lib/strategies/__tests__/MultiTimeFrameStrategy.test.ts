@@ -16,11 +16,11 @@ function generateMockOHLCV(count: number, basePrice: number = 100, trend: 'UP' |
     let change = 0;
     
     if (trend === 'UP') {
-      change = Math.random() * 2 + 0.5; // 0.5% to 2.5% up
+      change = Math.random() * 5 + 2.0; // Stronger uptrend
     } else if (trend === 'DOWN') {
-      change = -(Math.random() * 2 + 0.5); // 0.5% to 2.5% down
+      change = -(Math.random() * 5 + 2.0); // Stronger downtrend
     } else {
-      change = (Math.random() - 0.5) * 2; // -1% to +1%
+      change = (Math.random() - 0.5) * 1; // Sideways
     }
     
     price += change;

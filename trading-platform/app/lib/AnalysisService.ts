@@ -265,6 +265,9 @@ class AnalysisService {
         type: 'BUY' | 'SELL' | 'HOLD';
         reason: string;
     } {
+        // LOG: Debugging signal generation
+        // console.log(`[ANALYSIS] price=${price.toFixed(2)}, sma=${sma.toFixed(2)}, rsi=${rsi.toFixed(1)}, regime=${regime?.regime}`);
+
         const isBullishRegime = regime?.regime === 'TRENDING' && regime?.trendDirection === 'UP';
         const isBearishRegime = regime?.regime === 'TRENDING' && regime?.trendDirection === 'DOWN';
         
@@ -530,21 +533,9 @@ class AnalysisService {
             };
         }
 
-        // ML prediction integration point - using Off-main-thread Workers
-        const mlAvailable = mlIntegrationService.isAvailable();
-        if (mlAvailable && !context?.minimal) {
-            const mlPrediction = await mlIntegrationService.predictWithML(
-                { symbol, market } as Stock, 
-                data, 
-                indexDataOverride
-            );
-            if (mlPrediction) {
-                logger.debug('[analyzeStock] Using ML-enhanced signal', { symbol, type: mlPrediction.type });
-                return mlPrediction;
-            }
-        }
-        // If ML not available or prediction fails, continue with rule-based approach below
-
+        // Note: ML prediction integration is now handled in IntegratedPredictionService
+        // to support off-main-thread Worker execution without blocking the UI.
+        
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
         if (context?.forcedParams) {
             opt = context.forcedParams;

@@ -119,6 +119,29 @@ describe('StockChart', () => {
   });
 
   it('calculates ghost forecast on hover', () => {
+    const { createChart } = require('lightweight-charts');
+    const mockAddSeries = jest.fn(() => ({
+      setData: jest.fn(),
+      applyOptions: jest.fn(),
+      priceToCoordinate: jest.fn(() => 100),
+      createPriceLine: jest.fn(() => ({})),
+      removePriceLine: jest.fn(),
+    }));
+    const mockChart = {
+      addSeries: mockAddSeries,
+      remove: jest.fn(),
+      applyOptions: jest.fn(),
+      priceScale: jest.fn(() => ({
+        applyOptions: jest.fn(),
+      })),
+      subscribeCrosshairMove: jest.fn(),
+      unsubscribeCrosshairMove: jest.fn(),
+      timeScale: jest.fn(() => ({
+        scrollToRealTime: jest.fn(),
+      })),
+    };
+    createChart.mockReturnValue(mockChart);
+
     const mockSignalLocal: Signal = {
       symbol: 'TEST',
       type: 'BUY',
@@ -152,6 +175,9 @@ describe('StockChart', () => {
     const mockAddSeries = jest.fn(() => ({
       setData: jest.fn(),
       applyOptions: jest.fn(),
+      priceToCoordinate: jest.fn(() => 100),
+      createPriceLine: jest.fn(() => ({})),
+      removePriceLine: jest.fn(),
     }));
     const mockChart = {
       addSeries: mockAddSeries,
@@ -180,6 +206,9 @@ describe('StockChart', () => {
     const mockAddSeries = jest.fn(() => ({
       setData: jest.fn(),
       applyOptions: jest.fn(),
+      priceToCoordinate: jest.fn(() => 100),
+      createPriceLine: jest.fn(() => ({})),
+      removePriceLine: jest.fn(),
     }));
     const mockChart = {
       addSeries: mockAddSeries,

@@ -56,6 +56,7 @@ function Workstation() {
 
   const [showSMA, setShowSMA] = useState(true);
   const [showBollinger, setShowBollinger] = useState(false);
+  const [showSupplyDemandWall, setShowSupplyDemandWall] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
 
@@ -239,6 +240,8 @@ function Workstation() {
                 setShowSMA={setShowSMA}
                 showBollinger={showBollinger}
                 setShowBollinger={setShowBollinger}
+                showSupplyDemandWall={showSupplyDemandWall}
+                setShowSupplyDemandWall={setShowSupplyDemandWall}
                 interval={interval}
                 setInterval={setInterval}
                 fallbackApplied={fallbackApplied}
@@ -255,6 +258,7 @@ function Workstation() {
                     error={error}
                     showSMA={showSMA}
                     showBollinger={showBollinger}
+                    showSupplyDemandWall={showSupplyDemandWall}
                     market={selectedStock?.market}
                     signal={chartSignal}
                     accuracyData={accuracy ? {

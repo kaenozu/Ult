@@ -2,9 +2,14 @@ import { OHLCV, Signal, TechnicalIndicatorsWithATR } from '@/app/types';
 import { devWarn } from '@/app/lib/utils/dev-logger';
 import { PredictionCalculator } from './implementations/prediction-calculator';
 import { candlestickPatternService, PatternFeatures } from './candlestick-pattern-service';
-import { predictionWorker, PredictionRequest } from './prediction-worker';
+import { predictionWorker, PredictionRequest, predictionCache } from './prediction-worker';
 import { featureEngineeringService, PredictionFeatures } from './feature-engineering-service';
-import { OPTIMIZED_REGIME_WEIGHTS, RSI_THRESHOLDS, SIGNAL_THRESHOLDS } from '@/app/lib/config/prediction-config';
+import { OPTIMIZED_ENSEMBLE_WEIGHTS, RSI_THRESHOLDS } from '@/app/lib/config/prediction-config';
+
+const SIGNAL_THRESHOLDS = {
+  MIN_CONFIDENCE: 0.6,
+  EXTREME_CONFIDENCE: 0.95,
+} as const;
 
 
 
@@ -31,6 +36,7 @@ export interface EnhancedPredictionResult {
   };
   marketRegime: string;
   calculationTime: number;
+  cacheHit: boolean;
 }
 
 export class EnhancedPredictionService {
@@ -136,14 +142,22 @@ export class EnhancedPredictionService {
       throw new Error('Insufficient data for prediction (minimum 20 candles required)');
     }
 
-    // キャッシュチェック
     const dataHash = this.generateDataHash(data);
     const cacheKey = `${symbol}_${dataHash}`;
+    
+    // Check predictionCache first (shared with prediction-worker)
+    const sharedCached = predictionCache.get<EnhancedPredictionResult>(cacheKey);
+    if (sharedCached) {
+      this.performanceMetrics.cacheHits++;
+      return { ...sharedCached, cacheHit: true };
+    }
+
+    // Check local cache
     const cached = this.predictionCache.get(cacheKey);
     
     if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
       this.performanceMetrics.cacheHits++;
-      return cached.result;
+      return { ...cached.result, cacheHit: true };
     }
 
     // 重複リクエスト防止
@@ -156,9 +170,9 @@ export class EnhancedPredictionService {
       const regime = this.detectMarketRegime(data);
       
       // Get optimized weights for regime
-      const weights = OPTIMIZED_REGIME_WEIGHTS[regime];
+      const weights = OPTIMIZED_ENSEMBLE_WEIGHTS[regime as keyof typeof OPTIMIZED_ENSEMBLE_WEIGHTS] || OPTIMIZED_ENSEMBLE_WEIGHTS.RANGING;
 
-      let result: Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>;
+      let result: Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime' | 'cacheHit'>;
 
       // Try to use web worker first
       if (this.useWorker) {
@@ -175,7 +189,8 @@ export class EnhancedPredictionService {
       const finalResult: EnhancedPredictionResult = {
         ...result,
         marketRegime: regime,
-        calculationTime: performance.now() - startTime
+        calculationTime: performance.now() - startTime,
+        cacheHit: false
       };
 
       // メトリクス更新
@@ -185,8 +200,9 @@ export class EnhancedPredictionService {
         (currentAvg * (this.performanceMetrics.totalCalculations - 1) + finalResult.calculationTime) / 
         this.performanceMetrics.totalCalculations;
 
-      // キャッシュ保存
+      // 両方のキャッシュに保存
       this.setCache(cacheKey, finalResult, dataHash);
+      predictionCache.set(cacheKey, finalResult);
       
       return finalResult;
     })();
@@ -222,7 +238,7 @@ export class EnhancedPredictionService {
     symbol: string, 
     data: OHLCV[], 
     indicators?: TechnicalIndicatorsWithATR
-  ): Promise<Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>> {
+  ): Promise<Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime' | 'cacheHit'>> {
     const request: PredictionRequest = {
       id: `pred_${Date.now()}_${symbol}`,
       symbol,
@@ -277,7 +293,7 @@ export class EnhancedPredictionService {
     data: OHLCV[],
     indicators: TechnicalIndicatorsWithATR | undefined,
     weights: { RF: number; XGB: number; LSTM: number; TECHNICAL: number }
-  ): Promise<Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>> {
+  ): Promise<Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime' | 'cacheHit'>> {
     
     // Calculate features
     const features = featureEngineeringService.calculateBasicFeatures(data);

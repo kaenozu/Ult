@@ -50,10 +50,11 @@ describe('DataQualityPanel', () => {
 
     await act(async () => {
       render(<DataQualityPanel compact />);
+      jest.advanceTimersByTime(0);
     });
 
     expect(screen.getByText('データ品質')).toBeInTheDocument();
-    expect(screen.getByText('75%')).toBeInTheDocument();
+    expect(await screen.findByText('75%')).toBeInTheDocument();
   });
 
   it('displays data after fetch', async () => {

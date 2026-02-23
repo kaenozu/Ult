@@ -5,9 +5,56 @@
  * for better UI responsiveness
  */
 
-
 import { OHLCV, Signal } from '@/app/types';
 import { devError } from '@/app/lib/utils/dev-logger';
+import { RSI_THRESHOLDS } from '@/app/lib/config/prediction-config';
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+class PredictionCache {
+  private cache = new Map<string, CacheEntry<unknown>>();
+  private readonly TTL = 5000;
+  private readonly MAX_SIZE = 50;
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > this.TTL) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.data as T;
+  }
+
+  set<T>(key: string, data: T): void {
+    if (this.cache.size >= this.MAX_SIZE) {
+      this.cleanup();
+    }
+    this.cache.set(key, { data, timestamp: Date.now() });
+  }
+
+  private cleanup(): void {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > this.TTL) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
+}
+
+export const predictionCache = new PredictionCache();
 
 import { PredictionFeatures } from './feature-engineering-service';
 import { PatternFeatures } from './candlestick-pattern-service';
@@ -117,7 +164,7 @@ function calculateFeatures(data, indicators) {
 
 function calculateRF(f) {
   let score = 0;
-  if (f.rsi < 30) score += 2; else if (f.rsi > 70) score -= 2;
+  if (f.rsi < RSI_THRESHOLDS.MODERATE_OVERSOLD) score += 2; else if (f.rsi > RSI_THRESHOLDS.MODERATE_OVERBOUGHT) score -= 2;
   if (f.sma5 < -2) score += 1.5; else if (f.sma5 > 2) score -= 1.5;
   if (f.macdSignal > 0) score += 1; else score -= 1;
   return score * 0.5;
@@ -137,7 +184,7 @@ function calculateLSTM(f) {
 
 function calculateConfidence(f, ensemble) {
   let conf = 0.5;
-  if (f.rsi < 20 || f.rsi > 80) conf += 0.15;
+  if (f.rsi < RSI_THRESHOLDS.EXTREME_OVERSOLD || f.rsi > RSI_THRESHOLDS.EXTREME_OVERBOUGHT) conf += 0.15;
   if (Math.abs(f.sma20) > 3) conf += 0.1;
   if (f.volumeRatio > 2) conf += 0.05;
   return Math.min(0.95, conf);
@@ -285,8 +332,8 @@ export class PredictionWorker {
   ): number {
     let confidence = 0.5;
     
-    if (features.rsi < 15 || features.rsi > 85) confidence += 0.15;
-    else if (features.rsi < 30 || features.rsi > 70) confidence += 0.08;
+    if (features.rsi < RSI_THRESHOLDS.EXTREME_OVERSOLD || features.rsi > RSI_THRESHOLDS.EXTREME_OVERBOUGHT) confidence += 0.15;
+    else if (features.rsi < RSI_THRESHOLDS.MODERATE_OVERSOLD || features.rsi > RSI_THRESHOLDS.MODERATE_OVERBOUGHT) confidence += 0.08;
     
     if (Math.abs(features.sma5) > 2) confidence += 0.1;
     if (Math.abs(features.sma20) > 1) confidence += 0.05;

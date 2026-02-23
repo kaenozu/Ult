@@ -1,24 +1,14 @@
-import type { OHLCV } from '@/app/types';
-
-export interface EMASignal {
-  type: 'BUY' | 'SELL' | 'HOLD';
-  probability: number;
-  confidence: number;
-  strength: 'WEAK' | 'MODERATE' | 'STRONG';
-  reason: string;
-  ema9: number;
-  ema21: number;
-  adx: number;
-  sma50: number;
-  currentPrice: number;
-}
+import type { OHLCV } from '../../types';
+import { calculateEMA, calculateSMA, calculateADX } from './indicators';
+import type { EMASignal, EMAStrategyConfig } from './ema-types';
+import { DEFAULT_CONFIG } from './ema-types';
 
 export class EMACrossStrategy {
-  private readonly SHORT_PERIOD = 9;
-  private readonly LONG_PERIOD = 21;
-  private readonly SMA_PERIOD = 50;
-  private readonly ADX_PERIOD = 14;
-  private readonly ADX_THRESHOLD = 25;
+  private config: EMAStrategyConfig;
+
+  constructor(config?: Partial<EMAStrategyConfig>) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+  }
 
   generateSignal(data: OHLCV[]): EMASignal {
     if (data.length < 100) {
@@ -29,10 +19,10 @@ export class EMACrossStrategy {
     const highs = data.map(d => d.high);
     const lows = data.map(d => d.low);
     
-    const ema9 = this.calculateEMA(closes, this.SHORT_PERIOD);
-    const ema21 = this.calculateEMA(closes, this.LONG_PERIOD);
-    const sma50 = this.calculateSMA(closes, this.SMA_PERIOD);
-    const adx = this.calculateADX(highs, lows, closes);
+    const ema9 = calculateEMA(closes, this.config.shortPeriod);
+    const ema21 = calculateEMA(closes, this.config.longPeriod);
+    const sma50 = calculateSMA(closes, this.config.smaPeriod);
+    const adx = calculateADX(highs, lows, closes, this.config.adxPeriod);
 
     const lastIdx = data.length - 1;
     const currentEma9 = ema9[lastIdx];
@@ -56,71 +46,11 @@ export class EMACrossStrategy {
     const baseConfidence = Math.min(70 + distance * 1000, 95);
 
     if (crossUp) {
-      const adxOk = currentAdx >= this.ADX_THRESHOLD;
-      const trendOk = currentPrice >= currentSma50;
-      
-      if (adxOk && trendOk) {
-        const confidence = Math.min(baseConfidence + 10, 98);
-        return {
-          type: 'BUY',
-          probability: 0.65,
-          confidence,
-          strength,
-          reason: `EMA9上抜け + ADX${currentAdx.toFixed(0)} + トレンド上昇中`,
-          ema9: currentEma9,
-          ema21: currentEma21,
-          adx: currentAdx,
-          sma50: currentSma50,
-          currentPrice,
-        };
-      } else {
-        return {
-          type: 'HOLD',
-          probability: 0.5,
-          confidence: 50,
-          strength: 'WEAK',
-          reason: `EMA上抜けだが条件不足 (ADX:${currentAdx.toFixed(0)} ${adxOk ? '✓' : '✗'}, トレンド:${trendOk ? '✓' : '✗'})`,
-          ema9: currentEma9,
-          ema21: currentEma21,
-          adx: currentAdx,
-          sma50: currentSma50,
-          currentPrice,
-        };
-      }
+      return this.evaluateBuySignal(currentAdx, currentPrice, currentSma50, currentEma9, currentEma21, baseConfidence, strength);
     }
 
     if (crossDown) {
-      const adxOk = currentAdx >= this.ADX_THRESHOLD;
-      const trendOk = currentPrice <= currentSma50;
-      
-      if (adxOk && trendOk) {
-        const confidence = Math.min(baseConfidence + 10, 98);
-        return {
-          type: 'SELL',
-          probability: 0.65,
-          confidence,
-          strength,
-          reason: `EMA9下抜け + ADX${currentAdx.toFixed(0)} + トレンド下降中`,
-          ema9: currentEma9,
-          ema21: currentEma21,
-          adx: currentAdx,
-          sma50: currentSma50,
-          currentPrice,
-        };
-      } else {
-        return {
-          type: 'HOLD',
-          probability: 0.5,
-          confidence: 50,
-          strength: 'WEAK',
-          reason: `EMA下抜けだが条件不足 (ADX:${currentAdx.toFixed(0)} ${adxOk ? '✓' : '✗'}, トレンド:${trendOk ? '✓' : '✗'})`,
-          ema9: currentEma9,
-          ema21: currentEma21,
-          adx: currentAdx,
-          sma50: currentSma50,
-          currentPrice,
-        };
-      }
+      return this.evaluateSellSignal(currentAdx, currentPrice, currentSma50, currentEma9, currentEma21, baseConfidence, strength);
     }
 
     return {
@@ -137,75 +67,86 @@ export class EMACrossStrategy {
     };
   }
 
-  private calculateEMA(data: number[], period: number): number[] {
-    const result: number[] = [];
-    const multiplier = 2 / (period + 1);
-
-    for (let i = 0; i < data.length; i++) {
-      if (i < period - 1) {
-        result.push(0);
-      } else if (i === period - 1) {
-        const sum = data.slice(0, period).reduce((a, b) => a + b, 0);
-        result.push(sum / period);
-      } else {
-        result.push((data[i] - result[i - 1]) * multiplier + result[i - 1]);
-      }
+  private evaluateBuySignal(
+    adx: number,
+    price: number,
+    sma50: number,
+    ema9: number,
+    ema21: number,
+    confidence: number,
+    strength: 'WEAK' | 'MODERATE' | 'STRONG'
+  ): EMASignal {
+    const adxOk = adx >= this.config.adxThreshold;
+    const trendOk = price >= sma50;
+    
+    if (adxOk && trendOk) {
+      return {
+        type: 'BUY',
+        probability: 0.65,
+        confidence: Math.min(confidence + 10, 98),
+        strength,
+        reason: `EMA9上抜け + ADX${adx.toFixed(0)} + トレンド上昇中`,
+        ema9,
+        ema21,
+        adx,
+        sma50,
+        currentPrice: price,
+      };
     }
-
-    return result;
+    
+    return {
+      type: 'HOLD',
+      probability: 0.5,
+      confidence: 50,
+      strength: 'WEAK',
+      reason: `EMA上抜けだが条件不足 (ADX:${adx.toFixed(0)} ${adxOk ? '✓' : '✗'}, トレンド:${trendOk ? '✓' : '✗'})`,
+      ema9,
+      ema21,
+      adx,
+      sma50,
+      currentPrice: price,
+    };
   }
 
-  private calculateSMA(data: number[], period: number): number[] {
-    const result: number[] = [];
-    for (let i = 0; i < data.length; i++) {
-      if (i < period - 1) {
-        result.push(0);
-      } else {
-        const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
-        result.push(sum / period);
-      }
+  private evaluateSellSignal(
+    adx: number,
+    price: number,
+    sma50: number,
+    ema9: number,
+    ema21: number,
+    confidence: number,
+    strength: 'WEAK' | 'MODERATE' | 'STRONG'
+  ): EMASignal {
+    const adxOk = adx >= this.config.adxThreshold;
+    const trendOk = price <= sma50;
+    
+    if (adxOk && trendOk) {
+      return {
+        type: 'SELL',
+        probability: 0.65,
+        confidence: Math.min(confidence + 10, 98),
+        strength,
+        reason: `EMA9下抜け + ADX${adx.toFixed(0)} + トレンド下降中`,
+        ema9,
+        ema21,
+        adx,
+        sma50,
+        currentPrice: price,
+      };
     }
-    return result;
-  }
-
-  private calculateADX(highs: number[], lows: number[], closes: number[], period: number = 14): number[] {
-    const result: number[] = [];
-    const plusDM: number[] = [0];
-    const minusDM: number[] = [0];
-    const tr: number[] = [0];
-
-    for (let i = 1; i < closes.length; i++) {
-      const upMove = highs[i] - highs[i - 1];
-      const downMove = lows[i - 1] - lows[i];
-      
-      plusDM.push(upMove > downMove && upMove > 0 ? upMove : 0);
-      minusDM.push(downMove > upMove && downMove > 0 ? downMove : 0);
-      
-      const trValue = Math.max(
-        highs[i] - lows[i],
-        Math.abs(highs[i] - closes[i - 1]),
-        Math.abs(lows[i] - closes[i - 1])
-      );
-      tr.push(trValue);
-    }
-
-    for (let i = 0; i < closes.length; i++) {
-      if (i < period * 2) {
-        result.push(0);
-      } else {
-        const smoothTR = tr.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period;
-        const smoothPlusDM = plusDM.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period;
-        const smoothMinusDM = minusDM.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0) / period;
-        
-        const plusDI = smoothTR === 0 ? 0 : (smoothPlusDM / smoothTR) * 100;
-        const minusDI = smoothTR === 0 ? 0 : (smoothMinusDM / smoothTR) * 100;
-        
-        const dx = plusDI + minusDI === 0 ? 0 : (Math.abs(plusDI - minusDI) / (plusDI + minusDI)) * 100;
-        result.push(dx);
-      }
-    }
-
-    return result;
+    
+    return {
+      type: 'HOLD',
+      probability: 0.5,
+      confidence: 50,
+      strength: 'WEAK',
+      reason: `EMA下抜けだが条件不足 (ADX:${adx.toFixed(0)} ${adxOk ? '✓' : '✗'}, トレンド:${trendOk ? '✓' : '✗'})`,
+      ema9,
+      ema21,
+      adx,
+      sma50,
+      currentPrice: price,
+    };
   }
 
   private createHoldSignal(reason: string, ema9: number, ema21: number, adx: number, price: number): EMASignal {

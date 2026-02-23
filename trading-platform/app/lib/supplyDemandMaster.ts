@@ -56,7 +56,7 @@ class SupplyDemandMaster {
    * Calculate volume profile by price range
    * Optimized to avoid unnecessary flatMap and spread operations
    */
-  private calculateVolumeProfile(data: OHLCV[], bucketCount: number = 50): VolumeProfileBucket[] {
+  public calculateVolumeProfile(data: OHLCV[], bucketCount: number = 50): VolumeProfileBucket[] {
     if (data.length === 0) return [];
 
     // Find min/max prices in a single pass instead of flatMap + spread
@@ -100,6 +100,32 @@ class SupplyDemandMaster {
     }
 
     return buckets;
+  }
+
+  /**
+   * Get wall data for visualization
+   */
+  public getWallData(data: OHLCV[], bucketCount: number = 40): {
+    buckets: (VolumeProfileBucket & { isWall: boolean; type: 'SUPPORT' | 'RESISTANCE' | 'NEUTRAL' })[];
+    maxVolume: number;
+  } {
+    const buckets = this.calculateVolumeProfile(data, bucketCount);
+    if (buckets.length === 0) return { buckets: [], maxVolume: 0 };
+
+    const maxVolume = Math.max(...buckets.map(b => b.volume));
+    const avgVolume = buckets.reduce((sum, b) => sum + b.volume, 0) / buckets.length;
+    const currentPrice = data[data.length - 1].close;
+
+    const wallBuckets = buckets.map(b => {
+      const isWall = b.volume > avgVolume * 1.5;
+      let type: 'SUPPORT' | 'RESISTANCE' | 'NEUTRAL' = 'NEUTRAL';
+      if (isWall) {
+        type = b.price < currentPrice ? 'SUPPORT' : 'RESISTANCE';
+      }
+      return { ...b, isWall, type };
+    });
+
+    return { buckets: wallBuckets, maxVolume };
   }
 
   /**

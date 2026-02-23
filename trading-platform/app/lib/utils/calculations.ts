@@ -131,32 +131,54 @@ export function calculateReturns(prices: number[] | Float64Array): number[] {
 
 /**
  * SMA（単純移動平均）を計算
- * O(N) complexity using sliding window approach
+ * O(N) complexity using sliding window approach.
+ * Robust against NaN: if any value in the window is NaN, result is NaN.
  */
 export function calculateSMA(prices: number[] | Float64Array, period: number): number[] {
-  const sma: number[] = [];
+  const length = prices.length;
+  const result: number[] = new Array(length).fill(NaN);
   
-  if (prices.length < period || period <= 0) {
-    return Array.from({ length: prices.length }, () => NaN);
+  if (length < period || period <= 0) {
+    return result;
   }
   
-  let windowSum = 0;
-  
-  for (let i = 0; i < prices.length; i++) {
-    windowSum += prices[i];
-    
-    if (i >= period) {
-      windowSum -= prices[i - period];
-    }
-    
-    if (i < period - 1) {
-      sma.push(NaN);
+  const floatPrices = typeof prices === 'object' && 'buffer' in prices ? prices : new Float64Array(prices);
+  let sum = 0;
+  let nanCount = 0;
+
+  // Initial window
+  for (let i = 0; i < period; i++) {
+    const val = floatPrices[i];
+    if (isNaN(val)) {
+      nanCount++;
     } else {
-      sma.push(windowSum / period);
+      sum += val;
     }
   }
   
-  return sma;
+  if (nanCount === 0) {
+    result[period - 1] = sum / period;
+  }
+
+  // Sliding window
+  for (let i = period; i < length; i++) {
+    const newVal = floatPrices[i];
+    const oldVal = floatPrices[i - period];
+    
+    if (isNaN(newVal)) nanCount++;
+    else sum += newVal;
+    
+    if (isNaN(oldVal)) nanCount--;
+    else sum -= oldVal;
+    
+    if (nanCount === 0) {
+      result[i] = sum / period;
+    } else {
+      result[i] = NaN;
+    }
+  }
+
+  return result;
 }
 
 /**

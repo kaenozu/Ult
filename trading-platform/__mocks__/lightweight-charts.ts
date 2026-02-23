@@ -2,6 +2,9 @@ export const createChart = jest.fn(() => ({
   addSeries: jest.fn(() => ({
     setData: jest.fn(),
     applyOptions: jest.fn(),
+    priceToCoordinate: jest.fn(() => 100),
+    createPriceLine: jest.fn(() => ({})),
+    removePriceLine: jest.fn(),
   })),
   remove: jest.fn(),
   applyOptions: jest.fn(),

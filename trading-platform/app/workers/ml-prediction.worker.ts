@@ -39,7 +39,7 @@ interface WorkerResponse {
 }
 
 let tfInstance: TensorFlowModule | null = null;
-let models: Map<string, LayersModel> = new Map();
+const models: Map<string, LayersModel> = new Map();
 
 async function loadTensorFlow(): Promise<TensorFlowModule> {
   if (tfInstance) return tfInstance;

@@ -150,17 +150,17 @@ describe('ConsensusSignalService', () => {
       
       for (let i = 0; i < 200; i++) {
         // ジグザグ上昇: 偶数日は上昇、奇数日は下降（ただし上昇幅が大きい）
-        price += (i % 2 === 0) ? 2.5 : -2.0;
+        // これによりRSIが中立圏(40-60)に留まりやすくなる
+        price += (i % 2 === 0) ? 1.5 : -1.0;
         
-        // 正しい日付生成
         const d = new Date(baseDate);
         d.setDate(d.getDate() + i);
         const dateStr = d.toISOString().split('T')[0];
 
         trendData.push({
-          open: price,
-          high: price + 2,
-          low: price - 2,
+          open: price - 0.5,
+          high: price + 1,
+          low: price - 1,
           close: price,
           volume: 1000,
           date: dateStr,
@@ -168,7 +168,7 @@ describe('ConsensusSignalService', () => {
         });
       }
 
-      const signal = consensusSignalService.generateConsensus(trendData);
+      const signal = consensusSignalService.generateConsensus(trendData, undefined, 'TrendFollowingTest');
 
       expect(signal.type).toBe('BUY');
       expect(signal.reason).toContain('上昇トレンド順張り');

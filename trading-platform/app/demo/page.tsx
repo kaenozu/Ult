@@ -129,6 +129,7 @@ export default function DemoPage() {
                   data={mockHistory} 
                   signal={mockSignal}
                   height={400}
+                  showSupplyDemandWall={true}
                 />
               </div>
             </div>

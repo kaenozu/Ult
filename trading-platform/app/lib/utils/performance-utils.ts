@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { devWarn, devError } from '@/app/lib/utils/dev-logger';
 import type { DependencyList } from 'react';
 
@@ -58,16 +58,16 @@ function shallowEqual(objA: any, objB: any) {
 /**
  * オブジェクトを浅く比較してメモ化
  * 子コンポーネントへのpropsとして使うオブジェクトに最適
- * Uses useRef to avoid linter errors with dynamic dependencies
+ * Uses a state update during render to stay within React's allowed patterns
  */
 export function useShallowMemo<T>(value: T): T {
-  const ref = useRef<T>(value);
+  const [memoizedValue, setMemoizedValue] = useState(value);
   
-  if (!shallowEqual(ref.current, value)) {
-    ref.current = value;
+  if (!shallowEqual(memoizedValue, value)) {
+    setMemoizedValue(value);
   }
   
-  return ref.current;
+  return memoizedValue;
 }
 
 /**

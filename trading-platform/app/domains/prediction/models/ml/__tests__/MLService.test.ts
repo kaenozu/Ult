@@ -6,12 +6,16 @@
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { mlService, MLService } from '../MLService';
+import { featureEngineering } from '../FeatureEngineering';
 import { OHLCV } from '../../../types/shared';
 
 describe('MLService', () => {
   let mockData: OHLCV[];
 
   beforeEach(() => {
+    // キャッシュをクリア
+    featureEngineering.clearCache();
+    
     // モックデータの生成（200日分）
     mockData = [];
     let price = 1000;

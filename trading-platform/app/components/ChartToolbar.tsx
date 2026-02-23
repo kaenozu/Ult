@@ -12,6 +12,8 @@ interface ChartToolbarProps {
   setShowSMA: (show: boolean) => void;
   showBollinger: boolean;
   setShowBollinger: (show: boolean) => void;
+  showSupplyDemandWall: boolean;
+  setShowSupplyDemandWall: (show: boolean) => void;
   interval: string;
   setInterval: (interval: string) => void;
   fallbackApplied?: boolean;
@@ -25,6 +27,8 @@ export const ChartToolbar = memo(function ChartToolbar({
   setShowSMA,
   showBollinger,
   setShowBollinger,
+  showSupplyDemandWall,
+  setShowSupplyDemandWall,
   interval,
   setInterval,
   fallbackApplied = false,
@@ -143,6 +147,23 @@ export const ChartToolbar = memo(function ChartToolbar({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
               </svg>
               ボリンジャー
+            </button>
+            <button
+              type="button"
+              aria-pressed={showSupplyDemandWall}
+              onClick={() => setShowSupplyDemandWall(!showSupplyDemandWall)}
+              className={cn(
+                'px-3 py-1 text-xs font-bold rounded transition-all duration-200 flex items-center gap-1.5',
+                'focus:outline-none focus:ring-2 focus:ring-green-500/50',
+                showSupplyDemandWall 
+                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                  : 'text-[#92adc9] hover:text-green-400 hover:bg-[#233648]'
+              )}
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4h16v16H4V4zm4 4h8v8H8V8z" />
+              </svg>
+              需給の壁
             </button>
           </div>
 
