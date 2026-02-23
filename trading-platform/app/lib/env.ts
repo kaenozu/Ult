@@ -97,6 +97,12 @@ if (!parsed.success) {
   if (parsed.data.NODE_ENV === 'production' && parsed.data.JWT_SECRET === DEFAULT_JWT_SECRET) {
     throw new Error('CRITICAL SECURITY ERROR: You are running in production with the default JWT_SECRET. Please set a secure JWT_SECRET environment variable.');
   }
+  // Security Check: Prevent weak default admin password in production
+  if (parsed.data.NODE_ENV === 'production' && parsed.data.ENABLE_DEFAULT_ADMIN) {
+    if (parsed.data.DEFAULT_ADMIN_PASSWORD === 'admin123') {
+      throw new Error('CRITICAL SECURITY ERROR: Default admin password is enabled in production with weak default password "admin123". Please set a secure DEFAULT_ADMIN_PASSWORD environment variable.');
+    }
+  }
 }
 
 /**
