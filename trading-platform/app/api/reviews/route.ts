@@ -13,6 +13,7 @@ export async function GET() {
 
     const issues = JSON.parse(stdout || '[]');
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const comments = issues.map((issue: any, index: number) => ({
       id: index,
       prNumber: issue.number,

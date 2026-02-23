@@ -21,6 +21,7 @@ export default function DemoPage() {
     changePercent: 1.83,
     market: 'japan',
     volume: 12500000,
+    sector: '自動車',
   };
 
   // 2. デモ用の完璧なAIシグナル

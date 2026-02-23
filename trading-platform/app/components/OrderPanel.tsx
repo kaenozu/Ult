@@ -140,6 +140,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   useEffect(() => {
     if (isConfirming) {
       confirmBtnRef.current?.focus();
+      const triggerBtn = triggerBtnRef.current; // Capture ref value for cleanup
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
@@ -149,7 +150,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       window.addEventListener('keydown', handleKeyDown);
       return () => {
         window.removeEventListener('keydown', handleKeyDown);
-        triggerBtnRef.current?.focus();
+        triggerBtn?.focus();
       };
     }
   }, [isConfirming, setIsConfirming]);

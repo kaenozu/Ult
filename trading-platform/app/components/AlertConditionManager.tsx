@@ -172,7 +172,7 @@ export function AlertConditionManager() {
                   <select
                     value={newCondition.type}
                     aria-label="Condition Type"
-                    onChange={(e) => setNewCondition({ ...newCondition, type: e.target.value as any })}
+                    onChange={(e) => setNewCondition({ ...newCondition, type: e.target.value as 'price' | 'indicator' | 'portfolio' | 'risk' })}
                     className="w-full px-3 py-2 bg-gray-700 rounded text-white"
                   >
                     <option value="price">Price Alert</option>

@@ -71,6 +71,7 @@ describe('POST /api/trading - Config XSS Sanitization Test', () => {
     });
 
     const res = await POST(req);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const data = await res.json();
 
     expect(res.status).toBe(200);
