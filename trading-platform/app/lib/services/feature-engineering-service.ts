@@ -325,8 +325,16 @@ export class FeatureEngineeringService {
    */
   public calculateTechnicalFeatures(data: OHLCV[]): TechnicalFeatures {
     // Helpers (Moved to top to fix TDZ error)
-    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
-    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
+    const last = (arr: number[], fallback: number) => {
+      if (arr.length === 0) return fallback;
+      const val = arr[arr.length - 1];
+      return Number.isNaN(val) ? fallback : val;
+    };
+    const prev = (arr: number[], idx: number, fallback: number) => {
+      if (idx < 0 || idx >= arr.length) return fallback;
+      const val = arr[idx];
+      return Number.isNaN(val) ? fallback : val;
+    };
 
     // ⚡ Bolt Optimization: Use single loop extraction for ~60% speedup vs separate maps
     const length = data.length;

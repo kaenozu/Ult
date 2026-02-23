@@ -412,8 +412,16 @@ export class FeatureEngineering {
     const currentVolume = volumes[volumes.length - 1];
 
     // 値取得ヘルパー
-    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
-    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
+    const last = (arr: number[], fallback: number) => {
+      if (arr.length === 0) return fallback;
+      const val = arr[arr.length - 1];
+      return Number.isNaN(val) ? fallback : val;
+    };
+    const prev = (arr: number[], idx: number, fallback: number) => {
+      if (idx < 0 || idx >= arr.length) return fallback;
+      const val = arr[idx];
+      return Number.isNaN(val) ? fallback : val;
+    };
 
     // 基本指標値
     const rsiValue = last(rsi, 50);
