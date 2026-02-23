@@ -29,6 +29,38 @@ describe('Environment Security', () => {
     }).not.toThrow();
   });
 
+  it('should throw an error in production if ENABLE_DEFAULT_ADMIN is true and password is default', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.JWT_SECRET = 'secure-secret-that-is-very-long-and-random-32-chars';
+    process.env.ENABLE_DEFAULT_ADMIN = 'true';
+    process.env.DEFAULT_ADMIN_PASSWORD = 'admin123';
+
+    expect(() => {
+      jest.requireActual('../env');
+    }).toThrow('You are running in production with ENABLE_DEFAULT_ADMIN=true but using the default password');
+  });
+
+  it('should NOT throw an error in production if ENABLE_DEFAULT_ADMIN is true but password is secure', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.JWT_SECRET = 'secure-secret-that-is-very-long-and-random-32-chars';
+    process.env.ENABLE_DEFAULT_ADMIN = 'true';
+    process.env.DEFAULT_ADMIN_PASSWORD = 'secure-admin-password-123';
+
+    expect(() => {
+      jest.requireActual('../env');
+    }).not.toThrow();
+  });
+
+  it('should NOT throw an error in development with default admin password', () => {
+    process.env.NODE_ENV = 'development';
+    process.env.ENABLE_DEFAULT_ADMIN = 'true';
+    process.env.DEFAULT_ADMIN_PASSWORD = 'admin123';
+
+    expect(() => {
+      jest.requireActual('../env');
+    }).not.toThrow();
+  });
+
   it('should NOT throw an error in development with default secret', () => {
     process.env.NODE_ENV = 'development';
     process.env.JWT_SECRET = 'demo-secret-must-be-at-least-32-chars-long';
