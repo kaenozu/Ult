@@ -345,6 +345,10 @@ export class FeatureEngineeringService {
     // Bollinger Bands
     const bb = calculateBollingerBands(prices, BOLLINGER_BANDS.PERIOD, BOLLINGER_BANDS.STD_DEVIATION);
 
+    // Helpers
+    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
+    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
+
     // ADX
     const adxArray = calculateADX(data, 14);
     const adxValue = last(adxArray, 20);
@@ -352,10 +356,6 @@ export class FeatureEngineeringService {
     // Current Values
     const currentPrice = prices[prices.length - 1];
     const currentVolume = volumes[volumes.length - 1];
-
-    // Helpers
-    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
-    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
 
     // Derived Values
     const rsiValue = last(rsi, 50);
