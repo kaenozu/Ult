@@ -36,6 +36,7 @@ export function NotificationCenter({ _onClose }: NotificationCenterProps) {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
         setIsOpen(false);
         setShowSettings(false);
         buttonRef.current?.focus();
