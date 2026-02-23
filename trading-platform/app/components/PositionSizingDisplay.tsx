@@ -8,7 +8,7 @@
 
 import { useMemo } from 'react';
 import { useRiskManagementStore } from '@/app/store/riskManagementStore';
-import { PositionSizingResult } from '@/app/lib/aiAnalytics/PredictiveAnalyticsEngine';
+import { PositionSizingResult } from '@/app/lib/services/position-sizing-service';
 import { cn } from '@/app/lib/utils';
 import { TrendingUp, AlertTriangle, DollarSign, Target } from 'lucide-react';
 

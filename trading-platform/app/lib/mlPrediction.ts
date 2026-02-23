@@ -276,9 +276,9 @@ class MLPredictionService {
    * }
    * ```
    */
-  generateSignal(stock: Stock, data: OHLCV[], prediction: ModelPrediction, indicators: TechnicalIndicator & { atr: number[] }, indexData?: OHLCV[]): Signal {
+  async generateSignal(stock: Stock, data: OHLCV[], prediction: ModelPrediction, indicators: TechnicalIndicator & { atr: number[] }, indexData?: OHLCV[]): Promise<Signal> {
     const currentPrice = data[data.length - 1].close;
-    const baseAnalysis = analyzeStock(stock.symbol, data, stock.market, indexData);
+    const baseAnalysis = await analyzeStock(stock.symbol, data, stock.market, indexData);
 
     // 1. 市場相関分析 (Market Sync)
     const { marketInfo, confidenceAdjustment, marketComment } = this.analyzeMarketCorrelation(stock, data, indexData, prediction.ensemblePrediction);

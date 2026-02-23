@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { AnomalyDetector, EventPredictor } from '@/app/lib/aiAnalytics/AnomalyDetection';
-import { MarketData } from '@/app/lib/aiAnalytics/AnomalyDetection/types';
+import { AnomalyDetector, EventPredictor } from '@/app/lib/services/anomaly';
+import { MarketData } from '@/app/lib/services/anomaly/types';
 import { handleApiError } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
 import { requireCSRF } from '@/app/lib/csrf/csrf-protection';

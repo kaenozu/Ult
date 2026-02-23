@@ -4,7 +4,7 @@ import { getConfidenceColor, cn, formatCurrency } from '@/app/lib/utils';
 import { sanitizeString } from '@/app/lib/sanitize';
 import { useRiskManagementStore } from '@/app/store/riskManagementStore';
 import { PositionSizingDisplay } from '@/app/components/PositionSizingDisplay';
-import { getGlobalAnalyticsEngine } from '@/app/lib/aiAnalytics/PredictiveAnalyticsEngine';
+import { positionSizingService } from '@/app/lib/services/position-sizing-service';
 
 interface SignalCardProps {
     signal: Signal;
@@ -37,8 +37,7 @@ export const SignalCard = memo(function SignalCard({
         }
 
         try {
-            const engine = getGlobalAnalyticsEngine();
-            return engine.calculatePositionSize({
+            return positionSizingService.calculatePositionSize({
                 accountEquity: riskSettings.accountEquity,
                 riskPerTrade: riskSettings.riskPerTrade,
                 entryPrice: stock.price,

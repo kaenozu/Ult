@@ -7,14 +7,14 @@
 
 import { EventEmitter } from 'events';
 import { MultiExchangeDataFeed, MarketData } from '../marketDataFeed/MultiExchangeDataFeed';
-import { PredictiveAnalyticsEngine, PredictionResult } from '../aiAnalytics/PredictiveAnalyticsEngine';
+import { analysisService } from '@/app/lib/AnalysisService';
 import { SentimentAnalysisEngine, AggregatedSentiment } from '../sentiment/SentimentAnalysisEngine';
 import { AdvancedRiskManager, RiskMetrics, PositionSizingResult } from '../risk/AdvancedRiskManager';
 import { AlgorithmicExecutionEngine, ExecutionResult, Order } from '../execution/AlgorithmicExecutionEngine';
 import { AdvancedBacktestEngine, BacktestResult, Strategy } from '../backtest/AdvancedBacktestEngine';
 import { AlertSystem, AlertCondition, AlertTrigger } from '../alerts/AlertSystem';
 import { PaperTradingEnvironment, PaperPortfolio, PaperTrade } from '../paperTrading/PaperTradingEnvironment';
-import type { OHLCV } from '../../types';
+import { OHLCV, Signal } from '../../types';
 
 // Re-export OHLCV for backward compatibility
 import { logger } from '@/app/core/logger';
@@ -32,20 +32,6 @@ export type { OHLCV };
  * Extends the shared OHLCV type with timestamp field
  */
 export interface OHLCVWithTimestamp extends Omit<OHLCV, 'symbol'> {
-  timestamp: number;
-}
-
-export interface TradingSignal {
-  symbol: string;
-  direction: 'BUY' | 'SELL' | 'HOLD';
-  confidence: number;
-  entryPrice: number;
-  targetPrice: number;
-  stopLoss: number;
-  timeHorizon: 'short' | 'medium' | 'long';
-  rationale: string[];
-  aiPrediction?: PredictionResult;
-  sentiment?: AggregatedSentiment;
   timestamp: number;
 }
 
@@ -95,7 +81,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
   
   // Core components - definite assignment assertion
   private dataFeed!: MultiExchangeDataFeed;
-  private aiEngine!: PredictiveAnalyticsEngine;
+  // aiEngine replaced by singleton analysisService
   private sentimentEngine!: SentimentAnalysisEngine;
   private riskManager!: AdvancedRiskManager;
   private executionEngine!: AlgorithmicExecutionEngine;
@@ -105,8 +91,8 @@ export class UnifiedTradingPlatform extends EventEmitter {
   
   // Data storage
   private marketData: Map<string, OHLCVWithTimestamp[]> = new Map();
-  private signals: Map<string, TradingSignal> = new Map();
-  private updateInterval: ReturnType<typeof setInterval> | null = null;
+  private signals: Map<string, Signal> = new Map();
+  private updateTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(config: Partial<PlatformConfig> = {}) {
     super();
@@ -152,7 +138,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
     // Note: Direct instantiation for now.
     // TODO: Migrate to DI container when all services are registered
     this.dataFeed = new MultiExchangeDataFeed();
-    this.aiEngine = new PredictiveAnalyticsEngine();
+    // aiEngine is removed
     this.sentimentEngine = new SentimentAnalysisEngine();
     this.riskManager = new AdvancedRiskManager({
       maxPositionSize: this.config.riskLimits.maxPositionSize,
@@ -197,10 +183,8 @@ export class UnifiedTradingPlatform extends EventEmitter {
       // Start alert system
       // this.alertSystem.start();
 
-      // Start update loop
-      this.updateInterval = setInterval(() => {
-        this.processUpdateCycle();
-      }, 5000); // 5 second update cycle
+      // Start update loop (recursive setTimeout)
+      this.scheduleNextUpdate();
 
       this.status.isRunning = true;
       this.emit('started', this.status);
@@ -216,9 +200,9 @@ export class UnifiedTradingPlatform extends EventEmitter {
    */
   async stop(): Promise<void> {
 
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-      this.updateInterval = null;
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+      this.updateTimeout = null;
     }
 
     this.dataFeed.disconnect();
@@ -243,6 +227,15 @@ export class UnifiedTradingPlatform extends EventEmitter {
   // ============================================================================
   // Core Processing Cycle
   // ============================================================================
+
+  private scheduleNextUpdate(): void {
+    if (!this.status.isRunning) return;
+
+    this.updateTimeout = setTimeout(async () => {
+      await this.processUpdateCycle();
+      this.scheduleNextUpdate();
+    }, 5000); // 5 second delay between cycles
+  }
 
   private async processUpdateCycle(): Promise<void> {
     try {
@@ -297,9 +290,10 @@ export class UnifiedTradingPlatform extends EventEmitter {
     });
 
     // 3. AI Prediction (if enabled and enough data)
-    let prediction: PredictionResult | undefined;
+    let signal: Signal | undefined;
     if (this.config.aiEnabled && data.length >= 60) {
-      prediction = this.aiEngine.predict(symbol, data);
+      // Use modern AnalysisService (async)
+      signal = await analysisService.analyzeStock(symbol, data, 'usa'); // Market should be dynamic
     }
 
     // 4. Sentiment Analysis (if enabled)
@@ -308,9 +302,13 @@ export class UnifiedTradingPlatform extends EventEmitter {
       sentiment = this.sentimentEngine.getCurrentSentiment(symbol);
     }
 
-    // 5. Generate trading signal
-    const signal = this.generateTradingSignal(symbol, prediction, sentiment, ohlcv);
-    if (signal) {
+    // 5. Enhance signal with sentiment if available
+    if (signal && sentiment) {
+      signal = this.enhanceSignalWithSentiment(signal, sentiment);
+    }
+
+    // Store and emit signal
+    if (signal && signal.type !== 'HOLD') {
       this.signals.set(symbol, signal);
       this.emit('signal_generated', signal);
 
@@ -334,79 +332,29 @@ export class UnifiedTradingPlatform extends EventEmitter {
   }
 
   // ============================================================================
-  // Signal Generation
+  // Signal Generation / Enhancement
   // ============================================================================
 
-  private generateTradingSignal(
-    symbol: string,
-    prediction?: PredictionResult,
-    sentiment?: AggregatedSentiment,
-    ohlcv?: OHLCVWithTimestamp
-  ): TradingSignal | null {
-    if (!prediction && !sentiment) return null;
+  private enhanceSignalWithSentiment(signal: Signal, sentiment: AggregatedSentiment): Signal {
+    const enhancedSignal = { ...signal };
 
-    let direction: TradingSignal['direction'] = 'HOLD';
-    let confidence = 50;
-    const rationale: string[] = [];
-
-    // AI prediction contribution
-    if (prediction) {
-      const predConf = prediction.prediction.confidence * 100;
-      
-      if (prediction.prediction.direction === 'UP' && predConf > 60) {
-        direction = 'BUY';
-        confidence = predConf;
-        rationale.push(`AI predicts upward movement (${predConf.toFixed(1)}% confidence)`);
-      } else if (prediction.prediction.direction === 'DOWN' && predConf > 60) {
-        direction = 'SELL';
-        confidence = predConf;
-        rationale.push(`AI predicts downward movement (${predConf.toFixed(1)}% confidence)`);
-      }
-
-      // Add AI rationale
-      rationale.push(...prediction.signal.rationale);
+    // Sentiment impact logic
+    if (sentiment.overallScore > 0.5 && signal.type !== 'SELL') {
+      enhancedSignal.confidence = Math.min(signal.confidence + 10, 95);
+      enhancedSignal.reason += ` Positive sentiment boost: ${(sentiment.overallScore * 100).toFixed(1)}%`;
+    } else if (sentiment.overallScore < -0.5 && signal.type !== 'BUY') {
+      enhancedSignal.confidence = Math.min(signal.confidence + 10, 95);
+      enhancedSignal.reason += ` Negative sentiment boost: ${(sentiment.overallScore * 100).toFixed(1)}%`;
     }
 
-    // Sentiment contribution
-    if (sentiment) {
-      if (sentiment.overallScore > 0.5 && direction !== 'SELL') {
-        confidence = Math.min(confidence + 10, 95);
-        rationale.push(`Positive sentiment: ${(sentiment.overallScore * 100).toFixed(1)}%`);
-      } else if (sentiment.overallScore < -0.5 && direction !== 'BUY') {
-        confidence = Math.min(confidence + 10, 95);
-        rationale.push(`Negative sentiment: ${(sentiment.overallScore * 100).toFixed(1)}%`);
-      }
-    }
-
-    if (direction === 'HOLD' || confidence < 60) return null;
-
-    const currentPrice = ohlcv?.close || prediction?.features.sma20 || 0;
-    const volatility = prediction?.prediction.volatilityForecast || 20;
-
-    return {
-      symbol,
-      direction,
-      confidence,
-      entryPrice: currentPrice,
-      targetPrice: direction === 'BUY' 
-        ? currentPrice * (1 + volatility / 100) 
-        : currentPrice * (1 - volatility / 100),
-      stopLoss: direction === 'BUY'
-        ? currentPrice * (1 - volatility / 200)
-        : currentPrice * (1 + volatility / 200),
-      timeHorizon: prediction?.signal.timeHorizon || 'medium',
-      rationale,
-      aiPrediction: prediction,
-      sentiment,
-      timestamp: Date.now(),
-    };
+    return enhancedSignal;
   }
 
   // ============================================================================
   // Trade Execution
   // ============================================================================
 
-  private async evaluateAndExecuteTrade(signal: TradingSignal): Promise<void> {
+  private async evaluateAndExecuteTrade(signal: Signal): Promise<void> {
     // 1. Risk assessment
     const portfolio = this.paperTrading.getPortfolio();
     const riskMetrics = this.riskManager.updateRiskMetrics({
@@ -434,9 +382,12 @@ export class UnifiedTradingPlatform extends EventEmitter {
     }
 
     // 2. Calculate position size
+    // Note: Use current price if entryPrice is missing, though Signal usually has price context
+    const entryPrice = signal.price || portfolio.positions.find(p => p.symbol === signal.symbol)?.currentPrice || 0;
+
     const positionSize = this.riskManager.calculatePositionSize({
       capital: portfolio.cash,
-      entryPrice: signal.entryPrice,
+      entryPrice: entryPrice,
       stopLossPrice: signal.stopLoss,
       method: 'fixed',
       riskPercent: 2,
@@ -444,17 +395,17 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
     // 3. Execute trade
     if (this.config.mode === 'paper') {
-      if (signal.direction === 'BUY') {
+      if (signal.type === 'BUY') {
         await this.paperTrading.buy(
           signal.symbol,
           positionSize.recommendedSize,
-          signal.entryPrice,
+          entryPrice,
           {
             stopLoss: signal.stopLoss,
             takeProfit: signal.targetPrice,
           }
         );
-      } else if (signal.direction === 'SELL') {
+      } else if (signal.type === 'SELL') {
         // Check if we have a position to sell
         const position = portfolio.positions.find((p) => p.symbol === signal.symbol);
         if (position) {
@@ -559,11 +510,11 @@ export class UnifiedTradingPlatform extends EventEmitter {
     return this.paperTrading.getPortfolio();
   }
 
-  getSignals(): TradingSignal[] {
+  getSignals(): Signal[] {
     return Array.from(this.signals.values());
   }
 
-  getSignal(symbol: string): TradingSignal | undefined {
+  getSignal(symbol: string): Signal | undefined {
     return this.signals.get(symbol);
   }
 
