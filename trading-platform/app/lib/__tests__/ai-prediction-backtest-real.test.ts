@@ -295,6 +295,41 @@ function runBacktestWithRealData(
         }
       }
     }
+  }
+
+  // Calculate metrics
+  const winningTrades = trades.filter(t => t.win).length;
+  const losingTrades = trades.length - winningTrades;
+  const winRate = trades.length > 0 ? (winningTrades / trades.length) * 100 : 0;
+  const totalReturn = ((capital - initialCapital) / initialCapital) * 100;
+  const avgReturn = trades.length > 0 ? trades.reduce((sum, t) => sum + t.return, 0) / trades.length : 0;
+
+  // Calculate Sharpe Ratio (simplified)
+  const riskFreeRate = 0;
+  const returns = trades.map(t => t.return);
+  const avgReturnVal = returns.reduce((a, b) => a + b, 0) / returns.length || 0;
+  const stdDev = Math.sqrt(returns.map(x => Math.pow(x - avgReturnVal, 2)).reduce((a, b) => a + b, 0) / returns.length) || 1;
+  const sharpeRatio = (avgReturnVal - riskFreeRate) / stdDev;
+
+  // Expected Value
+  const avgWin = trades.filter(t => t.win).reduce((sum, t) => sum + t.return, 0) / (winningTrades || 1);
+  const avgLoss = Math.abs(trades.filter(t => !t.win).reduce((sum, t) => sum + t.return, 0) / (losingTrades || 1));
+  const expectedValue = (winRate / 100) * avgWin - (1 - winRate / 100) * avgLoss;
+
+  return {
+    totalTrades: trades.length,
+    winningTrades,
+    losingTrades,
+    winRate,
+    avgReturn,
+    totalReturn,
+    expectedValue,
+    sharpeRatio,
+    maxDrawdown,
+    symbol,
+    dataPoints: data.length
+  };
+}
 
   it('実市場データを取得してバックテストを実行', async () => {
     console.log('\n========================================');
@@ -439,8 +474,6 @@ const TEST_SYMBOLS = [
 describe('AI予測精度改善バックテスト - 実市場データ (#1127)', () => {
   const results: BacktestMetrics[] = [];
   const MAX_SYMBOLS = 20; // テスト対象銘柄数（API制限を考慮）
-  const results: BacktestMetrics[] = [];
-  const MAX_SYMBOLS = 20; // テスト対象銘柄数（API制限を考慮）
   
   it('実市場データを取得してバックテストを実行', async () => {
     console.log('\n========================================');
@@ -551,3 +584,4 @@ describe('AI予測精度改善バックテスト - 実市場データ (#1127)', 
     
     console.log('========================================\n');
   });
+});

@@ -126,6 +126,13 @@ class ConsensusSignalService {
   }
 
   /**
+   * Enhanced Consensus Generation (Async wrapper for compatibility)
+   */
+  async generateEnhancedConsensus(data: OHLCV[]): Promise<ConsensusSignal> {
+    return this.generateConsensus(data);
+  }
+
+  /**
    * RSIからのシグナル生成
    */
   private generateRSISignal(rsi: number[], currentPrice: number): IndicatorSignal {
