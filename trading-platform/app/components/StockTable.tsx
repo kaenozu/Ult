@@ -274,19 +274,14 @@ export const StockTable = memo(({
         let interval = 60000;
 
         if (currentStocks.length > 0) {
-            // Calculate average volatility
-            let totalVol = 0;
-            for (let i = 0; i < currentStocks.length; i++) {
-              totalVol += Math.abs(currentStocks[i].changePercent || 0);
-            }
-            const avgVol = totalVol / currentStocks.length;
-
-            // Higher volatility -> Faster polling
-            // > 2% avg move -> 15s
-            // > 1% avg move -> 30s
-            // < 1% avg move -> 60s
-            if (avgVol > 2) interval = 15000;
-            else if (avgVol > 1) interval = 30000;
+          const avgVol = currentStocks.reduce((sum, s) => sum + Math.abs(s.changePercent || 0), 0) / currentStocks.length;
+          
+          // Higher volatility -> Faster polling
+          // > 2% avg move -> 15s
+          // > 1% avg move -> 30s
+          // < 1% avg move -> 60s
+          if (avgVol > 2) interval = 15000;
+          else if (avgVol > 1) interval = 30000;
         }
 
         timeoutId = setTimeout(fetchQuotes, interval);
