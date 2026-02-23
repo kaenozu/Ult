@@ -86,13 +86,15 @@ export function MarketDataPanel({ symbols, selectedSymbol, onSelectSymbol }: Mar
       <CardContent>
         <div className="space-y-2">
           {marketData.map((data) => (
-            <div
+            <button
               key={data.symbol}
+              type="button"
               onClick={() => onSelectSymbol(data.symbol)}
-              className={`p-4 rounded-lg cursor-pointer transition-colors ${
+              aria-pressed={selectedSymbol === data.symbol}
+              className={`w-full text-left p-4 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 selectedSymbol === data.symbol
                   ? 'bg-blue-600/20 border border-blue-500/50'
-                  : 'bg-[#0f172a] hover:bg-[#1e293b]'
+                  : 'bg-[#0f172a] hover:bg-[#1e293b] border border-transparent'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -113,7 +115,7 @@ export function MarketDataPanel({ symbols, selectedSymbol, onSelectSymbol }: Mar
                 <span>H: {formatCurrency(data.high24h)}</span>
                 <span>L: {formatCurrency(data.low24h)}</span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </CardContent>

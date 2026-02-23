@@ -144,6 +144,9 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.2.3(@types/react@19.2.14)
+      '@types/seedrandom':
+        specifier: 3.0.8
+        version: 3.0.8
       '@types/swagger-jsdoc':
         specifier: 6.0.4
         version: 6.0.4
@@ -180,6 +183,9 @@ importers:
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
+      seedrandom:
+        specifier: 3.0.5
+        version: 3.0.5
       tailwindcss:
         specifier: ^4.1.18
         version: 4.1.18
@@ -193,6 +199,9 @@ importers:
       '@tailwindcss/oxide-wasm32-wasi':
         specifier: 4.1.18
         version: 4.1.18
+      tree-sitter:
+        specifier: 0.21.1
+        version: 0.21.1
 
 packages:
 
@@ -1964,6 +1973,9 @@ packages:
 
   '@types/seedrandom@2.4.34':
     resolution: {integrity: sha512-ytDiArvrn/3Xk6/vtylys5tlY6eo7Ane0hvcx++TKo6RxQXuVfW0AF/oeWqAj9dN29SyhtawuXstgmPlwNcv/A==}
+
+  '@types/seedrandom@3.0.8':
+    resolution: {integrity: sha512-TY1eezMU2zH2ozQoAFAQFOPpvP15g+ZgSfTZt31AUUH/Rxtnz3H+A/Sv1Snw2/amp//omibc+AEkTaA8KUeOLQ==}
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
@@ -5189,6 +5201,9 @@ packages:
       tree-sitter:
         optional: true
 
+  tree-sitter@0.21.1:
+    resolution: {integrity: sha512-7dxoA6kYvtgWw80265MyqJlkRl4yawIjO7S5MigytjELkX43fV2WsAXzsNfO7sBpPPCF5Gp0+XzHk0DwLCq3xQ==}
+
   tree-sitter@0.22.4:
     resolution: {integrity: sha512-usbHZP9/oxNsUY65MQUsduGRqDHQOou1cagUSwjhoSYAmSahjQDAVsh9s+SlZkn8X8+O1FULRGwHu7AFP3kjzg==}
 
@@ -7783,6 +7798,8 @@ snapshots:
       csstype: 3.2.3
 
   '@types/seedrandom@2.4.34': {}
+
+  '@types/seedrandom@3.0.8': {}
 
   '@types/stack-utils@2.0.3': {}
 
@@ -11503,6 +11520,12 @@ snapshots:
       node-gyp-build: 4.8.4
     optionalDependencies:
       tree-sitter: 0.22.4
+    optional: true
+
+  tree-sitter@0.21.1:
+    dependencies:
+      node-addon-api: 8.5.0
+      node-gyp-build: 4.8.4
     optional: true
 
   tree-sitter@0.22.4:
