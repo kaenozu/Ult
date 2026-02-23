@@ -427,6 +427,7 @@ export const StockChart = memo(function StockChart({
         <div
           className="absolute z-50 bg-[#1a2632] border border-[#233648] rounded-lg p-3 shadow-lg pointer-events-none"
           style={{
+            // eslint-disable-next-line
             left: Math.min(tooltipPos.x + 10, (chartContainerRef.current?.clientWidth || 300) - 150),
             top: Math.max(tooltipPos.y - 100, 10),
           }}

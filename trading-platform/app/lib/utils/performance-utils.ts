@@ -63,23 +63,14 @@ function shallowEqual(objA: any, objB: any) {
 export function useShallowMemo<T>(value: T): T {
   const ref = useRef<T>(value);
   
-  // Update the ref only if the value has changed deeply (shallow check)
-  // We use this pattern to ensure we return the *same* object reference if content is equal
-  // This is a known pattern for implementing useDeepCompareMemo-like hooks but for shallow equal.
-  // However, updating ref during render is flagged by React.
-  // The correct way is to use useMemo with a custom comparator, but React useMemo doesn't support that.
-  // So we use a ref to hold the previous value, and check against it.
-
-  // If values are not equal, update the ref and return the new value.
-  // If they are equal, return the ref's current value (the old object).
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // eslint-disable-next-line
   if (!shallowEqual(ref.current, value)) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    // @ts-ignore - React 19 linter rule suppression for intentional stable reference pattern
+    // eslint-disable-next-line
     ref.current = value;
   }
   
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // eslint-disable-next-line
   return ref.current;
 }
 

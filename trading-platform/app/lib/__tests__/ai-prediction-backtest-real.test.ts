@@ -295,150 +295,58 @@ function runBacktestWithRealData(
         }
       }
     }
-
-  it('実市場データを取得してバックテストを実行', async () => {
-    console.log('\n========================================');
-    console.log('AI予測精度改善バックテスト - 実市場データ');
-    console.log('========================================\n');
     
-    const symbolsToTest = TEST_SYMBOLS.slice(0, MAX_SYMBOLS);
-    let successCount = 0;
-    let failCount = 0;
-    
-    for (const symbol of symbolsToTest) {
-      try {
-        console.log(`\n📊 ${symbol} のデータを取得中...`);
-        
-        const result = await marketDataService.fetchMarketData(symbol);
-        
-        if (!result.success) {
-          console.log(`   ⚠️ スキップ: ${result.error}`);
-          failCount++;
-          continue;
-        }
-        
-        const data = result.data;
-        
-        if (data.length < 252) {
-          console.log(`   ⚠️ スキップ: データ不足 (${data.length}日 < 252日)`);
-          failCount++;
-          continue;
-        }
-        
-        console.log(`   ✅ ${data.length}日分のデータを取得`);
-        
-        const metrics = runBacktestWithRealData(data);
-        results.push(metrics);
-        successCount++;
-        
-        console.log(`   📈 取引数: ${metrics.totalTrades}, 勝率: ${metrics.winRate.toFixed(2)}%, 期待値: ${metrics.expectedValue.toFixed(2)}%`);
-        
-      } catch (error) {
-        console.log(`   ❌ エラー: ${error}`);
-        failCount++;
+    // エントリーロジック
+    if (!position) {
+      const signal = consensusSignalService.generateConsensus(data.slice(0, i + 1));
+      if (signal.type !== 'HOLD' && signal.confidence >= 60) {
+        position = {
+          type: signal.type === 'BUY' ? 'LONG' : 'SHORT',
+          entryPrice: nextPrice,
+          entryIndex: i
+        };
       }
     }
-    
-    console.log('\n========================================');
-    console.log('バックテスト完了');
-    console.log(`成功: ${successCount}銘柄, 失敗: ${failCount}銘柄`);
-    console.log('========================================\n');
-    
-    expect(successCount).toBeGreaterThan(0);
-  });
+  }
 
-// テスト対象銘柄（実際の銘柄コード）
-const TEST_SYMBOLS = [
-  // 日本株（日経225主要銘柄）
-  '7203.T',   // トヨタ
-  '6758.T',   // ソニー
-  '9984.T',   // ソフトバンク
-  '6861.T',   // キーエンス
-  '8306.T',   // 三菱UFJ
-  '7267.T',   // 本田
-  '6098.T',   // リクルート
-  '9432.T',   // NTT
-  '9433.T',   // KDDI
-  '4502.T',   // 武田薬品
-  '9020.T',   // JR東日本
-  '9021.T',   // JR西日本
-  '9104.T',   // 商船三井
-  '9202.T',   // ANA
-  '9501.T',   // 東京電力
-  '8411.T',   // みずほ
-  '8058.T',   // 三菱商事
-  '8031.T',   // 三井物産
-  '8001.T',   // 伊藤忠
-  '8015.T',   // 丸紅
-  '3382.T',   // セブン＆アイ
-  '2914.T',   // JT
-  '2502.T',   // アサヒ
-  '2269.T',   // 明治HD
-  '2002.T',   // 日清製粉HD
-  '1928.T',   // 積水ハウス
-  '1803.T',   // 清水建設
-  '1605.T',   // INPEX
-  '1545.T',   // 住友化学
-  '1398.T',   // 日鉄
-  // 米国株（S&P500主要銘柄）
-  'AAPL',     // Apple
-  'MSFT',     // Microsoft
-  'GOOGL',    // Alphabet
-  'AMZN',     // Amazon
-  'TSLA',     // Tesla
-  'NVDA',     // NVIDIA
-  'META',     // Meta
-  'BRK-B',    // Berkshire Hathaway
-  'UNH',      // UnitedHealth
-  'JPM',      // JPMorgan
-  'V',        // Visa
-  'PG',       // Procter & Gamble
-  'MA',       // Mastercard
-  'HD',       // Home Depot
-  'CVX',      // Chevron
-  'MRK',      // Merck
-  'KO',       // Coca-Cola
-  'PEP',      // PepsiCo
-  'WMT',      // Walmart
-  'BAC',      // Bank of America
-  'PFE',      // Pfizer
-  'ABBV',     // AbbVie
-  'CSCO',     // Cisco
-  'TMO',      // Thermo Fisher
-  'ACN',      // Accenture
-  'MCD',      // McDonald's
-  'ABT',      // Abbott
-  'CRM',      // Salesforce
-  'NKE',      // Nike
-  'DIS',      // Disney
-  'ADBE',     // Adobe
-  'CMCSA',    // Comcast
-  'VZ',       // Verizon
-  'TXN',      // Texas Instruments
-  'NFLX',     // Netflix
-  'QCOM',     // Qualcomm
-  'RTX',      // Raytheon
-  'HON',      // Honeywell
-  'BMY',      // Bristol Myers
-  'COP',      // ConocoPhillips
-  'IBM',      // IBM
-  'GE',       // General Electric
-  'CAT',      // Caterpillar
-  'AMGN',     // Amgen
-  'UPS',      // UPS
-  'LOW',      // Lowe's
-  'SPGI',     // S&P Global
-  'MS',       // Morgan Stanley
-  'GS',       // Goldman Sachs
-  'INTC',     // Intel
-  'AMD',      // AMD
-  'PLTR',     // Palantir
-  'UBER',     // Uber
-];
+  // 結果集計
+  const totalTrades = trades.length;
+  const winningTrades = trades.filter(t => t.win).length;
+  const losingTrades = totalTrades - winningTrades;
+  const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
+  const totalReturn = ((capital - initialCapital) / initialCapital) * 100;
+  const avgReturn = totalTrades > 0 ? trades.reduce((sum, t) => sum + t.return, 0) / totalTrades : 0;
+
+  const avgWin = winningTrades > 0
+    ? trades.filter(t => t.win).reduce((sum, t) => sum + t.return, 0) / winningTrades
+    : 0;
+  const avgLoss = losingTrades > 0
+    ? trades.filter(t => !t.win).reduce((sum, t) => sum + t.return, 0) / losingTrades
+    : 0;
+  const expectedValue = (winRate / 100) * avgWin + ((100 - winRate) / 100) * avgLoss;
+
+  const returns = trades.map(t => t.return);
+  const avg = returns.reduce((sum, r) => sum + r, 0) / returns.length || 0;
+  const variance = returns.reduce((sum, r) => sum + Math.pow(r - avg, 2), 0) / returns.length || 0;
+  const stdDev = Math.sqrt(variance);
+  const sharpeRatio = stdDev > 0 ? avg / stdDev : 0;
+
+  return {
+    totalTrades,
+    winningTrades,
+    losingTrades,
+    winRate,
+    avgReturn,
+    totalReturn,
+    expectedValue,
+    sharpeRatio,
+    maxDrawdown,
+    symbol,
+    dataPoints: data.length
+  };
+}
 
 describe('AI予測精度改善バックテスト - 実市場データ (#1127)', () => {
-  const results: BacktestMetrics[] = [];
-  const MAX_SYMBOLS = 20; // テスト対象銘柄数（API制限を考慮）
   const results: BacktestMetrics[] = [];
   const MAX_SYMBOLS = 20; // テスト対象銘柄数（API制限を考慮）
   
@@ -552,5 +460,3 @@ describe('AI予測精度改善バックテスト - 実市場データ (#1127)', 
     console.log('========================================\n');
   });
 });
-}
-}

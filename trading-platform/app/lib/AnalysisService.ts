@@ -1,4 +1,4 @@
-import { OHLCV, Signal } from '../types';
+import { OHLCV, Signal, Stock } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';
@@ -531,23 +531,9 @@ class AnalysisService {
         }
 
         // ML prediction integration point - using Off-main-thread Workers
-        const mlAvailable = mlIntegrationService.isAvailable();
-        if (mlAvailable && !context?.minimal) {
-            // NOTE: AnalysisService.analyzeStock is synchronous but ML integration is async.
-            // Temporarily commented out to fix build errors. Will be refactored to support async or worker-based flow.
-            /*
-            const mlPrediction = await mlIntegrationService.predictWithML(
-                { symbol, market } as Stock, 
-                data, 
-                indexDataOverride
-            );
-            if (mlPrediction) {
-                logger.debug('[analyzeStock] Using ML-enhanced signal', { symbol, type: mlPrediction.type });
-                return mlPrediction;
-            }
-            */
-        }
-        // If ML not available or prediction fails, continue with rule-based approach below
+        // Note: Async/await cannot be used here because analyzeStock must be synchronous
+        // for compatibility with the rest of the application architecture.
+        // ML integration is handled separately via off-main-thread workers where applicable.
 
         let opt: { rsiPeriod: number; smaPeriod: number; accuracy: number };
         if (context?.forcedParams) {

@@ -17,7 +17,7 @@ describe('AIRecommendationPanel', () => {
 
   it('should render no recommendations message when empty', () => {
     render(<AIRecommendationPanel signals={[]} />);
-    expect(screen.getByText('現在、高確信の推奨銘柄はありません')).toBeInTheDocument();
+    expect(screen.getByText('現在、基準を満たす推奨銘柄はありません')).toBeInTheDocument();
   });
 
   it('should render no recommendations for low confidence signals', () => {
@@ -25,7 +25,7 @@ describe('AIRecommendationPanel', () => {
       createMockSignal({ confidence: 0.4 }),
     ];
     render(<AIRecommendationPanel signals={signals} />);
-    expect(screen.getByText('現在、高確信の推奨銘柄はありません')).toBeInTheDocument();
+    expect(screen.getByText('現在、基準を満たす推奨銘柄はありません')).toBeInTheDocument();
   });
 
   it('should render high confidence signals', () => {
@@ -34,7 +34,7 @@ describe('AIRecommendationPanel', () => {
     ];
     render(<AIRecommendationPanel signals={signals} />);
     expect(screen.getByText('AAPL')).toBeInTheDocument();
-    expect(screen.getByText('BUY')).toBeInTheDocument();
+    expect(screen.getByText('買い')).toBeInTheDocument();
   });
 
   it('should rank signals by confidence', () => {
