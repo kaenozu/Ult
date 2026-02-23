@@ -222,16 +222,23 @@ export const StockTable = memo(({
 
   const symbolKey = useMemo(() => stocks.map(s => s.symbol).join(','), [stocks]);
 
+  // Use a ref to access latest stocks in effect without triggering re-renders
+  const stocksRef = useRef(stocks);
+  useEffect(() => {
+    stocksRef.current = stocks;
+  }, [stocks]);
+
   // Adaptive polling interval based on market volatility
-  const getAdaptiveInterval = useCallback(() => {
-    if (stocks.length === 0) return 60000;
+  const calculateAdaptiveInterval = useCallback(() => {
+    const currentStocks = stocksRef.current;
+    if (currentStocks.length === 0) return 60000;
     
     // Calculate average volatility
     let totalVol = 0;
-    for (let i = 0; i < stocks.length; i++) {
-      totalVol += Math.abs(stocks[i].changePercent || 0);
+    for (let i = 0; i < currentStocks.length; i++) {
+      totalVol += Math.abs(currentStocks[i].changePercent || 0);
     }
-    const avgVol = totalVol / stocks.length;
+    const avgVol = totalVol / currentStocks.length;
     
     // Higher volatility -> Faster polling
     // > 2% avg move -> 15s
@@ -240,7 +247,7 @@ export const StockTable = memo(({
     if (avgVol > 2) return 15000;
     if (avgVol > 1) return 30000;
     return 60000;
-  }, [stocks]);
+  }, []); // Stable dependency
 
   useEffect(() => {
     let mounted = true;
@@ -286,7 +293,7 @@ export const StockTable = memo(({
       
       // Schedule next poll adaptively
       if (mounted) {
-        timeoutId = setTimeout(fetchQuotes, getAdaptiveInterval());
+        timeoutId = setTimeout(fetchQuotes, calculateAdaptiveInterval());
       }
     };
 
@@ -298,7 +305,7 @@ export const StockTable = memo(({
       controller.abort();
       clearTimeout(timeoutId);
     };
-  }, [symbolKey, batchUpdateStockData, getAdaptiveInterval, measureAsync]);
+  }, [symbolKey, batchUpdateStockData, calculateAdaptiveInterval, measureAsync]);
 
   const handleSelect = useCallback((stock: Stock) => {
     setSelectedStock(stock);
