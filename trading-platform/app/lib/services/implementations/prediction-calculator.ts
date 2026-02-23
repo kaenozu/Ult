@@ -7,6 +7,7 @@
 
 import { PredictionFeatures } from '../feature-engineering-service';
 import { IPredictionCalculator } from '../interfaces/ml-model-interfaces';
+import { RSI_THRESHOLDS } from '@/app/lib/config/prediction-config';
 
 /**
  * Default implementation of prediction calculator
@@ -33,13 +34,13 @@ export class PredictionCalculator implements IPredictionCalculator {
     let score = 0;
 
     // RSI extreme values - more granular thresholds
-    if (f.rsi < 15) {
+    if (f.rsi < RSI_THRESHOLDS.EXTREME_OVERSOLD) {
       score += RSI_EXTREME_SCORE; // Strong oversold
-    } else if (f.rsi < 30) {
+    } else if (f.rsi < RSI_THRESHOLDS.MODERATE_OVERSOLD) {
       score += RSI_MODERATE_SCORE; // Moderate oversold
-    } else if (f.rsi > 85) {
+    } else if (f.rsi > RSI_THRESHOLDS.EXTREME_OVERBOUGHT) {
       score -= RSI_EXTREME_SCORE; // Strong overbought
-    } else if (f.rsi > 70) {
+    } else if (f.rsi > RSI_THRESHOLDS.MODERATE_OVERBOUGHT) {
       score -= RSI_MODERATE_SCORE; // Moderate overbought
     }
 
@@ -82,13 +83,13 @@ export class PredictionCalculator implements IPredictionCalculator {
     let score = 0;
 
     // RSI with more granular thresholds
-    if (f.rsi < 15) {
+    if (f.rsi < RSI_THRESHOLDS.EXTREME_OVERSOLD) {
       score += RSI_EXTREME_SCORE;
-    } else if (f.rsi < 30) {
+    } else if (f.rsi < RSI_THRESHOLDS.MODERATE_OVERSOLD) {
       score += RSI_MODERATE_SCORE;
-    } else if (f.rsi > 85) {
+    } else if (f.rsi > RSI_THRESHOLDS.EXTREME_OVERBOUGHT) {
       score -= RSI_EXTREME_SCORE;
-    } else if (f.rsi > 70) {
+    } else if (f.rsi > RSI_THRESHOLDS.MODERATE_OVERBOUGHT) {
       score -= RSI_MODERATE_SCORE;
     }
 
