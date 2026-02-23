@@ -195,14 +195,6 @@ export const StockChart = memo(function StockChart({
     });
     candleSeriesRef.current = candleSeries as unknown as ISeriesApi<'Candlestick'>;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (candleSeriesRef.current as any).setMarkers = (markers: any[]) => {
-       // Manual type override for markers if needed, or just let it pass
-       // This is a workaround for the missing type definition in the library
-       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-       (candleSeries as any).setMarkers(markers);
-    };
-
     if (showVolume) {
       const volumeSeries = chart.addSeries(HistogramSeries, {
         priceFormat: { type: 'volume' },
@@ -256,7 +248,6 @@ export const StockChart = memo(function StockChart({
     forecastLowerRef.current = forecastLower as unknown as ISeriesApi<'Line'>;
 
     // AI Confidence Markers (Beginner Friendly Visuals)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const markers: any[] = [];
     if (signal && signal.confidence >= 60) {
       const time = data[data.length - 1].date as Time;
@@ -285,8 +276,7 @@ export const StockChart = memo(function StockChart({
          });
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (candleSeries as any).setMarkers(markers);
+    candleSeries.setMarkers(markers);
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -380,7 +370,6 @@ export const StockChart = memo(function StockChart({
     }
 
     // AI Confidence Markers
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const markers: any[] = [];
     if (signal && signal.confidence >= 60) {
       const time = data[data.length - 1].date as Time;
@@ -407,8 +396,7 @@ export const StockChart = memo(function StockChart({
          });
       }
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (candleSeriesRef.current as any).setMarkers(markers);
+    candleSeriesRef.current.setMarkers(markers);
 
   }, [data, signal, showVolume, showSMA, showBollinger, accuracyData, convertToLWCData, convertToVolumeData, calculateSMA, calculateBollingerBands]);
 

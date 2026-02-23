@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { devError } from '@/app/lib/utils/dev-logger';
 
 const DEFAULT_JWT_SECRET = 'demo-secret-must-be-at-least-32-chars-long';
-const DEFAULT_ADMIN_PASSWORD_VALUE = 'admin123';
 
 const envSchema = z.object({
   // Node Environment
@@ -22,7 +21,7 @@ const envSchema = z.object({
 
   // Initial Admin Config (Only if enabled)
   DEFAULT_ADMIN_EMAIL: z.string().email().default('admin@example.com'),
-  DEFAULT_ADMIN_PASSWORD: z.string().min(8).default(DEFAULT_ADMIN_PASSWORD_VALUE),
+  DEFAULT_ADMIN_PASSWORD: z.string().min(8).default('admin123'),
 
   // System Config
   NEXT_PUBLIC_API_URL: z.string().url().default('http://localhost:3000'),
@@ -58,9 +57,9 @@ if (!parsed.success) {
     throw new Error('CRITICAL SECURITY ERROR: You are running in production with the default JWT_SECRET. Please set a secure JWT_SECRET environment variable.');
   }
 
-  // Security Check: Ensure production does not use default admin password if admin is enabled
-  if (parsed.data.NODE_ENV === 'production' && parsed.data.ENABLE_DEFAULT_ADMIN && parsed.data.DEFAULT_ADMIN_PASSWORD === DEFAULT_ADMIN_PASSWORD_VALUE) {
-    throw new Error('CRITICAL SECURITY ERROR: You are running in production with ENABLE_DEFAULT_ADMIN=true but using the default password. Please set a strong DEFAULT_ADMIN_PASSWORD environment variable.');
+  // Security Check: Ensure production does not use default admin credentials
+  if (parsed.data.NODE_ENV === 'production' && parsed.data.ENABLE_DEFAULT_ADMIN === true && parsed.data.DEFAULT_ADMIN_PASSWORD === 'admin123') {
+    throw new Error('CRITICAL SECURITY ERROR: You have enabled the default admin account with the default password in production. Please disable ENABLE_DEFAULT_ADMIN or change DEFAULT_ADMIN_PASSWORD.');
   }
 }
 
