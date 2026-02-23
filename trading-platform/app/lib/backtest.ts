@@ -8,6 +8,6 @@ import { accuracyService } from './AccuracyService';
 
 export type { BacktestResult, BacktestTrade } from '@/app/types';
 
-export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): BacktestResult {
+export function runBacktest(symbol: string, data: OHLCV[], market: 'japan' | 'usa'): Promise<BacktestResult> {
   return accuracyService.runBacktest(symbol, data, market);
 }

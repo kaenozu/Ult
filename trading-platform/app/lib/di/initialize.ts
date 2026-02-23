@@ -6,8 +6,6 @@ import { analysisService } from '../AnalysisService';
 import { MarketDataHub } from '../data/MarketDataHub';
 import { AutoScreener } from '../universe/AutoScreener';
 
-
-
 /**
  * サービスコンテナの初期化
  * すべての主要サービスを登録します。

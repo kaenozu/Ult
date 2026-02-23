@@ -311,7 +311,7 @@ export class PerformanceScreenerService {
         };
 
         // 2. AIシグナル評価
-        const consensus = await consensusSignalService.generateEnhancedConsensus(recentData);
+        const consensus = await consensusSignalService.generateConsensus(recentData);
         const currentPrice = recentData[recentData.length - 1].close;
         const mockStock: Stock = {
           symbol: ds.symbol,
@@ -326,7 +326,7 @@ export class PerformanceScreenerService {
 
         const indicators = mlPredictionService.calculateIndicators(recentData);
         const mlPred = await mlPredictionService.predictAsync(mockStock, recentData, indicators);
-        const mlSignal = mlPredictionService.generateSignal(mockStock, recentData, mlPred, indicators);
+        const mlSignal = await mlPredictionService.generateSignal(mockStock, recentData, mlPred, indicators);
 
         // シグナル統合ロジック (Hybrid Signal)
         // テクニカル分析とMLが一致する場合に信頼度をブースト
@@ -658,7 +658,7 @@ export class PerformanceScreenerService {
         const recentData = data.slice(-lookbackDays);
 
         // コンセンサスシグナル生成
-        const consensus = await consensusSignalService.generateEnhancedConsensus(recentData);
+        const consensus = await consensusSignalService.generateConsensus(recentData);
 
         // ML予測を実行 (Phase 1 Integration)
         const currentPrice = recentData[recentData.length - 1].close;
@@ -675,7 +675,7 @@ export class PerformanceScreenerService {
 
         const indicators = mlPredictionService.calculateIndicators(recentData);
         const mlPred = await mlPredictionService.predictAsync(mockStock, recentData, indicators);
-        const mlSignal = mlPredictionService.generateSignal(mockStock, recentData, mlPred, indicators);
+        const mlSignal = await mlPredictionService.generateSignal(mockStock, recentData, mlPred, indicators);
 
         // シグナル統合ロジック (Hybrid Signal)
         // テクニカル分析とMLが一致する場合に信頼度をブースト

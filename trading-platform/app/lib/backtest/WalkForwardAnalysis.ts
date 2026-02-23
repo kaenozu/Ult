@@ -7,17 +7,36 @@
 
 import { EventEmitter } from 'events';
 import { OHLCV } from '@/app/types';
-import { TrainingData, WalkForwardResult, MLBacktestConfig } from '../ml/types';
-import { EnsembleStrategy } from '../ml/EnsembleStrategy';
+import { EnsembleStrategy } from '../../domains/prediction/models/ml/EnsembleStrategy';
 import { FeatureEngineeringService, featureEngineeringService } from '../services/feature-engineering-service';
+import { MLFeatures } from '../services/feature-engineering-service';
 
 import { logger } from '@/app/core/logger';
+
 export interface WalkForwardConfig {
   trainWindowSize: number; // days
   testWindowSize: number; // days
   stepSize: number; // days to move window forward
   minTrainingSamples: number;
   retrainFrequency: number; // retrain every N test windows
+}
+
+// Types formerly in app/lib/ml/types.ts
+export interface TrainingData {
+  features: MLFeatures[];
+  labels: number[];
+  dates: Date[];
+}
+
+export interface WalkForwardResult {
+  windowId: number;
+  trainStartDate: Date;
+  trainEndDate: Date;
+  testStartDate: Date;
+  testEndDate: Date;
+  trainMetrics: { loss: number; accuracy: number };
+  testMetrics: { returns: number; sharpeRatio: number; maxDrawdown: number; winRate: number };
+  predictions: { date: Date; predicted: number; actual: number }[];
 }
 
 export class WalkForwardAnalysis extends EventEmitter {
@@ -64,7 +83,7 @@ export class WalkForwardAnalysis extends EventEmitter {
       const trainLabels = this.calculateReturns(trainData.slice(200));
 
       // Normalize features
-      const { normalized: normalizedTrain, scalers } = this.featureService.normalizeFeatures(trainFeatures);
+      // const { normalized: normalizedTrain, scalers } = this.featureService.normalizeFeatures(trainFeatures);
 
       // Prepare training data
       const trainingData: TrainingData = {

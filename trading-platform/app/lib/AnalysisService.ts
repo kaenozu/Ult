@@ -1,4 +1,4 @@
-import { OHLCV, Signal } from '../types';
+import { OHLCV, Signal, Stock } from '../types';
 import { technicalIndicatorService } from './TechnicalIndicatorService';
 import { marketDataService } from './MarketDataService';
 import { volumeAnalysisService } from './VolumeAnalysis';

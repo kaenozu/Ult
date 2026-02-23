@@ -63,7 +63,7 @@ export interface PlatformStatus {
 
 export interface TradeDecision {
   shouldTrade: boolean;
-  signal: TradingSignal | null;
+  signal: Signal | null;
   positionSize: PositionSizingResult | null;
   riskAssessment: {
     approved: boolean;
@@ -383,22 +383,7 @@ export class UnifiedTradingPlatform extends EventEmitter {
 
     // 2. Calculate position size
     // Note: Use current price if entryPrice is missing, though Signal usually has price context
-    const existingPosition = portfolio.positions.find(p => p.symbol === signal.symbol);
-    const marketDataHistory = this.marketData.get(signal.symbol);
-    const latestMarketPrice = marketDataHistory && marketDataHistory.length > 0 
-      ? marketDataHistory[marketDataHistory.length - 1].close 
-      : undefined;
-    
-    const entryPrice = signal.price ?? existingPosition?.currentPrice ?? latestMarketPrice;
-    
-    if (!entryPrice || entryPrice <= 0) {
-      logger.warn(`Cannot execute trade for ${signal.symbol}: no valid price available`, {
-        signalPrice: signal.price,
-        positionPrice: existingPosition?.currentPrice,
-        marketDataPrice: latestMarketPrice,
-      });
-      return;
-    }
+    const entryPrice = signal.price || portfolio.positions.find(p => p.symbol === signal.symbol)?.currentPrice || 0;
 
     const positionSize = this.riskManager.calculatePositionSize({
       capital: portfolio.cash,

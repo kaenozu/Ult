@@ -10,11 +10,11 @@ import {
   UnifiedTradingPlatform,
   PlatformConfig,
   PlatformStatus,
-  TradingSignal,
 } from '@/app/lib/tradingCore/UnifiedTradingPlatform';
 import { PaperPortfolio } from '@/app/lib/paperTrading/PaperTradingEnvironment';
 import { AlertTrigger } from '@/app/lib/alerts/AlertSystem';
 import { RiskMetrics } from '@/app/lib/risk/AdvancedRiskManager';
+import { Signal } from '@/app/types';
 
 interface UseUnifiedTradingReturn {
   // Status
@@ -23,7 +23,7 @@ interface UseUnifiedTradingReturn {
   
   // Data
   portfolio: PaperPortfolio | null;
-  signals: TradingSignal[];
+  signals: Signal[];
   alerts: AlertTrigger[];
   riskMetrics: RiskMetrics | null;
   
@@ -67,7 +67,7 @@ export function useUnifiedTrading(
   const [isRunning, setIsRunning] = useState(false);
   const [status, setStatus] = useState<PlatformStatus | null>(null);
   const [portfolio, setPortfolio] = useState<PaperPortfolio | null>(null);
-  const [signals, setSignals] = useState<TradingSignal[]>([]);
+  const [signals, setSignals] = useState<Signal[]>([]);
   const [alerts, setAlerts] = useState<AlertTrigger[]>([]);
   const [riskMetrics, setRiskMetrics] = useState<RiskMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +97,7 @@ export function useUnifiedTrading(
       setRiskMetrics(platform.getRiskMetrics());
     };
 
-    const handleSignalGenerated = (signal: TradingSignal) => {
+    const handleSignalGenerated = (signal: Signal) => {
       setSignals((prev) => {
         const filtered = prev.filter((s) => s.symbol !== signal.symbol);
         return [...filtered, signal];

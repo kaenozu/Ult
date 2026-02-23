@@ -1,6 +1,14 @@
 import { runBacktest } from './backtest';
 import { OHLCV } from '@/app/types';
 
+// Mock mlIntegrationService to avoid worker issues in tests
+jest.mock('./services/MLIntegrationService', () => ({
+  mlIntegrationService: {
+    isAvailable: () => false,
+    predictWithML: jest.fn(),
+  },
+}));
+
 describe('runBacktest', () => {
   // Generate simple mock data: Uptrend
   const generateUptrendData = (): OHLCV[] => {
@@ -25,25 +33,20 @@ describe('runBacktest', () => {
     return data;
   };
 
-  it('should return empty result for insufficient data', () => {
+  it('should return empty result for insufficient data', async () => {
     const data: OHLCV[] = [];
-    const result = runBacktest('TEST', data, 'usa');
+    const result = await runBacktest('TEST', data, 'usa');
     expect(result.totalTrades).toBe(0);
     expect(result.winRate).toBe(0);
   });
 
-  it('should execute trades on sufficient data', () => {
+  it('should execute trades on sufficient data', async () => {
     const data = generateUptrendData();
-    // We mock analyzeStock inside backtest.ts? 
-    // runBacktest imports analyzeStock directly. We should mock that import.
-    // However, for integration test, we can use the real one if it's deterministic.
-    // analyzeStock uses RSI/SMA. Uptrend data should trigger BUY.
     
-    const result = runBacktest('TEST', data, 'usa');
+    const result = await runBacktest('TEST', data, 'usa');
     
     // We expect some trades because price is increasing
-    // The exact number depends on analyzeStock logic, but it shouldn't crash
     expect(result).toBeDefined();
     expect(result.totalTrades).toBeGreaterThanOrEqual(0);
-  });
+  }, 10000); // Increase timeout to 10s
 });

@@ -6,7 +6,6 @@
  */
 
 import { OHLCV } from '@/app/types';
-import { MLFeatures } from '../ml/types';
 import { PredictionFeatures } from '@/app/domains/prediction/types';
 export type { PredictionFeatures }; // Re-export for compatibility
 import {
@@ -22,6 +21,60 @@ import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '@/app/cons
 import { candlestickPatternService } from './candlestick-pattern-service';
 
 // --- Interfaces from ML Domain ---
+
+export interface MLFeatures {
+  close: number;
+  open: number;
+  high: number;
+  low: number;
+  rsi: number;
+  rsiChange: number;
+  sma5: number;
+  sma20: number;
+  sma50: number;
+  sma200: number;
+  ema12: number;
+  ema26: number;
+  priceMomentum: number;
+  volumeRatio: number;
+  volatility: number;
+  macdSignal: number;
+  macdHistogram: number;
+  bollingerPosition: number;
+  atrPercent: number;
+  stochasticK: number;
+  stochasticD: number;
+  williamsR: number;
+  adx: number;
+  cci: number;
+  roc: number;
+  obv: number;
+  vwap: number;
+  volumeProfile: number[];
+  priceLevel: number;
+  momentum5: number;
+  momentum10: number;
+  momentum20: number;
+  historicalVolatility: number;
+  parkinsonVolatility: number;
+  garmanKlassVolatility: number;
+  adxTrend: number;
+  aroonUp: number;
+  aroonDown: number;
+  volumeSMA: number;
+  volumeStd: number;
+  volumeTrend: number;
+  candlePattern: number;
+  supportLevel: number;
+  resistanceLevel: number;
+  marketCorrelation: number;
+  sectorCorrelation: number;
+  dayOfWeek: number;
+  weekOfMonth: number;
+  monthOfYear: number;
+  timestamp: number;
+  [key: string]: any;
+}
 
 export interface TechnicalFeatures {
   // Basic Indicators
@@ -324,6 +377,10 @@ export class FeatureEngineeringService {
    * Refactored calculateTechnicalFeatures to support all domains
    */
   public calculateTechnicalFeatures(data: OHLCV[]): TechnicalFeatures {
+    // Helpers - defined at top to avoid temporal dead zone
+    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
+    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
+
     const prices = data.map(d => d.close);
     const highs = data.map(d => d.high);
     const lows = data.map(d => d.low);
@@ -352,10 +409,6 @@ export class FeatureEngineeringService {
     // Current Values
     const currentPrice = prices[prices.length - 1];
     const currentVolume = volumes[volumes.length - 1];
-
-    // Helpers
-    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
-    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
 
     // Derived Values
     const rsiValue = last(rsi, 50);

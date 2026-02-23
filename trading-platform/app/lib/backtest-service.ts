@@ -87,7 +87,7 @@ export class BacktestService {
           // シグナル生成（実際にはindicatorも計算する必要がある）
           const indicators = mlPredictionService.calculateIndicators(currentData);
           const prediction = mlPredictionService.predict(stock, currentData, indicators);
-          const signal = mlPredictionService.generateSignal(stock, currentData, prediction, indicators);
+          const signal = await mlPredictionService.generateSignal(stock, currentData, prediction, indicators);
 
           // 現在のポジションとシグナルを比較して取引判断
           const trade = this.evaluateTrade(

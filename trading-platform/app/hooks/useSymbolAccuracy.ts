@@ -149,7 +149,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           logger.warn(`[useSymbolAccuracy] Unreliable accuracy due to short data length for ${currentSymbol}`, undefined, 'useSymbolAccuracy');
         }
 
-        const accuracyResult = calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
+        const accuracyResult = await calculateRealTimeAccuracy(currentSymbol, historicalData, currentMarket);
         if (!accuracyResult) {
           if (stock.symbol === currentSymbol) setLoading(false);
           return;
@@ -177,7 +177,7 @@ export function useSymbolAccuracy(stock: Stock, ohlcv: OHLCV[] = []) {
           setError(ERROR_MESSAGES.CALCULATION_FAILED);
           if (ohlcv.length >= DATA_REQUIREMENTS.LOOKBACK_PERIOD_DAYS) {
             try {
-              const accuracyResult = calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
+              const accuracyResult = await calculateRealTimeAccuracy(currentSymbol, ohlcv, currentMarket);
               if (accuracyResult) {
                 setAccuracy({
                   hitRate: accuracyResult.hitRate,
