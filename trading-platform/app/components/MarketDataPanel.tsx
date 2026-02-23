@@ -97,24 +97,24 @@ export function MarketDataPanel({ symbols, selectedSymbol, onSelectSymbol }: Mar
                   : 'bg-[#0f172a] hover:bg-[#1e293b] border border-transparent'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-white">{data.symbol}</p>
-                  <p className="text-xs text-gray-400">
+              <span className="flex items-center justify-between">
+                <span className="block">
+                  <span className="font-bold text-white block">{data.symbol}</span>
+                  <span className="text-xs text-gray-400 block">
                     Vol: {formatVolume(data.volume24h)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium text-white">{formatCurrency(data.price)}</p>
-                  <p className={`text-sm ${data.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  </span>
+                </span>
+                <span className="block text-right">
+                  <span className="font-medium text-white block">{formatCurrency(data.price)}</span>
+                  <span className={`text-sm block ${data.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {formatPercent(data.change24h)}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-2 flex justify-between text-xs text-gray-500">
+                  </span>
+                </span>
+              </span>
+              <span className="mt-2 flex justify-between text-xs text-gray-500 block">
                 <span>H: {formatCurrency(data.high24h)}</span>
                 <span>L: {formatCurrency(data.low24h)}</span>
-              </div>
+              </span>
             </button>
           ))}
         </div>
