@@ -27,8 +27,8 @@ describe('GET /api/market/realtime', () => {
     const req = {
       url: 'http://localhost:3000/api/market/realtime',
       nextUrl: new URL('http://localhost:3000/api/market/realtime'),
-    } as any;
-    const res = await GET(req);
+    } as unknown as Request;
+    const res = await GET(req as any);
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toBe('Symbol required');
@@ -38,8 +38,8 @@ describe('GET /api/market/realtime', () => {
     const req = {
       url: 'http://localhost:3000/api/market/realtime?symbol=INVALID',
       nextUrl: new URL('http://localhost:3000/api/market/realtime?symbol=INVALID'),
-    } as any;
-    const res = await GET(req);
+    } as unknown as Request;
+    const res = await GET(req as any);
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toContain('Invalid symbol format');
@@ -49,8 +49,8 @@ describe('GET /api/market/realtime', () => {
     const req = {
       url: 'http://localhost:3000/api/market/realtime?symbol=7203&market=usa',
       nextUrl: new URL('http://localhost:3000/api/market/realtime?symbol=7203&market=usa'),
-    } as any;
-    const res = await GET(req);
+    } as unknown as Request;
+    const res = await GET(req as any);
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toContain('Japanese market');
@@ -69,8 +69,8 @@ describe('GET /api/market/realtime', () => {
     const req = {
       url: 'http://localhost:3000/api/market/realtime?symbol=7203&market=japan',
       nextUrl: new URL('http://localhost:3000/api/market/realtime?symbol=7203&market=japan'),
-    } as any;
-    const res = await GET(req);
+    } as unknown as Request;
+    const res = await GET(req as any);
     
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -84,8 +84,8 @@ describe('GET /api/market/realtime', () => {
     const req = {
       url: 'http://localhost:3000/api/market/realtime?symbol=7203&market=japan',
       nextUrl: new URL('http://localhost:3000/api/market/realtime?symbol=7203&market=japan'),
-    } as any;
-    const res = await GET(req);
+    } as unknown as Request;
+    const res = await GET(req as any);
     
     expect(res.status).toBe(502);
     const data = await res.json();
