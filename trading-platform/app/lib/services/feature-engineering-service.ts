@@ -324,6 +324,10 @@ export class FeatureEngineeringService {
    * Refactored calculateTechnicalFeatures to support all domains
    */
   public calculateTechnicalFeatures(data: OHLCV[]): TechnicalFeatures {
+    // Helpers - Defined at top to avoid Temporal Dead Zone
+    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
+    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
+
     const prices = data.map(d => d.close);
     const highs = data.map(d => d.high);
     const lows = data.map(d => d.low);
@@ -352,10 +356,6 @@ export class FeatureEngineeringService {
     // Current Values
     const currentPrice = prices[prices.length - 1];
     const currentVolume = volumes[volumes.length - 1];
-
-    // Helpers
-    const last = (arr: number[], fallback: number) => arr.length > 0 ? arr[arr.length - 1] : fallback;
-    const prev = (arr: number[], idx: number, fallback: number) => idx >= 0 && idx < arr.length ? arr[idx] : fallback;
 
     // Derived Values
     const rsiValue = last(rsi, 50);

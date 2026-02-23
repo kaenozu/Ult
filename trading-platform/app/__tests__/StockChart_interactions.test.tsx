@@ -36,7 +36,7 @@ const mockChartInstance = {
 jest.mock('react-chartjs-2', () => {
     const { forwardRef, useImperativeHandle } = require('react');
 
-    const MockLine = forwardRef((props: any, ref: any) => {
+    const MockLine = forwardRef((props: { options?: { onHover?: (e: unknown, activeElements: Array<{ index: number; element: Record<string, unknown>; datasetIndex: number }>) => void } }, ref: unknown) => {
         useImperativeHandle(ref, () => mockChartInstance);
         return (
             <div
@@ -95,7 +95,7 @@ describe.skip('StockChart Interactions', () => {
         
         expect(mockChartInstance.setActiveElements).toHaveBeenCalled();
         const initialCall = mockChartInstance.setActiveElements.mock.calls[0][0];
-        expect(initialCall.some((el: any) => el.index === 9)).toBe(true);
+        expect(initialCall.some((el: { index: number }) => el.index === 9)).toBe(true);
 
         // 2. Set Hover to index 5 via click (our mock click simulates hover at 5)
         mockChartInstance.setActiveElements.mockClear();
@@ -109,7 +109,7 @@ describe.skip('StockChart Interactions', () => {
         });
 
         const lastCall = mockChartInstance.setActiveElements.mock.calls[mockChartInstance.setActiveElements.mock.calls.length - 1][0];
-        expect(lastCall.some((el: any) => el.index === 6)).toBe(true);
+        expect(lastCall.some((el: { index: number }) => el.index === 6)).toBe(true);
 
         // 4. Left Arrow: Should move back to index 5
         // Need to wait 300ms? No, the block is for MOUSE, keys are always accepted.
