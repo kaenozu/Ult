@@ -96,7 +96,7 @@ export const useDataQuality = (updateInterval: number = 1000) => {
   useEffect(() => {
     // Initial fetch - delayed slightly to avoid cascading renders
     const timer = setTimeout(() => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       fetchMetrics();
     }, 0);
     

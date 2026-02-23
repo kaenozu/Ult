@@ -1,8 +1,25 @@
 import { OHLCV } from '@/app/types';
 import { PerformanceMetrics } from '@/app/types/performance';
 
-// Re-export PerformanceMetrics for consumers
 export type { PerformanceMetrics };
+
+export type {
+  AdvancedMetrics,
+  DrawdownAnalysis,
+  DrawdownEvent,
+  TradeAnalysis,
+  ConsecutiveTrade,
+  TradeDistribution,
+  RangeCount,
+  MonthlyPerformance,
+  YearlyPerformance,
+  ReturnDistribution,
+  HistogramBin,
+  DistributionStats,
+  Percentiles,
+  BenchmarkComparison,
+  BenchmarkMetricsResult,
+} from './performance-metrics/types';
 
 // Commission Tier Interface (from Realistic)
 export interface CommissionTier {

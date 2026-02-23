@@ -724,10 +724,10 @@ export class EnsembleModel {
 
     // 重みの正規化と境界チェック
     if (totalScore > 0) {
-      let rf = scores.RF / totalScore;
-      let xgb = scores.XGB / totalScore;
-      let lstm = scores.LSTM / totalScore;
-      let technical = scores.TECHNICAL / totalScore;
+      const rf = scores.RF / totalScore;
+      const xgb = scores.XGB / totalScore;
+      const lstm = scores.LSTM / totalScore;
+      const technical = scores.TECHNICAL / totalScore;
       
       const minWeight = 0.05;
       const maxWeight = 0.6;

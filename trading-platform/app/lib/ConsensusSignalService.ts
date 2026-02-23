@@ -292,8 +292,8 @@ class ConsensusSignalService {
     const currentPrice = data[data.length - 1].close;
     const adjustment = consensus.confidence / 100 * 0.05; 
     
-    let targetPrice = consensus.type === 'BUY' ? currentPrice * (1 + adjustment) : currentPrice * (1 - adjustment);
-    let stopLoss = consensus.type === 'BUY' ? currentPrice * (1 - adjustment * 1.5) : currentPrice * (1 + adjustment * 1.5);
+    const targetPrice = consensus.type === 'BUY' ? currentPrice * (1 + adjustment) : currentPrice * (1 - adjustment);
+    const stopLoss = consensus.type === 'BUY' ? currentPrice * (1 - adjustment * 1.5) : currentPrice * (1 + adjustment * 1.5);
     
     return {
       symbol,

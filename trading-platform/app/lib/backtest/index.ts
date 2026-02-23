@@ -1,6 +1,6 @@
 export * from './types';
+export * from './performance-metrics';
 export * from './BaseBacktestEngine';
-export * from './AdvancedPerformanceMetrics';
 export * from './MultiAssetBacktestEngine';
 
 // Realistic Backtesting Modules (TRADING-030)

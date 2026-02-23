@@ -92,7 +92,7 @@ function runBacktestWithConsensus(
 ): BacktestMetrics {
   let capital = initialCapital;
   let position: { type: 'LONG' | 'SHORT'; entryPrice: number; entryIndex: number } | null = null;
-  let trades: { return: number; win: boolean }[] = [];
+  const trades: { return: number; win: boolean }[] = [];
   let maxCapital = initialCapital;
   let maxDrawdown = 0;
   

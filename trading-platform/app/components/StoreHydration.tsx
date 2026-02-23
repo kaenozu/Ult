@@ -12,7 +12,7 @@ export function StoreHydration() {
         // Manually trigger hydration on mount to ensure client-side storage is used
         // Wrapped in setTimeout to avoid cascading renders during hydration
         const timer = setTimeout(() => {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+             
             usePortfolioStore.persist.rehydrate();
         }, 0);
         return () => clearTimeout(timer);

@@ -1,0 +1,81 @@
+export interface OptimizationConstraints {
+  minWeight: number;
+  maxWeight: number;
+  targetReturn?: number;
+  maxRisk?: number;
+  sectorLimits?: Map<string, number>;
+  minReturnThreshold?: number;
+}
+
+export interface OptimizationResult {
+  weights: Map<string, number>;
+  expectedReturn: number;
+  expectedVolatility: number;
+  sharpeRatio: number;
+  informationRatio?: number;
+  sortinoRatio?: number;
+  maxDrawdown?: number;
+  efficientFrontier: EfficientFrontierPoint[];
+  optimizationType: 'MAX_SHARPE' | 'MIN_VARIANCE' | 'RISK_PARITY' | 'TARGET_RETURN';
+  confidence: number;
+}
+
+export interface EfficientFrontierPoint {
+  return: number;
+  volatility: number;
+  sharpeRatio: number;
+  weights: Map<string, number>;
+}
+
+export interface AssetData {
+  symbol: string;
+  sector?: string;
+  returns: number[];
+  currentPrice?: number;
+  companyName?: string;
+}
+
+export interface CovarianceOptions {
+  lookbackPeriod?: number;
+  tradingDaysPerYear?: number;
+  riskFreeRate?: number;
+  l2Regularization?: number;
+}
+
+export interface PortfolioRiskMetrics {
+  portfolioReturn: number;
+  portfolioVolatility: number;
+  excessReturn: number;
+  sharpeRatio: number;
+  downsideRisk: number;
+  sortinoRatio: number;
+  maxDrawdown: number;
+  valueAtRisk: Map<number, number>;
+  conditionalVaR: Map<number, number>;
+  beta?: number;
+  alpha?: number;
+}
+
+export interface OptimizerConfig {
+  riskFreeRate: number;
+  tradingDaysPerYear: number;
+  maxIterations: number;
+  convergenceThreshold: number;
+  maxCorrelation: number;
+  sectorConcentrationLimit: number;
+}
+
+export const DEFAULT_CONFIG: OptimizerConfig = {
+  riskFreeRate: 2.0,
+  tradingDaysPerYear: 252,
+  maxIterations: 1000,
+  convergenceThreshold: 1e-8,
+  maxCorrelation: 0.99,
+  sectorConcentrationLimit: 0.4,
+};
+
+export const DEFAULT_CONSTRAINTS: OptimizationConstraints = {
+  minWeight: 0,
+  maxWeight: 0.4,
+  minReturnThreshold: -10,
+};

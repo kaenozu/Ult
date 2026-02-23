@@ -230,7 +230,7 @@ describe('AI予測精度改善バックテスト - トレンドベース', () =>
     ];
     
     let bestResult = { winRate: 0, expectedValue: -Infinity, params: testCases[0] };
-    let allResults: any[] = [];
+    const allResults: any[] = [];
     
     for (const params of testCases) {
       const result = runBacktest(data, params.confidence, params.sl, params.tp);
