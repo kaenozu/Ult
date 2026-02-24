@@ -52,9 +52,17 @@ if (!parsed.success) {
     throw new Error('Invalid environment variables');
   }
 } else {
-  // Security Check: Ensure production uses a secure secret
-  if (parsed.data.NODE_ENV === 'production' && parsed.data.JWT_SECRET === DEFAULT_JWT_SECRET) {
-    throw new Error('CRITICAL SECURITY ERROR: You are running in production with the default JWT_SECRET. Please set a secure JWT_SECRET environment variable.');
+  // Security Check: Ensure production uses secure configuration
+  if (parsed.data.NODE_ENV === 'production') {
+    // 1. JWT Secret Check
+    if (parsed.data.JWT_SECRET === DEFAULT_JWT_SECRET) {
+      throw new Error('CRITICAL SECURITY ERROR: You are running in production with the default JWT_SECRET. Please set a secure JWT_SECRET environment variable.');
+    }
+
+    // 2. Default Admin Password Check
+    if (parsed.data.ENABLE_DEFAULT_ADMIN && parsed.data.DEFAULT_ADMIN_PASSWORD === 'admin123') {
+      throw new Error('CRITICAL SECURITY ERROR: You are running in production with default admin credentials (admin123). Please set a secure DEFAULT_ADMIN_PASSWORD or disable ENABLE_DEFAULT_ADMIN.');
+    }
   }
 }
 
