@@ -9,20 +9,20 @@ import { TECHNICAL_INDICATORS } from '@/app/constants';
  * 共通ライブラリ(technical-analysis.ts)を使用し、システム全体で計算ロジックを統一している。
  */
 class TechnicalIndicatorService {
-    calculateSMA(prices: number[], period: number): number[] {
+    calculateSMA(prices: number[] | Float64Array, period: number): number[] {
         return ta.calculateSMA(prices, period);
     }
 
-    calculateEMA(prices: number[], period: number): number[] {
+    calculateEMA(prices: number[] | Float64Array, period: number): number[] {
         return ta.calculateEMA(prices, period);
     }
 
-    calculateRSI(prices: number[], period: number = TECHNICAL_INDICATORS.RSI_PERIOD): number[] {
+    calculateRSI(prices: number[] | Float64Array, period: number = TECHNICAL_INDICATORS.RSI_PERIOD): number[] {
         return ta.calculateRSI(prices, period);
     }
 
     calculateMACD(
-        prices: number[],
+        prices: number[] | Float64Array,
         fastPeriod: number = TECHNICAL_INDICATORS.MACD_FAST,
         slowPeriod: number = TECHNICAL_INDICATORS.MACD_SLOW,
         signalPeriod: number = TECHNICAL_INDICATORS.MACD_SIGNAL
@@ -31,7 +31,7 @@ class TechnicalIndicatorService {
     }
 
     calculateBollingerBands(
-        prices: number[],
+        prices: number[] | Float64Array,
         period: number = TECHNICAL_INDICATORS.BB_PERIOD,
         stdDev: number = TECHNICAL_INDICATORS.BB_STD_DEV
     ): { upper: number[]; middle: number[]; lower: number[] } {

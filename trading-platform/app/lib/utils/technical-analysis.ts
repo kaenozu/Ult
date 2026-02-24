@@ -18,12 +18,12 @@ export function _getValidPrice(p: number | null | undefined): number {
  * Calculate Simple Moving Average (SMA)
  * Optimized with Float64Array and sliding window
  */
-export function calculateSMA(prices: number[], period: number): number[] {
+export function calculateSMA(prices: number[] | Float64Array, period: number): number[] {
   const length = prices.length;
   const result: number[] = new Array(length).fill(NaN);
   if (length < period) return result;
 
-  const floatPrices = new Float64Array(prices);
+  const floatPrices = prices instanceof Float64Array ? prices : new Float64Array(prices);
   let sum = 0;
 
   // Initial window
@@ -65,12 +65,12 @@ export function calculateSMA(prices: number[], period: number): number[] {
  * Calculate Exponential Moving Average (EMA)
  * Optimized with Float64Array
  */
-export function calculateEMA(prices: number[], period: number): number[] {
+export function calculateEMA(prices: number[] | Float64Array, period: number): number[] {
   const length = prices.length;
   const result: number[] = new Array(length).fill(NaN);
   if (length < period) return result;
 
-  const floatPrices = new Float64Array(prices);
+  const floatPrices = prices instanceof Float64Array ? prices : new Float64Array(prices);
   const k = 2 / (period + 1);
 
   // Initial SMA
@@ -94,12 +94,12 @@ export function calculateEMA(prices: number[], period: number): number[] {
 /**
  * Calculate Relative Strength Index (RSI)
  */
-export function calculateRSI(prices: number[], period: number = 14): number[] {
+export function calculateRSI(prices: number[] | Float64Array, period: number = 14): number[] {
   const length = prices.length;
   const result: number[] = new Array(length).fill(NaN);
   if (length <= period) return result;
 
-  const floatPrices = new Float64Array(prices);
+  const floatPrices = prices instanceof Float64Array ? prices : new Float64Array(prices);
   let avgGain = 0;
   let avgLoss = 0;
 
@@ -137,7 +137,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
  * Fix: Supports negative MACD values for Signal line calculation.
  */
 export function calculateMACD(
-  prices: number[],
+  prices: number[] | Float64Array,
   fastPeriod: number = 12,
   slowPeriod: number = 26,
   signalPeriod: number = 9,
@@ -212,7 +212,7 @@ export function calculateMACD(
  * Calculate Bollinger Bands
  */
 export function calculateBollingerBands(
-  prices: number[],
+  prices: number[] | Float64Array,
   period: number = 20,
   standardDeviations: number = 2,
 ): { upper: number[]; middle: number[]; lower: number[] } {

@@ -126,7 +126,9 @@ class AnalysisService {
             return { rsiPeriod: RSI_CONFIG.DEFAULT_PERIOD, smaPeriod: SMA_CONFIG.MEDIUM_PERIOD, accuracy: 0 };
         }
 
-        const closes = data.map(d => d.close);
+        const length = data.length;
+        const closes = new Float64Array(length);
+        for (let i = 0; i < length; i++) closes[i] = data[i].close;
 
         let rsiCache: Map<number, number[]>;
         let smaCache: Map<number, number[]>;
@@ -213,7 +215,7 @@ class AnalysisService {
         data: OHLCV[],
         rsiP: number,
         smaP: number,
-        closes: number[],
+        closes: number[] | Float64Array,
         atrArray: number[],
         preCalcRsi: number[],
         preCalcSma: number[],
@@ -544,7 +546,10 @@ class AnalysisService {
             opt = this.optimizeParameters(data, market, context);
         }
 
-        const closes = data.map(d => d.close);
+        const length = data.length;
+        const closes = new Float64Array(length);
+        for (let i = 0; i < length; i++) closes[i] = data[i].close;
+
         const effectiveEndIndex = context?.endIndex !== undefined ? context.endIndex : data.length - 1;
 
         // Efficient lookup using pre-calculated indicators if available

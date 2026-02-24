@@ -7,7 +7,12 @@ import { RSI_CONFIG, SMA_CONFIG } from '@/app/constants';
  * 指標計算の純粋ロジック（Worker内外から利用可能）
  */
 export function calculateIndicatorsSync(data: OHLCV[]) {
-  const closes = data.map(d => d.close);
+  // Optimized: Create Float64Array once to avoid repeated allocations and map overhead
+  const length = data.length;
+  const closes = new Float64Array(length);
+  for (let i = 0; i < length; i++) {
+    closes[i] = data[i].close;
+  }
   
   const rsi = new Map<number, number[]>();
   const sma = new Map<number, number[]>();
