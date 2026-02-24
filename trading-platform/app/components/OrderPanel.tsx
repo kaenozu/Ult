@@ -6,6 +6,7 @@ import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { RiskSettingsPanel } from './RiskSettingsPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Minus, Plus } from 'lucide-react';
 
 /**
  * メッセージ定数
@@ -243,14 +244,6 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setQuantity(Math.max(1, quantity + 1))}
-              className="text-[10px] text-[#92adc9] hover:text-white bg-[#233648] px-1.5 rounded transition-colors"
-              aria-label="数量を1増やす"
-            >
-              +1
-            </button>
-            <button
-              type="button"
               onClick={() => setQuantity(Math.max(1, quantity + 100))}
               className="text-[10px] text-[#92adc9] hover:text-white bg-[#233648] px-1.5 rounded transition-colors"
               aria-label="数量を100増やす"
@@ -266,19 +259,38 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
             )}
           </div>
         </div>
-        <input
-          id={ids.quantity}
-          type="number"
-          min="1"
-          step="1"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          autoComplete="off"
-          value={quantity}
-          onFocus={(e) => e.target.select()}
-          onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 0))}
-          className="bg-[#192633] border border-[#233648] rounded text-white text-sm p-2 outline-none focus:border-primary"
-        />
+        <div className="flex items-center">
+          <button
+            type="button"
+            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            className="bg-[#233648] hover:bg-[#324d67] border border-[#233648] text-white p-2 rounded-l transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:z-10"
+            disabled={quantity <= 1}
+            aria-label="数量を減らす"
+          >
+            <Minus size={16} />
+          </button>
+          <input
+            id={ids.quantity}
+            type="number"
+            min="1"
+            step="1"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="off"
+            value={quantity}
+            onFocus={(e) => e.target.select()}
+            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 0))}
+            className="flex-1 bg-[#192633] border-y border-[#233648] text-white text-sm p-2 text-center outline-none focus:border-primary focus:z-10"
+          />
+          <button
+            type="button"
+            onClick={() => setQuantity(Math.max(1, quantity + 1))}
+            className="bg-[#233648] hover:bg-[#324d67] border border-[#233648] text-white p-2 rounded-r transition-colors focus:z-10"
+            aria-label="数量を増やす"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Limit Price (if LIMIT) */}
