@@ -266,29 +266,6 @@ export function calculateBollingerBands(
       validCount--;
     }
 
-    if (validCount >= period) { // Relaxed constraint for rolling window
-      const mean = sum / validCount; // Use validCount instead of fixed period if recovering
-      // Variance calculation might be slightly off if count > period due to non-removed old values,
-      // but standard logic assumes constant window size.
-      // For strict correctness with NaNs, we should probably stick to:
-      // only output if validCount === period.
-      // HOWEVER, the test expects robustness.
-      // Let's stick to validCount === period for strict correctness as per standard lib behavior,
-      // but ensure state is correctly maintained.
-      //
-      // Re-reading the failure: expected NaN, got 10.
-      // Input: [10, NaN, 20, 30, 40], period 2.
-      // i=0: val=10. sum=10. count=1.
-      // i=1: val=NaN. sum=10. count=1. limit=2. loop ends. middle[1]=NaN.
-      // Rolling:
-      // i=2: val=20. sum=10+20=30. sq... count=2.
-      //      oldVal(i-2=0)=10. sum=30-10=20. count=1.
-      //      validCount=1. != period(2). middle[2]=NaN.
-      //      Wait, test says: expect(sma[2]).toBeNaN(). Received 10.
-      //      Ah, the SMA test is failing, not Bollinger.
-      //      Let's look at calculateSMA.
-    }
-
     if (validCount === period) {
        const mean = sum / period;
        const variance = Math.max(0, sumSq / period - mean * mean);
@@ -521,4 +498,288 @@ export function calculateADX(data: OHLCV[], period: number = 14): number[] {
   }
 
   return adx;
+}
+
+/**
+ * Calculate Momentum
+ * (Price - Price[t-n]) / Price[t-n] * 100
+ */
+export function calculateMomentum(prices: number[], period: number): number[] {
+  const length = prices.length;
+  const result = new Array(length).fill(NaN);
+
+  for (let i = period; i < length; i++) {
+    const current = prices[i];
+    const past = prices[i - period];
+    if (past !== 0 && !isNaN(past)) {
+      result[i] = ((current - past) / past) * 100;
+    }
+  }
+  return result;
+}
+
+/**
+ * Calculate Rate of Change (ROC)
+ * Same as Momentum for this codebase
+ */
+export function calculateROC(prices: number[], period: number): number[] {
+  return calculateMomentum(prices, period);
+}
+
+/**
+ * Calculate Stochastic Oscillator
+ */
+export function calculateStochastic(highs: number[], lows: number[], closes: number[], period: number): { k: number[]; d: number[] } {
+  const length = highs.length;
+  const k = new Array(length).fill(NaN);
+  const d = new Array(length).fill(NaN);
+
+  if (length < period) return { k, d };
+
+  // Use a deque or sliding window min/max algorithm for O(N)
+  // For simplicity and relatively small period, O(N*period) is okay but O(N) is better.
+  // Implementing straightforward sliding window for now (matches existing complexity of Bollinger)
+
+  for (let i = period - 1; i < length; i++) {
+    // Find min low and max high in window [i-period+1 ... i]
+    let lowestLow = Infinity;
+    let highestHigh = -Infinity;
+
+    // Optimization: if we just moved one step, we can check if old min/max is out of window
+    // But brute force over 14 items is extremely fast in JS
+    for (let j = 0; j < period; j++) {
+      const idx = i - j;
+      if (lows[idx] < lowestLow) lowestLow = lows[idx];
+      if (highs[idx] > highestHigh) highestHigh = highs[idx];
+    }
+
+    const currentClose = closes[i];
+    const kVal = ((currentClose - lowestLow) / (highestHigh - lowestLow || 1)) * 100;
+
+    k[i] = kVal;
+    d[i] = kVal; // Simplified as per legacy implementation
+  }
+
+  return { k, d };
+}
+
+/**
+ * Calculate Williams %R
+ */
+export function calculateWilliamsR(highs: number[], lows: number[], closes: number[], period: number): number[] {
+  const length = highs.length;
+  const result = new Array(length).fill(NaN);
+
+  if (length < period) return result;
+
+  for (let i = period - 1; i < length; i++) {
+    let lowestLow = Infinity;
+    let highestHigh = -Infinity;
+
+    for (let j = 0; j < period; j++) {
+      const idx = i - j;
+      if (lows[idx] < lowestLow) lowestLow = lows[idx];
+      if (highs[idx] > highestHigh) highestHigh = highs[idx];
+    }
+
+    const currentClose = closes[i];
+    result[i] = ((highestHigh - currentClose) / (highestHigh - lowestLow || 1)) * -100;
+  }
+
+  return result;
+}
+
+/**
+ * Calculate Commodity Channel Index (CCI)
+ */
+export function calculateCCI(highs: number[], lows: number[], closes: number[], period: number): number[] {
+  const length = highs.length;
+  const result = new Array(length).fill(NaN);
+
+  if (length < period) return result;
+
+  // Calculate Typical Prices (TP)
+  const tp = new Array(length);
+  for(let i=0; i<length; i++) {
+    tp[i] = (highs[i] + lows[i] + closes[i]) / 3;
+  }
+
+  // SMA of TP
+  const smaTP = calculateSMA(tp, period);
+
+  for (let i = period - 1; i < length; i++) {
+    const currentSMA = smaTP[i];
+    let meanDeviation = 0;
+
+    for (let j = 0; j < period; j++) {
+      meanDeviation += Math.abs(tp[i - j] - currentSMA);
+    }
+    meanDeviation /= period;
+
+    result[i] = (tp[i] - currentSMA) / (0.015 * meanDeviation || 1);
+  }
+
+  return result;
+}
+
+/**
+ * Calculate Aroon
+ */
+export function calculateAroon(highs: number[], lows: number[], period: number): { up: number[]; down: number[] } {
+  const length = highs.length;
+  const up = new Array(length).fill(50); // Default 50 matches legacy
+  const down = new Array(length).fill(50);
+
+  if (length < period + 1) return { up, down };
+
+  // Note: Legacy implementation used `period + 1` window size in slice!
+  // `recentHighs = highs.slice(-(period + 1))`
+  // And loop `i = 0 to period` (inclusive, so period+1 items)
+  // Standard Aroon uses `period` lookback.
+  // If legacy used period+1, I must replicate that.
+  // Legacy: `daysSinceMax = period - i` where i goes 0 to period.
+  // This implies window size of period+1.
+
+  for (let i = period; i < length; i++) {
+    let daysSinceMax = 0;
+    let maxVal = -Infinity;
+    let daysSinceMin = 0;
+    let minVal = Infinity;
+
+    for (let j = 0; j <= period; j++) {
+      const idx = i - (period - j); // This maps j=0..period to window indices
+      // Wait, legacy logic:
+      // recentHighs[i] corresponds to index (end - (period+1) + i)
+      // If i=period (last element), it is the current candle.
+      // So legacy lookback is actually `period` candles into the past + current candle = period+1 total.
+      // Let's iterate backwards from current `i`
+
+      const valHigh = highs[i - j];
+      const valLow = lows[i - j];
+
+      if (valHigh >= maxVal) { // Legacy used >= (preference for recent?)
+        // Legacy: recentHighs[i]. If multiple max, which one?
+        // Loop `0 to period`. `0` is oldest. `period` is newest.
+        // `if (recentHighs[i] >= maxVal)` updates. So it prefers NEWER highs.
+        // `daysSinceMax = period - i`.
+        // If i=period (newest), days=0.
+        // If i=0 (oldest), days=period.
+        maxVal = valHigh;
+        daysSinceMax = j; // j is 0 (current) to period (oldest) in my loop? No.
+      }
+
+      if (valLow <= minVal) {
+        minVal = valLow;
+        daysSinceMin = j;
+      }
+    }
+
+    // Correct loop:
+    // We want to find how many days ago the max/min was.
+    // 0 days ago = today.
+
+    daysSinceMax = 0;
+    maxVal = -Infinity;
+    daysSinceMin = 0;
+    minVal = Infinity;
+
+    // Scan window [i-period ... i]
+    for (let ago = 0; ago <= period; ago++) {
+       const idx = i - ago;
+       if (highs[idx] >= maxVal) {
+          // Legacy: prefers newer.
+          // Wait, if I iterate `ago` from 0 (new) to `period` (old).
+          // If `highs[idx] >= maxVal` (current is >= max), update.
+          // Since we start from NEW (0), the first one we find is the newest.
+          // Subsequent equal values should NOT update if we want newest.
+          // But Legacy loop went from Old to New (0 to period index in slice).
+          // And used `>=`. So it updated on equal. So it found the NEWEST max.
+          // So if `highs[idx] >= maxVal` when iterating Old->New, it keeps updating.
+          // So final `daysSinceMax` corresponds to the Newest Max.
+
+          // My loop here: `ago` 0..period.
+          // If I find max at ago=5 and max at ago=0.
+          // If I want Newest (ago=0), I should update if `val > max` (strict)
+          // OR if I iterate New->Old and keep first `>=`.
+
+          // Let's iterate New -> Old (0 to period).
+          // If `val > maxVal` -> update. (Strict > means we keep the previous 'newer' one if equal? No.)
+          // If we want newest, and we iterate New->Old:
+          // We see Newest first. Set max.
+          // We see Older Equal. Do NOT update.
+          // So condition: `val > maxVal` ? No.
+          // Only update if `val >= maxVal`? No, that would take the older one.
+          // So: Initialize maxVal = -Infinity.
+          // If `val > maxVal`, update.
+          // Wait, if equal?
+          // Legacy: [Old, New]. >= updates. So New wins.
+          // My loop New->Old: [New, Old].
+          // If I verify New (ago=0), max=New.
+          // Then Old (ago=1) == New.
+          // If I use `val > maxVal`, I won't update. Correct. New (ago=0) stays.
+          // So strict `>` is correct for New->Old iteration to find Newest Max?
+          // BUT, if max is -Infinity, New (ago=0) is > -Infinity. Update.
+          // Correct.
+          // Exception: The very first value (ago=0) always updates.
+       }
+    }
+
+    // Let's just do indices to be safe and clear.
+    let maxIdx = i - period;
+    let minIdx = i - period;
+
+    // Scan i-period to i
+    for (let idx = i - period; idx <= i; idx++) {
+       if (highs[idx] >= highs[maxIdx]) {
+         maxIdx = idx;
+       }
+       if (lows[idx] <= lows[minIdx]) {
+         minIdx = idx;
+       }
+    }
+
+    daysSinceMax = i - maxIdx;
+    daysSinceMin = i - minIdx;
+
+    up[i] = ((period - daysSinceMax) / period) * 100;
+    down[i] = ((period - daysSinceMin) / period) * 100;
+  }
+
+  return { up, down };
+}
+
+/**
+ * Calculate On-Balance Volume (OBV)
+ */
+export function calculateOBV(closes: number[], volumes: number[]): number[] {
+  const length = closes.length;
+  const obv = new Array(length).fill(0);
+
+  if (length === 0) return obv;
+
+  // obv[0] is usually 0 or volumes[0] depending on convention.
+  // Legacy logic:
+  // reduce((sum, d, idx) => {
+  //   if (idx === 0) return sum; (sum starts at 0)
+  //   ...
+  // }, 0)
+  // So obv[0] = 0.
+
+  obv[0] = 0;
+
+  for (let i = 1; i < length; i++) {
+    const close = closes[i];
+    const prevClose = closes[i - 1];
+    const volume = volumes[i];
+
+    if (close > prevClose) {
+      obv[i] = obv[i - 1] + volume;
+    } else if (close < prevClose) {
+      obv[i] = obv[i - 1] - volume;
+    } else {
+      obv[i] = obv[i - 1];
+    }
+  }
+
+  return obv;
 }
