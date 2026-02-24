@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2026-02-26 - Default Admin Configuration Bypass in Production
+**Vulnerability:** The `env.ts` validation schema allowed `ENABLE_DEFAULT_ADMIN=true` in production with the default password `admin123`. While the code checked for insecure `JWT_SECRET`, it missed checking the default admin password when enabled.
+**Learning:** Environment validation often focuses on *missing* variables (like `JWT_SECRET`) but neglects *insecure combinations* of valid variables (like enabling admin with default credentials).
+**Prevention:** Always validate sensitive configuration *values* (especially defaults) against environment contexts (production vs dev) using explicit logic checks or schema refinements to reject insecure defaults in production.
