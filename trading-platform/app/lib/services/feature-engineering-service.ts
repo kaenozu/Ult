@@ -17,6 +17,13 @@ import {
   calculateBollingerBands,
   calculateATR,
   calculateADX,
+  calculateMomentum,
+  calculateROC,
+  calculateStochastic,
+  calculateWilliamsR,
+  calculateCCI,
+  calculateAroon,
+  calculateOBV
 } from '../utils/technical-analysis';
 import { RSI_CONFIG, SMA_CONFIG, MACD_CONFIG, BOLLINGER_BANDS } from '@/app/constants';
 import { candlestickPatternService } from './candlestick-pattern-service';
@@ -250,8 +257,8 @@ export class FeatureEngineeringService {
 
     // Derived values mapping
     const volatility = this.calculateVolatility(data.map(d => d.close), 20);
-    const momentum = this.calculateMomentum(data.map(d => d.close), 10);
-    const rateOfChange = this.calculateROC(data.map(d => d.close), 12);
+    const momentum = this.calculateMomentumScalar(data.map(d => d.close), 10);
+    const rateOfChange = this.calculateROCScalar(data.map(d => d.close), 12);
 
     const prices = data.map(d => d.close);
     const rsiArray = calculateRSI(prices, RSI_CONFIG.DEFAULT_PERIOD);
@@ -316,10 +323,6 @@ export class FeatureEngineeringService {
      };
   }
 
-  // NOTE: I need to fix `calculateTechnicalFeatures` to optionally return raw values or split it.
-  // The ML implementation returned DEVIATIONS for SMAs.
-  // I will refactor `calculateTechnicalFeatures` to return both or Raw values, and let consumers compute deviations.
-
   /**
    * Refactored calculateTechnicalFeatures to support all domains
    */
@@ -362,8 +365,6 @@ export class FeatureEngineeringService {
     const rsiChange = rsiValue - prev(rsi, rsi.length - 2, 50);
 
     // SMA Deviations (for ML)
-    // Note: The ML interface expects deviations. I will keep it this way for TechnicalFeatures interface compliance.
-    // For BasicFeatures, I will need to access the raw SMA values. I'll re-calculate or handle it there.
     const sma5Dev = (currentPrice - last(sma5, currentPrice)) / currentPrice * 100;
     const sma10Dev = (currentPrice - last(sma10, currentPrice)) / currentPrice * 100;
     const sma20Dev = (currentPrice - last(sma20, currentPrice)) / currentPrice * 100;
@@ -392,23 +393,34 @@ export class FeatureEngineeringService {
     const atrAvg = atrArray.length > 0 ? atrArray.reduce((sum, v) => sum + v, 0) / atrArray.length : atrValue;
     const atrRatio = atrValue / (atrAvg || 1);
 
-    // Momentum & ROC
-    const momentum10 = this.calculateMomentum(prices, 10);
-    const momentum20 = this.calculateMomentum(prices, 20);
-    const roc12 = this.calculateROC(prices, 12);
-    const roc25 = this.calculateROC(prices, 25);
+    // Momentum & ROC - Vectorized
+    const momentum10Arr = calculateMomentum(prices, 10);
+    const momentum20Arr = calculateMomentum(prices, 20);
+    const roc12Arr = calculateROC(prices, 12);
+    const roc25Arr = calculateROC(prices, 25);
 
-    // Stochastic
-    const stoch = this.calculateStochastic(highs, lows, prices, 14);
+    const momentum10 = last(momentum10Arr, 0);
+    const momentum20 = last(momentum20Arr, 0);
+    const roc12 = last(roc12Arr, 0);
+    const roc25 = last(roc25Arr, 0);
 
-    // Williams %R
-    const williamsR = this.calculateWilliamsR(highs, lows, prices, 14);
+    // Stochastic - Vectorized
+    const stoch = calculateStochastic(highs, lows, prices, 14);
+    const stochK = last(stoch.k, 50);
+    const stochD = last(stoch.d, 50);
 
-    // CCI
-    const cci = this.calculateCCI(highs, lows, prices, 20);
+    // Williams %R - Vectorized
+    const williamsRArr = calculateWilliamsR(highs, lows, prices, 14);
+    const williamsR = last(williamsRArr, -50);
 
-    // Aroon
-    const aroon = this.calculateAroon(highs, lows, 14);
+    // CCI - Vectorized
+    const cciArr = calculateCCI(highs, lows, prices, 20);
+    const cci = last(cciArr, 0);
+
+    // Aroon - Vectorized
+    const aroon = calculateAroon(highs, lows, 14);
+    const aroonUp = last(aroon.up, 50);
+    const aroonDown = last(aroon.down, 50);
 
     // Volume
     const volumeMA5 = this.calculateSMA_Internal(volumes, 5);
@@ -416,7 +428,7 @@ export class FeatureEngineeringService {
     const volumeRatio = currentVolume / (last(volumeMA20, currentVolume) || 1);
     const volumeTrend = this.classifyVolumeTrend(volumes.slice(-5));
 
-    // Price Position/Velocity
+    // Price Position/Velocity (Keeping internal helpers as they are specific/simple)
     const pricePosition = this.calculatePricePosition(prices.slice(-50));
     const priceVelocity = this.calculateVelocity(prices, 5);
     const priceAcceleration = this.calculateAcceleration(prices, 5);
@@ -447,12 +459,12 @@ export class FeatureEngineeringService {
       momentum20,
       rateOfChange12: roc12,
       rateOfChange25: roc25,
-      stochasticK: stoch.k,
-      stochasticD: stoch.d,
+      stochasticK: stochK,
+      stochasticD: stochD,
       williamsR,
       cci,
-      aroonUp: aroon.up,
-      aroonDown: aroon.down,
+      aroonUp,
+      aroonDown,
       volumeRatio: isNaN(volumeRatio) ? 1 : volumeRatio,
       volumeMA5: last(volumeMA5, currentVolume),
       volumeMA20: last(volumeMA20, currentVolume),
@@ -460,35 +472,6 @@ export class FeatureEngineeringService {
       pricePosition,
       priceVelocity,
       priceAcceleration,
-    };
-  }
-
-  private calculateAroon(highs: number[], lows: number[], period: number): { up: number; down: number } {
-    if (highs.length < period + 1) return { up: 50, down: 50 };
-    const recentHighs = highs.slice(-(period + 1));
-    const recentLows = lows.slice(-(period + 1));
-    
-    let daysSinceMax = 0;
-    let maxVal = -Infinity;
-    for (let i = 0; i <= period; i++) {
-      if (recentHighs[i] >= maxVal) {
-        maxVal = recentHighs[i];
-        daysSinceMax = period - i;
-      }
-    }
-    
-    let daysSinceMin = 0;
-    let minVal = Infinity;
-    for (let i = 0; i <= period; i++) {
-      if (recentLows[i] <= minVal) {
-        minVal = recentLows[i];
-        daysSinceMin = period - i;
-      }
-    }
-    
-    return {
-      up: ((period - daysSinceMax) / period) * 100,
-      down: ((period - daysSinceMin) / period) * 100
     };
   }
 
@@ -507,50 +490,19 @@ export class FeatureEngineeringService {
 
   // --- Helpers ---
 
-  public calculateMomentum(prices: number[], period: number): number {
+  // Renamed to avoid conflict with imported calculateMomentum
+  public calculateMomentumScalar(prices: number[], period: number): number {
     if (prices.length < period + 1) return 0;
     const current = prices[prices.length - 1];
     const past = prices[prices.length - 1 - period];
     return ((current - past) / past) * 100;
   }
 
-  public calculateROC(prices: number[], period: number): number {
-    return this.calculateMomentum(prices, period); // ROC is essentially Momentum in %
+  public calculateROCScalar(prices: number[], period: number): number {
+    return this.calculateMomentumScalar(prices, period);
   }
 
-  private calculateStochastic(highs: number[], lows: number[], closes: number[], period: number): { k: number; d: number } {
-    const start = Math.max(0, highs.length - period);
-    const recentHighs = highs.slice(start);
-    const recentLows = lows.slice(start);
-    const highestHigh = Math.max(...recentHighs);
-    const lowestLow = Math.min(...recentLows);
-    const currentClose = closes[closes.length - 1];
-    const k = ((currentClose - lowestLow) / (highestHigh - lowestLow || 1)) * 100;
-    return { k, d: k }; // Simplified
-  }
-
-  private calculateWilliamsR(highs: number[], lows: number[], closes: number[], period: number): number {
-    const start = Math.max(0, highs.length - period);
-    const recentHighs = highs.slice(start);
-    const recentLows = lows.slice(start);
-    const highestHigh = Math.max(...recentHighs);
-    const lowestLow = Math.min(...recentLows);
-    const currentClose = closes[closes.length - 1];
-    return ((highestHigh - currentClose) / (highestHigh - lowestLow || 1)) * -100;
-  }
-
-  private calculateCCI(highs: number[], lows: number[], closes: number[], period: number): number {
-    const start = Math.max(0, highs.length - period);
-    const typicalPrices: number[] = [];
-    for (let i = start; i < closes.length; i++) {
-      typicalPrices.push((highs[i] + lows[i] + closes[i]) / 3);
-    }
-    if (typicalPrices.length === 0) return 0;
-    const sma = typicalPrices.reduce((sum, tp) => sum + tp, 0) / typicalPrices.length;
-    const meanDeviation = typicalPrices.reduce((sum, tp) => sum + Math.abs(tp - sma), 0) / typicalPrices.length;
-    const currentTP = typicalPrices[typicalPrices.length - 1];
-    return (currentTP - sma) / (0.015 * meanDeviation || 1);
-  }
+  // Helper methods removed (calculateStochastic, calculateWilliamsR, calculateCCI) as they are now vectorized imports
 
   private calculateSMA_Internal(values: number[], period: number): number[] {
     // Re-implementation of simple SMA for internal use (e.g. Volume) or use shared util
@@ -615,17 +567,6 @@ export class FeatureEngineeringService {
     const mean = slice.reduce((sum, v) => sum + v, 0) / slice.length;
     const variance = slice.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / slice.length;
     return Math.sqrt(variance);
-  }
-
-  private calculateEMA(values: number[], period: number): number {
-    if (values.length === 0) return 0;
-    if (values.length < period) return values[values.length - 1];
-    const multiplier = 2 / (period + 1);
-    let ema = values[0];
-    for (let i = 1; i < values.length; i++) {
-      ema = (values[i] - ema) * multiplier + ema;
-    }
-    return ema;
   }
 
   public calculateTimeSeriesFeatures(data: OHLCV[]): TimeSeriesFeatures {
@@ -772,11 +713,11 @@ export class FeatureEngineeringService {
     const rollingStd20 = this.calculateRollingStd(prices, 20);
 
     // Exponential MA
-    const exponentialMA = this.calculateEMA(prices, 12);
+    const exponentialMA = this.lastValue(calculateEMA(prices, 12));
 
     // Momentum Change
-    const momentum10 = this.calculateMomentum(prices, 10);
-    const momentum5 = this.calculateMomentum(prices, 5);
+    const momentum10 = this.calculateMomentumScalar(prices, 10);
+    const momentum5 = this.calculateMomentumScalar(prices, 5);
     const momentumChange = momentum10 - momentum5;
 
     // Acceleration
@@ -890,9 +831,16 @@ export class FeatureEngineeringService {
     return count;
   }
 
-  private lastValue(arr: number[]): number {
+  private lastValue(arr: number[], fallback: number = 0): number {
+    // Helper to get last valid value (or 0/fallback)
+    // Note: arr might contain NaNs. We usually want the last element regardless of NaN for array alignment,
+    // but if we want a scalar value for a feature object, we typically want valid.
+    // However, vectorized functions pad with NaNs.
+    // If we are at index i, and we want values aligned to i, we just take arr[i].
+    // This helper is for `calculateTechnicalFeatures` which returns single scalar values for the *latest* point.
+    // So taking the last element is correct.
     const valid = arr.filter(v => !isNaN(v));
-    return valid.length > 0 ? valid[valid.length - 1] : 0;
+    return valid.length > 0 ? valid[valid.length - 1] : fallback;
   }
 
   private quantifyTextData(newsTexts: string[]): NewsSentimentData {
@@ -969,11 +917,6 @@ export class FeatureEngineeringService {
       return 1;
   }
 
-  // Method to extract raw ML Features (for compatibility with extractFeatures from ML domain)
-  // The ML domain had `extractFeatures(data, lookback)` which returned `MLFeatures[]`
-  /**
-   * Normalize features for ML models
-   */
   public normalizeFeatures(features: MLFeatures[]): { normalized: MLFeatures[]; scalers: Record<string, { min: number; max: number }> } {
     if (features.length === 0) return { normalized: [], scalers: {} };
 
@@ -1000,13 +943,76 @@ export class FeatureEngineeringService {
     return { normalized, scalers };
   }
 
+  /**
+   * Extract features using vectorized calculations (O(N) Complexity)
+   */
   public extractFeatures(data: OHLCV[], lookback: number): MLFeatures[] {
-    // This replicates the `extractFeatures` logic from app/lib/ml/FeatureEngineering.ts
-    // We can reuse calculateTechnicalFeatures but need to wrap it in a loop
     if (data.length <= lookback) return [];
 
     const features: MLFeatures[] = [];
     const startIndex = Math.max(lookback, 1);
+
+    // --- Pre-calculate all indicators (Vectorized) ---
+    const prices = data.map(d => d.close);
+    const highs = data.map(d => d.high);
+    const lows = data.map(d => d.low);
+    const volumes = data.map(d => d.volume);
+
+    // Basic
+    const rsi = calculateRSI(prices, 14);
+    const sma5 = calculateSMA(prices, 5);
+    const sma20 = calculateSMA(prices, 20);
+    const sma50 = calculateSMA(prices, 50);
+    const sma200 = calculateSMA(prices, 200);
+    const ema12 = calculateEMA(prices, 12);
+    const ema26 = calculateEMA(prices, 26);
+
+    // MACD
+    const macdData = calculateMACD(prices, 12, 26, 9);
+
+    // BB
+    const bb = calculateBollingerBands(prices, 20, 2);
+
+    // ATR
+    const atr = calculateATR(highs, lows, prices, 14);
+
+    // ADX
+    const adxData = calculateADX(data, 14);
+
+    // Momentum
+    const momentum10 = calculateMomentum(prices, 10);
+    const momentum20 = calculateMomentum(prices, 20);
+    const momentum5 = calculateMomentum(prices, 5); // Used explicitly in loop
+    const roc12 = calculateROC(prices, 12);
+
+    // Oscillators
+    const stoch = calculateStochastic(highs, lows, prices, 14);
+    const williamsR = calculateWilliamsR(highs, lows, prices, 14);
+    const cci = calculateCCI(highs, lows, prices, 20);
+    const aroon = calculateAroon(highs, lows, 14);
+
+    // Volume
+    const volumeMA5 = calculateSMA(volumes, 5);
+    const volumeMA20 = calculateSMA(volumes, 20);
+
+    // OBV (Global)
+    const obvGlobal = calculateOBV(prices, volumes);
+
+    // VWAP Helpers (Moving VWAP for window)
+    const cumVol = new Array(data.length).fill(0);
+    const cumPV = new Array(data.length).fill(0);
+    let runningVol = 0;
+    let runningPV = 0;
+    for (let i = 0; i < data.length; i++) {
+        runningVol += volumes[i];
+        runningPV += prices[i] * volumes[i];
+        cumVol[i] = runningVol;
+        cumPV[i] = runningPV;
+    }
+
+    // Helpers
+    const getVal = (arr: number[], i: number) => (i >= 0 && i < arr.length) ? (isNaN(arr[i]) ? 0 : arr[i]) : 0;
+    const getValRaw = (arr: number[], i: number) => (i >= 0 && i < arr.length) ? arr[i] : NaN;
 
     const calcStd = (values: number[]): number => {
       if (values.length === 0) return 0;
@@ -1015,110 +1021,153 @@ export class FeatureEngineeringService {
       return Math.sqrt(variance);
     };
 
+    // --- Main Loop (Indexing Only) ---
     for (let i = startIndex; i <= data.length; i++) {
-      const window = data.slice(i - lookback, i);
-      const current = window[window.length - 1];
-      const technical = this.calculateTechnicalFeatures(window);
-      const timeSeries = this.calculateTimeSeriesFeatures(window);
-      const prices = window.map(d => d.close);
-      const volumes = window.map(d => d.volume);
+       // Current index is i-1 (because i goes up to data.length for slice compatibility)
+       const currIdx = i - 1;
+       const current = data[currIdx];
 
-      const obv = window.reduce((sum, d, idx) => {
-        if (idx === 0) return sum;
-        const prev = window[idx - 1].close;
-        if (d.close > prev) return sum + d.volume;
-        if (d.close < prev) return sum - d.volume;
-        return sum;
-      }, 0);
+       // Window: data[i-lookback ... i-1] (slice i-lookback, i)
+       const window = data.slice(i - lookback, i);
 
-      const vwap = (() => {
-        const totalVolume = volumes.reduce((sum, v) => sum + v, 0);
-        if (totalVolume === 0) return current.close;
-        const totalValue = window.reduce((sum, d) => sum + d.close * d.volume, 0);
-        return totalValue / totalVolume;
-      })();
+       // Technicals (Lookup)
+       const close = current.close;
 
-      const momentum5 = this.calculateMomentum(prices, 5);
-      const supportLevel = Math.min(...prices);
-      const resistanceLevel = Math.max(...prices);
-      const volumeStd = calcStd(volumes);
+       // Calculate Deviations for SMAs (as per legacy)
+       const sma5Val = getValRaw(sma5, currIdx);
+       const sma5Dev = isNaN(sma5Val) ? 0 : (close - sma5Val) / close * 100;
 
-      const returns = prices.slice(1).map((price, idx) => (price - prices[idx]) / (prices[idx] || 1));
-      const historicalVolatility = calcStd(returns) * Math.sqrt(252) * 100;
+       const sma20Val = getValRaw(sma20, currIdx);
+       const sma20Dev = isNaN(sma20Val) ? 0 : (close - sma20Val) / close * 100;
 
-      const parkinsonVolatility = (() => {
-        if (window.length === 0) return 0;
-        const logRatios = window.map(d => Math.log((d.high || 1) / (d.low || 1)));
-        const meanSquare = logRatios.reduce((sum, v) => sum + v * v, 0) / logRatios.length;
-        return Math.sqrt(meanSquare) * Math.sqrt(252) * 100;
-      })();
+       const sma50Val = getValRaw(sma50, currIdx);
+       const sma50Dev = isNaN(sma50Val) ? 0 : (close - sma50Val) / close * 100;
 
-      const garmanKlassVolatility = (() => {
-        if (window.length === 0) return 0;
-        const values = window.map(d => {
+       const sma200Val = getValRaw(sma200, currIdx);
+       const sma200Dev = isNaN(sma200Val) ? 0 : (close - sma200Val) / close * 100;
+
+       const ema12Val = getValRaw(ema12, currIdx);
+       const ema12Dev = isNaN(ema12Val) ? 0 : (close - ema12Val) / close * 100;
+
+       const ema26Val = getValRaw(ema26, currIdx);
+       const ema26Dev = isNaN(ema26Val) ? 0 : (close - ema26Val) / close * 100;
+
+       const bbUp = getValRaw(bb.upper, currIdx);
+       const bbLow = getValRaw(bb.lower, currIdx);
+       const bbPos = (isNaN(bbUp) || isNaN(bbLow)) ? 50 : ((close - bbLow) / (bbUp - bbLow || 1)) * 100;
+
+       const atrVal = getValRaw(atr, currIdx);
+       const atrPercent = isNaN(atrVal) ? 0 : (atrVal / close) * 100;
+
+       const rsiVal = getValRaw(rsi, currIdx);
+       const prevRsiVal = getValRaw(rsi, currIdx - 1);
+       const rsiChange = (isNaN(rsiVal) || isNaN(prevRsiVal)) ? 0 : rsiVal - prevRsiVal;
+
+       const volMA5 = getValRaw(volumeMA5, currIdx);
+       const volMA20 = getValRaw(volumeMA20, currIdx); // Legacy calc technicals used SMA20 for volume ratio
+       const volRatio = isNaN(volMA20) ? 1 : current.volume / (volMA20 || 1);
+
+       // OBV (Window based)
+       const obvStartIdx = i - lookback;
+       const obvStartVal = (obvStartIdx >= 0 && obvStartIdx < obvGlobal.length) ? obvGlobal[obvStartIdx] : 0;
+       const obvVal = (currIdx < obvGlobal.length ? obvGlobal[currIdx] : 0) - obvStartVal;
+
+       // VWAP (Window based)
+       const prevIdx = i - lookback - 1;
+       const volSum = cumVol[currIdx] - (prevIdx >= 0 ? cumVol[prevIdx] : 0);
+       const pvSum = cumPV[currIdx] - (prevIdx >= 0 ? cumPV[prevIdx] : 0);
+       const vwap = volSum === 0 ? close : pvSum / volSum;
+
+       // Time Series Features (Legacy logic kept for now)
+       const timeSeries = this.calculateTimeSeriesFeatures(window);
+
+       // Volatility
+       const windowPrices = window.map(d => d.close);
+       const windowVolumes = window.map(d => d.volume);
+
+       // Historical Volatility
+       const returns = windowPrices.slice(1).map((p, idx) => (p - windowPrices[idx]) / (windowPrices[idx] || 1));
+       const historicalVolatility = calcStd(returns) * Math.sqrt(252) * 100;
+
+       // Parkinson
+       const logRatios = window.map(d => Math.log((d.high || 1) / (d.low || 1)));
+       const meanSquare = logRatios.reduce((sum, v) => sum + v * v, 0) / logRatios.length;
+       const parkinsonVolatility = Math.sqrt(meanSquare) * Math.sqrt(252) * 100;
+
+       // Garman Klass
+       const gkValues = window.map(d => {
           const logHL = Math.log((d.high || 1) / (d.low || 1));
           const logCO = Math.log((d.close || 1) / (d.open || 1));
           return 0.5 * logHL * logHL - (2 * Math.log(2) - 1) * logCO * logCO;
-        });
-        const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-        return Math.sqrt(Math.max(mean, 0)) * Math.sqrt(252) * 100;
-      })();
+       });
+       const gkMean = gkValues.reduce((sum, v) => sum + v, 0) / gkValues.length;
+       const garmanKlassVolatility = Math.sqrt(Math.max(gkMean, 0)) * Math.sqrt(252) * 100;
 
-      const adxHistory = calculateADX(window, 14);
-      const adx = adxHistory[adxHistory.length - 1] || 20;
-      const prevADX = adxHistory[adxHistory.length - 2] || adx;
-      const adxTrend = adx - prevADX;
+       // ADX Trend
+       const adxVal = getValRaw(adxData, currIdx);
+       const prevAdxVal = getValRaw(adxData, currIdx - 1);
+       const adxTrend = (isNaN(adxVal) || isNaN(prevAdxVal)) ? 0 : adxVal - prevAdxVal;
 
-      const aroon = this.calculateAroon(window.map(d => d.high), window.map(d => d.low), 14);
-      const candlePatternFeatures = candlestickPatternService.calculatePatternFeatures(window);
-      const candlePattern = candlestickPatternService.getPatternSignal(candlePatternFeatures);
+       // Support/Resistance (Window)
+       const supportLevel = Math.min(...windowPrices);
+       const resistanceLevel = Math.max(...windowPrices);
 
-      const currentDate = new Date(current.date);
-      const weekOfMonth = Math.floor((currentDate.getDate() - 1) / 7) + 1;
+       // Volume Std
+       const volumeStd = calcStd(windowVolumes);
 
-      // Construct MLFeatures object
-      features.push({
+       // Volume Trend
+       const volTrendStr = this.classifyVolumeTrend(windowVolumes.slice(-5));
+       const volumeTrend = volTrendStr === 'INCREASING' ? 1 : -1;
+
+       // Candle Pattern
+       const candlePatternFeatures = candlestickPatternService.calculatePatternFeatures(window);
+       const candlePattern = candlestickPatternService.getPatternSignal(candlePatternFeatures);
+
+       const currentDate = new Date(current.date);
+       const weekOfMonth = Math.floor((currentDate.getDate() - 1) / 7) + 1;
+
+       features.push({
         close: current.close,
         open: current.open,
         high: current.high,
         low: current.low,
-        rsi: technical.rsi,
-        rsiChange: technical.rsiChange,
-        sma5: technical.sma5, // Deviation
-        sma20: technical.sma20,
-        sma50: technical.sma50,
-        sma200: technical.sma200,
-        ema12: technical.ema12,
-        ema26: technical.ema26,
-        priceMomentum: technical.momentum10,
-        volumeRatio: technical.volumeRatio,
-        volatility: technical.atrPercent,
-        macdSignal: technical.macdSignal,
-        macdHistogram: technical.macdHistogram,
-        bollingerPosition: technical.bbPosition,
-        atrPercent: technical.atrPercent,
-        stochasticK: technical.stochasticK,
-        stochasticD: technical.stochasticD,
-        williamsR: technical.williamsR,
-        adx,
-        cci: technical.cci,
-        roc: technical.rateOfChange12,
-        obv,
-        vwap,
+        rsi: isNaN(rsiVal) ? 50 : rsiVal,
+        rsiChange: rsiChange,
+        sma5: sma5Dev,
+        sma20: sma20Dev,
+        sma50: sma50Dev,
+        sma200: sma200Dev,
+        ema12: ema12Dev,
+        ema26: ema26Dev,
+        priceMomentum: getVal(momentum10, currIdx),
+        volumeRatio: volRatio,
+        volatility: atrPercent,
+        macdSignal: getVal(macdData.signal, currIdx),
+        macdHistogram: getVal(macdData.histogram, currIdx),
+        bollingerPosition: bbPos,
+        atrPercent: atrPercent,
+        stochasticK: getVal(stoch.k, currIdx),
+        stochasticD: getVal(stoch.d, currIdx),
+        williamsR: getVal(williamsR, currIdx),
+        adx: isNaN(adxVal) ? 20 : adxVal,
+        cci: getVal(cci, currIdx),
+        roc: getVal(roc12, currIdx),
+        obv: obvVal,
+        vwap: vwap,
         volumeProfile: [current.volume],
         priceLevel: current.close,
-        momentum5,
-        momentum10: technical.momentum10,
-        momentum20: technical.momentum20,
+        momentum5: getVal(momentum5, currIdx),
+        momentum10: getVal(momentum10, currIdx),
+        momentum20: getVal(momentum20, currIdx),
         historicalVolatility,
         parkinsonVolatility,
         garmanKlassVolatility,
         adxTrend,
-        aroonUp: aroon.up,
-        aroonDown: aroon.down,
-        volumeSMA: technical.volumeMA5,
+        aroonUp: getVal(aroon.up, currIdx),
+        aroonDown: getVal(aroon.down, currIdx),
+        volumeSMA: isNaN(volMA5) ? 0 : volMA5,
         volumeStd,
-        volumeTrend: technical.volumeTrend === 'INCREASING' ? 1 : -1,
+        volumeTrend,
         candlePattern,
         supportLevel,
         resistanceLevel,
@@ -1130,6 +1179,7 @@ export class FeatureEngineeringService {
         timestamp: data.length > 1 ? (i - 1) / (data.length - 1) : 0,
       });
     }
+
     return features;
   }
 }
