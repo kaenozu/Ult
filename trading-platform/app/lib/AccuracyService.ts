@@ -248,7 +248,10 @@ class AccuracyService {
     }
 
     private preCalculateIndicators(data: OHLCV[]): AnalysisContext['preCalculatedIndicators'] {
-        const closes = data.map(d => d.close);
+        const length = data.length;
+        const closes = new Float64Array(length);
+        for (let i = 0; i < length; i++) closes[i] = data[i].close;
+
         const rsi = new Map<number, number[]>();
         const sma = new Map<number, number[]>();
         for (const rsiP of RSI_CONFIG.PERIOD_OPTIONS) rsi.set(rsiP, technicalIndicatorService.calculateRSI(closes, rsiP));
