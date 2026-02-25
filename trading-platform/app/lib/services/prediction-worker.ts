@@ -28,6 +28,14 @@ export interface PredictionRequest {
     bb: { upper: number[]; middle: number[]; lower: number[] };
     atr: number[];
   };
+  patternFeatures?: PatternFeatures;
+  patternSignal?: number;
+  weights?: {
+    RF: number;
+    XGB: number;
+    LSTM: number;
+    TECHNICAL: number;
+  };
 }
 
 export interface PredictionResult {
@@ -37,6 +45,12 @@ export interface PredictionResult {
   expectedReturn: number;
   duration: number;
   features: PredictionFeatures;
+  patternFeatures: PatternFeatures;
+  components: {
+    rf: number;
+    xgb: number;
+    lstm: number;
+  };
   ensembleWeights: {
     RF: number;
     XGB: number;
@@ -55,10 +69,10 @@ const workerCode = `
 // Robust prediction logic for web worker (Production implementation)
 
 self.onmessage = function(e) {
-  const { id, symbol, data, indicators } = e.data;
+  const { id, symbol, data, indicators, patternFeatures, patternSignal, weights } = e.data;
   
   try {
-    // Calculate features
+    // Calculate technical features
     const features = calculateFeatures(data, indicators);
     
     // Calculate predictions from each model (Algorithmic approximation)
@@ -66,16 +80,28 @@ self.onmessage = function(e) {
     const xgb = calculateXGB(features);
     const lstm = calculateLSTM(features);
     
+    // Use passed weights or defaults
+    const w = weights || { RF: 0.35, XGB: 0.35, LSTM: 0.30, TECHNICAL: 0 };
+
     // Ensemble with optimized weights
-    const weights = { RF: 0.35, XGB: 0.35, LSTM: 0.30 };
-    const ensemble = rf * weights.RF + xgb * weights.XGB + lstm * weights.LSTM;
+    // If patternSignal is provided, include it
+    const technicalComponent = (patternSignal || 0) * (w.TECHNICAL || 0);
+    const ensemble = rf * w.RF + xgb * w.XGB + lstm * w.LSTM + technicalComponent;
     
-    // Calculate confidence based on technical alignment
-    const confidence = calculateConfidence(features, ensemble);
+    // Calculate confidence based on technical alignment and pattern strength
+    const confidence = calculateConfidence(features, patternFeatures, ensemble);
     
     // Generate signal with dynamic price targets
     const signal = generateSignal(symbol, ensemble, confidence, data[data.length - 1]);
     
+    // Default pattern features if not provided (should be provided by main thread)
+    const finalPatternFeatures = patternFeatures || {
+      isDoji: 0, isHammer: 0, isInvertedHammer: 0, isShootingStar: 0,
+      isBullishEngulfing: 0, isBearishEngulfing: 0, isMorningStar: 0, isEveningStar: 0,
+      isPiercingLine: 0, isDarkCloudCover: 0, isBullishHarami: 0, isBearishHarami: 0,
+      bodyRatio: 0.5, upperShadowRatio: 0.25, lowerShadowRatio: 0.25, candleStrength: 0
+    };
+
     self.postMessage({
       id,
       signal,
@@ -83,7 +109,9 @@ self.onmessage = function(e) {
       expectedReturn: ensemble,
       duration: 5,
       features,
-      ensembleWeights: { ...weights, TECHNICAL: 0 }
+      patternFeatures: finalPatternFeatures,
+      components: { rf, xgb, lstm },
+      ensembleWeights: w
     });
   } catch (error) {
     self.postMessage({
@@ -135,11 +163,16 @@ function calculateLSTM(f) {
   return (f.priceMomentum * 0.6) + (f.macdSignal * 0.4);
 }
 
-function calculateConfidence(f, ensemble) {
+function calculateConfidence(f, patternFeatures, ensemble) {
   let conf = 0.5;
   if (f.rsi < 20 || f.rsi > 80) conf += 0.15;
   if (Math.abs(f.sma20) > 3) conf += 0.1;
   if (f.volumeRatio > 2) conf += 0.05;
+
+  if (patternFeatures && patternFeatures.candleStrength > 0.7) {
+    conf += 0.08;
+  }
+
   return Math.min(0.95, conf);
 }
 
@@ -232,7 +265,7 @@ export class PredictionWorker {
     const calculator = new PredictionCalculator();
     const featureService = featureEngineeringService;
 
-    const { symbol, data, indicators } = request;
+    const { symbol, data, indicators, weights: passedWeights, patternSignal: passedSignal } = request;
     const transformedIndicators = indicators ? {
       ...indicators,
       macd: {
@@ -246,20 +279,23 @@ export class PredictionWorker {
         lower: indicators.bb?.lower || []
       }
     } : undefined;
+
     const features = featureService.calculateBasicFeatures(data);
-    const patternFeatures = candlestickPatternService.calculatePatternFeatures(data);
+
+    // Use passed pattern features or calculate new ones
+    const patternFeatures = request.patternFeatures || candlestickPatternService.calculatePatternFeatures(data);
     
     // Calculate predictions
     const rf = calculator.calculateRandomForest(features);
     const xgb = calculator.calculateXGBoost(features);
     const lstm = calculator.calculateLSTM(features);
     
-    // Add pattern signal
-    const patternSignal = candlestickPatternService.getPatternSignal(patternFeatures);
+    // Add pattern signal (use passed or calculate)
+    const patternSignal = passedSignal !== undefined ? passedSignal : candlestickPatternService.getPatternSignal(patternFeatures);
     
     // Ensemble with pattern influence
-    const weights = { RF: 0.30, XGB: 0.30, LSTM: 0.30, PATTERN: 0.10 };
-    const ensemble = rf * weights.RF + xgb * weights.XGB + lstm * weights.LSTM + patternSignal * weights.PATTERN;
+    const weights = passedWeights || { RF: 0.30, XGB: 0.30, LSTM: 0.30, TECHNICAL: 0.10 };
+    const ensemble = rf * weights.RF + xgb * weights.XGB + lstm * weights.LSTM + patternSignal * weights.TECHNICAL;
     
     // Calculate confidence
     const confidence = this.calculateConfidence(features, patternFeatures, ensemble);
@@ -274,7 +310,9 @@ export class PredictionWorker {
       expectedReturn: Math.abs(ensemble),
       duration: ensemble > 0 ? 5 : -5,
       features,
-      ensembleWeights: { RF: weights.RF, XGB: weights.XGB, LSTM: weights.LSTM, TECHNICAL: weights.PATTERN }
+      patternFeatures,
+      components: { rf, xgb, lstm },
+      ensembleWeights: weights
     };
   }
 

@@ -9,7 +9,7 @@ import { Stock, Signal, OHLCV } from '@/app/types';
 
 /**
  * 成功体験デモページ (Sato-san Scenario)
- * 初心者がこのアプリを使って利益を出すまでの一連の流れを可視化します。
+ * 初心者がこのアプリを開いて利益を出すまでの一連の流れを可視化します。
  */
 export default function DemoPage() {
   // 1. デモ用の銘柄データ (トヨタ自動車)
@@ -22,7 +22,6 @@ export default function DemoPage() {
     market: 'japan',
     sector: '輸送用機器',
     volume: 12500000,
-    sector: 'auto',
   };
 
   // 2. デモ用の完璧なAIシグナル
