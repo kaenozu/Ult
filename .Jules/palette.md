@@ -11,3 +11,7 @@
 ## 2026-02-18 - Semantic Structures in Modals
 **Learning:** Complex components like `AlertConditionManager` often use `div`s for layout (e.g., tabs, modals) without semantic roles. This makes navigation impossible for screen readers. Explicitly adding `role="dialog"`, `aria-modal="true"`, and `role="tablist"` transforms a confusing "soup of divs" into a navigable application structure.
 **Action:** When creating or reviewing modal interfaces with tabs, always ensure the container has `role="dialog"` and the tab controls use the `tablist`/`tab` pattern.
+
+## 2026-02-28 - Visual Metrics to Accessible Progress Bars
+**Learning:** "Trader Health" and similar performance dashboards often use visual-only progress bars (styled divs) that are completely invisible to screen readers. Replacing these with `role="progressbar"` and appropriate `aria-valuenow`/`aria-label` attributes makes complex metrics accessible without changing the visual design.
+**Action:** Always verify that visual indicators (like health bars, progress meters) have semantic roles and readable labels.
