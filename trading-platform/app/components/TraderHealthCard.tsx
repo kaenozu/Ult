@@ -39,33 +39,48 @@ export function TraderHealthCard() {
   const config = getStatusConfig();
 
   return (
-    <div className={cn(
-      "p-4 rounded-xl border transition-all duration-300",
-      config.bg,
-      config.border
-    )}>
+    <div
+      role="region"
+      aria-label="トレーダー・ヘルス・ダッシュボード"
+      className={cn(
+        "p-4 rounded-xl border transition-all duration-300",
+        config.bg,
+        config.border
+      )}
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <config.icon className={cn("w-5 h-5", config.color)} />
+          <config.icon className={cn("w-5 h-5", config.color)} aria-hidden="true" />
           <h3 className="font-bold text-white tracking-tight">トレーダー・ヘルス</h3>
         </div>
-        <div className={cn(
-          "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-          config.bg,
-          config.color,
-          "border border-current/20"
-        )}>
+        <div
+          className={cn(
+            "px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+            config.bg,
+            config.color,
+            "border border-current/20"
+          )}
+          aria-live="polite"
+        >
           {config.label}
         </div>
       </div>
 
       {/* Main Score */}
       <div className="mb-4">
-        <div className="flex justify-between items-end mb-1">
+        <div className="flex justify-between items-end mb-1" id="overall-score-label">
           <span className="text-xs text-[#92adc9]">総合メンタルスコア</span>
-          <span className={cn("text-2xl font-black", config.color)}>{overallScore}</span>
+          <span className={cn("text-2xl font-black", config.color)} aria-hidden="true">{overallScore}</span>
         </div>
-        <div className="h-1.5 w-full bg-[#192633] rounded-full overflow-hidden">
+        <div
+          role="progressbar"
+          aria-labelledby="overall-score-label"
+          aria-valuenow={overallScore}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="総合メンタルスコア"
+          className="h-1.5 w-full bg-[#192633] rounded-full overflow-hidden"
+        >
           <div 
             className={cn("h-full transition-all duration-1000", config.color.replace('text-', 'bg-'))}
             style={{ width: `${overallScore}%` }}
@@ -76,27 +91,43 @@ export function TraderHealthCard() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-black/20 p-2 rounded-lg border border-white/5">
-          <span className="text-[10px] text-[#92adc9] block mb-1">ストレス</span>
+          <span className="text-[10px] text-[#92adc9] block mb-1" id="stress-label">ストレス</span>
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-1 bg-[#192633] rounded-full">
+            <div
+              role="progressbar"
+              aria-labelledby="stress-label"
+              aria-valuenow={stressLevel}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="ストレスレベル"
+              className="flex-1 h-1 bg-[#192633] rounded-full"
+            >
               <div 
                 className="h-full bg-orange-400 rounded-full" 
                 style={{ width: `${stressLevel}%` }}
               />
             </div>
-            <span className="text-[10px] font-bold text-white">{stressLevel}%</span>
+            <span className="text-[10px] font-bold text-white" aria-hidden="true">{stressLevel}%</span>
           </div>
         </div>
         <div className="bg-black/20 p-2 rounded-lg border border-white/5">
-          <span className="text-[10px] text-[#92adc9] block mb-1">規律</span>
+          <span className="text-[10px] text-[#92adc9] block mb-1" id="discipline-label">規律</span>
           <div className="flex items-center gap-2">
-            <div className="flex-1 h-1 bg-[#192633] rounded-full">
+            <div
+              role="progressbar"
+              aria-labelledby="discipline-label"
+              aria-valuenow={disciplineScore}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="規律スコア"
+              className="flex-1 h-1 bg-[#192633] rounded-full"
+            >
               <div 
                 className="h-full bg-blue-400 rounded-full" 
                 style={{ width: `${disciplineScore}%` }}
               />
             </div>
-            <span className="text-[10px] font-bold text-white">{disciplineScore}%</span>
+            <span className="text-[10px] font-bold text-white" aria-hidden="true">{disciplineScore}%</span>
           </div>
         </div>
       </div>
