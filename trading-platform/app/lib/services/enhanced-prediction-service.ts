@@ -158,18 +158,22 @@ export class EnhancedPredictionService {
       // Get optimized weights for regime
       const weights = OPTIMIZED_REGIME_WEIGHTS[regime];
 
+      // Calculate pattern features on Main Thread (lightweight enough)
+      const patternFeatures = candlestickPatternService.calculatePatternFeatures(data);
+      const patternSignal = candlestickPatternService.getPatternSignal(patternFeatures);
+
       let result: Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>;
 
       // Try to use web worker first
       if (this.useWorker) {
         try {
-          result = await this.predictWithWorker(symbol, data, indicators);
+          result = await this.predictWithWorker(symbol, data, indicators, patternFeatures, patternSignal, weights);
         } catch (error) {
           devWarn('Worker prediction failed, falling back to main thread:', error);
-          result = await this.predictOnMainThread(symbol, data, indicators, weights);
+          result = await this.predictOnMainThread(symbol, data, indicators, weights, patternFeatures, patternSignal);
         }
       } else {
-        result = await this.predictOnMainThread(symbol, data, indicators, weights);
+        result = await this.predictOnMainThread(symbol, data, indicators, weights, patternFeatures, patternSignal);
       }
 
       const finalResult: EnhancedPredictionResult = {
@@ -221,7 +225,10 @@ export class EnhancedPredictionService {
   private async predictWithWorker(
     symbol: string, 
     data: OHLCV[], 
-    indicators?: TechnicalIndicatorsWithATR
+    indicators: TechnicalIndicatorsWithATR | undefined,
+    patternFeatures: PatternFeatures,
+    patternSignal: number,
+    weights: { RF: number; XGB: number; LSTM: number; TECHNICAL: number }
   ): Promise<Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>> {
     const request: PredictionRequest = {
       id: `pred_${Date.now()}_${symbol}`,
@@ -241,10 +248,22 @@ export class EnhancedPredictionService {
           lower: indicators.bollingerBands?.lower || []
         },
         atr: indicators.atr || []
-      } : undefined
+      } : undefined,
+      patternFeatures,
+      patternSignal,
+      weights
     };
 
     const result = await predictionWorker.predict(request);
+
+    // Calculate normalized weights for contribution breakdown
+    const totalWeight = weights.RF + weights.XGB + weights.LSTM + weights.TECHNICAL;
+    const normalizedWeights = {
+      RF: weights.RF / totalWeight,
+      XGB: weights.XGB / totalWeight,
+      LSTM: weights.LSTM / totalWeight,
+      TECHNICAL: weights.TECHNICAL / totalWeight
+    };
 
     return {
       signal: result.signal,
@@ -252,19 +271,14 @@ export class EnhancedPredictionService {
       direction: result.expectedReturn > 0 ? 1 : -1,
       expectedReturn: result.expectedReturn,
       ensembleContribution: {
-        rf: 0.3, // Simplified for worker
-        xgb: 0.3,
-        lstm: 0.3,
-        pattern: 0.1
+        rf: (result.components?.rf || 0) * normalizedWeights.RF,
+        xgb: (result.components?.xgb || 0) * normalizedWeights.XGB,
+        lstm: (result.components?.lstm || 0) * normalizedWeights.LSTM,
+        pattern: patternSignal * normalizedWeights.TECHNICAL
       },
       features: {
         technical: result.features,
-        pattern: {
-          isDoji: 0, isHammer: 0, isInvertedHammer: 0, isShootingStar: 0,
-          isBullishEngulfing: 0, isBearishEngulfing: 0, isMorningStar: 0, isEveningStar: 0,
-          isPiercingLine: 0, isDarkCloudCover: 0, isBullishHarami: 0, isBearishHarami: 0,
-          bodyRatio: 0.5, upperShadowRatio: 0.25, lowerShadowRatio: 0.25, candleStrength: 0
-        }
+        pattern: result.patternFeatures || patternFeatures
       }
     };
   }
@@ -276,18 +290,20 @@ export class EnhancedPredictionService {
     symbol: string,
     data: OHLCV[],
     indicators: TechnicalIndicatorsWithATR | undefined,
-    weights: { RF: number; XGB: number; LSTM: number; TECHNICAL: number }
+    weights: { RF: number; XGB: number; LSTM: number; TECHNICAL: number },
+    patternFeatures: PatternFeatures,
+    patternSignal: number
   ): Promise<Omit<EnhancedPredictionResult, 'marketRegime' | 'calculationTime'>> {
     
     // Calculate features
     const features = featureEngineeringService.calculateBasicFeatures(data);
-    const patternFeatures = candlestickPatternService.calculatePatternFeatures(data);
+    // patternFeatures already calculated
 
     // Calculate model predictions
     const rf = this.calculator.calculateRandomForest(features);
     const xgb = this.calculator.calculateXGBoost(features);
     const lstm = this.calculator.calculateLSTM(features);
-    const patternSignal = candlestickPatternService.getPatternSignal(patternFeatures);
+    // patternSignal already calculated
 
     // Weighted ensemble
     const totalWeight = weights.RF + weights.XGB + weights.LSTM + weights.TECHNICAL;
