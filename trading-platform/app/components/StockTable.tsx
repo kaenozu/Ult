@@ -176,6 +176,12 @@ export const StockTable = memo(({
   const removeFromWatchlist = useWatchlistStore(state => state.removeFromWatchlist);
   const [pollingInterval, setPollingInterval] = useState(60000);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const stocksRef = useRef(stocks);
+
+  // Update stocks ref when stocks change to avoid re-creating getAdaptiveInterval
+  useEffect(() => {
+    stocksRef.current = stocks;
+  }, [stocks]);
   
   // Sorting state
   const [sortField, setSortField] = useState<SortField>('symbol');
@@ -224,14 +230,15 @@ export const StockTable = memo(({
 
   // Adaptive polling interval based on market volatility
   const getAdaptiveInterval = useCallback(() => {
-    if (stocks.length === 0) return 60000;
+    const currentStocks = stocksRef.current;
+    if (currentStocks.length === 0) return 60000;
     
     // Calculate average volatility
     let totalVol = 0;
-    for (let i = 0; i < stocks.length; i++) {
-      totalVol += Math.abs(stocks[i].changePercent || 0);
+    for (let i = 0; i < currentStocks.length; i++) {
+      totalVol += Math.abs(currentStocks[i].changePercent || 0);
     }
-    const avgVol = totalVol / stocks.length;
+    const avgVol = totalVol / currentStocks.length;
     
     // Higher volatility -> Faster polling
     // > 2% avg move -> 15s
@@ -240,7 +247,7 @@ export const StockTable = memo(({
     if (avgVol > 2) return 15000;
     if (avgVol > 1) return 30000;
     return 60000;
-  }, [stocks]);
+  }, []); // No dependencies to prevent polling reset
 
   useEffect(() => {
     let mounted = true;
