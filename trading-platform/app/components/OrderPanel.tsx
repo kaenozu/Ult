@@ -240,19 +240,42 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       <div className="flex flex-col gap-1">
         <div className="flex justify-between items-center">
           <label htmlFor={ids.quantity} className="text-[10px] uppercase text-[#92adc9] font-bold">数量</label>
-          <div className="flex gap-2">
+          <div className="flex gap-1 items-center">
             <button
               type="button"
-              onClick={() => setQuantity(Math.max(1, quantity + 1))}
-              className="text-[10px] text-[#92adc9] hover:text-white bg-[#233648] px-1.5 rounded transition-colors"
-              aria-label="数量を1増やす"
+              onClick={() => setQuantity(Math.max(1, quantity - 100))}
+              disabled={quantity <= 1}
+              className="text-[10px] text-[#92adc9] hover:text-white bg-[#233648] hover:bg-[#324d67] disabled:opacity-30 disabled:cursor-not-allowed px-1.5 py-1 rounded transition-colors"
+              aria-label="数量を100減らす"
             >
-              +1
+              -100
             </button>
             <button
               type="button"
-              onClick={() => setQuantity(Math.max(1, quantity + 100))}
-              className="text-[10px] text-[#92adc9] hover:text-white bg-[#233648] px-1.5 rounded transition-colors"
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              disabled={quantity <= 1}
+              className="text-[#92adc9] hover:text-white bg-[#233648] hover:bg-[#324d67] disabled:opacity-30 disabled:cursor-not-allowed p-1 rounded transition-colors"
+              aria-label="数量を1減らす"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-minus w-3 h-3">
+                <path d="M5 12h14"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuantity(quantity + 1)}
+              className="text-[#92adc9] hover:text-white bg-[#233648] hover:bg-[#324d67] p-1 rounded transition-colors"
+              aria-label="数量を1増やす"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus w-3 h-3">
+                <path d="M5 12h14"/>
+                <path d="M12 5v14"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuantity(quantity + 100)}
+              className="text-[10px] text-[#92adc9] hover:text-white bg-[#233648] hover:bg-[#324d67] px-1.5 py-1 rounded transition-colors"
               aria-label="数量を100増やす"
             >
               +100
