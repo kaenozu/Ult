@@ -1,4 +1,6 @@
 import { logger } from '@/app/core/logger';
+import { useMemo } from 'react';
+
 /**
  * Performance Monitor
  * 
@@ -329,14 +331,21 @@ export const performanceMonitor = new PerformanceMonitor();
 
 // Export hook for React components
 export function usePerformanceMonitor(componentName: string) {
-  return {
+  return useMemo(() => ({
     measure: (callback: () => void) => {
       performanceMonitor.measureRender(componentName, callback);
     },
     measureApi: <T>(endpoint: string, callback: () => Promise<T>) => {
       return performanceMonitor.measureApiCall(`${componentName}.${endpoint}`, callback);
     },
-  };
+    measureAsync: <T>(
+      name: string,
+      callback: () => Promise<T>,
+      _context?: Record<string, unknown>
+    ) => {
+      return performanceMonitor.measureAsync(`${componentName}.${name}`, callback, _context);
+    },
+  }), [componentName]);
 }
 
 // Web Vitals tracking
