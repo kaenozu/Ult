@@ -12,7 +12,6 @@ import {
 import { accuracyService } from './AccuracyService';
 import { marketRegimeDetector, RegimeDetectionResult } from './MarketRegimeDetector';
 import { exitStrategy } from './ExitStrategy';
-import { mlIntegrationService } from './services/MLIntegrationService';
 
 import { logger } from '@/app/core/logger';
 export interface AnalysisContext {
