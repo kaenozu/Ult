@@ -43,6 +43,14 @@ const DANGEROUS_EXTENSIONS = [
   '.jsp', '.asp', '.aspx', '.py', '.rb', '.pl',
 ];
 
+// Path Traversal Regex Components
+// Dot: literal dot, encoded dot, or double encoded dot
+const DOT_PATTERN = '(?:\\.|%2e|%252e)';
+// Slash: literal slash, backslash, encoded variants, or double encoded variants
+const SLASH_PATTERN = '(?:/|\\\\|%2f|%5c|%252f|%255c)';
+// Full pattern: .. followed by / or \ (handling all encoding permutations)
+const TRAVERSAL_REGEX = new RegExp(`${DOT_PATTERN}${DOT_PATTERN}${SLASH_PATTERN}`, 'ig');
+
 // ============================================================================
 // 基本サニタイズ関数
 // ============================================================================
@@ -137,16 +145,8 @@ export function detectXss(input: string): boolean {
  * パストラバーサルを検出
  */
 export function detectPathTraversal(input: string): boolean {
-  const traversalPatterns = [
-    /\.\.\//,
-    /\.\.\\/,
-    /%2e%2e%2f/i,
-    /%2e%2e\//i,
-    /\.\.\/%2f/i,
-    /%252e%252e%252f/i,
-  ];
-
-  return traversalPatterns.some(pattern => pattern.test(input));
+  // Use search() to avoid stateful behavior of global regex (lastIndex issues)
+  return input.search(TRAVERSAL_REGEX) !== -1;
 }
 
 /**
@@ -213,6 +213,18 @@ export function sanitizeText(
     input = input.trim();
   }
 
+  // パストラバーサル検出 (Run BEFORE HTML escaping to catch encoded slashes)
+  if (detectPathTraversal(input)) {
+    errors.push('Path traversal attempt detected');
+    // Apply replacement repeatedly to prevent bypass (e.g., ....// -> ../)
+    // Use the comprehensive regex to strip all variations
+    let previous;
+    do {
+      previous = input;
+      input = input.replace(TRAVERSAL_REGEX, '');
+    } while (input !== previous);
+  }
+
   // XSS検出
   if (detectXss(input)) {
     errors.push('Potential XSS pattern detected');
@@ -228,17 +240,6 @@ export function sanitizeText(
   if (detectSqlInjection(input)) {
     errors.push('Potential SQL injection pattern detected');
     input = escapeSql(input);
-  }
-
-  // パストラバーサル検出
-  if (detectPathTraversal(input)) {
-    errors.push('Path traversal attempt detected');
-    // Apply replacement repeatedly to prevent bypass (e.g., ....// -> ../)
-    let previous;
-    do {
-      previous = input;
-      input = input.replace(/\.\.[\/\\]/g, '');
-    } while (input !== previous);
   }
 
   // 最大長チェック
