@@ -207,7 +207,7 @@ export class MLIntegrationService {
         maxDrawdown: 0, // Not available in current metrics
       };
     } catch (error) {
-      logger.error('[ML Integration] Failed to get performance metrics', error);
+      logger.error('[ML Integration] Failed to get performance metrics', error instanceof Error ? error : new Error(String(error)));
       return {
         available: true, // Still available, just failed to get metrics
         accuracy: 0,
