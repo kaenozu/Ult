@@ -259,7 +259,7 @@ export class EnhancedPredictionService {
       },
       features: {
         technical: result.features,
-        pattern: {
+        pattern: result.patternFeatures || {
           isDoji: 0, isHammer: 0, isInvertedHammer: 0, isShootingStar: 0,
           isBullishEngulfing: 0, isBearishEngulfing: 0, isMorningStar: 0, isEveningStar: 0,
           isPiercingLine: 0, isDarkCloudCover: 0, isBullishHarami: 0, isBearishHarami: 0,

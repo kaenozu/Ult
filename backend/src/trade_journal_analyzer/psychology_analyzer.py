@@ -838,6 +838,8 @@ class TradingPsychologyAnalyzer:
             elif (last_date - session_date).days == 1:
                 consecutive_days += 1
                 last_date = session_date
+            elif (last_date - session_date).days == 0:
+                continue
             else:
                 break
 

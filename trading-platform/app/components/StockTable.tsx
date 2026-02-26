@@ -181,6 +181,12 @@ export const StockTable = memo(({
   const [sortField, setSortField] = useState<SortField>('symbol');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  // Keep latest stocks in ref to avoid effect cycles
+  const stocksRef = useRef(stocks);
+  useEffect(() => {
+    stocksRef.current = stocks;
+  }, [stocks]);
+
   // Sort stocks
   const sortedStocks = useMemo(() => {
     const sorted = [...stocks].sort((a, b) => {
@@ -224,14 +230,15 @@ export const StockTable = memo(({
 
   // Adaptive polling interval based on market volatility
   const getAdaptiveInterval = useCallback(() => {
-    if (stocks.length === 0) return 60000;
+    const currentStocks = stocksRef.current;
+    if (currentStocks.length === 0) return 60000;
     
     // Calculate average volatility
     let totalVol = 0;
-    for (let i = 0; i < stocks.length; i++) {
-      totalVol += Math.abs(stocks[i].changePercent || 0);
+    for (let i = 0; i < currentStocks.length; i++) {
+      totalVol += Math.abs(currentStocks[i].changePercent || 0);
     }
-    const avgVol = totalVol / stocks.length;
+    const avgVol = totalVol / currentStocks.length;
     
     // Higher volatility -> Faster polling
     // > 2% avg move -> 15s
@@ -240,7 +247,7 @@ export const StockTable = memo(({
     if (avgVol > 2) return 15000;
     if (avgVol > 1) return 30000;
     return 60000;
-  }, [stocks]);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
