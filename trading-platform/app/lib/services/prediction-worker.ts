@@ -37,6 +37,7 @@ export interface PredictionResult {
   expectedReturn: number;
   duration: number;
   features: PredictionFeatures;
+  patternFeatures?: PatternFeatures;
   ensembleWeights: {
     RF: number;
     XGB: number;
