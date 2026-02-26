@@ -1,0 +1,148 @@
+
+> trading-platform@0.1.0 test /app/trading-platform
+> jest app/lib/services/__tests__/MLIntegrationService.test.ts
+
+  console.info
+    [2026-02-26T09:01:16.190Z] [INFO]  [ML Integration] Initializing Prediction Worker...
+
+      at Logger.info (app/core/logger.ts:76:15)
+
+  console.info
+    [2026-02-26T09:01:16.587Z] [INFO]  [ML Integration] Initializing Prediction Worker...
+
+      at Logger.info (app/core/logger.ts:76:15)
+
+FAIL app/lib/services/__tests__/MLIntegrationService.test.ts
+  Utils Test Utils Dummy
+    ✓ should pass (2 ms)
+  MLIntegrationService
+    Initialization
+      ✓ should initialize successfully (30 ms)
+      ✓ should be a singleton (1 ms)
+      ✕ should report unavailable when models are not trained (2 ms)
+    Status
+      ✓ should return current status (1 ms)
+      ✕ should have empty modelsLoaded when models not available (4 ms)
+    Prediction
+      ✕ should return null when models not available (347 ms)
+    Performance Reporting
+      ✕ should return unavailable performance when models not loaded
+      ✕ should not include metrics when unavailable (1 ms)
+    Graceful Degradation
+      ✓ should handle initialization errors gracefully (1 ms)
+      ✓ should allow reinitialization (2 ms)
+
+  ● MLIntegrationService › Initialization › should report unavailable when models are not trained
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      31 |       await service.initialize();
+      32 |
+    > 33 |       expect(service.isAvailable()).toBe(false);
+         |                                     ^
+      34 |     });
+      35 |   });
+      36 |
+
+      at Object.toBe (app/lib/services/__tests__/MLIntegrationService.test.ts:33:37)
+
+  ● MLIntegrationService › Status › should have empty modelsLoaded when models not available
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 6
+
+    - Array []
+    + Array [
+    +   "ENSEMBLE_WORKER",
+    +   "RF",
+    +   "XGB",
+    +   "LSTM",
+    + ]
+
+      50 |       const status = service.getStatus();
+      51 |
+    > 52 |       expect(status.modelsLoaded).toEqual([]);
+         |                                   ^
+      53 |     });
+      54 |   });
+      55 |
+
+      at Object.toEqual (app/lib/services/__tests__/MLIntegrationService.test.ts:52:35)
+
+  ● MLIntegrationService › Prediction › should return null when models not available
+
+    expect(received).toBeNull()
+
+    Received: {"accuracy": undefined, "agreeingIndicators": undefined, "atr": undefined, "confidence": 50, "driftRisk": "LOW", "expectedValue": 0.37668750000000006, "indicatorCount": undefined, "marketContext": undefined, "optimizedParams": undefined, "predictedChange": -0.76875, "predictionDate": "2026-02-26", "predictionError": undefined, "reason": "【注視】 中立的なシグナル。様子見を推奨。 中ボラティリティ 推奨ポジション: 0.10 (Kelly基準)", "stopLoss": 102, "symbol": "TEST", "targetPrice": 101.215875, "type": "HOLD", "volumeResistance": undefined}
+
+      65 |       const prediction = await service.predictWithML(mockStock, mockData);
+      66 |
+    > 67 |       expect(prediction).toBeNull();
+         |                          ^
+      68 |     });
+      69 |   });
+      70 |
+
+      at Object.toBeNull (app/lib/services/__tests__/MLIntegrationService.test.ts:67:26)
+
+  ● MLIntegrationService › Performance Reporting › should return unavailable performance when models not loaded
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      74 |       const report = service.getPerformanceReport();
+      75 |
+    > 76 |       expect(report.available).toBe(false);
+         |                                ^
+      77 |     });
+      78 |
+      79 |     it('should not include metrics when unavailable', async () => {
+
+      at Object.toBe (app/lib/services/__tests__/MLIntegrationService.test.ts:76:32)
+
+  ● MLIntegrationService › Performance Reporting › should not include metrics when unavailable
+
+    expect(received).toBeUndefined()
+
+    Received: 0
+
+      81 |       const report = service.getPerformanceReport();
+      82 |
+    > 83 |       expect(report.accuracy).toBeUndefined();
+         |                               ^
+      84 |       expect(report.directionalAccuracy).toBeUndefined();
+      85 |     });
+      86 |   });
+
+      at Object.toBeUndefined (app/lib/services/__tests__/MLIntegrationService.test.ts:83:31)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 6 passed, 11 total
+Snapshots:   0 total
+Time:        1.048 s
+Ran all test suites matching /app\/lib\/services\/__tests__\/MLIntegrationService.test.ts/i.
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.
+  console.warn
+    [2026-02-26T09:01:21.237Z] [WARN]  [ML Integration] Prediction timeout for TEST
+
+      84 |     const formatted = this.formatMessage('warn', message, context);
+      85 |     if (this.config.enableConsole) {
+    > 86 |       console.warn(formatted, data ?? '');
+         |               ^
+      87 |     }
+      88 |     this.addLog({ timestamp: new Date(), level: 'warn', message, context, data });
+      89 |   }
+
+      at Logger.warn (app/core/logger.ts:86:15)
+      at Timeout.warn [as _onTimeout] (app/lib/services/MLIntegrationService.ts:129:16)
+
+ ELIFECYCLE  Test failed. See above for more details.
