@@ -8,11 +8,12 @@
 import { Signal, OHLCV, Stock } from '@/app/types';
 import { ML_MODEL_CONFIG } from '@/app/constants/prediction';
 import { predictionWorkerClient } from '@/app/domains/prediction/services/worker-client';
+import { logger } from '@/app/core/logger';
+import { integratedPredictionService } from '@/app/domains/prediction/services/integrated-prediction-service';
 
 /**
  * ML Model Status
  */
-import { logger } from '@/app/core/logger';
 export interface MLModelStatus {
   available: boolean;
   initialized: boolean;
@@ -142,7 +143,7 @@ export class MLIntegrationService {
       
       if (!result) return null;
       
-      return (result as any).signal;
+      return result.signal;
     } catch (error) {
       logger.error(`[ML Integration] Worker prediction failed for ${stock.symbol}:`, error instanceof Error ? error : new Error(String(error)));
       return null;
@@ -157,14 +158,18 @@ export class MLIntegrationService {
     actualValue: number,
     predictedValue: number
   ): void {
-    // TODO: Implement prediction tracking for model performance monitoring
     if (this.modelStatus.available) {
-      logger.debug('[ML Integration] Recording prediction outcome:', {
+      const error = Math.abs(actualValue - predictedValue);
+      logger.info('[ML Integration] Recording prediction outcome', {
         predictionId,
         actualValue,
         predictedValue,
-        error: Math.abs(actualValue - predictedValue),
+        error,
+        timestamp: new Date().toISOString()
       });
+
+      // In a real implementation, we might send this back to the server/worker
+      // to update online learning models or drift detection.
     }
   }
 
@@ -184,14 +189,33 @@ export class MLIntegrationService {
       };
     }
 
-    // TODO: Return actual performance metrics when models are active
-    return {
-      available: true,
-      accuracy: 0,
-      directionalAccuracy: 0,
-      profitFactor: 0,
-      maxDrawdown: 0,
-    };
+    try {
+      const metrics = integratedPredictionService.getPerformanceMetrics();
+
+      // Calculate average hit rate across models
+      const avgHitRate = (
+        metrics.hitRates.rf +
+        metrics.hitRates.xgb +
+        metrics.hitRates.lstm
+      ) / 3;
+
+      return {
+        available: true,
+        accuracy: avgHitRate, // Using hit rate as accuracy
+        directionalAccuracy: avgHitRate, // In this context, hit rate implies directional accuracy
+        profitFactor: 0, // Not available in current metrics
+        maxDrawdown: 0, // Not available in current metrics
+      };
+    } catch (error) {
+      logger.error('[ML Integration] Failed to get performance metrics', error);
+      return {
+        available: true, // Still available, just failed to get metrics
+        accuracy: 0,
+        directionalAccuracy: 0,
+        profitFactor: 0,
+        maxDrawdown: 0,
+      };
+    }
   }
 
   /**
