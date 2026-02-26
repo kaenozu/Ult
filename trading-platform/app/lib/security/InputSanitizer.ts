@@ -138,12 +138,14 @@ export function detectXss(input: string): boolean {
  */
 export function detectPathTraversal(input: string): boolean {
   const traversalPatterns = [
-    /\.\.\//,
-    /\.\.\\/,
-    /%2e%2e%2f/i,
-    /%2e%2e\//i,
-    /\.\.\/%2f/i,
-    /%252e%252e%252f/i,
+    /\.\.\//,        // ../
+    /\.\.\\/,        // ..\
+    /%2e%2e%2f/i,    // %2e%2e%2f
+    /%2e%2e\//i,     // %2e%2e/
+    /\.\.%2f/i,      // ..%2f
+    /\.\.%5c/i,      // ..%5c
+    /%2e%2e%5c/i,    // %2e%2e%5c
+    /%252e%252e%252f/i, // Double encoded
   ];
 
   return traversalPatterns.some(pattern => pattern.test(input));
@@ -237,7 +239,13 @@ export function sanitizeText(
     let previous;
     do {
       previous = input;
-      input = input.replace(/\.\.[\/\\]/g, '');
+      input = input.replace(/\.\.[\/\\]/g, '')
+        .replace(/%2e%2e%2f/ig, '')
+        .replace(/%2e%2e\//ig, '')
+        .replace(/\.\.%2f/ig, '')
+        .replace(/\.\.%5c/ig, '')
+        .replace(/%2e%2e%5c/ig, '')
+        .replace(/%252e%252e%252f/ig, '');
     } while (input !== previous);
   }
 
