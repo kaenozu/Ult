@@ -5,7 +5,7 @@ import { checkRateLimit } from '@/app/lib/api-middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authStore, User } from '@/app/lib/auth-store';
-import { env } from '@/app/lib/env';
+import { env } from '@/app/config/env';
 
 // --- Zod Schemas ---
 const RegisterSchema = z.object({

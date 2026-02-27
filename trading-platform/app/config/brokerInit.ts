@@ -13,6 +13,7 @@ import {
   isBrokerConfigured,
 } from '../lib/brokers';
 import { devLog, devError } from '../lib/utils/logger';
+import { env } from './env';
 
 let initialized = false;
 
@@ -110,9 +111,9 @@ export function getBrokerSystemStatus() {
 }
 
 // Auto-initialize in development mode
-if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+if (env.NODE_ENV === 'development' && typeof window !== 'undefined') {
   // Only initialize in browser, not during SSR
-  if (process.env.NEXT_PUBLIC_AUTO_INIT_BROKER !== 'false') {
+  if (env.NEXT_PUBLIC_AUTO_INIT_BROKER) {
     initializeBrokerSystem().catch(error => {
       devError('Auto-initialization failed:', error);
     });

@@ -5,7 +5,7 @@
  * 本番環境ではログ出力を抑制します
  */
 
-export const isDev = process.env.NODE_ENV !== 'production';
+const isDev = process.env.NODE_ENV !== 'production';
 
 /**
  * Development-only log
@@ -46,3 +46,5 @@ export const devDebug = (...args: unknown[]): void => {
     console.debug(...args);
   }
 };
+
+export { isDev };
