@@ -40,6 +40,14 @@ export const LeftSidebar = memo(function LeftSidebar({
     setIsDeleteModalOpen(false);
   }, []);
 
+  const handleAddStock = useCallback(() => {
+    // Focus the stock search input in the header
+    const searchInput = document.getElementById('stockSearch');
+    if (searchInput) {
+      searchInput.focus();
+    }
+  }, []);
+
   return (
     <aside className={cn(
       "w-80 min-w-[300px] flex flex-col border-r border-[#233648] bg-[#141e27] shrink-0 transition-transform duration-300 ease-in-out z-40",
@@ -59,6 +67,7 @@ export const LeftSidebar = memo(function LeftSidebar({
             </svg>
           </button>
           <button
+            onClick={handleAddStock}
             className="p-1 hover:bg-[#233648] rounded text-[#92adc9] transition-colors"
             aria-label="新しい銘柄を追加"
             title="新しい銘柄を追加"
