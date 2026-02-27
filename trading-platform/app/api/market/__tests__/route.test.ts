@@ -82,15 +82,15 @@ describe('Market API Security Tests', () => {
   it('should reject invalid symbol format', async () => {
     const req = createRequest(`/api/market?symbol=AAPL@#$&type=quote`);
     const res = await GET(req);
-    const json = await res.json();
+    // const json = await res.json();
 
     expect(res.status).toBe(400);
   });
 
   it('should handle missing required parameters', async () => {
     const req = createRequest(`/api/market?type=quote`); // symbol is missing
-    const res = await GET(req as any);
-    const json = await res.json();
+    const res = await GET(req as Request);
+    // const json = await res.json();
 
     expect(res.status).toBe(400);
   });
