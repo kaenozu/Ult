@@ -37,4 +37,15 @@ describe('Environment Security', () => {
       jest.requireActual('../env');
     }).not.toThrow();
   });
+
+  it('should throw an error in production if ENABLE_DEFAULT_ADMIN is true and DEFAULT_ADMIN_PASSWORD is default', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.ENABLE_DEFAULT_ADMIN = 'true';
+    process.env.DEFAULT_ADMIN_PASSWORD = 'admin123';
+    process.env.JWT_SECRET = 'secure-secret-that-is-very-long-and-random-32-chars';
+
+    expect(() => {
+      jest.requireActual('../env');
+    }).toThrow('CRITICAL SECURITY ERROR: You are running in production with the default admin password');
+  });
 });
