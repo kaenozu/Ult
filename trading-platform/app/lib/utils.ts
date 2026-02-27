@@ -7,10 +7,17 @@ export function cn(...inputs: ClassValue[]) {
 
 export type CurrencyCode = "JPY" | "USD" | "EUR" | "GBP";
 
+const currencyFormatterCache = new Map<CurrencyCode, Intl.NumberFormat>();
+const numberFormatterCache = new Map<string, Intl.NumberFormat>();
+
 export function formatCurrency(
   value: number,
   currency: CurrencyCode = "JPY",
 ): string {
+  if (currencyFormatterCache.has(currency)) {
+    return currencyFormatterCache.get(currency)!.format(value);
+  }
+
   const currencyConfig: Record<
     CurrencyCode,
     { locale: string; fractionDigits: number }
@@ -22,19 +29,30 @@ export function formatCurrency(
   };
 
   const config = currencyConfig[currency];
-  return new Intl.NumberFormat(config.locale, {
+  const formatter = new Intl.NumberFormat(config.locale, {
     style: "currency",
     currency: currency,
     minimumFractionDigits: config.fractionDigits,
     maximumFractionDigits: config.fractionDigits,
-  }).format(value);
+  });
+
+  currencyFormatterCache.set(currency, formatter);
+  return formatter.format(value);
 }
 
 export function formatNumber(value: number, decimals: number = 2): string {
-  return new Intl.NumberFormat("en-US", {
+  const cacheKey = `en-US-${decimals}`;
+  if (numberFormatterCache.has(cacheKey)) {
+    return numberFormatterCache.get(cacheKey)!.format(value);
+  }
+
+  const formatter = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
-  }).format(value);
+  });
+
+  numberFormatterCache.set(cacheKey, formatter);
+  return formatter.format(value);
 }
 
 export function formatPercent(value: number): string {
