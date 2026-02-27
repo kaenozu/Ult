@@ -144,6 +144,8 @@ export function detectPathTraversal(input: string): boolean {
     /%2e%2e\//i,
     /\.\.\/%2f/i,
     /%252e%252e%252f/i,
+    /\.\.%2f/i,
+    /\.\.%5c/i,
   ];
 
   return traversalPatterns.some(pattern => pattern.test(input));
@@ -213,6 +215,16 @@ export function sanitizeText(
     input = input.trim();
   }
 
+  // パストラバーサル検出 (Moved to BEFORE HTML escaping)
+  if (detectPathTraversal(input)) {
+    errors.push('Path traversal attempt detected');
+    // 強力なサニタイズ: 危険なパターンが見つかった場合、ディレクトリセパレータを無効化
+    // 単純な削除ではバイパスされる可能性があるため、安全な文字に置換
+    input = input.replace(/[\/\\]/g, '_')
+                 .replace(/%2f/gi, '_')
+                 .replace(/%5c/gi, '_');
+  }
+
   // XSS検出
   if (detectXss(input)) {
     errors.push('Potential XSS pattern detected');
@@ -228,17 +240,6 @@ export function sanitizeText(
   if (detectSqlInjection(input)) {
     errors.push('Potential SQL injection pattern detected');
     input = escapeSql(input);
-  }
-
-  // パストラバーサル検出
-  if (detectPathTraversal(input)) {
-    errors.push('Path traversal attempt detected');
-    // Apply replacement repeatedly to prevent bypass (e.g., ....// -> ../)
-    let previous;
-    do {
-      previous = input;
-      input = input.replace(/\.\.[\/\\]/g, '');
-    } while (input !== previous);
   }
 
   // 最大長チェック
