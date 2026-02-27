@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { env } from './env';
+import { env } from '@/app/config/env';
 
 export interface JWTPayload {
   userId: string;

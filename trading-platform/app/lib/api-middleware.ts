@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ipRateLimiter, getClientIp } from './ip-rate-limit';
 import { rateLimitError, handleApiError } from './error-handler';
 import { devWarn } from '@/app/lib/utils/dev-logger';
+import { env } from '@/app/config/env';
 
 /**
  * Rate limiting middleware
@@ -28,7 +29,7 @@ import { devWarn } from '@/app/lib/utils/dev-logger';
 export function checkRateLimit(request: Request | NextRequest): NextResponse | null {
   // Security fix: Always enable rate limiting even in development
   // Use relaxed limits in development to balance security and debugging
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = env.NODE_ENV === 'development';
   
   if (isDevelopment) {
     // In development, only log warnings but still track for monitoring
