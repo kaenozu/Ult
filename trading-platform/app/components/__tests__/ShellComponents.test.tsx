@@ -71,6 +71,20 @@ describe('Shell Components', () => {
             fireEvent.click(buttons[0]);
             expect(props.onClose).toHaveBeenCalled();
         });
+
+        it('focuses search input when add button is clicked', () => {
+            render(
+                <div>
+                    <input id="stockSearch" data-testid="stockSearch" />
+                    <LeftSidebar {...props} />
+                </div>
+            );
+            const addButton = screen.getByLabelText('新しい銘柄を追加');
+            const searchInput = screen.getByTestId('stockSearch');
+
+            fireEvent.click(addButton);
+            expect(searchInput).toHaveFocus();
+        });
     });
 
     describe('RightSidebar', () => {
