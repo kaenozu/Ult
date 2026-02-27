@@ -136,6 +136,14 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
   const [isProcessing, setIsProcessing] = useState(false);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
   const triggerBtnRef = useRef<HTMLButtonElement>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (isConfirming) {
@@ -162,7 +170,9 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
     } catch (error) {
       console.error('Order execution failed:', error);
     } finally {
-      setIsProcessing(false);
+      if (isMountedRef.current) {
+        setIsProcessing(false);
+      }
     }
   }, [isProcessing, handleOrder]);
 

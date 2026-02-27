@@ -73,8 +73,23 @@ self.onmessage = function(e) {
     // Calculate confidence based on technical alignment
     const confidence = calculateConfidence(features, ensemble);
     
+    // Calculate ATR (True Range if possible)
+    const last = data[data.length - 1];
+    const prev = data[data.length - 2];
+
+    let atrValue = last.high - last.low;
+    if (prev) {
+      const tr = Math.max(
+        last.high - last.low,
+        Math.abs(last.high - prev.close),
+        Math.abs(last.low - prev.close)
+      );
+      // Simple smoothing if indicators provided, else use TR
+      atrValue = indicators?.atr?.[indicators.atr.length - 1] || tr;
+    }
+
     // Generate signal with dynamic price targets
-    const signal = generateSignal(symbol, ensemble, confidence, data[data.length - 1]);
+    const signal = generateSignal(symbol, ensemble, confidence, last, atrValue);
     
     self.postMessage({
       id,
@@ -143,9 +158,8 @@ function calculateConfidence(f, ensemble) {
   return Math.min(0.95, conf);
 }
 
-function generateSignal(symbol, ensemble, confidence, lastPrice) {
+function generateSignal(symbol, ensemble, confidence, lastPrice, atr) {
   const type = confidence < 0.6 ? 'HOLD' : (ensemble > 0 ? 'BUY' : 'SELL');
-  const atr = lastPrice.high - lastPrice.low;
   const vol = atr / (lastPrice.close || 1);
   
   return {
@@ -158,7 +172,7 @@ function generateSignal(symbol, ensemble, confidence, lastPrice) {
     predictedChange: ensemble,
     predictionDate: new Date().toISOString(),
     timestamp: Date.now(),
-    atr
+    atr: atr
   };
 }
 `;
