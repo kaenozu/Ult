@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-02-28 - [Intl.NumberFormat Performance]
+**Learning:** Instantiating `Intl.NumberFormat` repeatedly inside tight loops or frequently called utility functions (like `formatCurrency` and `formatNumber` during React renders) is a massive performance bottleneck. In benchmarks, instantiating it on every call was ~100x slower than reusing a cached instance.
+**Action:** Always cache `Intl.NumberFormat` instances using a `Map` based on formatting configuration (currency code, fraction digits) when they are used in global utility functions to prevent unnecessary CPU overhead and garbage collection during list rendering.
