@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { env } from './env';
+import { getEnv } from '@/app/config/env';
 
 export interface JWTPayload {
   userId: string;
@@ -15,7 +15,8 @@ export interface JWTPayload {
  * @returns Decoded JWT payload or null if invalid
  */
 export function verifyAuthToken(req: NextRequest): JWTPayload | null {
-  const JWT_SECRET = env.JWT_SECRET;
+  const env = getEnv();
+  const JWT_SECRET = env.JWT_SECRET || 'demo-secret-must-be-at-least-32-chars-long';
 
   try {
     // Get token from Authorization header
@@ -52,7 +53,8 @@ export function generateAuthToken(userId: string, username?: string): string {
     username,
   };
 
-  const JWT_SECRET = env.JWT_SECRET;
+  const env = getEnv();
+  const JWT_SECRET = env.JWT_SECRET || 'demo-secret-must-be-at-least-32-chars-long';
   const JWT_EXPIRATION = '7d'; // Default expiration
 
   return jwt.sign(payload, JWT_SECRET, {

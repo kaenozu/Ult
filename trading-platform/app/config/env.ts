@@ -13,7 +13,7 @@ import { devError } from '@/app/lib/utils/dev-logger';
  */
 const EnvSchema = z.object({
   // Security
-  JWT_SECRET: z.string().min(32).optional(),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters').default('demo-secret-must-be-at-least-32-chars-long'),
   JWT_EXPIRATION: z.string().default('24h'),
 
   // Database
@@ -94,7 +94,17 @@ const EnvSchema = z.object({
 
   // Node Environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+
+  // Added from app/lib/env.ts
+  YAHOO_FINANCE_API_KEY: z.string().optional(),
+  ENABLE_REAL_TRADING: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
+  ENABLE_ML_TRAINING: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
+  ENABLE_DEFAULT_ADMIN: z.enum(['true', 'false']).default('false').transform(val => val === 'true'),
+  DEFAULT_ADMIN_PASSWORD: z.string().min(8).default('admin123'),
+  DEFAULT_ADMIN_EMAIL: z.string().email().default('admin@example.com'),
 });
+
+const DEFAULT_JWT_SECRET = 'demo-secret-must-be-at-least-32-chars-long';
 
 /**
  * Parsed and validated environment variables
@@ -111,6 +121,16 @@ export const loadEnv = (): z.infer<typeof EnvSchema> => {
 
   try {
     env = EnvSchema.parse(process.env);
+
+    // Security Checks
+    if (env.NODE_ENV === 'production' && env.JWT_SECRET === DEFAULT_JWT_SECRET) {
+      throw new Error('CRITICAL SECURITY ERROR: You are running in production with the default JWT_SECRET. Please set a secure JWT_SECRET environment variable.');
+    }
+
+    if (env.NODE_ENV === 'production' && env.ENABLE_DEFAULT_ADMIN && env.DEFAULT_ADMIN_PASSWORD === 'admin123') {
+      throw new Error('CRITICAL SECURITY ERROR: You are running in production with ENABLE_DEFAULT_ADMIN=true and the default DEFAULT_ADMIN_PASSWORD. Please set a secure DEFAULT_ADMIN_PASSWORD environment variable or disable the default admin.');
+    }
+
     return env;
   } catch (error) {
     if (error instanceof z.ZodError) {

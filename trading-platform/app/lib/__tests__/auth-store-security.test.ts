@@ -8,6 +8,20 @@ describe('AuthStore Security', () => {
     jest.resetModules();
   });
 
+  test('should throw an error in production if ENABLE_DEFAULT_ADMIN is true and DEFAULT_ADMIN_PASSWORD is default', async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      NODE_ENV: 'production',
+      ENABLE_DEFAULT_ADMIN: 'true',
+      DEFAULT_ADMIN_PASSWORD: 'admin123',
+      JWT_SECRET: 'secure-secret-that-is-at-least-32-chars-long-12345',
+    };
+
+    expect(() => {
+      jest.requireActual('../../config/env').loadEnv();
+    }).toThrow('CRITICAL SECURITY ERROR: You are running in production with ENABLE_DEFAULT_ADMIN=true and the default DEFAULT_ADMIN_PASSWORD.');
+  });
+
   test('should NOT create default admin user when ENABLE_DEFAULT_ADMIN is false (default)', async () => {
     process.env = {
       ...ORIGINAL_ENV,
