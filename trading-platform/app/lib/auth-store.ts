@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { env } from './env';
+import { getEnv } from '@/app/config/env';
 
 export interface User {
   id: string;
@@ -17,6 +17,7 @@ class AuthStore {
   private users: Map<string, User> = new Map();
 
   private constructor() {
+    const env = getEnv();
     // Add a default admin user if enabled via environment (typically for DEV/STAGING)
     // SECURITY: This is now explicitly controlled via ENABLE_DEFAULT_ADMIN
     if (env.ENABLE_DEFAULT_ADMIN) {

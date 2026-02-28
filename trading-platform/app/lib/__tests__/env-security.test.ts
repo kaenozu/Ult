@@ -16,7 +16,7 @@ describe('Environment Security', () => {
     process.env.JWT_SECRET = 'demo-secret-must-be-at-least-32-chars-long';
 
     expect(() => {
-      jest.requireActual('../env');
+      jest.requireActual('../../config/env').loadEnv();
     }).toThrow('You are running in production with the default JWT_SECRET');
   });
 
@@ -25,7 +25,7 @@ describe('Environment Security', () => {
     process.env.JWT_SECRET = 'secure-secret-that-is-very-long-and-random-32-chars';
 
     expect(() => {
-      jest.requireActual('../env');
+      jest.requireActual('../../config/env').loadEnv();
     }).not.toThrow();
   });
 
@@ -34,7 +34,7 @@ describe('Environment Security', () => {
     process.env.JWT_SECRET = 'demo-secret-must-be-at-least-32-chars-long';
 
     expect(() => {
-      jest.requireActual('../env');
+      jest.requireActual('../../config/env').loadEnv();
     }).not.toThrow();
   });
 });

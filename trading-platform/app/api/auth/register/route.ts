@@ -5,7 +5,7 @@ import { checkRateLimit } from '@/app/lib/api-middleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authStore, User } from '@/app/lib/auth-store';
-import { env } from '@/app/lib/env';
+import { getEnv } from '@/app/config/env';
 
 // --- Zod Schemas ---
 const RegisterSchema = z.object({
@@ -94,9 +94,10 @@ export async function POST(request: NextRequest) {
     authStore.addUser(user);
 
     // Generate JWT
+    const env = getEnv();
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      env.JWT_SECRET,
+      env.JWT_SECRET || 'demo-secret-must-be-at-least-32-chars-long',
       { expiresIn: '7d' }
     );
 
