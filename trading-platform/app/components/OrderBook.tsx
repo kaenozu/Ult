@@ -61,8 +61,11 @@ export function OrderBook({ stock }: OrderBookProps) {
                 ))}
                 <tr className="bg-[#192633] border-y border-[#233648]">
                     <td className="py-1 px-4 text-center font-bold text-sm text-white flex justify-center items-center gap-2" colSpan={3}>
+                    <div className="relative flex items-center justify-center w-1.5 h-1.5" title="Live data" aria-label="Live data" role="status">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" aria-hidden="true"></div>
+                    </div>
                     {stock ? formatCurrency(stock.price, stock.market === 'japan' ? 'JPY' : 'USD') : '-'}
-                    <span className="text-[10px] font-normal text-[#92adc9]">
+                    <span className="text-[10px] font-normal text-[#92adc9]" title="Spread">
                         Spread: 0.02
                     </span>
                     </td>
