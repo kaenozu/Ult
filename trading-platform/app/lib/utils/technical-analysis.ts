@@ -229,17 +229,19 @@ export function calculateBollingerBands(
   // Initial window loop
   const initialLimit = Math.min(length, period);
   for (let i = 0; i < initialLimit; i++) {
-    const val = _getValidPrice(prices[i]);
-    if (!isNaN(val)) {
-      sum += val;
-      sumSq += val * val;
+    const p = prices[i];
+    // Inline valid price logic for performance: checks for number type and >= 0, skipping NaN check function calls
+    if (typeof p === "number" && p >= 0) {
+      sum += p;
+      sumSq += p * p;
       validCount++;
     }
 
     if (i === period - 1 && validCount === period) {
       const mean = sum / period;
-      const variance = Math.max(0, sumSq / period - mean * mean);
-      const stdDev = Math.sqrt(variance);
+      const variance = sumSq / period - mean * mean;
+      // Inline Math.max for better performance in tight loop
+      const stdDev = Math.sqrt(variance > 0 ? variance : 0);
       middle[i] = mean;
       upper[i] = mean + standardDeviations * stdDev;
       lower[i] = mean - standardDeviations * stdDev;
@@ -252,17 +254,17 @@ export function calculateBollingerBands(
 
   // Rolling window loop
   for (let i = period; i < length; i++) {
-    const val = _getValidPrice(prices[i]);
-    if (!isNaN(val)) {
-      sum += val;
-      sumSq += val * val;
+    const p = prices[i];
+    if (typeof p === "number" && p >= 0) {
+      sum += p;
+      sumSq += p * p;
       validCount++;
     }
 
-    const oldVal = _getValidPrice(prices[i - period]);
-    if (!isNaN(oldVal)) {
-      sum -= oldVal;
-      sumSq -= oldVal * oldVal;
+    const oldP = prices[i - period];
+    if (typeof oldP === "number" && oldP >= 0) {
+      sum -= oldP;
+      sumSq -= oldP * oldP;
       validCount--;
     }
 
@@ -291,8 +293,8 @@ export function calculateBollingerBands(
 
     if (validCount === period) {
        const mean = sum / period;
-       const variance = Math.max(0, sumSq / period - mean * mean);
-       const stdDev = Math.sqrt(variance);
+       const variance = sumSq / period - mean * mean;
+       const stdDev = Math.sqrt(variance > 0 ? variance : 0);
        middle[i] = mean;
        upper[i] = mean + standardDeviations * stdDev;
        lower[i] = mean - standardDeviations * stdDev;
