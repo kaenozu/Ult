@@ -454,7 +454,21 @@ class AuditLogger {
   // ========================================================================
   
   private generateEventId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // For compatibility, fallback if crypto.randomUUID is not available
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return `${Date.now()}-${crypto.randomUUID()}`;
+    }
+
+    // Fallback using cryptographically secure pseudo-random number generator
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const array = new Uint32Array(4);
+      crypto.getRandomValues(array);
+      return `${Date.now()}-${Array.from(array).map(n => n.toString(16).padStart(8, '0')).join('')}`;
+    }
+
+    // Final fallback for environments where crypto is not available
+    // While not cryptographically secure, it's a necessary fallback
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}`;
   }
   
   private startAutoFlush(): void {
