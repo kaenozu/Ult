@@ -11,3 +11,7 @@
 ## 2026-02-18 - Semantic Structures in Modals
 **Learning:** Complex components like `AlertConditionManager` often use `div`s for layout (e.g., tabs, modals) without semantic roles. This makes navigation impossible for screen readers. Explicitly adding `role="dialog"`, `aria-modal="true"`, and `role="tablist"` transforms a confusing "soup of divs" into a navigable application structure.
 **Action:** When creating or reviewing modal interfaces with tabs, always ensure the container has `role="dialog"` and the tab controls use the `tablist`/`tab` pattern.
+
+## 2025-03-01 - Added `aria-label` to Psychology Warning Card
+**Learning:** Found an icon-only button without an `aria-label` in the `PsychologyWarningPanel.tsx` component which rendered an SVG close button 'X', which makes screen readers unable to announce its function.
+**Action:** When implementing or refactoring close/dismiss buttons that only use icons, explicitly add an `aria-label` to ensure screen-reader accessibility.
