@@ -7,7 +7,7 @@
 'use client';
 
 import { PositionSizeRecommendation } from '@/app/types/risk';
-import { cn } from '@/app/lib/utils';
+import { cn, formatCurrency as utilsFormatCurrency } from '@/app/lib/utils';
 import { TrendingUp, AlertTriangle, Target, Activity, Shield } from 'lucide-react';
 
 interface KellyPositionSizingDisplayProps {
@@ -42,11 +42,7 @@ export function KellyPositionSizingDisplay({
   };
   
   const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('ja-JP', {
-      style: 'currency',
-      currency: 'JPY',
-      maximumFractionDigits: 0,
-    }).format(value);
+    return utilsFormatCurrency(value, 'JPY');
   };
 
   const formatPercent = (value: number): string => {
