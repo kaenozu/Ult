@@ -7,6 +7,23 @@ export function cn(...inputs: ClassValue[]) {
 
 export type CurrencyCode = "JPY" | "USD" | "EUR" | "GBP";
 
+// Cache for Intl.NumberFormat instances to improve performance
+// Instantiating Intl.NumberFormat is notoriously slow in JS engines (~70-90x slower than reusing)
+const numberFormatCache = new Map<string, Intl.NumberFormat>();
+
+function getCachedNumberFormat(
+  locale: string,
+  options: Intl.NumberFormatOptions
+): Intl.NumberFormat {
+  const key = `${locale}-${JSON.stringify(options)}`;
+  let formatter = numberFormatCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, options);
+    numberFormatCache.set(key, formatter);
+  }
+  return formatter;
+}
+
 export function formatCurrency(
   value: number,
   currency: CurrencyCode = "JPY",
@@ -22,7 +39,7 @@ export function formatCurrency(
   };
 
   const config = currencyConfig[currency];
-  return new Intl.NumberFormat(config.locale, {
+  return getCachedNumberFormat(config.locale, {
     style: "currency",
     currency: currency,
     minimumFractionDigits: config.fractionDigits,
@@ -31,7 +48,7 @@ export function formatCurrency(
 }
 
 export function formatNumber(value: number, decimals: number = 2): string {
-  return new Intl.NumberFormat("en-US", {
+  return getCachedNumberFormat("en-US", {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(value);

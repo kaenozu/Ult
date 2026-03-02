@@ -9,7 +9,7 @@
 import { useMemo } from 'react';
 import { useRiskManagementStore } from '@/app/store/riskManagementStore';
 import { PositionSizingResult } from '@/app/lib/aiAnalytics/PredictiveAnalyticsEngine';
-import { cn } from '@/app/lib/utils';
+import { cn, formatCurrency as utilsFormatCurrency } from '@/app/lib/utils';
 import { TrendingUp, AlertTriangle, DollarSign, Target } from 'lucide-react';
 
 interface PositionSizingDisplayProps {
@@ -87,11 +87,7 @@ export function PositionSizingDisplay({
   }
   
   const formatCurrency = (value: number): string => {
-    return new Intl.NumberFormat('ja-JP', {
-      style: 'currency',
-      currency: 'JPY',
-      maximumFractionDigits: 0,
-    }).format(value);
+    return utilsFormatCurrency(value, 'JPY');
   };
   
   return (

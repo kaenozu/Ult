@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/Card';
+import { formatCurrency as utilsFormatCurrency } from '@/app/lib/utils';
 
 interface MarketData {
   symbol: string;
@@ -60,11 +61,7 @@ export function MarketDataPanel({ symbols, selectedSymbol, onSelectSymbol }: Mar
   }, [symbols]);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(value);
+    return utilsFormatCurrency(value, 'USD');
   };
 
   const formatPercent = (value: number) => {

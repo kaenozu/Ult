@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useRiskMonitoringStore, getRiskLevelColor, getRiskLevelBgColor, getAlertSeverityColor } from '@/app/store/riskMonitoringStore';
 import { Portfolio } from '@/app/types';
+import { formatCurrency as utilsFormatCurrency } from '@/app/lib/utils';
 
 interface RiskMonitoringDashboardProps {
   portfolio: Portfolio;
@@ -370,11 +371,7 @@ function PositionRiskItem({ risk }: PositionRiskItemProps) {
 // ============================================================================
 
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: 'JPY',
-    maximumFractionDigits: 0,
-  }).format(value);
+  return utilsFormatCurrency(value, 'JPY');
 }
 
 export default RiskMonitoringDashboard;
