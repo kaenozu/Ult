@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo, memo } from 'react';
 import { Stock } from '@/app/types';
 import { formatCurrency } from '@/app/lib/utils';
 
@@ -7,24 +8,29 @@ interface OrderBookProps {
   stock: Stock | null;
 }
 
-export function OrderBook({ stock }: OrderBookProps) {
+export const OrderBook = memo(function OrderBook({ stock }: OrderBookProps) {
   const basePrice = stock?.price || 100;
 
   // Mock data generation
-  const bids = [
-    { price: basePrice - 0.01, size: 920 },
-    { price: basePrice - 0.02, size: 410 },
-    { price: basePrice - 0.03, size: 250 },
-    { price: basePrice - 0.04, size: 180 },
-    { price: basePrice - 0.05, size: 120 },
-  ];
-  const asks = [
-    { price: basePrice + 0.01, size: 450 },
-    { price: basePrice + 0.02, size: 230 },
-    { price: basePrice + 0.03, size: 150 },
-    { price: basePrice + 0.04, size: 100 },
-    { price: basePrice + 0.05, size: 80 },
-  ];
+  const { bids, asks } = useMemo(() => {
+    return {
+      bids: [
+        { price: basePrice - 0.01, size: 920 },
+        { price: basePrice - 0.02, size: 410 },
+        { price: basePrice - 0.03, size: 250 },
+        { price: basePrice - 0.04, size: 180 },
+        { price: basePrice - 0.05, size: 120 },
+      ],
+      asks: [
+        { price: basePrice + 0.01, size: 450 },
+        { price: basePrice + 0.02, size: 230 },
+        { price: basePrice + 0.03, size: 150 },
+        { price: basePrice + 0.04, size: 100 },
+        { price: basePrice + 0.05, size: 80 },
+      ]
+    };
+  }, [basePrice]);
+
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden border-t border-[#233648]">
@@ -44,7 +50,7 @@ export function OrderBook({ stock }: OrderBookProps) {
                 </tr>
             </thead>
             <tbody>
-                {asks.reverse().map((ask, i) => (
+                {[...asks].reverse().map((ask, i) => (
                     <tr key={`ask-${i}`} className="hover:bg-[#192633]/50">
                     <td className="py-0.5 px-2 text-right text-[#92adc9]"></td>
                     <td className="py-0.5 px-2 text-center text-red-500 font-medium">
@@ -87,4 +93,4 @@ export function OrderBook({ stock }: OrderBookProps) {
         </div>
     </div>
   );
-}
+});
