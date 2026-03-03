@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-03 - [OrderBook Component Re-renders]
+**Learning:** React state mutation when caching mock array dependencies. `Array.prototype.reverse()` modifies the underlying array in-place, which is particularly destructive when that array has just been wrapped in `useMemo` specifically to persist reference equality across renders. Calling `.reverse()` in the JSX render function flipped the cached array on every render!
+**Action:** When memoizing an array in React, NEVER apply in-place mutators like `.reverse()`, `.sort()`, or `.splice()` to the memoized array directly in the render phase. Always create a shallow copy before applying array mutations (e.g., `[...asks].reverse()`).
