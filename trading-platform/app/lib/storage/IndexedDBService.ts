@@ -115,6 +115,26 @@ class IndexedDBService {
   }
 
   /**
+   * 安全なIDを生成
+   */
+  private generateSecureId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    // Fallback if crypto is not available
+    const array = new Uint32Array(4);
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      crypto.getRandomValues(array);
+    } else {
+      // Very basic fallback if nothing else is available (e.g. some old environments/tests)
+      for (let i = 0; i < array.length; i++) {
+        array[i] = Math.floor(Math.random() * 0x100000000);
+      }
+    }
+    return `${Date.now()}_${Array.from(array, dec => dec.toString(16).padStart(8, '0')).join('')}`;
+  }
+
+  /**
    * 取引を保存
    */
   async saveTrade(trade: Order): Promise<void> {
@@ -123,7 +143,7 @@ class IndexedDBService {
 
     const storedTrade: StoredTrade = {
       ...trade,
-      id: trade.id || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: trade.id || this.generateSecureId(),
       syncedAt: Date.now(),
     };
 
@@ -162,7 +182,7 @@ class IndexedDBService {
       trades.forEach((trade) => {
         const storedTrade: StoredTrade = {
           ...trade,
-          id: trade.id || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: trade.id || this.generateSecureId(),
           syncedAt: Date.now(),
         };
 
