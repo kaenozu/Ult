@@ -455,27 +455,31 @@ export function calculateADX(data: OHLCV[], period: number = 14): number[] {
   // We can optimize by combining loops, but splitting is clearer and avoids conditionals
   const initialLimit = Math.min(length, period + 1); // Loop i goes up to period
 
-  for (let i = 1; i < initialLimit; i++) {
-    const curr = data[i];
-    const prev = data[i - 1];
+  if (initialLimit > 1) {
+    let prev = data[0];
 
-    const upMove = curr.high - prev.high;
-    const downMove = prev.low - curr.low;
+    for (let i = 1; i < initialLimit; i++) {
+      const curr = data[i];
 
-    const dmPlus = upMove > downMove && upMove > 0 ? upMove : 0;
-    const dmMinus = downMove > upMove && downMove > 0 ? downMove : 0;
+      const upMove = curr.high - prev.high;
+      const downMove = prev.low - curr.low;
 
-    const tr = Math.max(
-      curr.high - curr.low,
-      Math.abs(curr.high - prev.close),
-      Math.abs(curr.low - prev.close)
-    );
+      const dmPlus = upMove > downMove && upMove > 0 ? upMove : 0;
+      const dmMinus = downMove > upMove && downMove > 0 ? downMove : 0;
 
-    avgTR += tr;
-    avgDMPlus += dmPlus;
-    avgDMMinus += dmMinus;
+      const tr = Math.max(
+        curr.high - curr.low,
+        Math.abs(curr.high - prev.close),
+        Math.abs(curr.low - prev.close)
+      );
 
-    adx[i] = NaN;
+      avgTR += tr;
+      avgDMPlus += dmPlus;
+      avgDMMinus += dmMinus;
+
+      adx[i] = NaN;
+      prev = curr;
+    }
   }
 
   // 2. Calculate initial ADX at i = period + 1
@@ -492,32 +496,41 @@ export function calculateADX(data: OHLCV[], period: number = 14): number[] {
   }
 
   // 3. Main loop (i = period + 2 to end)
-  for (let i = period + 2; i < length; i++) {
-    const curr = data[i];
-    const prev = data[i - 1];
+  if (length > period + 2) {
+    let prev = data[period + 1];
 
-    const upMove = curr.high - prev.high;
-    const downMove = prev.low - curr.low;
+    let prevADX = adx[period + 1];
+    const periodMinus1 = period - 1;
+    const invPeriod = 1 / period;
 
-    const dmPlus = upMove > downMove && upMove > 0 ? upMove : 0;
-    const dmMinus = downMove > upMove && downMove > 0 ? downMove : 0;
+    for (let i = period + 2; i < length; i++) {
+      const curr = data[i];
 
-    const tr = Math.max(
-      curr.high - curr.low,
-      Math.abs(curr.high - prev.close),
-      Math.abs(curr.low - prev.close)
-    );
+      const upMove = curr.high - prev.high;
+      const downMove = prev.low - curr.low;
 
-    avgTR = avgTR - (avgTR / period) + tr;
-    avgDMPlus = avgDMPlus - (avgDMPlus / period) + dmPlus;
-    avgDMMinus = avgDMMinus - (avgDMMinus / period) + dmMinus;
+      const dmPlus = upMove > downMove && upMove > 0 ? upMove : 0;
+      const dmMinus = downMove > upMove && downMove > 0 ? downMove : 0;
 
-    const diPlus = (avgDMPlus / avgTR) * 100;
-    const diMinus = (avgDMMinus / avgTR) * 100;
-    const dx = (Math.abs(diPlus - diMinus) / (diPlus + diMinus)) * 100;
+      const tr = Math.max(
+        curr.high - curr.low,
+        Math.abs(curr.high - prev.close),
+        Math.abs(curr.low - prev.close)
+      );
 
-    const prevADX = adx[i - 1];
-    adx[i] = (prevADX * (period - 1) + dx) / period;
+      avgTR = avgTR - (avgTR * invPeriod) + tr;
+      avgDMPlus = avgDMPlus - (avgDMPlus * invPeriod) + dmPlus;
+      avgDMMinus = avgDMMinus - (avgDMMinus * invPeriod) + dmMinus;
+
+      const diPlus = (avgDMPlus / avgTR) * 100;
+      const diMinus = (avgDMMinus / avgTR) * 100;
+      const dx = (Math.abs(diPlus - diMinus) / (diPlus + diMinus)) * 100;
+
+      prevADX = (prevADX * periodMinus1 + dx) * invPeriod;
+      adx[i] = prevADX;
+
+      prev = curr;
+    }
   }
 
   return adx;
