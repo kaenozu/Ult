@@ -19,7 +19,7 @@ export interface MeasureOptions {
  * ```typescript
  * class MyService {
  *   @measurePerformance('calculate_metrics', { threshold: 100 })
- *   calculateMetrics(data: any) {
+ *   calculateMetrics(data: unknown) {
  *     // This method will be measured
  *   }
  * }
@@ -234,7 +234,7 @@ export async function measurePerformanceAsync<T>(
  */
 export async function measureBatchPerformance(
   name: string,
-  operations: Array<{ name: string; fn: () => Promise<any> }>
+  operations: Array<{ name: string; fn: () => Promise<unknown> }>
 ): Promise<void> {
   const batchStart = performance.now();
 

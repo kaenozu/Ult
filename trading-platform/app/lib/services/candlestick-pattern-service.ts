@@ -213,6 +213,104 @@ export class CandlestickPatternService {
   }
 
   /**
+   * Detect Piercing Line pattern (2 candles)
+   * Bearish -> Bullish opening below previous low and closing above midpoint of previous body
+   */
+  private isPiercingLine(candles: OHLCV[]): number {
+    if (candles.length < 2) return 0;
+
+    const [prev, curr] = candles.slice(-2);
+
+    const prevBearish = prev.close < prev.open;
+    const currBullish = curr.close > curr.open;
+    const prevBody = prev.open - prev.close;
+    const prevMidpoint = prev.close + (prevBody / 2);
+
+    const opensBelowLow = curr.open < prev.low;
+    const closesAboveMidpoint = curr.close > prevMidpoint && curr.close < prev.open; // Should close within previous body
+
+    if (prevBearish && currBullish && opensBelowLow && closesAboveMidpoint) {
+      const penetrationDepth = (curr.close - prev.close) / prevBody;
+      return Math.min(penetrationDepth * 1.5, 1.0); // Stronger signal if it penetrates deeper
+    }
+    return 0;
+  }
+
+  /**
+   * Detect Dark Cloud Cover pattern (2 candles)
+   * Bullish -> Bearish opening above previous high and closing below midpoint of previous body
+   */
+  private isDarkCloudCover(candles: OHLCV[]): number {
+    if (candles.length < 2) return 0;
+
+    const [prev, curr] = candles.slice(-2);
+
+    const prevBullish = prev.close > prev.open;
+    const currBearish = curr.close < curr.open;
+    const prevBody = prev.close - prev.open;
+    const prevMidpoint = prev.open + (prevBody / 2);
+
+    const opensAboveHigh = curr.open > prev.high;
+    const closesBelowMidpoint = curr.close < prevMidpoint && curr.close > prev.open; // Should close within previous body
+
+    if (prevBullish && currBearish && opensAboveHigh && closesBelowMidpoint) {
+      const penetrationDepth = (prev.close - curr.close) / prevBody;
+      return Math.min(penetrationDepth * 1.5, 1.0); // Stronger signal if it penetrates deeper
+    }
+    return 0;
+  }
+
+  /**
+   * Detect Bullish Harami pattern (2 candles)
+   * Large Bearish -> Small Bullish completely contained within previous body
+   */
+  private isBullishHarami(candles: OHLCV[]): number {
+    if (candles.length < 2) return 0;
+
+    const [prev, curr] = candles.slice(-2);
+
+    const prevBearish = prev.close < prev.open;
+    const currBullish = curr.close > curr.open;
+
+    const prevBody = prev.open - prev.close;
+    const currBody = curr.close - curr.open;
+
+    const isContained = curr.open > prev.close && curr.close < prev.open;
+    const isSmallBody = currBody < (prevBody * 0.3);
+
+    if (prevBearish && currBullish && isContained && isSmallBody) {
+      // Return stronger signal if the body is smaller
+      return 1.0 - (currBody / prevBody);
+    }
+    return 0;
+  }
+
+  /**
+   * Detect Bearish Harami pattern (2 candles)
+   * Large Bullish -> Small Bearish completely contained within previous body
+   */
+  private isBearishHarami(candles: OHLCV[]): number {
+    if (candles.length < 2) return 0;
+
+    const [prev, curr] = candles.slice(-2);
+
+    const prevBullish = prev.close > prev.open;
+    const currBearish = curr.close < curr.open;
+
+    const prevBody = prev.close - prev.open;
+    const currBody = curr.open - curr.close;
+
+    const isContained = curr.open < prev.close && curr.close > prev.open;
+    const isSmallBody = currBody < (prevBody * 0.3);
+
+    if (prevBullish && currBearish && isContained && isSmallBody) {
+      // Return stronger signal if the body is smaller
+      return 1.0 - (currBody / prevBody);
+    }
+    return 0;
+  }
+
+  /**
    * Calculate simple trend from candles
    */
   private calculateTrend(candles: OHLCV[]): number {
@@ -241,10 +339,14 @@ export class CandlestickPatternService {
     const bearishEngulfing = this.isBearishEngulfing(current, previous);
     const morningStar = this.isMorningStar(candles);
     const eveningStar = this.isEveningStar(candles);
+    const piercingLine = this.isPiercingLine(candles);
+    const darkCloudCover = this.isDarkCloudCover(candles);
+    const bullishHarami = this.isBullishHarami(candles);
+    const bearishHarami = this.isBearishHarami(candles);
 
     // Calculate combined strength score
-    const bullishPatterns = hammer + invertedHammer + bullishEngulfing + morningStar;
-    const bearishPatterns = shootingStar + bearishEngulfing + eveningStar;
+    const bullishPatterns = hammer + invertedHammer + bullishEngulfing + morningStar + piercingLine + bullishHarami;
+    const bearishPatterns = shootingStar + bearishEngulfing + eveningStar + darkCloudCover + bearishHarami;
     const candleStrength = Math.min(Math.abs(bullishPatterns - bearishPatterns), 3) / 3;
 
     return {
@@ -256,10 +358,10 @@ export class CandlestickPatternService {
       isBearishEngulfing: bearishEngulfing,
       isMorningStar: morningStar,
       isEveningStar: eveningStar,
-      isPiercingLine: 0, // TODO: Implement
-      isDarkCloudCover: 0, // TODO: Implement
-      isBullishHarami: 0, // TODO: Implement
-      isBearishHarami: 0, // TODO: Implement
+      isPiercingLine: piercingLine,
+      isDarkCloudCover: darkCloudCover,
+      isBullishHarami: bullishHarami,
+      isBearishHarami: bearishHarami,
       bodyRatio: this.calculateBodyRatio(current),
       upperShadowRatio: this.calculateUpperShadowRatio(current),
       lowerShadowRatio: this.calculateLowerShadowRatio(current),
@@ -300,12 +402,16 @@ export class CandlestickPatternService {
       features.isHammer * 0.8 +
       features.isInvertedHammer * 0.6 +
       features.isBullishEngulfing * 1.0 +
-      features.isMorningStar * 0.9;
+      features.isMorningStar * 0.9 +
+      features.isPiercingLine * 0.8 +
+      features.isBullishHarami * 0.7;
 
     const bearishScore = 
       features.isShootingStar * 0.8 +
       features.isBearishEngulfing * 1.0 +
-      features.isEveningStar * 0.9;
+      features.isEveningStar * 0.9 +
+      features.isDarkCloudCover * 0.8 +
+      features.isBearishHarami * 0.7;
 
     // Normalize to -1 to 1 range
     const totalScore = bullishScore - bearishScore;
