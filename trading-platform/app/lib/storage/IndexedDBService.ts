@@ -7,6 +7,7 @@
 
 import { Order, Position } from '@/app/types';
 import { logger } from '@/app/core/logger';
+import { generateSecureId } from '@/app/lib/security/secure-id';
 
 const DB_NAME = 'TradingPlatformDB';
 const DB_VERSION = 1;
@@ -123,7 +124,7 @@ class IndexedDBService {
 
     const storedTrade: StoredTrade = {
       ...trade,
-      id: trade.id || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: trade.id || generateSecureId(),
       syncedAt: Date.now(),
     };
 
@@ -162,7 +163,7 @@ class IndexedDBService {
       trades.forEach((trade) => {
         const storedTrade: StoredTrade = {
           ...trade,
-          id: trade.id || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: trade.id || generateSecureId(),
           syncedAt: Date.now(),
         };
 
