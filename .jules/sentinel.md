@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2026-03-01 - Predictable ID Generation using Math.random()
+**Vulnerability:** Several crucial services (`IndexedDBService` and `AlertNotificationSystem`) were using `Math.random()` to generate unique identifiers for trades, alerts, and other entities. `Math.random()` is not cryptographically secure and the sequence of pseudo-random numbers can be predicted, opening the door to ID collision, spoofing, or unauthorized actions (especially if these IDs are ever exposed or used in access control).
+**Learning:** Developers frequently rely on `Math.random().toString(36).substr(2, 9)` as a quick way to generate a short ID, without considering the security implications of predictable sequences in a production environment.
+**Prevention:** Always use cryptographically secure random number generators (CSPRNG). Native functions like `crypto.randomUUID()` or `crypto.getRandomValues()` should be encapsulated in a secure ID generation utility and used as the standard across the codebase instead of `Math.random()`.
