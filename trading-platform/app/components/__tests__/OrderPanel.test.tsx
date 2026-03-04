@@ -93,6 +93,23 @@ describe('OrderPanel', () => {
     });
 
     it('shows loading state during order processing', async () => {
+        // Slow down mock Execute Order so we can assert loading state
+        let resolveOrder: any;
+        const slowExecuteOrder = jest.fn().mockImplementation(() => {
+            return new Promise((resolve) => {
+                resolveOrder = resolve;
+            });
+        });
+        (usePortfolioStore as unknown as jest.Mock).mockImplementation((selector) => {
+            return selector ? selector({
+                ...mockPortfolioState,
+                executeOrder: slowExecuteOrder
+            }) : {
+                ...mockPortfolioState,
+                executeOrder: slowExecuteOrder
+            };
+        });
+
         jest.useFakeTimers();
         render(<OrderPanel stock={mockStock} currentPrice={2000} />);
 
@@ -104,10 +121,17 @@ describe('OrderPanel', () => {
         fireEvent.click(confirmButton);
 
         // Should show loading text and be disabled immediately
-        expect(screen.getByText('処理中...')).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText('処理中...')).toBeInTheDocument();
+        });
         expect(confirmButton).toBeDisabled();
 
-        // Advance timers to complete processing
+        // Complete the order
+        await act(async () => {
+            resolveOrder({ success: true });
+        });
+
+        // Advance timers to complete processing delay
         await act(async () => {
             jest.advanceTimersByTime(500);
         });
