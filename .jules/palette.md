@@ -1,0 +1,3 @@
+## 2026-03-05 - Fix array mutation in render phase causing UI bugs
+**Learning:** Calling `[...array].reverse()` or `[...array].sort()` instead of `array.reverse()` prevents React component arrays from mutating in place during a render phase. In-place mutation breaks React’s shallow comparison checks and causes bugs like flickering or out-of-order lists, especially noticeable on fast-updating components like OrderBook or stock tickers.
+**Action:** Always create a shallow copy `[...array]` before applying mutating array functions (`reverse`, `sort`, `splice`) in React components, or use the `useMemo` hook effectively while avoiding direct mutations.
