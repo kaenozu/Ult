@@ -147,61 +147,84 @@ export function calculateMACD(
   const signal = new Array(length).fill(NaN);
   const histogram = new Array(length).fill(NaN);
 
-  /**
-   * Internal helper to update EMA state in a single pass
-   */
-  const createEMAState = (period: number) => {
-    let sum = 0;
-    let count = 0;
-    let prev = NaN;
-    const k = 2 / (period + 1);
+  // Inline EMA calculation for performance
+  let fastSum = 0, fastCount = 0, fastPrev = NaN;
+  const fastK = 2 / (fastPeriod + 1);
 
-    return (val: number): number => {
-      if (isNaN(val)) {
-        if (count >= period) prev = NaN;
-        return NaN;
-      }
+  let slowSum = 0, slowCount = 0, slowPrev = NaN;
+  const slowK = 2 / (slowPeriod + 1);
 
-      if (count < period) {
-        sum += val;
-        count++;
-        if (count === period) {
-          prev = sum / period;
-          return prev;
-        }
-        return NaN;
-      }
-
-      if (!isNaN(prev)) {
-        prev = (val - prev) * k + prev;
-        return prev;
-      }
-
-      return NaN;
-    };
-  };
-
-  const updateFast = createEMAState(fastPeriod);
-  const updateSlow = createEMAState(slowPeriod);
-  const updateSignal = createEMAState(signalPeriod);
+  let signalSum = 0, signalCount = 0, signalPrev = NaN;
+  const signalK = 2 / (signalPeriod + 1);
 
   for (let i = 0; i < length; i++) {
     const price = _getValidPrice(prices[i]);
 
-    const fastVal = updateFast(price);
-    const slowVal = updateSlow(price);
+    let fastVal = NaN;
+    if (!isNaN(price)) {
+      if (fastCount < fastPeriod) {
+        fastSum += price;
+        fastCount++;
+        if (fastCount === fastPeriod) {
+          fastPrev = fastSum / fastPeriod;
+          fastVal = fastPrev;
+        }
+      } else if (!isNaN(fastPrev)) {
+        fastPrev = (price - fastPrev) * fastK + fastPrev;
+        fastVal = fastPrev;
+      }
+    } else {
+      if (fastCount >= fastPeriod) fastPrev = NaN;
+    }
+
+    let slowVal = NaN;
+    if (!isNaN(price)) {
+      if (slowCount < slowPeriod) {
+        slowSum += price;
+        slowCount++;
+        if (slowCount === slowPeriod) {
+          slowPrev = slowSum / slowPeriod;
+          slowVal = slowPrev;
+        }
+      } else if (!isNaN(slowPrev)) {
+        slowPrev = (price - slowPrev) * slowK + slowPrev;
+        slowVal = slowPrev;
+      }
+    } else {
+      if (slowCount >= slowPeriod) slowPrev = NaN;
+    }
 
     let macdVal = NaN;
     if (!isNaN(fastVal) && !isNaN(slowVal)) {
       macdVal = fastVal - slowVal;
       macd[i] = macdVal;
+    } else {
+      macd[i] = NaN;
     }
 
-    const signalVal = updateSignal(macdVal);
+    let signalVal = NaN;
+    if (!isNaN(macdVal)) {
+      if (signalCount < signalPeriod) {
+        signalSum += macdVal;
+        signalCount++;
+        if (signalCount === signalPeriod) {
+          signalPrev = signalSum / signalPeriod;
+          signalVal = signalPrev;
+        }
+      } else if (!isNaN(signalPrev)) {
+        signalPrev = (macdVal - signalPrev) * signalK + signalPrev;
+        signalVal = signalPrev;
+      }
+    } else {
+      if (signalCount >= signalPeriod) signalPrev = NaN;
+    }
+
     signal[i] = signalVal;
 
     if (!isNaN(macdVal) && !isNaN(signalVal)) {
       histogram[i] = macdVal - signalVal;
+    } else {
+      histogram[i] = NaN;
     }
   }
 
