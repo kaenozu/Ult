@@ -6,6 +6,7 @@
  */
 
 import { SafeStorage } from './XSSProtection';
+import { generateSecureId } from './secure-id';
 
 // ============================================================================
 // 監査ログ型定義
@@ -454,7 +455,7 @@ class AuditLogger {
   // ========================================================================
   
   private generateEventId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${generateSecureId()}`;
   }
   
   private startAutoFlush(): void {

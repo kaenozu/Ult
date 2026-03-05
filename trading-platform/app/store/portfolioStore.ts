@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devLog, devError } from '@/app/lib/utils/dev-logger';
 import { persist } from 'zustand/middleware';
+import { generateSecureId } from '../lib/security/secure-id';
 import { Portfolio, Position } from '../types';
 import { OrderRequest, OrderResult } from '../types/order';
 import { getRiskManagementService } from '../lib/services/RiskManagementService';
@@ -116,7 +117,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             syncPortfolio((state) => {
               if (orderRequest.side === 'LONG' && state.portfolio.cash < totalCost) return {};
 
-              const orderId = `at_ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+              const orderId = `at_ord_${Date.now()}_${generateSecureId()}`;
               const existingIdx = state.portfolio.positions.findIndex(p => p.symbol === orderRequest.symbol && p.side === orderRequest.side);
               const positions = [...state.portfolio.positions];
 
@@ -220,7 +221,7 @@ export const usePortfolioStore = create<PortfolioState>()(
               // We do this asynchronously to not block the UI update
               import('../lib/storage/IndexedDBService').then(({ indexedDBService }) => {
                 const closedTrade = {
-                  id: `trd_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                  id: `trd_${Date.now()}_${generateSecureId()}`,
                   symbol: p.symbol,
                   side: p.side === 'LONG' ? 'SELL' : 'BUY', // Closing side
                   type: 'MARKET',
