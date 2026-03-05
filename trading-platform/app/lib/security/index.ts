@@ -52,3 +52,4 @@ export {
   type AuditEventOutcome,
   type AuditLogConfig,
 } from './AuditLogger';
+export { generateSecureId } from './secure-id';

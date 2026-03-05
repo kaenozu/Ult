@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { generateSecureId } from './security/secure-id';
 
 export interface AlertCondition {
   id: string;
@@ -264,7 +265,7 @@ export class AlertNotificationSystem extends EventEmitter {
 
   // Utilities
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${generateSecureId()}`;
   }
 
   // Cleanup

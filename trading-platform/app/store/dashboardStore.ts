@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { generateSecureId } from '../lib/security/secure-id';
 
 export type WidgetType = 
   | 'chart'
@@ -142,7 +143,7 @@ export const useDashboardStore = create<DashboardState>()(
       },
 
       addWidget: (layoutId, widget) => {
-        const id = `widget-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const id = `widget-${Date.now()}-${generateSecureId()}`;
         const newWidget: Widget = { ...widget, id };
 
         set((state) => ({
