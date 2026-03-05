@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-05 - [Closure Inlining in Tight Loops]
+**Learning:** In V8, creating and calling helper functions returning closures (like `createEMAState` in MACD) inside high-frequency data loops (e.g. over 100k data points) adds significant function call and closure allocation overhead. Using `new Array(length).fill(NaN)` creates packed double arrays immediately, which is optimal for performance, but avoiding the closure itself provides the real speedup.
+**Action:** When optimizing tight array processing loops (like technical indicators), inline the mathematical state logic directly into the main loop to avoid closure overhead. Retain `new Array(length).fill(NaN)` since V8 optimizes this into packed double arrays natively.
