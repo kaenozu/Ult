@@ -12,3 +12,7 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+## 2026-03-06 - [Secure ID generation]
+**Vulnerability:** Weak random number generation using Math.random for AuditLog event IDs.
+**Learning:** Insecure ID generation using `Math.random()` was a recurring anti-pattern. It must be systematically remediated by using `crypto.randomUUID()` with a fallback to `crypto.getRandomValues()`.
+**Prevention:** Avoid defining duplicate utility functions in multiple places, such as exporting a `generateSecureId` method from `index.ts` while also keeping the inner class implementation in `AuditLogger.ts`.
