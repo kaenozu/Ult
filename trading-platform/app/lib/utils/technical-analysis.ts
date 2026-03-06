@@ -96,36 +96,55 @@ export function calculateEMA(prices: number[], period: number): number[] {
  */
 export function calculateRSI(prices: number[], period: number = 14): number[] {
   const length = prices.length;
-  const result: number[] = new Array(length).fill(NaN);
-  if (length <= period) return result;
+  const result: number[] = new Array(length);
+  if (length <= period) {
+    for (let i = 0; i < length; i++) result[i] = NaN;
+    return result;
+  }
 
-  const floatPrices = new Float64Array(prices);
+  for (let i = 0; i <= period; i++) result[i] = NaN;
+
   let avgGain = 0;
   let avgLoss = 0;
+  const invPeriod = 1 / period;
 
+  let prevPrice = prices[0];
   // Initial averages
   for (let i = 1; i <= period; i++) {
-    const change = floatPrices[i] - floatPrices[i - 1];
-    if (change >= 0) avgGain += change;
-    else avgLoss += Math.abs(change);
+    const currPrice = prices[i];
+    const change = currPrice - prevPrice;
+    if (change >= 0) {
+      avgGain += change;
+    } else {
+      avgLoss -= change;
+    }
+    prevPrice = currPrice;
   }
-  avgGain /= period;
-  avgLoss /= period;
+  avgGain *= invPeriod;
+  avgLoss *= invPeriod;
 
   const rsInitial = avgLoss === 0 ? 100 : avgGain / avgLoss;
   result[period] = 100 - (100 / (1 + rsInitial));
 
   // Wilder's smoothing
   for (let i = period + 1; i < length; i++) {
-    const change = floatPrices[i] - floatPrices[i - 1];
-    const gain = change >= 0 ? change : 0;
-    const loss = change < 0 ? Math.abs(change) : 0;
+    const currPrice = prices[i];
+    const change = currPrice - prevPrice;
+    let gain = 0;
+    let loss = 0;
 
-    avgGain = (avgGain * (period - 1) + gain) / period;
-    avgLoss = (avgLoss * (period - 1) + loss) / period;
+    if (change >= 0) {
+      gain = change;
+    } else {
+      loss = -change;
+    }
+
+    avgGain = (avgGain * (period - 1) + gain) * invPeriod;
+    avgLoss = (avgLoss * (period - 1) + loss) * invPeriod;
 
     const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
     result[i] = 100 - (100 / (1 + rs));
+    prevPrice = currPrice;
   }
 
   return result;
