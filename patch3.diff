@@ -1,0 +1,11 @@
+--- trading-platform/app/lib/utils/technical-analysis.ts
++++ trading-platform/app/lib/utils/technical-analysis.ts
+@@ -88,7 +88,7 @@
+   // EMA calculation
+   let prevEMA = result[period - 1];
+   for (let i = period; i < length; i++) {
+-    const currentEMA = (floatPrices[i] - prevEMA) * k + prevEMA;
++    const currentEMA = (prices[i] - prevEMA) * k + prevEMA;
+     result[i] = currentEMA;
+     prevEMA = currentEMA;
+   }

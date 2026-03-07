@@ -1,6 +1,6 @@
 /**
  * Technical Analysis Utilities
- * 
+ *
  * Pure functional implementations of technical indicators.
  * Optimized for performance and accuracy.
  */
@@ -21,10 +21,10 @@ export function _getValidPrice(p: number | null | undefined): number {
 export function calculateSMA(prices: number[], period: number): number[] {
   const length = prices.length;
   const result: number[] = new Array(length);
-  if (length < period) return new Array(length).fill(NaN);
   for (let i = 0; i < period - 1; i++) {
     result[i] = NaN;
   }
+  if (length < period) return result;
 
   let sum = 0;
 
@@ -71,10 +71,10 @@ export function calculateSMA(prices: number[], period: number): number[] {
 export function calculateEMA(prices: number[], period: number): number[] {
   const length = prices.length;
   const result: number[] = new Array(length);
-  if (length < period) return new Array(length).fill(NaN);
   for (let i = 0; i < period - 1; i++) {
     result[i] = NaN;
   }
+  if (length < period) return result;
 
   const k = 2 / (period + 1);
 

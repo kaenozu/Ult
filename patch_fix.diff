@@ -1,0 +1,25 @@
+--- trading-platform/app/lib/utils/technical-analysis.ts
++++ trading-platform/app/lib/utils/technical-analysis.ts
+@@ -24,10 +24,10 @@
+ export function calculateSMA(prices: number[], period: number): number[] {
+   const length = prices.length;
+   const result: number[] = new Array(length);
++  if (length < period) return new Array(length).fill(NaN);
+   for (let i = 0; i < period - 1; i++) {
+     result[i] = NaN;
+   }
+-  if (length < period) return result;
+
+   let sum = 0;
+
+@@ -71,10 +71,10 @@
+ export function calculateEMA(prices: number[], period: number): number[] {
+   const length = prices.length;
+   const result: number[] = new Array(length);
++  if (length < period) return new Array(length).fill(NaN);
+   for (let i = 0; i < period - 1; i++) {
+     result[i] = NaN;
+   }
+-  if (length < period) return result;
+
+   const k = 2 / (period + 1);
