@@ -4,6 +4,20 @@ import { globalCache } from '@/app/hooks/useCachedFetch';
 import { enhancedPredictionService } from '@/app/lib/services/enhanced-prediction-service';
 import { INTERVAL } from '@/app/constants/timing';
 
+interface MemoryInfo {
+  totalJSHeapSize: number;
+  usedJSHeapSize: number;
+}
+
+interface ExtendedPerformance extends Performance {
+  memory?: MemoryInfo;
+}
+
+interface LayoutShift extends PerformanceEntry {
+  hadRecentInput: boolean;
+  value: number;
+}
+
 interface PerformanceMetrics {
   // レンダリング
   renderCount: number;
@@ -58,7 +72,7 @@ export function PerformanceDashboard() {
   
   const updateMetrics = useCallback(() => {
     // メモリ情報
-    const memory = (performance as any).memory;
+    const memory = (performance as ExtendedPerformance).memory;
     
     // キャッシュ情報
     const cacheStats = globalCache.getStats();
@@ -108,8 +122,8 @@ export function PerformanceDashboard() {
     let clsValue = 0;
     const clsObserver = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
-        if (!(entry as any).hadRecentInput) {
-          clsValue += (entry as any).value;
+        if (!(entry as LayoutShift).hadRecentInput) {
+          clsValue += (entry as LayoutShift).value;
         }
       }
       setMetrics(m => ({ ...m, cls: clsValue }));

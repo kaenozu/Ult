@@ -155,7 +155,7 @@ export function prefetchComponent(componentPath: keyof typeof routeComponents) {
  * 重要度に応じて読み込み順序を制御
  */
 export function loadComponentWithPriority(
-  importFn: () => Promise<any>,
+  importFn: () => Promise<unknown>,
   priority: 'high' | 'low' = 'low'
 ) {
   if (priority === 'high') {
