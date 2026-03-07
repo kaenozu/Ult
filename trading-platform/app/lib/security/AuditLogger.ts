@@ -454,6 +454,17 @@ class AuditLogger {
   // ========================================================================
   
   private generateEventId(): string {
+    if (typeof crypto !== 'undefined') {
+      if (typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+      }
+      if (typeof crypto.getRandomValues === 'function') {
+        const array = new Uint32Array(4);
+        crypto.getRandomValues(array);
+        return Array.from(array, dec => dec.toString(16).padStart(8, '0')).join('-');
+      }
+    }
+    // Fallback for environments lacking crypto support
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
   
