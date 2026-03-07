@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-05 - Float64Array Mapping Overhead in Hot Loops
+**Learning:** While typed arrays like `Float64Array` are performant in V8, converting standard JavaScript arrays (`number[]`) to typed arrays inside high-frequency utility functions incurs an O(n) memory allocation and copy overhead that overshadows any execution speed benefits in small to medium datasets. Additionally, `new Array(len).fill(NaN)` creates significant execution overhead compared to manual loop initialization or implicit pre-allocation logic.
+**Action:** When implementing mathematical utilities (like SMA, EMA, or ATR) that accept `number[]`, iterate directly over the input arrays instead of casting to `Float64Array`. Pre-allocate fixed-size output arrays and use manual loops for initialization if necessary. Also, prefer checking `val === val` for faster NaN detection over `isNaN(val)`.
