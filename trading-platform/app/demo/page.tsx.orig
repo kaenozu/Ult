@@ -22,6 +22,7 @@ export default function DemoPage() {
     market: 'japan',
     sector: '輸送用機器',
     volume: 12500000,
+    sector: 'auto',
   };
 
   // 2. デモ用の完璧なAIシグナル
@@ -47,13 +48,13 @@ export default function DemoPage() {
     const data: OHLCV[] = [];
     let basePrice = 2300;
     const now = new Date();
-    
+
     for (let i = 30; i >= 0; i--) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const volatility = (Math.random() - 0.4) * 20; // Slightly bullish bias
       basePrice += volatility;
-      
+
       data.push({
         date: date.toISOString().split('T')[0],
         open: basePrice - 5,
@@ -94,7 +95,7 @@ export default function DemoPage() {
   return (
     <div className="min-h-screen bg-[#0b1118] text-white font-sans">
       <Header />
-      
+
       <main className="container mx-auto p-4 lg:p-8 space-y-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-black tracking-tighter">
@@ -124,19 +125,19 @@ export default function DemoPage() {
                   <div className="text-xs font-bold text-green-400">+{mockStock.change} ({mockStock.changePercent}%)</div>
                 </div>
               </div>
-              
+
               <div className="h-[400px] w-full rounded-xl overflow-hidden bg-black/20">
-                <StockChart 
-                  data={mockHistory} 
+                <StockChart
+                  data={mockHistory}
                   signal={mockSignal}
                   height={400}
                 />
               </div>
             </div>
 
-            <AIRecommendationPanel 
-              signals={[mockSignal]} 
-              onSelectSignal={() => {}} 
+            <AIRecommendationPanel
+              signals={[mockSignal]}
+              onSelectSignal={() => {}}
             />
           </div>
 
@@ -153,8 +154,8 @@ export default function DemoPage() {
                 </div>
               </div>
 
-              <BeginnerSignalCard 
-                signal={beginnerSignal as any} 
+              <BeginnerSignalCard
+                signal={beginnerSignal as any}
                 currentPrice={2500}
                 onExecute={() => alert('デモ注文が送信されました！指示通りの価格・株数で予約します。')}
               />

@@ -1,0 +1,80 @@
+--- trading-platform/app/lib/utils/technical-analysis.ts
++++ trading-platform/app/lib/utils/technical-analysis.ts
+@@ -23,15 +23,17 @@
+  */
+ export function calculateSMA(prices: number[], period: number): number[] {
+   const length = prices.length;
+-  const result: number[] = new Array(length).fill(NaN);
++  const result: number[] = new Array(length);
++  for (let i = 0; i < period - 1; i++) {
++    result[i] = NaN;
++  }
+   if (length < period) return result;
+
+-  const floatPrices = new Float64Array(prices);
+   let sum = 0;
+
+   // Initial window
+   let validCount = 0;
+   for (let i = 0; i < period; i++) {
+-    const val = floatPrices[i];
++    const val = prices[i];
+     if (!isNaN(val)) {
+       sum += val;
+@@ -42,21 +44,22 @@
+   // Only set result if we have a full valid window (standard SMA behavior)
+   result[period - 1] = validCount === period ? sum / period : NaN;
++  const invPeriod = 1 / period;
+
+   // Sliding window
+   for (let i = period; i < length; i++) {
+-    const newVal = floatPrices[i];
+-    const oldVal = floatPrices[i - period];
++    const newVal = prices[i];
++    const oldVal = prices[i - period];
+
+     if (!isNaN(newVal)) {
+       sum += newVal;
+       validCount++;
+     }
+
+     if (!isNaN(oldVal)) {
+       sum -= oldVal;
+       validCount--;
+     }
+
+     // Strict SMA: if any value in window is NaN, result is NaN
+-    result[i] = validCount === period ? sum / period : NaN;
++    result[i] = validCount === period ? sum * invPeriod : NaN;
+   }
+
+@@ -67,16 +70,18 @@
+  */
+ export function calculateEMA(prices: number[], period: number): number[] {
+   const length = prices.length;
+-  const result: number[] = new Array(length).fill(NaN);
++  const result: number[] = new Array(length);
++  for (let i = 0; i < period - 1; i++) {
++    result[i] = NaN;
++  }
+   if (length < period) return result;
+
+-  const floatPrices = new Float64Array(prices);
+   const k = 2 / (period + 1);
+
+   // Initial SMA
+   let sum = 0;
+   for (let i = 0; i < period; i++) {
+-    sum += floatPrices[i];
++    sum += prices[i];
+   }
+   result[period - 1] = sum / period;
+
+   // EMA calculation
+   let prevEMA = result[period - 1];
+   for (let i = period; i < length; i++) {
+-    const currentEMA = (floatPrices[i] - prevEMA) * k + prevEMA;
++    const currentEMA = (prices[i] - prevEMA) * k + prevEMA;
+     result[i] = currentEMA;
+     prevEMA = currentEMA;
+   }
