@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2026-03-07 - Insecure Event ID Generation in AuditLogger
+**Vulnerability:** The `AuditLogger` components (`app/lib/security/AuditLogger.ts` and `app/security/AuditLogger.ts`) used `Math.random()` to generate event IDs. Since these are used in security-critical contexts to trace, hash, and prevent tampering, predictable IDs undermine log integrity and open the door for ID spoofing and collisions.
+**Learning:** Security-critical identifiers must use cryptographically secure random number generation. Even for seemingly innocuous event IDs, predictable generation in an audit context breaks the chain of trust and compromises tamper detection.
+**Prevention:** Systematically use `crypto.randomUUID()` (with a fallback to `crypto.getRandomValues()` returning zero-padded hex representations) for generating identifiers in security-sensitive components instead of `Math.random()`.

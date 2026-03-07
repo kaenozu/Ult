@@ -26,15 +26,22 @@ interface AuditLoggerConfig {
 }
 
 function generateSecureId(): string {
-  const array = new Uint8Array(16);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(array);
-  } else {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
+  if (typeof crypto !== 'undefined') {
+    if (typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    if (typeof crypto.getRandomValues === 'function') {
+      const array = new Uint8Array(16);
+      crypto.getRandomValues(array);
+      return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
     }
   }
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  // Fallback if crypto is completely unavailable
+  const fallbackArray = new Uint8Array(16);
+  for (let i = 0; i < fallbackArray.length; i++) {
+    fallbackArray[i] = Math.floor(Math.random() * 256);
+  }
+  return Array.from(fallbackArray, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
 export class AuditLogger {
