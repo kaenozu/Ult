@@ -26,7 +26,7 @@ export function UnifiedIntelligenceCard({ stock }: UnifiedIntelligenceCardProps)
       setIsLoading(true);
       try {
         // 1. 統合レポート生成
-        const result = await unifiedIntelligenceService.generateReport(stock.symbol, stock.market as any);
+        const result = await unifiedIntelligenceService.generateReport(stock.symbol, stock.market as 'japan' | 'usa');
         if (abortController.signal.aborted) return;
         setReport(result);
 

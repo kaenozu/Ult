@@ -14,6 +14,7 @@ import {
   CandlestickSeries,
   LineSeries,
   HistogramSeries,
+  SeriesMarker,
 } from 'lightweight-charts';
 import { OHLCV, Signal } from '@/app/types';
 import { SMA_CONFIG, GHOST_FORECAST, FORECAST_CONE } from '@/app/constants';
@@ -248,7 +249,7 @@ export const StockChart = memo(function StockChart({
     forecastLowerRef.current = forecastLower as unknown as ISeriesApi<'Line'>;
 
     // AI Confidence Markers (Beginner Friendly Visuals)
-    const markers: any[] = [];
+    const markers: SeriesMarker<Time>[] = [];
     if (signal && signal.confidence >= 60) {
       const time = data[data.length - 1].date as Time;
       const isBuy = signal.type === 'BUY';
@@ -276,7 +277,7 @@ export const StockChart = memo(function StockChart({
          });
       }
     }
-    (candleSeries as any).setMarkers(markers);
+    (candleSeries as unknown as { setMarkers: (markers: SeriesMarker<Time>[]) => void }).setMarkers(markers);
 
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -370,7 +371,7 @@ export const StockChart = memo(function StockChart({
     }
 
     // AI Confidence Markers
-    const markers: any[] = [];
+    const markers: SeriesMarker<Time>[] = [];
     if (signal && signal.confidence >= 60) {
       const time = data[data.length - 1].date as Time;
       const isBuy = signal.type === 'BUY';
@@ -396,7 +397,7 @@ export const StockChart = memo(function StockChart({
          });
       }
     }
-    (candleSeriesRef.current as any).setMarkers(markers);
+    (candleSeriesRef.current as unknown as { setMarkers: (markers: SeriesMarker<Time>[]) => void }).setMarkers(markers);
 
   }, [data, signal, showVolume, showSMA, showBollinger, accuracyData, convertToLWCData, convertToVolumeData, calculateSMA, calculateBollingerBands]);
 
