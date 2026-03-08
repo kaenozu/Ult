@@ -7,34 +7,51 @@ export function cn(...inputs: ClassValue[]) {
 
 export type CurrencyCode = "JPY" | "USD" | "EUR" | "GBP";
 
+const currencyFormatterCache = new Map<CurrencyCode, Intl.NumberFormat>();
+const numberFormatterCache = new Map<number, Intl.NumberFormat>();
+
 export function formatCurrency(
   value: number,
   currency: CurrencyCode = "JPY",
 ): string {
-  const currencyConfig: Record<
-    CurrencyCode,
-    { locale: string; fractionDigits: number }
-  > = {
-    JPY: { locale: "ja-JP", fractionDigits: 0 },
-    USD: { locale: "en-US", fractionDigits: 2 },
-    EUR: { locale: "de-DE", fractionDigits: 2 },
-    GBP: { locale: "en-GB", fractionDigits: 2 },
-  };
+  let formatter = currencyFormatterCache.get(currency);
 
-  const config = currencyConfig[currency];
-  return new Intl.NumberFormat(config.locale, {
-    style: "currency",
-    currency: currency,
-    minimumFractionDigits: config.fractionDigits,
-    maximumFractionDigits: config.fractionDigits,
-  }).format(value);
+  if (!formatter) {
+    const currencyConfig: Record<
+      CurrencyCode,
+      { locale: string; fractionDigits: number }
+    > = {
+      JPY: { locale: "ja-JP", fractionDigits: 0 },
+      USD: { locale: "en-US", fractionDigits: 2 },
+      EUR: { locale: "de-DE", fractionDigits: 2 },
+      GBP: { locale: "en-GB", fractionDigits: 2 },
+    };
+
+    const config = currencyConfig[currency];
+    formatter = new Intl.NumberFormat(config.locale, {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: config.fractionDigits,
+      maximumFractionDigits: config.fractionDigits,
+    });
+    currencyFormatterCache.set(currency, formatter);
+  }
+
+  return formatter.format(value);
 }
 
 export function formatNumber(value: number, decimals: number = 2): string {
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(value);
+  let formatter = numberFormatterCache.get(decimals);
+
+  if (!formatter) {
+    formatter = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+    numberFormatterCache.set(decimals, formatter);
+  }
+
+  return formatter.format(value);
 }
 
 export function formatPercent(value: number): string {
