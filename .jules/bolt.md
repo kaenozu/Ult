@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-01 - [React Render In-Place Mutation]
+**Learning:** In React components, avoiding in-place array mutation during the render phase (e.g., using `.reverse()` or `.sort()`) is crucial. Mutating the original array state in the render can cause React to miss updates, or trigger UI toggling/flickering bugs since the underlying reference is the same but the array elements flip back and forth on every render.
+**Action:** Always copy the array first before mutating it in the render phase. Use `[...arr].reverse()` or `[...arr].sort()` to ensure pure components and avoid React rendering issues.
