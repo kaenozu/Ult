@@ -12,3 +12,7 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+## 2026-03-08 - [Insecure RNG in Audit Logger Event IDs]
+**Vulnerability:** Audit event IDs were being generated using `Math.random()`, which is not cryptographically secure and produces predictable outputs.
+**Learning:** In contexts where identifiers are used for security purposes (like auditing, session tokens, or transaction IDs), predictable PRNGs can allow attackers to spoof, guess, or correlate events, compromising the integrity of the audit trail.
+**Prevention:** Always use cryptographically secure pseudo-random number generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` for security-sensitive identifiers.

@@ -26,15 +26,15 @@ interface AuditLoggerConfig {
 }
 
 function generateSecureId(): string {
-  const array = new Uint8Array(16);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(array);
-  } else {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
-    }
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
   }
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const array = new Uint32Array(4);
+    crypto.getRandomValues(array);
+    return Array.from(array, dec => dec.toString(16).padStart(8, '0')).join('-');
+  }
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 }
 
 export class AuditLogger {
