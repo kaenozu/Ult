@@ -44,7 +44,7 @@ export function OrderBook({ stock }: OrderBookProps) {
                 </tr>
             </thead>
             <tbody>
-                {asks.reverse().map((ask, i) => (
+                {[...asks].reverse().map((ask, i) => (
                     <tr key={`ask-${i}`} className="hover:bg-[#192633]/50">
                     <td className="py-0.5 px-2 text-right text-[#92adc9]"></td>
                     <td className="py-0.5 px-2 text-center text-red-500 font-medium">

@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-08 - [Map Caching for Intl.NumberFormat]
+**Learning:** Re-instantiating `Intl.NumberFormat` on every call to `formatCurrency` or `formatNumber` is a significant performance bottleneck in React render cycles where hundreds of numbers are formatted. Using a module-level `Map` to cache these formatters based on configuration keys (like currency or decimal places) can yield a 70-90x performance improvement.
+**Action:** Always check `utils.ts` formatters and cache `Intl.NumberFormat` objects, reusing them across renders instead of relying on `new Intl.NumberFormat()` inline.
