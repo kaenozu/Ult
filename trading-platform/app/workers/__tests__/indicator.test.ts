@@ -14,7 +14,7 @@ describe('Indicator Worker Logic', () => {
       volume: 1000
     }));
 
-    const result = calculateIndicatorsSync(mockData as any);
+    const result = calculateIndicatorsSync(mockData as Parameters<typeof calculateIndicatorsSync>[0]);
     
     expect(result).toHaveProperty('rsi');
     expect(result).toHaveProperty('macd');
