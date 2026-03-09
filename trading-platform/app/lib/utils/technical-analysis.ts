@@ -143,65 +143,89 @@ export function calculateMACD(
   signalPeriod: number = 9,
 ): { macd: number[]; signal: number[]; histogram: number[] } {
   const length = prices.length;
-  const macd = new Array(length).fill(NaN);
-  const signal = new Array(length).fill(NaN);
-  const histogram = new Array(length).fill(NaN);
+  const macd = new Array(length);
+  const signal = new Array(length);
+  const histogram = new Array(length);
 
-  /**
-   * Internal helper to update EMA state in a single pass
-   */
-  const createEMAState = (period: number) => {
-    let sum = 0;
-    let count = 0;
-    let prev = NaN;
-    const k = 2 / (period + 1);
+  const fastK = 2 / (fastPeriod + 1);
+  const slowK = 2 / (slowPeriod + 1);
+  const signalK = 2 / (signalPeriod + 1);
 
-    return (val: number): number => {
-      if (isNaN(val)) {
-        if (count >= period) prev = NaN;
-        return NaN;
-      }
-
-      if (count < period) {
-        sum += val;
-        count++;
-        if (count === period) {
-          prev = sum / period;
-          return prev;
-        }
-        return NaN;
-      }
-
-      if (!isNaN(prev)) {
-        prev = (val - prev) * k + prev;
-        return prev;
-      }
-
-      return NaN;
-    };
-  };
-
-  const updateFast = createEMAState(fastPeriod);
-  const updateSlow = createEMAState(slowPeriod);
-  const updateSignal = createEMAState(signalPeriod);
+  let fastSum = 0; let fastCount = 0; let fastPrev = NaN;
+  let slowSum = 0; let slowCount = 0; let slowPrev = NaN;
+  let signalSum = 0; let signalCount = 0; let signalPrev = NaN;
 
   for (let i = 0; i < length; i++) {
-    const price = _getValidPrice(prices[i]);
+    const price = prices[i];
+    const isPriceValid = price === price && price >= 0; // faster _getValidPrice
 
-    const fastVal = updateFast(price);
-    const slowVal = updateSlow(price);
-
-    let macdVal = NaN;
-    if (!isNaN(fastVal) && !isNaN(slowVal)) {
-      macdVal = fastVal - slowVal;
-      macd[i] = macdVal;
+    // Fast EMA inline
+    let fastVal = NaN;
+    if (!isPriceValid) {
+      if (fastCount >= fastPeriod) fastPrev = NaN;
+    } else {
+      if (fastCount < fastPeriod) {
+        fastSum += price;
+        fastCount++;
+        if (fastCount === fastPeriod) {
+          fastPrev = fastSum / fastPeriod;
+          fastVal = fastPrev;
+        }
+      } else if (fastPrev === fastPrev) { // fast isNaN check
+        fastPrev = (price - fastPrev) * fastK + fastPrev;
+        fastVal = fastPrev;
+      }
     }
 
-    const signalVal = updateSignal(macdVal);
+    // Slow EMA inline
+    let slowVal = NaN;
+    if (!isPriceValid) {
+      if (slowCount >= slowPeriod) slowPrev = NaN;
+    } else {
+      if (slowCount < slowPeriod) {
+        slowSum += price;
+        slowCount++;
+        if (slowCount === slowPeriod) {
+          slowPrev = slowSum / slowPeriod;
+          slowVal = slowPrev;
+        }
+      } else if (slowPrev === slowPrev) {
+        slowPrev = (price - slowPrev) * slowK + slowPrev;
+        slowVal = slowPrev;
+      }
+    }
+
+    let macdVal = NaN;
+    if (fastVal === fastVal && slowVal === slowVal) {
+      macdVal = fastVal - slowVal;
+      macd[i] = macdVal;
+    } else {
+      macd[i] = NaN;
+    }
+
+    // Signal EMA inline
+    let signalVal = NaN;
+    if (macdVal !== macdVal) { // isNaN(macdVal)
+      if (signalCount >= signalPeriod) signalPrev = NaN;
+    } else {
+      if (signalCount < signalPeriod) {
+        signalSum += macdVal;
+        signalCount++;
+        if (signalCount === signalPeriod) {
+          signalPrev = signalSum / signalPeriod;
+          signalVal = signalPrev;
+        }
+      } else if (signalPrev === signalPrev) {
+        signalPrev = (macdVal - signalPrev) * signalK + signalPrev;
+        signalVal = signalPrev;
+      }
+    }
     signal[i] = signalVal;
 
-    if (!isNaN(macdVal) && !isNaN(signalVal)) {
+    if (macdVal === macdVal && signalVal === signalVal) {
       histogram[i] = macdVal - signalVal;
+    } else {
+      histogram[i] = NaN;
     }
   }
 
@@ -225,20 +249,21 @@ export function calculateBollingerBands(
   let sum = 0;
   let sumSq = 0;
   let validCount = 0;
+  const invPeriod = 1 / period;
 
   // Initial window loop
   const initialLimit = Math.min(length, period);
   for (let i = 0; i < initialLimit; i++) {
-    const val = _getValidPrice(prices[i]);
-    if (!isNaN(val)) {
+    const val = prices[i];
+    if (val === val && val >= 0) { // faster _getValidPrice
       sum += val;
       sumSq += val * val;
       validCount++;
     }
 
     if (i === period - 1 && validCount === period) {
-      const mean = sum / period;
-      const variance = Math.max(0, sumSq / period - mean * mean);
+      const mean = sum * invPeriod;
+      const variance = Math.max(0, sumSq * invPeriod - mean * mean);
       const stdDev = Math.sqrt(variance);
       middle[i] = mean;
       upper[i] = mean + standardDeviations * stdDev;
@@ -252,46 +277,25 @@ export function calculateBollingerBands(
 
   // Rolling window loop
   for (let i = period; i < length; i++) {
-    const val = _getValidPrice(prices[i]);
-    if (!isNaN(val)) {
+    const val = prices[i];
+    const oldVal = prices[i - period];
+
+    if (val === val && val >= 0) {
       sum += val;
       sumSq += val * val;
       validCount++;
     }
 
-    const oldVal = _getValidPrice(prices[i - period]);
-    if (!isNaN(oldVal)) {
+    if (oldVal === oldVal && oldVal >= 0) {
       sum -= oldVal;
       sumSq -= oldVal * oldVal;
       validCount--;
     }
 
-    if (validCount >= period) { // Relaxed constraint for rolling window
-      const mean = sum / validCount; // Use validCount instead of fixed period if recovering
-      // Variance calculation might be slightly off if count > period due to non-removed old values,
-      // but standard logic assumes constant window size.
-      // For strict correctness with NaNs, we should probably stick to:
-      // only output if validCount === period.
-      // HOWEVER, the test expects robustness.
-      // Let's stick to validCount === period for strict correctness as per standard lib behavior,
-      // but ensure state is correctly maintained.
-      //
-      // Re-reading the failure: expected NaN, got 10.
-      // Input: [10, NaN, 20, 30, 40], period 2.
-      // i=0: val=10. sum=10. count=1.
-      // i=1: val=NaN. sum=10. count=1. limit=2. loop ends. middle[1]=NaN.
-      // Rolling:
-      // i=2: val=20. sum=10+20=30. sq... count=2.
-      //      oldVal(i-2=0)=10. sum=30-10=20. count=1.
-      //      validCount=1. != period(2). middle[2]=NaN.
-      //      Wait, test says: expect(sma[2]).toBeNaN(). Received 10.
-      //      Ah, the SMA test is failing, not Bollinger.
-      //      Let's look at calculateSMA.
-    }
-
+    // Standard BB calculation assumes strict validCount === period
     if (validCount === period) {
-       const mean = sum / period;
-       const variance = Math.max(0, sumSq / period - mean * mean);
+       const mean = sum * invPeriod;
+       const variance = Math.max(0, sumSq * invPeriod - mean * mean);
        const stdDev = Math.sqrt(variance);
        middle[i] = mean;
        upper[i] = mean + standardDeviations * stdDev;
