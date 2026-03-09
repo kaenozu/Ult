@@ -23,14 +23,14 @@ export function calculateSMA(prices: number[], period: number): number[] {
   const result: number[] = new Array(length).fill(NaN);
   if (length < period) return result;
 
-  const floatPrices = new Float64Array(prices);
+  const floatPrices = prices; // Avoid Float64Array for memory allocation
   let sum = 0;
 
   // Initial window
   let validCount = 0;
   for (let i = 0; i < period; i++) {
     const val = floatPrices[i];
-    if (!isNaN(val)) {
+    if (val === val) { // fast !isNaN
       sum += val;
       validCount++;
     }
@@ -44,12 +44,12 @@ export function calculateSMA(prices: number[], period: number): number[] {
     const newVal = floatPrices[i];
     const oldVal = floatPrices[i - period];
 
-    if (!isNaN(newVal)) {
+    if (newVal === newVal) {
       sum += newVal;
       validCount++;
     }
 
-    if (!isNaN(oldVal)) {
+    if (oldVal === oldVal) {
       sum -= oldVal;
       validCount--;
     }
@@ -70,7 +70,7 @@ export function calculateEMA(prices: number[], period: number): number[] {
   const result: number[] = new Array(length).fill(NaN);
   if (length < period) return result;
 
-  const floatPrices = new Float64Array(prices);
+  const floatPrices = prices; // Avoid Float64Array for memory allocation
   const k = 2 / (period + 1);
 
   // Initial SMA
@@ -99,7 +99,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   const result: number[] = new Array(length).fill(NaN);
   if (length <= period) return result;
 
-  const floatPrices = new Float64Array(prices);
+  const floatPrices = prices; // Avoid Float64Array for memory allocation
   let avgGain = 0;
   let avgLoss = 0;
 
@@ -107,7 +107,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   for (let i = 1; i <= period; i++) {
     const change = floatPrices[i] - floatPrices[i - 1];
     if (change >= 0) avgGain += change;
-    else avgLoss += Math.abs(change);
+    else avgLoss -= change; // Faster than Math.abs
   }
   avgGain /= period;
   avgLoss /= period;
@@ -119,7 +119,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
   for (let i = period + 1; i < length; i++) {
     const change = floatPrices[i] - floatPrices[i - 1];
     const gain = change >= 0 ? change : 0;
-    const loss = change < 0 ? Math.abs(change) : 0;
+    const loss = change < 0 ? -change : 0;
 
     avgGain = (avgGain * (period - 1) + gain) / period;
     avgLoss = (avgLoss * (period - 1) + loss) / period;
