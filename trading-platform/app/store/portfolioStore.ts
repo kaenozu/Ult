@@ -24,6 +24,24 @@ interface PortfolioState {
 let orderLock = false;
 
 /**
+ * Generates a cryptographically secure random ID
+ */
+function generateSecureId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID().replace(/-/g, '');
+  }
+  const array = new Uint32Array(4);
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    crypto.getRandomValues(array);
+  } else {
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 0x100000000);
+    }
+  }
+  return Array.from(array, byte => byte.toString(16).padStart(8, '0')).join('');
+}
+
+/**
  * Calculate aggregate statistics for the portfolio based on current positions.
  */
 function calculatePortfolioStats(positions: Position[]) {
@@ -116,7 +134,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             syncPortfolio((state) => {
               if (orderRequest.side === 'LONG' && state.portfolio.cash < totalCost) return {};
 
-              const orderId = `at_ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+              const orderId = `at_ord_${Date.now()}_${generateSecureId().substring(0, 5)}`;
               const existingIdx = state.portfolio.positions.findIndex(p => p.symbol === orderRequest.symbol && p.side === orderRequest.side);
               const positions = [...state.portfolio.positions];
 
@@ -220,7 +238,7 @@ export const usePortfolioStore = create<PortfolioState>()(
               // We do this asynchronously to not block the UI update
               import('../lib/storage/IndexedDBService').then(({ indexedDBService }) => {
                 const closedTrade = {
-                  id: `trd_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                  id: `trd_${Date.now()}_${generateSecureId().substring(0, 5)}`,
                   symbol: p.symbol,
                   side: p.side === 'LONG' ? 'SELL' : 'BUY', // Closing side
                   type: 'MARKET',
