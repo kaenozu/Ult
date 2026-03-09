@@ -33,6 +33,24 @@ export interface NotificationChannel {
   config: NotificationChannelConfig;
 }
 
+/**
+ * Generates a cryptographically secure random ID
+ */
+function generateSecureId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID().replace(/-/g, '');
+  }
+  const array = new Uint32Array(4);
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    crypto.getRandomValues(array);
+  } else {
+    for (let i = 0; i < array.length; i++) {
+      array[i] = Math.floor(Math.random() * 0x100000000);
+    }
+  }
+  return Array.from(array, byte => byte.toString(16).padStart(8, '0')).join('');
+}
+
 export class AlertNotificationSystem extends EventEmitter {
   private conditions: Map<string, AlertCondition> = new Map();
   private alerts: Map<string, Alert> = new Map();
@@ -264,7 +282,7 @@ export class AlertNotificationSystem extends EventEmitter {
 
   // Utilities
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${generateSecureId().substring(0, 9)}`;
   }
 
   // Cleanup
