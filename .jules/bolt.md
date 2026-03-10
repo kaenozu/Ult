@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-10 - Closure Overhead in Hot Loops
+**Learning:** In V8/Node.js array processing, using closure-based helper functions (e.g., higher-order functions like `createEMAState()`) to manage loop-carried state variables across iterations introduces severe performance penalties due to closure allocation overhead in hot loops.
+**Action:** When calculating technical indicators (like MACD) over large arrays, always inline the state logic and manage state variables (e.g., sums, counts, prev values) natively as local variables within the tight iteration loop.

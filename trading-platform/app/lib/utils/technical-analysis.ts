@@ -135,6 +135,7 @@ export function calculateRSI(prices: number[], period: number = 14): number[] {
  * Calculate Moving Average Convergence Divergence (MACD)
  * Optimized: Single-pass calculation to avoid intermediate array allocations.
  * Fix: Supports negative MACD values for Signal line calculation.
+ * Bolt Optimization: Inlined EMA state calculations to avoid closure allocation overhead in hot loops.
  */
 export function calculateMACD(
   prices: number[],
@@ -143,65 +144,83 @@ export function calculateMACD(
   signalPeriod: number = 9,
 ): { macd: number[]; signal: number[]; histogram: number[] } {
   const length = prices.length;
-  const macd = new Array(length).fill(NaN);
-  const signal = new Array(length).fill(NaN);
-  const histogram = new Array(length).fill(NaN);
+  const macd = new Array(length);
+  const signal = new Array(length);
+  const histogram = new Array(length);
 
-  /**
-   * Internal helper to update EMA state in a single pass
-   */
-  const createEMAState = (period: number) => {
-    let sum = 0;
-    let count = 0;
-    let prev = NaN;
-    const k = 2 / (period + 1);
+  let fastSum = 0, fastCount = 0, fastPrev = NaN;
+  const fastK = 2 / (fastPeriod + 1);
 
-    return (val: number): number => {
-      if (isNaN(val)) {
-        if (count >= period) prev = NaN;
-        return NaN;
-      }
+  let slowSum = 0, slowCount = 0, slowPrev = NaN;
+  const slowK = 2 / (slowPeriod + 1);
 
-      if (count < period) {
-        sum += val;
-        count++;
-        if (count === period) {
-          prev = sum / period;
-          return prev;
-        }
-        return NaN;
-      }
-
-      if (!isNaN(prev)) {
-        prev = (val - prev) * k + prev;
-        return prev;
-      }
-
-      return NaN;
-    };
-  };
-
-  const updateFast = createEMAState(fastPeriod);
-  const updateSlow = createEMAState(slowPeriod);
-  const updateSignal = createEMAState(signalPeriod);
+  let signalSum = 0, signalCount = 0, signalPrev = NaN;
+  const signalK = 2 / (signalPeriod + 1);
 
   for (let i = 0; i < length; i++) {
-    const price = _getValidPrice(prices[i]);
+    const price = prices[i];
+    // Inline _getValidPrice logic
+    const validPrice = (price === price && price >= 0) ? price : NaN;
 
-    const fastVal = updateFast(price);
-    const slowVal = updateSlow(price);
-
-    let macdVal = NaN;
-    if (!isNaN(fastVal) && !isNaN(slowVal)) {
-      macdVal = fastVal - slowVal;
-      macd[i] = macdVal;
+    // Fast EMA
+    let fastVal = NaN;
+    if (validPrice !== validPrice) { // isNaN check
+      if (fastCount >= fastPeriod) fastPrev = NaN;
+    } else if (fastCount < fastPeriod) {
+      fastSum += validPrice;
+      fastCount++;
+      if (fastCount === fastPeriod) {
+        fastPrev = fastSum / fastPeriod;
+        fastVal = fastPrev;
+      }
+    } else if (fastPrev === fastPrev) {
+      fastPrev = (validPrice - fastPrev) * fastK + fastPrev;
+      fastVal = fastPrev;
     }
 
-    const signalVal = updateSignal(macdVal);
+    // Slow EMA
+    let slowVal = NaN;
+    if (validPrice !== validPrice) {
+      if (slowCount >= slowPeriod) slowPrev = NaN;
+    } else if (slowCount < slowPeriod) {
+      slowSum += validPrice;
+      slowCount++;
+      if (slowCount === slowPeriod) {
+        slowPrev = slowSum / slowPeriod;
+        slowVal = slowPrev;
+      }
+    } else if (slowPrev === slowPrev) {
+      slowPrev = (validPrice - slowPrev) * slowK + slowPrev;
+      slowVal = slowPrev;
+    }
+
+    let macdVal = NaN;
+    if (fastVal === fastVal && slowVal === slowVal) {
+      macdVal = fastVal - slowVal;
+    }
+    macd[i] = macdVal;
+
+    // Signal EMA
+    let signalVal = NaN;
+    if (macdVal !== macdVal) {
+      if (signalCount >= signalPeriod) signalPrev = NaN;
+    } else if (signalCount < signalPeriod) {
+      signalSum += macdVal;
+      signalCount++;
+      if (signalCount === signalPeriod) {
+        signalPrev = signalSum / signalPeriod;
+        signalVal = signalPrev;
+      }
+    } else if (signalPrev === signalPrev) {
+      signalPrev = (macdVal - signalPrev) * signalK + signalPrev;
+      signalVal = signalPrev;
+    }
     signal[i] = signalVal;
 
-    if (!isNaN(macdVal) && !isNaN(signalVal)) {
+    if (macdVal === macdVal && signalVal === signalVal) {
       histogram[i] = macdVal - signalVal;
+    } else {
+      histogram[i] = NaN;
     }
   }
 
