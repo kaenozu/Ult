@@ -218,7 +218,12 @@ export class FeatureEngineeringService {
     const macro = macroData || this.getDefaultMacroFeatures();
     const sentiment = sentimentData || this.getDefaultSentimentFeatures();
     const dataQuality = this.assessDataQuality(data);
-    const featureCount = this.countFeatures(technical, macro, sentiment, timeSeries);
+    const featureCount = this.countFeatures(
+      technical as unknown as Record<string, unknown>,
+      macro as unknown as Record<string, unknown>,
+      sentiment as unknown as Record<string, unknown>,
+      timeSeries as unknown as Record<string, unknown>
+    );
 
     return {
       technical,
@@ -883,7 +888,7 @@ export class FeatureEngineeringService {
     return 'POOR';
   }
 
-  private countFeatures(t: any, m: any, s: any, ts: any): number {
+  private countFeatures(t: Record<string, unknown>, m: Record<string, unknown> | null, s: Record<string, unknown> | null, ts: Record<string, unknown>): number {
     let count = Object.keys(t).length + Object.keys(ts).length;
     if (m) count += Object.keys(m).length;
     if (s) count += Object.keys(s).length;
@@ -934,7 +939,7 @@ export class FeatureEngineeringService {
     };
   }
 
-  private integrateMacroIndicators(macro: MacroIndicators, micro: any): MacroIndicators {
+  private integrateMacroIndicators(macro: MacroIndicators, _micro: unknown): MacroIndicators {
     return { ...macro };
   }
 
@@ -991,9 +996,9 @@ export class FeatureEngineeringService {
       scalers[key] = { min, max };
 
       if (max === min) {
-        normalized.forEach(f => (f as any)[key] = 0.5); // Avoid division by zero
+        normalized.forEach(f => (f as unknown as Record<string, unknown>)[key] = 0.5); // Avoid division by zero
       } else {
-        normalized.forEach(f => (f as any)[key] = ((f as any)[key] - min) / (max - min));
+        normalized.forEach(f => (f as unknown as Record<string, unknown>)[key] = ((f as unknown as Record<string, number>)[key] - min) / (max - min));
       }
     }
 
