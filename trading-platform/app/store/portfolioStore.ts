@@ -45,6 +45,8 @@ function calculatePortfolioStats(positions: Position[]) {
   return { totalValue, totalProfit, dailyPnL };
 }
 
+import { generateSecureId } from '../lib/utils';
+
 export const usePortfolioStore = create<PortfolioState>()(
   persist(
     (set, get) => {
@@ -116,7 +118,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             syncPortfolio((state) => {
               if (orderRequest.side === 'LONG' && state.portfolio.cash < totalCost) return {};
 
-              const orderId = `at_ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+              const orderId = generateSecureId('at_ord_');
               const existingIdx = state.portfolio.positions.findIndex(p => p.symbol === orderRequest.symbol && p.side === orderRequest.side);
               const positions = [...state.portfolio.positions];
 
@@ -220,7 +222,7 @@ export const usePortfolioStore = create<PortfolioState>()(
               // We do this asynchronously to not block the UI update
               import('../lib/storage/IndexedDBService').then(({ indexedDBService }) => {
                 const closedTrade = {
-                  id: `trd_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+                  id: generateSecureId('trd_'),
                   symbol: p.symbol,
                   side: p.side === 'LONG' ? 'SELL' : 'BUY', // Closing side
                   type: 'MARKET',

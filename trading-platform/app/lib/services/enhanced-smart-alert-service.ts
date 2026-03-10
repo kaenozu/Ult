@@ -8,6 +8,7 @@
 import { OHLCV } from '@/app/types';
 import type { TechnicalIndicators } from '@/app/types';
 import { ProcessedData } from './high-frequency-data-processing-service';
+import { generateSecureId } from '../utils';
 
 export interface AlertCondition {
   type: 'price' | 'indicator' | 'volume' | 'pattern' | 'volatility' | 'correlation' | 'custom';
@@ -316,7 +317,7 @@ class EnhancedSmartAlertService {
    */
   private createNotification(trigger: AlertTrigger, method: 'popup' | 'email' | 'sms' | 'push'): AlertNotification {
     return {
-      id: `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: generateSecureId('notification_'),
       trigger,
       method,
       sentAt: new Date(),

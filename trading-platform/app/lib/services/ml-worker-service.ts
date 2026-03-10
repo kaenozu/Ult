@@ -8,7 +8,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { devWarn, devError } from '@/app/lib/utils/dev-logger';
-
+import { generateSecureId } from '../utils';
 
 interface MLPredictionRequest {
   id: string;
@@ -223,7 +223,7 @@ export class MLWorkerManager {
   ): Promise<number> {
     await this.initializeWorker();
 
-    const id = `pred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = generateSecureId('pred_');
 
     return new Promise((resolve, reject) => {
       const startTime = performance.now();

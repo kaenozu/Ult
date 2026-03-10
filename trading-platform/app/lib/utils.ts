@@ -52,6 +52,23 @@ export function formatVolume(value: number): string {
   return value.toString();
 }
 
+/**
+ * Generates a cryptographically secure random ID.
+ * Falls back to Math.random() if crypto is unavailable.
+ */
+export function generateSecureId(prefix: string = ''): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${prefix}${crypto.randomUUID()}`;
+  }
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const array = new Uint32Array(4);
+    crypto.getRandomValues(array);
+    const randomStr = Array.from(array, dec => dec.toString(16).padStart(8, '0')).join('-');
+    return `${prefix}${Date.now()}_${randomStr}`;
+  }
+  return `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+}
+
 export function getChangeColor(change: number): string {
   if (change > 0) return "text-green-500";
   if (change < 0) return "text-red-500";
