@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2026-03-10 - Insecure Predictable ID Generation
+**Vulnerability:** Several parts of the application, including the ML worker service, dashboard store, portfolio store, and alert notification system, were generating IDs using a predictable and cryptographically insecure pattern: `Date.now()_Math.random().toString(36).substr(2, 9)`.
+**Learning:** Using `Math.random()` combined with `Date.now()` is a common anti-pattern for generating UUIDs or sensitive identifiers. While it may seem random enough for non-critical elements, it can lead to ID collisions in high-concurrency environments and allows attackers to predict IDs, potentially leading to spoofing or unauthorized access if the IDs are used as security or session tokens.
+**Prevention:** Always use cryptographically secure random number generators (CSPRNG) for ID generation across the entire application. Specifically, use `crypto.randomUUID()` as the primary mechanism, and provide a fallback using `crypto.getRandomValues()` for environments where `randomUUID` is unavailable (like older Node.js or Jest environments). Never use `Math.random()` for identifiers.
