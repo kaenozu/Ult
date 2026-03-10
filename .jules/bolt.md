@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-10 - Fast native array allocations for OHLCV Loops
+**Learning:** `new Float64Array(prices)` has large allocation overhead inside fast-running loops in Node/V8 compared to native arrays (`PACKED_DOUBLE_ELEMENTS`). Creating intermediate `Float64Array` inside utility functions like `calculateSMA`, `calculateEMA`, and `calculateRSI` adds significant garbage collection and parsing costs overhead. Additionally, `new Array(length).fill(NaN)` creates double-allocations (Array initialization then array walk/filling).
+**Action:** Avoid copying primitive standard arrays (like `prices`) into `Float64Array` inside tight calculation loops. Also, avoid `.fill(NaN)` by manually setting `NaN` initialization inside the existing loop, and use `val === val` for fast NaN checks over `isNaN()`. Also, cache inverted constants (e.g. `const invPeriod = 1 / period`) to multiply instead of dividing inside tight loops.
