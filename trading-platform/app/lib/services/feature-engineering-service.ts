@@ -883,7 +883,7 @@ export class FeatureEngineeringService {
     return 'POOR';
   }
 
-  private countFeatures(t: any, m: any, s: any, ts: any): number {
+  private countFeatures(t: Record<string, unknown>, m: Record<string, unknown> | null, s: Record<string, unknown> | null, ts: Record<string, unknown>): number {
     let count = Object.keys(t).length + Object.keys(ts).length;
     if (m) count += Object.keys(m).length;
     if (s) count += Object.keys(s).length;
@@ -934,7 +934,7 @@ export class FeatureEngineeringService {
     };
   }
 
-  private integrateMacroIndicators(macro: MacroIndicators, micro: any): MacroIndicators {
+  private integrateMacroIndicators(macro: MacroIndicators, _micro: unknown): MacroIndicators {
     return { ...macro };
   }
 
@@ -991,9 +991,9 @@ export class FeatureEngineeringService {
       scalers[key] = { min, max };
 
       if (max === min) {
-        normalized.forEach(f => (f as any)[key] = 0.5); // Avoid division by zero
+        normalized.forEach(f => (f as Record<string, unknown>)[key] = 0.5); // Avoid division by zero
       } else {
-        normalized.forEach(f => (f as any)[key] = ((f as any)[key] - min) / (max - min));
+        normalized.forEach(f => (f as Record<string, unknown>)[key] = ((f as Record<string, number>)[key] - min) / (max - min));
       }
     }
 

@@ -7,34 +7,34 @@ import { setupTestEnvironment, cleanupTestEnvironment } from './app/__tests__/ut
 
 // TextEncoder/Decoder
 if (typeof global.TextEncoder === 'undefined') {
-  (global as any).TextEncoder = TextEncoder;
+  (global as unknown as { TextEncoder: typeof TextEncoder }).TextEncoder = TextEncoder;
 }
 if (typeof global.TextDecoder === 'undefined') {
-  (global as any).TextDecoder = TextDecoder;
+  (global as unknown as { TextDecoder: typeof TextDecoder }).TextDecoder = TextDecoder;
 }
 
 // Crypto (needed for UUIDs)
 if (typeof global.crypto === 'undefined' || !global.crypto.randomUUID) {
   const nodeCrypto = require('crypto');
-  (global as any).crypto = {
+  (global as unknown as { crypto: Crypto }).crypto = {
     randomUUID: () => nodeCrypto.randomUUID(),
     subtle: nodeCrypto.webcrypto?.subtle,
-    getRandomValues: (buffer: any) => nodeCrypto.randomFillSync(buffer),
-  };
+    getRandomValues: (buffer: NodeJS.ArrayBufferView) => nodeCrypto.randomFillSync(buffer),
+  } as unknown as Crypto;
 }
 
 // structuredClone for fake-indexeddb
 if (typeof global.structuredClone === 'undefined') {
-  (global as any).structuredClone = (val: any) => JSON.parse(JSON.stringify(val));
+  (global as unknown as { structuredClone: <T>(val: T) => T }).structuredClone = <T>(val: T): T => JSON.parse(JSON.stringify(val));
 }
 
 // Request/Response for Next.js API testing
 if (typeof Request === 'undefined') {
-  (global as any).Request = class Request {
+  (global as unknown as { Request: unknown }).Request = class Request {
     url: string;
     method: string;
     headers: Map<string, string>;
-    constructor(input: any, init?: any) {
+    constructor(input: string | { url: string }, init?: { method?: string; headers?: Record<string, string> }) {
       this.url = typeof input === 'string' ? input : input.url;
       this.method = init?.method || 'GET';
       this.headers = new Map(Object.entries(init?.headers || {}));
@@ -43,11 +43,11 @@ if (typeof Request === 'undefined') {
 }
 
 if (typeof Response === 'undefined') {
-  (global as any).Response = class Response {
-    body: any;
+  (global as unknown as { Response: unknown }).Response = class Response {
+    body: unknown;
     status: number;
     headers: Map<string, string>;
-    constructor(body: any, init?: any) {
+    constructor(body: unknown, init?: { status?: number; headers?: Record<string, string> }) {
       this.body = body;
       this.status = init?.status || 200;
       this.headers = new Map(Object.entries(init?.headers || {}));
@@ -55,7 +55,7 @@ if (typeof Response === 'undefined') {
     json() {
       return Promise.resolve(typeof this.body === 'string' ? JSON.parse(this.body) : this.body);
     }
-    static json(data: any, init?: any) {
+    static json(data: unknown, init?: { headers?: Record<string, string> }) {
       return new Response(JSON.stringify(data), {
         ...init,
         headers: {
@@ -98,7 +98,7 @@ if (typeof HTMLCanvasElement !== 'undefined') {
         getParameter: jest.fn().mockReturnValue(null),
         getShaderPrecisionFormat: jest.fn().mockReturnValue({ precision: 0 }),
         isContextLost: jest.fn().mockReturnValue(false),
-      } as any;
+      } as unknown as RenderingContext;
     }
     return {
       fillRect: jest.fn(),
@@ -127,8 +127,8 @@ if (typeof HTMLCanvasElement !== 'undefined') {
       createLinearGradient: jest.fn(() => ({
         addColorStop: jest.fn()
       })),
-    } as any;
-  }) as any;
+    } as unknown as RenderingContext;
+  }) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 }
 
 // Configure TensorFlow.js for Node.js environment
@@ -136,14 +136,14 @@ process.env.TFJS_BACKEND = 'cpu';
 
 // Mock Performance API
 if (!global.performance) {
-  (global as any).performance = {
+  (global as unknown as { performance: Partial<Performance> }).performance = {
     now: jest.fn(() => Date.now()),
     getEntriesByType: jest.fn(() => []),
     mark: jest.fn(),
     measure: jest.fn(),
-  };
+  } as unknown as Performance;
 } else {
   if (!global.performance.getEntriesByType) {
-    (global as any).performance.getEntriesByType = jest.fn(() => []);
+    (global as unknown as { performance: Partial<Performance> }).performance.getEntriesByType = jest.fn(() => []) as unknown as typeof performance.getEntriesByType;
   }
 }

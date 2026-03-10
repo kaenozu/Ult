@@ -1,5 +1,5 @@
 
-> trading-platform@0.1.0 lint
+> trading-platform@0.1.0 lint /app/trading-platform
 > eslint .
 
 
@@ -9,8 +9,8 @@
    98:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   112:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/__tests__/utils/query-wrapper.tsx
-  13:10  error  Component definition is missing display name  react/display-name
+/app/trading-platform/app/__tests__/StockTableAccessibility.test.tsx
+  1:37  warning  'waitFor' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/api/export/trades/route.ts
   7:30  warning  'ExportTradesRequest' is defined but never used  @typescript-eslint/no-unused-vars
@@ -34,54 +34,43 @@
 /app/trading-platform/app/api/reviews/route.ts
   16:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/components/AlertConditionManager.tsx
-  157:97  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+/app/trading-platform/app/api/trading/__tests__/config-sanitization.test.ts
+  101:11  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/components/SignalPanel/hooks/useBacktestControls.ts
-  62:6  warning  React Hook useEffect has a missing dependency: 'ohlcv'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+/app/trading-platform/app/components/AlertConditionManager.tsx
+  175:97  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/app/trading-platform/app/components/DataQualityPanel/hooks/useDataQuality.ts
+  98:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/app/trading-platform/app/components/DataQualityPanel/hooks/useDataQuality.ts:98:5
+   96 |   useEffect(() => {
+   97 |     // Initial fetch
+>  98 |     fetchMetrics();
+      |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+   99 |
+  100 |     // Polling
+  101 |     const interval = setInterval(fetchMetrics, updateInterval);  react-hooks/set-state-in-effect
+
+/app/trading-platform/app/components/OrderPanel.tsx
+  152:23  warning  The ref value 'triggerBtnRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'triggerBtnRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+/app/trading-platform/app/components/SignalPanel/components/SignalFilters.tsx
+   1:14  warning  'getConfidenceColor' is defined but never used                                   @typescript-eslint/no-unused-vars
+  10:58  warning  'displaySignal' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/components/StockChart/StockChart.tsx
-   52:3   warning  'indexData' is assigned a value but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
-   59:3   warning  'market' is assigned a value but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
-  365:48  warning  Error: Cannot access refs during render
-
-React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
-
-/app/trading-platform/app/components/StockChart/StockChart.tsx:365:48
-  363 |           className="absolute z-50 bg-[#1a2632] border border-[#233648] rounded-lg p-3 shadow-lg pointer-events-none"
-  364 |           style={{
-> 365 |             left: Math.min(tooltipPos.x + 10, (chartContainerRef.current?.clientWidth || 300) - 150),
-      |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
-  366 |             top: Math.max(tooltipPos.y - 100, 10),
-  367 |           }}
-  368 |         >                      react-hooks/refs
-  365:48  warning  Error: Cannot access refs during render
-
-React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
-
-/app/trading-platform/app/components/StockChart/StockChart.tsx:365:48
-  363 |           className="absolute z-50 bg-[#1a2632] border border-[#233648] rounded-lg p-3 shadow-lg pointer-events-none"
-  364 |           style={{
-> 365 |             left: Math.min(tooltipPos.x + 10, (chartContainerRef.current?.clientWidth || 300) - 150),
-      |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
-  366 |             top: Math.max(tooltipPos.y - 100, 10),
-  367 |           }}
-  368 |         >         react-hooks/refs
-  365:48  warning  Error: Cannot access refs during render
-
-React refs are values that are not needed for rendering. Refs should only be accessed outside of render, such as in event handlers or effects. Accessing a ref value (the `current` property) during render can cause your component not to update as expected (https://react.dev/reference/react/useRef).
-
-/app/trading-platform/app/components/StockChart/StockChart.tsx:365:48
-  363 |           className="absolute z-50 bg-[#1a2632] border border-[#233648] rounded-lg p-3 shadow-lg pointer-events-none"
-  364 |           style={{
-> 365 |             left: Math.min(tooltipPos.x + 10, (chartContainerRef.current?.clientWidth || 300) - 150),
-      |                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Cannot access ref value during render
-  366 |             top: Math.max(tooltipPos.y - 100, 10),
-  367 |           }}
-  368 |         >  react-hooks/refs
-
-/app/trading-platform/app/components/StockChart/hooks/useChartOptions.ts
-  123:12  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  251:20  warning  Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
+  279:22  warning  Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
+  315:6   warning  React Hook useEffect has missing dependencies: 'data' and 'signal'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  373:20  warning  Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
+  399:33  warning  Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/components/StockChart/hooks/useForecastLayers.ts
    46:3  warning  'market' is defined but never used. Allowed unused args must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
@@ -101,6 +90,15 @@ Calling setState synchronously within an effect body causes cascading renders th
   130 |       return;
   131 |     }
   132 |  react-hooks/set-state-in-effect
+
+/app/trading-platform/app/components/StockChart/hooks/useTechnicalIndicators.ts
+  51:6  warning  React Hook useEffect has a missing dependency: 'prices'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/app/trading-platform/app/components/StockTable.tsx
+  177:10  warning  'pollingInterval' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  177:27  warning  'setPollingInterval' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  178:9   warning  'intervalRef' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  282:18  warning  'error' is defined but never used                        @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/components/StoreHydration.tsx
   12:9  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
@@ -123,11 +121,11 @@ Calling setState synchronously within an effect body causes cascading renders th
 /app/trading-platform/app/components/UnifiedIntelligenceCard.tsx
   29:102  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/components/__tests__/StockTable.test.tsx
-  148:17  warning  'container' is assigned a value but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/components/__tests__/OrderPanel_Keyboard.test.tsx
+  1:37  warning  'waitFor' is defined but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/components/performance/MemoizedComponents.tsx
-  266:9  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+/app/trading-platform/app/components/__tests__/StockTable.test.tsx
+  160:17  warning  'container' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/components/performance/PerformanceDashboard.tsx
     2:10  warning  'usePerformanceMonitor' is defined but never used  @typescript-eslint/no-unused-vars
@@ -137,6 +135,9 @@ Calling setState synchronously within an effect body causes cascading renders th
 
 /app/trading-platform/app/components/psychology/TradingPsychologyDashboard/hooks/usePsychologyAnalysis.ts
   63:6  warning  React Hook useEffect has a missing dependency: 'patterns'. Either include it or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setSuggestions' needs the current value of 'patterns'  react-hooks/exhaustive-deps
+
+/app/trading-platform/app/components/signal/BeginnerSignalCard.tsx
+  46:3  warning  'currentPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/components/ui/LoadingStates.tsx
   144:3  warning  'height' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -149,8 +150,8 @@ Calling setState synchronously within an effect body causes cascading renders th
   471:5   warning  'riskLevel' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/market-data/integration/MultiSourceDataAggregator.ts
-   14:15  warning  'OHLCV' is defined but never used             @typescript-eslint/no-unused-vars
-  191:11  warning  'latency' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   15:15  warning  'OHLCV' is defined but never used             @typescript-eslint/no-unused-vars
+  192:11  warning  'latency' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/market-data/integration/__tests__/MultiSourceDataAggregator.test.ts
    9:8  warning  'AggregationConfig' is defined but never used  @typescript-eslint/no-unused-vars
@@ -191,12 +192,10 @@ Calling setState synchronously within an effect body causes cascading renders th
   389:5   warning  'assets' is defined but never used. Allowed unused args must match /^_/u                  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/models/ml/EnsembleModel.ts
-  232:11  warning  'highs' is assigned a value but never used   @typescript-eslint/no-unused-vars
-  233:11  warning  'lows' is assigned a value but never used    @typescript-eslint/no-unused-vars
-  670:11  warning  'closes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  14:10  warning  'calculateATR' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/models/ml/FeatureEngineering.ts
-  924:34  warning  'windowSize' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  943:34  warning  'windowSize' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/models/ml/MLService.ts
   118:30  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
@@ -205,7 +204,7 @@ Calling setState synchronously within an effect body causes cascading renders th
   126:11  warning  'overallDriftSeverity' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/models/ml/ModelPipeline.ts
-  186:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  189:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/domains/prediction/models/ml/__tests__/EnsembleModel.test.ts
     7:44  warning  'jest' is defined but never used                     @typescript-eslint/no-unused-vars
@@ -224,25 +223,18 @@ Calling setState synchronously within an effect body causes cascading renders th
   12:3  warning  'DriftDetectionResult' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/services/enhanced-ml-service.ts
-   13:24  warning  'Signal' is defined but never used                                           @typescript-eslint/no-unused-vars
-   15:10  warning  'FeatureCalculationService' is defined but never used                        @typescript-eslint/no-unused-vars
-  191:28  warning  'features' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
-  390:32  warning  'modelType' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   15:24  warning  'Signal' is defined but never used                                           @typescript-eslint/no-unused-vars
+  194:28  warning  'features' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+  399:32  warning  'modelType' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/domains/prediction/services/integrated-prediction-service.ts
-   8:32  warning  'TechnicalIndicator' is defined but never used   @typescript-eslint/no-unused-vars
-  14:10  warning  'BACKTEST_CONFIG' is defined but never used      @typescript-eslint/no-unused-vars
-  54:11  warning  'indicators' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  167:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-/app/trading-platform/app/domains/prediction/services/model-training-example.ts
-  11:10  warning  'mlModelService' is defined but never used       @typescript-eslint/no-unused-vars
-  13:10  warning  'PredictionFeatures' is defined but never used   @typescript-eslint/no-unused-vars
-  74:10  warning  'calculateIndicators' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/features/prediction/service.ts
-  284:47  warning  'marketComment' is assigned a value but never used      @typescript-eslint/no-unused-vars
-  287:11  warning  'isStrong' is assigned a value but never used           @typescript-eslint/no-unused-vars
-  325:7   warning  'correctionComment' is assigned a value but never used  @typescript-eslint/no-unused-vars
+/app/trading-platform/app/domains/prediction/services/tensorflow-model-service.ts
+  212:11  warning  'lstm' is assigned a value but never used              @typescript-eslint/no-unused-vars
+  220:11  warning  'attentionDense' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  221:11  warning  'attentionSoftmax' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/heatmap/page.tsx
    86:11  warning  'batchUpdateStockData' is assigned a value but never used  @typescript-eslint/no-unused-vars
@@ -267,23 +259,18 @@ Calling setState synchronously within an effect body causes cascading renders th
   191:9  warning  'queryClient' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/hooks/useCachedFetch.ts
-  270:11  warning  'pageSize' is assigned a value but never used   @typescript-eslint/no-unused-vars
-  270:26  warning  'threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  237:21  warning  '_pageSize' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  237:48  warning  '_threshold' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/hooks/usePsychology.ts
-  15:15  warning  'DisciplineScoreProps' is defined but never used  @typescript-eslint/no-unused-vars
+  18:15  warning  'DisciplineScoreProps' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/hooks/useSignalAlerts.ts
   26:72  warning  'previousHitRate' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/hooks/useStockData.ts
-   76:6  warning  React Hook useEffect has a missing dependency: 'chartData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  269:6  warning  React Hook useCallback has a missing dependency: 'loading'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-/app/trading-platform/app/hooks/useSymbolAccuracy.ts
-   84:14  warning  'e' is defined but never used                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
-  203:6   warning  React Hook useEffect has a missing dependency: 'ohlcv'. Either include it or remove the dependency array. If 'setAccuracy' needs the current value of 'ohlcv', you can also switch to useReducer instead of useState and read 'ohlcv' in the reducer  react-hooks/exhaustive-deps
-  203:49  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                              react-hooks/exhaustive-deps
+   78:6  warning  React Hook useEffect has a missing dependency: 'chartData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  298:6  warning  React Hook useCallback has a missing dependency: 'loading'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
 
 /app/trading-platform/app/hooks/useWebVitals.ts
    77:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -303,21 +290,31 @@ Calling setState synchronously within an effect body causes cascading renders th
   21:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/infrastructure/api/data-aggregator.ts
-  167:16  warning  '_err' is defined but never used          @typescript-eslint/no-unused-vars
-  331:14  warning  '_err' is defined but never used          @typescript-eslint/no-unused-vars
-  386:16  warning  '_fallbackErr' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/AgentSystem/skills.ts
-  506:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+  168:16  warning  '_err' is defined but never used          @typescript-eslint/no-unused-vars
+  347:14  warning  '_err' is defined but never used          @typescript-eslint/no-unused-vars
+  402:16  warning  '_fallbackErr' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/AnalysisService.ts
-  14:10  warning  'exitStrategy' is defined but never used  @typescript-eslint/no-unused-vars
+   1:25  warning  'Stock' is defined but never used                 @typescript-eslint/no-unused-vars
+  14:10  warning  'exitStrategy' is defined but never used          @typescript-eslint/no-unused-vars
+  15:10  warning  'mlIntegrationService' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/BacktestVisualizationUtils.ts
   8:26  warning  'BacktestTrade' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/ConsensusSignalService.ts
-  95:44  warning  'currentPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   11:25  warning  'TimeFrame' is defined but never used                                           @typescript-eslint/no-unused-vars
+   12:10  warning  'devLog' is defined but never used                                              @typescript-eslint/no-unused-vars
+   18:10  warning  'useSignalHistoryStore' is defined but never used                               @typescript-eslint/no-unused-vars
+  131:44  warning  'currentPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  171:95  warning  'currentPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  237:5   warning  'regime' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
+  238:5   warning  'currentPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  239:5   warning  'currentSMA' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
+  240:5   warning  'currentRSI' is defined but never used. Allowed unused args must match /^_/u    @typescript-eslint/no-unused-vars
+  246:9   warning  'weightedScore' is never reassigned. Use 'const' instead                        prefer-const
+  302:9   warning  'targetPrice' is never reassigned. Use 'const' instead                          prefer-const
+  303:9   warning  'stopLoss' is never reassigned. Use 'const' instead                             prefer-const
 
 /app/trading-platform/app/lib/ExitStrategy.ts
   126:11  warning  'trailingDistance' is assigned a value but never used                     @typescript-eslint/no-unused-vars
@@ -331,11 +328,8 @@ Calling setState synchronously within an effect body causes cascading renders th
   360:15  warning  'endTime' is assigned a value but never used                              @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/SignalValidatorService.ts
-  32:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  39:16  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/VolumeAnalysis.ts
-  2:32  warning  'DATA_REQUIREMENTS' is defined but never used  @typescript-eslint/no-unused-vars
+  35:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  42:16  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/WinningTradingSystem.ts
   14:17  warning  'Stock' is defined but never used                 @typescript-eslint/no-unused-vars
@@ -367,9 +361,6 @@ Calling setState synchronously within an effect body causes cascading renders th
   270:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
   300:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
   330:34  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
-
-/app/trading-platform/app/lib/__tests__/ConsensusSignalService.test.ts
-  8:32  warning  'beforeEach' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/__tests__/ExitStrategy.test.ts
    8:3  warning  'ExitStrategy' is defined but never used                @typescript-eslint/no-unused-vars
@@ -406,13 +397,39 @@ Calling setState synchronously within an effect body causes cascading renders th
 /app/trading-platform/app/lib/__tests__/UnifiedTradingPlatform.core.test.ts
   38:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/__tests__/VolumeAnalysis.test.ts
-   10:35  warning  'TestDataValidators' is defined but never used  @typescript-eslint/no-unused-vars
-  286:59  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-  287:64  warning  Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
-
 /app/trading-platform/app/lib/__tests__/WinningTradingSystem.test.ts
   76:13  warning  'session' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/__tests__/ai-prediction-backtest-real.test.ts
+    9:34  warning  'ConsensusSignal' is defined but never used        @typescript-eslint/no-unused-vars
+   10:17  warning  'Stock' is defined but never used                  @typescript-eslint/no-unused-vars
+  213:7   warning  'trades' is never reassigned. Use 'const' instead  prefer-const
+  224:11  warning  'currentPrice' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  270:11  warning  'closeReason' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/__tests__/ai-prediction-backtest-simple.test.ts
+  135:11  warning  'currentPrice' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  233:9   warning  'allResults' is never reassigned. Use 'const' instead  prefer-const
+  233:21  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+
+/app/trading-platform/app/lib/__tests__/ai-prediction-backtest-simulation.test.ts
+   10:34  warning  'ConsensusSignal' is defined but never used                    @typescript-eslint/no-unused-vars
+  179:7   warning  'trades' is never reassigned. Use 'const' instead              prefer-const
+  211:7   warning  'signalStats' is never reassigned. Use 'const' instead         prefer-const
+  212:7   warning  'buySignalAccuracy' is never reassigned. Use 'const' instead   prefer-const
+  213:7   warning  'sellSignalAccuracy' is never reassigned. Use 'const' instead  prefer-const
+  214:7   warning  'mlOutputStats' is never reassigned. Use 'const' instead       prefer-const
+  215:7   warning  'signalReasonStats' is never reassigned. Use 'const' instead   prefer-const
+  329:11  warning  'closeReason' is assigned a value but never used               @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/__tests__/ai-prediction-backtest.test.ts
+    9:32  warning  'jest' is defined but never used                      @typescript-eslint/no-unused-vars
+   10:34  warning  'ConsensusSignal' is defined but never used           @typescript-eslint/no-unused-vars
+   11:17  warning  'Stock' is defined but never used                     @typescript-eslint/no-unused-vars
+   12:10  warning  'marketClient' is defined but never used              @typescript-eslint/no-unused-vars
+   15:7   warning  'TEST_SYMBOLS_JP' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   95:7   warning  'trades' is never reassigned. Use 'const' instead     prefer-const
+  105:11  warning  'currentPrice' is assigned a value but never used     @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/__tests__/api-middleware.test.ts
    5:10  warning  'NextRequest' is defined but never used       @typescript-eslint/no-unused-vars
@@ -464,6 +481,9 @@ Calling setState synchronously within an effect body causes cascading renders th
 
 /app/trading-platform/app/lib/__tests__/utils.test.ts
   534:50  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/agent-system/skills.ts
+  506:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
 
 /app/trading-platform/app/lib/aiAnalytics/AnomalyDetection/AlertManager.ts
   226:35  warning  'alert' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
@@ -542,8 +562,8 @@ Calling setState synchronously within an effect body causes cascading renders th
   14:10  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/api-middleware.ts
-  40:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  40:75  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  41:75  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/api/UnifiedApiClient.ts
   128:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
@@ -554,6 +574,10 @@ Calling setState synchronously within an effect body causes cascading renders th
 
 /app/trading-platform/app/lib/api/__tests__/idb-migrations.test.ts
   18:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/api/idb-migrations.ts
+  9:18  warning  'devWarn' is defined but never used   @typescript-eslint/no-unused-vars
+  9:27  warning  'devError' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/auth.ts
   37:12  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
@@ -643,6 +667,9 @@ Calling setState synchronously within an effect body causes cascading renders th
 /app/trading-platform/app/lib/config/__tests__/env-validator.test.ts
   10:8  warning  'EnvironmentConfig' is defined but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/config/env-validator.ts
+  160:16  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/lib/csrf/__tests__/csrf-protection.test.ts
    2:23  warning  'NextResponse' is defined but never used                                @typescript-eslint/no-unused-vars
   10:23  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
@@ -668,8 +695,8 @@ Calling setState synchronously within an effect body causes cascading renders th
   5:45  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/di/initialize.ts
-  3:10  warning  'technicalIndicatorService' is defined but never used  @typescript-eslint/no-unused-vars
-  4:10  warning  'analysisService' is defined but never used            @typescript-eslint/no-unused-vars
+  4:10  warning  'technicalIndicatorService' is defined but never used  @typescript-eslint/no-unused-vars
+  5:10  warning  'analysisService' is defined but never used            @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/dynamicImports.tsx
   158:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -758,10 +785,6 @@ Calling setState synchronously within an effect body causes cascading renders th
   442:11  warning  'absGap' is assigned a value but never used                                  @typescript-eslint/no-unused-vars
   471:5   warning  'riskLevel' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
-/app/trading-platform/app/lib/ml/FeatureEngineering.ts
-  226:13  warning  'highs' is assigned a value but never used  @typescript-eslint/no-unused-vars
-  227:13  warning  'lows' is assigned a value but never used   @typescript-eslint/no-unused-vars
-
 /app/trading-platform/app/lib/ml/MLService.ts
   115:30  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
@@ -769,7 +792,7 @@ Calling setState synchronously within an effect body causes cascading renders th
   126:11  warning  'overallDriftSeverity' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/ml/__tests__/FeatureEngineering.test.ts
-  8:43  warning  'TechnicalFeatures' is defined but never used  @typescript-eslint/no-unused-vars
+  8:72  warning  'TechnicalFeatures' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/ml/integration-tests/EnsembleModel.test.ts
     7:44  warning  'jest' is defined but never used                     @typescript-eslint/no-unused-vars
@@ -838,9 +861,6 @@ Calling setState synchronously within an effect body causes cascading renders th
 /app/trading-platform/app/lib/paperTrading/PaperTradingEnvironment.ts
   421:5   warning  'options' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
   504:27  warning  'symbol' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
-
-/app/trading-platform/app/lib/performance-examples.ts
-  22:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/performance-utils.ts
   237:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -984,18 +1004,23 @@ Calling setState synchronously within an effect body causes cascading renders th
   337:9   warning  'maxCorrelation' is assigned a value but never used     @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/route-splitting.ts
-  13:53  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
-  60:42  warning  'path' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  16:53  warning  Unexpected any. Specify a different type                                @typescript-eslint/no-explicit-any
+  63:42  warning  'path' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/sentiment/SentimentAnalysisEngine.ts
   338:49  warning  'type' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/service-worker.ts
-  127:6   warning  React Hook useEffect has a missing dependency: 'state.isSupported'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  208:65  warning  Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+  130:6   warning  React Hook useEffect has a missing dependency: 'state.isSupported'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  211:65  warning  Unexpected any. Specify a different type                                                                              @typescript-eslint/no-explicit-any
+
+/app/trading-platform/app/lib/services/MLIntegrationService.ts
+    9:10  warning  'ML_MODEL_CONFIG' is defined but never used  @typescript-eslint/no-unused-vars
+  145:25  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/services/MLTrainingService.ts
-  178:15  warning  'indicators' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  178:15  warning  'indicators' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  189:19  warning  'sliceIndicators' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/PsychologyService.ts
    15:28  warning  'positions' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1004,7 +1029,8 @@ Calling setState synchronously within an effect body causes cascading renders th
 
 /app/trading-platform/app/lib/services/RealTimeDataService.ts
    1:10  warning  'spawn' is defined but never used         @typescript-eslint/no-unused-vars
-  86:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   2:18  warning  'devWarn' is defined but never used       @typescript-eslint/no-unused-vars
+  89:54  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/services/UnifiedIntelligenceService.ts
    11:10  warning  'logger' is defined but never used                                        @typescript-eslint/no-unused-vars
@@ -1026,6 +1052,9 @@ Calling setState synchronously within an effect body causes cascading renders th
 
 /app/trading-platform/app/lib/services/__tests__/feature-calculation-service.test.ts
   34:52  warning  'i' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/services/__tests__/market-regime-detector.test.ts
+  1:32  warning  'MarketRegime' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/__tests__/ml-model-service-di.test.ts
   162:70  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -1062,6 +1091,20 @@ Calling setState synchronously within an effect body causes cascading renders th
 /app/trading-platform/app/lib/services/enhanced-ml-service.ts
   12:24  warning  'domainEnhancedMLService' is defined but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/services/feature-engineering-service.ts
+  886:28  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+  886:36  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+  886:44  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+  886:53  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+  937:60  warning  'micro' is defined but never used. Allowed unused args must match /^_/u         @typescript-eslint/no-unused-vars
+  937:67  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+  956:49  warning  'period' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
+  967:29  warning  'atr' is defined but never used. Allowed unused args must match /^_/u           @typescript-eslint/no-unused-vars
+  967:44  warning  'currentPrice' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  994:39  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+  996:39  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+  996:58  warning  Unexpected any. Specify a different type                                        @typescript-eslint/no-explicit-any
+
 /app/trading-platform/app/lib/services/high-frequency-data-processing-service.ts
     8:17  warning  'Stock' is defined but never used                                         @typescript-eslint/no-unused-vars
    10:21  warning  'logError' is defined but never used                                      @typescript-eslint/no-unused-vars
@@ -1072,11 +1115,17 @@ Calling setState synchronously within an effect body causes cascading renders th
 /app/trading-platform/app/lib/services/implementations/prediction-calculator.ts
   79:11  warning  'VOLATILITY_WEIGHT' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/services/market-regime-detector.ts
+  32:11  warning  'latestATR' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/lib/services/ml-model-service.ts
-  33:16  warning  'loadTensorFlowModels' is defined but never used  @typescript-eslint/no-unused-vars
+  36:16  warning  'loadTensorFlowModels' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/portfolio-risk-management-service.ts
   9:10  warning  'calculateATR' is defined but never used  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/app/lib/services/prediction-worker.ts
+  236:11  warning  'transformedIndicators' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/services/realtime-data-service.ts
   27:21  warning  'symbols' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1148,6 +1197,9 @@ Calling setState synchronously within an effect body causes cascading renders th
    6:42  warning  'UniverseStats' is defined but never used    @typescript-eslint/no-unused-vars
   26:13  warning  'stock2' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/utils/__tests__/dev-logger.test.ts
+  167:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
 /app/trading-platform/app/lib/utils/__tests__/memoize.test.ts
   308:22  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
@@ -1172,25 +1224,14 @@ Calling setState synchronously within an effect body causes cascading renders th
   8:10  warning  'OHLCV' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/utils/memory-monitor.ts
-   41:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  196:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
-  204:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   43:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  206:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/lib/utils/performance-utils.ts
-  40:29  warning  Error: Expected the dependency list for useMemo to be an array literal
-
-Expected the dependency list for useMemo to be an array literal.
-
-/app/trading-platform/app/lib/utils/performance-utils.ts:40:29
-  38 |  */
-  39 | export function useShallowMemo<T extends Record<string, unknown>>(obj: T): T {
-> 40 |   return useMemo(() => obj, Object.values(obj));
-     |                             ^^^^^^^^^^^^^^^^^^ Expected the dependency list for useMemo to be an array literal
-  41 | }
-  42 |
-  43 | /**  react-hooks/use-memo
-  40:29  warning  React Hook useMemo was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies                                                                                                                                                                                                                                                                                                                                                  react-hooks/exhaustive-deps
-  40:29  warning  React Hook useMemo has a missing dependency: 'obj'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                react-hooks/exhaustive-deps
+  41:29  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  41:40  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  68:5   warning  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
 
 /app/trading-platform/app/lib/utils/performanceMonitor.ts
   68:11  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
@@ -1199,31 +1240,37 @@ Expected the dependency list for useMemo to be an array literal.
 /app/trading-platform/app/lib/utils/singleton.ts
   99:33  warning  'T' is defined but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/app/lib/utils/technical-analysis.ts
+  270:13  warning  'mean' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/lib/validation.ts
   298:9  warning  'allowedFields' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/lib/workers/IntelligenceWorker.ts
-  11:17  warning  'data' is assigned a value but never used    @typescript-eslint/no-unused-vars
-  21:11  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  14:17  warning  'data' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  24:11  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/performance/page.tsx
-   12:44  warning  'useRef' is defined but never used                                                                                @typescript-eslint/no-unused-vars
-   22:10  warning  'Signal' is defined but never used                                                                                @typescript-eslint/no-unused-vars
-   24:10  warning  'fetchOHLCV' is defined but never used                                                                            @typescript-eslint/no-unused-vars
-   77:3   warning  'onClick' is defined but never used. Allowed unused args must match /^_/u                                         @typescript-eslint/no-unused-vars
-  117:39  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
-  121:26  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
-  182:3   warning  'onClick' is defined but never used. Allowed unused args must match /^_/u                                         @typescript-eslint/no-unused-vars
-  371:6   warning  React Hook useCallback has a missing dependency: 'setDualData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  798:54  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
-  875:53  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+   14:44  warning  'useRef' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   25:10  warning  'Signal' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+   27:10  warning  'fetchOHLCV' is defined but never used                                                                            @typescript-eslint/no-unused-vars
+   80:3   warning  'onClick' is defined but never used. Allowed unused args must match /^_/u                                         @typescript-eslint/no-unused-vars
+  120:39  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  124:26  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  185:3   warning  'onClick' is defined but never used. Allowed unused args must match /^_/u                                         @typescript-eslint/no-unused-vars
+  374:6   warning  React Hook useCallback has a missing dependency: 'setDualData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  801:54  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  878:53  warning  Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+
+/app/trading-platform/app/recommendations/page.tsx
+  11:11  warning  'watchlist' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/screener/page.tsx
-   63:52  warning  'isFilterDebouncing' is assigned a value but never used                                                        @typescript-eslint/no-unused-vars
-  235:6   warning  React Hook useMemo has an unnecessary dependency: 'filters'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+   66:52  warning  'isFilterDebouncing' is assigned a value but never used                                                        @typescript-eslint/no-unused-vars
+  238:6   warning  React Hook useMemo has an unnecessary dependency: 'filters'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
 
 /app/trading-platform/app/security/AuditLogger.ts
-  9:10  warning  'idbClient' is defined but never used  @typescript-eslint/no-unused-vars
+  12:10  warning  'idbClient' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/store/__tests__/tradingStore.test.ts
   3:10  warning  'AI_TRADING' is defined but never used  @typescript-eslint/no-unused-vars
@@ -1247,7 +1294,7 @@ Expected the dependency list for useMemo to be an array literal.
   6:11  warning  'DualMatchResult' is defined but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/store/portfolioStore.ts
-  235:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  238:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/store/psychologyStore.ts
    14:3   warning  'MentalState' is defined but never used                                  @typescript-eslint/no-unused-vars
@@ -1256,7 +1303,7 @@ Expected the dependency list for useMemo to be an array literal.
   351:90  warning  Unexpected any. Specify a different type                                 @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/store/universeStore.ts
-  46:11  warning  'get' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  49:11  warning  'get' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/app/types/__tests__/branded.test.ts
   21:8  warning  'Price' is defined but never used        @typescript-eslint/no-unused-vars
@@ -1269,6 +1316,10 @@ Expected the dependency list for useMemo to be an array literal.
 /app/trading-platform/app/types/api.ts
   237:38  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
+/app/trading-platform/app/types/result.ts
+  16:10  warning  'devLog' is defined but never used    @typescript-eslint/no-unused-vars
+  16:18  warning  'devError' is defined but never used  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/app/workers/__tests__/indicator.test.ts
   17:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
@@ -1280,7 +1331,10 @@ Expected the dependency list for useMemo to be an array literal.
   3:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/app/workers/ml-prediction.worker.ts
-  39:5  warning  'models' is never reassigned. Use 'const' instead  prefer-const
+  42:5  warning  'models' is never reassigned. Use 'const' instead  prefer-const
+
+/app/trading-platform/app/workers/prediction-analysis.worker.ts
+  12:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/e2e/authentication.spec.ts
    13:69  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1308,9 +1362,6 @@ Expected the dependency list for useMemo to be an array literal.
 /app/trading-platform/e2e/monkey.spec.ts
   112:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
   124:16  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
-
-/app/trading-platform/e2e/prediction-clouds.spec.ts
-  107:56  warning  'request' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/e2e/specs/auth.spec.ts
   118:81  warning  'context' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
@@ -1358,14 +1409,27 @@ Expected the dependency list for useMemo to be an array literal.
   145:11  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
   164:11  warning  '_' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
+/app/trading-platform/scripts/check-recommended.ts
+  206:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
 /app/trading-platform/scripts/debug_prediction_flatline.ts
   28:77  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/trading-platform/scripts/debug_recruit_prediction.ts
   16:56  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
+/app/trading-platform/scripts/ema-backtest.ts
+   16:10  warning  'calculateSMA' is defined but never used  @typescript-eslint/no-unused-vars
+  205:14  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
 /app/trading-platform/scripts/final-integrity-check.ts
   56:51  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/app/trading-platform/scripts/live-signal.ts
+  80:14  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/app/trading-platform/scripts/optimize-filter.ts
+  161:23  warning  'winRate' is assigned a value but never used  @typescript-eslint/no-unused-vars
 
 /app/trading-platform/scripts/verify-direct.ts
   32:50  warning  Unexpected any. Specify a different type                     @typescript-eslint/no-explicit-any
@@ -1381,5 +1445,5 @@ Expected the dependency list for useMemo to be an array literal.
   22:35  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   27:49  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-✖ 692 problems (1 error, 691 warnings)
-  0 errors and 1 warning potentially fixable with the `--fix` option.
+✖ 751 problems (0 errors, 751 warnings)
+  0 errors and 13 warnings potentially fixable with the `--fix` option.

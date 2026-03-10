@@ -179,28 +179,32 @@ describe('BacktestService', () => {
   });
 
   describe('filterByDateRange', () => {
+    type ServiceWithPrivateMethods = {
+      filterByDateRange(data: OHLCV[], startDate?: string, endDate?: string): OHLCV[];
+    };
+
     it('should filter data by start date only', () => {
-      const result = (service as any).filterByDateRange(mockData, '2024-01-20', undefined);
+      const result = (service as unknown as ServiceWithPrivateMethods).filterByDateRange(mockData, '2024-01-20', undefined);
       expect(result.length).toBeLessThan(mockData.length);
     });
 
     it('should filter data by end date only', () => {
-      const result = (service as any).filterByDateRange(mockData, undefined, '2024-01-50');
+      const result = (service as unknown as ServiceWithPrivateMethods).filterByDateRange(mockData, undefined, '2024-01-50');
       expect(result.length).toBeLessThan(mockData.length);
     });
 
     it('should filter data by both start and end dates', () => {
-      const result = (service as any).filterByDateRange(mockData, '2024-01-20', '2024-01-50');
+      const result = (service as unknown as ServiceWithPrivateMethods).filterByDateRange(mockData, '2024-01-20', '2024-01-50');
       expect(result.length).toBeGreaterThan(0);
     });
 
     it('should return all data if no dates specified', () => {
-      const result = (service as any).filterByDateRange(mockData, undefined, undefined);
+      const result = (service as unknown as ServiceWithPrivateMethods).filterByDateRange(mockData, undefined, undefined);
       expect(result).toEqual(mockData);
     });
 
     it('should handle empty data array', () => {
-      const result = (service as any).filterByDateRange([], '2024-01-01', '2024-01-31');
+      const result = (service as unknown as ServiceWithPrivateMethods).filterByDateRange([], '2024-01-01', '2024-01-31');
       expect(result).toEqual([]);
     });
   });
@@ -215,6 +219,10 @@ describe('BacktestService', () => {
       volume: 1000000,
     };
 
+    type EvaluateTradeService = {
+      evaluateTrade(signal: Signal, candle: OHLCV, position: unknown, capital: number, config: unknown): unknown;
+    };
+
     it('should return ENTER_LONG for BUY signal with sufficient confidence', () => {
       const signal: Signal = {
         type: 'BUY',
@@ -225,7 +233,7 @@ describe('BacktestService', () => {
         takeProfit: 110,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as EvaluateTradeService).evaluateTrade(
         signal,
         mockCandle,
         null,
@@ -246,7 +254,7 @@ describe('BacktestService', () => {
         takeProfit: 90,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as EvaluateTradeService).evaluateTrade(
         signal,
         mockCandle,
         null,
@@ -267,7 +275,7 @@ describe('BacktestService', () => {
         takeProfit: 110,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as EvaluateTradeService).evaluateTrade(
         signal,
         mockCandle,
         null,
@@ -297,7 +305,7 @@ describe('BacktestService', () => {
         takeProfit: 90,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as EvaluateTradeService).evaluateTrade(
         sellSignal,
         mockCandle,
         longPosition,
@@ -327,7 +335,7 @@ describe('BacktestService', () => {
         takeProfit: 110,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as EvaluateTradeService).evaluateTrade(
         buySignal,
         mockCandle,
         shortPosition,
