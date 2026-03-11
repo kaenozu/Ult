@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { handleApiError } from '@/app/lib/error-handler';
@@ -82,8 +83,9 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create user
+    // Secure ID generation using crypto to avoid predictable IDs associated with Math.random()
     const user: User = {
-      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: `user_${Date.now()}_${randomUUID().split('-')[0]}`,
       email: email.toLowerCase(),
       passwordHash,
       name,

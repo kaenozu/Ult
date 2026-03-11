@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2026-03-11 - [Predictable User IDs via Math.random]
+**Vulnerability:** User identifiers in the authentication service (`trading-platform/app/api/auth/register/route.ts`) were generated using `Math.random()`. This PRNG is not cryptographically secure, allowing predictable ID generation that could lead to account enumeration, hijacking, or spoofing attacks.
+**Learning:** Legacy ID generation approaches often persist during refactoring. Secure endpoints handling PII or authentication must ensure identifiers are truly random. Additionally, in Node.js/Jest edge environments, a fallback approach for `crypto.randomUUID()` utilizing `crypto.getRandomValues()` is needed to maintain platform stability while enforcing security.
+**Prevention:** Always use the `crypto` module (`crypto.randomUUID()` or `crypto.getRandomValues()`) for generating any security-critical identifiers across the codebase.
