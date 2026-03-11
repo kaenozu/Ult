@@ -158,7 +158,20 @@ export const Header = memo(function Header() {
         
         {/* Portfolio Stats */}
         <div className="hidden lg:flex gap-4 xl:gap-8 text-sm tabular-nums">
-          <div className="flex flex-col leading-tight group cursor-pointer relative" onClick={handleCashClick}>
+          <div
+            className="flex flex-col leading-tight group cursor-pointer relative rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            onClick={handleCashClick}
+            role="button"
+            tabIndex={0}
+            aria-label="資金を編集"
+            title="資金を編集"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleCashClick();
+              }
+            }}
+          >
             <span className="text-[#92adc9] text-[10px] uppercase font-semibold tracking-wider flex items-center gap-1">
               資金
             </span>
