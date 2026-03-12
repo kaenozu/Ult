@@ -245,6 +245,7 @@ export class EnhancedPredictionService {
     };
 
     const result = await predictionWorker.predict(request);
+    const patternFeatures = candlestickPatternService.calculatePatternFeatures(data);
 
     return {
       signal: result.signal,
@@ -252,19 +253,14 @@ export class EnhancedPredictionService {
       direction: result.expectedReturn > 0 ? 1 : -1,
       expectedReturn: result.expectedReturn,
       ensembleContribution: {
-        rf: 0.3, // Simplified for worker
-        xgb: 0.3,
-        lstm: 0.3,
-        pattern: 0.1
+        rf: result.ensembleWeights.RF,
+        xgb: result.ensembleWeights.XGB,
+        lstm: result.ensembleWeights.LSTM,
+        pattern: result.ensembleWeights.TECHNICAL
       },
       features: {
         technical: result.features,
-        pattern: {
-          isDoji: 0, isHammer: 0, isInvertedHammer: 0, isShootingStar: 0,
-          isBullishEngulfing: 0, isBearishEngulfing: 0, isMorningStar: 0, isEveningStar: 0,
-          isPiercingLine: 0, isDarkCloudCover: 0, isBullishHarami: 0, isBearishHarami: 0,
-          bodyRatio: 0.5, upperShadowRatio: 0.25, lowerShadowRatio: 0.25, candleStrength: 0
-        }
+        pattern: patternFeatures
       }
     };
   }
