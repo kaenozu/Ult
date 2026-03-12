@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-10 - Optimizing indicator calculations
+**Learning:** In V8 (Node.js/Chrome), when iterating over object arrays in hot loops (like OHLCV data for technical indicators), replacing loop-carried division operations by the `period` with multiplication by its pre-calculated inverse (`const invPeriod = 1 / period`) and caching previous iteration lookups (`data[i-1]` or `closes[i-1]`) significantly reduces overhead.
+**Action:** When working with math-heavy loops on large datasets (such as `calculateATR`), pre-calculate inverse constants to replace slow float division with float multiplication and cache array lookups in local variables when carrying them across loops.
