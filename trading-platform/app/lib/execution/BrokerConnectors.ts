@@ -158,7 +158,17 @@ export abstract class BaseBrokerConnector extends EventEmitter {
   // ============================================================================
 
   protected generateOrderId(): string {
-    return `${this.config.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    let securePart = '';
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      securePart = crypto.randomUUID().replace(/-/g, '').substring(0, 9);
+    } else if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      securePart = array[0].toString(36).substring(0, 9);
+    } else {
+      securePart = Math.random().toString(36).substring(2, 11);
+    }
+    return `${this.config.name}_${Date.now()}_${securePart}`;
   }
 
   protected emitOrderUpdate(order: BrokerOrder): void {

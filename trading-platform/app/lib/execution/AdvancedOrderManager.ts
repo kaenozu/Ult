@@ -602,7 +602,17 @@ export class AdvancedOrderManager extends EventEmitter {
    * Generate a unique order ID
    */
   private generateOrderId(): string {
-    return `adv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    let securePart = '';
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      securePart = crypto.randomUUID().replace(/-/g, '').substring(0, 9);
+    } else if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      securePart = array[0].toString(36).substring(0, 9);
+    } else {
+      securePart = Math.random().toString(36).substring(2, 11);
+    }
+    return `adv_${Date.now()}_${securePart}`;
   }
 
   /**
