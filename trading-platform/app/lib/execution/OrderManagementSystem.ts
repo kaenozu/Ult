@@ -331,9 +331,21 @@ export class OrderManagementSystem extends EventEmitter {
     // Use timestamp + random for better uniqueness
     // In production, consider using a UUID library like 'uuid'
     const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
-    const counter = Math.floor(Math.random() * 10000);
-    return `OMS_${timestamp}_${counter}_${random}`;
+    let randomPart = '';
+
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      randomPart = crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+    } else if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      const array = new Uint32Array(2);
+      crypto.getRandomValues(array);
+      randomPart = array[0].toString(36) + '_' + array[1].toString(36);
+    } else {
+      const random = Math.random().toString(36).substring(2, 11);
+      const counter = Math.floor(Math.random() * 10000);
+      randomPart = `${counter}_${random}`;
+    }
+
+    return `OMS_${timestamp}_${randomPart}`;
   }
 
   private validateOrder(request: OrderRequest): OrderValidationError[] {

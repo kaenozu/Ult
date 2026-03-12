@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2024-05-24 - [ID Predictability in Order Management Systems]
+**Vulnerability:** Weak, predictable order IDs generated using `Math.random()` in core trading execution modules (`AdvancedOrderManager`, `OrderManagementSystem`, `AlgorithmicExecutionEngine`, and `BrokerConnectors`).
+**Learning:** Generating object identifiers with `Math.random()` creates a significant security risk, especially in financial systems. Predictable IDs can enable Insecure Direct Object Reference (IDOR) attacks, allowing malicious actors to guess valid order IDs and potentially view, modify, or cancel other users' orders.
+**Prevention:** Always use cryptographically secure pseudo-random number generators (CSPRNG) like `crypto.randomUUID()` or `crypto.getRandomValues()` when creating IDs for sensitive resources like trade orders. Do not rely on `Math.random()` concatenated with timestamps.
