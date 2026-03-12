@@ -154,6 +154,15 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
     }
   }, [isConfirming, setIsConfirming]);
 
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const handleConfirmOrder = useCallback(async () => {
     if (isProcessing) return;
     setIsProcessing(true);
@@ -162,7 +171,9 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
     } catch (error) {
       console.error('Order execution failed:', error);
     } finally {
-      setIsProcessing(false);
+      if (isMounted.current) {
+        setIsProcessing(false);
+      }
     }
   }, [isProcessing, handleOrder]);
 

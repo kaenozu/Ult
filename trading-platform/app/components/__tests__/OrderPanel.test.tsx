@@ -94,6 +94,12 @@ describe('OrderPanel', () => {
 
     it('shows loading state during order processing', async () => {
         jest.useFakeTimers();
+
+        let resolveOrder: any;
+        mockExecuteOrder.mockImplementation(() => new Promise((resolve) => {
+            resolveOrder = resolve;
+        }));
+
         render(<OrderPanel stock={mockStock} currentPrice={2000} />);
 
         // Open modal
@@ -101,6 +107,7 @@ describe('OrderPanel', () => {
 
         // Click confirm
         const confirmButton = screen.getByText('注文を確定');
+
         fireEvent.click(confirmButton);
 
         // Should show loading text and be disabled immediately
@@ -109,6 +116,7 @@ describe('OrderPanel', () => {
 
         // Advance timers to complete processing
         await act(async () => {
+            resolveOrder({ success: true });
             jest.advanceTimersByTime(500);
         });
 
