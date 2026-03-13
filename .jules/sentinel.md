@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2026-03-13 - [Insecure ID Generation using Math.random()]
+**Vulnerability:** Found `generateEventId()` in `AuditLogger.ts` and `generateCooldownId()` in `CoolingOffManager.ts` utilizing `Math.random()` to generate IDs.
+**Learning:** This implementation existed because of unawareness regarding predictable generation and lack of explicit crypto methods usage, potentially leading to identifier collision/prediction.
+**Prevention:** Always use cryptographically secure RNGs (`crypto.randomUUID()` or `crypto.getRandomValues()`) instead of `Math.random()` for generating IDs, tokens, or any security-sensitive random values.
