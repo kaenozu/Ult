@@ -22,7 +22,7 @@ export default function DemoPage() {
     market: 'japan',
     sector: '輸送用機器',
     volume: 12500000,
-    sector: 'auto',
+
   };
 
   // 2. デモ用の完璧なAIシグナル
