@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-23 - [Optimized calculateRSI Array Allocation & Logic]
+**Learning:** In V8 (Node.js/Chrome), using `new Float64Array(prices)` inside hot paths that accept generic number arrays creates unnecessary allocation and copying overhead. Furthermore, doing `.fill(NaN)` inside large arrays before mutating them iterates the array needlessly. Finally, extracting state out of the inner loop into cached variables like `prevPrice` rather than accessing array indexes saves substantial processing time.
+**Action:** Replace `Float64Array` with standard pre-allocated loops `new Array(length)` without `fill()`. Pre-calculate constant inverses like `invPeriod = 1 / period` for faster calculation and cache values sequentially inside loops. Avoid naive `Math.abs` within hot loops where manual variable switching (`loss = -change`) executes faster.
