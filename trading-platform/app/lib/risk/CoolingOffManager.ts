@@ -295,6 +295,19 @@ export class CoolingOffManager {
    * クーリングIDを生成
    */
   private generateCooldownId(): string {
+    // 予測可能なMath.random()の代わりに、暗号学的に安全なIDを生成
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return `cooldown-${Date.now()}-${crypto.randomUUID()}`;
+    }
+
+    // フォールバック
+    const array = new Uint32Array(1);
+    if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+      crypto.getRandomValues(array);
+      return `cooldown-${Date.now()}-${array[0].toString(36)}`;
+    }
+
+    // 最終手段（Node環境など）
     return `cooldown-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 }

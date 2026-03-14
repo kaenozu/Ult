@@ -12,3 +12,13 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2026-03-14 - [Distinguish Between Security Contexts and Mathematical Simulations for RNG]
+**Vulnerability:** Weak random number generation in  ID generation (using `Math.random()`).
+**Learning:** When addressing weak RNG, it is critical to distinguish between security contexts (like generating unpredictable IDs, session tokens, or nonces) and mathematical/statistical contexts (like Monte Carlo simulations, Box-Muller transforms, or random weight initialization in AI models). Replacing `Math.random()` with `crypto.getRandomValues()` in heavy mathematical loops introduces severe performance regressions due to the overhead of CSPRNGs and represents 'security theater' without real benefit.
+**Prevention:** Only apply CSPRNGs (like `crypto.randomUUID()` or `crypto.getRandomValues()`) when the unpredictability is required for security or identity purposes. Leave `Math.random()` intact for statistical simulations where speed is paramount and cryptographic security is unnecessary.
+
+## 2026-03-14 - [Distinguish Between Security Contexts and Mathematical Simulations for RNG]
+**Vulnerability:** Weak random number generation in `CoolingOffManager.ts` ID generation (using `Math.random()`).
+**Learning:** When addressing weak RNG, it is critical to distinguish between security contexts (like generating unpredictable IDs, session tokens, or nonces) and mathematical/statistical contexts (like Monte Carlo simulations, Box-Muller transforms, or random weight initialization in AI models). Replacing `Math.random()` with `crypto.getRandomValues()` in heavy mathematical loops introduces severe performance regressions due to the overhead of CSPRNGs and represents 'security theater' without real benefit.
+**Prevention:** Only apply CSPRNGs (like `crypto.randomUUID()` or `crypto.getRandomValues()`) when the unpredictability is required for security or identity purposes. Leave `Math.random()` intact for statistical simulations where speed is paramount and cryptographic security is unnecessary.
