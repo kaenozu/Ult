@@ -35,7 +35,7 @@ export function OrderBook({ stock }: OrderBookProps) {
             </span>
         </div>
         <div className="flex-1 overflow-y-auto bg-[#101922]">
-            <table className="w-full text-xs tabular-nums border-collapse">
+            <table aria-label="板情報" className="w-full text-xs tabular-nums border-collapse">
             <thead className="sticky top-0 bg-[#141e27] text-[10px] text-[#92adc9] z-10">
                 <tr>
                 <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">買数量</th>
@@ -44,7 +44,7 @@ export function OrderBook({ stock }: OrderBookProps) {
                 </tr>
             </thead>
             <tbody>
-                {asks.reverse().map((ask, i) => (
+                {[...asks].reverse().map((ask, i) => (
                     <tr key={`ask-${i}`} className="hover:bg-[#192633]/50">
                     <td className="py-0.5 px-2 text-right text-[#92adc9]"></td>
                     <td className="py-0.5 px-2 text-center text-red-500 font-medium">
