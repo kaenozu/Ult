@@ -11,3 +11,7 @@
 ## 2026-02-18 - Semantic Structures in Modals
 **Learning:** Complex components like `AlertConditionManager` often use `div`s for layout (e.g., tabs, modals) without semantic roles. This makes navigation impossible for screen readers. Explicitly adding `role="dialog"`, `aria-modal="true"`, and `role="tablist"` transforms a confusing "soup of divs" into a navigable application structure.
 **Action:** When creating or reviewing modal interfaces with tabs, always ensure the container has `role="dialog"` and the tab controls use the `tablist`/`tab` pattern.
+
+## 2026-03-05 - OrderBook Array Mutation
+**Learning:** Calling `asks.reverse().map(...)` directly inside a React functional component's render method mutates the array in-place, which can cause UI flickering, toggling, and generally negatively impact UX due to unexpected re-renders. Always create a copy first, e.g. `[...asks].reverse().map(...)`.
+**Action:** When working on UX improvements in React components that manipulate arrays for display, watch out for in-place mutation methods like `.reverse()` and `.sort()`.
