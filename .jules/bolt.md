@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-14 - [RSI Calculation Array Optimization]
+**Learning:** V8 highly optimizes homogeneous standard number arrays (`PACKED_DOUBLE_ELEMENTS`). Creating a `new Float64Array(prices)` from a standard Javascript array inside frequently called utility functions (like indicator calculations) degrades performance due to memory allocation and copying overhead. Replacing division inside hot loops with multiplication by a pre-computed inverse (`1 / period`) and substituting `Math.abs` with `else if` logic further enhances speed.
+**Action:** Always favor direct access over `Float64Array` mapping when dealing with standard number arrays in hot utility loops, pre-compute inverse divisions, and inline absolute value checks.
