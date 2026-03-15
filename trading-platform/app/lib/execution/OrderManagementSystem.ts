@@ -13,6 +13,7 @@ import {
   OrderStatus 
 } from './BrokerConnectors';
 import { SmartOrderRouter, RoutingDecision } from './SmartOrderRouter';
+import { randomUUID } from 'crypto';
 
 // ============================================================================
 // Types
@@ -331,8 +332,10 @@ export class OrderManagementSystem extends EventEmitter {
     // Use timestamp + random for better uniqueness
     // In production, consider using a UUID library like 'uuid'
     const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 9);
-    const counter = Math.floor(Math.random() * 10000);
+    const uuid = randomUUID();
+    const random = uuid.split('-')[0];
+    const counter = uuid.split('-')[1];
+
     return `OMS_${timestamp}_${counter}_${random}`;
   }
 

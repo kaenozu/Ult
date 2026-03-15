@@ -6,6 +6,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { randomUUID } from 'crypto';
 
 // ============================================================================
 // Types
@@ -158,7 +159,8 @@ export abstract class BaseBrokerConnector extends EventEmitter {
   // ============================================================================
 
   protected generateOrderId(): string {
-    return `${this.config.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const randomPart = randomUUID().split('-')[0];
+    return `${this.config.name}_${Date.now()}_${randomPart}`;
   }
 
   protected emitOrderUpdate(order: BrokerOrder): void {

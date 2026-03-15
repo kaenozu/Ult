@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2025-05-27 - [Predictable Math.random() for Security Identifiers]
+**Vulnerability:** Weak PRNG `Math.random()` was used to generate Order IDs in various execution modules (`AlgorithmicExecutionEngine.ts`, `AdvancedOrderManager.ts`, `BrokerConnectors.ts`, `OrderManagementSystem.ts`) and monitoring identifiers (`PredictionQualityMonitor.ts`).
+**Learning:** `Math.random()` provides predictable randomness which makes security identifiers and sensitive tokens susceptible to prediction and enumeration attacks. Using cryptographically secure generation is critical for identifiers that require high entropy and uniqueness guarantees in a production trading platform.
+**Prevention:** Use `crypto.randomUUID()` with an appropriate fallback logic (like `crypto.getRandomValues()`) for generating secure identifiers to ensure cryptographically strong uniqueness across the entire platform.
