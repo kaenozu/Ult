@@ -360,7 +360,10 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
 
   private generateVolumeProfile(): number[] { return [0.05, 0.04, 0.03, 0.02, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.08, 0.07, 0.08, 0.09, 0.10, 0.09, 0.08, 0.06, 0.05, 0.04]; }
   private delay(ms: number): Promise<void> { return new Promise((r) => setTimeout(r, ms)); }
-  private generateOrderId(): string { return `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`; }
+  private generateOrderId(): string {
+    const randomPart = randomUUID().split('-')[0];
+    return `ord_${Date.now()}_${randomPart}`;
+  }
   private recordLatency(m: LatencyMetrics): void { this.latencyMetrics.push(m); if (this.latencyMetrics.length > 1000) this.latencyMetrics.shift(); if (m.roundTrip > this.config.maxLatency) this.emit('high_latency', m); }
   updateOrderBook(s: string, b: OrderBook): void { this.orderBook.set(s, b); this.emit('orderbook_update', s, b); }
   getOrderBook(s: string): OrderBook | undefined { return this.orderBook.get(s); }
@@ -378,6 +381,7 @@ export class AlgorithmicExecutionEngine extends EventEmitter {
   getActiveOrders(): Order[] { return Array.from(this.activeOrders.values()); }
 }
 
+import { randomUUID } from 'crypto';
 import { createSingleton } from '../utils/singleton';
 const { getInstance, resetInstance } = createSingleton((config?: Partial<ExecutionConfig>) => new AlgorithmicExecutionEngine(config));
 export const getGlobalExecutionEngine = getInstance;

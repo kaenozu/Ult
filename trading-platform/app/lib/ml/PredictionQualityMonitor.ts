@@ -8,6 +8,7 @@
 import { ModelPerformance, ModelPredictionResult } from './types';
 
 import { logger } from '@/app/core/logger';
+import { randomUUID } from 'crypto';
 export interface PredictionRecord {
   id: string;
   timestamp: Date;
@@ -39,7 +40,8 @@ export class PredictionQualityMonitor {
     prediction: ModelPredictionResult,
     modelVersion: string
   ): string {
-    const id = `${symbol}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const randomPart = randomUUID().split('-')[0];
+    const id = `${symbol}-${Date.now()}-${randomPart}`;
     
     const record: PredictionRecord = {
       id,

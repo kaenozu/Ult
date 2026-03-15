@@ -602,7 +602,8 @@ export class AdvancedOrderManager extends EventEmitter {
    * Generate a unique order ID
    */
   private generateOrderId(): string {
-    return `adv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const randomPart = randomUUID().split('-')[0];
+    return `adv_${Date.now()}_${randomPart}`;
   }
 
   /**
@@ -655,6 +656,7 @@ export class AdvancedOrderManager extends EventEmitter {
 // Singleton Instance
 // ============================================================================
 
+import { randomUUID } from 'crypto';
 import { createSingleton } from '../utils/singleton';
 
 const { getInstance, resetInstance } = createSingleton(
