@@ -284,9 +284,9 @@ describe('VolumeAnalysisService', () => {
   describe('Error Handling', () => {
     it('should handle null or undefined data gracefully', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(() => service.calculateVolumeProfile(null as any)).toThrow();
+      expect(() => service.calculateVolumeProfile(null as unknown as OHLCV[])).toThrow();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      expect(() => service.calculateVolumeProfile(undefined as any)).toThrow();
+      expect(() => service.calculateVolumeProfile(undefined as unknown as OHLCV[])).toThrow();
     });
 
     it('should handle data with invalid numbers', () => {

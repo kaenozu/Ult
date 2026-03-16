@@ -47,7 +47,7 @@ describe.skip('Authentication Module', () => {
 
     it('should include correct payload in token', () => {
       const token = generateAuthToken(validUserId, validUsername);
-      const decoded = jwt.decode(token) as any;
+      const decoded = jwt.decode(token) as jwt.JwtPayload;
       
       expect(decoded.userId).toBe(validUserId);
       expect(decoded.username).toBe(validUsername);
@@ -205,7 +205,7 @@ describe.skip('Authentication Module', () => {
   describe('Token expiration', () => {
     it('should include expiration claim in token', () => {
       const token = generateAuthToken(validUserId);
-      const decoded = jwt.decode(token) as any;
+      const decoded = jwt.decode(token) as jwt.JwtPayload;
 
       expect(decoded.exp).toBeDefined();
       expect(typeof decoded.exp).toBe('number');
@@ -214,7 +214,7 @@ describe.skip('Authentication Module', () => {
 
     it('should include issued at claim in token', () => {
       const token = generateAuthToken(validUserId);
-      const decoded = jwt.decode(token) as any;
+      const decoded = jwt.decode(token) as jwt.JwtPayload;
 
       expect(decoded.iat).toBeDefined();
       expect(typeof decoded.iat).toBe('number');

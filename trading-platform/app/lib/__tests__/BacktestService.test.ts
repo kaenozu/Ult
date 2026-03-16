@@ -180,27 +180,27 @@ describe('BacktestService', () => {
 
   describe('filterByDateRange', () => {
     it('should filter data by start date only', () => {
-      const result = (service as any).filterByDateRange(mockData, '2024-01-20', undefined);
+      const result = (service as unknown as { filterByDateRange: (data: OHLCV[], startDate?: string, endDate?: string) => OHLCV[] }).filterByDateRange(mockData, '2024-01-20', undefined);
       expect(result.length).toBeLessThan(mockData.length);
     });
 
     it('should filter data by end date only', () => {
-      const result = (service as any).filterByDateRange(mockData, undefined, '2024-01-50');
+      const result = (service as unknown as { filterByDateRange: (data: OHLCV[], startDate?: string, endDate?: string) => OHLCV[] }).filterByDateRange(mockData, undefined, '2024-01-50');
       expect(result.length).toBeLessThan(mockData.length);
     });
 
     it('should filter data by both start and end dates', () => {
-      const result = (service as any).filterByDateRange(mockData, '2024-01-20', '2024-01-50');
+      const result = (service as unknown as { filterByDateRange: (data: OHLCV[], startDate?: string, endDate?: string) => OHLCV[] }).filterByDateRange(mockData, '2024-01-20', '2024-01-50');
       expect(result.length).toBeGreaterThan(0);
     });
 
     it('should return all data if no dates specified', () => {
-      const result = (service as any).filterByDateRange(mockData, undefined, undefined);
+      const result = (service as unknown as { filterByDateRange: (data: OHLCV[], startDate?: string, endDate?: string) => OHLCV[] }).filterByDateRange(mockData, undefined, undefined);
       expect(result).toEqual(mockData);
     });
 
     it('should handle empty data array', () => {
-      const result = (service as any).filterByDateRange([], '2024-01-01', '2024-01-31');
+      const result = (service as unknown as { filterByDateRange: (data: OHLCV[], startDate?: string, endDate?: string) => OHLCV[] }).filterByDateRange([], '2024-01-01', '2024-01-31');
       expect(result).toEqual([]);
     });
   });
@@ -215,6 +215,29 @@ describe('BacktestService', () => {
       volume: 1000000,
     };
 
+    interface BacktestPosition {
+      symbol: string;
+      type: 'LONG' | 'SHORT';
+      quantity: number;
+      entryPrice: number;
+      entryDate: string;
+      value: number;
+    }
+
+    interface BacktestConfig {
+      initialCapital: number;
+      commission: number;
+      slippage: number;
+    }
+
+    type EvaluateTradeFn = (
+      signal: Signal,
+      currentCandle: OHLCV,
+      currentPosition: BacktestPosition | null,
+      capital: number,
+      config: BacktestConfig
+    ) => { type: 'ENTER_LONG' | 'ENTER_SHORT' | 'EXIT_LONG' | 'EXIT_SHORT', signal: Signal } | null;
+
     it('should return ENTER_LONG for BUY signal with sufficient confidence', () => {
       const signal: Signal = {
         type: 'BUY',
@@ -225,7 +248,7 @@ describe('BacktestService', () => {
         takeProfit: 110,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as { evaluateTrade: EvaluateTradeFn }).evaluateTrade(
         signal,
         mockCandle,
         null,
@@ -246,7 +269,7 @@ describe('BacktestService', () => {
         takeProfit: 90,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as { evaluateTrade: EvaluateTradeFn }).evaluateTrade(
         signal,
         mockCandle,
         null,
@@ -267,7 +290,7 @@ describe('BacktestService', () => {
         takeProfit: 110,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as { evaluateTrade: EvaluateTradeFn }).evaluateTrade(
         signal,
         mockCandle,
         null,
@@ -279,9 +302,9 @@ describe('BacktestService', () => {
     });
 
     it('should return EXIT_LONG when holding LONG and get SELL signal', () => {
-      const longPosition = {
+      const longPosition: BacktestPosition = {
         symbol: 'AAPL',
-        type: 'LONG' as const,
+        type: 'LONG',
         quantity: 10,
         entryPrice: 100,
         entryDate: '2024-01-10',
@@ -297,7 +320,7 @@ describe('BacktestService', () => {
         takeProfit: 90,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as { evaluateTrade: EvaluateTradeFn }).evaluateTrade(
         sellSignal,
         mockCandle,
         longPosition,
@@ -309,9 +332,9 @@ describe('BacktestService', () => {
     });
 
     it('should return EXIT_SHORT when holding SHORT and get BUY signal', () => {
-      const shortPosition = {
+      const shortPosition: BacktestPosition = {
         symbol: 'AAPL',
-        type: 'SHORT' as const,
+        type: 'SHORT',
         quantity: 10,
         entryPrice: 100,
         entryDate: '2024-01-10',
@@ -327,7 +350,7 @@ describe('BacktestService', () => {
         takeProfit: 110,
       };
 
-      const result = (service as any).evaluateTrade(
+      const result = (service as unknown as { evaluateTrade: EvaluateTradeFn }).evaluateTrade(
         buySignal,
         mockCandle,
         shortPosition,

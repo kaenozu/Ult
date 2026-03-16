@@ -51,7 +51,7 @@ describe('ServiceName', () => {
     });
 
     it('should handle edge case: invalid input', () => {
-      expect(() => service.methodName(null as any)).toThrow();
+      expect(() => service.methodName(null as unknown as ExpectedType)).toThrow();
     });
   });
 });

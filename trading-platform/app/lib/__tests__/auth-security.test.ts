@@ -2,6 +2,7 @@
 import { verifyAuthToken } from '../auth';
 import jwt from 'jsonwebtoken';
 import { resetConfig } from '../config/env-validator';
+import { NextRequest } from 'next/server';
 
 class MockNextRequest {
   headers: Map<string, string>;
@@ -38,7 +39,7 @@ describe.skip('Authentication Security', () => {
     
     // verifyAuthToken calls getConfig() internally
     expect(() => {
-      verifyAuthToken(new MockNextRequest('http://localhost:3000/api/test') as any);
+      verifyAuthToken(new MockNextRequest('http://localhost:3000/api/test') as unknown as NextRequest);
     }).toThrow('JWT_SECRET must be at least 32 characters');
   });
 
