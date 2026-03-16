@@ -97,7 +97,7 @@ describe('calculateChartMinMax', () => {
     ];
     const indicators = {
       sma: [NaN, 85, NaN],
-      upper: [125, null as any, undefined as any],
+      upper: [125, null as unknown as number, undefined as unknown as number],
     };
     const result = calculateChartMinMax(data, indicators);
     expect(result).toEqual({ min: 85, max: 125 });

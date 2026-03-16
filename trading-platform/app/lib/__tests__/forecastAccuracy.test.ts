@@ -270,7 +270,7 @@ describe('ForecastAccuracyService', () => {
   describe('Error Handling', () => {
     it('should handle null predictions gracefully', () => {
       expect(() => {
-        forecastAccuracyService.calculateAccuracy(null as any, []);
+        forecastAccuracyService.calculateAccuracy(null as unknown as Prediction[], []);
       }).toThrow();
     });
 
