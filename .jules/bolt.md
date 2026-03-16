@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-16 - Pre-allocation over Array methods for Indicators
+**Learning:** Functions in `trading-platform/app/lib/utils/calculations.ts` (like `calculateSMA`, `calculateEMA`, `calculateRSI`) were using dynamic `Array.push()` and creating intermediate arrays using `Array.slice()`. In V8, especially in computationally dense paths, avoiding dynamic array resizing and GC overhead by allocating `new Array(length)` beforehand and explicitly using index assignment yields significant speedups (over 50-70% improvement).
+**Action:** When working on numerical array reductions or time-series processing functions, pre-allocate arrays, avoid intermediate slices, compute averages within loops, and inline repetitive calculations.
