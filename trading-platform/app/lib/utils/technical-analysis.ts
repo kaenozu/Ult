@@ -96,36 +96,58 @@ export function calculateEMA(prices: number[], period: number): number[] {
  */
 export function calculateRSI(prices: number[], period: number = 14): number[] {
   const length = prices.length;
-  const result: number[] = new Array(length).fill(NaN);
-  if (length <= period) return result;
+  // Pre-allocate array without .fill(NaN) for better V8 performance
+  const result: number[] = new Array(length);
+  const initialLimit = Math.min(length, period + 1);
+  for (let i = 0; i < initialLimit; i++) result[i] = NaN;
 
-  const floatPrices = new Float64Array(prices);
+  if (length <= period) {
+    return result;
+  }
+
   let avgGain = 0;
   let avgLoss = 0;
 
+  // Cache previous price to avoid repeated array lookups
+  let prevPrice = prices[0];
+
   // Initial averages
   for (let i = 1; i <= period; i++) {
-    const change = floatPrices[i] - floatPrices[i - 1];
-    if (change >= 0) avgGain += change;
-    else avgLoss += Math.abs(change);
+    const currentPrice = prices[i];
+    const change = currentPrice - prevPrice;
+
+    if (change > 0) avgGain += change;
+    else if (change < 0) avgLoss -= change;
+
+    prevPrice = currentPrice;
   }
-  avgGain /= period;
-  avgLoss /= period;
+
+  const invPeriod = 1 / period;
+  avgGain *= invPeriod;
+  avgLoss *= invPeriod;
 
   const rsInitial = avgLoss === 0 ? 100 : avgGain / avgLoss;
   result[period] = 100 - (100 / (1 + rsInitial));
 
   // Wilder's smoothing
+  const pMinus1 = period - 1;
   for (let i = period + 1; i < length; i++) {
-    const change = floatPrices[i] - floatPrices[i - 1];
-    const gain = change >= 0 ? change : 0;
-    const loss = change < 0 ? Math.abs(change) : 0;
+    const currentPrice = prices[i];
+    const change = currentPrice - prevPrice;
 
-    avgGain = (avgGain * (period - 1) + gain) / period;
-    avgLoss = (avgLoss * (period - 1) + loss) / period;
+    let gain = 0;
+    let loss = 0;
+
+    // Explicit condition checking correctly ignores NaN and avoids Math.abs
+    if (change > 0) gain = change;
+    else if (change < 0) loss = -change;
+
+    avgGain = (avgGain * pMinus1 + gain) * invPeriod;
+    avgLoss = (avgLoss * pMinus1 + loss) * invPeriod;
 
     const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
     result[i] = 100 - (100 / (1 + rs));
+    prevPrice = currentPrice;
   }
 
   return result;
