@@ -104,7 +104,10 @@ export const handleAsyncWithToast = async <T,>(
 
     // Optional reporting
     if (options?.reportError !== false) {
-      reportError(appError, { context: options?.context });
+      reportError(appError, {
+        timestamp: Date.now(),
+        operation: options?.context || 'handleAsyncWithToast',
+      });
     }
 
     if (options?.rethrow) {

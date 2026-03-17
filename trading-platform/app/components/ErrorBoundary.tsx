@@ -189,9 +189,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // エラーモニタリングサービスへ報告
     reportError(appError, {
+      timestamp: Date.now(),
       operation: name ? `Render ${name}` : 'Render component',
-      componentStack: errorInfo.componentStack,
-      errorId: this.state.errorId,
+      metadata: {
+        componentStack: errorInfo.componentStack,
+        errorId: this.state.errorId,
+      }
     });
     
     // カスタムエラーハンドラを呼び出し
