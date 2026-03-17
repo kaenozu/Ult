@@ -20,9 +20,8 @@ export default function DemoPage() {
     change: 45,
     changePercent: 1.83,
     market: 'japan',
-    sector: '輸送用機器',
     volume: 12500000,
-    sector: 'auto',
+    sector: '輸送用機器',
   };
 
   // 2. デモ用の完璧なAIシグナル
