@@ -106,6 +106,7 @@ export {
   // Utility Functions
   stringifyError,
   extractErrorInfo,
+  wrapAsync,
 } from './handlers';
 
 // ============================================================================

@@ -10,6 +10,7 @@ import {
   SystemError,
   isAppError,
   handleError,
+  reportError,
   getUserErrorMessage,
   canRecover,
 } from '@/app/lib/errors';
@@ -185,6 +186,16 @@ export class ErrorBoundary extends Component<Props, State> {
         errorId: this.state.errorId,
       });
     }
+
+    // エラーモニタリングサービスへ報告
+    reportError(appError, {
+      timestamp: Date.now(),
+      operation: name ? `Render ${name}` : 'Render component',
+      metadata: {
+        componentStack: errorInfo.componentStack,
+        errorId: this.state.errorId,
+      }
+    });
     
     // カスタムエラーハンドラを呼び出し
     if (onError) {

@@ -660,6 +660,30 @@ export function extractErrorInfo(error: unknown): {
 }
 
 // ============================================================================
+// Async Wrapper
+// ============================================================================
+
+/**
+ * 非同期関数をラップし、エラー発生時に統一されたAppErrorとしてキャッチする
+ *
+ * @param fn ラップする非同期関数
+ * @param context エラーのコンテキスト（省略可）
+ * @returns 統一エラーハンドリングが適用された非同期関数
+ */
+export function wrapAsync<TArgs extends unknown[], TReturn>(
+  fn: (...args: TArgs) => Promise<TReturn>,
+  context?: string
+): (...args: TArgs) => Promise<TReturn> {
+  return async (...args: TArgs): Promise<TReturn> => {
+    try {
+      return await fn(...args);
+    } catch (error) {
+      throw handleError(error, context);
+    }
+  };
+}
+
+// ============================================================================
 // Re-exports for Backward Compatibility
 // ============================================================================
 
