@@ -5,6 +5,7 @@
  * 連続損失や過度取引時に強制的な休憩を設定し、感情的な取引を防止
  */
 
+import { randomUUID } from 'crypto';
 import { CoolingReason, CooldownRecord } from '@/app/types/risk';
 
 export interface TimeDuration {
@@ -293,9 +294,11 @@ export class CoolingOffManager {
 
   /**
    * クーリングIDを生成
+   * SECURITY: Use cryptographically secure random values instead of predictable Math.random()
+   * to prevent ID spoofing/prediction of cooldown records.
    */
   private generateCooldownId(): string {
-    return `cooldown-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `cooldown-${Date.now()}-${randomUUID().replace(/-/g, '').substring(0, 9)}`;
   }
 }
 
