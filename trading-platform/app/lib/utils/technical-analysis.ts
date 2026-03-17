@@ -20,42 +20,46 @@ export function _getValidPrice(p: number | null | undefined): number {
  */
 export function calculateSMA(prices: number[], period: number): number[] {
   const length = prices.length;
-  const result: number[] = new Array(length).fill(NaN);
-  if (length < period) return result;
+  const result: number[] = new Array(length);
+  if (length < period) {
+    for (let i = 0; i < length; i++) result[i] = NaN;
+    return result;
+  }
 
-  const floatPrices = new Float64Array(prices);
   let sum = 0;
+  let validCount = 0;
+  const invPeriod = 1 / period;
 
   // Initial window
-  let validCount = 0;
   for (let i = 0; i < period; i++) {
-    const val = floatPrices[i];
-    if (!isNaN(val)) {
+    const val = Number(prices[i]);
+    if (val === val) { // Check for NaN, handling undefined/null via Number()
       sum += val;
       validCount++;
     }
+    result[i] = NaN;
   }
 
   // Only set result if we have a full valid window (standard SMA behavior)
-  result[period - 1] = validCount === period ? sum / period : NaN;
+  result[period - 1] = validCount === period ? sum * invPeriod : NaN;
 
   // Sliding window
   for (let i = period; i < length; i++) {
-    const newVal = floatPrices[i];
-    const oldVal = floatPrices[i - period];
+    const newVal = Number(prices[i]);
+    const oldVal = Number(prices[i - period]);
 
-    if (!isNaN(newVal)) {
+    if (newVal === newVal) {
       sum += newVal;
       validCount++;
     }
 
-    if (!isNaN(oldVal)) {
+    if (oldVal === oldVal) {
       sum -= oldVal;
       validCount--;
     }
 
     // Strict SMA: if any value in window is NaN, result is NaN
-    result[i] = validCount === period ? sum / period : NaN;
+    result[i] = validCount === period ? sum * invPeriod : NaN;
   }
 
   return result;
@@ -63,27 +67,36 @@ export function calculateSMA(prices: number[], period: number): number[] {
 
 /**
  * Calculate Exponential Moving Average (EMA)
- * Optimized with Float64Array
+ * Optimized: Native array without .fill(NaN), inline NaN checks.
  */
 export function calculateEMA(prices: number[], period: number): number[] {
   const length = prices.length;
-  const result: number[] = new Array(length).fill(NaN);
-  if (length < period) return result;
+  const result: number[] = new Array(length);
+  if (length < period) {
+    for (let i = 0; i < length; i++) result[i] = NaN;
+    return result;
+  }
 
-  const floatPrices = new Float64Array(prices);
   const k = 2 / (period + 1);
+  const invPeriod = 1 / period;
+
+  // Initialize array with NaN up to period - 1
+  for (let i = 0; i < period - 1; i++) {
+    result[i] = NaN;
+  }
 
   // Initial SMA
   let sum = 0;
   for (let i = 0; i < period; i++) {
-    sum += floatPrices[i];
+    sum += Number(prices[i]);
   }
-  result[period - 1] = sum / period;
+  let prevEMA = sum * invPeriod;
+  result[period - 1] = prevEMA;
 
   // EMA calculation
-  let prevEMA = result[period - 1];
   for (let i = period; i < length; i++) {
-    const currentEMA = (floatPrices[i] - prevEMA) * k + prevEMA;
+    const val = Number(prices[i]);
+    const currentEMA = (val - prevEMA) * k + prevEMA;
     result[i] = currentEMA;
     prevEMA = currentEMA;
   }
