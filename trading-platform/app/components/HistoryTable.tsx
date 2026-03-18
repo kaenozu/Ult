@@ -11,16 +11,16 @@ interface HistoryTableProps {
 export const HistoryTable = memo(({ entries }: HistoryTableProps) => {
   return (
     <div className="flex-1 overflow-auto">
-      <table className="w-full text-left text-xs tabular-nums">
+      <table className="w-full text-left text-xs tabular-nums" aria-label="Trade history">
         <thead className="text-[10px] uppercase text-[#92adc9] font-semibold sticky top-0 bg-[#141e27] z-10 border-b-2 border-[#233648]">
           <tr>
-            <th className="px-4 py-2.5 font-medium tracking-wider">銘柄</th>
-            <th className="px-4 py-2.5 font-medium tracking-wider">日付</th>
-            <th className="px-4 py-2.5 font-medium tracking-wider">種別</th>
-            <th className="px-4 py-2.5 text-right font-medium tracking-wider">数量</th>
-            <th className="px-4 py-2.5 text-right font-medium tracking-wider">価格</th>
-            <th className="px-4 py-2.5 text-right font-medium tracking-wider">確定損益</th>
-            <th className="px-4 py-2.5 font-medium tracking-wider">状態</th>
+            <th scope="col" className="px-4 py-2.5 font-medium tracking-wider">銘柄</th>
+            <th scope="col" className="px-4 py-2.5 font-medium tracking-wider">日付</th>
+            <th scope="col" className="px-4 py-2.5 font-medium tracking-wider">種別</th>
+            <th scope="col" className="px-4 py-2.5 text-right font-medium tracking-wider">数量</th>
+            <th scope="col" className="px-4 py-2.5 text-right font-medium tracking-wider">価格</th>
+            <th scope="col" className="px-4 py-2.5 text-right font-medium tracking-wider">確定損益</th>
+            <th scope="col" className="px-4 py-2.5 font-medium tracking-wider">状態</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#233648]/40">
