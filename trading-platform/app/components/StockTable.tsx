@@ -311,10 +311,11 @@ export const StockTable = memo(({
 
   return (
     <div className="overflow-y-auto flex-1">
-      <table className="w-full text-left text-xs tabular-nums">
+      <table className="w-full text-left text-xs tabular-nums" aria-label="Watchlist">
         <thead className="text-[10px] uppercase text-[#92adc9] font-bold sticky top-0 bg-[#141e27] z-10 border-b-2 border-[#233648]">
           <tr>
             <th 
+              scope="col"
               className="p-0"
               aria-sort={sortField === 'symbol' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
@@ -327,6 +328,7 @@ export const StockTable = memo(({
               </button>
             </th>
             <th 
+              scope="col"
               className="p-0"
               aria-sort={sortField === 'price' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
             >
@@ -340,6 +342,7 @@ export const StockTable = memo(({
             </th>
             {showChange && (
               <th 
+                scope="col"
                 className="p-0"
                 aria-sort={sortField === 'changePercent' ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
               >
@@ -352,7 +355,7 @@ export const StockTable = memo(({
                 </button>
               </th>
             )}
-            <th className="w-10 px-1"></th>
+            <th scope="col" aria-label="Actions" className="w-10 px-1"></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#233648]/40">

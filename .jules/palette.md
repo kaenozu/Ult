@@ -1,0 +1,3 @@
+## 2025-05-15 - Table Accessibility Pattern
+**Learning:** Many data tables across the application (`OrderBook`, `HistoryTable`, `PositionTable`, `StockTable`) lack proper `aria-label` descriptions on the `<table>` element and `scope="col"` attributes on `<th>` elements. This makes navigation significantly harder for screen reader users trying to understand the context and column associations of financial data.
+**Action:** Always verify that every `<table>` has a descriptive `aria-label` and that all `<th>` tags include `scope="col"` (or `scope="row"` if applicable) during component creation or modification.
