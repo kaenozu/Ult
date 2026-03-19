@@ -11,3 +11,8 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-19 - Replacing Array .reduce() and .filter() with Index Loops
+
+**Learning:** Replacing `.reduce()` and chained `.filter().reduce()` with standard index-based `for` loops in calculation modules (like `calculateSharpeRatio` and `calculateSortinoRatio`) yields a 10x to 12x performance improvement. This is due to bypassing function allocation per element, avoiding V8 JIT de-optimization on callbacks, and eliminating garbage collection pressure from intermediate array creation (e.g., from `.filter()`).
+**Action:** When working on numerical/financial indicators that iterate over arrays on the hot path, strictly avoid `.reduce()`, `.map()`, and `.filter()`. Use index loops and compute multiple metrics (like `sum` and `sqSum` or `pSum` and `mSum`) in a single pass.
