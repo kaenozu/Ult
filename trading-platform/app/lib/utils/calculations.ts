@@ -266,9 +266,22 @@ export function calculateVolatilityFlexible(
     return 0;
   }
 
-  const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-  const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / 
-    (useSampleVariance ? (returns.length - 1) : returns.length);
+  const len = returns.length;
+
+  // パフォーマンス最適化: .reduce()の代わりにインデックスループを使用（コールバックのオーバーヘッドを回避）
+  let sum = 0;
+  for (let i = 0; i < len; i++) {
+    sum += returns[i];
+  }
+  const mean = sum / len;
+
+  let sqSum = 0;
+  for (let i = 0; i < len; i++) {
+    const diff = returns[i] - mean;
+    sqSum += diff * diff;
+  }
+
+  const variance = sqSum / (useSampleVariance ? (len - 1) : len);
 
   const vol = Math.sqrt(variance);
 
