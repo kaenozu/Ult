@@ -85,6 +85,7 @@ export function DashboardCustomizer() {
             <button
               onClick={() => setIsOpen(false)}
               className="text-gray-400 hover:text-white"
+              aria-label="Close"
             >
               ✕
             </button>
@@ -168,6 +169,7 @@ export function DashboardCustomizer() {
                       <button
                         onClick={() => deleteLayout(layout.id)}
                         className="p-2 hover:bg-gray-700 rounded text-red-400"
+                        aria-label={`Delete layout ${layout.name}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -203,6 +205,7 @@ export function DashboardCustomizer() {
                         key={widget.type}
                         onClick={() => handleAddWidget(widget.type)}
                         className="p-2 bg-gray-700 hover:bg-gray-600 rounded text-left text-sm"
+                        aria-label={`Add ${widget.label} widget`}
                       >
                         {widget.label}
                       </button>
@@ -242,6 +245,7 @@ export function DashboardCustomizer() {
                             currentLayoutId && toggleWidgetVisibility(currentLayoutId, widget.id)
                           }
                           className="p-2 hover:bg-gray-700 rounded"
+                          aria-label={`${widget.visible ? 'Hide' : 'Show'} ${widget.title} widget`}
                         >
                           {widget.visible ? (
                             <Eye className="w-4 h-4 text-green-500" />
@@ -252,6 +256,7 @@ export function DashboardCustomizer() {
                         <button
                           onClick={() => currentLayoutId && removeWidget(currentLayoutId, widget.id)}
                           className="p-2 hover:bg-gray-700 rounded text-red-400"
+                          aria-label={`Remove ${widget.title} widget`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
