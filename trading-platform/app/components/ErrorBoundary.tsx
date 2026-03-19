@@ -3,6 +3,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw, Home, Bug, Copy, CheckCircle } from 'lucide-react';
 import { ANIMATION } from '@/app/constants/timing';
+import { showErrorToast } from '@/app/components/ErrorToast';
 import {
   NetworkError,
   ValidationError,
@@ -178,6 +179,9 @@ export class ErrorBoundary extends Component<Props, State> {
     // 統一エラーシステムでログ出力
     const appError = isAppError(error) ? error : handleError(error, name || 'ErrorBoundary');
     
+    // UIへのトースト通知
+    showErrorToast(appError, name || 'ErrorBoundary');
+
     if (process.env.NODE_ENV !== 'production') {
       console.error(`ErrorBoundary caught an error in ${name || 'component'}:`, {
         error: appError.toJSON(),

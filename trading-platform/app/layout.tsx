@@ -44,6 +44,7 @@ import { Navigation } from "@/app/components/Navigation";
 import { UserExperienceEnhancements } from "@/app/components/UserExperienceEnhancements";
 import { StoreHydration } from "@/app/components/StoreHydration";
 import { Providers } from "@/app/providers";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -98,6 +99,7 @@ export default function RootLayout({
               </MonitoringProvider>
             </MLProvider>
           </ThemeProvider>
+          <Toaster theme="dark" position="bottom-right" richColors />
         </Providers>
       </body>
     </html>

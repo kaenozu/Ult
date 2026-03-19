@@ -6,6 +6,7 @@ import { useOrderEntry } from '@/app/hooks/useOrderEntry';
 import { RiskSettingsPanel } from './RiskSettingsPanel';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { showErrorToast } from '@/app/components/ErrorToast';
 
 /**
  * メッセージ定数
@@ -161,6 +162,7 @@ export function OrderPanel({ stock, currentPrice, ohlcv = [] }: OrderPanelProps)
       await handleOrder();
     } catch (error) {
       console.error('Order execution failed:', error);
+      showErrorToast(error, 'OrderPanel');
     } finally {
       setIsProcessing(false);
     }
