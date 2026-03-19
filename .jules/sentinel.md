@@ -12,3 +12,7 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+## 2026-03-19 - Predictable ID Generation in Risk Manager
+**Vulnerability:** Predictable IDs using Math.random() in CoolingOffManager.
+**Learning:** Math.random() in risk controls creates predictable IDs, enabling tracking or collision attacks.
+**Prevention:** Use cryptographically secure UUIDs (crypto.randomUUID()) for all system-generated IDs.
