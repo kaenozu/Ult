@@ -9,7 +9,7 @@ import { integratedPredictionService } from '@/app/domains/prediction/services/i
 import { Stock, OHLCV } from '@/app/types';
 
 // Web Worker message handling
-const ctx: Worker = self as any;
+const ctx: Worker = self as unknown as Worker;
 
 ctx.onmessage = async (event: MessageEvent) => {
   const { requestId, stock, data, indexData } = event.data;
