@@ -42,10 +42,22 @@ export function calculateSharpeRatio(
 ): number {
   if (returns.length === 0) return 0;
   
-  const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  // ⚡ Bolt Optimization: Replaced .reduce() with standard for-loops to eliminate callback overhead and intermediate memory allocations
+  const n = returns.length;
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    sum += returns[i];
+  }
+
+  const avgReturn = sum / n;
   const excessReturn = avgReturn - riskFreeRate;
   
-  const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+  let varianceSum = 0;
+  for (let i = 0; i < n; i++) {
+    const diff = returns[i] - avgReturn;
+    varianceSum += diff * diff;
+  }
+  const variance = varianceSum / n;
   const volatility = Math.sqrt(variance);
   
   if (volatility === 0) return 0;
@@ -64,18 +76,31 @@ export function calculateSortinoRatio(
 ): number {
   if (returns.length === 0) return 0;
   
-  const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  // ⚡ Bolt Optimization: Replaced .reduce() and .filter() with a single-pass loop to avoid array allocation and callback overhead
+  const n = returns.length;
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    sum += returns[i];
+  }
+
+  const avgReturn = sum / n;
   const excessReturn = avgReturn - riskFreeRate;
   
+  let downsideCount = 0;
+  let downsideVarianceSum = 0;
+
   // 下方偏差（targetReturn以下のリターンのみ対象）
-  const downsideReturns = returns.filter(r => r < targetReturn);
-  if (downsideReturns.length === 0) return excessReturn > 0 ? Infinity : 0;
+  for (let i = 0; i < n; i++) {
+    if (returns[i] < targetReturn) {
+      downsideCount++;
+      const diff = returns[i] - targetReturn;
+      downsideVarianceSum += diff * diff;
+    }
+  }
+
+  if (downsideCount === 0) return excessReturn > 0 ? Infinity : 0;
   
-  const downsideVariance = downsideReturns.reduce(
-    (sum, r) => sum + Math.pow(r - targetReturn, 2), 
-    0
-  ) / downsideReturns.length;
-  const downsideDeviation = Math.sqrt(downsideVariance);
+  const downsideDeviation = Math.sqrt(downsideVarianceSum / downsideCount);
   
   if (downsideDeviation === 0) return 0;
   
@@ -154,8 +179,16 @@ export function calculateBeta(
   }
   
   const n = portfolioReturns.length;
-  const avgPortfolio = portfolioReturns.reduce((sum, r) => sum + r, 0) / n;
-  const avgMarket = marketReturns.reduce((sum, r) => sum + r, 0) / n;
+
+  // ⚡ Bolt Optimization: Replaced multiple .reduce() calls with a single loop iterating over both arrays simultaneously
+  let portSum = 0;
+  let marketSum = 0;
+  for (let i = 0; i < n; i++) {
+    portSum += portfolioReturns[i];
+    marketSum += marketReturns[i];
+  }
+  const avgPortfolio = portSum / n;
+  const avgMarket = marketSum / n;
   
   let covariance = 0;
   let marketVariance = 0;
@@ -242,8 +275,20 @@ export function analyzePortfolio(
   const recoveryDays = calculateRecoveryDays(equityCurve, troughIndex);
   
   // ボラティリティ（月次リターンの年率標準偏差）
-  const avgMonthlyReturn = monthlyReturns.reduce((sum, r) => sum + r, 0) / monthlyReturns.length;
-  const monthlyVariance = monthlyReturns.reduce((sum, r) => sum + Math.pow(r - avgMonthlyReturn, 2), 0) / monthlyReturns.length;
+  // ⚡ Bolt Optimization: Replaced .reduce() calls with standard for-loops to avoid callback overhead
+  const numMonthlyReturns = monthlyReturns.length;
+  let monthlySum = 0;
+  for (let i = 0; i < numMonthlyReturns; i++) {
+    monthlySum += monthlyReturns[i];
+  }
+  const avgMonthlyReturn = monthlySum / numMonthlyReturns;
+
+  let monthlyVarianceSum = 0;
+  for (let i = 0; i < numMonthlyReturns; i++) {
+    const diff = monthlyReturns[i] - avgMonthlyReturn;
+    monthlyVarianceSum += diff * diff;
+  }
+  const monthlyVariance = monthlyVarianceSum / numMonthlyReturns;
   const monthlyStdDev = Math.sqrt(monthlyVariance);
   const volatility = monthlyStdDev * Math.sqrt(12); // 年率化
   
@@ -318,7 +363,11 @@ export function calculateAssetAllocation(
     allocation.set(symbol, currentValue + (trade.quantity || 1));
   }
 
-  const total = Array.from(allocation.values()).reduce((sum, v) => sum + v, 0);
+  // ⚡ Bolt Optimization: Replaced Array.from().reduce() with a direct for...of loop over the Map's values
+  let total = 0;
+  for (const v of allocation.values()) {
+    total += v;
+  }
 
   return Array.from(allocation.entries())
     .sort(([, a], [, b]) => b - a)

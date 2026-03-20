@@ -11,3 +11,6 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+## 2026-02-24 - Portfolio Analysis Array Methods Optimization
+**Learning:** In high-frequency or large-array data processing (like calculating Sharpe/Sortino ratios over thousands of simulated trades), functional array methods (.reduce, .filter) create massive overhead due to callback allocations and intermediate array creation.
+**Action:** Always replace chained array methods with manual, index-based `for` loops in data-crunching paths. Consolidating multiple passes into single loops (e.g., calculating both array sums at once) further optimizes execution time by minimizing V8 bounds checking and iteration count.
