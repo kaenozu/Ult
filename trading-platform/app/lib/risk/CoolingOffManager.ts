@@ -293,8 +293,15 @@ export class CoolingOffManager {
 
   /**
    * クーリングIDを生成
+   * 🛡️ Security: Used global crypto.randomUUID to prevent predictable ID generation (IDOR risk).
+   * Note: Checks if global crypto is available to support different environments without breaking frontend builds.
    */
   private generateCooldownId(): string {
+    const isCryptoAvailable = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function';
+    if (isCryptoAvailable) {
+      return `cooldown-${Date.now()}-${crypto.randomUUID()}`;
+    }
+    // Fallback for environments lacking global crypto (e.g., older Jest versions)
     return `cooldown-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 }

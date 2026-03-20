@@ -12,3 +12,7 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+## 2024-05-24 - [Insecure ID Generation]
+**Vulnerability:** Predictable ID generation using `Math.random().toString(36)` in `CoolingOffManager.ts`.
+**Learning:** Found that `Math.random()` was being used to generate supposedly unique identifiers (`cooldownId`), which could lead to IDOR (Insecure Direct Object Reference) vulnerabilities or ID collisions because `Math.random()` is not cryptographically secure.
+**Prevention:** Always use Node.js `crypto.randomUUID()` or Web Crypto API `crypto.randomUUID()` when generating secure, unique identifiers instead of relying on predictable patterns.
