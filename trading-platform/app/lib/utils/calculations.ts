@@ -134,26 +134,29 @@ export function calculateReturns(prices: number[] | Float64Array): number[] {
  * O(N) complexity using sliding window approach
  */
 export function calculateSMA(prices: number[] | Float64Array, period: number): number[] {
-  const sma: number[] = [];
+  const len = prices.length;
+  const sma = new Array(len);
   
-  if (prices.length < period || period <= 0) {
-    return Array.from({ length: prices.length }, () => NaN);
+  if (len < period || period <= 0) {
+    for (let i = 0; i < len; i++) sma[i] = NaN;
+    return sma;
   }
   
   let windowSum = 0;
   
-  for (let i = 0; i < prices.length; i++) {
+  for (let i = 0; i < period - 1; i++) {
     windowSum += prices[i];
-    
-    if (i >= period) {
-      windowSum -= prices[i - period];
-    }
-    
-    if (i < period - 1) {
-      sma.push(NaN);
-    } else {
-      sma.push(windowSum / period);
-    }
+    sma[i] = NaN;
+  }
+
+  // First valid SMA
+  windowSum += prices[period - 1];
+  sma[period - 1] = windowSum / period;
+
+  // Remaining SMA
+  for (let i = period; i < len; i++) {
+    windowSum += prices[i] - prices[i - period];
+    sma[i] = windowSum / period;
   }
   
   return sma;
@@ -163,25 +166,35 @@ export function calculateSMA(prices: number[] | Float64Array, period: number): n
  * EMA（指数平滑移動平均）を計算
  */
 export function calculateEMA(prices: number[] | Float64Array, period: number): number[] {
-  const ema: number[] = [];
+  const len = prices.length;
+  const ema = new Array(len);
+  
+  if (len < period || period <= 0) {
+    for (let i = 0; i < len; i++) ema[i] = NaN;
+    return ema;
+  }
+
   const multiplier = 2 / (period + 1);
-  
   let currentEMA = 0;
+  let sum = 0;
   
-  for (let i = 0; i < prices.length; i++) {
+  // Calculate initial mean
+  for (let i = 0; i < period; i++) {
+    sum += prices[i];
     if (i < period - 1) {
-      ema.push(NaN);
-      if (i === period - 2) {
-        currentEMA = mean(prices.slice(0, period));
-      }
-    } else if (i === period - 1) {
-      ema.push(currentEMA);
-    } else {
-      currentEMA = (prices[i] - currentEMA) * multiplier + currentEMA;
-      ema.push(currentEMA);
+      ema[i] = NaN;
     }
   }
   
+  currentEMA = sum / period;
+  ema[period - 1] = currentEMA;
+
+  // Calculate remaining EMA
+  for (let i = period; i < len; i++) {
+    currentEMA = (prices[i] - currentEMA) * multiplier + currentEMA;
+    ema[i] = currentEMA;
+  }
+
   return ema;
 }
 
@@ -189,33 +202,47 @@ export function calculateEMA(prices: number[] | Float64Array, period: number): n
  * RSI（相対力指数）を計算
  */
 export function calculateRSI(prices: number[] | Float64Array, period: number = 14): number[] {
-  const rsi: number[] = [];
-  const gains: number[] = [];
-  const losses: number[] = [];
+  const len = prices.length;
+  const rsi = new Array(len);
   
-  for (let i = 1; i < prices.length; i++) {
-    const diff = prices[i] - prices[i-1];
-    gains.push(Math.max(0, diff));
-    losses.push(Math.max(0, -diff));
+  if (len < period + 1) {
+    for (let i = 0; i < len; i++) rsi[i] = NaN;
+    return rsi;
   }
   
-  let avgGain = mean(gains.slice(0, period));
-  let avgLoss = mean(losses.slice(0, period));
+  let sumGain = 0;
+  let sumLoss = 0;
   
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period) {
-      rsi.push(NaN);
-    } else if (i === period) {
-      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-      rsi.push(100 - (100 / (1 + rs)));
+  for (let i = 0; i < period; i++) {
+    rsi[i] = NaN;
+    const diff = prices[i + 1] - prices[i];
+    if (diff > 0) {
+      sumGain += diff;
     } else {
-      avgGain = (avgGain * (period - 1) + gains[i-1]) / period;
-      avgLoss = (avgLoss * (period - 1) + losses[i-1]) / period;
-      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-      rsi.push(100 - (100 / (1 + rs)));
+      sumLoss -= diff;
     }
   }
   
+  let avgGain = sumGain / period;
+  let avgLoss = sumLoss / period;
+
+  // Calculate first RSI
+  let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+  rsi[period] = 100 - (100 / (1 + rs));
+
+  // Calculate remaining RSI
+  for (let i = period + 1; i < len; i++) {
+    const diff = prices[i] - prices[i - 1];
+    const gain = diff > 0 ? diff : 0;
+    const loss = diff < 0 ? -diff : 0;
+
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+    rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+    rsi[i] = 100 - (100 / (1 + rs));
+  }
+
   return rsi;
 }
 
