@@ -1,0 +1,42 @@
+--- app/lib/utils/portfolio-analysis.ts
++++ app/lib/utils/portfolio-analysis.ts
+@@ -42,6 +42,7 @@
+ ): number {
+   if (returns.length === 0) return 0;
+
++  // ⚡ Bolt Optimization: Replaced .reduce() with standard for-loops to eliminate callback overhead and intermediate memory allocations
+   const n = returns.length;
+   let sum = 0;
+   for (let i = 0; i < n; i++) {
+@@ -75,6 +76,7 @@
+ ): number {
+   if (returns.length === 0) return 0;
+
++  // ⚡ Bolt Optimization: Replaced .reduce() and .filter() with a single-pass loop to avoid array allocation and callback overhead
+   const n = returns.length;
+   let sum = 0;
+   for (let i = 0; i < n; i++) {
+@@ -178,6 +180,7 @@
+
+   const n = portfolioReturns.length;
+
++  // ⚡ Bolt Optimization: Replaced multiple .reduce() calls with a single loop iterating over both arrays simultaneously
+   let portSum = 0;
+   let marketSum = 0;
+   for (let i = 0; i < n; i++) {
+@@ -272,6 +275,7 @@
+   const recoveryDays = calculateRecoveryDays(equityCurve, troughIndex);
+
+   // ボラティリティ（月次リターンの年率標準偏差）
++  // ⚡ Bolt Optimization: Replaced .reduce() calls with standard for-loops to avoid callback overhead
+   const numMonthlyReturns = monthlyReturns.length;
+   let monthlySum = 0;
+   for (let i = 0; i < numMonthlyReturns; i++) {
+@@ -359,6 +363,7 @@
+     allocation.set(symbol, currentValue + (trade.quantity || 1));
+   }
+
++  // ⚡ Bolt Optimization: Replaced Array.from().reduce() with a direct for...of loop over the Map's values
+   let total = 0;
+   for (const v of allocation.values()) {
+     total += v;
