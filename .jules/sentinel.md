@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2025-05-15 - [Prevent Predictable ID Generation in Shared Modules]
+**Vulnerability:** Predictable IDs were generated using `Math.random().toString(36)` in `app/lib/risk/CoolingOffManager.ts`, potentially leading to IDOR or replay vulnerabilities.
+**Learning:** Shared/isomorphic modules like `app/lib/risk/` are imported in both Node environments and Frontend browsers. Directly importing Node's `crypto` module (e.g. `import crypto from 'crypto'`) completely breaks frontend builds via webpack/Next.js.
+**Prevention:** Always use the global Web Crypto API with an availability fallback (`typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36)`) when generating secure random values in these shared directories.
