@@ -40,12 +40,22 @@ export function calculateSharpeRatio(
   returns: number[],
   riskFreeRate: number = 0.02
 ): number {
-  if (returns.length === 0) return 0;
+  const len = returns.length;
+  if (len === 0) return 0;
   
-  const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  let sum = 0;
+  for (let i = 0; i < len; i++) {
+    sum += returns[i];
+  }
+  const avgReturn = sum / len;
   const excessReturn = avgReturn - riskFreeRate;
   
-  const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+  let varianceSum = 0;
+  for (let i = 0; i < len; i++) {
+    const diff = returns[i] - avgReturn;
+    varianceSum += diff * diff;
+  }
+  const variance = varianceSum / len;
   const volatility = Math.sqrt(variance);
   
   if (volatility === 0) return 0;
@@ -62,19 +72,29 @@ export function calculateSortinoRatio(
   riskFreeRate: number = 0.02,
   targetReturn: number = 0
 ): number {
-  if (returns.length === 0) return 0;
+  const len = returns.length;
+  if (len === 0) return 0;
+
+  let sum = 0;
+  let downsideVarianceSum = 0;
+  let downsideCount = 0;
+
+  for (let i = 0; i < len; i++) {
+    const r = returns[i];
+    sum += r;
+    if (r < targetReturn) {
+      const diff = r - targetReturn;
+      downsideVarianceSum += diff * diff;
+      downsideCount++;
+    }
+  }
   
-  const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  const avgReturn = sum / len;
   const excessReturn = avgReturn - riskFreeRate;
   
-  // 下方偏差（targetReturn以下のリターンのみ対象）
-  const downsideReturns = returns.filter(r => r < targetReturn);
-  if (downsideReturns.length === 0) return excessReturn > 0 ? Infinity : 0;
+  if (downsideCount === 0) return excessReturn > 0 ? Infinity : 0;
   
-  const downsideVariance = downsideReturns.reduce(
-    (sum, r) => sum + Math.pow(r - targetReturn, 2), 
-    0
-  ) / downsideReturns.length;
+  const downsideVariance = downsideVarianceSum / downsideCount;
   const downsideDeviation = Math.sqrt(downsideVariance);
   
   if (downsideDeviation === 0) return 0;
@@ -149,13 +169,20 @@ export function calculateBeta(
   portfolioReturns: number[],
   marketReturns: number[]
 ): number {
-  if (portfolioReturns.length !== marketReturns.length || portfolioReturns.length === 0) {
+  const n = portfolioReturns.length;
+  if (n !== marketReturns.length || n === 0) {
     return 1;
   }
   
-  const n = portfolioReturns.length;
-  const avgPortfolio = portfolioReturns.reduce((sum, r) => sum + r, 0) / n;
-  const avgMarket = marketReturns.reduce((sum, r) => sum + r, 0) / n;
+  let sumPortfolio = 0;
+  let sumMarket = 0;
+  for (let i = 0; i < n; i++) {
+    sumPortfolio += portfolioReturns[i];
+    sumMarket += marketReturns[i];
+  }
+
+  const avgPortfolio = sumPortfolio / n;
+  const avgMarket = sumMarket / n;
   
   let covariance = 0;
   let marketVariance = 0;
@@ -219,22 +246,26 @@ export function analyzePortfolio(
     };
   }
   
+  const months = monthlyData.length;
+
   // 月次リターンを計算
-  const monthlyReturns = monthlyData.map(m => m.return / initialCapital);
+  const monthlyReturns = new Array(months);
+  for (let i = 0; i < months; i++) {
+    monthlyReturns[i] = monthlyData[i].return / initialCapital;
+  }
   
   // エクイティカーブを構築
-  const equityCurve: number[] = [initialCapital];
-  for (const monthlyReturn of monthlyReturns) {
-    const currentEquity = equityCurve[equityCurve.length - 1];
-    equityCurve.push(currentEquity * (1 + monthlyReturn));
+  const equityCurve: number[] = new Array(months + 1);
+  equityCurve[0] = initialCapital;
+  for (let i = 0; i < months; i++) {
+    equityCurve[i + 1] = equityCurve[i] * (1 + monthlyReturns[i]);
   }
   
   // 基本指標
-  const finalEquity = equityCurve[equityCurve.length - 1];
+  const finalEquity = equityCurve[months];
   const totalReturn = (finalEquity - initialCapital) / initialCapital;
   
   // 月数を計算
-  const months = monthlyData.length;
   const annualizedReturn = Math.pow(1 + totalReturn, 12 / months) - 1;
   
   // ドローダウン
@@ -242,8 +273,18 @@ export function analyzePortfolio(
   const recoveryDays = calculateRecoveryDays(equityCurve, troughIndex);
   
   // ボラティリティ（月次リターンの年率標準偏差）
-  const avgMonthlyReturn = monthlyReturns.reduce((sum, r) => sum + r, 0) / monthlyReturns.length;
-  const monthlyVariance = monthlyReturns.reduce((sum, r) => sum + Math.pow(r - avgMonthlyReturn, 2), 0) / monthlyReturns.length;
+  let monthlySum = 0;
+  for (let i = 0; i < months; i++) {
+    monthlySum += monthlyReturns[i];
+  }
+  const avgMonthlyReturn = monthlySum / months;
+
+  let monthlyVarianceSum = 0;
+  for (let i = 0; i < months; i++) {
+    const diff = monthlyReturns[i] - avgMonthlyReturn;
+    monthlyVarianceSum += diff * diff;
+  }
+  const monthlyVariance = monthlyVarianceSum / months;
   const monthlyStdDev = Math.sqrt(monthlyVariance);
   const volatility = monthlyStdDev * Math.sqrt(12); // 年率化
   
@@ -312,13 +353,18 @@ export function calculateAssetAllocation(
 }> {
   const allocation = new Map<string, number>();
 
-  for (const trade of trades) {
+  for (let i = 0; i < trades.length; i++) {
+    const trade = trades[i];
     const symbol = trade.symbol;
     const currentValue = allocation.get(symbol) || 0;
     allocation.set(symbol, currentValue + (trade.quantity || 1));
   }
 
-  const total = Array.from(allocation.values()).reduce((sum, v) => sum + v, 0);
+  let total = 0;
+  const values = Array.from(allocation.values());
+  for (let i = 0; i < values.length; i++) {
+    total += values[i];
+  }
 
   return Array.from(allocation.entries())
     .sort(([, a], [, b]) => b - a)
