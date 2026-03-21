@@ -295,7 +295,13 @@ export class CoolingOffManager {
    * クーリングIDを生成
    */
   private generateCooldownId(): string {
-    return `cooldown-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // SECURITY: IDOR/predictable ID vulnerability prevention. Use secure UUID generation if available.
+    // For shared modules (like app/lib/risk/), avoid importing Node's crypto to prevent breaking frontend builds.
+    const randomPart = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID().replace(/-/g, '').substring(0, 9)
+      : Math.random().toString(36).substring(2, 11);
+
+    return `cooldown-${Date.now()}-${randomPart}`;
   }
 }
 
