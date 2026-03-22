@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2026-02-21 - Predictable User ID Generation in Auth Route
+**Vulnerability:** The `trading-platform/app/api/auth/register/route.ts` used `Math.random().toString(36)` along with `Date.now()` to generate user IDs. This predictable generation methodology poses an Insecure Direct Object Reference (IDOR) risk if user IDs are expected to be unpredictable identifiers.
+**Learning:** Developers often fallback to `Math.random()` for quick identifier generation without considering the cryptographic implications, especially when the generated IDs identify critical entities like users or orders.
+**Prevention:** Always use a cryptographically secure pseudo-random number generator (CSPRNG) such as Node's `crypto.randomUUID()` for backend routes (or global Web Crypto API for shared modules) when generating security-sensitive entity identifiers.

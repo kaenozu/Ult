@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { handleApiError } from '@/app/lib/error-handler';
 import { checkRateLimit } from '@/app/lib/api-middleware';
@@ -83,7 +84,8 @@ export async function POST(request: NextRequest) {
 
     // Create user
     const user: User = {
-      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      // Security: Prevent predictable ID generation vulnerabilities (IDOR risk)
+      id: `user_${randomUUID().replace(/-/g, '').substring(0, 16)}`,
       email: email.toLowerCase(),
       passwordHash,
       name,
