@@ -289,6 +289,27 @@ export interface WithErrorHandlingResult<T> {
 }
 
 /**
+ * 非同期関数をラップしてエラーハンドリングを追加する
+ * @param fn ラップする非同期関数
+ * @param context エラーコンテキスト
+ * @returns ラップされた非同期関数
+ */
+export function wrapAsync<T, Args extends unknown[]>(
+  fn: (...args: Args) => Promise<T>,
+  context?: string
+): (...args: Args) => Promise<WithErrorHandlingResult<T>> {
+  return async (...args: Args): Promise<WithErrorHandlingResult<T>> => {
+    try {
+      const data = await fn(...args);
+      return { data, error: null, success: true };
+    } catch (err) {
+      const error = handleError(err, context);
+      return { data: null, error, success: false };
+    }
+  };
+}
+
+/**
  * 関数実行をエラーハンドリングでラップする（非同期版）
  */
 export async function withErrorHandling<T>(

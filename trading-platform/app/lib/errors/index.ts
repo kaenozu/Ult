@@ -133,6 +133,7 @@ export {
   tryCatchAsync,
   resultToPromise,
   promiseToResult,
+  wrapAsync,
   withErrorHandling,
   withErrorHandlingSync,
   withRetry,
