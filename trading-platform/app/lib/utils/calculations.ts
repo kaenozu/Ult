@@ -114,13 +114,13 @@ export function stdDev(arr: number[] | Float64Array): number {
  * リターン（騰落率）を計算
  */
 export function calculateReturns(prices: number[] | Float64Array): number[] {
-  const returns: number[] = [];
-  for (let i = 1; i < prices.length; i++) {
-    if (prices[i-1] !== 0) {
-      returns.push((prices[i] - prices[i-1]) / prices[i-1]);
-    } else {
-      returns.push(0);
-    }
+  const length = prices.length;
+  if (length === 0) return [];
+
+  const returns: number[] = new Array(length - 1);
+  for (let i = 1; i < length; i++) {
+    const prev = prices[i-1];
+    returns[i-1] = prev !== 0 ? (prices[i] - prev) / prev : 0;
   }
   return returns;
 }
@@ -262,14 +262,24 @@ export function calculateVolatilityFlexible(
   annualize: boolean = true,
   useSampleVariance: boolean = false
 ): number {
-  if (!returns || returns.length < 2) {
+  const length = returns ? returns.length : 0;
+  if (length < 2) {
     return 0;
   }
 
-  const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-  const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / 
-    (useSampleVariance ? (returns.length - 1) : returns.length);
+  let sum = 0;
+  for (let i = 0; i < length; i++) {
+    sum += returns[i];
+  }
+  const mean = sum / length;
 
+  let sqSum = 0;
+  for (let i = 0; i < length; i++) {
+    const diff = returns[i] - mean;
+    sqSum += diff * diff;
+  }
+
+  const variance = sqSum / (useSampleVariance ? (length - 1) : length);
   const vol = Math.sqrt(variance);
 
   if (annualize) {
@@ -343,7 +353,8 @@ export function calculateMaxDrawdownFlexible(equityCurve: number[], asPercentage
  * @returns 最大ドローダウン
  */
 export function calculateMaxDrawdownFromReturns(returns: number[], asPercentage: boolean = true): number {
-  if (!returns || returns.length === 0) {
+  const length = returns ? returns.length : 0;
+  if (length === 0) {
     return 0;
   }
 
@@ -351,12 +362,16 @@ export function calculateMaxDrawdownFromReturns(returns: number[], asPercentage:
   let maxDD = 0;
   let cumulative = 1;
 
-  for (const ret of returns) {
-    cumulative *= (1 + ret);
-    peak = Math.max(peak, cumulative);
+  for (let i = 0; i < length; i++) {
+    cumulative *= (1 + returns[i]);
+    if (cumulative > peak) {
+      peak = cumulative;
+    }
     if (peak !== 0) {
       const dd = (peak - cumulative) / peak;
-      maxDD = Math.max(maxDD, dd);
+      if (dd > maxDD) {
+        maxDD = dd;
+      }
     }
   }
 
