@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2024-05-20 - [Replace predictable Math.random in shared modules]
+**Vulnerability:** Insecure, predictable ID generation using Math.random() for Cooldown Records.
+**Learning:** Shared logic environments (frontend+backend modules) often rely on predictable built-in alternatives like Math.random() when crypto is unavailable globally, risking IDOR vulnerabilities or tracking issues.
+**Prevention:** Standardize unpredictable ID creation using an availability check fallback `typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random()` in shared code spaces that cannot import node:crypto explicitly.
