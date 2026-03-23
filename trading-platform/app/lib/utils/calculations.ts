@@ -114,13 +114,12 @@ export function stdDev(arr: number[] | Float64Array): number {
  * リターン（騰落率）を計算
  */
 export function calculateReturns(prices: number[] | Float64Array): number[] {
-  const returns: number[] = [];
-  for (let i = 1; i < prices.length; i++) {
-    if (prices[i-1] !== 0) {
-      returns.push((prices[i] - prices[i-1]) / prices[i-1]);
-    } else {
-      returns.push(0);
-    }
+  const len = prices.length;
+  if (len === 0) return [];
+  const returns: number[] = new Array(len - 1);
+  for (let i = 1; i < len; i++) {
+    const prev = prices[i-1];
+    returns[i-1] = prev !== 0 ? (prices[i] - prev) / prev : 0;
   }
   return returns;
 }
@@ -134,26 +133,27 @@ export function calculateReturns(prices: number[] | Float64Array): number[] {
  * O(N) complexity using sliding window approach
  */
 export function calculateSMA(prices: number[] | Float64Array, period: number): number[] {
-  const sma: number[] = [];
+  const len = prices.length;
+  if (len < period || period <= 0) {
+    const arr = new Array(len);
+    for (let i = 0; i < len; i++) arr[i] = NaN;
+    return arr;
+  }
   
-  if (prices.length < period || period <= 0) {
-    return Array.from({ length: prices.length }, () => NaN);
+  const sma: number[] = new Array(len);
+  for (let i = 0; i < period - 1; i++) {
+    sma[i] = NaN;
   }
   
   let windowSum = 0;
-  
-  for (let i = 0; i < prices.length; i++) {
+  for (let i = 0; i < period; i++) {
     windowSum += prices[i];
-    
-    if (i >= period) {
-      windowSum -= prices[i - period];
-    }
-    
-    if (i < period - 1) {
-      sma.push(NaN);
-    } else {
-      sma.push(windowSum / period);
-    }
+  }
+  sma[period - 1] = windowSum / period;
+
+  for (let i = period; i < len; i++) {
+    windowSum += prices[i] - prices[i - period];
+    sma[i] = windowSum / period;
   }
   
   return sma;
@@ -163,23 +163,29 @@ export function calculateSMA(prices: number[] | Float64Array, period: number): n
  * EMA（指数平滑移動平均）を計算
  */
 export function calculateEMA(prices: number[] | Float64Array, period: number): number[] {
-  const ema: number[] = [];
+  const len = prices.length;
+  if (len < period || period <= 0) {
+    const arr = new Array(len);
+    for (let i = 0; i < len; i++) arr[i] = NaN;
+    return arr;
+  }
+  
+  const ema: number[] = new Array(len);
+  for (let i = 0; i < period - 1; i++) {
+    ema[i] = NaN;
+  }
+  
   const multiplier = 2 / (period + 1);
-  
-  let currentEMA = 0;
-  
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period - 1) {
-      ema.push(NaN);
-      if (i === period - 2) {
-        currentEMA = mean(prices.slice(0, period));
-      }
-    } else if (i === period - 1) {
-      ema.push(currentEMA);
-    } else {
-      currentEMA = (prices[i] - currentEMA) * multiplier + currentEMA;
-      ema.push(currentEMA);
-    }
+  let sum = 0;
+  for (let i = 0; i < period; i++) {
+    sum += prices[i];
+  }
+  let currentEMA = sum / period;
+  ema[period - 1] = currentEMA;
+
+  for (let i = period; i < len; i++) {
+    currentEMA = (prices[i] - currentEMA) * multiplier + currentEMA;
+    ema[i] = currentEMA;
   }
   
   return ema;
@@ -189,31 +195,43 @@ export function calculateEMA(prices: number[] | Float64Array, period: number): n
  * RSI（相対力指数）を計算
  */
 export function calculateRSI(prices: number[] | Float64Array, period: number = 14): number[] {
-  const rsi: number[] = [];
-  const gains: number[] = [];
-  const losses: number[] = [];
-  
-  for (let i = 1; i < prices.length; i++) {
-    const diff = prices[i] - prices[i-1];
-    gains.push(Math.max(0, diff));
-    losses.push(Math.max(0, -diff));
+  const len = prices.length;
+  if (len <= period || period <= 0) {
+    const arr = new Array(len);
+    for (let i = 0; i < len; i++) arr[i] = NaN;
+    return arr;
+  }
+
+  const rsi: number[] = new Array(len);
+  for (let i = 0; i < period; i++) {
+    rsi[i] = NaN;
   }
   
-  let avgGain = mean(gains.slice(0, period));
-  let avgLoss = mean(losses.slice(0, period));
+  let sumGain = 0;
+  let sumLoss = 0;
+
+  for (let i = 1; i <= period; i++) {
+    const diff = prices[i] - prices[i-1];
+    if (diff > 0) sumGain += diff;
+    else if (diff < 0) sumLoss -= diff;
+  }
   
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period) {
-      rsi.push(NaN);
-    } else if (i === period) {
-      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-      rsi.push(100 - (100 / (1 + rs)));
-    } else {
-      avgGain = (avgGain * (period - 1) + gains[i-1]) / period;
-      avgLoss = (avgLoss * (period - 1) + losses[i-1]) / period;
-      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-      rsi.push(100 - (100 / (1 + rs)));
-    }
+  let avgGain = sumGain / period;
+  let avgLoss = sumLoss / period;
+  
+  rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+
+  for (let i = period + 1; i < len; i++) {
+    const diff = prices[i] - prices[i-1];
+    let gain = 0;
+    let loss = 0;
+    if (diff > 0) gain = diff;
+    else if (diff < 0) loss = -diff;
+
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+    rsi[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
   }
   
   return rsi;
@@ -262,13 +280,23 @@ export function calculateVolatilityFlexible(
   annualize: boolean = true,
   useSampleVariance: boolean = false
 ): number {
-  if (!returns || returns.length < 2) {
+  const len = returns ? returns.length : 0;
+  if (len < 2) {
     return 0;
   }
 
-  const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-  const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / 
-    (useSampleVariance ? (returns.length - 1) : returns.length);
+  let sum = 0;
+  for (let i = 0; i < len; i++) {
+    sum += returns[i];
+  }
+  const mean = sum / len;
+
+  let varSum = 0;
+  for (let i = 0; i < len; i++) {
+    const diff = returns[i] - mean;
+    varSum += diff * diff;
+  }
+  const variance = varSum / (useSampleVariance ? (len - 1) : len);
 
   const vol = Math.sqrt(variance);
 
@@ -343,7 +371,8 @@ export function calculateMaxDrawdownFlexible(equityCurve: number[], asPercentage
  * @returns 最大ドローダウン
  */
 export function calculateMaxDrawdownFromReturns(returns: number[], asPercentage: boolean = true): number {
-  if (!returns || returns.length === 0) {
+  const len = returns ? returns.length : 0;
+  if (len === 0) {
     return 0;
   }
 
@@ -351,12 +380,16 @@ export function calculateMaxDrawdownFromReturns(returns: number[], asPercentage:
   let maxDD = 0;
   let cumulative = 1;
 
-  for (const ret of returns) {
-    cumulative *= (1 + ret);
-    peak = Math.max(peak, cumulative);
+  for (let i = 0; i < len; i++) {
+    cumulative *= (1 + returns[i]);
+    if (cumulative > peak) {
+      peak = cumulative;
+    }
     if (peak !== 0) {
       const dd = (peak - cumulative) / peak;
-      maxDD = Math.max(maxDD, dd);
+      if (dd > maxDD) {
+        maxDD = dd;
+      }
     }
   }
 

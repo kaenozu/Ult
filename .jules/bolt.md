@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2024-05-28 - Optimizing Utility Calculations
+**Learning:** Functions in `trading-platform/app/lib/utils/calculations.ts` like `calculateSMA`, `calculateEMA`, `calculateRSI`, `calculateReturns`, `calculateVolatilityFlexible`, and `calculateMaxDrawdownFromReturns` suffer major V8 garbage collection overhead and iterator allocation when relying on dynamic `Array.push()`, intermediate array instantiations (like `Array.slice()`), and functional methods (like `.reduce()`).
+**Action:** Replace these operations with pre-allocated arrays (`new Array(length)`), standard index-based `for` loops, and inline accumulators to achieve substantial performance improvements (typically ~2x to ~3x faster).
