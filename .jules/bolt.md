@@ -11,3 +11,8 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## 2026-03-23 - Chained Array Methods in Hot Loops
+
+**Learning:** Chaining `.reduce()`, `.map()`, and `.filter()` in mathematical operations (like `calculateStandardDeviation` or statistical correlations) forces multiple passes over the array and intermediate array allocations, causing extreme performance degradation (up to 60x slower) and unnecessary garbage collection overhead.
+**Action:** Always replace chained array methods in mathematical utilities with single-pass, index-based `for` loops. Combining calculations like `sum` and `sumSq` in a single loop yields massive performance gains.

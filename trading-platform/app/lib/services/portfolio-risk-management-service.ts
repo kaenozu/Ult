@@ -339,11 +339,21 @@ class PortfolioRiskManagementService {
    * 標準偏差を計算
    */
   private calculateStandardDeviation(data: number[]): number {
-    if (data.length === 0) return 0;
+    const len = data.length;
+    if (len === 0) return 0;
     
-    const mean = data.reduce((sum, val) => sum + val, 0) / data.length;
-    const squaredDiffs = data.map(val => Math.pow(val - mean, 2));
-    const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / data.length;
+    let sum = 0;
+    for (let i = 0; i < len; i++) {
+      sum += data[i];
+    }
+    const mean = sum / len;
+
+    let varianceSum = 0;
+    for (let i = 0; i < len; i++) {
+      const diff = data[i] - mean;
+      varianceSum += diff * diff;
+    }
+    const variance = varianceSum / len;
     
     return Math.sqrt(variance);
   }
@@ -412,9 +422,14 @@ class PortfolioRiskManagementService {
    * シャープレシオを計算
    */
   private calculateSharpeRatio(returns: number[], riskFreeRate: number): number {
-    if (returns.length === 0) return 0;
+    const len = returns.length;
+    if (len === 0) return 0;
     
-    const meanReturn = returns.reduce((sum, val) => sum + val, 0) / returns.length;
+    let sum = 0;
+    for (let i = 0; i < len; i++) {
+      sum += returns[i];
+    }
+    const meanReturn = sum / len;
     const volatility = this.calculateStandardDeviation(returns);
     
     if (volatility === 0) return 0;
@@ -468,11 +483,21 @@ class PortfolioRiskManagementService {
     if (series1.length !== series2.length || series1.length === 0) return 0;
     
     const n = series1.length;
-    const sum1 = series1.reduce((sum, val) => sum + val, 0);
-    const sum2 = series2.reduce((sum, val) => sum + val, 0);
-    const sum1Sq = series1.reduce((sum, val) => sum + val * val, 0);
-    const sum2Sq = series2.reduce((sum, val) => sum + val * val, 0);
-    const pSum = series1.reduce((sum, val, idx) => sum + val * series2[idx], 0);
+    let sum1 = 0;
+    let sum2 = 0;
+    let sum1Sq = 0;
+    let sum2Sq = 0;
+    let pSum = 0;
+
+    for (let i = 0; i < n; i++) {
+      const v1 = series1[i];
+      const v2 = series2[i];
+      sum1 += v1;
+      sum2 += v2;
+      sum1Sq += v1 * v1;
+      sum2Sq += v2 * v2;
+      pSum += v1 * v2;
+    }
     
     const num = pSum - (sum1 * sum2 / n);
     const den = Math.sqrt((sum1Sq - sum1 * sum1 / n) * (sum2Sq - sum2 * sum2 / n));
