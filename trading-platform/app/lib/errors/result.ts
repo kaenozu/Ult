@@ -357,3 +357,24 @@ export async function withRetry<T>(
   
   return { data: null, error: lastError, success: false };
 }
+
+/**
+ * 非同期関数をラップし、エラーをキャッチしてResult型を返す
+ *
+ * @param fn ラップする非同期関数
+ * @param context エラーコンテキスト
+ * @returns Result型を返す非同期関数
+ */
+export function wrapAsync<T, Args extends any[]>(
+  fn: (...args: Args) => Promise<T>,
+  context?: string
+): (...args: Args) => Promise<Result<T, AppError>> {
+  return async (...args: Args): Promise<Result<T, AppError>> => {
+    try {
+      const result = await fn(...args);
+      return ok(result);
+    } catch (error) {
+      return err(handleError(error, context));
+    }
+  };
+}
