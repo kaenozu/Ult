@@ -339,7 +339,10 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
   let sum = 0;
   let validCount = 0;
 
+  const invPeriod = 1 / period;
+
   if (isObjectArray) {
+    let prev = data[0]; // cache previous element
     // Initial loop
     for (let i = 0; i < length && i < period; i++) {
       const currentHigh = data[i].high;
@@ -349,7 +352,7 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
       if (i === 0) {
         tr = currentHigh - currentLow;
       } else {
-        const prevClose = data[i - 1].close;
+        const prevClose = prev.close;
         tr = Math.max(
           currentHigh - currentLow,
           Math.abs(currentHigh - prevClose),
@@ -364,29 +367,35 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
       result[i] = NaN;
 
       if (i === period - 1) {
-        result[i] = validCount === period ? sum / period : NaN;
+        result[i] = validCount === period ? sum * invPeriod : NaN;
       }
+      prev = data[i];
     }
 
+    let prevResult = result[period - 1];
+    prev = data[period - 1];
     // Remaining loop
     for (let i = period; i < length; i++) {
       const currentHigh = data[i].high;
       const currentLow = data[i].low;
-      const prevClose = data[i - 1].close;
+      const prevClose = prev.close;
       const tr = Math.max(
         currentHigh - currentLow,
         Math.abs(currentHigh - prevClose),
         Math.abs(currentLow - prevClose)
       );
 
-      const prevResult = result[i - 1];
       if (!isNaN(tr) && !isNaN(prevResult)) {
-        result[i] = (prevResult * (period - 1) + tr) / period;
+        prevResult = (prevResult * (period - 1) + tr) * invPeriod;
+        result[i] = prevResult;
       } else {
+        prevResult = NaN;
         result[i] = NaN;
       }
+      prev = data[i];
     }
   } else {
+    let prevClose = closes[0]; // cache previous element
     // Initial loop
     for (let i = 0; i < length && i < period; i++) {
       const currentHigh = highs[i];
@@ -396,7 +405,6 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
       if (i === 0) {
         tr = currentHigh - currentLow;
       } else {
-        const prevClose = closes[i - 1];
         tr = Math.max(
           currentHigh - currentLow,
           Math.abs(currentHigh - prevClose),
@@ -411,15 +419,17 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
       result[i] = NaN;
 
       if (i === period - 1) {
-        result[i] = validCount === period ? sum / period : NaN;
+        result[i] = validCount === period ? sum * invPeriod : NaN;
       }
+      prevClose = closes[i];
     }
 
+    let prevResult = result[period - 1];
+    prevClose = closes[period - 1];
     // Remaining loop
     for (let i = period; i < length; i++) {
       const currentHigh = highs[i];
       const currentLow = lows[i];
-      const prevClose = closes[i - 1];
 
       const tr = Math.max(
         currentHigh - currentLow,
@@ -427,12 +437,14 @@ export function calculateATR(dataOrHighs: OHLCV[] | number[], periodOrLows?: num
         Math.abs(currentLow - prevClose)
       );
 
-      const prevResult = result[i - 1];
       if (!isNaN(tr) && !isNaN(prevResult)) {
-        result[i] = (prevResult * (period - 1) + tr) / period;
+        prevResult = (prevResult * (period - 1) + tr) * invPeriod;
+        result[i] = prevResult;
       } else {
+        prevResult = NaN;
         result[i] = NaN;
       }
+      prevClose = closes[i];
     }
   }
 
@@ -455,9 +467,10 @@ export function calculateADX(data: OHLCV[], period: number = 14): number[] {
   // We can optimize by combining loops, but splitting is clearer and avoids conditionals
   const initialLimit = Math.min(length, period + 1); // Loop i goes up to period
 
+  // Cache previous element to avoid array lookup overhead
+  let prev = data[0];
   for (let i = 1; i < initialLimit; i++) {
     const curr = data[i];
-    const prev = data[i - 1];
 
     const upMove = curr.high - prev.high;
     const downMove = prev.low - curr.low;
@@ -476,6 +489,7 @@ export function calculateADX(data: OHLCV[], period: number = 14): number[] {
     avgDMMinus += dmMinus;
 
     adx[i] = NaN;
+    prev = curr;
   }
 
   // 2. Calculate initial ADX at i = period + 1
@@ -492,9 +506,12 @@ export function calculateADX(data: OHLCV[], period: number = 14): number[] {
   }
 
   // 3. Main loop (i = period + 2 to end)
+  const invPeriod = 1 / period;
+  let prevADX = adx[period + 1];
+  prev = data[period + 1];
+
   for (let i = period + 2; i < length; i++) {
     const curr = data[i];
-    const prev = data[i - 1];
 
     const upMove = curr.high - prev.high;
     const downMove = prev.low - curr.low;
@@ -508,16 +525,17 @@ export function calculateADX(data: OHLCV[], period: number = 14): number[] {
       Math.abs(curr.low - prev.close)
     );
 
-    avgTR = avgTR - (avgTR / period) + tr;
-    avgDMPlus = avgDMPlus - (avgDMPlus / period) + dmPlus;
-    avgDMMinus = avgDMMinus - (avgDMMinus / period) + dmMinus;
+    avgTR = avgTR - (avgTR * invPeriod) + tr;
+    avgDMPlus = avgDMPlus - (avgDMPlus * invPeriod) + dmPlus;
+    avgDMMinus = avgDMMinus - (avgDMMinus * invPeriod) + dmMinus;
 
     const diPlus = (avgDMPlus / avgTR) * 100;
     const diMinus = (avgDMMinus / avgTR) * 100;
     const dx = (Math.abs(diPlus - diMinus) / (diPlus + diMinus)) * 100;
 
-    const prevADX = adx[i - 1];
-    adx[i] = (prevADX * (period - 1) + dx) / period;
+    prevADX = (prevADX * (period - 1) + dx) * invPeriod;
+    adx[i] = prevADX;
+    prev = curr;
   }
 
   return adx;
