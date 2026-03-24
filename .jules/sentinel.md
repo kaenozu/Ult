@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+
+## 2024-05-27 - Predictable ID Vulnerability in Isomorphic Modules
+**Vulnerability:** Found `Math.random().toString(36).substr(2, 9)` used for ID generation in `CoolingOffManager.ts`, potentially allowing for predictable IDs in security-relevant mechanisms.
+**Learning:** `Math.random()` is not cryptographically secure and predictable. Moreover, in isomorphic modules, importing `crypto` from Node.js can break frontend builds. A robust approach must fallback to standard JavaScript functions if the Web Crypto API isn't present, preventing build/execution errors.
+**Prevention:** Avoid `Math.random()` for any form of unique identifier. In isomorphic code, use `typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '').substring(0, 9) : Math.random().toString(36).substring(2, 11)` to securely generate IDs when possible while keeping compatibility.
