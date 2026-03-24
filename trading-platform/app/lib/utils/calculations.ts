@@ -428,6 +428,7 @@ export function calculateCorrelation(
 
 /**
  * 線形回帰（最小二乗法）を実行
+ * Optimized to single-pass calculation for R2 to avoid extra array iterations
  */
 export function linearRegression(
   x: number[] | Float64Array,
@@ -436,25 +437,37 @@ export function linearRegression(
   const n = x.length;
   if (n !== y.length || n === 0) return { slope: 0, intercept: 0, r2: 0 };
   
-  const mx = mean(x);
-  const my = mean(y);
+  let sumX = 0;
+  let sumY = 0;
+
+  for (let i = 0; i < n; i++) {
+    sumX += x[i];
+    sumY += y[i];
+  }
+
+  const mx = sumX / n;
+  const my = sumY / n;
   
   let num = 0;
-  let den = 0;
+  let den1 = 0;
+  let den2 = 0;
   
   for (let i = 0; i < n; i++) {
-    num += (x[i] - mx) * (y[i] - my);
-    den += (x[i] - mx) * (x[i] - mx);
+    const dx = x[i] - mx;
+    const dy = y[i] - my;
+    num += dx * dy;
+    den1 += dx * dx;
+    den2 += dy * dy;
   }
   
-  if (den === 0) return { slope: 0, intercept: my, r2: 0 };
+  if (den1 === 0) return { slope: 0, intercept: my, r2: 0 };
   
-  const slope = num / den;
+  const slope = num / den1;
   const intercept = my - slope * mx;
   
-  // R2計算
-  const r = calculateCorrelation(x, y);
-  const r2 = r * r;
+  // R2 calculation without calling calculateCorrelation to save a full array pass
+  const rDenom = den1 * den2;
+  const r2 = rDenom === 0 ? 0 : (num * num) / rDenom;
   
   return { slope, intercept, r2 };
 }
