@@ -123,14 +123,14 @@
   - [ ] `app/lib/errors/ValidationError.ts` - バリデーションエラー
   - [ ] `app/lib/errors/index.ts` - エクスポート
 
-- [ ] **8.2 エラーハンドリングユーティリティ**
-  - [ ] `handleError()` - 統一エラーハンドラ
-  - [ ] `wrapAsync()` - 非同期関数ラッパー
-  - [ ] `withRetry()` - リトライロジック
+- [x] **8.2 エラーハンドリングユーティリティ**
+  - [x] `handleError()` - 統一エラーハンドラ
+  - [x] `wrapAsync()` - 非同期関数ラッパー
+  - [x] `withRetry()` - リトライロジック
 
 - [ ] **8.3 エラー表示コンポーネント**
   - [ ] `ErrorBoundary` の強化
-  - [ ] `ErrorToast` コンポーネント
+  - [x] `ErrorToast` コンポーネント
   - [ ] エラーログ収集の実装
 
 - [ ] **8.4 既存コードの移行**

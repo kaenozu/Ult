@@ -136,6 +136,7 @@ export {
   withErrorHandling,
   withErrorHandlingSync,
   withRetry,
+  wrapAsync,
 } from './result';
 
 // ============================================================================
