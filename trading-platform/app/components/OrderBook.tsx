@@ -35,12 +35,12 @@ export function OrderBook({ stock }: OrderBookProps) {
             </span>
         </div>
         <div className="flex-1 overflow-y-auto bg-[#101922]">
-            <table className="w-full text-xs tabular-nums border-collapse">
+            <table className="w-full text-xs tabular-nums border-collapse" aria-label="板情報">
             <thead className="sticky top-0 bg-[#141e27] text-[10px] text-[#92adc9] z-10">
                 <tr>
-                <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">買数量</th>
-                <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">気配値</th>
-                <th className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">売数量</th>
+                <th scope="col" className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">買数量</th>
+                <th scope="col" className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">気配値</th>
+                <th scope="col" className="py-2 px-2 text-center font-medium w-1/3 border-b border-[#233648]">売数量</th>
                 </tr>
             </thead>
             <tbody>
