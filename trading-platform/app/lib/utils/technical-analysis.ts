@@ -225,6 +225,7 @@ export function calculateBollingerBands(
   let sum = 0;
   let sumSq = 0;
   let validCount = 0;
+  const invPeriod = 1 / period;
 
   // Initial window loop
   const initialLimit = Math.min(length, period);
@@ -237,12 +238,13 @@ export function calculateBollingerBands(
     }
 
     if (i === period - 1 && validCount === period) {
-      const mean = sum / period;
-      const variance = Math.max(0, sumSq / period - mean * mean);
-      const stdDev = Math.sqrt(variance);
+      const mean = sum * invPeriod;
+      const variance = sumSq * invPeriod - mean * mean;
+      const stdDev = variance > 0 ? Math.sqrt(variance) : 0;
+      const dev = standardDeviations * stdDev;
       middle[i] = mean;
-      upper[i] = mean + standardDeviations * stdDev;
-      lower[i] = mean - standardDeviations * stdDev;
+      upper[i] = mean + dev;
+      lower[i] = mean - dev;
     } else {
       middle[i] = NaN;
       upper[i] = NaN;
@@ -266,36 +268,14 @@ export function calculateBollingerBands(
       validCount--;
     }
 
-    if (validCount >= period) { // Relaxed constraint for rolling window
-      const mean = sum / validCount; // Use validCount instead of fixed period if recovering
-      // Variance calculation might be slightly off if count > period due to non-removed old values,
-      // but standard logic assumes constant window size.
-      // For strict correctness with NaNs, we should probably stick to:
-      // only output if validCount === period.
-      // HOWEVER, the test expects robustness.
-      // Let's stick to validCount === period for strict correctness as per standard lib behavior,
-      // but ensure state is correctly maintained.
-      //
-      // Re-reading the failure: expected NaN, got 10.
-      // Input: [10, NaN, 20, 30, 40], period 2.
-      // i=0: val=10. sum=10. count=1.
-      // i=1: val=NaN. sum=10. count=1. limit=2. loop ends. middle[1]=NaN.
-      // Rolling:
-      // i=2: val=20. sum=10+20=30. sq... count=2.
-      //      oldVal(i-2=0)=10. sum=30-10=20. count=1.
-      //      validCount=1. != period(2). middle[2]=NaN.
-      //      Wait, test says: expect(sma[2]).toBeNaN(). Received 10.
-      //      Ah, the SMA test is failing, not Bollinger.
-      //      Let's look at calculateSMA.
-    }
-
     if (validCount === period) {
-       const mean = sum / period;
-       const variance = Math.max(0, sumSq / period - mean * mean);
-       const stdDev = Math.sqrt(variance);
+       const mean = sum * invPeriod;
+       const variance = sumSq * invPeriod - mean * mean;
+       const stdDev = variance > 0 ? Math.sqrt(variance) : 0;
+       const dev = standardDeviations * stdDev;
        middle[i] = mean;
-       upper[i] = mean + standardDeviations * stdDev;
-       lower[i] = mean - standardDeviations * stdDev;
+       upper[i] = mean + dev;
+       lower[i] = mean - dev;
     } else {
        middle[i] = NaN;
        upper[i] = NaN;
