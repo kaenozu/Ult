@@ -82,6 +82,8 @@ export {
   
   // Core Functions
   handleError,
+  wrapAsync,
+  withRetry,
   logError,
   reportError,
   

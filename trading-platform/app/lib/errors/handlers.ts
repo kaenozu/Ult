@@ -664,3 +664,115 @@ export function extractErrorInfo(error: unknown): {
 // ============================================================================
 
 export { logError as logErrorFromErrors };
+
+/**
+ * 非同期関数ラッパー (wrapAsync)
+ *
+ * 非同期関数を実行し、エラーが発生した場合に統一されたエラーハンドリングを行います。
+ * Next.jsのAPIルートやServer Actionsでの使用を想定しています。
+ *
+ * @param fn 実行する非同期関数
+ * @param context エラーコンテキスト（オプション）
+ * @returns 関数の実行結果、またはエラー
+ */
+export async function wrapAsync<T>(
+  fn: () => Promise<T>,
+  context?: string
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    throw handleError(error, context);
+  }
+}
+
+/**
+ * リトライオプション
+ */
+export interface RetryOptions {
+  /** 最大リトライ回数 */
+  maxRetries?: number;
+  /** 初期遅延時間（ミリ秒） */
+  initialDelayMs?: number;
+  /** 遅延時間の増加係数（バックオフ乗数） */
+  backoffFactor?: number;
+  /** 最大遅延時間（ミリ秒） */
+  maxDelayMs?: number;
+  /** リトライ対象とするエラーかどうかを判定する関数。省略した場合は回復可能とマークされているエラー、またはネットワークエラーのみリトライします。 */
+  shouldRetry?: (error: unknown) => boolean;
+  /** リトライ前に実行されるフック */
+  onRetry?: (error: unknown, attempt: number, delayMs: number) => void;
+}
+
+/**
+ * リトライロジック (withRetry)
+ *
+ * 非同期処理が失敗した場合に、指定された条件に従ってリトライを行います。
+ * エクスポネンシャルバックオフ（指数関数的遅延）をサポートしています。
+ *
+ * @param fn 実行する非同期関数
+ * @param options リトライオプション
+ * @param context エラーコンテキスト（オプション）
+ * @returns 関数の実行結果
+ */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: RetryOptions = {},
+  context?: string
+): Promise<T> {
+  const {
+    maxRetries = 3,
+    initialDelayMs = 1000,
+    backoffFactor = 2,
+    maxDelayMs = 30000,
+    shouldRetry = (err) => {
+      // デフォルトでは回復可能なエラーまたはネットワークエラーのみリトライ
+      if (isAppError(err) && err.recoverable) return true;
+      if (isNetworkError(err)) return true;
+      if (isApiError(err)) {
+        // 500番台のエラーやレート制限はリトライ対象とする
+        return err.statusCode >= 500 || err.statusCode === 429;
+      }
+      return false;
+    },
+    onRetry,
+  } = options;
+
+  let attempt = 0;
+  let currentDelay = initialDelayMs;
+
+  while (true) {
+    try {
+      return await fn();
+    } catch (error) {
+      attempt++;
+
+      const appError = handleError(error, context);
+
+      if (attempt > maxRetries || !shouldRetry(appError)) {
+        throw appError;
+      }
+
+      if (onRetry) {
+        onRetry(appError, attempt, currentDelay);
+      } else {
+        logger.warn(
+          `Operation failed. Retrying... (Attempt ${attempt}/${maxRetries}, Delay: ${currentDelay}ms)`,
+          {
+            component: 'withRetry',
+            metadata: {
+              context,
+              originalError: appError.message,
+              errorCode: appError.code,
+            }
+          }
+        );
+      }
+
+      await new Promise(resolve => setTimeout(resolve, currentDelay));
+
+      // 次の遅延時間を計算（最大値を超えないようにする）
+      currentDelay = Math.min(currentDelay * backoffFactor, maxDelayMs);
+    }
+  }
+}
