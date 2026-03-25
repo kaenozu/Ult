@@ -12,3 +12,8 @@
 **Vulnerability:** The authentication system contained a hardcoded admin user (`admin@example.com`) initialized by default in the in-memory store, intended for testing but active in production.
 **Learning:** Developers often add "temporary" or "convenience" users for local testing but forget to wrap them in environment checks, creating critical backdoors.
 **Prevention:** Always wrap test data initialization in strict `process.env.NODE_ENV !== 'production'` checks, or better yet, use separate seed scripts/fixtures that are never imported in production code.
+## 2026-02-20 - Fix Insecure ID Generation
+
+**Vulnerability:** ID generation in API endpoints (`auth/register`, `export/trades`) was using `Math.random()`, which is not cryptographically secure and prone to collisions.
+**Learning:** Secure random generation is critical for security identifiers like user IDs or export IDs to prevent prediction or collision attacks.
+**Prevention:** Use `randomUUID` from the Node `crypto` module (e.g., `randomUUID().replace(/-/g, '').substring(0, 16)`) for generating secure IDs in backend API routes.
