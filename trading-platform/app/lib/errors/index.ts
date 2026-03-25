@@ -82,6 +82,8 @@ export {
   
   // Core Functions
   handleError,
+  wrapAsync,
+  withRetry,
   logError,
   reportError,
   
@@ -135,7 +137,6 @@ export {
   promiseToResult,
   withErrorHandling,
   withErrorHandlingSync,
-  withRetry,
 } from './result';
 
 // ============================================================================
