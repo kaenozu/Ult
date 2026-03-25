@@ -66,6 +66,7 @@ export function DashboardCustomizer() {
         onClick={() => setIsOpen(true)}
         variant="ghost"
         className="fixed bottom-4 left-4 z-40"
+        aria-label="Open dashboard customization"
       >
         <Layout className="w-5 h-5" />
       </Button>
@@ -73,18 +74,24 @@ export function DashboardCustomizer() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dashboard-customizer-title"
+    >
       <div className="bg-[#1a2332] rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold flex items-center gap-2">
+            <h2 id="dashboard-customizer-title" className="text-xl font-bold flex items-center gap-2">
               <Layout className="w-6 h-6" />
               Dashboard Customization
             </h2>
             <button
               onClick={() => setIsOpen(false)}
               className="text-gray-400 hover:text-white"
+              aria-label="Close"
             >
               ✕
             </button>
@@ -168,6 +175,7 @@ export function DashboardCustomizer() {
                       <button
                         onClick={() => deleteLayout(layout.id)}
                         className="p-2 hover:bg-gray-700 rounded text-red-400"
+                        aria-label="Delete layout"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -242,6 +250,7 @@ export function DashboardCustomizer() {
                             currentLayoutId && toggleWidgetVisibility(currentLayoutId, widget.id)
                           }
                           className="p-2 hover:bg-gray-700 rounded"
+                          aria-label={widget.visible ? "Hide widget" : "Show widget"}
                         >
                           {widget.visible ? (
                             <Eye className="w-4 h-4 text-green-500" />
@@ -252,6 +261,7 @@ export function DashboardCustomizer() {
                         <button
                           onClick={() => currentLayoutId && removeWidget(currentLayoutId, widget.id)}
                           className="p-2 hover:bg-gray-700 rounded text-red-400"
+                          aria-label="Remove widget"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
