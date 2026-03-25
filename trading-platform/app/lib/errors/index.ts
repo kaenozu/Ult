@@ -137,7 +137,6 @@ export {
   promiseToResult,
   withErrorHandling,
   withErrorHandlingSync,
-  withRetry,
 } from './result';
 
 // ============================================================================

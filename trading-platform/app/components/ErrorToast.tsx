@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
-import { reportError } from '@/app/lib/errors';
+import { reportError, handleError } from '@/app/lib/errors';
 
 export interface ErrorToastProps {
   error: unknown;
@@ -42,11 +42,14 @@ export function ErrorToast({
 
     const processError = async () => {
       // reportErrorを呼び出してエラーを記録し、ユーザー向けのエラーメッセージを取得
-      const appError = await reportError(error, {
-        component: context,
-        action: 'show_error_toast',
+      const appError = handleError(error, context);
+
+      await reportError(appError, {
+        timestamp: Date.now(),
+        operation: 'show_error_toast',
         metadata: {
           ...metadata,
+          component: context,
           source: 'ErrorToastComponent',
         },
       });
