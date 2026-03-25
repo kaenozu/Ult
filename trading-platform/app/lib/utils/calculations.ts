@@ -114,12 +114,16 @@ export function stdDev(arr: number[] | Float64Array): number {
  * リターン（騰落率）を計算
  */
 export function calculateReturns(prices: number[] | Float64Array): number[] {
-  const returns: number[] = [];
-  for (let i = 1; i < prices.length; i++) {
-    if (prices[i-1] !== 0) {
-      returns.push((prices[i] - prices[i-1]) / prices[i-1]);
+  const length = prices.length;
+  if (length <= 1) return [];
+  // ⚡ Bolt optimization: Use pre-allocated array instead of dynamic .push() to prevent reallocation overhead
+  const returns: number[] = new Array(length - 1);
+  for (let i = 1; i < length; i++) {
+    const prev = prices[i - 1];
+    if (prev !== 0) {
+      returns[i - 1] = (prices[i] - prev) / prev;
     } else {
-      returns.push(0);
+      returns[i - 1] = 0;
     }
   }
   return returns;
@@ -134,15 +138,19 @@ export function calculateReturns(prices: number[] | Float64Array): number[] {
  * O(N) complexity using sliding window approach
  */
 export function calculateSMA(prices: number[] | Float64Array, period: number): number[] {
-  const sma: number[] = [];
+  const length = prices.length;
+  // ⚡ Bolt optimization: Use pre-allocated array and standard index assignments instead of dynamic .push()
+  const sma: number[] = new Array(length);
   
-  if (prices.length < period || period <= 0) {
-    return Array.from({ length: prices.length }, () => NaN);
+  if (length < period || period <= 0) {
+    for (let i = 0; i < length; i++) sma[i] = NaN;
+    return sma;
   }
   
   let windowSum = 0;
+  const invPeriod = 1 / period;
   
-  for (let i = 0; i < prices.length; i++) {
+  for (let i = 0; i < length; i++) {
     windowSum += prices[i];
     
     if (i >= period) {
@@ -150,9 +158,9 @@ export function calculateSMA(prices: number[] | Float64Array, period: number): n
     }
     
     if (i < period - 1) {
-      sma.push(NaN);
+      sma[i] = NaN;
     } else {
-      sma.push(windowSum / period);
+      sma[i] = windowSum * invPeriod;
     }
   }
   
@@ -163,23 +171,28 @@ export function calculateSMA(prices: number[] | Float64Array, period: number): n
  * EMA（指数平滑移動平均）を計算
  */
 export function calculateEMA(prices: number[] | Float64Array, period: number): number[] {
-  const ema: number[] = [];
+  const length = prices.length;
+  // ⚡ Bolt optimization: Use pre-allocated array and inline mean calculation to avoid .slice() allocations
+  const ema: number[] = new Array(length);
   const multiplier = 2 / (period + 1);
   
-  let currentEMA = 0;
+  if (length < period || period <= 0) {
+    for (let i = 0; i < length; i++) ema[i] = NaN;
+    return ema;
+  }
   
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period - 1) {
-      ema.push(NaN);
-      if (i === period - 2) {
-        currentEMA = mean(prices.slice(0, period));
-      }
-    } else if (i === period - 1) {
-      ema.push(currentEMA);
-    } else {
-      currentEMA = (prices[i] - currentEMA) * multiplier + currentEMA;
-      ema.push(currentEMA);
-    }
+  let sum = 0;
+  for (let i = 0; i < period; i++) {
+    sum += prices[i];
+    ema[i] = NaN;
+  }
+
+  let currentEMA = sum / period;
+  ema[period - 1] = currentEMA;
+
+  for (let i = period; i < length; i++) {
+    currentEMA = (prices[i] - currentEMA) * multiplier + currentEMA;
+    ema[i] = currentEMA;
   }
   
   return ema;
@@ -189,30 +202,55 @@ export function calculateEMA(prices: number[] | Float64Array, period: number): n
  * RSI（相対力指数）を計算
  */
 export function calculateRSI(prices: number[] | Float64Array, period: number = 14): number[] {
-  const rsi: number[] = [];
-  const gains: number[] = [];
-  const losses: number[] = [];
+  const length = prices.length;
+  // ⚡ Bolt optimization: Use pre-allocated array and single-pass iteration, eliminating intermediate 'gains' and 'losses' arrays
+  const rsi: number[] = new Array(length);
   
-  for (let i = 1; i < prices.length; i++) {
-    const diff = prices[i] - prices[i-1];
-    gains.push(Math.max(0, diff));
-    losses.push(Math.max(0, -diff));
+  if (length <= period || period <= 0) {
+    for (let i = 0; i < length; i++) rsi[i] = NaN;
+    return rsi;
   }
   
-  let avgGain = mean(gains.slice(0, period));
-  let avgLoss = mean(losses.slice(0, period));
+  let sumGain = 0;
+  let sumLoss = 0;
   
-  for (let i = 0; i < prices.length; i++) {
-    if (i < period) {
-      rsi.push(NaN);
-    } else if (i === period) {
-      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-      rsi.push(100 - (100 / (1 + rs)));
+  rsi[0] = NaN;
+
+  for (let i = 1; i <= period; i++) {
+    const diff = prices[i] - prices[i - 1];
+    if (diff > 0) {
+      sumGain += diff;
     } else {
-      avgGain = (avgGain * (period - 1) + gains[i-1]) / period;
-      avgLoss = (avgLoss * (period - 1) + losses[i-1]) / period;
-      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
-      rsi.push(100 - (100 / (1 + rs)));
+      sumLoss -= diff;
+    }
+    rsi[i] = NaN;
+  }
+
+  let avgGain = sumGain / period;
+  let avgLoss = sumLoss / period;
+
+  let rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+  rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + rs));
+
+  for (let i = period + 1; i < length; i++) {
+    const diff = prices[i] - prices[i - 1];
+    let gain = 0;
+    let loss = 0;
+
+    if (diff > 0) {
+      gain = diff;
+    } else {
+      loss = -diff;
+    }
+
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+    if (avgLoss === 0) {
+      rsi[i] = 100;
+    } else {
+      rs = avgGain / avgLoss;
+      rsi[i] = 100 - (100 / (1 + rs));
     }
   }
   
@@ -266,9 +304,20 @@ export function calculateVolatilityFlexible(
     return 0;
   }
 
-  const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
-  const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / 
-    (useSampleVariance ? (returns.length - 1) : returns.length);
+  // ⚡ Bolt optimization: Replaced expensive .reduce() and Math.pow() with standard loops for O(n) performance
+  const length = returns.length;
+  let sum = 0;
+  for (let i = 0; i < length; i++) {
+    sum += returns[i];
+  }
+  const mean = sum / length;
+
+  let varianceSum = 0;
+  for (let i = 0; i < length; i++) {
+    const diff = returns[i] - mean;
+    varianceSum += diff * diff;
+  }
+  const variance = varianceSum / (useSampleVariance ? (length - 1) : length);
 
   const vol = Math.sqrt(variance);
 
@@ -351,12 +400,18 @@ export function calculateMaxDrawdownFromReturns(returns: number[], asPercentage:
   let maxDD = 0;
   let cumulative = 1;
 
-  for (const ret of returns) {
-    cumulative *= (1 + ret);
-    peak = Math.max(peak, cumulative);
+  // ⚡ Bolt optimization: Standard index-based loop and inline comparisons instead of for...of iterator and Math.max()
+  const length = returns.length;
+  for (let i = 0; i < length; i++) {
+    cumulative *= (1 + returns[i]);
+    if (cumulative > peak) {
+      peak = cumulative;
+    }
     if (peak !== 0) {
       const dd = (peak - cumulative) / peak;
-      maxDD = Math.max(maxDD, dd);
+      if (dd > maxDD) {
+        maxDD = dd;
+      }
     }
   }
 
