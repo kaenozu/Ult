@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { usePortfolioStore } from '@/app/store/portfolioStore';
 import { handleApiError } from '@/app/lib/error-handler';
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     const profitFactor = avgLoss > 0 ? avgProfit / avgLoss : avgProfit > 0 ? Infinity : 0;
 
     const exportData: TradeHistoryExport = {
-      exportId: `exp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      exportId: `exp_${Date.now()}_${randomUUID().replace(/-/g, '').substring(0, 16)}`,
       createdAt: new Date().toISOString(),
       trades,
       summary: {
