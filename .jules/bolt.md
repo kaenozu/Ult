@@ -11,3 +11,7 @@
 ## 2026-02-24 - [MACD Performance & Bug Fix]
 **Learning:** Generic `calculateEMA` utilities often enforce `price >= 0` (for financial data correctness), but derived indicators like MACD (Fast EMA - Slow EMA) can be negative. Reusing `calculateEMA` for the MACD Signal line caused the signal to vanish when MACD dipped below zero.
 **Action:** For derived indicators, use specialized inline calculations or validation logic that permits negative values, rather than reusing strict price-based utilities. Single-pass implementation also yielded a 50% performance boost by avoiding intermediate array allocations.
+
+## $(date +%Y-%m-%d) - Bollinger Bands Optimization and Validation Danger
+**Learning:** When micro-optimizing numerical calculation loops in JavaScript, replacing explicit validation logic (like `_getValidPrice`) with simple coercion (`Number()`) introduces severe data corruption risks. `Number(null)` and `Number('')` resolve to `0`, which artificially skew financial indicators if the dataset contains missing values.
+**Action:** Retain explicit `NaN` and validation checks within hot loops. Focus optimizations on mathematical simplifications (e.g. replacing division with inverse multiplication, caching repeated products) and avoiding object instantiation/method overheads.
